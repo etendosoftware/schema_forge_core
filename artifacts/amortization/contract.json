@@ -1,0 +1,2056 @@
+{
+  "version": "0.17.0",
+  "generatedAt": "2026-05-22T16:00:10.872Z",
+  "updatedAt": "2026-05-26T17:09:19.920Z",
+  "checksum": "e6bcaf1e3c564ab7",
+  "frontendContract": {
+    "window": {
+      "id": "800026",
+      "name": "Amortization",
+      "primaryEntity": "header",
+      "category": "finance",
+      "sidebarLayout": true,
+      "hideDeleteWhenComplete": true,
+      "hidePrint": true,
+      "hideLink": true,
+      "breadcrumb": "Finance / Amortization",
+      "menuActions": [
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenFieldTrue": "processed",
+          "columnName": "Processed"
+        }
+      ],
+      "labelOverrides": {
+        "es_ES": {
+          "Name": "Nombre",
+          "Description": "Descripción",
+          "DateAcct": "Fecha contable",
+          "StartDate": "Fecha de inicio",
+          "Totalamortization": "Amortización total",
+          "C_Currency_ID": "Moneda",
+          "A_Asset_ID": "Activo",
+          "Amortization_Percentage": "% Amortización",
+          "Amortizationamt": "Importe amortización",
+          "Line": "Nº línea"
+        },
+        "en_US": {
+          "Name": "Name",
+          "Description": "Description",
+          "DateAcct": "Accounting Date",
+          "StartDate": "Starting Date",
+          "Totalamortization": "Total Amortization",
+          "C_Currency_ID": "Currency",
+          "A_Asset_ID": "Asset",
+          "Amortization_Percentage": "Amortization %",
+          "Amortizationamt": "Amortization Amount",
+          "Line": "Line No."
+        }
+      },
+      "titleField": "name",
+      "layoutType": "default",
+      "linesLayout": "inlineEditable"
+    },
+    "entities": {
+      "header": {
+        "tableName": "A_Amortization",
+        "tabId": "800076",
+        "tabName": "Header",
+        "uiPattern": "STD",
+        "fields": [
+          {
+            "name": "name",
+            "apiKey": "name",
+            "column": "Name",
+            "label": "Name",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "sourceRequired": true,
+            "seq": 10,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
+            }
+          },
+          {
+            "name": "description",
+            "apiKey": "description",
+            "column": "Description",
+            "label": "Description",
+            "type": "text",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "section": "principal",
+            "seq": 50,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
+            }
+          },
+          {
+            "name": "accountingDate",
+            "apiKey": "accountingDate",
+            "column": "DateAcct",
+            "label": "Accounting Date",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "sourceRequired": true,
+            "seq": 20,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
+            }
+          },
+          {
+            "name": "startingDate",
+            "apiKey": "startingDate",
+            "column": "StartDate",
+            "label": "Starting Date",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "seq": 30,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
+            }
+          },
+          {
+            "name": "totalAmortization",
+            "apiKey": "totalAmortization",
+            "column": "Totalamortization",
+            "label": "Total Amortization",
+            "type": "decimal",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": false,
+            "columnType": "amount",
+            "seq": 40,
+            "summable": true,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
+            }
+          },
+          {
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "label": "Currency",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "reference": "Currency",
+            "inputMode": "selector",
+            "section": "principal",
+            "seq": 35,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
+            }
+          },
+          {
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "label": "Post Amortization",
+            "type": "button",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "false"
+            },
+            "columnType": "status",
+            "enumValues": [
+              {
+                "value": "N",
+                "name": "statusDraft"
+              },
+              {
+                "value": "Y",
+                "name": "statusProcessed"
+              }
+            ],
+            "defaultValue": "N",
+            "filterOnly": true
+          }
+        ],
+        "searchableFields": [
+          "name",
+          "accountingDate",
+          "startingDate"
+        ],
+        "computedFields": [
+          {
+            "name": "processed",
+            "derivation": {
+              "type": "computed",
+              "source": "false"
+            }
+          }
+        ],
+        "draftMode": {
+          "enabled": true,
+          "processField": "Processed",
+          "processValue": "Y",
+          "label": "confirm",
+          "confirmModal": "AmortizationConfirmModal",
+          "disableWhenEmpty": true
+        }
+      },
+      "lines": {
+        "tableName": "A_Amortizationline",
+        "tabId": "800077",
+        "tabName": "Lines",
+        "uiPattern": "STD",
+        "fields": [
+          {
+            "name": "asset",
+            "apiKey": "asset",
+            "column": "A_Asset_ID",
+            "label": "Asset",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "Asset",
+            "inputMode": "selector",
+            "grow": true,
+            "readOnlyLogic": {
+              "raw": "@Posted@='Y'",
+              "evaluable": true,
+              "js": "record['posted'] === 'Y'"
+            }
+          },
+          {
+            "name": "amortizationPercentage",
+            "apiKey": "amortizationPercentage",
+            "column": "Amortization_Percentage",
+            "label": "Amortization Percentage",
+            "type": "decimal",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "grow": true,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
+            }
+          },
+          {
+            "name": "amortizationAmount",
+            "apiKey": "amortizationAmount",
+            "column": "Amortizationamt",
+            "label": "Amortization Amount",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "noTrailing": true,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
+            }
+          },
+          {
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "label": "Currency",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": false,
+            "reference": "Currency",
+            "inputMode": "selector",
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
+            }
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "800026",
+      "name": "Amortization",
+      "primaryEntity": "header",
+      "category": "finance",
+      "sidebarLayout": true,
+      "hideDeleteWhenComplete": true,
+      "hidePrint": true,
+      "hideLink": true,
+      "breadcrumb": "Finance / Amortization",
+      "menuActions": [
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenFieldTrue": "processed",
+          "columnName": "Processed"
+        }
+      ],
+      "labelOverrides": {
+        "es_ES": {
+          "Name": "Nombre",
+          "Description": "Descripción",
+          "DateAcct": "Fecha contable",
+          "StartDate": "Fecha de inicio",
+          "Totalamortization": "Amortización total",
+          "C_Currency_ID": "Moneda",
+          "A_Asset_ID": "Activo",
+          "Amortization_Percentage": "% Amortización",
+          "Amortizationamt": "Importe amortización",
+          "Line": "Nº línea"
+        },
+        "en_US": {
+          "Name": "Name",
+          "Description": "Description",
+          "DateAcct": "Accounting Date",
+          "StartDate": "Starting Date",
+          "Totalamortization": "Total Amortization",
+          "C_Currency_ID": "Currency",
+          "A_Asset_ID": "Asset",
+          "Amortization_Percentage": "Amortization %",
+          "Amortizationamt": "Amortization Amount",
+          "Line": "Line No."
+        }
+      },
+      "titleField": "name",
+      "linesLayout": "inlineEditable"
+    },
+    "entities": {
+      "header": {
+        "tableName": "A_Amortization",
+        "tabId": "800076",
+        "tabName": "Header",
+        "fields": [
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "name",
+            "apiKey": "name",
+            "column": "Name",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "apiKey": "description",
+            "column": "Description",
+            "type": "text",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "accountingDate",
+            "apiKey": "accountingDate",
+            "column": "DateAcct",
+            "type": "date",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "startingDate",
+            "apiKey": "startingDate",
+            "column": "StartDate",
+            "type": "date",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "totalAmortization",
+            "apiKey": "totalAmortization",
+            "column": "Totalamortization",
+            "type": "decimal",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "type": "button",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "posted",
+            "apiKey": "posted",
+            "column": "Posted",
+            "type": "button",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "project",
+            "apiKey": "project",
+            "column": "C_Project_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "salesCampaign",
+            "apiKey": "salesCampaign",
+            "column": "C_Campaign_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "activity",
+            "apiKey": "activity",
+            "column": "C_Activity_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "stDimension",
+            "apiKey": "stDimension",
+            "column": "User1_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "ndDimension",
+            "apiKey": "ndDimension",
+            "column": "User2_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "A_Amortization_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "endingDate",
+            "apiKey": "endingDate",
+            "column": "EndDate",
+            "type": "date",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "processNow",
+            "apiKey": "processNow",
+            "column": "Processing",
+            "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      },
+      "lines": {
+        "tableName": "A_Amortizationline",
+        "tabId": "800077",
+        "tabName": "Lines",
+        "fields": [
+          {
+            "name": "lineNo",
+            "apiKey": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "asset",
+            "apiKey": "asset",
+            "column": "A_Asset_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "amortizationPercentage",
+            "apiKey": "amortizationPercentage",
+            "column": "Amortization_Percentage",
+            "type": "decimal",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "amortizationAmount",
+            "apiKey": "amortizationAmount",
+            "column": "Amortizationamt",
+            "type": "amount",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "project",
+            "apiKey": "project",
+            "column": "C_Project_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "costcenter",
+            "apiKey": "costcenter",
+            "column": "C_Costcenter_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "stDimension",
+            "apiKey": "stDimension",
+            "column": "User1_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "ndDimension",
+            "apiKey": "ndDimension",
+            "column": "User2_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "A_Amortizationline_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "amortization",
+            "apiKey": "amortization",
+            "column": "A_Amortization_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "sEQNoAsset",
+            "apiKey": "sEQNoAsset",
+            "column": "SEQ_No_Asset",
+            "type": "integer",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/header",
+        "entity": "header",
+        "supportedFilters": [
+          "name",
+          "accountingDate",
+          "startingDate"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/header/:id",
+        "entity": "header",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/header",
+        "entity": "header",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/header/:id",
+        "entity": "header",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/header/:id",
+        "entity": "header",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/lines",
+        "entity": "lines",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/lines/:id",
+        "entity": "lines",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/lines",
+        "entity": "lines",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/lines/:id",
+        "entity": "lines",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/lines/:id",
+        "entity": "lines",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "apiPrediction": {
+    "specName": "amortization",
+    "baseUrl": "/sws/neo/amortization",
+    "crud": {
+      "header": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/amortization/header",
+        "detailUrl": "/sws/neo/amortization/header/{id}",
+        "supportedFilters": [
+          "name",
+          "accountingDate",
+          "startingDate"
+        ]
+      },
+      "lines": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/amortization/lines",
+        "detailUrl": "/sws/neo/amortization/lines/{id}",
+        "supportedFilters": []
+      }
+    },
+    "selectors": [
+      {
+        "entity": "header",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/header/selectors/currency"
+      },
+      {
+        "entity": "lines",
+        "field": "asset",
+        "column": "A_Asset_ID",
+        "reference": "Asset",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/asset"
+      },
+      {
+        "entity": "lines",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/currency"
+      }
+    ],
+    "actions": [
+      {
+        "entity": "header",
+        "field": "processed",
+        "column": "Processed",
+        "url": "/sws/neo/amortization/header/{id}/action/processed",
+        "processId": "800134",
+        "processType": "classic"
+      },
+      {
+        "entity": "header",
+        "field": "posted",
+        "column": "Posted",
+        "url": "/sws/neo/amortization/header/{id}/action/posted"
+      }
+    ],
+    "queryParams": {
+      "pagination": {
+        "startRow": "_startRow",
+        "endRow": "_endRow",
+        "default": "0-100"
+      },
+      "sorting": {
+        "param": "_sortBy",
+        "example": "_sortBy=creationDate desc"
+      },
+      "filtering": "Use field name as query param: ?fieldName=value",
+      "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "finance"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "Name": "Nombre",
+        "Description": "Descripción",
+        "DateAcct": "Fecha contable",
+        "StartDate": "Fecha de inicio",
+        "Totalamortization": "Amortización total",
+        "C_Currency_ID": "Moneda",
+        "A_Asset_ID": "Activo",
+        "Amortization_Percentage": "% Amortización",
+        "Amortizationamt": "Importe amortización",
+        "Line": "Nº línea"
+      },
+      "en_US": {
+        "Name": "Name",
+        "Description": "Description",
+        "DateAcct": "Accounting Date",
+        "StartDate": "Starting Date",
+        "Totalamortization": "Total Amortization",
+        "C_Currency_ID": "Currency",
+        "A_Asset_ID": "Asset",
+        "Amortization_Percentage": "Amortization %",
+        "Amortizationamt": "Amortization Amount",
+        "Line": "Line No."
+      }
+    }
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-action-endpoint-header-posted",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "posted",
+        "runner": "node",
+        "description": "Action endpoint for 'posted' in header should exist"
+      },
+      {
+        "id": "t-action-endpoint-header-processed",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "processed",
+        "runner": "node",
+        "description": "Action endpoint for 'processed' in header should exist"
+      },
+      {
+        "id": "t-crud-flags-header",
+        "category": "crud-flags",
+        "entity": "header",
+        "runner": "node",
+        "description": "CRUD flags for 'header' should all be booleans"
+      },
+      {
+        "id": "t-crud-flags-lines",
+        "category": "crud-flags",
+        "entity": "lines",
+        "runner": "node",
+        "description": "CRUD flags for 'lines' should all be booleans"
+      },
+      {
+        "id": "t-default-value-type-header-processed",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "processed",
+        "runner": "node",
+        "description": "Default value for 'processed' in header should be a string"
+      },
+      {
+        "id": "t-field-presence-header-accountingDate",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "accountingDate",
+        "runner": "node",
+        "description": "Field 'accountingDate' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-currency",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-description",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-name",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-processed",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "processed",
+        "runner": "node",
+        "description": "Field 'processed' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-startingDate",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "startingDate",
+        "runner": "node",
+        "description": "Field 'startingDate' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-totalAmortization",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "totalAmortization",
+        "runner": "node",
+        "description": "Field 'totalAmortization' should be present in header"
+      },
+      {
+        "id": "t-field-presence-lines-amortizationAmount",
+        "category": "field-presence",
+        "entity": "lines",
+        "field": "amortizationAmount",
+        "runner": "node",
+        "description": "Field 'amortizationAmount' should be present in lines"
+      },
+      {
+        "id": "t-field-presence-lines-amortizationPercentage",
+        "category": "field-presence",
+        "entity": "lines",
+        "field": "amortizationPercentage",
+        "runner": "node",
+        "description": "Field 'amortizationPercentage' should be present in lines"
+      },
+      {
+        "id": "t-field-presence-lines-asset",
+        "category": "field-presence",
+        "entity": "lines",
+        "field": "asset",
+        "runner": "node",
+        "description": "Field 'asset' should be present in lines"
+      },
+      {
+        "id": "t-field-presence-lines-currency",
+        "category": "field-presence",
+        "entity": "lines",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should be present in lines"
+      },
+      {
+        "id": "t-field-type-header-accountingDate",
+        "category": "field-type",
+        "entity": "header",
+        "field": "accountingDate",
+        "runner": "node",
+        "description": "Field 'accountingDate' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-currency",
+        "category": "field-type",
+        "entity": "header",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-description",
+        "category": "field-type",
+        "entity": "header",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-name",
+        "category": "field-type",
+        "entity": "header",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-processed",
+        "category": "field-type",
+        "entity": "header",
+        "field": "processed",
+        "runner": "node",
+        "description": "Field 'processed' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-startingDate",
+        "category": "field-type",
+        "entity": "header",
+        "field": "startingDate",
+        "runner": "node",
+        "description": "Field 'startingDate' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-totalAmortization",
+        "category": "field-type",
+        "entity": "header",
+        "field": "totalAmortization",
+        "runner": "node",
+        "description": "Field 'totalAmortization' should have type 'number' in header"
+      },
+      {
+        "id": "t-field-type-lines-amortizationAmount",
+        "category": "field-type",
+        "entity": "lines",
+        "field": "amortizationAmount",
+        "runner": "node",
+        "description": "Field 'amortizationAmount' should have type 'number' in lines"
+      },
+      {
+        "id": "t-field-type-lines-amortizationPercentage",
+        "category": "field-type",
+        "entity": "lines",
+        "field": "amortizationPercentage",
+        "runner": "node",
+        "description": "Field 'amortizationPercentage' should have type 'number' in lines"
+      },
+      {
+        "id": "t-field-type-lines-asset",
+        "category": "field-type",
+        "entity": "lines",
+        "field": "asset",
+        "runner": "node",
+        "description": "Field 'asset' should have type 'string' in lines"
+      },
+      {
+        "id": "t-field-type-lines-currency",
+        "category": "field-type",
+        "entity": "lines",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should have type 'string' in lines"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-header-accountingDate",
+        "category": "readonlylogic-evaluable",
+        "entity": "header",
+        "field": "accountingDate",
+        "runner": "node",
+        "description": "Read-only logic for 'accountingDate' in header should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-header-currency",
+        "category": "readonlylogic-evaluable",
+        "entity": "header",
+        "field": "currency",
+        "runner": "node",
+        "description": "Read-only logic for 'currency' in header should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-header-description",
+        "category": "readonlylogic-evaluable",
+        "entity": "header",
+        "field": "description",
+        "runner": "node",
+        "description": "Read-only logic for 'description' in header should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-header-name",
+        "category": "readonlylogic-evaluable",
+        "entity": "header",
+        "field": "name",
+        "runner": "node",
+        "description": "Read-only logic for 'name' in header should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-header-startingDate",
+        "category": "readonlylogic-evaluable",
+        "entity": "header",
+        "field": "startingDate",
+        "runner": "node",
+        "description": "Read-only logic for 'startingDate' in header should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-header-totalAmortization",
+        "category": "readonlylogic-evaluable",
+        "entity": "header",
+        "field": "totalAmortization",
+        "runner": "node",
+        "description": "Read-only logic for 'totalAmortization' in header should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-lines-amortizationAmount",
+        "category": "readonlylogic-evaluable",
+        "entity": "lines",
+        "field": "amortizationAmount",
+        "runner": "node",
+        "description": "Read-only logic for 'amortizationAmount' in lines should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-lines-amortizationPercentage",
+        "category": "readonlylogic-evaluable",
+        "entity": "lines",
+        "field": "amortizationPercentage",
+        "runner": "node",
+        "description": "Read-only logic for 'amortizationPercentage' in lines should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-lines-asset",
+        "category": "readonlylogic-evaluable",
+        "entity": "lines",
+        "field": "asset",
+        "runner": "node",
+        "description": "Read-only logic for 'asset' in lines should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-lines-currency",
+        "category": "readonlylogic-evaluable",
+        "entity": "lines",
+        "field": "currency",
+        "runner": "node",
+        "description": "Read-only logic for 'currency' in lines should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-valid-header-accountingDate",
+        "category": "readonlylogic-valid",
+        "entity": "header",
+        "field": "accountingDate",
+        "runner": "node",
+        "description": "Read-only logic for 'accountingDate' in header should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-header-currency",
+        "category": "readonlylogic-valid",
+        "entity": "header",
+        "field": "currency",
+        "runner": "node",
+        "description": "Read-only logic for 'currency' in header should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-header-description",
+        "category": "readonlylogic-valid",
+        "entity": "header",
+        "field": "description",
+        "runner": "node",
+        "description": "Read-only logic for 'description' in header should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-header-name",
+        "category": "readonlylogic-valid",
+        "entity": "header",
+        "field": "name",
+        "runner": "node",
+        "description": "Read-only logic for 'name' in header should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-header-startingDate",
+        "category": "readonlylogic-valid",
+        "entity": "header",
+        "field": "startingDate",
+        "runner": "node",
+        "description": "Read-only logic for 'startingDate' in header should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-header-totalAmortization",
+        "category": "readonlylogic-valid",
+        "entity": "header",
+        "field": "totalAmortization",
+        "runner": "node",
+        "description": "Read-only logic for 'totalAmortization' in header should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-lines-amortizationAmount",
+        "category": "readonlylogic-valid",
+        "entity": "lines",
+        "field": "amortizationAmount",
+        "runner": "node",
+        "description": "Read-only logic for 'amortizationAmount' in lines should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-lines-amortizationPercentage",
+        "category": "readonlylogic-valid",
+        "entity": "lines",
+        "field": "amortizationPercentage",
+        "runner": "node",
+        "description": "Read-only logic for 'amortizationPercentage' in lines should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-lines-asset",
+        "category": "readonlylogic-valid",
+        "entity": "lines",
+        "field": "asset",
+        "runner": "node",
+        "description": "Read-only logic for 'asset' in lines should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-lines-currency",
+        "category": "readonlylogic-valid",
+        "entity": "lines",
+        "field": "currency",
+        "runner": "node",
+        "description": "Read-only logic for 'currency' in lines should be valid JS"
+      },
+      {
+        "id": "t-rule-declared-A-Amortization-AD-Client-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortization-AD_Client_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortization-AD_Client_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortization-AD-Org-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortization-AD_Org_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortization-AD_Org_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortization-C-Activity-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortization-C_Activity_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortization-C_Activity_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortization-C-Campaign-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortization-C_Campaign_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortization-C_Campaign_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortization-C-Currency-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortization-C_Currency_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortization-C_Currency_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortization-C-Project-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortization-C_Project_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortization-C_Project_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortization-DateAcct-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortization-DateAcct-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortization-DateAcct-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortization-Description-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortization-Description-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortization-Description-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortization-EndDate-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortization-EndDate-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortization-EndDate-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortization-Name-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortization-Name-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortization-Name-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortization-StartDate-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortization-StartDate-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortization-StartDate-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortization-Totalamortization-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortization-Totalamortization-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortization-Totalamortization-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortization-User1-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortization-User1_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortization-User1_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortization-User2-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortization-User2_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortization-User2_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortizationline-A-Amortizationline-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortizationline-A_Amortizationline_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortizationline-A_Amortizationline_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortizationline-A-Asset-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortizationline-A_Asset_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortizationline-A_Asset_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortizationline-AD-Client-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortizationline-AD_Client_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortizationline-AD_Client_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortizationline-AD-Org-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortizationline-AD_Org_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortizationline-AD_Org_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortizationline-Amortization-Percentage-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortizationline-Amortization_Percentage-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortizationline-Amortization_Percentage-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortizationline-Amortizationamt-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortizationline-Amortizationamt-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortizationline-Amortizationamt-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortizationline-C-Costcenter-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortizationline-C_Costcenter_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortizationline-C_Costcenter_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortizationline-C-Currency-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortizationline-C_Currency_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortizationline-C_Currency_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortizationline-C-Project-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortizationline-C_Project_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortizationline-C_Project_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortizationline-IsActive-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortizationline-IsActive-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortizationline-IsActive-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortizationline-Line-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortizationline-Line-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortizationline-Line-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortizationline-User1-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortizationline-User1_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortizationline-User1_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortizationline-User2-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortizationline-User2_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortizationline-User2_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortline-Acctdimension-A-Asset-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortline_Acctdimension-A_Asset_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortline_Acctdimension-A_Asset_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortline-Acctdimension-Amt-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortline_Acctdimension-Amt-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortline_Acctdimension-Amt-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortline-Acctdimension-C-Activity-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortline_Acctdimension-C_Activity_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortline_Acctdimension-C_Activity_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortline-Acctdimension-C-Bpartner-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortline_Acctdimension-C_Bpartner_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortline_Acctdimension-C_Bpartner_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortline-Acctdimension-C-Campaign-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortline_Acctdimension-C_Campaign_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortline_Acctdimension-C_Campaign_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortline-Acctdimension-C-Costcenter-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortline_Acctdimension-C_Costcenter_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortline_Acctdimension-C_Costcenter_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortline-Acctdimension-C-Project-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortline_Acctdimension-C_Project_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortline_Acctdimension-C_Project_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortline-Acctdimension-Isactive-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortline_Acctdimension-Isactive-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortline_Acctdimension-Isactive-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortline-Acctdimension-M-Product-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortline_Acctdimension-M_Product_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortline_Acctdimension-M_Product_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortline-Acctdimension-User1-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortline_Acctdimension-User1_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortline_Acctdimension-User1_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-A-Amortline-Acctdimension-User2-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "A_Amortline_Acctdimension-User2_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'A_Amortline_Acctdimension-User2_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-AD-Org-show-child-organizations",
+        "category": "rule-declared",
+        "rule": "AD_Org show child organizations",
+        "runner": "node",
+        "description": "Rule 'AD_Org show child organizations' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Accounting-dimension-A-Asset-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Accounting dimension-A_Asset_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Accounting dimension-A_Asset_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Accounting-dimension-AD-Org-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Accounting dimension-AD_Org_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Accounting dimension-AD_Org_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Accounting-dimension-C-Activity-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Accounting dimension-C_Activity_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Accounting dimension-C_Activity_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Accounting-dimension-C-Bpartner-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Accounting dimension-C_Bpartner_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Accounting dimension-C_Bpartner_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Accounting-dimension-C-Campaign-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Accounting dimension-C_Campaign_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Accounting dimension-C_Campaign_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Accounting-dimension-C-Costcenter-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Accounting dimension-C_Costcenter_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Accounting dimension-C_Costcenter_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Accounting-dimension-C-Project-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Accounting dimension-C_Project_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Accounting dimension-C_Project_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Accounting-dimension-M-Product-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Accounting dimension-M_Product_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Accounting dimension-M_Product_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Accounting-dimension-User1-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Accounting dimension-User1_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Accounting dimension-User1_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Accounting-dimension-User2-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Accounting dimension-User2_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Accounting dimension-User2_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Header-C-Activity-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Header-C_Activity_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Header-C_Activity_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Header-C-Campaign-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Header-C_Campaign_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Header-C_Campaign_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Header-C-Project-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Header-C_Project_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Header-C_Project_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Header-Posted-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Header-Posted-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Header-Posted-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Header-User1-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Header-User1_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Header-User1_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Header-User2-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Header-User2_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Header-User2_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Lines-AD-Org-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Lines-AD_Org_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Lines-AD_Org_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Lines-C-Costcenter-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Lines-C_Costcenter_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Lines-C_Costcenter_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Lines-C-Project-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Lines-C_Project_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Lines-C_Project_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Lines-User1-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Lines-User1_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Lines-User1_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-amortization-Lines-User2-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "amortization-Lines-User2_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'amortization-Lines-User2_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-process-PostAmortization-Processed",
+        "category": "rule-declared",
+        "rule": "process_PostAmortization_Processed",
+        "runner": "node",
+        "description": "Rule 'process_PostAmortization_Processed' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-process-PostAmortization-Processing",
+        "category": "rule-declared",
+        "rule": "process_PostAmortization_Processing",
+        "runner": "node",
+        "description": "Rule 'process_PostAmortization_Processing' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-process-Posted-hardcoded",
+        "category": "rule-declared",
+        "rule": "process_Posted_hardcoded",
+        "runner": "node",
+        "description": "Rule 'process_Posted_hardcoded' (process) should be declared"
+      },
+      {
+        "id": "t-searchable-filters-header-accountingDate",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "accountingDate",
+        "runner": "node",
+        "description": "Field 'accountingDate' should be a supported filter for header"
+      },
+      {
+        "id": "t-searchable-filters-header-name",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for header"
+      },
+      {
+        "id": "t-searchable-filters-header-startingDate",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "startingDate",
+        "runner": "node",
+        "description": "Field 'startingDate' should be a supported filter for header"
+      },
+      {
+        "id": "t-selector-endpoint-header-currency",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "currency",
+        "runner": "node",
+        "description": "Selector endpoint for 'currency' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-asset",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "asset",
+        "runner": "node",
+        "description": "Selector endpoint for 'asset' in lines should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-currency",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "currency",
+        "runner": "node",
+        "description": "Selector endpoint for 'currency' in lines should exist"
+      },
+      {
+        "id": "t-system-field-header-active",
+        "category": "system-field",
+        "entity": "header",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-activity",
+        "category": "system-field",
+        "entity": "header",
+        "field": "activity",
+        "runner": "node",
+        "description": "System field 'activity' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-client",
+        "category": "system-field",
+        "entity": "header",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-createdBy",
+        "category": "system-field",
+        "entity": "header",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-creationDate",
+        "category": "system-field",
+        "entity": "header",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-endingDate",
+        "category": "system-field",
+        "entity": "header",
+        "field": "endingDate",
+        "runner": "node",
+        "description": "System field 'endingDate' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-id",
+        "category": "system-field",
+        "entity": "header",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-ndDimension",
+        "category": "system-field",
+        "entity": "header",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "System field 'ndDimension' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-organization",
+        "category": "system-field",
+        "entity": "header",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-posted",
+        "category": "system-field",
+        "entity": "header",
+        "field": "posted",
+        "runner": "node",
+        "description": "System field 'posted' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-processNow",
+        "category": "system-field",
+        "entity": "header",
+        "field": "processNow",
+        "runner": "node",
+        "description": "System field 'processNow' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-project",
+        "category": "system-field",
+        "entity": "header",
+        "field": "project",
+        "runner": "node",
+        "description": "System field 'project' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-salesCampaign",
+        "category": "system-field",
+        "entity": "header",
+        "field": "salesCampaign",
+        "runner": "node",
+        "description": "System field 'salesCampaign' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-stDimension",
+        "category": "system-field",
+        "entity": "header",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "System field 'stDimension' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-updated",
+        "category": "system-field",
+        "entity": "header",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-updatedBy",
+        "category": "system-field",
+        "entity": "header",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-lines-active",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-amortization",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "amortization",
+        "runner": "node",
+        "description": "System field 'amortization' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-client",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-costcenter",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "System field 'costcenter' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-createdBy",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-creationDate",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-id",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-lineNo",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "System field 'lineNo' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-ndDimension",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "System field 'ndDimension' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-organization",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-project",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "project",
+        "runner": "node",
+        "description": "System field 'project' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-sEQNoAsset",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "sEQNoAsset",
+        "runner": "node",
+        "description": "System field 'sEQNoAsset' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-stDimension",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "System field 'stDimension' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-updated",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-updatedBy",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-visibility-header",
+        "category": "visibility",
+        "entity": "header",
+        "runner": "node",
+        "description": "Entity 'header' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-lines",
+        "category": "visibility",
+        "entity": "lines",
+        "runner": "node",
+        "description": "Entity 'lines' should only expose visible fields in frontend"
+      }
+    ],
+    "summary": {
+      "total": 149,
+      "byCategory": {
+        "action-endpoint": 2,
+        "crud-flags": 2,
+        "default-value-type": 1,
+        "field-presence": 11,
+        "field-type": 11,
+        "readonlylogic-evaluable": 10,
+        "readonlylogic-valid": 10,
+        "rule-declared": 63,
+        "searchable-filters": 3,
+        "selector-endpoint": 3,
+        "system-field": 31,
+        "visibility": 2
+      },
+      "byRunner": {
+        "node": 149,
+        "junit": 0
+      }
+    }
+  }
+}

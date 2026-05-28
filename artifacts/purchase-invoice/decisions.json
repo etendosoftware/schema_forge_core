@@ -392,7 +392,8 @@
         },
         "aeatsiiEstado": {
           "visibility": "readOnly",
-          "form": false
+          "form": false,
+          "grid": true
         },
         "etsgDateOperation": {
           "visibility": "editable",

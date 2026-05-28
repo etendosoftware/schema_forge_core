@@ -3,6 +3,31 @@ import { resolve, dirname } from 'node:path';
 import { MARKERS } from './custom-section-markers.js';
 import { convertLogicToJs } from './generate-contract.js';
 
+const FRONTEND_ACTION_PROJECTION = [
+  ['entity', 'entity'],
+  ['field', 'field'],
+  ['column', 'column'],
+  ['url', 'url'],
+  ['processId', 'processId'],
+  ['processType', 'processType'],
+];
+
+function projectActionForFrontend(action) {
+  const result = {};
+  for (const [targetKey, sourceKey] of FRONTEND_ACTION_PROJECTION) {
+    if (action?.[sourceKey] !== undefined) result[targetKey] = action[sourceKey];
+  }
+  return result;
+}
+
+export function projectApiPredictionForFrontend(apiPrediction) {
+  if (!apiPrediction) return apiPrediction;
+  return {
+    ...apiPrediction,
+    actions: (apiPrediction.actions ?? []).map(projectActionForFrontend),
+  };
+}
+
 /**
  * Resolves the correct import path for a custom component.
  *
@@ -210,7 +235,10 @@ export function generateTableComponent(entityName, contract) {
     const lookupPart = f.lookup ? ', lookup: true' : '';
     const popupPart = f.popup ? ', popup: true' : '';
     const minColPart = optProp('min', f.min);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart}${minColPart} },`;
+    const growPart = f.grow ? ', grow: true' : '';
+    const noTrailingPart = f.noTrailing ? ', noTrailing: true' : '';
+    const filterOnlyPart = (f.filterOnly || f.filterable === false) ? ', filterable: false' : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart}${minColPart}${growPart}${noTrailingPart}${filterOnlyPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -218,9 +246,13 @@ export function generateTableComponent(entityName, contract) {
   // Render helper functions for custom cell types
   const depreciationProgressHelper = neededCellTypes.has('depreciationProgress') ? `
 function renderDepreciationProgress(row) {
-  const pct = row.assetValue > 0
-    ? Math.min(100, Math.round(((row.depreciatedValue ?? 0) / row.assetValue) * 100))
-    : null;
+  const depreciatedValue = row.depreciatedValue ?? 0;
+  const depreciatedPlan = row.depreciatedPlan ?? 0;
+  const depreciationAmt = row.depreciationAmt ?? 0;
+  const denominator = depreciatedPlan > 0 ? depreciatedPlan : depreciationAmt;
+  const pct = denominator > 0
+    ? Math.min(100, Math.round((depreciatedValue / denominator) * 100))
+    : (depreciatedValue > 0 ? 100 : null);
   if (pct == null) return null;
   const color = pct === 100 ? '#10b981' : '#f59e0b';
   return (
@@ -436,7 +468,10 @@ function generateStatusBarComponent(headerEntity, statusBarConfig) {
 
   // Build cards array literal
   const cardsLiteral = cards.map(card => {
-    return `    { label: '${card.label}', value: fmt(data.${card.field}), color: '${card.color}',  Icon: ${card.icon} },`;
+    const valueExpr = card.display === 'identifier'
+      ? `(data['${card.field}$_identifier'] || data['${card.field}'] || '—')`
+      : `fmt(data.${card.field})`;
+    return `    { label: '${card.label}', value: ${valueExpr}, color: '${card.color}',  Icon: ${card.icon} },`;
   }).join('\n');
 
   // Build progress section
@@ -505,6 +540,7 @@ ${MARKERS.GENERATED_END(`statusBar:${headerEntity}`)}`;
   // No progress section
   const componentCode = `${MARKERS.GENERATED_START(`statusBar:${headerEntity}`)}
 function ${headerName}StatusBar({ data }) {
+  const ui = useUI();
   if (!data) return null;
   const fmt = (v) => v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
   const colorMap = {
@@ -525,7 +561,7 @@ ${cardsLiteral}
             <Icon size={18} className={c.icon} />
             <div>
               <div className={\`text-lg font-semibold leading-tight \${c.text}\`}>{value}</div>
-              <div className={\`text-xs \${c.sub} mt-0.5\`}>{label}</div>
+              <div className={\`text-xs \${c.sub} mt-0.5\`}>{ui(label)}</div>
             </div>
           </div>
         );
@@ -711,7 +747,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   }).join('\n');
 
   // API prediction config
-  const apiPrediction = contract.apiPrediction;
+  const apiPrediction = projectApiPredictionForFrontend(contract.apiPrediction);
   const apiBlock = apiPrediction
     ? `\nexport const api = ${JSON.stringify(apiPrediction, null, 2)};\n`
     : '';
@@ -1013,6 +1049,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const dateFilterKeyProp = dateFilterKey
     ? `\n      dateFilterKey="${dateFilterKey}"`
     : '';
+  // filterOnly fields are in the table columns (so ListFilterBar detects them)
+  // but should not be visually rendered. Pass as initialHiddenColumns to DataTable.
+  const filterOnlyFields = allEntityFields.filter(f => f.filterOnly && f.grid);
+  const initialHiddenColumnsProp = filterOnlyFields.length > 0
+    ? `\n      hiddenColumns={${JSON.stringify(filterOnlyFields.map(f => f.name))}}`
+    : '';
   // contentBg prop
   const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
   // lineConfig prop — emitted when the window uses a non-default line pricing config
@@ -1075,7 +1117,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     : `import ${headerName}Table from './${headerName}Table';`;
 
   // menuActions prop
-  const menuActionsNeedsData = menuActionsConfig.some(a => a.visibleWhenFieldFalse);
+  const menuActionsNeedsData = menuActionsConfig.some(a => a.visibleWhenFieldFalse || a.visibleWhenFieldTrue);
   const menuActionsFnParams = menuActionsNeedsData ? '({ data, status })' : '({ status })';
   const menuActionsProp = menuActionsConfig.length > 0
     ? `\n        menuActions={${menuActionsFnParams} => [\n${menuActionsConfig.map(a => {
@@ -1084,8 +1126,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             ? `${JSON.stringify(a.visibleWhenStatus)}.includes(status)`
             : `status === '${a.visibleWhenStatus}'`
           : '';
-        const fieldVis = a.visibleWhenFieldFalse ? `!data?.${a.visibleWhenFieldFalse}` : '';
-        const visParts = [statusVis, fieldVis].filter(Boolean);
+        const fieldVisFalse = a.visibleWhenFieldFalse ? `!data?.${a.visibleWhenFieldFalse}` : '';
+        const fieldVisTrue = a.visibleWhenFieldTrue ? `(data?.${a.visibleWhenFieldTrue} === 'Y' || data?.${a.visibleWhenFieldTrue} === true)` : '';
+        const visParts = [statusVis, fieldVisFalse, fieldVisTrue].filter(Boolean);
         const vis = visParts.length > 0 ? `visible: ${visParts.join(' && ')}, ` : '';
         const destr = a.destructive ? 'destructive: true, ' : '';
         // Handler precedence: documentAction (declarative DocAction) > columnName (AD process button) > onClick placeholder
@@ -1122,10 +1165,18 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // Draft mode config from frontend contract
   const draftModeConfig = contract.frontendContract.entities[headerEntity]?.draftMode;
-  const draftModeValue = draftModeConfig?.enabled
-    ? JSON.stringify(draftModeConfig, null, 2)
+  const confirmModalName = draftModeConfig?.confirmModal || null;
+  // Strip confirmModal from the static config — it's runtime-only (resolved via useState in the component)
+  const draftModeStaticConfig = draftModeConfig
+    ? Object.fromEntries(Object.entries(draftModeConfig).filter(([k]) => k !== 'confirmModal'))
+    : null;
+  const draftModeValue = draftModeStaticConfig?.enabled
+    ? JSON.stringify(draftModeStaticConfig, null, 2)
     : 'null';
-  const draftModeProp = draftModeConfig?.enabled ? '\n        draftMode={draftMode}' : '';
+  const draftModePropName = confirmModalName ? 'draftModeWithConfirm' : 'draftMode';
+  const draftModeProp = draftModeStaticConfig?.enabled
+    ? `\n        draftMode={${draftModePropName}}`
+    : '';
   const requiredHeaderFieldsProp = requiredHeaderFieldNames.length > 0
     ? '\n        requiredHeaderFields={requiredHeaderFields}'
     : '';
@@ -1141,7 +1192,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // StatusBar component generation
   const statusBarResult = statusBar ? generateStatusBarComponent(headerEntity, statusBar) : null;
-  const statusBarImport = statusBarResult ? `\n${statusBarResult.lucideImports}` : '';
+  const statusBarImport = statusBarResult ? `\nimport { useUI } from '@/i18n';\n${statusBarResult.lucideImports}` : '';
+  const confirmModalImport = confirmModalName
+    ? `\nimport ${confirmModalName} from ${resolveCustomImport(specName || headerEntity, confirmModalName)};`
+    : '';
   const statusBarCode = statusBarResult ? `\n${statusBarResult.componentCode}\n` : '';
   const headerContentProp = statusBar
     ? `\n        headerContent={(data) => <${headerName}StatusBar data={data} />}`
@@ -1293,7 +1347,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     return `    {${stateName} && <${a.component} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => ${setterName}(false)} />}`;
   }).join('\n');
 
-  const needsUseState = customComponents.newRecordComponent || newActionsWithComponents.length > 0;
+  const needsUseState = customComponents.newRecordComponent || newActionsWithComponents.length > 0 || !!confirmModalName;
   const needsFragment = customComponents.newRecordComponent || newActionsWithComponents.length > 0;
 
   return `import { ${needsUseState ? 'useState, ' : ''}useEffect } from 'react';
@@ -1304,8 +1358,8 @@ import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';` : ''}
 ${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
 ${isGallery ? `import ${headerName}Gallery from ${resolveCustomImport(specName || headerEntity, `${headerName}Gallery`)};` : ''}${isSidebar ? `
-import ${headerName}Sidebar from ${resolveCustomImport(specName || headerEntity, `${headerName}Sidebar`)};` : (isGallery ? `
-import ${headerName}DetailHeader from ${resolveCustomImport(specName || headerEntity, `${headerName}DetailHeader`)};` : '')}${statusBarImport}
+import ${headerName}Sidebar from ${resolveCustomImport(specName || headerEntity, `${headerName}Sidebar`)};` : ''}${isGallery && !isSidebar ? `
+import ${headerName}DetailHeader from ${resolveCustomImport(specName || headerEntity, `${headerName}DetailHeader`)};` : ''}${statusBarImport}${confirmModalImport}
 
 const breadcrumb = '${windowBreadcrumbOverride !== undefined ? windowBreadcrumbOverride : `${windowCategory} / ${windowLabel}`}';
 ${labelOverridesBlock}${statusBarCode}
@@ -1352,9 +1406,12 @@ ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}({ windowName, recordId, ...props }) {${customComponents.newRecordComponent ? `
-  const [showNewModal, setShowNewModal] = useState(false);` : ''}${newActionsWithComponents.length > 0 ? `\n${newActionsStatements}` : ''}
+  const [showNewModal, setShowNewModal] = useState(false);` : ''}${newActionsWithComponents.length > 0 ? `\n${newActionsStatements}` : ''}${confirmModalName ? `
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const draftModeWithConfirm = { ...draftMode, onConfirm: () => setShowConfirmModal(true) };` : ''}
   if (recordId) {
-    return (
+    return (${confirmModalName ? `
+      <>` : ''}
       <DetailView
         entity="${headerEntity}"${detailEntity ? `
         detailEntity="${detailEntity}"` : ''}
@@ -1373,7 +1430,19 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
         recordId={recordId}
         breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
         {...props}${sidebarContentProp}
-      />
+      />${confirmModalName ? `
+      {showConfirmModal && (
+        <${confirmModalName}
+          recordId={recordId}
+          token={props.token}
+          apiBaseUrl={props.apiBaseUrl}
+          onClose={(success) => {
+            setShowConfirmModal(false);
+            if (success) window.location.reload();
+          }}
+        />
+      )}
+      </>` : ''}
     );
   }
 
@@ -1385,7 +1454,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `

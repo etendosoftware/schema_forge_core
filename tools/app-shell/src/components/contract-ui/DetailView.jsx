@@ -73,6 +73,7 @@ import { formatAmount } from '@/lib/formatAmount.js';
 import { useRegisterWindowContext } from '@/components/CurrentWindowContext';
 import { matchOcrDocType } from '@/components/copilot/ocr/ocrDocTypes';
 import { isDeleteVisibleForRecord } from '@/utils/recordActions.js';
+import { buildHeaderSelectorContext, buildLineSelectorContext } from '@/lib/selectorContext.js';
 import DocumentStatusPill from './DocumentStatusPill.jsx';
 
 const LazyOcrInlineUploader = lazy(() => import('@/components/copilot/ocr/OcrInlineUploader.jsx'));
@@ -153,7 +154,7 @@ function CollapsibleSection({ title, children }) {
  */
 function detailContentPadding(linesLayout, hasSidebar, variant) {
   const isInline = linesLayout === 'inlineEditable';
-  if (hasSidebar) return isInline ? 'pr-2' : 'pl-6 pr-2';
+  if (hasSidebar) return isInline ? 'p-2' : 'pl-6 pr-2';
   if (variant === 'panel') return isInline ? 'pr-6' : 'px-6';
   return isInline ? '' : 'px-6';
 }
@@ -341,51 +342,36 @@ export function DetailView({
   const secondaryTabKeysStr = secondaryTabs.map(t => t?.key ?? '').join('|');
 
   const selectorContextByEntity = useMemo(() => {
-    // Derive isSOTrx from window category so NEO's validation filter resolves
-    // @isSOTrx@ in M_PriceList.issopricelist = @isSOTrx@, showing only sales or
-    // purchase price lists depending on the document type.
     const category = api?.window?.category;
-    const isSOTrx = category === 'sales' ? 'Y' : category === 'purchases' ? 'N' : null;
-
-    // Derive isCustomer/isVendor from window category so the BusinessPartner selector
-    // shows only customers (sales) or vendors (purchases).
-    const isCustomer = category === 'sales' ? 'Y' : null;
-    const isVendor = category === 'purchases' ? 'Y' : null;
-
     const next = {};
-    // Primary entity (header): inject isSOTrx, isCustomer, isVendor
+
     if (entity) {
-      next[entity] = {
-        ...(isSOTrx ? { isSOTrx } : {}),
-        ...(isCustomer ? { isCustomer } : {}),
-        ...(isVendor ? { isVendor } : {}),
-      };
+      next[entity] = buildHeaderSelectorContext(category);
     }
+
     if (!parentRecordId) return next;
+
     if (detailEntity) {
-      // DateInvoiced is required by the C_Tax validationRule:
-      // VALIDFROM <= COALESCE(@DateInvoiced@, @DateOrdered@)
-      // Without it, COALESCE(null,null)=null → VALIDFROM<=null is always FALSE → no taxes returned.
-      // Etendo Classic's PL/pgSQL to_date() expects DD-MM-YYYY, so the ISO date from the
-      // header (YYYY-MM-DD) must be reformatted before being sent as a context param.
       const headerSnapshot = hook.selected ?? hook.editing;
-      const invoiceDate = headerSnapshot?.invoiceDate ?? headerSnapshot?.orderDate ?? null;
-      const isoMatch = typeof invoiceDate === 'string' ? invoiceDate.match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
-      const dateInvoicedParam = isoMatch ? `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}` : invoiceDate;
       const currency = headerSnapshot?.['currency$_identifier'] ?? sessionCurrencyCode ?? null;
       next[detailEntity] = {
-        parentId: parentRecordId,
-        ...(isSOTrx ? { isSOTrx, IsSOTrx: isSOTrx } : {}),
-        ...(priceListId ? { priceList: priceListId } : {}),
-        ...(dateInvoicedParam ? { DateInvoiced: dateInvoicedParam } : {}),
+        ...buildLineSelectorContext({
+          windowCategory: category,
+          parentId: parentRecordId,
+          headerRecord: {
+            ...headerSnapshot,
+            priceList: priceListId,
+          },
+        }),
         ...(currency ? { currency } : {}),
       };
     }
+
     for (const key of secondaryTabKeysStr.split('|').filter(Boolean)) {
       next[key] = { parentId: parentRecordId };
     }
     return next;
-  }, [entity, detailEntity, parentRecordId, secondaryTabKeysStr, priceListId, api, hook.selected, hook.editing]);
+  }, [entity, detailEntity, parentRecordId, secondaryTabKeysStr, priceListId, api, hook.selected, hook.editing, sessionCurrencyCode]);
   const { catalogs, catalogsLoaded } = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
@@ -1571,7 +1557,7 @@ export function DetailView({
             })}
             {topbarExtra && (() => {
               const TopbarExtraComponent = topbarExtra;
-              return <TopbarExtraComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} />;
+              return <TopbarExtraComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} onRefresh={() => hook.fetchById?.(data?.id || recordId)} />;
             })()}
           </div>
 
@@ -1579,7 +1565,7 @@ export function DetailView({
               {/* Topbar right slot (e.g. payment status badge) */}
               {topbarRight && (() => {
                 const TopbarRightComponent = topbarRight;
-                return <TopbarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} />;
+                return <TopbarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} onRefresh={() => hook.fetchById?.(data?.id || recordId)} />;
               })()}
               {/* Send / Print document — uses DocumentPrintDrawer.
                   Icon unified with RowQuickActions (envelope/Mail) so the same
@@ -1604,8 +1590,8 @@ export function DetailView({
                   <Printer className="h-4 w-4" />
                 </button>
               )}
-              {/* Delete record — hidden when hideDeleteWhenComplete and status matches */}
-              {!isNew && recordId && isDeleteVisibleForRecord({ record: data, statusField, hideDeleteWhenComplete }) && (
+              {/* Delete record — hidden when hideDeleteWhenComplete and status matches or record is processed */}
+              {!isNew && recordId && isDeleteVisibleForRecord({ record: data, statusField, hideDeleteWhenComplete }) && !(hideDeleteWhenComplete && isProcessed) && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className={`${sqBtnSize} flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors`}
@@ -1618,6 +1604,7 @@ export function DetailView({
               {/* More actions */}
               {!(typeof hideMoreMenu === 'function' ? hideMoreMenu({ data }) : hideMoreMenu) && <div className="relative" ref={moreMenuRef}>
                 <button
+                  data-testid="action-more"
                   onClick={() => setShowMoreMenu(v => !v)}
                   className="flex items-center justify-center p-[7px] rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors"
                 >
@@ -1770,6 +1757,8 @@ export function DetailView({
                           } else if (saved.id && isNew) {
                             hook.primeSaved?.(saved);
                             navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+                          } else if (saved.id) {
+                            hook.fetchById?.(saved.id);
                           }
                         }
                       }}>

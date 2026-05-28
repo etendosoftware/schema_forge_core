@@ -36,3 +36,7 @@ e2e/auth.json
 tmp/
 sonar-results.md
 .scannerwork/
+.etendo-go/
+dev.log
+dev.pid
+test-results/

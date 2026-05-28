@@ -23,6 +23,15 @@ vi.mock('@/hooks/useFinancialAccounts.js', () => ({
   useFinancialAccounts: () => mockUseFinancialAccounts(),
 }));
 
+vi.mock('@/hooks/useAccountMutations.js', () => ({
+  useAccountMutations: () => ({
+    createAccount: vi.fn(),
+    updateAccount: vi.fn(),
+    archiveAccount: vi.fn(),
+    fetchDefaults: vi.fn().mockResolvedValue({ currencies: [], defaultCurrencyId: '' }),
+  }),
+}));
+
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -154,7 +163,7 @@ describe('FinancialAccountsPage', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/financial-account/acc-1');
   });
 
-  it('renders the "Nueva cuenta" button enabled with no click handler in T1', () => {
+  it('renders the "Nueva cuenta" button enabled and does not navigate when clicked', () => {
     mockUseFinancialAccounts.mockReturnValue({
       accounts: baseAccounts,
       summary: baseSummary,
@@ -167,7 +176,7 @@ describe('FinancialAccountsPage', () => {
     const button = screen.getByTestId('cuentas-new-account-button');
     expect(button).toBeInTheDocument();
     expect(button).not.toBeDisabled();
-    // Clicking is a no-op in T1; the modal lands in ETP-4096.
+    // Clicking opens the wizard modal, not a navigation.
     fireEvent.click(button);
     expect(mockNavigate).not.toHaveBeenCalled();
   });

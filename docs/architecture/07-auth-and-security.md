@@ -251,6 +251,19 @@ The API may return all fields visible to the role, even if the current UI view d
 **Audit Logging**
 Etendo has `AD_Audit_Trail` for tracking data changes. Ensure it is enabled for sensitive entities (user management, financial transactions, role changes).
 
+**Transactional Email**
+Transactional email must be protected as a server-side contract system:
+- The frontend must never call the provider endpoint directly.
+- Provider endpoint URLs, API keys, sender identities, and signing secrets must stay in server configuration only.
+- No browser-visible endpoint may accept an arbitrary email payload such as `to`, `template`, and `data`.
+- Each send must execute a versioned contract that defines authorization, recipient resolution, variables, throttle, idempotency, audit, suppression, and kill switch behavior.
+- Recipients must be derived from trusted server records by default.
+- Caller-provided recipients are allowed only for explicit admin/support contracts.
+- Reply-To must be disabled by default or constrained to a documented allowlist policy.
+- Controlled custom HTML email requires role checks, reason capture, sanitizer, strict throttle, and audit.
+
+See [../transactional-email-framework.md](../transactional-email-framework.md), [../email-contracts.md](../email-contracts.md), and [../ops/transactional-email-security.md](../ops/transactional-email-security.md).
+
 ## HTTPS / TLS
 
 ### TLS Termination

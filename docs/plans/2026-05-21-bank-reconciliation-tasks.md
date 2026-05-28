@@ -23,11 +23,12 @@ These 8 tasks **retire that placeholder** and add a new menu entry **"Cuentas"**
 | T1 | Build Accounts list page reading existing financial accounts | — | ✅ | ◐ | ~1 w |
 | T2 | Implement offline account creation, edit and archive | T1 | ✅ | ◐ | ~1 w |
 | T3 | Wire PSD2 connection panel and Salt Edge integration into the Accounts UI | T2, existing PSD2 module | ✅ | - | ~0.5 w |
-| T4 | Build financial account detail view (Movements + Imported statements tabs) | T1 | ✅ | ◐ | ~1.5 w |
+| T4 | Build financial account detail view (Movements tab + placeholders) | T1 | ✅ | ✅ | ~1.5 w |
 | T5 | Deliver matching rules backend, AD window and Figma-aligned UI | T1 | ✅ | ✅ | ~1.5 w |
 | T6 | Implement manual reconciliation split panel and reconcile handler | T4 | ✅ | ✅ | ~2 w |
 | T7 | Implement suggested automatic reconciliation popup with rules engine | T5, T6 | ✅ | ✅ | ~2 w |
 | T8 | Add deferred accounting and reactivate reconciliation flow | T6 | ◐ | ✅ | ~1.5 w |
+| T9 | Build Imported Bank Statements view with file import flow | T4 | ✅ | ✅ | ~1.5 w |
 
 ---
 
@@ -250,9 +251,9 @@ These 8 tasks **retire that placeholder** and add a new menu entry **"Cuentas"**
 
 ---
 
-## Task 4 — Build financial account detail view (Movements + Imported statements tabs)
+## Task 4 — Build financial account detail view (Movements tab + placeholders)
 
-**Title (Jira):** Build financial account detail view with Movements and Imported statements tabs
+**Title (Jira):** Build financial account detail view with Movements tab and placeholders
 **Type:** Story
 **Parent epic:** ETP-3504
 **Depends on:** T1
@@ -261,69 +262,98 @@ These 8 tasks **retire that placeholder** and add a new menu entry **"Cuentas"**
 
 ### Issue Description
 
-* Build the per-account detail view rendered at `/financial-account/{id}` with three tabs: Movements (default), Reconciliation (placeholder, materialized in T6), Imported statements.
+* Build the per-account detail view rendered at `/financial-account/{id}` with three tabs: Movements (default, fully functional), Reconciliation (placeholder, materialized in T6), Imported statements (placeholder, materialized in T9).
 * Movements is the canonical list of `FIN_FinAcc_Transaction` for the selected account, redesigned per section 3 of the functional document: drop the legacy combined "Third party / Reconciliation" column in favor of separate Contact, Description, Status columns; remove the "Uncategorized" counter from the header.
-* KPI strip at the top: Current balance, Inflows (sum of last 30 days), Outflows (sum of last 30 days). The "Uncategorized" counter present in classic Etendo must NOT be shown.
-* Toolbar filters: All statuses, Last 30 days, Any type, Any amount, free-text search, Export, `+ New movement`.
-* Status column derived (not stored): Draft / Completed / Reconciled / Posted, following the derivation rules from section 11 of the implementation plan.
-* Imported statements tab: read-only listing of `FIN_Bank_Statement` for the account with Name, Statement date, Beginning balance, Ending balance, Document status, Posted flag.
-* Per-row kebab in Movements: `View detail` (active), `Unreconcile` (disabled until T8), `Post` (disabled until T8).
+* Account summary strip below the toolbar: IBAN (chunked in groups of 4, copy-to-clipboard), Total balance, Inflows (last 30 days), Outflows (last 30 days). The "Uncategorized" counter present in classic Etendo must NOT be shown.
+* Toolbar filters (all functional, client-side over the loaded movements): status (8 backend search keys), date range (presets + custom range using the same picker as the grid views), type (BPD = Cobro / BPW = Pago), amount (manual min/max + inflows/outflows presets + clear), free-text search, `+ Nuevo movimiento` (visible + enabled, fires "coming soon" toast). Export button at the right of the tab strip.
+* Status column uses the **8 real backend search keys** of `FIN_Payment.Status` (RPAP, RPAE, RPVOID, RPR, PPM, PWNC, RDNC, RPPC) mapped to 5 visual families (pending / voided / cleared / inTransit / executed). This supersedes the original Draft/Completed/Reconciled/Posted derivation — the derived helper is dropped in favor of the real values.
+* Per-row kebab in Movements (visible on hover): `View detail` (active, toast), `Unreconcile` (disabled until T8), `Post` (disabled until T8).
+* Imported Statements tab: placeholder ("Coming soon") in this ticket — the real listing of `FIN_Bank_Statement` + the file import flow is delivered by T9.
+* Reconciliation tab: placeholder ("Coming in T6") — materialized by T6.
 
 ### Solution Design
 
 **Schema Forge:**
 
-* New artifact `artifacts/financial-account/` with `decisions.json` v2 declaring `layoutType: "custom"`. Registered in `tools/app-shell/src/windows/registry.js`.
-* New custom window `tools/app-shell/src/windows/custom/financial-account/index.jsx` rendering a local Tabs strip (UI-driven, not AD tabs).
-* Three tab components under `tools/app-shell/src/windows/custom/financial-account/`:
-  * `MovimientosTab.jsx` — uses `DataTable` from `contract-ui` with a custom column config, KPI strip via a shared `KpiStrip` component, custom filter row.
-  * `ExtractosImportadosTab.jsx` — reuses the existing list infrastructure pointing to the NEO Headless `bank-statement` spec, filtered by current account.
-  * `ReconciliacionTab.jsx` — empty body with a placeholder message "Coming in T6".
-* Status derivation extracted to a pure helper `deriveTransactionStatus(tx)` and unit-tested. Inputs: `FIN_Payment.Processed`, presence of a `FIN_Reconciliation_Line`, and the `ETBR_PostStatus` column when it exists (T8 introduces it; this ticket treats missing column as Draft/Completed/Reconciled only).
-* Per-row kebab implemented with a shared `<DropdownMenu>`; `Unreconcile` and `Post` entries rendered with `disabled` flag.
+* New artifact `artifacts/financial-account/` with `decisions.json` v2 declaring `layoutType: "custom"`. Whitelisted as `CUSTOM_ONLY` in `cli/src/validate-pipeline.js` (no contract pipeline).
+* New custom window `tools/app-shell/src/windows/custom/financial-account/index.jsx` rendering a local Tabs strip (UI-driven, not AD tabs), registered in `tools/app-shell/src/windows/registry.js`.
+* Tab components under `tools/app-shell/src/windows/custom/financial-account/`:
+  * `MovimientosTab.jsx` — orchestrates filters + `AccountSummaryStrip` + `MovementsTable`; runs `applyFilters` client-side over the movement list returned by the hook.
+  * `MovementsTable.jsx` — header + rows / skeleton / empty-state via a `renderBody` helper, hover with elevation shadow, locale-aware date column, signed-amount colors.
+  * `AccountSummaryStrip.jsx` — IBAN chunked with copy button + 3 KPI sections (flex-1 each).
+  * `MovementStatusBadge.jsx` + `movementStatusConfig.js` — 8 status chips mapped to 5 color families.
+  * `PostingStatusDot.jsx` — provisional posted/not-posted dot derived from `paymentStatus === 'RPPC'`.
+  * `MovementRowKebab.jsx` — on-hover kebab with the 3 actions.
+  * `MovementsToolbar/` — back arrow + 4 filters + search + new-movement button.
+  * `ReconciliacionTab.jsx`, `ExtractosImportadosTab.jsx` — placeholders.
+* New reusable primitives introduced (used by this window but generic):
+  * `components/ui/tabs.jsx` — manual Tabs primitive (no Radix react-tabs); context value memoised.
+  * `components/ui/money-amount.jsx` — `Intl.NumberFormat` + sign prefix + tone colors.
+  * `components/ui/date-range-popover.jsx` — split into `DateRangePopover` (wrapper with default trigger) and `DateRangePopoverContent` (reusable inner panel). `ListFilterBar` from `contract-ui` is refactored to consume the same content.
+  * `components/ui/distinct-values-filter.jsx` — Popover-wrapped `DistinctValuesList` for in-memory fixed code lists; consumed by Status and Type filters.
+* New hooks:
+  * `hooks/useNeoResource.js` — generic NEO fetch with auth + abort + timeout. Returns `{ data, loading, error, reload }`.
+  * `hooks/useFinancialAccount.js` — thin wrapper over `useNeoResource`. Uses `/sws/neo/financial-accounts-page` + client-side filter by id (shortcut; a dedicated by-id endpoint is a follow-up).
+  * `hooks/useAccountMovements.js` — thin wrapper over `useNeoResource`. Hits `/sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}`.
 
 **Backend:**
 
-* Extend `FinancialAccountHandler` if the by-id `GET` requires extra response shaping (header info: name, IBAN, current balance, currency, PSD2 status if any).
-* Movements listing reads from the existing NEO Headless spec for `FIN_FinAcc_Transaction` (create one via `push-to-neo` if missing), filtered server-side by `FIN_FinancialAccount_ID`.
-* Imported statements listing reads from the `bank-statement` spec, filtered by account.
-* New i18n keys `finance.account.tab.*`, `finance.account.kpi.*`, `finance.account.movements.column.*`.
+* New NEO handler `FinancialAccountTransactionsHandler.java` (CDI `@Named("financial-account-transactions")`) under `com.etendoerp.go`. Queries `FIN_Finacc_Transaction` joined with `FIN_Financial_Account`, `C_Currency`, `FIN_Payment`, `C_BPartner` (resolved from the transaction or its parent payment). Computes a per-row running balance anchored to `FIN_Financial_Account.currentbalance` (window function). Returns `transactions` array + `totals` object with current balance, 30-day inflows, 30-day outflows, currency. The 30-day cutoff is computed in Java via `Instant.now().minus(30, ChronoUnit.DAYS)` and bound as a `Timestamp` parameter so the query stays portable across PostgreSQL and Oracle.
+* Spec + entity records registered in `src-db/database/sourcedata/ETGO_SF_SPEC.xml` and `ETGO_SF_ENTITY.xml` so they survive `update.database`.
+* The dedicated by-id endpoint for `FIN_Financial_Account` is **not** in scope of this ticket; the front-end uses the existing list endpoint and filters by id. Promoting that to a dedicated endpoint is a follow-up.
 
-**Out of scope:** Reconciliation tab body (T6), `+ New movement` action, functional `Unreconcile` / `Post` kebab actions (T8).
+**i18n:** new keys prefixed `financeAccountDetail*` and `financeAccountMovements*` in both `en_US.json` and `es_ES.json` (tabs, KPIs, filters, status labels, column headers, kebab actions, IBAN-copy toast, empty state, aria labels).
+
+**Out of scope:**
+
+* Reconciliation tab body — delivered by **T6**.
+* Imported Statements tab body and the file import flow — delivered by **T9**.
+* `+ Nuevo movimiento` real action — delivered by **T8**.
+* Functional `Unreconcile` / `Post` kebab actions — delivered by **T8**.
+* Real bank logos (uses generic `AccountLogoAvatar`).
+* Server-side filtering for movements (filters are applied client-side over the loaded list).
 
 ### Test Cases
 
 **Given** I click an account row on the Accounts page
 **When** the detail view loads
-**Then** the header shows account name, IBAN and balance; tabs Movements / Reconciliation / Imported statements are visible; Movements is selected by default.
+**Then** the topbar shows the account name as title and `Finanzas / Cuentas / {accountName}` as breadcrumb; tabs Movements / Reconciliation / Imported statements are visible; Movements is selected by default.
 
 **Given** the Movements tab is active for an account with 50 transactions
 **When** the page finishes loading
-**Then** the KPI strip shows Current balance, Inflows (last 30 days), Outflows (last 30 days), and the table lists the 50 transactions with columns Date, Document, Contact, Description, Status, Type, Amount, Balance, kebab — without an "Uncategorized" counter and without a combined "Third party / Reconciliation" column.
+**Then** the summary strip shows IBAN (chunked) + Total balance + Inflows (30d) + Outflows (30d), and the table lists the 50 transactions with columns Date / Document / Contact / Description / Status / Type / Amount / Balance / kebab — without an "Uncategorized" counter and without a combined "Third party / Reconciliation" column.
 
-**Given** I select the type filter "Any type" → "Sale invoice"
+**Given** I open the Status filter dropdown
+**When** I type "Conciliado" in the search box and pick the only matching option
+**Then** the table only renders movements whose `paymentStatus` matches the chosen search key; the trigger button label updates to the selected status.
+
+**Given** I open the Type filter and pick "Cobro"
 **When** the filter is applied
-**Then** only transactions of type Sale invoice are rendered and the KPI inflow/outflow are recomputed accordingly.
+**Then** only movements with `trxType === 'BPD'` are rendered.
 
-**Given** a transaction has an associated unprocessed `FIN_Payment`
-**When** the row renders
-**Then** the Status column shows "Draft".
+**Given** I open the Amount filter and fill `Mín = 0` with `Máx` empty
+**When** I click Apply
+**Then** only movements with `amount >= 0` are rendered (signed comparison — inflows only).
 
-**Given** a transaction has a processed payment but no `FIN_Reconciliation_Line`
-**When** the row renders
-**Then** the Status column shows "Completed".
+**Given** I type `1000016` in the search box
+**When** the input debounces
+**Then** the table renders only the movement whose `documentNo`, `contact` or `description` contains the substring.
 
-**Given** a transaction has a `FIN_Reconciliation_Line` with `Status=Reconciled`
-**When** the row renders
-**Then** the Status column shows "Reconciled".
+**Given** I click the IBAN copy button in the summary strip
+**When** the clipboard write resolves
+**Then** the IBAN (without spaces) is copied and a green "IBAN copied" toast appears.
 
-**Given** I switch to the Imported statements tab
+**Given** I hover a row in the Movements table
+**When** the kebab opens
+**Then** "View detail" is active (toast on click), and "Unreconcile" / "Post" are disabled with their tooltips referencing T8.
+
+**Given** I switch to the Reconciliation or the Imported statements tab
 **When** the tab loads
-**Then** the table shows all `FIN_Bank_Statement` rows for that account with Name, Statement date, Beginning balance, Ending balance, Status, Posted.
+**Then** an empty state is rendered referencing the pending implementation (T6 / T9 respectively).
 
-**Given** I switch to the Reconciliation tab
-**When** the tab loads
-**Then** an empty state is rendered with a message referencing the pending implementation (T6).
+**Given** I click the back arrow in the Movements toolbar
+**When** the navigation completes
+**Then** the URL returns to `/finance/accounts`.
 
 ---
 
@@ -686,9 +716,85 @@ These 8 tasks **retire that placeholder** and add a new menu entry **"Cuentas"**
 
 ---
 
+## Task 9 — Build Imported Bank Statements view with file import flow
+
+**Title (Jira):** Build Imported Bank Statements view with file import flow
+**Type:** Story
+**Parent epic:** ETP-3504
+**Depends on:** T4
+**Branch:** `feature/ETP-XXXX`
+**Commit prefix:** `Feature ETP-XXXX:`
+
+### Issue Description
+
+* Replace the "Coming soon" placeholder in the `/financial-account/{id}` Imported Statements tab with a read-only listing of `FIN_Bank_Statement` filtered to the current account.
+* Add an `Importar extracto` action that triggers a file upload flow for bank statement files (`.mt940`, `.ofx`, `.csv`), showing parser progress and per-line outcome.
+* Display per-statement progress (matched lines vs total lines) as a circular indicator, plus a status badge (`Completado` / `Con incidencias` / `En curso`) derived from `processed` + `posted` + the presence of unmatched `fin_bankstatementline` rows.
+* Columns (per-account scope): Archivo, Datos, Periodo, Líneas, Progreso, Estado, Importado. The cross-account variant of the view (under `/finance/accounts` with a `Cuenta` column) stays out of scope and would be a separate story.
+
+### Solution Design
+
+**Schema Forge:**
+
+* New hook `useBankStatements(accountId)` consuming the shared `useNeoResource` hook (same pattern as `useAccountMovements`).
+* Replace `tools/app-shell/src/windows/custom/financial-account/ExtractosImportadosTab.jsx` placeholder with a real component: toolbar (date range reusing `DateRangePopover` + status filter reusing `DistinctValuesFilter` + search + `Importar extracto` button) plus a new `StatementsTable.jsx` mirroring the `MovementsTable` skeleton/empty/renderBody pattern.
+* New reusable primitive `components/ui/progress-ring.jsx` — SVG circular indicator with `value` (0–100) and `size` props. No equivalent exists in the repo.
+* New `StatementStatusBadge.jsx` in the financial-account window (analogous to `MovementStatusBadge` but with the imported-statements palette: green / orange / yellow).
+* New `UploadStatementDialog.jsx` modal — drag-and-drop + native file input + per-upload progress + success / error toasts.
+* Update `index.jsx` to call `useBankStatements(recordId)` and pass `statements.length` to `DetailTabs` as `statementsCount` (replacing the hardcoded `0`).
+
+**Backend:**
+
+* New `BankStatementsListHandler.java` (CDI `@Named("bank-statements-by-account")`) following the `FinancialAccountTransactionsHandler` pattern. Query against `fin_bankstatement` joined with a subquery counting `fin_bankstatementline` (total + matched) for each statement. Filter by `fin_financial_account_id` and `isactive='Y'`. Order by `importdate DESC`.
+* Register the spec + entity records in `src-db/database/sourcedata/ETGO_SF_SPEC.xml` and `ETGO_SF_ENTITY.xml` (`spec_type='R'`, `java_qualifier='bank-statements-by-account'`). Generate UUIDs with `make uuid`.
+* New upload endpoint (separate handler): accepts multipart POST with file payload, delegates parsing to an existing Etendo Classic process if available, otherwise to a new parser. Returns the new `fin_bankstatement` id + parser summary.
+
+**i18n:** new keys prefixed `financeAccountDetailStatements*` in both `en_US.json` and `es_ES.json` for column headers, status badges, upload dialog and the empty state.
+
+**Discovery items to resolve before implementation:**
+
+1. **Status mapping**: `FIN_Bank_Statement` exposes `processed` (Y/N) and `posted` (Y/N) but no `docstatus`. Confirm with product the exact rule for `Completado` / `Con incidencias` / `En curso`.
+2. **"Datos" column**: confirm with Figma / product what value this column shows (IBAN of origin? statement reference number?).
+3. **"Progreso" semantics**: confirm whether the % is "lines matched to transactions" or "lines reconciled".
+4. **Upload formats**: confirm accepted extensions and whether parsing reuses existing Classic processes or a new Java parser.
+
+**Out of scope:** cross-account variant of the view; editing / deleting imported statements; re-running the import process on an existing statement; drill-down into a statement's `fin_bankstatementline` rows.
+
+### Test Cases
+
+**Given** I am on `/financial-account/{id}` for an account with imported statements
+**When** I click the `Extractos importados` tab
+**Then** the table renders with columns Archivo / Datos / Periodo / Líneas / Progreso / Estado / Importado, populated with the rows for that account ordered by `importdate` descending.
+
+**Given** a statement has 10 lines, 7 matched and 3 unmatched
+**When** the row renders
+**Then** the Progreso column shows a circular ring at 70% with the "70%" label.
+
+**Given** a statement has `processed=Y AND posted=Y`
+**When** the row renders
+**Then** the Estado badge shows `Completado` with green tone.
+
+**Given** a statement has `processed=N`
+**When** the row renders
+**Then** the Estado badge shows `En curso` with yellow tone.
+
+**Given** a statement has `processed=Y` but unmatched lines
+**When** the row renders
+**Then** the Estado badge shows `Con incidencias` with orange tone.
+
+**Given** I click `Importar extracto`
+**When** the dialog opens
+**Then** I see a dropzone, I can drag an `.mt940` file and clicking `Importar` posts it to the backend; on success a toast confirms and the new statement appears at the top of the table.
+
+**Given** I upload a file with an unsupported extension
+**When** I trigger the import
+**Then** an error toast describes the issue and the dialog stays open so I can retry with another file.
+
+---
+
 ## PR conventions for every task (recap)
 
-Each PR produced for any of T1–T8 must comply with the Etendo Git Police and the project policy:
+Each PR produced for any of T1–T9 must comply with the Etendo Git Police and the project policy:
 
 * **Branch:** `feature/ETP-XXXX` (one branch per task, off `develop`).
 * **Commit prefix:** `Feature ETP-XXXX: <description>` — first line ≤80 chars, English, imperative.
@@ -704,7 +810,7 @@ Each PR produced for any of T1–T8 must comply with the Etendo Git Police and t
   * Crisol (code review): APPROVED.
   * Unitas (unit tests): PASSED.
   * Vigia (security review): PASSED — critical on T2 (account creation), T3 (PSD2 credentials), T6, T7, T8 (money-mutating surfaces).
-  * Argos (E2E): PASSED on user-facing tickets (T1, T2, T3, T4, T5, T6, T7, T8 — i.e. every ticket in this plan).
+  * Argos (E2E): PASSED on user-facing tickets (T1, T2, T3, T4, T5, T6, T7, T8, T9 — i.e. every ticket in this plan).
   * `make validate-pipeline` reports 0 violations for any ticket touching `artifacts/`.
 * **i18n:** every new user-facing string must land in both `en_US.json` and `es_ES.json` before review.
 * **Documentation:** `docs/generated-custom-windows/financial-account.md` and/or `match-rule.md` updated within the same PR when the ticket touches the corresponding window.

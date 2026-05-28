@@ -336,7 +336,8 @@
         },
         "aeatsiiEstado": {
           "visibility": "readOnly",
-          "form": false
+          "form": false,
+          "grid": true
         },
         "tbaiIssent": {
           "visibility": "readOnly",
@@ -369,6 +370,11 @@
         "tbaiInvoiceseq": {
           "visibility": "readOnly",
           "form": false
+        },
+        "etvfacInvoiceStatus": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": true
         }
       }
     },

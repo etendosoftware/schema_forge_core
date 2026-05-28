@@ -11,6 +11,7 @@ import {
   generateIndexComponent,
   generateMockCatalogs,
   generateAll,
+  projectApiPredictionForFrontend,
 } from '../src/generate-frontend.js';
 
 // ---------------------------------------------------------------------------
@@ -431,6 +432,32 @@ describe('generateFormComponent', () => {
     const code = generateFormComponent('item', singleEntityContract);
     assert.ok(code.includes("key: 'description'"));
     assert.ok(code.includes("type: 'textarea'"));
+  });
+
+  it('respects explicit sections without consuming the automatic principal limit', () => {
+    const sectionContract = {
+      frontendContract: {
+        window: { id: '1', name: 'Test', primaryEntity: 'test', category: 'test' },
+        entities: {
+          test: {
+            fields: [
+              { name: 'first', column: 'First', type: 'string', tsType: 'string', visibility: 'editable', form: true },
+              { name: 'second', column: 'Second', type: 'string', tsType: 'string', visibility: 'editable', form: true, section: 'principal' },
+              { name: 'third', column: 'Third', type: 'string', tsType: 'string', visibility: 'editable', form: true, section: 'principal' },
+              { name: 'fourth', column: 'Fourth', type: 'string', tsType: 'string', visibility: 'editable', form: true },
+              { name: 'fifth', column: 'Fifth', type: 'string', tsType: 'string', visibility: 'editable', form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+
+    const code = generateFormComponent('test', sectionContract);
+    assert.ok(code.includes("key: 'fourth', column: 'Fourth', type: 'text', section: 'principal'"));
+    assert.ok(code.includes("key: 'fifth', column: 'Fifth', type: 'text', section: 'principal'"));
   });
 
   it('does NOT contain inline CSS or save/delete buttons', () => {
@@ -1122,6 +1149,39 @@ describe('generatePageComponent - apiPrediction', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.ok(!code.includes('const api ='), 'should not declare api const without apiPrediction');
     assert.ok(!code.includes('api={api}'), 'should not pass api prop without apiPrediction');
+  });
+
+  it('emits a frontend-only action projection', () => {
+    const api = projectApiPredictionForFrontend({
+      specName: 'sales-order',
+      actions: [{
+        name: 'documentAction',
+        label: 'Process Order',
+        actionType: 'documentAction',
+        entity: 'order',
+        column: 'DocAction',
+        requiresRecord: true,
+        endpoint: '/sws/neo/sales-order/order/{id}/action/documentAction',
+        method: 'POST',
+        url: '/sws/neo/sales-order/order/{id}/action/documentAction',
+        parameters: [{ name: 'docAction', type: 'string' }],
+        preconditions: [{ field: 'documentStatus', operator: 'in', values: ['DR'] }],
+        effects: ['Updates document status'],
+        dryRunSupported: true,
+        edgeCases: ['Already processed', 'Missing lines', 'No permission'],
+        provenance: 'extracted',
+        processId: '104',
+        processType: 'classic',
+      }],
+    });
+
+    assert.deepEqual(api.actions, [{
+      entity: 'order',
+      column: 'DocAction',
+      url: '/sws/neo/sales-order/order/{id}/action/documentAction',
+      processId: '104',
+      processType: 'classic',
+    }]);
   });
 });
 

@@ -73,6 +73,27 @@ async function getActiveWindows() {
   return windows;
 }
 
+async function readPreviousWindowContracts(name) {
+  let prevVersion = null;
+  let prevContract = null;
+  let prevMcpContract = null;
+  let prevContractRaw = null;
+  try {
+    const existingRaw = await readFile(join(ARTIFACTS, name, 'contract.json'), 'utf-8');
+    const existing = JSON.parse(existingRaw);
+    let rawV = existing.version ?? null;
+    while (rawV !== null && typeof rawV === 'object') rawV = rawV.version ?? null;
+    prevVersion = rawV;
+    prevContract = existing;
+    prevContractRaw = existingRaw;
+  } catch { /* first generation */ }
+  try {
+    const existingMcpRaw = await readFile(join(ARTIFACTS, name, 'contract.mcp.json'), 'utf-8');
+    prevMcpContract = JSON.parse(existingMcpRaw);
+  } catch { /* first split generation */ }
+  return { prevVersion, prevContract, prevContractRaw, prevMcpContract };
+}
+
 /**
  * Run the full pipeline for one window.
  */
@@ -135,7 +156,7 @@ async function runPipeline(name, windowId, { pushToNeo, skipExtract }) {
 
   // Step 5: generate-contract
   console.log(`  [F6] Generating contract...`);
-  const { generateContract } = await import('./generate-contract.js');
+  const { generateContract, splitWindowContractArtifacts } = await import('./generate-contract.js');
   const { writeFile: wf2, access: acc2, mkdir: mk2 } = await import('node:fs/promises');
   const processesPath = join(ARTIFACTS, name, 'processes.json');
   try { await acc2(processesPath); } catch {
@@ -144,21 +165,16 @@ async function runPipeline(name, windowId, { pushToNeo, skipExtract }) {
   }
   const processes = JSON.parse(await readFile(processesPath, 'utf8'));
 
-  let prevVersion = null;
-  let prevContract = null;
-  try {
-    const existingRaw = await readFile(join(ARTIFACTS, name, 'contract.json'), 'utf-8');
-    const existing = JSON.parse(existingRaw);
-    let rawV = existing.version ?? null;
-    while (rawV !== null && typeof rawV === 'object') rawV = rawV.version ?? null;
-    prevVersion = rawV;
-    prevContract = existing;
-    await wf2(join(ARTIFACTS, name, 'contract.prev.json'), existingRaw, 'utf-8');
-  } catch { /* first generation */ }
+  const { prevVersion, prevContract, prevContractRaw, prevMcpContract } = await readPreviousWindowContracts(name);
 
   const rules = Array.isArray(resolved.rules) ? resolved.rules : resolved.rules?.rules || [];
-  const contract = generateContract(resolved.schema, rules, processes.processes || [], prevVersion, prevContract);
+  const generatedContract = generateContract(resolved.schema, rules, processes.processes || [], prevVersion, prevContract);
+  const { contract, mcpContract } = splitWindowContractArtifacts(generatedContract, prevContract, prevMcpContract);
+  if (prevContractRaw) {
+    await wf2(join(ARTIFACTS, name, 'contract.prev.json'), prevContractRaw, 'utf-8');
+  }
   await wf2(join(ARTIFACTS, name, 'contract.json'), JSON.stringify(contract, null, 2) + '\n');
+  await wf2(join(ARTIFACTS, name, 'contract.mcp.json'), JSON.stringify(mcpContract, null, 2) + '\n');
   console.log(`    Contract: ${contract.testManifest.summary.total} tests`);
 
   // Version check (advisory)

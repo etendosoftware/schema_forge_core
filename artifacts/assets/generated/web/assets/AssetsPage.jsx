@@ -231,10 +231,8 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
-      dateFilterKey="purchaseDate"
       hidePrint
       hideMoreMenu
-      hideListFilters
       hideLink
       hideEyeCount
       rowQuickActions={{}}

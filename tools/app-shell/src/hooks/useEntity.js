@@ -642,6 +642,12 @@ export function useEntity(entity, childEntity, {
       const isContactsBusinessPartnerCreate = entity === 'businessPartner'
         && /\/contacts$/i.test(apiBaseUrl || '');
 
+      // Required form fields must always be included in the payload, even when their value
+      // came from backend defaults and was never explicitly changed by the user.
+      const requiredFormKeys = new Set(
+        [...formFieldsRef.current.values()].flat().filter(f => f.required).map(f => f.key),
+      );
+
       for (const [key, value] of Object.entries(editing)) {
         if (key === 'id' || key.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(key)) continue;
         if (value === '' || value == null) continue;
@@ -653,11 +659,13 @@ export function useEntity(entity, childEntity, {
         // Skip short numeric legacy FK IDs that came from backend defaults and were not
         // explicitly changed by the user (e.g. language: "181"). These are resolved by the
         // backend automatically; sending them as raw integers causes SmartClient import errors.
+        // Exception: required fields must always be sent so the user's chosen value persists.
         if (
           typeof value === 'string'
           && /^\d{3,9}$/.test(value)
           && backendDefaultKeysRef.current.has(key)
           && !userChangedKeysRef.current.has(key)
+          && !requiredFormKeys.has(key)
         ) continue;
 
         // Contacts (Business Partner): keep create aligned with Classic behavior.
@@ -851,12 +859,14 @@ export function useEntity(entity, childEntity, {
     }
     toast.success(ui('recordProcessed'));
     refresh();
-    // Fetch updated record so caller gets the post-process state (e.g. documentStatus: 'CO')
+    // Fetch updated record and update selected state so the detail view reflects the new status
     try {
       const updatedRes = await fetch(`${apiBaseUrl}/${entity}/${saved.id}`, { method: 'GET', headers });
       if (updatedRes.ok) {
         const data = await updatedRes.json();
-        return normalizeRecord(data?.response?.data?.[0] ?? data, entity);
+        const updated = normalizeRecord(data?.response?.data?.[0] ?? data, entity);
+        setSelected(updated);
+        return updated;
       }
     } catch { /* ignore, fall back to saved */ }
     return saved;

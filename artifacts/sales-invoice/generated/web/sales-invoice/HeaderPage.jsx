@@ -164,7 +164,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/sales-invoice/header/selectors/partnerAddress"
+      "url": "/sws/neo/sales-invoice/header/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -180,7 +189,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/header/selectors/paymentMethod"
+      "url": "/sws/neo/sales-invoice/header/selectors/paymentMethod",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -196,7 +213,15 @@ export const api = {
       "column": "M_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/header/selectors/priceList"
+      "url": "/sws/neo/sales-invoice/header/selectors/priceList",
+      "context": {
+        "required": [
+          {
+            "param": "isSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -228,7 +253,21 @@ export const api = {
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/lines/selectors/tax"
+      "url": "/sws/neo/sales-invoice/lines/selectors/tax",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "DateInvoiced",
+            "source": "parentField",
+            "field": "invoiceDate",
+            "format": "DD-MM-YYYY"
+          }
+        ]
+      }
     },
     {
       "entity": "paymentPlan",

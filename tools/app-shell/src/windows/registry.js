@@ -51,6 +51,7 @@ const windowLoaders = {
   'assets': () => import('@generated/assets/generated/web/assets/index.jsx'),
   'conversion-rates': () => import('@generated/conversion-rates/generated/web/conversion-rates/index.jsx'),
   'conversion-rate-downloader-log': () => import('@generated/conversion-rate-downloader-log/generated/web/conversion-rate-downloader-log/index.jsx'),
+  'amortization': () => import('@generated/amortization/generated/web/amortization/index.jsx'),
 };
 
 /**
@@ -151,6 +152,7 @@ const customLoaders = {
   'spike-hello-app': () => import('./spike-apps-host/index.jsx'),
   'quick-order-sales': () => import('./quick-order/index.jsx'),
   'quick-order-purchase': () => import('./quick-order/index.jsx'),
+  'financial-account': () => import('./custom/financial-account/index.jsx'),
 };
 
 /**
