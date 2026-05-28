@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { StatusTag } from '@/components/ui/status-tag';
@@ -26,6 +27,7 @@ function getLineStatuses(lines, depreciatedValue) {
 
 export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
   const ui = useUI();
+  const navigate = useNavigate();
   const orgCurrency = useCurrency() ?? 'USD';
   const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -108,7 +110,11 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {lines.map((line) => (
-                <tr key={line.id ?? line.sEQNoAsset} className="hover:bg-gray-50">
+                <tr
+                  key={line.id ?? line.sEQNoAsset}
+                  className="hover:bg-blue-50 cursor-pointer"
+                  onClick={() => line.amortization && navigate(`/amortization/${line.amortization}`)}
+                >
                   <td className="py-2.5 pr-4 text-gray-700">{line['amortization$_identifier'] ?? line.amortization ?? '—'}</td>
                   <td className="py-2.5 pr-4 text-gray-700">
                     {line.amortizationPercentage != null

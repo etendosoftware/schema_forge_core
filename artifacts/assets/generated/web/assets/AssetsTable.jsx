@@ -2,9 +2,13 @@ import { forwardRef } from 'react';
 import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 
 function renderDepreciationProgress(row) {
-  const pct = row.assetValue > 0
-    ? Math.min(100, Math.round(((row.depreciatedValue ?? 0) / row.assetValue) * 100))
-    : null;
+  const depreciatedValue = row.depreciatedValue ?? 0;
+  const depreciatedPlan = row.depreciatedPlan ?? 0;
+  const depreciationAmt = row.depreciationAmt ?? 0;
+  const denominator = depreciatedPlan > 0 ? depreciatedPlan : depreciationAmt;
+  const pct = denominator > 0
+    ? Math.min(100, Math.round((depreciatedValue / denominator) * 100))
+    : (depreciatedValue > 0 ? 100 : null);
   if (pct == null) return null;
   const color = pct === 100 ? '#10b981' : '#f59e0b';
   return (
@@ -25,7 +29,7 @@ const columns = [
   { key: 'depreciationStartDate', column: 'Amortizationstartdate', type: 'date', label: 'Depreciation Start Date' },
   { key: 'assetValue', column: 'AssetValueAmt', type: 'amount', label: 'Asset Value', summable: true },
   { key: 'depreciatedValue', column: 'Depreciatedvalue', type: 'amount', label: 'Depreciated Value', summable: true },
-  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'boolean', label: 'Fully Depreciated', render: renderDepreciationProgress, required: true },
+  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'status', label: 'Fully Depreciated', enumLabels: { 'true': 'assetsFullyDepreciated', 'false': 'assetsStillInProgress' }, render: renderDepreciationProgress, required: true, filterable: false },
 ];
 // @sf-generated-end columns:assets
 

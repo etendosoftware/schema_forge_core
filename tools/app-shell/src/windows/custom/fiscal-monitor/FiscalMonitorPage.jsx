@@ -149,7 +149,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
     mockData, setMockData, debugOverrideActive,
   } = useDebugState(orgId, apiBaseUrl);
 
-  const { daysLeft: certDaysLeft } = useCertExpiry(apiBaseUrl, { mockDaysLeft: mockCertDays });
+  const { daysLeft: certDaysLeft } = useCertExpiry(apiBaseUrl, { mockDaysLeft: mockCertDays, orgId });
 
   // ── Count helpers for useSetPageMeta (must be computed before hook call) ──
   const _siiTotalMeta  = (kpis?.sii?.issued ?? 0) + (kpis?.sii?.issuedPrevious ?? 0)

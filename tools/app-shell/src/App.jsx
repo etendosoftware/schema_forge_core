@@ -16,6 +16,7 @@ import CrmPage from './pages/CrmPage.jsx';
 import HrPage from './pages/HrPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
 import ReportViewerPage from './pages/ReportViewerPage.jsx';
+import FinancialAccountsPage from './pages/FinancialAccountsPage.jsx';
 import { buildMenuGroups, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
 import { LocaleProvider } from './i18n/index.js';
@@ -95,6 +96,7 @@ async function loadAllMockData() {
     import('@generated/bank-reconciliation/generated/web/bank-reconciliation/mockData.js'),
     import('@generated/chart-of-accounts/generated/web/chart-of-accounts/mockData.js'),
     import('@generated/assets/generated/web/assets/mockData.js'),
+    import('@generated/amortization/generated/web/amortization/mockData.js'),
     import('@generated/deal/generated/web/deal/mockData.js'),
     import('@generated/activity/generated/web/activity/mockData.js'),
     import('@generated/lead/generated/web/lead/mockData.js'),
@@ -167,6 +169,7 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="purchases" element={<PurchasesPage />} />
         <Route path="accounting" element={<AccountingPage />} />
+        <Route path="finance/accounts" element={<FinancialAccountsPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="report-viewer" element={<ReportViewerPage />} />
         <Route path="crm" element={<CrmPage />} />

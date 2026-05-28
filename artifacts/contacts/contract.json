@@ -1,8 +1,8 @@
 {
   "version": "0.9.0",
   "generatedAt": "2026-05-06T15:52:09.982Z",
-  "updatedAt": "2026-05-20T18:19:49.410Z",
-  "checksum": "71169ede1419e12b",
+  "updatedAt": "2026-05-22T17:24:15.125Z",
+  "checksum": "53cb295b2130e122",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -9939,7 +9939,16 @@
         "column": "PO_Financial_Account_ID",
         "reference": "FIN_Financial_Account",
         "inputMode": "selector",
-        "url": "/sws/neo/contacts/businessPartner/selectors/pOFinancialAccount"
+        "url": "/sws/neo/contacts/businessPartner/selectors/pOFinancialAccount",
+        "context": {
+          "required": [
+            {
+              "param": "PO_Paymentmethod_ID",
+              "source": "field",
+              "field": "pOPaymentMethod"
+            }
+          ]
+        }
       },
       {
         "entity": "businessPartner",
@@ -10083,7 +10092,16 @@
         "column": "PO_Financial_Account_ID",
         "reference": "Financial_Account",
         "inputMode": "search",
-        "url": "/sws/neo/contacts/vendorCreditor/selectors/pOFinancialAccount"
+        "url": "/sws/neo/contacts/vendorCreditor/selectors/pOFinancialAccount",
+        "context": {
+          "required": [
+            {
+              "param": "PO_Paymentmethod_ID",
+              "source": "parentField",
+              "field": "pOPaymentMethod"
+            }
+          ]
+        }
       },
       {
         "entity": "vendorCreditor",

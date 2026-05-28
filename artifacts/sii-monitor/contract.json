@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-05-04T17:00:26.053Z",
-  "updatedAt": "2026-05-15T16:00:46.793Z",
-  "checksum": "bca4f1d3afc38f51",
+  "updatedAt": "2026-05-20T11:45:15.719Z",
+  "checksum": "456a97b1e48ef275",
   "frontendContract": {
     "window": {
       "id": "FEF76C3E0F104F06A89AAD15A4A4A35C",
@@ -10885,7 +10885,15 @@
         "column": "FIN_Paymentmethod_ID",
         "reference": "Paymentmethod",
         "inputMode": "selector",
-        "url": "/sws/neo/sii-monitor/issuedInvoices/selectors/paymentMethod"
+        "url": "/sws/neo/sii-monitor/issuedInvoices/selectors/paymentMethod",
+        "context": {
+          "optional": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "issuedInvoicesSiiData",
@@ -10925,7 +10933,15 @@
         "column": "FIN_Paymentmethod_ID",
         "reference": "Paymentmethod",
         "inputMode": "selector",
-        "url": "/sws/neo/sii-monitor/receivedInvoices/selectors/paymentMethod"
+        "url": "/sws/neo/sii-monitor/receivedInvoices/selectors/paymentMethod",
+        "context": {
+          "optional": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "receivedInvoicesSiiData",
@@ -11029,7 +11045,15 @@
         "column": "FIN_Paymentmethod_ID",
         "reference": "Paymentmethod",
         "inputMode": "selector",
-        "url": "/sws/neo/sii-monitor/issuedInvoices(previousPeriod)/selectors/paymentMethod"
+        "url": "/sws/neo/sii-monitor/issuedInvoices(previousPeriod)/selectors/paymentMethod",
+        "context": {
+          "optional": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "issuedInvoices(previousPeriod)SiiData",
@@ -11069,7 +11093,15 @@
         "column": "FIN_Paymentmethod_ID",
         "reference": "Paymentmethod",
         "inputMode": "selector",
-        "url": "/sws/neo/sii-monitor/receivedInvoices(previousPeriod)/selectors/paymentMethod"
+        "url": "/sws/neo/sii-monitor/receivedInvoices(previousPeriod)/selectors/paymentMethod",
+        "context": {
+          "optional": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "receivedInvoices(previousPeriod)SiiData",

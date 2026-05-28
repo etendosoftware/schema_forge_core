@@ -1,0 +1,357 @@
+{
+  "version": "0.3.0",
+  "generatedAt": "2026-04-29T18:11:26.703Z",
+  "updatedAt": "2026-05-26T18:48:57.009Z",
+  "contractChecksum": "25678f671a86073d",
+  "apiPrediction": {
+    "specName": "product-category",
+    "baseUrl": "/sws/neo/product-category",
+    "crud": {
+      "productCategory": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/product-category/productCategory",
+        "detailUrl": "/sws/neo/product-category/productCategory/{id}",
+        "supportedFilters": [
+          "searchKey",
+          "name"
+        ]
+      },
+      "assignedProducts": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/product-category/assignedProducts",
+        "detailUrl": "/sws/neo/product-category/assignedProducts/{id}",
+        "supportedFilters": [
+          "searchKey",
+          "name",
+          "productType"
+        ]
+      }
+    },
+    "selectors": [],
+    "actions": [
+      {
+        "name": "processNow",
+        "actionType": "documentAction",
+        "entity": "assignedProducts",
+        "column": "Processing",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/product-category/assignedProducts/{id}/action/processNow",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "processId": "136",
+        "processType": "classic"
+      },
+      {
+        "name": "copyservicemodifytaxconfig",
+        "actionType": "utilityAction",
+        "entity": "assignedProducts",
+        "column": "Copyservicemodifytaxconfig",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/product-category/assignedProducts/{id}/action/copyservicemodifytaxconfig",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "processId": "CBBD7BB6BDFE4705B68DD3D9FF788D4E",
+        "processType": "obuiapp"
+      },
+      {
+        "name": "createVariants",
+        "actionType": "createFrom",
+        "entity": "assignedProducts",
+        "column": "CreateVariants",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/product-category/assignedProducts/{id}/action/createVariants",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates child or related records",
+          "May copy data from source document"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Source document has no valid lines to copy",
+          "Target entity already has linked records",
+          "Required reference data is missing (price list, warehouse, etc.)"
+        ],
+        "processId": "3C386BC12832466790E50F2F8C5EBD85",
+        "processType": "classic"
+      },
+      {
+        "name": "manageVariants",
+        "actionType": "utilityAction",
+        "entity": "assignedProducts",
+        "column": "ManageVariants",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/product-category/assignedProducts/{id}/action/manageVariants",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "processId": "FE3A8C134D41488DB3A69837BD54B56A",
+        "processType": "obuiapp"
+      },
+      {
+        "name": "relateprodcattaxtoservice",
+        "actionType": "utilityAction",
+        "entity": "assignedProducts",
+        "column": "Relateprodcattaxtoservice",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/product-category/assignedProducts/{id}/action/relateprodcattaxtoservice",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "processId": "E0870062F05F4DC88E589ABC6A45DF4C",
+        "processType": "obuiapp"
+      },
+      {
+        "name": "relateprodcattoservice",
+        "actionType": "utilityAction",
+        "entity": "assignedProducts",
+        "column": "Relateprodcattoservice",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/product-category/assignedProducts/{id}/action/relateprodcattoservice",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "processId": "8E5996F1F3154B498468938B5341A0CB",
+        "processType": "obuiapp"
+      },
+      {
+        "name": "relateprodtoservice",
+        "actionType": "utilityAction",
+        "entity": "assignedProducts",
+        "column": "Relateprodtoservice",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/product-category/assignedProducts/{id}/action/relateprodtoservice",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "processId": "E66C669B0B01498C8EB3F99CD371CF9A",
+        "processType": "obuiapp"
+      },
+      {
+        "name": "updateInvariants",
+        "actionType": "utilityAction",
+        "entity": "assignedProducts",
+        "column": "Updateinvariants",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/product-category/assignedProducts/{id}/action/updateInvariants",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "processId": "7DC2C8DC186B4C1DB18E147911950861",
+        "processType": "obuiapp"
+      }
+    ],
+    "queryParams": {
+      "pagination": {
+        "startRow": "_startRow",
+        "endRow": "_endRow",
+        "default": "0-100"
+      },
+      "sorting": {
+        "param": "_sortBy",
+        "example": "_sortBy=creationDate desc"
+      },
+      "filtering": "Use field name as query param: ?fieldName=value",
+      "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "inventory"
+    }
+  },
+  "formState": {
+    "entities": {
+      "productCategory": {
+        "fields": {
+          "searchKey": {
+            "required": true
+          },
+          "name": {
+            "required": true
+          },
+          "description": {},
+          "default": {
+            "required": true
+          },
+          "summaryLevel": {
+            "required": true,
+            "defaultValue": "N"
+          },
+          "image": {}
+        }
+      },
+      "assignedProducts": {
+        "fields": {
+          "searchKey": {
+            "readOnly": true,
+            "required": true
+          },
+          "name": {
+            "readOnly": true,
+            "required": true
+          },
+          "productType": {
+            "readOnly": true,
+            "required": true,
+            "defaultValue": "I"
+          }
+        }
+      }
+    },
+    "requiredSessionVariables": [],
+    "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Manage product category inventory operations.",
+    "whenToUse": [
+      "Use for stock and warehouse operations."
+    ],
+    "minimumCreate": {
+      "headerFields": [
+        "searchKey",
+        "name",
+        "default",
+        "summaryLevel"
+      ],
+      "recommendedOrder": [
+        "createHeader"
+      ]
+    },
+    "selectorContexts": [],
+    "actions": [
+      "processNow",
+      "createVariants"
+    ],
+    "workflow": [
+      "Create draft header with required fields",
+      "Validate form state",
+      "Complete the document"
+    ],
+    "edgeCases": [
+      "Document is already completed or closed",
+      "Document has pending lines or missing required fields",
+      "User lacks permission to execute the action",
+      "Required context is missing",
+      "User lacks permission",
+      "Record is in an incompatible state",
+      "Source document has no valid lines to copy",
+      "Target entity already has linked records",
+      "Required reference data is missing (price list, warehouse, etc.)",
+      "Required field without default value must be provided"
+    ],
+    "examples": [
+      {
+        "operation": "createHeader",
+        "description": "Create a draft header with the minimum required editable fields.",
+        "fields": [
+          "searchKey",
+          "name",
+          "default",
+          "summaryLevel"
+        ]
+      },
+      {
+        "operation": "completeDocument",
+        "description": "Validate form state and run the document lifecycle action when the draft is complete.",
+        "action": "processNow"
+      }
+    ],
+    "warnings": [],
+    "knownLimitations": [],
+    "dangerousOperations": []
+  },
+  "checksum": "71bfb479e2a0e4fc"
+}

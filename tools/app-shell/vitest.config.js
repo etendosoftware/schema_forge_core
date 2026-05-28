@@ -8,7 +8,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.js'],
-    include: ['src/**/*.vitest.{js,jsx}'],
+    include: ['src/**/*.vitest.{js,jsx}', 'src/**/*.spec.{js,jsx}'],
     css: false,
     alias: {
       '@': resolve(__dirname, './src'),
