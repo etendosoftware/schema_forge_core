@@ -63,9 +63,9 @@ The tab × period combination maps to one of 4 NEO entities:
 
 All entities live under spec `sii-monitor`. Pagination: 20 rows per page.
 
-**Status filter row** (second row, below the tabs): Todas | Correcto (CO) | Aceptado con errores (AE) | Con errores | Pendiente (PE)
+**Status filter row** (second row, below the tabs): Todas | Aceptado (CO) | Aceptado con errores (AE) | Con errores | Pendiente (PE)
 
-The "Con errores" tab is a composite filter covering both `IN` (Incorrecto) and `EE` (Error de envío). For the real API it sends `operator: "inSet", value: ["IN","EE"]`; for mock data it filters both codes client-side. All other tabs send `operator: "equals"` with the single code.
+The "Con errores" tab is a composite filter covering both `IN` (Rechazado) and `EE` (Error). For the real API it sends `operator: "inSet", value: ["IN","EE"]`; for mock data it filters both codes client-side. All other tabs send `operator: "equals"` with the single code.
 
 **Columns:** Date · Invoice number · Cliente/Proveedor · Type (`aeatsiiClaveTipo` / `aeatsiiClaveTipoFc`) · Total · Status pill · CSV AEAT
 
