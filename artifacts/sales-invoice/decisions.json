@@ -342,6 +342,10 @@
           "visibility": "readOnly",
           "form": false
         },
+        "etvfacInvoiceStatus": {
+          "visibility": "readOnly",
+          "form": false
+        },
         "etsgDateOperation": {
           "visibility": "editable",
           "form": false
