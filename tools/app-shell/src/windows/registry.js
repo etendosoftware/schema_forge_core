@@ -49,6 +49,7 @@ const windowLoaders = {
   'bank-reconciliation': () => import('@generated/bank-reconciliation/generated/web/bank-reconciliation/index.jsx'),
   'chart-of-accounts': () => import('@generated/chart-of-accounts/generated/web/chart-of-accounts/index.jsx'),
   'assets': () => import('@generated/assets/generated/web/assets/index.jsx'),
+  'amortization': () => import('@generated/amortization/generated/web/amortization/index.jsx'),
 };
 
 /**
@@ -149,6 +150,7 @@ const customLoaders = {
   'spike-hello-app': () => import('./spike-apps-host/index.jsx'),
   'quick-order-sales': () => import('./quick-order/index.jsx'),
   'quick-order-purchase': () => import('./quick-order/index.jsx'),
+  'financial-account': () => import('./custom/financial-account/index.jsx'),
 };
 
 /**

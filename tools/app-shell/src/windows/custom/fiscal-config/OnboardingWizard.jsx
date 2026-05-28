@@ -353,7 +353,7 @@ function AppliedScreen({ orgId, orgName, selectedOrg, orgList, onSelectOrg, syst
     if (!orgId || !system) return;
     const certCtx = getCertificateContext(system);
     if (!certCtx) return;
-    apiFetch('/certificate')
+    apiFetch(`/certificate?${new URLSearchParams({ orgId })}`)
       .then(r => r.json())
       .then(data => {
         if (data?.exists) setCert({ name: ui('fiscal.cert.loaded'), validTo: data.validTo ?? '' });

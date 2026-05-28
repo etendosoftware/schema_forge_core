@@ -345,6 +345,7 @@ export function SendDocumentButton({ onClick }) {
     <div style={{ position: 'relative' }} className="group">
       <button
         type="button"
+        data-testid="action-send-email"
         onClick={onClick}
         aria-label={label}
         className="flex items-center justify-center p-[7px] rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors"

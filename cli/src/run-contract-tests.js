@@ -230,7 +230,7 @@ function checkSelectorEndpoint(contract, test) {
  */
 function checkActionEndpoint(contract, test) {
   const actions = contract.apiPrediction?.actions ?? [];
-  const match = actions.find(a => a.entity === test.entity && a.field === test.field);
+  const match = actions.find(a => a.entity === test.entity && (a.field ?? a.name) === test.field);
   return match
     ? { passed: true }
     : { passed: false, reason: `No action endpoint for button field '${test.field}' in entity '${test.entity}'` };

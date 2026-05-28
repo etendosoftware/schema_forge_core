@@ -139,7 +139,16 @@ export const api = {
       "column": "Default_Ad_Client_ID",
       "reference": "Client",
       "inputMode": "dependent",
-      "url": "/sws/neo/user/user/selectors/defaultClient"
+      "url": "/sws/neo/user/user/selectors/defaultClient",
+      "context": {
+        "required": [
+          {
+            "param": "Default_AD_Role_ID",
+            "source": "field",
+            "field": "defaultRole"
+          }
+        ]
+      }
     },
     {
       "entity": "user",
@@ -147,7 +156,16 @@ export const api = {
       "column": "Default_Ad_Org_ID",
       "reference": "Organization",
       "inputMode": "dependent",
-      "url": "/sws/neo/user/user/selectors/defaultOrganization"
+      "url": "/sws/neo/user/user/selectors/defaultOrganization",
+      "context": {
+        "required": [
+          {
+            "param": "Default_AD_Role_ID",
+            "source": "field",
+            "field": "defaultRole"
+          }
+        ]
+      }
     },
     {
       "entity": "user",
@@ -155,7 +173,16 @@ export const api = {
       "column": "Default_M_Warehouse_ID",
       "reference": "Warehouse",
       "inputMode": "dependent",
-      "url": "/sws/neo/user/user/selectors/defaultWarehouse"
+      "url": "/sws/neo/user/user/selectors/defaultWarehouse",
+      "context": {
+        "required": [
+          {
+            "param": "Default_AD_Client_ID",
+            "source": "field",
+            "field": "defaultClient"
+          }
+        ]
+      }
     },
     {
       "entity": "userRoles",

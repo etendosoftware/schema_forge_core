@@ -867,6 +867,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               'flex w-full rounded-lg border border-[#D1D4DB] p-2 text-sm shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
               'placeholder:text-muted-foreground resize-none flex-1 min-h-[96px]',
               'focus:outline-none focus:ring-2 focus:ring-primary',
+              'disabled:bg-muted/50 disabled:cursor-not-allowed',
               isReadOnly ? 'bg-muted/50 cursor-default' : 'bg-background',
             ].join(' ')}
           />
