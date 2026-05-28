@@ -47,6 +47,48 @@ export const DOCUMENT_CHIP_TYPES = {
     statusField: 'status',
     routePrefix: '/payment-out',
   },
+  'sales-order': {
+    iconKey: 'order',
+    titleKey: 'orderDoc',
+    titleField: 'documentNo',
+    amountField: 'grandTotalAmount',
+    currencyField: 'currency$_identifier',
+    statusField: 'documentStatus',
+    routePrefix: '/sales-order',
+  },
+  'sales-invoice': {
+    iconKey: 'invoice',
+    titleKey: 'invoiceDoc',
+    titleField: 'documentNo',
+    amountField: 'grandTotalAmount',
+    currencyField: 'currency$_identifier',
+    statusField: 'documentStatus',
+    routePrefix: '/sales-invoice',
+  },
+  shipment: {
+    iconKey: 'shipment',
+    titleKey: 'shipmentDoc',
+    titleField: 'documentNo',
+    statusField: 'documentStatus',
+    routePrefix: '/goods-shipment',
+  },
+  'payment-in': {
+    iconKey: 'payment',
+    titleKey: 'paymentDoc',
+    titleField: 'documentNo',
+    titleFallbackField: 'id',
+    amountField: 'amount',
+    currencyField: 'currency$_identifier',
+    statusField: 'status',
+    routePrefix: '/payment-in',
+  },
+  'return-material-receipt': {
+    iconKey: 'returnDoc',
+    titleKey: 'returnDoc',
+    titleField: 'documentNo',
+    statusField: 'documentStatus',
+    routePrefix: '/return-material-receipt',
+  },
 };
 
 /**
