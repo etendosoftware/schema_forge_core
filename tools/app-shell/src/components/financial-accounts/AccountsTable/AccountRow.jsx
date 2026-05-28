@@ -20,7 +20,7 @@ function chunkIban(iban) {
   return iban.replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim();
 }
 
-export function AccountRow({ account, onOpen, onReconcile }) {
+export function AccountRow({ account, onOpen, onReconcile, onEdit, onArchive }) {
   const ui = useUI();
   const isNegative = Number(account.currentBalance) < 0;
   const typeLabel = ui(TYPE_LABEL_KEY[account.type] ?? 'financeAccountsTypeBank');
@@ -123,7 +123,12 @@ export function AccountRow({ account, onOpen, onReconcile }) {
           >
             <RefreshCw className="h-5 w-5" />
           </button>
-          <AccountRowMenu account={account} onOpen={onOpen} />
+          <AccountRowMenu
+            account={account}
+            onOpen={onOpen}
+            onEdit={onEdit}
+            onArchive={onArchive}
+          />
         </div>
       </TableCell>
     </TableRow>

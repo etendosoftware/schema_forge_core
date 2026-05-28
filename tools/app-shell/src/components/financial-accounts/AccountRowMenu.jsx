@@ -1,6 +1,8 @@
 import {
   MoreVertical,
   ExternalLink,
+  Pencil,
+  Archive,
   Link2,
   RefreshCw,
   Unlink2,
@@ -31,7 +33,7 @@ import { ACCOUNT_TYPE } from './tokens';
  * Cash accounts (type=C) never expose the PSD2 group because the connection
  * does not apply to manual cash drawers.
  */
-export function AccountRowMenu({ account, onOpen }) {
+export function AccountRowMenu({ account, onOpen, onEdit, onArchive }) {
   const ui = useUI();
   const isCash = account.type === ACCOUNT_TYPE.CASH;
 
@@ -55,6 +57,16 @@ export function AccountRowMenu({ account, onOpen }) {
           <ExternalLink className="h-5 w-5 text-[#828FA3]" />
           <span className="text-sm font-normal leading-6 text-[#121217]">
             {ui('financeAccountsMenuOpen')}
+          </span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => onEdit?.(account)}
+          data-testid={`account-row-menu-edit-${account.id}`}
+        >
+          <Pencil className="h-5 w-5 text-[#828FA3]" />
+          <span className="text-sm font-normal leading-6 text-[#121217]">
+            {ui('financeAccountsMenuEdit')}
           </span>
         </DropdownMenuItem>
 
@@ -87,6 +99,17 @@ export function AccountRowMenu({ account, onOpen }) {
             </DropdownMenuItem>
           </>
         ) : null}
+
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => onArchive?.(account)}
+          data-testid={`account-row-menu-archive-${account.id}`}
+        >
+          <Archive className="h-5 w-5 text-[#D50B3E]" />
+          <span className="text-sm font-normal leading-6 text-[#D50B3E]">
+            {ui('financeAccountsMenuArchive')}
+          </span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

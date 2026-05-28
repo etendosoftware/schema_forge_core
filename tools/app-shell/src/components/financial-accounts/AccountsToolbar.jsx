@@ -17,6 +17,7 @@ export function AccountsToolbar({
   onTypeFilterChange,
   search,
   onSearchChange,
+  onNewAccount,
 }) {
   const ui = useUI();
 
@@ -59,6 +60,7 @@ export function AccountsToolbar({
 
         <Button
           type="button"
+          onClick={onNewAccount}
           className="group h-10 w-[153px] gap-1 rounded-lg bg-[#121217] px-3 text-sm font-medium leading-6 text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217] [&_svg]:size-5"
           data-testid="cuentas-new-account-button"
         >
