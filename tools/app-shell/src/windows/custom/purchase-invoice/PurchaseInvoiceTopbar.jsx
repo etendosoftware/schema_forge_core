@@ -9,13 +9,13 @@ import { useUI } from '@/i18n';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { useInvoiceUpdatedListener } from '../shared/useInvoiceUpdatedListener.js';
 
-export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUrl, onProcess }) {
+export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUrl, onProcess, onRefresh }) {
   const navigate = useNavigate();
   const ui = useUI();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showClone, setShowClone] = useState(false);
 
-  useInvoiceUpdatedListener('purchase-invoice', recordId, onProcess);
+  useInvoiceUpdatedListener('purchase-invoice', recordId, onRefresh);
 
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,
@@ -38,7 +38,7 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
 
   const handleModalClose = () => {
     setShowPaymentModal(false);
-    onProcess?.();
+    onRefresh?.();
   };
 
   return (

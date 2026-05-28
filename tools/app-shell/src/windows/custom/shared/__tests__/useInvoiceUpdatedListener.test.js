@@ -8,8 +8,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'useInvoiceUpdatedListener.js'), 'utf8');
 
 describe('useInvoiceUpdatedListener', () => {
-  it('calls onProcess?.() in the event handler (not window.location.reload)', () => {
-    assert.match(src, /onProcess\?\.\(\)/, 'expected onProcess?.() call in event handler');
+  it('calls onRefresh?.() in the event handler (not window.location.reload)', () => {
+    assert.match(src, /onRefresh\?\.\(\)/, 'expected onRefresh?.() call in event handler');
     assert.doesNotMatch(src, /window\.location\.reload\(\)/, 'expected no window.location.reload()');
   });
 });

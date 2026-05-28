@@ -9,12 +9,12 @@ import { useInvoiceUpdatedListener } from '../shared/useInvoiceUpdatedListener.j
 
 /* eslint-disable react/prop-types */
 
-export default function SalesInvoiceTopbar({ data, recordId, token, apiBaseUrl, api, onProcess }) {
+export default function SalesInvoiceTopbar({ data, recordId, token, apiBaseUrl, api, onProcess, onRefresh }) {
   const navigate = useNavigate();
   const ui = useUI();
   const [showClone, setShowClone] = useState(false);
 
-  useInvoiceUpdatedListener('sales-invoice', recordId, onProcess);
+  useInvoiceUpdatedListener('sales-invoice', recordId, onRefresh);
 
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,
