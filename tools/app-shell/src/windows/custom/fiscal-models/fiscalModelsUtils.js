@@ -65,30 +65,30 @@ export async function generate303File(decl, { token, apiBaseUrl } = {}) {
   }
 }
 
-// 'pendiente' is kept intentionally: Modelo 349 uses it as its initial draft state.
+// 'pending' is kept intentionally: Modelo 349 uses it as its initial draft state.
 export const STATUSES = [
-  'omitido', 'pendiente', 'borrador', 'listo',
-  'presentado', 'presentadoOtra', 'presentadoAcuse',
+  'skipped', 'pending', 'draft', 'ready',
+  'submitted', 'submitted_ext', 'submitted_ack',
 ];
 
 export const STATUS_COLOR = {
-  omitido:         'grey',
-  pendiente:       'orange',
-  borrador:        'blue',
-  listo:           'green',
-  presentado:      'teal',
-  presentadoOtra:  'violet',
-  presentadoAcuse: 'emerald',
+  skipped:       'grey',
+  pending:       'orange',
+  draft:         'blue',
+  ready:         'green',
+  submitted:     'teal',
+  submitted_ext: 'violet',
+  submitted_ack: 'emerald',
 };
 
 export const STATUS_ICON = {
-  omitido:         '×',
-  pendiente:       '○',
-  borrador:        '✎',
-  listo:           '✓',
-  presentado:      '✓',
-  presentadoOtra:  '↗',
-  presentadoAcuse: '☑',
+  skipped:       '×',
+  pending:       '○',
+  draft:         '✎',
+  ready:         '✓',
+  submitted:     '✓',
+  submitted_ext: '↗',
+  submitted_ack: '☑',
 };
 
 export const STATUS_ORDER = [...STATUSES];
@@ -244,7 +244,7 @@ export function deriveBoxes303(data) {
 }
 
 const COMPLETED_STATUSES = new Set([
-  'presentado', 'presentadoOtra', 'presentadoAcuse', 'omitido',
+  'submitted', 'submitted_ext', 'submitted_ack', 'skipped',
 ]);
 
 function getDeadlineDate(model, year, period) {

@@ -70,17 +70,17 @@ function StatusSelect({ value, options, onChange }) {
 }
 
 const MOCK_DECLARATIONS = [
-  { id:'349-2025-12', model:'349', year:2025, period:'12', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_12.349',  updatedAt:'19/01/2026' },
-  { id:'349-2025-11', model:'349', year:2025, period:'11', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_11.349',  updatedAt:'18/12/2025' },
-  { id:'349-2025-10', model:'349', year:2025, period:'10', type:'ord', status:'presentadoOtra',   result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null, fileExternal:true, updatedAt:'15/11/2025' },
-  { id:'349-2025-09', model:'349', year:2025, period:'09', type:'ord', status:'omitido',          result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null,           updatedAt:'12/10/2025' },
-  { id:'349-2025-08', model:'349', year:2025, period:'08', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_08.349',  updatedAt:'18/09/2025' },
-  { id:'349-2025-07', model:'349', year:2025, period:'07', type:'ord', status:'presentado',       result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:1}, file:'2025_07.349',  updatedAt:'18/08/2025' },
-  { id:'349-2025-06', model:'349', year:2025, period:'06', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_06.349',  updatedAt:'19/07/2025' },
-  { id:'349-2025-05', model:'349', year:2025, period:'05', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_05.349',  updatedAt:'18/06/2025' },
-  { id:'349-2025-04', model:'349', year:2025, period:'04', type:'ord', status:'omitido',          result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null,           updatedAt:'10/05/2025' },
-  { id:'349-2025-03', model:'349', year:2025, period:'03', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_03.349',  updatedAt:'19/04/2025' },
-  { id:'303-2026-T2', model:'303', year:2026, period:'T2', type:'ord', status:'borrador',
+  { id:'349-2025-12', model:'349', year:2025, period:'12', type:'ord', status:'submitted_ack',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_12.349',  updatedAt:'19/01/2026' },
+  { id:'349-2025-11', model:'349', year:2025, period:'11', type:'ord', status:'submitted_ack',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_11.349',  updatedAt:'18/12/2025' },
+  { id:'349-2025-10', model:'349', year:2025, period:'10', type:'ord', status:'submitted_ext',   result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null, fileExternal:true, updatedAt:'15/11/2025' },
+  { id:'349-2025-09', model:'349', year:2025, period:'09', type:'ord', status:'skipped',          result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null,           updatedAt:'12/10/2025' },
+  { id:'349-2025-08', model:'349', year:2025, period:'08', type:'ord', status:'submitted_ack',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_08.349',  updatedAt:'18/09/2025' },
+  { id:'349-2025-07', model:'349', year:2025, period:'07', type:'ord', status:'submitted',       result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:1}, file:'2025_07.349',  updatedAt:'18/08/2025' },
+  { id:'349-2025-06', model:'349', year:2025, period:'06', type:'ord', status:'submitted_ack',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_06.349',  updatedAt:'19/07/2025' },
+  { id:'349-2025-05', model:'349', year:2025, period:'05', type:'ord', status:'submitted_ack',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_05.349',  updatedAt:'18/06/2025' },
+  { id:'349-2025-04', model:'349', year:2025, period:'04', type:'ord', status:'skipped',          result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null,           updatedAt:'10/05/2025' },
+  { id:'349-2025-03', model:'349', year:2025, period:'03', type:'ord', status:'submitted_ack',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_03.349',  updatedAt:'19/04/2025' },
+  { id:'303-2026-T2', model:'303', year:2026, period:'T2', type:'ord', status:'draft',
     result:{kind:'compensar',amount:35479.08}, incidents:{blocking:0,warning:1,items:[
       { severity:'warn', origin:'Casilla 4', message:'El tipo aplicado (7%) difiere del tipo registrado para el período anterior (10%)', suggestion:'Verifica si se trata de una operación a tipo reducido correcta' },
     ]},
@@ -123,15 +123,15 @@ const MOCK_DECLARATIONS = [
       { date:'19/05/2026', ref:'10000039', type:'Venta',  party:'Juan Perez',            regime:'Exportación (%N→0%)',       base:36.00, vat:0,       total:36.00,     boxes:'60' },
     ],
     updatedAt:'19/05/2026' },
-  { id:'349-2026-T1', model:'349', year:2026, period:'T1', type:'ord', status:'borrador',    result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null, updatedAt:'—' },
-  { id:'303-2026-T1', model:'303', year:2026, period:'T1', type:'ord', status:'presentadoAcuse',         result:{kind:'compensar',amount:2816.31}, incidents:{blocking:2,warning:3,items:[
+  { id:'349-2026-T1', model:'349', year:2026, period:'T1', type:'ord', status:'draft',    result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null, updatedAt:'—' },
+  { id:'303-2026-T1', model:'303', year:2026, period:'T1', type:'ord', status:'submitted_ack',         result:{kind:'compensar',amount:2816.31}, incidents:{blocking:2,warning:3,items:[
     { severity:'block', origin:'Casilla 28', message:'El total de cuota devengada no coincide con la suma de las cuotas parciales', suggestion:'Revisa las cuotas de los tipos 21%, 10% y 4%' },
     { severity:'block', origin:'Casilla 69', message:'El resultado de la liquidación está pendiente de confirmar', suggestion:'Verifica que el resultado neto sea correcto antes de generar el fichero' },
     { severity:'warn',  origin:'Casilla 48', message:'No se han detectado facturas de compra para este período', suggestion:'Comprueba si hay facturas de compra no registradas' },
     { severity:'warn',  origin:'Casilla 64', message:'El total deducible es inferior al período anterior en más de un 30%', suggestion:'Verifica si es coherente con la actividad del trimestre' },
     { severity:'warn',  origin:'NIF declarante', message:'El NIF del declarante no está verificado en la AEAT', suggestion:'Confirma el NIF en la configuración del declarante' },
   ]}, file:null, boxes:{ 7:3248, 9:682.08, 27:682.08, 28:16659, 29:3498.39, 45:3498.39, 46:-2816.31 }, summary:{ accrued:682.08, deductible:3498.39, result:-2816.31 }, updatedAt:'14/05/2026', current:true },
-  { id:'303-2025-T4', model:'303', year:2025, period:'T4', type:'ord', status:'presentadoAcuse',  result:{kind:'compensar',amount:2100}, incidents:{blocking:0,warning:0}, file:'2025_T4.303', updatedAt:'28/01/2026' },
+  { id:'303-2025-T4', model:'303', year:2025, period:'T4', type:'ord', status:'submitted_ack',  result:{kind:'compensar',amount:2100}, incidents:{blocking:0,warning:0}, file:'2025_T4.303', updatedAt:'28/01/2026' },
 ];
 
 const DEFAULT_ACTIVE = { '303': true, '349': true };
@@ -272,7 +272,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
   }, [dataMode, token, apiBaseUrl]);
 
   const draftDecls303 = useMemo(
-    () => realDecls.filter(d => d.model === '303' && d.status === 'borrador'),
+    () => realDecls.filter(d => d.model === '303' && d.status === 'draft'),
     [realDecls]
   );
 
@@ -467,7 +467,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
                 {filtered.map(decl => {
                   const computed = dataMode === 'real' ? computedMap[decl.id] : undefined;
                   const isComputingThis = dataMode === 'real' && decl.model === '303'
-                    && decl.status === 'borrador' && !computed;
+                    && decl.status === 'draft' && !computed;
                   const computeError = computed?.error ?? null;
 
                   let displayResult = decl.result;

@@ -28,7 +28,7 @@ const DEMO_303_BOXES = {
 
 const MOCK_303 = {
   id: 'debug-303-2026-T1', model: '303', year: 2026, period: 'T1',
-  type: 'ord', status: 'borrador', nif: 'B12345678',
+  type: 'ord', status: 'draft', nif: 'B12345678',
   result: { kind: 'compensar', amount: 2816.31 },
   incidents: { blocking: 0, warning: 0, items: [] },
   summary: { accrued: 682.08, deductible: 3498.39, result: -2816.31 },
@@ -39,7 +39,7 @@ const MOCK_303 = {
 
 const MOCK_349 = {
   id: 'debug-349-2026-01', model: '349', year: 2026, period: '01',
-  type: 'ord', status: 'borrador', nif: 'B12345678',
+  type: 'ord', status: 'draft', nif: 'B12345678',
   result: { kind: 'informativa', amount: 0 },
   incidents: { blocking: 0, warning: 0, items: [] },
   updatedAt: '14/05/2026',
@@ -406,11 +406,11 @@ export default function FmDebugPanel({ view, setView }) {
               <div style={divider} />
               <div style={sectionLabel}>Modelo 303</div>
               {[
-                { label: '2026 T1 · borrador',        patch: { status: 'borrador', incidents: { blocking: 0, warning: 0, items: [] } } },
-                { label: '2026 T1 · 2 blocking',      patch: { status: 'borrador', incidents: { blocking: 2, warning: 3, items: [...MOCK_INCIDENTS.blocking, ...MOCK_INCIDENTS.warning] } } },
-                { label: '2026 T1 · listo + file',    patch: { status: 'listo', file: MOCK_FILE, incidents: { blocking: 0, warning: 0, items: [] } } },
-                { label: '2026 T1 · presentadoAcuse', patch: { status: 'presentadoAcuse', file: MOCK_FILE, incidents: { blocking: 0, warning: 0, items: [] } } },
-                { label: '2025 T4 · complementaria',  patch: { year: 2025, period: 'T4', type: 'comp', status: 'pendiente' } },
+                { label: '2026 T1 · draft',          patch: { status: 'draft', incidents: { blocking: 0, warning: 0, items: [] } } },
+                { label: '2026 T1 · 2 blocking',      patch: { status: 'draft', incidents: { blocking: 2, warning: 3, items: [...MOCK_INCIDENTS.blocking, ...MOCK_INCIDENTS.warning] } } },
+                { label: '2026 T1 · ready + file',    patch: { status: 'ready', file: MOCK_FILE, incidents: { blocking: 0, warning: 0, items: [] } } },
+                { label: '2026 T1 · submitted_ack',   patch: { status: 'submitted_ack', file: MOCK_FILE, incidents: { blocking: 0, warning: 0, items: [] } } },
+                { label: '2025 T4 · complementaria',  patch: { year: 2025, period: 'T4', type: 'comp', status: 'pending' } },
               ].map(({ label, patch }) => (
                 <button
                   key={label}
@@ -425,8 +425,8 @@ export default function FmDebugPanel({ view, setView }) {
               <div style={divider} />
               <div style={sectionLabel}>Modelo 349</div>
               {[
-                { label: '2026 01 · borrador',        patch: { status: 'borrador' } },
-                { label: '2026 01 · presentadoAcuse', patch: { status: 'presentadoAcuse' } },
+                { label: '2026 01 · draft',           patch: { status: 'draft' } },
+                { label: '2026 01 · submitted_ack',   patch: { status: 'submitted_ack' } },
               ].map(({ label, patch }) => (
                 <button
                   key={label}
