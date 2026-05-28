@@ -46,14 +46,51 @@ describe('FiscalStatusBadge — TBAI status strings', () => {
 });
 
 describe('FiscalStatusBadge — Verifactu status strings', () => {
-  const vfStatuses = ['accepted', 'partiallyAccepted', 'rejected', 'invalid'];
+  const vfStatuses = ['accepted', 'partiallyAccepted', 'rejected', 'invalid', 'vf_pending'];
 
   for (const status of vfStatuses) {
     it(`CONFIG includes Verifactu status "${status}"`, () => {
-      assert.match(src, new RegExp(`${status}:\\s*\\{`),
+      assert.match(src, new RegExp(`${status}[\\s:,]`),
         `Expected CONFIG entry for Verifactu status "${status}"`);
     });
   }
+
+  it('vf_pending maps to fiscalMonitor.status.vf.pending', () => {
+    assert.match(src, /vf_pending:.*key:\s*'fiscalMonitor\.status\.vf\.pending'/s);
+  });
+});
+
+describe('FiscalStatusBadge — normalizeVerifactuStatus', () => {
+  it('exports normalizeVerifactuStatus', () => {
+    assert.match(src, /export function normalizeVerifactuStatus/);
+  });
+
+  it('defines VF_CODE_MAP with all five known short codes', () => {
+    for (const code of ['AC', 'AE', 'ER', 'IN', 'PE']) {
+      assert.match(src, new RegExp(`${code}:\\s*'`),
+        `VF_CODE_MAP must include code "${code}"`);
+    }
+  });
+
+  it('AC maps to accepted', () => {
+    assert.match(src, /AC:\s*'accepted'/);
+  });
+
+  it('AE maps to partiallyAccepted', () => {
+    assert.match(src, /AE:\s*'partiallyAccepted'/);
+  });
+
+  it('ER maps to rejected', () => {
+    assert.match(src, /ER:\s*'rejected'/);
+  });
+
+  it('IN maps to invalid', () => {
+    assert.match(src, /IN:\s*'invalid'/);
+  });
+
+  it('PE maps to vf_pending', () => {
+    assert.match(src, /PE:\s*'vf_pending'/);
+  });
 });
 
 // ── i18n key wiring ──────────────────────────────────────────────────────────

@@ -10,14 +10,14 @@ import {
 } from '@/lib/invoiceDueDate';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { getInvoiceFiscalTargets } from '@/windows/custom/shared/fiscalTargets.js';
-import { FiscalStatusBadge } from '@/windows/custom/shared/FiscalStatusBadge.jsx';
+import { FiscalStatusBadge, normalizeVerifactuStatus } from '@/windows/custom/shared/FiscalStatusBadge.jsx';
 
 /* eslint-disable react/prop-types */
 
 const filters = ['documentNo', 'invoiceDate', 'businessPartner', 'orderReference', 'documentStatus'];
 
 export default function PurchaseInvoiceHeaderTable(props) {
-  const { apiBaseUrl, data } = props;
+  const { apiBaseUrl } = props;
   const dictionary = useLocale();
   const { locale } = useLocaleSwitch();
   const gl = dictionary?.genericLabels || {};
@@ -43,7 +43,7 @@ export default function PurchaseInvoiceHeaderTable(props) {
     if (targets.showVerifactu) {
       fiscalCols.push({
         key: '_vfStatus', type: 'custom', label: vfColLabel,
-        render: (row) => <FiscalStatusBadge status={row.etvfacInvoiceStatus ?? null} />,
+        render: (row) => <FiscalStatusBadge status={normalizeVerifactuStatus(row.etvfacInvoiceStatus ?? null)} />,
       });
     }
 

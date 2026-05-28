@@ -10,7 +10,7 @@ import {
 } from '@/lib/invoiceDueDate';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { getInvoiceFiscalTargets } from '@/windows/custom/shared/fiscalTargets.js';
-import { FiscalStatusBadge } from '@/windows/custom/shared/FiscalStatusBadge.jsx';
+import { FiscalStatusBadge, normalizeVerifactuStatus } from '@/windows/custom/shared/FiscalStatusBadge.jsx';
 
 // ─── Invoice-specific status logic ───────────────────────────────
 
@@ -83,7 +83,7 @@ export default function InvoiceHeaderTable(props) {
     if (targets.showVerifactu) {
       fiscalCols.push({
         key: '_vfStatus', type: 'custom', label: vfColLabel,
-        render: (row) => <FiscalStatusBadge status={row.etvfacInvoiceStatus ?? null} />,
+        render: (row) => <FiscalStatusBadge status={normalizeVerifactuStatus(row.etvfacInvoiceStatus ?? null)} />,
       });
     }
 

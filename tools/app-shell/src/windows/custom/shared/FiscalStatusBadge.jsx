@@ -17,7 +17,23 @@ const CONFIG = {
   partiallyAccepted: { color: '#854d0e', bg: '#fefce8', key: 'fiscalMonitor.status.vf.partiallyAccepted' },
   rejected:          { color: '#b91c1c', bg: '#fef2f2', key: 'fiscalMonitor.status.vf.rejected' },
   invalid:           { color: '#b91c1c', bg: '#fef2f2', key: 'fiscalMonitor.status.vf.invalid' },
+  vf_pending:        { color: '#6b7280', bg: '#f9fafb', key: 'fiscalMonitor.status.vf.pending' },
 };
+
+// Maps raw em_etvfac_invoice_status short codes → badge CONFIG keys.
+// Passes through any value not in the map (e.g. already-normalised strings).
+const VF_CODE_MAP = {
+  AC: 'accepted',
+  AE: 'partiallyAccepted',
+  ER: 'rejected',
+  IN: 'invalid',
+  PE: 'vf_pending',
+};
+
+export function normalizeVerifactuStatus(raw) {
+  if (!raw) return raw;
+  return VF_CODE_MAP[raw] ?? raw;
+}
 
 export function FiscalStatusBadge({ status, loading }) {
   const ui = useUI();

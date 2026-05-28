@@ -4,7 +4,7 @@ import { useLocale } from '@/i18n';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { getInvoiceFiscalTargets } from '@/windows/custom/shared/fiscalTargets.js';
-import { FiscalStatusBadge } from '@/windows/custom/shared/FiscalStatusBadge.jsx';
+import { FiscalStatusBadge, normalizeVerifactuStatus } from '@/windows/custom/shared/FiscalStatusBadge.jsx';
 
 const BASE_COLUMNS = [
   { key: 'invoiceDate',       column: 'DateInvoiced',              type: 'date',   label: 'Invoice Date' },
@@ -47,7 +47,7 @@ export default function InvoiceHeaderTable(props) {
     if (targets.showVerifactu) {
       fiscalCols.push({
         key: '_vfStatus', type: 'custom', label: vfColLabel,
-        render: (row) => <FiscalStatusBadge status={row.etvfacInvoiceStatus ?? null} />,
+        render: (row) => <FiscalStatusBadge status={normalizeVerifactuStatus(row.etvfacInvoiceStatus ?? null)} />,
       });
     }
     return [...BASE_COLUMNS, ...fiscalCols, ...TAIL_COLUMNS];
