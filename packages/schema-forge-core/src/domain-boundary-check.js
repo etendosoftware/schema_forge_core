@@ -4,16 +4,19 @@ import {
   analyzeBoundary,
   collectArtifactWindows,
   getChangedFiles,
+  loadBoundaryPolicy,
   loadPrBody,
   renderBoundaryReport,
 } from './domain-boundary/classifier.js';
 
 export {
+  DEFAULT_BOUNDARY_POLICY,
   VERTICAL_WINDOWS,
   analyzeBoundary,
   classifyPath,
   collectArtifactWindows,
   getChangedFiles,
+  loadBoundaryPolicy,
   loadPrBody,
   renderBoundaryReport,
   verticalForWindows,
@@ -40,6 +43,8 @@ function parseArgs(argv) {
       options.labels = next().split(',').map((label) => label.trim()).filter(Boolean);
     } else if (arg === '--pr-body-file') {
       options.prBodyFile = next();
+    } else if (arg === '--policy-file') {
+      options.policyFile = next();
     } else if (arg === '--format') {
       options.format = next();
     } else if (arg === '--output') {
@@ -66,6 +71,7 @@ Options:
   --head <ref>             Head ref/SHA (default: HEAD)
   --labels <csv>           PR labels, comma-separated
   --pr-body-file <path>    PR body markdown used to validate exception plans
+  --policy-file <path>     Optional JSON policy override/additions
   --changed-file <path>    Explicit changed file; may be repeated (skips git diff)
   --format text|json       Console format (default: text)
   --output <path>          Write markdown report
@@ -86,6 +92,10 @@ export function runDomainBoundaryCheckCli(argv = process.argv.slice(2), {
     }
 
     const rootDir = resolve(cwd, options.rootDir);
+    const policy = loadBoundaryPolicy(
+      rootDir,
+      options.policyFile ? resolve(rootDir, options.policyFile) : null,
+    );
     const knownWindows = collectArtifactWindows(rootDir);
     let changedFiles = options.changedFiles;
     let diff = null;
@@ -107,6 +117,7 @@ export function runDomainBoundaryCheckCli(argv = process.argv.slice(2), {
       knownWindows,
       labels: options.labels,
       prBody: loadPrBody(options.prBodyFile),
+      policy,
     });
 
     const payload = {

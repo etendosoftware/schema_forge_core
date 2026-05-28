@@ -27,6 +27,38 @@ as `artifacts/<window>`, `tools/app-shell`, `docs/generated-custom-windows`, and
 `e2e/tests/flows`. Repositories with a different layout can call the exported
 functions directly with their own changed-file list and known windows.
 
+## Boundary Policy
+
+The check ships with a default policy, but repositories can extend it without
+editing package code. The CLI auto-loads `domain-boundary.config.json` or
+`.schema-forge/domain-boundary.config.json` from the repository root, and it also
+accepts an explicit policy file:
+
+```bash
+npx sf-domain-boundary-check --base origin/main --policy-file domain-boundary.config.json
+```
+
+Example:
+
+```json
+{
+  "verticalWindows": {
+    "aftermarket": ["warranty-claim", "service-order"]
+  },
+  "patternGroups": [
+    {
+      "id": "local-generator-fixtures",
+      "kind": "generator-change",
+      "scope": "generator-change",
+      "patterns": ["^fixtures/generator/"]
+    }
+  ]
+}
+```
+
+Pattern groups with an existing `id` append patterns by default. Set
+`"replacePatterns": true` to replace the default patterns for that group.
+
 ## Local Workspace Consumption
 
 Inside this monorepo, root tooling depends on `@etendosoftware/schema-forge-core` by package

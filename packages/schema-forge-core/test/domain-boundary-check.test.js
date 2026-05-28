@@ -1,11 +1,16 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import {
   analyzeBoundary,
   classifyPath,
+  loadBoundaryPolicy,
   renderBoundaryReport,
   verticalForWindows,
 } from '../src/domain-boundary/classifier.js';
+import { runDomainBoundaryCheckCli } from '../src/domain-boundary-check.js';
 
 const WINDOWS = [
   'purchase-invoice',
@@ -286,6 +291,57 @@ describe('domain boundary helpers', () => {
     assert.equal(verticalForWindows([]), null);
     assert.equal(verticalForWindows(['sales-order', 'sales-invoice']), 'sales');
     assert.equal(verticalForWindows(['sales-order', 'purchase-order']), null);
+  });
+
+  it('allows repository policy to add vertical windows without code changes', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sf-boundary-policy-'));
+    const policyFile = join(dir, 'domain-boundary.config.json');
+    writeFileSync(policyFile, JSON.stringify({
+      verticalWindows: {
+        aftermarket: ['warranty-claim', 'service-order'],
+      },
+      patternGroups: [{
+        id: 'custom-generator-fixtures',
+        kind: 'generator-change',
+        scope: 'generator-change',
+        patterns: ['^fixtures/generator/'],
+      }],
+    }));
+
+    const policy = loadBoundaryPolicy(dir, policyFile);
+    assert.equal(verticalForWindows(['warranty-claim', 'service-order'], policy), 'aftermarket');
+    assert.deepEqual(
+      classifyPath('fixtures/generator/sample.json', { knownWindows: WINDOWS, policy }),
+      { kind: 'generator-change', scope: 'generator-change' },
+    );
+  });
+
+  it('supports policy files from the CLI', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sf-boundary-cli-'));
+    const policyFile = join(dir, 'domain-boundary.config.json');
+    writeFileSync(policyFile, JSON.stringify({
+      patternGroups: [{
+        id: 'local-docs',
+        kind: 'repo-infra',
+        scope: 'repo-infra',
+        patterns: ['^local-docs/'],
+      }],
+    }));
+
+    const output = [];
+    const exitCode = runDomainBoundaryCheckCli([
+      '--policy-file',
+      policyFile,
+      '--changed-file',
+      'local-docs/readme.md',
+    ], {
+      cwd: dir,
+      stdout: (message) => output.push(message),
+      stderr: (message) => output.push(message),
+    });
+
+    assert.equal(exitCode, 0);
+    assert.match(output.join('\n'), /Decision: \*\*PASS\*\*/);
   });
 
   it('renders a markdown report with the marker used by the workflow comment', () => {

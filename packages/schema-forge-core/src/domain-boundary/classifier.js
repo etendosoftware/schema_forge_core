@@ -1,204 +1,88 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { DEFAULT_BOUNDARY_POLICY } from './default-policy.js';
 
-const WINDOW_DOC_RE = /^docs\/generated-custom-windows\/([a-z0-9-]+)\.md$/;
-const E2E_FLOW_RE = /^e2e\/tests\/flows\/(.+)\.(?:mocked\.)?spec\.js$/;
+export { DEFAULT_BOUNDARY_POLICY } from './default-policy.js';
 
-export const VERTICAL_WINDOWS = {
-  sales: [
-    'sales',
-    'sales-order',
-    'sales-invoice',
-    'sales-quotation',
-    'goods-shipment',
-    'return-from-customer',
-    'print-sales-order',
-    'print-sales-invoice',
-    'print-sales-quotation',
-    'print-goods-shipment',
-  ],
-  purchases: [
-    'purchases',
-    'purchase-order',
-    'purchase-invoice',
-    'goods-receipt',
-    'return-to-vendor',
-    'return-to-vendor-shipment',
-    'return-material-receipt',
-    'print-purchase-order',
-  ],
-  inventory: [
-    'inventory',
-    'physical-inventory',
-    'warehouse',
-    'warehouse-picking-list',
-    'warehouse-storage-bins',
-    'goods-movements',
-    'internal-consumption',
-    'inventory-quality-inspection',
-    'inventory-stock-report',
-    'stock-reservation',
-    'product',
-    'product-category',
-    'unit-of-measure',
-    'uom',
-    'packing',
-    'bom-production',
-  ],
-  fiscal: [
-    'fiscal-config',
-    'fiscal-monitor',
-    'fiscal-models',
-    'sii-config',
-    'sii-monitor',
-    'tbai-config',
-    'tbai-facturas-enviadas',
-    'verifactu-config',
-    'monitor-verifactu',
-    'tax',
-    'tax-report',
-  ],
-  finance: [
-    'accounting',
-    'balance-sheet',
-    'bank-reconciliation',
-    'chart-of-accounts',
-    'payment-in',
-    'payment-out',
-    'payment-method',
-    'payment-term',
-    'profit-loss',
-    'report-general-ledger',
-    'report-journal-entries',
-    'report-trial-balance',
-    'aging-payable',
-    'aging-receivable',
-    'cost-adjustment',
-    'commission',
-    'commission-payment',
-    'price-list',
-    'landed-cost',
-  ],
-  'people-crm': [
-    'absence',
-    'activity',
-    'business-partner',
-    'contacts',
-    'crm',
-    'deal',
-    'employee',
-    'hr',
-    'lead',
-    'project',
-    'projects',
-    'time-tracking',
-    'user',
-    'bp-location',
-  ],
-};
+export const VERTICAL_WINDOWS = DEFAULT_BOUNDARY_POLICY.verticalWindows;
 
-const GENERATOR_PATTERNS = [
-  /^cli\/package(?:-lock)?\.json$/,
-  /^cli\/src\/generate-/,
-  /^cli\/src\/extract-/,
-  /^cli\/src\/resolve-curated\.js$/,
-  /^cli\/src\/pipeline\.js$/,
-  /^cli\/src\/regen-all\.js$/,
-  /^cli\/src\/push-to-neo\.js$/,
-  /^cli\/src\/validate-pipeline\.js$/,
-  /^cli\/src\/quality-gate(?:\.js|\/)/,
-  /^cli\/test\//,
-  /^schemas\//,
-  /^templates\//,
-  /^core-maps\//,
-  /^quality-gate\.config\.json$/,
-  /^cli\/config\/regen-windows\.json$/,
+const POLICY_FILENAMES = [
+  'domain-boundary.config.json',
+  '.schema-forge/domain-boundary.config.json',
 ];
 
-const PLATFORM_PATTERNS = [
-  /^tools\/app-shell\/package(?:-lock)?\.json$/,
-  /^tools\/app-shell\/src\/App\.jsx$/,
-  /^tools\/app-shell\/src\/main\.jsx$/,
-  /^tools\/app-shell\/src\/index\.css$/,
-  /^tools\/app-shell\/src\/menu\.json$/,
-  /^tools\/app-shell\/src\/test\//,
-  /^tools\/app-shell\/test\//,
-  /^tools\/app-shell\/src\/components\/[^/]+\.(?:js|jsx)$/,
-  /^tools\/app-shell\/src\/components\/__tests__\//,
-  /^tools\/app-shell\/src\/components\/attachments\//,
-  /^tools\/app-shell\/src\/components\/copilot\//,
-  /^tools\/app-shell\/src\/components\/dashboard\//,
-  /^tools\/app-shell\/src\/components\/layout\//,
-  /^tools\/app-shell\/src\/components\/related-documents\//,
-  /^tools\/app-shell\/src\/components\/contract-ui\//,
-  /^tools\/app-shell\/src\/components\/ui\//,
-  /^tools\/app-shell\/src\/explorer\//,
-  /^tools\/app-shell\/src\/hooks\//,
-  /^tools\/app-shell\/src\/auth\//,
-  /^tools\/app-shell\/src\/layout\//,
-  /^tools\/app-shell\/src\/i18n\//,
-  /^tools\/app-shell\/src\/locales\//,
-  /^tools\/app-shell\/src\/pages\//,
-  /^tools\/app-shell\/src\/preview\//,
-  /^tools\/app-shell\/src\/windows\/__tests__\//,
-  /^tools\/app-shell\/src\/windows\/WindowLoader\.jsx$/,
-  /^tools\/app-shell\/src\/lib\//,
-  /^tools\/app-shell\/src\/utils\//,
-  /^tools\/app-shell\/vite\.config\.js$/,
-  /^tools\/app-shell\/vite-plugins\//,
-  /^tools\/app-shell\/public\//,
-];
+function compilePattern(pattern) {
+  return new RegExp(pattern);
+}
 
-const SDK_PATTERNS = [
-  /^packages\/apps-sdk(?:-|\/)/,
-  /^tools\/quick-order-app\//,
-  /^tools\/spike-hello-app\//,
-];
+function compilePolicy(policy = DEFAULT_BOUNDARY_POLICY) {
+  return {
+    ...policy,
+    windowDocPattern: compilePattern(policy.windowDocPattern),
+    e2eFlowPattern: compilePattern(policy.e2eFlowPattern),
+    crossDomainPlanPattern: compilePattern(policy.crossDomainPlanPattern),
+    repoDocPatterns: policy.repoDocPatterns.map(compilePattern),
+    patternGroups: policy.patternGroups.map((group) => ({
+      ...group,
+      patterns: group.patterns.map(compilePattern),
+    })),
+  };
+}
 
-const APP_SHELL_CORE_PATTERNS = [
-  /^packages\/app-shell-core\//,
-];
+function mergePolicy(basePolicy, overridePolicy = {}) {
+  const overrideGroupsById = new Map((overridePolicy.patternGroups ?? []).map((group) => [group.id, group]));
+  const mergedGroups = basePolicy.patternGroups.map((group) => {
+    const override = overrideGroupsById.get(group.id);
+    if (!override) {
+      return group;
+    }
+    overrideGroupsById.delete(group.id);
+    return {
+      ...group,
+      ...override,
+      patterns: override.replacePatterns ? override.patterns : [
+        ...group.patterns,
+        ...(override.patterns ?? []),
+      ],
+    };
+  });
 
-const REPO_INFRA_PATTERNS = [
-  /^\.github\//,
-  /^\.githooks\//,
-  /^pipelines\//,
-  /^infra\//,
-  /^scripts\//,
-  /^Makefile$/,
-  /^sonar-project\.properties$/,
-  /^schema_forge\.properties$/,
-  /^ETENDO_VERSION$/,
-  /^\.env\.example$/,
-  /^\.npmrc$/,
-  /^\.nvmrc$/,
-  /^AGENTS\.md$/,
-  /^CLAUDE\.md$/,
-  /^opencode\.json$/,
-];
+  return {
+    ...basePolicy,
+    ...overridePolicy,
+    verticalWindows: {
+      ...basePolicy.verticalWindows,
+      ...(overridePolicy.verticalWindows ?? {}),
+    },
+    repoDocPatterns: [
+      ...basePolicy.repoDocPatterns,
+      ...(overridePolicy.repoDocPatterns ?? []),
+    ],
+    patternGroups: [
+      ...mergedGroups,
+      ...overrideGroupsById.values(),
+    ],
+  };
+}
 
-const ROOT_SENSITIVE_PATTERNS = [
-  /^package\.json$/,
-  /^package-lock\.json$/,
-  /^cli\/cache\//,
-];
+function readPolicyFile(path) {
+  return JSON.parse(readFileSync(path, 'utf8'));
+}
 
-const CORE_PACKAGE_PATTERNS = [
-  /^packages\/schema-forge-core\//,
-];
+export function loadBoundaryPolicy(rootDir, policyFile) {
+  if (policyFile) {
+    return mergePolicy(DEFAULT_BOUNDARY_POLICY, readPolicyFile(policyFile));
+  }
 
-const STACK_PACKAGE_PATTERNS = [
-  /^packages\/schema-forge-agent-context\//,
-  /^packages\/schema-forge-stack\//,
-];
-
-const BOUNDARY_GATE_PATTERNS = [
-  /^packages\/schema-forge-core\/bin\/sf-domain-boundary-check\.js$/,
-  /^packages\/schema-forge-core\/src\/domain-boundary(?:\/|$)/,
-  /^packages\/schema-forge-core\/src\/domain-boundary-check\.js$/,
-  /^packages\/schema-forge-core\/test\/domain-boundary-check\.test\.js$/,
-];
+  const found = POLICY_FILENAMES
+    .map((filename) => join(rootDir, filename))
+    .find((candidate) => existsSync(candidate));
+  if (!found) {
+    return DEFAULT_BOUNDARY_POLICY;
+  }
+  return mergePolicy(DEFAULT_BOUNDARY_POLICY, readPolicyFile(found));
+}
 
 function matchesAny(path, patterns) {
   return patterns.some((pattern) => pattern.test(path));
@@ -255,9 +139,10 @@ export function getChangedFiles({ rootDir, baseRef, headRef = 'HEAD' }) {
   };
 }
 
-export function classifyPath(path, { knownWindows = [] } = {}) {
+export function classifyPath(path, { knownWindows = [], policy = DEFAULT_BOUNDARY_POLICY } = {}) {
   const normalized = normalizePath(path);
   const known = new Set(knownWindows);
+  const compiledPolicy = compilePolicy(policy);
 
   const artifactMatch = normalized.match(/^artifacts\/([^/]+)\//);
   if (artifactMatch) {
@@ -288,12 +173,12 @@ export function classifyPath(path, { knownWindows = [] } = {}) {
     return { kind: 'registry', scope: 'platform-change' };
   }
 
-  const docMatch = normalized.match(WINDOW_DOC_RE);
+  const docMatch = normalized.match(compiledPolicy.windowDocPattern);
   if (docMatch) {
     return { kind: 'window-doc', scope: `window:${docMatch[1]}`, window: docMatch[1] };
   }
 
-  const e2eMatch = normalized.match(E2E_FLOW_RE);
+  const e2eMatch = normalized.match(compiledPolicy.e2eFlowPattern);
   if (e2eMatch) {
     const specName = e2eMatch[1];
     const window = knownWindows
@@ -309,59 +194,28 @@ export function classifyPath(path, { knownWindows = [] } = {}) {
     return { kind: 'e2e', scope: 'e2e' };
   }
 
-  if (matchesAny(normalized, GENERATOR_PATTERNS)) {
-    return { kind: 'generator-change', scope: 'generator-change' };
+  const matchedGroup = compiledPolicy.patternGroups.find((group) => matchesAny(normalized, group.patterns));
+  if (matchedGroup) {
+    return { kind: matchedGroup.kind, scope: matchedGroup.scope };
   }
 
-  if (matchesAny(normalized, SDK_PATTERNS)) {
-    return { kind: 'sdk-or-external-app', scope: 'sdk-or-external-app' };
-  }
-
-  if (matchesAny(normalized, APP_SHELL_CORE_PATTERNS)) {
-    return { kind: 'app-shell-core', scope: 'app-shell-core' };
-  }
-
-  if (matchesAny(normalized, PLATFORM_PATTERNS)) {
-    return { kind: 'platform-change', scope: 'platform-change' };
-  }
-
-  if (matchesAny(normalized, STACK_PACKAGE_PATTERNS)) {
-    return { kind: 'schema-forge-stack-package', scope: 'repo-infra' };
-  }
-
-  if (matchesAny(normalized, BOUNDARY_GATE_PATTERNS)) {
-    return { kind: 'domain-boundary-gate', scope: 'repo-infra' };
-  }
-
-  if (matchesAny(normalized, CORE_PACKAGE_PATTERNS)) {
-    return { kind: 'schema-forge-core', scope: 'generator-change' };
-  }
-
-  if (/^docs\/plans\/[^/]+-cross-domain\.md$/.test(normalized)) {
+  if (compiledPolicy.crossDomainPlanPattern.test(normalized)) {
     return { kind: 'cross-domain-plan', scope: 'repo-infra' };
   }
 
-  if (/^docs\/(?:architecture|ops|diagrams|proposals|superpowers|plans)\//.test(normalized) || /^docs\/[^/]+\.md$/.test(normalized)) {
+  if (matchesAny(normalized, compiledPolicy.repoDocPatterns)) {
     return { kind: 'repo-doc', scope: 'repo-infra' };
-  }
-
-  if (matchesAny(normalized, ROOT_SENSITIVE_PATTERNS)) {
-    return { kind: 'root-global-sensitive', scope: 'root-global-sensitive' };
-  }
-
-  if (matchesAny(normalized, REPO_INFRA_PATTERNS)) {
-    return { kind: 'repo-infra', scope: 'repo-infra' };
   }
 
   return { kind: 'unknown', scope: 'unknown' };
 }
 
-export function verticalForWindows(windows) {
+export function verticalForWindows(windows, policy = DEFAULT_BOUNDARY_POLICY) {
   const uniqueWindows = [...new Set(windows)].sort((left, right) => left.localeCompare(right));
   if (uniqueWindows.length === 0) {
     return null;
   }
-  const matches = Object.entries(VERTICAL_WINDOWS)
+  const matches = Object.entries(policy.verticalWindows)
     .filter(([, members]) => uniqueWindows.every((window) => members.includes(window)))
     .map(([vertical]) => vertical);
   return matches[0] ?? null;
@@ -371,8 +225,9 @@ function hasLabel(labels, name) {
   return labels.some((label) => label.toLowerCase() === name.toLowerCase());
 }
 
-function hasCrossDomainPlan({ changedFiles, prBody }) {
-  if (changedFiles.some((path) => /^docs\/plans\/[^/]+-cross-domain\.md$/.test(path))) {
+function hasCrossDomainPlan({ changedFiles, prBody, policy }) {
+  const compiledPolicy = compilePolicy(policy);
+  if (changedFiles.some((path) => compiledPolicy.crossDomainPlanPattern.test(path))) {
     return true;
   }
   const body = prBody.toLowerCase();
@@ -425,11 +280,12 @@ export function analyzeBoundary({
   knownWindows = [],
   labels = [],
   prBody = '',
+  policy = DEFAULT_BOUNDARY_POLICY,
 } = {}) {
   const normalizedFiles = changedFiles.map(normalizePath).sort((left, right) => left.localeCompare(right));
   const entries = normalizedFiles.map((path) => ({
     path,
-    ...classifyPath(path, { knownWindows }),
+    ...classifyPath(path, { knownWindows, policy }),
   }));
 
   const filesByScope = new Map();
@@ -454,8 +310,8 @@ export function analyzeBoundary({
   const blockers = [];
   const warnings = [];
   const crossDomainApproved = hasLabel(labels, 'cross-domain-approved');
-  const hasPlan = hasCrossDomainPlan({ changedFiles: normalizedFiles, prBody });
-  const vertical = verticalForWindows([...windows]);
+  const hasPlan = hasCrossDomainPlan({ changedFiles: normalizedFiles, prBody, policy });
+  const vertical = verticalForWindows([...windows], policy);
   const verticalRequested = hasLabel(labels, 'scope:vertical-slice');
   const platformRequested = hasLabel(labels, 'scope:platform-change');
   const generatorRequested = hasLabel(labels, 'scope:generator-change');
