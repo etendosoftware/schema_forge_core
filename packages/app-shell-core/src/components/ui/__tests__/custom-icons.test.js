@@ -30,8 +30,8 @@ describe('custom-icons — exports (ETP-3660)', () => {
   });
 
   it('has exactly four exported functions (no accidental extras)', () => {
-    const exports = src.match(/export function \w+/g) ?? [];
-    assert.equal(exports.length, 4);
+    const exportedFunctions = src.match(/export function \w+/g) ?? [];
+    assert.equal(exportedFunctions.length, 4);
   });
 });
 
