@@ -24,11 +24,11 @@ Display the full detail of a financial account: a summary strip with KPIs, and t
 ## Not implemented yet
 
 - `+ Nuevo movimiento` real action — toast placeholder for now.
-- Reconciliation tab body — placeholder with Scale icon.
-- Imported Statements tab body — placeholder with FileText icon.
+- Reconciliation tab body — placeholder (T6/T7).
+- Statement matching / reconciliation — import leaves statements with `processed='N'` (T6/T7).
 - Unreconcile / Post row actions — visible but disabled, with tooltip.
 - Real bank logos (Santander, BBVA, etc.) — uses the generic `AccountLogoAvatar` for all accounts.
-- Server-side filtering for movements — filters are applied client-side over the full movement list returned by the endpoint.
+- Server-side filtering for movements and statements — filters are applied client-side.
 
 ## Routing
 
@@ -53,8 +53,15 @@ index.jsx                          — receives { recordId }, sets page meta, mo
         MovementStatusBadge.jsx    — 8 status chips (5 color families)
         PostingStatusDot.jsx       — derived posting status (RPPC → posted/green, else → orange)
         MovementRowKebab.jsx       — on-hover kebab (View detail active, Unreconcile/Post disabled)
-    ReconciliacionTab.jsx          — placeholder
-    ExtractosImportadosTab.jsx     — placeholder
+    ReconciliacionTab.jsx          — placeholder (T6)
+    ImportedStatementsTab.jsx      — orchestrates list ↔ lines state machine
+      StatementsToolbar.jsx        — back ←, search, import button
+      StatementsTable.jsx          — 7-column table (file, data, period, lines, progress, status, imported)
+        StatementStatusBadge.jsx   — 3 status chips (COMPLETED / WITH_ISSUES / IN_PROGRESS)
+        ProgressRing              — SVG circular progress indicator (new primitive)
+      StatementLinesView.jsx       — sub-view: header with ← + lines table
+        StatementLinesTable.jsx    — 7-column lines table (lineNo, date, desc, ref, bpartner, amount, matched)
+      UploadStatementDialog.jsx    — Dialog for C43 file upload (file input + base64 POST)
 ```
 
 ## Shared primitives introduced or used
@@ -65,6 +72,7 @@ index.jsx                          — receives { recordId }, sets page meta, mo
 | `MoneyAmount` | `components/ui/money-amount.jsx` | Props: `value`, `currency`, `tone` (`auto`/`positive`/`negative`/`neutral`), `compact`. Locale: `es-ES`. `tone='auto'` colors positive green (`#1E874C`), negative red (`#D50B3E`), zero neutral. Sign prefix `+`/`-` applied automatically. |
 | `DateRangePopover` / `DateRangePopoverContent` | `components/ui/date-range-popover.jsx` | Canonical date range picker — same UX as the grid views (Sales Order, etc.). Presets list (Hoy / Ayer / Últimos 7/30 días / Últimos 12 meses / Todo el tiempo / Personalizado) + dual-month calendar with year selector. Value shape: `null \| { presetId } \| { from, to }`. `DateRangePopoverContent` is the inner panel — use it when you need a custom trigger button (as `ListFilterBar.jsx` does). |
 | `DistinctValuesFilter` | `components/ui/distinct-values-filter.jsx` | Reusable Popover-wrapped `DistinctValuesList` for in-memory fixed code lists (no backend pagination). Used by `StatusFilter` and `TypeFilter`. |
+| `ProgressRing` | `components/ui/progress-ring.jsx` | SVG circular progress ring. Props: `value` (0–100), `size` (default 32), `strokeWidth` (default 3). Track is `#E8EAEF`, fill is `#26A95F`. |
 
 ## Hooks
 
@@ -73,8 +81,13 @@ index.jsx                          — receives { recordId }, sets page meta, mo
 | `useNeoResource({ path, deps, mapPayload, timeoutMs, label })` | `hooks/useNeoResource.js` | Generic NEO fetch with auth + abort + timeout. Returns `{ data, loading, error, reload }`. Passing `path: null` keeps the hook idle (useful when the path depends on a not-yet-known id). Consumed by `useFinancialAccount` and `useAccountMovements`. |
 | `useFinancialAccount(id)` | `hooks/useFinancialAccount.js` | Thin wrapper over `useNeoResource` — hits `/sws/neo/financial-accounts-page` and filters client-side by `id`. Returns `{ account, loading, error, reload }`. Follow-up: replace with dedicated `/sws/neo/financial-account/{id}` endpoint once that spec is live. |
 | `useAccountMovements(accountId)` | `hooks/useAccountMovements.js` | Thin wrapper over `useNeoResource` — hits `/sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}` (powered by `FinancialAccountTransactionsHandler` on the Etendo Go side). Returns `{ movements, totals, loading, error, reload }`. |
+| `useBankStatements(accountId)` | `hooks/useBankStatements.js` | Fetches imported bank statements — hits `GET /sws/neo/bank-statements?FIN_Financial_Account_ID={id}`. Returns `{ statements, loading, error, reload }`. |
+| `useBankStatementLines(statementId)` | `hooks/useBankStatementLines.js` | Fetches lines of one statement — hits `GET /sws/neo/bank-statements?action=lines&statementId={id}`. Returns `{ lines, loading, error, reload }`. |
+| `useStatementImport()` | `hooks/useStatementImport.js` | Mutation hook for C43 import — posts `{ FIN_Financial_Account_ID, fileName, contentBase64 }` to `POST /sws/neo/bank-statements?action=import`. Returns `{ importStatement, importing, error }`. |
 
-## Backend endpoint
+## Backend endpoints
+
+### Movements
 
 ```
 GET /sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}
@@ -111,6 +124,49 @@ Response shape:
 ```
 
 The spec + entity records that wire this endpoint live in `src-db/database/sourcedata/ETGO_SF_SPEC.xml` and `ETGO_SF_ENTITY.xml` of `com.etendoerp.go` (so the records survive `update.database`).
+
+### Imported statements
+
+Three operations routed by HTTP method + `action` query param, all served by `BankStatementsHandler` (`@Named("bank-statements")`):
+
+```
+GET  /sws/neo/bank-statements?FIN_Financial_Account_ID={id}          → list
+GET  /sws/neo/bank-statements?action=lines&statementId={id}          → lines
+POST /sws/neo/bank-statements?action=import                          → C43 import
+     body: { FIN_Financial_Account_ID, fileName, contentBase64 }
+```
+
+The import handler:
+- Decodes base64 → `ByteArrayInputStream`
+- Instantiates the Cuaderno 43 parser (`org.openbravo.module.cuaderno43.es.utility.Cuaderno43`) via reflection (no compile-time dependency on the commercial JAR)
+- Calls `init(account)` + `loadFile(stream, statement)` headlessly (no servlet context needed)
+- Saves `FIN_BankStatement` + `FIN_BankStatementLine` rows in one transaction
+- Returns `201 { id, fileName, lineCount }` on success
+
+#### Cuaderno 43 lookup requirements (MANDATORY)
+
+The Cuaderno 43 parser does **not** read fields from `c_bank` / `c_bankaccount`. It runs an OBCriteria over `FIN_FinancialAccount` looking for an **exact match** on three fields, scoped to the **current user's client** (organization filter is disabled via `setFilterOnReadableOrganization(false)`):
+
+| Header record 11 position | `FIN_FinancialAccount` property | DB column |
+|---------------------------|---------------------------------|-----------|
+| Entity (pos 3–6, 4 digits) | `bankCode` | `codebank` |
+| Branch (pos 7–10, 4 digits) | `branchCode` | `codebranch` |
+| Account (pos 11–20, 10 digits) | `partialAccountNo` | `codeaccount` |
+
+Additionally, after the lookup the parser asserts that the account returned is the **same instance** as `statement.getAccount()` (i.e. the financial account from which the user triggered the import). If either check fails, the import aborts with `Error en la cuenta bancaria. La cuenta bancaria no existe. ({entity}-{branch}-{account})`.
+
+**Therefore, to enable C43 import on a financial account:**
+1. The user's session must belong to the same `ad_client_id` as the account.
+2. `codebank`, `codebranch`, and `codeaccount` must be populated and match the values encoded in the file header record (type 11).
+3. `bank_digitcontrol` + `account_digitcontrol` are used to render the displayed IBAN/CCC but do not participate in the lookup; they must still be consistent with the IBAN if you want the UI to display it correctly.
+4. The user must trigger the import from the same financial account whose codes match the file. Importing a file from a different account will fail even if the codes exist somewhere else in the database.
+
+Local dev account that is already configured: **Cuenta de Banco** (client GOClient, id `5521767A6D3C47E1957AF82D1334BFE4`) — `codebank=2100`, `codebranch=0418`, `codeaccount=0200051332`, DC `45`. The C43 fixtures under `e2e/fixtures/bank-statements/` target this account.
+
+Status derivation in list response: `COMPLETED` = processed=Y AND posted=Y; `WITH_ISSUES` = processed=Y AND matchedCount < lineCount; `IN_PROGRESS` = processed=N.
+
+#### Statement status config
+`statementStatusConfig.js` — 3 statuses: `COMPLETED` (green `#EEFBF4`), `WITH_ISSUES` (orange `#FFF1D6`), `IN_PROGRESS` (yellow `#FFF7E0`).
 
 ## Pipeline / artifact status
 
@@ -159,6 +215,8 @@ All keys prefixed `financeAccountDetail*` and `financeAccountMovements*`, added 
 - `financeAccountMovementsCol*` — table column headers.
 - `financeAccountMovementsRow*` — kebab actions + their disabled tooltips.
 - `financeAccountMovementsEmpty` — empty-state message.
+- `financeAccountStatements*` — all statements tab keys (search, import, column headers, status labels, dialog, toasts).
+- `financeAccountStatementLines*` — all lines sub-view keys (column headers, empty state, matched labels).
 
 ## Known deviations from the Figma frame
 

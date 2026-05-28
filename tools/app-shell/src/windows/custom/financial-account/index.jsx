@@ -6,6 +6,7 @@ import { useUI } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFinancialAccount } from '@/hooks/useFinancialAccount';
 import { useAccountMovements } from '@/hooks/useAccountMovements';
+import { useBankStatements } from '@/hooks/useBankStatements';
 import { DetailTabs } from './DetailTabs';
 import { MovementsTab } from './MovementsTab';
 import { ReconciliationTab } from './ReconciliationTab';
@@ -22,6 +23,7 @@ export default function FinancialAccountWindow({ recordId }) {
   const [activeTab, setActiveTab] = useState('movements');
   const { account } = useFinancialAccount(recordId);
   const { movements, totals, loading: movementsLoading } = useAccountMovements(recordId);
+  const { statements } = useBankStatements(recordId);
 
   const accountName = account?.name ?? '';
   useSetPageMeta(
@@ -43,7 +45,7 @@ export default function FinancialAccountWindow({ recordId }) {
             onValueChange={setActiveTab}
             movementsCount={movements.length}
             reconciliationCount={account?.pendingCount ?? 0}
-            statementsCount={0}
+            statementsCount={statements.length}
           />
           <button
             type="button"
@@ -66,7 +68,7 @@ export default function FinancialAccountWindow({ recordId }) {
             />
           )}
           {activeTab === 'reconciliation' && <ReconciliationTab />}
-          {activeTab === 'statements' && <ImportedStatementsTab />}
+          {activeTab === 'statements' && <ImportedStatementsTab account={account} />}
         </div>
       </div>
     </TooltipProvider>
