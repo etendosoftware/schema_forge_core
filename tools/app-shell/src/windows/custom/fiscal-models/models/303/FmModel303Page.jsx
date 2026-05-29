@@ -15,9 +15,9 @@ import { neoBase } from '@/components/related-documents/helpers.js';
 import { formatAmount, formatPeriod, computeBoxes303, generate303File } from '../../fiscalModelsUtils.js';
 
 const STEPPER_INDEX = {
-  borrador: 0, listo: 1,
-  presentado: 2, presentadoOtra: 2, presentadoAcuse: 2,
-  omitido: -1,
+  draft: 0, ready: 1,
+  submitted: 2, submitted_ext: 2, submitted_ack: 2,
+  skipped: -1,
 };
 
 // ── Tab content components ────────────────────────────────────────
@@ -315,9 +315,9 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
     const result = liveSummary?.result ?? decl.summary?.result ?? 0;
     let kind = decl.result?.kind;
     if (!kind) {
-      if (result > 0) kind = 'ingresar';
-      else if (result < 0) kind = 'compensar';
-      else kind = 'informativa';
+      if (result > 0) kind = 'I';
+      else if (result < 0) kind = 'C';
+      else kind = 'N';
     }
     const declForGenerate = { ...decl, result: { ...decl.result, kind } };
     const ok = await generate303File(declForGenerate, { token, apiBaseUrl });
@@ -359,7 +359,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
   const blocking = decl.incidents?.blocking ?? 0;
   const warning = decl.incidents?.warning ?? 0;
   const incidentCount = blocking + warning;
-  const isSubmitted = ['presentado', 'presentadoOtra', 'presentadoAcuse'].includes(status);
+  const isSubmitted = ['submitted', 'submitted_ext', 'submitted_ack'].includes(status);
   const fileBlocked = blocking > 0;
   const summary = liveSummary ?? decl.summary ?? {};
   const resultKind = decl.result?.kind ?? null;

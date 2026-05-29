@@ -19,7 +19,7 @@ vi.mock('@/components/related-documents/helpers.js', () => ({ neoBase: (u) => u 
 
 const DECL = {
   id: '303-2026-T2', model: '303', year: 2026, period: 'T2', type: 'ord',
-  status: 'borrador', result: null, incidents: { blocking: 0, warning: 0 },
+  status: 'draft', result: null, incidents: { blocking: 0, warning: 0 },
   _precomputed: {
     boxes:   { 7: 100, 9: 21, 27: 21, 28: 500, 29: 105, 45: 105, 46: -84 },
     summary: { accrued: 21, deductible: 105, result: -84 },
