@@ -120,7 +120,7 @@ Edge cases:
 
 Purpose: send a business document notification derived from an Etendo record.
 
-Expected contracts: `sales-invoice-send`, `sales-order-send`, or a document-specific contract name.
+Expected contracts: `sales-invoice-send`, `sales-order-send`, `sales-quotation-send`, or a document-specific contract name.
 
 Edge cases:
 

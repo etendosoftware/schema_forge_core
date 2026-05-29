@@ -208,6 +208,42 @@ describe('SendDocumentModal', () => {
     });
   });
 
+  it('routes sales quotation sends to the sales-quotation email contract', async () => {
+    const user = userEvent.setup();
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ status: 'SENT' }),
+    });
+
+    render(
+      <SendDocumentModal
+        {...BASE}
+        documentType="Sales Quotation"
+        documentNo="SQ-001"
+        documentId="quotation-1"
+        windowName="sales-quotation"
+        bpEmail="quotes@domain.com"
+        apiBaseUrl="http://localhost:8080/etendo/neo/sales-quotation"
+      />,
+    );
+
+    await user.click(getSendButton());
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8080/etendo/neo/email-contracts/sales-quotation-send/send',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body).toEqual({
+      version: 'v1',
+      recordId: 'quotation-1',
+      intent: 'send-document',
+      idempotencyKey: 'sales-quotation-send:quotation-1:send:v1',
+    });
+  });
+
   it('shows throttled state from the email contract executor', async () => {
     const user = userEvent.setup();
     global.fetch.mockResolvedValueOnce({

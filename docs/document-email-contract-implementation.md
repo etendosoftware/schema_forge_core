@@ -24,6 +24,7 @@ Use stable kebab-case names:
 |--------|---------------|
 | Sales Invoice | `sales-invoice-send` |
 | Sales Order | `sales-order-send` |
+| Sales Quotation | `sales-quotation-send` |
 
 For new document families, prefer:
 
