@@ -1085,7 +1085,7 @@ function getPillLabel(pill, row) {
   return pill?.when(row) ? pill.label : null;
 }
 
-function renderBooleanCell(rawValue, col, savingToggles, toggleKey, handleInlineToggle, row, locale, t, ui) {
+function renderBooleanCell({ rawValue, col, savingToggles, toggleKey, handleInlineToggle, row, locale, t, ui }) {
   const val = rawValue;
   // --- boolean-toggle: DE ACA --- (extract: renderBooleanToggle)
   if (col.toggle) {
@@ -1384,7 +1384,7 @@ export function DataTable({
     // Has 3 internal blocks (toggle / badge / fallback yes-no-dash) — each can be
     // its own helper if cognitive complexity is still high after the first split.
     if (col.type === 'boolean') {
-      return renderBooleanCell(rawValue, col, savingToggles, toggleKey, handleInlineToggle, row, locale, t, ui);
+      return renderBooleanCell({ rawValue, col, savingToggles, toggleKey, handleInlineToggle, row, locale, t, ui });
     }
     // === boolean-cell: HASTA ACA ===
 
