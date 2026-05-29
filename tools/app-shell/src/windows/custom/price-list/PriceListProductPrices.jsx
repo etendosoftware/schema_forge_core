@@ -6,6 +6,7 @@ import { useUI, useMenuLabel } from '@/i18n';
 import { Trash2, X } from 'lucide-react';
 
 function ConfirmDeleteModal({ onConfirm, onCancel }) {
+  const ui = useUI();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
@@ -13,30 +14,18 @@ function ConfirmDeleteModal({ onConfirm, onCancel }) {
         <button onClick={onCancel} className="absolute top-3 right-3 h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground">
           <X className="h-3.5 w-3.5" />
         </button>
-        <h3 className="text-[15px] font-semibold text-foreground mb-2">Delete record</h3>
+        <h3 className="text-[15px] font-semibold text-foreground mb-2">{ui('deleteRecord')}</h3>
         <p className="text-sm text-muted-foreground mb-5">
-          Are you sure you want to delete this record? This action cannot be undone.
+          {ui('deleteConfirmMessage')}
         </p>
         <div className="flex items-center justify-end gap-2">
-          <button onClick={onCancel} className="px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent transition-colors">Cancel</button>
-          <button onClick={onConfirm} className="px-3 py-1.5 text-sm font-medium rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">Delete</button>
+          <button onClick={onCancel} className="px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent transition-colors">{ui('cancel')}</button>
+          <button onClick={onConfirm} className="px-3 py-1.5 text-sm font-medium rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">{ui('delete')}</button>
         </div>
       </div>
     </div>
   );
 }
-
-const columns = [
-  { key: 'product', column: 'M_Product_ID', type: 'string', label: 'Product' },
-  { key: 'standardPrice', column: 'PriceStd', type: 'amount', label: 'Unit Price' },
-  { key: 'listPrice', type: 'amount', label: 'List Price' },
-];
-
-const addRowFields = [
-  { key: 'product', column: 'M_Product_ID', type: 'search', label: 'Product', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
-  { key: 'standardPrice', column: 'PriceStd', type: 'number', label: 'Unit Price', required: true },
-  { key: 'listPrice', column: 'PriceList', type: 'number', label: 'List Price', required: true },
-];
 
 function rowsFrom(json) {
   return json?.response?.data ?? (Array.isArray(json) ? json : []);
@@ -58,6 +47,16 @@ function toNumber(value) {
 export default function PriceListProductPrices({ recordId, data, token, apiBaseUrl, editing }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
+  const columns = useMemo(() => [
+    { key: 'product', column: 'M_Product_ID', type: 'string', label: ui('product') },
+    { key: 'standardPrice', column: 'PriceStd', type: 'amount', label: ui('unitPrice') },
+    { key: 'listPrice', type: 'amount', label: ui('listPrice') },
+  ], [ui]);
+  const addRowFields = useMemo(() => [
+    { key: 'product', column: 'M_Product_ID', type: 'search', label: ui('product'), required: true, lookup: true, reference: 'Product', inputMode: 'search' },
+    { key: 'standardPrice', column: 'PriceStd', type: 'number', label: ui('unitPrice'), required: true },
+    { key: 'listPrice', column: 'PriceList', type: 'number', label: ui('listPrice'), required: true },
+  ], [ui]);
   const [versionId, setVersionId] = useState(null);
   const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -177,7 +176,7 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
   if (!parentId) {
     return (
       <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
-        Save the price list before managing products.
+        {ui('priceListSaveFirst')}
       </div>
     );
   }
@@ -193,7 +192,7 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
         <div className="flex-1 min-w-0">
           {!versionId && !loading ? (
             <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
-              This price list has no hidden price list version yet, so product prices cannot be shown.
+              {ui('priceListNoVersion')}
             </div>
           ) : (
             <DataTable
@@ -233,7 +232,7 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
         {(selectedLine || closing) && (
           <div className={`w-[26rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${closing ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-foreground">Price Detail</span>
+              <span className="text-sm font-medium text-foreground">{ui('priceDetail')}</span>
               <button
                 onClick={closeSidePanel}
                 className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
@@ -245,7 +244,7 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
             <div className="space-y-3">
               {/* Product (read-only) */}
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Product</label>
+                <label className="text-xs font-medium text-muted-foreground">{ui('product')}</label>
                 <div className="h-8 rounded-md border border-input bg-muted/30 px-2 text-sm flex items-center text-foreground">
                   {selectedLine?.['product$_identifier'] || selectedLine?.product || '—'}
                 </div>
@@ -253,7 +252,7 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
 
               {/* Unit Price */}
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Unit Price</label>
+                <label className="text-xs font-medium text-muted-foreground">{ui('unitPrice')}</label>
                 <input
                   type="number"
                   step="0.01"
@@ -266,7 +265,7 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
 
               {/* List Price */}
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">List Price</label>
+                <label className="text-xs font-medium text-muted-foreground">{ui('listPrice')}</label>
                 <input
                   type="number"
                   step="0.01"
@@ -285,13 +284,13 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
                   onClick={handleSaveEdit}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
-                  Guardar
+                  {ui('save')}
                 </button>
                 <button
                   onClick={closeSidePanel}
                   className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
                 >
-                  Cancelar
+                  {ui('cancel')}
                 </button>
                 <button
                   disabled={saving}
@@ -299,7 +298,7 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive/40 text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  Eliminar
+                  {ui('delete')}
                 </button>
               </div>
             )}
