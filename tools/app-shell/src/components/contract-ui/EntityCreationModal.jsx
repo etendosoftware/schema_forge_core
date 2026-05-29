@@ -118,10 +118,7 @@ function FieldRenderer({ field, value, onChange, opts, ui, form, autoFocus }) {
   return (
     <input
       type={
-        field.type === 'number' ? 'number'
-        : field.type === 'email' ? 'email'
-        : field.type === 'tel' ? 'tel'
-        : 'text'
+        getInputType(field)
       }
       className={INPUT_CLS}
       value={value}
@@ -131,6 +128,13 @@ function FieldRenderer({ field, value, onChange, opts, ui, form, autoFocus }) {
       autoFocus={autoFocus}
     />
   );
+}
+
+function getInputType(field) {
+  return field.type === 'number' ? 'number'
+    : field.type === 'email' ? 'email'
+      : field.type === 'tel' ? 'tel'
+        : 'text';
 }
 
 function RepeatableSection({ section, rows, onAdd, onUpdate, onRemove, ui }) {
