@@ -538,11 +538,10 @@
   padding: 2px 8px; border-radius: 999px;
   font: 600 11px/14px var(--fm-font-sans, system-ui); border: 1px solid;
 }
-.fm-result-pill--ingresar  { background: var(--fm-pending-bg); color: var(--fm-pending-fg); border-color: var(--fm-pending-border); }
-.fm-result-pill--compensar { background: var(--fm-info-bg);    color: var(--fm-info-fg);    border-color: var(--fm-info-border); }
-.fm-result-pill--devolver  { background: var(--fm-success-bg); color: var(--fm-success-fg); border-color: var(--fm-success-border); }
-.fm-result-pill--zero        { background: var(--fm-bg-subtle);  color: var(--fm-fg-3);       border-color: var(--fm-border-1); }
-.fm-result-pill--informativa { background: var(--fm-bg-subtle);  color: var(--fm-fg-3);       border-color: var(--fm-border-1); }
+.fm-result-pill--I { background: var(--fm-pending-bg); color: var(--fm-pending-fg); border-color: var(--fm-pending-border); }
+.fm-result-pill--C { background: var(--fm-info-bg);    color: var(--fm-info-fg);    border-color: var(--fm-info-border); }
+.fm-result-pill--V { background: var(--fm-success-bg); color: var(--fm-success-fg); border-color: var(--fm-success-border); }
+.fm-result-pill--N { background: var(--fm-bg-subtle);  color: var(--fm-fg-3);       border-color: var(--fm-border-1); }
 
 /* ─── Side / Catalog panel ─────────────────────────────────────────── */
 .fm-side-scrim { position: fixed; inset: 0; background: rgba(18,18,23,.25); z-index: 50; }
