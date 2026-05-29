@@ -16,7 +16,7 @@ const LOCALE = process.env.LOCALE || 'es_ES';
 
 const localePath = join(
   __dirname,
-  '../../../tools/app-shell/src/locales',
+  '../../../packages/app-shell-core/src/locales',
   `${LOCALE}.json`,
 );
 

@@ -2,31 +2,31 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Mock use-mobile hook
-vi.mock('@/hooks/use-mobile', () => ({
+vi.mock('../../../hooks/use-mobile.jsx', () => ({
   useIsMobile: () => false,
 }));
 
 // Mock UI sub-components used by sidebar
-vi.mock('@/components/ui/button', () => ({
+vi.mock('../button.jsx', () => ({
   Button: ({ children, ...props }) => <button {...props}>{children}</button>,
 }));
-vi.mock('@/components/ui/input', () => ({
+vi.mock('../input.jsx', () => ({
   Input: (props) => <input {...props} />,
 }));
-vi.mock('@/components/ui/separator', () => ({
+vi.mock('../separator.jsx', () => ({
   Separator: (props) => <hr {...props} />,
 }));
-vi.mock('@/components/ui/sheet', () => ({
+vi.mock('../sheet.jsx', () => ({
   Sheet: ({ children, open }) => open ? <div data-testid="sheet">{children}</div> : null,
   SheetContent: ({ children }) => <div>{children}</div>,
   SheetDescription: ({ children }) => <p>{children}</p>,
   SheetHeader: ({ children }) => <div>{children}</div>,
   SheetTitle: ({ children }) => <h2>{children}</h2>,
 }));
-vi.mock('@/components/ui/skeleton', () => ({
+vi.mock('../skeleton.jsx', () => ({
   Skeleton: (props) => <div data-testid="skeleton" {...props} />,
 }));
-vi.mock('@/components/ui/tooltip', () => ({
+vi.mock('../tooltip.jsx', () => ({
   TooltipProvider: ({ children }) => <>{children}</>,
   Tooltip: ({ children }) => <>{children}</>,
   TooltipTrigger: ({ children }) => <>{children}</>,

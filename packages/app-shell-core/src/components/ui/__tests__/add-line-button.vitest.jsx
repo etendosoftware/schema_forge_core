@@ -2,12 +2,12 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Mock i18n
-vi.mock('@/i18n', () => ({
+vi.mock('../../../i18n/index.js', () => ({
   useUI: () => (key) => key,
 }));
 
 // Mock Radix dropdown — render a simplified version that works in jsdom
-vi.mock('@/components/ui/dropdown-menu', async () => {
+vi.mock('../dropdown-menu.jsx', async () => {
   const React = await import('react');
   return {
     DropdownMenu: ({ children }) => <>{children}</>,
