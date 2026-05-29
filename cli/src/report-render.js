@@ -148,14 +148,30 @@ function parseArgs(argv) {
     open: false,
     limit: null,
   };
-  for (let i = 0; i < argv.length; i++) {
+  let i = 0;
+  while (i < argv.length) {
     const a = argv[i];
-    if (a === '--artifact' && argv[i + 1]) opts.artifact = argv[++i];
-    else if (a === '--format' && argv[i + 1]) opts.format = argv[++i];
-    else if (a === '--client-id' && argv[i + 1]) opts.clientId = argv[++i];
-    else if (a === '--org-id' && argv[i + 1]) opts.orgId = argv[++i];
-    else if (a === '--limit' && argv[i + 1]) opts.limit = parseInt(argv[++i], 10);
-    else if (a === '--open') opts.open = true;
+    if (a === '--artifact' && argv[i + 1]) {
+      opts.artifact = argv[i + 1];
+      i += 2;
+    } else if (a === '--format' && argv[i + 1]) {
+      opts.format = argv[i + 1];
+      i += 2;
+    } else if (a === '--client-id' && argv[i + 1]) {
+      opts.clientId = argv[i + 1];
+      i += 2;
+    } else if (a === '--org-id' && argv[i + 1]) {
+      opts.orgId = argv[i + 1];
+      i += 2;
+    } else if (a === '--limit' && argv[i + 1]) {
+      opts.limit = parseInt(argv[i + 1], 10);
+      i += 2;
+    } else if (a === '--open') {
+      opts.open = true;
+      i += 1;
+    } else {
+      i += 1;
+    }
   }
   return opts;
 }

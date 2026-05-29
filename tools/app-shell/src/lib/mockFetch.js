@@ -9,8 +9,8 @@
  */
 export function createMockFetch(mockData, basePath, catalogData = {}) {
   // Deep clone to avoid mutation across calls
-  const store = JSON.parse(JSON.stringify(mockData));
-  const catalogStore = JSON.parse(JSON.stringify(catalogData));
+  const store = structuredClone(mockData);
+  const catalogStore = structuredClone(catalogData);
 
   return async function mockFetch(url, options = {}) {
     if (!url.startsWith(basePath)) {
