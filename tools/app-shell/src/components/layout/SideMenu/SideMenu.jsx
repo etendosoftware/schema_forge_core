@@ -171,11 +171,11 @@ function CollapsedGroupPopover({
 }
 
 function matchesItem(item, currentPath, currentFull) {
-  const itemPath = item.path || item.name;
-  if (item.path && item.path.includes('?')) {
-    return currentFull === itemPath;
+  const target = item.path || item.name;
+  if (target.includes('?')) {
+    return currentFull === target;
   }
-  return currentPath === item.name || currentPath.startsWith(item.name + '/');
+  return currentPath === target || currentPath.startsWith(target + '/');
 }
 
 export function findActiveGroup(menuGroups, pathname, search) {

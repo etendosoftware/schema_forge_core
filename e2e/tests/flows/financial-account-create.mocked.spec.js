@@ -117,9 +117,11 @@ test.describe('Financial Account Create (T2) — mocked', () => {
     // Step 1: pick the Bank type.
     await page.getByTestId('new-account-type-B').click();
 
-    // Step 2: connection options — "Con conexión" is disabled, pick "Sin conexión".
+    // Step 2: connection options — both cards are info-only tiles; only
+    // "Sin conexión" carries an onClick and advances the wizard.
     await expect(page.getByTestId('account-connection-options')).toBeVisible();
-    await expect(page.getByTestId('account-connection-online')).toBeDisabled();
+    await expect(page.getByTestId('account-connection-online')).toBeVisible();
+    await expect(page.getByTestId('account-connection-offline')).toBeVisible();
     await page.getByTestId('account-connection-offline').click();
 
     // Step 3: bank picker — search then pick Santander.
@@ -253,8 +255,11 @@ test.describe('Financial Account Create (T2) — mocked', () => {
     await page.getByTestId('new-account-type-B').click();
 
     // ── Step 2: connection options ─────────────────────────────────────────
+    // Both connection cards are info-only tiles; only "Sin conexión" advances
+    // the wizard. The online card has no onClick and no `disabled` flag.
     await expect(page.getByTestId('account-connection-options')).toBeVisible();
-    await expect(page.getByTestId('account-connection-online')).toBeDisabled();
+    await expect(page.getByTestId('account-connection-online')).toBeVisible();
+    await expect(page.getByTestId('account-connection-offline')).toBeVisible();
     await page.getByTestId('account-connection-offline').click();
 
     // ── Step 3: bank picker → search → Santander ───────────────────────────
