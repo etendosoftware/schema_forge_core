@@ -24,6 +24,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { registerReportHelpers } from '../../templates/reports/helpers/report-html-helpers.js';
 
 const _require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -569,21 +570,11 @@ function getRowCount(rows) {
 
 function renderTemplateWithHelpers(helpersCode, templateContent, templateData, res) {
   const Handlebars = _require('handlebars');
-  if (helpersCode) {
-    // helpersCode is loaded from the server's own filesystem (artifacts/{id}/helpers.js),
-    // never from user-supplied input — dynamic execution is intentional here. NOSONAR
-    // eslint-disable-next-line no-new-func
-    const helperFn = new Function(helpersCode + `
-            var _out = {};
-            ['isGroupBreak','resetGroupTracking','formatDate','formatCurrency',
-             'formatBoolean','formatNumber','ifCond','eq','sumField','formatDateDisplay','sumRowsByCategory']
-            .forEach(function(n) { try { var f = eval(n); if (typeof f === 'function') _out[n] = f; } catch(e) {} });
-            return _out;
-          `);
-    const helpers = helperFn();
-    if (typeof helpers.resetGroupTracking === 'function') helpers.resetGroupTracking();
-    Object.entries(helpers).forEach(([name, fn]) => { if (typeof fn === 'function') Handlebars.registerHelper(name, fn); });
-  }
+  // Register the trusted in-repo helper set — no dynamic code execution.
+  // helpersCode is read (not executed) only to preserve a report's formatNumber
+  // decimals. Report-specific helpers (e.g. qrCode) are only needed by the
+  // jsreport PDF/XLSX path, which consumes the artifact helpers.js string directly.
+  registerReportHelpers(Handlebars, helpersCode);
   const html = Handlebars.compile(templateContent)(templateData);
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end(html);
