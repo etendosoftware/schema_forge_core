@@ -71,9 +71,9 @@ Do not include monetary amounts by default. `amount` is allowed only when the ex
 The runtime implementation belongs in `modules/com.etendoerp.go`. The Etendo Go PR should:
 
 1. Add a server-side `EmailContract` implementation or extend the shared document contract base.
-2. Add a resolver method to load the trusted document record.
+2. Add a document-owned `EmailDocumentRecordResolver` implementation to load the trusted document record.
 3. Resolve recipients from the business partner or active contact email.
-4. Register the contract in the default registry.
+4. Expose the contract through an injected `EmailContractProvider`; do not add document-specific methods to a shared framework resolver.
 5. Add behavioral tests for registry lookup, recipient resolution, default payload, and edge cases.
 6. Update the module runtime documentation.
 
