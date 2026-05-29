@@ -66,18 +66,30 @@ function buildCalendarGrid(year, month) {
  * Index events by date key for O(1) lookup.
  * Multi-day events (date..endDate) are duplicated across every day they span.
  */
+const MS_PER_DAY = 86400000;
+
+function indexEventSpan(evt, map) {
+  const start = new Date(evt.date);
+  const end = evt.endDate ? new Date(evt.endDate) : start;
+  if (end < start) return;
+  // Upper bound on calendar-day iterations; the real terminator is `cursor > end`
+  // in the body. Computed up-front so the loop counter (i), not `end`, drives
+  // the loop condition.
+  const maxIters = Math.ceil((end - start) / MS_PER_DAY) + 2;
+  const cursor = new Date(start);
+  for (let i = 0; i < maxIters; i++) {
+    if (cursor > end) break;
+    const key = toDateKey(cursor);
+    if (!map[key]) map[key] = [];
+    map[key].push(evt);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+}
+
 export function indexEvents(events) {
   const map = {};
   for (const evt of events) {
-    const start = new Date(evt.date);
-    const end = evt.endDate ? new Date(evt.endDate) : start;
-    const cursor = new Date(start);
-    while (cursor <= end) {
-      const key = toDateKey(cursor);
-      if (!map[key]) map[key] = [];
-      map[key].push(evt);
-      cursor.setDate(cursor.getDate() + 1);
-    }
+    indexEventSpan(evt, map);
   }
   return map;
 }
