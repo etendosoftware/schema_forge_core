@@ -49,7 +49,7 @@ Content-Type: application/json
 
 The browser must not send provider API keys, sender addresses, raw templates, or arbitrary provider payloads.
 
-For the app-shell document send flow, `SendDocumentModal` posts only the contract command to `/sws/neo/email-contracts/sales-invoice-send/send`. The UI must not include `to`, `template`, `data`, `subject`, `body`, sender, Reply-To, or provider metadata in that request; those values are resolved by the server-side contract.
+For the app-shell document send flow, `SendDocumentModal` posts only the contract command to `/sws/neo/email-contracts/{document-contract}/send`, such as `sales-invoice-send` or `sales-order-send`. The UI must not include `to`, `template`, `data`, `subject`, `body`, sender, Reply-To, or provider metadata in that request; those values are resolved by the server-side contract.
 
 ## Response Contract
 
@@ -119,6 +119,17 @@ Variables must be allowlisted and typed. HTML variables require sanitizer policy
 | `currency` | Include amount and ISO currency code; avoid preformatted ambiguous strings when possible |
 | `url` | Generate server-side; allowlisted hosts only |
 | `html` | Only for controlled contracts; sanitize and audit sanitizer outcome |
+
+Document notification contracts should use the default document payload unless a legacy provider template requires a specific alias:
+
+| Variable | Source |
+|----------|--------|
+| `name` | Business partner/contact display name |
+| `document_type` | Contract-defined document label |
+| `document_number` | Document number from the trusted record |
+| `download_link` | Server-generated document URL |
+
+Amounts and document-specific aliases are compatibility exceptions, not the default. For example, `sales-invoice-send` still emits `amount` and `invoice_number` because the existing invoice provider template expects them. `sales-order-send` uses only the default document variables.
 
 ## Initial Contracts
 
@@ -209,6 +220,8 @@ Descriptor sketch:
   "recipient": { "source": "business-partner-contact", "recordId": "request.recordId" },
   "variables": {
     "name": { "type": "string", "source": "businessPartner.name", "required": true },
+    "document_type": { "type": "string", "source": "contract.documentType", "required": true },
+    "document_number": { "type": "string", "source": "invoice.documentNo", "required": true },
     "invoice_number": { "type": "string", "source": "invoice.documentNo", "required": true },
     "amount": { "type": "currency", "source": "invoice.grandTotal", "required": true },
     "download_link": { "type": "url", "source": "documentDownload.url", "required": true }
@@ -223,6 +236,41 @@ Required edge cases:
 - Caller lacks record access: return `UNAUTHORIZED` and do not reveal record details.
 - Document has no contact email: return `NO_RECIPIENT`.
 - Document status is not allowed for sending: return `VALIDATION_FAILED`.
+
+### `sales-order-send`
+
+Purpose: send a sales order document notification to the recipient resolved from the order.
+
+Descriptor sketch:
+
+```json
+{
+  "name": "sales-order-send",
+  "version": "v1",
+  "template": "document",
+  "caller": ["frontend"],
+  "authorization": {
+    "windowAccess": "sales-order",
+    "recordAccess": "recordId",
+    "requiresReadableDocument": true
+  },
+  "recipient": { "source": "business-partner-contact", "recordId": "request.recordId" },
+  "variables": {
+    "name": { "type": "string", "source": "businessPartner.name", "required": true },
+    "document_type": { "type": "string", "source": "contract.documentType", "required": true },
+    "document_number": { "type": "string", "source": "order.documentNo", "required": true },
+    "download_link": { "type": "url", "source": "documentDownload.url", "required": true }
+  },
+  "replyTo": { "enabled": false },
+  "idempotency": { "key": "sales-order-send:{tenantId}:{recordId}:v1", "windowSeconds": 3600 }
+}
+```
+
+Required edge cases:
+
+- Caller lacks record access: return `UNAUTHORIZED` and do not reveal record details.
+- Order has no contact email: return `NO_RECIPIENT`.
+- Record is not a sales order: return `VALIDATION_FAILED`.
 
 ### `support-custom-email`
 
