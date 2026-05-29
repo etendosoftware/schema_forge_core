@@ -890,7 +890,8 @@ export function useEntity(entity, childEntity, {
       if (res.ok) {
         const specificKey = `${process.name}Completed`;
         const specificMsg = ui(specificKey);
-        toast.success(specificMsg !== specificKey ? specificMsg : (process.label ? `${process.label} completed` : 'Process completed'));
+        const fallbackMsg = process.label ? `${process.label} completed` : 'Process completed';
+        toast.success(specificMsg !== specificKey ? specificMsg : fallbackMsg);
         window.dispatchEvent(new CustomEvent('neo:processSuccess', { detail: { process, entity, recordId: selected.id } }));
         fetchById(selected.id);
         refresh();
