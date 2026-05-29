@@ -167,13 +167,7 @@ export function generateFrontendContract(schema, rules = []) {
   // Curated fields use field.column (the DB column name) and field.name (the JS property name)
   const columnMap = {};
   const booleanFields = [];
-  for (const entity of schema.entities) {
-    for (const field of entity.fields ?? []) {
-      const col = field.column || field.columnName;
-      if (col && field.name) columnMap[col] = field.name;
-      if (field.type === 'boolean') booleanFields.push(field.name);
-    }
-  }
+  mapColumnsAndCollectBooleanFields(schema, columnMap, booleanFields);
 
   for (const entity of schema.entities) {
     const visibleFields = entity.fields.filter(isVisible);
@@ -191,20 +185,7 @@ export function generateFrontendContract(schema, rules = []) {
         grid: f.grid,
         form: f.form,
       };
-      if (f.sourceRequired === true) mapped.sourceRequired = true;
-      if (f.derivation) mapped.derivation = f.derivation;
-      if (f.columnType) mapped.columnType = f.columnType;
-      if (f.reference) mapped.reference = f.reference;
-      if (f.enumValues) mapped.enumValues = f.enumValues;
-      if (f.inputMode) mapped.inputMode = f.inputMode;
-      if (f.dependsOn) mapped.dependsOn = f.dependsOn;
-      if (f.lookup) mapped.lookup = true;
-      if (f.popup) mapped.popup = true;
-      if (f.lookupDrawer) mapped.lookupDrawer = f.lookupDrawer;
-      if (f.lookupTitle) mapped.lookupTitle = f.lookupTitle;
-      if (Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0) mapped.onSelectMappings = f.onSelectMappings;
-      if (f.displayFromCatalog) mapped.displayFromCatalog = f.displayFromCatalog;
-      if (Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0) mapped.forceCalloutFields = f.forceCalloutFields;
+      mapFieldAttributes(f, mapped);
 
       // UI hints
       if (f.defaultValue !== undefined) mapped.defaultValue = f.defaultValue;
@@ -239,16 +220,7 @@ export function generateFrontendContract(schema, rules = []) {
 
       // Behavioral metadata: callout
       if (f.callout) {
-        mapped.callout = { className: f.callout };
-        const matchingRule = findMatchingRule(rules, f.callout, 'callout');
-        if (matchingRule) {
-          if (matchingRule.effects && matchingRule.effects.length) {
-            mapped.callout.effects = matchingRule.effects.map(e => e.field ?? e);
-          }
-          if (matchingRule.complexity) {
-            mapped.callout.complexity = matchingRule.complexity;
-          }
-        }
+        processCalloutMetadata(mapped, f, rules);
       }
 
       // Behavioral metadata: onChangeFunction
@@ -258,25 +230,7 @@ export function generateFrontendContract(schema, rules = []) {
 
       // Behavioral metadata: displayLogic
       if (f.displayLogic) {
-        mapped.displayLogic = { raw: f.displayLogic };
-        const matchingRule = findMatchingRule(rules, f.displayLogic, 'displayLogic');
-        if (matchingRule && matchingRule.translated) {
-          mapped.displayLogic.js = matchingRule.translated;
-        }
-        const evalInfo = classifyEvaluability(f.displayLogic);
-        mapped.displayLogic.evaluable = evalInfo.evaluable;
-        if (!evalInfo.evaluable) {
-          mapped.displayLogic.reason = evalInfo.reason;
-          mapped.displayLogic.js = null;
-        } else if (!mapped.displayLogic.js && !f.displayLogic.includes('@')) {
-          // Raw expression has no Etendo @Variable@ markers — treat as direct JS
-          mapped.displayLogic.js = f.displayLogic;
-        }
-        // Prefer explicit displayLogicJs from decisions over rule-based lookup
-        // but only when evaluable — if not evaluable, js must remain null
-        if (f.displayLogicJs != null && mapped.displayLogic.evaluable !== false) {
-          mapped.displayLogic.js = f.displayLogicJs;
-        }
+        processDisplayLogic(mapped, f, rules);
       }
 
       // Behavioral metadata: readOnlyLogic
@@ -337,6 +291,72 @@ export function generateFrontendContract(schema, rules = []) {
   if (schema.window.linesLayout) win.linesLayout = schema.window.linesLayout;
 
   return { window: reorderKeys(win, WINDOW_KEY_ORDER), entities };
+}
+
+function processCalloutMetadata(mapped, f, rules) {
+  mapped.callout = { className: f.callout };
+  const matchingRule = findMatchingRule(rules, f.callout, 'callout');
+  if (matchingRule) {
+    if (matchingRule.effects?.length) {
+      mapped.callout.effects = matchingRule.effects.map(e => e.field ?? e);
+    }
+    if (matchingRule.complexity) {
+      mapped.callout.complexity = matchingRule.complexity;
+    }
+  }
+}
+
+function processDisplayLogic(mapped, f, rules) {
+  mapped.displayLogic = { raw: f.displayLogic };
+  const matchingRule = findMatchingRule(rules, f.displayLogic, 'displayLogic');
+  if (matchingRule && matchingRule.translated) {
+    mapped.displayLogic.js = matchingRule.translated;
+  }
+  const evalInfo = classifyEvaluability(f.displayLogic);
+  mapped.displayLogic.evaluable = evalInfo.evaluable;
+  if (!evalInfo.evaluable) {
+    mapped.displayLogic.reason = evalInfo.reason;
+    mapped.displayLogic.js = null;
+  } else if (!mapped.displayLogic.js && !f.displayLogic.includes('@')) {
+    // Raw expression has no Etendo @Variable@ markers — treat as direct JS
+    mapped.displayLogic.js = f.displayLogic;
+  }
+  // Prefer explicit displayLogicJs from decisions over rule-based lookup
+  // but only when evaluable — if not evaluable, js must remain null
+  if (f.displayLogicJs != null && mapped.displayLogic.evaluable !== false) {
+    mapped.displayLogic.js = f.displayLogicJs;
+  }
+}
+
+function mapFieldAttributes(f, mapped) {
+  if (f.sourceRequired === true) mapped.sourceRequired = true;
+  if (f.derivation) mapped.derivation = f.derivation;
+  if (f.columnType) mapped.columnType = f.columnType;
+  if (f.reference) mapped.reference = f.reference;
+  if (f.enumValues) mapped.enumValues = f.enumValues;
+  if (f.inputMode) mapped.inputMode = f.inputMode;
+  if (f.dependsOn) mapped.dependsOn = f.dependsOn;
+  if (f.lookup) mapped.lookup = true;
+  if (f.popup) mapped.popup = true;
+  if (f.lookupDrawer) mapped.lookupDrawer = f.lookupDrawer;
+  if (f.lookupTitle) mapped.lookupTitle = f.lookupTitle;
+  if (isNonEmptyArray(f.onSelectMappings)) mapped.onSelectMappings = f.onSelectMappings;
+  if (f.displayFromCatalog) mapped.displayFromCatalog = f.displayFromCatalog;
+  if (isNonEmptyArray(f.forceCalloutFields)) mapped.forceCalloutFields = f.forceCalloutFields;
+}
+
+function isNonEmptyArray(s) {
+  return Array.isArray(s) && s.length > 0;
+}
+
+function mapColumnsAndCollectBooleanFields(schema, columnMap, booleanFields) {
+  for (const entity of schema.entities) {
+    for (const field of entity.fields ?? []) {
+      const col = field.column || field.columnName;
+      if (col && field.name) columnMap[col] = field.name;
+      if (field.type === 'boolean') booleanFields.push(field.name);
+    }
+  }
 }
 
 /**
@@ -428,142 +448,11 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
 
   // Derive system fields from backend minus frontend
   for (const [entityName, entityData] of Object.entries(frontendContract.entities)) {
-    const visibleFields = entityData.fields;
-
-    // field-presence: one per visible field
-    for (const field of visibleFields) {
-      tests.push({
-        id: makeId('field-presence', entityName, field.name),
-        category: 'field-presence',
-        entity: entityName,
-        field: field.name,
-        runner: 'node',
-        description: `Field '${field.name}' should be present in ${entityName}`,
-      });
-    }
-
-    // field-type: one per visible field
-    for (const field of visibleFields) {
-      tests.push({
-        id: makeId('field-type', entityName, field.name),
-        category: 'field-type',
-        entity: entityName,
-        field: field.name,
-        runner: 'node',
-        description: `Field '${field.name}' should have type '${field.tsType}' in ${entityName}`,
-      });
-    }
-
-    // searchable-filters: one per searchable field
-    for (const fieldName of entityData.searchableFields) {
-      tests.push({
-        id: makeId('searchable-filters', entityName, fieldName),
-        category: 'searchable-filters',
-        entity: entityName,
-        field: fieldName,
-        runner: 'node',
-        description: `Field '${fieldName}' should be a supported filter for ${entityName}`,
-      });
-    }
-
-    // visibility: one per entity
-    tests.push({
-      id: makeId('visibility', entityName),
-      category: 'visibility',
-      entity: entityName,
-      runner: 'node',
-      description: `Entity '${entityName}' should only expose visible fields in frontend`,
-    });
-
-    // displayLogic validity: one per field with displayLogic
-    for (const field of visibleFields) {
-      if (field.displayLogic) {
-        tests.push({
-          id: makeId('displaylogic-valid', entityName, field.name),
-          category: 'displaylogic-valid',
-          entity: entityName,
-          field: field.name,
-          runner: 'node',
-          description: `Display logic for '${field.name}' in ${entityName} should be valid JS`,
-        });
-      }
-    }
-
-    // readOnlyLogic validity: one per field with readOnlyLogic
-    for (const field of visibleFields) {
-      if (field.readOnlyLogic) {
-        tests.push({
-          id: makeId('readonlylogic-valid', entityName, field.name),
-          category: 'readonlylogic-valid',
-          entity: entityName,
-          field: field.name,
-          runner: 'node',
-          description: `Read-only logic for '${field.name}' in ${entityName} should be valid JS`,
-        });
-      }
-    }
-
-    // displayLogic evaluable: one per field with displayLogic
-    for (const field of visibleFields) {
-      if (field.displayLogic) {
-        tests.push({
-          id: makeId('displaylogic-evaluable', entityName, field.name),
-          category: 'displaylogic-evaluable',
-          entity: entityName,
-          field: field.name,
-          runner: 'node',
-          description: `Display logic for '${field.name}' in ${entityName} should have evaluable flag`,
-        });
-      }
-    }
-
-    // readOnlyLogic evaluable: one per field with readOnlyLogic
-    for (const field of visibleFields) {
-      if (field.readOnlyLogic) {
-        tests.push({
-          id: makeId('readonlylogic-evaluable', entityName, field.name),
-          category: 'readonlylogic-evaluable',
-          entity: entityName,
-          field: field.name,
-          runner: 'node',
-          description: `Read-only logic for '${field.name}' in ${entityName} should have evaluable flag`,
-        });
-      }
-    }
-
-    // defaultValue type: one per field with defaultValue
-    for (const field of visibleFields) {
-      if (field.defaultValue !== undefined) {
-        tests.push({
-          id: makeId('default-value-type', entityName, field.name),
-          category: 'default-value-type',
-          entity: entityName,
-          field: field.name,
-          runner: 'node',
-          description: `Default value for '${field.name}' in ${entityName} should be a string`,
-        });
-      }
-    }
+    generateFieldTests(entityData, tests, makeId, entityName);
   }
 
   // system-field tests from backend fields not in frontend
-  for (const [entityName, beEntity] of Object.entries(backendContract.entities)) {
-    const feEntity = frontendContract.entities[entityName];
-    const feFieldNames = new Set(feEntity ? feEntity.fields.map(f => f.name) : []);
-
-    for (const field of beEntity.fields) {
-      if (!feFieldNames.has(field.name)) {
-        tests.push({
-          id: makeId('system-field', entityName, field.name),
-          category: 'system-field',
-          entity: entityName,
-          field: field.name,
-          runner: 'node',
-          description: `System field '${field.name}' should exist in backend but not frontend for ${entityName}`,
-        });
-      }
-    }
-  }
+  validateBackendFields(backendContract, frontendContract, tests, makeId);
 
   // rule-declared: one per kept rule
   for (const rule of rules) {
@@ -577,6 +466,140 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
   }
 
   // process tests
+  generateProcessTests(processes, tests, makeId);
+
+  // Sort by id for deterministic ordering across regens
+  tests.sort((a, b) => a.id.localeCompare(b.id));
+
+  // Build summary
+  const byCategory = {};
+  const byRunner = { node: 0, junit: 0 };
+  for (const t of tests) {
+    byCategory[t.category] = (byCategory[t.category] ?? 0) + 1;
+    byRunner[t.runner] = (byRunner[t.runner] ?? 0) + 1;
+  }
+
+  return {
+    tests,
+    summary: {
+      total: tests.length,
+      byCategory,
+      byRunner,
+    },
+    _makeId: makeId,
+  };
+}
+
+
+function generateFieldTests(entityData, tests, makeId, entityName) {
+  const visibleFields = entityData.fields;
+
+  // field-presence: one per visible field
+  for (const field of visibleFields) {
+    tests.push({
+      id: makeId('field-presence', entityName, field.name),
+      category: 'field-presence',
+      entity: entityName,
+      field: field.name,
+      runner: 'node',
+      description: `Field '${field.name}' should be present in ${entityName}`,
+    });
+  }
+
+  // field-type: one per visible field
+  for (const field of visibleFields) {
+    tests.push({
+      id: makeId('field-type', entityName, field.name),
+      category: 'field-type',
+      entity: entityName,
+      field: field.name,
+      runner: 'node',
+      description: `Field '${field.name}' should have type '${field.tsType}' in ${entityName}`,
+    });
+  }
+
+  // searchable-filters: one per searchable field
+  for (const fieldName of entityData.searchableFields) {
+    tests.push({
+      id: makeId('searchable-filters', entityName, fieldName),
+      category: 'searchable-filters',
+      entity: entityName,
+      field: fieldName,
+      runner: 'node',
+      description: `Field '${fieldName}' should be a supported filter for ${entityName}`,
+    });
+  }
+
+  // visibility: one per entity
+  tests.push({
+    id: makeId('visibility', entityName),
+    category: 'visibility',
+    entity: entityName,
+    runner: 'node',
+    description: `Entity '${entityName}' should only expose visible fields in frontend`,
+  });
+
+  // displayLogic validity: one per field with displayLogic
+  validateDisplayLogic(visibleFields, tests, makeId, entityName);
+
+  // readOnlyLogic validity: one per field with readOnlyLogic
+  for (const field of visibleFields) {
+    if (field.readOnlyLogic) {
+      tests.push({
+        id: makeId('readonlylogic-valid', entityName, field.name),
+        category: 'readonlylogic-valid',
+        entity: entityName,
+        field: field.name,
+        runner: 'node',
+        description: `Read-only logic for '${field.name}' in ${entityName} should be valid JS`,
+      });
+    }
+  }
+
+  // displayLogic evaluable: one per field with displayLogic
+  for (const field of visibleFields) {
+    if (field.displayLogic) {
+      tests.push({
+        id: makeId('displaylogic-evaluable', entityName, field.name),
+        category: 'displaylogic-evaluable',
+        entity: entityName,
+        field: field.name,
+        runner: 'node',
+        description: `Display logic for '${field.name}' in ${entityName} should have evaluable flag`,
+      });
+    }
+  }
+
+  // readOnlyLogic evaluable: one per field with readOnlyLogic
+  for (const field of visibleFields) {
+    if (field.readOnlyLogic) {
+      tests.push({
+        id: makeId('readonlylogic-evaluable', entityName, field.name),
+        category: 'readonlylogic-evaluable',
+        entity: entityName,
+        field: field.name,
+        runner: 'node',
+        description: `Read-only logic for '${field.name}' in ${entityName} should have evaluable flag`,
+      });
+    }
+  }
+
+  // defaultValue type: one per field with defaultValue
+  for (const field of visibleFields) {
+    if (field.defaultValue !== undefined) {
+      tests.push({
+        id: makeId('default-value-type', entityName, field.name),
+        category: 'default-value-type',
+        entity: entityName,
+        field: field.name,
+        runner: 'node',
+        description: `Default value for '${field.name}' in ${entityName} should be a string`,
+      });
+    }
+  }
+}
+
+function generateProcessTests(processes, tests, makeId) {
   for (const proc of processes) {
     // process-happy
     tests.push({
@@ -625,29 +648,42 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
       });
     }
   }
-
-  // Sort by id for deterministic ordering across regens
-  tests.sort((a, b) => a.id.localeCompare(b.id));
-
-  // Build summary
-  const byCategory = {};
-  const byRunner = { node: 0, junit: 0 };
-  for (const t of tests) {
-    byCategory[t.category] = (byCategory[t.category] ?? 0) + 1;
-    byRunner[t.runner] = (byRunner[t.runner] ?? 0) + 1;
-  }
-
-  return {
-    tests,
-    summary: {
-      total: tests.length,
-      byCategory,
-      byRunner,
-    },
-    _makeId: makeId,
-  };
 }
 
+function validateBackendFields(backendContract, frontendContract, tests, makeId) {
+  for (const [entityName, beEntity] of Object.entries(backendContract.entities)) {
+    const feEntity = frontendContract.entities[entityName];
+    const feFieldNames = new Set(feEntity ? feEntity.fields.map(f => f.name) : []);
+
+    for (const field of beEntity.fields) {
+      if (!feFieldNames.has(field.name)) {
+        tests.push({
+          id: makeId('system-field', entityName, field.name),
+          category: 'system-field',
+          entity: entityName,
+          field: field.name,
+          runner: 'node',
+          description: `System field '${field.name}' should exist in backend but not frontend for ${entityName}`,
+        });
+      }
+    }
+  }
+}
+
+function validateDisplayLogic(visibleFields, tests, makeId, entityName) {
+  for (const field of visibleFields) {
+    if (field.displayLogic) {
+      tests.push({
+        id: makeId('displaylogic-valid', entityName, field.name),
+        category: 'displaylogic-valid',
+        entity: entityName,
+        field: field.name,
+        runner: 'node',
+        description: `Display logic for '${field.name}' in ${entityName} should be valid JS`,
+      });
+    }
+  }
+}
 
 function createSelectorContextIndex(schema, frontendContract, currentEntityName) {
   const currentFields = frontendContract?.entities?.[currentEntityName]?.fields ?? [];

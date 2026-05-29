@@ -148,9 +148,7 @@ function CollapsedGroupPopover({
           {items.map((item) => {
             const itemPath = item.path || item.name;
             const currentFull = currentPath + locationSearch;
-            const isItemActive = itemPath.includes('?')
-              ? currentFull === itemPath
-              : currentPath === itemPath || currentPath.startsWith(itemPath + '/');
+            const isItemActive = matchesItem(item, currentPath, currentFull);
             return (
               <NavLink
                 key={item.name}
@@ -191,6 +189,142 @@ export function findActiveGroup(menuGroups, pathname, search) {
 
 const COLLAPSED_W = 56;
 const EXPANDED_W = 240;
+
+function deriveMenuGroupRenderProps(gIdx, resolvedMenuGroups, expanded, g, activeGroup, openGroups) {
+  const prevSection = gIdx > 0 ? resolvedMenuGroups[gIdx - 1].section : null;
+  const showSectionLabel = expanded && g.section && g.section !== prevSection;
+  const Icon = ICON_MAP[g.icon] || Package;
+  const isGroupActive = activeGroup?.group === g.group && g.group !== 'Favorites';
+  const isOpen = openGroups[g.group];
+  const visibleItems = g.items.filter(i => !i.hidden);
+  const isDirect = visibleItems.length === 1 && g.group !== 'Favorites';
+  return {showSectionLabel, Icon, isGroupActive, isOpen, visibleItems, isDirect};
+}
+
+function ExpandedDirectLink({ group, singleItem, Icon, showSectionLabel, sectionLabel, isItemActive, isGroupActive, itemLabel }) {
+  const itemPath = singleItem.path || singleItem.name;
+  const isActive = isItemActive || isGroupActive;
+  return (
+    <div>
+      {showSectionLabel && (
+        <div className="px-4 pt-4 pb-1">
+          <span className="text-xs text-[#6C6C89]">{sectionLabel}</span>
+        </div>
+      )}
+      <div className="px-2 py-0.5">
+        <NavLink
+          to={`/${itemPath}`}
+          className={cn(
+            'flex w-full items-center gap-2.5 px-3 py-1.5 text-sm transition-colors border-l-[3px] border-transparent',
+            isActive
+              ? 'bg-accent-highlight text-accent-highlight-foreground font-medium'
+              : 'hover:bg-muted/50'
+          )}
+        >
+          <Icon
+            weight={isActive ? 'fill' : 'regular'}
+            className={cn('h-5 w-5 shrink-0', !isActive && 'text-muted-foreground')}
+          />
+          <span className={cn('flex-1 text-left truncate', !isActive && 'text-text-primary')}>
+            {itemLabel}
+          </span>
+        </NavLink>
+      </div>
+    </div>
+  );
+}
+
+function getGroupHeaderClass(isGroupActive, isOpen) {
+  if (isGroupActive && !isOpen) {
+    return 'bg-accent-highlight text-accent-highlight-foreground font-medium border-accent-highlight';
+  } else {
+    if (isGroupActive) {
+      return 'font-medium hover:bg-muted/50 border-accent-highlight';
+    } else {
+      return 'hover:bg-muted/50 border-transparent';
+    }
+  }
+}
+
+function ExpandedGroupSection({
+  group,
+  Icon,
+  showSectionLabel,
+  sectionLabel,
+  groupLabel,
+  isOpen,
+  isGroupActive,
+  onToggle,
+  emptyFavoritesLabel,
+  visibleItems,
+  overflowItems,
+  isFavorites,
+  favOverflowOpen,
+  onShowMoreFavorites,
+  andNMoreLabel,
+  renderItem,
+  renderFavoriteOverflowItem,
+}) {
+  return (
+    <div>
+      {showSectionLabel && (
+        <div className="px-4 pt-4 pb-1">
+          <span className="text-xs text-[#6C6C89]">{sectionLabel}</span>
+        </div>
+      )}
+      <div className="px-2 py-0.5">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={!!isOpen}
+          className={cn(
+            'flex w-full items-center gap-2.5 px-3 py-1.5 text-sm transition-colors border-l-[3px]',
+            getGroupHeaderClass(isGroupActive, isOpen)
+          )}
+        >
+          <Icon
+            weight={isGroupActive ? 'fill' : 'regular'}
+            className={cn('h-5 w-5 shrink-0', !isGroupActive && 'text-muted-foreground')}
+          />
+          <span className={cn('flex-1 text-left truncate', !(isGroupActive && !isOpen) && 'text-text-primary')}>
+            {groupLabel}
+          </span>
+          <ChevronDown
+            className={cn(
+              'h-3.5 w-3.5 shrink-0 transition-transform duration-200 text-muted-foreground',
+              isOpen && 'rotate-180'
+            )}
+          />
+        </button>
+      </div>
+      {isOpen && (
+        <div className="py-0.5">
+          {isFavorites && group.items.length === 0 && (
+            <p className="pl-[52px] pr-4 py-1.5 text-xs text-muted-foreground italic">
+              {emptyFavoritesLabel}
+            </p>
+          )}
+          {visibleItems.map(renderItem)}
+          {isFavorites && overflowItems.length > 0 && (
+            favOverflowOpen
+              ? overflowItems.map(renderFavoriteOverflowItem)
+              : (
+                <button
+                  type="button"
+                  onClick={onShowMoreFavorites}
+                  className="relative flex w-full items-center pl-[52px] pr-4 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+                >
+                  <span className="absolute left-[33px] top-0 bottom-0 w-px bg-[#E8EAEF]" />
+                  <span className="flex-1 text-left">{andNMoreLabel}</span>
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                </button>
+              )
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function SideMenu({
   menuGroups,
@@ -331,22 +465,21 @@ export default function SideMenu({
         {/* Menu groups */}
         <div className={cn('flex-1 overflow-auto sidebar-scroll', expanded ? 'py-2' : 'flex flex-col py-2 px-2 gap-3')}>
           {resolvedMenuGroups.map((g, gIdx) => {
-            const prevSection = gIdx > 0 ? resolvedMenuGroups[gIdx - 1].section : null;
-            const showSectionLabel = expanded && g.section && g.section !== prevSection;
-            const Icon = ICON_MAP[g.icon] || Package;
-            const isGroupActive = activeGroup?.group === g.group && g.group !== 'Favorites';
-            const isOpen = openGroups[g.group];
-            const visibleItems = g.items.filter(i => !i.hidden);
-            const isDirect = visibleItems.length === 1 && g.group !== 'Favorites';
+            const {
+              showSectionLabel,
+              Icon,
+              isGroupActive,
+              isOpen,
+              visibleItems,
+              isDirect
+            } = deriveMenuGroupRenderProps(gIdx, resolvedMenuGroups, expanded, g, activeGroup, openGroups);
 
             /* ── COLLAPSED ── */
             if (!expanded) {
               if (isDirect) {
                 const singleItem = visibleItems[0];
                 const itemPath = singleItem.path || singleItem.name;
-                const isItemActive = itemPath.includes('?')
-                  ? (currentPath + location.search) === itemPath
-                  : currentPath === itemPath || currentPath.startsWith(itemPath + '/');
+                const isItemActive = matchesItem(singleItem, currentPath, currentPath + location.search);
                 return (
                   <div
                     key={g.group}
@@ -395,139 +528,92 @@ export default function SideMenu({
             if (isDirect) {
               const singleItem = visibleItems[0];
               const itemPath = singleItem.path || singleItem.name;
-              const isItemActive = itemPath.includes('?')
-                ? (currentPath + location.search) === itemPath
-                : currentPath === itemPath || currentPath.startsWith(itemPath + '/');
+              const isItemActive = matchesItem(singleItem, currentPath, currentPath + location.search);
               return (
-                <div key={g.group}>
-                  {showSectionLabel && (
-                    <div className="px-4 pt-4 pb-1">
-                      <span className="text-xs text-[#6C6C89]">
-                        {tMenu(g.section)}
-                      </span>
-                    </div>
-                  )}
-                  <div className="px-2 py-0.5">
-                    <NavLink
-                      to={`/${itemPath}`}
-                      className={cn(
-                        'flex w-full items-center gap-2.5 px-3 py-1.5 text-sm transition-colors border-l-[3px] border-transparent',
-                        isItemActive || isGroupActive
-                          ? 'bg-accent-highlight text-accent-highlight-foreground font-medium'
-                          : 'hover:bg-muted/50'
-                      )}
-                    >
-                      <Icon weight={isItemActive || isGroupActive ? 'fill' : 'regular'} className={cn('h-5 w-5 shrink-0', !(isItemActive || isGroupActive) && 'text-muted-foreground')} />
-                      <span className={cn('flex-1 text-left truncate', !(isItemActive || isGroupActive) && 'text-text-primary')}>{tMenu(singleItem.label)}</span>
-                    </NavLink>
-                  </div>
-                </div>
+                <ExpandedDirectLink
+                  key={g.group}
+                  group={g}
+                  singleItem={singleItem}
+                  Icon={Icon}
+                  showSectionLabel={showSectionLabel}
+                  sectionLabel={tMenu(g.section)}
+                  isItemActive={isItemActive}
+                  isGroupActive={isGroupActive}
+                  itemLabel={tMenu(singleItem.label)}
+                />
               );
             }
 
             /* ── EXPANDED — group with sub-items ── */
-            const GroupIcon = Icon;
+            const isFavorites = g.group === 'Favorites';
+            const renderMenuItemLink = (item) => {
+              const itemPath = item.path || item.name;
+              const currentFull = currentPath + location.search;
+              const isItemActive = !isFavorites && matchesItem(item, currentPath, currentFull);
+              return (
+                <NavLink
+                  key={item.name}
+                  to={`/${itemPath}`}
+                  className={cn(
+                    'relative flex w-full items-center pl-[52px] pr-4 py-1.5 text-sm transition-colors',
+                    isItemActive
+                      ? 'text-accent-highlight-foreground font-semibold'
+                      : 'text-text-primary hover:bg-muted/50'
+                  )}
+                >
+                  <span className={cn(
+                    'absolute left-[33px] top-0 bottom-0 w-px',
+                    isItemActive ? 'bg-white/40' : 'bg-[#E8EAEF]'
+                  )} />
+                  {isItemActive && (
+                    <span className="absolute left-[33px] right-2 top-0 bottom-0 bg-accent-highlight" />
+                  )}
+                  <span className="relative z-10">
+                    {isFavorites
+                      ? (item.labels?.[locale] || tMenu(favNameMap[item.path || item.name] || item.label))
+                      : tMenu(item.label)}
+                  </span>
+                </NavLink>
+              );
+            };
+            const renderFavoriteOverflowItem = (item) => {
+              const itemPath = item.path || item.name;
+              return (
+                <NavLink
+                  key={item.name}
+                  to={`/${itemPath}`}
+                  className="relative flex w-full items-center pl-[52px] pr-4 py-1.5 text-sm text-text-primary hover:bg-muted/50 transition-colors"
+                >
+                  <span className="absolute left-[33px] top-0 bottom-0 w-px bg-[#E8EAEF]" />
+                  <span className="relative z-10">
+                    {item.labels?.[locale] || tMenu(favNameMap[itemPath] || item.label)}
+                  </span>
+                </NavLink>
+              );
+            };
+            const visibleSubItems = isFavorites ? g.items.slice(0, FAVORITES_VISIBLE) : g.items;
+            const overflowSubItems = isFavorites ? g.items.slice(FAVORITES_VISIBLE) : [];
             return (
-              <div key={g.group}>
-                {showSectionLabel && (
-                  <div className="px-4 pt-4 pb-1">
-                    <span className="text-xs text-[#6C6C89]">
-                      {tMenu(g.section)}
-                    </span>
-                  </div>
-                )}
-                <div className="px-2 py-0.5">
-                  <button
-                    type="button"
-                    onClick={() => toggleGroup(g.group)}
-                    aria-expanded={!!isOpen}
-                    className={cn(
-                      'flex w-full items-center gap-2.5 px-3 py-1.5 text-sm transition-colors border-l-[3px]',
-                      isGroupActive && !isOpen
-                        ? 'bg-accent-highlight text-accent-highlight-foreground font-medium border-accent-highlight'
-                        : isGroupActive
-                          ? 'font-medium hover:bg-muted/50 border-accent-highlight'
-                          : 'hover:bg-muted/50 border-transparent'
-                    )}
-                  >
-                    <GroupIcon weight={isGroupActive ? 'fill' : 'regular'} className={cn('h-5 w-5 shrink-0', !isGroupActive && 'text-muted-foreground')} />
-                    <span className={cn('flex-1 text-left truncate', !(isGroupActive && !isOpen) && 'text-text-primary')}>{tMenu(g.group)}</span>
-                    <ChevronDown className={cn(
-                      'h-3.5 w-3.5 shrink-0 transition-transform duration-200 text-muted-foreground',
-                      isOpen && 'rotate-180'
-                    )} />
-                  </button>
-                </div>
-                {isOpen && (
-                  <div className="py-0.5">
-                    {g.items.length === 0 && g.group === 'Favorites' && (
-                      <p className="pl-[52px] pr-4 py-1.5 text-xs text-muted-foreground italic">
-                        {ui('noFavoritesYet')}
-                      </p>
-                    )}
-                    {(g.group === 'Favorites'
-                      ? g.items.slice(0, FAVORITES_VISIBLE)
-                      : g.items
-                    ).map((item) => {
-                      const itemPath = item.path || item.name;
-                      const currentFull = currentPath + location.search;
-                      const isItemActive = g.group !== 'Favorites' && (itemPath.includes('?')
-                        ? currentFull === itemPath
-                        : currentPath === itemPath || currentPath.startsWith(itemPath + '/'));
-                      return (
-                        <NavLink
-                          key={item.name}
-                          to={`/${itemPath}`}
-                          className={cn(
-                            'relative flex w-full items-center pl-[52px] pr-4 py-1.5 text-sm transition-colors',
-                            isItemActive
-                              ? 'text-accent-highlight-foreground font-semibold'
-                              : 'text-text-primary hover:bg-muted/50'
-                          )}
-                        >
-                          <span className={cn(
-                            'absolute left-[33px] top-0 bottom-0 w-px',
-                            isItemActive ? 'bg-white/40' : 'bg-[#E8EAEF]'
-                          )} />
-                          {isItemActive && (
-                            <span className="absolute left-[33px] right-2 top-0 bottom-0 bg-accent-highlight" />
-                          )}
-                          <span className="relative z-10">{g.group === 'Favorites' ? (item.labels?.[locale] || tMenu(favNameMap[item.path || item.name] || item.label)) : tMenu(item.label)}</span>
-                        </NavLink>
-                      );
-                    })}
-                    {g.group === 'Favorites' && g.items.length > FAVORITES_VISIBLE && (
-                      favOverflowOpen
-                        ? g.items.slice(FAVORITES_VISIBLE).map((item) => {
-                            const itemPath = item.path || item.name;
-                            return (
-                              <NavLink
-                                key={item.name}
-                                to={`/${itemPath}`}
-                                className="relative flex w-full items-center pl-[52px] pr-4 py-1.5 text-sm text-text-primary hover:bg-muted/50 transition-colors"
-                              >
-                                <span className="absolute left-[33px] top-0 bottom-0 w-px bg-[#E8EAEF]" />
-                                <span className="relative z-10">{item.labels?.[locale] || tMenu(favNameMap[itemPath] || item.label)}</span>
-                              </NavLink>
-                            );
-                          })
-                        : (
-                          <button
-                            type="button"
-                            onClick={() => setFavOverflowOpen(true)}
-                            className="relative flex w-full items-center pl-[52px] pr-4 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
-                          >
-                            <span className="absolute left-[33px] top-0 bottom-0 w-px bg-[#E8EAEF]" />
-                            <span className="flex-1 text-left">
-                              {ui('andNMore', { n: g.items.length - FAVORITES_VISIBLE })}
-                            </span>
-                            <ChevronDown className="h-3.5 w-3.5 shrink-0" />
-                          </button>
-                        )
-                    )}
-                  </div>
-                )}
-              </div>
+              <ExpandedGroupSection
+                key={g.group}
+                group={g}
+                Icon={Icon}
+                showSectionLabel={showSectionLabel}
+                sectionLabel={tMenu(g.section)}
+                groupLabel={tMenu(g.group)}
+                isOpen={isOpen}
+                isGroupActive={isGroupActive}
+                onToggle={() => toggleGroup(g.group)}
+                emptyFavoritesLabel={ui('noFavoritesYet')}
+                visibleItems={visibleSubItems}
+                overflowItems={overflowSubItems}
+                isFavorites={isFavorites}
+                favOverflowOpen={favOverflowOpen}
+                onShowMoreFavorites={() => setFavOverflowOpen(true)}
+                andNMoreLabel={ui('andNMore', { n: g.items.length - FAVORITES_VISIBLE })}
+                renderItem={renderMenuItemLink}
+                renderFavoriteOverflowItem={renderFavoriteOverflowItem}
+              />
             );
           })}
         </div>
