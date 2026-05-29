@@ -28,8 +28,8 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
   const menuRef = useRef(null);
 
   const isCompleted = data?.documentStatus === 'CO';
-  const ci = data?.completelyInvoiced;
-  const isFullyInvoiced = ci === true || ci === 'true' || ci === 'Y';
+  const isFullyInvoiced = (Array.isArray(data?.linkedInvoices) && data.linkedInvoices.length > 0) || data?.invoiceStatus >= 100;
+  const hasReturn = Array.isArray(data?.returnReceipts) && data.returnReceipts.length > 0;
 
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({
@@ -170,7 +170,7 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
         </button>
       )}
 
-      {isCompleted && (
+      {isCompleted && !hasReturn && (
         <button
           type="button"
           onClick={() => setWizardOpen(true)}

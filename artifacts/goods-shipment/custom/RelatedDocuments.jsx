@@ -1,46 +1,22 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DocChip, RelatedDocumentsShell, STATUS_KEYS, CHIP_ICONS, CHIP_COLORS, docChipProps, fetchByCriteria, fetchById } from '@/components/related-documents';
+import { DocChip, RelatedDocumentsShell, docChipProps } from '@/components/related-documents';
 import { useUI } from '@/i18n';
 
-export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) {
-  const [order, setOrder] = useState(null);
-  const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0);
+export default function RelatedDocuments({ data }) {
   const navigate = useNavigate();
   const ui = useUI();
 
-  useEffect(() => {
-    if (!recordId || !data) { setLoading(false); return; }
-    setLoading(true);
-    const orderId = data.salesOrder;
-    if (!orderId) { setLoading(false); return; }
-
-    Promise.all([
-      fetchById('sales-order', 'header', orderId, token, apiBaseUrl),
-      fetchByCriteria('sales-invoice', 'header', 'salesOrder', orderId, token, apiBaseUrl),
-    ]).then(([o, inv]) => {
-      setOrder(o);
-      setInvoices(inv);
-      setLoading(false);
-    });
-  }, [recordId, data, token, apiBaseUrl, refreshKey]);
+  const orders = Array.isArray(data?.linkedOrders) ? data.linkedOrders : [];
+  const invoices = Array.isArray(data?.linkedInvoices) ? data.linkedInvoices : [];
+  const returnReceipts = Array.isArray(data?.returnReceipts) ? data.returnReceipts : [];
 
   const chips = [];
 
-  if (order) {
+  for (const ord of orders) {
     chips.push(
       <DocChip
-        key="order"
-        icon={CHIP_ICONS.order}
-        iconColor={CHIP_COLORS.order}
-        title={ui('orderDoc', { number: order.documentNo })}
-        amount={order.grandTotalAmount}
-        currency={order['currency$_identifier']}
-        status={order.documentStatus}
-        statusLabel={ui(STATUS_KEYS[order.documentStatus] || order.documentStatus)}
-        onClick={() => navigate(`/sales-order/${order.id}`)}
+        key={`order-${ord.id}`}
+        {...docChipProps({ type: 'sales-order', doc: ord, ui, navigate })}
       />
     );
   }
@@ -49,19 +25,11 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     chips.push(
       <DocChip
         key={`inv-${inv.id}`}
-        icon={CHIP_ICONS.invoice}
-        iconColor={CHIP_COLORS.invoice}
-        title={ui('invoiceDoc', { number: inv.documentNo })}
-        amount={inv.grandTotalAmount}
-        currency={inv['currency$_identifier']}
-        status={inv.documentStatus}
-        statusLabel={ui(STATUS_KEYS[inv.documentStatus] || inv.documentStatus)}
-        onClick={() => navigate(`/sales-invoice/${inv.id}`)}
+        {...docChipProps({ type: 'sales-invoice', doc: inv, ui, navigate })}
       />
     );
   }
 
-  const returnReceipts = Array.isArray(data?.returnReceipts) ? data.returnReceipts : [];
   for (const ret of returnReceipts) {
     chips.push(
       <DocChip
@@ -72,7 +40,7 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   }
 
   return (
-    <RelatedDocumentsShell loading={loading} onRefresh={() => setRefreshKey(k => k + 1)}>
+    <RelatedDocumentsShell loading={false}>
       {chips}
     </RelatedDocumentsShell>
   );
