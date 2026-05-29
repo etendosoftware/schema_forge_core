@@ -22,6 +22,12 @@ import { StatementLinesInline } from './StatementLinesInline';
 const GRID =
   'grid grid-cols-[28px_110px_minmax(220px,1fr)_130px_130px_90px_130px_150px_minmax(32px,1fr)] gap-4';
 
+// Stable keys for the 9 skeleton cells (kept in lockstep with the grid above)
+// so we don't rely on the array index — Sonar/React lint flag that as unstable.
+const SKELETON_CELL_KEYS = [
+  'chev', 'docno', 'name', 'imp', 'trx', 'lines', 'total', 'status', 'spacer',
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Date / money formatting
 // ─────────────────────────────────────────────────────────────────────────────
@@ -115,36 +121,46 @@ export function StatementsTable({ statements, loading, currency = 'EUR' }) {
       </div>
 
       {/* Body */}
-      {loading ? (
-        [1, 2, 3, 4, 5].map((n) => (
-          <div key={n} role="row" className={cn(GRID, 'border-b border-[#F0F2F5] px-4 py-3')}>
-            {Array.from({ length: 9 }).map((_, i) => (
-              <Skeleton key={i} className="h-4 w-full" />
-            ))}
-          </div>
-        ))
-      ) : statements.length === 0 ? (
-        <div className="px-4 py-16 text-center text-sm text-[#6C6C89]">
-          {ui('financeAccountStatementsEmpty')}
-        </div>
-      ) : (
-        statements.map((s) => {
-          const open = openId === s.id;
-          return (
-            <StatementRow
-              key={s.id}
-              statement={s}
-              currency={currency}
-              bcpLocale={bcpLocale}
-              ui={ui}
-              open={open}
-              onToggle={() => toggle(s.id)}
-            />
-          );
-        })
-      )}
+      {renderBody({ loading, statements, ui, currency, bcpLocale, openId, toggle })}
     </div>
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Body renderer extracted to avoid the nested ternary Sonar flagged on the
+// previous loading / empty / rows branching.
+// ─────────────────────────────────────────────────────────────────────────────
+function renderBody({ loading, statements, ui, currency, bcpLocale, openId, toggle }) {
+  if (loading) {
+    return [1, 2, 3, 4, 5].map((n) => (
+      <div key={n} role="row" className={cn(GRID, 'border-b border-[#F0F2F5] px-4 py-3')}>
+        {SKELETON_CELL_KEYS.map((k) => (
+          <Skeleton key={k} className="h-4 w-full" />
+        ))}
+      </div>
+    ));
+  }
+  if (statements.length === 0) {
+    return (
+      <div className="px-4 py-16 text-center text-sm text-[#6C6C89]">
+        {ui('financeAccountStatementsEmpty')}
+      </div>
+    );
+  }
+  return statements.map((s) => {
+    const open = openId === s.id;
+    return (
+      <StatementRow
+        key={s.id}
+        statement={s}
+        currency={currency}
+        bcpLocale={bcpLocale}
+        ui={ui}
+        open={open}
+        onToggle={() => toggle(s.id)}
+      />
+    );
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

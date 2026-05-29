@@ -52,7 +52,8 @@ export function useStatementPreview() {
       });
       if (!res.ok) {
         const text = await res.text().catch(() => '');
-        const err = new Error(`HTTP ${res.status}${text ? `: ${text}` : ''}`);
+        const detail = text ? `: ${text}` : '';
+        const err = new Error(`HTTP ${res.status}${detail}`);
         err.status = res.status;
         throw err;
       }

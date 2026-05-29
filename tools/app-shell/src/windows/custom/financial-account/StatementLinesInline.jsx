@@ -17,6 +17,9 @@ import { useBankStatementLines } from '@/hooks/useBankStatementLines';
 const MINI_GRID =
   'grid grid-cols-[100px_minmax(220px,1fr)_minmax(140px,1fr)_120px_120px_110px_minmax(0,1fr)] gap-3';
 
+// Stable keys for the 6 skeleton cells of each loading row (matches MINI_GRID).
+const SKELETON_CELL_KEYS = ['date', 'desc', 'bp', 'out', 'in', 'matched'];
+
 // kind → (StatusTag tone, i18n key). Reusing the shared StatusTag keeps the
 // look consistent with the statement-level status pills above and the rest of
 // the app. "Manual" still maps to success because today (pre-T6/T7) the only
@@ -104,55 +107,73 @@ export function StatementLinesInline({ statementId, currency = 'EUR' }) {
       </div>
 
       {/* Body */}
-      {loading ? (
-        [1, 2, 3].map((n) => (
-          <div key={n} className={cn(MINI_GRID, 'border-b border-[#F0F2F5] px-3 py-2.5')}>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-4 w-full" />
-            ))}
-            <span aria-hidden="true" />
-          </div>
-        ))
-      ) : lines.length === 0 ? (
-        <div className="px-3 py-8 text-center text-sm text-[#6C6C89]" role="row">
-          {ui('financeAccountStatementLinesEmpty')}
-        </div>
-      ) : (
-        lines.map((line) => {
-          const amount = Number(line.amount) || 0;
-          const isDebit = amount < 0;
-          const out = isDebit ? -amount : 0;
-          const inn = !isDebit && amount > 0 ? amount : 0;
-          const matchKind = line.matched ? 'auto' : 'none';
-          return (
-            <div
-              key={line.id}
-              data-testid={`statement-line-row-${line.id}`}
-              className={cn(
-                MINI_GRID,
-                'border-b border-[#F0F2F5] px-3 py-2.5 text-sm transition-colors last:border-0 hover:bg-[#FAFBFC]',
-              )}
-            >
-              <span className="whitespace-nowrap text-[#121217]">{formatDate(line.date, bcpLocale)}</span>
-              <span className="truncate font-medium text-[#121217]">{line.description || '—'}</span>
-              <span className="truncate text-[#3F3F50]">{line.bpartnerName || ''}</span>
-              <span className="text-right tabular-nums">
-                {out > 0
-                  ? <span className="font-semibold text-red-700">−{formatMoney(out, currency, bcpLocale)}</span>
-                  : <span className="text-[#C1C3CC]">—</span>}
-              </span>
-              <span className="text-right tabular-nums">
-                {inn > 0
-                  ? <span className="font-semibold text-green-700">+{formatMoney(inn, currency, bcpLocale)}</span>
-                  : <span className="text-[#C1C3CC]">—</span>}
-              </span>
-              <span><MatchPill kind={matchKind} ui={ui} /></span>
-              <span aria-hidden="true" />
-            </div>
-          );
-        })
-      )}
+      {renderBody({ loading, lines, ui, currency, bcpLocale })}
 
     </div>
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Body renderer extracted to avoid the nested ternary Sonar flagged on the
+// previous loading / empty / rows branching.
+// ─────────────────────────────────────────────────────────────────────────────
+function renderBody({ loading, lines, ui, currency, bcpLocale }) {
+  if (loading) {
+    return [1, 2, 3].map((n) => (
+      <div key={n} className={cn(MINI_GRID, 'border-b border-[#F0F2F5] px-3 py-2.5')}>
+        {SKELETON_CELL_KEYS.map((k) => (
+          <Skeleton key={k} className="h-4 w-full" />
+        ))}
+        <span aria-hidden="true" />
+      </div>
+    ));
+  }
+  if (lines.length === 0) {
+    return (
+      <div className="px-3 py-8 text-center text-sm text-[#6C6C89]" role="row">
+        {ui('financeAccountStatementLinesEmpty')}
+      </div>
+    );
+  }
+  return lines.map((line) => (
+    <LineRow key={line.id} line={line} ui={ui} currency={currency} bcpLocale={bcpLocale} />
+  ));
+}
+
+// Single row of the lines table — split out so we can render the amount
+// columns with simple if/else branching instead of nested ternaries.
+function LineRow({ line, ui, currency, bcpLocale }) {
+  const amount = Number(line.amount) || 0;
+  const isDebit = amount < 0;
+  const out = isDebit ? -amount : 0;
+  const inn = !isDebit && amount > 0 ? amount : 0;
+  const matchKind = line.matched ? 'auto' : 'none';
+  return (
+    <div
+      data-testid={`statement-line-row-${line.id}`}
+      className={cn(
+        MINI_GRID,
+        'border-b border-[#F0F2F5] px-3 py-2.5 text-sm transition-colors last:border-0 hover:bg-[#FAFBFC]',
+      )}
+    >
+      <span className="whitespace-nowrap text-[#121217]">{formatDate(line.date, bcpLocale)}</span>
+      <span className="truncate font-medium text-[#121217]">{line.description || '—'}</span>
+      <span className="truncate text-[#3F3F50]">{line.bpartnerName || ''}</span>
+      <span className="text-right tabular-nums">
+        <AmountCell value={out} sign="−" toneClass="font-semibold text-red-700" currency={currency} bcpLocale={bcpLocale} />
+      </span>
+      <span className="text-right tabular-nums">
+        <AmountCell value={inn} sign="+" toneClass="font-semibold text-green-700" currency={currency} bcpLocale={bcpLocale} />
+      </span>
+      <span><MatchPill kind={matchKind} ui={ui} /></span>
+      <span aria-hidden="true" />
+    </div>
+  );
+}
+
+function AmountCell({ value, sign, toneClass, currency, bcpLocale }) {
+  if (value > 0) {
+    return <span className={toneClass}>{sign}{formatMoney(value, currency, bcpLocale)}</span>;
+  }
+  return <span className="text-[#C1C3CC]">—</span>;
 }

@@ -2,8 +2,6 @@
 // the "Export Data" action of the Transactions tab so the file can be opened
 // alongside Classic exports without surprises.
 
-import { MOVEMENT_STATUS_CONFIG } from './movementStatusConfig';
-
 /**
  * Escapes a single CSV field per RFC 4180: wrap in double quotes and double-up
  * embedded quotes. Numbers come through as-is.
@@ -95,9 +93,9 @@ const HEADER = [
 ];
 
 /**
- * Returns the CSV body for the given movements. Pass through `MOVEMENT_STATUS_CONFIG`
- * to keep this module decoupled from the locale dictionary — labels here are the
- * English ones Classic emits, not the localised badge labels.
+ * Returns the CSV body for the given movements. Status labels here are the
+ * English ones Classic emits ({@link STATUS_TO_CLASSIC_LABEL}), not the
+ * localised badge labels.
  *
  * @param {Array<object>} movements - rows from useAccountMovements (filtered or raw)
  * @returns {string} CSV text starting with the header row
@@ -137,10 +135,6 @@ export function buildMovementsCsv(movements) {
  * @param {string} fileName - suggested file name (without extension)
  */
 export function downloadMovementsCsv(movements, fileName) {
-  // Reference imported only to keep dead-code analyzers from dropping the import
-  // when this module gets tree-shaken in tests; the map is also useful in dev tools.
-  void MOVEMENT_STATUS_CONFIG;
-
   const csv = buildMovementsCsv(movements);
   const blob = new Blob(['﻿', csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);

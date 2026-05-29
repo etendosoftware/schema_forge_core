@@ -39,7 +39,8 @@ export function useStatementImport() {
       });
       if (!res.ok) {
         const text = await res.text().catch(() => '');
-        throw new Error(`HTTP ${res.status}${text ? `: ${text}` : ''}`);
+        const detail = text ? `: ${text}` : '';
+        throw new Error(`HTTP ${res.status}${detail}`);
       }
       const json = await res.json();
       return json?.response?.data ?? {};
