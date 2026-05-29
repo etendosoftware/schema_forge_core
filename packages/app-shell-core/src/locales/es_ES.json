@@ -16874,6 +16874,7 @@
     "priceColListPrice": "Precio de lista",
     "priceRemove": "Eliminar",
     "priceSelectVersion": "Seleccionar versión…",
+    "priceLoadError": "No se pudieron cargar los precios de producto",
     "priceZeroPlaceholder": "0,00",
     "priceSalesPrice": "Precio de venta",
     "priceSalesDescription": "Precio inicial utilizado para listas de ventas.",

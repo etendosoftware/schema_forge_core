@@ -97,12 +97,15 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
       setLines(rowsFrom(await lineRes.json()));
       setLoading(false);
     } catch (err) {
-      setError(err?.message || 'Failed to load product prices');
+      setError(err?.message || ui('priceLoadError'));
       setVersionId(null); setLines([]); setLoading(false);
     }
   }, [apiBaseUrl, headers, parentId, token, versionFromRecord]);
 
-  useEffect(() => { void loadProductPrices(); }, [loadProductPrices]);
+  useEffect(() => {
+    // loadProductPrices handles its own errors; catch is a safety net for unexpected throws.
+    loadProductPrices().catch(() => setError(ui('priceLoadError')));
+  }, [loadProductPrices]);
 
   const canAddProducts = !!editing && !!versionId;
 

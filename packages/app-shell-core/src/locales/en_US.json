@@ -16632,6 +16632,7 @@
     "priceColListPrice": "List Price",
     "priceRemove": "Remove",
     "priceSelectVersion": "Select version…",
+    "priceLoadError": "Failed to load product prices",
     "priceZeroPlaceholder": "0.00",
     "priceSalesPrice": "Sales price",
     "priceSalesDescription": "Initial price used for sales lists.",
