@@ -52,6 +52,10 @@ describe('SendDocumentModal', () => {
     assert.match(src, /buildEmailContractCommand/);
   });
 
+  it('derives sales order email contract from the window name', () => {
+    assert.match(src, /windowName\s*===\s*'sales-invoice'\s*\?\s*'sales-invoice-send'\s*:\s*`\$\{windowName\}-send`/);
+  });
+
   it('uses toast for send confirmation', () => {
     assert.match(src, /toast\.success/);
   });
