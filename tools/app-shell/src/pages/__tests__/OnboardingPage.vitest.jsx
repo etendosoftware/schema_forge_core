@@ -48,11 +48,14 @@ vi.mock('../../i18n/index.js', () => ({
 // Mock onboarding API
 vi.mock('../onboarding/onboardingApi.js', () => ({
   ONBOARDING_ERROR_CODES: {},
+  changePassword: vi.fn(),
+  confirmPasswordReset: vi.fn(),
   fetchAccount: vi.fn(),
   fetchEnvironments: vi.fn().mockResolvedValue([]),
   loginAccount: vi.fn(),
   loginEnvironment: vi.fn(),
   registerAccount: vi.fn(),
+  requestPasswordReset: vi.fn(),
   runOnboardingStream: vi.fn(),
 }));
 
@@ -93,11 +96,14 @@ vi.mock('@/components/ui/label', () => ({
 
 import OnboardingPage from '../OnboardingPage.jsx';
 import {
+  changePassword,
+  confirmPasswordReset,
   fetchAccount,
   fetchEnvironments,
   loginAccount,
   loginEnvironment,
   registerAccount,
+  requestPasswordReset,
   runOnboardingStream,
 } from '../onboarding/onboardingApi.js';
 import { checkSalesInvoiceReadiness } from '../onboarding/onboardingReadiness.js';
@@ -110,6 +116,9 @@ describe('OnboardingPage', () => {
     fetchAccount.mockReset();
     fetchEnvironments.mockReset();
     fetchEnvironments.mockResolvedValue([]);
+    requestPasswordReset.mockReset();
+    confirmPasswordReset.mockReset();
+    changePassword.mockReset();
     loginAccount.mockReset();
     loginEnvironment.mockReset();
     registerAccount.mockReset();
@@ -448,6 +457,121 @@ describe('OnboardingPage', () => {
       });
     });
     expect(screen.getByText('Readable login failure')).toBeInTheDocument();
+  });
+
+  it('submits forgot password requests with neutral success messaging', async () => {
+    requestPasswordReset.mockResolvedValue({ success: true });
+
+    localStorage.removeItem('sf_platform_token');
+    render(<OnboardingPage />);
+
+    fireEvent.click(screen.getByTestId('action-switch-to-login'));
+    fireEvent.change(screen.getByLabelText(/onboardingEmailLabel/), {
+      target: { value: 'reset@example.com' },
+    });
+    fireEvent.click(screen.getByText('onboardingForgotPasswordAction'));
+    fireEvent.submit(screen.getByTestId('action-forgot-password-submit').closest('form'));
+
+    await waitFor(() => {
+      expect(requestPasswordReset).toHaveBeenCalledWith(expect.any(Function), '', 'reset@example.com');
+    });
+    expect(screen.getAllByText('onboardingResetEmailSent').length).toBeGreaterThan(0);
+  });
+
+  it('renders reset password from the reset token URL and handles success', async () => {
+    confirmPasswordReset.mockResolvedValue({ success: true });
+    window.history.replaceState(null, '', '/onboarding?resetToken=reset-token');
+
+    render(<OnboardingPage />);
+
+    fireEvent.change(screen.getByLabelText(/onboardingNewPasswordLabel/), {
+      target: { value: 'new-secret' },
+    });
+    fireEvent.change(screen.getByLabelText(/onboardingConfirmPasswordLabel/), {
+      target: { value: 'new-secret' },
+    });
+    fireEvent.submit(screen.getByTestId('action-reset-password-submit').closest('form'));
+
+    await waitFor(() => {
+      expect(confirmPasswordReset).toHaveBeenCalledWith(expect.any(Function), '', {
+        token: 'reset-token',
+        password: 'new-secret',
+        confirmPassword: 'new-secret',
+      });
+    });
+    expect(localStorage.removeItem).toHaveBeenCalledWith('sf_platform_token');
+    expect(screen.getByText('onboardingResetPasswordSuccess')).toBeInTheDocument();
+  });
+
+  it('renders invalid or expired reset link errors', async () => {
+    confirmPasswordReset.mockRejectedValue({ userMessage: 'Invalid or expired reset link' });
+    window.history.replaceState(null, '', '/onboarding?resetToken=used-token');
+
+    render(<OnboardingPage />);
+
+    fireEvent.change(screen.getByLabelText(/onboardingNewPasswordLabel/), {
+      target: { value: 'new-secret' },
+    });
+    fireEvent.change(screen.getByLabelText(/onboardingConfirmPasswordLabel/), {
+      target: { value: 'new-secret' },
+    });
+    fireEvent.submit(screen.getByTestId('action-reset-password-submit').closest('form'));
+
+    expect(await screen.findByText('Invalid or expired reset link')).toBeInTheDocument();
+  });
+
+  it('changes the account password and stores the rotated platform token', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+    changePassword.mockResolvedValue({ token: 'rotated-platform-token' });
+
+    render(<OnboardingPage />);
+
+    fireEvent.click(await screen.findByText('onboardingChangePasswordAction'));
+    fireEvent.change(screen.getByLabelText(/onboardingCurrentPasswordLabel/), {
+      target: { value: 'old-secret' },
+    });
+    fireEvent.change(screen.getByLabelText(/onboardingNewPasswordLabel/), {
+      target: { value: 'new-secret' },
+    });
+    fireEvent.change(screen.getByLabelText(/onboardingConfirmPasswordLabel/), {
+      target: { value: 'new-secret' },
+    });
+    fireEvent.submit(screen.getByText('onboardingSavePasswordAction').closest('form'));
+
+    await waitFor(() => {
+      expect(changePassword).toHaveBeenCalledWith(expect.any(Function), '', 'platform-token', {
+        currentPassword: 'old-secret',
+        newPassword: 'new-secret',
+        confirmPassword: 'new-secret',
+      });
+    });
+    expect(localStorage.setItem).toHaveBeenCalledWith('sf_platform_token', 'rotated-platform-token');
+    expect(screen.getByText('onboardingCredentialChangeSuccess')).toBeInTheDocument();
+  });
+
+  it('renders current-password failures from change password', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+    changePassword.mockRejectedValue({ userMessage: 'Wrong current password' });
+
+    render(<OnboardingPage />);
+
+    fireEvent.click(await screen.findByText('onboardingChangePasswordAction'));
+    fireEvent.change(screen.getByLabelText(/onboardingCurrentPasswordLabel/), {
+      target: { value: 'bad-secret' },
+    });
+    fireEvent.change(screen.getByLabelText(/onboardingNewPasswordLabel/), {
+      target: { value: 'new-secret' },
+    });
+    fireEvent.change(screen.getByLabelText(/onboardingConfirmPasswordLabel/), {
+      target: { value: 'new-secret' },
+    });
+    fireEvent.submit(screen.getByText('onboardingSavePasswordAction').closest('form'));
+
+    expect(await screen.findByText('Wrong current password')).toBeInTheDocument();
   });
 
   it('tracks setup back navigation from company step', async () => {
