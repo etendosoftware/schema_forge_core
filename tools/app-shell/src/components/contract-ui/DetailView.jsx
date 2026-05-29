@@ -1786,12 +1786,12 @@ export function DetailView({
             {primaryTabs && activePrimaryTab !== 'general' ? (() => {
               const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
               return activeTab?.Panel ? (
-                <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel')}`}>
+                <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel', compactSidebarPadding)}`}>
                   <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
                 </div>
               ) : null;
             })() : null}
-            <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'content')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+            <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'content', compactSidebarPadding)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
               {typeof headerContent === 'function' ? headerContent(data) : headerContent}
               {(() => {
                 const slotProps = {
@@ -1810,115 +1810,56 @@ export function DetailView({
                     if (saved?.id && isNew) {
                       hook.primeSaved?.(saved);
                     }
-                  >
-                    {tMenu(tab.label)}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              primaryTabs.map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActivePrimaryTab(tab.key)}
-                  className={[
-                    'relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
-                    activePrimaryTab === tab.key
-                      ? 'bg-white border-gray-200 shadow-sm text-foreground'
-                      : 'border-transparent text-muted-foreground hover:text-foreground',
-                  ].join(' ')}
-                >
-                  {tMenu(tab.label)}
-                </button>
-              ))
-            )}
-            {tabsBarRight && (() => {
-              const TabsBarRightComponent = tabsBarRight;
-              return (
-                <div className="ml-auto flex-shrink-0">
-                  <TabsBarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} />
-                </div>
-              );
-            })()}
-          </div>
-        )}
-        {/* Non-general primary tab: show Panel fullscreen */}
-        {primaryTabs && activePrimaryTab !== 'general' ? (() => {
-          const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
-          return activeTab?.Panel ? (
-            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel', compactSidebarPadding)}`}>
-              <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
-            </div>
-          ) : null;
-        })() : null}
-        <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'content', compactSidebarPadding)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
-          {typeof headerContent === 'function' ? headerContent(data) : headerContent}
-          {(() => {
-            const slotProps = {
-              data,
-              isNew,
-              entity,
-              recordId: data?.id || recordId,
-              token,
-              apiBaseUrl,
-              api,
-              detailEntity,
-              onFieldChange: handleChangeWithCallout,
-              onSave: async () => {
-                if (!(await flushPendingLines())) return null;
-                const saved = await hook.handleSave(data);
-                if (saved?.id && isNew) {
-                  hook.primeSaved?.(saved);
-                }
-                return saved;
-              },
-              onAddChild: hook.handleAddChild,
-              onRefresh: (parentId = data?.id || recordId) => {
-                if (!parentId) return;
-                hook.fetchChildren?.(parentId);
-                hook.fetchById?.(parentId);
-              },
-              onRefreshChildren: () => hook.fetchChildren?.(data?.id || recordId),
-            };
-            const ocrDocType = matchOcrDocType(location.pathname);
-            return (
-              <>
-                {headerExtra && (
-                  typeof headerExtra === 'function'
-                    ? headerExtra(slotProps)
-                    : headerExtra
-                )}
-                {!headerExtra && !sidePanel && ocrDocType && (
-                  <Suspense fallback={null}>
-                    <LazyOcrInlineUploader {...slotProps} docTypeId={ocrDocType.id} />
-                  </Suspense>
-                )}
-              </>
-            );
-          })()}
-          <div className={sidePanelWrapperCls(!!sidePanel, linesLayout)}>
-          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`}>
+                    return saved;
+                  },
+                  onAddChild: hook.handleAddChild,
+                  onRefresh: (parentId = data?.id || recordId) => {
+                    if (!parentId) return;
+                    hook.fetchChildren?.(parentId);
+                    hook.fetchById?.(parentId);
+                  },
+                  onRefreshChildren: () => hook.fetchChildren?.(data?.id || recordId),
+                };
+                const ocrDocType = matchOcrDocType(location.pathname);
+                return (
+                  <>
+                    {headerExtra && (
+                      typeof headerExtra === 'function'
+                        ? headerExtra(slotProps)
+                        : headerExtra
+                    )}
+                    {!headerExtra && !sidePanel && ocrDocType && (
+                      <Suspense fallback={null}>
+                        <LazyOcrInlineUploader {...slotProps} docTypeId={ocrDocType.id} />
+                      </Suspense>
+                    )}
+                  </>
+                );
+              })()}
+              <div className={sidePanelWrapperCls(!!sidePanel, linesLayout)}>
+                <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`}>
 
-            {/* Principal + collapsed fields wrapped in a card */}
-            <div className={`${hideFormCard ? 'hidden' : ''}${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${whiteFormBackground ? ' bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50' : ''}${embedded ? ' pointer-events-none' : ''}`}>
-              <div className={linesLayout === 'inlineEditable' ? 'p-2' : 'p-6'}>
-                <Form
-                  entity={entity}
-                  data={data}
-                  onChange={handleChangeWithCallout}
-                  catalogs={catalogs}
-                  layout="horizontal"
-                  section="principal"
-                  displayLogic={{ readOnly: displayLogic?.readOnly ?? {}, visibility: {} }}
-                  api={api}
-                  token={token}
-                  apiBaseUrl={apiBaseUrl}
-                  selectorContext={selectorContextByEntity[entity]}
-                  labelOverrides={labelOverrides}
-                  registerFields={hook.registerFields}
-                  fieldErrors={hook.fieldErrors}
-                  onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
-                />
-              </div>
+                  {/* Principal + collapsed fields wrapped in a card */}
+                  <div className={`${hideFormCard ? 'hidden' : ''}${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${whiteFormBackground ? ' bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50' : ''}${embedded ? ' pointer-events-none' : ''}`}>
+                    <div className={linesLayout === 'inlineEditable' ? 'p-2' : 'p-6'}>
+                      <Form
+                        entity={entity}
+                        data={data}
+                        onChange={handleChangeWithCallout}
+                        catalogs={catalogs}
+                        layout="horizontal"
+                        section="principal"
+                        displayLogic={{ readOnly: displayLogic?.readOnly ?? {}, visibility: {} }}
+                        api={api}
+                        token={token}
+                        apiBaseUrl={apiBaseUrl}
+                        selectorContext={selectorContextByEntity[entity]}
+                        labelOverrides={labelOverrides}
+                        registerFields={hook.registerFields}
+                        fieldErrors={hook.fieldErrors}
+                        onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
+                      />
+                    </div>
 
                     {/* Collapsible secondary header fields (hidden if no collapsed fields or sidebarContent) */}
                     {!hideMoreDetails && !sidebarContent && (
@@ -1947,12 +1888,12 @@ export function DetailView({
                     )}
                   </div>
 
-            {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
-            {formFooter && (
-              <div className={embedded ? 'pointer-events-none' : ''}>
-                {React.createElement(formFooter, { data, entity, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl, editing: hook.editing })}
-              </div>
-            )}
+                  {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
+                  {formFooter && (
+                    <div className={embedded ? 'pointer-events-none' : ''}>
+                      {React.createElement(formFooter, { data, entity, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl, editing: hook.editing })}
+                    </div>
+                  )}
 
                   {/* Tabs: child entities + Others */}
                   {tabs.length > 0 && (
