@@ -124,11 +124,16 @@ function parseArgs(argv) {
   let lang = null;
   let out = null;
 
-  for (let i = 0; i < args.length; i++) {
+  let i = 0;
+  while (i < args.length) {
     if (args[i] === '--lang' && args[i + 1]) {
-      lang = args[++i];
+      lang = args[i + 1];
+      i += 2;
     } else if (args[i] === '--out' && args[i + 1]) {
-      out = args[++i];
+      out = args[i + 1];
+      i += 2;
+    } else {
+      i += 1;
     }
   }
   return { lang, out };

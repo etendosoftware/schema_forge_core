@@ -681,7 +681,7 @@ function applyWindowDraftModeToPrimaryEntity(curatedEntities, windowDecisions) {
  * @param {Object} schemaRaw  - Parsed schema-raw.json
  * @param {Object} rulesRaw   - Parsed rules-raw.json
  * @param {Object} decisions  - Parsed decisions.json (may be empty {})
- * @returns {{ schema: Object, rules: Array }}
+ * @returns {Promise<{ schema: Object, rules: Array }>}
  */
 export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   // Migrate decisions to current version if needed (in-memory only, no file write)

@@ -40,3 +40,4 @@ sonar-results.md
 dev.log
 dev.pid
 test-results/
+.idea/
