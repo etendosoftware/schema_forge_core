@@ -23,10 +23,10 @@ function MetricCard({ label, value, subtitle, tint = null }) {
     );
   }
   return (
-    <div className="rounded-xl bg-gray-50 p-3">
-      <div className="text-xs text-gray-500 mb-0.5">{label}</div>
-      <div className="text-lg font-bold leading-none text-gray-900">{value}</div>
-      {subtitle && <div className="text-xs text-gray-400 mt-1">{subtitle}</div>}
+    <div className="rounded-xl bg-blue-50 p-3">
+      <div className="text-xs text-blue-600 mb-0.5">{label}</div>
+      <div className="text-lg font-bold leading-none text-blue-900">{value}</div>
+      {subtitle && <div className="text-xs text-blue-500 mt-1">{subtitle}</div>}
     </div>
   );
 }
@@ -38,7 +38,7 @@ function ProgressCard({ total, completed, pct, ui }) {
   const trackColor = isComplete ? 'bg-emerald-200' : 'bg-blue-100';
 
   return (
-    <div className="rounded-xl bg-gray-50 p-3">
+    <div className="rounded-xl border border-gray-100 bg-white p-3">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-semibold text-gray-600">{ui('assetsDepreciationProgress')}</span>
         <span className="text-xs text-blue-600 font-medium">{completed} / {total}</span>
@@ -110,11 +110,11 @@ export default function AssetsSidebar({ data, recordId, token, apiBaseUrl }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm">
-        <div className="px-4 pt-4 pb-3">
+      <div>
+        <div className="pb-3">
           <span className="text-sm font-semibold text-gray-800">{ui('assetsDepreciationSummary')}</span>
         </div>
-        <div className="px-4 pb-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           <MetricCard
             label={ui('assetsCurrentValue')}
             value={hasData ? formatCurrency(orgCurrency, assetValue) : '—'}

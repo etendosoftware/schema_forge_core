@@ -8,7 +8,7 @@ function MetricCard({ label, value, subtitle, tint = null }) {
     green: { bg: 'bg-emerald-50', text: 'text-emerald-800', labelCls: 'text-emerald-600', sub: 'text-emerald-600' },
     amber: { bg: 'bg-amber-50', text: 'text-amber-800', labelCls: 'text-amber-600', sub: 'text-amber-600' },
     blue: { bg: 'bg-blue-50', text: 'text-blue-800', labelCls: 'text-blue-600', sub: 'text-blue-500' },
-    gray: { bg: 'bg-gray-50', text: 'text-gray-900', labelCls: 'text-gray-500', sub: 'text-gray-400' },
+    gray: { bg: 'bg-white border border-gray-100', text: 'text-gray-900', labelCls: 'text-gray-500', sub: 'text-gray-400' },
   };
   const c = tints[tint] || tints.gray;
   return (
@@ -48,11 +48,11 @@ export default function HeaderSidebar({ data, recordId, token, apiBaseUrl }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm">
-        <div className="px-4 pt-4 pb-3">
+      <div>
+        <div className="pb-3">
           <span className="text-sm font-semibold text-gray-800">{ui('amortizationSummary')}</span>
         </div>
-        <div className="px-4 pb-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           <MetricCard
             label={ui('totalAmortization')}
             value={hasData ? formatCurrency(currencyCode, totalAmortization) : '—'}

@@ -33,7 +33,7 @@ function ToggleCard({ label, description, fieldKey, value, onChange, editing }) 
         onClick={handleToggle}
         disabled={!editing}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none
-          ${isOn ? 'bg-blue-600' : 'bg-gray-200'}
+          ${isOn ? 'bg-gray-900' : 'bg-gray-200'}
           ${!editing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
         aria-checked={isOn}
         role="switch"
@@ -108,7 +108,7 @@ export default function AssetsConfigPanel({ data, token, apiBaseUrl, catalogs, a
   const common = { data: d, onChange, catalogs, api, token, apiBaseUrl, entity: 'assets', layout: 'horizontal' };
 
   return (
-    <div className="space-y-4 pb-6">
+    <div className="space-y-4 pb-6 bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50">
       <SectionCard
         title={null}
         description={ui('assetsConfigDesc')}

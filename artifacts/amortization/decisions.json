@@ -10,6 +10,12 @@
     "hideDeleteWhenComplete": true,
     "hidePrint": true,
     "hideLink": true,
+    "toolbarButtonSize": "default",
+    "noHeaderBorder": true,
+    "whiteFormBackground": true,
+    "listbarPaddingX": "px-2",
+    "tablePaddingX": "px-2",
+    "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2",
     "relatedDocuments": false,
     "draftMode": {
       "enabled": true,
@@ -72,12 +78,14 @@
         "accountingDate": {
           "grid": true,
           "searchable": true,
-          "seq": 20
+          "seq": 20,
+          "dot": false
         },
         "startingDate": {
           "grid": true,
           "searchable": true,
-          "seq": 30
+          "seq": 30,
+          "dot": false
         },
         "totalAmortization": {
           "visibility": "readOnly",
