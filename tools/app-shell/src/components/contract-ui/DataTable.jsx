@@ -279,6 +279,82 @@ function isStaticSelectField(field) {
 }
 
 /**
+ * Renders the inline-add-row cell for a `selector` field. When the catalog has
+ * pre-loaded options it shows a Radix <Select>; otherwise it falls back to the
+ * lazy-loading <InlineSearchCombo> backed by the selector URL.
+ */
+function renderSelectorCell({
+  catalogs, entity, field, apiBaseUrl, col, values, touchedFieldsRef,
+  handleChange, handleFieldChange, handleKeyDown, isFirst, firstInputRef,
+  fieldLabel, selectorContext, token,
+}) {
+  const options = getCatalogOptions(catalogs, entity, field);
+  const selectorUrl = buildSelectorUrl(apiBaseUrl, entity, field);
+
+  if (options.length === 0) {
+    if (!selectorUrl) return <TableCell key={col.key} className="py-1 px-2"/>;
+    return (
+        <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
+          <InlineSearchCombo
+              field={field}
+              value={values[field.key] ?? ''}
+              displayLabel={values[field.key + '$_identifier'] || ''}
+              options={[]}
+              onChange={(id, label, selectedItem) => {
+                touchedFieldsRef.current.add(field.key);
+                handleChange(field.key + '$_identifier', label || '');
+                handleFieldChange(field.key, id, selectedItem);
+              }}
+              onKeyDown={handleKeyDown}
+              inputRef={isFirst ? firstInputRef : undefined}
+              placeholder={fieldLabel}
+              selectorUrl={selectorUrl}
+              selectorContext={selectorContext}
+              token={token}
+          />
+        </TableCell>
+    );
+  }
+  return (
+      <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
+        <Select
+            value={values[field.key] || undefined}
+            onValueChange={(val) => {
+              if (val === '__empty__') {
+                handleChange(field.key + '$_identifier', '');
+                handleFieldChange(field.key, '', null);
+                return;
+              }
+              const opt = options.find(o => o.id === val);
+              if (opt) {
+                handleChange(field.key + '$_identifier', opt.name || opt.label || opt._identifier || '');
+              }
+              handleFieldChange(field.key, val, opt);
+            }}
+        >
+          <SelectTrigger
+              ref={isFirst ? firstInputRef : undefined}
+              data-testid={`inline-add-field-${field.key}`}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') handleKeyDown(e);
+              }}
+              className="w-full h-8 text-sm bg-white focus:ring-2 focus:ring-primary"
+          >
+            <SelectValue placeholder={fieldLabel}/>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__empty__">&nbsp;</SelectItem>
+            {options.map(opt => (
+                <SelectItem key={opt.id}
+                            value={opt.id}>{opt.name || opt.label || opt._identifier || opt.id}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </TableCell>
+  );
+}
+
+/**
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
@@ -652,67 +728,11 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         // accept free-text typing — the user has to pick from the list, matching the
         // form-mode UX. Mirrors the InlineAddRow behavior for the line tax field.
         if (field.type === 'selector') {
-          const options = getCatalogOptions(catalogs, entity, field);
-          const selectorUrl = buildSelectorUrl(apiBaseUrl, entity, field);
-
-          if (options.length === 0) {
-            if (!selectorUrl) return <TableCell key={col.key} className="py-1 px-2" />;
-            return (
-              <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
-                <InlineSearchCombo
-                  field={field}
-                  value={values[field.key] ?? ''}
-                  displayLabel={values[field.key + '$_identifier'] || ''}
-                  options={[]}
-                  onChange={(id, label, selectedItem) => {
-                    touchedFieldsRef.current.add(field.key);
-                    handleChange(field.key + '$_identifier', label || '');
-                    handleFieldChange(field.key, id, selectedItem);
-                  }}
-                  onKeyDown={handleKeyDown}
-                  inputRef={isFirst ? firstInputRef : undefined}
-                  placeholder={fieldLabel}
-                  selectorUrl={selectorUrl}
-                  selectorContext={selectorContext}
-                  token={token}
-                />
-              </TableCell>
-            );
-          }
-          return (
-            <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
-              <Select
-                value={values[field.key] || undefined}
-                onValueChange={(val) => {
-                  if (val === '__empty__') {
-                    handleChange(field.key + '$_identifier', '');
-                    handleFieldChange(field.key, '', null);
-                    return;
-                  }
-                  const opt = options.find(o => o.id === val);
-                  if (opt) {
-                    handleChange(field.key + '$_identifier', opt.name || opt.label || opt._identifier || '');
-                  }
-                  handleFieldChange(field.key, val, opt);
-                }}
-              >
-                <SelectTrigger
-                  ref={isFirst ? firstInputRef : undefined}
-                  data-testid={`inline-add-field-${field.key}`}
-                  onKeyDown={(e) => { if (e.key === 'Escape') handleKeyDown(e); }}
-                  className="w-full h-8 text-sm bg-white focus:ring-2 focus:ring-primary"
-                >
-                  <SelectValue placeholder={fieldLabel} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__empty__">&nbsp;</SelectItem>
-                  {options.map(opt => (
-                    <SelectItem key={opt.id} value={opt.id}>{opt.name || opt.label || opt._identifier || opt.id}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </TableCell>
-          );
+          return renderSelectorCell({
+            catalogs, entity, field, apiBaseUrl, col, values, touchedFieldsRef,
+            handleChange, handleFieldChange, handleKeyDown, isFirst, firstInputRef,
+            fieldLabel, selectorContext, token,
+          });
         }
 
         const isNumeric = NUMERIC_FIELD_TYPES.has(field.type);
