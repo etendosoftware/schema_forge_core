@@ -78,12 +78,14 @@
         "accountingDate": {
           "grid": true,
           "searchable": true,
-          "seq": 20
+          "seq": 20,
+          "dot": false
         },
         "startingDate": {
           "grid": true,
           "searchable": true,
-          "seq": 30
+          "seq": 30,
+          "dot": false
         },
         "totalAmortization": {
           "visibility": "readOnly",

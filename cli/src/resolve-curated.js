@@ -219,6 +219,7 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.section) field.section = fieldDecision.section;
   if (fieldDecision.seq != null) field.seq = fieldDecision.seq;
   if (fieldDecision.filterable === false) field.filterable = false;
+  if (fieldDecision.dot === false) field.dot = false;
   if (fieldDecision.badge) field.badge = true;
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
@@ -547,6 +548,7 @@ const WINDOW_TRUTHY_PROPS = [
   'sendDocument',
   'linesLayout',
   'extraTabs',
+  'customPanelTabs',
 ];
 
 const WINDOW_BOOLEAN_TRUE_PROPS = [
@@ -563,6 +565,7 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'toolbarBorderBottom',
   'compactSidebarPadding',
   'whiteFormBackground',
+  'hideFormCard',
 ];
 
 // `attachments` is defined-only (not truthy) so an explicit `false` from
@@ -588,8 +591,8 @@ export const WINDOW_KEY_ORDER = [
   'labelOverrides', 'primaryTabs', 'othersLabel',
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
-  'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
-  'extraTabs', 'attachments', 'rowQuickActions',
+  'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
+  'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
   'layoutType', 'linesLayout',
 ];

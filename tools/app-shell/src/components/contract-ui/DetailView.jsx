@@ -233,6 +233,7 @@ export function DetailView({
   toolbarBorderBottom = false,
   compactSidebarPadding = false,
   whiteFormBackground = false,
+  hideFormCard = false,
   tabsBarRightDivider = null,
   tabsBarRight = null,
   hideTopBar = false,
@@ -1900,7 +1901,7 @@ export function DetailView({
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`}>
 
             {/* Principal + collapsed fields wrapped in a card */}
-            <div className={`${noHeaderBorder ? '' : 'rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${whiteFormBackground ? ' bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50' : ''}${embedded ? ' pointer-events-none' : ''}`}>
+            <div className={`${hideFormCard ? 'hidden' : ''}${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${whiteFormBackground ? ' bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50' : ''}${embedded ? ' pointer-events-none' : ''}`}>
               <div className={linesLayout === 'inlineEditable' ? 'p-2' : 'p-6'}>
                 <Form
                   entity={entity}
@@ -1951,7 +1952,7 @@ export function DetailView({
             {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
             {formFooter && (
               <div className={embedded ? 'pointer-events-none' : ''}>
-                {React.createElement(formFooter, { data, entity, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl })}
+                {React.createElement(formFooter, { data, entity, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl, editing: hook.editing })}
               </div>
             )}
 

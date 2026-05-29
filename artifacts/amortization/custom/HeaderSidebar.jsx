@@ -8,7 +8,7 @@ function MetricCard({ label, value, subtitle, tint = null }) {
     green: { bg: 'bg-emerald-50', text: 'text-emerald-800', labelCls: 'text-emerald-600', sub: 'text-emerald-600' },
     amber: { bg: 'bg-amber-50', text: 'text-amber-800', labelCls: 'text-amber-600', sub: 'text-amber-600' },
     blue: { bg: 'bg-blue-50', text: 'text-blue-800', labelCls: 'text-blue-600', sub: 'text-blue-500' },
-    gray: { bg: 'bg-gray-50', text: 'text-gray-900', labelCls: 'text-gray-500', sub: 'text-gray-400' },
+    gray: { bg: 'bg-white border border-gray-100', text: 'text-gray-900', labelCls: 'text-gray-500', sub: 'text-gray-400' },
   };
   const c = tints[tint] || tints.gray;
   return (

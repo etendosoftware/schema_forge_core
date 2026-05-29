@@ -1,8 +1,8 @@
 {
-  "version": "0.8.0",
+  "version": "0.9.1",
   "generatedAt": "2026-04-29T19:06:30.936Z",
   "updatedAt": "2026-05-26T18:48:56.797Z",
-  "contractChecksum": "4a68a8a644d72b4d",
+  "contractChecksum": "b7adf89c9c19e165",
   "apiPrediction": {
     "specName": "assets",
     "baseUrl": "/sws/neo/assets",

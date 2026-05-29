@@ -28,6 +28,7 @@ const columns = [
   { key: 'purchaseDate', column: 'Datepurchased', type: 'date', label: 'Purchase Date' },
   { key: 'depreciationStartDate', column: 'Amortizationstartdate', type: 'date', label: 'Depreciation Start Date' },
   { key: 'assetValue', column: 'AssetValueAmt', type: 'amount', label: 'Asset Value', summable: true },
+  { key: 'depreciationAmt', column: 'Amortizationvalueamt', type: 'amount', label: 'Depreciation Amt.', summable: true },
   { key: 'depreciatedValue', column: 'Depreciatedvalue', type: 'amount', label: 'Depreciated Value', summable: true },
   { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'status', label: 'Fully Depreciated', enumLabels: { 'true': 'assetsFullyDepreciated', 'false': 'assetsStillInProgress' }, render: renderDepreciationProgress, required: true, filterable: false },
 ];

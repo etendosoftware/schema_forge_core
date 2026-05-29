@@ -109,6 +109,12 @@ Changes landed in `feature/ETP-4103`. All items below affect the Amortization wi
 - `tabsBarPaddingX: "px-2"` in `decisions.json` — tabs bar horizontal padding set to 8 px.
 - `toolbarPaddingX: "px-2"` in `decisions.json` — toolbar horizontal padding set to 8 px.
 
+## v3 UX redesign — ETP-4103
+
+Changes landed in `feature/ETP-4103`. Item below covers the sidebar style change specific to the Amortization window.
+
+- `artifacts/amortization/custom/HeaderSidebar.jsx` — "Moneda" and "Líneas" MetricCards changed from `bg-gray-50` to `bg-white border border-gray-100` to maintain visual separation against the white sidebar background.
+
 ## Iteration backlog (out of current scope)
 
 - Callout linking `amortizationPercentage` ↔ `amortizationAmount` so that editing one updates the other based on the asset's value.

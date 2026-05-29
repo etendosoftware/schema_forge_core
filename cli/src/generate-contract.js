@@ -232,6 +232,7 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.noTrailing) mapped.noTrailing = true;
       if (f.filterOnly) mapped.filterOnly = true;
       if (f.filterable === false) mapped.filterable = false;
+      if (f.dot === false) mapped.dot = false;
       if (f.min !== undefined) mapped.min = f.min;
 
       // Behavioral metadata: validationRule (e.g. M_PriceList.issopricelist = @isSOTrx@)
