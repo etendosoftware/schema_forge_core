@@ -359,8 +359,12 @@ export function analyzeBoundary({
       }
     }
 
+    const appShellCoreFiles = entries.filter((e) => e.scope === 'app-shell-core').map((e) => e.path);
+    const appShellCoreOnlyLocales = appShellCoreFiles.length > 0
+      && appShellCoreFiles.every((f) => /^packages\/app-shell-core\/src\/locales\//.test(f));
     const appShellCoreMixedScope = nonSupportScopes.includes('app-shell-core')
-      && nonSupportScopes.some((scope) => !['app-shell-core'].includes(scope));
+      && nonSupportScopes.some((scope) => !['app-shell-core'].includes(scope))
+      && !(appShellCoreOnlyLocales && windowScopes.length === 1);
     if (appShellCoreMixedScope && !platformRequested) {
       blockers.push({
         code: 'APP_SHELL_CORE_MIXED_SCOPE',

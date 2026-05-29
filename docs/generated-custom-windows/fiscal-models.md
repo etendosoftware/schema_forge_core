@@ -23,7 +23,7 @@ The window supports two data modes: **demo** (read-only mock data for exploratio
 | Mode | Source | Auto-compute | Status writes |
 |------|--------|--------------|---------------|
 | `demo` | `MOCK_DECLARATIONS` constant in `FmListPage.jsx` | Disabled | Local state only |
-| `real` | `GET /fiscal303/declarations` (NEO Headless) | Enabled for 303 borrador | `PUT /fiscal303/declarations?id=` |
+| `real` | `GET /fiscal303/declarations` (NEO Headless) | Enabled for 303 draft | `PUT /fiscal303/declarations?id=` |
 
 The toggle renders as `Demo` / `Real` pill in the toolbar. The selected mode is stored in `sessionStorage` under key `fm-data-mode` so it survives page navigation within the session.
 
@@ -49,25 +49,25 @@ FmListPage
 
 ```
 Modelo 303:
-(new) → borrador → listo → presentado
-                          ↘ presentadoOtra
-                          ↘ presentadoAcuse
+(new) → draft → ready → submitted
+                        ↘ submitted_ext
+                        ↘ submitted_ack
           ↓
-        omitido  (can be set from any non-submitted state)
+        skipped  (can be set from any non-submitted state)
 
 Modelo 349:
-(new) → pendiente → borrador → listo → presentado
+(new) → pending → draft → ready → submitted
 ```
 
 | Status | Color | Meaning |
 |--------|-------|---------|
-| `pendiente` | orange | Pending — initial state for Modelo 349 before drafting begins |
-| `borrador` | blue | Draft — boxes may still be computing |
-| `listo` | green | Ready — review complete, file can be generated |
-| `presentado` | teal | Filed via the standard channel |
-| `presentadoOtra` | violet | Filed via an alternative channel |
-| `presentadoAcuse` | emerald | Filed with receipt acknowledgement |
-| `omitido` | grey | Intentionally skipped |
+| `pending` | orange | Pending — initial state for Modelo 349 before drafting begins |
+| `draft` | blue | Draft — boxes may still be computing |
+| `ready` | green | Ready — review complete, file can be generated |
+| `submitted` | teal | Filed via the standard channel |
+| `submitted_ext` | violet | Filed via an alternative channel |
+| `submitted_ack` | emerald | Filed with receipt acknowledgement |
+| `skipped` | grey | Intentionally skipped |
 
 Status transitions are driven by `StatusPillMenu` inline in the list and by the detail page action buttons.
 
@@ -79,11 +79,11 @@ Three steps (0-based index):
 
 | Step | Index | Status |
 |------|-------|--------|
-| Borrador | 0 | `borrador` |
-| Listo | 1 | `listo` |
-| Presentado | 2 | `presentado*` |
+| Draft | 0 | `draft` |
+| Ready | 1 | `ready` |
+| Submitted | 2 | `submitted*` |
 
-(`omitido` uses index `-1` — no step is highlighted.)
+(`skipped` uses index `-1` — no step is highlighted.)
 
 ### Tabs
 
@@ -104,7 +104,7 @@ A `GET /session` call on mount populates the NIF/nombre fields used in the gener
 
 ## Modelo 349 detail page (`FmModel349Page`)
 
-Uses a 4-step stepper including `pendiente` (index 0). The 349 page is structurally similar to 303 but does not have the auto-compute mechanism.
+Uses a 4-step stepper including `pending` (index 0). The 349 page is structurally similar to 303 but does not have the auto-compute mechanism.
 
 ## Key files
 

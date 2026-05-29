@@ -139,6 +139,48 @@ describe('domain boundary classification', () => {
     assert.equal(report.decision, 'pass');
   });
 
+  it('allows locale-only app-shell-core changes paired with a single window (i18n key additions)', () => {
+    const report = analyzeBoundary({
+      knownWindows: WINDOWS,
+      changedFiles: [
+        'packages/app-shell-core/src/locales/en_US.json',
+        'packages/app-shell-core/src/locales/es_ES.json',
+        'tools/app-shell/src/windows/custom/sales-order/SalesOrderForm.jsx',
+        'tools/app-shell/src/windows/custom/sales-order/__tests__/SalesOrderForm.test.js',
+      ],
+    });
+
+    assert.equal(report.decision, 'pass');
+    assert.deepEqual(report.blockers, []);
+  });
+
+  it('still blocks locale changes paired with multiple windows', () => {
+    const report = analyzeBoundary({
+      knownWindows: WINDOWS,
+      changedFiles: [
+        'packages/app-shell-core/src/locales/en_US.json',
+        'tools/app-shell/src/windows/custom/sales-order/SalesOrderForm.jsx',
+        'tools/app-shell/src/windows/custom/purchase-order/PurchaseOrderForm.jsx',
+      ],
+    });
+
+    assert.equal(report.decision, 'fail');
+  });
+
+  it('still blocks locale changes paired with non-locale app-shell-core files', () => {
+    const report = analyzeBoundary({
+      knownWindows: WINDOWS,
+      changedFiles: [
+        'packages/app-shell-core/src/locales/en_US.json',
+        'packages/app-shell-core/src/i18n/useLabel.js',
+        'tools/app-shell/src/windows/custom/sales-order/SalesOrderForm.jsx',
+      ],
+    });
+
+    assert.equal(report.decision, 'fail');
+    assert.ok(report.blockers.some((b) => b.code === 'APP_SHELL_CORE_MIXED_SCOPE'));
+  });
+
   it('classifies app-shell test harness files as platform', () => {
     assert.deepEqual(
       classifyPath('tools/app-shell/src/test/mockUseApiFetch.js', { knownWindows: WINDOWS }),
