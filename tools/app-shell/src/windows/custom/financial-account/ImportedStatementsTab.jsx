@@ -3,7 +3,7 @@ import { useBankStatements } from '@/hooks/useBankStatements';
 import { StatementsToolbar } from './StatementsToolbar';
 import { StatementsTable } from './StatementsTable';
 import { StatementLinesView } from './StatementLinesView';
-import { UploadStatementDialog } from './UploadStatementDialog';
+import { ImportStatementModal } from './ImportStatementModal';
 
 function presetBounds(presetId) {
   const today = new Date();
@@ -121,9 +121,10 @@ export function ImportedStatementsTab({ account }) {
         />
       </div>
 
-      <UploadStatementDialog
+      <ImportStatementModal
         open={importOpen}
         accountId={accountId}
+        accountCurrency={currency}
         onClose={() => setImportOpen(false)}
         onSuccess={reload}
       />
