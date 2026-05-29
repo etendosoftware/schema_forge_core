@@ -24,6 +24,7 @@ Transactional email is executed inside Etendo Go, behind the NEO Headless bounda
 ```
 React SPA
   -> POST /sws/neo/email-contracts/{contractName}/send
+     or auth endpoints such as /sws/go/register and /sws/go/password-reset/request
   -> JWT auth and role/org context
   -> EmailContractExecutor
   -> Contract registry
@@ -64,6 +65,11 @@ The contract decides:
 - which audit fields are stored
 - what happens if a kill switch is active
 
+Authentication flows are stricter: browser clients call the auth endpoint only
+and never send the email contract command. The server creates the transactional
+email command after the account, password reset, or onboarding state transition
+has been validated and persisted.
+
 ## Contract Lifecycle
 
 | Phase | Owner | Required Output |
@@ -92,22 +98,47 @@ Edge cases:
 
 ### New Account
 
-Purpose: notify a user that an account or environment is ready.
+Purpose: notify a user that a local Etendo Go account was created.
 
 Expected contract: `new-account`.
 
 Edge cases:
 
 - The account exists but is inactive: block the send unless a dedicated activation flow permits it.
-- The environment is not fully provisioned: do not send the email until readiness checks pass.
 - The recipient email belongs to an existing user in another tenant: keep tenant context isolated and avoid cross-tenant data in variables.
 - The invite link is regenerated: invalidate or supersede prior links according to the contract idempotency rule.
+
+### Environment Ready
+
+Purpose: notify a user that onboarding committed successfully and the new environment is ready to enter.
+
+Expected contract: `environment-ready`.
+
+Edge cases:
+
+- Onboarding fails before commit: do not send the email.
+- The account cannot be resolved after commit: audit the failure and keep onboarding success unchanged.
+- A retry completes the same environment again: use idempotency scoped to the environment/client id.
+
+### Password Changed
+
+Purpose: notify the account owner after an authenticated local password change.
+
+Expected contract: `password-changed`.
+
+Edge cases:
+
+- The current password is wrong: reject the change and do not send email.
+- The provider fails after the password is changed: audit the email failure but keep the password change and rotated session token.
+- Multiple changes happen in a short window: throttle per recipient and tenant while keeping each successful change auditable.
 
 ### Login Alert
 
 Purpose: notify a user about security-relevant login events.
 
 Expected contract: `login-alert`.
+
+Current status: registered for contract compatibility but not triggered by login. Sending login alerts is deferred until the SSO and risk-policy model is defined.
 
 Edge cases:
 
@@ -183,6 +214,8 @@ Recommended key shape:
 ### Audit
 
 Audit records must be written for success, blocked, duplicate, throttled, unauthorized, suppressed, sanitizer rejection, provider failure, and kill-switch outcomes. Audit must not store provider secrets or full HTML bodies.
+
+Runtime audit, idempotency, throttle counters, and kill-switch records are persisted through the DAL-backed safety store. Process-local in-memory storage is acceptable only for unit tests or explicit non-runtime harnesses.
 
 ### Kill Switches
 

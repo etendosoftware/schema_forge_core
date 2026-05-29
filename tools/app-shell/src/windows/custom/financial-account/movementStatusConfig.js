@@ -1,18 +1,27 @@
 // Payment status search_keys from Etendo backend reference list (FIN_Payment.Status).
-// These match the actual backend values — do NOT translate the keys.
-// Follow-up: once a reference endpoint is exposed, this map can be fetched dynamically.
+// Keys match the actual backend values — do NOT rename.
+//
+// Visual model (ETP-4121 update): the 8 backend statuses collapse into 5 user-facing
+// families. Labels are single strings shared across all backend codes that map to the
+// same family (e.g. RPAP + RPAE both render as "Borrador").
 
 import { MOVEMENT_STATUS_FAMILY } from '@/components/financial-accounts/tokens';
 
+const DRAFT     = { family: MOVEMENT_STATUS_FAMILY.PENDING,    labelKey: 'financeAccountMovementsStatusDraft' };
+const VOIDED    = { family: MOVEMENT_STATUS_FAMILY.VOIDED,     labelKey: 'financeAccountMovementsStatusVoided' };
+const COMPLETED = { family: MOVEMENT_STATUS_FAMILY.EXECUTED,   labelKey: 'financeAccountMovementsStatusCompleted' };
+const IN_TRANSIT= { family: MOVEMENT_STATUS_FAMILY.IN_TRANSIT, labelKey: 'financeAccountMovementsStatusInTransit' };
+const RECONCILED= { family: MOVEMENT_STATUS_FAMILY.CLEARED,    labelKey: 'financeAccountMovementsStatusReconciled' };
+
 export const MOVEMENT_STATUS_CONFIG = {
-  RPAP:   { family: MOVEMENT_STATUS_FAMILY.PENDING,    labelKey: 'financeAccountMovementsStatusRPAP' },
-  RPAE:   { family: MOVEMENT_STATUS_FAMILY.PENDING,    labelKey: 'financeAccountMovementsStatusRPAE' },
-  RPVOID: { family: MOVEMENT_STATUS_FAMILY.VOIDED,     labelKey: 'financeAccountMovementsStatusRPVOID' },
-  RPR:    { family: MOVEMENT_STATUS_FAMILY.EXECUTED,   labelKey: 'financeAccountMovementsStatusRPR' },
-  PPM:    { family: MOVEMENT_STATUS_FAMILY.EXECUTED,   labelKey: 'financeAccountMovementsStatusPPM' },
-  PWNC:   { family: MOVEMENT_STATUS_FAMILY.IN_TRANSIT, labelKey: 'financeAccountMovementsStatusPWNC' },
-  RDNC:   { family: MOVEMENT_STATUS_FAMILY.IN_TRANSIT, labelKey: 'financeAccountMovementsStatusRDNC' },
-  RPPC:   { family: MOVEMENT_STATUS_FAMILY.CLEARED,    labelKey: 'financeAccountMovementsStatusRPPC' },
+  RPAP:   DRAFT,
+  RPAE:   DRAFT,
+  RPVOID: VOIDED,
+  RPR:    COMPLETED,
+  PPM:    COMPLETED,
+  PWNC:   IN_TRANSIT,
+  RDNC:   IN_TRANSIT,
+  RPPC:   RECONCILED,
 };
 
 export const ALL_STATUSES = Object.keys(MOVEMENT_STATUS_CONFIG);
