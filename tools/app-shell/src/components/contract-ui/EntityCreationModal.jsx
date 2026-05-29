@@ -131,10 +131,16 @@ function FieldRenderer({ field, value, onChange, opts, ui, form, autoFocus }) {
 }
 
 function getInputType(field) {
-  return field.type === 'number' ? 'number'
-    : field.type === 'email' ? 'email'
-      : field.type === 'tel' ? 'tel'
-        : 'text';
+  if (field.type === 'number') {
+    return 'number';
+  } else {
+    if (field.type === 'email') {
+      return 'email';
+    } else {
+      return field.type === 'tel' ? 'tel'
+          : 'text';
+    }
+  }
 }
 
 function RepeatableSection({ section, rows, onAdd, onUpdate, onRemove, ui }) {
