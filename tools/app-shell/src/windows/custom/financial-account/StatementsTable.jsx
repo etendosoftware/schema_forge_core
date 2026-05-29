@@ -1,115 +1,220 @@
+import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table';
+import { StatusTag } from '@/components/ui/status-tag';
+import { cn } from '@/lib/utils';
+import { StatementLinesInline } from './StatementLinesInline';
 
-function formatDate(isoString, bcpLocale) {
-  if (!isoString) return '—';
-  const d = new Date(isoString);
+// ─────────────────────────────────────────────────────────────────────────────
+// Layout — grid (NOT <table>) so the expanded accordion row can span all cols.
+//   28        · chevron
+//   110       · doc nº
+//   1fr       · name (caps at 1fr instead of 2fr so it doesn't eat the row)
+//   130       · import date
+//   130       · transaction date
+//   90        · lines (numeric right-aligned in the cells)
+//   130       · total amount
+//   150       · status pill
+//   minmax(32, 1fr) · trailing flexible spacer — absorbs the leftover width on
+//                     wide viewports so the data columns stay close to the name
+// ─────────────────────────────────────────────────────────────────────────────
+const GRID =
+  'grid grid-cols-[28px_110px_minmax(220px,1fr)_130px_130px_90px_130px_150px_minmax(32px,1fr)] gap-4';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Date / money formatting
+// ─────────────────────────────────────────────────────────────────────────────
+function formatDate(iso, bcpLocale) {
+  if (!iso) return '—';
+  const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat(bcpLocale, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
+    day: '2-digit', month: '2-digit', year: 'numeric',
   }).format(d);
 }
 
-const SKELETON_ROWS = [1, 2, 3, 4, 5];
-const SKELETON_COL_KEYS = ['docno', 'name', 'importdate', 'txdate', 'filename', 'chevron'];
-
-function renderBody({ loading, statements, emptyLabel, renderRow }) {
-  if (loading) {
-    return SKELETON_ROWS.map((n) => (
-      <TableRow key={n}>
-        {SKELETON_COL_KEYS.map((k) => (
-          <TableCell key={k}>
-            <Skeleton className="h-4 w-full" />
-          </TableCell>
-        ))}
-      </TableRow>
-    ));
+function formatMoney(amount, currency, bcpLocale) {
+  if (amount == null) return '—';
+  try {
+    return new Intl.NumberFormat(bcpLocale, {
+      style: 'currency', currency,
+      minimumFractionDigits: 2, maximumFractionDigits: 2,
+    }).format(Number(amount));
+  } catch {
+    return `${Number(amount).toFixed(2)} ${currency}`;
   }
-  if (statements.length === 0) {
-    return (
-      <TableRow>
-        <TableCell colSpan={6} className="py-16 text-center text-sm text-[#6c6c89]">
-          {emptyLabel}
-        </TableCell>
-      </TableRow>
-    );
-  }
-  return statements.map(renderRow);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Status pill — uses the shared StatusTag component so the chrome (radius,
+// padding, font) matches every other status tag across the app (ETP-3835).
+// Status → tone mapping:
+//   PENDING    → neutral (no lines reconciled yet)
+//   PARTIAL    → warning (some lines reconciled)
+//   RECONCILED → success (all lines reconciled)
+// ─────────────────────────────────────────────────────────────────────────────
+const STATUS_TO_TONE = {
+  PENDING: 'neutral',
+  PARTIAL: 'warning',
+  RECONCILED: 'success',
+};
+
+const STATUS_TO_LABEL_KEY = {
+  PENDING:    'financeAccountStatementsStatusPending',
+  PARTIAL:    'financeAccountStatementsStatusPartial',
+  RECONCILED: 'financeAccountStatementsStatusReconciled',
+};
+
+function StatusPill({ status, matched, total, ui }) {
+  const tone = STATUS_TO_TONE[status] ?? 'neutral';
+  const base = ui(STATUS_TO_LABEL_KEY[status] ?? STATUS_TO_LABEL_KEY.PENDING);
+  const label = status === 'PARTIAL' ? `${base} ${matched}/${total}` : base;
+  return <StatusTag tone={tone} label={label} />;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────────────────────
 /**
- * Table of imported bank statements.
- * Columns mirror the Classic "Imported Bank Statements" tab:
- * Document No. | Document Type | Name | Import Date | Transaction Date | File Name
+ * Imported Statements list with inline accordion (Opción C). Each row reveals
+ * a card with the statement's lines.
  *
  * @param {{
  *   statements: Array<object>;
  *   loading: boolean;
- *   onOpenStatement: (id: string) => void;
+ *   currency?: string;
  * }} props
  */
-export function StatementsTable({ statements, loading, onOpenStatement }) {
+export function StatementsTable({ statements, loading, currency = 'EUR' }) {
   const ui = useUI();
   const { locale: appLocale } = useLocaleSwitch();
   const bcpLocale = (appLocale || 'es_ES').replace('_', '-');
+  const [openId, setOpenId] = useState(null);
+  const toggle = (id) => setOpenId((prev) => (prev === id ? null : id));
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow className="h-10 [&_th]:text-xs [&_th]:font-semibold [&_th]:leading-4 [&_th]:text-[#121217]">
-          <TableHead>{ui('financeAccountStatementsColDocumentNo')}</TableHead>
-          <TableHead>{ui('financeAccountStatementsColName')}</TableHead>
-          <TableHead>{ui('financeAccountStatementsColImportDate')}</TableHead>
-          <TableHead>{ui('financeAccountStatementsColTransactionDate')}</TableHead>
-          <TableHead>{ui('financeAccountStatementsColFileName')}</TableHead>
-          <TableHead className="w-10" aria-hidden="true" />
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {renderBody({
-          loading,
-          statements,
-          emptyLabel: ui('financeAccountStatementsEmpty'),
-          renderRow: (s) => (
-            <TableRow
+    <div role="table" className="w-full">
+      {/* Header — same style as MovementsTable headers (xs / semibold / #121217). */}
+      <div
+        role="row"
+        className={cn(
+          GRID,
+          'h-10 items-center border-b border-[#E8EAEF] px-4 text-xs font-semibold leading-4 text-[#121217]',
+        )}
+      >
+        <span aria-hidden="true" />
+        <span>{ui('financeAccountStatementsColDocumentNo')}</span>
+        <span>{ui('financeAccountStatementsColName')}</span>
+        <span>{ui('financeAccountStatementsColImportDate')}</span>
+        <span>{ui('financeAccountStatementsColTransactionDate')}</span>
+        <span>{ui('financeAccountStatementsColLines')}</span>
+        <span>{ui('financeAccountStatementsColTotalAmount')}</span>
+        <span>{ui('financeAccountStatementsColStatus')}</span>
+        <span aria-hidden="true" />
+      </div>
+
+      {/* Body */}
+      {loading ? (
+        [1, 2, 3, 4, 5].map((n) => (
+          <div key={n} role="row" className={cn(GRID, 'border-b border-[#F0F2F5] px-4 py-3')}>
+            {Array.from({ length: 9 }).map((_, i) => (
+              <Skeleton key={i} className="h-4 w-full" />
+            ))}
+          </div>
+        ))
+      ) : statements.length === 0 ? (
+        <div className="px-4 py-16 text-center text-sm text-[#6C6C89]">
+          {ui('financeAccountStatementsEmpty')}
+        </div>
+      ) : (
+        statements.map((s) => {
+          const open = openId === s.id;
+          return (
+            <StatementRow
               key={s.id}
-              data-testid={`statement-row-${s.id}`}
-              className="group relative cursor-pointer bg-white transition-shadow hover:z-10 hover:bg-white hover:shadow-lg"
-              onClick={() => onOpenStatement(s.id)}
-            >
-              <TableCell className="text-sm font-semibold text-[#121217]">
-                {s.documentNo || '—'}
-              </TableCell>
-              <TableCell className="max-w-[240px] truncate text-sm text-[#121217]">
-                {s.name || '—'}
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-sm text-[#121217]">
-                {formatDate(s.importDate, bcpLocale)}
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-sm text-[#121217]">
-                {formatDate(s.transactionDate, bcpLocale)}
-              </TableCell>
-              <TableCell className="max-w-[220px] truncate text-sm text-[#121217]">
-                {s.fileName || '—'}
-              </TableCell>
-              <TableCell className="w-10 pr-4 text-right text-[#6c6c89]">
-                <ChevronRight className="ml-auto h-4 w-4" aria-hidden="true" />
-              </TableCell>
-            </TableRow>
-          ),
-        })}
-      </TableBody>
-    </Table>
+              statement={s}
+              currency={currency}
+              bcpLocale={bcpLocale}
+              ui={ui}
+              open={open}
+              onToggle={() => toggle(s.id)}
+            />
+          );
+        })
+      )}
+    </div>
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Internals
+// ─────────────────────────────────────────────────────────────────────────────
+function StatementRow({ statement: s, currency, bcpLocale, ui, open, onToggle }) {
+  const rangeName = s.periodFrom || s.periodTo
+    ? formatRange(s.periodFrom, s.periodTo, bcpLocale)
+    : (s.name || '—');
+
+  return (
+    <>
+      <div
+        role="row"
+        data-testid={`statement-row-${s.id}`}
+        className={cn(
+          GRID,
+          'group relative cursor-pointer items-center bg-white px-4 py-3 text-sm transition-shadow',
+          open ? 'bg-[#F5F7F9]' : 'hover:z-10 hover:bg-white hover:shadow-lg',
+        )}
+        onClick={onToggle}
+      >
+        <span
+          role="button"
+          aria-label={open ? ui('financeAccountStatementsCollapseAria') : ui('financeAccountStatementsExpandAria')}
+          aria-expanded={open}
+          tabIndex={0}
+          onClick={(e) => { e.stopPropagation(); onToggle(); }}
+          className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-[#6C6C89] transition-transform hover:bg-[#EDEFF3] hover:text-[#121217]"
+          style={{ transform: open ? 'rotate(90deg)' : undefined }}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </span>
+        <span className="whitespace-nowrap font-semibold text-[#121217]">{s.documentNo || '—'}</span>
+        <span className="truncate text-[#121217]">{rangeName}</span>
+        <span className="whitespace-nowrap text-[#121217]">{formatDate(s.importDate, bcpLocale)}</span>
+        <span className="whitespace-nowrap text-[#121217]">{formatDate(s.transactionDate, bcpLocale)}</span>
+        <span className="text-right tabular-nums text-[#121217]">{s.lineCount ?? 0}</span>
+        <span className="text-right tabular-nums font-semibold text-[#121217]">
+          {formatMoney(s.totalAmount, currency, bcpLocale)}
+        </span>
+        <span>
+          <StatusPill
+            status={s.status}
+            matched={s.matchedCount ?? 0}
+            total={s.lineCount ?? 0}
+            ui={ui}
+          />
+        </span>
+        <span aria-hidden="true" />
+      </div>
+
+      {open ? (
+        <div className="border-b border-[#E8EAEF] bg-[#F8F9FB] px-4 pb-4">
+          <StatementLinesInline
+            statementId={s.id}
+            currency={currency}
+          />
+        </div>
+      ) : (
+        <div className="border-b border-[#F0F2F5]" aria-hidden="true" />
+      )}
+    </>
+  );
+}
+
+function formatRange(fromIso, toIso, bcpLocale) {
+  const f = formatDate(fromIso, bcpLocale);
+  const t = formatDate(toIso, bcpLocale);
+  if (f === '—' && t === '—') return '—';
+  if (f === t) return f;
+  return `${f} ${'–'} ${t}`;
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -11,6 +11,7 @@ import { DetailTabs } from './DetailTabs';
 import { MovementsTab } from './MovementsTab';
 import { ReconciliationTab } from './ReconciliationTab';
 import { ImportedStatementsTab } from './ImportedStatementsTab';
+import { downloadMovementsCsv } from './movementsCsvExport';
 
 /**
  * Financial Account detail view.
@@ -22,8 +23,24 @@ export default function FinancialAccountWindow({ recordId }) {
   const ui = useUI();
   const [activeTab, setActiveTab] = useState('movements');
   const { account } = useFinancialAccount(recordId);
-  const { movements, totals, loading: movementsLoading } = useAccountMovements(recordId);
+  const { movements, totals, loading: movementsLoading, reload: reloadMovements } = useAccountMovements(recordId);
   const { statements } = useBankStatements(recordId);
+  const movementsTabRef = useRef(null);
+
+  const handleExport = () => {
+    if (activeTab !== 'movements') {
+      toast(ui('financeAccountDetailExportToast'));
+      return;
+    }
+    const rows = movementsTabRef.current?.getFilteredMovements() ?? movements;
+    if (!rows || rows.length === 0) {
+      toast.error(ui('financeAccountDetailExportEmpty'));
+      return;
+    }
+    const safeName = (account?.name ?? 'movements').replace(/[^\w.-]+/g, '_');
+    downloadMovementsCsv(rows, `${safeName}_movements`);
+    toast.success(ui('financeAccountDetailExportDone'));
+  };
 
   const accountName = account?.name ?? '';
   useSetPageMeta(
@@ -49,7 +66,8 @@ export default function FinancialAccountWindow({ recordId }) {
           />
           <button
             type="button"
-            onClick={() => toast(ui('financeAccountDetailExportToast'))}
+            data-testid="financial-account-export"
+            onClick={handleExport}
             className="inline-flex h-10 items-center gap-1 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium leading-6 text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9]"
           >
             <Upload className="h-6 w-6 text-[#828FA3]" />
@@ -61,10 +79,12 @@ export default function FinancialAccountWindow({ recordId }) {
         <div className="flex flex-1 flex-col overflow-auto">
           {activeTab === 'movements' && (
             <MovementsTab
+              ref={movementsTabRef}
               account={account}
               totals={totals}
               movements={movements}
               loading={movementsLoading}
+              onReload={reloadMovements}
             />
           )}
           {activeTab === 'reconciliation' && <ReconciliationTab />}

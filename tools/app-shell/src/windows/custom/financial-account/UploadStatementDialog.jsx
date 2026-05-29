@@ -76,7 +76,7 @@ export function UploadStatementDialog({ open, accountId, onClose, onSuccess }) {
             <input
               ref={inputRef}
               type="file"
-              accept=".c43,.43,.txt,.nor"
+              accept=".c43,.43,.txt,.nor,.csv,text/csv,text/plain"
               onChange={handleFileChange}
               className="sr-only"
               aria-label={ui('financeAccountStatementsImportFileInput')}

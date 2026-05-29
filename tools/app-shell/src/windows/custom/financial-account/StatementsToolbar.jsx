@@ -2,6 +2,7 @@ import { ArrowLeft, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUI } from '@/i18n';
 import { DateRangePopover } from '@/components/ui/date-range-popover';
+import { StatementStatusFilter } from './StatementStatusFilter';
 
 /**
  * Toolbar for the imported statements tab.
@@ -11,10 +12,20 @@ import { DateRangePopover } from '@/components/ui/date-range-popover';
  *   onSearchChange: (v: string) => void;
  *   dateRange: null | { presetId: string } | { from: Date, to: Date };
  *   onDateRangeChange: (v: null | { presetId: string } | { from: Date, to: Date }) => void;
+ *   status: string|null;
+ *   onStatusChange: (v: string|null) => void;
  *   onImportClick: () => void;
  * }} props
  */
-export function StatementsToolbar({ search, onSearchChange, dateRange, onDateRangeChange, onImportClick }) {
+export function StatementsToolbar({
+  search,
+  onSearchChange,
+  dateRange,
+  onDateRangeChange,
+  status,
+  onStatusChange,
+  onImportClick,
+}) {
   const ui = useUI();
   const navigate = useNavigate();
 
@@ -37,6 +48,9 @@ export function StatementsToolbar({ search, onSearchChange, dateRange, onDateRan
         onChange={onDateRangeChange}
         placeholder={ui('dateRangeAnyTime')}
       />
+
+      {/* Status filter */}
+      <StatementStatusFilter value={status} onChange={onStatusChange} />
 
       {/* Spacer */}
       <div className="flex-1" />

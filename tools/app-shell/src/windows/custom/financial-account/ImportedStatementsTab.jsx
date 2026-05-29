@@ -62,6 +62,7 @@ export function ImportedStatementsTab({ account }) {
   const [selectedStatementId, setSelectedStatementId] = useState(null);
   const [search, setSearch] = useState('');
   const [dateRange, setDateRange] = useState(null);
+  const [status, setStatus] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
 
   const selectedStatement = statements.find((s) => s.id === selectedStatementId) ?? null;
@@ -73,6 +74,7 @@ export function ImportedStatementsTab({ account }) {
     const q = search.trim().toLowerCase();
 
     return statements.filter((s) => {
+      if (status && s.status !== status) return false;
       if (from || to) {
         const d = new Date(s.importDate);
         if (from && d < from) return false;
@@ -86,7 +88,7 @@ export function ImportedStatementsTab({ account }) {
       }
       return true;
     });
-  }, [statements, search, dateRange]);
+  }, [statements, search, dateRange, status]);
 
   if (selectedStatementId) {
     return (
@@ -106,6 +108,8 @@ export function ImportedStatementsTab({ account }) {
         onSearchChange={setSearch}
         dateRange={dateRange}
         onDateRangeChange={setDateRange}
+        status={status}
+        onStatusChange={setStatus}
         onImportClick={() => setImportOpen(true)}
       />
 
@@ -113,7 +117,7 @@ export function ImportedStatementsTab({ account }) {
         <StatementsTable
           statements={filteredStatements}
           loading={loading}
-          onOpenStatement={(id) => setSelectedStatementId(id)}
+          currency={currency}
         />
       </div>
 

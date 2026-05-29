@@ -26,7 +26,7 @@ export function DetailTabs({ value, onValueChange, movementsCount, reconciliatio
         <TabsTrigger value="reconciliation" icon={Scale} badge={reconciliationCount}>
           {ui('financeAccountDetailTabReconciliation')}
         </TabsTrigger>
-        <TabsTrigger value="statements" icon={FileText} badge={statementsCount}>
+        <TabsTrigger value="statements" icon={FileText}>
           {ui('financeAccountDetailTabStatements')}
         </TabsTrigger>
       </TabsList>
