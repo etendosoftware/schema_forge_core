@@ -77,12 +77,15 @@ async function fetchSiiMonitorData(apiFetch, orgId) {
 }
 
 async function fetchVerifactuMonitorData(apiFetch, orgId) {
-  const orgParams = { organization: orgId };
+  // The monitor-verifactu child tabs filter only by verifactuSendingStatus (HQL fixed to
+  // not include @AD_Org_id@). OBDal/OBQuery applies org visibility automatically from the
+  // JWT context, so passing _org is sufficient for scoping.
+  const vfParams = { _org: orgId };
   const [accepted, partial, rejected, invalid] = await Promise.all([
-    fetchCount(apiFetch, VF_SPEC, VF_ACEPTADAS_ENTITY,  orgParams),
-    fetchCount(apiFetch, VF_SPEC, VF_PARCIAL_ENTITY,    orgParams),
-    fetchCount(apiFetch, VF_SPEC, VF_RECHAZADAS_ENTITY, orgParams),
-    fetchCount(apiFetch, VF_SPEC, VF_INVALIDAS_ENTITY,  orgParams),
+    fetchCount(apiFetch, VF_SPEC, VF_ACEPTADAS_ENTITY,  vfParams),
+    fetchCount(apiFetch, VF_SPEC, VF_PARCIAL_ENTITY,    vfParams),
+    fetchCount(apiFetch, VF_SPEC, VF_RECHAZADAS_ENTITY, vfParams),
+    fetchCount(apiFetch, VF_SPEC, VF_INVALIDAS_ENTITY,  vfParams),
   ]);
   return { accepted, partiallyAccepted: partial, rejected, invalid };
 }

@@ -65,7 +65,7 @@ describe('JB-06 — Spanish naming of accounting reports', () => {
 describe('JB-06 — legacy locale key (balanceSheet in es_ES.json)', () => {
   const localePath = resolve(
     __dirname,
-    '../../tools/app-shell/src/locales/es_ES.json',
+    '../../packages/app-shell-core/src/locales/es_ES.json',
   );
   const locale = JSON.parse(readFileSync(localePath, 'utf-8'));
 
