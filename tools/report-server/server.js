@@ -32,7 +32,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // Config
 // ---------------------------------------------------------------------------
 
-const PORT = parseInt(process.env.PORT) || 3001;
+const PORT = Number.parseInt(process.env.PORT) || 3001;
 const JSREPORT_URL = process.env.JSREPORT_URL || 'http://localhost:5488';
 const ETENDO_URL = process.env.ETENDO_URL || 'http://localhost:8080/etendo';
 
@@ -42,14 +42,14 @@ const ROOT = resolve(ARTIFACTS_DIR, '..');
 function getDbConfig() {
   const cfg = {
     host: process.env.BBDD_HOST || 'localhost',
-    port: parseInt(process.env.BBDD_PORT) || 5432,
+    port: Number.parseInt(process.env.BBDD_PORT) || 5432,
     user: process.env.BBDD_USER,
     password: process.env.BBDD_PASSWORD,
     database: process.env.BBDD_SID,
     max: 3,
   };
   // RDS requires SSL; skip certificate verification (self-signed RDS cert)
-  if (process.env.BBDD_HOST && process.env.BBDD_HOST.includes('rds.amazonaws.com')) {
+  if (process.env.BBDD_HOST?.includes('rds.amazonaws.com')) {
     cfg.ssl = { rejectUnauthorized: false };
   }
   return cfg;
@@ -99,7 +99,7 @@ function listReports() {
         contract.outputs?.length > 0 &&
         contract.type !== 'document' &&
         (contract.source === 'jasper-migration' || contract.source === 'manual' ||
-         contract.source === 'sql' || contract.source === 'neo' || contract.mockDataFile)
+          contract.source === 'sql' || contract.source === 'neo' || contract.mockDataFile)
       ) {
         reports.push({
           id: contract.reportId,
@@ -128,7 +128,7 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
   if (contract.neo?.endpoint) {
     if (!authToken) throw new Error('No auth token');
     const neoUrl = `${ETENDO_URL}${contract.neo.endpoint}`;
-    const neoBody = { ...(contract.neo.body || {}), ...params };
+    const neoBody = { ...contract.neo.body, ...params };
     const neoRes = await fetch(neoUrl, {
       method: contract.neo.method || 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
@@ -139,19 +139,8 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
       throw new Error(`NEO ${neoRes.status}: ${text.slice(0, 200)}`);
     }
     const data = await neoRes.json();
-    let rows = data;
-    if (contract.neo.dataPath) {
-      for (const key of contract.neo.dataPath.split('.')) rows = rows?.[key];
-    }
-    if (limit && Array.isArray(rows)) rows = rows.slice(0, parseInt(limit, 10));
-    let neoMeta = {};
-    if (contract.neo.dataPath) {
-      const pathParts = contract.neo.dataPath.split('.');
-      const metaParts = [...pathParts.slice(0, -1), 'meta'];
-      let metaObj = data;
-      for (const key of metaParts) metaObj = metaObj?.[key];
-      if (metaObj && typeof metaObj === 'object') neoMeta = metaObj;
-    }
+    let rows = extractRowsFromData(data, contract, limit);
+    let neoMeta = extractNeoMeta(contract, data);
     return { rows, contract, neoMeta };
   }
 
@@ -163,7 +152,7 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
       const replace = (sql) => {
         let q = sql;
         for (const [k, v] of Object.entries(params)) {
-          if (v) q = q.replace(new RegExp(`__${k.toUpperCase()}__`, 'g'), String(v).replace(/'/g, "''"));
+          if (v) q = q.replace(new RegExp(`__${k.toUpperCase()}__`, 'g'), String(v).replaceAll('\'', "''"));
         }
         return q;
       };
@@ -183,6 +172,59 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
   }
 
   // SQL / Jasper path
+  let sql = await buildReportSql(contract, reportId, authToken, params);
+
+  sql = injectDateFilters(contract, params, sql);
+
+  sql = applyLimitToSql(limit, sql);
+
+  const pg = await import('pg');
+  const pool = new pg.default.Pool(getDbConfig());
+  try {
+    const { rows } = await pool.query(sql);
+    return { rows, contract };
+  } finally {
+    await pool.end();
+  }
+}
+
+function applyLimitToSql(limit, sql) {
+  if (limit) sql = sql.replace(/;\s*$/, '') + ` LIMIT ${Number.parseInt(limit, 10)}`;
+  return sql;
+}
+
+function injectDateFilters(contract, params, sql) {
+  if (contract.jasper?.originalFile) {
+    const dateParams = (contract.parameters || []).filter(p => p.type === 'date');
+    const extraClauses = [];
+    applyDateFilters(dateParams, params, contract, sql, extraClauses);
+    if (extraClauses.length > 0) {
+      const insertPoint = sql.search(/\bGROUP\s+BY\b/i);
+      if (insertPoint > 0) sql = sql.slice(0, insertPoint) + 'AND ' + extraClauses.join(' AND ') + '\n' + sql.slice(insertPoint);
+      else {
+        const orderPoint = sql.search(/\bORDER\s+BY\b/i);
+        if (orderPoint > 0) sql = sql.slice(0, orderPoint) + 'AND ' + extraClauses.join(' AND ') + '\n' + sql.slice(orderPoint);
+      }
+    }
+  }
+  return sql;
+}
+
+function applyDateFilters(dateParams, params, contract, sql, extraClauses) {
+  for (const p of dateParams) {
+    const val = params[p.name];
+    if (!val) continue;
+    const col = p.column || contract.jasper.dateColumn
+      || (sql.match(/\b(\w+\.)?DATEORDERED\b/i)?.[0])
+      || (sql.match(/\b(\w+\.)?DATEACCT\b/i)?.[0])
+      || 'DATEACCT';
+    const escaped = String(val).replaceAll('\'', "''");
+    if (p.name.toLowerCase().includes('from')) extraClauses.push(`${col} >= '${escaped}'::date`);
+    else if (p.name.toLowerCase().includes('to')) extraClauses.push(`${col} <= '${escaped}'::date`);
+  }
+}
+
+async function buildReportSql(contract, reportId, authToken, params) {
   let sql = contract.sql?.query || null;
 
   if (!sql && contract.jasper?.originalFile) {
@@ -197,11 +239,11 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
   if (!sql) throw new Error(`No data source configured for report '${reportId}'`);
 
   const clientId = getClientIdFromToken(`Bearer ${authToken}`) || '0';
-  sql = sql.replace(/__CLIENT_ID__/g, clientId);
+  sql = sql.replaceAll('__CLIENT_ID__', clientId);
   for (const [k, v] of Object.entries(params)) {
     if (k.startsWith('_display_')) continue;
     if (v !== undefined && v !== null && v !== '') {
-      sql = sql.replace(new RegExp(`__${k.toUpperCase()}__`, 'g'), String(v).replace(/'/g, "''"));
+      sql = sql.replace(new RegExp(`__${k.toUpperCase()}__`, 'g'), String(v).replaceAll('\'', "''"));
     }
   }
   for (const p of (contract.parameters || [])) {
@@ -209,46 +251,37 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
       sql = sql.replace(new RegExp(`__${p.name.toUpperCase()}__`, 'g'), String(p.default));
     }
   }
-  sql = sql.replace(/=\s*'([^']*,[^']*)'/g, (_, ids) => `IN (${ids.split(',').map(id => `'${id.trim()}'`).join(',')})`);
+  sql = sql.replace(/=\s*'([^',]+(?:,[^',]+)+)'/g, (_, ids) => `IN (${ids.split(',').map(formatIdForSql()).join(',')})`);
   sql = sql.replace(/AND\s*\('__\w+__'\s*=\s*''\s*OR\s*[\s\S]*?'__\w+__'[^)]*\)/gi, '');
   sql = sql.replace(/AD_CLIENT_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi, `AD_CLIENT_ID IN ('${clientId}')`);
   sql = sql.replace(/AD_ORG_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi, `AD_ORG_ID IN (SELECT AD_ORG_ID FROM AD_ORG WHERE AD_CLIENT_ID = '${clientId}' AND ISACTIVE = 'Y')`);
   sql = sql.replace(/AD_LANGUAGE\s*=\s*'[^']+'/gi, `AD_LANGUAGE = 'en_US'`);
+  return sql;
+}
 
-  if (contract.jasper?.originalFile) {
-    const dateParams = (contract.parameters || []).filter(p => p.type === 'date');
-    const extraClauses = [];
-    for (const p of dateParams) {
-      const val = params[p.name];
-      if (!val) continue;
-      const col = p.column || contract.jasper.dateColumn
-        || (sql.match(/\b(\w+\.)?DATEORDERED\b/i)?.[0])
-        || (sql.match(/\b(\w+\.)?DATEACCT\b/i)?.[0])
-        || 'DATEACCT';
-      const escaped = String(val).replace(/'/g, "''");
-      if (p.name.toLowerCase().includes('from')) extraClauses.push(`${col} >= '${escaped}'::date`);
-      else if (p.name.toLowerCase().includes('to')) extraClauses.push(`${col} <= '${escaped}'::date`);
-    }
-    if (extraClauses.length > 0) {
-      const insertPoint = sql.search(/\bGROUP\s+BY\b/i);
-      if (insertPoint > 0) sql = sql.slice(0, insertPoint) + 'AND ' + extraClauses.join(' AND ') + '\n' + sql.slice(insertPoint);
-      else {
-        const orderPoint = sql.search(/\bORDER\s+BY\b/i);
-        if (orderPoint > 0) sql = sql.slice(0, orderPoint) + 'AND ' + extraClauses.join(' AND ') + '\n' + sql.slice(orderPoint);
-      }
-    }
+function formatIdForSql() {
+  return id => `'${id.trim()}'`;
+}
+
+function extractNeoMeta(contract, data) {
+  let neoMeta = {};
+  if (contract.neo.dataPath) {
+    const pathParts = contract.neo.dataPath.split('.');
+    const metaParts = [...pathParts.slice(0, -1), 'meta'];
+    let metaObj = data;
+    for (const key of metaParts) metaObj = metaObj?.[key];
+    if (metaObj && typeof metaObj === 'object') neoMeta = metaObj;
   }
+  return neoMeta;
+}
 
-  if (limit) sql = sql.replace(/;\s*$/, '') + ` LIMIT ${parseInt(limit, 10)}`;
-
-  const pg = await import('pg');
-  const pool = new pg.default.Pool(getDbConfig());
-  try {
-    const { rows } = await pool.query(sql);
-    return { rows, contract };
-  } finally {
-    await pool.end();
+function extractRowsFromData(data, contract, limit) {
+  let rows = data;
+  if (contract.neo.dataPath) {
+    for (const key of contract.neo.dataPath.split('.')) rows = rows?.[key];
   }
+  if (limit && Array.isArray(rows)) rows = rows.slice(0, Number.parseInt(limit, 10));
+  return rows;
 }
 
 // ---------------------------------------------------------------------------
@@ -263,36 +296,33 @@ async function handleRequest(req, res) {
   // CORS for same-origin calls from the SPA
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+  if (method === 'OPTIONS') {
+    res.writeHead(204); res.end();
+    return;
+  }
 
   // Health check
   if (path === '/api/ping') {
-    res.writeHead(200); res.end('pong'); return;
+    res.writeHead(200); res.end('pong');
+    return;
   }
 
   // GET /api/reports
-  if (method === 'GET' && path === '/api/reports') {
-    try { json(res, 200, listReports()); }
-    catch (e) { json(res, 500, { error: e.message }); }
+  if (isGetReportsRequest(method, path)) {
+    getReportsList(res);
     return;
   }
 
   // GET /api/reports/:id/data
-  const dataMatch = path.match(/^\/api\/reports\/([\w-]+)\/data$/);
-  if (method === 'GET' && dataMatch) {
-    const reportId = dataMatch[1];
-    const limit = url.searchParams.get('limit');
-    try {
-      const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-      const { rows, contract } = await fetchReportData(reportId, { limit, authToken });
-      json(res, 200, { rows, contract, count: rows.length });
-    } catch (e) { json(res, 500, { error: e.message }); }
+  const dataMatch = new RegExp(/^\/api\/reports\/([\w-]+)\/data$/).exec(path);
+  if (isGetDataRequest(method, dataMatch)) {
+    await fetchReportDataById(dataMatch, url, req, res);
     return;
   }
 
   // POST /api/reports/:id/render
-  const renderMatch = path.match(/^\/api\/reports\/([\w-]+)\/render$/);
-  if (method === 'POST' && renderMatch) {
+  const renderMatch = new RegExp(/^\/api\/reports\/([\w-]+)\/render$/).exec(path);
+  if (isPostRequestForRender(method, renderMatch)) {
     const reportId = renderMatch[1];
     const body = await readBody(req);
     const { format = 'html', limit, params = {} } = JSON.parse(body || '{}');
@@ -303,43 +333,18 @@ async function handleRequest(req, res) {
       let { rows, contract, documentData, neoMeta = {} } = result;
 
       // groupBy logic
-      let groupLabel = contract.groups?.[0]?.label?.en_US || 'Account';
-      let descriptionLabel = (contract.columns || []).find(c => c.field === 'groupbyname')?.label?.en_US || 'Description';
-      if (params.groupBy && rows) {
-        const dimensionParam = (contract.parameters || []).find(p => p.groupByValue === params.groupBy && p.groupByField);
-        if (dimensionParam) {
-          const sourceField = dimensionParam.groupByField;
-          groupLabel = dimensionParam.label?.en_US || params.groupBy;
-          descriptionLabel = dimensionParam.label?.en_US || descriptionLabel;
-          rows = [...rows].sort((a, b) => (a[sourceField] || '').toLowerCase().localeCompare((b[sourceField] || '').toLowerCase()));
-          rows = rows.map(r => ({ ...r, name: r[sourceField] || '', value: '' }));
-        }
-      }
+      let groupLabel;
+      let descriptionLabel;
+      ({ groupLabel, descriptionLabel, rows } = getGroupedData(contract, params, rows));
 
-      const activeFilters = Object.entries(params)
-        .filter(([k, v]) => v && v !== '' && !k.startsWith('_display_'))
-        .map(([k, v]) => {
-          const paramDef = contract.parameters?.find(p => p.name === k);
-          let displayValue = params['_display_' + k] || v;
-          if (k === 'groupBy') {
-            const dimParam = (contract.parameters || []).find(p => p.groupByValue === v);
-            displayValue = dimParam?.label?.en_US || v;
-          }
-          if (typeof displayValue === 'string' && displayValue.includes(' | '))
-            displayValue = displayValue.split(' | ').filter(Boolean).join(', ');
-          if (paramDef?.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(displayValue)) {
-            const [y, m, d] = displayValue.split('-');
-            displayValue = `${d}/${m}/${y}`;
-          }
-          return { label: paramDef?.label?.en_US || k, value: displayValue };
-        });
+      const activeFilters = filterAndTransformParams(params, contract);
 
       const artifactDir = join(ARTIFACTS_DIR, reportId);
       const templateContent = readFileSync(join(artifactDir, 'template.hbs'), 'utf8');
       const helpersPath = join(artifactDir, 'helpers.js');
-      const helpersCode = existsSync(helpersPath) ? readFileSync(helpersPath, 'utf8') : '';
+      const helpersCode = loadHelpersFromFile(helpersPath);
       const cssPath = join(ROOT, 'templates', 'reports', 'base.css');
-      const css = existsSync(cssPath) ? readFileSync(cssPath, 'utf8') : '';
+      const css = readCssFile(cssPath);
 
       const recipeMap = { html: 'html', pdf: 'chrome-pdf', xlsx: 'html-to-xlsx', csv: 'text' };
       const recipe = recipeMap[format] || 'html';
@@ -347,33 +352,12 @@ async function handleRequest(req, res) {
 
       const amountCols = (contract.columns || []).filter(c => c.type === 'amount');
       const totals = {};
-      if (!documentData && amountCols.length && Array.isArray(rows)) {
-        for (const col of amountCols) totals[col.field] = rows.reduce((sum, r) => sum + (Number(r[col.field]) || 0), 0);
-      }
-      const recordCount = Array.isArray(rows) ? rows.length : undefined;
-      const templateData = documentData
-        ? { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes }
-        : { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
-
+      calculateTotals(documentData, amountCols, rows, totals);
+      const recordCount = getRowCount(rows);
+      const templateData = buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows });
       // HTML: render with Handlebars locally
       if (format === 'html') {
-        const Handlebars = _require('handlebars');
-        if (helpersCode) {
-          // eslint-disable-next-line no-new-func
-          const helperFn = new Function(helpersCode + `
-            var _out = {};
-            ['isGroupBreak','resetGroupTracking','formatDate','formatCurrency',
-             'formatBoolean','formatNumber','ifCond','eq','sumField','formatDateDisplay','sumRowsByCategory']
-            .forEach(function(n) { try { var f = eval(n); if (typeof f === 'function') _out[n] = f; } catch(e) {} });
-            return _out;
-          `);
-          const helpers = helperFn();
-          if (typeof helpers.resetGroupTracking === 'function') helpers.resetGroupTracking();
-          Object.entries(helpers).forEach(([name, fn]) => { if (typeof fn === 'function') Handlebars.registerHelper(name, fn); });
-        }
-        const html = Handlebars.compile(templateContent)(templateData);
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(html);
+        renderTemplateWithHelpers(helpersCode, templateContent, templateData, res);
         return;
       }
 
@@ -413,73 +397,9 @@ async function handleRequest(req, res) {
   }
 
   // GET /api/report-selectors/:type
-  const selectorMatch = path.match(/^\/api\/report-selectors\/([\w-]+)$/);
-  if (method === 'GET' && selectorMatch) {
-    const type = selectorMatch[1];
-    const q = (url.searchParams.get('q') || '').trim();
-    const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 100));
-    const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10));
-    const selectedOrgId = url.searchParams.get('selectedOrgId') || '';
-    const selectedAcctSchemaId = url.searchParams.get('selectedAcctSchemaId') || '';
-    const selectedWarehouseIds = (url.searchParams.get('warehouseIds') || '').split(',').map(s => s.trim()).filter(Boolean);
-    const roleOrgIds = (url.searchParams.get('roleOrgIds') || '').split(',').map(s => s.trim()).filter(Boolean);
-
-    try {
-      const clientId = getClientIdFromToken(req.headers.authorization);
-      const byClient = (col) => clientId ? `AND ${col} = '${clientId}'` : '';
-
-      const queries = {
-        bpartner: { select: `SELECT c_bpartner_id AS id, name, name AS label`, fromWhere: `FROM c_bpartner WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
-        product: { select: `SELECT m_product_id AS id, value AS "searchKey", name, value || ' - ' || name AS label`, fromWhere: `FROM m_product WHERE isactive='Y' ${byClient('ad_client_id')} AND (name ILIKE $1 OR value ILIKE $1)`, orderBy: 'ORDER BY value, name' },
-        warehouse: { select: `SELECT m_warehouse_id AS id, name, name AS label`, fromWhere: `FROM m_warehouse WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
-        project: { select: `SELECT c_project_id AS id, name, name AS label`, fromWhere: `FROM c_project WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
-        org: { select: `SELECT ad_org_id AS id, name, name AS label`, fromWhere: `FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
-        account: { select: `SELECT ev.value AS id, ev.value || ' - ' || ev.name AS name, ev.value || ' - ' || ev.name AS label`, fromWhere: `FROM c_elementvalue ev WHERE ev.isactive='Y' AND ev.issummary='N' ${byClient('ev.ad_client_id')} AND (ev.value ILIKE $1 OR ev.name ILIKE $1)`, orderBy: 'ORDER BY ev.value' },
-        acctschema: { select: `SELECT c_acctschema_id AS id, name, name AS label`, fromWhere: `FROM c_acctschema WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
-        currency: { select: `SELECT c_currency_id AS id, iso_code AS name, iso_code || ' - ' || description AS label`, fromWhere: `FROM c_currency WHERE isactive='Y' AND (iso_code ILIKE $1 OR description ILIKE $1)`, orderBy: clientId ? `ORDER BY (CASE WHEN c_currency_id = (SELECT c_currency_id FROM ad_client WHERE ad_client_id = '${clientId}') THEN 0 ELSE 1 END), iso_code` : 'ORDER BY iso_code' },
-        tax: { select: `SELECT c_tax_id AS id, name, name AS label`, fromWhere: `FROM c_tax WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
-        year: { select: `SELECT y.c_year_id AS id, y.year || ' (' || c.name || ')' AS name, y.year || ' (' || c.name || ')' AS label`, fromWhere: `FROM c_year y JOIN c_calendar c ON c.c_calendar_id = y.c_calendar_id WHERE y.isactive='Y' ${byClient('y.ad_client_id')} AND (y.year || ' (' || c.name || ')') ILIKE $1`, orderBy: 'ORDER BY y.year DESC' },
-      };
-      // accounting is alias of acctschema
-      queries.accounting = queries.acctschema;
-
-      const queryCfg = queries[type];
-      if (!queryCfg) throw new Error(`Unknown selector type: ${type}`);
-
-      const values = [`%${q}%`];
-      const whereFragments = [queryCfg.fromWhere];
-
-      if (type === 'year' && selectedOrgId) {
-        values.push(selectedOrgId);
-        whereFragments.push(`AND EXISTS (SELECT 1 FROM ad_org o WHERE o.c_calendar_id = c.c_calendar_id AND o.ad_org_id = $${values.length})`);
-      }
-      if (type === 'warehouse') {
-        if (selectedOrgId) { values.push(selectedOrgId); whereFragments.push(`AND EXISTS (SELECT 1 FROM ad_org_warehouse ow WHERE ow.m_warehouse_id = m_warehouse.m_warehouse_id AND ow.ad_org_id = $${values.length})`); }
-        if (roleOrgIds.length > 0) { values.push(roleOrgIds); whereFragments.push(`AND EXISTS (SELECT 1 FROM ad_org_warehouse ow WHERE ow.m_warehouse_id = m_warehouse.m_warehouse_id AND ow.ad_org_id = ANY($${values.length}))`); }
-      }
-      if (type === 'product') {
-        if (selectedWarehouseIds.length > 0) { values.push(selectedWarehouseIds); whereFragments.push(`AND EXISTS (SELECT 1 FROM m_storage_detail sd JOIN m_locator l ON l.m_locator_id = sd.m_locator_id WHERE sd.m_product_id = m_product.m_product_id AND l.m_warehouse_id = ANY($${values.length}))`); }
-        if (selectedOrgId) { values.push(selectedOrgId); whereFragments.push(`AND EXISTS (SELECT 1 FROM m_storage_detail sd JOIN m_locator l ON l.m_locator_id = sd.m_locator_id WHERE sd.m_product_id = m_product.m_product_id AND ad_isorgincluded(l.ad_org_id, $${values.length}, m_product.ad_client_id) <> -1)`); }
-        if (roleOrgIds.length > 0) { values.push(roleOrgIds); whereFragments.push(`AND EXISTS (SELECT 1 FROM m_storage_detail sd JOIN m_locator l ON l.m_locator_id = sd.m_locator_id WHERE sd.m_product_id = m_product.m_product_id AND l.ad_org_id = ANY($${values.length}))`); }
-      }
-      if (type === 'account' && selectedAcctSchemaId) {
-        values.push(selectedAcctSchemaId);
-        whereFragments.push(`AND ev.c_element_id IN (SELECT c_element_id FROM c_acctschema_element WHERE c_acctschema_id = $${values.length} AND c_element_id IS NOT NULL)`);
-      }
-
-      const fullFromWhere = whereFragments.join(' ');
-      const pg = await import('pg');
-      const pool = new pg.default.Pool(getDbConfig());
-      try {
-        const countResult = await pool.query(`SELECT COUNT(*)::int AS total ${fullFromWhere}`, values);
-        const totalCount = countResult.rows[0]?.total ?? 0;
-        const { rows } = await pool.query(`${queryCfg.select} ${fullFromWhere} ${queryCfg.orderBy} LIMIT $${values.length + 1} OFFSET $${values.length + 2}`, [...values, limit, offset]);
-        json(res, 200, { items: rows, totalCount, hasMore: offset + rows.length < totalCount });
-      } finally { await pool.end(); }
-    } catch (e) {
-      console.error('[selector]', e.message);
-      json(res, 500, { error: e.message });
-    }
+  const selectorMatch = matchReportSelectorRequest(method, path);
+  if (selectorMatch) {
+    await fetchReportSelectors(selectorMatch, url, req, res);
     return;
   }
 
@@ -505,3 +425,194 @@ server.listen(PORT, () => {
   console.log(`[report-server] ETENDO_URL=${ETENDO_URL}`);
   console.log(`[report-server] ARTIFACTS_DIR=${ARTIFACTS_DIR}`);
 });
+function buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows }) {
+  if (documentData) {
+    return { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes };
+  }
+  return { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
+}
+
+function getGroupedData(contract, params, rows) {
+  let groupLabel = contract.groups?.[0]?.label?.en_US || 'Account';
+  let descriptionLabel = (contract.columns || []).find(c => c.field === 'groupbyname')?.label?.en_US || 'Description';
+  if (params.groupBy && rows) {
+    const dimensionParam = (contract.parameters || []).find(p => p.groupByValue === params.groupBy && p.groupByField);
+    if (dimensionParam) {
+      const sourceField = dimensionParam.groupByField;
+      groupLabel = dimensionParam.label?.en_US || params.groupBy;
+      descriptionLabel = dimensionParam.label?.en_US || descriptionLabel;
+      rows = [...rows].sort((a, b) => (a[sourceField] || '').toLowerCase().localeCompare((b[sourceField] || '').toLowerCase()));
+      rows = rows.map(r => ({ ...r, name: r[sourceField] || '', value: '' }));
+    }
+  }
+  return { groupLabel, descriptionLabel, rows };
+}
+
+function filterAndTransformParams(params, contract) {
+  return Object.entries(params)
+    .filter(([k, v]) => v && v !== '' && !k.startsWith('_display_'))
+    .map(([k, v]) => {
+      const paramDef = contract.parameters?.find(p => p.name === k);
+      let displayValue = params['_display_' + k] || v;
+      if (k === 'groupBy') {
+        const dimParam = (contract.parameters || []).find(p => p.groupByValue === v);
+        displayValue = dimParam?.label?.en_US || v;
+      }
+      if (typeof displayValue === 'string' && displayValue.includes(' | '))
+        displayValue = displayValue.split(' | ').filter(Boolean).join(', ');
+      if (paramDef?.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(displayValue)) {
+        const [y, m, d] = displayValue.split('-');
+        displayValue = `${d}/${m}/${y}`;
+      }
+      return { label: paramDef?.label?.en_US || k, value: displayValue };
+    });
+}
+
+function readCssFile(cssPath) {
+  return existsSync(cssPath) ? readFileSync(cssPath, 'utf8') : '';
+}
+
+function loadHelpersFromFile(helpersPath) {
+  return existsSync(helpersPath) ? readFileSync(helpersPath, 'utf8') : '';
+}
+
+function calculateTotals(documentData, amountCols, rows, totals) {
+  if (!documentData && amountCols.length && Array.isArray(rows)) {
+    for (const col of amountCols) totals[col.field] = rows.reduce((sum, r) => sum + (Number(r[col.field]) || 0), 0);
+  }
+}
+
+function matchReportSelectorRequest(method, path) {
+  if (method !== 'GET') return null;
+  return path.match(/^\/api\/report-selectors\/([\w-]+)$/);
+}
+
+async function fetchReportSelectors(selectorMatch, url, req, res) {
+  const type = selectorMatch[1];
+  const q = (url.searchParams.get('q') || '').trim();
+  const limit = Math.max(1, Math.min(Number.parseInt(url.searchParams.get('limit') || '20', 10), 100));
+  const offset = Math.max(0, Number.parseInt(url.searchParams.get('offset') || '0', 10));
+  const selectedOrgId = url.searchParams.get('selectedOrgId') || '';
+  const selectedAcctSchemaId = url.searchParams.get('selectedAcctSchemaId') || '';
+  const selectedWarehouseIds = (url.searchParams.get('warehouseIds') || '').split(',').map(s => s.trim()).filter(Boolean);
+  const roleOrgIds = (url.searchParams.get('roleOrgIds') || '').split(',').map(s => s.trim()).filter(Boolean);
+
+  try {
+    const clientId = getClientIdFromToken(req.headers.authorization);
+    const byClient = (col) => clientId ? `AND ${col} = '${clientId}'` : '';
+
+    const queries = {
+      bpartner: { select: `SELECT c_bpartner_id AS id, name, name AS label`, fromWhere: `FROM c_bpartner WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
+      product: { select: `SELECT m_product_id AS id, value AS "searchKey", name, value || ' - ' || name AS label`, fromWhere: `FROM m_product WHERE isactive='Y' ${byClient('ad_client_id')} AND (name ILIKE $1 OR value ILIKE $1)`, orderBy: 'ORDER BY value, name' },
+      warehouse: { select: `SELECT m_warehouse_id AS id, name, name AS label`, fromWhere: `FROM m_warehouse WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
+      project: { select: `SELECT c_project_id AS id, name, name AS label`, fromWhere: `FROM c_project WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
+      org: { select: `SELECT ad_org_id AS id, name, name AS label`, fromWhere: `FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
+      account: { select: `SELECT ev.value AS id, ev.value || ' - ' || ev.name AS name, ev.value || ' - ' || ev.name AS label`, fromWhere: `FROM c_elementvalue ev WHERE ev.isactive='Y' AND ev.issummary='N' ${byClient('ev.ad_client_id')} AND (ev.value ILIKE $1 OR ev.name ILIKE $1)`, orderBy: 'ORDER BY ev.value' },
+      acctschema: { select: `SELECT c_acctschema_id AS id, name, name AS label`, fromWhere: `FROM c_acctschema WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
+      currency: { select: `SELECT c_currency_id AS id, iso_code AS name, iso_code || ' - ' || description AS label`, fromWhere: `FROM c_currency WHERE isactive='Y' AND (iso_code ILIKE $1 OR description ILIKE $1)`, orderBy: clientId ? `ORDER BY (CASE WHEN c_currency_id = (SELECT c_currency_id FROM ad_client WHERE ad_client_id = '${clientId}') THEN 0 ELSE 1 END), iso_code` : 'ORDER BY iso_code' },
+      tax: { select: `SELECT c_tax_id AS id, name, name AS label`, fromWhere: `FROM c_tax WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
+      year: { select: `SELECT y.c_year_id AS id, y.year || ' (' || c.name || ')' AS name, y.year || ' (' || c.name || ')' AS label`, fromWhere: `FROM c_year y JOIN c_calendar c ON c.c_calendar_id = y.c_calendar_id WHERE y.isactive='Y' ${byClient('y.ad_client_id')} AND (y.year || ' (' || c.name || ')') ILIKE $1`, orderBy: 'ORDER BY y.year DESC' },
+    };
+    // accounting is alias of acctschema
+    queries.accounting = queries.acctschema;
+
+    const queryCfg = queries[type];
+    if (!queryCfg) throw new Error(`Unknown selector type: ${type}`);
+
+    const values = [`%${q}%`];
+    const whereFragments = [queryCfg.fromWhere];
+
+    if (type === 'year' && selectedOrgId) {
+      values.push(selectedOrgId);
+      whereFragments.push(`AND EXISTS (SELECT 1 FROM ad_org o WHERE o.c_calendar_id = c.c_calendar_id AND o.ad_org_id = $${values.length})`);
+    }
+    if (type === 'warehouse') {
+      addWarehouseOrgFilters(selectedOrgId, values, whereFragments, roleOrgIds);
+    }
+    if (type === 'product') {
+      applyWarehouseFilters(selectedWarehouseIds, values, whereFragments, selectedOrgId, roleOrgIds);
+    }
+    if (type === 'account' && selectedAcctSchemaId) {
+      values.push(selectedAcctSchemaId);
+      whereFragments.push(`AND ev.c_element_id IN (SELECT c_element_id FROM c_acctschema_element WHERE c_acctschema_id = $${values.length} AND c_element_id IS NOT NULL)`);
+    }
+
+    const fullFromWhere = whereFragments.join(' ');
+    const pg = await import('pg');
+    const pool = new pg.default.Pool(getDbConfig());
+    try {
+      const countResult = await pool.query(`SELECT COUNT(*)::int AS total ${fullFromWhere}`, values);
+      const totalCount = countResult.rows[0]?.total ?? 0;
+      const { rows } = await pool.query(`${queryCfg.select} ${fullFromWhere} ${queryCfg.orderBy} LIMIT $${values.length + 1} OFFSET $${values.length + 2}`, [...values, limit, offset]);
+      json(res, 200, { items: rows, totalCount, hasMore: offset + rows.length < totalCount });
+    } finally { await pool.end(); }
+  } catch (e) {
+    console.error('[selector]', e.message);
+    json(res, 500, { error: e.message });
+  }
+}
+
+function addWarehouseOrgFilters(selectedOrgId, values, whereFragments, roleOrgIds) {
+  if (selectedOrgId) { values.push(selectedOrgId); whereFragments.push(`AND EXISTS (SELECT 1 FROM ad_org_warehouse ow WHERE ow.m_warehouse_id = m_warehouse.m_warehouse_id AND ow.ad_org_id = $${values.length})`); }
+  if (roleOrgIds.length > 0) { values.push(roleOrgIds); whereFragments.push(`AND EXISTS (SELECT 1 FROM ad_org_warehouse ow WHERE ow.m_warehouse_id = m_warehouse.m_warehouse_id AND ow.ad_org_id = ANY($${values.length}))`); }
+}
+
+function applyWarehouseFilters(selectedWarehouseIds, values, whereFragments, selectedOrgId, roleOrgIds) {
+  if (selectedWarehouseIds.length > 0) { values.push(selectedWarehouseIds); whereFragments.push(`AND EXISTS (SELECT 1 FROM m_storage_detail sd JOIN m_locator l ON l.m_locator_id = sd.m_locator_id WHERE sd.m_product_id = m_product.m_product_id AND l.m_warehouse_id = ANY($${values.length}))`); }
+  if (selectedOrgId) { values.push(selectedOrgId); whereFragments.push(`AND EXISTS (SELECT 1 FROM m_storage_detail sd JOIN m_locator l ON l.m_locator_id = sd.m_locator_id WHERE sd.m_product_id = m_product.m_product_id AND ad_isorgincluded(l.ad_org_id, $${values.length}, m_product.ad_client_id) <> -1)`); }
+  if (roleOrgIds.length > 0) { values.push(roleOrgIds); whereFragments.push(`AND EXISTS (SELECT 1 FROM m_storage_detail sd JOIN m_locator l ON l.m_locator_id = sd.m_locator_id WHERE sd.m_product_id = m_product.m_product_id AND l.ad_org_id = ANY($${values.length}))`); }
+}
+
+function getRowCount(rows) {
+  return Array.isArray(rows) ? rows.length : undefined;
+}
+
+function renderTemplateWithHelpers(helpersCode, templateContent, templateData, res) {
+  const Handlebars = _require('handlebars');
+  if (helpersCode) {
+    // helpersCode is loaded from the server's own filesystem (artifacts/{id}/helpers.js),
+    // never from user-supplied input — dynamic execution is intentional here. NOSONAR
+    // eslint-disable-next-line no-new-func
+    const helperFn = new Function(helpersCode + `
+            var _out = {};
+            ['isGroupBreak','resetGroupTracking','formatDate','formatCurrency',
+             'formatBoolean','formatNumber','ifCond','eq','sumField','formatDateDisplay','sumRowsByCategory']
+            .forEach(function(n) { try { var f = eval(n); if (typeof f === 'function') _out[n] = f; } catch(e) {} });
+            return _out;
+          `);
+    const helpers = helperFn();
+    if (typeof helpers.resetGroupTracking === 'function') helpers.resetGroupTracking();
+    Object.entries(helpers).forEach(([name, fn]) => { if (typeof fn === 'function') Handlebars.registerHelper(name, fn); });
+  }
+  const html = Handlebars.compile(templateContent)(templateData);
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+  res.end(html);
+}
+
+function isPostRequestForRender(method, renderMatch) {
+  return method === 'POST' && renderMatch;
+}
+
+async function fetchReportDataById(dataMatch, url, req, res) {
+  const reportId = dataMatch[1];
+  const limit = url.searchParams.get('limit');
+  try {
+    const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+    const { rows, contract } = await fetchReportData(reportId, { limit, authToken });
+    json(res, 200, { rows, contract, count: rows.length });
+  } catch (e) { json(res, 500, { error: e.message }); }
+}
+
+function isGetDataRequest(method, dataMatch) {
+  return method === 'GET' && dataMatch;
+}
+
+function isGetReportsRequest(method, path) {
+  return method === 'GET' && path === '/api/reports';
+}
+
+function getReportsList(res) {
+  try { json(res, 200, listReports()); }
+  catch (e) { json(res, 500, { error: e.message }); }
+}
+
