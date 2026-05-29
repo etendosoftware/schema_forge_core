@@ -27,6 +27,79 @@ async function fetchSelectorPage(url, headers) {
   };
 }
 
+function CountryPicker({
+  onClose,
+  onContentMouseDown,
+  title,
+  closeAriaLabel,
+  searchInputRef,
+  searchValue,
+  onSearchChange,
+  searchPlaceholder,
+  isLoading,
+  loadingText,
+  hasLoadFailed,
+  loadErrorText,
+  emptyText,
+  filteredCountries,
+  renderCountryRow,
+  loadMoreRef,
+  isLoadingMore,
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-60 flex items-center justify-center bg-black/30 p-4"
+      onMouseDown={onClose}
+    >
+      <div
+        className="w-full max-w-md max-h-[540px] bg-white rounded-xl shadow-2xl flex flex-col"
+        onMouseDown={onContentMouseDown}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label={closeAriaLabel}
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <div className="px-4 py-3 border-b border-gray-100">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchValue}
+              onChange={onSearchChange}
+              placeholder={searchPlaceholder}
+              className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+        <div className="flex-1 overflow-auto py-1">
+          {isLoading ? (
+            <div className="px-4 py-6 text-center text-sm text-gray-500">{loadingText}</div>
+          ) : hasLoadFailed ? (
+            <div className="px-4 py-6 text-center text-sm text-gray-500">{loadErrorText}</div>
+          ) : filteredCountries.length === 0 ? (
+            <div className="px-4 py-6 text-center text-sm text-gray-500">{emptyText}</div>
+          ) : (
+            filteredCountries.map(renderCountryRow)
+          )}
+          {!isLoading && !hasLoadFailed && (
+            <div ref={loadMoreRef} className="flex justify-center py-2">
+              {isLoadingMore ? <Loader2 size={14} className="animate-spin text-gray-400" /> : <span className="h-3" />}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * LocationEditorModal — create or edit a C_BPartner_Location record with its
  * underlying C_Location fields (address lines, city, postal code, country, region).
@@ -237,7 +310,7 @@ export default function LocationEditorModal({
         .then(r => (r.ok ? r.json() : null))
         .then(d => {
           const rec = d?.response?.data?.[0] ?? d;
-          if (rec && rec.id) {
+          if (rec?.id) {
             setForm({
               address: rec.address ?? rec.addressLine1 ?? '',
               address2: rec.address2 ?? rec.addressLine2 ?? '',
@@ -745,71 +818,40 @@ export default function LocationEditorModal({
         )}
 
         {countryPickerOpen && (
-          <div
-            className="fixed inset-0 z-60 flex items-center justify-center bg-black/30 p-4"
-            onMouseDown={() => setCountryPickerOpen(false)}
-          >
-            <div
-              className="w-full max-w-md max-h-[540px] bg-white rounded-xl shadow-2xl flex flex-col"
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-900">{ui('countryLabel')}</h3>
-                <button
-                  type="button"
-                  onClick={() => setCountryPickerOpen(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                  aria-label={ui('cancel')}
-                >
-                  <X size={16} />
-                </button>
-              </div>
-              <div className="px-4 py-3 border-b border-gray-100">
-                <div className="relative">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    ref={countrySearchRef}
-                    type="text"
-                    value={countryQuery}
-                    onChange={e => setCountryQuery(e.target.value)}
-                    placeholder={ui('countrySearchPlaceholder')}
-                    className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-              <div className="flex-1 overflow-auto py-1">
-                {countriesLoading ? (
-                  <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('loading')}</div>
-                ) : countriesLoadFailed ? (
-                  <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('countryLoadError')}</div>
-                ) : filteredCountries.length === 0 ? (
-                  <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('noResults')}</div>
-                ) : (
-                  filteredCountries.map(country => (
-                    <button
-                      key={country.id}
-                      type="button"
-                      onClick={() => handleCountrySelect(country.id)}
-                      className={[
-                        'w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left hover:bg-gray-50',
-                        form.country === country.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-800',
-                      ].join(' ')}
-                    >
-                      <span className="w-4 shrink-0">
-                        {form.country === country.id ? <Check size={14} /> : null}
-                      </span>
-                      <span className="truncate">{country.label}</span>
-                    </button>
-                  ))
-                )}
-                {!countriesLoading && !countriesLoadFailed && (
-                  <div ref={countryLoadMoreRef} className="flex justify-center py-2">
-                    {countryLoadingMore ? <Loader2 size={14} className="animate-spin text-gray-400" /> : <span className="h-3" />}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <CountryPicker
+            onClose={() => setCountryPickerOpen(false)}
+            onContentMouseDown={(e) => e.stopPropagation()}
+            title={ui('countryLabel')}
+            closeAriaLabel={ui('cancel')}
+            searchInputRef={countrySearchRef}
+            searchValue={countryQuery}
+            onSearchChange={e => setCountryQuery(e.target.value)}
+            searchPlaceholder={ui('countrySearchPlaceholder')}
+            isLoading={countriesLoading}
+            loadingText={ui('loading')}
+            hasLoadFailed={countriesLoadFailed}
+            loadErrorText={ui('countryLoadError')}
+            emptyText={ui('noResults')}
+            filteredCountries={filteredCountries}
+            renderCountryRow={country => (
+              <button
+                key={country.id}
+                type="button"
+                onClick={() => handleCountrySelect(country.id)}
+                className={[
+                  'w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left hover:bg-gray-50',
+                  form.country === country.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-800',
+                ].join(' ')}
+              >
+                <span className="w-4 shrink-0">
+                  {form.country === country.id ? <Check size={14} /> : null}
+                </span>
+                <span className="truncate">{country.label}</span>
+              </button>
+            )}
+            loadMoreRef={countryLoadMoreRef}
+            isLoadingMore={countryLoadingMore}
+          />
         )}
 
         {regionPickerOpen && (
