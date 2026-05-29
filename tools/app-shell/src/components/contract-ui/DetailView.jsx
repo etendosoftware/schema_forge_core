@@ -3299,15 +3299,22 @@ function populateIdentifierFields(api, result, detailEntity, catalogs) {
 }
 
 function getButtonClass(salesTheme, p, isPrimary) {
-  return salesTheme
-    ? (p.style === 'destructive'
-      ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-      : isPrimary
-        ? 'bg-amber-400 text-black hover:bg-amber-500 border-transparent font-medium'
-        : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100')
-    : (p.style === 'destructive'
-      ? 'border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20'
-      : ''
-    );
+  if (salesTheme) {
+    if (p.style === 'destructive') {
+      return 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100';
+    } else {
+      if (isPrimary) {
+        return 'bg-amber-400 text-black hover:bg-amber-500 border-transparent font-medium';
+      } else {
+        return 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
+      }
+    }
+  } else {
+    if (p.style === 'destructive') {
+      return 'border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20';
+    } else {
+      return '';
+    }
+  }
 }
 
