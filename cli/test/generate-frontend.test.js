@@ -13,6 +13,9 @@ import {
   generateAll,
   projectApiPredictionForFrontend,
   fragmentIf,
+  wrapIf,
+  jsonWrapIf,
+  pick,
 } from '../src/generate-frontend.js';
 
 // ---------------------------------------------------------------------------
@@ -1795,5 +1798,77 @@ describe('fragmentIf', () => {
 
   it('does not coerce the returned fragment — returns it verbatim', () => {
     assert.equal(fragmentIf(1, ', isSelectionColumn: true'), ', isSelectionColumn: true');
+  });
+});
+
+describe('wrapIf', () => {
+  it('wraps a truthy value between prefix and suffix', () => {
+    assert.equal(wrapIf('\n  notesField="', 'comment', '"'), '\n  notesField="comment"');
+  });
+
+  it('returns an empty string when the value is falsy', () => {
+    assert.equal(wrapIf('\n  notesField="', '', '"'), '');
+    assert.equal(wrapIf('\n  notesField="', null, '"'), '');
+    assert.equal(wrapIf('\n  notesField="', undefined, '"'), '');
+    assert.equal(wrapIf(', precision: ', 0), '');
+  });
+
+  it('defaults the suffix to an empty string', () => {
+    assert.equal(wrapIf(', precision: ', 4), ', precision: 4');
+    assert.equal(wrapIf(', lineConfig={', 'INVOICE_LINE_CONFIG', '}'), ', lineConfig={INVOICE_LINE_CONFIG}');
+  });
+
+  it('injects the value verbatim — no serialization', () => {
+    assert.equal(wrapIf('={', 'rawExpr', '}'), '={rawExpr}');
+  });
+
+  it('gates on an explicit cond while still injecting value (emits falsy values)', () => {
+    // detailTabIndex={0} must be emitted even though 0 is falsy
+    assert.equal(wrapIf('={', 0, '}', 0 != null), '={0}');
+    assert.equal(wrapIf('={', false, '}', false !== undefined), '={false}');
+  });
+
+  it('suppresses output when an explicit cond is falsy, regardless of value', () => {
+    assert.equal(wrapIf('="', 'classic', '"', false), '');
+  });
+});
+
+describe('jsonWrapIf', () => {
+  it('serializes a truthy value with JSON.stringify between prefix and suffix', () => {
+    assert.equal(
+      jsonWrapIf('\n  listViewOptions={', { density: 'compact' }, '}'),
+      '\n  listViewOptions={{"density":"compact"}}'
+    );
+  });
+
+  it('serializes arrays', () => {
+    assert.equal(jsonWrapIf('={', ['a', 'b'], '}'), '={["a","b"]}');
+  });
+
+  it('returns an empty string when the value is falsy', () => {
+    assert.equal(jsonWrapIf('={', null, '}'), '');
+    assert.equal(jsonWrapIf('={', undefined, '}'), '');
+  });
+
+  it('treats an empty array as truthy (matches the original ternary semantics)', () => {
+    assert.equal(jsonWrapIf('={', [], '}'), '={[]}');
+  });
+
+  it('gates on an explicit cond — empty array suppressed via length check', () => {
+    assert.equal(jsonWrapIf('={', [], '}', [].length > 0), '');
+    assert.equal(jsonWrapIf('={', ['a'], '}', ['a'].length > 0), '={["a"]}');
+  });
+});
+
+describe('pick', () => {
+  it('returns the first value when cond is truthy', () => {
+    assert.equal(pick(true, '#10b981', '#f59e0b'), '#10b981');
+    assert.equal(pick('confirm', 'draftModeWithConfirm', 'draftMode'), 'draftModeWithConfirm');
+  });
+
+  it('returns the second value when cond is falsy', () => {
+    assert.equal(pick(false, '#10b981', '#f59e0b'), '#f59e0b');
+    assert.equal(pick(null, 'draftModeWithConfirm', 'draftMode'), 'draftMode');
+    assert.equal(pick(undefined, '({ data, status })', '({ status })'), '({ status })');
   });
 });
