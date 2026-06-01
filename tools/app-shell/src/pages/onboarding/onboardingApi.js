@@ -106,6 +106,38 @@ export async function loginEnvironment(fetchImpl, baseUrl, token, env) {
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.environmentLoginFailed);
 }
 
+function processLines(lines, onMessage, finalResult) {
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const message = JSON.parse(line);
+    onMessage?.(message);
+    if (message.type === 'result') {
+      finalResult = message;
+    }
+  }
+  return finalResult;
+}
+
+async function readStreamResult(reader, onMessage) {
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let finalResult = null;
+
+  while (true) {
+    const {done, value} = await reader.read();
+    if (value) buffer += decoder.decode(value, {stream: !done});
+    if (done) buffer += decoder.decode();
+
+    const lines = buffer.split('\n');
+    buffer = done ? '' : lines.pop();
+
+    finalResult = processLines(lines, onMessage, finalResult);
+
+    if (done) break;
+  }
+  return finalResult;
+}
+
 export async function runOnboardingStream(fetchImpl, baseUrl, token, form, onMessage) {
   const response = await fetchImpl(`${baseUrl}/sws/go/onboarding`, {
     method: 'POST',
@@ -125,29 +157,7 @@ export async function runOnboardingStream(fetchImpl, baseUrl, token, form, onMes
   }
 
   const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let finalResult = null;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (value) buffer += decoder.decode(value, { stream: !done });
-    if (done) buffer += decoder.decode();
-
-    const lines = buffer.split('\n');
-    buffer = done ? '' : lines.pop();
-
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      const message = JSON.parse(line);
-      onMessage?.(message);
-      if (message.type === 'result') {
-        finalResult = message;
-      }
-    }
-
-    if (done) break;
-  }
+  const finalResult = await readStreamResult(reader, onMessage);
 
   if (!finalResult) {
     const error = new Error(ONBOARDING_ERROR_CODES.missingResult);

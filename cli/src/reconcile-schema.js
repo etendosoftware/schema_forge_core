@@ -75,6 +75,30 @@ function buildFieldMap(fields) {
 // Decisions-based reconciliation (new model)
 // ---------------------------------------------------------------------------
 
+function collectOrphanedDecisions(decisionEntities, rawEntities, result) {
+  for (const [entityKey, entityDecision] of Object.entries(decisionEntities)) {
+    const rawEntity = rawEntities.find(e => (e.tableName || e.name || '').toLowerCase() === entityKey);
+    if (!rawEntity) {
+      // Entire entity is orphaned — collect all its field decisions
+      const fieldDecisions = entityDecision.fields || {};
+      for (const fieldKey of Object.keys(fieldDecisions)) {
+        result.entities.orphaned.push({entityKey, fieldName: fieldKey});
+      }
+      continue;
+    }
+
+    const rawFields = buildFieldMap(rawEntity.fields || []);
+    const fieldDecisions = entityDecision.fields || {};
+
+    for (const fieldKey of Object.keys(fieldDecisions)) {
+      // Check whether this field still exists in raw (by name or column)
+      if (!rawFields.has(fieldKey.toLowerCase())) {
+        result.entities.orphaned.push({entityKey, fieldName: fieldKey});
+      }
+    }
+  }
+}
+
 /**
  * Compare schema-raw against decisions.json.
  * Fields with no decision entry are "unclassified" (pipeline defaults apply but
@@ -145,29 +169,7 @@ async function reconcileWithDecisions(windowName) {
   }
 
   // Check each decision entity for fields no longer in raw (orphaned decisions)
-  const rawEntityKeys = new Set(rawEntities.map(e => (e.tableName || e.name || '').toLowerCase()));
-
-  for (const [entityKey, entityDecision] of Object.entries(decisionEntities)) {
-    const rawEntity = rawEntities.find(e => (e.tableName || e.name || '').toLowerCase() === entityKey);
-    if (!rawEntity) {
-      // Entire entity is orphaned — collect all its field decisions
-      const fieldDecisions = entityDecision.fields || {};
-      for (const fieldKey of Object.keys(fieldDecisions)) {
-        result.entities.orphaned.push({ entityKey, fieldName: fieldKey });
-      }
-      continue;
-    }
-
-    const rawFields = buildFieldMap(rawEntity.fields || []);
-    const fieldDecisions = entityDecision.fields || {};
-
-    for (const fieldKey of Object.keys(fieldDecisions)) {
-      // Check whether this field still exists in raw (by name or column)
-      if (!rawFields.has(fieldKey.toLowerCase())) {
-        result.entities.orphaned.push({ entityKey, fieldName: fieldKey });
-      }
-    }
-  }
+  collectOrphanedDecisions(decisionEntities, rawEntities, result);
 
   result.hasDiff =
     result.entities.unclassified.length > 0 ||
@@ -179,6 +181,27 @@ async function reconcileWithDecisions(windowName) {
 // ---------------------------------------------------------------------------
 // Legacy curated-based reconciliation (backward compat)
 // ---------------------------------------------------------------------------
+
+function collectRemovedFields(curatedFields, rawFields, removedFields) {
+  for (const [col, field] of curatedFields) {
+    if (!rawFields.has(col)) {
+      removedFields.push({columnName: field.column || field.columnName, field});
+    }
+  }
+}
+
+function collectAddedFields(rawFields, curatedFields, addedFields) {
+  let unchangedCount = 0;
+
+  for (const [col, field] of rawFields) {
+    if (!curatedFields.has(col)) {
+      addedFields.push({columnName: field.column || field.columnName, field});
+    } else {
+      unchangedCount++;
+    }
+  }
+  return unchangedCount;
+}
 
 /**
  * Compute structural diff between raw and curated schemas.
@@ -247,21 +270,9 @@ async function reconcileWithCurated(windowName) {
 
     const addedFields = [];
     const removedFields = [];
-    let unchangedCount = 0;
+    let unchangedCount = collectAddedFields(rawFields, curatedFields, addedFields);
 
-    for (const [col, field] of rawFields) {
-      if (!curatedFields.has(col)) {
-        addedFields.push({ columnName: field.column || field.columnName, field });
-      } else {
-        unchangedCount++;
-      }
-    }
-
-    for (const [col, field] of curatedFields) {
-      if (!rawFields.has(col)) {
-        removedFields.push({ columnName: field.column || field.columnName, field });
-      }
-    }
+    collectRemovedFields(curatedFields, rawFields, removedFields);
 
     if (addedFields.length > 0 || removedFields.length > 0) {
       result.entities.changed.push({
@@ -310,6 +321,47 @@ export async function reconcileSchema(windowName) {
   return await reconcileWithCurated(windowName);
 }
 
+function appendChangedEntitiesSummary(diff, lines) {
+  if (diff.entities.changed.length > 0) {
+    lines.push('CHANGED entities:');
+    for (const e of diff.entities.changed) {
+      lines.push(`  ~ ${e.tabName} (${e.tableName}):`);
+      if (e.fields.added.length > 0) {
+        lines.push(`      + ${e.fields.added.length} new field(s): ${e.fields.added.map(f => f.columnName).join(', ')}`);
+      }
+      if (e.fields.removed.length > 0) {
+        lines.push(`      - ${e.fields.removed.length} orphaned field(s): ${e.fields.removed.map(f => f.columnName).join(', ')}`);
+      }
+      lines.push(`      = ${e.fields.unchanged} field(s) unchanged`);
+    }
+    lines.push('');
+  }
+}
+
+function appendDecisionsModeSummary(diff, lines) {
+  if (diff.entities.unclassified.length > 0) {
+    lines.push('UNCLASSIFIED fields (in raw, no decision entry):');
+    for (const e of diff.entities.unclassified) {
+      lines.push(`  + ${e.tabName} (${e.tableName}) — ${e.fields.length} field(s):`);
+      for (const f of e.fields) {
+        lines.push(`      ${f.fieldName} (${f.columnName})`);
+      }
+    }
+    lines.push('');
+  }
+
+  if (diff.entities.orphaned.length > 0) {
+    lines.push('ORPHANED decisions (in decisions.json, no longer in raw):');
+    for (const o of diff.entities.orphaned) {
+      lines.push(`  - ${o.entityKey}.${o.fieldName}`);
+    }
+    lines.push('');
+  }
+
+  const totalUnclassified = diff.entities.unclassified.reduce((sum, e) => sum + e.fields.length, 0);
+  lines.push(`Summary: ${totalUnclassified} field(s) need decisions, ${diff.entities.orphaned.length} orphaned decision(s).`);
+}
+
 /**
  * Format diff as a human-readable summary for display in /classify.
  */
@@ -324,27 +376,7 @@ export function formatDiffSummary(diff) {
   const lines = ['=== Schema Drift Detected ===', ''];
 
   if (diff.mode === 'decisions') {
-    if (diff.entities.unclassified.length > 0) {
-      lines.push('UNCLASSIFIED fields (in raw, no decision entry):');
-      for (const e of diff.entities.unclassified) {
-        lines.push(`  + ${e.tabName} (${e.tableName}) — ${e.fields.length} field(s):`);
-        for (const f of e.fields) {
-          lines.push(`      ${f.fieldName} (${f.columnName})`);
-        }
-      }
-      lines.push('');
-    }
-
-    if (diff.entities.orphaned.length > 0) {
-      lines.push('ORPHANED decisions (in decisions.json, no longer in raw):');
-      for (const o of diff.entities.orphaned) {
-        lines.push(`  - ${o.entityKey}.${o.fieldName}`);
-      }
-      lines.push('');
-    }
-
-    const totalUnclassified = diff.entities.unclassified.reduce((sum, e) => sum + e.fields.length, 0);
-    lines.push(`Summary: ${totalUnclassified} field(s) need decisions, ${diff.entities.orphaned.length} orphaned decision(s).`);
+    appendDecisionsModeSummary(diff, lines);
   } else {
     // Legacy curated mode
     if (diff.entities.added.length > 0) {
@@ -363,20 +395,7 @@ export function formatDiffSummary(diff) {
       lines.push('');
     }
 
-    if (diff.entities.changed.length > 0) {
-      lines.push('CHANGED entities:');
-      for (const e of diff.entities.changed) {
-        lines.push(`  ~ ${e.tabName} (${e.tableName}):`);
-        if (e.fields.added.length > 0) {
-          lines.push(`      + ${e.fields.added.length} new field(s): ${e.fields.added.map(f => f.columnName).join(', ')}`);
-        }
-        if (e.fields.removed.length > 0) {
-          lines.push(`      - ${e.fields.removed.length} orphaned field(s): ${e.fields.removed.map(f => f.columnName).join(', ')}`);
-        }
-        lines.push(`      = ${e.fields.unchanged} field(s) unchanged`);
-      }
-      lines.push('');
-    }
+    appendChangedEntitiesSummary(diff, lines);
 
     const totalNew =
       diff.entities.added.reduce((sum, e) => sum + e.fieldCount, 0) +

@@ -94,33 +94,51 @@ export function parseArgs(argv) {
   const args = argv.slice(2);
   const result = {};
 
-  for (let i = 0; i < args.length; i++) {
-    if (isMenuIdArgument(args, i)) {
-      result.menuId = args[++i];
-    } else if (isMenuNameArgument(args, i)) {
-      result.menuName = args[++i];
-    } else if (isProcessIdArgument(args, i)) {
-      result.processId = args[++i];
-    } else if (isProcessNameArgument(args, i)) {
-      result.processName = args[++i];
-    } else if (isReportIdArgument(args, i)) {
-      result.reportId = args[++i];
-    } else if (isReportNameArgument(args, i)) {
-      result.reportName = args[++i];
-    } else if (args[i] === '--dry-run') {
-      result.dryRun = true;
-    } else if (isSkipToArgument(args, i)) {
-      result.skipTo = args[++i];
-    } else if (args[i] === '--skip-interactive') {
-      result.skipInteractive = true;
-    } else if (!args[i].startsWith('--') && !result.windowId) {
-      result.windowId = args[i];
-    } else if (isWindowNameSet(args, i, result)) {
-      result.windowName = args[i];
-    }
+  let i = 0;
+  while (i < args.length) {
+    i += consumeArgument(args, i, result);
   }
 
   return result;
+}
+
+/**
+ * Consume one logical argument at index `i`, mutating `result`.
+ * Returns the number of tokens consumed (2 for flag+value, 1 otherwise),
+ * so the caller advances the cursor without reassigning a loop counter.
+ */
+function consumeArgument(args, i, result) {
+  if (isMenuIdArgument(args, i)) {
+    result.menuId = args[i + 1];
+    return 2;
+  } else if (isMenuNameArgument(args, i)) {
+    result.menuName = args[i + 1];
+    return 2;
+  } else if (isProcessIdArgument(args, i)) {
+    result.processId = args[i + 1];
+    return 2;
+  } else if (isProcessNameArgument(args, i)) {
+    result.processName = args[i + 1];
+    return 2;
+  } else if (isReportIdArgument(args, i)) {
+    result.reportId = args[i + 1];
+    return 2;
+  } else if (isReportNameArgument(args, i)) {
+    result.reportName = args[i + 1];
+    return 2;
+  } else if (args[i] === '--dry-run') {
+    result.dryRun = true;
+  } else if (isSkipToArgument(args, i)) {
+    result.skipTo = args[i + 1];
+    return 2;
+  } else if (args[i] === '--skip-interactive') {
+    result.skipInteractive = true;
+  } else if (!args[i].startsWith('--') && !result.windowId) {
+    result.windowId = args[i];
+  } else if (isWindowNameSet(args, i, result)) {
+    result.windowName = args[i];
+  }
+  return 1;
 }
 
 function isWindowNameSet(args, i, result) {

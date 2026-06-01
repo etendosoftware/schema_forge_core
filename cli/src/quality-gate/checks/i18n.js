@@ -64,6 +64,36 @@ function collectCustomFiles(rootDir, windowDir, windowName) {
   ].sort((left, right) => left.localeCompare(right));
 }
 
+function isScannedLiteralProperty(node) {
+  return node.type === 'ObjectProperty'
+    && !node.computed
+    && ((node.key?.type === 'Identifier' && SCANNED_LITERAL_PROPERTIES.has(node.key.name))
+      || (node.key?.type === 'StringLiteral' && SCANNED_LITERAL_PROPERTIES.has(node.key.value)))
+    && node.value?.type === 'StringLiteral';
+}
+
+function isTranslatorCall(node, translatorAliases) {
+  return node.type === 'CallExpression'
+    && node.callee?.type === 'Identifier'
+    && translatorAliases.has(node.callee.name)
+    && node.arguments?.[0]?.type === 'StringLiteral';
+}
+
+function isScannedJsxAttribute(node) {
+  return node.type === 'JSXAttribute'
+    && node.name?.type === 'JSXIdentifier'
+    && SCANNED_ATTRIBUTES.has(node.name.name)
+    && node.value?.type === 'StringLiteral';
+}
+
+function reportLiteralPropertyViolation(node, allowlist, violations, rootDir, filePath) {
+  const text = significantText(node.value.value || '');
+  if (text && !allowlist.has(text)) {
+    const propertyName = node.key.type === 'Identifier' ? node.key.name : node.key.value;
+    violations.push(`${repoRelative(rootDir, filePath)}:${node.loc?.start?.line ?? 1} — hardcoded ${propertyName} '${text}'.`);
+  }
+}
+
 function collectStringViolations(ast, source, rootDir, filePath) {
   const violations = [];
   const allowlist = collectAllowlist(source);
@@ -78,12 +108,7 @@ function collectStringViolations(ast, source, rootDir, filePath) {
       return;
     }
 
-    if (
-      node.type === 'JSXAttribute'
-      && node.name?.type === 'JSXIdentifier'
-      && SCANNED_ATTRIBUTES.has(node.name.name)
-      && node.value?.type === 'StringLiteral'
-    ) {
+    if (isScannedJsxAttribute(node)) {
       const text = significantText(node.value.value || '');
       if (text && !allowlist.has(text)) {
         violations.push(`${repoRelative(rootDir, filePath)}:${node.loc?.start?.line ?? 1} — hardcoded ${node.name.name} '${text}'.`);
@@ -91,32 +116,30 @@ function collectStringViolations(ast, source, rootDir, filePath) {
       return;
     }
 
-    if (
-      node.type === 'ObjectProperty'
-      && !node.computed
-      && ((node.key?.type === 'Identifier' && SCANNED_LITERAL_PROPERTIES.has(node.key.name))
-        || (node.key?.type === 'StringLiteral' && SCANNED_LITERAL_PROPERTIES.has(node.key.value)))
-      && node.value?.type === 'StringLiteral'
-    ) {
-      const text = significantText(node.value.value || '');
-      if (text && !allowlist.has(text)) {
-        const propertyName = node.key.type === 'Identifier' ? node.key.name : node.key.value;
-        violations.push(`${repoRelative(rootDir, filePath)}:${node.loc?.start?.line ?? 1} — hardcoded ${propertyName} '${text}'.`);
-      }
+    if (isScannedLiteralProperty(node)) {
+      reportLiteralPropertyViolation(node, allowlist, violations, rootDir, filePath);
       return;
     }
 
-    if (
-      node.type === 'CallExpression'
-      && node.callee?.type === 'Identifier'
-      && translatorAliases.has(node.callee.name)
-      && node.arguments?.[0]?.type === 'StringLiteral'
-    ) {
+    if (isTranslatorCall(node, translatorAliases)) {
       allowlist.add(node.arguments[0].value);
     }
   });
 
   return violations;
+}
+
+function collectContractColumnViolations(contract, violations) {
+  for (const [entityName, entity] of Object.entries(contract.frontendContract?.entities ?? {})) {
+    for (const field of entity.fields ?? []) {
+      if (!field.form || IGNORED_VISIBILITIES.has(field.visibility)) {
+        continue;
+      }
+      if (typeof field.column !== 'string' || field.column.trim().length === 0) {
+        violations.push(`${entityName}.${field.name} is missing a non-empty column key for i18n lookup.`);
+      }
+    }
+  }
 }
 
 export async function runI18nCheck(windowName, { rootDir, windowDir }) {
@@ -129,16 +152,7 @@ export async function runI18nCheck(windowName, { rootDir, windowDir }) {
     }
 
     const contract = readJson(contractPath);
-    for (const [entityName, entity] of Object.entries(contract.frontendContract?.entities ?? {})) {
-      for (const field of entity.fields ?? []) {
-        if (!field.form || IGNORED_VISIBILITIES.has(field.visibility)) {
-          continue;
-        }
-        if (typeof field.column !== 'string' || field.column.trim().length === 0) {
-          violations.push(`${entityName}.${field.name} is missing a non-empty column key for i18n lookup.`);
-        }
-      }
-    }
+    collectContractColumnViolations(contract, violations);
   }
 
   const customFiles = collectCustomFiles(rootDir, windowDir, windowName);

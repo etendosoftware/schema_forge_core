@@ -41,3 +41,4 @@ dev.log
 dev.pid
 test-results/
 .idea/
+tools/app-shell/coverage/vitest/coverage-summary.json
