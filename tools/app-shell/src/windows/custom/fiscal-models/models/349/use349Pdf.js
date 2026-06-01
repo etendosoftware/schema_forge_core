@@ -72,6 +72,14 @@ body { font-family:'Inter',sans-serif; font-size:11px; color:#111; background:#f
 .former-box { border:1px solid #777; padding:2px 6px; min-width:160px; font-size:10px; background:#fff; min-height:18px; }
 
 .footer { margin-top:12px; font-size:7px; color:#aaa; text-align:center; border-top:1px solid #eee; padding-top:4px; }
+
+.watermark {
+  position:fixed; top:50%; left:50%;
+  transform:translate(-50%,-50%) rotate(-40deg);
+  font-size:72px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+  color:rgba(180,0,0,0.07); white-space:nowrap; pointer-events:none;
+  z-index:9999; user-select:none;
+}
 `;
 
 const HTML = `
@@ -233,6 +241,7 @@ const HTML = `
 
   <div class="footer">BORRADOR — Generado desde Etendo GO · Modelo 349 · {{year}} {{period}}</div>
 </div>
+<div class="watermark">Solo referencia · No presentar</div>
 </body></html>
 `;
 
