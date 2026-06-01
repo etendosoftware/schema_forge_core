@@ -51,6 +51,8 @@ The browser must not send provider API keys, sender addresses, raw templates, or
 
 For the app-shell document send flow, `SendDocumentModal` posts only the contract command to `/sws/neo/email-contracts/{document-contract}/send`, such as `sales-invoice-send`, `sales-order-send`, or `sales-quotation-send`. The UI must not include `to`, `template`, `data`, `subject`, `body`, sender, Reply-To, or provider metadata in that request; those values are resolved by the server-side contract.
 
+For auth email flows, the browser does not send an email contract command at all. It calls `/sws/go/register`, `/sws/go/password-reset/request`, `/sws/go/password-reset/confirm`, or `/sws/go/change-password`; Etendo Go builds the `new-account`, `reset-password`, `password-changed`, and `environment-ready` commands server-side from trusted account/onboarding records.
+
 ## Response Contract
 
 Recommended executor response:
@@ -157,19 +159,43 @@ Descriptor sketch:
 
 Required edge cases:
 
-- Unknown email returns neutral success and writes a security audit event without provider send.
-- Disabled user suppresses the send unless an explicit account recovery policy allows it.
-- Repeated requests within the duplicate window reuse idempotency and do not create multiple active reset tokens.
+- Unknown email returns neutral success without revealing account existence.
+- Disabled or inactive accounts return the same neutral request response and do not receive a token.
+- Provider failure, throttling, or kill-switch suppression does not change the neutral request response.
+- Missing, expired, or already-used reset tokens are rejected by `/sws/go/password-reset/confirm`.
+- A valid reset token can be used once; the password is changed, reset token fields are cleared/consumed, and the platform session token is cleared.
 
 ### `new-account`
 
-Purpose: notify users that their account or environment is ready.
+Purpose: notify users immediately after successful local account registration.
 
 Required edge cases:
 
-- Environment readiness is incomplete: block send with `VALIDATION_FAILED`.
-- User email is not verified when verification is required: block or route to verification contract.
-- Duplicate onboarding completion event: return `DUPLICATE`.
+- Registration commits before the email attempt; provider failure is audited and must not roll back account creation.
+- Inactive account records are rejected by the contract resolver.
+- Duplicate registration email commands return `DUPLICATE`.
+
+Email verification is not part of the local account flow. There are no verification fields and login/onboarding is not gated by email verification because SSO is the next authentication step.
+
+### `environment-ready`
+
+Purpose: notify users after onboarding successfully commits and the environment is ready.
+
+Required edge cases:
+
+- Onboarding fails or rolls back: do not send the email.
+- Onboarding commits and the provider fails: audit the failure but keep onboarding success.
+- Duplicate completion for the same environment/client id returns `DUPLICATE`.
+
+### `password-changed`
+
+Purpose: notify the account owner after an authenticated local password change.
+
+Required edge cases:
+
+- Wrong current password rejects the request and sends no email.
+- Valid change rotates the platform session token and sends the notice best-effort.
+- Provider failure is audited and must not roll back the password change.
 
 ### `login-alert`
 
@@ -199,6 +225,8 @@ Required edge cases:
 - Missing IP or device metadata uses safe fallback text and logs missing metadata.
 - High-volume attempts throttle per account and source IP.
 - User has disabled security emails only if policy allows opt-out; mandatory alerts ignore preference.
+
+Current status: the contract remains registered but login does not trigger it yet. Login alerts are deferred until the SSO and risk-policy model exists.
 
 ### `sales-invoice-send`
 

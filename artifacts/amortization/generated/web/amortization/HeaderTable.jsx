@@ -4,8 +4,8 @@ import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 // @sf-generated-start columns:header
 const columns = [
   { key: 'name', column: 'Name', type: 'string', label: 'Name', required: true },
-  { key: 'accountingDate', column: 'DateAcct', type: 'date', label: 'Accounting Date', required: true },
-  { key: 'startingDate', column: 'StartDate', type: 'date', label: 'Starting Date' },
+  { key: 'accountingDate', column: 'DateAcct', type: 'date', label: 'Accounting Date', required: true, dot: false },
+  { key: 'startingDate', column: 'StartDate', type: 'date', label: 'Starting Date', dot: false },
   { key: 'totalAmortization', column: 'Totalamortization', type: 'amount', label: 'Total Amortization', summable: true },
   { key: 'processed', column: 'Processed', type: 'status', label: 'Post Amortization', enumLabels: { 'N': 'statusDraft', 'Y': 'statusProcessed' }, required: true, filterable: false },
 ];

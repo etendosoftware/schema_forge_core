@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import AssetsTable from './AssetsTable';
 import AssetsForm from './AssetsForm';
-import AssetsAmortizationPanel from '@/windows/custom/assets/AssetsAmortizationPanel';
-import AssetsConfigPanel from '@/windows/custom/assets/AssetsConfigPanel';
+import AssetsDetailPanel from '@/windows/custom/assets/AssetsDetailPanel';
 import { AttachmentsTab } from '@/components/attachments';
+import AssetsAmortizationPanel from '@/windows/custom/assets/AssetsAmortizationPanel';
 import catalogs from './mockCatalogs';
 
 import AssetsSidebar from '@/windows/custom/assets/AssetsSidebar';
@@ -36,7 +36,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:assets
 
 // @sf-generated-start requiredHeaderFields:assets
-const requiredHeaderFields = ['searchKey', 'name', 'assetCategory'];
+const requiredHeaderFields = [];
 // @sf-generated-end requiredHeaderFields:assets
 
 
@@ -196,17 +196,19 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        formFooter={AssetsAmortizationPanel}
-        primaryTabs={[
-          { key: 'general', label: 'Overview' },
-          { key: 'configuration', label: 'Depreciation Setup', Panel: AssetsConfigPanel },
-        ]}
+        formFooter={AssetsDetailPanel}
         hidePrint
         hideMoreMenu
         hideMoreDetails
-        contentBg="bg-slate-50"
-        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "A_Asset", config: {} } }]}
-        requiredHeaderFields={requiredHeaderFields}
+        toolbarBorderBottom
+        compactSidebarPadding
+        whiteFormBackground
+        hideFormCard
+        sidebarClassName="w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2"
+        toolbarPaddingX="px-2"
+        toolbarButtonSize="default"
+        contentBg="bg-white"
+        customTabs={[{ key: 'amortizationPlan', labelKey: 'assetsAmortizationPlanTab', Component: AssetsAmortizationPanel, placement: 'tab' }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "A_Asset", config: {} } }]}
         detailSortBy="sEQNoAsset asc"
         titleField="name"
         lockWhenProcessed={false}
@@ -231,6 +233,8 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      listbarPaddingX="px-2"
+      tablePaddingX="px-2"
       hidePrint
       hideMoreMenu
       hideLink

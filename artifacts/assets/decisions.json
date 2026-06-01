@@ -7,7 +7,16 @@
     "titleField": "name",
     "hidePrint": true,
     "hideMoreMenu": true,
-    "contentBg": "bg-slate-50",
+    "contentBg": "bg-white",
+    "toolbarBorderBottom": true,
+    "whiteFormBackground": true,
+    "hideFormCard": true,
+    "listbarPaddingX": "px-2",
+    "tablePaddingX": "px-2",
+    "compactSidebarPadding": true,
+    "toolbarPaddingX": "px-2",
+    "toolbarButtonSize": "default",
+    "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2",
     "hideListFilters": false,
     "hideLink": true,
     "hideEyeCount": true,
@@ -25,40 +34,39 @@
     },
     "secondaryTabs": {},
     "detailEntity": null,
-    "primaryTabs": [
+    "customPanelTabs": [
       {
-        "key": "general",
-        "label": "Overview"
-      },
-      {
-        "key": "configuration",
-        "label": "Depreciation Setup",
-        "panel": "AssetsConfigPanel"
+        "key": "amortizationPlan",
+        "labelKey": "assetsAmortizationPlanTab",
+        "component": "AssetsAmortizationPanel"
       }
     ],
     "headerExtra": {
-      "customForm": "AssetsAmortizationPanel"
+      "customForm": "AssetsDetailPanel"
     }
   },
   "entities": {
     "assets": {
       "fields": {
         "searchKey": {
-          "searchable": true
+          "searchable": true,
+          "form": false
         },
         "name": {
           "grid": true,
-          "searchable": true
+          "searchable": true,
+          "form": false
         },
         "assetCategory": {
           "grid": true,
           "searchable": true,
           "inputMode": "selector",
-          "reference": "AssetGroup"
+          "reference": "AssetGroup",
+          "form": false
         },
         "documentNo": {
           "visibility": "discarded",
-          "reason": "Internal sequential number — not relevant for users in simplified UI"
+          "reason": "Internal sequential number \u2014 not relevant for users in simplified UI"
         },
         "product": {
           "visibility": "discarded",
@@ -104,7 +112,7 @@
           "visibility": "editable",
           "form": false,
           "displayLogicJs": "(record.depreciate === true || record.depreciate === 'Y') && record.calculateType === 'TI'",
-          "reason": "Technical calculation detail — shown only when using Time-based depreciation"
+          "reason": "Technical calculation detail \u2014 shown only when using Time-based depreciation"
         },
         "purchaseDate": {
           "grid": true,
@@ -135,6 +143,9 @@
           "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "depreciationAmt": {
+          "grid": true,
+          "gridOrder": 6,
+          "summable": true,
           "form": false,
           "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
@@ -153,7 +164,7 @@
         "processed": {
           "visibility": "editable",
           "form": false,
-          "reason": "Create Amortization process button — rendered as process action, not a form field"
+          "reason": "Create Amortization process button \u2014 rendered as process action, not a form field"
         },
         "processAsset": {
           "form": false
@@ -164,8 +175,14 @@
           "cellType": "depreciationProgress",
           "columnType": "status",
           "enumValues": [
-            { "value": "true", "name": "assetsFullyDepreciated" },
-            { "value": "false", "name": "assetsStillInProgress" }
+            {
+              "value": "true",
+              "name": "assetsFullyDepreciated"
+            },
+            {
+              "value": "false",
+              "name": "assetsStillInProgress"
+            }
           ],
           "filterable": false,
           "form": false
@@ -178,6 +195,9 @@
           "form": false,
           "defaultExpr": "@C_Currency_ID@",
           "readOnlyLogicJs": "Number(record.depreciatedPlan || 0) > 0 || Number(record.depreciatedValue || 0) > 0"
+        },
+        "description": {
+          "form": false
         }
       }
     },
@@ -187,7 +207,7 @@
         "sEQNoAsset": {
           "visibility": "readOnly",
           "grid": true,
-          "reason": "Auto-generated sequence number — users should not edit line numbering"
+          "reason": "Auto-generated sequence number \u2014 users should not edit line numbering"
         },
         "amortization": {
           "grid": true
@@ -219,11 +239,11 @@
         },
         "disposalGain": {
           "visibility": "discarded",
-          "reason": "Advanced asset management feature — not in scope for simplified UI"
+          "reason": "Advanced asset management feature \u2014 not in scope for simplified UI"
         },
         "disposalLoss": {
           "visibility": "discarded",
-          "reason": "Advanced asset management feature — not in scope for simplified UI"
+          "reason": "Advanced asset management feature \u2014 not in scope for simplified UI"
         }
       }
     }
@@ -234,8 +254,8 @@
       "entity": "asset",
       "decision": "Omit",
       "description": "Recalculates depreciation amount on asset value changes",
-      "impactIfOmitted": "No auto-recalculation when asset value is edited — users set amounts manually",
-      "reason": "Source not found — cannot analyze effects safely"
+      "impactIfOmitted": "No auto-recalculation when asset value is edited \u2014 users set amounts manually",
+      "reason": "Source not found \u2014 cannot analyze effects safely"
     },
     "SL_Assets_Residualassetvalueamt": {
       "type": "callout",
@@ -243,7 +263,7 @@
       "decision": "Omit",
       "description": "Recalculates fields when residual asset value changes",
       "impactIfOmitted": "No auto-recalculation on residual value changes",
-      "reason": "Source not found — cannot analyze effects safely"
+      "reason": "Source not found \u2014 cannot analyze effects safely"
     },
     "SL_Assets_AssetValueAmt": {
       "type": "callout",
@@ -251,7 +271,7 @@
       "decision": "Omit",
       "description": "Recalculates fields when asset value changes",
       "impactIfOmitted": "No auto-recalculation on asset value changes",
-      "reason": "Source not found — cannot analyze effects safely"
+      "reason": "Source not found \u2014 cannot analyze effects safely"
     },
     "SL_Asset_Product_M_Product_ID": {
       "type": "callout",
@@ -259,22 +279,22 @@
       "decision": "Omit",
       "description": "Auto-fills asset fields from selected product",
       "impactIfOmitted": "Product selection does not auto-populate asset details",
-      "reason": "Source not found — cannot analyze effects safely"
+      "reason": "Source not found \u2014 cannot analyze effects safely"
     },
     "SL_Depreciate_A_Asset_Group_ID": {
       "type": "callout",
       "entity": "asset",
       "decision": "Omit",
       "description": "Auto-fills depreciation configuration from selected asset category",
-      "impactIfOmitted": "Selecting asset category does not auto-populate depreciation type, calculate type, and amortize schedule — users must set them manually",
-      "reason": "Source not found — key UX behavior but cannot safely implement without source"
+      "impactIfOmitted": "Selecting asset category does not auto-populate depreciation type, calculate type, and amortize schedule \u2014 users must set them manually",
+      "reason": "Source not found \u2014 key UX behavior but cannot safely implement without source"
     },
     "AD_User_C_BPartner_User_Contacts": {
       "type": "validation",
       "entity": "asset",
       "decision": "Omit",
       "description": "Filters user/contact selector by business partner",
-      "impactIfOmitted": "No impact — userContact field is system (not displayed)",
+      "impactIfOmitted": "No impact \u2014 userContact field is system (not displayed)",
       "reason": "Validation applies to a discarded/system field"
     },
     "C_BPartner_Location": {
@@ -282,7 +302,7 @@
       "entity": "asset",
       "decision": "Omit",
       "description": "Filters partner address by business partner",
-      "impactIfOmitted": "No impact — partnerAddress field is system (not displayed)",
+      "impactIfOmitted": "No impact \u2014 partnerAddress field is system (not displayed)",
       "reason": "Validation applies to a system field"
     },
     "AD_Org_show_child_organizations": {
@@ -299,7 +319,7 @@
       "decision": "Keep",
       "description": "Currency becomes read-only once amortization lines exist",
       "impactIfOmitted": "Users could change currency mid-process, corrupting amortization financial data",
-      "reason": "Critical data integrity rule — currency must be locked after depreciation schedule is created"
+      "reason": "Critical data integrity rule \u2014 currency must be locked after depreciation schedule is created"
     },
     "readOnlyLogic_Processed_AmortizationLine": {
       "type": "readOnlyLogic",
@@ -307,7 +327,7 @@
       "decision": "Keep",
       "description": "Amortization line fields lock (read-only) once the line is processed",
       "impactIfOmitted": "Users could edit amortization amounts after accounting entries are posted",
-      "reason": "Standard document locking — processed records must not be modified"
+      "reason": "Standard document locking \u2014 processed records must not be modified"
     },
     "process_CreateAmortization": {
       "type": "process",
@@ -315,7 +335,7 @@
       "decision": "Keep",
       "description": "Generates amortization schedule entries based on the asset depreciation configuration",
       "impactIfOmitted": "No way to trigger depreciation schedule generation from the asset record",
-      "reason": "Core feature — primary action of this window"
+      "reason": "Core feature \u2014 primary action of this window"
     },
     "process_GenerateAmortizationPlan": {
       "type": "process",
@@ -329,7 +349,7 @@
       "type": "process",
       "entity": "asset",
       "decision": "Omit",
-      "description": "Hardcoded processing flag — internal status column",
+      "description": "Hardcoded processing flag \u2014 internal status column",
       "impactIfOmitted": "No user-facing impact",
       "reason": "Internal mechanism, not a user-facing action"
     }
