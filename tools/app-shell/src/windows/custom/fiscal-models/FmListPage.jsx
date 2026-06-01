@@ -400,12 +400,18 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
 
                   let displayResult = decl.result;
                   if (computed?.summary && !computed.error) {
-                    const r = computed.summary.result;
-                    let kind;
-                    if (r > 0) kind = 'I';
-                    else if (r < 0) kind = 'C';
-                    else kind = 'N';
-                    displayResult = { kind, amount: Math.abs(r) };
+                    if (decl.model === '349') {
+                      const total = ['totalE','totalS','totalA','totalI']
+                        .reduce((s, k) => s + (parseFloat(computed.summary[k]) || 0), 0);
+                      displayResult = { kind: total > 0 ? 'I' : 'N', amount: total };
+                    } else {
+                      const r = computed.summary.result;
+                      let kind;
+                      if (r > 0) kind = 'I';
+                      else if (r < 0) kind = 'C';
+                      else kind = 'N';
+                      displayResult = { kind, amount: Math.abs(r) };
+                    }
                   }
 
                   return (
