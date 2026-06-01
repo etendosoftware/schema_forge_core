@@ -219,6 +219,7 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.section) field.section = fieldDecision.section;
   if (fieldDecision.seq != null) field.seq = fieldDecision.seq;
   if (fieldDecision.filterable === false) field.filterable = false;
+  if (fieldDecision.dot === false) field.dot = false;
   if (fieldDecision.badge) field.badge = true;
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
@@ -547,6 +548,7 @@ const WINDOW_TRUTHY_PROPS = [
   'sendDocument',
   'linesLayout',
   'extraTabs',
+  'customPanelTabs',
 ];
 
 const WINDOW_BOOLEAN_TRUE_PROPS = [
@@ -560,12 +562,16 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'hideEyeCount',
   'disableProcessedLock',
   'noHeaderBorder',
+  'toolbarBorderBottom',
+  'compactSidebarPadding',
+  'whiteFormBackground',
+  'hideFormCard',
 ];
 
 // `attachments` is defined-only (not truthy) so an explicit `false` from
 // decisions.json reaches the contract and disables the AttachmentsTab in the
 // generator. Accepted shapes: boolean | { enabled?: boolean, ...options }.
-const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments'];
+const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX'];
 const WINDOW_NOT_NULL_PROPS = ['detailTabIndex', 'salesTheme'];
 
 // Canonical key order for the contract window object. Stabilizes contract.json
@@ -585,8 +591,8 @@ export const WINDOW_KEY_ORDER = [
   'labelOverrides', 'primaryTabs', 'othersLabel',
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
-  'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'lineEntityConfig',
-  'extraTabs', 'attachments', 'rowQuickActions',
+  'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
+  'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
   'layoutType', 'linesLayout',
 ];
@@ -675,7 +681,7 @@ function applyWindowDraftModeToPrimaryEntity(curatedEntities, windowDecisions) {
  * @param {Object} schemaRaw  - Parsed schema-raw.json
  * @param {Object} rulesRaw   - Parsed rules-raw.json
  * @param {Object} decisions  - Parsed decisions.json (may be empty {})
- * @returns {{ schema: Object, rules: Array }}
+ * @returns {Promise<{ schema: Object, rules: Array }>}
  */
 export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   // Migrate decisions to current version if needed (in-memory only, no file write)

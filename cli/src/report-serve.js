@@ -41,16 +41,23 @@ export function parseServeArgs(argv) {
     stop: false,
   };
 
-  for (let i = 0; i < argv.length; i++) {
+  let i = 0;
+  while (i < argv.length) {
     const arg = argv[i];
     if (arg === '--port' && argv[i + 1]) {
-      opts.port = parseInt(argv[++i], 10);
+      opts.port = parseInt(argv[i + 1], 10);
+      i += 2;
     } else if (arg === '--verbose') {
       opts.verbose = true;
+      i += 1;
     } else if (arg === '--detach') {
       opts.detach = true;
+      i += 1;
     } else if (arg === '--stop') {
       opts.stop = true;
+      i += 1;
+    } else {
+      i += 1;
     }
   }
 

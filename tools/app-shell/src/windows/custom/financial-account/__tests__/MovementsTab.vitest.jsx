@@ -58,6 +58,15 @@ vi.mock('../MovementsTable.jsx', () => ({
   ),
 }));
 
+// Stub the dialog — its internals (useCreateMovement → useAuth, lookups, etc.)
+// are out of scope for MovementsTab filtering behaviour and need a real
+// AuthProvider otherwise.
+vi.mock('../NewMovementDialog.jsx', () => ({
+  NewMovementDialog: ({ open }) => (
+    <div data-testid="new-movement-dialog" data-open={String(!!open)} />
+  ),
+}));
+
 import { MovementsTab } from '../MovementsTab.jsx';
 
 // Date helper — choose dates relative to "today" so that the default last30

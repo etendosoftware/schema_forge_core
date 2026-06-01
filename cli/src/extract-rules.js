@@ -120,14 +120,7 @@ export function analyzeJavaSource(sourceCode) {
   // Detect addResult / setFieldValue patterns
   // addResult("fieldName", ...) or setFieldValue("fieldName", ...)
   const effectPattern = /(?:addResult|setFieldValue)\s*\(\s*"([^"]+)"/g;
-  let match;
-  while ((match = effectPattern.exec(sourceCode)) !== null) {
-    effects.push({
-      field: match[1],
-      action: 'setValue',
-      confidence: 'high',
-    });
-  }
+  extractEffectsFromSource(effectPattern, sourceCode, effects);
 
   // Count branches: if, switch, ternary (?)
   const lines = sourceCode.split('\n');
@@ -151,6 +144,24 @@ export function analyzeJavaSource(sourceCode) {
   }
 
   // Count LOC (non-blank, non-comment lines)
+  const loc = calculateLOC(lines);
+
+  // Detect DML patterns
+  const dmlPattern = /OBDal|PreparedStatement|createCriteria|ConnectionProvider|executeUpdate|createQuery|getConnection/;
+  const hasDml = dmlPattern.test(sourceCode);
+
+  const confidence = effects.length > 0 ? 'high' : 'medium';
+
+  return {
+    effects,
+    confidence,
+    branches,
+    loc,
+    hasDml,
+  };
+}
+
+function calculateLOC(lines) {
   let loc = 0;
   let inBlockComment = false;
   for (const line of lines) {
@@ -171,20 +182,18 @@ export function analyzeJavaSource(sourceCode) {
 
     loc++;
   }
+  return loc;
+}
 
-  // Detect DML patterns
-  const dmlPattern = /OBDal|PreparedStatement|createCriteria|ConnectionProvider|executeUpdate|createQuery|getConnection/;
-  const hasDml = dmlPattern.test(sourceCode);
-
-  const confidence = effects.length > 0 ? 'high' : 'medium';
-
-  return {
-    effects,
-    confidence,
-    branches,
-    loc,
-    hasDml,
-  };
+function extractEffectsFromSource(effectPattern, sourceCode, effects) {
+  let match;
+  while ((match = effectPattern.exec(sourceCode)) !== null) {
+    effects.push({
+      field: match[1],
+      action: 'setValue',
+      confidence: 'high',
+    });
+  }
 }
 
 /**

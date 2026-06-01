@@ -152,18 +152,25 @@ describe('MovementsToolbar', () => {
     expect(lastCall[0]).toBe('c');
   });
 
-  it('fires a toast when the new-movement button is clicked', async () => {
+  it('invokes onNewMovement when the new-movement button is clicked', async () => {
     const user = userEvent.setup();
+    const onNewMovement = vi.fn();
     render(
-      <MovementsToolbar filters={defaultFilters} onFiltersChange={() => () => {}} />,
+      <MovementsToolbar
+        filters={defaultFilters}
+        onFiltersChange={() => () => {}}
+        onNewMovement={onNewMovement}
+      />,
     );
 
     await user.click(
       screen.getByRole('button', { name: 'financeAccountMovementsNew' }),
     );
 
-    expect(mockToast).toHaveBeenCalledTimes(1);
-    expect(mockToast).toHaveBeenCalledWith('financeAccountMovementsNewToast');
+    expect(onNewMovement).toHaveBeenCalledTimes(1);
+    // The placeholder toast behaviour was removed in favour of opening the
+    // real NewMovementDialog managed by the parent (MovementsTab).
+    expect(mockToast).not.toHaveBeenCalled();
   });
 
   it('passes the active filter values to child filter components', () => {

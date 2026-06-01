@@ -56,12 +56,13 @@ const SUMMARY = {
 
 /**
  * Movements mock: mix of trxType BPD/BPW and varied paymentStatus codes so
- * the Type and Status filter assertions are meaningful.
- *   - tx-1: BPD / RPPC (Cobro / Pago compensado)
- *   - tx-2: BPW / RPAP (Pago / Pendiente de pago)
- *   - tx-3: BPD / RPR  (Cobro / Pago recibido)
+ * the Type and Status filter assertions are meaningful. Labels reflect the
+ * 5 user-facing status families introduced in ETP-4121.
+ *   - tx-1: BPD / RPPC   (Cobro / Conciliado)
+ *   - tx-2: BPW / RPAP   (Pago / Borrador)
+ *   - tx-3: BPD / RPR    (Cobro / Completado)
  *   - tx-4: BPW / RPVOID (Pago / Anulado)
- *   - tx-5: BPD / RPPC (Cobro / Pago compensado)
+ *   - tx-5: BPD / RPPC   (Cobro / Conciliado)
  */
 const MOVEMENTS = [
   {
@@ -241,12 +242,15 @@ test.describe('Financial Account Detail (T6) — mocked', () => {
     await page.getByRole('button', { name: 'Todos los estados' }).click();
 
     // Type into the search to verify the search box works inside the popover.
-    // "compensado" should narrow the visible options to "Pago compensado" (RPPC).
+    // "concil" should narrow the visible options to "Conciliado" — the family
+    // label shared by every code that maps to MOVEMENT_STATUS_FAMILY.CLEARED.
+    // In the mocked fixture only RPPC carries that family, so the option is
+    // unique and the resulting filter narrows the table to tx-1 and tx-5.
     // Placeholder is "Buscar estado..." (es_ES).
-    await page.getByPlaceholder(/buscar estado|search status/i).fill('compensado');
+    await page.getByPlaceholder(/buscar estado|search status/i).fill('concil');
 
     // Pick the only remaining option.
-    await page.getByRole('button', { name: 'Pago compensado' }).click();
+    await page.getByRole('button', { name: 'Conciliado' }).click();
 
     // RPPC rows remain: tx-1 and tx-5.
     await expect(page.getByTestId('movement-row-tx-1')).toBeVisible();

@@ -540,6 +540,31 @@ export function AdvancedFilterBuilder({
   );
 }
 
+function betweenOperator(value, mode, onChange) {
+  const pair = Array.isArray(value) ? value : ['', ''];
+  const inputType = mode === 'date' ? 'date' : mode === 'numeric' ? 'number' : 'text';
+  return (
+      <div className="flex gap-1">
+        <Input
+            type={inputType}
+            value={pair[0] ?? ''}
+            onChange={(e) => onChange([e.target.value, pair[1] ?? ''])}
+            className="h-9 text-xs"
+        />
+        <Input
+            type={inputType}
+            value={pair[1] ?? ''}
+            onChange={(e) => onChange([pair[0] ?? '', e.target.value])}
+            className="h-9 text-xs"
+        />
+      </div>
+  );
+}
+
+function getJoinedValue(value) {
+  return Array.isArray(value) ? value.join(',') : (value ?? '');
+}
+
 function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows, entity, apiBaseUrl, labelOverrides }) {
   if (mode === 'identifier' && !TEXTUAL_IDENT_OPS.has(operator)) {
     return (
@@ -557,24 +582,7 @@ function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows
   }
 
   if (operator === 'between') {
-    const pair = Array.isArray(value) ? value : ['', ''];
-    const inputType = mode === 'date' ? 'date' : mode === 'numeric' ? 'number' : 'text';
-    return (
-      <div className="flex gap-1">
-        <Input
-          type={inputType}
-          value={pair[0] ?? ''}
-          onChange={(e) => onChange([e.target.value, pair[1] ?? ''])}
-          className="h-9 text-xs"
-        />
-        <Input
-          type={inputType}
-          value={pair[1] ?? ''}
-          onChange={(e) => onChange([pair[0] ?? '', e.target.value])}
-          className="h-9 text-xs"
-        />
-      </div>
-    );
+    return betweenOperator(value, mode, onChange);
   }
 
   if (mode === 'enumLabel') {
@@ -582,7 +590,7 @@ function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows
       return (
         <Input
           type="text"
-          value={Array.isArray(value) ? value.join(',') : (value ?? '')}
+          value={getJoinedValue(value)}
           onChange={(e) => onChange(e.target.value)}
           placeholder={ui('advancedFilterInSetPlaceholder')}
           className="h-9 text-xs"
@@ -806,6 +814,14 @@ function resolveEnumOptions(col, dictionary) {
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
+function fillFallbackCodes(out, labelMap, seen) {
+  if (out.length === 0) {
+    for (const c of Object.keys(labelMap)) {
+      if (!seen.has(c)) out.push(c);
+    }
+  }
+}
+
 /**
  * Popover picker for enum columns in the advanced filter builder.
  *
@@ -861,9 +877,7 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
     if (value && !seen.has(value)) { seen.add(value); out.push(value); }
     // Fallback: for virtual columns with static enumLabels and no dynamic data, use the
     // enumLabels keys directly so the picker is not empty.
-    if (out.length === 0) {
-      for (const c of Object.keys(labelMap)) { if (!seen.has(c)) out.push(c); }
-    }
+    fillFallbackCodes(out, labelMap, seen);
     return out;
   }, [distinct.values, distinct.search, inMemoryCodes, value, labelMap, dictionary]);
 

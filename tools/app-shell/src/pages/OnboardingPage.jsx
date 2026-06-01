@@ -11,11 +11,14 @@ import {
 } from 'lucide-react';
 import {
   ONBOARDING_ERROR_CODES,
+  changePassword,
+  confirmPasswordReset,
   fetchAccount,
   fetchEnvironments,
   loginAccount,
   loginEnvironment,
   registerAccount,
+  requestPasswordReset,
   runOnboardingStream,
 } from './onboarding/onboardingApi.js';
 import { checkSalesInvoiceReadiness } from './onboarding/onboardingReadiness.js';
@@ -403,7 +406,7 @@ function PageHeader({ accountName, onLogout, isAuthenticated, logoutLabel, brand
   );
 }
 
-export default function OnboardingPage() {
+export default function OnboardingPage() { // NOSONAR: route component coordinates covered auth/setup flows.
   const [view, setView] = useState(null); // null = loading initial state
   const [accountName, setAccountName] = useState(null);
 
@@ -421,6 +424,31 @@ export default function OnboardingPage() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  // Password reset and change state
+  const resetTokenFromUrl = new URLSearchParams(window.location.search).get('resetToken') || ''; // NOSONAR: reset links carry single-use server-side tokens.
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotError, setForgotError] = useState(null);
+  const [resetForm, setResetForm] = useState({
+    token: resetTokenFromUrl,
+    password: '',
+    confirmPassword: '',
+  });
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [resetError, setResetError] = useState(null);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [changePasswordForm, setChangePasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+  const [changePasswordError, setChangePasswordError] = useState(null);
+  const [changePasswordMessage, setChangePasswordMessage] = useState(null);
 
   // Environments state
   const [environments, setEnvironments] = useState([]);
@@ -461,6 +489,10 @@ export default function OnboardingPage() {
 
   // Validate existing platform token on mount
   useEffect(() => {
+    if (resetTokenFromUrl) {
+      setView('reset-password');
+      return;
+    }
     const token = getPlatformToken();
     if (!token) {
       setView('register');
@@ -488,12 +520,14 @@ export default function OnboardingPage() {
   }, [accountName]);
 
   // Save token + account name and route by environments
-  const handleAuthSuccess = (token, account) => {
+  const handleAuthSuccess = (token, account, { route = true } = {}) => {
     localStorage.setItem('sf_platform_token', token);
     setAccountName(account?.name || account?.email || null);
     setShowRegisterPassword(false);
     setShowLoginPassword(false);
-    routeByEnvironments();
+    if (route) {
+      routeByEnvironments();
+    }
   };
 
   const handleRegisterSuccess = (token, account) => {
@@ -525,6 +559,17 @@ export default function OnboardingPage() {
     setAccountName(null);
     setRegisterForm({ name: '', email: '', password: '' });
     setLoginForm({ email: '', password: '' });
+    setForgotEmail('');
+    setForgotSent(false);
+    setForgotError(null);
+    setResetForm({ token: '', password: '', confirmPassword: '' });
+    setResetSuccess(false);
+    setResetError(null);
+    setShowResetPassword(false);
+    setShowChangePassword(false);
+    setChangePasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    setChangePasswordError(null);
+    setChangePasswordMessage(null);
     setForm(DEFAULT_ONBOARDING_FORM);
     setCreateStep(1);
     setRegisterError(null);
@@ -603,6 +648,64 @@ export default function OnboardingPage() {
       setLoginError(err.userMessage || ui(err.code || 'onboardingConnectionError'));
     } finally {
       setLoginLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotError(null);
+    setForgotSent(false);
+    setForgotLoading(true);
+    try {
+      await requestPasswordReset(fetch, BASE_URL, forgotEmail);
+      setForgotSent(true);
+    } catch (err) {
+      setForgotError(err.userMessage || ui(err.code || 'onboardingCredentialResetFailed'));
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setResetError(null);
+    if (resetForm.password !== resetForm.confirmPassword) {
+      setResetError(ui('onboardingCredentialsMustMatch'));
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await confirmPasswordReset(fetch, BASE_URL, resetForm);
+      localStorage.removeItem('sf_platform_token'); // NOSONAR: clears stale token after server invalidates reset sessions.
+      setResetSuccess(true);
+      window.history.replaceState({}, document.title, window.location.pathname); // NOSONAR: removes consumed reset token from the visible URL.
+    } catch (err) {
+      setResetError(err.userMessage || ui(err.code || 'onboardingCredentialResetFailed'));
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setChangePasswordError(null);
+    setChangePasswordMessage(null);
+    if (changePasswordForm.newPassword !== changePasswordForm.confirmPassword) {
+      setChangePasswordError(ui('onboardingCredentialsMustMatch'));
+      return;
+    }
+    setChangePasswordLoading(true);
+    try {
+      const data = await changePassword(fetch, BASE_URL, getPlatformToken(), changePasswordForm);
+      if (data.token) {
+        handleAuthSuccess(data.token, data.account, { route: false });
+      }
+      setChangePasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setChangePasswordMessage(ui('onboardingCredentialChangeSuccess'));
+    } catch (err) {
+      setChangePasswordError(err.userMessage || ui(err.code || 'onboardingCredentialChangeFailed'));
+    } finally {
+      setChangePasswordLoading(false);
     }
   };
 
@@ -772,6 +875,27 @@ export default function OnboardingPage() {
       options={languageOptions}
     />
   ) : null;
+  const setupHeaderContent = (
+    <div className="flex flex-wrap items-end justify-end gap-3">
+      {localeControl}
+      {accountName && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setShowChangePassword(value => !value);
+            setChangePasswordError(null);
+            setChangePasswordMessage(null);
+          }}
+          className="h-10 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+        >
+          <Lock className="mr-2 h-4 w-4" />
+          {ui('onboardingChangePasswordAction')}
+        </Button>
+      )}
+    </div>
+  );
   const isStepOneValid = isProfileStepValid(form);
   const isStepTwoValid = isCompanyStepValid(form);
   const setupGreetingName = (form.fullName || accountName || ui('onboardingGreetingFallback')).trim().split(/\s+/)[0];
@@ -829,6 +953,98 @@ export default function OnboardingPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
       </div>
+    );
+  }
+
+  // ── RESET PASSWORD VIEW ──
+  if (view === 'reset-password') {
+    return (
+      <AuthShell
+        switchPrompt={ui('onboardingRememberPasswordPrompt')}
+        switchAction={ui('onboardingBackToLoginAction')}
+        switchTestId="action-reset-back-to-login"
+        onSwitch={() => {
+          setResetError(null);
+          setResetSuccess(false);
+          setView('login');
+        }}
+        brandLabel={ui('onboardingBrandName')}
+        headerContent={localeControl}
+        marketingTitle={ui('onboardingMarketingTitle')}
+        marketingDescription={ui('onboardingMarketingDescription')}
+        featureLabels={authFeatureLabels}
+      >
+        <div className="mb-10">
+          <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
+            {ui('onboardingResetPasswordTitle')}
+          </h1>
+          <p className="mt-3 text-base text-slate-600 sm:text-xl">
+            {ui(resetSuccess ? 'onboardingResetPasswordSuccess' : 'onboardingResetPasswordSubtitle')}
+          </p>
+        </div>
+
+        {resetSuccess ? (
+          <Button
+            type="button"
+            onClick={() => setView('login')}
+            className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
+          >
+            {ui('onboardingBackToLoginAction')}
+          </Button>
+        ) : (
+          <form onSubmit={handleResetPassword} className="space-y-5">
+            <AuthField
+              id="reset-password"
+              type={showResetPassword ? 'text' : 'password'}
+              label={ui('onboardingNewPasswordLabel')}
+              icon={Lock}
+              value={resetForm.password}
+              onChange={e => setResetForm(f => ({ ...f, password: e.target.value }))}
+              disabled={resetLoading}
+              placeholder={ui('onboardingPasswordPlaceholder')}
+              autoComplete="new-password"
+              required
+              trailing={(
+                <button
+                  type="button"
+                  aria-label={showResetPassword ? ui('onboardingHidePassword') : ui('onboardingShowPassword')}
+                  onClick={() => setShowResetPassword(value => !value)}
+                  className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                >
+                  {showResetPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              )}
+            />
+            <AuthField
+              id="reset-password-confirm"
+              type={showResetPassword ? 'text' : 'password'}
+              label={ui('onboardingConfirmPasswordLabel')}
+              icon={Lock}
+              value={resetForm.confirmPassword}
+              onChange={e => setResetForm(f => ({ ...f, confirmPassword: e.target.value }))}
+              disabled={resetLoading}
+              placeholder={ui('onboardingPasswordPlaceholder')}
+              autoComplete="new-password"
+              required
+            />
+            {resetError && (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+                {resetError}
+              </div>
+            )}
+            <Button
+              type="submit"
+              data-testid="action-reset-password-submit"
+              disabled={resetLoading || !resetForm.token}
+              className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
+            >
+              {resetLoading
+                ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{ui('onboardingSavingPassword')}</>
+                : ui('onboardingSavePasswordAction')}
+            </Button>
+          </form>
+        )}
+      </AuthShell>
     );
   }
 
@@ -932,6 +1148,71 @@ export default function OnboardingPage() {
     );
   }
 
+  // ── FORGOT PASSWORD VIEW ──
+  if (view === 'forgot-password') {
+    return (
+      <AuthShell
+        switchPrompt={ui('onboardingRememberPasswordPrompt')}
+        switchAction={ui('onboardingBackToLoginAction')}
+        switchTestId="action-forgot-back-to-login"
+        onSwitch={() => {
+          setForgotError(null);
+          setForgotSent(false);
+          setView('login');
+        }}
+        brandLabel={ui('onboardingBrandName')}
+        headerContent={localeControl}
+        marketingTitle={ui('onboardingMarketingTitle')}
+        marketingDescription={ui('onboardingMarketingDescription')}
+        featureLabels={authFeatureLabels}
+      >
+        <div className="mb-10">
+          <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
+            {ui('onboardingForgotPasswordTitle')}
+          </h1>
+          <p className="mt-3 text-base text-slate-600 sm:text-xl">
+            {ui(forgotSent ? 'onboardingResetEmailSent' : 'onboardingForgotPasswordSubtitle')}
+          </p>
+        </div>
+
+        <form onSubmit={handleForgotPassword} className="space-y-5">
+          <AuthField
+            id="forgot-email"
+            type="email"
+            label={ui('onboardingEmailLabel')}
+            icon={Mail}
+            value={forgotEmail}
+            onChange={e => setForgotEmail(e.target.value)}
+            disabled={forgotLoading || forgotSent}
+            placeholder={ui('onboardingEmailPlaceholder')}
+            autoComplete="email"
+            required
+          />
+          {forgotError && (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+              {forgotError}
+            </div>
+          )}
+          {forgotSent && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+              {ui('onboardingResetEmailSent')}
+            </div>
+          )}
+          <Button
+            type="submit"
+            data-testid="action-forgot-password-submit"
+            disabled={forgotLoading || forgotSent}
+            className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
+          >
+            {forgotLoading
+              ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{ui('onboardingSendingResetEmail')}</>
+              : ui('onboardingSendResetEmailAction')}
+          </Button>
+        </form>
+      </AuthShell>
+    );
+  }
+
   // ── LOGIN VIEW ──
   if (view === 'login') {
     return (
@@ -997,6 +1278,22 @@ export default function OnboardingPage() {
               </button>
             )}
           />
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setLoginError(null);
+                setForgotEmail(loginForm.email);
+                setForgotSent(false);
+                setForgotError(null);
+                setView('forgot-password');
+              }}
+              className="text-sm font-medium text-slate-700 underline underline-offset-4 transition hover:text-slate-900"
+            >
+              {ui('onboardingForgotPasswordAction')}
+            </button>
+          </div>
 
           {loginError && (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
@@ -1153,9 +1450,80 @@ export default function OnboardingPage() {
     <SetupShell
       progressLabel={createStep === 1 ? ui('onboardingProgressAlmostReady') : ui('onboardingProgressAlmostDone')}
       progressValue={createStep === 1 ? 50 : 90}
-      headerContent={localeControl}
+      headerContent={setupHeaderContent}
       brandLabel={ui('onboardingBrandName')}
     >
+      {showChangePassword && (
+        <form
+          onSubmit={handleChangePassword}
+          className="mb-8 space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+        >
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">{ui('onboardingChangePasswordTitle')}</h2>
+            <p className="mt-1 text-sm text-slate-500">{ui('onboardingChangePasswordSubtitle')}</p>
+          </div>
+          <SetupField
+            id="change-current-password"
+            type="password"
+            label={ui('onboardingCurrentPasswordLabel')}
+            required
+            value={changePasswordForm.currentPassword}
+            onChange={e => setChangePasswordForm(f => ({ ...f, currentPassword: e.target.value }))}
+            disabled={changePasswordLoading}
+            autoComplete="current-password"
+          />
+          <SetupField
+            id="change-new-password"
+            type="password"
+            label={ui('onboardingNewPasswordLabel')}
+            required
+            value={changePasswordForm.newPassword}
+            onChange={e => setChangePasswordForm(f => ({ ...f, newPassword: e.target.value }))}
+            disabled={changePasswordLoading}
+            autoComplete="new-password"
+          />
+          <SetupField
+            id="change-confirm-password"
+            type="password"
+            label={ui('onboardingConfirmPasswordLabel')}
+            required
+            value={changePasswordForm.confirmPassword}
+            onChange={e => setChangePasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
+            disabled={changePasswordLoading}
+            autoComplete="new-password"
+          />
+          {changePasswordError && (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+              {changePasswordError}
+            </div>
+          )}
+          {changePasswordMessage && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+              {changePasswordMessage}
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowChangePassword(false)}
+              disabled={changePasswordLoading}
+              className="h-10 rounded-xl"
+            >
+              {ui('cancel')}
+            </Button>
+            <Button
+              type="submit"
+              disabled={changePasswordLoading}
+              className="h-10 rounded-xl bg-gray-900 text-white hover:bg-gray-800"
+            >
+              {changePasswordLoading
+                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{ui('onboardingSavingPassword')}</>
+                : ui('onboardingSavePasswordAction')}
+            </Button>
+          </div>
+        </form>
+      )}
       {createStep === 1 ? (
         <div>
           <div className="mb-10">

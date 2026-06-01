@@ -1,6 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 import { StatusFilter } from './StatusFilter';
 import { DateRangeFilter } from './DateRangeFilter';
@@ -13,10 +12,11 @@ import { AmountFilter } from './AmountFilter';
  *
  * @param {{
  *   filters: { status: string|null, dateRange: string, type: string|null, amount: string|null, search: string },
- *   onFiltersChange: (key: string) => (value: unknown) => void
+ *   onFiltersChange: (key: string) => (value: unknown) => void,
+ *   onNewMovement?: () => void,
  * }} props
  */
-export function MovementsToolbar({ filters, onFiltersChange }) {
+export function MovementsToolbar({ filters, onFiltersChange, onNewMovement }) {
   const ui = useUI();
   const navigate = useNavigate();
 
@@ -55,7 +55,8 @@ export function MovementsToolbar({ filters, onFiltersChange }) {
       {/* New movement */}
       <button
         type="button"
-        onClick={() => toast(ui('financeAccountMovementsNewToast'))}
+        data-testid="new-movement-button"
+        onClick={onNewMovement}
         className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#121217] px-3 text-sm font-medium text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217]"
       >
         {ui('financeAccountMovementsNew')}

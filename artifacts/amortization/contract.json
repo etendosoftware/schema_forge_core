@@ -1,8 +1,8 @@
 {
-  "version": "0.17.0",
+  "version": "0.18.0",
   "generatedAt": "2026-05-22T16:00:10.872Z",
-  "updatedAt": "2026-05-26T17:09:19.920Z",
-  "checksum": "e6bcaf1e3c564ab7",
+  "updatedAt": "2026-05-29T13:03:58.527Z",
+  "checksum": "1cdb2cae927ecb75",
   "frontendContract": {
     "window": {
       "id": "800026",
@@ -50,6 +50,12 @@
         }
       },
       "titleField": "name",
+      "noHeaderBorder": true,
+      "whiteFormBackground": true,
+      "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2",
+      "toolbarButtonSize": "default",
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
       "layoutType": "default",
       "linesLayout": "inlineEditable"
     },
@@ -111,6 +117,7 @@
             "form": true,
             "sourceRequired": true,
             "seq": 20,
+            "dot": false,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -129,6 +136,7 @@
             "grid": true,
             "form": true,
             "seq": 30,
+            "dot": false,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -365,6 +373,12 @@
         }
       },
       "titleField": "name",
+      "noHeaderBorder": true,
+      "whiteFormBackground": true,
+      "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2",
+      "toolbarButtonSize": "default",
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
       "linesLayout": "inlineEditable"
     },
     "entities": {

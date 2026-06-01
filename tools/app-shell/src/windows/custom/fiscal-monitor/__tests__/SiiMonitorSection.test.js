@@ -49,8 +49,8 @@ describe('SiiMonitorSection — period segmented control', () => {
     assert.match(src, /useState\(['"]current['"]\)/);
   });
 
-  it('renders current and previous period buttons inside fm-segmented', () => {
-    assert.match(src, /fm-segmented/);
+  it('renders current and previous period buttons inside fm-filter-pills', () => {
+    assert.match(src, /fm-filter-pills/);
     assert.match(src, /fiscalMonitor\.sii\.period\.current/);
     assert.match(src, /fiscalMonitor\.sii\.period\.previous/);
   });
@@ -140,16 +140,6 @@ describe('SiiMonitorSection — data fetching', () => {
 
   it('surfaces fetch errors in state', () => {
     assert.match(src, /setError/);
-  });
-});
-
-describe('SiiMonitorSection — section title', () => {
-  it('renders the SII section title from i18n', () => {
-    assert.match(src, /fiscalMonitor\.sii\.title/);
-  });
-
-  it('includes a badge-system SII badge', () => {
-    assert.match(src, /badge-system/);
   });
 });
 

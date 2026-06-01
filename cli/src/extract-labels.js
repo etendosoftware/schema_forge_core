@@ -124,11 +124,16 @@ function parseArgs(argv) {
   let lang = null;
   let out = null;
 
-  for (let i = 0; i < args.length; i++) {
+  let i = 0;
+  while (i < args.length) {
     if (args[i] === '--lang' && args[i + 1]) {
-      lang = args[++i];
+      lang = args[i + 1];
+      i += 2;
     } else if (args[i] === '--out' && args[i + 1]) {
-      out = args[++i];
+      out = args[i + 1];
+      i += 2;
+    } else {
+      i += 1;
     }
   }
   return { lang, out };
@@ -139,7 +144,7 @@ async function main() {
 
   if (!lang || !out) {
     console.error('Usage: node extract-labels.js --lang <language> --out <path>');
-    console.error('Example: node cli/src/extract-labels.js --lang en_US --out tools/app-shell/src/locales/en_US.json');
+    console.error('Example: node cli/src/extract-labels.js --lang en_US --out packages/app-shell-core/src/locales/en_US.json');
     process.exit(1);
   }
 

@@ -89,6 +89,33 @@ The Assets window should let a finance user register fixed assets, define how ea
 - No assets-specific browser or component test file was found in `tools/app-shell/test` or `tools/app-shell/src/**/__tests__`, so the automated evidence is structural/code-backed rather than end-to-end behavioral proof.
 - The generated `AssetsPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `A_Asset` AD table.
 
+## Visual polish — ETP-4103
+
+Changes landed in `feature/ETP-4103`. All items below affect the Assets window specifically or in common with Amortization.
+
+- `toolbarBorderBottom: true` in `decisions.json` — adds a horizontal divider line below the toolbar buttons row.
+- `sidebarClassName: "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2"` in `decisions.json` — sidebar is now proportional (30% of detail width) with a left-border divider and 8 px internal padding. Previously fixed at `w-96`.
+- `toolbarButtonSize: "default"` in `decisions.json` — toolbar buttons (including the kebab menu) are now `h-10 w-10`, matching the Contacts window. Previously `sm` (`h-9`).
+- `listbarPaddingX: "px-2"` and `tablePaddingX: "px-2"` in `decisions.json` — list-view toolbar and table horizontal padding reduced from 24 px to 8 px.
+- `tools/app-shell/src/windows/custom/assets/AssetsSidebar.jsx` — outer `rounded-2xl border bg-white shadow-sm` card wrapper removed; the sidebar `border-l` divider from `sidebarClassName` makes the wrapper border redundant.
+- `whiteFormBackground: true` in `decisions.json` — forces white background on form inputs and textareas, overriding the `bg-[#F5F7F9]` default on inputs and `bg-background` on textareas. Disabled textareas use `opacity-50` instead of `bg-muted/50` for visual consistency.
+- `compactSidebarPadding: true` in `decisions.json` — reduces the detail content wrapper padding to `p-2` (8 px) instead of `pl-6 pr-2`. This prop is scoped exclusively to Assets.
+- `tools/app-shell/src/windows/custom/assets/AssetsConfigPanel.jsx` — outer container classes updated to `bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50`, ensuring white field backgrounds in the Depreciation Setup tab consistent with `whiteFormBackground`.
+
+## v3 UX redesign — ETP-4103
+
+Changes landed in `feature/ETP-4103`. Items below cover the full-form restructure specific to the Assets window.
+
+- `primaryTabs` removed from `decisions.json` — the "General" / "Depreciation Setup" tab selector no longer exists; the window opens directly to a unified form.
+- `AssetsDetailPanel.jsx` added at `tools/app-shell/src/windows/custom/assets/AssetsDetailPanel.jsx` — custom `formFooter` component that renders all fields in four grouped sections with `GroupHead` dividers: Group 1 — Asset Info (searchKey, name, assetCategory, description in a 4-column grid); Group 2 — Financial Info (currency, assetValue, residualAssetValue, depreciationAmt, previouslyDepreciatedAmt); Group 3 — Depreciation Config (ToggleCards + conditional depreciation fields); Group 4 — Dates (visible only when `depreciate=true`). Replaces both the standard `EntityForm` and `AssetsConfigPanel` as the primary form UI.
+- All header fields set to `form: false` in `decisions.json` — the standard `EntityForm` renders nothing. `hideFormCard: true` hides the now-empty card.
+- `AssetsAmortizationPanel` moved from `formFooter` to a secondary tab — declared via `window.customPanelTabs` in `decisions.json`; appears as the first secondary tab "Plan de amortización" (before Attachments); reports line count via `onCountChange` for the tab badge.
+- `hideFormCard` prop added to `DetailView.jsx` (default `false`) — when `true`, adds a `hidden` class to the form card wrapper; safe for all other windows because the default is `false`.
+- `customPanelTabs` support added to the generator (`generate-frontend.js` + `resolve-curated.js`) — accepts an array of `{ key, labelKey, component }` entries under `window` config; each entry is imported from the custom directory and added as a `customTab` with `placement: 'tab'`, before Attachments in tab order.
+- `contentBg` changed to `bg-white` — the detail content area background is now white (was `bg-slate-50`).
+- `AssetsSidebar.jsx` — "Valor actual" MetricCard uses `bg-blue-50` tint (was neutral gray); "Progreso de depreciación" ProgressCard uses `bg-white border border-gray-100`.
+- `AssetsAmortizationPanel.jsx` — internal title/description header removed; table uses system design tokens (`text-foreground`, `border-border/50`) matching DataTable style; horizontal padding removed (`px-5` dropped).
+
 ## Pipeline regeneration — ETP-3908
 
 Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.

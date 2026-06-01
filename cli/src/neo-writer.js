@@ -354,6 +354,69 @@ export async function populateSpec(client, params) {
   throw new Error(`Unknown spec type: ${spec.spec_type}`);
 }
 
+async function deleteStaleFields(existingFieldByColumn, visitedFieldIds, client, changes) {
+  // Delete stale fields (exist in DB but column no longer in AD)
+  for (const [, existingFieldId] of existingFieldByColumn) {
+    if (!visitedFieldIds.has(existingFieldId)) {
+      await client.query(
+          'DELETE FROM etgo_sf_field WHERE etgo_sf_field_id = $1',
+          [existingFieldId],
+      );
+      changes.fields.deleted++;
+    }
+  }
+}
+
+function indexFieldsByColumn(existingFieldsResult) {
+  const existingFieldByColumn = new Map();
+  for (const row of existingFieldsResult.rows) {
+    if (row.ad_column_id) {
+      existingFieldByColumn.set(row.ad_column_id, row.etgo_sf_field_id);
+    }
+  }
+  return existingFieldByColumn;
+}
+
+function tallyFieldChange(fieldCreated, changes) {
+  if (fieldCreated) changes.fields.created++;
+  else changes.fields.updated++;
+}
+
+async function deleteStaleEntities(existingEntityByTab, visitedEntityIds, client, changes) {
+  for (const [, existingEntityId] of existingEntityByTab) {
+    if (!visitedEntityIds.has(existingEntityId)) {
+      // Delete fields for stale entity first
+      const staleFieldsResult = await client.query(
+          'SELECT COUNT(*) as cnt FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
+          [existingEntityId],
+      );
+      const staleFieldCount = parseInt(staleFieldsResult.rows[0].cnt, 10);
+      await client.query(
+          'DELETE FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
+          [existingEntityId],
+      );
+      changes.fields.deleted += staleFieldCount;
+
+      await client.query(
+          'DELETE FROM etgo_sf_entity WHERE etgo_sf_entity_id = $1',
+          [existingEntityId],
+      );
+      changes.entities.deleted++;
+    }
+  }
+}
+
+function indexEntitiesByTabAndName(existingEntitiesResult, existingEntityByTab, existingEntityByName) {
+  for (const row of existingEntitiesResult.rows) {
+    if (row.ad_tab_id) {
+      existingEntityByTab.set(row.ad_tab_id, row.etgo_sf_entity_id);
+    }
+    if (row.name) {
+      existingEntityByName.set(row.name, row.etgo_sf_entity_id);
+    }
+  }
+}
+
 /**
  * Populate entities + fields for a Window-type spec from AD_Tab/AD_Column.
  * Incremental: matches entities by ad_tab_id, fields by ad_column_id.
@@ -379,14 +442,7 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
   );
   const existingEntityByTab = new Map();
   const existingEntityByName = new Map();
-  for (const row of existingEntitiesResult.rows) {
-    if (row.ad_tab_id) {
-      existingEntityByTab.set(row.ad_tab_id, row.etgo_sf_entity_id);
-    }
-    if (row.name) {
-      existingEntityByName.set(row.name, row.etgo_sf_entity_id);
-    }
-  }
+  indexEntitiesByTabAndName(existingEntitiesResult, existingEntityByTab, existingEntityByName);
 
   const methodFlags = includeAllMethods
     ? { isGet: 'Y', isGetbyid: 'Y', isPost: 'Y', isPut: 'Y', isPatch: 'Y', isDelete: 'Y' }
@@ -434,12 +490,7 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
        ORDER BY created, etgo_sf_field_id`,
       [entityId],
     );
-    const existingFieldByColumn = new Map();
-    for (const row of existingFieldsResult.rows) {
-      if (row.ad_column_id) {
-        existingFieldByColumn.set(row.ad_column_id, row.etgo_sf_field_id);
-      }
-    }
+    const existingFieldByColumn = indexFieldsByColumn(existingFieldsResult);
 
     // Get active columns for this tab's table
     // ORDER BY needs a tiebreaker: AD_Column.position is not unique within a
@@ -475,48 +526,34 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
       });
       fieldCount++;
       visitedFieldIds.add(fieldId);
-      if (fieldCreated) changes.fields.created++;
-      else changes.fields.updated++;
+      tallyFieldChange(fieldCreated, changes);
     }
 
-    // Delete stale fields (exist in DB but column no longer in AD)
-    for (const [, existingFieldId] of existingFieldByColumn) {
-      if (!visitedFieldIds.has(existingFieldId)) {
-        await client.query(
-          'DELETE FROM etgo_sf_field WHERE etgo_sf_field_id = $1',
-          [existingFieldId],
-        );
-        changes.fields.deleted++;
-      }
-    }
+    await deleteStaleFields(existingFieldByColumn, visitedFieldIds, client, changes);
 
     entities.push({ entityId, name: tab.name, tabId: tab.ad_tab_id });
   }
 
   // Delete stale entities (exist in DB but tab no longer in AD)
-  for (const [, existingEntityId] of existingEntityByTab) {
-    if (!visitedEntityIds.has(existingEntityId)) {
-      // Delete fields for stale entity first
-      const staleFieldsResult = await client.query(
-        'SELECT COUNT(*) as cnt FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
-        [existingEntityId],
-      );
-      const staleFieldCount = parseInt(staleFieldsResult.rows[0].cnt, 10);
-      await client.query(
-        'DELETE FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
-        [existingEntityId],
-      );
-      changes.fields.deleted += staleFieldCount;
+  await deleteStaleEntities(existingEntityByTab, visitedEntityIds, client, changes);
 
+  return { entityCount, fieldCount, entities, changes };
+}
+
+async function deleteDuplicateEntities(existingEntityResult, entityId, client, changes) {
+  for (const row of existingEntityResult.rows) {
+    if (row.etgo_sf_entity_id !== entityId) {
       await client.query(
-        'DELETE FROM etgo_sf_entity WHERE etgo_sf_entity_id = $1',
-        [existingEntityId],
+          'DELETE FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
+          [row.etgo_sf_entity_id],
+      );
+      await client.query(
+          'DELETE FROM etgo_sf_entity WHERE etgo_sf_entity_id = $1',
+          [row.etgo_sf_entity_id],
       );
       changes.entities.deleted++;
     }
   }
-
-  return { entityCount, fieldCount, entities, changes };
 }
 
 /**
@@ -558,19 +595,7 @@ async function populateProcessSpec(client, { specId, processId, moduleId, audit 
 
   // Delete any extra entities beyond the one we just upserted (shouldn't happen, but be safe)
   if (existingEntityResult.rows.length > 1) {
-    for (const row of existingEntityResult.rows) {
-      if (row.etgo_sf_entity_id !== entityId) {
-        await client.query(
-          'DELETE FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
-          [row.etgo_sf_entity_id],
-        );
-        await client.query(
-          'DELETE FROM etgo_sf_entity WHERE etgo_sf_entity_id = $1',
-          [row.etgo_sf_entity_id],
-        );
-        changes.entities.deleted++;
-      }
-    }
+    await deleteDuplicateEntities(existingEntityResult, entityId, client, changes);
   }
 
   // Load existing fields indexed by java_qualifier
