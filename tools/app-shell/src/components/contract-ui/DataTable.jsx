@@ -507,7 +507,10 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     // applyUpdates updates valuesRef synchronously so submitLine always reads the latest
     // values even if React hasn't re-rendered yet when Enter is pressed.
     const calloutPromise = onFieldChange?.(key, val, snapshot, (updates, forceFields = new Set()) => {
-      const next = applyCalloutUpdates(valuesRef.current, updates, forceFields, key, touchedFieldsRef.current);
+      // Don't let the callout overwrite the field being typed: a cascade can echo
+      // it back normalized (e.g. rate "11." -> 11), erasing in-progress decimals.
+      const { [key]: _trigger, ...derived } = updates;
+      const next = applyCalloutUpdates(valuesRef.current, derived, forceFields, key, touchedFieldsRef.current);
       valuesRef.current = next;
       setValues(next);
     });
@@ -752,9 +755,13 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
               value={displayValue}
               onChange={(e) => {
                 const raw = e.target.value;
-                if (isNumeric && raw !== '' && raw !== '-') {
-                  const parsed = field.type === 'integer' ? Number.parseInt(raw, 10) : Number.parseFloat(raw);
-                  handleFieldChange(field.key, Number.isNaN(parsed) ? raw : parsed);
+                if (isNumeric) {
+                  // Keep the raw string while typing so in-progress decimals ("1.")
+                  // survive; numeric coercion happens at commit.
+                  const partialPattern = field.type === 'integer' ? /^-?\d*$/ : /^-?\d*\.?\d*$/;
+                  if (raw === '' || partialPattern.test(raw)) {
+                    handleFieldChange(field.key, raw);
+                  }
                 } else {
                   handleFieldChange(field.key, raw);
                 }
