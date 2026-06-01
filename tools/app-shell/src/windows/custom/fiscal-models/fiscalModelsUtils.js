@@ -282,6 +282,79 @@ export async function checkModified303(decl, sinceMs, { token, apiBaseUrl } = {}
   }
 }
 
+// ── Model 349 utilities ───────────────────────────────────────────
+
+export async function compute349Operators(decl, { token, apiBaseUrl } = {}) {
+  if (token && apiBaseUrl) {
+    try {
+      const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+      const params = new URLSearchParams({ year: decl.year, period: decl.period });
+      const res = await fetch(`${base}/fiscal349/operators?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) return await res.json();
+    } catch (_) {
+      // fall through to mock
+    }
+  }
+
+  // Mock fallback (demo / no backend)
+  await new Promise(r => setTimeout(r, 700));
+  if (decl.year === 2026 && (decl.period === 'T1' || decl.period === 'T2')) {
+    return {
+      operators: [
+        { bpId: '1', nif: 'IT12345678901', name: 'Bramini Vino S.r.l.',      key: 'A', base: '12450.00' },
+        { bpId: '2', nif: 'FR40123456789', name: 'Olives de Provence SARL',   key: 'A', base: '6800.00'  },
+        { bpId: '3', nif: 'DE123456789',   name: 'Bayern Technik GmbH',        key: 'E', base: '17600.00' },
+        { bpId: '4', nif: 'PT501234567',   name: 'Lusitana Serviços Lda',      key: 'S', base: '650.00'   },
+        { bpId: '5', nif: 'NL123456789B01',name: 'Amsterdam Trading BV',       key: 'I', base: '1450.00'  },
+      ],
+      summary: { totalE: '17600.00', totalS: '650.00', totalA: '19250.00', totalI: '1450.00' },
+    };
+  }
+  return null;
+}
+
+export async function generate349File(decl, { token, apiBaseUrl } = {}) {
+  if (!token || !apiBaseUrl) return false;
+  try {
+    const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+    const params = new URLSearchParams({ year: decl.year, period: decl.period });
+    const res = await fetch(`${base}/fiscal349/generate?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return false;
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = `349_${decl.period}_${decl.year}.349`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+export async function checkModified349(decl, sinceMs, { token, apiBaseUrl } = {}) {
+  if (!token || !apiBaseUrl) return false;
+  try {
+    const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+    const params = new URLSearchParams({ year: decl.year, period: decl.period, since: sinceMs });
+    const res = await fetch(`${base}/fiscal349/modified?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data.modified === true;
+  } catch (_) {
+    return false;
+  }
+}
+
 export function computeUpcomingDeadlines(decls, limit = 5) {
   return decls
     .filter(d => !COMPLETED_STATUSES.has(d.status))

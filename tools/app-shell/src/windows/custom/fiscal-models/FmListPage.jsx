@@ -4,7 +4,7 @@ import { LayoutGrid, Settings2, ListFilter, ArrowUpDown } from 'lucide-react';
 import { StatusPillMenu, ResultPill, EmptyState } from './FmCommon.jsx';
 import { ConfigDrawer, NewDeclModal } from './FmOverlays.jsx';
 import FmCatalogPage from './FmCatalogPage.jsx';
-import { formatAmount, STATUS_COLOR, computeUpcomingDeadlines, checkModified303 } from './fiscalModelsUtils.js';
+import { formatAmount, STATUS_COLOR, computeUpcomingDeadlines, checkModified303, checkModified349, compute349Operators } from './fiscalModelsUtils.js';
 import useFiscalAutoCompute from './useFiscalAutoCompute.js';
 
 // Real-mode only: throws on fetch failure instead of falling back to mock data.
@@ -17,6 +17,10 @@ async function computeBoxes303Real(decl, { token, apiBaseUrl } = {}) {
   });
   if (!res.ok) throw new Error(`boxes fetch failed: ${res.status}`);
   return await res.json();
+}
+
+async function computeOperators349Real(decl, { token, apiBaseUrl } = {}) {
+  return compute349Operators(decl, { token, apiBaseUrl });
 }
 
 function StatusSelect({ value, options, onChange }) {
@@ -276,9 +280,23 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
     [realDecls]
   );
 
+  const draftDecls349 = useMemo(
+    () => realDecls.filter(d => d.model === '349' && d.status === 'draft'),
+    [realDecls]
+  );
+
   const { computedMap } = useFiscalAutoCompute(draftDecls303, {
     computeFn:       computeBoxes303Real,
     checkModifiedFn: checkModified303,
+    token,
+    apiBaseUrl,
+    enabled:         dataMode === 'real',
+    pollIntervalMs:  180_000,
+  });
+
+  const { computedMap: computedMap349 } = useFiscalAutoCompute(draftDecls349, {
+    computeFn:       computeOperators349Real,
+    checkModifiedFn: checkModified349,
     token,
     apiBaseUrl,
     enabled:         dataMode === 'real',
@@ -426,7 +444,12 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
 
         <UpcomingDeadlines
           decls={modelYearFiltered}
-          onSelect={decl => onSelect?.({ ...decl, _precomputed: dataMode === 'real' ? computedMap[decl.id] : undefined })}
+          onSelect={decl => {
+            const precomputed = dataMode === 'real'
+              ? (decl.model === '349' ? computedMap349[decl.id] : computedMap[decl.id])
+              : undefined;
+            onSelect?.({ ...decl, _precomputed: precomputed });
+          }}
           t={t}
         />
 
@@ -465,8 +488,11 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
               </thead>
               <tbody>
                 {filtered.map(decl => {
-                  const computed = dataMode === 'real' ? computedMap[decl.id] : undefined;
-                  const isComputingThis = dataMode === 'real' && decl.model === '303'
+                  const computed = dataMode === 'real'
+                    ? (decl.model === '349' ? computedMap349[decl.id] : computedMap[decl.id])
+                    : undefined;
+                  const isComputingThis = dataMode === 'real'
+                    && (decl.model === '303' || decl.model === '349')
                     && decl.status === 'draft' && !computed;
                   const computeError = computed?.error ?? null;
 
@@ -484,7 +510,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
                   <tr
                     key={decl.id}
                     className={decl.current ? 'fm-table__row--current' : ''}
-                    onClick={() => onSelect?.({ ...decl, _precomputed: dataMode === 'real' ? computedMap[decl.id] : undefined })}
+                    onClick={() => onSelect?.({ ...decl, _precomputed: computed })}
                   >
                     <td onClick={e => e.stopPropagation()}>
                       <input type="checkbox" className="fm-table__cb" checked={selected.has(decl.id)} onChange={() => toggleSelect(decl.id)} />
@@ -507,7 +533,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
                     <td><FileCell file={decl.file} fileExternal={decl.fileExternal} /></td>
                     <td><span className="fm-date">{decl.updatedAt ?? '—'}</span></td>
                     <td onClick={e => e.stopPropagation()}>
-                      <button className="fm-table-action" onClick={() => onSelect?.({ ...decl, _precomputed: computedMap[decl.id] })}>
+                      <button className="fm-table-action" onClick={() => onSelect?.({ ...decl, _precomputed: computed })}>
                         {t('fm.action.open')} ›
                       </button>
                     </td>

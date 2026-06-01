@@ -3,7 +3,9 @@ import { useUI } from '@/i18n';
 import { ArrowLeft, Download, FileDown, Play, OctagonAlert, CircleCheck, Search, RefreshCw, Globe, Eye, Lock } from 'lucide-react';
 import { StatusPillMenu } from '../../FmCommon.jsx';
 import { PresentModal, FileGenModal } from '../../FmOverlays.jsx';
-import { formatAmount } from '../../fiscalModelsUtils.js';
+import { formatAmount, compute349Operators, generate349File } from '../../fiscalModelsUtils.js';
+import { use349Pdf } from './use349Pdf.js';
+import { DocumentPreview } from '../../../../../components/contract-ui/DocumentPreview.jsx';
 import '../../fiscal-models.css';
 
 // ── Constants ────────────────────────────────────────────────────
@@ -105,7 +107,7 @@ function TotalsCard({ operators }) {
 }
 
 // ── Main ─────────────────────────────────────────────────────────
-export default function FmModel349Page({ decl, onBack, onStatusChange }) {
+export default function FmModel349Page({ decl, onBack, onStatusChange, token, apiBaseUrl }) {
   const ui = useUI();
   const t = ui;
 
@@ -114,9 +116,14 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
   const [keyFilter,   setKeyFilter]   = useState('all');
   const [showPresent, setShowPresent] = useState(false);
   const [showFilegen, setShowFilegen] = useState(false);
-  const [selected,    setSelected]    = useState(new Set());
+  const [selected,     setSelected]     = useState(new Set());
+  const [liveOperators, setLiveOperators] = useState(null);
+  const [computing,    setComputing]    = useState(false);
+  const [generating,   setGenerating]   = useState(false);
+  const [showPdf,      setShowPdf]      = useState(false);
+  const { pdfUrl, loading: pdfLoading, generatePdf, clearPdf } = use349Pdf();
 
-  const operators = decl.operators ?? MOCK_OPERATORS;
+  const operators = liveOperators ?? decl.operators ?? MOCK_OPERATORS;
   const stepIdx   = STEPPER_INDEX[status] ?? 0;
 
   const monthNum  = /^\d{2}$/.test(decl.period) ? parseInt(decl.period, 10) : null;
@@ -135,6 +142,28 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
   function handleStatusChange(newStatus) {
     setStatus(newStatus);
     onStatusChange?.(decl.id, newStatus);
+  }
+
+  async function handleCompute() {
+    setComputing(true);
+    try {
+      const res = await compute349Operators(decl, { token, apiBaseUrl });
+      if (res?.operators) setLiveOperators(res.operators);
+    } finally {
+      setComputing(false);
+    }
+  }
+
+  async function handleGenerate() {
+    setGenerating(true);
+    const ok = await generate349File(decl, { token, apiBaseUrl });
+    setGenerating(false);
+    if (!ok) console.error('generate349File failed for', decl.year, decl.period);
+  }
+
+  async function handlePreviewPdf() {
+    const url = await generatePdf(decl, operators);
+    if (url) setShowPdf(true);
   }
 
   const filteredOps  = keyFilter === 'all' ? operators : operators.filter(o => o.key === keyFilter);
@@ -177,10 +206,19 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
             </div>
           </div>
           <div className="fm-349-header__actions">
-            <button className="fm-349-header__btn"><RefreshCw size={14} strokeWidth={1.75} /> {t('fm.action.recalc')}</button>
+            <button className="fm-349-header__btn" onClick={handleCompute} disabled={computing}>
+              <RefreshCw size={14} strokeWidth={1.75} style={computing ? { animation: 'spin 1s linear infinite' } : {}} />
+              {computing ? (t('fm.action.computing') ?? 'Calculando…') : t('fm.action.recalc')}
+            </button>
             <button className="fm-349-header__btn"><Globe size={14} strokeWidth={1.75} /> VIES</button>
-            <button className="fm-349-header__btn"><Eye size={14} strokeWidth={1.75} /> {t('fm.action.preview_pdf')}</button>
-            <button className="fm-349-header__btn" onClick={() => setShowFilegen(true)}><FileDown size={14} strokeWidth={1.75} /> {t('fm.action.generate_file')}</button>
+            <button className="fm-349-header__btn" onClick={handlePreviewPdf} disabled={pdfLoading}>
+              <Eye size={14} strokeWidth={1.75} />
+              {pdfLoading ? (t('fm.action.generating') ?? 'Generando…') : t('fm.action.preview_pdf')}
+            </button>
+            <button className="fm-349-header__btn" onClick={handleGenerate} disabled={generating}>
+              <FileDown size={14} strokeWidth={1.75} />
+              {generating ? (t('fm.action.generating') ?? 'Generando…') : t('fm.action.generate_file')}
+            </button>
             <button className="fm-349-header__btn fm-349-header__btn--primary" onClick={() => setShowPresent(true)}>
               <Play size={13} strokeWidth={1.75} fill="currentColor" /> {t('fm.action.present')}
             </button>
@@ -352,6 +390,14 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
       )}
       {showFilegen && (
         <FileGenModal decl={decl} onConfirm={() => {}} onClose={() => setShowFilegen(false)} />
+      )}
+      {showPdf && (
+        <DocumentPreview
+          open={showPdf}
+          onClose={() => { setShowPdf(false); clearPdf(); }}
+          title={`Modelo 349 · ${decl.year} ${decl.period}`}
+          pdfUrl={pdfUrl}
+        />
       )}
     </div>
   );
