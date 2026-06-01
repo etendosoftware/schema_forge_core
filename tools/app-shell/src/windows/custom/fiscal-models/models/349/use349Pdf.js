@@ -88,14 +88,8 @@ const HTML = `
 
   <!-- Header -->
   <div class="hdr">
-    <div class="hdr-logo">
-      <div class="at-name">Agencia Tributaria</div>
-      <div class="at-phone">Tfno: 91 554 87 70 / 901 33 55 33</div>
-      <div class="at-phone">https://sede.agenciatributaria.gob.es</div>
-    </div>
     <div class="hdr-title">
       <h1>Declaración recapitulativa de operaciones<br>intracomunitarias</h1>
-      <div class="subtitle">Art. 78 al 81 del Reglamento del IVA aprobado por el R.D. 1624/1992,<br>de 29 de diciembre (BOE del 31)</div>
     </div>
     <div class="hdr-right">
       <div class="hdr-sheet">Hoja Resumen</div>
@@ -105,8 +99,6 @@ const HTML = `
       </div>
     </div>
   </div>
-
-  <div class="num-just">Número justificante: {{justificante}}</div>
 
   <!-- Declarante + Ejercicio -->
   <div class="two-col">
@@ -262,7 +254,6 @@ export function use349Pdf() {
         period:            decl.period,
         contact:           decl.contact  ?? '',
         phone:             decl.phone    ?? '',
-        justificante:      '3490000000000',
         totalOperators:    operators.length,
         totalAmount,
         totalRectifOps:    0,
