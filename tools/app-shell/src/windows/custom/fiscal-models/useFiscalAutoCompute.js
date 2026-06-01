@@ -4,26 +4,53 @@ import { useEffect, useRef, useState } from 'react';
  * Auto-computes fiscal boxes for a list of declarations on mount, then polls
  * for data changes every pollIntervalMs and recomputes only modified ones.
  *
- * All function/token/apiBaseUrl arguments are captured via a ref, so the
- * polling interval is never recreated due to prop changes.
+ * On mount, results cached in sessionStorage are restored immediately. A
+ * checkModifiedFn call then determines whether a fresh compute is needed.
+ * This prevents redundant server queries when the user navigates away and
+ * back without any underlying data change.
  *
  * @param {Array} decls - Declarations to compute (should be a stable memoized array)
  * @param {object} opts
- * @param {Function} opts.computeFn - async (decl, { token, apiBaseUrl }) => { boxes, summary } | null
+ * @param {Function} opts.computeFn - async (decl, { token, apiBaseUrl }) => result | null
  * @param {Function} opts.checkModifiedFn - async (decl, sinceMs, { token, apiBaseUrl }) => boolean
  * @param {string}   opts.token
  * @param {string}   opts.apiBaseUrl
  * @param {number}   opts.pollIntervalMs - default 180_000 (3 min)
- * @param {boolean}  opts.enabled - set false to disable all activity (e.g. in demo mode)
- * @returns {{ computedMap: { [id]: { boxes, summary, error, computedAt } } }}
+ * @param {boolean}  opts.enabled - set false to disable all activity
+ * @returns {{ computedMap: { [id]: { ...result, error, computedAt } } }}
  */
 
-async function computeOne(decl, { fn, token, apiBaseUrl, isCancelled, computedAtRef, setComputedMap }) {
+function sessionCacheKey(declId) {
+  return `fiscal_ac_v1_${declId}`;
+}
+
+function readCache(key) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed.computedAt !== 'number') return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(key, result, computedAt) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify({ result, computedAt }));
+  } catch {
+    // Quota exceeded or private browsing mode — silently skip
+  }
+}
+
+async function computeOne(decl, { fn, token, apiBaseUrl, isCancelled, computedAtRef, setComputedMap, cacheKey }) {
   try {
     const result = await fn(decl, { token, apiBaseUrl });
     if (isCancelled()) return;
     const computedAt = Date.now();
     computedAtRef.current[decl.id] = computedAt;
+    if (cacheKey && result) writeCache(cacheKey, result, computedAt);
     setComputedMap(m => ({
       ...m,
       [decl.id]: result
@@ -57,16 +84,44 @@ export default function useFiscalAutoCompute(decls, {
   const ctxRef = useRef({});
   ctxRef.current = { computeFn, checkModifiedFn, token, apiBaseUrl };
 
-  // Initial compute: run in parallel for all decls on mount / when decls changes
+  // Initial compute: restore from session cache when possible, recompute only
+  // when checkModifiedFn confirms data has changed since the cached result.
   useEffect(() => {
     if (!enabled || !decls.length) return;
     let cancelled = false;
 
     (async () => {
-      const { computeFn: fn, token: t, apiBaseUrl: api } = ctxRef.current;
-      await Promise.all(decls.map(decl =>
-        computeOne(decl, { fn, token: t, apiBaseUrl: api, isCancelled: () => cancelled, computedAtRef, setComputedMap })
-      ));
+      const { computeFn: fn, checkModifiedFn: checkFn, token: t, apiBaseUrl: api } = ctxRef.current;
+      await Promise.all(decls.map(async (decl) => {
+        const key = sessionCacheKey(decl.id);
+        const cached = readCache(key);
+
+        if (cached && checkFn) {
+          // Restore so the polling interval uses the real last-compute timestamp
+          computedAtRef.current[decl.id] = cached.computedAt;
+          try {
+            const modified = await checkFn(decl, cached.computedAt, { token: t, apiBaseUrl: api });
+            if (!cancelled && !modified) {
+              setComputedMap(m => ({
+                ...m,
+                [decl.id]: { ...cached.result, error: null, computedAt: cached.computedAt },
+              }));
+              return;
+            }
+          } catch {
+            // checkModifiedFn failed — fall through to full recompute
+          }
+        }
+
+        if (!cancelled) {
+          await computeOne(decl, {
+            fn, token: t, apiBaseUrl: api,
+            isCancelled: () => cancelled,
+            computedAtRef, setComputedMap,
+            cacheKey: key,
+          });
+        }
+      }));
     })();
 
     return () => { cancelled = true; };
@@ -85,7 +140,12 @@ export default function useFiscalAutoCompute(decls, {
           const sinceMs = computedAtRef.current[decl.id] ?? 0;
           const modified = await checkFn(decl, sinceMs, { token: t, apiBaseUrl: api });
           if (cancelled || !modified) return;
-          await computeOne(decl, { fn, token: t, apiBaseUrl: api, isCancelled: () => cancelled, computedAtRef, setComputedMap });
+          await computeOne(decl, {
+            fn, token: t, apiBaseUrl: api,
+            isCancelled: () => cancelled,
+            computedAtRef, setComputedMap,
+            cacheKey: sessionCacheKey(decl.id),
+          });
         } catch {
           // poll errors are silent — computedAtRef stays at last success so next tick retries
         }

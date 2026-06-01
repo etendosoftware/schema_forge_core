@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import useFiscalAutoCompute from '../useFiscalAutoCompute.js';
 
@@ -7,6 +7,7 @@ const DECL_B = { id: '303-2026-T1', model: '303', year: 2026, period: 'T1' };
 const BOXES  = { 7: 100, 9: 21 };
 const SUMMARY = { accrued: 21, deductible: 200, result: -179 };
 
+beforeEach(() => sessionStorage.clear());
 afterEach(() => vi.restoreAllMocks());
 
 describe('useFiscalAutoCompute — initial compute', () => {
@@ -91,6 +92,96 @@ describe('useFiscalAutoCompute — initial compute', () => {
     );
     await act(async () => { await new Promise(r => setTimeout(r, 50)); });
     expect(computeFn).not.toHaveBeenCalled();
+  });
+});
+
+describe('useFiscalAutoCompute — sessionStorage cache', () => {
+  const CACHED_RESULT = { boxes: BOXES, summary: SUMMARY };
+  const CACHE_KEY = `fiscal_ac_v1_${DECL_A.id}`;
+  const CACHED_AT = Date.now() - 60_000; // 1 minute ago
+
+  // Stable array refs: prevent effect re-runs caused by a new array reference on
+  // every render (which would create an infinite loop when checkModifiedFn always
+  // returns truthy and computeFn triggers a state update → re-render → new effect).
+  const DECL_A_LIST  = [DECL_A];
+  const DECL_AB_LIST = [DECL_A, DECL_B];
+
+  function makeOpts(overrides) {
+    return {
+      token: 'tok',
+      apiBaseUrl: 'http://host/neo/fiscal-models',
+      enabled: true,
+      pollIntervalMs: 100_000,
+      ...overrides,
+    };
+  }
+
+  it('uses cached result and skips computeFn when data is unchanged', async () => {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ result: CACHED_RESULT, computedAt: CACHED_AT }));
+    const computeFn       = vi.fn();
+    const checkModifiedFn = vi.fn().mockResolvedValue(false); // not modified
+
+    const { result } = renderHook(() =>
+      useFiscalAutoCompute(DECL_A_LIST, makeOpts({ computeFn, checkModifiedFn }))
+    );
+
+    await waitFor(() =>
+      expect(result.current.computedMap[DECL_A.id]).toMatchObject({ summary: SUMMARY })
+    );
+    expect(computeFn).not.toHaveBeenCalled();
+    expect(checkModifiedFn).toHaveBeenCalledWith(DECL_A, CACHED_AT, expect.any(Object));
+  });
+
+  it('recomputes when checkModifiedFn returns true despite cache', async () => {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ result: CACHED_RESULT, computedAt: CACHED_AT }));
+    const freshBoxes = { 7: 999 };
+    const computeFn       = vi.fn().mockResolvedValue({ boxes: freshBoxes, summary: SUMMARY });
+    const checkModifiedFn = vi.fn().mockResolvedValue(true); // data changed
+
+    const { result } = renderHook(() =>
+      useFiscalAutoCompute(DECL_A_LIST, makeOpts({ computeFn, checkModifiedFn }))
+    );
+
+    await waitFor(() => expect(computeFn).toHaveBeenCalled());
+    expect(result.current.computedMap[DECL_A.id]).toMatchObject({ boxes: freshBoxes });
+  });
+
+  it('falls through to computeFn when cache exists but checkModifiedFn throws', async () => {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ result: CACHED_RESULT, computedAt: CACHED_AT }));
+    const computeFn       = vi.fn().mockResolvedValue({ boxes: BOXES, summary: SUMMARY });
+    const checkModifiedFn = vi.fn().mockRejectedValue(new Error('network error'));
+
+    const { result } = renderHook(() =>
+      useFiscalAutoCompute(DECL_A_LIST, makeOpts({ computeFn, checkModifiedFn }))
+    );
+
+    await waitFor(() => expect(computeFn).toHaveBeenCalled());
+    expect(result.current.computedMap[DECL_A.id]).toMatchObject({ summary: SUMMARY });
+  });
+
+  it('computes directly when no checkModifiedFn provided (cache not consulted)', async () => {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ result: CACHED_RESULT, computedAt: CACHED_AT }));
+    const computeFn = vi.fn().mockResolvedValue({ boxes: BOXES, summary: SUMMARY });
+
+    renderHook(() =>
+      useFiscalAutoCompute(DECL_A_LIST, makeOpts({ computeFn }))
+    );
+
+    await waitFor(() => expect(computeFn).toHaveBeenCalled());
+  });
+
+  it('writes result to sessionStorage after a successful compute', async () => {
+    const computeFn = vi.fn().mockResolvedValue(CACHED_RESULT);
+
+    renderHook(() =>
+      useFiscalAutoCompute(DECL_A_LIST, makeOpts({ computeFn, checkModifiedFn: vi.fn() }))
+    );
+
+    await waitFor(() => expect(computeFn).toHaveBeenCalled());
+    const stored = JSON.parse(sessionStorage.getItem(CACHE_KEY) ?? 'null');
+    expect(stored).not.toBeNull();
+    expect(stored.result).toMatchObject(CACHED_RESULT);
+    expect(typeof stored.computedAt).toBe('number');
   });
 });
 
