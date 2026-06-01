@@ -172,6 +172,12 @@ function ResultCell({ isComputing, error, result, t }) {
     );
   }
   if (!result?.kind) return <span style={{ color: '#9ca3af' }}>—</span>;
+  // 349 is informational — show total volume without a payment label
+  if (result.kind === 'info') {
+    return result.amount > 0
+      ? <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>{formatAmount(result.amount)}</span>
+      : <span style={{ color: '#9ca3af' }}>—</span>;
+  }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
       <ResultPill kind={result.kind} label={t(`fm.result.${result.kind}`) ?? result.kind} />
@@ -403,7 +409,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
                     if (decl.model === '349') {
                       const total = ['totalE','totalS','totalA','totalI']
                         .reduce((s, k) => s + (parseFloat(computed.summary[k]) || 0), 0);
-                      displayResult = { kind: total > 0 ? 'I' : 'N', amount: total };
+                      displayResult = { kind: 'info', amount: total };
                     } else {
                       const r = computed.summary.result;
                       let kind;
