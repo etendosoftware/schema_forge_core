@@ -186,6 +186,14 @@ function optProp(name, val) {
 }
 
 /**
+ * Return `fragment` when `cond` is truthy, otherwise an empty string.
+ * Used to conditionally append optional prop fragments to generated code.
+ */
+export function fragmentIf(cond, fragment) {
+  return cond ? fragment : '';
+}
+
+/**
  * Generate a data table component for an entity.
  * Produces a thin declarative component that imports DataTable from contract-ui.
  */
@@ -209,19 +217,19 @@ export function generateTableComponent(entityName, contract) {
 
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
-    const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
+    const selectionPart = fragmentIf(f.isSelectionColumn, ', isSelectionColumn: true');
     const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
       ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
-    const togglePart = f.inlineToggle ? ', toggle: true' : '';
-    const badgePart = (f.badge && !f.cellType) ? ', badge: true' : '';
+    const togglePart = fragmentIf(f.inlineToggle, ', toggle: true');
+    const badgePart = fragmentIf(f.badge && !f.cellType, ', badge: true');
     const badgeLabelsPart = f.badgeLabels ? `, badgeLabels: ${JSON.stringify(f.badgeLabels)}` : '';
     const badgeColorsPart = f.badgeColors ? `, badgeColors: ${JSON.stringify(f.badgeColors)}` : '';
     const badgeVariantsPart = f.badgeVariants ? `, badgeVariants: ${JSON.stringify(f.badgeVariants)}` : '';
     const enumVariantsPart = f.enumVariants ? `, enumVariants: ${JSON.stringify(f.enumVariants)}` : '';
     const labelsPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
-    const summablePart = f.summable ? ', summable: true' : '';
+    const summablePart = fragmentIf(f.summable, ', summable: true');
     const displayPart = f.display ? `, display: '${f.display}'` : '';
     let renderPart = '';
     if (f.cellType === 'depreciationProgress') renderPart = ', render: renderDepreciationProgress';
@@ -230,14 +238,15 @@ export function generateTableComponent(entityName, contract) {
     // Flags consumed by InlineLinesPanel to drive inline-edit affordances:
     //  - required → suppress the empty option in the SelectorInput dropdown.
     //  - lookup / popup → swap the dropdown for a ProductSearchDrawer modal.
-    const requiredPart = f.required ? ', required: true' : '';
-    const lookupPart = f.lookup ? ', lookup: true' : '';
-    const popupPart = f.popup ? ', popup: true' : '';
+    const requiredPart = fragmentIf(f.required, ', required: true');
+    const lookupPart = fragmentIf(f.lookup, ', lookup: true');
+    const popupPart = fragmentIf(f.popup, ', popup: true');
     const minColPart = optProp('min', f.min);
-    const growPart = f.grow ? ', grow: true' : '';
-    const noTrailingPart = f.noTrailing ? ', noTrailing: true' : '';
+    const growPart = fragmentIf(f.grow, ', grow: true');
+    const noTrailingPart = fragmentIf(f.noTrailing, ', noTrailing: true');
+    // fragmentIf candidate
     const filterOnlyPart = (f.filterOnly || f.filterable === false) ? ', filterable: false' : '';
-    const dotPart = f.dot === false ? ', dot: false' : '';
+    const dotPart = fragmentIf(f.dot === false, ', dot: false');
     return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart}${minColPart}${growPart}${noTrailingPart}${filterOnlyPart}${dotPart} },`;
   }).join('\n');
 
@@ -335,6 +344,46 @@ ${MARKERS.GENERATED_END(`component:${compName}`)}
 `;
 }
 
+function getDefaultValuePart(skipCheckboxDefault, skipServerMacro, f) {
+  if (typeof f.defaultValue === 'number') {
+    if (!skipCheckboxDefault && !skipServerMacro && f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '') {
+      return `, defaultValue: ${f.defaultValue}`;
+    } else {
+      return '';
+    }
+  } else {
+    if (!skipCheckboxDefault && !skipServerMacro && f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '') {
+      return `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'`;
+    } else {
+      return '';
+    }
+  }
+}
+
+function extractedds(f) {
+  let displayLogicPart = '';
+  if (f.displayLogic) {
+    if (f.displayLogic.js) {
+      displayLogicPart = `, displayLogic: (record) => ${f.displayLogic.js}`;
+    } else if (f.displayLogic.evaluable === false) {
+      displayLogicPart = `, visible: null, visibilitySource: 'server', displayLogicReason: '${f.displayLogic.reason || 'unknown'}'`;
+    }
+  }
+  return displayLogicPart;
+}
+
+function extractedddsdsdsds(f) {
+  let readOnlyLogicPart = '';
+  if (f.readOnlyLogic) {
+    if (f.readOnlyLogic.evaluable === false) {
+      readOnlyLogicPart = `, readOnlySource: 'server', readOnlyLogicReason: '${f.readOnlyLogic.reason || 'unknown'}'`;
+    } else if (f.readOnlyLogic.js) {
+      readOnlyLogicPart = `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`;
+    }
+  }
+  return readOnlyLogicPart;
+}
+
 /**
  * Generate a detail/edit form component for an entity.
  * Produces a thin declarative component that imports EntityForm from contract-ui.
@@ -373,10 +422,14 @@ export function generateFormComponent(entityName, contract) {
 
   const fieldsArray = formFields.map((f, idx) => {
     const type = mapFormFieldType(f);
-    const requiredPart = f.required ? ', required: true' : '';
-    const lookupPart = f.lookup ? ', lookup: true' : '';
-    const popupPart = f.popup ? ', popup: true' : '';
-    const readOnlyPart = f.visibility === 'readOnly' ? ', readOnly: true' : '';
+    // fragmentIf candidate
+    const requiredPart = fragmentIf(f.required, ', required: true');
+    // fragmentIf candidate
+    const lookupPart = fragmentIf(f.lookup, ', lookup: true');
+    // fragmentIf candidate
+    const popupPart = fragmentIf(f.popup, ', popup: true');
+    // fragmentIf candidate
+    const readOnlyPart = fragmentIf(f.visibility === 'readOnly', ', readOnly: true');
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
     const dependsOnPart = f.dependsOn
@@ -389,31 +442,13 @@ export function generateFormComponent(entityName, contract) {
     // already coerces missing/'N'/false to false, so emitting them only bloats generated files.
     const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
     const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
-    const defaultValuePart = (!skipCheckboxDefault && !skipServerMacro && f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '')
-      ? (typeof f.defaultValue === 'number'
-          ? `, defaultValue: ${f.defaultValue}`
-          : `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'`)
-      : '';
+    const defaultValuePart = getDefaultValuePart(skipCheckboxDefault, skipServerMacro, f);
     const helpPart = f.help ? `, help: '${f.help.replace(/'/g, "\\'")}'` : '';
     const fieldGroupPart = f.fieldGroup ? `, fieldGroup: '${f.fieldGroup.replace(/'/g, "\\'")}'` : '';
     const precisionPart = f.precision ? `, precision: ${f.precision}` : '';
     // Behavioral metadata: displayLogic and readOnlyLogic
-    let displayLogicPart = '';
-    if (f.displayLogic) {
-      if (f.displayLogic.js) {
-        displayLogicPart = `, displayLogic: (record) => ${f.displayLogic.js}`;
-      } else if (f.displayLogic.evaluable === false) {
-        displayLogicPart = `, visible: null, visibilitySource: 'server', displayLogicReason: '${f.displayLogic.reason || 'unknown'}'`;
-      }
-    }
-    let readOnlyLogicPart = '';
-    if (f.readOnlyLogic) {
-      if (f.readOnlyLogic.evaluable === false) {
-        readOnlyLogicPart = `, readOnlySource: 'server', readOnlyLogicReason: '${f.readOnlyLogic.reason || 'unknown'}'`;
-      } else if (f.readOnlyLogic.js) {
-        readOnlyLogicPart = `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`;
-      }
-    }
+    let displayLogicPart = extractedds(f);
+    let readOnlyLogicPart = extractedddsdsdsds(f);
     const slotLines = [];
     const optionsPart = (type === 'select' && f.enumValues?.length)
       ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
@@ -575,6 +610,20 @@ ${MARKERS.GENERATED_END(`statusBar:${headerEntity}`)}`;
 }
 
 /**
+ * Build the lookup-related entry-field prop fragments (drawer, title,
+ * onSelect mappings and displayFromCatalog) for an addLineFields entry.
+ */
+export function buildLookupEntryParts(f) {
+  const lookupDrawerPart = f.lookupDrawer ? `, lookupDrawer: '${String(f.lookupDrawer).replace(/'/g, "\\'")}'` : '';
+  const lookupTitlePart = f.lookupTitle ? `, lookupTitle: '${String(f.lookupTitle).replace(/'/g, "\\'")}'` : '';
+  const onSelectMappingsPart = Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0
+      ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
+      : '';
+  const displayFromCatalogPart = fragmentIf(f.displayFromCatalog, ', displayFromCatalog: true');
+  return {lookupDrawerPart, lookupTitlePart, onSelectMappingsPart, displayFromCatalogPart};
+}
+
+/**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
  */
@@ -656,7 +705,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       const label = ovr.label || f.label || toLabel(f.name);
       const dlRawVal = ovr.displayLogicRaw || f.displayLogic?.raw;
       const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"')}"` : '';
-      const requiresLinesPart = ovr.requiresLines ? `, requiresLines: true` : '';
+      // fragmentIf candidate
+      const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
       return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart} },`;
     }).filter(Boolean),
     // Extra processes defined purely in decisions.json (not in backend contract)
@@ -669,7 +719,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
         const dlRaw = ovr.displayLogicRaw
           ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
           : '';
-        const requiresLinesPart = ovr.requiresLines ? `, requiresLines: true` : '';
+        // fragmentIf candidate
+        const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
         return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart} },`;
       }),
   ].join('\n');
@@ -691,8 +742,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const firstSearchIdx = entryFields.findIndex(f => mapFormFieldType(f) === 'search');
   const entryArray = entryFields.map((f, i) => {
     const type = mapFormFieldType(f);
-    const requiredPart = f.required ? ', required: true' : '';
-    const lookupPart = (i === firstSearchIdx && firstSearchIdx !== -1) ? ', lookup: true' : '';
+    // fragmentIf candidate
+    const requiredPart = fragmentIf(f.required, ', required: true');
+    // fragmentIf candidate
+    const lookupPart = fragmentIf(i === firstSearchIdx && firstSearchIdx !== -1, ', lookup: true');
     const labelPart = f.label ? `, label: '${f.label}'` : '';
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
@@ -712,12 +765,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const forceCalloutFieldsPart = Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0
       ? `, forceCalloutFields: ${JSON.stringify(f.forceCalloutFields)}`
       : '';
-    const lookupDrawerPart = f.lookupDrawer ? `, lookupDrawer: '${String(f.lookupDrawer).replace(/'/g, "\\'")}'` : '';
-    const lookupTitlePart = f.lookupTitle ? `, lookupTitle: '${String(f.lookupTitle).replace(/'/g, "\\'")}'` : '';
-    const onSelectMappingsPart = Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0
-      ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
-      : '';
-    const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
+    const {lookupDrawerPart, lookupTitlePart, onSelectMappingsPart, displayFromCatalogPart} = buildLookupEntryParts(f);
     const minEntryPart = optProp('min', f.min);
     return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart} },`;
   }).join('\n');
@@ -1010,28 +1058,38 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     : '';
 
   // hideDeleteWhenComplete prop
+  // fragmentIf candidate
   const hideDeleteProp = hideDeleteWhenComplete ? '\n        hideDeleteWhenComplete' : '';
   // customTabsAfterBottom prop
+  // fragmentIf candidate
   const customTabsAfterBottomProp = customTabsAfterBottom ? '\n        customTabsAfterBottom' : '';
 
   // hidePrint prop (DetailView)
+  // fragmentIf candidate
   const hidePrintProp = hidePrint ? '\n        hidePrint' : '';
   // hideSaveStatuses prop (DetailView)
   const hideSaveStatusesProp = hideSaveStatuses.length > 0
     ? `\n        hideSaveStatuses={${JSON.stringify(hideSaveStatuses)}}`
     : '';
   // hideMoreMenu prop (DetailView)
+  // fragmentIf candidate
   const hideMoreMenuProp = hideMoreMenu ? '\n        hideMoreMenu' : '';
   // hideMoreDetails prop (DetailView)
+  // fragmentIf candidate
   const hideMoreDetailsProp = hideMoreDetails ? '\n        hideMoreDetails' : '';
   // noHeaderBorder prop (DetailView)
+  // fragmentIf candidate
   const noHeaderBorderProp = noHeaderBorder ? '\n        noHeaderBorder' : '';
   // toolbarBorderBottom prop (DetailView)
+  // fragmentIf candidate
   const toolbarBorderBottomProp = toolbarBorderBottom ? '\n        toolbarBorderBottom' : '';
   // compactSidebarPadding prop (DetailView)
+  // fragmentIf candidate
   const compactSidebarPaddingProp = compactSidebarPadding ? '\n        compactSidebarPadding' : '';
+  // fragmentIf candidate
   const whiteFormBackgroundProp = whiteFormBackground ? '\n        whiteFormBackground' : '';
   // hideFormCard prop (DetailView)
+  // fragmentIf candidate
   const hideFormCardProp = hideFormCard ? '\n        hideFormCard' : '';
   // sidebarClassName prop (DetailView)
   const sidebarClassNameProp = sidebarClassName ? `\n        sidebarClassName="${sidebarClassName}"` : '';
@@ -1080,10 +1138,15 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const lineConfigSymbol = lineEntityConfig ? (LINE_CONFIG_SYMBOLS[lineEntityConfig] ?? null) : null;
   const lineConfigProp = lineConfigSymbol ? `\n        lineConfig={${lineConfigSymbol}}` : '';
   // ListView toolbar props
+  // fragmentIf candidate
   const hidePrintListProp = hidePrint ? '\n      hidePrint' : '';
+  // fragmentIf candidate
   const hideMoreMenuListProp = hideMoreMenu ? '\n      hideMoreMenu' : '';
+  // fragmentIf candidate
   const hideListFiltersProp = hideListFilters ? '\n      hideListFilters' : '';
+  // fragmentIf candidate
   const hideLinkProp = hideLink ? '\n      hideLink' : '';
+  // fragmentIf candidate
   const hideEyeCountProp = hideEyeCount ? '\n      hideEyeCount' : '';
 
   // Custom component props (bottomSection, topbarRight)
@@ -1246,6 +1309,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const titleFieldProp = titleField ? `\n        titleField="${titleField}"` : '';
 
   // salesTheme prop
+  // fragmentIf candidate
   const salesThemeProp = salesTheme ? '\n        salesTheme' : '';
 
   // listKpiCards → headerContent prop in ListView
@@ -1295,6 +1359,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const othersLabelProp = othersLabelValue ? `\n        othersLabel="${othersLabelValue}"` : '';
 
   // disableProcessedLock support
+  // fragmentIf candidate
   const disableProcessedLockProp = windowConfig.disableProcessedLock ? `\n        lockWhenProcessed={false}` : '';
 
   // statusEnumLabels support

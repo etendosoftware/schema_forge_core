@@ -12,6 +12,7 @@ import {
   generateMockCatalogs,
   generateAll,
   projectApiPredictionForFrontend,
+  fragmentIf,
 } from '../src/generate-frontend.js';
 
 // ---------------------------------------------------------------------------
@@ -1765,5 +1766,34 @@ describe('generatePageComponent — F3 drawer + display emission (secondary-tab 
     assert.ok(!plainEntry[0].includes('lookupTitle'), 'plain entry must not include lookupTitle');
     assert.ok(!plainEntry[0].includes('onSelectMappings'), 'plain entry must not include onSelectMappings');
     assert.ok(!plainEntry[0].includes('displayFromCatalog'), 'plain entry must not include displayFromCatalog');
+  });
+});
+
+describe('fragmentIf', () => {
+  it('returns the string when the condition is truthy', () => {
+    assert.equal(fragmentIf(true, ', required: true'), ', required: true');
+  });
+
+  it('returns an empty string when the condition is falsy', () => {
+    assert.equal(fragmentIf(false, ', required: true'), '');
+  });
+
+  it('treats undefined and null conditions as falsy', () => {
+    assert.equal(fragmentIf(undefined, ', toggle: true'), '');
+    assert.equal(fragmentIf(null, ', toggle: true'), '');
+  });
+
+  it('treats 0 and empty string as falsy', () => {
+    assert.equal(fragmentIf(0, ', min: 0'), '');
+    assert.equal(fragmentIf('', ', label'), '');
+  });
+
+  it('accepts truthy non-boolean conditions (e.g. compound expressions)', () => {
+    const f = { badge: true, cellType: undefined };
+    assert.equal(fragmentIf(f.badge && !f.cellType, ', badge: true'), ', badge: true');
+  });
+
+  it('does not coerce the returned fragment — returns it verbatim', () => {
+    assert.equal(fragmentIf(1, ', isSelectionColumn: true'), ', isSelectionColumn: true');
   });
 });
