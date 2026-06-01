@@ -12,6 +12,37 @@ function buildHeaders(token) {
     };
 }
 
+export function pickMessageObjectCase(node) {
+    if (typeof node === 'object') {
+        const preferredKeys = ['message', 'errorMessage', 'text', 'description', 'title'];
+        for (const key of preferredKeys) {
+            const msg = pickMessage(node[key]);
+            if (msg) return msg;
+        }
+        for (const value of Object.values(node)) {
+            const msg = pickMessage(value);
+            if (msg) return msg;
+        }
+    }
+    return null;
+}
+
+export function pickMessage(node) {
+    if (!node) return null;
+    if (typeof node === 'string') {
+        const txt = node.trim();
+        return txt ? txt : null;
+    }
+    if (Array.isArray(node)) {
+        for (const item of node) {
+            const msg = pickMessage(item);
+            if (msg) return msg;
+        }
+        return null;
+    }
+    return pickMessageObjectCase(node);
+}
+
 /**
  * Extract a human-readable error message from a NEO Headless error response.
  */
@@ -107,32 +138,6 @@ export async function extractErrorMessage(res, ui) {
             return translateBackendError(raw, ui) || raw;
         };
 
-        const pickMessage = (node) => {
-            if (!node) return null;
-            if (typeof node === 'string') {
-                const txt = node.trim();
-                return txt ? txt : null;
-            }
-            if (Array.isArray(node)) {
-                for (const item of node) {
-                    const msg = pickMessage(item);
-                    if (msg) return msg;
-                }
-                return null;
-            }
-            if (typeof node === 'object') {
-                const preferredKeys = ['message', 'errorMessage', 'text', 'description', 'title'];
-                for (const key of preferredKeys) {
-                    const msg = pickMessage(node[key]);
-                    if (msg) return msg;
-                }
-                for (const value of Object.values(node)) {
-                    const msg = pickMessage(value);
-                    if (msg) return msg;
-                }
-            }
-            return null;
-        };
 
         // NEO Headless top-level error: { error: { message, status } }
         const neoError = pickMessage(data?.error);
@@ -152,7 +157,8 @@ export async function extractErrorMessage(res, ui) {
         if (data?.response?.status === -4) {
             return translate('validationError', 'Validation error');
         }
-    } catch { /* body not JSON */ }
+    } catch { /* body not JSON */
+    }
     return `${translate('error', 'Error')} ${res.status}`;
 }
 
@@ -177,20 +183,24 @@ function derivePersonName(firstName, lastName) {
     return [first, last].filter(Boolean).join(' ').slice(0, 60);
 }
 
+export function setNameContactCase(payload, source) {
+    if (!payload.name) {
+        const derivedName = derivePersonName(
+            payload.firstName ?? source.firstName,
+            payload.lastName ?? source.lastName
+        );
+        if (derivedName) payload.name = derivedName;
+    }
+    if (!payload.username && payload.name) {
+        payload.username = String(payload.name).slice(0, 60);
+    }
+}
+
 function applyContactsRequiredFields(entity, payload, source = {}) {
     if (!payload || typeof payload !== 'object') return payload;
 
-    if (entity === 'contact' || entity === 'adUser' || entity === 'user') {
-        if (!payload.name) {
-            const derivedName = derivePersonName(
-                payload.firstName ?? source.firstName,
-                payload.lastName ?? source.lastName
-            );
-            if (derivedName) payload.name = derivedName;
-        }
-        if (!payload.username && payload.name) {
-            payload.username = String(payload.name).slice(0, 60);
-        }
+    if (entity === 'contact' || entity === 'adUser' || entity === 'user') { //TODO: Remove this specific window logic
+        setNameContactCase(payload, source);
     }
 
     if (entity === 'businessPartner' || entity === 'bpartner') {
@@ -240,6 +250,15 @@ function normalizeRows(rows, entityName) {
 const EMPTY_FILTERS = {};
 const EMPTY_DEFS = {};
 
+export function criteriaCase(v, out) {
+    try {
+        const parsed = JSON.parse(v);
+        if (Array.isArray(parsed)) out.push(...parsed);
+        else out.push(parsed);
+    } catch { /* skip malformed criteria */
+    }
+}
+
 /**
  * Extract `criteria=...` entries from a raw filter query-string fragment and push the
  * remaining key/value pairs straight into queryParams as passthrough (e.g. `active=true`).
@@ -254,11 +273,7 @@ function extractCriteriaFromFilter(filterStr, queryParams) {
         const k = p.slice(0, eqIdx);
         const v = decodeURIComponent(p.slice(eqIdx + 1));
         if (k === 'criteria') {
-            try {
-                const parsed = JSON.parse(v);
-                if (Array.isArray(parsed)) out.push(...parsed);
-                else out.push(parsed);
-            } catch { /* skip malformed criteria */ }
+            criteriaCase(v, out);
         } else {
             queryParams.append(k, v);
         }
@@ -298,6 +313,71 @@ function applyFilterParams(queryParams, baseFilter, columnFilters, columnDefs, t
         ? { _constructor: 'AdvancedCriteria', operator: 'and', criteria: allCriteria }
         : allCriteria;
     queryParams.append('criteria', JSON.stringify(finalCriteria));
+}
+
+export function normalizeKey(val, normalized, key) {
+    if (typeof val === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(val)) {
+        const [dd, mm, yyyy] = val.split('-');
+        normalized[key] = `${yyyy}-${mm}-${dd}`;
+    } else if (typeof val === 'string' && /^'.*'$/.test(val)) {
+        normalized[key] = val.slice(1, -1).replace(/''/g, "'");
+    } else if (typeof val === 'number' && Number.isInteger(val)) {
+        // Enum/list fields are stored as strings in the DB (e.g. priority: 5 → "5").
+        // The backend /defaults endpoint returns them as JSON integers, but the
+        // PATCH/POST API expects string values — otherwise OBDal throws a type error.
+        normalized[key] = String(val);
+    }
+}
+
+export function saveContinueClauses(key, value, backendDefaultKeysRef, userChangedKeysRef, requiredFormKeys, isContactsBusinessPartnerCreate, editing) {
+    // Always skip ID fields, identifier companions, and legacy FK keys (e.g. ad_org_id)
+    // managed by the backend — these should never be sent by the client on create/update.
+    if (key === 'id' || key.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(key)) {
+        return true;
+    }
+    if (value === '' || value == null) {
+        return true;
+    }
+
+    // Skip NEO sequence placeholders (e.g. "<10000000>") — these are display hints
+    // for auto-generated values and must not be sent to the backend on create.
+    if (typeof value === 'string' && /^<\d+>$/.test(value)) {
+        return true;
+    }
+
+    // Skip short numeric legacy FK IDs that came from backend defaults and were not
+    // explicitly changed by the user (e.g. language: "181"). These are resolved by the
+    // backend automatically; sending them as raw integers causes SmartClient import errors.
+    // Exception: required fields must always be sent so the user's chosen value persists.
+    if (
+        typeof value === 'string'
+        && /^\d{3,9}$/.test(value)
+        && backendDefaultKeysRef.current.has(key)
+        && !userChangedKeysRef.current.has(key)
+        && !requiredFormKeys.has(key)
+    ) {
+        return true;
+    }
+
+    // Contacts (Business Partner): keep create aligned with Classic behavior.
+    // Billing preference fields are configured only after header creation.
+    // If sent here, org/window defaults can persist unwanted values on first save.
+    if (isContactsBusinessPartnerCreate && CONTACTS_PRECREATE_BILLING_FIELDS.has(key)) {
+        return true;
+    }
+
+    // Ignore SmartClient temporary import references (e.g. "100_BusinessPartner")
+    // for FK-like fields. These pseudo IDs are client-internal placeholders and are
+    // invalid as persistent FK values in NEO POST payloads.
+    const hasIdentifierCompanion = Object.prototype.hasOwnProperty.call(editing, `${key}$_identifier`);
+    if (
+        hasIdentifierCompanion
+        && typeof value === 'string'
+        && /^\d+_[A-Za-z][A-Za-z0-9]*$/.test(value)
+    ) {
+        return true;
+    }
+    return false;
 }
 
 export function useEntity(entity, childEntity, {
@@ -445,7 +525,11 @@ export function useEntity(entity, childEntity, {
     }, [refresh, skipListFetch]);
 
     const fetchChildren = useCallback((parentId) => {
-        if (!childEntity || !parentId) { setChildren([]); setChildrenLoading(false); return; }
+        if (!childEntity || !parentId) {
+            setChildren([]);
+            setChildrenLoading(false);
+            return;
+        }
         setChildrenLoading(true);
         // NEO Headless uses ?parentId= to filter child entity records
         fetch(`${apiBaseUrl}/${childEntity}?parentId=${parentId}${childSortBy ? `&_sortBy=${childSortBy}` : ''}`, { headers })
@@ -502,7 +586,8 @@ export function useEntity(entity, childEntity, {
                     return merged;
                 });
             })
-            .catch(() => { });
+            .catch(() => {
+            });
     }, [apiBaseUrl, entity, headers]);
 
     const handleSelect = useCallback((row) => {
@@ -529,17 +614,7 @@ export function useEntity(entity, childEntity, {
                     backendDefaultKeysRef.current = new Set(Object.keys(rest));
                     const normalized = { ...rest };
                     for (const [key, val] of Object.entries(normalized)) {
-                        if (typeof val === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(val)) {
-                            const [dd, mm, yyyy] = val.split('-');
-                            normalized[key] = `${yyyy}-${mm}-${dd}`;
-                        } else if (typeof val === 'string' && /^'.*'$/.test(val)) {
-                            normalized[key] = val.slice(1, -1).replace(/''/g, "'");
-                        } else if (typeof val === 'number' && Number.isInteger(val)) {
-                            // Enum/list fields are stored as strings in the DB (e.g. priority: 5 → "5").
-                            // The backend /defaults endpoint returns them as JSON integers, but the
-                            // PATCH/POST API expects string values — otherwise OBDal throws a type error.
-                            normalized[key] = String(val);
-                        }
+                        normalizeKey(val, normalized, key);
                     }
 
                     const isContactsBusinessPartner = entity === 'businessPartner'
@@ -601,7 +676,11 @@ export function useEntity(entity, childEntity, {
             };
             const isVisible = (f) => {
                 if (typeof f.displayLogic !== 'function') return true;
-                try { return !!f.displayLogic(editing ?? {}); } catch { return true; }
+                try {
+                    return !!f.displayLogic(editing ?? {});
+                } catch {
+                    return true;
+                }
             };
             const missing = fields
                 .filter(f => f.required && !isReadOnly(f) && isVisible(f) && f.type !== 'checkbox' && f.section !== 'summary')
@@ -649,43 +728,7 @@ export function useEntity(entity, childEntity, {
             );
 
             for (const [key, value] of Object.entries(editing)) {
-                if (key === 'id' || key.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(key)) continue;
-                if (value === '' || value == null) continue;
-
-                // Skip NEO sequence placeholders (e.g. "<10000000>") — these are display hints
-                // for auto-generated values and must not be sent to the backend on create.
-                if (typeof value === 'string' && /^<\d+>$/.test(value)) continue;
-
-                // Skip short numeric legacy FK IDs that came from backend defaults and were not
-                // explicitly changed by the user (e.g. language: "181"). These are resolved by the
-                // backend automatically; sending them as raw integers causes SmartClient import errors.
-                // Exception: required fields must always be sent so the user's chosen value persists.
-                if (
-                    typeof value === 'string'
-                    && /^\d{3,9}$/.test(value)
-                    && backendDefaultKeysRef.current.has(key)
-                    && !userChangedKeysRef.current.has(key)
-                    && !requiredFormKeys.has(key)
-                ) continue;
-
-                // Contacts (Business Partner): keep create aligned with Classic behavior.
-                // Billing preference fields are configured only after header creation.
-                // If sent here, org/window defaults can persist unwanted values on first save.
-                if (isContactsBusinessPartnerCreate && CONTACTS_PRECREATE_BILLING_FIELDS.has(key)) {
-                    continue;
-                }
-
-                // Ignore SmartClient temporary import references (e.g. "100_BusinessPartner")
-                // for FK-like fields. These pseudo IDs are client-internal placeholders and are
-                // invalid as persistent FK values in NEO POST payloads.
-                const hasIdentifierCompanion = Object.prototype.hasOwnProperty.call(editing, `${key}$_identifier`);
-                if (
-                    hasIdentifierCompanion
-                    && typeof value === 'string'
-                    && /^\d+_[A-Za-z][A-Za-z0-9]*$/.test(value)
-                ) {
-                    continue;
-                }
+                if (saveContinueClauses(key, value, backendDefaultKeysRef, userChangedKeysRef, requiredFormKeys, isContactsBusinessPartnerCreate, editing)) continue;
 
                 payload[key] = value;
             }
@@ -868,7 +911,8 @@ export function useEntity(entity, childEntity, {
                 setSelected(updated);
                 return updated;
             }
-        } catch { /* ignore, fall back to saved */ }
+        } catch { /* ignore, fall back to saved */
+        }
         return saved;
     }, [handleSave, apiBaseUrl, entity, token, refresh, ui]);
 
@@ -892,7 +936,13 @@ export function useEntity(entity, childEntity, {
                 const specificMsg = ui(specificKey);
                 const fallbackMsg = process.label ? `${process.label} completed` : 'Process completed';
                 toast.success(specificMsg !== specificKey ? specificMsg : fallbackMsg);
-                window.dispatchEvent(new CustomEvent('neo:processSuccess', { detail: { process, entity, recordId: selected.id } }));
+                window.dispatchEvent(new CustomEvent('neo:processSuccess', {
+                    detail: {
+                        process,
+                        entity,
+                        recordId: selected.id
+                    }
+                }));
                 fetchById(selected.id);
                 refresh();
             } else {
