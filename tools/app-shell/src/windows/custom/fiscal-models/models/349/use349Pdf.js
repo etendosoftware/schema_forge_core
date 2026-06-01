@@ -75,6 +75,7 @@ body { font-family:'Inter',sans-serif; font-size:11px; color:#111; background:#f
 `;
 
 const HTML = `
+<html lang="es"><head><meta charset="UTF-8"><style>{{{css}}}</style></head><body>
 <div class="page">
 
   <!-- Header -->
@@ -232,6 +233,7 @@ const HTML = `
 
   <div class="footer">BORRADOR — Generado desde Etendo GO · Modelo 349 · {{year}} {{period}}</div>
 </div>
+</body></html>
 `;
 
 export function use349Pdf() {
