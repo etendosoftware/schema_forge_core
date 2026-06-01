@@ -217,6 +217,7 @@ export function generateTableComponent(entityName, contract) {
     const togglePart = f.inlineToggle ? ', toggle: true' : '';
     const badgePart = (f.badge && !f.cellType) ? ', badge: true' : '';
     const badgeLabelsPart = f.badgeLabels ? `, badgeLabels: ${JSON.stringify(f.badgeLabels)}` : '';
+
     const badgeColorsPart = f.badgeColors ? `, badgeColors: ${JSON.stringify(f.badgeColors)}` : '';
     const badgeVariantsPart = f.badgeVariants ? `, badgeVariants: ${JSON.stringify(f.badgeVariants)}` : '';
     const enumVariantsPart = f.enumVariants ? `, enumVariants: ${JSON.stringify(f.enumVariants)}` : '';
@@ -773,6 +774,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const compactSidebarPadding = windowConfig.compactSidebarPadding ?? false;
   const whiteFormBackground = windowConfig.whiteFormBackground ?? false;
   const hideFormCard = windowConfig.hideFormCard ?? false;
+  const sidebarAboveTabsOnly = windowConfig.sidebarAboveTabsOnly ?? false;
   const sidebarClassName = windowConfig.sidebarClassName ?? null;
   const tabsBarPaddingX = windowConfig.tabsBarPaddingX ?? null;
   const primaryTabsVariant = windowConfig.primaryTabsVariant ?? null;
@@ -1033,6 +1035,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const whiteFormBackgroundProp = whiteFormBackground ? '\n        whiteFormBackground' : '';
   // hideFormCard prop (DetailView)
   const hideFormCardProp = hideFormCard ? '\n        hideFormCard' : '';
+  // sidebarAboveTabsOnly prop (DetailView)
+  const sidebarAboveTabsOnlyProp = sidebarAboveTabsOnly ? '\n        sidebarAboveTabsOnly' : '';
   // sidebarClassName prop (DetailView)
   const sidebarClassNameProp = sidebarClassName ? `\n        sidebarClassName="${sidebarClassName}"` : '';
   // tabsBarPaddingX prop (DetailView)
@@ -1273,6 +1277,19 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     formFooterProp = `\n        formFooter={${compName}}`;
   }
 
+  // customLinesComponent → CustomLines prop
+  const customLinesComp = windowConfig.customLinesComponent ?? null;
+  const customLinesLabelValue = windowConfig.customLinesLabel ?? null;
+  let customLinesImport = '';
+  let customLinesProp = '';
+  if (customLinesComp && specName) {
+    customLinesImport = `import ${customLinesComp} from ${resolveCustomImport(specName, customLinesComp)};\n`;
+    customLinesProp = `\n        CustomLines={${customLinesComp}}`;
+    if (customLinesLabelValue) {
+      customLinesProp += `\n        customLinesLabel="${customLinesLabelValue}"`;
+    }
+  }
+
   // primaryTabs support
   const primaryTabsConfig = windowConfig.primaryTabs ?? null;
   let primaryTabsImports = '';
@@ -1375,10 +1392,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   return `import { ${needsUseState ? 'useState, ' : ''}useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}${lineConfigSymbol ? `\nimport { ${lineConfigSymbol} } from '@/hooks/useLineGrossAmount';` : ''}
 ${headerTableImport}
-import ${headerName}Form from './${headerName}Form';${detailEntity ? `
+import ${headerName}Form from './${headerName}Form';${detailEntity && !customLinesComp ? `
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';` : ''}
-${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
+${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${customLinesImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
 ${isGallery ? `import ${headerName}Gallery from ${resolveCustomImport(specName || headerEntity, `${headerName}Gallery`)};` : ''}${isSidebar ? `
 import ${headerName}Sidebar from ${resolveCustomImport(specName || headerEntity, `${headerName}Sidebar`)};` : ''}${isGallery && !isSidebar ? `
 import ${headerName}DetailHeader from ${resolveCustomImport(specName || headerEntity, `${headerName}DetailHeader`)};` : ''}${statusBarImport}${confirmModalImport}
@@ -1437,20 +1454,20 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
       <DetailView
         entity="${headerEntity}"${detailEntity ? `
         detailEntity="${detailEntity}"` : ''}
-        Form={${headerName}Form}${detailEntity ? `
+        Form={${headerName}Form}${detailEntity && !customLinesComp ? `
         DetailTable={${detailName}Table}
         DetailForm={${detailName}Form}` : ''}
         summary={summary}
         statusField={statusField}
         extraBadges={extraBadges}
-        processes={processes}${detailEntity ? `
+        processes={processes}${detailEntity && !customLinesComp ? `
         addLineFields={addLineFields}` : ''}
         catalogs={catalogs}
         entityLabel="${entityLabel}"${detailEntity ? `
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${hideFormCardProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
         {...props}${sidebarContentProp}
       />${confirmModalName ? `
       {showConfirmModal && (

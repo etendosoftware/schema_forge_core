@@ -28,7 +28,14 @@ export const assets = [
     "depreciatedValue": 38907,
     "depreciatedPlan": 38907,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "processAsset": "Sample processAsset"
+    "processAsset": "Sample processAsset",
+    "businessPartner": "Acme Corp",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASCostCenter": "Sample eTADASCostCenter",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
+    "eTADASUser1": "Sample eTADASUser1",
+    "eTADASUser2": "Sample eTADASUser2"
   },
   {
     "id": "mock-assets-002",
@@ -57,7 +64,14 @@ export const assets = [
     "depreciatedValue": 9306,
     "depreciatedPlan": 9306,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "processAsset": "Sample processAsset"
+    "processAsset": "Sample processAsset",
+    "businessPartner": "TechFlow Inc",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASCostCenter": "Sample eTADASCostCenter",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
+    "eTADASUser1": "Sample eTADASUser1",
+    "eTADASUser2": "Sample eTADASUser2"
   },
   {
     "id": "mock-assets-003",
@@ -86,7 +100,14 @@ export const assets = [
     "depreciatedValue": 11544,
     "depreciatedPlan": 11544,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "processAsset": "Sample processAsset"
+    "processAsset": "Sample processAsset",
+    "businessPartner": "Global Trade Ltd",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASCostCenter": "Sample eTADASCostCenter",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
+    "eTADASUser1": "Sample eTADASUser1",
+    "eTADASUser2": "Sample eTADASUser2"
   },
   {
     "id": "mock-assets-004",
@@ -115,7 +136,14 @@ export const assets = [
     "depreciatedValue": 11872,
     "depreciatedPlan": 11872,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "processAsset": "Sample processAsset"
+    "processAsset": "Sample processAsset",
+    "businessPartner": "Summit Industries",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASCostCenter": "Sample eTADASCostCenter",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
+    "eTADASUser1": "Sample eTADASUser1",
+    "eTADASUser2": "Sample eTADASUser2"
   },
   {
     "id": "mock-assets-005",
@@ -144,7 +172,14 @@ export const assets = [
     "depreciatedValue": 48460,
     "depreciatedPlan": 48460,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "processAsset": "Sample processAsset"
+    "processAsset": "Sample processAsset",
+    "businessPartner": "Pacific Partners",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASCostCenter": "Sample eTADASCostCenter",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
+    "eTADASUser1": "Sample eTADASUser1",
+    "eTADASUser2": "Sample eTADASUser2"
   },
   {
     "id": "mock-assets-006",
@@ -173,7 +208,14 @@ export const assets = [
     "depreciatedValue": 45418,
     "depreciatedPlan": 45418,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "processAsset": "Sample processAsset"
+    "processAsset": "Sample processAsset",
+    "businessPartner": "Alpine Solutions",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASCostCenter": "Sample eTADASCostCenter",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
+    "eTADASUser1": "Sample eTADASUser1",
+    "eTADASUser2": "Sample eTADASUser2"
   },
   {
     "id": "mock-assets-007",
@@ -202,7 +244,14 @@ export const assets = [
     "depreciatedValue": 33840,
     "depreciatedPlan": 33840,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "processAsset": "Sample processAsset"
+    "processAsset": "Sample processAsset",
+    "businessPartner": "Meridian Group",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASCostCenter": "Sample eTADASCostCenter",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
+    "eTADASUser1": "Sample eTADASUser1",
+    "eTADASUser2": "Sample eTADASUser2"
   },
   {
     "id": "mock-assets-008",
@@ -231,7 +280,14 @@ export const assets = [
     "depreciatedValue": 25716,
     "depreciatedPlan": 25716,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "processAsset": "Sample processAsset"
+    "processAsset": "Sample processAsset",
+    "businessPartner": "Vertex Systems",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASCostCenter": "Sample eTADASCostCenter",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
+    "eTADASUser1": "Sample eTADASUser1",
+    "eTADASUser2": "Sample eTADASUser2"
   },
   {
     "id": "mock-assets-009",
@@ -260,7 +316,14 @@ export const assets = [
     "depreciatedValue": 44780,
     "depreciatedPlan": 44780,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "processAsset": "Sample processAsset"
+    "processAsset": "Sample processAsset",
+    "businessPartner": "Atlas Manufacturing",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASCostCenter": "Sample eTADASCostCenter",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
+    "eTADASUser1": "Sample eTADASUser1",
+    "eTADASUser2": "Sample eTADASUser2"
   },
   {
     "id": "mock-assets-010",
@@ -289,7 +352,14 @@ export const assets = [
     "depreciatedValue": 12483,
     "depreciatedPlan": 12483,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "processAsset": "Sample processAsset"
+    "processAsset": "Sample processAsset",
+    "businessPartner": "Nova Enterprises",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASCostCenter": "Sample eTADASCostCenter",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
+    "eTADASUser1": "Sample eTADASUser1",
+    "eTADASUser2": "Sample eTADASUser2"
   },
   {
     "id": "mock-assets-011",
@@ -318,7 +388,14 @@ export const assets = [
     "depreciatedValue": 46022,
     "depreciatedPlan": 46022,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "processAsset": "Sample processAsset"
+    "processAsset": "Sample processAsset",
+    "businessPartner": "Pinnacle Services",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASCostCenter": "Sample eTADASCostCenter",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
+    "eTADASUser1": "Sample eTADASUser1",
+    "eTADASUser2": "Sample eTADASUser2"
   },
   {
     "id": "mock-assets-012",
@@ -347,7 +424,14 @@ export const assets = [
     "depreciatedValue": 38634,
     "depreciatedPlan": 38634,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "processAsset": "Sample processAsset"
+    "processAsset": "Sample processAsset",
+    "businessPartner": "Horizon Labs",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASCostCenter": "Sample eTADASCostCenter",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
+    "eTADASUser1": "Sample eTADASUser1",
+    "eTADASUser2": "Sample eTADASUser2"
   }
 ];
 

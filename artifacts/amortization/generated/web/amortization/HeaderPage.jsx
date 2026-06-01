@@ -3,8 +3,7 @@ import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
 import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
-import LinesTable from './LinesTable';
-import LinesForm from './LinesForm';
+import AmortizationLinesTable from '@/windows/custom/amortization/AmortizationLinesTable';
 import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
@@ -24,7 +23,15 @@ const labelOverrides = {
     "A_Asset_ID": "Activo",
     "Amortization_Percentage": "% Amortización",
     "Amortizationamt": "Importe amortización",
-    "Line": "Nº línea"
+    "Line": "Nº línea",
+    "C_Project_ID": "Proyecto",
+    "C_Costcenter_ID": "Centro de costo",
+    "User1_ID": "1ª Dimensión",
+    "User2_ID": "2ª Dimensión",
+    "EM_Etadas_C_Bpartner_ID": "Contacto",
+    "EM_Etadas_Salesregion_ID": "Región de ventas",
+    "EM_Etadas_C_Activity_ID": "Actividad",
+    "EM_Etadas_Campaign_ID": "Campaña"
   },
   "en_US": {
     "Name": "Name",
@@ -36,7 +43,15 @@ const labelOverrides = {
     "A_Asset_ID": "Asset",
     "Amortization_Percentage": "Amortization %",
     "Amortizationamt": "Amortization Amount",
-    "Line": "Line No."
+    "Line": "Line No.",
+    "C_Project_ID": "Project",
+    "C_Costcenter_ID": "Cost Center",
+    "User1_ID": "1st Dimension",
+    "User2_ID": "2nd Dimension",
+    "EM_Etadas_C_Bpartner_ID": "Contact",
+    "EM_Etadas_Salesregion_ID": "Sales Region",
+    "EM_Etadas_C_Activity_ID": "Activity",
+    "EM_Etadas_Campaign_ID": "Sales Campaign"
   }
 };
 
@@ -79,6 +94,14 @@ const addLineFields = {
     { key: 'asset', column: 'A_Asset_ID', type: 'selector', label: 'Asset', reference: 'Asset', inputMode: 'selector' },
     { key: 'amortizationPercentage', column: 'Amortization_Percentage', type: 'number', label: 'Amortization Percentage' },
     { key: 'amortizationAmount', column: 'Amortizationamt', type: 'number', required: true, label: 'Amortization Amount' },
+    { key: 'project', column: 'C_Project_ID', type: 'selector', label: 'Project', reference: 'Project', inputMode: 'selector' },
+    { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'Costcenter', inputMode: 'selector' },
+    { key: 'stDimension', column: 'User1_ID', type: 'selector', label: '1st Dimension', reference: 'User1', inputMode: 'selector' },
+    { key: 'ndDimension', column: 'User2_ID', type: 'selector', label: '2nd Dimension', reference: 'User2', inputMode: 'selector' },
+    { key: 'eTADASActivity', column: 'EM_Etadas_C_Activity_ID', type: 'selector', label: 'Activity', reference: 'Activity', inputMode: 'selector' },
+    { key: 'eTADASBpartner', column: 'EM_Etadas_C_Bpartner_ID', type: 'selector', label: 'Business Partner', reference: 'BPartner', inputMode: 'selector' },
+    { key: 'eTADASSalesCampaign', column: 'EM_Etadas_Campaign_ID', type: 'selector', label: 'Sales Campaign', reference: 'Campaign', inputMode: 'selector' },
+    { key: 'eTADASSalesRegion', column: 'EM_Etadas_Salesregion_ID', type: 'selector', label: 'Sales Region', reference: 'SalesRegion', inputMode: 'selector' },
   ],
   derived: [
 
@@ -144,6 +167,70 @@ export const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/amortization/lines/selectors/currency"
+    },
+    {
+      "entity": "lines",
+      "field": "project",
+      "column": "C_Project_ID",
+      "reference": "Project",
+      "inputMode": "selector",
+      "url": "/sws/neo/amortization/lines/selectors/project"
+    },
+    {
+      "entity": "lines",
+      "field": "costcenter",
+      "column": "C_Costcenter_ID",
+      "reference": "Costcenter",
+      "inputMode": "selector",
+      "url": "/sws/neo/amortization/lines/selectors/costcenter"
+    },
+    {
+      "entity": "lines",
+      "field": "stDimension",
+      "column": "User1_ID",
+      "reference": "User1",
+      "inputMode": "selector",
+      "url": "/sws/neo/amortization/lines/selectors/stDimension"
+    },
+    {
+      "entity": "lines",
+      "field": "ndDimension",
+      "column": "User2_ID",
+      "reference": "User2",
+      "inputMode": "selector",
+      "url": "/sws/neo/amortization/lines/selectors/ndDimension"
+    },
+    {
+      "entity": "lines",
+      "field": "eTADASActivity",
+      "column": "EM_Etadas_C_Activity_ID",
+      "reference": "Activity",
+      "inputMode": "selector",
+      "url": "/sws/neo/amortization/lines/selectors/eTADASActivity"
+    },
+    {
+      "entity": "lines",
+      "field": "eTADASBpartner",
+      "column": "EM_Etadas_C_Bpartner_ID",
+      "reference": "BPartner",
+      "inputMode": "selector",
+      "url": "/sws/neo/amortization/lines/selectors/eTADASBpartner"
+    },
+    {
+      "entity": "lines",
+      "field": "eTADASSalesCampaign",
+      "column": "EM_Etadas_Campaign_ID",
+      "reference": "Campaign",
+      "inputMode": "selector",
+      "url": "/sws/neo/amortization/lines/selectors/eTADASSalesCampaign"
+    },
+    {
+      "entity": "lines",
+      "field": "eTADASSalesRegion",
+      "column": "EM_Etadas_Salesregion_ID",
+      "reference": "SalesRegion",
+      "inputMode": "selector",
+      "url": "/sws/neo/amortization/lines/selectors/eTADASSalesRegion"
     }
   ],
   "actions": [
@@ -189,7 +276,15 @@ export const api = {
       "A_Asset_ID": "Activo",
       "Amortization_Percentage": "% Amortización",
       "Amortizationamt": "Importe amortización",
-      "Line": "Nº línea"
+      "Line": "Nº línea",
+      "C_Project_ID": "Proyecto",
+      "C_Costcenter_ID": "Centro de costo",
+      "User1_ID": "1ª Dimensión",
+      "User2_ID": "2ª Dimensión",
+      "EM_Etadas_C_Bpartner_ID": "Contacto",
+      "EM_Etadas_Salesregion_ID": "Región de ventas",
+      "EM_Etadas_C_Activity_ID": "Actividad",
+      "EM_Etadas_Campaign_ID": "Campaña"
     },
     "en_US": {
       "Name": "Name",
@@ -201,7 +296,15 @@ export const api = {
       "A_Asset_ID": "Asset",
       "Amortization_Percentage": "Amortization %",
       "Amortizationamt": "Amortization Amount",
-      "Line": "Line No."
+      "Line": "Line No.",
+      "C_Project_ID": "Project",
+      "C_Costcenter_ID": "Cost Center",
+      "User1_ID": "1st Dimension",
+      "User2_ID": "2nd Dimension",
+      "EM_Etadas_C_Bpartner_ID": "Contact",
+      "EM_Etadas_Salesregion_ID": "Sales Region",
+      "EM_Etadas_C_Activity_ID": "Activity",
+      "EM_Etadas_Campaign_ID": "Sales Campaign"
     }
   }
 };
@@ -217,13 +320,10 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         entity="header"
         detailEntity="lines"
         Form={HeaderForm}
-        DetailTable={LinesTable}
-        DetailForm={LinesForm}
         summary={summary}
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
-        addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Header"
         detailLabel="Lines"
@@ -231,11 +331,14 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        CustomLines={AmortizationLinesTable}
+        customLinesLabel="Lines"
         hideDeleteWhenComplete
         hidePrint
         noHeaderBorder
         whiteFormBackground
-        sidebarClassName="w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2"
+        sidebarAboveTabsOnly
+        sidebarClassName="w-[30%] shrink-0 border-l border-[#E8EAEF] p-2"
         toolbarButtonSize="default"
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "A_Amortization", config: {} } }]}
         menuActions={({ data, status }) => [

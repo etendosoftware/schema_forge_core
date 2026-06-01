@@ -56,10 +56,11 @@ Records are typically created from the **Assets** window via the **Create Amorti
 2. From Assets, trigger **Create Amortization** on a depreciation-enabled asset. Open the new record in `/amortization`.
 3. Confirm the record is in draft:
    - Header fields (name, accounting date, starting date, currency) are editable.
-   - Lines can be added/edited inline (asset selector, % and amount fields appear in the add-row form).
-   - Sidebar shows total (computed from lines), currency, line count, and "Borrador" status.
+   - Lines render in the custom `AmortizationLinesTable` — columns: Asset | Amortization % | Amount | Accounting dimensions.
+   - Sidebar shows only 2 cards: Total Amortización + Estado ("Borrador"). Confirm no "Moneda" or "Líneas" cards are present. Confirm the sidebar ends above the tabs row — Líneas and Adjuntos tabs span the full width below the form area.
    - **Confirmar** button is black/primary on the far right; **Guardar** is grey.
-4. Edit a line amount and save. Verify the sidebar total updates to reflect the new sum.
+4. Click the pencil icon on an existing line and confirm the Asset, %, and Amount fields become editable inline within the same row. Edit the amount and click outside (blur) — confirm the value saves without pressing a confirm button. Verify the sidebar total updates to reflect the new sum.
+4a. Click the chevron on a line row and confirm a "DIMENSIONES CONTABLES" panel expands below, showing 7 dimension selectors. Select a value in one selector (e.g., Cost Center) and confirm it auto-saves immediately without a Save button. Collapse the panel and verify the Accounting dimensions column now shows a chip for the filled dimension.
 5. Press **Confirmar** with no lines and confirm the button is disabled.
 6. With at least one line, press **Confirmar** and verify the modal opens showing the correct total (matching the line sum, not the old header value).
 7. Confirm in the modal. Verify:
@@ -84,6 +85,8 @@ Records are typically created from the **Assets** window via the **Create Amorti
 - `cli/config/regen-windows.json` — `amortization` entry.
 - `artifacts/amortization/decisions.json` — source of truth:
   - `linesLayout: "inlineEditable"` with `noTrailing: true` on `amortizationAmount` (dedicated 160px action slot).
+  - `customLinesComponent: "AmortizationLinesTable"` — replaces the standard InlineLinesPanel with the custom component.
+  - `sidebarAboveTabsOnly: true` — sidebar positioned only alongside the form, not the tabs section.
   - `asset.grow: true` and `amortizationPercentage.grow: true` for balanced column distribution.
   - `draftMode: { processField: "Processed", label: "confirm", confirmModal: "AmortizationConfirmModal", disableWhenEmpty: true }`.
   - `menuActions: [{ key: "reactivate", visibleWhenFieldTrue: "processed", columnName: "Processed" }]`.
@@ -91,12 +94,15 @@ Records are typically created from the **Assets** window via the **Create Amorti
   - `currency.defaultExpr: "@$C_Currency_ID@"`.
   - `processed` header field: `grid: true`, `filterOnly: true`, `columnType: "status"`, `filterable: false` — feeds the status dropdown without showing as a column.
   - Accounting entity excluded; accounting dimensions discarded.
-- `artifacts/amortization/custom/HeaderSidebar.jsx` — sidebar with three metric cards: total (sum of line amounts, calculated client-side), currency, line count + status badge. Refetches lines when `data` changes.
+- `artifacts/amortization/custom/HeaderSidebar.jsx` — simplified sidebar with 2 metric cards: Total Amortización (from header `data` prop, not line fetch) + Estado badge. "Moneda" and "Líneas" cards removed.
+- `tools/app-shell/src/windows/custom/amortization/AmortizationLinesTable.jsx` — custom lines component. Renders Asset | Amortization % | Amount | Accounting dimensions columns. Pencil icon activates inline editing for the 3 core fields (blur-saves). Chevron expands a "DIMENSIONES CONTABLES" panel with 7 dimension selectors that auto-save on `onChange`. Accounting dimensions column shows chips of the first 2 filled dimensions + "+N" badge + "n/7" counter.
 - `artifacts/amortization/custom/AmortizationConfirmModal.jsx` — confirmation modal. Fetches lines to calculate current total independently. Calls `POST /action/Processed` on confirm. On success calls `onClose(true)` which triggers `window.location.reload()`.
 
-## Visual polish — ETP-4103
+## ETP-4103 changes
 
-Changes landed in `feature/ETP-4103`. All items below affect the Amortization window specifically or in common with Assets.
+Changes landed in `feature/ETP-4103`. Covers visual polish, sidebar simplification, custom lines table, and a Java process bug fix for the Amortization window.
+
+### Visual polish
 
 - `toolbarBorderBottom: true` in `decisions.json` — adds a horizontal divider line below the toolbar buttons row.
 - `sidebarClassName: "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2"` in `decisions.json` — sidebar is now proportional (30% of detail width) with a left-border divider and 8 px internal padding. Previously fixed at `w-96`.
@@ -109,11 +115,31 @@ Changes landed in `feature/ETP-4103`. All items below affect the Amortization wi
 - `tabsBarPaddingX: "px-2"` in `decisions.json` — tabs bar horizontal padding set to 8 px.
 - `toolbarPaddingX: "px-2"` in `decisions.json` — toolbar horizontal padding set to 8 px.
 
-## v3 UX redesign — ETP-4103
+### Sidebar (HeaderSidebar.jsx)
 
-Changes landed in `feature/ETP-4103`. Item below covers the sidebar style change specific to the Amortization window.
+- `sidebarAboveTabsOnly: true` in `decisions.json` — sidebar is now positioned **only** alongside the form area, NOT alongside the tabs section. Tabs (Líneas, Adjuntos) now occupy full width below the form.
+- Sidebar **simplified to 2 cards only**: Total Amortización + Estado. "Moneda" and "Líneas" MetricCards removed.
+- The sidebar no longer fetches amortization lines — it uses only the header `data` prop directly.
 
-- `artifacts/amortization/custom/HeaderSidebar.jsx` — "Moneda" and "Líneas" MetricCards changed from `bg-gray-50` to `bg-white border border-gray-100` to maintain visual separation against the white sidebar background.
+### Lines tab — custom AmortizationLinesTable
+
+- `customLinesComponent: "AmortizationLinesTable"` in `decisions.json` — the standard InlineLinesPanel is replaced by a custom component at `tools/app-shell/src/windows/custom/amortization/AmortizationLinesTable.jsx`.
+- Table shows columns: Asset | Amortization % | Amount | Accounting dimensions.
+- **Inline editing** (pencil icon): clicking the pencil on a row makes the 3 core fields (Asset, %, Amount) editable inline within the same row. Save happens on blur — no confirm button needed. Same pattern as Sales Order.
+- **Expandable dimensions** (chevron `>`): each row has a chevron that expands a "DIMENSIONES CONTABLES" panel below the row, showing 7 dimension selectors: Cost Center, Contact/Business Partner, 1st Dimension, 2nd Dimension, Sales Region, Activity, Sales Campaign. The Project field is hidden because it carries `displayLogic: @ACCT_DIMENSION_DISPLAY@`, which is not always active.
+- Dimension selectors auto-save on `onChange` — immediate PUT per field, no Save button required.
+- "Accounting dimensions" column summary shows chips of the first 2 filled dimensions + "+N" badge + "n/7" counter. Empty rows show a "+ Añadir dimensiones" dashed button.
+- Add line via "+ Add line" split button (same component as other windows). Delete via trash icon on row hover.
+- Dimension fields are also exposed as columns in the list view: Project, Cost Center, 1st Dimension, 2nd Dimension, Business Partner, Sales Region, Activity, Sales Campaign.
+
+### Lines — badge labels
+
+- Status badge "Planificado" renamed to **"Pendiente"**.
+- Status badge "Procesado" renamed to **"Confirmado"**.
+
+### Java bug fix (NeoProcessService.java)
+
+- Fixed: the "Crear amortizaciones" process was failing with `JSONObject["A_Asset_ID"] not found`. Root cause: `AssetLinearGroupedDepreciationMethodProcess.doExecute()` reads the record id from the table's key column name (`A_Asset_ID`) in the content JSON, but `NeoProcessService` was only providing it under `inpRecordId`. Fix: `NeoProcessService` now resolves the key column from the tab's table and exposes the record id under the DB column name. This fix is generic — works for any OBUIAPP process that reads the record id by table key column name.
 
 ## Iteration backlog (out of current scope)
 

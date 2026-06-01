@@ -1,8 +1,8 @@
 {
-  "version": "0.9.1",
+  "version": "0.18.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-05-26T18:48:56.797Z",
-  "contractChecksum": "b7adf89c9c19e165",
+  "updatedAt": "2026-06-01T14:01:21.343Z",
+  "contractChecksum": "7737fb3871502cd9",
   "apiPrediction": {
     "specName": "assets",
     "baseUrl": "/sws/neo/assets",
@@ -63,6 +63,62 @@
         "reference": "Currency",
         "inputMode": "selector",
         "url": "/sws/neo/assets/assets/selectors/currency"
+      },
+      {
+        "entity": "assets",
+        "field": "businessPartner",
+        "column": "C_BPartner_ID",
+        "reference": "BPartner",
+        "inputMode": "search",
+        "url": "/sws/neo/assets/assets/selectors/businessPartner"
+      },
+      {
+        "entity": "assets",
+        "field": "eTADASActivity",
+        "column": "EM_Etadas_C_Activity_ID",
+        "reference": "Activity",
+        "inputMode": "selector",
+        "url": "/sws/neo/assets/assets/selectors/eTADASActivity"
+      },
+      {
+        "entity": "assets",
+        "field": "eTADASCostCenter",
+        "column": "EM_Etadas_Costcenter_ID",
+        "reference": "Costcenter",
+        "inputMode": "selector",
+        "url": "/sws/neo/assets/assets/selectors/eTADASCostCenter"
+      },
+      {
+        "entity": "assets",
+        "field": "eTADASSalesCampaign",
+        "column": "EM_Etadas_Campaign_ID",
+        "reference": "Campaign",
+        "inputMode": "selector",
+        "url": "/sws/neo/assets/assets/selectors/eTADASSalesCampaign"
+      },
+      {
+        "entity": "assets",
+        "field": "eTADASSalesRegion",
+        "column": "EM_Etadas_Salesregion_ID",
+        "reference": "SalesRegion",
+        "inputMode": "selector",
+        "url": "/sws/neo/assets/assets/selectors/eTADASSalesRegion"
+      },
+      {
+        "entity": "assets",
+        "field": "eTADASUser1",
+        "column": "EM_Etadas_User1_ID",
+        "reference": "User1",
+        "inputMode": "selector",
+        "url": "/sws/neo/assets/assets/selectors/eTADASUser1"
+      },
+      {
+        "entity": "assets",
+        "field": "eTADASUser2",
+        "column": "EM_Etadas_User2_ID",
+        "reference": "User2",
+        "inputMode": "selector",
+        "url": "/sws/neo/assets/assets/selectors/eTADASUser2"
       },
       {
         "entity": "amortizationLine",
@@ -147,8 +203,8 @@
           "User lacks permission",
           "Record is in an incompatible state"
         ],
-        "processId": "85601427EAEE401FA0250FF0A6DD62EF",
-        "processType": "classic"
+        "processId": "D1E4EC58B04D4D3FA0060FF28094B39B",
+        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -235,7 +291,14 @@
           "processAsset": {
             "required": true,
             "defaultValue": "N"
-          }
+          },
+          "businessPartner": {},
+          "eTADASActivity": {},
+          "eTADASCostCenter": {},
+          "eTADASSalesCampaign": {},
+          "eTADASSalesRegion": {},
+          "eTADASUser1": {},
+          "eTADASUser2": {}
         }
       },
       "amortizationLine": {
@@ -349,5 +412,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "b060c4bed89c5971"
+  "checksum": "752f3ae258a1a66a"
 }

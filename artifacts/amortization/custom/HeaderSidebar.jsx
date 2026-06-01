@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { useUI } from '@/i18n';
 import { useCurrency } from '@/hooks/useCurrency';
 import { formatCurrency } from '@/lib/formatCurrency';
@@ -20,29 +19,12 @@ function MetricCard({ label, value, subtitle, tint = null }) {
   );
 }
 
-export default function HeaderSidebar({ data, recordId, token, apiBaseUrl }) {
+export default function HeaderSidebar({ data }) {
   const ui = useUI();
   const orgCurrency = useCurrency() ?? 'USD';
-  const [lineCount, setLineCount] = useState(0);
-  const [linesTotal, setLinesTotal] = useState(null);
-
-  useEffect(() => {
-    if (!recordId || !apiBaseUrl) return;
-    const url = `${apiBaseUrl}/lines?parentId=${recordId}&_startRow=0&_endRow=500`;
-    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        if (!json) return;
-        const lines = json?.response?.data ?? json?.data ?? json?.rows ?? [];
-        const arr = Array.isArray(lines) ? lines : [];
-        setLineCount(arr.length);
-        setLinesTotal(arr.reduce((acc, l) => acc + Number(l.amortizationAmount ?? 0), 0));
-      })
-      .catch(() => {});
-  }, [recordId, apiBaseUrl, token, data]);
 
   const hasData = !!data;
-  const totalAmortization = linesTotal !== null ? linesTotal : Number(data?.totalAmortization ?? 0);
+  const totalAmortization = Number(data?.totalAmortization ?? 0);
   const currencyCode = data?.['currency$_identifier'] || orgCurrency;
   const isProcessed = data?.processed === 'Y' || data?.processed === true;
 
@@ -58,15 +40,6 @@ export default function HeaderSidebar({ data, recordId, token, apiBaseUrl }) {
             value={hasData ? formatCurrency(currencyCode, totalAmortization) : '—'}
             subtitle={ui('amortizationTotalPlanned')}
             tint="blue"
-          />
-          <MetricCard
-            label={ui('currency')}
-            value={hasData ? currencyCode : '—'}
-          />
-          <MetricCard
-            label={ui('amortizationLineCount')}
-            value={hasData ? String(lineCount) : '—'}
-            subtitle={ui('amortizationLineCountSubtitle')}
           />
           <MetricCard
             label={ui('amortizationStatus')}

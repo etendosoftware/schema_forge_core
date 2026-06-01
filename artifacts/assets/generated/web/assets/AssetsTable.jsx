@@ -26,11 +26,11 @@ const columns = [
   { key: 'name', column: 'Name', type: 'string', label: 'Name', required: true },
   { key: 'assetCategory', column: 'A_Asset_Group_ID', type: 'selector', label: 'Asset Category', required: true },
   { key: 'purchaseDate', column: 'Datepurchased', type: 'date', label: 'Purchase Date' },
-  { key: 'depreciationStartDate', column: 'Amortizationstartdate', type: 'date', label: 'Depreciation Start Date' },
+  { key: 'depreciationStartDate', column: 'Amortizationstartdate', type: 'date', label: 'Depreciation Start Date', dot: false },
   { key: 'assetValue', column: 'AssetValueAmt', type: 'amount', label: 'Asset Value', summable: true },
   { key: 'depreciationAmt', column: 'Amortizationvalueamt', type: 'amount', label: 'Depreciation Amt.', summable: true },
   { key: 'depreciatedValue', column: 'Depreciatedvalue', type: 'amount', label: 'Depreciated Value', summable: true },
-  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'status', label: 'Fully Depreciated', enumLabels: { 'true': 'assetsFullyDepreciated', 'false': 'assetsStillInProgress' }, render: renderDepreciationProgress, required: true, filterable: false },
+  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'boolean', label: 'Fully Depreciated', badgeLabels: {"true":"Totalmente depreciado","false":"En progreso"}, render: renderDepreciationProgress, required: true, filterable: false },
 ];
 // @sf-generated-end columns:assets
 

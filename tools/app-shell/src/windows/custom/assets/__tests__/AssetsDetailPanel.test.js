@@ -34,8 +34,9 @@ describe('AssetsDetailPanel — props and structure', () => {
 });
 
 describe('AssetsDetailPanel — 4 form groups', () => {
-  it('renders Group 1: Asset Info with assetsGroupInfoTitle', () => {
-    assert.match(src, /assetsGroupInfoTitle/);
+  it('renders Group 1: Asset Info fields directly (no subtitle)', () => {
+    assert.match(src, /'searchKey'/);
+    assert.match(src, /'name'/);
   });
 
   it('renders Group 2: Financial Info with assetsGroupFinancialTitle', () => {

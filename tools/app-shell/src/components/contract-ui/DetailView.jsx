@@ -258,6 +258,7 @@ export function DetailView({
   customLinesLabel = 'Invoices',
   sidePanel = null,
   sidePanelStyle = null,
+  sidebarAboveTabsOnly = false,
   afterTotals = null,
   bottomSection = null,
   linesEmptyState = null,
@@ -1304,6 +1305,7 @@ export function DetailView({
   const footerCustomTabs = customTabs.filter(ct => (ct?.placement ?? 'footer') === 'footer');
   const tabCustomTabs = customTabs.filter(ct => ct?.placement === 'tab');
   const [customTabCounts, setCustomTabCounts] = useState({});
+  const [customLinesCount, setCustomLinesCount] = useState(null);
   const [activeCustomBelowTab, setActiveCustomBelowTab] = useState(0);
   // Reuse the secondaryTabs/lines/others activeTab state for custom tabs by prefixing
   // their keys with `custom:` so they cannot collide with secondaryTabs/lines/others/customLines.
@@ -1323,7 +1325,7 @@ export function DetailView({
       tabs.unshift(linesTab);
     }
   } else if (CustomLines) {
-    tabs.unshift({ key: 'customLines', label: customLinesLabel });
+    tabs.unshift({ key: 'customLines', label: customLinesLabel, count: customLinesCount ?? null });
   }
   // Append 'tab' placement custom items after lines/secondary tabs but before Others.
   // Items may pass `labelKey` to resolve a generic i18n label via useUI() instead of a
@@ -1791,7 +1793,7 @@ export function DetailView({
                 </div>
               ) : null;
             })() : null}
-            <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'content', compactSidebarPadding)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+            <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
               {typeof headerContent === 'function' ? headerContent(data) : headerContent}
               {(() => {
                 const slotProps = {
@@ -1839,61 +1841,77 @@ export function DetailView({
               <div className={sidePanelWrapperCls(!!sidePanel, linesLayout)}>
                 <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`}>
 
-                  {/* Principal + collapsed fields wrapped in a card */}
-                  <div className={`${hideFormCard ? 'hidden' : ''}${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${whiteFormBackground ? ' bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50' : ''}${embedded ? ' pointer-events-none' : ''}`}>
-                    <div className={linesLayout === 'inlineEditable' ? 'p-2' : 'p-6'}>
-                      <Form
-                        entity={entity}
-                        data={data}
-                        onChange={handleChangeWithCallout}
-                        catalogs={catalogs}
-                        layout="horizontal"
-                        section="principal"
-                        displayLogic={{ readOnly: displayLogic?.readOnly ?? {}, visibility: {} }}
-                        api={api}
-                        token={token}
-                        apiBaseUrl={apiBaseUrl}
-                        selectorContext={selectorContextByEntity[entity]}
-                        labelOverrides={labelOverrides}
-                        registerFields={hook.registerFields}
-                        fieldErrors={hook.fieldErrors}
-                        onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
-                      />
-                    </div>
+                  {/* Form section — conditionally wrapped with sidebar when sidebarAboveTabsOnly */}
+                  {(() => {
+                    const formSection = (
+                      <>
+                        {/* Principal + collapsed fields wrapped in a card */}
+                        <div className={`${hideFormCard ? 'hidden' : ''}${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${whiteFormBackground ? ' bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50' : ''}${embedded ? ' pointer-events-none' : ''}`}>
+                          <div className={linesLayout === 'inlineEditable' ? 'p-2' : 'p-6'}>
+                            <Form
+                              entity={entity}
+                              data={data}
+                              onChange={handleChangeWithCallout}
+                              catalogs={catalogs}
+                              layout="horizontal"
+                              section="principal"
+                              displayLogic={{ readOnly: displayLogic?.readOnly ?? {}, visibility: {} }}
+                              api={api}
+                              token={token}
+                              apiBaseUrl={apiBaseUrl}
+                              selectorContext={selectorContextByEntity[entity]}
+                              labelOverrides={labelOverrides}
+                              registerFields={hook.registerFields}
+                              fieldErrors={hook.fieldErrors}
+                              onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
+                            />
+                          </div>
 
-                    {/* Collapsible secondary header fields (hidden if no collapsed fields or sidebarContent) */}
-                    {!hideMoreDetails && !sidebarContent && (
-                      <CollapsibleSection title={ui('moreDetails')}>
-                        <div className={`px-6 pb-6${embedded ? ' pointer-events-none' : ''}`}>
-                          <Form
-                            entity={entity}
-                            data={data}
-                            onChange={handleChangeWithCallout}
-                            catalogs={catalogs}
-                            layout="horizontal"
-                            section="collapsed"
-                            excludeFields={notesField ? [notesField] : []}
-                            displayLogic={displayLogic}
-                            api={api}
-                            token={token}
-                            apiBaseUrl={apiBaseUrl}
-                            selectorContext={selectorContextByEntity[entity]}
-                            labelOverrides={labelOverrides}
-                            registerFields={hook.registerFields}
-                            fieldErrors={hook.fieldErrors}
-                            onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
-                          />
+                          {/* Collapsible secondary header fields (hidden if no collapsed fields or sidebarContent) */}
+                          {!hideMoreDetails && !sidebarContent && (
+                            <CollapsibleSection title={ui('moreDetails')}>
+                              <div className={`px-6 pb-6${embedded ? ' pointer-events-none' : ''}`}>
+                                <Form
+                                  entity={entity}
+                                  data={data}
+                                  onChange={handleChangeWithCallout}
+                                  catalogs={catalogs}
+                                  layout="horizontal"
+                                  section="collapsed"
+                                  excludeFields={notesField ? [notesField] : []}
+                                  displayLogic={displayLogic}
+                                  api={api}
+                                  token={token}
+                                  apiBaseUrl={apiBaseUrl}
+                                  selectorContext={selectorContextByEntity[entity]}
+                                  labelOverrides={labelOverrides}
+                                  registerFields={hook.registerFields}
+                                  fieldErrors={hook.fieldErrors}
+                                  onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
+                                />
+                              </div>
+                            </CollapsibleSection>
+                          )}
                         </div>
-                      </CollapsibleSection>
-                    )}
-                  </div>
 
-                  {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
-                  {formFooter && (
-                    <div className={embedded ? 'pointer-events-none' : ''}>
-                      {React.createElement(formFooter, { data, entity, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl, editing: hook.editing })}
-                    </div>
-                  )}
+                        {/* Form footer: inline content below form, above tabs */}
+                        {formFooter && (
+                          <div className={embedded ? 'pointer-events-none' : ''}>
+                            {React.createElement(formFooter, { data, entity, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl, editing: hook.editing })}
+                          </div>
+                        )}
+                      </>
+                    );
+                    if (sidebarAboveTabsOnly && sidebarContent) {
+                      return (
+                        <div className="flex items-start">
+                          <div className="flex-1 min-w-0 space-y-2">{formSection}</div>
+                          <div className={sidebarClassName}>{sidebarContent(data)}</div>
+                        </div>
+                      );
+                    }
+                    return formSection;
+                  })()}
 
                   {/* Tabs: child entities + Others */}
                   {tabs.length > 0 && (
@@ -2560,6 +2578,9 @@ export function DetailView({
                               apiBaseUrl={apiBaseUrl}
                               api={api}
                               editing={hook.editing}
+                              catalogs={catalogs}
+                              entity={detailEntity}
+                              onCountChange={(n) => setCustomLinesCount(n)}
                               onRefresh={() => hook.fetchChildren?.(data?.id || recordId)}
                             />
                           </div>
@@ -3074,7 +3095,7 @@ export function DetailView({
               </div>
             </div>
           </div>{/* end content column wrapper */}
-          {sidebarContent && (
+          {sidebarContent && !sidebarAboveTabsOnly && (
             <div className={sidebarClassName}>
               {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
             </div>

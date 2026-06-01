@@ -16,7 +16,8 @@
     "compactSidebarPadding": true,
     "toolbarPaddingX": "px-2",
     "toolbarButtonSize": "default",
-    "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2",
+    "sidebarAboveTabsOnly": true,
+    "sidebarClassName": "w-[30%] shrink-0 border-l border-[#E8EAEF] p-2",
     "hideListFilters": false,
     "hideLink": true,
     "hideEyeCount": true,
@@ -126,6 +127,7 @@
         "depreciationStartDate": {
           "grid": true,
           "form": false,
+          "dot": false,
           "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "depreciationEndDate": {
@@ -173,17 +175,10 @@
           "grid": true,
           "searchable": true,
           "cellType": "depreciationProgress",
-          "columnType": "status",
-          "enumValues": [
-            {
-              "value": "true",
-              "name": "assetsFullyDepreciated"
-            },
-            {
-              "value": "false",
-              "name": "assetsStillInProgress"
-            }
-          ],
+          "badgeLabels": {
+            "true": "Totalmente depreciado",
+            "false": "En progreso"
+          },
           "filterable": false,
           "form": false
         },

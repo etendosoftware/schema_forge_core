@@ -121,9 +121,8 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
 
   return (
     <div className="p-2 pb-6 bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50">
-      {/* Group 1 — Asset Info */}
+      {/* Group 1 — Asset Info (no subtitle) */}
       <div className="mb-5">
-        <GroupHead title={ui('assetsGroupInfoTitle')} />
         <EntityForm
           fields={group1Fields}
           {...common}
@@ -131,17 +130,7 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
         />
       </div>
 
-      {/* Group 2 — Financial Info */}
-      <GroupDivider title={ui('assetsGroupFinancialTitle')} />
-      <div className="mb-5">
-        <EntityForm
-          fields={group2Fields}
-          {...common}
-          displayLogic={readOnlyAll}
-        />
-      </div>
-
-      {/* Group 3 — Depreciation Config */}
+      {/* Group 3 — Depreciation Config (includes Financial Info when depreciate=true) */}
       <GroupDivider title={ui('assetsGroupDepreciationTitle')} description={ui('assetsConfigDesc')} />
       <div className="mb-5 space-y-4">
         <div className={`grid gap-4 ${depreciate ? 'grid-cols-2' : 'grid-cols-1 max-w-sm'}`}>
@@ -165,11 +154,20 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
           )}
         </div>
         {depreciate ? (
-          <EntityForm
-            fields={deprecFields}
-            {...common}
-            displayLogic={makeDisplayLogic(deprecFields)}
-          />
+          <>
+            {/* Financial Info — only visible when depreciation is enabled */}
+            <GroupDivider title={ui('assetsGroupFinancialTitle')} />
+            <EntityForm
+              fields={group2Fields}
+              {...common}
+              displayLogic={readOnlyAll}
+            />
+            <EntityForm
+              fields={deprecFields}
+              {...common}
+              displayLogic={makeDisplayLogic(deprecFields)}
+            />
+          </>
         ) : (
           <p className="text-xs text-[#6C6C89]">{ui('assetsDepreciationDisabledHint')}</p>
         )}
