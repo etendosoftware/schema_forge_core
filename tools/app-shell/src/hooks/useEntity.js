@@ -12,7 +12,7 @@ function buildHeaders(token) {
     };
 }
 
-export function pickMessageObjectCase(node) {
+export function pickMessageFromObject(node) {
     if (typeof node === 'object') {
         const preferredKeys = ['message', 'errorMessage', 'text', 'description', 'title'];
         for (const key of preferredKeys) {
@@ -40,7 +40,7 @@ export function pickMessage(node) {
         }
         return null;
     }
-    return pickMessageObjectCase(node);
+    return pickMessageFromObject(node);
 }
 
 /**
@@ -183,7 +183,7 @@ function derivePersonName(firstName, lastName) {
     return [first, last].filter(Boolean).join(' ').slice(0, 60);
 }
 
-export function setNameContactCase(payload, source) {
+export function applyContactNameDefaults(payload, source) {
     if (!payload.name) {
         const derivedName = derivePersonName(
             payload.firstName ?? source.firstName,
@@ -200,7 +200,7 @@ function applyContactsRequiredFields(entity, payload, source = {}) {
     if (!payload || typeof payload !== 'object') return payload;
 
     if (entity === 'contact' || entity === 'adUser' || entity === 'user') { //TODO: Remove this specific window logic
-        setNameContactCase(payload, source);
+        applyContactNameDefaults(payload, source);
     }
 
     if (entity === 'businessPartner' || entity === 'bpartner') {
@@ -250,7 +250,7 @@ function normalizeRows(rows, entityName) {
 const EMPTY_FILTERS = {};
 const EMPTY_DEFS = {};
 
-export function criteriaCase(v, out) {
+export function parseCriteriaInto(v, out) {
     try {
         const parsed = JSON.parse(v);
         if (Array.isArray(parsed)) out.push(...parsed);
@@ -273,7 +273,7 @@ function extractCriteriaFromFilter(filterStr, queryParams) {
         const k = p.slice(0, eqIdx);
         const v = decodeURIComponent(p.slice(eqIdx + 1));
         if (k === 'criteria') {
-            criteriaCase(v, out);
+            parseCriteriaInto(v, out);
         } else {
             queryParams.append(k, v);
         }
@@ -315,7 +315,7 @@ function applyFilterParams(queryParams, baseFilter, columnFilters, columnDefs, t
     queryParams.append('criteria', JSON.stringify(finalCriteria));
 }
 
-export function normalizeKey(val, normalized, key) {
+export function normalizeDefaultValue(val, normalized, key) {
     if (typeof val === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(val)) {
         const [dd, mm, yyyy] = val.split('-');
         normalized[key] = `${yyyy}-${mm}-${dd}`;
@@ -329,7 +329,7 @@ export function normalizeKey(val, normalized, key) {
     }
 }
 
-export function saveContinueClauses(key, value, backendDefaultKeysRef, userChangedKeysRef, requiredFormKeys, isContactsBusinessPartnerCreate, editing) {
+export function shouldSkipPayloadField(key, value, backendDefaultKeysRef, userChangedKeysRef, requiredFormKeys, isContactsBusinessPartnerCreate, editing) {
     // Always skip ID fields, identifier companions, and legacy FK keys (e.g. ad_org_id)
     // managed by the backend — these should never be sent by the client on create/update.
     if (key === 'id' || key.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(key)) {
@@ -378,6 +378,109 @@ export function saveContinueClauses(key, value, backendDefaultKeysRef, userChang
         return true;
     }
     return false;
+}
+
+export function getReadOnly(editing) {
+    return (f) => {
+        if (f.readOnly === true) return true;
+        try {
+            return typeof f.readOnlyLogic === 'function'
+                ? Boolean(f.readOnlyLogic(editing))
+                : false;
+        } catch {
+            return false;
+        }
+    };
+}
+
+export function getVisible(editing) {
+    return (f) => {
+        if (typeof f.displayLogic !== 'function') return true;
+        try {
+            return !!f.displayLogic(editing ?? {});
+        } catch {
+            return true;
+        }
+    };
+}
+
+export function getUrl(isNew, apiBaseUrl, entity, editing) {
+    return isNew ? `${apiBaseUrl}/${entity}` : `${apiBaseUrl}/${entity}/${editing.id}`;
+}
+
+export function getMethod(isNew) {
+    return isNew ? 'POST' : 'PATCH';
+}
+
+export function buildPatchPayload(editing, selected, entity) {
+    const payload = {};
+    for (const [key, value] of Object.entries(editing)) {
+        if (key === 'id') continue;
+        if (value !== selected[key]) payload[key] = value;
+    }
+    applyContactsRequiredFields(entity, payload, editing);
+    return payload;
+}
+
+export async function handleSaveErrorResponse(res, ui, setFieldErrors, setSaveError) {
+    // ETP-3894: parse a structured MISSING_REQUIRED_FIELDS 400 from the backend so
+    // the UI can highlight the missing fields. Falls back to the regular error
+    // extraction for any other error shape.
+    let backendFieldErrors = null;
+    try {
+        const cloned = res.clone();
+        const body = await cloned.json();
+        const errCode = body?.error?.code;
+        const errFields = body?.error?.fields;
+        if (errCode === 'MISSING_REQUIRED_FIELDS' && Array.isArray(errFields)) {
+            backendFieldErrors = {};
+            for (const k of errFields) backendFieldErrors[k] = ui('fieldRequired');
+        }
+    } catch {
+        // ignore — fall through to the legacy extractor
+    }
+    if (backendFieldErrors) {
+        setFieldErrors(backendFieldErrors);
+        const msg = ui('requiredFieldsMissing');
+        setSaveError(msg);
+        toast.error(msg);
+        return null;
+    }
+    const msg = await extractErrorMessage(res, ui);
+    setSaveError(msg);
+    toast.error(msg);
+    return null;
+}
+
+export function getSaveSuccessMessage(isNew, ui) {
+    return isNew ? ui('recordCreated') : ui('recordSaved');
+}
+
+export function buildCreatePayload(editing, backendDefaultKeysRef, userChangedKeysRef, requiredFormKeys, isContactsBusinessPartnerCreate, payload) {
+    for (const [key, value] of Object.entries(editing)) {
+        if (shouldSkipPayloadField(key, value, backendDefaultKeysRef, userChangedKeysRef, requiredFormKeys, isContactsBusinessPartnerCreate, editing)) continue;
+
+        payload[key] = value;
+    }
+}
+
+export function reportMissingRequiredFields(missing, ui, setFieldErrors, setSaveError, setIsSaving) {
+    const fieldsErr = {};
+    for (const k of missing) fieldsErr[k] = ui('fieldRequired');
+    setFieldErrors(fieldsErr);
+    const msg = ui('requiredFieldsMissing');
+    setSaveError(msg);
+    toast.error(msg);
+    setIsSaving(false);
+    return null;
+}
+
+export function shouldRefetchAfterSave(saved, refetchAfterSave) {
+    return saved?.id && refetchAfterSave;
+}
+
+export function showSaveSuccessToast(silent, isNew, ui) {
+    if (!silent) toast.success(getSaveSuccessMessage(isNew, ui));
 }
 
 export function useEntity(entity, childEntity, {
@@ -614,7 +717,7 @@ export function useEntity(entity, childEntity, {
                     backendDefaultKeysRef.current = new Set(Object.keys(rest));
                     const normalized = { ...rest };
                     for (const [key, val] of Object.entries(normalized)) {
-                        normalizeKey(val, normalized, key);
+                        normalizeDefaultValue(val, normalized, key);
                     }
 
                     const isContactsBusinessPartner = entity === 'businessPartner'
@@ -664,24 +767,8 @@ export function useEntity(entity, childEntity, {
         // existing records, `editing` already includes server-resolved values.
         if (isNew) {
             const fields = [...formFieldsRef.current.values()].flat();
-            const isReadOnly = (f) => {
-                if (f.readOnly === true) return true;
-                try {
-                    return typeof f.readOnlyLogic === 'function'
-                        ? Boolean(f.readOnlyLogic(editing))
-                        : false;
-                } catch {
-                    return false;
-                }
-            };
-            const isVisible = (f) => {
-                if (typeof f.displayLogic !== 'function') return true;
-                try {
-                    return !!f.displayLogic(editing ?? {});
-                } catch {
-                    return true;
-                }
-            };
+            const isReadOnly = getReadOnly(editing);
+            const isVisible = getVisible(editing);
             const missing = fields
                 .filter(f => f.required && !isReadOnly(f) && isVisible(f) && f.type !== 'checkbox' && f.section !== 'summary')
                 .filter(f => {
@@ -690,30 +777,17 @@ export function useEntity(entity, childEntity, {
                 })
                 .map(f => f.key);
             if (missing.length > 0) {
-                const fieldsErr = {};
-                for (const k of missing) fieldsErr[k] = ui('fieldRequired');
-                setFieldErrors(fieldsErr);
-                const msg = ui('requiredFieldsMissing');
-                setSaveError(msg);
-                toast.error(msg);
-                setIsSaving(false);
-                return null;
+                return reportMissingRequiredFields(missing, ui, setFieldErrors, setSaveError, setIsSaving);
             }
             setFieldErrors({});
         }
-        const url = isNew ? `${apiBaseUrl}/${entity}` : `${apiBaseUrl}/${entity}/${editing.id}`;
+        const url = getUrl(isNew, apiBaseUrl, entity, editing);
         // Use PATCH for existing records (partial update), POST for new
-        const method = isNew ? 'POST' : 'PATCH';
+        const method = getMethod(isNew);
         // For PATCH, only send changed fields
         let payload;
         if (!isNew && selected) {
-            const changes = {};
-            for (const [key, value] of Object.entries(editing)) {
-                if (key === 'id') continue;
-                if (value !== selected[key]) changes[key] = value;
-            }
-            payload = changes;
-            applyContactsRequiredFields(entity, payload, editing);
+            payload = buildPatchPayload(editing, selected, entity);
         } else {
             // For POST (create), strip empty strings — let backend injectMandatoryDefaults
             // resolve proper values for fields not explicitly set by the user or callouts.
@@ -727,11 +801,7 @@ export function useEntity(entity, childEntity, {
                 [...formFieldsRef.current.values()].flat().filter(f => f.required).map(f => f.key),
             );
 
-            for (const [key, value] of Object.entries(editing)) {
-                if (saveContinueClauses(key, value, backendDefaultKeysRef, userChangedKeysRef, requiredFormKeys, isContactsBusinessPartnerCreate, editing)) continue;
-
-                payload[key] = value;
-            }
+            buildCreatePayload(editing, backendDefaultKeysRef, userChangedKeysRef, requiredFormKeys, isContactsBusinessPartnerCreate, payload);
 
             applyContactsRequiredFields(entity, payload, editing);
         }
@@ -742,7 +812,7 @@ export function useEntity(entity, childEntity, {
             if (res.ok) {
                 const data = await res.json();
                 const saved = normalizeRecord(data?.response?.data?.[0] ?? data, entity);
-                if (saved?.id && refetchAfterSave) {
+                if (shouldRefetchAfterSave(saved, refetchAfterSave)) {
                     await fetch(`${apiBaseUrl}/${entity}/${saved.id}`, { headers })
                         .then(refetchRes => (refetchRes.ok ? refetchRes.json() : null))
                         .then(refetchData => {
@@ -760,36 +830,10 @@ export function useEntity(entity, childEntity, {
                 }
                 setSaveError(null);
                 setFieldErrors({});
-                if (!silent) toast.success(isNew ? ui('recordCreated') : ui('recordSaved'));
+                showSaveSuccessToast(silent, isNew, ui);
                 return saved;
             } else {
-                // ETP-3894: parse a structured MISSING_REQUIRED_FIELDS 400 from the backend so
-                // the UI can highlight the missing fields. Falls back to the regular error
-                // extraction for any other error shape.
-                let backendFieldErrors = null;
-                try {
-                    const cloned = res.clone();
-                    const body = await cloned.json();
-                    const errCode = body?.error?.code;
-                    const errFields = body?.error?.fields;
-                    if (errCode === 'MISSING_REQUIRED_FIELDS' && Array.isArray(errFields)) {
-                        backendFieldErrors = {};
-                        for (const k of errFields) backendFieldErrors[k] = ui('fieldRequired');
-                    }
-                } catch {
-                    // ignore — fall through to the legacy extractor
-                }
-                if (backendFieldErrors) {
-                    setFieldErrors(backendFieldErrors);
-                    const msg = ui('requiredFieldsMissing');
-                    setSaveError(msg);
-                    toast.error(msg);
-                    return null;
-                }
-                const msg = await extractErrorMessage(res, ui);
-                setSaveError(msg);
-                toast.error(msg);
-                return null;
+                return await handleSaveErrorResponse(res, ui, setFieldErrors, setSaveError);
             }
         } catch (err) {
             const msg = err?.message || 'Network error';
