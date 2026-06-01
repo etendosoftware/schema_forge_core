@@ -117,7 +117,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
   const [showPresent, setShowPresent] = useState(false);
   const [showFilegen, setShowFilegen] = useState(false);
   const [selected,     setSelected]     = useState(new Set());
-  const [liveOperators, setLiveOperators] = useState(null);
+  const [liveOperators, setLiveOperators] = useState(decl._precomputed?.operators ?? null);
   const [computing,    setComputing]    = useState(false);
   const [generating,   setGenerating]   = useState(false);
   const [showPdf,      setShowPdf]      = useState(false);

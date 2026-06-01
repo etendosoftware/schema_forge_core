@@ -292,13 +292,14 @@ export async function compute349Operators(decl, { token, apiBaseUrl } = {}) {
       const res = await fetch(`${base}/fiscal349/operators?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) return await res.json();
+      if (!res.ok) return null;
+      return await res.json();
     } catch (_) {
-      // fall through to mock
+      return null;
     }
   }
 
-  // Mock fallback (demo / no backend)
+  // Mock fallback — demo mode only (no token)
   await new Promise(r => setTimeout(r, 700));
   if (decl.year === 2026 && (decl.period === 'T1' || decl.period === 'T2')) {
     return {

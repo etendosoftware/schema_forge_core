@@ -55,15 +55,14 @@ describe('compute349Operators', () => {
     vi.unstubAllGlobals();
   });
 
-  it('falls back to mock when fetch fails', async () => {
+  it('returns null (not mock) when token is present but fetch fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network error')));
     const decl = { year: 2026, period: 'T1' };
     const result = await compute349Operators(decl, {
       token: 'tok',
       apiBaseUrl: 'https://host/sws/neo/fiscal-models',
     });
-    expect(result).not.toBeNull();
-    expect(result.operators.length).toBeGreaterThan(0);
+    expect(result).toBeNull();
     vi.unstubAllGlobals();
   });
 });
