@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ChevronRight, Box, Plus, Loader2, Save, Pencil, Trash2, X } from 'lucide-react';
+import { ChevronRight, Box, Plus, Loader2, Pencil, Trash2, X } from 'lucide-react';
 import { useUI, useLabel } from '@/i18n';
 import { EntityForm } from '@/components/contract-ui';
 import SelectorInput from '@/components/contract-ui/SelectorInput';
@@ -7,20 +7,20 @@ import { AddLineButton } from '@/components/ui/add-line-button';
 
 // ── field definitions ────────────────────────────────────────────────
 const CORE_FIELDS = [
-  { key: 'asset', column: 'A_Asset_ID', type: 'selector', label: 'Asset', reference: 'Asset', inputMode: 'selector', required: true, readOnlyLogic: (r) => r['posted'] === 'Y' },
-  { key: 'amortizationPercentage', column: 'Amortization_Percentage', type: 'number', label: 'Amortization Percentage', readOnlyLogic: (r) => r['processed'] === 'Y' },
-  { key: 'amortizationAmount', column: 'Amortizationamt', type: 'number', label: 'Amortization Amount', required: true, readOnlyLogic: (r) => r['processed'] === 'Y' },
+  { key: 'asset', column: 'A_Asset_ID', type: 'selector', reference: 'Asset', inputMode: 'selector', required: true, readOnlyLogic: (r) => r['posted'] === 'Y' },
+  { key: 'amortizationPercentage', column: 'Amortization_Percentage', type: 'number', readOnlyLogic: (r) => r['processed'] === 'Y' },
+  { key: 'amortizationAmount', column: 'Amortizationamt', type: 'number', required: true, readOnlyLogic: (r) => r['processed'] === 'Y' },
 ];
 
 const DIMENSION_FIELDS = [
-  { key: 'project', column: 'C_Project_ID', type: 'selector', label: 'Project', reference: 'Project', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y', hidden: true },
-  { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'Costcenter', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y' },
-  { key: 'eTADASBpartner', column: 'EM_Etadas_C_Bpartner_ID', type: 'selector', label: 'Contact', reference: 'BPartner', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y' },
-  { key: 'stDimension', column: 'User1_ID', type: 'selector', label: '1st Dimension', reference: 'User1', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y' },
-  { key: 'ndDimension', column: 'User2_ID', type: 'selector', label: '2nd Dimension', reference: 'User2', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y' },
-  { key: 'eTADASSalesRegion', column: 'EM_Etadas_Salesregion_ID', type: 'selector', label: 'Sales Region', reference: 'SalesRegion', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y' },
-  { key: 'eTADASActivity', column: 'EM_Etadas_C_Activity_ID', type: 'selector', label: 'Activity', reference: 'Activity', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y' },
-  { key: 'eTADASSalesCampaign', column: 'EM_Etadas_Campaign_ID', type: 'selector', label: 'Sales Campaign', reference: 'Campaign', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y' },
+  { key: 'project', column: 'C_Project_ID', type: 'selector', reference: 'Project', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y', hidden: true },
+  { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', reference: 'Costcenter', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y' },
+  { key: 'eTADASBpartner', column: 'EM_Etadas_C_Bpartner_ID', type: 'selector', reference: 'BPartner', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y' },
+  { key: 'stDimension', column: 'User1_ID', type: 'selector', reference: 'User1', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y' },
+  { key: 'ndDimension', column: 'User2_ID', type: 'selector', reference: 'User2', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y' },
+  { key: 'eTADASSalesRegion', column: 'EM_Etadas_Salesregion_ID', type: 'selector', reference: 'SalesRegion', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y' },
+  { key: 'eTADASActivity', column: 'EM_Etadas_C_Activity_ID', type: 'selector', reference: 'Activity', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y' },
+  { key: 'eTADASSalesCampaign', column: 'EM_Etadas_Campaign_ID', type: 'selector', reference: 'Campaign', inputMode: 'selector', readOnlyLogic: (r) => r['posted'] === 'Y' },
 ];
 
 const VISIBLE_DIMENSION_FIELDS = DIMENSION_FIELDS.filter(f => !f.hidden);
@@ -185,25 +185,6 @@ export default function AmortizationLinesTable({
     setPendingEdits(prev => ({ ...prev, [lineId]: { ...(prev[lineId] ?? {}), [key]: value } }));
   }
 
-  async function saveLine(lineId) {
-    const changes = pendingEdits[lineId];
-    if (!changes || Object.keys(changes).length === 0) { setEditingLineId(null); setExpandedId(null); return; }
-    setSaving(lineId);
-    try {
-      const res = await fetch(`${apiBaseUrl}/lines/${lineId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(changes),
-      });
-      if (res.ok) {
-        setPendingEdits(prev => { const n = { ...prev }; delete n[lineId]; return n; });
-        setEditingLineId(null);
-        setExpandedId(null);
-        fetchLines();
-      }
-    } finally { setSaving(null); }
-  }
-
   // Per-field save on blur (like Sales Order inline editing)
   async function saveField(lineId, line, fieldKey, value) {
     if (String(line[fieldKey] ?? '') === String(value ?? '')) return;
@@ -297,7 +278,6 @@ export default function AmortizationLinesTable({
                 const isEditing = editingLineId === line.id;
                 const edits = pendingEdits[line.id] ?? {};
                 const lineData = { ...line, ...edits };
-                const hasPending = Object.keys(edits).length > 0;
 
                 return (
                   <React.Fragment key={line.id}>
@@ -346,7 +326,7 @@ export default function AmortizationLinesTable({
                             className="h-8 w-full rounded-lg border border-[#D1D4DB] bg-white px-2 text-sm text-right tabular-nums"
                             defaultValue={line.amortizationPercentage ?? ''}
                             onBlur={e => saveField(line.id, line, 'amortizationPercentage', e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingLineId(null); }}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.currentTarget.blur(); } else if (e.key === 'Escape') { setEditingLineId(null); } }}
                           />
                         </td>
                       ) : (
@@ -363,7 +343,7 @@ export default function AmortizationLinesTable({
                             className="h-8 w-full rounded-lg border border-[#D1D4DB] bg-white px-2 text-sm text-right tabular-nums"
                             defaultValue={line.amortizationAmount ?? ''}
                             onBlur={e => saveField(line.id, line, 'amortizationAmount', e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingLineId(null); }}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.currentTarget.blur(); } else if (e.key === 'Escape') { setEditingLineId(null); } }}
                           />
                         </td>
                       ) : (
