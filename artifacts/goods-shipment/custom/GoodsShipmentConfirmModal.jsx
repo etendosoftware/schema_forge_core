@@ -1,68 +1,63 @@
-import { useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useEffect } from 'react';
+import { FileText } from 'lucide-react';
 import { useUI } from '@/i18n';
 
-function Spinner() {
-  return (
-    <>
-      <svg
-        style={{ width: 14, height: 14, animation: 'spin 1s linear infinite', flexShrink: 0 }}
-        viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-      >
-        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-      </svg>
-      <style>{`@keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }`}</style>
-    </>
-  );
-}
-
-function SoCheckboxCard({ checked, onChange, icon, title, subtitle, disabled }) {
-  return (
-    <div
-      onClick={disabled ? undefined : onChange}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: checked ? '11px 13px' : '12px 14px', borderRadius: 8,
-        cursor: disabled ? 'default' : 'pointer',
-        border: disabled ? '2px solid #10B981' : (checked ? '2px solid #3B82F6' : '1px solid #E5E7EB'),
-        background: disabled ? '#ECFDF5' : (checked ? '#EFF6FF' : '#fff'),
-        opacity: disabled ? 0.85 : 1,
-        transition: 'border-color 0.15s, background 0.15s',
-      }}
-    >
-      <span style={{ fontSize: 15, lineHeight: 1, flexShrink: 0 }}>{icon}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: disabled ? '#059669' : (checked ? '#2563EB' : '#111827') }}>
-          {title}
-        </div>
-        <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3, lineHeight: 1.4 }}>
-          {subtitle}
-        </div>
-      </div>
-      <div style={{
-        width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-        border: (checked || disabled) ? 'none' : '1.5px solid #D1D5DB',
-        background: disabled ? '#10B981' : (checked ? '#3B82F6' : '#fff'),
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        transition: 'background 0.15s',
-      }}>
-        {(checked || disabled) && (
-          <svg width="11" height="9" viewBox="0 0 11 9" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="1 4 4 7.5 10 1" />
-          </svg>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default function GoodsShipmentConfirmModal({ base, headers, recordId, onConfirmed, onClose }) {
+/**
+ * Confirmation modal for Goods Shipment.
+ *
+ * Mirrors the OrderConfirmModal pattern:
+ *  1. Blue summary card with shipment info (number, BP, total, line count).
+ *  2. Optional checkbox: create draft invoice for pending lines.
+ *  3. On confirm: DocAction=CO → create invoice (if checked).
+ *  4. Success state with navigation to the created invoice.
+ *  5. Self-contained — handles page reload internally; caller only needs onClose.
+ */
+export default function GoodsShipmentConfirmModal({ base, headers, recordId, data: propData, onClose }) {
   const ui = useUI();
-  const [createInvoice, setCreateInvoice] = useState(true);
+  const [createInvoice, setCreateInvoice] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [createdInvoice, setCreatedInvoice] = useState(null);
+  const [freshData, setFreshData] = useState(null);
+  const [lineCount, setLineCount] = useState(null);
+  const [needsReload, setNeedsReload] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [recRes, linesRes] = await Promise.all([
+          fetch(`${base}/goods-shipment/goodsShipment/${recordId}`, { headers }),
+          fetch(`${base}/goods-shipment/goodsShipmentLine?parentId=${recordId}&_startRow=0&_endRow=999`, { headers }),
+        ]);
+        if (cancelled) return;
+        if (recRes.ok) {
+          const json = await recRes.json();
+          setFreshData(json?.response?.data?.[0] ?? json);
+        }
+        if (linesRes.ok) {
+          const json = await linesRes.json();
+          setLineCount(json?.response?.data?.length ?? 0);
+        }
+      } catch { /* silent */ }
+    })();
+    return () => { cancelled = true; };
+  }, [recordId, base, headers]);
+
+  const d = freshData || propData || {};
+  const documentNo = d.documentNo || '';
+  const bpName = d['businessPartner$_identifier'] || '';
+  // M_InOut has no grandTotalAmount — fall back to the linked order's total
+  const linkedOrder = Array.isArray(d.linkedOrders) ? d.linkedOrders[0] : null;
+  const currency = linkedOrder?.['currency$_identifier'] || d['currency$_identifier'] || '';
+  const grossTotal = Number(linkedOrder?.grandTotalAmount ?? d.grandTotalAmount ?? 0);
+  const netTotal = Number(d.summedLineAmount ?? grossTotal);
+
+  const fmtNum = (v) =>
+    v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
 
   const handleConfirm = async () => {
+    if (loading) return;
     setLoading(true);
     setError(null);
     try {
@@ -74,89 +69,237 @@ export default function GoodsShipmentConfirmModal({ base, headers, recordId, onC
         const body = await res.json().catch(() => null);
         throw new Error(body?.response?.message || body?.message || `Error (${res.status})`);
       }
+      setNeedsReload(true);
 
-      let invoice = null;
-      if (createInvoice) {
-        const linesRes = await fetch(
-          `${base}/goods-shipment/goodsShipmentLine?parentId=${recordId}&_startRow=0&_endRow=200`,
-          { headers },
-        );
-        const lines = linesRes.ok ? (await linesRes.json())?.response?.data || [] : [];
-        const payload = lines.map(l => ({
-          shipmentLineId: l.id,
-          quantity: String(l.movementQuantity || 0),
-        }));
-        const body = payload.length > 0 ? { lines: payload } : {};
-        const invRes = await fetch(
-          `${base}/goods-shipment/goodsShipment/${recordId}/action/createDraftInvoice`,
-          { method: 'POST', headers, body: JSON.stringify(body) },
-        );
-        if (!invRes.ok) {
-          const err = await invRes.json().catch(() => null);
-          throw new Error(err?.response?.message || err?.message || `Error (${invRes.status})`);
-        }
-        const invJson = await invRes.json();
-        const invData = invJson?.response?.data;
-        invoice = { id: invData?.id ?? null, documentNo: invData?.documentNo || '', amount: invData?.grandTotalAmount ?? null };
+      if (!createInvoice) {
+        onClose();
+        window.location.reload();
+        return;
       }
 
-      onConfirmed({ invoice });
+      // Invoice all pending (uninvoiced) lines — backend computes pending qty.
+      const invRes = await fetch(
+        `${base}/goods-shipment/goodsShipment/${recordId}/action/createDraftInvoice`,
+        { method: 'POST', headers, body: JSON.stringify({}) },
+      );
+      if (!invRes.ok) {
+        const err = await invRes.json().catch(() => null);
+        throw new Error(err?.response?.message || err?.message || `Error (${invRes.status})`);
+      }
+      const invJson = await invRes.json();
+      const invData = invJson?.response?.data;
+      setCreatedInvoice({ id: invData?.id ?? null, documentNo: invData?.documentNo || '' });
     } catch (err) {
       setError(err.message);
+    } finally {
       setLoading(false);
     }
   };
 
-  return createPortal(
-    <div onClick={onClose} style={overlayStyle}>
-      <div onClick={e => e.stopPropagation()} style={{ ...cardStyle, width: 460 }}>
+  const handleClose = () => {
+    onClose();
+    if (needsReload) window.location.reload();
+  };
 
-        <div style={{ padding: '16px 20px 14px', borderBottom: '0.5px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>
-            {ui('shipmentConfirmModalTitle')}
+  const handleGoToInvoice = () => {
+    if (!createdInvoice?.id) { handleClose(); return; }
+    const basePath = window.location.pathname.replace(/\/goods-shipment\/.*$/, '');
+    window.location.href = `${basePath}/sales-invoice/${createdInvoice.id}`;
+  };
+
+  const primaryLabel = createInvoice ? ui('soConfirmActionInvoice') : ui('soConfirmActionOnly');
+
+  // ── Success state ───────────────────────────────────────────────────────────
+  if (createdInvoice) {
+    return (
+      <div style={overlayStyle}>
+        <div onClick={e => e.stopPropagation()} style={{ ...cardStyle, width: 400 }}>
+          <div style={{ padding: '28px 24px', textAlign: 'center' }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%', margin: '0 auto 14px',
+              background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 500, color: '#111827' }}>
+              {ui('soInvoiceCreated')}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+              <DocPill
+                label={ui('invoiceDoc', { number: createdInvoice.documentNo })}
+                statusLabel={ui('statusDraft')}
+              />
+            </div>
           </div>
-          <button type="button" onClick={onClose} style={closeBtnStyle}>&times;</button>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8,
+            padding: '12px 16px', borderTop: '0.5px solid #E5E7EB',
+          }}>
+            <button type="button" onClick={handleClose} style={btnSecondary}>
+              {ui('soClose')}
+            </button>
+            {createdInvoice.id && (
+              <button type="button" onClick={handleGoToInvoice} style={btnPrimary}>
+                {ui('soViewInvoice')}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Selection state ─────────────────────────────────────────────────────────
+  return (
+    <div onClick={handleClose} style={overlayStyle}>
+      <div onClick={e => e.stopPropagation()} style={cardStyle}>
+
+        {/* Blue summary card */}
+        <div style={{ padding: '14px 16px 0', position: 'relative' }}>
+          <button
+            type="button"
+            onClick={handleClose}
+            style={{
+              position: 'absolute', top: 10, right: 12,
+              fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4,
+              background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF',
+            }}
+          >
+            &times;
+          </button>
+          <div style={{ fontSize: 10, color: '#9CA3AF', letterSpacing: '0.04em', marginBottom: 8 }}>
+            {ui('shipmentRef')}{documentNo}
+          </div>
+          <div style={{
+            background: '#E6F1FB', border: '0.5px solid #B5D4F4', borderRadius: 10,
+            padding: '14px 16px', marginBottom: 14,
+          }}>
+            <div style={{ fontSize: 11, color: '#185FA5' }}>{bpName}</div>
+            <div style={{ fontSize: 28, fontWeight: 500, color: '#042C53', lineHeight: 1, marginTop: 4, marginBottom: 6 }}>
+              {fmtNum(grossTotal)}{currency ? ` ${currency}` : ''}
+            </div>
+            <div style={{ fontSize: 11, color: '#185FA5' }}>
+              {lineCount != null ? ui('soLines', { count: lineCount }) : '...'}
+              {' '}<span style={{ color: '#85B7EB' }}>·</span>{' '}
+              {ui('soSubtotal')}{' '}
+              <span style={{ fontWeight: 500, color: '#042C53' }}>
+                {fmtNum(netTotal)}{currency ? ` ${currency}` : ''}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div style={{ padding: '16px 20px 8px' }}>
-          <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.5, margin: 0 }}>
-            {ui('shipmentConfirmModalDesc')}
-          </p>
-        </div>
-
-        <div style={{ padding: '8px 20px 16px' }}>
-          <SoCheckboxCard
+        {/* Optional: create invoice */}
+        <div style={{ padding: '0 16px 14px', display: 'flex', flexDirection: 'column', gap: 8, borderBottom: '0.5px solid #E5E7EB' }}>
+          <div style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', marginBottom: 2 }}>
+            {ui('soGenerateDocs')}
+          </div>
+          <CheckboxCard
             checked={createInvoice}
             onChange={() => setCreateInvoice(v => !v)}
-            icon="🧾"
-            title={ui('shipmentConfirmCardTitle')}
-            subtitle={ui('shipmentConfirmCardSubtitle')}
+            icon={<FileText size={16} />}
+            title={ui('soCreateInvoiceTitle')}
+            subtitle={ui('soCreateInvoiceCheckDesc')}
           />
         </div>
 
         {error && (
-          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA' }}>
+          <div style={{ padding: '8px 16px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA' }}>
             {error}
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: '0.5px solid #E5E7EB' }}>
-          <button type="button" onClick={onClose} disabled={loading} style={{ ...btnSecondaryStyle, opacity: loading ? 0.5 : 1 }}>
+        {/* Footer */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, padding: '12px 16px' }}>
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={loading}
+            style={{ ...btnSecondary, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+          >
             {ui('cancel')}
           </button>
           <button
             type="button"
             onClick={handleConfirm}
             disabled={loading}
-            style={{ ...btnPrimaryStyle, opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+            style={{
+              ...btnPrimary,
+              opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+            }}
           >
             {loading && <Spinner />}
-            {ui('Confirm')}
+            {loading ? ui('soProcessing') : primaryLabel}
           </button>
+          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
-    </div>,
-    document.body,
+    </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }}
+      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+    </svg>
+  );
+}
+
+function CheckboxCard({ checked, onChange, icon, title, subtitle }) {
+  return (
+    <div
+      onClick={onChange}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        border: checked ? '2px solid #3B82F6' : '0.5px solid #E5E7EB',
+        borderRadius: 8, padding: checked ? '11px 13px' : '12px 14px',
+        cursor: 'pointer',
+        background: checked ? '#EFF6FF' : '#fff',
+        transition: 'border-color 0.15s, background 0.15s',
+      }}
+    >
+      <div style={{
+        width: 32, height: 32, borderRadius: 6, flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: checked ? '#fff' : '#F3F4F6',
+        color: checked ? '#2563EB' : '#6B7280',
+      }}>
+        {icon}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: checked ? '#2563EB' : '#111827' }}>{title}</div>
+        <div style={{ fontSize: 12, color: '#6B7280', marginTop: 3, lineHeight: 1.4 }}>{subtitle}</div>
+      </div>
+      <div style={{
+        width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+        border: checked ? 'none' : '1.5px solid #D1D5DB',
+        background: checked ? '#3B82F6' : '#fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        transition: 'background 0.15s',
+      }}>
+        {checked && (
+          <svg width="11" height="9" viewBox="0 0 11 9" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="1 4 4 7.5 10 1" />
+          </svg>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DocPill({ label, statusLabel }) {
+  return (
+    <div style={{ fontSize: 12, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
+      <span>{label}</span>
+      <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 99, background: '#FEF3C7', color: '#92400E' }}>
+        {statusLabel}
+      </span>
+    </div>
   );
 }
 
@@ -172,18 +315,12 @@ const cardStyle = {
   boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB',
 };
 
-const btnPrimaryStyle = {
-  padding: '5px 14px', borderRadius: 6, border: 'none',
-  background: '#185FA5', color: '#fff', fontWeight: 500, fontSize: 13,
-  cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
-};
-
-const btnSecondaryStyle = {
+const btnSecondary = {
   fontSize: 12, padding: '7px 14px', borderRadius: 6,
   border: '1px solid #D1D5DB', background: 'transparent', color: '#6B7280', cursor: 'pointer',
 };
 
-const closeBtnStyle = {
-  fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4,
-  background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF',
+const btnPrimary = {
+  fontSize: 12, fontWeight: 500, padding: '7px 16px', borderRadius: 6,
+  border: 'none', background: '#185FA5', color: '#fff', cursor: 'pointer',
 };
