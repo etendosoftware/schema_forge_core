@@ -36,13 +36,29 @@ function parseArgs(argv) {
     writeCache: false,
     fromCache: false,
   };
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--push-to-neo') result.pushToNeo = true;
-    else if (args[i] === '--dry-run') result.dryRun = true;
-    else if (args[i] === '--skip-extract') result.skipExtract = true;
-    else if (args[i] === '--write-cache') result.writeCache = true;
-    else if (args[i] === '--from-cache') result.fromCache = true;
-    else if (args[i] === '--only' && args[i + 1]) result.only = args[++i].split(',').map(s => s.trim());
+  let i = 0;
+  while (i < args.length) {
+    if (args[i] === '--push-to-neo') {
+      result.pushToNeo = true;
+      i += 1;
+    } else if (args[i] === '--dry-run') {
+      result.dryRun = true;
+      i += 1;
+    } else if (args[i] === '--skip-extract') {
+      result.skipExtract = true;
+      i += 1;
+    } else if (args[i] === '--write-cache') {
+      result.writeCache = true;
+      i += 1;
+    } else if (args[i] === '--from-cache') {
+      result.fromCache = true;
+      i += 1;
+    } else if (args[i] === '--only' && args[i + 1]) {
+      result.only = args[i + 1].split(',').map(s => s.trim());
+      i += 2;
+    } else {
+      i += 1;
+    }
   }
   return result;
 }

@@ -82,6 +82,13 @@ export const DOCUMENT_CHIP_TYPES = {
     statusField: 'status',
     routePrefix: '/payment-in',
   },
+  'return-material-receipt': {
+    iconKey: 'returnDoc',
+    titleKey: 'returnDoc',
+    titleField: 'documentNo',
+    statusField: 'documentStatus',
+    routePrefix: '/return-material-receipt',
+  },
 };
 
 /**

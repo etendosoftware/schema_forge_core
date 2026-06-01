@@ -1,8 +1,8 @@
 {
-  "version": "0.25.0",
+  "version": "0.26.1",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-05-20T18:17:18.587Z",
-  "checksum": "00240d7863ea80c9",
+  "updatedAt": "2026-05-27T18:42:10.295Z",
+  "checksum": "3b45220ae82cac08",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -525,6 +525,49 @@
             }
           },
           {
+            "name": "etvfacInvoiceStatus",
+            "apiKey": "etvfacInvoiceStatus",
+            "column": "EM_Etvfac_Invoice_Status",
+            "label": "Estado de Envío a Verifactu",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": false,
+            "enumValues": [
+              {
+                "value": "AC",
+                "name": "Aceptada"
+              },
+              {
+                "value": "AE",
+                "name": "Aceptada con Errores"
+              },
+              {
+                "value": "IN",
+                "name": "Inválida"
+              },
+              {
+                "value": "PE",
+                "name": "Pendiente"
+              },
+              {
+                "value": "ER",
+                "name": "Rechazada"
+              }
+            ],
+            "displayLogic": {
+              "raw": "@etvfac_has_configuration@='Y'",
+              "evaluable": true
+            },
+            "readOnlyLogic": {
+              "raw": "@processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
+          },
+          {
             "name": "tbaiSequence",
             "apiKey": "tbaiSequence",
             "column": "EM_Tbai_Sequence",
@@ -725,7 +768,7 @@
             "tsType": "string",
             "visibility": "readOnly",
             "required": false,
-            "grid": false,
+            "grid": true,
             "form": false,
             "derivation": {
               "type": "lookup",
@@ -2047,7 +2090,7 @@
             "apiKey": "etvfacInvoiceStatus",
             "column": "EM_Etvfac_Invoice_Status",
             "type": "enum",
-            "visibility": "discarded",
+            "visibility": "readOnly",
             "required": false
           },
           {
@@ -4573,6 +4616,14 @@
         "description": "Display logic for 'etsgDateOperation' in header should have evaluable flag"
       },
       {
+        "id": "t-displaylogic-evaluable-header-etvfacInvoiceStatus",
+        "category": "displaylogic-evaluable",
+        "entity": "header",
+        "field": "etvfacInvoiceStatus",
+        "runner": "node",
+        "description": "Display logic for 'etvfacInvoiceStatus' in header should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-header-outstandingAmount",
         "category": "displaylogic-evaluable",
         "entity": "header",
@@ -4731,6 +4782,14 @@
         "field": "etsgDateOperation",
         "runner": "node",
         "description": "Display logic for 'etsgDateOperation' in header should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-header-etvfacInvoiceStatus",
+        "category": "displaylogic-valid",
+        "entity": "header",
+        "field": "etvfacInvoiceStatus",
+        "runner": "node",
+        "description": "Display logic for 'etvfacInvoiceStatus' in header should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-header-outstandingAmount",
@@ -4955,6 +5014,14 @@
         "field": "etsgDateOperation",
         "runner": "node",
         "description": "Field 'etsgDateOperation' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-etvfacInvoiceStatus",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "etvfacInvoiceStatus",
+        "runner": "node",
+        "description": "Field 'etvfacInvoiceStatus' should be present in header"
       },
       {
         "id": "t-field-presence-header-grandTotalAmount",
@@ -5405,6 +5472,14 @@
         "description": "Field 'etsgDateOperation' should have type 'string' in header"
       },
       {
+        "id": "t-field-type-header-etvfacInvoiceStatus",
+        "category": "field-type",
+        "entity": "header",
+        "field": "etvfacInvoiceStatus",
+        "runner": "node",
+        "description": "Field 'etvfacInvoiceStatus' should have type 'string' in header"
+      },
+      {
         "id": "t-field-type-header-grandTotalAmount",
         "category": "field-type",
         "entity": "header",
@@ -5789,6 +5864,14 @@
         "description": "Read-only logic for 'etsgDateOperation' in header should have evaluable flag"
       },
       {
+        "id": "t-readonlylogic-evaluable-header-etvfacInvoiceStatus",
+        "category": "readonlylogic-evaluable",
+        "entity": "header",
+        "field": "etvfacInvoiceStatus",
+        "runner": "node",
+        "description": "Read-only logic for 'etvfacInvoiceStatus' in header should have evaluable flag"
+      },
+      {
         "id": "t-readonlylogic-evaluable-header-invoiceDate",
         "category": "readonlylogic-evaluable",
         "entity": "header",
@@ -5971,6 +6054,14 @@
         "field": "etsgDateOperation",
         "runner": "node",
         "description": "Read-only logic for 'etsgDateOperation' in header should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-header-etvfacInvoiceStatus",
+        "category": "readonlylogic-valid",
+        "entity": "header",
+        "field": "etvfacInvoiceStatus",
+        "runner": "node",
+        "description": "Read-only logic for 'etvfacInvoiceStatus' in header should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-header-invoiceDate",
@@ -6771,14 +6862,6 @@
         "field": "etvfacInvNoIDArt61d",
         "runner": "node",
         "description": "System field 'etvfacInvNoIDArt61d' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-system-field-header-etvfacInvoiceStatus",
-        "category": "system-field",
-        "entity": "header",
-        "field": "etvfacInvoiceStatus",
-        "runner": "node",
-        "description": "System field 'etvfacInvoiceStatus' should exist in backend but not frontend for header"
       },
       {
         "id": "t-system-field-header-etvfacInvType",
@@ -7803,25 +7886,25 @@
       }
     ],
     "summary": {
-      "total": 465,
+      "total": 470,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 3,
         "default-value-type": 22,
-        "displaylogic-evaluable": 20,
-        "displaylogic-valid": 20,
-        "field-presence": 56,
-        "field-type": 56,
-        "readonlylogic-evaluable": 23,
-        "readonlylogic-valid": 23,
+        "displaylogic-evaluable": 21,
+        "displaylogic-valid": 21,
+        "field-presence": 57,
+        "field-type": 57,
+        "readonlylogic-evaluable": 24,
+        "readonlylogic-valid": 24,
         "rule-declared": 8,
         "searchable-filters": 6,
         "selector-endpoint": 13,
-        "system-field": 188,
+        "system-field": 187,
         "visibility": 3
       },
       "byRunner": {
-        "node": 465,
+        "node": 470,
         "junit": 0
       }
     }

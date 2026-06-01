@@ -35,16 +35,26 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
   - `AuthGuard` redirects unauthenticated protected traffic to `/onboarding`.
   - `OnboardingPage` validates the platform token in `localStorage`.
   - Register/login calls the `/sws/go/register` or `/sws/go/login` endpoints.
+  - Successful registration stores the platform token and Etendo Go sends the `new-account` transactional email best-effort after the account commit.
   - After platform auth, the page fetches `/sws/go/environments`.
   - If at least one environment exists, it auto-enters the first one, stores `sf_auth_token`, user, role, and org context, clears caches, and redirects to `/dashboard`.
-  - During new-environment creation, the onboarding backend runs the sequence generator for the selected organization using the new client's admin user/role context, seeds a default customer programmatically, and only then returns success; the page then logs in, checks Sales Invoice readiness, and redirects.
+  - During new-environment creation, the onboarding backend runs the sequence generator for the selected organization using the new client's admin user/role context, seeds a default customer programmatically, commits the onboarding transaction, and then sends the `environment-ready` transactional email best-effort; the page then logs in, checks Sales Invoice readiness, and redirects.
   - The curated onboarding dataset skips business partner rows and locations while still importing shared setup catalogs such as BP groups, payment terms, and accounting foundations.
   - If no environments exist, the page switches to the environment creation flow.
+  - The login form includes a forgot-password action that calls `/sws/go/password-reset/request`; the UI always shows neutral "reset email sent" messaging when the request succeeds.
+  - Reset links open `/onboarding?resetToken=...`, render the reset-password form, call `/sws/go/password-reset/confirm`, clear any stored platform token on success, and show invalid/expired link errors inline when the backend rejects the token.
+  - Authenticated setup views include a change-password panel that calls `/sws/go/change-password`, requires the current password, stores the rotated platform token returned by the backend, and shows success or current-password errors inline.
+  - Auth email UI calls never include provider payload fields such as `to`, `template`, `data`, sender, Reply-To, or provider metadata.
 - **Failure or edge behavior:**
   - An invalid stored platform token is removed and the page falls back to the register view.
   - Register/login failures stay on the onboarding page and surface inline errors.
+  - Password reset request success remains neutral and provider-detail-free.
+  - Password reset confirmation rejects mismatched local form passwords before calling the backend.
+  - Password-change failures keep the user on the current setup view without clearing the existing platform token.
   - Environment login failures currently surface browser `alert()` messages.
 - **Automated evidence:**
+  - `tools/app-shell/src/pages/onboarding/__tests__/onboardingApi.test.js` verifies register/login, forgot/reset/change password API calls, bearer handling, and that auth flows do not send provider payload fields.
+  - `tools/app-shell/src/pages/__tests__/OnboardingPage.vitest.jsx` verifies forgot-password, reset-password, invalid reset link, change-password success, token refresh, and current-password failure states.
   - `tools/app-shell/test/pwa.test.js` verifies that `OnboardingPage.jsx` clears caches on environment login.
   - Route protection and onboarding branching are code-backed in `tools/app-shell/src/App.jsx` and `tools/app-shell/src/pages/OnboardingPage.jsx`, but are not covered by a full browser test.
   - `etendo_core/modules/com.etendoerp.go/src-test/src/com/etendoerp/go/onboarding/OnboardingDefaultCustomerServiceTest.java` verifies the default customer seed behavior, and `EtendoGoJwtServletOnboardingDatasetTest.java` verifies the seed runs after sequence generation and fails honestly if customer creation fails.
@@ -53,6 +63,9 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
   2. Complete register or login.
   3. If the account already has an environment, confirm the browser lands on `/dashboard`.
   4. Clear `sf_auth_token`, open `/dashboard`, and confirm the browser is redirected back to `/onboarding`.
+  5. From login, request a password reset and confirm the success copy does not reveal whether the email exists.
+  6. Open `/onboarding?resetToken=<token>`, reset the password, then confirm login works with the new password and the old platform token was cleared.
+  7. While authenticated in setup, change the password and confirm the returned platform token replaces the previous `sf_platform_token`.
 
 ### 2. Authenticated shell and navigation chrome
 

@@ -16,7 +16,7 @@ import { login, navigateTo } from '../helpers/auth.js';
  *     (calendar header shows the right month, the day is highlighted).
  *
  * Companion source-level coverage:
- *   tools/app-shell/src/components/ui/__tests__/date-field.test.js
+ *   packages/app-shell-core/src/components/ui/__tests__/date-field.test.js
  *
  * Target page: Sales Order detail (New Order). The form renders an
  * orderDate field which mounts a DateField via EntityForm. The input

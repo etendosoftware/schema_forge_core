@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import { createStableUseApiFetchMock } from '@/test/mockUseApiFetch.js';
 
 // --- Mocks ----------------------------------------------------------------
 
@@ -68,6 +69,10 @@ vi.mock('@/windows/custom/fiscal-config/useFiscalConfig.js', () => ({
 
 vi.mock('@/auth/AuthContext.jsx', () => ({
   useAuth: () => ({ selectedOrg: { id: 'ORG_1' } }),
+}));
+
+vi.mock('@/auth/useApiFetch.js', () => ({
+  useApiFetch: createStableUseApiFetchMock(),
 }));
 
 vi.mock('@/components/ui/badge.jsx', () => ({
@@ -141,7 +146,11 @@ describe('InvoicePreviewModal', () => {
       }),
     );
     // Mock requestAnimationFrame for animation state
-    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => { cb(0); return 0; });
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+      const id = setTimeout(() => cb(0), 0);
+      return id;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => clearTimeout(id));
   });
 
   afterEach(() => {
@@ -216,6 +225,24 @@ describe('InvoicePreviewModal', () => {
     fireEvent.click(screen.getByText('sendToSif'));
     expect(screen.getByText('sendToSifTitle')).toBeInTheDocument();
     expect(screen.getByText('sendToSifBodyTbai')).toBeInTheDocument();
+  });
+
+  it('shows a progress indicator while the SIF request is in flight', async () => {
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/action/')) {
+        return new Promise(resolve =>
+          setTimeout(() => resolve({ ok: true, json: () => Promise.resolve({}) }), 80));
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ response: { data: [] } }) });
+    });
+
+    renderPreview({ specName: 'sales-invoice' });
+    fireEvent.click(screen.getByText('sendToSif'));
+    fireEvent.click(screen.getByRole('button', { name: 'sendToSifConfirm' }));
+
+    // SifSendingModal renders a '%' percentage during the sending phase
+    // The old inline dialog never rendered one — this assertion distinguishes them
+    expect(await screen.findByText(/^\d+%$/)).toBeInTheDocument();
   });
 
   it('keeps current invoice data when preview refetch returns a non-record payload', async () => {

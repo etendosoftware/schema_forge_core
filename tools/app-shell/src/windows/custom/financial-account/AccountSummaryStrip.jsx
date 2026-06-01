@@ -15,10 +15,27 @@ function formatIban(iban) {
  * Horizontal strip shown under the movements toolbar.
  * Displays IBAN with copy button + three KPI figures (balance, inflows, outflows).
  *
- * @param {{ account: object|null, totals: { balance: number, inflows: number, outflows: number, currency: string }, loading: boolean }} props
+ * `totals.windowSuffix` is an optional `{ key, params }` descriptor used to render
+ * the date-range hint next to Inflows/Outflows (e.g. "(7D)", "(hoy)", "(rango)").
+ *
+ * @param {{
+ *   account: object|null,
+ *   totals: {
+ *     balance: number,
+ *     inflows: number,
+ *     outflows: number,
+ *     currency: string,
+ *     windowSuffix?: { key: string, params: object|null } | null,
+ *   },
+ *   loading: boolean,
+ * }} props
  */
 export function AccountSummaryStrip({ account, totals, loading }) {
   const ui = useUI();
+  const suffixText = totals.windowSuffix
+    ? ui(totals.windowSuffix.key, totals.windowSuffix.params ?? undefined)
+    : null;
+  const suffix = suffixText ? ` (${suffixText})` : '';
 
   const handleCopyIban = () => {
     if (account?.iban) {
@@ -88,10 +105,10 @@ export function AccountSummaryStrip({ account, totals, loading }) {
           />
         </div>
 
-        {/* Entradas (30D) */}
+        {/* Entradas — sufijo dinámico según el filtro de fecha activo */}
         <div data-testid="kpi-inflows" className="flex flex-1 flex-col gap-0.5">
           <span className="text-xs leading-4 text-[#3F3F50]">
-            {ui('financeAccountDetailKpiInflows')}
+            {ui('financeAccountDetailKpiInflows')}{suffix}
           </span>
           <MoneyAmount
             value={totals.inflows}
@@ -101,10 +118,10 @@ export function AccountSummaryStrip({ account, totals, loading }) {
           />
         </div>
 
-        {/* Salidas (30D) */}
+        {/* Salidas — mismo sufijo que Entradas */}
         <div data-testid="kpi-outflows" className="flex flex-1 flex-col gap-0.5">
           <span className="text-xs leading-4 text-[#3F3F50]">
-            {ui('financeAccountDetailKpiOutflows')}
+            {ui('financeAccountDetailKpiOutflows')}{suffix}
           </span>
           <MoneyAmount
             value={totals.outflows}

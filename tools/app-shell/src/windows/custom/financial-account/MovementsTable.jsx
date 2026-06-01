@@ -40,7 +40,7 @@ const SKELETON_ROWS = [1, 2, 3, 4, 5];
 // Stable cell keys for skeleton rows (same order/length as the real header columns).
 const SKELETON_COL_KEYS = [
   'select', 'date', 'document', 'contact', 'description',
-  'status', 'type', 'amount', 'balance', 'kebab',
+  'status', 'type', 'glItem', 'amount', 'balance', 'kebab',
 ];
 
 /**
@@ -63,7 +63,7 @@ function renderBody({ loading, movements, emptyLabel, renderRow }) {
   if (movements.length === 0) {
     return (
       <TableRow>
-        <TableCell colSpan={10} className="py-16 text-center text-sm text-[#6c6c89]">
+        <TableCell colSpan={11} className="py-16 text-center text-sm text-[#6c6c89]">
           {emptyLabel}
         </TableCell>
       </TableRow>
@@ -78,6 +78,7 @@ function useTrxTypeLabel() {
     movement.typeLabel ||
     (movement.trxType === 'BPD' ? ui('financeAccountMovementsTypeBPD') : null) ||
     (movement.trxType === 'BPW' ? ui('financeAccountMovementsTypeBPW') : null) ||
+    (movement.trxType === 'BF' ? ui('financeAccountMovementsTypeBF') : null) ||
     movement.trxType ||
     '—';
 }
@@ -128,6 +129,7 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
             <TableHead>{ui('financeAccountMovementsColDescription')}</TableHead>
             <TableHead>{ui('financeAccountMovementsColStatus')}</TableHead>
             <TableHead>{ui('financeAccountMovementsColType')}</TableHead>
+            <TableHead>{ui('financeAccountMovementsColGlItem')}</TableHead>
             <TableHead>{ui('financeAccountMovementsColAmount')}</TableHead>
             <TableHead>{ui('financeAccountMovementsColBalance')}</TableHead>
             <TableHead className="w-10" />
@@ -184,6 +186,11 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
                     <span className="text-sm leading-5 text-[#121217]">{getTrxTypeLabel(movement)}</span>
                     <PostingStatusDot paymentStatus={movement.paymentStatus} />
                   </div>
+                </TableCell>
+
+                {/* G/L Item */}
+                <TableCell className="max-w-[180px] truncate text-sm text-[#121217]">
+                  {movement.glItem || '—'}
                 </TableCell>
 
                 {/* Amount */}

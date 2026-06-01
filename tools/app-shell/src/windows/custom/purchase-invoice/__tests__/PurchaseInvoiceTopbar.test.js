@@ -13,4 +13,9 @@ describe('PurchaseInvoiceTopbar', () => {
     assert.ok(modalBlock, 'expected InvoicePaymentModal to be rendered');
     assert.doesNotMatch(modalBlock[0], /token=\{token\}/);
   });
+
+  it('calls onRefresh (not window.location.reload) for invoice-updated and modal close', () => {
+    assert.match(src, /onRefresh\?\.\(\)/, 'expected onRefresh?.() call');
+    assert.doesNotMatch(src, /window\.location\.reload\(\)/, 'expected no window.location.reload()');
+  });
 });

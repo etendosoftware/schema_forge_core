@@ -190,12 +190,12 @@ export function parseUserFilter(col, input) {
 
 function parseByMode(mode, trimmed, col) {
   switch (mode) {
-    case 'date':        return parseDateFilter(trimmed);
-    case 'enumLabel':   return parseEnumLabelFilter(trimmed, col);
+    case 'date': return parseDateFilter(trimmed);
+    case 'enumLabel': return parseEnumLabelFilter(trimmed, col);
     case 'booleanLabel': return parseBooleanLabelFilter(trimmed, col);
-    case 'numeric':     return parseNumericFilter(trimmed);
-    case 'identifier':  return { mode: 'identifier', value: trimmed };
-    default:            return { mode: 'text', value: trimmed };
+    case 'numeric': return parseNumericFilter(trimmed);
+    case 'identifier': return { mode: 'identifier', value: trimmed };
+    default: return { mode: 'text', value: trimmed };
   }
 }
 
@@ -220,7 +220,7 @@ function parseDateFilter(trimmed) {
 
 function parseEnumLabelFilter(trimmed, col) {
   // Direct code match (e.g. value committed from a dropdown: 'DR', 'CO')
-  if (col.enumLabels && Object.prototype.hasOwnProperty.call(col.enumLabels, trimmed)) {
+  if (col.enumLabels && Object.hasOwn(col.enumLabels, trimmed)) {
     return { mode: 'enumLabel', value: [trimmed] };
   }
   const invertedMap = invertEnumLabels(col.enumLabels);
@@ -380,15 +380,15 @@ export function buildBackendFilter(col, parsed) {
 
 function inferFilterMode(type) {
   switch (type) {
-    case 'date':     return 'date';
+    case 'date': return 'date';
     case 'selector': return 'identifier';
     case 'status':
-    case 'enum':     return 'enumLabel';
-    case 'boolean':  return 'booleanLabel';
+    case 'enum': return 'enumLabel';
+    case 'boolean': return 'booleanLabel';
     case 'number':
     case 'amount':
-    case 'percent':  return 'numeric';
-    default:         return 'text';
+    case 'percent': return 'numeric';
+    default: return 'text';
   }
 }
 
@@ -454,7 +454,7 @@ function buildRowCriteria(col, row) {
   // inSet, picked from the checkbox popover) filter against the ID directly.
   const fieldName = getFilteredKey(col, mode, op);
 
-    if (op === 'isNull' || op === 'isNotNull') {
+  if (op === 'isNull' || op === 'isNotNull') {
     return createNullCriteria(fieldName, op);
   }
 
@@ -478,7 +478,7 @@ function buildRowCriteria(col, row) {
     return generateInSetCriteria(val, fieldName);
 
   }
-  
+
   // Multi-value via a checkbox picker: OR-compose the same operator across items.
   if (Array.isArray(val)) {
     return buildOrCriteria(val, fieldName, op);
@@ -508,14 +508,10 @@ function generateInSetCriteria(val, fieldName) {
   if (items.length === 0) {
     result = null;
 
+  } else if (items.length === 1) {
+    result = [{ fieldName, operator: 'equals', value: items[0] }];
   } else {
-    if (items.length === 1) {
-      result = [{ fieldName, operator: 'equals', value: items[0] }];
-    } else {
-
-      result = [{ fieldName, operator: 'inSet', value: items.join(',') }];
-    }
-
+    result = [{ fieldName, operator: 'inSet', value: items.join(',') }];
   }
   return result;
 }
@@ -526,13 +522,11 @@ function buildOrCriteria(val, fieldName, op) {
   if (items.length === 0) {
     result = null;
 
+  } else if (items.length === 1) {
+    result = [{ fieldName, operator: op, value: items[0] }];
   } else {
-    if (items.length === 1) {
-      result = [{ fieldName, operator: op, value: items[0] }];
-    } else {
-      const clauses = items.map((v) => ({ fieldName, operator: op, value: v }));
-      result = [{ _constructor: 'AdvancedCriteria', operator: 'or', criteria: clauses }];
-    }
+    const clauses = items.map((v) => ({ fieldName, operator: op, value: v }));
+    result = [{ _constructor: 'AdvancedCriteria', operator: 'or', criteria: clauses }];
   }
   return result;
 }

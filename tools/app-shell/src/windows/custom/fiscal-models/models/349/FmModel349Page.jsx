@@ -8,9 +8,9 @@ import '../../fiscal-models.css';
 
 // ── Constants ────────────────────────────────────────────────────
 const STEPPER_INDEX = {
-  pendiente:0, borrador:1, listo:2,
-  presentado:3, presentadoOtra:3, presentadoAcuse:3,
-  omitido:-1,
+  pending:0, draft:1, ready:2,
+  submitted:3, submitted_ext:3, submitted_ack:3,
+  skipped:-1,
 };
 
 const KEY_IDS = ['E', 'S', 'A', 'I'];
@@ -130,7 +130,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
   const totalBase    = operators.reduce((s,o) => s + o.base, 0);
   const rectifications = decl.rectifications ?? 1;
 
-  const stepLabels = ['pendiente', 'borrador', 'listo', 'presentado'].map(id => t(`fm.status.${id}`));
+  const stepLabels = ['pending', 'draft', 'ready', 'submitted'].map(id => t(`fm.status.${id}`));
 
   function handleStatusChange(newStatus) {
     setStatus(newStatus);
@@ -213,7 +213,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
             actions={<button className="fm-349-banner__btn fm-349-banner__btn--outline"><RefreshCw size={13} strokeWidth={1.75} style={{ display:'inline',verticalAlign:'middle',marginRight:4 }} />{t('fm.m349.banner.vies_action')}</button>}
           />
         )}
-        {status === 'listo' && (
+        {status === 'ready' && (
           <Banner349
             type="success"
             icon={<CircleCheck size={18} strokeWidth={1.75} />}

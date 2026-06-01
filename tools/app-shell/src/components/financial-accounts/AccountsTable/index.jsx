@@ -81,6 +81,8 @@ export function AccountsTable({
   error,
   onOpen,
   onReconcile,
+  onEdit,
+  onArchive,
   onRetry,
 }) {
   const ui = useUI();
@@ -108,6 +110,8 @@ export function AccountsTable({
         account={account}
         onOpen={onOpen}
         onReconcile={onReconcile}
+        onEdit={onEdit}
+        onArchive={onArchive}
       />
     ));
   };

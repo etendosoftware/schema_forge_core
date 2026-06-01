@@ -9,6 +9,9 @@ import {
   AccountsToolbar,
   AccountsTable,
 } from '@/components/financial-accounts';
+import { NewAccountWizard } from '@/windows/custom/financial-account/NewAccountWizard.jsx';
+import { EditAccountModal } from '@/windows/custom/financial-account/EditAccountModal.jsx';
+import { ArchiveAccountDialog } from '@/windows/custom/financial-account/ArchiveAccountDialog.jsx';
 
 function filterAccounts(accounts, typeFilter, search) {
   if (!Array.isArray(accounts)) return [];
@@ -28,6 +31,9 @@ export default function FinancialAccountsPage() {
   const { accounts, summary, loading, error, reload } = useFinancialAccounts();
   const [typeFilter, setTypeFilter] = useState(null);
   const [search, setSearch] = useState('');
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [editAccount, setEditAccount] = useState(null);
+  const [archiveTarget, setArchiveTarget] = useState(null);
 
   useSetPageMeta({
     title: ui('financeAccountsPageTitle'),
@@ -56,6 +62,7 @@ export default function FinancialAccountsPage() {
           onTypeFilterChange={setTypeFilter}
           search={search}
           onSearchChange={setSearch}
+          onNewAccount={() => setWizardOpen(true)}
         />
       </div>
 
@@ -74,10 +81,30 @@ export default function FinancialAccountsPage() {
             error={error}
             onOpen={handleOpenAccount}
             onReconcile={handleReconcile}
+            onEdit={setEditAccount}
+            onArchive={setArchiveTarget}
             onRetry={reload}
           />
         </div>
       </div>
+
+      <NewAccountWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        onCreated={reload}
+      />
+      <EditAccountModal
+        open={!!editAccount}
+        account={editAccount}
+        onClose={() => setEditAccount(null)}
+        onSaved={reload}
+      />
+      <ArchiveAccountDialog
+        open={!!archiveTarget}
+        account={archiveTarget}
+        onClose={() => setArchiveTarget(null)}
+        onArchived={reload}
+      />
     </div>
   );
 }

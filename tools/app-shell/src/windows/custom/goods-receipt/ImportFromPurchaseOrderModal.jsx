@@ -4,6 +4,17 @@ import { useUI } from '@/i18n';
 import { useCurrency } from '@/hooks/useCurrency';
 import { formatCurrency } from '@/lib/formatCurrency';
 
+function showImported(errors, ui, importedCount) {
+  if (errors > 0) toast.warning(ui('importedLinesWithErrors').replace('{count}', String(importedCount)).replace('{errors}', String(errors)));
+  else toast.success(ui('linesImportedFromPurchaseOrder').replace('{count}', String(importedCount)));
+}
+
+function tallyImportResult(res, errors, importedCount) {
+  if (!res.ok) errors += 1;
+  else importedCount += 1;
+  return { errors, importedCount };
+}
+
 export default function ImportFromPurchaseOrderModal({ receiptId, bpId, base, headers, onClose, onSuccess }) {
   const ui = useUI();
   const orgCurrency = useCurrency() ?? 'USD';
@@ -205,16 +216,14 @@ export default function ImportFromPurchaseOrderModal({ receiptId, bpId, base, he
             body: JSON.stringify(body),
           });
 
-          if (!res.ok) errors += 1;
-          else importedCount += 1;
+          ({ errors, importedCount } = tallyImportResult(res, errors, importedCount));
 
           lineNo += 10;
         }
       }
 
       if (importedCount > 0) {
-        if (errors > 0) toast.warning(ui('importedLinesWithErrors').replace('{count}', String(importedCount)).replace('{errors}', String(errors)));
-        else toast.success(ui('linesImportedFromPurchaseOrder').replace('{count}', String(importedCount)));
+        showImported(errors, ui, importedCount);
         onSuccess();
         return;
       }

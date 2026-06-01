@@ -7,14 +7,14 @@ vi.mock('@/i18n', () => ({
 import { MovementStatusBadge } from '../MovementStatusBadge.jsx';
 
 describe('MovementStatusBadge', () => {
-  it('renders the label key for a known status (RPR → executed family)', () => {
+  it('renders the consolidated label for a known status (RPR → Completed)', () => {
     render(<MovementStatusBadge status="RPR" />);
-    expect(screen.getByText('financeAccountMovementsStatusRPR')).toBeInTheDocument();
+    expect(screen.getByText('financeAccountMovementsStatusCompleted')).toBeInTheDocument();
   });
 
-  it('renders the label key for a pending status (RPAP)', () => {
+  it('renders the consolidated label for a pending status (RPAP → Draft)', () => {
     render(<MovementStatusBadge status="RPAP" />);
-    expect(screen.getByText('financeAccountMovementsStatusRPAP')).toBeInTheDocument();
+    expect(screen.getByText('financeAccountMovementsStatusDraft')).toBeInTheDocument();
   });
 
   it('applies inline background/text colors based on the status family', () => {
