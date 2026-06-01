@@ -79,7 +79,7 @@ function Banner349({ type, icon, title, sub, actions }) {
 function TotalsCard({ operators }) {
   const t = useUI();
   const totals = {};
-  KEY_IDS.forEach(k => { totals[k] = operators.filter(o => o.key === k).reduce((s,o) => s + o.base, 0); });
+  KEY_IDS.forEach(k => { totals[k] = operators.filter(o => o.key === k).reduce((s,o) => s + (parseFloat(o.base) || 0), 0); });
   return (
     <div className="fm-349-totals">
       <div className="fm-349-totals__header">
@@ -119,6 +119,12 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
   const [selected,     setSelected]     = useState(new Set());
   const [liveOperators, setLiveOperators] = useState(decl._precomputed?.operators ?? null);
   const [liveInvoices,  setLiveInvoices]  = useState(decl._precomputed?.invoices  ?? null);
+
+  // Sync when background polling updates _precomputed in the parent
+  React.useEffect(() => {
+    if (decl._precomputed?.operators) setLiveOperators(decl._precomputed.operators);
+    if (decl._precomputed?.invoices)  setLiveInvoices(decl._precomputed.invoices);
+  }, [decl._precomputed]);
   const [invoiceNifFilter, setInvoiceNifFilter] = useState(null);
   const [computing,    setComputing]    = useState(false);
   const [generating,   setGenerating]   = useState(false);
@@ -136,7 +142,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
 
   const blocking     = decl.incidents?.blocking ?? 0;
   const viesPending  = operators.filter(o => o.vies === 'pending').length;
-  const totalBase    = operators.reduce((s,o) => s + o.base, 0);
+  const totalBase    = operators.reduce((s,o) => s + (parseFloat(o.base) || 0), 0);
   const rectifications = decl.rectifications ?? 1;
 
   const stepLabels = ['pending', 'draft', 'ready', 'submitted'].map(id => t(`fm.status.${id}`));
@@ -229,7 +235,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
             </div>
             <div className="fm-349-header__subtitle">
               {t('fm.m349.subtitle')} · {decl.type === 'ord' ? t('fm.m349.type.ord') : t('fm.m349.type.com')}
-              {declNif && ` · NIF: ${declNif}`} · {t('fm.m349.periodicity')}: {t('fm.m349.monthly')}
+              {declNif && ` · NIF: ${declNif}`} · {t('fm.m349.periodicity')}: {/^T\d$/.test(decl.period) ? 'Trimestral' : t('fm.m349.monthly')}
             </div>
           </div>
           <div className="fm-349-header__actions">

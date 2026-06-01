@@ -17,13 +17,22 @@ export default function FiscalModelsPage({ token, apiBaseUrl }) {
     setView({ type: 'list' });
   }, []);
 
+  const handleComputeUpdate = useCallback((computedMap349) => {
+    setView(v => {
+      if (v.type !== '349') return v;
+      const updated = computedMap349[v.decl.id];
+      if (!updated) return v;
+      return { ...v, decl: { ...v.decl, _precomputed: updated } };
+    });
+  }, []);
+
   const inDetail = view.type === '303' || view.type === '349';
 
   return (
     <>
       {/* FmListPage stays mounted at all times so useFiscalAutoCompute keeps polling */}
       <div style={inDetail ? { display: 'none' } : undefined}>
-        <FmListPage onSelect={handleSelect} token={token} apiBaseUrl={apiBaseUrl} />
+        <FmListPage onSelect={handleSelect} token={token} apiBaseUrl={apiBaseUrl} onComputeUpdate={handleComputeUpdate} />
       </div>
 
       {view.type === '303' && (

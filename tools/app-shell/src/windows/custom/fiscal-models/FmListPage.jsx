@@ -185,7 +185,7 @@ function ResultCell({ isComputing, error, result, t }) {
 }
 
 // ── Main component ───────────────────────────────────────────────
-export default function FmListPage({ declarations: propDecls, onSelect, onStatusChange, token, apiBaseUrl }) {
+export default function FmListPage({ declarations: propDecls, onSelect, onStatusChange, onComputeUpdate, token, apiBaseUrl }) {
   const ui = useUI();
   const t  = ui;
 
@@ -227,6 +227,12 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
     apiBaseUrl,
     pollIntervalMs:  180_000,
   });
+
+  useEffect(() => {
+    if (onComputeUpdate && Object.keys(computedMap349).length > 0) {
+      onComputeUpdate(computedMap349);
+    }
+  }, [computedMap349, onComputeUpdate]);
 
   const [modelFilter, setModelFilter]   = useState('all');
   const [yearFilter,  setYearFilter]    = useState('all');
