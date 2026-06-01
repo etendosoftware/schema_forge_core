@@ -316,11 +316,13 @@ export async function compute349Operators(decl, { token, apiBaseUrl } = {}) {
   return null;
 }
 
-export async function generate349File(decl, { token, apiBaseUrl } = {}) {
+export async function generate349File(decl, { token, apiBaseUrl, phone, contact } = {}) {
   if (!token || !apiBaseUrl) return false;
   try {
     const base = apiBaseUrl.replace(/\/[^/]+$/, '');
     const params = new URLSearchParams({ year: decl.year, period: decl.period });
+    if (phone)   params.set('phone',   phone);
+    if (contact) params.set('contact', contact);
     const res = await fetch(`${base}/fiscal349/generate?${params}`, {
       headers: { Authorization: `Bearer ${token}` },
     });

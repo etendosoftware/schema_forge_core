@@ -157,9 +157,9 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
     }
   }
 
-  async function handleGenerate() {
+  async function handleGenerate({ phone, contact } = {}) {
     setGenerating(true);
-    const ok = await generate349File(decl, { token, apiBaseUrl });
+    const ok = await generate349File(decl, { token, apiBaseUrl, phone, contact });
     setGenerating(false);
     if (!ok) console.error('generate349File failed for', decl.year, decl.period);
   }
@@ -242,7 +242,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
               <Eye size={14} strokeWidth={1.75} />
               {pdfLoading ? (t('fm.action.generating') ?? 'Generando…') : t('fm.action.preview_pdf')}
             </button>
-            <button className="fm-349-header__btn" onClick={handleGenerate} disabled={generating}>
+            <button className="fm-349-header__btn" onClick={() => setShowFilegen(true)} disabled={generating}>
               <FileDown size={14} strokeWidth={1.75} />
               {generating ? (t('fm.action.generating') ?? 'Generando…') : t('fm.action.generate_file')}
             </button>
@@ -346,13 +346,8 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
                 ))}
               </div>
               <div style={{ flex: 1 }} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12, color: '#6b7280', background: '#fff' }}>
-                  <Search size={13} strokeWidth={1.75} style={{ flexShrink: 0 }} /> <span>{t('fm.m349.search_placeholder')}</span>
-                </div>
-                <button className="fm-toolbar__btn fm-toolbar__btn--primary" style={{ fontSize: 12, padding: '5px 12px' }}>
-                  + {t('fm.m349.add_operator')}
-                </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12, color: '#6b7280', background: '#fff' }}>
+                <Search size={13} strokeWidth={1.75} style={{ flexShrink: 0 }} /> <span>{t('fm.m349.search_placeholder')}</span>
               </div>
             </div>
 
@@ -485,7 +480,11 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
         <PresentModal decl={decl} onConfirm={({ status: s }) => handleStatusChange(s)} onClose={() => setShowPresent(false)} />
       )}
       {showFilegen && (
-        <FileGenModal decl={decl} onConfirm={() => {}} onClose={() => setShowFilegen(false)} />
+        <FileGenModal
+          decl={decl}
+          onConfirm={({ phone, contact }) => handleGenerate({ phone, contact })}
+          onClose={() => setShowFilegen(false)}
+        />
       )}
       {showPdf && (
         <DocumentPreview

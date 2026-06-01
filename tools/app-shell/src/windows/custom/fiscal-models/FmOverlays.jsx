@@ -109,18 +109,31 @@ export function PresentModal({ decl, onConfirm, onClose }) {
 export function FileGenModal({ decl, onConfirm, onClose }) {
   const ui = useUI();
   const t = ui;
+  const [phone,   setPhone]   = React.useState(decl?.phone   ?? '');
+  const [contact, setContact] = React.useState(decl?.contact ?? '');
+  const FIELD = { fontSize: 12, padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: 4, width: '100%', outline: 'none' };
   return (
     <div className="fm-modal-overlay" role="dialog" aria-modal="true">
       <div className="fm-present-modal">
         <div className="fm-present-modal__title">{t('fm.filegen.title')}</div>
         <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 16 }}>
-          {t('fm.filegen.desc')} <strong>{decl?.model} {decl?.year}</strong>
+          {t('fm.filegen.desc')} <strong>{decl?.model} {decl?.year} {decl?.period}</strong>
         </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+          <label style={{ fontSize: 11, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            Persona de contacto <span style={{ fontSize: 10, color: '#9ca3af' }}>(para el fichero .349)</span>
+            <input style={FIELD} value={contact} onChange={e => setContact(e.target.value)} placeholder="Nombre y apellidos" />
+          </label>
+          <label style={{ fontSize: 11, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            Teléfono de contacto
+            <input style={FIELD} value={phone} onChange={e => setPhone(e.target.value)} placeholder="91 000 00 00" />
+          </label>
+        </div>
         <div className="fm-present-modal__actions">
           <button className="fm-present-modal__btn" onClick={onClose}>{t('fm.action.cancel')}</button>
           <button
             className="fm-present-modal__btn fm-present-modal__btn--primary"
-            onClick={() => { onConfirm?.(); onClose(); }}
+            onClick={() => { onConfirm?.({ phone, contact }); onClose(); }}
           >
             {t('fm.filegen.generate')}
           </button>
