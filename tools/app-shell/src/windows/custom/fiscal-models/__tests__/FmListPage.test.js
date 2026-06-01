@@ -27,3 +27,18 @@ describe('FmListPage — table', () => {
 describe('FmListPage — navigation', () => {
   it('calls onSelect with declaration on row click', () => assert.match(src, /onSelect/));
 });
+
+describe('FmListPage — 349 auto-compute wiring', () => {
+  it('imports checkModified349', () =>
+    assert.match(src, /checkModified349/));
+  it('imports compute349Operators', () =>
+    assert.match(src, /compute349Operators/));
+  it('defines draftDecls349', () =>
+    assert.match(src, /draftDecls349/));
+  it('calls useFiscalAutoCompute twice (once for 303, once for 349)', () => {
+    const matches = src.match(/useFiscalAutoCompute\s*\(/g);
+    assert.ok(matches && matches.length >= 2, 'expected at least 2 useFiscalAutoCompute calls');
+  });
+  it('349 computed data is passed on row click (computedMap349)', () =>
+    assert.match(src, /computedMap349/));
+});
