@@ -4,6 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { useRowDelete } from '@/hooks/useRowDelete';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
+import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
+import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.jsx';
 import GoodsShipmentPage from '@generated/goods-shipment/generated/web/goods-shipment/GoodsShipmentPage';
 import GoodsShipmentTable from '@generated/goods-shipment/generated/web/goods-shipment/GoodsShipmentTable';
 import BulkInvoiceFromShipment from '@generated/goods-shipment/custom/BulkInvoiceFromShipment';
@@ -56,7 +58,8 @@ export default function GoodsShipmentWindow({ windowName, recordId, apiBaseUrl, 
     onSuccess: () => setRefreshKey(k => k + 1),
   });
 
-  const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
+  const { headers, createContactCtxValue, contactPortal } =
+    useCreateContactModal({ apiBaseUrl, token, documentType: 'sale' });
 
   const rowQuickActions = useMemo(() => ({
     enabled: true,
@@ -76,17 +79,20 @@ export default function GoodsShipmentWindow({ windowName, recordId, apiBaseUrl, 
 
   if (recordId) {
     return (
-      <GoodsShipmentPage
-        windowName={windowName}
-        recordId={recordId}
-        apiBaseUrl={apiBaseUrl}
-        token={token}
-        Table={CustomGoodsShipmentTable}
-        processes={[]}
-        draftMode={{ enabled: true, label: 'Confirm', style: 'positive', onConfirm: () => window.dispatchEvent(new CustomEvent('goods-shipment:open-confirm-modal')) }}
-        hideMoreMenu={true}
-        {...rest}
-      />
+      <CreateContactContext.Provider value={createContactCtxValue}>
+        <GoodsShipmentPage
+          windowName={windowName}
+          recordId={recordId}
+          apiBaseUrl={apiBaseUrl}
+          token={token}
+          Table={CustomGoodsShipmentTable}
+          processes={[]}
+          draftMode={{ enabled: true, label: 'Confirm', style: 'positive', onConfirm: () => window.dispatchEvent(new CustomEvent('goods-shipment:open-confirm-modal')) }}
+          hideMoreMenu={true}
+          {...rest}
+        />
+        {contactPortal}
+      </CreateContactContext.Provider>
     );
   }
 

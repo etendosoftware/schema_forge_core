@@ -1,54 +1,62 @@
-# ETP-4083 Cross-Domain Plan: SonarQube Critical-Issue Cleanup
+# ETP-4083 Cross-Domain Plan: i18n + Behavior-Preserving Refactors
 
 ## Domains
 
-- `generator-change`: Sonar fixes in CLI extractors and generators
-  (`extract-*.js`, `generate-contract.js`, `generate-report-template.js`,
-  `quality-gate.js`, `regen-all.js`, `resolve-curated.js`).
-- `platform-change`: Sonar fixes in shared app-shell components and libs
-  (`DataTable`, `DetailView`, `EntityForm`, `EntityCreationModal`, `ListView`,
-  `CalendarView`, `AdvancedFilterBuilder`, `SideMenu`, `useBarcodeScanner`,
-  `gridQuery`, `mockFetch`, `PreviewPage`).
-- `shared-custom-capability`: Sonar fixes in the shared `LocationEditorModal`.
-- `window:goods-receipt` / `window:product`: Sonar fixes in the custom
-  components of those windows (`ImportFromPurchaseOrderModal`, `ProductSidebar`).
-- `repo-infra`: adjustment to the `sonar-scan.yml` analysis workflow.
-- `unknown`: CLI maintenance scripts and report tooling
-  (`check-version.js`, `migrate-*.js`, `pr-review.js`, `report-*.js`,
-  `validate-schema.js`, `tools/report-server/server.js`), the Tailwind
-  purge guard test and config, `.gitignore`, and `feedback.md`.
+- `window:price-list`: internationalize the price list product prices panel
+  (`PriceListProductPrices.jsx`) — replace hardcoded strings with i18n hooks.
+- `app-shell-core`: add the i18n keys consumed by the price list panel and the
+  price list load error to `locales/en_US.json` and `locales/es_ES.json`.
+- `platform-change`: behavior-preserving refactors in shared app-shell code —
+  extract line net and tax factor helpers in `useLineGrossAmount.js`, and rename
+  the onboarding stream helpers in `onboardingApi.js` for clarity.
+- `generator-change`: behavior-preserving refactors in the CLI — extract the
+  i18n check predicates in `quality-gate/checks/i18n.js`, and refactor argument
+  parsing in `pipeline.js`'s `parseArgs`.
+- `unknown`: extract field/entity helpers in the `neo-writer.js` populate
+  functions (no behavior change).
+
+Detected vertical: `finance` (single window: `price-list`).
 
 ## Why This Cannot Be Split Cleanly
 
-This PR is a single transversal SonarQube remediation pass (ETP-4083) that
-reduces critical issues across the whole repository. There is no new feature
-and no behavior change — only quality refactors. The findings are reported by
-one Sonar analysis run over the full tree, so the fixes naturally span every
-scope at once. Splitting them per scope would create many tiny PRs with no
-independent value, all closing the same Sonar quality gate, and would make the
-overall "critical issues reduced" target impossible to review as a unit.
+This PR is a single follow-up pass on ETP-4083 that finishes the price list
+panel internationalization and lands the small, behavior-preserving readability
+refactors that fell out of it. The i18n change spans the window component
+(`window:price-list`) and the shared locale catalogs (`app-shell-core`) as one
+inseparable unit — the new keys are meaningless without the component that reads
+them, and vice versa. The accompanying refactors (`platform-change`,
+`generator-change`, `unknown`) are pure structural cleanups discovered while
+touching those files; they carry no functional change and have no independent
+review value as standalone PRs. Splitting per scope would produce several
+trivial PRs that only make sense reviewed together.
 
 ## Review Order
 
-1. Review the generator (`cli/src/*`) Sonar fixes — confirm no behavior change
-   in extractors/generators.
-2. Review the platform (app-shell) component fixes — confirm rendering and
-   props are unchanged.
-3. Review the per-window custom component fixes (goods-receipt, product) and the
-   shared `LocationEditorModal`.
-4. Review the Tailwind purge guard and `sonar-scan.yml` workflow change.
+1. Review the price list panel i18n (`PriceListProductPrices.jsx`) together with
+   the new keys in `en_US.json` / `es_ES.json` — confirm every user-visible
+   string resolves through a hook and both locales have matching keys.
+2. Review the platform refactors (`useLineGrossAmount.js`, `onboardingApi.js`) —
+   confirm extracted helpers and renamed functions preserve behavior.
+3. Review the generator refactors (`pipeline.js` `parseArgs`,
+   `quality-gate/checks/i18n.js` predicates) — confirm no CLI behavior change.
+4. Review the `neo-writer.js` helper extraction — confirm populate output is
+   unchanged.
 5. Review this plan.
 
 ## Tests
 
-- `make test` (CLI test suite).
-- `npm test --workspace=tools/app-shell` (app-shell vitest suite, incl. the
-  Tailwind purge guard and `CalendarView.indexEvents` test).
-- `node cli/src/validate-pipeline.js` clean for touched artifacts.
-- Manual smoke of goods-receipt and product custom windows in `make dev`.
+- `make test` (CLI test suite, covers `pipeline.js`, `quality-gate/checks/i18n.js`,
+  and `neo-writer.js`).
+- `npm test --workspace=tools/app-shell` (app-shell vitest suite, covers
+  `useLineGrossAmount` and the price list panel).
+- i18n quality gate clean — no hardcoded strings, both locales in sync.
+- Manual smoke of the price list window in `make dev` (panel labels render in
+  Spanish, load error message is translated).
 
 ## Rollback
 
-These are behavior-preserving refactors, so rollback is a straight revert of the
-PR merge commit. If a single fix regresses, revert that file to its pre-PR state;
-no data migration or NEO re-push is involved.
+Every change is behavior-preserving (i18n + structural refactors), so rollback is
+a straight revert of the PR merge commit. If a single refactor regresses, revert
+that file to its pre-PR state; no data migration, NEO re-push, or
+`export.database` is involved. Reverting the i18n change restores the prior
+hardcoded strings without breaking the panel.

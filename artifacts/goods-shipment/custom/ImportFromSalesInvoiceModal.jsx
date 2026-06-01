@@ -103,6 +103,7 @@ const buildLineBody = async ({ line, qty, invoiceId: shipmentId, lineNo }) => ({
   movementQuantity: qty,
   uOM: line.uOM || null,
   ...(line._orderLineId ? { salesOrderLine: line._orderLineId } : {}),
+  invoiceLineId: line.id,
   lineNo,
 });
 
