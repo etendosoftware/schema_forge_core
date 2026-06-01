@@ -172,6 +172,30 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
   const toggleSelect = id => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const allSelected  = filteredOps.length > 0 && filteredOps.every(o => selected.has(o.id));
 
+  // Derive invoice counts per NIF from liveInvoices (same compute, no extra request)
+  const originByNif = React.useMemo(() => {
+    if (!liveInvoices) return {};
+    const map = {};
+    liveInvoices.forEach(inv => {
+      const k = inv.nifIva;
+      if (!map[k]) map[k] = { Compra: 0, Venta: 0 };
+      map[k][inv.type] = (map[k][inv.type] ?? 0) + 1;
+    });
+    return map;
+  }, [liveInvoices]);
+
+  function formatOrigin(op) {
+    if (op.origin) return op.origin; // mock or manually set
+    const counts = originByNif[op.nif];
+    if (!counts) return null;
+    const c = counts['Compra'] ?? 0;
+    const v = counts['Venta']  ?? 0;
+    if (c > 0 && v > 0) return `${c} compra, ${v} venta`;
+    if (c > 0) return `${c} factura${c !== 1 ? 's' : ''} compra`;
+    if (v > 0) return `${v} factura${v !== 1 ? 's' : ''} venta`;
+    return null;
+  }
+
   const declNif = decl.nif ?? '';
 
   const TABS = [
@@ -369,7 +393,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
                       <td><KeyBadge k={op.key} /><span style={{ marginLeft: 5, fontSize: 11, color: '#6b7280' }}>{t(`fm.m349.key.${op.key}`)}</span></td>
                       <td style={{ textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>{formatAmount(op.base)}</td>
                       <td><ViesBadge status={op.vies} /></td>
-                      <td><span className="fm-origin-link">{op.origin}</span></td>
+                      <td><span className="fm-origin-link">{formatOrigin(op) ?? <span style={{ color: '#d1d5db' }}>—</span>}</span></td>
                       <td><button className="fm-table-action"><Eye size={12} strokeWidth={1.75} style={{ display:'inline',verticalAlign:'middle',marginRight:4 }} />{t('fm.action.open')}</button></td>
                     </tr>
                   ))}
