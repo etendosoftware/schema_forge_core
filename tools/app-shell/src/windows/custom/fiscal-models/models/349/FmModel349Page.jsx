@@ -114,6 +114,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
   const [status,      setStatus]      = useState(decl.status);
   const [activeTab,   setActiveTab]   = useState('operators');
   const [keyFilter,   setKeyFilter]   = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showPresent, setShowPresent] = useState(false);
   const [showFilegen, setShowFilegen] = useState(false);
   const [selected,     setSelected]     = useState(new Set());
@@ -175,7 +176,13 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
     if (url) setShowPdf(true);
   }
 
-  const filteredOps  = keyFilter === 'all' ? operators : operators.filter(o => o.key === keyFilter);
+  const searchLower  = searchQuery.trim().toLowerCase();
+  const filteredOps  = operators
+    .filter(o => keyFilter === 'all' || o.key === keyFilter)
+    .filter(o => !searchLower ||
+      o.name.toLowerCase().includes(searchLower) ||
+      o.nif.toLowerCase().includes(searchLower)
+    );
   const toggleSelect = id => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const allSelected  = filteredOps.length > 0 && filteredOps.every(o => selected.has(o.id));
 
@@ -352,8 +359,17 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
                 ))}
               </div>
               <div style={{ flex: 1 }} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12, color: '#6b7280', background: '#fff' }}>
-                <Search size={13} strokeWidth={1.75} style={{ flexShrink: 0 }} /> <span>{t('fm.m349.search_placeholder')}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', border: `1px solid ${searchQuery ? '#6366f1' : '#e2e8f0'}`, borderRadius: 6, fontSize: 12, color: '#6b7280', background: '#fff', minWidth: 220 }}>
+                <Search size={13} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+                <input
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder={t('fm.m349.search_placeholder')}
+                  style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 12, color: '#374151', width: '100%' }}
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0, lineHeight: 1, fontSize: 14 }}>×</button>
+                )}
               </div>
             </div>
 
@@ -362,7 +378,14 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
 
             {/* Operators table */}
             <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', marginBottom: 2 }}>{t('fm.m349.operators_count', { count: operators.length })}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', marginBottom: 2 }}>
+                {t('fm.m349.operators_count', { count: filteredOps.length })}
+                {filteredOps.length !== operators.length && (
+                  <span style={{ fontWeight: 400, color: '#6b7280', marginLeft: 6 }}>
+                    {t('fm.m349.operators_filtered', { total: operators.length }) ?? `de ${operators.length}`}
+                  </span>
+                )}
+              </div>
               <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 10 }}>
                 {t('fm.m349.operators_sub')}
               </div>

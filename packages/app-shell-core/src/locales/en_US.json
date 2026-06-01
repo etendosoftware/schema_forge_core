@@ -19450,6 +19450,7 @@
     "fm.m349.search_placeholder": "Search operator or VAT ID",
     "fm.m349.add_operator": "Add operator",
     "fm.m349.operators_count": "{count} operators",
+    "fm.m349.operators_filtered": "of {total}",
     "fm.m349.operators_sub": "Source of truth for the .349 file — each row will be a reconcilable record in the generated file.",
     "fm.m349.coming_soon": "{tab} — content available soon.",
     "amortization": "Amortization",

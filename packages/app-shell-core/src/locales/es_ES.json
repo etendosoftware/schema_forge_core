@@ -19716,6 +19716,7 @@
     "fm.m349.search_placeholder": "Buscar operador o NIF-IVA",
     "fm.m349.add_operator": "Añadir operador",
     "fm.m349.operators_count": "{count} operadores",
+    "fm.m349.operators_filtered": "de {total}",
     "fm.m349.operators_sub": "Fuente de verdad del fichero .349 — cada fila será un registro reconciliable en el fichero generado.",
     "fm.m349.coming_soon": "{tab} — contenido disponible próximamente.",
     "amortization": "Amortización",
