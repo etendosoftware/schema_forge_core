@@ -248,8 +248,8 @@ export function use349Pdf() {
     try {
       const totalAmount = operators.reduce((s, op) => s + Number(op.base || 0), 0);
       const data = {
-        nif:               decl.nif      ?? '',
-        orgName:           decl.orgName  ?? '',
+        nif:               decl._precomputed?.orgNif  ?? decl.nif     ?? '',
+        orgName:           decl._precomputed?.orgName ?? decl.orgName ?? '',
         year:              decl.year,
         period:            decl.period,
         contact:           decl.contact  ?? '',

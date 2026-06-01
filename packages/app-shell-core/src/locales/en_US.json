@@ -19393,6 +19393,7 @@
     "fm.compare.row.exports": "Exports",
     "fm.action.compute": "Calculate",
     "fm.action.computing": "Calculating…",
+    "fm.action.generating": "Generating…",
     "fm.action.filter": "Filter",
     "fm.action.sort": "Sort",
     "fm.list.mode.to_real": "Switch to real data",

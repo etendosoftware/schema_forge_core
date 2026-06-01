@@ -19659,6 +19659,7 @@
     "fm.compare.row.exports": "Exportaciones",
     "fm.action.compute": "Calcular",
     "fm.action.computing": "Calculando…",
+    "fm.action.generating": "Generando…",
     "fm.action.filter": "Filtrar",
     "fm.action.sort": "Ordenar",
     "fm.list.mode.to_real": "Cambiar a datos reales",
