@@ -541,6 +541,37 @@ describe('populateSpec (process, incremental)', () => {
     assert.equal(result.changes.fields.created, 1); // NewParam
   });
 
+  it('deletes duplicate entities, keeping the first one', async () => {
+    // A process spec must have exactly one entity. Seed two pointing at the
+    // same spec to exercise the deleteDuplicateEntities cleanup path.
+    const ENT_KEEP = 'ENT_PROC_KEEP';
+    const ENT_DUP = 'ENT_PROC_DUP';
+
+    const client = createMockClient({
+      specs: [[SPEC_ID, { spec_type: 'P', ad_window_id: null, ad_process_id: PROCESS_ID }]],
+      entities: [
+        [ENT_KEEP, { etgo_sf_spec_id: SPEC_ID, ad_tab_id: null, name: 'Generate Invoices' }],
+        [ENT_DUP, { etgo_sf_spec_id: SPEC_ID, ad_tab_id: null, name: 'Generate Invoices (dup)' }],
+      ],
+      fields: [
+        ['FLD_DUP', { etgo_sf_entity_id: ENT_DUP, ad_column_id: null, java_qualifier: 'Stale' }],
+      ],
+      processes: [{ ad_process_id: PROCESS_ID, name: 'Generate Invoices' }],
+      processParas: [
+        { ad_process_para_id: 'PP1', name: 'DateFrom', defaultvalue: null, seqno: 10, ad_process_id: PROCESS_ID },
+      ],
+    });
+
+    const result = await populateSpec(client, { specId: SPEC_ID, moduleId: MODULE_ID });
+
+    // First entity reused, the duplicate removed along with its fields.
+    assert.equal(result.entities[0].entityId, ENT_KEEP);
+    assert.equal(result.changes.entities.deleted, 1);
+    assert.equal(client.store.entities.has(ENT_DUP), false);
+    assert.equal(client.store.entities.has(ENT_KEEP), true);
+    assert.equal(client.store.fields.has('FLD_DUP'), false);
+  });
+
   it('is idempotent for process specs', async () => {
     const EXISTING_ENT = 'ENT_PROC_IDEM';
     const EXISTING_FLD = 'FLD_PROC_IDEM';

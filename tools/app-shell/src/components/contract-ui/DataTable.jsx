@@ -244,6 +244,116 @@ function isBelowMin(f, valuesRef) {
   return !isNaN(Number(v)) && Number(v) < f.min;
 }
 
+function buildSelectorUrl(apiBaseUrl, entity, field) {
+  return apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${field.column}` : null;
+}
+
+function displayOrDash(displayVal) {
+  return displayVal != null && displayVal !== '' ? displayVal : '—';
+}
+
+function getNumericCellAlignClass(isNumeric) {
+  return isNumeric ? ' text-right tabular-nums' : '';
+}
+
+function resolveNumericInputMode(field, isNumeric) {
+  let numericInputMode = field.inputMode;
+  if (!numericInputMode && isNumeric) {
+    numericInputMode = field.type === 'integer' ? 'numeric' : 'decimal';
+  }
+  return numericInputMode;
+}
+
+function formatNumericInputValue(isTwoDecimal, rawValue, formatTwoDecimals) {
+  return isTwoDecimal && rawValue !== '' && rawValue != null
+    ? formatTwoDecimals(rawValue)
+    : (rawValue ?? '');
+}
+
+function isLookupSearchField(field) {
+  return field.type === 'search' && field.lookup;
+}
+
+function isStaticSelectField(field) {
+  return field.type === 'select' && field.options?.length;
+}
+
+/**
+ * Renders the inline-add-row cell for a `selector` field. When the catalog has
+ * pre-loaded options it shows a Radix <Select>; otherwise it falls back to the
+ * lazy-loading <InlineSearchCombo> backed by the selector URL.
+ */
+function renderSelectorCell({
+  catalogs, entity, field, apiBaseUrl, col, values, touchedFieldsRef,
+  handleChange, handleFieldChange, handleKeyDown, isFirst, firstInputRef,
+  fieldLabel, selectorContext, token,
+}) {
+  const options = getCatalogOptions(catalogs, entity, field);
+  const selectorUrl = buildSelectorUrl(apiBaseUrl, entity, field);
+
+  if (options.length === 0) {
+    if (!selectorUrl) return <TableCell key={col.key} className="py-1 px-2"/>;
+    return (
+        <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
+          <InlineSearchCombo
+              field={field}
+              value={values[field.key] ?? ''}
+              displayLabel={values[field.key + '$_identifier'] || ''}
+              options={[]}
+              onChange={(id, label, selectedItem) => {
+                touchedFieldsRef.current.add(field.key);
+                handleChange(field.key + '$_identifier', label || '');
+                handleFieldChange(field.key, id, selectedItem);
+              }}
+              onKeyDown={handleKeyDown}
+              inputRef={isFirst ? firstInputRef : undefined}
+              placeholder={fieldLabel}
+              selectorUrl={selectorUrl}
+              selectorContext={selectorContext}
+              token={token}
+          />
+        </TableCell>
+    );
+  }
+  return (
+      <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
+        <Select
+            value={values[field.key] || undefined}
+            onValueChange={(val) => {
+              if (val === '__empty__') {
+                handleChange(field.key + '$_identifier', '');
+                handleFieldChange(field.key, '', null);
+                return;
+              }
+              const opt = options.find(o => o.id === val);
+              if (opt) {
+                handleChange(field.key + '$_identifier', opt.name || opt.label || opt._identifier || '');
+              }
+              handleFieldChange(field.key, val, opt);
+            }}
+        >
+          <SelectTrigger
+              ref={isFirst ? firstInputRef : undefined}
+              data-testid={`inline-add-field-${field.key}`}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') handleKeyDown(e);
+              }}
+              className="w-full h-8 text-sm bg-white focus:ring-2 focus:ring-primary"
+          >
+            <SelectValue placeholder={fieldLabel}/>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__empty__">&nbsp;</SelectItem>
+            {options.map(opt => (
+                <SelectItem key={opt.id}
+                            value={opt.id}>{opt.name || opt.label || opt._identifier || opt.id}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </TableCell>
+  );
+}
+
 /**
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
@@ -351,14 +461,8 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           await Promise.all(pendingCalloutsRef.current);
         }
         // Read from ref (always current) instead of the stale `values` closure.
-        const coercedValues = { ...valuesRef.current };
-        for (const f of fields) {
-          if (NUMERIC_FIELD_TYPES.has(f.type) && coercedValues[f.key] !== '' && coercedValues[f.key] != null) {
-            const raw = String(coercedValues[f.key]);
-            const parsed = f.type === 'integer' ? Number.parseInt(raw, 10) : Number.parseFloat(raw);
-            if (!Number.isNaN(parsed)) coercedValues[f.key] = parsed;
-          }
-        }
+        const coercedValues = coerceFieldValues(valuesRef, fields);
+
         const result = await onAdd(coercedValues);
         if (result === false || result == null) {
           return false;
@@ -386,6 +490,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
             next[key] = '';
           }
         }
+
         valuesRef.current = next;
         setValues(next);
         touchedFieldsRef.current = new Set();
@@ -438,7 +543,10 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
       if (touchedFieldsRef.current.size === 0) {
         onCancel();
       } else {
-        void submitLine({ closeAfterSave: true });
+        submitLine({ closeAfterSave: true }).catch((err) => {
+          // Errors are surfaced to the user via toast inside onAdd; log for diagnostics.
+          console.error('Failed to submit inline line on outside click:', err);
+        });
       }
     };
     document.addEventListener('mousedown', handler, true);
@@ -467,41 +575,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     // Also fire top-level display fields from selectedItem (mirrors EntityForm behavior).
     // Skips structural/object fields; fires e.g. product_uOM = "Unit" for identifier resolution.
     if (selectedItem && typeof selectedItem === 'object') {
-      for (const [topField, topVal] of Object.entries(selectedItem)) {
-        if (topField === 'id' || topField === '_aux' || topField === 'label'
-            || topField === 'name' || topField === 'searchKey'
-            || typeof topVal === 'object' || topVal === null) continue;
-        // Price from the document's price list. Mapping depends on price list type:
-        //   - Gross list (isTaxIncluded=true): standardPrice is the gross price → grossUnitPrice
-        //   - Net list   (isTaxIncluded=false): standardPrice is the net price   → unitPrice
-        // Mark the target field as touched so the callout does not overwrite it (some callouts
-        // look up the price themselves and may return a different value from another price list).
-        if (topField === 'standardPrice' && topVal != null) {
-          const isGross = selectedItem?.isTaxIncluded !== false;
-          if (isGross) {
-            snapshot['grossUnitPrice'] = topVal;
-            handleChange('grossUnitPrice', topVal);
-            snapshot['grossListPrice'] = topVal;
-            handleChange('grossListPrice', topVal);
-            touchedFieldsRef.current.add('grossUnitPrice');
-            touchedFieldsRef.current.add('grossListPrice');
-          } else {
-            snapshot['unitPrice'] = topVal;
-            handleChange('unitPrice', topVal);
-            snapshot['listPrice'] = topVal;
-            handleChange('listPrice', topVal);
-            touchedFieldsRef.current.add('unitPrice');
-            touchedFieldsRef.current.add('listPrice');
-          }
-          continue;
-        }
-        const ctxKey = `${key}_${topField}`;
-        if (!(ctxKey in snapshot)) {
-          // Keep display hints only in the callout snapshot.
-          // Persisting these transient keys in row state can leak them into POST payloads.
-          snapshot[ctxKey] = topVal;
-        }
-      }
+      updateSnapshotWithSelectedItem(selectedItem, snapshot, handleChange, touchedFieldsRef, key);
     }
     // Notify parent for callout execution — pass computed snapshot (not stale React state).
     // applyUpdates updates valuesRef synchronously so submitLine always reads the latest
@@ -543,7 +617,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
       )}
       {columns.map(col => {
         const field = fieldMap[col.key];
-        const fieldLabel = field ? (t(field.column) ?? field.label ?? field.key) : (t(col.column) ?? col.label ?? col.key);
+        const fieldLabel = getFieldLabel(field, t, col);
         if (!field) {
           // Show callout-derived values if available, otherwise dash.
           // Prefer $_identifier (human-readable) over raw ID for FK fields.
@@ -551,14 +625,10 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           const identVal = values[col.key + '$_identifier'];
           const isNumericDerived = NUMERIC_FIELD_TYPES.has(col.type);
           const isTwoDecimalDerived = col.type === 'amount' || col.type === 'price';
-          let displayVal = identVal || rawVal;
-          if (isTwoDecimalDerived && displayVal != null && displayVal !== '') {
-            const n = typeof displayVal === 'string' ? Number.parseFloat(displayVal) : displayVal;
-            if (Number.isFinite(n)) displayVal = n.toFixed(2);
-          }
+          let displayVal = formatDerivedCellValue(identVal, rawVal, isTwoDecimalDerived);
           return (
-            <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className={`text-muted-foreground text-sm${isNumericDerived ? ' text-right tabular-nums' : ''}`}>
-              {displayVal != null && displayVal !== '' ? displayVal : '—'}
+            <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className={`text-muted-foreground text-sm${(getNumericCellAlignClass(isNumericDerived))}`}>
+              {displayOrDash(displayVal)}
             </TableCell>
           );
         }
@@ -566,8 +636,8 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         if (isFirst) firstInputAssigned = true;
 
         // Lookup fields: click to open search modal (no inline combo)
-        if (field.type === 'search' && field.lookup) {
-          const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${field.column}` : null;
+        if (isLookupSearchField(field)) {
+          const selectorUrl = buildSelectorUrl(apiBaseUrl, entity, field);
           const displayLabel = values[field.key + '$_identifier'] || '';
           const drawerKey = field.lookupDrawer || 'default';
           const lookupTitle = field.lookupTitle || fieldLabel;
@@ -600,7 +670,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         // Search fields render as compact combobox (text input + filtered dropdown)
         if (field.type === 'search') {
           const options = getCatalogOptions(catalogs, entity, field);
-          const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${field.column}` : null;
+          const selectorUrl = buildSelectorUrl(apiBaseUrl, entity, field);
           return (
             <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
               <InlineSearchCombo
@@ -625,7 +695,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         }
 
         // Select fields with inline static options array
-        if (field.type === 'select' && field.options?.length) {
+        if (isStaticSelectField(field)) {
           return (
             <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
               <Select
@@ -658,66 +728,11 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         // accept free-text typing — the user has to pick from the list, matching the
         // form-mode UX. Mirrors the InlineAddRow behavior for the line tax field.
         if (field.type === 'selector') {
-          const options = getCatalogOptions(catalogs, entity, field);
-          if (options.length === 0) {
-            const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${field.column}` : null;
-            if (!selectorUrl) return <TableCell key={col.key} className="py-1 px-2" />;
-            return (
-              <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
-                <InlineSearchCombo
-                  field={field}
-                  value={values[field.key] ?? ''}
-                  displayLabel={values[field.key + '$_identifier'] || ''}
-                  options={[]}
-                  onChange={(id, label, selectedItem) => {
-                    touchedFieldsRef.current.add(field.key);
-                    handleChange(field.key + '$_identifier', label || '');
-                    handleFieldChange(field.key, id, selectedItem);
-                  }}
-                  onKeyDown={handleKeyDown}
-                  inputRef={isFirst ? firstInputRef : undefined}
-                  placeholder={fieldLabel}
-                  selectorUrl={selectorUrl}
-                  selectorContext={selectorContext}
-                  token={token}
-                />
-              </TableCell>
-            );
-          }
-          return (
-            <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
-              <Select
-                value={values[field.key] || undefined}
-                onValueChange={(val) => {
-                  if (val === '__empty__') {
-                    handleChange(field.key + '$_identifier', '');
-                    handleFieldChange(field.key, '', null);
-                    return;
-                  }
-                  const opt = options.find(o => o.id === val);
-                  if (opt) {
-                    handleChange(field.key + '$_identifier', opt.name || opt.label || opt._identifier || '');
-                  }
-                  handleFieldChange(field.key, val, opt);
-                }}
-              >
-                <SelectTrigger
-                  ref={isFirst ? firstInputRef : undefined}
-                  data-testid={`inline-add-field-${field.key}`}
-                  onKeyDown={(e) => { if (e.key === 'Escape') handleKeyDown(e); }}
-                  className="w-full h-8 text-sm bg-white focus:ring-2 focus:ring-primary"
-                >
-                  <SelectValue placeholder={fieldLabel} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__empty__">&nbsp;</SelectItem>
-                  {options.map(opt => (
-                    <SelectItem key={opt.id} value={opt.id}>{opt.name || opt.label || opt._identifier || opt.id}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </TableCell>
-          );
+          return renderSelectorCell({
+            catalogs, entity, field, apiBaseUrl, col, values, touchedFieldsRef,
+            handleChange, handleFieldChange, handleKeyDown, isFirst, firstInputRef,
+            fieldLabel, selectorContext, token,
+          });
         }
 
         const isNumeric = NUMERIC_FIELD_TYPES.has(field.type);
@@ -726,10 +741,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         // surface the digits-only on-screen keyboard, the rest get the decimal
         // pad. Resolved via an intermediate variable so the call site stays a
         // flat conditional (Sonar S3358).
-        let numericInputMode = field.inputMode;
-        if (!numericInputMode && isNumeric) {
-          numericInputMode = field.type === 'integer' ? 'numeric' : 'decimal';
-        }
+        let numericInputMode = resolveNumericInputMode(field, isNumeric);
         const formatTwoDecimals = (raw) => {
           if (raw == null || raw === '') return '';
           const n = typeof raw === 'string' ? Number.parseFloat(raw) : raw;
@@ -739,9 +751,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         // buttons; the numeric on-screen keyboard is preserved via inputMode.
         const inputType = 'text';
         const rawValue = values[field.key];
-        const displayValue = isTwoDecimal && rawValue !== '' && rawValue != null
-          ? formatTwoDecimals(rawValue)
-          : (rawValue ?? '');
+        const displayValue = formatNumericInputValue(isTwoDecimal, rawValue, formatTwoDecimals);
         return (
           <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
             <input
@@ -786,6 +796,69 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     </TableRow>
   );
 });
+
+function getFieldLabel(field, t, col) {
+  return field ? (t(field.column) ?? field.label ?? field.key) : (t(col.column) ?? col.label ?? col.key);
+}
+
+function formatDerivedCellValue(identVal, rawVal, isTwoDecimalDerived) {
+  let displayVal = identVal || rawVal;
+  if (isTwoDecimalDerived && displayVal != null && displayVal !== '') {
+    const n = typeof displayVal === 'string' ? Number.parseFloat(displayVal) : displayVal;
+    if (Number.isFinite(n)) displayVal = n.toFixed(2);
+  }
+  return displayVal;
+}
+
+function updateSnapshotWithSelectedItem(selectedItem, snapshot, handleChange, touchedFieldsRef, key) {
+  for (const [topField, topVal] of Object.entries(selectedItem)) {
+    if (topField === 'id' || topField === '_aux' || topField === 'label'
+      || topField === 'name' || topField === 'searchKey'
+      || typeof topVal === 'object' || topVal === null) continue;
+    // Price from the document's price list. Mapping depends on price list type:
+    //   - Gross list (isTaxIncluded=true): standardPrice is the gross price → grossUnitPrice
+    //   - Net list   (isTaxIncluded=false): standardPrice is the net price   → unitPrice
+    // Mark the target field as touched so the callout does not overwrite it (some callouts
+    // look up the price themselves and may return a different value from another price list).
+    if (topField === 'standardPrice' && topVal != null) {
+      const isGross = selectedItem?.isTaxIncluded !== false;
+      if (isGross) {
+        snapshot['grossUnitPrice'] = topVal;
+        handleChange('grossUnitPrice', topVal);
+        snapshot['grossListPrice'] = topVal;
+        handleChange('grossListPrice', topVal);
+        touchedFieldsRef.current.add('grossUnitPrice');
+        touchedFieldsRef.current.add('grossListPrice');
+      } else {
+        snapshot['unitPrice'] = topVal;
+        handleChange('unitPrice', topVal);
+        snapshot['listPrice'] = topVal;
+        handleChange('listPrice', topVal);
+        touchedFieldsRef.current.add('unitPrice');
+        touchedFieldsRef.current.add('listPrice');
+      }
+      continue;
+    }
+    const ctxKey = `${key}_${topField}`;
+    if (!(ctxKey in snapshot)) {
+      // Keep display hints only in the callout snapshot.
+      // Persisting these transient keys in row state can leak them into POST payloads.
+      snapshot[ctxKey] = topVal;
+    }
+  }
+}
+
+function coerceFieldValues(valuesRef, fields) {
+  const coercedValues = { ...valuesRef.current };
+  for (const f of fields) {
+    if (NUMERIC_FIELD_TYPES.has(f.type) && coercedValues[f.key] !== '' && coercedValues[f.key] != null) {
+      const raw = String(coercedValues[f.key]);
+      const parsed = f.type === 'integer' ? Number.parseInt(raw, 10) : Number.parseFloat(raw);
+      if (!Number.isNaN(parsed)) coercedValues[f.key] = parsed;
+    }
+  }
+  return coercedValues;
+}
 
 /**
  * Inline field that shows selected value and opens modal on click/focus.
@@ -872,6 +945,202 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
       />
     </>
   );
+}
+
+function computeSelectionState(filteredData, selectedRows, isRowSelectable) {
+  const allSelected = filteredData.length > 0 && selectedRows.size === filteredData.length;
+  const someSelected = selectedRows.size > 0 && !allSelected;
+
+  const selectableData = isRowSelectable ? filteredData.filter(isRowSelectable) : filteredData;
+  return { allSelected, someSelected, selectableData };
+}
+
+function oneIfTrue(bool) {
+  return bool ? 1 : 0;
+}
+
+function getTableContainerStyle(hideHeader) {
+  return hideHeader ? { tableLayout: 'fixed', width: '100%' } : undefined;
+}
+
+function renderRowActionHeaderCells(hoverRowActions, onDeleteRow, legacyDeleteEnabled, onCloneRow, quickActionsEnabled) {
+  return hoverRowActions ? (
+    <>
+      <TableHead className="w-10 px-2" />
+      {onDeleteRow && <TableHead className="w-10 px-2" />}
+    </>
+  ) : (
+    <>
+      {legacyDeleteEnabled && <TableHead className="w-10 px-2" />}
+      {onCloneRow && !quickActionsEnabled && <TableHead className="w-10 px-2" />}
+    </>
+  );
+}
+
+function renderRowActionFooterCells(hoverRowActions, onDeleteRow, legacyDeleteEnabled, onCloneRow, quickActionsEnabled) {
+  return hoverRowActions ? (
+    <>
+      <TableCell />
+      {onDeleteRow && <TableCell />}
+    </>
+  ) : (
+    <>
+      {legacyDeleteEnabled && <TableCell />}
+      {onCloneRow && !quickActionsEnabled && <TableCell />}
+    </>
+  );
+}
+
+function isQuickActionsEnabled(rowQuickActions) {
+  return !!rowQuickActions && rowQuickActions.enabled !== false;
+}
+
+function getRowClassName(onRowClick, onNavigate, isChecked, selectedRowBg, selectedId, row, isSelectedLine) {
+  let hoverClass;
+  if (isSelectedLine) {
+    hoverClass = 'hover:bg-slate-300/80';
+  } else {
+    hoverClass = (onRowClick || onNavigate) ? 'hover:bg-muted/50' : '';
+  }
+  return [
+    'transition-colors h-12 group/row',
+    (onRowClick || onNavigate) ? 'cursor-pointer' : 'cursor-default',
+    isChecked ? selectedRowBg : '',
+    selectedId != null && row.id === selectedId ? 'bg-primary/10' : '',
+    isSelectedLine ? 'bg-slate-200/90 ring-1 ring-slate-300' : '',
+    hoverClass,
+  ].filter(Boolean).join(' ');
+}
+
+function renderBooleanFallback(val, ui) {
+  if (isTruthyBoolean(val)) return <span className="text-emerald-600">{ui('yes')}</span>;
+  if (isFalsyBoolean(val)) return <span className="text-slate-400">{ui('no')}</span>;
+  return <span className="text-slate-300">&mdash;</span>;
+}
+
+function renderBooleanBadge(col, val, trueLabel, falseLabel) {
+  const trueVariant = col.badgeVariants?.true ?? 'green';
+  const falseVariant = col.badgeVariants?.false ?? 'neutral';
+  if (isTruthyBoolean(val)) return <Tag variant={trueVariant} label={trueLabel} />;
+  if (isFalsyBoolean(val)) return <Tag variant={falseVariant} label={falseLabel} />;
+  // Unknown value: caller falls through to em-dash fallback.
+  return null;
+}
+
+function renderColoredBooleanBadge(col, val, trueLabel, falseLabel) {
+  const trueColor = col.badgeColors.true ?? 'bg-emerald-100 text-emerald-800';
+  const falseColor = col.badgeColors.false ?? 'bg-amber-100 text-amber-700';
+  if (isTruthyBoolean(val)) return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${trueColor}`}>
+      {trueLabel}
+    </span>
+  );
+  if (isFalsyBoolean(val)) return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${falseColor}`}>
+      {falseLabel}
+    </span>
+  );
+  // Unknown value: caller falls through to em-dash fallback.
+  return null;
+}
+
+function parseDateValue(raw) {
+  if (raw) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return new Date(raw + 'T00:00:00');
+    } else {
+      return new Date(raw);
+    }
+  } else {
+    return null;
+  }
+}
+
+function formatDateCellDisplay(row, col, dateFormatter) {
+  const raw = row[col.key];
+  // Parse date-only strings (yyyy-MM-dd) as local to avoid timezone shift
+  const parsed = parseDateValue(raw);
+  const formatted = parsed && !Number.isNaN(parsed) ? dateFormatter.format(parsed) : '\u2014';
+  const dotColor = col.dot === false ? null : getDateDotColor(raw);
+  return { formatted, dotColor };
+}
+
+function createBadgeLabelResolver(locale) {
+  return (raw, fallback) => {
+    if (raw && typeof raw === 'object') return raw[locale] ?? raw.en_US ?? fallback;
+    return raw ?? fallback;
+  };
+}
+
+function renderBooleanBadgeCell(locale, col, ui, val) {
+  const resolveBadgeLabel = createBadgeLabelResolver(locale);
+  const trueLabel = resolveBadgeLabel(col.badgeLabels?.true, ui('statusComplete'));
+  const falseLabel = resolveBadgeLabel(col.badgeLabels?.false, ui('statusInProcess'));
+  if (col.badgeColors) {
+    return renderColoredBooleanBadge(col, val, trueLabel, falseLabel);
+  }
+  return renderBooleanBadge(col, val, trueLabel, falseLabel);
+}
+
+function renderEnumCell(rawValue, tMenu, col) {
+  const raw = rawValue;
+  const label = tMenu(col.enumLabels?.[raw] ?? raw);
+  if (col.display === 'dot') {
+    const dotColor = getStatusDotColor(raw);
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
+        {label}
+      </span>
+    );
+  }
+  if (col.enumVariants) {
+    const variant = col.enumVariants[raw] ?? 'neutral';
+    return <Tag variant={variant} label={label} />;
+  }
+  return <span>{label}</span>;
+}
+
+function getPillLabel(pill, row) {
+  return pill?.when(row) ? pill.label : null;
+}
+
+function renderBooleanCell({ rawValue, col, savingToggles, toggleKey, handleInlineToggle, row, locale, t, ui }) {
+  const val = rawValue;
+  // --- boolean-toggle: DE ACA --- (extract: renderBooleanToggle)
+  if (col.toggle) {
+    const checked = isTruthyBoolean(val);
+    const disabled = !!savingToggles[toggleKey] || (!isTruthyBoolean(val) && !isFalsyBoolean(val));
+    return (
+      <div
+        className="flex items-center justify-center"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <Switch
+          checked={checked}
+          disabled={disabled}
+          onCheckedChange={(nextChecked) => {
+            handleInlineToggle(row, col, nextChecked).catch((err) => {
+              // Errors are surfaced to the user via toast inside the request; log for diagnostics.
+              console.error('Failed to toggle inline boolean cell:', err);
+            });
+          }}
+          aria-label={resolveColumnLabel(col, locale, t)}
+        />
+      </div>
+    );
+  }
+  // --- boolean-toggle: HASTA ACA ---
+  // --- boolean-badge: DE ACA --- (extract: renderBooleanBadge — colors OR variants)
+  if (col.badge) {
+    const badge = renderBooleanBadgeCell(locale, col, ui, val);
+    if (badge) return badge;
+  }
+  // --- boolean-badge: HASTA ACA ---
+  // --- boolean-fallback: DE ACA --- (extract: renderBooleanFallback — yes / no / em-dash)
+  return renderBooleanFallback(val, ui);
+  // --- boolean-fallback: HASTA ACA ---
 }
 
 /**
@@ -1023,7 +1292,7 @@ export function DataTable({
   // looks specifically for a trailing `amount` column — headers can end in any type
   // (status, date, etc.), so we always pick the last visible column.
   const trailingHoverColumn = useMemo(() => {
-    const enabled = !!rowQuickActions && rowQuickActions.enabled !== false;
+    const enabled = isQuickActionsEnabled(rowQuickActions);
     if (!enabled || visibleColumns.length === 0) return null;
     return visibleColumns[visibleColumns.length - 1];
   }, [visibleColumns, rowQuickActions]);
@@ -1064,27 +1333,15 @@ export function DataTable({
     // === resolve-display: DE ACA ===
     // Extract to helper: resolveCellDisplay(row, col, { optimisticToggles, displayCatalogMaps })
     // → returns { toggleKey, rawValue, display }
-    const toggleKey = `${row.id}:${col.key}`;
-    const rawValue = Object.hasOwn(optimisticToggles, toggleKey)
-      ? optimisticToggles[toggleKey]
-      : row[col.key];
-    let display = resolveIdentifier(row, col.key);
-    const displayMap = displayCatalogMaps.get(col.key);
-    if (displayMap) {
-      const fkId = row?.[col.key];
-      if (fkId != null) {
-        const mapped = displayMap.get(String(fkId));
-        if (mapped) display = mapped;
-      }
-    }
+    const { display, rawValue, toggleKey } = resolveCellDisplay(row, col, optimisticToggles, displayCatalogMaps);
     // === resolve-display: HASTA ACA ===
 
     // === first-column-pill: DE ACA ===
     // Extract to: renderFirstColumnWithPill({ display, pill: col.pill, row })
     // Only applies when col is the first visible column AND type === 'string'.
-    if (col === visibleColumns[0] && col.type === 'string') {
+    if (isFirstVisibleStringColumn(col, visibleColumns)) {
       const pill = col.pill;
-      const pillLabel = pill?.when(row) ? pill.label : null;
+      const pillLabel = getPillLabel(pill, row);
       return (
         <span className="inline-flex items-center gap-2">
           <span>{display}</span>
@@ -1102,22 +1359,7 @@ export function DataTable({
     // Extract to: renderEnumCell({ rawValue, col, tMenu })
     // 3 sub-variants: display === 'dot' | enumVariants (Tag) | plain <span>.
     if (col.type === 'enum') {
-      const raw = rawValue;
-      const label = tMenu(col.enumLabels?.[raw] ?? raw);
-      if (col.display === 'dot') {
-        const dotColor = getStatusDotColor(raw);
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
-            {label}
-          </span>
-        );
-      }
-      if (col.enumVariants) {
-        const variant = col.enumVariants[raw] ?? 'neutral';
-        return <Tag variant={variant} label={label} />;
-      }
-      return <span>{label}</span>;
+      return renderEnumCell(rawValue, tMenu, col);
     }
     // === enum-cell: HASTA ACA ===
 
@@ -1144,10 +1386,7 @@ export function DataTable({
     // Extract to: renderPercentCell({ value: row[col.key] })
     // Pure UI — no closure deps beyond the raw numeric value.
     if (col.type === 'percent') {
-      const val = Number(row[col.key]);
-      const pct = Number.isNaN(val) ? 0 : val;
-      const color = pct >= 100 ? 'bg-emerald-500' : pct > 0 ? 'bg-amber-400' : 'bg-slate-200';
-      const textColor = pct >= 100 ? 'text-emerald-700' : pct > 0 ? 'text-amber-700' : 'text-slate-400';
+      const { color, pct, textColor } = getPercentCellPalette(row, col);
       return (
         <div className="flex items-center gap-2">
           <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -1165,63 +1404,7 @@ export function DataTable({
     // Has 3 internal blocks (toggle / badge / fallback yes-no-dash) — each can be
     // its own helper if cognitive complexity is still high after the first split.
     if (col.type === 'boolean') {
-      const val = rawValue;
-      // --- boolean-toggle: DE ACA --- (extract: renderBooleanToggle)
-      if (col.toggle) {
-        const checked = isTruthyBoolean(val);
-        const disabled = !!savingToggles[toggleKey] || (!isTruthyBoolean(val) && !isFalsyBoolean(val));
-        return (
-          <div
-            className="flex items-center justify-center"
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <Switch
-              checked={checked}
-              disabled={disabled}
-              onCheckedChange={(nextChecked) => {
-                void handleInlineToggle(row, col, nextChecked);
-              }}
-              aria-label={resolveColumnLabel(col, locale, t)}
-            />
-          </div>
-        );
-      }
-      // --- boolean-toggle: HASTA ACA ---
-      // --- boolean-badge: DE ACA --- (extract: renderBooleanBadge — colors OR variants)
-      if (col.badge) {
-        const resolveBadgeLabel = (raw, fallback) => {
-          if (raw && typeof raw === 'object') return raw[locale] ?? raw.en_US ?? fallback;
-          return raw ?? fallback;
-        };
-        const trueLabel  = resolveBadgeLabel(col.badgeLabels?.true,  ui('statusComplete'));
-        const falseLabel = resolveBadgeLabel(col.badgeLabels?.false, ui('statusInProcess'));
-        if (col.badgeColors) {
-          const trueColor  = col.badgeColors.true  ?? 'bg-emerald-100 text-emerald-800';
-          const falseColor = col.badgeColors.false ?? 'bg-amber-100 text-amber-700';
-          if (isTruthyBoolean(val)) return (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${trueColor}`}>
-              {trueLabel}
-            </span>
-          );
-          if (isFalsyBoolean(val)) return (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${falseColor}`}>
-              {falseLabel}
-            </span>
-          );
-        } else {
-          const trueVariant = col.badgeVariants?.true ?? 'green';
-          const falseVariant = col.badgeVariants?.false ?? 'neutral';
-          if (isTruthyBoolean(val)) return <Tag variant={trueVariant} label={trueLabel} />;
-          if (isFalsyBoolean(val)) return <Tag variant={falseVariant} label={falseLabel} />;
-        }
-      }
-      // --- boolean-badge: HASTA ACA ---
-      // --- boolean-fallback: DE ACA --- (extract: renderBooleanFallback — yes / no / em-dash)
-      if (isTruthyBoolean(val)) return <span className="text-emerald-600">{ui('yes')}</span>;
-      if (isFalsyBoolean(val)) return <span className="text-slate-400">{ui('no')}</span>;
-      return <span className="text-slate-300">&mdash;</span>;
-      // --- boolean-fallback: HASTA ACA ---
+      return renderBooleanCell({ rawValue, col, savingToggles, toggleKey, handleInlineToggle, row, locale, t, ui });
     }
     // === boolean-cell: HASTA ACA ===
 
@@ -1229,11 +1412,7 @@ export function DataTable({
     // Extract to: renderDateCell({ raw: row[col.key], col, dateFormatter })
     // Edge cases under test: yyyy-MM-dd (date-only, no TZ shift), full ISO, null/empty.
     if (col.type === 'date') {
-      const raw = row[col.key];
-      // Parse date-only strings (yyyy-MM-dd) as local to avoid timezone shift
-      const parsed = raw ? (/^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + 'T00:00:00') : new Date(raw)) : null;
-      const formatted = parsed && !Number.isNaN(parsed) ? dateFormatter.format(parsed) : '\u2014';
-      const dotColor = col.dot === false ? null : getDateDotColor(raw);
+      const { formatted, dotColor } = formatDateCellDisplay(row, col, dateFormatter);
       return (
         <span className="inline-flex items-center gap-1.5">
           {dotColor && <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${dotColor}`} />}
@@ -1268,11 +1447,7 @@ export function DataTable({
       </div>
     );
   }
-
-  const allSelected = filteredData.length > 0 && selectedRows.size === filteredData.length;
-  const someSelected = selectedRows.size > 0 && !allSelected;
-
-  const selectableData = isRowSelectable ? filteredData.filter(isRowSelectable) : filteredData;
+  const { allSelected, someSelected, selectableData } = computeSelectionState(filteredData, selectedRows, isRowSelectable);
 
   const toggleAll = (e) => {
     e.stopPropagation();
@@ -1298,13 +1473,13 @@ export function DataTable({
     });
   };
 
-  const quickActionsEnabled = !!rowQuickActions && rowQuickActions.enabled !== false;
+  const quickActionsEnabled = isQuickActionsEnabled(rowQuickActions);
   const legacyDeleteEnabled = !!onDeleteRow && (hoverRowActions || !quickActionsEnabled);
-  const deleteCol = legacyDeleteEnabled ? 1 : 0;
-  const cloneCol = onCloneRow && !quickActionsEnabled ? 1 : 0;
-  const quickActionsCol = quickActionsEnabled ? 1 : 0;
+  const deleteCol = oneIfTrue(legacyDeleteEnabled);
+  const cloneCol = oneIfTrue(onCloneRow && !quickActionsEnabled);
+  const quickActionsCol = oneIfTrue(quickActionsEnabled);
   const actionCols = hoverRowActions ? 1 + deleteCol : deleteCol + cloneCol;
-  const colSpan = visibleColumns.length + (selectable ? 1 : 0) + actionCols + quickActionsCol;
+  const colSpan = visibleColumns.length + oneIfTrue(selectable) + actionCols + quickActionsCol;
   const selectedRowBg = hoverRowActions ? 'bg-[#F5F7F9]' : 'bg-primary/5';
 
   // In inlineEditable add-row mode (hideHeader=true), the DataTable only renders
@@ -1318,7 +1493,7 @@ export function DataTable({
   return (
     <div className="space-y-0">
       <div className={linesLayout === 'inlineEditable' ? '[&>div]:!overflow-visible' : 'overflow-x-auto overflow-y-visible'}>
-        <Table style={hideHeader ? { tableLayout: 'fixed', width: '100%' } : undefined}>
+        <Table style={getTableContainerStyle(hideHeader)}>
           {/* When hideHeader is true (add-row-only mode), a <colgroup> drives column
               widths with the same fixed/auto split used by InlineLinesPanel's flex
               layout. Fixed-size columns (flex-grow: 0) get explicit pixel widths;
@@ -1380,38 +1555,28 @@ export function DataTable({
                     style={headStyle}
                   >
                     {onSort && isSortable ? (
-                        <button
-                          type="button"
-                          className="text-xs leading-4 font-semibold text-text-primary tracking-normal cursor-pointer select-none transition-colors bg-transparent border-0 p-0 text-left"
-                          onClick={() => onSort(col.key)}
-                        >
-                          {colLabel}
-                          {isSorted && (
-                            <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
-                          )}
-                        </button>
-                      ) : (
-                        <span className="text-xs leading-4 font-semibold text-text-primary tracking-normal">
-                          {colLabel}
-                          {isSorted && (
-                            <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
-                          )}
-                        </span>
-                      )}
+                      <button
+                        type="button"
+                        className="text-xs leading-4 font-semibold text-text-primary tracking-normal cursor-pointer select-none transition-colors bg-transparent border-0 p-0 text-left"
+                        onClick={() => onSort(col.key)}
+                      >
+                        {colLabel}
+                        {isSorted && (
+                          <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                        )}
+                      </button>
+                    ) : (
+                      <span className="text-xs leading-4 font-semibold text-text-primary tracking-normal">
+                        {colLabel}
+                        {isSorted && (
+                          <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                        )}
+                      </span>
+                    )}
                   </TableHead>
                 );
               })}
-              {hoverRowActions ? (
-                <>
-                  <TableHead className="w-10 px-2" />
-                  {onDeleteRow && <TableHead className="w-10 px-2" />}
-                </>
-              ) : (
-                <>
-                  {legacyDeleteEnabled && <TableHead className="w-10 px-2" />}
-                  {onCloneRow && !quickActionsEnabled && <TableHead className="w-10 px-2" />}
-                </>
-              )}
+              {renderRowActionHeaderCells(hoverRowActions, onDeleteRow, legacyDeleteEnabled, onCloneRow, quickActionsEnabled)}
               {quickActionsEnabled && <TableHead className="w-10 px-2" aria-hidden="true" />}
             </TableRow>
           </TableHeader>
@@ -1436,14 +1601,7 @@ export function DataTable({
                       else if (onNavigate) onNavigate(row);
                       else onRowSelect?.(row);
                     }}
-                    className={[
-                      'transition-colors h-12 group/row',
-                      (onRowClick || onNavigate) ? 'cursor-pointer' : 'cursor-default',
-                      isChecked ? selectedRowBg : '',
-                      selectedId != null && row.id === selectedId ? 'bg-primary/10' : '',
-                      isSelectedLine ? 'bg-slate-200/90 ring-1 ring-slate-300' : '',
-                      isSelectedLine ? 'hover:bg-slate-300/80' : (onRowClick || onNavigate) ? 'hover:bg-muted/50' : '',
-                    ].filter(Boolean).join(' ')}
+                    className={getRowClassName(onRowClick, onNavigate, isChecked, selectedRowBg, selectedId, row, isSelectedLine)}
                   >
                     {selectable && (() => {
                       const rowDisabled = isRowSelectable && !isRowSelectable(row);
@@ -1628,20 +1786,20 @@ export function DataTable({
                 catalogs={addRow.catalogs}
                 onFieldChange={addRow.onFieldChange}
                 onValuesChange={addRow.onValuesChange}
-                  selectable={selectable}
-                  hasDeleteColumn={!hoverRowActions && legacyDeleteEnabled}
-                  hasCloneColumn={!hoverRowActions && !!onCloneRow && !quickActionsEnabled}
-                  hoverRowActions={hoverRowActions}
-                  hoverRowHasDelete={hoverRowActions && !!onDeleteRow}
-                  hasQuickActionsColumn={quickActionsEnabled}
-                  token={token}
-                  apiBaseUrl={apiBaseUrl}
-                  entity={entity}
-                  selectorContext={selectorContext}
-                  ilpHasNoAmountCol={ilpHasNoAmountCol}
-                  ilpTrailing={ilpTrailing}
-                />
-              )}
+                selectable={selectable}
+                hasDeleteColumn={!hoverRowActions && legacyDeleteEnabled}
+                hasCloneColumn={!hoverRowActions && !!onCloneRow && !quickActionsEnabled}
+                hoverRowActions={hoverRowActions}
+                hoverRowHasDelete={hoverRowActions && !!onDeleteRow}
+                hasQuickActionsColumn={quickActionsEnabled}
+                token={token}
+                apiBaseUrl={apiBaseUrl}
+                entity={entity}
+                selectorContext={selectorContext}
+                ilpHasNoAmountCol={ilpHasNoAmountCol}
+                ilpTrailing={ilpTrailing}
+              />
+            )}
           </TableBody>
           {totals && showFooterTotals && (
             <TableFooter>
@@ -1654,17 +1812,7 @@ export function DataTable({
                       : ''}
                   </TableCell>
                 ))}
-                {hoverRowActions ? (
-                  <>
-                    <TableCell />
-                    {onDeleteRow && <TableCell />}
-                  </>
-                ) : (
-                  <>
-                    {legacyDeleteEnabled && <TableCell />}
-                    {onCloneRow && !quickActionsEnabled && <TableCell />}
-                  </>
-                )}
+                {renderRowActionFooterCells(hoverRowActions, onDeleteRow, legacyDeleteEnabled, onCloneRow, quickActionsEnabled)}
                 {quickActionsEnabled && <TableCell />}
               </TableRow>
             </TableFooter>
@@ -1679,3 +1827,50 @@ export function DataTable({
     </div>
   );
 }
+function isFirstVisibleStringColumn(col, visibleColumns) {
+  return col === visibleColumns[0] && col.type === 'string';
+}
+
+function resolveCellDisplay(row, col, optimisticToggles, displayCatalogMaps) {
+  const toggleKey = `${row.id}:${col.key}`;
+  const rawValue = Object.hasOwn(optimisticToggles, toggleKey)
+    ? optimisticToggles[toggleKey]
+    : row[col.key];
+  let display = resolveIdentifier(row, col.key);
+  const displayMap = displayCatalogMaps.get(col.key);
+  if (displayMap) {
+    const fkId = row?.[col.key];
+    if (fkId != null) {
+      const mapped = displayMap.get(String(fkId));
+      if (mapped) display = mapped;
+    }
+  }
+  return { display, rawValue, toggleKey };
+}
+
+function getPercentCellPalette(row, col) {
+  const val = Number(row[col.key]);
+  const pct = Number.isNaN(val) ? 0 : val;
+  let color;
+  if (pct >= 100) {
+    color = 'bg-emerald-500';
+  } else {
+    if (pct > 0) {
+      color = 'bg-amber-400';
+    } else {
+      color = 'bg-slate-200';
+    }
+  }
+  let textColor;
+  if (pct >= 100) {
+    textColor = 'text-emerald-700';
+  } else {
+    if (pct > 0) {
+      textColor = 'text-amber-700';
+    } else {
+      textColor = 'text-slate-400';
+    }
+  }
+  return { color, pct, textColor };
+}
+

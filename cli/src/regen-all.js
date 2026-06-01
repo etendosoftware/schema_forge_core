@@ -36,13 +36,29 @@ function parseArgs(argv) {
     writeCache: false,
     fromCache: false,
   };
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--push-to-neo') result.pushToNeo = true;
-    else if (args[i] === '--dry-run') result.dryRun = true;
-    else if (args[i] === '--skip-extract') result.skipExtract = true;
-    else if (args[i] === '--write-cache') result.writeCache = true;
-    else if (args[i] === '--from-cache') result.fromCache = true;
-    else if (args[i] === '--only' && args[i + 1]) result.only = args[++i].split(',').map(s => s.trim());
+  let i = 0;
+  while (i < args.length) {
+    if (args[i] === '--push-to-neo') {
+      result.pushToNeo = true;
+      i += 1;
+    } else if (args[i] === '--dry-run') {
+      result.dryRun = true;
+      i += 1;
+    } else if (args[i] === '--skip-extract') {
+      result.skipExtract = true;
+      i += 1;
+    } else if (args[i] === '--write-cache') {
+      result.writeCache = true;
+      i += 1;
+    } else if (args[i] === '--from-cache') {
+      result.fromCache = true;
+      i += 1;
+    } else if (args[i] === '--only' && args[i + 1]) {
+      result.only = args[i + 1].split(',').map(s => s.trim());
+      i += 2;
+    } else {
+      i += 1;
+    }
   }
   return result;
 }
@@ -71,6 +87,27 @@ async function getActiveWindows() {
     console.log(`Skipping ${skipped.length} window(s) without decisions.json: ${skipped.join(', ')}`);
   }
   return windows;
+}
+
+async function readPreviousWindowContracts(name) {
+  let prevVersion = null;
+  let prevContract = null;
+  let prevMcpContract = null;
+  let prevContractRaw = null;
+  try {
+    const existingRaw = await readFile(join(ARTIFACTS, name, 'contract.json'), 'utf-8');
+    const existing = JSON.parse(existingRaw);
+    let rawV = existing.version ?? null;
+    while (rawV !== null && typeof rawV === 'object') rawV = rawV.version ?? null;
+    prevVersion = rawV;
+    prevContract = existing;
+    prevContractRaw = existingRaw;
+  } catch { /* first generation */ }
+  try {
+    const existingMcpRaw = await readFile(join(ARTIFACTS, name, 'contract.mcp.json'), 'utf-8');
+    prevMcpContract = JSON.parse(existingMcpRaw);
+  } catch { /* first split generation */ }
+  return { prevVersion, prevContract, prevContractRaw, prevMcpContract };
 }
 
 /**
@@ -135,7 +172,7 @@ async function runPipeline(name, windowId, { pushToNeo, skipExtract }) {
 
   // Step 5: generate-contract
   console.log(`  [F6] Generating contract...`);
-  const { generateContract } = await import('./generate-contract.js');
+  const { generateContract, splitWindowContractArtifacts } = await import('./generate-contract.js');
   const { writeFile: wf2, access: acc2, mkdir: mk2 } = await import('node:fs/promises');
   const processesPath = join(ARTIFACTS, name, 'processes.json');
   try { await acc2(processesPath); } catch {
@@ -144,21 +181,16 @@ async function runPipeline(name, windowId, { pushToNeo, skipExtract }) {
   }
   const processes = JSON.parse(await readFile(processesPath, 'utf8'));
 
-  let prevVersion = null;
-  let prevContract = null;
-  try {
-    const existingRaw = await readFile(join(ARTIFACTS, name, 'contract.json'), 'utf-8');
-    const existing = JSON.parse(existingRaw);
-    let rawV = existing.version ?? null;
-    while (rawV !== null && typeof rawV === 'object') rawV = rawV.version ?? null;
-    prevVersion = rawV;
-    prevContract = existing;
-    await wf2(join(ARTIFACTS, name, 'contract.prev.json'), existingRaw, 'utf-8');
-  } catch { /* first generation */ }
+  const { prevVersion, prevContract, prevContractRaw, prevMcpContract } = await readPreviousWindowContracts(name);
 
   const rules = Array.isArray(resolved.rules) ? resolved.rules : resolved.rules?.rules || [];
-  const contract = generateContract(resolved.schema, rules, processes.processes || [], prevVersion, prevContract);
+  const generatedContract = generateContract(resolved.schema, rules, processes.processes || [], prevVersion, prevContract);
+  const { contract, mcpContract } = splitWindowContractArtifacts(generatedContract, prevContract, prevMcpContract);
+  if (prevContractRaw) {
+    await wf2(join(ARTIFACTS, name, 'contract.prev.json'), prevContractRaw, 'utf-8');
+  }
   await wf2(join(ARTIFACTS, name, 'contract.json'), JSON.stringify(contract, null, 2) + '\n');
+  await wf2(join(ARTIFACTS, name, 'contract.mcp.json'), JSON.stringify(mcpContract, null, 2) + '\n');
   console.log(`    Contract: ${contract.testManifest.summary.total} tests`);
 
   // Version check (advisory)

@@ -31,24 +31,16 @@ describe('GoodsShipmentActions', () => {
   });
 
   describe('isFullyInvoiced — still required for Create Invoice button visibility', () => {
-    it('reads completelyInvoiced from data', () => {
-      assert.match(src, /data\?\.completelyInvoiced/);
-    });
-
-    it('computes isFullyInvoiced from completelyInvoiced', () => {
+    it('computes isFullyInvoiced using invoiceStatus', () => {
       assert.match(src, /isFullyInvoiced\s*=/);
     });
 
-    it('treats boolean true as fully invoiced', () => {
-      assert.match(src, /ci\s*===\s*true/);
+    it('uses invoiceStatus >= 100 as the fully-invoiced threshold', () => {
+      assert.match(src, /data\?\.invoiceStatus\s*>=\s*100/);
     });
 
-    it('treats string "true" as fully invoiced', () => {
-      assert.match(src, /ci\s*===\s*'true'/);
-    });
-
-    it('treats string "Y" as fully invoiced', () => {
-      assert.match(src, /ci\s*===\s*'Y'/);
+    it('does not gate on linkedInvoices presence (partial invoicing must remain invoiceable)', () => {
+      assert.doesNotMatch(src, /linkedInvoices\.length\s*>\s*0.*isFullyInvoiced|isFullyInvoiced.*linkedInvoices\.length\s*>\s*0/);
     });
   });
 

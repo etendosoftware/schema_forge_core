@@ -1,10 +1,23 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useUI } from '@/i18n';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useUI } from '@etendosoftware/app-shell-core';
 import { LayoutGrid, Settings2, ListFilter, ArrowUpDown } from 'lucide-react';
 import { StatusPillMenu, ResultPill, EmptyState } from './FmCommon.jsx';
 import { ConfigDrawer, NewDeclModal } from './FmOverlays.jsx';
 import FmCatalogPage from './FmCatalogPage.jsx';
-import { formatAmount, STATUS_COLOR, computeUpcomingDeadlines } from './fiscalModelsUtils.js';
+import { formatAmount, STATUS_COLOR, computeUpcomingDeadlines, checkModified303 } from './fiscalModelsUtils.js';
+import useFiscalAutoCompute from './useFiscalAutoCompute.js';
+
+// Real-mode only: throws on fetch failure instead of falling back to mock data.
+async function computeBoxes303Real(decl, { token, apiBaseUrl } = {}) {
+  if (!token || !apiBaseUrl) throw new Error('missing credentials');
+  const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+  const params = new URLSearchParams({ year: decl.year, period: decl.period });
+  const res = await fetch(`${base}/fiscal303/boxes?${params}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`boxes fetch failed: ${res.status}`);
+  return await res.json();
+}
 
 function StatusSelect({ value, options, onChange }) {
   const t = useUI();
@@ -57,18 +70,18 @@ function StatusSelect({ value, options, onChange }) {
 }
 
 const MOCK_DECLARATIONS = [
-  { id:'349-2025-12', model:'349', year:2025, period:'12', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_12.349',  updatedAt:'19/01/2026' },
-  { id:'349-2025-11', model:'349', year:2025, period:'11', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_11.349',  updatedAt:'18/12/2025' },
-  { id:'349-2025-10', model:'349', year:2025, period:'10', type:'ord', status:'presentadoOtra',   result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null, fileExternal:true, updatedAt:'15/11/2025' },
-  { id:'349-2025-09', model:'349', year:2025, period:'09', type:'ord', status:'omitido',          result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null,           updatedAt:'12/10/2025' },
-  { id:'349-2025-08', model:'349', year:2025, period:'08', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_08.349',  updatedAt:'18/09/2025' },
-  { id:'349-2025-07', model:'349', year:2025, period:'07', type:'ord', status:'presentado',       result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:1}, file:'2025_07.349',  updatedAt:'18/08/2025' },
-  { id:'349-2025-06', model:'349', year:2025, period:'06', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_06.349',  updatedAt:'19/07/2025' },
-  { id:'349-2025-05', model:'349', year:2025, period:'05', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_05.349',  updatedAt:'18/06/2025' },
-  { id:'349-2025-04', model:'349', year:2025, period:'04', type:'ord', status:'omitido',          result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null,           updatedAt:'10/05/2025' },
-  { id:'349-2025-03', model:'349', year:2025, period:'03', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_03.349',  updatedAt:'19/04/2025' },
-  { id:'303-2026-T2', model:'303', year:2026, period:'T2', type:'ord', status:'borrador',
-    result:{kind:'compensar',amount:35479.08}, incidents:{blocking:0,warning:1,items:[
+  { id:'349-2025-12', model:'349', year:2025, period:'12', type:'ord', status:'submitted_ack',  result:{kind:'N',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_12.349',  updatedAt:'19/01/2026' },
+  { id:'349-2025-11', model:'349', year:2025, period:'11', type:'ord', status:'submitted_ack',  result:{kind:'N',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_11.349',  updatedAt:'18/12/2025' },
+  { id:'349-2025-10', model:'349', year:2025, period:'10', type:'ord', status:'submitted_ext',   result:{kind:'N',amount:0}, incidents:{blocking:0,warning:0}, file:null, fileExternal:true, updatedAt:'15/11/2025' },
+  { id:'349-2025-09', model:'349', year:2025, period:'09', type:'ord', status:'skipped',          result:{kind:'N',amount:0}, incidents:{blocking:0,warning:0}, file:null,           updatedAt:'12/10/2025' },
+  { id:'349-2025-08', model:'349', year:2025, period:'08', type:'ord', status:'submitted_ack',  result:{kind:'N',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_08.349',  updatedAt:'18/09/2025' },
+  { id:'349-2025-07', model:'349', year:2025, period:'07', type:'ord', status:'submitted',       result:{kind:'N',amount:0}, incidents:{blocking:0,warning:1}, file:'2025_07.349',  updatedAt:'18/08/2025' },
+  { id:'349-2025-06', model:'349', year:2025, period:'06', type:'ord', status:'submitted_ack',  result:{kind:'N',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_06.349',  updatedAt:'19/07/2025' },
+  { id:'349-2025-05', model:'349', year:2025, period:'05', type:'ord', status:'submitted_ack',  result:{kind:'N',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_05.349',  updatedAt:'18/06/2025' },
+  { id:'349-2025-04', model:'349', year:2025, period:'04', type:'ord', status:'skipped',          result:{kind:'N',amount:0}, incidents:{blocking:0,warning:0}, file:null,           updatedAt:'10/05/2025' },
+  { id:'349-2025-03', model:'349', year:2025, period:'03', type:'ord', status:'submitted_ack',  result:{kind:'N',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_03.349',  updatedAt:'19/04/2025' },
+  { id:'303-2026-T2', model:'303', year:2026, period:'T2', type:'ord', status:'draft',
+    result:{kind:'C',amount:35479.08}, incidents:{blocking:0,warning:1,items:[
       { severity:'warn', origin:'Casilla 4', message:'El tipo aplicado (7%) difiere del tipo registrado para el período anterior (10%)', suggestion:'Verifica si se trata de una operación a tipo reducido correcta' },
     ]},
     file:null,
@@ -110,18 +123,27 @@ const MOCK_DECLARATIONS = [
       { date:'19/05/2026', ref:'10000039', type:'Venta',  party:'Juan Perez',            regime:'Exportación (%N→0%)',       base:36.00, vat:0,       total:36.00,     boxes:'60' },
     ],
     updatedAt:'19/05/2026' },
-  { id:'349-2026-T1', model:'349', year:2026, period:'T1', type:'ord', status:'pendiente',   result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null, updatedAt:'—' },
-  { id:'303-2026-T1', model:'303', year:2026, period:'T1', type:'ord', status:'presentadoAcuse',         result:{kind:'compensar',amount:2816.31}, incidents:{blocking:2,warning:3,items:[
+  { id:'349-2026-T1', model:'349', year:2026, period:'T1', type:'ord', status:'draft',    result:{kind:'N',amount:0}, incidents:{blocking:0,warning:0}, file:null, updatedAt:'—' },
+  { id:'303-2026-T1', model:'303', year:2026, period:'T1', type:'ord', status:'submitted_ack',         result:{kind:'C',amount:2816.31}, incidents:{blocking:2,warning:3,items:[
     { severity:'block', origin:'Casilla 28', message:'El total de cuota devengada no coincide con la suma de las cuotas parciales', suggestion:'Revisa las cuotas de los tipos 21%, 10% y 4%' },
     { severity:'block', origin:'Casilla 69', message:'El resultado de la liquidación está pendiente de confirmar', suggestion:'Verifica que el resultado neto sea correcto antes de generar el fichero' },
     { severity:'warn',  origin:'Casilla 48', message:'No se han detectado facturas de compra para este período', suggestion:'Comprueba si hay facturas de compra no registradas' },
     { severity:'warn',  origin:'Casilla 64', message:'El total deducible es inferior al período anterior en más de un 30%', suggestion:'Verifica si es coherente con la actividad del trimestre' },
     { severity:'warn',  origin:'NIF declarante', message:'El NIF del declarante no está verificado en la AEAT', suggestion:'Confirma el NIF en la configuración del declarante' },
   ]}, file:null, boxes:{ 7:3248, 9:682.08, 27:682.08, 28:16659, 29:3498.39, 45:3498.39, 46:-2816.31 }, summary:{ accrued:682.08, deductible:3498.39, result:-2816.31 }, updatedAt:'14/05/2026', current:true },
-  { id:'303-2025-T4', model:'303', year:2025, period:'T4', type:'ord', status:'presentadoAcuse',  result:{kind:'compensar',amount:2100}, incidents:{blocking:0,warning:0}, file:'2025_T4.303', updatedAt:'28/01/2026' },
+  { id:'303-2025-T4', model:'303', year:2025, period:'T4', type:'ord', status:'submitted_ack',  result:{kind:'C',amount:2100}, incidents:{blocking:0,warning:0}, file:'2025_T4.303', updatedAt:'28/01/2026' },
 ];
 
 const DEFAULT_ACTIVE = { '303': true, '349': true };
+
+function normDecl(d) {
+  return {
+    ...d,
+    updatedAt: d.updatedAt ? new Date(d.updatedAt).toLocaleDateString('es-ES') : '—',
+    result: d.result ?? null,
+    incidents: d.incidents ?? { blocking: 0, warning: 0 },
+  };
+}
 
 // ── Upcoming deadlines helpers ───────────────────────────────────
 const MONTH_NAMES_ES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
@@ -200,15 +222,69 @@ function IncidentsCell({ blocking, warning, t }) {
   );
 }
 
+function ResultCell({ isComputing, error, result, t }) {
+  if (isComputing) return <span style={{ color: '#6b7280', fontSize: 12 }}>…</span>;
+  if (error) {
+    return (
+      <span className="fm-status-pill fm-status-pill--red" title={error} style={{ fontSize: 11 }}>
+        {t('fm.status.error')}
+      </span>
+    );
+  }
+  if (!result?.kind) return <span style={{ color: '#9ca3af' }}>—</span>;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+      <ResultPill kind={result.kind} label={t(`fm.result.${result.kind}`) ?? result.kind} />
+      {result.kind !== 'N' && result.amount != null && (
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>
+          {formatAmount(result.amount)}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // ── Main component ───────────────────────────────────────────────
 export default function FmListPage({ declarations: propDecls, onSelect, onStatusChange, token, apiBaseUrl }) {
   const ui = useUI();
   const t  = ui;
 
-  const [dataMode, setDataMode]          = useState('demo');
+  const [dataMode, setDataMode]          = useState(() => {
+    try { return sessionStorage.getItem('fm-data-mode') ?? 'demo'; } catch { return 'demo'; }
+  });
   const [demoDecls, setDemoDecls]        = useState(propDecls ?? MOCK_DECLARATIONS);
   const [realDecls, setRealDecls]        = useState([]);
   const decls = dataMode === 'demo' ? demoDecls : realDecls;
+
+  useEffect(() => {
+    try { sessionStorage.setItem('fm-data-mode', dataMode); } catch {}
+  }, [dataMode]);
+
+  useEffect(() => {
+    if (dataMode !== 'real' || !token || !apiBaseUrl) return;
+    const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+    fetch(`${base}/fiscal303/declarations`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(data => setRealDecls((Array.isArray(data) ? data : (data?.data ?? [])).map(normDecl)))
+      .catch(() => {});
+  }, [dataMode, token, apiBaseUrl]);
+
+  const draftDecls303 = useMemo(
+    () => realDecls.filter(d => d.model === '303' && d.status === 'draft'),
+    [realDecls]
+  );
+
+  const { computedMap } = useFiscalAutoCompute(draftDecls303, {
+    computeFn:       computeBoxes303Real,
+    checkModifiedFn: checkModified303,
+    token,
+    apiBaseUrl,
+    enabled:         dataMode === 'real',
+    pollIntervalMs:  180_000,
+  });
+
   const [modelFilter, setModelFilter]   = useState('all');
   const [yearFilter,  setYearFilter]    = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -219,15 +295,54 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
   const [selected,     setSelected]     = useState(new Set());
 
   const handleStatusChange = useCallback((id, newStatus) => {
-    (dataMode === 'demo' ? setDemoDecls : setRealDecls)(ds => ds.map(d => d.id === id ? { ...d, status: newStatus } : d));
-    onStatusChange?.(id, newStatus);
-  }, [dataMode, onStatusChange]);
+    if (dataMode === 'real' && token && apiBaseUrl) {
+      const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+      fetch(`${base}/fiscal303/declarations?id=${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+        .then(r => {
+          if (!r.ok) throw new Error(r.status);
+          setRealDecls(ds =>
+            ds.map(d => d.id === id
+              ? { ...d, status: newStatus, updatedAt: new Date().toLocaleDateString('es-ES') }
+              : d)
+          );
+          onStatusChange?.(id, newStatus);
+        })
+        .catch(() => {});
+    } else {
+      setDemoDecls(ds =>
+        ds.map(d => d.id === id
+          ? { ...d, status: newStatus, updatedAt: new Date().toLocaleDateString('es-ES') }
+          : d)
+      );
+      onStatusChange?.(id, newStatus);
+    }
+  }, [dataMode, onStatusChange, token, apiBaseUrl]);
 
   const handleNewDecl = useCallback(({ model, year, period, status }) => {
-    const id = `${model}-${year}-${period}`;
-    const newDecl = { id, model, year, period, type:'ord', status, result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null, updatedAt: new Date().toLocaleDateString('es-ES') };
-    (dataMode === 'demo' ? setDemoDecls : setRealDecls)(ds => [newDecl, ...ds]);
-  }, [dataMode]);
+    if (dataMode === 'real' && token && apiBaseUrl) {
+      const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+      fetch(`${base}/fiscal303/declarations`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, year: parseInt(year, 10), period, status }),
+      })
+        .then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .then(created => setRealDecls(ds => [normDecl(created?.data ?? created), ...ds]))
+        .catch(() => {});
+    } else {
+      const id = `${model}-${year}-${period}`;
+      setDemoDecls(ds => [
+        { id, model, year, period, type: 'ord', status,
+          result: { kind: 'N', amount: 0 }, incidents: { blocking: 0, warning: 0 },
+          file: null, updatedAt: new Date().toLocaleDateString('es-ES') },
+        ...ds,
+      ]);
+    }
+  }, [dataMode, token, apiBaseUrl]);
 
   const years = ['all', ...Array.from(new Set(decls.map(d => String(d.year)))).sort((a,b) => b - a)];
   const statuses = ['all', ...Array.from(new Set(decls.map(d => d.status)))];
@@ -309,7 +424,11 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
       {/* ── Body: sidebar + main ─────────────────────────────────── */}
       <div className="fm-list-body">
 
-        <UpcomingDeadlines decls={modelYearFiltered} onSelect={onSelect} t={t} />
+        <UpcomingDeadlines
+          decls={modelYearFiltered}
+          onSelect={decl => onSelect?.({ ...decl, _precomputed: dataMode === 'real' ? computedMap[decl.id] : undefined })}
+          t={t}
+        />
 
         <div className="fm-list-main">
           {/* ── Section header ─────────────────────────────────── */}
@@ -345,11 +464,27 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(decl => (
+                {filtered.map(decl => {
+                  const computed = dataMode === 'real' ? computedMap[decl.id] : undefined;
+                  const isComputingThis = dataMode === 'real' && decl.model === '303'
+                    && decl.status === 'draft' && !computed;
+                  const computeError = computed?.error ?? null;
+
+                  let displayResult = decl.result;
+                  if (computed?.summary && !computed.error) {
+                    const r = computed.summary.result;
+                    let kind;
+                    if (r > 0) kind = 'I';
+                    else if (r < 0) kind = 'C';
+                    else kind = 'N';
+                    displayResult = { kind, amount: Math.abs(r) };
+                  }
+
+                  return (
                   <tr
                     key={decl.id}
                     className={decl.current ? 'fm-table__row--current' : ''}
-                    onClick={() => onSelect?.(decl)}
+                    onClick={() => onSelect?.({ ...decl, _precomputed: dataMode === 'real' ? computedMap[decl.id] : undefined })}
                   >
                     <td onClick={e => e.stopPropagation()}>
                       <input type="checkbox" className="fm-table__cb" checked={selected.has(decl.id)} onChange={() => toggleSelect(decl.id)} />
@@ -364,16 +499,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
                       <StatusPillMenu status={decl.status} onStatusChange={s => handleStatusChange(decl.id, s)} />
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      {decl.result?.kind ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
-                          <ResultPill kind={decl.result.kind} label={t(`fm.result.${decl.result.kind}`) ?? decl.result.kind} />
-                          {decl.result.kind !== 'informativa' && decl.result.amount != null && (
-                            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>
-                              {formatAmount(decl.result.amount)}
-                            </span>
-                          )}
-                        </div>
-                      ) : <span style={{ color: '#9ca3af' }}>—</span>}
+                      <ResultCell isComputing={isComputingThis} error={computeError} result={displayResult} t={t} />
                     </td>
                     <td>
                       <IncidentsCell blocking={decl.incidents?.blocking ?? 0} warning={decl.incidents?.warning ?? 0} t={t} />
@@ -381,12 +507,13 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
                     <td><FileCell file={decl.file} fileExternal={decl.fileExternal} /></td>
                     <td><span className="fm-date">{decl.updatedAt ?? '—'}</span></td>
                     <td onClick={e => e.stopPropagation()}>
-                      <button className="fm-table-action" onClick={() => onSelect?.(decl)}>
+                      <button className="fm-table-action" onClick={() => onSelect?.({ ...decl, _precomputed: computedMap[decl.id] })}>
                         {t('fm.action.open')} ›
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           )}

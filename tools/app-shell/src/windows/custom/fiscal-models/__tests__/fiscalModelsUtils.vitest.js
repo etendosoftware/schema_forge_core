@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   STATUSES,
   STATUS_COLOR,
@@ -10,6 +10,7 @@ import {
   fmtDecl,
   deriveBoxes303,
   computeUpcomingDeadlines,
+  generate303File,
 } from '../fiscalModelsUtils.js';
 
 // ── STATUSES ──────────────────────────────────────────────────────────────────
@@ -21,13 +22,13 @@ describe('STATUSES', () => {
   });
 
   it('contains all expected status values', () => {
-    expect(STATUSES).toContain('omitido');
-    expect(STATUSES).toContain('pendiente');
-    expect(STATUSES).toContain('borrador');
-    expect(STATUSES).toContain('listo');
-    expect(STATUSES).toContain('presentado');
-    expect(STATUSES).toContain('presentadoOtra');
-    expect(STATUSES).toContain('presentadoAcuse');
+    expect(STATUSES).toContain('skipped');
+    expect(STATUSES).toContain('pending');
+    expect(STATUSES).toContain('draft');
+    expect(STATUSES).toContain('ready');
+    expect(STATUSES).toContain('submitted');
+    expect(STATUSES).toContain('submitted_ext');
+    expect(STATUSES).toContain('submitted_ack');
   });
 });
 
@@ -46,13 +47,13 @@ describe('STATUS_COLOR', () => {
   });
 
   it('maps specific statuses to expected color names', () => {
-    expect(STATUS_COLOR.omitido).toBe('grey');
-    expect(STATUS_COLOR.pendiente).toBe('orange');
-    expect(STATUS_COLOR.borrador).toBe('blue');
-    expect(STATUS_COLOR.listo).toBe('green');
-    expect(STATUS_COLOR.presentado).toBe('teal');
-    expect(STATUS_COLOR.presentadoOtra).toBe('violet');
-    expect(STATUS_COLOR.presentadoAcuse).toBe('emerald');
+    expect(STATUS_COLOR.skipped).toBe('grey');
+    expect(STATUS_COLOR.pending).toBe('orange');
+    expect(STATUS_COLOR.draft).toBe('blue');
+    expect(STATUS_COLOR.ready).toBe('green');
+    expect(STATUS_COLOR.submitted).toBe('teal');
+    expect(STATUS_COLOR.submitted_ext).toBe('violet');
+    expect(STATUS_COLOR.submitted_ack).toBe('emerald');
   });
 });
 
@@ -617,6 +618,157 @@ describe('deriveBoxes303', () => {
     });
   });
 
+  describe('snapshot — 2026 T2 screenshot values', () => {
+    const data = {
+      salesByRate: {
+        '4':  { base: 44,     tax: 1.76   },
+        '10': { base: 201,    tax: 20.10  },
+        '21': { base: 982.60, tax: 206.35 },
+      },
+      purchNormal:    { base: 99, tax: 20.79 },
+      intracommSales: 23,
+      exports:        36,
+    };
+
+    it('box 1 = 44, box 3 = 1.76', () => {
+      const { boxes } = deriveBoxes303(data);
+      expect(boxes[1]).toBe(44);
+      expect(boxes[3]).toBe(1.76);
+    });
+
+    it('box 4 = 201, box 6 = 20.10', () => {
+      const { boxes } = deriveBoxes303(data);
+      expect(boxes[4]).toBe(201);
+      expect(boxes[6]).toBe(20.10);
+    });
+
+    it('box 7 = 982.60, box 9 = 206.35', () => {
+      const { boxes } = deriveBoxes303(data);
+      expect(boxes[7]).toBe(982.60);
+      expect(boxes[9]).toBe(206.35);
+    });
+
+    it('box 27 = 228.21 (sum of tax boxes 3 + 6 + 9)', () => {
+      const { boxes } = deriveBoxes303(data);
+      expect(boxes[27]).toBe(228.21);
+    });
+
+    it('box 28 = 99, box 29 = 20.79', () => {
+      const { boxes } = deriveBoxes303(data);
+      expect(boxes[28]).toBe(99);
+      expect(boxes[29]).toBe(20.79);
+    });
+
+    it('box 45 = 20.79', () => {
+      const { boxes } = deriveBoxes303(data);
+      expect(boxes[45]).toBe(20.79);
+    });
+
+    it('box 46 = 207.42 (228.21 - 20.79)', () => {
+      const { boxes } = deriveBoxes303(data);
+      expect(boxes[46]).toBe(207.42);
+    });
+
+    it('box 59 = 23, box 60 = 36', () => {
+      const { boxes } = deriveBoxes303(data);
+      expect(boxes[59]).toBe(23);
+      expect(boxes[60]).toBe(36);
+    });
+
+    it('summary matches box 27/45/46', () => {
+      const { summary } = deriveBoxes303(data);
+      expect(summary.accrued).toBe(228.21);
+      expect(summary.deductible).toBe(20.79);
+      expect(summary.result).toBe(207.42);
+    });
+  });
+
+  describe('all accrued boxes feed into box 27', () => {
+    it('box 27 equals the exact sum of every contributing tax input', () => {
+      const data = {
+        salesByRate: {
+          '21': { base: 100, tax: 10 },
+          '10': { base: 100, tax: 10 },
+          '4':  { base: 100, tax: 10 },
+          '5':  { base: 100, tax: 10 },
+          '0':  { base: 100, tax: 10 },
+          '2':  { base: 100, tax: 10 },
+        },
+        ecByRate: {
+          '1.4':  { base: 100, tax: 10 },
+          '5.2':  { base: 100, tax: 10 },
+          '0.5':  { base: 100, tax: 10 },
+          '1.75': { base: 100, tax: 10 },
+        },
+        euPurch:  { base: 100, tax: 10 },
+        ispPurch: { base: 100, tax: 10 },
+      };
+      const { boxes } = deriveBoxes303(data);
+      // accruedBoxes in source: [3,6,9,11,13,15,18,21,24,26,152,155,158,167,170]
+      // inputs above map to boxes: 3(4%+5%), 6(10%+7%+8%), 9(21%), 11(euPurch),
+      //   13(ispPurch), 18(EC 0.5%), 21(EC 1.4%), 24(EC 5.2%), 152(0%), 158(EC 1.75%), 167(2%)
+      const accruedBoxes = [3, 6, 9, 11, 13, 15, 18, 21, 24, 26, 152, 155, 158, 167, 170];
+      const expectedSum = Math.round(accruedBoxes.reduce((s, box) => s + (boxes[box] ?? 0), 0) * 100) / 100;
+      expect(boxes[27]).toBe(expectedSum);
+    });
+
+    it('no tax input is silently dropped — 4% and 5% merge into box 3 (20), ten others each 10 → 27 = 120', () => {
+      const data = {
+        salesByRate: {
+          '21': { base: 100, tax: 10 },
+          '10': { base: 100, tax: 10 },
+          '4':  { base: 100, tax: 10 },
+          '5':  { base: 100, tax: 10 },
+          '0':  { base: 100, tax: 10 },
+          '2':  { base: 100, tax: 10 },
+        },
+        ecByRate: {
+          '1.4':  { base: 100, tax: 10 },
+          '5.2':  { base: 100, tax: 10 },
+          '0.5':  { base: 100, tax: 10 },
+          '1.75': { base: 100, tax: 10 },
+        },
+        euPurch:  { base: 100, tax: 10 },
+        ispPurch: { base: 100, tax: 10 },
+      };
+      const { boxes } = deriveBoxes303(data);
+      // box 3 = 4%+5% merged = 20; boxes 6,9,11,13,18,21,24,152,158,167 = 10 each
+      expect(boxes[27]).toBe(120);
+    });
+  });
+
+  describe('RE + IVA combined — same invoice data', () => {
+    const data = {
+      salesByRate: { '21': { base: 1000, tax: 210 } },
+      ecByRate:    { '5.2': { base: 1000, tax: 52 } },
+    };
+
+    it('box 7 = 1000 (IVA base at 21%)', () => {
+      const { boxes } = deriveBoxes303(data);
+      expect(boxes[7]).toBe(1000);
+    });
+
+    it('box 9 = 210 (IVA cuota at 21%)', () => {
+      const { boxes } = deriveBoxes303(data);
+      expect(boxes[9]).toBe(210);
+    });
+
+    it('box 22 = 1000 (RE base at 5.2%)', () => {
+      const { boxes } = deriveBoxes303(data);
+      expect(boxes[22]).toBe(1000);
+    });
+
+    it('box 24 = 52 (RE cuota at 5.2%)', () => {
+      const { boxes } = deriveBoxes303(data);
+      expect(boxes[24]).toBe(52);
+    });
+
+    it('box 27 = 262 (both IVA and RE tax contribute)', () => {
+      const { boxes } = deriveBoxes303(data);
+      expect(boxes[27]).toBe(262);
+    });
+  });
+
   describe('rounding', () => {
     it('rounds to 2 decimal places', () => {
       const data = { salesByRate: { '21': { base: 100.005, tax: 21.005 } } };
@@ -668,39 +820,35 @@ describe('computeUpcomingDeadlines', () => {
   });
 
   describe('filtering completed statuses', () => {
-    it('excludes presentado', () => {
-      expect(computeUpcomingDeadlines([D('303', 2026, 'T1', 'presentado')])).toHaveLength(0);
+    it('excludes submitted', () => {
+      expect(computeUpcomingDeadlines([D('303', 2026, 'T1', 'submitted')])).toHaveLength(0);
     });
 
-    it('excludes presentadoOtra', () => {
-      expect(computeUpcomingDeadlines([D('303', 2026, 'T1', 'presentadoOtra')])).toHaveLength(0);
+    it('excludes submitted_ext', () => {
+      expect(computeUpcomingDeadlines([D('303', 2026, 'T1', 'submitted_ext')])).toHaveLength(0);
     });
 
-    it('excludes presentadoAcuse', () => {
-      expect(computeUpcomingDeadlines([D('303', 2026, 'T1', 'presentadoAcuse')])).toHaveLength(0);
+    it('excludes submitted_ack', () => {
+      expect(computeUpcomingDeadlines([D('303', 2026, 'T1', 'submitted_ack')])).toHaveLength(0);
     });
 
-    it('excludes omitido', () => {
-      expect(computeUpcomingDeadlines([D('303', 2026, 'T1', 'omitido')])).toHaveLength(0);
+    it('excludes skipped', () => {
+      expect(computeUpcomingDeadlines([D('303', 2026, 'T1', 'skipped')])).toHaveLength(0);
     });
 
-    it('includes borrador', () => {
-      expect(computeUpcomingDeadlines([D('303', 2026, 'T1', 'borrador')])).toHaveLength(1);
+    it('includes draft', () => {
+      expect(computeUpcomingDeadlines([D('303', 2026, 'T1', 'draft')])).toHaveLength(1);
     });
 
-    it('includes pendiente', () => {
-      expect(computeUpcomingDeadlines([D('303', 2026, 'T1', 'pendiente')])).toHaveLength(1);
-    });
-
-    it('includes listo', () => {
-      expect(computeUpcomingDeadlines([D('303', 2026, 'T1', 'listo')])).toHaveLength(1);
+    it('includes ready', () => {
+      expect(computeUpcomingDeadlines([D('303', 2026, 'T1', 'ready')])).toHaveLength(1);
     });
 
     it('returns empty array when all declarations are completed', () => {
       const decls = [
-        D('303', 2026, 'T1', 'presentado'),
-        D('303', 2026, 'T2', 'omitido'),
-        D('303', 2026, 'T3', 'presentadoAcuse'),
+        D('303', 2026, 'T1', 'submitted'),
+        D('303', 2026, 'T2', 'skipped'),
+        D('303', 2026, 'T3', 'submitted_ack'),
       ];
       expect(computeUpcomingDeadlines(decls)).toHaveLength(0);
     });
@@ -708,28 +856,28 @@ describe('computeUpcomingDeadlines', () => {
 
   describe('quarter period deadlines', () => {
     it('T1 → deadline April 20 (month index 3)', () => {
-      const [{ deadline }] = computeUpcomingDeadlines([D('303', 2026, 'T1', 'borrador')]);
+      const [{ deadline }] = computeUpcomingDeadlines([D('303', 2026, 'T1', 'draft')]);
       expect(deadline.getFullYear()).toBe(2026);
       expect(deadline.getMonth()).toBe(3);
       expect(deadline.getDate()).toBe(20);
     });
 
     it('T2 → deadline July 20 (month index 6)', () => {
-      const [{ deadline }] = computeUpcomingDeadlines([D('303', 2026, 'T2', 'borrador')]);
+      const [{ deadline }] = computeUpcomingDeadlines([D('303', 2026, 'T2', 'draft')]);
       expect(deadline.getFullYear()).toBe(2026);
       expect(deadline.getMonth()).toBe(6);
       expect(deadline.getDate()).toBe(20);
     });
 
     it('T3 → deadline October 20 (month index 9)', () => {
-      const [{ deadline }] = computeUpcomingDeadlines([D('303', 2026, 'T3', 'borrador')]);
+      const [{ deadline }] = computeUpcomingDeadlines([D('303', 2026, 'T3', 'draft')]);
       expect(deadline.getFullYear()).toBe(2026);
       expect(deadline.getMonth()).toBe(9);
       expect(deadline.getDate()).toBe(20);
     });
 
     it('T4 → deadline January 20 of next year', () => {
-      const [{ deadline }] = computeUpcomingDeadlines([D('303', 2025, 'T4', 'pendiente')]);
+      const [{ deadline }] = computeUpcomingDeadlines([D('303', 2025, 'T4', 'draft')]);
       expect(deadline.getFullYear()).toBe(2026);
       expect(deadline.getMonth()).toBe(0);
       expect(deadline.getDate()).toBe(20);
@@ -738,28 +886,28 @@ describe('computeUpcomingDeadlines', () => {
 
   describe('monthly period deadlines', () => {
     it('"03" → deadline April 20 (month index 3)', () => {
-      const [{ deadline }] = computeUpcomingDeadlines([D('349', 2026, '03', 'pendiente')]);
+      const [{ deadline }] = computeUpcomingDeadlines([D('349', 2026, '03', 'draft')]);
       expect(deadline.getFullYear()).toBe(2026);
       expect(deadline.getMonth()).toBe(3);
       expect(deadline.getDate()).toBe(20);
     });
 
     it('"12" → deadline January 20 of next year', () => {
-      const [{ deadline }] = computeUpcomingDeadlines([D('349', 2025, '12', 'pendiente')]);
+      const [{ deadline }] = computeUpcomingDeadlines([D('349', 2025, '12', 'draft')]);
       expect(deadline.getFullYear()).toBe(2026);
       expect(deadline.getMonth()).toBe(0);
       expect(deadline.getDate()).toBe(20);
     });
 
     it('"01" → deadline February 20', () => {
-      const [{ deadline }] = computeUpcomingDeadlines([D('349', 2026, '01', 'pendiente')]);
+      const [{ deadline }] = computeUpcomingDeadlines([D('349', 2026, '01', 'draft')]);
       expect(deadline.getFullYear()).toBe(2026);
       expect(deadline.getMonth()).toBe(1);
       expect(deadline.getDate()).toBe(20);
     });
 
     it('"06" → deadline July 20 (month index 6)', () => {
-      const [{ deadline }] = computeUpcomingDeadlines([D('349', 2026, '06', 'pendiente')]);
+      const [{ deadline }] = computeUpcomingDeadlines([D('349', 2026, '06', 'draft')]);
       expect(deadline.getFullYear()).toBe(2026);
       expect(deadline.getMonth()).toBe(6);
       expect(deadline.getDate()).toBe(20);
@@ -769,9 +917,9 @@ describe('computeUpcomingDeadlines', () => {
   describe('sorting', () => {
     it('sorts by deadline ascending (earlier first)', () => {
       const decls = [
-        D('303', 2026, 'T3', 'borrador'),
-        D('303', 2026, 'T1', 'borrador'),
-        D('303', 2026, 'T2', 'borrador'),
+        D('303', 2026, 'T3', 'draft'),
+        D('303', 2026, 'T1', 'draft'),
+        D('303', 2026, 'T2', 'draft'),
       ];
       const result = computeUpcomingDeadlines(decls);
       expect(result[0].deadline <= result[1].deadline).toBe(true);
@@ -780,8 +928,8 @@ describe('computeUpcomingDeadlines', () => {
 
     it('first result has the earliest deadline', () => {
       const decls = [
-        D('303', 2026, 'T4', 'borrador'),
-        D('303', 2026, 'T1', 'borrador'),
+        D('303', 2026, 'T4', 'draft'),
+        D('303', 2026, 'T1', 'draft'),
       ];
       const result = computeUpcomingDeadlines(decls);
       expect(result[0].decl.period).toBe('T1');
@@ -790,43 +938,122 @@ describe('computeUpcomingDeadlines', () => {
 
   describe('limit parameter', () => {
     it('respects the default limit of 5', () => {
-      const decls = ['T1', 'T2', 'T3', 'T4'].map(p => D('303', 2026, p, 'pendiente'))
-        .concat(['01', '02'].map(p => D('349', 2026, p, 'pendiente')));
+      const decls = ['T1', 'T2', 'T3', 'T4'].map(p => D('303', 2026, p, 'draft'))
+        .concat(['01', '02'].map(p => D('349', 2026, p, 'draft')));
       const result = computeUpcomingDeadlines(decls);
       expect(result).toHaveLength(5);
     });
 
     it('respects a custom limit of 2', () => {
-      const decls = ['T1', 'T2', 'T3', 'T4'].map(p => D('303', 2026, p, 'pendiente'));
+      const decls = ['T1', 'T2', 'T3', 'T4'].map(p => D('303', 2026, p, 'draft'));
       expect(computeUpcomingDeadlines(decls, 2)).toHaveLength(2);
     });
 
     it('returns fewer items than limit when not enough declarations', () => {
-      const decls = [D('303', 2026, 'T1', 'borrador')];
+      const decls = [D('303', 2026, 'T1', 'draft')];
       expect(computeUpcomingDeadlines(decls, 5)).toHaveLength(1);
     });
 
     it('returns empty array with limit=0', () => {
-      const decls = [D('303', 2026, 'T1', 'borrador')];
+      const decls = [D('303', 2026, 'T1', 'draft')];
       expect(computeUpcomingDeadlines(decls, 0)).toHaveLength(0);
     });
   });
 
   describe('result shape', () => {
     it('each result item has a decl property', () => {
-      const [item] = computeUpcomingDeadlines([D('303', 2026, 'T1', 'borrador')]);
+      const [item] = computeUpcomingDeadlines([D('303', 2026, 'T1', 'draft')]);
       expect(item).toHaveProperty('decl');
     });
 
     it('each result item has a deadline Date instance', () => {
-      const [item] = computeUpcomingDeadlines([D('303', 2026, 'T1', 'borrador')]);
+      const [item] = computeUpcomingDeadlines([D('303', 2026, 'T1', 'draft')]);
       expect(item.deadline).toBeInstanceOf(Date);
     });
 
     it('decl on result item equals the original declaration', () => {
-      const decl = D('303', 2026, 'T1', 'borrador');
+      const decl = D('303', 2026, 'T1', 'draft');
       const [item] = computeUpcomingDeadlines([decl]);
       expect(item.decl).toBe(decl);
     });
+  });
+});
+
+// ── generate303File ───────────────────────────────────────────────────────────
+
+describe('generate303File', () => {
+  const DECL = { id: '303-2026-T2', model: '303', year: 2026, period: 'T2', result: { kind: 'I' } };
+  const TOKEN = 'test-token';
+  const API_BASE = 'http://host/neo/fiscal-models';
+
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+  function mockFetchOk(blob = new Blob(['data'])) {
+    const objectUrl = 'blob:mock';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, blob: () => Promise.resolve(blob) }));
+    vi.stubGlobal('URL', {
+      createObjectURL: vi.fn().mockReturnValue(objectUrl),
+      revokeObjectURL: vi.fn(),
+    });
+    const anchor = { href: '', download: '', click: vi.fn() };
+    vi.spyOn(document.body, 'appendChild').mockImplementation(() => {});
+    vi.spyOn(document.body, 'removeChild').mockImplementation(() => {});
+    vi.spyOn(document, 'createElement').mockReturnValue(anchor);
+    return { anchor, objectUrl };
+  }
+
+  it('returns false when token is missing', async () => {
+    expect(await generate303File(DECL, { token: '', apiBaseUrl: API_BASE })).toBe(false);
+    expect(await generate303File(DECL, { apiBaseUrl: API_BASE })).toBe(false);
+  });
+
+  it('returns false when apiBaseUrl is missing', async () => {
+    expect(await generate303File(DECL, { token: TOKEN })).toBe(false);
+  });
+
+  it('builds the correct URL with URLSearchParams', async () => {
+    mockFetchOk();
+    await generate303File(DECL, { token: TOKEN, apiBaseUrl: API_BASE });
+    const calledUrl = vi.mocked(fetch).mock.calls[0][0];
+    expect(calledUrl).toContain('/fiscal303/generate?');
+    expect(calledUrl).toContain('year=2026');
+    expect(calledUrl).toContain('period=T2');
+    expect(calledUrl).toContain('tipo=I');
+  });
+
+  it('uses the result.kind from decl as tipo', async () => {
+    mockFetchOk();
+    await generate303File({ ...DECL, result: { kind: 'C' } }, { token: TOKEN, apiBaseUrl: API_BASE });
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('tipo=C');
+  });
+
+  it('defaults tipo to N when result.kind is absent', async () => {
+    mockFetchOk();
+    await generate303File({ ...DECL, result: null }, { token: TOKEN, apiBaseUrl: API_BASE });
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('tipo=N');
+  });
+
+  it('sends Authorization header', async () => {
+    mockFetchOk();
+    await generate303File(DECL, { token: TOKEN, apiBaseUrl: API_BASE });
+    expect(vi.mocked(fetch).mock.calls[0][1].headers.Authorization).toBe(`Bearer ${TOKEN}`);
+  });
+
+  it('returns true and triggers download on success', async () => {
+    const { anchor } = mockFetchOk();
+    const result = await generate303File(DECL, { token: TOKEN, apiBaseUrl: API_BASE });
+    expect(result).toBe(true);
+    expect(anchor.download).toBe('303_T2_2026.txt');
+    expect(anchor.click).toHaveBeenCalled();
+  });
+
+  it('returns false when fetch responds not ok', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
+    expect(await generate303File(DECL, { token: TOKEN, apiBaseUrl: API_BASE })).toBe(false);
+  });
+
+  it('returns false when fetch throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
+    expect(await generate303File(DECL, { token: TOKEN, apiBaseUrl: API_BASE })).toBe(false);
   });
 });

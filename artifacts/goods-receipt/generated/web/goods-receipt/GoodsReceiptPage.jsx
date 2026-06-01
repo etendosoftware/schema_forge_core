@@ -118,7 +118,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/partnerAddress"
+      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "goodsReceipt",
@@ -134,7 +143,20 @@ export const api = {
       "column": "C_Project_ID",
       "reference": "Project",
       "inputMode": "search",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/project"
+      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/project",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "goodsReceipt",
@@ -182,7 +204,20 @@ export const api = {
       "column": "C_Aum",
       "reference": "UOM",
       "inputMode": "selector",
-      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/operativeUOM"
+      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/operativeUOM",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "M_Product_ID",
+            "source": "field",
+            "field": "product"
+          }
+        ]
+      }
     },
     {
       "entity": "goodsReceiptLine",
@@ -198,7 +233,16 @@ export const api = {
       "column": "M_Locator_ID",
       "reference": "Locator",
       "inputMode": "selector",
-      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/storageBin"
+      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/storageBin",
+      "context": {
+        "required": [
+          {
+            "param": "M_Warehouse_ID",
+            "source": "parentField",
+            "field": "warehouse"
+          }
+        ]
+      }
     },
     {
       "entity": "goodsReceiptLine",

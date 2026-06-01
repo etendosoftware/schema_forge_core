@@ -90,7 +90,7 @@ describe('SendToSifButton', () => {
     );
   });
 
-  it('dispatches the invoice-updated event after at least one successful send', async () => {
+  it('dispatches the invoice-updated event only after the user closes the results modal', async () => {
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
 
     renderButton({
@@ -101,6 +101,13 @@ describe('SendToSifButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'sendToSifConfirm' }));
 
     await screen.findByText('sendToSifSuccessTbai');
+
+    // The event must NOT be dispatched while results are still showing
+    expect(dispatchSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'sales-invoice:invoice-updated' }),
+    );
+
+    // Close the modal — NOW the event fires
     fireEvent.click(screen.getByRole('button', { name: 'close' }));
 
     expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({

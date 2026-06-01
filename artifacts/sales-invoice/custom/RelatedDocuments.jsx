@@ -7,6 +7,7 @@ import {
   STATUS_KEYS,
   CHIP_ICONS,
   CHIP_COLORS,
+  docChipProps,
   fetchById,
   fetchByCriteria,
 } from '@/components/related-documents';
@@ -117,6 +118,24 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
         status={inv.documentStatus}
         statusLabel={ui(STATUS_KEYS[inv.documentStatus] || inv.documentStatus)}
         onClick={() => navigate(`/sales-invoice/${inv.id}`)}
+      />
+    );
+  }
+
+  if (data?.sourceReturnReceipt) {
+    chips.push(
+      <DocChip
+        key="source-return-receipt"
+        {...docChipProps({ type: 'return-material-receipt', doc: data.sourceReturnReceipt, ui, navigate })}
+      />
+    );
+  }
+
+  if (data?.sourceInvoice) {
+    chips.push(
+      <DocChip
+        key="source-invoice"
+        {...docChipProps({ type: 'sales-invoice', doc: data.sourceInvoice, ui, navigate })}
       />
     );
   }

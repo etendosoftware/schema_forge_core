@@ -23,9 +23,9 @@ The Assets window should let a finance user register fixed assets, define how ea
 - Visibility: visible from the Finance menu as **Assets**.
 - Implementation type: generated window route with custom detail surfaces layered into the generated page (`AssetsConfigPanel`, `AssetsAmortizationPanel`, `AssetsSidebar`).
 - Window shape: master-child. The master entity is `assets`; the child surfaces are `amortizationLine` and `assetAcct`.
-- Detail layout: the detail page uses a sidebar layout, exposes an **Overview** tab plus a **Depreciation Setup** tab, and hides print, more-menu, more-details, and list-filter chrome.
+- Detail layout: the detail page uses a sidebar layout, exposes an **Overview** tab plus a **Depreciation Setup** tab, and hides print, more-menu, more-details chrome.
 - An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
-- List behavior: the list still exposes supported filters in the contract (`searchKey`, `name`, `assetCategory`, `depreciate`, `fullyDepreciated`), but the visible list-filter UI is intentionally hidden in the shell.
+- List toolbar: shows an **"All statuses ▾"** dropdown to filter by `fullyDepreciated` (Fully deprecated / Still in progress) and a funnel icon for the Conditional Filter. The `fullyDepreciated` column is hidden from visual display (`hiddenColumns`) but present in the columns array to power the status dropdown.
 
 ## Reactive behavior and dependencies
 
@@ -39,7 +39,7 @@ The Assets window should let a finance user register fixed assets, define how ea
 - The **Create Amortization** action is only exposed when the asset is marked as depreciated.
 - The amortization footer panel and right sidebar both depend on the current asset record id. They fetch amortization lines with `parentId={assetId}` and sort them by `sEQNoAsset asc`, so the child schedule is expected to stay anchored to the selected asset and appear in sequence order.
 - After a successful asset process event (`neo:processSuccess` for the current asset), the amortization footer re-fetches its lines. This is the clearest visible evidence that generating an amortization plan should refresh the schedule immediately in the detail view.
-- The sidebar derives progress from the amortization lines plus the asset's `depreciatedValue` and `assetValue`, so summary cards should react as line totals and depreciated value evolve.
+- The sidebar derives progress from the amortization lines plus the asset's `depreciatedValue` and planned totals. The denominator for the percentage is `depreciatedPlan` (system-computed) or `depreciationAmt` (user-configured) — NOT `assetValue`, which is the current book value and reaches 0 when fully deprecated. The same fix applies to the `renderDepreciationProgress` cell in the list table.
 - In the Asset Amortization child surface, editable fields become read-only when the line is processed, which indicates that posted or finalized schedule lines should no longer be freely editable.
 - In the Accounting child surface, selectors are exposed for general ledger, accumulated depreciation, and depreciation accounts. The current evidence shows selectable mappings, but no additional reactive cross-field behavior is visible.
 - No totals, discounts, or tax-style recalculations are visible here beyond depreciation progress, planned amount totals, and sequence-based schedule refresh.
@@ -55,15 +55,16 @@ The Assets window should let a finance user register fixed assets, define how ea
 
 ## Manual verification
 
-1. Open `/assets` from the Finance menu and confirm the Assets list renders without visible list-filter, print, or more-menu chrome.
+1. Open `/assets` from the Finance menu and confirm the Assets list renders with an "All statuses ▾" dropdown and funnel, without print or more-menu chrome.
 2. Open or create an asset and confirm the record starts with core setup fields such as Search Key, Name, and Asset Category.
 3. Toggle **Depreciate** off and on and confirm the depreciation setup section appears only when depreciation is enabled.
 4. Switch calculation type between percentage-based and time-based setups and confirm the window swaps the expected inputs:
-   - percentage path shows **Annual Depreciation %**
+   - percentage path shows **Annual Depreciation %** (label: `assetsAnnualDepreciationLabel`)
    - time path shows **Amortize** and usable-life inputs
 5. Save an asset with depreciation enabled and confirm the **Create Amortization** action is available.
 6. Trigger **Create Amortization** against a live backend and confirm the amortization footer refreshes and shows ordered schedule rows.
 7. Review the right sidebar and confirm depreciation summary metrics react to the loaded amortization lines.
+7a. Click any row in the Amortization Plan and confirm it navigates to `/amortization/{id}`, opening the corresponding amortization document.
 8. Open the **Asset Amortization** child surface and confirm line ordering follows sequence number, with processed rows becoming non-editable.
 9. Open the **Accounting** child surface and confirm the record exposes selectors for general ledger, accumulated depreciation, and depreciation accounts.
 10. If amortization lines already exist, confirm the asset currency can no longer be edited.
@@ -81,11 +82,39 @@ The Assets window should let a finance user register fixed assets, define how ea
   - child CRUD surfaces for `amortizationLine` and `assetAcct`
   - selector endpoints for asset category, currency, amortization, accounting schema, accumulated depreciation, and depreciation accounts
   - generated validation entries covering field presence, types, read-only/display logic, CRUD flags, and selector endpoints for the assets, amortizationLine, and assetAcct entities
-- `tools/app-shell/src/windows/custom/assets/AssetsConfigPanel.jsx` implements the visible setup logic that switches fields based on depreciation and calculation choices. All field labels (currency, purchase/cancellation/depreciation dates, asset value, residual value, depreciation amount, and previously depreciated amount) are resolved through `useUI()` with keys registered in both `en_US` and `es_ES` locales.
-- `tools/app-shell/src/windows/custom/assets/AssetsAmortizationPanel.jsx` fetches amortization lines by `parentId`, refreshes on `neo:processSuccess`, and shows planned totals/status. Monetary amounts in the amortization table and footer total are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`.
-- `tools/app-shell/src/windows/custom/assets/AssetsSidebar.jsx` derives depreciation progress from the asset header plus amortization lines. The asset value and planned depreciation metric cards display amounts using the org's configured currency via `useCurrency()` and `formatCurrency()`.
+- `tools/app-shell/src/windows/custom/assets/AssetsConfigPanel.jsx` implements the visible setup logic that switches fields based on depreciation and calculation choices. All field labels — including currency, purchase/cancellation/depreciation dates, asset value, residual value, depreciation amount, previously depreciated amount, and **annual depreciation percentage** (`assetsAnnualDepreciationLabel`) — are resolved through `useUI()` with keys registered in both `en_US` and `es_ES` locales. On new records, a `useEffect` calls `onChange('currency', data.currency)` on mount to register the backend-defaulted currency value in the form's change tracking — preventing it from being silently dropped on first save. The currency default expression `@C_Currency_ID@` is configured in `artifacts/assets/decisions.json` and pushed to `ETGO_SF_FIELD.DefaultValue` so the NEO `/defaults` endpoint resolves the org's functional currency for new records.
+- `tools/app-shell/src/windows/custom/assets/AssetsAmortizationPanel.jsx` fetches amortization lines by `parentId`, refreshes on `neo:processSuccess`, and shows planned totals/status. Monetary amounts in the amortization table and footer total are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`. Each row is clickable: clicking navigates to `/amortization/{amortizationId}`, linking directly to the corresponding Amortization document.
+- `tools/app-shell/src/windows/custom/assets/AssetsSidebar.jsx` derives depreciation progress from the asset header plus amortization lines. The percentage uses `depreciatedPlan` (or `depreciationAmt` as fallback) as the denominator — not `assetValue`, which reaches 0 when fully deprecated. The same logic applies to `renderDepreciationProgress` in `cli/src/generate-frontend.js` (the "Fully Depreciated" list column).
+- `artifacts/assets/decisions.json` configures `fullyDepreciated` with `columnType: "status"`, `filterOnly: true` (hidden from display, present for `ListFilterBar` detection), and `filterable: false` (excluded from Conditional Filter). The status dropdown normalizes JS booleans (`true`/`false`) to canonical string codes (`"true"`/`"false"`) in `ListFilterBar.jsx`.
 - No assets-specific browser or component test file was found in `tools/app-shell/test` or `tools/app-shell/src/**/__tests__`, so the automated evidence is structural/code-backed rather than end-to-end behavioral proof.
 - The generated `AssetsPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `A_Asset` AD table.
+
+## Visual polish — ETP-4103
+
+Changes landed in `feature/ETP-4103`. All items below affect the Assets window specifically or in common with Amortization.
+
+- `toolbarBorderBottom: true` in `decisions.json` — adds a horizontal divider line below the toolbar buttons row.
+- `sidebarClassName: "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2"` in `decisions.json` — sidebar is now proportional (30% of detail width) with a left-border divider and 8 px internal padding. Previously fixed at `w-96`.
+- `toolbarButtonSize: "default"` in `decisions.json` — toolbar buttons (including the kebab menu) are now `h-10 w-10`, matching the Contacts window. Previously `sm` (`h-9`).
+- `listbarPaddingX: "px-2"` and `tablePaddingX: "px-2"` in `decisions.json` — list-view toolbar and table horizontal padding reduced from 24 px to 8 px.
+- `tools/app-shell/src/windows/custom/assets/AssetsSidebar.jsx` — outer `rounded-2xl border bg-white shadow-sm` card wrapper removed; the sidebar `border-l` divider from `sidebarClassName` makes the wrapper border redundant.
+- `whiteFormBackground: true` in `decisions.json` — forces white background on form inputs and textareas, overriding the `bg-[#F5F7F9]` default on inputs and `bg-background` on textareas. Disabled textareas use `opacity-50` instead of `bg-muted/50` for visual consistency.
+- `compactSidebarPadding: true` in `decisions.json` — reduces the detail content wrapper padding to `p-2` (8 px) instead of `pl-6 pr-2`. This prop is scoped exclusively to Assets.
+- `tools/app-shell/src/windows/custom/assets/AssetsConfigPanel.jsx` — outer container classes updated to `bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50`, ensuring white field backgrounds in the Depreciation Setup tab consistent with `whiteFormBackground`.
+
+## v3 UX redesign — ETP-4103
+
+Changes landed in `feature/ETP-4103`. Items below cover the full-form restructure specific to the Assets window.
+
+- `primaryTabs` removed from `decisions.json` — the "General" / "Depreciation Setup" tab selector no longer exists; the window opens directly to a unified form.
+- `AssetsDetailPanel.jsx` added at `tools/app-shell/src/windows/custom/assets/AssetsDetailPanel.jsx` — custom `formFooter` component that renders all fields in four grouped sections with `GroupHead` dividers: Group 1 — Asset Info (searchKey, name, assetCategory, description in a 4-column grid); Group 2 — Financial Info (currency, assetValue, residualAssetValue, depreciationAmt, previouslyDepreciatedAmt); Group 3 — Depreciation Config (ToggleCards + conditional depreciation fields); Group 4 — Dates (visible only when `depreciate=true`). Replaces both the standard `EntityForm` and `AssetsConfigPanel` as the primary form UI.
+- All header fields set to `form: false` in `decisions.json` — the standard `EntityForm` renders nothing. `hideFormCard: true` hides the now-empty card.
+- `AssetsAmortizationPanel` moved from `formFooter` to a secondary tab — declared via `window.customPanelTabs` in `decisions.json`; appears as the first secondary tab "Plan de amortización" (before Attachments); reports line count via `onCountChange` for the tab badge.
+- `hideFormCard` prop added to `DetailView.jsx` (default `false`) — when `true`, adds a `hidden` class to the form card wrapper; safe for all other windows because the default is `false`.
+- `customPanelTabs` support added to the generator (`generate-frontend.js` + `resolve-curated.js`) — accepts an array of `{ key, labelKey, component }` entries under `window` config; each entry is imported from the custom directory and added as a `customTab` with `placement: 'tab'`, before Attachments in tab order.
+- `contentBg` changed to `bg-white` — the detail content area background is now white (was `bg-slate-50`).
+- `AssetsSidebar.jsx` — "Valor actual" MetricCard uses `bg-blue-50` tint (was neutral gray); "Progreso de depreciación" ProgressCard uses `bg-white border border-gray-100`.
+- `AssetsAmortizationPanel.jsx` — internal title/description header removed; table uses system design tokens (`text-foreground`, `border-border/50`) matching DataTable style; horizontal padding removed (`px-5` dropped).
 
 ## Pipeline regeneration — ETP-3908
 

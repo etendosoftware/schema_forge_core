@@ -5,7 +5,8 @@ export async function computeBoxes303(decl, { token, apiBaseUrl } = {}) {
   if (token && apiBaseUrl) {
     try {
       const base = apiBaseUrl.replace(/\/[^/]+$/, '');
-      const url = `${base}/fiscal303/boxes?year=${decl.year}&period=${decl.period}`;
+      const params = new URLSearchParams({ year: decl.year, period: decl.period });
+      const url = `${base}/fiscal303/boxes?${params}`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) return await res.json();
     } catch (_) {
@@ -36,29 +37,58 @@ export async function computeBoxes303(decl, { token, apiBaseUrl } = {}) {
   return null;
 }
 
+/**
+ * Calls GET /neo/fiscal303/generate and triggers a browser file download.
+ * Returns true on success, false on error.
+ */
+export async function generate303File(decl, { token, apiBaseUrl } = {}) {
+  if (!token || !apiBaseUrl) return false;
+  try {
+    const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+    const tipo = decl.result?.kind ?? 'N';
+    const params = new URLSearchParams({ year: decl.year, period: decl.period, tipo });
+    const url = `${base}/fiscal303/generate?${params}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return false;
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = `303_${decl.period}_${decl.year}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+// 'pending' is kept intentionally: Modelo 349 uses it as its initial draft state.
 export const STATUSES = [
-  'omitido', 'pendiente', 'borrador', 'listo',
-  'presentado', 'presentadoOtra', 'presentadoAcuse',
+  'skipped', 'pending', 'draft', 'ready',
+  'submitted', 'submitted_ext', 'submitted_ack',
 ];
 
 export const STATUS_COLOR = {
-  omitido:         'grey',
-  pendiente:       'orange',
-  borrador:        'blue',
-  listo:           'green',
-  presentado:      'teal',
-  presentadoOtra:  'violet',
-  presentadoAcuse: 'emerald',
+  skipped:       'grey',
+  pending:       'orange',
+  draft:         'blue',
+  ready:         'green',
+  submitted:     'teal',
+  submitted_ext: 'violet',
+  submitted_ack: 'emerald',
 };
 
 export const STATUS_ICON = {
-  omitido:         '×',
-  pendiente:       '○',
-  borrador:        '✎',
-  listo:           '✓',
-  presentado:      '✓',
-  presentadoOtra:  '↗',
-  presentadoAcuse: '☑',
+  skipped:       '×',
+  pending:       '○',
+  draft:         '✎',
+  ready:         '✓',
+  submitted:     '✓',
+  submitted_ext: '↗',
+  submitted_ack: '☑',
 };
 
 export const STATUS_ORDER = [...STATUSES];
@@ -214,7 +244,7 @@ export function deriveBoxes303(data) {
 }
 
 const COMPLETED_STATUSES = new Set([
-  'presentado', 'presentadoOtra', 'presentadoAcuse', 'omitido',
+  'submitted', 'submitted_ext', 'submitted_ack', 'skipped',
 ]);
 
 function getDeadlineDate(model, year, period) {
@@ -231,6 +261,25 @@ function getDeadlineDate(model, year, period) {
     return new Date(y, nextM - 1, 20);
   }
   return null;
+}
+
+/**
+ * Returns true if any invoice affecting the given declaration's period was
+ * updated after sinceMs (Unix ms timestamp). Returns false on any error.
+ */
+export async function checkModified303(decl, sinceMs, { token, apiBaseUrl } = {}) {
+  if (!token || !apiBaseUrl) return false;
+  try {
+    const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+    const params = new URLSearchParams({ year: decl.year, period: decl.period, since: sinceMs });
+    const url = `${base}/fiscal303/modified?${params}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data.modified === true;
+  } catch (_) {
+    return false;
+  }
 }
 
 export function computeUpcomingDeadlines(decls, limit = 5) {

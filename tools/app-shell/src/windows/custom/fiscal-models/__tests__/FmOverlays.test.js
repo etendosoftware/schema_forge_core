@@ -39,8 +39,8 @@ describe('FmOverlays — no removed components', () => {
 });
 
 describe('PresentModal — 3 paths', () => {
-  it('has presentadoAcuse path', () => assert.match(src, /presentadoAcuse/));
-  it('has presentado (sin acuse) path', () => assert.match(src, /'presentado'/));
-  it('has presentadoOtra path', () => assert.match(src, /presentadoOtra/));
-  it('file upload tied to presentadoAcuse path', () => assert.match(src, /acuseFile/));
+  it('has submitted_ack path', () => assert.match(src, /submitted_ack/));
+  it('has submitted (no ack) path', () => assert.match(src, /'submitted'/));
+  it('has submitted_ext path', () => assert.match(src, /submitted_ext/));
+  it('file upload tied to submitted_ack path', () => assert.match(src, /acuseFile/));
 });

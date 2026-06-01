@@ -125,6 +125,19 @@ describe('createMockFetch', () => {
     assert.equal(order.docStatus, 'VO');
   });
 
+  it('POST email contract send returns a mock contract success', async () => {
+    const mockFetch = createMockFetch(mockData, basePath);
+    const res = await mockFetch(`${basePath}/email-contracts/sales-invoice-send/send`, {
+      method: 'POST',
+      body: JSON.stringify({ version: 'v1', recordId: 'mock-001', intent: 'send-document' }),
+    });
+    assert.equal(res.ok, true);
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.status, 'SENT');
+    assert.match(data.auditId, /^mock-email-/);
+  });
+
   it('PUT to unknown entity returns 404', async () => {
     const mockFetch = createMockFetch(mockData, basePath);
     const res = await mockFetch(`${basePath}/invoice/mock-001`, {

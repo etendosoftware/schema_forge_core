@@ -39,6 +39,58 @@ function issue(level, code, message, path, severity = 'error') {
   return { level, code, message, path, severity };
 }
 
+function validateLevel1Fields(entity, errors, ePath) {
+  // Duplicate field names
+  const fieldNames = entity.fields.map(f => f.name);
+  const seenFields = new Set();
+  for (const name of fieldNames) {
+    if (seenFields.has(name)) {
+      errors.push(issue(1, 'DUPLICATE_FIELD', `Duplicate field name: ${name}`, `${ePath}.fields.${name}`));
+    }
+    seenFields.add(name);
+  }
+
+  for (const field of entity.fields) {
+    const fPath = `${ePath}.fields.${field.name}`;
+
+    // Valid visibility
+    if (field.visibility && !VALID_VISIBILITY.includes(field.visibility)) {
+      errors.push(issue(1, 'INVALID_ENUM', `Invalid visibility: ${field.visibility}`, `${fPath}.visibility`));
+    }
+
+    // Valid type
+    if (field.type && !VALID_TYPES.includes(field.type)) {
+      errors.push(issue(1, 'INVALID_ENUM', `Invalid field type: ${field.type}`, `${fPath}.type`));
+    }
+  }
+}
+
+function validateLevel1Entities(schema, errors) {
+  // Duplicate entity names
+  const entityNames = schema.entities.map(e => e.name);
+  const seenEntities = new Set();
+  for (const name of entityNames) {
+    if (seenEntities.has(name)) {
+      errors.push(issue(1, 'DUPLICATE_ENTITY', `Duplicate entity name: ${name}`, `entities.${name}`));
+    }
+    seenEntities.add(name);
+  }
+
+  for (const entity of schema.entities) {
+    const ePath = `entities.${entity.name}`;
+
+    // Valid level
+    if (entity.level && !VALID_LEVELS.includes(entity.level)) {
+      errors.push(issue(1, 'INVALID_ENUM', `Invalid entity level: ${entity.level}`, `${ePath}.level`));
+    }
+
+    // Field validation
+    if (Array.isArray(entity.fields)) {
+      validateLevel1Fields(entity, errors, ePath);
+    }
+  }
+}
+
 /**
  * Level 1 - Structural validation.
  * Checks required fields, valid enums, duplicate names.
@@ -75,54 +127,26 @@ function validateLevel1(schema) {
 
   // Entity validation
   if (Array.isArray(schema.entities)) {
-    // Duplicate entity names
-    const entityNames = schema.entities.map(e => e.name);
-    const seenEntities = new Set();
-    for (const name of entityNames) {
-      if (seenEntities.has(name)) {
-        errors.push(issue(1, 'DUPLICATE_ENTITY', `Duplicate entity name: ${name}`, `entities.${name}`));
-      }
-      seenEntities.add(name);
-    }
-
-    for (const entity of schema.entities) {
-      const ePath = `entities.${entity.name}`;
-
-      // Valid level
-      if (entity.level && !VALID_LEVELS.includes(entity.level)) {
-        errors.push(issue(1, 'INVALID_ENUM', `Invalid entity level: ${entity.level}`, `${ePath}.level`));
-      }
-
-      // Field validation
-      if (Array.isArray(entity.fields)) {
-        // Duplicate field names
-        const fieldNames = entity.fields.map(f => f.name);
-        const seenFields = new Set();
-        for (const name of fieldNames) {
-          if (seenFields.has(name)) {
-            errors.push(issue(1, 'DUPLICATE_FIELD', `Duplicate field name: ${name}`, `${ePath}.fields.${name}`));
-          }
-          seenFields.add(name);
-        }
-
-        for (const field of entity.fields) {
-          const fPath = `${ePath}.fields.${field.name}`;
-
-          // Valid visibility
-          if (field.visibility && !VALID_VISIBILITY.includes(field.visibility)) {
-            errors.push(issue(1, 'INVALID_ENUM', `Invalid visibility: ${field.visibility}`, `${fPath}.visibility`));
-          }
-
-          // Valid type
-          if (field.type && !VALID_TYPES.includes(field.type)) {
-            errors.push(issue(1, 'INVALID_ENUM', `Invalid field type: ${field.type}`, `${fPath}.type`));
-          }
-        }
-      }
-    }
+    validateLevel1Entities(schema, errors);
   }
 
   return { errors, warnings };
+}
+
+function validateLevel2Fields(entity, ePath, errors, fieldNames) {
+  for (const field of entity.fields) {
+    const fPath = `${ePath}.fields.${field.name}`;
+
+    // FK fields must have reference object (skip system/discarded — they don't reach the UI)
+    if (field.type === 'foreignKey' && !field.reference && field.visibility !== 'system' && field.visibility !== 'discarded') {
+      errors.push(issue(2, 'FK_MISSING_REF', `Foreign key field '${field.name}' missing reference object`, `${fPath}.reference`));
+    }
+
+    // cascadeFrom must reference a valid field in the same entity
+    if (field.cascadeFrom && !fieldNames.has(field.cascadeFrom)) {
+      errors.push(issue(2, 'INVALID_CASCADE', `cascadeFrom references nonexistent field: ${field.cascadeFrom}`, `${fPath}.cascadeFrom`));
+    }
+  }
 }
 
 /**
@@ -156,23 +180,57 @@ function validateLevel2(schema) {
     if (Array.isArray(entity.fields)) {
       const fieldNames = new Set(entity.fields.map(f => f.name));
 
-      for (const field of entity.fields) {
-        const fPath = `${ePath}.fields.${field.name}`;
-
-        // FK fields must have reference object (skip system/discarded — they don't reach the UI)
-        if (field.type === 'foreignKey' && !field.reference && field.visibility !== 'system' && field.visibility !== 'discarded') {
-          errors.push(issue(2, 'FK_MISSING_REF', `Foreign key field '${field.name}' missing reference object`, `${fPath}.reference`));
-        }
-
-        // cascadeFrom must reference a valid field in the same entity
-        if (field.cascadeFrom && !fieldNames.has(field.cascadeFrom)) {
-          errors.push(issue(2, 'INVALID_CASCADE', `cascadeFrom references nonexistent field: ${field.cascadeFrom}`, `${fPath}.cascadeFrom`));
-        }
-      }
+      validateLevel2Fields(entity, ePath, errors, fieldNames);
     }
   }
 
   return { errors, warnings };
+}
+
+function validateLevel3SystemFields(entity, ePath, systemColumnNames, warnings, errors, isHeader) {
+  function hasInvalidSystemCategory(field) {
+    return field.systemCategory && !VALID_SYSTEM_CATEGORIES.includes(field.systemCategory);
+  }
+
+  function hasInvalidFromParentDerivation(field) {
+    return field.derivation && field.derivation.type === 'fromParent' && isHeader && !entity.parentEntity;
+  }
+
+  function lacksDerivationSource(field) {
+    return !field.derivation && !systemColumnNames.has(field.column);
+  }
+
+  for (const field of entity.fields) {
+    if (field.visibility !== 'system') continue;
+
+    const fPath = `${ePath}.fields.${field.name}`;
+
+    // System fields must have derivation or be in system-columns.json
+    if (lacksDerivationSource(field)) {
+      warnings.push(issue(3, 'SYSTEM_NO_DERIVATION', `System field '${field.name}' has no derivation and is not in system-columns.json`, fPath, 'warning'));
+    }
+
+    // System fields must have valid systemCategory
+    if (hasInvalidSystemCategory(field)) {
+      errors.push(issue(3, 'INVALID_SYSTEM_CATEGORY', `Invalid systemCategory: ${field.systemCategory}`, `${fPath}.systemCategory`));
+    }
+
+    // No UI properties on system fields
+    if (field.searchable === true) {
+      errors.push(issue(3, 'SYSTEM_UI_PROP', `System field '${field.name}' must not have searchable=true`, `${fPath}.searchable`));
+    }
+    if (field.grid === true) {
+      errors.push(issue(3, 'SYSTEM_UI_PROP', `System field '${field.name}' must not have grid=true`, `${fPath}.grid`));
+    }
+    if (field.form === true) {
+      errors.push(issue(3, 'SYSTEM_UI_PROP', `System field '${field.name}' must not have form=true`, `${fPath}.form`));
+    }
+
+    // fromParent derivation not allowed on header entities (no parent)
+    if (hasInvalidFromParentDerivation(field)) {
+      errors.push(issue(3, 'INVALID_FROM_PARENT', `fromParent derivation not allowed on header entity without parent`, `${fPath}.derivation`));
+    }
+  }
 }
 
 /**
@@ -190,41 +248,55 @@ function validateLevel3(schema, systemColumns) {
     const isHeader = entity.level === 'header';
 
     if (Array.isArray(entity.fields)) {
-      for (const field of entity.fields) {
-        if (field.visibility !== 'system') continue;
-
-        const fPath = `${ePath}.fields.${field.name}`;
-
-        // System fields must have derivation or be in system-columns.json
-        if (!field.derivation && !systemColumnNames.has(field.column)) {
-          warnings.push(issue(3, 'SYSTEM_NO_DERIVATION', `System field '${field.name}' has no derivation and is not in system-columns.json`, fPath, 'warning'));
-        }
-
-        // System fields must have valid systemCategory
-        if (field.systemCategory && !VALID_SYSTEM_CATEGORIES.includes(field.systemCategory)) {
-          errors.push(issue(3, 'INVALID_SYSTEM_CATEGORY', `Invalid systemCategory: ${field.systemCategory}`, `${fPath}.systemCategory`));
-        }
-
-        // No UI properties on system fields
-        if (field.searchable === true) {
-          errors.push(issue(3, 'SYSTEM_UI_PROP', `System field '${field.name}' must not have searchable=true`, `${fPath}.searchable`));
-        }
-        if (field.grid === true) {
-          errors.push(issue(3, 'SYSTEM_UI_PROP', `System field '${field.name}' must not have grid=true`, `${fPath}.grid`));
-        }
-        if (field.form === true) {
-          errors.push(issue(3, 'SYSTEM_UI_PROP', `System field '${field.name}' must not have form=true`, `${fPath}.form`));
-        }
-
-        // fromParent derivation not allowed on header entities (no parent)
-        if (field.derivation && field.derivation.type === 'fromParent' && isHeader && !entity.parentEntity) {
-          errors.push(issue(3, 'INVALID_FROM_PARENT', `fromParent derivation not allowed on header entity without parent`, `${fPath}.derivation`));
-        }
-      }
+      validateLevel3SystemFields(entity, ePath, systemColumnNames, warnings, errors, isHeader);
     }
   }
 
   return { errors, warnings };
+}
+
+function validateLevel4Field(ePath, field, rules, warnings, errors) {
+  const fPath = `${ePath}.fields.${field.name}`;
+
+  function hasRules() {
+    return rules && Array.isArray(rules);
+  }
+
+  // System fields need derivation OR default OR active kept rule
+  if (field.visibility === 'system') {
+    const hasDerivation = !!field.derivation;
+    const hasDefault = field.defaultValue !== undefined && field.defaultValue !== null;
+    const hasKeptRule = hasRules() &&
+        rules.some(r => r.field === field.name && r.decision === 'keep' && r.active !== false);
+
+    if (!hasDerivation && !hasDefault && !hasKeptRule) {
+      warnings.push(issue(4, 'SYSTEM_NO_SOURCE', `System field '${field.name}' has no derivation, default value, or active kept rule`, fPath, 'warning'));
+    }
+  }
+
+  // readOnly computed fields should reference a computing rule
+  if (field.visibility === 'readOnly' && field.derivation && field.derivation.type === 'computed') {
+    if (hasRules()) {
+      const hasRule = rules.some(r => r.field === field.name);
+      if (!hasRule) {
+        warnings.push(issue(4, 'COMPUTED_NO_RULE', `ReadOnly computed field '${field.name}' has no computing rule`, fPath, 'warning'));
+      }
+    }
+  }
+
+  // Searchable fields must have compatible type
+  if (field.searchable === true && field.type && !SEARCHABLE_TYPES.includes(field.type)) {
+    errors.push(issue(4, 'INVALID_SEARCHABLE_TYPE', `Searchable field '${field.name}' has incompatible type: ${field.type}`, `${fPath}.searchable`));
+  }
+}
+
+function checkOrphanReferences(field, fieldNames, entity, errors, ePath) {
+  if (field.reference && field.reference.displayField) {
+    // Check if display field exists when it's a local reference
+    if (field.reference.entity === entity.name && !fieldNames.has(field.reference.displayField)) {
+      errors.push(issue(4, 'ORPHAN_FIELD', `Referenced displayField '${field.reference.displayField}' not found`, `${ePath}.fields.${field.name}.reference.displayField`));
+    }
+  }
 }
 
 /**
@@ -242,47 +314,12 @@ function validateLevel4(schema, rules) {
       const fieldNames = new Set(entity.fields.map(f => f.name));
 
       for (const field of entity.fields) {
-        const fPath = `${ePath}.fields.${field.name}`;
-
-        // System fields need derivation OR default OR active kept rule
-        if (field.visibility === 'system') {
-          const hasDerivation = !!field.derivation;
-          const hasDefault = field.defaultValue !== undefined && field.defaultValue !== null;
-          const hasKeptRule = rules && Array.isArray(rules) &&
-            rules.some(r => r.field === field.name && r.decision === 'keep' && r.active !== false);
-
-          if (!hasDerivation && !hasDefault && !hasKeptRule) {
-            warnings.push(issue(4, 'SYSTEM_NO_SOURCE', `System field '${field.name}' has no derivation, default value, or active kept rule`, fPath, 'warning'));
-          }
-        }
-
-        // readOnly computed fields should reference a computing rule
-        if (field.visibility === 'readOnly' && field.derivation && field.derivation.type === 'computed') {
-          if (rules && Array.isArray(rules)) {
-            const hasRule = rules.some(r => r.field === field.name);
-            if (!hasRule) {
-              warnings.push(issue(4, 'COMPUTED_NO_RULE', `ReadOnly computed field '${field.name}' has no computing rule`, fPath, 'warning'));
-            }
-          }
-        }
-
-        // Searchable fields must have compatible type
-        if (field.searchable === true && field.type && !SEARCHABLE_TYPES.includes(field.type)) {
-          errors.push(issue(4, 'INVALID_SEARCHABLE_TYPE', `Searchable field '${field.name}' has incompatible type: ${field.type}`, `${fPath}.searchable`));
-        }
+        validateLevel4Field(ePath, field, rules, warnings, errors);
       }
 
       // Check for orphan fields in references
       for (const field of entity.fields) {
-        if (field.cascadeFrom && !fieldNames.has(field.cascadeFrom)) {
-          // Already caught in L2, but could be caught here as orphan
-        }
-        if (field.reference && field.reference.displayField) {
-          // Check if display field exists when it's a local reference
-          if (field.reference.entity === entity.name && !fieldNames.has(field.reference.displayField)) {
-            errors.push(issue(4, 'ORPHAN_FIELD', `Referenced displayField '${field.reference.displayField}' not found`, `${ePath}.fields.${field.name}.reference.displayField`));
-          }
-        }
+        checkOrphanReferences(field, fieldNames, entity, errors, ePath);
       }
     }
   }

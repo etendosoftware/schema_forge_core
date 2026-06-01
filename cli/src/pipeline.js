@@ -94,33 +94,51 @@ export function parseArgs(argv) {
   const args = argv.slice(2);
   const result = {};
 
-  for (let i = 0; i < args.length; i++) {
-    if (isMenuIdArgument(args, i)) {
-      result.menuId = args[++i];
-    } else if (isMenuNameArgument(args, i)) {
-      result.menuName = args[++i];
-    } else if (isProcessIdArgument(args, i)) {
-      result.processId = args[++i];
-    } else if (isProcessNameArgument(args, i)) {
-      result.processName = args[++i];
-    } else if (isReportIdArgument(args, i)) {
-      result.reportId = args[++i];
-    } else if (isReportNameArgument(args, i)) {
-      result.reportName = args[++i];
-    } else if (args[i] === '--dry-run') {
-      result.dryRun = true;
-    } else if (isSkipToArgument(args, i)) {
-      result.skipTo = args[++i];
-    } else if (args[i] === '--skip-interactive') {
-      result.skipInteractive = true;
-    } else if (!args[i].startsWith('--') && !result.windowId) {
-      result.windowId = args[i];
-    } else if (isWindowNameSet(args, i, result)) {
-      result.windowName = args[i];
-    }
+  let i = 0;
+  while (i < args.length) {
+    i += consumeArgument(args, i, result);
   }
 
   return result;
+}
+
+/**
+ * Consume one logical argument at index `i`, mutating `result`.
+ * Returns the number of tokens consumed (2 for flag+value, 1 otherwise),
+ * so the caller advances the cursor without reassigning a loop counter.
+ */
+function consumeArgument(args, i, result) {
+  if (isMenuIdArgument(args, i)) {
+    result.menuId = args[i + 1];
+    return 2;
+  } else if (isMenuNameArgument(args, i)) {
+    result.menuName = args[i + 1];
+    return 2;
+  } else if (isProcessIdArgument(args, i)) {
+    result.processId = args[i + 1];
+    return 2;
+  } else if (isProcessNameArgument(args, i)) {
+    result.processName = args[i + 1];
+    return 2;
+  } else if (isReportIdArgument(args, i)) {
+    result.reportId = args[i + 1];
+    return 2;
+  } else if (isReportNameArgument(args, i)) {
+    result.reportName = args[i + 1];
+    return 2;
+  } else if (args[i] === '--dry-run') {
+    result.dryRun = true;
+  } else if (isSkipToArgument(args, i)) {
+    result.skipTo = args[i + 1];
+    return 2;
+  } else if (args[i] === '--skip-interactive') {
+    result.skipInteractive = true;
+  } else if (!args[i].startsWith('--') && !result.windowId) {
+    result.windowId = args[i];
+  } else if (isWindowNameSet(args, i, result)) {
+    result.windowName = args[i];
+  }
+  return 1;
 }
 
 function isWindowNameSet(args, i, result) {
@@ -502,7 +520,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           break;
         }
         case 'generate-contract': {
-          const { generateContract } = await import('./generate-contract.js');
+          const { generateContract, splitWindowContractArtifacts } = await import('./generate-contract.js');
           const { readFile, writeFile, access, mkdir } = await import('node:fs/promises');
           const processesPath = `artifacts/${windowName}/processes.json`;
           try {
@@ -519,6 +537,8 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           // and check-version can bump from the correct baseline.
           let prevVersion = null;
           let prevContract = null;
+          let prevContractRaw = null;
+          let prevMcpContract = null;
           try {
             const existingRaw = await readFile(`artifacts/${windowName}/contract.json`, 'utf-8');
             const existingContract = JSON.parse(existingRaw);
@@ -530,14 +550,23 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
             }
             prevVersion = rawVersion;
             prevContract = existingContract;
-            // Snapshot for version diffing
-            await writeFile(`artifacts/${windowName}/contract.prev.json`, existingRaw, 'utf-8');
+            prevContractRaw = existingRaw;
           } catch {
             // No existing contract — first generation, no prev needed
           }
-
-          const contract = generateContract(schema, Array.isArray(rules) ? rules : rules.rules || [], processes.processes || [], prevVersion, prevContract);
+          try {
+            const existingMcpRaw = await readFile(`artifacts/${windowName}/contract.mcp.json`, 'utf-8');
+            prevMcpContract = JSON.parse(existingMcpRaw);
+          } catch {
+            // No existing MCP contract — first split generation
+          }
+          const generatedContract = generateContract(schema, Array.isArray(rules) ? rules : rules.rules || [], processes.processes || [], prevVersion, prevContract);
+          const { contract, mcpContract } = splitWindowContractArtifacts(generatedContract, prevContract, prevMcpContract);
+          if (prevContractRaw) {
+            await writeFile(`artifacts/${windowName}/contract.prev.json`, prevContractRaw, 'utf-8');
+          }
           await writeFile(`artifacts/${windowName}/contract.json`, JSON.stringify(contract, null, 2) + '\n');
+          await writeFile(`artifacts/${windowName}/contract.mcp.json`, JSON.stringify(mcpContract, null, 2) + '\n');
           console.log(`  ✓ Contract generated (${contract.testManifest.summary.total} tests)`);
           // Version check
           try {

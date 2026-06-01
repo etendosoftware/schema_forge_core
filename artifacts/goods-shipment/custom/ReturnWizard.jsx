@@ -49,12 +49,6 @@ const ICONS = {
       <path d="M9 18h8" />
     </svg>
   ),
-  creditNote: (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-      <path d="M14 2v6h6M8 13h8M8 17h8M8 9h2" />
-    </svg>
-  ),
 };
 
 function StepIndicator({ current, total }) {
@@ -320,18 +314,6 @@ export default function ReturnWizard({
                   <p className="text-xs text-muted-foreground">{ui('stockMovementToWarehouse')}</p>
                 </div>
               </div>
-              <div
-                className="flex items-center gap-3"
-                style={{ border: '1px solid #E5E7EB', borderRadius: 8, padding: 12 }}
-              >
-                <span className="shrink-0 flex items-center justify-center" style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#F3E8FF' }}>
-                  <span className="text-purple-600">{ICONS.creditNote}</span>
-                </span>
-                <div>
-                  <p className="text-sm font-medium text-foreground">{ui('creditNote')}</p>
-                  <p className="text-xs text-muted-foreground">{ui('linkedToOriginalInvoice')}</p>
-                </div>
-              </div>
             </div>
 
             <div className="border-b border-border mb-4" />
@@ -397,7 +379,7 @@ export default function ReturnWizard({
                 {ui('back')}
               </Button>
               <Button size="sm" className="bg-amber-400 text-black hover:bg-amber-500 border-transparent font-medium" onClick={handleConfirm} disabled={loading}>
-                {loading ? 'Creating...' : 'Confirm return'}
+                {loading ? ui('creating') : ui('createReturn')}
               </Button>
             </>
           )}

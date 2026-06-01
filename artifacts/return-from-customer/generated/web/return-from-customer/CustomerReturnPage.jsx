@@ -117,7 +117,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BPartner_Location",
       "inputMode": "dependent",
-      "url": "/sws/neo/returns/customerReturn/selectors/partnerAddress"
+      "url": "/sws/neo/returns/customerReturn/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "customerReturn",
@@ -173,7 +182,21 @@ export const api = {
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
-      "url": "/sws/neo/returns/customerReturnLine/selectors/tax"
+      "url": "/sws/neo/returns/customerReturnLine/selectors/tax",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "DateInvoiced",
+            "source": "parentField",
+            "field": "orderDate",
+            "format": "DD-MM-YYYY"
+          }
+        ]
+      }
     },
     {
       "entity": "customerReturnLine",

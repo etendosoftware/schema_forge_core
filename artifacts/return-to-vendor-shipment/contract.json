@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "generatedAt": "2026-04-29T18:11:17.025Z",
-  "updatedAt": "2026-05-15T16:00:32.414Z",
-  "checksum": "4d305438a8946b09",
+  "updatedAt": "2026-05-20T13:15:04.027Z",
+  "checksum": "f9eb3c800a7d890d",
   "frontendContract": {
     "window": {
       "id": "273673D2ED914C399A6C51DB758BE0F9",
@@ -65,7 +65,7 @@
             "grid": false,
             "form": true,
             "sourceRequired": true,
-            "reference": "BPartner",
+            "reference": "BusinessPartner",
             "inputMode": "search",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_BPartner"
@@ -89,8 +89,12 @@
             "grid": false,
             "form": true,
             "sourceRequired": true,
-            "reference": "BPartner_Location",
-            "inputMode": "selector",
+            "reference": "BusinessPartnerLocation",
+            "inputMode": "dependent",
+            "dependsOn": {
+              "field": "businessPartner",
+              "filterKey": "C_BPartner_ID"
+            },
             "validationRule": {
               "code": "C_BPartner_Location.C_BPartner_ID=@C_BPartner_ID@ AND C_BPartner_Location.IsShipTo='Y' AND C_BPartner_Location.IsActive='Y'",
               "contextParams": [],
@@ -1720,7 +1724,7 @@
         "entity": "header",
         "field": "businessPartner",
         "column": "C_BPartner_ID",
-        "reference": "BPartner",
+        "reference": "BusinessPartner",
         "inputMode": "search",
         "url": "/sws/neo/return-to-vendor-shipment/header/selectors/businessPartner"
       },
@@ -1728,9 +1732,18 @@
         "entity": "header",
         "field": "partnerAddress",
         "column": "C_BPartner_Location_ID",
-        "reference": "BPartner_Location",
-        "inputMode": "selector",
-        "url": "/sws/neo/return-to-vendor-shipment/header/selectors/partnerAddress"
+        "reference": "BusinessPartnerLocation",
+        "inputMode": "dependent",
+        "url": "/sws/neo/return-to-vendor-shipment/header/selectors/partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -1746,7 +1759,20 @@
         "column": "C_Project_ID",
         "reference": "Project",
         "inputMode": "search",
-        "url": "/sws/neo/return-to-vendor-shipment/header/selectors/project"
+        "url": "/sws/neo/return-to-vendor-shipment/header/selectors/project",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -1786,7 +1812,20 @@
         "column": "C_Aum",
         "reference": "UOM",
         "inputMode": "search",
-        "url": "/sws/neo/return-to-vendor-shipment/lines/selectors/operativeUOM"
+        "url": "/sws/neo/return-to-vendor-shipment/lines/selectors/operativeUOM",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "M_Product_ID",
+              "source": "field",
+              "field": "product"
+            }
+          ]
+        }
       },
       {
         "entity": "lines",
@@ -1802,7 +1841,16 @@
         "column": "M_Locator_ID",
         "reference": "Locator",
         "inputMode": "selector",
-        "url": "/sws/neo/return-to-vendor-shipment/lines/selectors/storageBin"
+        "url": "/sws/neo/return-to-vendor-shipment/lines/selectors/storageBin",
+        "context": {
+          "required": [
+            {
+              "param": "M_Warehouse_ID",
+              "source": "parentField",
+              "field": "warehouse"
+            }
+          ]
+        }
       },
       {
         "entity": "lines",

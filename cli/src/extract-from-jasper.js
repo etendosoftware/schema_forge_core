@@ -121,33 +121,13 @@ export function parseJrxml(xml) {
   };
 
   // Report attributes
-  const reportMatch = xml.match(/<jasperReport\b([^>]*?)>/);
-  if (reportMatch) {
-    const attrs = parseAttributes(reportMatch[1]);
-    result.name = attrs.name || '';
-    result.pageWidth = parseInt(attrs.pageWidth) || 0;
-    result.pageHeight = parseInt(attrs.pageHeight) || 0;
-    result.orientation = result.pageWidth > result.pageHeight ? 'landscape' : 'portrait';
-  }
+  parseReportAttributes(xml, result);
 
   // Fields
-  for (const el of extractElements(xml, 'field')) {
-    result.fields.push({
-      name: el.attrs.name,
-      javaClass: el.attrs.class || 'java.lang.String',
-      type: mapJavaType(el.attrs.class || 'java.lang.String'),
-    });
-  }
+  extractFieldsFromXml(xml, result);
 
   // Parameters
-  for (const el of extractElements(xml, 'parameter')) {
-    result.parameters.push({
-      name: el.attrs.name,
-      javaClass: el.attrs.class || 'java.lang.String',
-      isForPrompting: el.attrs.isForPrompting !== 'false',
-      type: mapJavaType(el.attrs.class || 'java.lang.String'),
-    });
-  }
+  parseParameters(xml, result);
 
   // Query
   const queryEls = extractElements(xml, 'queryString');
@@ -170,21 +150,7 @@ export function parseJrxml(xml) {
     const headerFields = [];
     const groupHeaderMatch = el.body.match(/<groupHeader>([\s\S]*?)<\/groupHeader>/);
     if (groupHeaderMatch) {
-      const headerXml = groupHeaderMatch[1];
-      for (const st of extractElements(headerXml, 'staticText')) {
-        const textMatch = st.body.match(/<text>[\s\S]*?<!\[CDATA\[([\s\S]*?)\]\]>[\s\S]*?<\/text>/);
-        if (textMatch) headerLabels.push(textMatch[1].trim());
-      }
-      for (const tf of extractElements(headerXml, 'textFieldExpression')) {
-        // These are inside textField elements
-      }
-      // Also extract from textFieldExpression directly
-      const tfExprs = headerXml.match(/<textFieldExpression>[\s\S]*?<!\[CDATA\[([\s\S]*?)\]\]>[\s\S]*?<\/textFieldExpression>/g) || [];
-      for (const expr of tfExprs) {
-        const val = expr.match(/<!\[CDATA\[([\s\S]*?)\]\]>/)?.[1]?.trim() || '';
-        const ref = val.match(/\$F\{(\w+)\}/)?.[1];
-        if (ref) headerFields.push(ref);
-      }
+      extractGroupHeaderLabels(groupHeaderMatch, headerLabels, headerFields);
     }
 
     result.groups.push({
@@ -197,6 +163,22 @@ export function parseJrxml(xml) {
   }
 
   // Detail band — extract field expressions used in detail rows
+  parseDetailFields(xml, result);
+
+  // Also extract column headers from the last group header (detail-level headers)
+  if (result.groups.length > 0) {
+    const lastGroup = result.groups[result.groups.length - 1];
+    // The column headers for detail rows are typically in the last group's header
+    if (lastGroup.headerLabels.length > 2) {
+      // First labels are the group label+value, rest are detail column headers
+      // We'll capture all and let the contract builder sort them out
+    }
+  }
+
+  return result;
+}
+
+function parseDetailFields(xml, result) {
   const detailMatch = xml.match(/<detail>([\s\S]*?)<\/detail>/);
   if (detailMatch) {
     const detailXml = detailMatch[1];
@@ -215,18 +197,52 @@ export function parseJrxml(xml) {
       if (ref) result.detailFields.push(ref);
     }
   }
+}
 
-  // Also extract column headers from the last group header (detail-level headers)
-  if (result.groups.length > 0) {
-    const lastGroup = result.groups[result.groups.length - 1];
-    // The column headers for detail rows are typically in the last group's header
-    if (lastGroup.headerLabels.length > 2) {
-      // First labels are the group label+value, rest are detail column headers
-      // We'll capture all and let the contract builder sort them out
-    }
+function parseParameters(xml, result) {
+  for (const el of extractElements(xml, 'parameter')) {
+    result.parameters.push({
+      name: el.attrs.name,
+      javaClass: el.attrs.class || 'java.lang.String',
+      isForPrompting: el.attrs.isForPrompting !== 'false',
+      type: mapJavaType(el.attrs.class || 'java.lang.String'),
+    });
   }
+}
 
-  return result;
+function parseReportAttributes(xml, result) {
+  const reportMatch = xml.match(/<jasperReport\b([^>]*?)>/);
+  if (reportMatch) {
+    const attrs = parseAttributes(reportMatch[1]);
+    result.name = attrs.name || '';
+    result.pageWidth = parseInt(attrs.pageWidth) || 0;
+    result.pageHeight = parseInt(attrs.pageHeight) || 0;
+    result.orientation = result.pageWidth > result.pageHeight ? 'landscape' : 'portrait';
+  }
+}
+
+function extractFieldsFromXml(xml, result) {
+  for (const el of extractElements(xml, 'field')) {
+    result.fields.push({
+      name: el.attrs.name,
+      javaClass: el.attrs.class || 'java.lang.String',
+      type: mapJavaType(el.attrs.class || 'java.lang.String'),
+    });
+  }
+}
+
+function extractGroupHeaderLabels(groupHeaderMatch, headerLabels, headerFields) {
+  const headerXml = groupHeaderMatch[1];
+  for (const st of extractElements(headerXml, 'staticText')) {
+    const textMatch = st.body.match(/<text>[\s\S]*?<!\[CDATA\[([\s\S]*?)\]\]>[\s\S]*?<\/text>/);
+    if (textMatch) headerLabels.push(textMatch[1].trim());
+  }
+  const tfExprs = headerXml.match(/<textFieldExpression>[\s\S]*?<!\[CDATA\[([\s\S]*?)\]\]>[\s\S]*?<\/textFieldExpression>/g) || [];
+  for (const expr of tfExprs) {
+    const val = expr.match(/<!\[CDATA\[([\s\S]*?)\]\]>/)?.[1]?.trim() || '';
+    const ref = val.match(/\$F\{(\w+)\}/)?.[1];
+    if (ref) headerFields.push(ref);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -376,10 +392,12 @@ export function buildMigrationNotes(parsed, contract) {
 
 function parseArgs(argv) {
   const opts = { jrxml: null, output: null, processId: null };
-  for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--jrxml' && argv[i + 1]) opts.jrxml = argv[++i];
-    else if (argv[i] === '--output' && argv[i + 1]) opts.output = argv[++i];
-    else if (argv[i] === '--process-id' && argv[i + 1]) opts.processId = argv[++i];
+  let i = 0;
+  while (i < argv.length) {
+    if (argv[i] === '--jrxml' && argv[i + 1]) { opts.jrxml = argv[i + 1]; i += 2; }
+    else if (argv[i] === '--output' && argv[i + 1]) { opts.output = argv[i + 1]; i += 2; }
+    else if (argv[i] === '--process-id' && argv[i + 1]) { opts.processId = argv[i + 1]; i += 2; }
+    else { i += 1; }
   }
   return opts;
 }

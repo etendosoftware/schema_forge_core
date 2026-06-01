@@ -53,13 +53,16 @@ export default function PreviewPage() {
 
     const code = buildPreviewCode([sources[activeComponent]]);
 
+    // The iframe uses sandbox="allow-scripts" without allow-same-origin, so its
+    // effective origin is opaque ("null"). 'null' is the only targetOrigin that
+    // matches an opaque-origin window.
     iframe.contentWindow.postMessage(
       {
         type: 'preview-render',
         code,
         mockData: JSON.parse(JSON.stringify(mockDataModule)),
       },
-      '*',
+      'null',
     );
   }, [activeComponent, iframeReady, sources]);
 

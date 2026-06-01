@@ -325,6 +325,26 @@ function StockChart({
 }
 
 
+function getAvailablePct(onHand, available) {
+  return onHand > 0 && available !== null ? Math.round((available / onHand) * 100) : null;
+}
+
+function getAvailabilityColor(onHand, available) {
+  const onHandColor = onHand === 0 ? 'red' : 'blue';
+  let availableColor;
+  if (available === null) {
+    availableColor = 'blue';
+  } else {
+    if (available <= 0) {
+      availableColor = 'red';
+    } else {
+      availableColor = onHand > 0 && available <= onHand * 0.1 ? 'amber'
+          : 'green';
+    }
+  }
+  return {onHandColor, availableColor};
+}
+
 export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
   const ui = useUI();
   const [stockRows, setStockRows] = useState(null);
@@ -366,19 +386,16 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
   const binCount = locationRows.length;
 
   const available = (onHand !== null && reserved !== null) ? onHand - reserved : null;
+
   const fmt = v => (v === null ? null : v.toLocaleString());
 
-  const onHandColor = onHand === 0 ? 'red' : 'blue';
-  const availableColor = available === null ? 'blue'
-    : available <= 0 ? 'red'
-    : onHand > 0 && available <= onHand * 0.1 ? 'amber'
-    : 'green';
+  const {onHandColor, availableColor} = getAvailabilityColor(onHand, available);
 
   let onHandSubtitle = null;
   if (binCount === 1) onHandSubtitle = locationRows[0]?.binName ?? null;
   else if (binCount > 1) onHandSubtitle = `${binCount} ${ui('locations')}`;
 
-  const availablePct = onHand > 0 && available !== null ? Math.round((available / onHand) * 100) : null;
+  const availablePct = getAvailablePct(onHand, available);
   const hasChart = transactions !== null && transactions.length > 0;
   const sortedRows = [...locationRows].sort((a, b) => b.quantityOnHand - a.quantityOnHand);
 

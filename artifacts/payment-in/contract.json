@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:05:52.312Z",
-  "updatedAt": "2026-05-13T15:59:17.665Z",
-  "checksum": "248e72bf83cc52c1",
+  "updatedAt": "2026-05-20T11:45:15.196Z",
+  "checksum": "e951b67efe74c5cb",
   "frontendContract": {
     "window": {
       "id": "E547CE89D4C04429B6340FFA44E70716",
@@ -1283,7 +1283,16 @@
         "column": "Fin_Financial_Account_ID",
         "reference": "Financial_Account",
         "inputMode": "dependent",
-        "url": "/sws/neo/payment-in/finPayment/selectors/account"
+        "url": "/sws/neo/payment-in/finPayment/selectors/account",
+        "context": {
+          "required": [
+            {
+              "param": "Fin_Paymentmethod_ID",
+              "source": "field",
+              "field": "paymentMethod"
+            }
+          ]
+        }
       },
       {
         "entity": "finPayment",
@@ -1291,7 +1300,16 @@
         "column": "C_Currency_ID",
         "reference": "Currency",
         "inputMode": "dependent",
-        "url": "/sws/neo/payment-in/finPayment/selectors/currency"
+        "url": "/sws/neo/payment-in/finPayment/selectors/currency",
+        "context": {
+          "required": [
+            {
+              "param": "FIN_Financial_Account_ID",
+              "source": "field",
+              "field": "account"
+            }
+          ]
+        }
       },
       {
         "entity": "finPaymentScheduleDetail",
