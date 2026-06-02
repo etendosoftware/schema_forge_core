@@ -5,25 +5,57 @@ import { render, screen, act } from '@testing-library/react';
 //   - MovementsTable: just emits the current filtered movements as JSON for assertions
 //   - AccountSummaryStrip: just a marker
 vi.mock('../MovementsToolbar/index.jsx', () => ({
-  MovementsToolbar: ({ filters, onFiltersChange }) => (
+  MovementsToolbar: ({ filters, onFiltersChange, onAdvancedFilterChange }) => (
     <div data-testid="toolbar">
       <span data-testid="filters">{JSON.stringify(filters)}</span>
-      {/* Test-only setters wired to the same onFiltersChange contract */}
-      <button data-testid="set-status-rpr" onClick={() => onFiltersChange('status')('RPR')}>
-        set status
-      </button>
+      {/* Quick filters driven via onFiltersChange */}
       <button data-testid="set-type-bpd" onClick={() => onFiltersChange('type')('BPD')}>
         set type
       </button>
       <button data-testid="set-search-acme" onClick={() => onFiltersChange('search')('acme')}>
         set search
       </button>
-      <button data-testid="set-amount-gt0" onClick={() => onFiltersChange('amount')({ presetId: 'gt0' })}>
+      {/*
+        Status and amount are now advanced ("by conditions") filters, applied via
+        onAdvancedFilterChange. Status matches on the derived `statusFamily` field
+        (= movementStatusLabelKey(paymentStatus)), NOT raw paymentStatus.
+      */}
+      <button
+        data-testid="set-status-completed"
+        onClick={() =>
+          onAdvancedFilterChange({
+            rowOperator: 'and',
+            conditions: [
+              {
+                field: 'statusFamily',
+                operator: 'iEquals',
+                value: 'financeAccountMovementsStatusCompleted',
+              },
+            ],
+          })
+        }
+      >
+        set status
+      </button>
+      <button
+        data-testid="set-amount-gt0"
+        onClick={() =>
+          onAdvancedFilterChange({
+            rowOperator: 'and',
+            conditions: [{ field: 'amount', operator: 'greaterThan', value: 0 }],
+          })
+        }
+      >
         amount gt0
       </button>
       <button
         data-testid="set-amount-range"
-        onClick={() => onFiltersChange('amount')({ min: 50, max: 200 })}
+        onClick={() =>
+          onAdvancedFilterChange({
+            rowOperator: 'and',
+            conditions: [{ field: 'amount', operator: 'between', value: [50, 200] }],
+          })
+        }
       >
         amount range
       </button>
@@ -120,12 +152,13 @@ describe('MovementsTab — default filters', () => {
   });
 });
 
-describe('MovementsTab — applyFilters behavior', () => {
-  it('filters by status (paymentStatus equality)', () => {
+describe('MovementsTab — quick + advanced filter behavior', () => {
+  it('filters by status family via the advanced filter (derived statusFamily)', () => {
     renderTab();
     act(() => {
-      screen.getByTestId('set-status-rpr').click();
+      screen.getByTestId('set-status-completed').click();
     });
+    // Rows a (RPR) and c (RPR) map to the "Completed" family; b (RPAP) is Draft.
     expect(rowIds().sort()).toEqual(['a', 'c']);
   });
 
@@ -145,21 +178,21 @@ describe('MovementsTab — applyFilters behavior', () => {
     expect(rowIds()).toEqual(['a']);
   });
 
-  it('filters by amount preset gt0 (only positive amounts)', () => {
+  it('filters by amount > 0 via the advanced filter (only positive amounts)', () => {
     renderTab();
     act(() => {
       screen.getByTestId('set-amount-gt0').click();
     });
+    // a (100) and c (300) are positive; b (-200) is excluded.
     expect(rowIds().sort()).toEqual(['a', 'c']);
   });
 
-  it('filters by amount range {min, max} inclusive', () => {
+  it('filters by amount range [50, 200] via the advanced filter (inclusive between)', () => {
     renderTab();
     act(() => {
       screen.getByTestId('set-amount-range').click();
     });
-    // amounts within [50, 200] → only id a (100) and b (-200)? -200 < 50, so excluded.
-    // Only "a" (100) qualifies.
+    // Within [50, 200]: a (100) qualifies; c (300) is above, b (-200) is below.
     expect(rowIds()).toEqual(['a']);
   });
 

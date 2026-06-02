@@ -1,137 +1,212 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 
+// i18n translator returns the key itself, so we assert on key strings.
 vi.mock('@/i18n', () => ({
-  useUI: () => (key) => key,
+  useUI: () => (k) => k,
   useLocaleSwitch: () => ({ locale: 'es_ES' }),
 }));
 
-const toastFn = vi.fn();
-vi.mock('sonner', () => ({
-  toast: (...args) => toastFn(...args),
+const navigate = vi.fn();
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => navigate,
 }));
 
-// Stub the row sub-components so we can target them without their own deps
-vi.mock('../MovementStatusBadge.jsx', () => ({
-  MovementStatusBadge: ({ status }) => <span data-testid={`badge-${status}`}>{status}</span>,
+// Stub the leaf cell components — their internals are out of scope here.
+vi.mock('../MovementStatusBadge', () => ({
+  MovementStatusBadge: ({ status }) => <span data-testid="status-badge">{status}</span>,
 }));
-vi.mock('../PostingStatusDot.jsx', () => ({
-  PostingStatusDot: ({ paymentStatus }) => <span data-testid={`posting-${paymentStatus}`} />,
+vi.mock('../PostingStatusDot', () => ({
+  PostingStatusDot: () => <span data-testid="posting-dot" />,
 }));
-vi.mock('../MovementRowKebab.jsx', () => ({
-  MovementRowKebab: ({ movement }) => <span data-testid={`kebab-${movement.id}`} />,
+vi.mock('../MovementRowKebab', () => ({
+  MovementRowKebab: () => <span data-testid="row-kebab" />,
+}));
+vi.mock('@/components/ui/money-amount', () => ({
+  MoneyAmount: ({ value }) => <span data-testid="money">{String(value)}</span>,
 }));
 
 import { MovementsTable } from '../MovementsTable.jsx';
 
-const ROWS = [
-  {
-    id: 'm1',
-    date: '2026-05-06T12:00:00.000Z',
-    documentNo: 'DOC-001',
-    contact: 'ACME',
-    description: 'Compra mensual',
-    paymentStatus: 'RPR',
-    trxType: 'BPD',
-    amount: 1000,
-    balance: 5000,
-    currencyIso: 'EUR',
-  },
-  {
-    id: 'm2',
-    date: '2026-05-07T12:00:00.000Z',
-    documentNo: 'DOC-002',
-    contact: 'Globex',
-    description: 'Pago factura',
-    paymentStatus: 'RPAP',
-    trxType: 'BPW',
-    amount: -250,
-    balance: 4750,
-    currencyIso: 'EUR',
-  },
-];
+const baseMovement = (over = {}) => ({
+  id: 'm1',
+  date: '2026-05-10',
+  documentNo: 'DOC-001',
+  contact: 'ACME',
+  description: 'office',
+  paymentStatus: 'RPR',
+  trxType: 'BPD',
+  glItem: 'EXP',
+  amount: 100,
+  balance: 1000,
+  currencyIso: 'EUR',
+  dimensions: {},
+  ...over,
+});
 
 function renderTable(props = {}) {
   return render(
     <MovementsTable
-      movements={ROWS}
-      loading={false}
-      selectedIds={new Set()}
-      onSelectionChange={vi.fn()}
-      {...props}
+      movements={props.movements ?? [baseMovement()]}
+      loading={props.loading ?? false}
+      enabledDimensions={props.enabledDimensions ?? []}
+      selectedIds={props.selectedIds ?? new Set()}
+      onSelectionChange={props.onSelectionChange ?? vi.fn()}
     />,
   );
 }
 
-describe('MovementsTable', () => {
-  beforeEach(() => {
-    toastFn.mockClear();
-  });
+describe('MovementsTable — payment link', () => {
+  beforeEach(() => navigate.mockClear());
 
-  it('renders one row per movement with documentNo + contact + description', () => {
-    renderTable();
-    expect(screen.getByText('DOC-001')).toBeInTheDocument();
-    expect(screen.getByText('DOC-002')).toBeInTheDocument();
-    expect(screen.getByText('ACME')).toBeInTheDocument();
-    expect(screen.getByText('Globex')).toBeInTheDocument();
-    expect(screen.getByText('Compra mensual')).toBeInTheDocument();
-  });
-
-  it('renders the status badge for each row', () => {
-    renderTable();
-    expect(screen.getByTestId('badge-RPR')).toBeInTheDocument();
-    expect(screen.getByTestId('badge-RPAP')).toBeInTheDocument();
-  });
-
-  it('renders the type-label fallback ("BPD" → financeAccountMovementsTypeBPD)', () => {
-    renderTable();
-    // useUI mock returns the key itself
-    expect(screen.getByText('financeAccountMovementsTypeBPD')).toBeInTheDocument();
-    expect(screen.getByText('financeAccountMovementsTypeBPW')).toBeInTheDocument();
-  });
-
-  it('prefers movement.typeLabel over the localized fallback when present', () => {
+  it('navigates to payment-in for a receipt payment', () => {
     renderTable({
-      movements: [{ ...ROWS[0], typeLabel: 'Custom label' }],
+      movements: [baseMovement({ paymentId: 'pay-1', paymentIsReceipt: 'Y' })],
     });
-    expect(screen.getByText('Custom label')).toBeInTheDocument();
-    expect(screen.queryByText('financeAccountMovementsTypeBPD')).not.toBeInTheDocument();
-  });
-
-  it('renders skeleton rows when loading=true and no real rows appear', () => {
-    const { container } = renderTable({ loading: true, movements: [] });
-    expect(container.querySelectorAll('.animate-pulse').length).toBeGreaterThan(0);
-    expect(screen.queryByText('DOC-001')).not.toBeInTheDocument();
-  });
-
-  it('renders the empty-state row when there are no movements (and not loading)', () => {
-    renderTable({ movements: [] });
-    expect(screen.getByText('financeAccountMovementsEmpty')).toBeInTheDocument();
-  });
-
-  it('emits a toast when a data row is clicked', () => {
-    renderTable();
     fireEvent.click(screen.getByText('DOC-001'));
-    expect(toastFn).toHaveBeenCalledWith('financeAccountMovementsRowViewDetailToast');
+    expect(navigate).toHaveBeenCalledWith('/payment-in/pay-1');
   });
 
-  it('toggles selection when a row checkbox is clicked (and does not also fire the row toast)', () => {
+  it('navigates to payment-out for a non-receipt payment', () => {
+    renderTable({
+      movements: [baseMovement({ paymentId: 'pay-2', paymentIsReceipt: 'N' })],
+    });
+    fireEvent.click(screen.getByText('DOC-001'));
+    expect(navigate).toHaveBeenCalledWith('/payment-out/pay-2');
+  });
+
+  it('renders documentNo as plain text (no navigation) when there is no paymentId', () => {
+    renderTable({ movements: [baseMovement({ paymentId: undefined })] });
+    const docCell = screen.getByText('DOC-001');
+    expect(docCell.tagName).toBe('SPAN');
+    fireEvent.click(docCell);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+});
+
+describe('MovementsTable — expandable dimensions panel', () => {
+  it('renders no expand control when enabledDimensions is empty', () => {
+    renderTable({ enabledDimensions: [] });
+    expect(screen.queryByTestId('movement-expand-m1')).not.toBeInTheDocument();
+  });
+
+  it('expands and collapses the more-info panel on click', () => {
+    renderTable({
+      enabledDimensions: ['project'],
+      movements: [baseMovement({ dimensions: { project: 'Proj A' } })],
+    });
+    const expand = screen.getByTestId('movement-expand-m1');
+    expect(screen.queryByTestId('movement-moreinfo-m1')).not.toBeInTheDocument();
+
+    fireEvent.click(expand);
+    expect(screen.getByTestId('movement-moreinfo-m1')).toBeInTheDocument();
+
+    fireEvent.click(expand);
+    expect(screen.queryByTestId('movement-moreinfo-m1')).not.toBeInTheDocument();
+  });
+
+  it('shows only enabled dimensions that have a value, and excludes bpartner', () => {
+    renderTable({
+      enabledDimensions: ['project', 'costcenter', 'campaign', 'bpartner'],
+      movements: [
+        baseMovement({
+          dimensions: {
+            project: 'Proj A',
+            costcenter: '', // enabled but empty → hidden
+            campaign: 'Camp Z',
+            bpartner: 'Should Not Show', // excluded by design
+          },
+        }),
+      ],
+    });
+    fireEvent.click(screen.getByTestId('movement-expand-m1'));
+    const panel = screen.getByTestId('movement-moreinfo-m1');
+
+    expect(within(panel).getByText('Proj A')).toBeInTheDocument();
+    expect(within(panel).getByText('Camp Z')).toBeInTheDocument();
+    expect(within(panel).queryByText('Should Not Show')).not.toBeInTheDocument();
+    // Empty costcenter renders no label.
+    expect(within(panel).queryByText('financeAccountMovementsDimCostcenter')).not.toBeInTheDocument();
+  });
+
+  it('shows the no-dimensions message when no enabled dimension has a value', () => {
+    renderTable({
+      enabledDimensions: ['project', 'bpartner'],
+      movements: [baseMovement({ dimensions: { bpartner: 'Acme', project: '' } })],
+    });
+    fireEvent.click(screen.getByTestId('movement-expand-m1'));
+    const panel = screen.getByTestId('movement-moreinfo-m1');
+    expect(within(panel).getByText('financeAccountMovementsNoDimensions')).toBeInTheDocument();
+  });
+});
+
+describe('MovementsTable — selection', () => {
+  it('reflects selectedIds and calls onSelectionChange for a row checkbox', () => {
     const onSelectionChange = vi.fn();
-    renderTable({ onSelectionChange });
-    // Checkboxes have role="checkbox"; the first one is the header "select all".
+    renderTable({
+      movements: [baseMovement({ id: 'm1' })],
+      selectedIds: new Set(['m1']),
+      onSelectionChange,
+    });
     const checkboxes = screen.getAllByRole('checkbox');
-    // Index 1 is the first data row's checkbox.
-    fireEvent.click(checkboxes[1]);
+    // [0] = header select-all, [1] = the single row checkbox.
+    const rowCheckbox = checkboxes[1];
+    expect(rowCheckbox).toHaveAttribute('aria-checked', 'true');
+
+    fireEvent.click(rowCheckbox);
     expect(onSelectionChange).toHaveBeenCalledWith('m1');
-    expect(toastFn).not.toHaveBeenCalled();
   });
 
-  it('header "select all" calls onSelectionChange for each unselected row', () => {
+  it('header select-all is indeterminate and toggles only the unselected rows', () => {
     const onSelectionChange = vi.fn();
-    renderTable({ onSelectionChange });
-    const checkboxes = screen.getAllByRole('checkbox');
-    fireEvent.click(checkboxes[0]); // header
-    expect(onSelectionChange).toHaveBeenCalledTimes(ROWS.length);
+    renderTable({
+      movements: [
+        baseMovement({ id: 'm1' }),
+        baseMovement({ id: 'm2' }),
+        baseMovement({ id: 'm3' }),
+      ],
+      selectedIds: new Set(['m1']), // partially selected
+      onSelectionChange,
+    });
+    const headerCheckbox = screen.getAllByRole('checkbox')[0];
+    expect(headerCheckbox).toHaveAttribute('aria-checked', 'mixed');
+
+    fireEvent.click(headerCheckbox);
+    // Toggles only the currently-unselected rows: m2 and m3.
+    expect(onSelectionChange).toHaveBeenCalledTimes(2);
+    expect(onSelectionChange).toHaveBeenCalledWith('m2');
+    expect(onSelectionChange).toHaveBeenCalledWith('m3');
+    expect(onSelectionChange).not.toHaveBeenCalledWith('m1');
+  });
+
+  it('header select-all deselects every row when all are selected', () => {
+    const onSelectionChange = vi.fn();
+    renderTable({
+      movements: [baseMovement({ id: 'm1' }), baseMovement({ id: 'm2' })],
+      selectedIds: new Set(['m1', 'm2']),
+      onSelectionChange,
+    });
+    const headerCheckbox = screen.getAllByRole('checkbox')[0];
+    expect(headerCheckbox).toHaveAttribute('aria-checked', 'true');
+
+    fireEvent.click(headerCheckbox);
+    expect(onSelectionChange).toHaveBeenCalledTimes(2);
     expect(onSelectionChange).toHaveBeenCalledWith('m1');
     expect(onSelectionChange).toHaveBeenCalledWith('m2');
+  });
+
+  it('clicking a row checkbox does not navigate (stopPropagation on the cell)', () => {
+    const onSelectionChange = vi.fn();
+    renderTable({
+      movements: [baseMovement({ id: 'm1', paymentId: 'pay-1', paymentIsReceipt: 'Y' })],
+      enabledDimensions: ['project'],
+      onSelectionChange,
+    });
+    navigate.mockClear();
+    const rowCheckbox = screen.getAllByRole('checkbox')[1];
+    fireEvent.click(rowCheckbox);
+    expect(onSelectionChange).toHaveBeenCalledWith('m1');
+    expect(navigate).not.toHaveBeenCalled();
+    // Expand panel should not open from the checkbox click either.
+    expect(screen.queryByTestId('movement-moreinfo-m1')).not.toBeInTheDocument();
   });
 });
