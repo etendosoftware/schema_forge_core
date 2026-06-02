@@ -2660,7 +2660,9 @@ export function DetailView({
                                           const updated = await res.json().catch(() => null);
                                           // Server response wins over the optimistic cache when present
                                           // — keeps any callout-driven fields the backend computed.
-                                          if (updated) secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, updated);
+                                          // NEO wraps the saved record in {response:{data:[...]}}.
+                                          const serverRow = updated?.response?.data?.[0] ?? null;
+                                          if (serverRow) secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, serverRow);
                                         } else {
                                           secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, previous);
                                           const msg = await extractErrorMessage(res);
@@ -2743,7 +2745,16 @@ export function DetailView({
                                                       body: JSON.stringify(fieldValues),
                                                     });
                                                     if (res.ok) {
-                                                      setSelectedSecondaryLine(prev => ({ ...prev, ...secondaryLineEdits }));
+                                                      // Server response wins over the local edits: it carries
+                                                      // callout-computed fields (e.g. the recalculated foreignAmount
+                                                      // on an exchange-rate row) that the edited values don't have.
+                                                      // NEO wraps the saved record in {response:{data:[...]}}.
+                                                      const updated = await res.json().catch(() => null);
+                                                      const serverValues = updated?.response?.data?.[0] ?? null;
+                                                      setSelectedSecondaryLine(prev => ({ ...prev, ...secondaryLineEdits, ...(serverValues ?? {}) }));
+                                                      // Refresh the grid row cache so the list reflects the saved and
+                                                      // derived values without having to reopen the record.
+                                                      secondaryHooks[stIdx]?.handleUpdateChild?.(selectedSecondaryLine.id, serverValues ?? secondaryLineEdits);
                                                       setSecondaryLineEdits(null);
                                                       setSecondaryLineEditColumns({});
                                                       toast.success('Record saved');
