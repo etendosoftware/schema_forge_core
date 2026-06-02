@@ -671,7 +671,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
           : '';
         const requiresLinesPart = ovr.requiresLines ? `, requiresLines: true` : '';
-        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart} },`;
+        const fieldMaxPart = ovr.requiresFieldMax
+          ? `, requiresFieldMax: ${JSON.stringify(ovr.requiresFieldMax)}`
+          : '';
+        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart}${fieldMaxPart} },`;
       }),
   ].join('\n');
 

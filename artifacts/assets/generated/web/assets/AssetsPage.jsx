@@ -50,7 +50,7 @@ const extraBadges = [];
 // @sf-generated-start processes:assets
 const processes = [
   { name: 'processAsset', label: 'Create Amortization', style: 'positive',
-    displayLogicRaw: "@Depreciate@='Y'" },
+    displayLogicRaw: "@Depreciate@='Y'", requiresFieldMax: [{"field":"annualDepreciation","max":100,"conditionalOnField":"calculateType","conditionalValue":"PE","errorKey":"assetsValidationAnnualDepreciationMax"}] },
 ];
 // @sf-generated-end processes:assets
 

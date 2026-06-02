@@ -775,15 +775,16 @@ export function DetailView({
     }, 250);
   }, []);
 
-  // Track fields whose values were set by a callout response to avoid re-triggering
-  const calloutAppliedRef = useRef(new Set());
+  // Track fields whose values were set by a callout response, keyed by field with
+  // the applied value, so we only skip the echo (same value) and not genuine edits.
+  const calloutAppliedRef = useRef(new Map());
   // Track fields the user has manually changed in this record session — protected
   // from being overwritten by callouts triggered from other fields.
   const userTouchedRef = useRef(new Set());
   // Reset both refs when the record context changes (new record / different existing record)
   useEffect(() => {
     userTouchedRef.current = new Set();
-    calloutAppliedRef.current = new Set();
+    calloutAppliedRef.current = new Map();
   }, [recordId]);
   // Guard: fire default callouts only once per new-record session
   const defaultCalloutsTriggeredRef = useRef(false);
@@ -1036,7 +1037,7 @@ export function DetailView({
   useEffect(() => {
     if (!calloutResult) return;
     const { updates, combos, triggerField } = calloutResult;
-    const appliedFields = new Set();
+    const appliedFields = new Map();
 
     if (updates) {
       for (const [key, entry] of Object.entries(updates)) {
@@ -1053,7 +1054,7 @@ export function DetailView({
         if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
           continue;
         }
-        appliedFields.add(key);
+        appliedFields.set(key, entry.value);
         hook.handleChange(key, entry.value);
         handleEntryIdentifierChange(entry, hook, key, api, catalogs);
       }
@@ -1074,7 +1075,7 @@ export function DetailView({
           if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
             continue;
           }
-          appliedFields.add(key);
+          appliedFields.set(key, selectedVal);
           hook.handleChange(key, selectedVal);
           if (selectedLabel) {
             hook.handleChange(key + '$_identifier', selectedLabel);
@@ -1098,10 +1099,13 @@ export function DetailView({
     // from other triggers cannot overwrite the user's choice.
     userTouchedRef.current.add(field);
 
-    // If this field was just set by a callout response, don't re-trigger
+    // If this field was just set by a callout response to THIS exact value, it's
+    // the echo of the callout write — skip to avoid a re-trigger loop. A different
+    // value means the user genuinely edited it → let the callout run.
     if (calloutAppliedRef.current.has(field)) {
+      const appliedVal = calloutAppliedRef.current.get(field);
       calloutAppliedRef.current.delete(field);
-      return;
+      if (String(appliedVal) === String(value)) return;
     }
 
     // Only trigger callout for meaningful value changes (not empty/typing artifacts).
@@ -1625,7 +1629,16 @@ export function DetailView({
                       variant={isPrimary ? 'default' : 'outline'}
                       size="default"
                       className={`${btnClass} ${saveBtnCls}`.trim()}
-                      onClick={() => hook.handleProcess?.(p)}
+                      onClick={() => {
+                        for (const g of (p.requiresFieldMax ?? [])) {
+                          const condOk = !g.conditionalOnField || data?.[g.conditionalOnField] === g.conditionalValue;
+                          if (condOk && Number(data?.[g.field] ?? 0) > Number(g.max)) {
+                            toast.error(ui(g.errorKey));
+                            return;
+                          }
+                        }
+                        hook.handleProcess?.(p);
+                      }}
                     >
                       {tMenu(p.label)}
                     </Button>

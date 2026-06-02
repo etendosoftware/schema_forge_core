@@ -52,7 +52,16 @@
         "add": true,
         "label": "Create Amortization",
         "style": "positive",
-        "displayLogicRaw": "@Depreciate@='Y'"
+        "displayLogicRaw": "@Depreciate@='Y'",
+        "requiresFieldMax": [
+          {
+            "field": "annualDepreciation",
+            "max": 100,
+            "conditionalOnField": "calculateType",
+            "conditionalValue": "PE",
+            "errorKey": "assetsValidationAnnualDepreciationMax"
+          }
+        ]
       }
     },
     "secondaryTabs": {},

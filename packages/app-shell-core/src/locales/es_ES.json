@@ -19737,7 +19737,9 @@
     "amortizationLineCountLabel": "{count} línea(s)",
     "amortizationConfirmWarning": "Una vez confirmada no podrás editar la amortización",
     "amortizationErrorFullyDepreciated": "Este activo ya está completamente amortizado. No se pueden generar nuevas líneas de amortización.",
+    "assetsValidationAnnualDepreciationMax": "El % de Amortización Anual no puede ser superior al 100%. Corregí el valor antes de crear la amortización.",
     "amortizationConfirmAction": "Confirmar amortización",
+    "amortizationErrorLineAmountInvalid": "Hay líneas con importe cero o negativo. Corregilas antes de confirmar.",
     "assetsAnnualDepreciationLabel": "% Amortización anual"
   },
   "menus": {

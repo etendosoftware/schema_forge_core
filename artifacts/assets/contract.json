@@ -1,8 +1,8 @@
 {
   "version": "0.21.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-06-02T02:23:03.278Z",
-  "checksum": "424e5cddf093ee22",
+  "updatedAt": "2026-06-02T13:48:52.466Z",
+  "checksum": "8dd213f36bb02615",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -22,7 +22,16 @@
           "add": true,
           "label": "Create Amortization",
           "style": "positive",
-          "displayLogicRaw": "@Depreciate@='Y'"
+          "displayLogicRaw": "@Depreciate@='Y'",
+          "requiresFieldMax": [
+            {
+              "field": "annualDepreciation",
+              "max": 100,
+              "conditionalOnField": "calculateType",
+              "conditionalValue": "PE",
+              "errorKey": "assetsValidationAnnualDepreciationMax"
+            }
+          ]
         }
       },
       "secondaryTabs": {},
@@ -1000,7 +1009,16 @@
           "add": true,
           "label": "Create Amortization",
           "style": "positive",
-          "displayLogicRaw": "@Depreciate@='Y'"
+          "displayLogicRaw": "@Depreciate@='Y'",
+          "requiresFieldMax": [
+            {
+              "field": "annualDepreciation",
+              "max": 100,
+              "conditionalOnField": "calculateType",
+              "conditionalValue": "PE",
+              "errorKey": "assetsValidationAnnualDepreciationMax"
+            }
+          ]
         }
       },
       "secondaryTabs": {},
