@@ -82,7 +82,11 @@ const LazyOcrInlineUploader = lazy(() => import('@/components/copilot/ocr/OcrInl
  * Returns true (visible) if the expression cannot be parsed or if the field is missing from data.
  */
 function sidePanelWrapperCls(hasSidePanel, linesLayout) {
-  if (hasSidePanel) return 'flex items-start gap-0';
+  // Stack the side panel below the content on narrow viewports (e.g. when the
+  // devtools console is open) and only place it beside the content once there
+  // is room (lg+). A rigid side-by-side row would otherwise overlap the
+  // header/lines when the panel can't shrink.
+  if (hasSidePanel) return 'flex flex-col lg:flex-row items-start gap-0';
   if (linesLayout === 'inlineEditable') return 'flex flex-col';
   return '';
 }
@@ -2620,7 +2624,7 @@ export function DetailView({
                                       onSelectionChange={linesLayout === 'inlineEditable'
                                         ? (rows) => setSecondarySelectedRows(prev => ({ ...prev, [st.key]: rows }))
                                         : undefined}
-                                      onDeleteRow={enableSecondaryRowDelete && (api?.crud?.[st.key]?.delete ?? true) ? (row) => {
+                                      onDeleteRow={(enableSecondaryRowDelete || (linesLayout === 'inlineEditable' && !st.customAddModal)) && (api?.crud?.[st.key]?.delete ?? true) ? (row) => {
                                         setSecondaryDeleteConfirm({
                                           tabKey: st.key,
                                           tabIndex: stIdx,
@@ -3074,7 +3078,7 @@ export function DetailView({
                 </div>
                 {sidePanel && (
                   <div
-                    className="w-[280px] shrink-0 self-stretch border-l border-gray-200 pl-3 pr-3"
+                    className="w-full max-w-full shrink-0 self-stretch border-t lg:border-t-0 lg:w-[280px] lg:border-l border-gray-200 pt-3 lg:pt-0 pl-0 lg:pl-3 pr-0 lg:pr-3"
                     style={sidePanelStyle}
                   >
                     {typeof sidePanel === 'function'
