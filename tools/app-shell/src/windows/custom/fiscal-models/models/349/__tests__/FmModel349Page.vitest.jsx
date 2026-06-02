@@ -65,7 +65,7 @@ vi.mock('lucide-react', () => ({
 
 // ── Imports ───────────────────────────────────────────────────────────────────
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import FmModel349Page from '../FmModel349Page.jsx';
 
 // ── Fixture ───────────────────────────────────────────────────────────────────
@@ -230,5 +230,44 @@ describe('Bug 2 — liveOperators syncs when decl._precomputed changes', () => {
 
     const kpiValues = document.querySelectorAll('.fm-349-kpi__value:not(.fm-349-kpi__value--mono)');
     expect(kpiValues[0].textContent).toBe('1');
+  });
+});
+
+// ── Operator search filter ────────────────────────────────────────────────────
+describe('Operator search — filter by name and NIF-IVA', () => {
+  const ops = [
+    { id: 1, nif: 'IT12345678901', name: 'Bramini Vino S.r.l.', key: 'A', base: '1000.00', vies: 'valid' },
+    { id: 2, nif: 'FR40123456789', name: 'Olives de Provence',  key: 'E', base: '500.00',  vies: 'valid' },
+    { id: 3, nif: 'DE123456789',   name: 'Bayern GmbH',         key: 'S', base: '2000.00', vies: 'valid' },
+  ];
+
+  // Helper: find the search input (no explicit type attr in the component)
+  const getInput = (container) => container.querySelector('input');
+
+  it('shows all operators when search is empty', () => {
+    const decl = makeDecl({ _precomputed: { operators: ops } });
+    const { container } = render(<FmModel349Page decl={decl} {...defaultProps} />);
+    expect(container.querySelectorAll('tbody tr').length).toBe(3);
+  });
+
+  it('filters operators by name (case-insensitive)', () => {
+    const decl = makeDecl({ _precomputed: { operators: ops } });
+    const { container } = render(<FmModel349Page decl={decl} {...defaultProps} />);
+    fireEvent.change(getInput(container), { target: { value: 'bramini' } });
+    expect(container.querySelectorAll('tbody tr').length).toBe(1);
+  });
+
+  it('filters operators by NIF-IVA (case-insensitive)', () => {
+    const decl = makeDecl({ _precomputed: { operators: ops } });
+    const { container } = render(<FmModel349Page decl={decl} {...defaultProps} />);
+    fireEvent.change(getInput(container), { target: { value: 'FR40' } });
+    expect(container.querySelectorAll('tbody tr').length).toBe(1);
+  });
+
+  it('shows zero rows when search matches nothing', () => {
+    const decl = makeDecl({ _precomputed: { operators: ops } });
+    const { container } = render(<FmModel349Page decl={decl} {...defaultProps} />);
+    fireEvent.change(getInput(container), { target: { value: 'xxxxxxxxxxx' } });
+    expect(container.querySelectorAll('tbody tr').length).toBe(0);
   });
 });

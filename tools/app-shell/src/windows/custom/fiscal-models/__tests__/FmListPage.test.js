@@ -42,3 +42,29 @@ describe('FmListPage — 349 auto-compute wiring', () => {
   it('349 computed data is passed on row click (computedMap349)', () =>
     assert.match(src, /computedMap349/));
 });
+
+describe('FmListPage — 349 result column computation', () => {
+  it('sums totalE, totalS, totalA, totalI for 349 result (not summary.result)', () => {
+    // The four keys must be reduced together — summary.result would be undefined for 349
+    assert.match(src, /\['totalE','totalS','totalA','totalI'\]/);
+    assert.match(src, /\.reduce\(/);
+  });
+
+  it('uses kind "info" for 349 result (no payment label)', () =>
+    assert.match(src, /kind:\s*['"]info['"]/));
+
+  it('ResultCell renders info kind without ResultPill', () => {
+    // The info branch must exist in ResultCell and must NOT wrap in ResultPill
+    const resultCellMatch = src.match(/function ResultCell[\s\S]*?(?=\nfunction |\nexport )/);
+    assert.ok(resultCellMatch, 'ResultCell function must exist');
+    const resultCellSrc = resultCellMatch[0];
+    assert.match(resultCellSrc, /result\.kind\s*===\s*['"]info['"]/);
+  });
+
+  it('does not use summary.result for 349 branch', () => {
+    // Verify the 349 branch explicitly avoids reading summary.result
+    const m349block = src.match(/model === ['"]349['"][\s\S]*?displayResult\s*=/);
+    assert.ok(m349block, '349 branch must assign displayResult');
+    assert.doesNotMatch(m349block[0], /summary\.result/);
+  });
+});
