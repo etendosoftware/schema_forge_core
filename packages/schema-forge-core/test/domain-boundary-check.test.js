@@ -199,6 +199,17 @@ describe('domain boundary classification', () => {
     );
   });
 
+  it('classifies CLI test runners with the generator boundary', () => {
+    assert.deepEqual(
+      classifyPath('cli/src/run-aggregate-tests.js', { knownWindows: WINDOWS }),
+      { kind: 'generator-change', scope: 'generator-change' },
+    );
+    assert.deepEqual(
+      classifyPath('cli/src/run-contract-tests.js', { knownWindows: WINDOWS }),
+      { kind: 'generator-change', scope: 'generator-change' },
+    );
+  });
+
   it('classifies npm registry config as repo infra', () => {
     assert.deepEqual(
       classifyPath('.npmrc', { knownWindows: WINDOWS }),
