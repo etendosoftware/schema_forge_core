@@ -224,6 +224,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
     token,
     apiBaseUrl,
     pollIntervalMs:  180_000,
+    enabled:         Boolean(token && apiBaseUrl),
   });
 
   const { computedMap: computedMap349 } = useFiscalAutoCompute(draftDecls349, {
@@ -232,6 +233,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
     token,
     apiBaseUrl,
     pollIntervalMs:  180_000,
+    enabled:         Boolean(token && apiBaseUrl),
   });
 
   useEffect(() => {

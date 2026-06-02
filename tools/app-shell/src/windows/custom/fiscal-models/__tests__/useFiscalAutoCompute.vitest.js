@@ -61,7 +61,7 @@ describe('useFiscalAutoCompute — initial compute', () => {
     expect(computeFn).not.toHaveBeenCalled();
   });
 
-  it('writes a null-result entry when computeFn returns null', async () => {
+  it('writes a compute_failed error entry when computeFn returns null', async () => {
     const computeFn = vi.fn().mockResolvedValue(null);
     const { result } = renderHook(() =>
       useFiscalAutoCompute([DECL_A], {
@@ -74,7 +74,7 @@ describe('useFiscalAutoCompute — initial compute', () => {
       })
     );
     await waitFor(() =>
-      expect(result.current.computedMap[DECL_A.id]).toMatchObject({ boxes: null, summary: null, error: null })
+      expect(result.current.computedMap[DECL_A.id]).toMatchObject({ boxes: null, summary: null, error: 'compute_failed' })
     );
   });
 

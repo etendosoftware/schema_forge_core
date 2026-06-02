@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from 'react';
  * Auto-computes fiscal boxes for a list of declarations on mount, then polls
  * for data changes every pollIntervalMs and recomputes only modified ones.
  *
- * On mount, results cached in sessionStorage are restored immediately. A
- * checkModifiedFn call then determines whether a fresh compute is needed.
+ * On mount, if a cached result exists in sessionStorage AND checkModifiedFn is
+ * provided, the cached result is restored immediately and a checkModifiedFn call
+ * then determines whether a fresh compute is needed. If checkModifiedFn is omitted,
+ * the hook always recomputes on mount (cache is not consulted).
  * This prevents redundant server queries when the user navigates away and
  * back without any underlying data change.
  *
@@ -48,15 +50,20 @@ async function computeOne(decl, { fn, token, apiBaseUrl, isCancelled, computedAt
   try {
     const result = await fn(decl, { token, apiBaseUrl });
     if (isCancelled()) return;
+    if (result === null) {
+      // null means the backend returned an error or non-ok response.
+      // Do NOT advance computedAtRef so the next poll retries from the
+      // last successful sinceMs rather than skipping this window.
+      setComputedMap(m => ({
+        ...m,
+        [decl.id]: { boxes: null, summary: null, error: 'compute_failed', computedAt: Date.now() },
+      }));
+      return;
+    }
     const computedAt = Date.now();
     computedAtRef.current[decl.id] = computedAt;
-    if (cacheKey && result) writeCache(cacheKey, result, computedAt);
-    setComputedMap(m => ({
-      ...m,
-      [decl.id]: result
-        ? { ...result, error: null, computedAt }
-        : { boxes: null, summary: null, error: null, computedAt },
-    }));
+    if (cacheKey) writeCache(cacheKey, result, computedAt);
+    setComputedMap(m => ({ ...m, [decl.id]: { ...result, error: null, computedAt } }));
   } catch (err) {
     if (!isCancelled()) {
       // Do not update computedAtRef on error — sinceMs stays at the last

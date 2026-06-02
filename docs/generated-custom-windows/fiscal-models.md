@@ -128,7 +128,7 @@ Four cards (Operadores, Total operaciones, Rectificaciones, Pendientes VIES) sou
 ### PDF preview and file generation
 
 - `use349Pdf` hook renders a Modelo 349 draft PDF via Handlebars + `renderPdf`. Declarant NIF and org name are read from `_precomputed.orgNif` / `_precomputed.orgName`. The object URL is revoked on unmount to avoid memory leaks.
-- File generation (`generate349File`) prompts for contact name and phone via `FileGenModal` before calling `POST /fiscal349/generate`.
+- File generation (`generate349File`) prompts for contact name and phone via `FileGenModal` before calling `GET /fiscal349/generate`. Contact/phone are sent as query parameters; a future improvement would migrate to POST+body to avoid PII in server logs.
 
 ### Result in list view
 
@@ -164,8 +164,8 @@ Four cards (Operadores, Total operaciones, Rectificaciones, Pendientes VIES) sou
 | `GET` | `/fiscal303/modified?year=&period=&since=` | `checkModified303` |
 | `GET` | `/fiscal303/generate?year=&period=&tipo=` | `generate303File` |
 | `GET` | `/session` | FmModel303Page — org NIF/nombre for file header |
-| `GET` | `/fiscal349/operators?orgId=&year=&period=` | `compute349Operators` — returns operators + invoices + orgNif/orgName |
-| `GET` | `/fiscal349/modified?orgId=&year=&period=&since=` | `checkModified349` |
-| `GET` | `/fiscal349/generate?orgId=&year=&period=&contact=&phone=` | `generate349File` |
+| `GET` | `/fiscal349/operators?year=&period=` | `compute349Operators` — returns operators + invoices + orgNif/orgName |
+| `GET` | `/fiscal349/modified?year=&period=&since=` | `checkModified349` |
+| `GET` | `/fiscal349/generate?year=&period=&contact=&phone=` | `generate349File` |
 
 All query parameters are built with `URLSearchParams` to ensure correct encoding.
