@@ -106,6 +106,73 @@ function TotalsCard({ operators }) {
   );
 }
 
+// ── InvoicesTab ───────────────────────────────────────────────────
+function InvoicesTab({ liveInvoices, invoiceNifFilter, setInvoiceNifFilter, t }) {
+  if (!liveInvoices) {
+    return (
+      <div style={{ padding: '32px 0', textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>
+        {t('fm.m349.invoices.empty')}
+      </div>
+    );
+  }
+  if (liveInvoices.length === 0) {
+    return (
+      <div style={{ padding: '32px 0', textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>
+        {t('fm.m349.invoices.none')}
+      </div>
+    );
+  }
+  const visibleInvoices = invoiceNifFilter
+    ? liveInvoices.filter(inv => inv.nifIva === invoiceNifFilter)
+    : liveInvoices;
+  return (
+    <>
+      {invoiceNifFilter && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <span style={{ fontSize: 11, color: '#6b7280' }}>{t('fm.m349.invoices.filtering_by')}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#1e40af', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 4, padding: '2px 8px' }}>
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{invoiceNifFilter}</span>
+            <button onClick={() => setInvoiceNifFilter(null)} aria-label={t('fm.action.clear')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', lineHeight: 1, padding: 0, fontSize: 13 }}>×</button>
+          </span>
+          <span style={{ fontSize: 11, color: '#9ca3af' }}>{t('fm.m349.invoices.filtered', { visible: visibleInvoices.length, total: liveInvoices.length })}</span>
+        </div>
+      )}
+      <div className="fm-table-wrap" style={{ flex: 'none' }}>
+        <table className="fm-table">
+          <thead>
+            <tr>
+              <th>{t('fm.m349.col.date')}</th>
+              <th>{t('fm.m349.col.ref')}</th>
+              <th>{t('fm.m349.col.invoice_type')}</th>
+              <th>{t('fm.m349.col.operator')}</th>
+              <th>{t('fm.m349.col.nif_iva')}</th>
+              <th style={{ textAlign: 'right' }}>{t('fm.m349.col.taxable_base')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleInvoices.map((inv, i) => (
+              <tr key={`${inv.ref}-${i}`}>
+                <td><span className="fm-date">{inv.date}</span></td>
+                <td><span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }}>{inv.ref}</span></td>
+                <td>
+                  <span style={{ fontSize: 11, color: inv.type === 'Venta' ? '#059669' : '#2563eb', fontWeight: 500 }}>
+                    {inv.type}
+                  </span>
+                </td>
+                <td style={{ fontWeight: 500, color: '#0f172a' }}>{inv.party}</td>
+                <td><span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#374151' }}>{inv.nifIva}</span></td>
+                <td style={{ textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>
+                  {formatAmount(parseFloat(inv.base))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 // ── Main ─────────────────────────────────────────────────────────
 export default function FmModel349Page({ decl, onBack, onStatusChange, token, apiBaseUrl }) {
   const ui = useUI();
@@ -435,65 +502,12 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
 
         {activeTab === 'invoices' && (
           <div style={{ marginTop: 12 }}>
-            {!liveInvoices ? (
-              <div style={{ padding: '32px 0', textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>
-                {t('fm.m349.invoices.empty') ?? 'Recalculá para ver las facturas origen.'}
-              </div>
-            ) : liveInvoices.length === 0 ? (
-              <div style={{ padding: '32px 0', textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>
-                {t('fm.m349.invoices.none') ?? 'No hay facturas intracomunitarias en este período.'}
-              </div>
-            ) : (() => {
-              const visibleInvoices = invoiceNifFilter
-                ? liveInvoices.filter(inv => inv.nifIva === invoiceNifFilter)
-                : liveInvoices;
-              return (
-                <>
-                  {invoiceNifFilter && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                      <span style={{ fontSize: 11, color: '#6b7280' }}>{t('fm.m349.invoices.filtering_by')}</span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#1e40af', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 4, padding: '2px 8px' }}>
-                        <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{invoiceNifFilter}</span>
-                        <button onClick={() => setInvoiceNifFilter(null)} aria-label={t('fm.action.clear')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', lineHeight: 1, padding: 0, fontSize: 13 }}>×</button>
-                      </span>
-                      <span style={{ fontSize: 11, color: '#9ca3af' }}>{t('fm.m349.invoices.filtered', { visible: visibleInvoices.length, total: liveInvoices.length })}</span>
-                    </div>
-                  )}
-                  <div className="fm-table-wrap" style={{ flex: 'none' }}>
-                    <table className="fm-table">
-                      <thead>
-                        <tr>
-                          <th>{t('fm.m349.col.date') ?? 'Fecha'}</th>
-                          <th>{t('fm.m349.col.ref') ?? 'Referencia'}</th>
-                          <th>{t('fm.m349.col.invoice_type') ?? 'Tipo'}</th>
-                          <th>{t('fm.m349.col.operator') ?? 'Operador'}</th>
-                          <th>{t('fm.m349.col.nif_iva') ?? 'NIF-IVA'}</th>
-                          <th style={{ textAlign: 'right' }}>{t('fm.m349.col.taxable_base') ?? 'Base imponible'}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleInvoices.map((inv, i) => (
-                          <tr key={`${inv.ref}-${i}`}>
-                            <td><span className="fm-date">{inv.date}</span></td>
-                            <td><span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }}>{inv.ref}</span></td>
-                            <td>
-                              <span style={{ fontSize: 11, color: inv.type === 'Venta' ? '#059669' : '#2563eb', fontWeight: 500 }}>
-                                {inv.type}
-                              </span>
-                            </td>
-                            <td style={{ fontWeight: 500, color: '#0f172a' }}>{inv.party}</td>
-                            <td><span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#374151' }}>{inv.nifIva}</span></td>
-                            <td style={{ textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>
-                              {formatAmount(parseFloat(inv.base))}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              );
-            })()}
+            <InvoicesTab
+              liveInvoices={liveInvoices}
+              invoiceNifFilter={invoiceNifFilter}
+              setInvoiceNifFilter={setInvoiceNifFilter}
+              t={t}
+            />
           </div>
         )}
 
