@@ -113,9 +113,10 @@ describe('AmortizationLinesTable — dimensions', () => {
     assert.match(src, /VISIBLE_DIMENSION_FIELDS.*filter.*hidden/);
   });
 
-  it('renders DimSummary with chips and n/TOTAL_DIMS counter', () => {
+  it('renders DimSummary with Label:Value badges (no n/TOTAL_DIMS counter)', () => {
     assert.match(src, /DimSummary/);
-    assert.match(src, /TOTAL_DIMS/);
+    assert.match(src, /DimBadge/);
+    assert.match(src, /MAX_BADGES/);
   });
 
   it('DimSummary shows empty state with amortizationDimensionsEmpty label', () => {
@@ -135,8 +136,8 @@ describe('AmortizationLinesTable — dimensions', () => {
     assert.match(src, /amortizationDimensionsTitle/);
   });
 
-  it('shows filled count via amortizationDimensionsFilled', () => {
-    assert.match(src, /amortizationDimensionsFilled/);
+  it('shows empty state via amortizationDimensionsEmpty when no badges', () => {
+    assert.match(src, /amortizationDimensionsEmpty/);
   });
 });
 

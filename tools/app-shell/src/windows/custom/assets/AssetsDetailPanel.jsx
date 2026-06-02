@@ -174,6 +174,10 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
               fields={group2Fields}
               {...common}
               displayLogic={readOnlyAll}
+              onFieldBlur={(fieldKey) => {
+                const val = d[fieldKey];
+                if (val != null && val !== '') onChange?.(fieldKey, String(val));
+              }}
             />
             <EntityForm
               fields={deprecFields}

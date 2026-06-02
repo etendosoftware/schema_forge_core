@@ -1106,9 +1106,9 @@ export function DetailView({
 
     // Only trigger callout for meaningful value changes (not empty/typing artifacts).
     // Skip partial search text — only trigger when value looks like an Etendo ID
-    // (32-char hex UUID or legacy numeric ID), not user-typed search strings.
+    // (32-char hex UUID or legacy numeric ID) or a numeric/amount value (integer or decimal).
     if (!value || value === '') return;
-    if (!/^[0-9A-Fa-f]{32}$/.test(value) && !/^\d+$/.test(value)) return;
+    if (!/^[0-9A-Fa-f]{32}$/.test(value) && !/^-?\d+(\.\d+)?$/.test(value)) return;
 
     // Trigger callout — the backend returns empty if no callout is registered
     executeCallout(field, value, hook.editing);

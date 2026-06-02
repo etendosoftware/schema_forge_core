@@ -19470,6 +19470,7 @@
     "amortizationRef": "Amortization",
     "amortizationLineCountLabel": "{count} line(s)",
     "amortizationConfirmWarning": "Once confirmed you will not be able to edit the amortization",
+    "amortizationErrorFullyDepreciated": "This asset is already fully depreciated. No new amortization lines can be generated.",
     "amortizationConfirmAction": "Confirm amortization",
     "assetsAnnualDepreciationLabel": "Annual Depreciation %"
   },

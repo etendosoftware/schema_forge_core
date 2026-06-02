@@ -121,7 +121,7 @@ function DimSummary({ line, onClick, labelOverrides }) {
 
   return (
     <button onClick={onClick} className="inline-flex items-center gap-1.5 bg-transparent border-0 p-0 cursor-pointer max-w-full">
-      {shown.map((b, i) => <DimBadge key={i} label={b.label} value={b.value} />)}
+      {shown.map(b => <DimBadge key={b.label} label={b.label} value={b.value} />)}
       {extra > 0 && (
         <span className="px-2 py-1 rounded-lg bg-[#F5F7F9] text-sm leading-5 font-medium text-[#3F3F50]">+{extra}</span>
       )}
