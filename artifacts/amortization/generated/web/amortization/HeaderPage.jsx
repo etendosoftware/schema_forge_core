@@ -233,6 +233,10 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
         hideDeleteWhenComplete
         hidePrint
+        noHeaderBorder
+        whiteFormBackground
+        sidebarClassName="w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2"
+        toolbarButtonSize="default"
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "A_Amortization", config: {} } }]}
         menuActions={({ data, status }) => [
           { key: 'reactivate', label: 'Reactivate', visible: (data?.processed === 'Y' || data?.processed === true), labelKey: 'reactivate', columnName: 'Processed',  }
@@ -276,6 +280,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       hiddenColumns={["processed"]}
+      listbarPaddingX="px-2"
+      tablePaddingX="px-2"
       hidePrint
       hideLink
       labelOverrides={labelOverrides}

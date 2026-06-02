@@ -7,6 +7,7 @@
 | [architecture-overview.md](architecture-overview.md) | System architecture: Schema Forge (tooling) + Etendo Go (runtime), data flow, component inventory |
 | [transactional-email-framework.md](transactional-email-framework.md) | Transactional email framework: contract-driven execution, security boundary, lifecycle, edge cases, and agent checklist |
 | [email-contracts.md](email-contracts.md) | Email contracts guide: descriptor schema, request/response contract, recipient policies, versioning, and initial contract sketches |
+| [document-email-contract-implementation.md](document-email-contract-implementation.md) | Step-by-step guide for adding document-send email contracts from Schema Forge windows |
 | [NEO Headless API Reference](../modules/com.etendoerp.go/docs/neo-headless.md) | Full API reference for the runtime module (NeoServlet, selectors, processes, webhooks) |
 | [NEO Headless Extensibility Guide](neo-headless-extensibility.md) | How to extend/customize NEO Headless: NeoHandler hooks, configuration, patterns |
 | [NEO Entity Naming Investigation](neo-entity-naming-investigation.md) | Investigation report on `push-to-neo` naming, duplicate entities/fields, runtime endpoint resolution, and unification rule |
@@ -38,6 +39,7 @@
 | [ui-design-guidelines.md](ui-design-guidelines.md) | **UI design guidelines**: z-index scale, scrim opacity, overlay/drawer patterns, monetary amount formatting (`formatCurrency` vs `formatDashboardAmount`), column alignment |
 | [list-filters.md](list-filters.md) | **List view filters reference**: subset filters, quick filters, document-type filters, advanced filter popover — composition rules, URL-param hooks, when to use which |
 | [pipeline-validator-reference.md](pipeline-validator-reference.md) | **Pipeline completeness validator**: rules F1–F10, artifact classification, CLI flags, exit codes, and troubleshooting |
+| [contract-generation-ownership.md](contract-generation-ownership.md) | **Contract/generated output ownership**: producers, consumers, regeneration triggers, and split-ready artifact rules |
 | [line-pricing-model.md](line-pricing-model.md) | **Line pricing model**: client-side lineGrossAmount calculation for orders/quotations, field roles, callout vs client-side split, invoice refactor checklist |
 
 ## Design Specs

@@ -59,7 +59,8 @@
           "searchable": true,
           "inputMode": "search",
           "section": "principal",
-          "seq": 40
+          "seq": 40,
+          "defaultExpr": "@#M_Warehouse_ID@"
         },
         "documentStatus": {
           "visibility": "readOnly",

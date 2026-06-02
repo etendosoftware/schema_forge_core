@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import { createStableUseApiFetchMock } from '@/test/mockUseApiFetch.js';
 
 // --- Mocks ----------------------------------------------------------------
 
@@ -68,6 +69,10 @@ vi.mock('@/windows/custom/fiscal-config/useFiscalConfig.js', () => ({
 
 vi.mock('@/auth/AuthContext.jsx', () => ({
   useAuth: () => ({ selectedOrg: { id: 'ORG_1' } }),
+}));
+
+vi.mock('@/auth/useApiFetch.js', () => ({
+  useApiFetch: createStableUseApiFetchMock(),
 }));
 
 vi.mock('@/components/ui/badge.jsx', () => ({
@@ -141,7 +146,11 @@ describe('InvoicePreviewModal', () => {
       }),
     );
     // Mock requestAnimationFrame for animation state
-    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => { cb(0); return 0; });
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+      const id = setTimeout(() => cb(0), 0);
+      return id;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => clearTimeout(id));
   });
 
   afterEach(() => {

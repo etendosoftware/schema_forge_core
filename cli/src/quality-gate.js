@@ -96,33 +96,38 @@ export function parseQualityGateArgs(argv) {
     analysisDir: null,
   };
 
-  for (let index = 0; index < argv.length; index += 1) {
+  let index = 0;
+  while (index < argv.length) {
     const arg = argv[index];
     if (isWindowFlagWithArgument(arg, argv, index)) {
       options.mode = 'window';
       options.windowName = argv[index + 1];
-      index += 1;
+      index += 2;
     } else if (arg === '--all') {
       options.mode = 'all';
+      index += 1;
     } else if (arg === '--pr-affected') {
       options.mode = 'pr-affected';
+      index += 1;
     } else if (isBaselineRefFlag(arg, argv, index)) {
       options.baselineRef = argv[index + 1];
-      index += 1;
+      index += 2;
     } else if (isHeadRefFlag(arg, argv, index)) {
       options.headRef = argv[index + 1];
-      index += 1;
+      index += 2;
     } else if (isFormatFlagWithArgument(arg, argv, index)) {
       options.format = argv[index + 1];
-      index += 1;
+      index += 2;
     } else if (isOutputFlagWithArgument(arg, argv, index)) {
       options.outputPath = argv[index + 1];
-      index += 1;
+      index += 2;
     } else if (isJsonFlagWithArgument(arg, argv, index)) {
       options.jsonPath = argv[index + 1];
-      index += 1;
+      index += 2;
     } else if (arg === '--analysis-dir' && argv[index + 1]) {
       options.analysisDir = argv[index + 1];
+      index += 2;
+    } else {
       index += 1;
     }
   }

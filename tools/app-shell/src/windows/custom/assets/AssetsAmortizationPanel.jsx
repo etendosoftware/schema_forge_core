@@ -25,13 +25,13 @@ function getLineStatuses(lines, depreciatedValue) {
   return statuses;
 }
 
-export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
+export default function AssetsAmortizationPanel({ data, recordId: recordIdProp, token, apiBaseUrl, onCountChange }) {
   const ui = useUI();
   const navigate = useNavigate();
   const orgCurrency = useCurrency() ?? 'USD';
   const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(false);
-  const recordId = data?.id;
+  const recordId = recordIdProp ?? data?.id;
 
   const fetchLines = useCallback(() => {
     if (!recordId || !apiBaseUrl) return;
@@ -41,7 +41,9 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
       .then(r => r.ok ? r.json() : { data: [] })
       .then(json => {
         const rows = json?.response?.data ?? json?.data ?? json?.rows ?? [];
-        setLines(Array.isArray(rows) ? rows : []);
+        const normalizedRows = Array.isArray(rows) ? rows : [];
+        setLines(normalizedRows);
+        onCountChange?.(normalizedRows.length);
       })
       .catch(() => setLines([]))
       .finally(() => setLoading(false));
@@ -71,23 +73,7 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
   const totalAmount = lines.reduce((sum, l) => sum + Number(l.amortizationAmount ?? 0), 0);
 
   return (
-    <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm pt-2 pb-5 px-5">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <div className="text-sm font-semibold text-gray-800">{ui('assetsAmortizationPlan')}</div>
-          <div className="text-xs text-gray-400 mt-0.5">
-            {ui('assetsAmortizationPlanDesc')}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {plannedCount > 0 && (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-              {plannedCount} {ui(plannedCount === 1 ? 'assetsPlannedLine' : 'assetsPlannedLines')}
-            </span>
-          )}
-        </div>
-      </div>
-
+    <div className="pt-2 pb-5">
       {loading ? (
         <div className="text-xs text-gray-400 py-4 text-center inline-flex items-center gap-1.5 justify-center w-full">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -101,28 +87,28 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2 pr-4">{ui('assetsPeriod')}</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2 pr-4">{ui('assetsPercentage')}</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2 pr-4">{ui('amount')}</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2">{ui('assetsStatus')}</th>
+              <tr className="border-b border-border/50">
+                <th className="text-left text-sm font-semibold text-foreground py-2.5 pr-4">{ui('assetsPeriod')}</th>
+                <th className="text-left text-sm font-semibold text-foreground py-2.5 pr-4">{ui('assetsPercentage')}</th>
+                <th className="text-left text-sm font-semibold text-foreground py-2.5 pr-4">{ui('amount')}</th>
+                <th className="text-left text-sm font-semibold text-foreground py-2.5">{ui('assetsStatus')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border/50">
               {lines.map((line) => (
                 <tr
                   key={line.id ?? line.sEQNoAsset}
-                  className="hover:bg-blue-50 cursor-pointer"
+                  className="hover:bg-muted/30 cursor-pointer"
                   onClick={() => line.amortization && navigate(`/amortization/${line.amortization}`)}
                 >
-                  <td className="py-2.5 pr-4 text-gray-700">{line['amortization$_identifier'] ?? line.amortization ?? '—'}</td>
-                  <td className="py-2.5 pr-4 text-gray-700">
+                  <td className="py-3 pr-4 text-foreground">{line['amortization$_identifier'] ?? line.amortization ?? '—'}</td>
+                  <td className="py-3 pr-4 text-foreground">
                     {line.amortizationPercentage != null
                       ? `${Number(line.amortizationPercentage).toFixed(2)}%`
                       : '—'}
                   </td>
-                  <td className="py-2.5 pr-4 text-gray-700">{formatCurrency(orgCurrency, line.amortizationAmount)}</td>
-                  <td className="py-2.5">
+                  <td className="py-3 pr-4 text-foreground">{formatCurrency(orgCurrency, line.amortizationAmount)}</td>
+                  <td className="py-3">
                     <StatusBadge isProcessed={lineStatuses.get(line.id ?? line.sEQNoAsset)} ui={ui} />
                   </td>
                 </tr>
@@ -130,9 +116,9 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
             </tbody>
             {totalAmount > 0 && (
               <tfoot>
-                <tr className="border-t border-gray-200">
+                <tr className="border-t border-border/50">
                   <td colSpan={2} />
-                  <td colSpan={2} className="py-2.5 text-right text-xs font-semibold text-gray-700 pr-4">
+                  <td colSpan={2} className="py-3 text-right text-sm font-semibold text-foreground pr-4">
                     {ui('assetsTotalPlanned')} {formatCurrency(orgCurrency, totalAmount)}
                   </td>
                 </tr>

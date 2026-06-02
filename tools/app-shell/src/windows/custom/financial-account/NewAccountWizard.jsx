@@ -186,19 +186,19 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
 
         {step === STEP.CONNECTION ? (
           <div
-            className="grid grid-cols-1 gap-3 py-2 sm:grid-cols-2"
+            className="grid grid-cols-1 gap-4 py-2 sm:grid-cols-2"
             data-testid="account-connection-options"
           >
             <ConnectionCard
               icon={Link2}
+              iconTone="green"
               title={ui('financeAccountsNewConnectionOnline')}
               description={ui('financeAccountsNewConnectionOnlineDesc')}
-              badge={ui('financeAccountsNewConnectionSoonBadge')}
-              disabled
               testid="account-connection-online"
             />
             <ConnectionCard
               icon={PencilLine}
+              iconTone="neutral"
               title={ui('financeAccountsNewConnectionOffline')}
               description={ui('financeAccountsNewConnectionOfflineDesc')}
               onClick={() => setStep(STEP.BANK)}
@@ -389,30 +389,36 @@ function InstitutionList({ ui, bank, onPick }) {
   );
 }
 
-function ConnectionCard({ icon: Icon, title, description, badge, disabled, onClick, testid }) {
+/**
+ * Card used in the Bank "Connection" step. Renders as: lead icon (44x44, tinted
+ * box) → title → description. Per the redesigned spec the cards no longer carry
+ * status pills or illustrations — they're clean, info-only tiles.
+ *
+ * `iconTone` controls the lead icon's colour set:
+ *   - 'green'   → success tones (used by "Con conexión")
+ *   - 'neutral' → subtle/gray tones (used by "Sin conexión")
+ */
+function ConnectionCard({ icon: Icon, iconTone = 'neutral', title, description, onClick, testid }) {
+  const toneClasses = iconTone === 'green'
+    ? 'bg-[#EEFBF4] border-[#C5F0D8] text-[#17663A]'
+    : 'bg-[#F5F7F9] border-[#E8EAEF] text-[#3F3F50]';
   return (
     <button
       type="button"
-      disabled={disabled}
       onClick={onClick}
       data-testid={testid}
-      className={cn(
-        'flex flex-col gap-2 rounded-xl border border-[#E8EAEF] bg-white p-4 text-left shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors',
-        disabled ? 'cursor-not-allowed opacity-70' : 'hover:bg-[#F5F7F9]',
-      )}
+      className="flex flex-col rounded-xl border border-[#E8EAEF] bg-white p-5 text-left shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:bg-[#F5F7F9]"
     >
-      <div className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white text-[#828FA3] shadow-[0_1px_3px_rgba(18,18,23,0.1),0_1px_2px_rgba(18,18,23,0.06)]">
-          <Icon className="h-5 w-5" />
-        </span>
-        <span className="text-base font-medium leading-6 text-[#121217]">{title}</span>
-        {badge ? (
-          <span className="rounded-full bg-[#F5F7F9] px-2 py-0.5 text-xs font-normal text-[#6C6C89]">
-            {badge}
-          </span>
-        ) : null}
-      </div>
-      <span className="text-sm font-normal leading-5 text-[#555B6D]">{description}</span>
+      <span
+        className={cn(
+          'mb-1.5 flex h-11 w-11 items-center justify-center rounded-xl border',
+          toneClasses,
+        )}
+      >
+        <Icon className="h-[22px] w-[22px]" />
+      </span>
+      <h3 className="m-0 text-base font-semibold leading-5 text-[#121217]">{title}</h3>
+      <p className="mt-1 text-[13px] font-normal leading-[18px] text-[#6C6C89]">{description}</p>
     </button>
   );
 }

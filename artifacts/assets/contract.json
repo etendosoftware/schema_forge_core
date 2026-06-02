@@ -1,8 +1,8 @@
 {
-  "version": "0.8.0",
+  "version": "0.9.1",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-05-27T16:06:00.104Z",
-  "checksum": "f7a9cfcb7cd27d20",
+  "updatedAt": "2026-05-29T15:38:26.786Z",
+  "checksum": "b7adf89c9c19e165",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -13,7 +13,7 @@
       "hidePrint": true,
       "hideMoreMenu": true,
       "hideMoreDetails": true,
-      "contentBg": "bg-slate-50",
+      "contentBg": "bg-white",
       "hideLink": true,
       "hideEyeCount": true,
       "breadcrumb": "Finance / Assets",
@@ -29,21 +29,26 @@
       "detailEntity": null,
       "detailSortBy": "sEQNoAsset asc",
       "headerExtra": {
-        "customForm": "AssetsAmortizationPanel"
+        "customForm": "AssetsDetailPanel"
       },
-      "primaryTabs": [
-        {
-          "key": "general",
-          "label": "Overview"
-        },
-        {
-          "key": "configuration",
-          "label": "Depreciation Setup",
-          "panel": "AssetsConfigPanel"
-        }
-      ],
       "disableProcessedLock": true,
       "titleField": "name",
+      "toolbarBorderBottom": true,
+      "compactSidebarPadding": true,
+      "whiteFormBackground": true,
+      "hideFormCard": true,
+      "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2",
+      "toolbarPaddingX": "px-2",
+      "toolbarButtonSize": "default",
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
+      "customPanelTabs": [
+        {
+          "key": "amortizationPlan",
+          "labelKey": "assetsAmortizationPlanTab",
+          "component": "AssetsAmortizationPanel"
+        }
+      ],
       "layoutType": "default"
     },
     "entities": {
@@ -63,7 +68,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "sourceRequired": true
           },
           {
@@ -76,7 +81,7 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true,
+            "form": false,
             "sourceRequired": true
           },
           {
@@ -89,7 +94,7 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true,
+            "form": false,
             "sourceRequired": true,
             "reference": "AssetGroup",
             "inputMode": "selector",
@@ -107,7 +112,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": false
           },
           {
             "name": "currency",
@@ -418,8 +423,10 @@
             "tsType": "number",
             "visibility": "editable",
             "required": false,
-            "grid": false,
+            "grid": true,
             "form": false,
+            "summable": true,
+            "gridOrder": 6,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Assets"
             },
@@ -809,7 +816,7 @@
       "hidePrint": true,
       "hideMoreMenu": true,
       "hideMoreDetails": true,
-      "contentBg": "bg-slate-50",
+      "contentBg": "bg-white",
       "hideLink": true,
       "hideEyeCount": true,
       "breadcrumb": "Finance / Assets",
@@ -825,21 +832,26 @@
       "detailEntity": null,
       "detailSortBy": "sEQNoAsset asc",
       "headerExtra": {
-        "customForm": "AssetsAmortizationPanel"
+        "customForm": "AssetsDetailPanel"
       },
-      "primaryTabs": [
-        {
-          "key": "general",
-          "label": "Overview"
-        },
-        {
-          "key": "configuration",
-          "label": "Depreciation Setup",
-          "panel": "AssetsConfigPanel"
-        }
-      ],
       "disableProcessedLock": true,
-      "titleField": "name"
+      "titleField": "name",
+      "toolbarBorderBottom": true,
+      "compactSidebarPadding": true,
+      "whiteFormBackground": true,
+      "hideFormCard": true,
+      "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2",
+      "toolbarPaddingX": "px-2",
+      "toolbarButtonSize": "default",
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
+      "customPanelTabs": [
+        {
+          "key": "amortizationPlan",
+          "labelKey": "assetsAmortizationPlanTab",
+          "component": "AssetsAmortizationPanel"
+        }
+      ]
     },
     "entities": {
       "assets": {

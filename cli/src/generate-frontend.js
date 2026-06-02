@@ -238,7 +238,8 @@ export function generateTableComponent(entityName, contract) {
     const growPart = f.grow ? ', grow: true' : '';
     const noTrailingPart = f.noTrailing ? ', noTrailing: true' : '';
     const filterOnlyPart = (f.filterOnly || f.filterable === false) ? ', filterable: false' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart}${minColPart}${growPart}${noTrailingPart}${filterOnlyPart} },`;
+    const dotPart = f.dot === false ? ', dot: false' : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart}${minColPart}${growPart}${noTrailingPart}${filterOnlyPart}${dotPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -769,6 +770,17 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
   const hideMoreDetails = windowConfig.hideMoreDetails ?? false;
   const noHeaderBorder = windowConfig.noHeaderBorder ?? false;
+  const toolbarBorderBottom = windowConfig.toolbarBorderBottom ?? false;
+  const compactSidebarPadding = windowConfig.compactSidebarPadding ?? false;
+  const whiteFormBackground = windowConfig.whiteFormBackground ?? false;
+  const hideFormCard = windowConfig.hideFormCard ?? false;
+  const sidebarClassName = windowConfig.sidebarClassName ?? null;
+  const tabsBarPaddingX = windowConfig.tabsBarPaddingX ?? null;
+  const primaryTabsVariant = windowConfig.primaryTabsVariant ?? null;
+  const toolbarPaddingX = windowConfig.toolbarPaddingX ?? null;
+  const toolbarButtonSize = windowConfig.toolbarButtonSize ?? null;
+  const listbarPaddingX = windowConfig.listbarPaddingX ?? null;
+  const tablePaddingX = windowConfig.tablePaddingX ?? null;
   const linesLayout = windowConfig.linesLayout ?? 'classic';
   const listViewOptions = windowConfig.listViewOptions ?? null;
   const listBaseFilter = windowConfig.listBaseFilter ?? null;
@@ -787,6 +799,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const titleField = windowConfig.titleField ?? null;
   const salesTheme = windowConfig.salesTheme ?? false;
   const extraTabs = windowConfig.extraTabs ?? [];
+  const customPanelTabs = windowConfig.customPanelTabs ?? [];
   const lineEntityConfig = windowConfig.lineEntityConfig ?? null;
   // ETP-3914 — Row Quick Actions overlay config (defaults injected by resolve-curated.js).
   // When the entire feature is disabled we skip emitting the prop so the list view is
@@ -995,6 +1008,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   if (relatedDocuments) {
     customTabItems.push(`{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }`);
   }
+  customPanelTabs.forEach(pt => {
+    const labelPart = pt.labelKey ? `labelKey: '${pt.labelKey}'` : `label: '${pt.label}'`;
+    customTabItems.push(
+      `{ key: '${pt.key}', ${labelPart}, Component: ${pt.component}, placement: 'tab' }`
+    );
+  });
   if (attachmentsEnabled) {
     const optsLiteral = JSON.stringify(attachmentsOpts);
     customTabItems.push(
@@ -1028,6 +1047,26 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideMoreDetailsProp = hideMoreDetails ? '\n        hideMoreDetails' : '';
   // noHeaderBorder prop (DetailView)
   const noHeaderBorderProp = noHeaderBorder ? '\n        noHeaderBorder' : '';
+  // toolbarBorderBottom prop (DetailView)
+  const toolbarBorderBottomProp = toolbarBorderBottom ? '\n        toolbarBorderBottom' : '';
+  // compactSidebarPadding prop (DetailView)
+  const compactSidebarPaddingProp = compactSidebarPadding ? '\n        compactSidebarPadding' : '';
+  const whiteFormBackgroundProp = whiteFormBackground ? '\n        whiteFormBackground' : '';
+  // hideFormCard prop (DetailView)
+  const hideFormCardProp = hideFormCard ? '\n        hideFormCard' : '';
+  // sidebarClassName prop (DetailView)
+  const sidebarClassNameProp = sidebarClassName ? `\n        sidebarClassName="${sidebarClassName}"` : '';
+  // tabsBarPaddingX prop (DetailView)
+  const tabsBarPaddingXProp = tabsBarPaddingX ? `\n        tabsBarPaddingX="${tabsBarPaddingX}"` : '';
+  // primaryTabsVariant prop (DetailView)
+  const primaryTabsVariantProp = primaryTabsVariant ? `\n        primaryTabsVariant="${primaryTabsVariant}"` : '';
+  // toolbarPaddingX prop (DetailView)
+  const toolbarPaddingXProp = toolbarPaddingX ? `\n        toolbarPaddingX="${toolbarPaddingX}"` : '';
+  // toolbarButtonSize prop (DetailView)
+  const toolbarButtonSizeProp = toolbarButtonSize ? `\n        toolbarButtonSize="${toolbarButtonSize}"` : '';
+  // listbarPaddingX / tablePaddingX props (ListView)
+  const listbarPaddingXProp = listbarPaddingX ? `\n      listbarPaddingX="${listbarPaddingX}"` : '';
+  const tablePaddingXProp = tablePaddingX ? `\n      tablePaddingX="${tablePaddingX}"` : '';
   // linesLayout prop (DetailView). Only emit when non-default to keep generated
   // output diff-free for windows that don't opt in.
   const linesLayoutProp = linesLayout && linesLayout !== 'classic'
@@ -1099,6 +1138,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   }
   if (customComponents.newRecordComponent) {
     customComponentImports.push(`import ${customComponents.newRecordComponent} from ${resolveCustomImport(specName, customComponents.newRecordComponent)};`);
+  }
+  // customPanelTabs — import each panel component
+  for (const pt of customPanelTabs) {
+    customComponentImports.push(`import ${pt.component} from ${resolveCustomImport(specName, pt.component)};`);
   }
   // newActions — import component modals if declared
   const newActionsWithComponents = newActionsConfig.filter(a => a.component);
@@ -1428,7 +1471,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${hideFormCardProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
         {...props}${sidebarContentProp}
       />${confirmModalName ? `
       {showConfirmModal && (
@@ -1454,7 +1497,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `
