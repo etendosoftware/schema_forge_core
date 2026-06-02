@@ -17411,7 +17411,7 @@
     "financeAccountMovementsNewError": "Couldn't create the movement",
     "financeAccountMovementsNewErrorAmount": "Amount must be greater than 0",
     "financeAccountMovementsColDate": "Date",
-    "financeAccountMovementsColDocument": "Document",
+    "financeAccountMovementsColDocument": "Payment",
     "financeAccountMovementsColContact": "Contact",
     "financeAccountMovementsColDescription": "Description",
     "financeAccountMovementsColStatus": "Status",

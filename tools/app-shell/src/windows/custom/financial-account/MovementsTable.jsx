@@ -1,4 +1,6 @@
 import { toast } from 'sonner';
+import { ArrowUpRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -95,9 +97,18 @@ function useTrxTypeLabel() {
  */
 export function MovementsTable({ movements, loading, selectedIds, onSelectionChange }) {
   const ui = useUI();
+  const navigate = useNavigate();
   const { locale: appLocale } = useLocaleSwitch();
   const bcpLocale = (appLocale || 'es_ES').replace('_', '-');
   const getTrxTypeLabel = useTrxTypeLabel();
+
+  // Navigate to the related payment window (payment-in for received payments,
+  // payment-out for made payments). No-op when the movement has no payment.
+  const openPayment = (movement) => {
+    if (!movement.paymentId) return;
+    const win = movement.paymentIsReceipt === 'Y' ? 'payment-in' : 'payment-out';
+    navigate(`/${win}/${movement.paymentId}`);
+  };
   const allSelected = movements.length > 0 && selectedIds.size === movements.length;
   const someSelected = selectedIds.size > 0 && !allSelected;
 
@@ -160,9 +171,20 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
                   {formatDate(movement.date, bcpLocale)}
                 </TableCell>
 
-                {/* Document */}
-                <TableCell className="whitespace-nowrap text-sm font-semibold leading-5 text-[#121217]">
-                  {movement.documentNo}
+                {/* Payment — links to the payment-in / payment-out window */}
+                <TableCell className="whitespace-nowrap text-sm font-semibold leading-5">
+                  {movement.paymentId ? (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); openPayment(movement); }}
+                      className="inline-flex items-center gap-1 text-[#121217] underline decoration-[#d1d4db] underline-offset-4 hover:decoration-[#121217]"
+                    >
+                      {movement.documentNo}
+                      <ArrowUpRight className="h-3 w-3" />
+                    </button>
+                  ) : (
+                    <span className="text-[#121217]">{movement.documentNo}</span>
+                  )}
                 </TableCell>
 
                 {/* Contact */}

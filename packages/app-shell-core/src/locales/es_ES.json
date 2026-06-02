@@ -17661,7 +17661,7 @@
     "financeAccountMovementsNewError": "No se pudo crear el movimiento",
     "financeAccountMovementsNewErrorAmount": "El importe debe ser mayor a 0",
     "financeAccountMovementsColDate": "Fecha",
-    "financeAccountMovementsColDocument": "Documento",
+    "financeAccountMovementsColDocument": "Pago",
     "financeAccountMovementsColContact": "Contacto",
     "financeAccountMovementsColDescription": "Descripción",
     "financeAccountMovementsColStatus": "Estado",
