@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'SendDocumentModal.jsx'), 'utf8');
+const sendSrc = readFileSync(join(__dirname, '..', 'documentEmailSend.js'), 'utf8');
 
 describe('SendDocumentModal', () => {
   it('exports a default function component', () => {
@@ -48,12 +49,14 @@ describe('SendDocumentModal', () => {
   });
 
   it('sends document email through the email contracts endpoint', () => {
-    assert.match(src, /email-contracts\/\$\{contractName\}\/send/);
-    assert.match(src, /buildEmailContractCommand/);
+    assert.match(src, /sendDocumentEmail/);
+    assert.match(sendSrc, /email-contracts\/\$\{contractName\}\/send/);
+    assert.match(sendSrc, /buildEmailContractCommand/);
   });
 
-  it('derives sales order email contract from the window name', () => {
-    assert.match(src, /windowName\s*===\s*'sales-invoice'\s*\?\s*'sales-invoice-send'\s*:\s*`\$\{windowName\}-send`/);
+  it('derives email contract names from the window name without document-specific branches', () => {
+    assert.match(sendSrc, /return `\$\{windowName\}-send`/);
+    assert.doesNotMatch(sendSrc, /windowName\s*===\s*'sales-invoice'/);
   });
 
   it('uses toast for send confirmation', () => {
@@ -85,9 +88,11 @@ describe('SendDocumentModal', () => {
   });
 
   it('does not send caller-provided provider payload fields', () => {
-    const commandStart = src.indexOf('function buildEmailContractCommand');
-    const commandEnd = src.indexOf('async function readEmailContractResponse');
-    const commandSrc = src.slice(commandStart, commandEnd);
+    const commandStart = sendSrc.indexOf('export function buildEmailContractCommand');
+    const commandEnd = sendSrc.indexOf('export async function readEmailContractResponse');
+    assert.ok(commandStart > -1, 'buildEmailContractCommand export not found');
+    assert.ok(commandEnd > commandStart, 'readEmailContractResponse export not found after command builder');
+    const commandSrc = sendSrc.slice(commandStart, commandEnd);
     assert.doesNotMatch(commandSrc, /\bto\b/);
     assert.doesNotMatch(commandSrc, /\btemplate\b/);
     assert.doesNotMatch(commandSrc, /\bdata\b/);
