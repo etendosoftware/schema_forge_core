@@ -3,6 +3,7 @@ import { ArrowUpRight, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
@@ -86,9 +87,9 @@ function useTrxTypeLabel() {
 }
 
 /**
- * "More info" panel — read-only accounting dimensions rendered as field-style
- * boxes (label on top + bordered value box with a decorative chevron), in a
- * 4-column grid with an elevated surface. Mirrors the Figma "Desplegado" spec.
+ * "More info" panel — read-only accounting dimensions rendered as disabled
+ * form fields (label on top + greyed-out bordered box, same look as a read-only
+ * field in the document forms), in a 4-column grid with an elevated surface.
  *
  * Shows only dimensions that are enabled in the chart of accounts AND have a
  * value; the business partner is excluded (it has its own "Contacto" column).
@@ -99,20 +100,20 @@ function DimensionsPanel({ movement, enabledDimensions, ui }) {
 
   if (visible.length === 0) {
     return (
-      <div className="px-[52px] pb-8 pt-3 text-sm text-[#6C6C89]">
+      <div className="pl-16 pr-[52px] pb-8 pt-3 text-sm text-[#6C6C89]">
         {ui('financeAccountMovementsNoDimensions')}
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-x-5 gap-y-4 px-[52px] pb-8 pt-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-5 pl-16 pr-[52px] pb-8 pt-3 sm:grid-cols-2 lg:grid-cols-4">
       {visible.map((key) => (
-        <div key={key} className="flex flex-col gap-1">
+        <div key={key} className="flex flex-col gap-2">
           <span className="text-sm font-medium leading-6 text-[#121217]">
             {ui(DIMENSION_LABEL_KEYS[key] ?? key)}
           </span>
-          <span className="text-sm leading-6 text-[#3F3F50]">{dims[key]}</span>
+          <Input className="items-center" value={dims[key]} disabled readOnly />
         </div>
       ))}
     </div>

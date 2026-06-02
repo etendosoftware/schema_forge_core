@@ -121,9 +121,14 @@ describe('MovementsTable — expandable dimensions panel', () => {
     fireEvent.click(screen.getByTestId('movement-expand-m1'));
     const panel = screen.getByTestId('movement-moreinfo-m1');
 
-    expect(within(panel).getByText('Proj A')).toBeInTheDocument();
-    expect(within(panel).getByText('Camp Z')).toBeInTheDocument();
-    expect(within(panel).queryByText('Should Not Show')).not.toBeInTheDocument();
+    // Values now render as disabled read-only inputs, so assert by display value.
+    expect(within(panel).getByDisplayValue('Proj A')).toBeInTheDocument();
+    expect(within(panel).getByDisplayValue('Camp Z')).toBeInTheDocument();
+    expect(within(panel).getByDisplayValue('Proj A')).toBeDisabled();
+    expect(within(panel).queryByDisplayValue('Should Not Show')).not.toBeInTheDocument();
+    // Labels are still plain text.
+    expect(within(panel).getByText('financeAccountMovementsDimProject')).toBeInTheDocument();
+    expect(within(panel).getByText('financeAccountMovementsDimCampaign')).toBeInTheDocument();
     // Empty costcenter renders no label.
     expect(within(panel).queryByText('financeAccountMovementsDimCostcenter')).not.toBeInTheDocument();
   });
