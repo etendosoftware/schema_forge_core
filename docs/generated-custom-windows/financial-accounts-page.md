@@ -5,16 +5,16 @@
 
 ## Intent
 
-Use this page as the entry point to the reconciliation module. It lists the active financial accounts the user can see (banks, cash drawers and cards), exposes the per-currency balances aggregated across them and highlights how many lines are still pending reconciliation. From here the user opens a single account to manage its reconciliation workflow (introduced in T4) or triggers a manual match (T6).
+Use this page as the entry point to the reconciliation module. It lists the financial accounts the user can see (banks, cash drawers and cards — active by default, with archived ones available behind the **Inactivas** filter), exposes the per-currency balances aggregated across them and highlights how many lines are still pending reconciliation. From here the user opens a single account to manage its reconciliation workflow (introduced in T4) or triggers a manual match (T6).
 
 ## What this page allows in T1
 
-- List all active `FIN_Financial_Account` records for the current client and accessible organizations.
+- List `FIN_Financial_Account` records for the current client and accessible organizations — active accounts in the type views, plus archived (inactive) accounts behind a dedicated **Inactivas** filter.
 - Show the aggregated sidebar widgets:
   - Total balance across visible accounts.
   - Balance broken down by ISO currency (EUR, USD, …).
   - Pending counters: accounts with unreconciled `FIN_Bank_Statement_Line`s plus placeholders for the matching engine (introduced in T5).
-- Filter the table by account type (Banco, Caja, Tarjeta) and search by name / IBAN / currency.
+- Filter the table by account type (Banco, Caja, Tarjeta), by **Inactivas** (all archived accounts regardless of type), and search by name / IBAN / currency.
 - Click a row to navigate to `/financial-account/:id` (placeholder route in T1; the real detail view ships in T4).
 - Click the pending pill (`Conciliar (N)`) on a row to surface a toast pointing at T6 (`ETP-4100`).
 - Click "Reglas de matcheo" to surface a toast pointing at T5 (`ETP-4099`).
@@ -62,7 +62,7 @@ section is rendered disabled.
 ### Archive account (`ArchiveAccountDialog`)
 
 Row kebab → **Archivar cuenta** opens a confirmation dialog. Confirming soft-deletes the
-account (`IsActive='N'`) and it disappears from the list. Accounts with open
+account (`IsActive='N'`) and it disappears from the default list (still reachable via the **Inactivas** filter). Accounts with open
 reconciliations cannot be archived — the backend rejects with HTTP 409 and the UI shows
 a clear message.
 
@@ -97,6 +97,7 @@ Response shape (envelope `response.data`):
       "currencyIso": "EUR",
       "iban": "ES12...",
       "isDefault": true,
+      "active": true,
       "pendingCount": 4
     }
   ],
@@ -114,9 +115,9 @@ Response shape (envelope `response.data`):
 }
 ```
 
-- `accounts` is filtered by `AD_Client_ID = current client` and the accessible organization tree from `OrganizationStructureProvider`.
+- `accounts` is filtered by `AD_Client_ID = current client` and the accessible organization tree from `OrganizationStructureProvider`. It returns **both active and archived** accounts; each row carries an `active` boolean (`IsActive`). The UI shows active accounts in the type views (Todas / Banco / Caja / Tarjeta) and archived ones only under the dedicated **Inactivas** filter.
 - `pendingCount` counts active `FIN_Bank_Statement_Line` rows linked to the account (through `FIN_BankStatement`) whose `fin_finacc_transaction_id IS NULL`.
-- `summary.totalBalance` is the raw sum of `CurrentBalance` across visible accounts. Currency normalisation against the GL schema arrives with later stories.
+- `summary.*` is computed over **active accounts only** — archived accounts never skew `totalBalance`, `byCurrency` or `accountsWithPending`. (`summary.totalBalance` is the raw sum of `CurrentBalance`; currency normalisation against the GL schema arrives with later stories.)
 - `summary.pending.suggestionsReady` and `summary.pending.byRule` always return `0` in T1 because the `ETBR_Match_Suggestion` table lands with T5.
 
 ### Account mutations endpoint (ETP-4096)
@@ -171,7 +172,7 @@ The legacy `bank-reconciliation` placeholder entry in `menu.json` is now hidden 
    - Total balance reflects the sum of every active account.
    - "Por moneda" lists each ISO code with its aggregated total.
    - "Pendientes de conciliar" shows the number of accounts with non-zero `pendingCount`.
-3. Toggle the type filter (Banco / Caja / Tarjeta / Todas) and confirm the table updates.
+3. Toggle the type filter (Banco / Caja / Tarjeta / Todas) and confirm the table updates. Select **Inactivas** and confirm only archived accounts are listed (across all types) and the sidebar totals stay unchanged.
 4. Type a partial bank name in the search box and confirm the table narrows down.
 5. Click "Reglas de matcheo" and verify the toast "Próximamente en T5 (ETP-4099)" appears.
 6. Click "+ Nueva cuenta" → Banco → "Sin conexión" → pick a bank → an institution →

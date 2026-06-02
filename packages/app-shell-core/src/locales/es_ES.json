@@ -17506,6 +17506,7 @@
     "financeAccountsPageTitle": "Cuentas",
     "financeAccountsSearchPlaceholder": "Buscar cuenta…",
     "financeAccountsFilterAll": "Todas las cuentas",
+    "financeAccountsFilterInactive": "Inactivas",
     "financeAccountsTypeBank": "Banco",
     "financeAccountsTypeCash": "Caja",
     "financeAccountsTypeCard": "Tarjeta",

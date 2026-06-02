@@ -17256,6 +17256,7 @@
     "financeAccountsPageTitle": "Accounts",
     "financeAccountsSearchPlaceholder": "Search account…",
     "financeAccountsFilterAll": "All accounts",
+    "financeAccountsFilterInactive": "Inactive",
     "financeAccountsTypeBank": "Bank",
     "financeAccountsTypeCash": "Cash",
     "financeAccountsTypeCard": "Card",
