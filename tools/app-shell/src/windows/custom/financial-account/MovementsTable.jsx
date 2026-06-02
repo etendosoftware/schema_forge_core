@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react';
-import { ArrowUpRight, ChevronDown } from 'lucide-react';
+import { ArrowUpRight, ArrowLeftRight, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -51,7 +51,7 @@ const DIMENSION_LABEL_KEYS = {
   user2: 'financeAccountMovementsDimUser2',
 };
 
-function renderBody({ loading, movements, emptyLabel, renderRow }) {
+function renderBody({ loading, movements, ui, renderRow }) {
   if (loading) {
     return SKELETON_ROWS.map((n) => (
       <TableRow key={n}>
@@ -65,9 +65,19 @@ function renderBody({ loading, movements, emptyLabel, renderRow }) {
   }
   if (movements.length === 0) {
     return (
-      <TableRow>
-        <TableCell colSpan={COL_COUNT} className="py-16 text-center text-sm text-[#6c6c89]">
-          {emptyLabel}
+      <TableRow className="hover:bg-transparent">
+        <TableCell colSpan={COL_COUNT} className="py-16">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F5F7F9]">
+              <ArrowLeftRight className="h-5 w-5 text-[#828FA3]" />
+            </div>
+            <p className="text-sm font-medium text-[#121217]">
+              {ui('financeAccountMovementsEmpty')}
+            </p>
+            <p className="max-w-sm text-sm text-[#6C6C89]">
+              {ui('financeAccountMovementsEmptyHint')}
+            </p>
+          </div>
         </TableCell>
       </TableRow>
     );
@@ -313,7 +323,7 @@ export function MovementsTable({ movements, loading, enabledDimensions = [], sel
           {renderBody({
             loading,
             movements,
-            emptyLabel: ui('financeAccountMovementsEmpty'),
+            ui,
             renderRow,
           })}
         </TableBody>
