@@ -62,6 +62,81 @@ export function resolveDateFromRecord(record, fields) {
   return null;
 }
 
+function applyDefaultContext(field, record, parentRecord, windowCategory, ctx) {
+  // Default: for partnerAddress, try to get businessPartner from record
+  if (field?.column === 'C_BPartner_Location_ID' && !ctx.C_BPartner_ID) {
+    const bpValue = record?.businessPartner ?? parentRecord?.businessPartner ?? null;
+    if (bpValue) ctx.C_BPartner_ID = bpValue;
+  }
+
+  // Default: for priceList, derive isSOTrx
+  if (field?.column === 'M_PriceList_ID') {
+    const isSOTrx = deriveIsSOTrx(windowCategory);
+    if (isSOTrx) ctx.isSOTrx = isSOTrx;
+  }
+}
+
+function applyWindowCategoryParam(entry, windowCategory, ctx) {
+  if (entry.param === 'IsSOTrx' || entry.param === 'isSOTrx') {
+    const isSOTrx = deriveIsSOTrx(windowCategory);
+    if (isSOTrx) {
+      ctx[entry.param] = isSOTrx;
+      if (entry.param === 'IsSOTrx') ctx.isSOTrx = isSOTrx;
+      else ctx.IsSOTrx = isSOTrx;
+    }
+  }
+}
+
+/**
+ * Resolve a parentField entry's value from an already-selected source record
+ * and write it into ctx. The caller decides which record to read from
+ * (required entries narrow priceList/partnerAddress to the parent record).
+ */
+function applyParentField(entry, sourceRecord, ctx) {
+  let value = sourceRecord?.[entry.field] ?? null;
+  if (!value && entry.fallbackField) {
+    value = sourceRecord?.[entry.fallbackField] ?? null;
+  }
+  if (value) {
+    if (entry.format === 'DD-MM-YYYY') {
+      value = formatIsoToClassicDate(value) ?? value;
+    }
+    ctx[entry.param] = value;
+  }
+}
+
+function applyRequiredParentField(entry, record, parentRecord, ctx) {
+  const sourceRecord = entry.field === 'priceList' || entry.field === 'partnerAddress'
+      ? parentRecord
+      : parentRecord ?? record;
+  applyParentField(entry, sourceRecord, ctx);
+}
+
+function applyNonRequiredEntries(entries, record, parentRecord, windowCategory, ctx) {
+  for (const entry of entries) {
+    switch (entry.source) {
+      case 'parentField': {
+        applyParentField(entry, parentRecord ?? record, ctx);
+        break;
+      }
+      case 'windowCategory': {
+        if (entry.param === 'isCustomer' && windowCategory === 'sales') {
+          ctx.isCustomer = 'Y';
+        }
+        if (entry.param === 'isVendor' && windowCategory === 'purchases') {
+          ctx.isVendor = 'Y';
+        }
+        break;
+      }
+    }
+  }
+}
+
+function applyFieldParam(entry, record, parentRecord, ctx) {
+  const value = record?.[entry.field] ?? parentRecord?.[entry.field] ?? null;
+  if (value) ctx[entry.param] = value;
+}
+
 /**
  * Build selector context params for a given field.
  *
@@ -100,51 +175,21 @@ export function buildSelectorContext({
 
   // If no context metadata, apply default heuristics for known patterns
   if (!context) {
-    // Default: for partnerAddress, try to get businessPartner from record
-    if (field?.column === 'C_BPartner_Location_ID' && !ctx.C_BPartner_ID) {
-      const bpValue = record?.businessPartner ?? parentRecord?.businessPartner ?? null;
-      if (bpValue) ctx.C_BPartner_ID = bpValue;
-    }
-
-    // Default: for priceList, derive isSOTrx
-    if (field?.column === 'M_PriceList_ID') {
-      const isSOTrx = deriveIsSOTrx(windowCategory);
-      if (isSOTrx) ctx.isSOTrx = isSOTrx;
-    }
+    applyDefaultContext(field, record, parentRecord, windowCategory, ctx);
   } else {
     // Process context.required entries
     for (const entry of context.required ?? []) {
       switch (entry.source) {
         case 'field': {
-          const value = record?.[entry.field] ?? parentRecord?.[entry.field] ?? null;
-          if (value) ctx[entry.param] = value;
+          applyFieldParam(entry, record, parentRecord, ctx);
           break;
         }
         case 'windowCategory': {
-          if (entry.param === 'IsSOTrx' || entry.param === 'isSOTrx') {
-            const isSOTrx = deriveIsSOTrx(windowCategory);
-            if (isSOTrx) {
-              ctx[entry.param] = isSOTrx;
-              if (entry.param === 'IsSOTrx') ctx.isSOTrx = isSOTrx;
-              else ctx.IsSOTrx = isSOTrx;
-            }
-          }
+          applyWindowCategoryParam(entry, windowCategory, ctx);
           break;
         }
         case 'parentField': {
-          const sourceRecord = entry.field === 'priceList' || entry.field === 'partnerAddress'
-            ? parentRecord
-            : parentRecord ?? record;
-          let value = sourceRecord?.[entry.field] ?? null;
-          if (!value && entry.fallbackField) {
-            value = sourceRecord?.[entry.fallbackField] ?? null;
-          }
-          if (value) {
-            if (entry.format === 'DD-MM-YYYY') {
-              value = formatIsoToClassicDate(value) ?? value;
-            }
-            ctx[entry.param] = value;
-          }
+          applyRequiredParentField(entry, record, parentRecord, ctx);
           break;
         }
       }
@@ -156,33 +201,7 @@ export function buildSelectorContext({
       ...(context.optional ?? []),
       ...(context.recommended ?? []),
     ];
-    for (const entry of nonRequiredEntries) {
-      switch (entry.source) {
-        case 'parentField': {
-          const sourceRecord = parentRecord ?? record;
-          let value = sourceRecord?.[entry.field] ?? null;
-          if (!value && entry.fallbackField) {
-            value = sourceRecord?.[entry.fallbackField] ?? null;
-          }
-          if (value) {
-            if (entry.format === 'DD-MM-YYYY') {
-              value = formatIsoToClassicDate(value) ?? value;
-            }
-            ctx[entry.param] = value;
-          }
-          break;
-        }
-        case 'windowCategory': {
-          if (entry.param === 'isCustomer' && windowCategory === 'sales') {
-            ctx.isCustomer = 'Y';
-          }
-          if (entry.param === 'isVendor' && windowCategory === 'purchases') {
-            ctx.isVendor = 'Y';
-          }
-          break;
-        }
-      }
-    }
+    applyNonRequiredEntries(nonRequiredEntries, record, parentRecord, windowCategory, ctx);
   }
 
   // Parent ID for child entities (always added if provided)

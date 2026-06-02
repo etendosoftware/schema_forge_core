@@ -210,6 +210,21 @@ describe('domain boundary classification', () => {
     );
   });
 
+  it('classifies CLI migration and validation tooling with the generator boundary', () => {
+    for (const file of [
+      'cli/src/migrate-api-keys.js',
+      'cli/src/migrations/migrate-all.js',
+      'cli/src/validate-field-names.js',
+      'cli/src/validate-pipeline.js',
+    ]) {
+      assert.deepEqual(
+        classifyPath(file, { knownWindows: WINDOWS }),
+        { kind: 'generator-change', scope: 'generator-change' },
+        `expected ${file} to classify as generator-change`,
+      );
+    }
+  });
+
   it('classifies npm registry config as repo infra', () => {
     assert.deepEqual(
       classifyPath('.npmrc', { knownWindows: WINDOWS }),

@@ -267,6 +267,77 @@ describe('buildSelectorContext', () => {
       C_BPartner_Location_ID: 'LOC-VENDOR',
     });
   });
+
+  it('derives C_BPartner_ID via default heuristic from record (no context, no dependsOn)', () => {
+    const result = buildSelectorContext({
+      windowCategory: 'sales',
+      entityName: 'header',
+      field: { column: 'C_BPartner_Location_ID' },
+      record: { businessPartner: 'BP-REC' },
+    });
+    expect(result).toEqual({ C_BPartner_ID: 'BP-REC' });
+  });
+
+  it('derives C_BPartner_ID via default heuristic from parent record fallback', () => {
+    const result = buildSelectorContext({
+      windowCategory: 'sales',
+      entityName: 'header',
+      field: { column: 'C_BPartner_Location_ID' },
+      record: {},
+      parentRecord: { businessPartner: 'BP-PARENT' },
+    });
+    expect(result).toEqual({ C_BPartner_ID: 'BP-PARENT' });
+  });
+
+  it('dual-writes isSOTrx and IsSOTrx for lowercase isSOTrx windowCategory param', () => {
+    const result = buildSelectorContext({
+      windowCategory: 'sales',
+      entityName: 'lines',
+      field: {
+        column: 'C_Tax_ID',
+        context: {
+          required: [
+            { param: 'isSOTrx', source: 'windowCategory' },
+          ],
+        },
+      },
+    });
+    expect(result).toEqual({ isSOTrx: 'Y', IsSOTrx: 'Y' });
+  });
+
+  it('does not fall back to record for required priceList parentField', () => {
+    const result = buildSelectorContext({
+      windowCategory: 'sales',
+      entityName: 'lines',
+      field: {
+        column: 'M_PriceList_ID',
+        context: {
+          required: [
+            { param: 'priceList', source: 'parentField', field: 'priceList' },
+          ],
+        },
+      },
+      record: { priceList: 'PL-FROM-RECORD' },
+    });
+    expect(result).toEqual({});
+  });
+
+  it('falls back to record for a generic required parentField when no parent record', () => {
+    const result = buildSelectorContext({
+      windowCategory: 'sales',
+      entityName: 'lines',
+      field: {
+        column: 'C_Tax_ID',
+        context: {
+          required: [
+            { param: 'someParam', source: 'parentField', field: 'someField' },
+          ],
+        },
+      },
+      record: { someField: 'SOME-VALUE' },
+    });
+    expect(result).toEqual({ someParam: 'SOME-VALUE' });
+  });
 });
 
 describe('buildHeaderSelectorContext', () => {
