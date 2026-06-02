@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { renderPdf, COMMON_HANDLEBARS_HELPERS } from '../../../shared/pdfUtils.js';
 
 const HELPERS = `
@@ -241,6 +241,11 @@ export function use349Pdf() {
   const [pdfUrl,  setPdfUrl]  = useState(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
+
+  // Revoke the object URL when the component unmounts to avoid memory leaks
+  React.useEffect(() => {
+    return () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); };
+  }, [pdfUrl]);
 
   async function generatePdf(decl, operators = []) {
     setLoading(true);

@@ -180,8 +180,8 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
   const filteredOps  = operators
     .filter(o => keyFilter === 'all' || o.key === keyFilter)
     .filter(o => !searchLower ||
-      o.name.toLowerCase().includes(searchLower) ||
-      o.nif.toLowerCase().includes(searchLower)
+      (o.name ?? '').toLowerCase().includes(searchLower) ||
+      (o.nif  ?? '').toLowerCase().includes(searchLower)
     );
   const toggleSelect = id => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const allSelected  = filteredOps.length > 0 && filteredOps.every(o => selected.has(o.id));
@@ -242,7 +242,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
             </div>
             <div className="fm-349-header__subtitle">
               {t('fm.m349.subtitle')} · {decl.type === 'ord' ? t('fm.m349.type.ord') : t('fm.m349.type.com')}
-              {declNif && ` · NIF: ${declNif}`} · {t('fm.m349.periodicity')}: {/^T\d$/.test(decl.period) ? 'Trimestral' : t('fm.m349.monthly')}
+              {declNif && ` · NIF: ${declNif}`} · {t('fm.m349.periodicity')}: {/^T\d$/.test(decl.period) ? t('fm.m349.period.quarterly') : t('fm.m349.monthly')}
             </div>
           </div>
           <div className="fm-349-header__actions">
@@ -451,12 +451,12 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
                 <>
                   {invoiceNifFilter && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                      <span style={{ fontSize: 11, color: '#6b7280' }}>Filtrando por:</span>
+                      <span style={{ fontSize: 11, color: '#6b7280' }}>{t('fm.m349.invoices.filtering_by')}</span>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#1e40af', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 4, padding: '2px 8px' }}>
                         <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{invoiceNifFilter}</span>
-                        <button onClick={() => setInvoiceNifFilter(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', lineHeight: 1, padding: 0, fontSize: 13 }}>×</button>
+                        <button onClick={() => setInvoiceNifFilter(null)} aria-label={t('fm.action.clear')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', lineHeight: 1, padding: 0, fontSize: 13 }}>×</button>
                       </span>
-                      <span style={{ fontSize: 11, color: '#9ca3af' }}>{visibleInvoices.length} de {liveInvoices.length}</span>
+                      <span style={{ fontSize: 11, color: '#9ca3af' }}>{t('fm.m349.invoices.filtered', { visible: visibleInvoices.length, total: liveInvoices.length })}</span>
                     </div>
                   )}
                   <div className="fm-table-wrap" style={{ flex: 'none' }}>

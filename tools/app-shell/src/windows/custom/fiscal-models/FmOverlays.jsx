@@ -121,12 +121,12 @@ export function FileGenModal({ decl, onConfirm, onClose }) {
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
           <label style={{ fontSize: 11, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            Persona de contacto <span style={{ fontSize: 10, color: '#9ca3af' }}>(para el fichero .349)</span>
-            <input style={FIELD} value={contact} onChange={e => setContact(e.target.value)} placeholder="Nombre y apellidos" />
+            {t('fm.filegen.contact_name')} <span style={{ fontSize: 10, color: '#9ca3af' }}>{t('fm.filegen.contact_name_hint')}</span>
+            <input style={FIELD} value={contact} onChange={e => setContact(e.target.value)} placeholder={t('fm.filegen.contact_name_placeholder')} />
           </label>
           <label style={{ fontSize: 11, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            Teléfono de contacto
-            <input style={FIELD} value={phone} onChange={e => setPhone(e.target.value)} placeholder="91 000 00 00" />
+            {t('fm.filegen.contact_phone')}
+            <input style={FIELD} value={phone} onChange={e => setPhone(e.target.value)} placeholder={t('fm.filegen.contact_phone_placeholder')} />
           </label>
         </div>
         <div className="fm-present-modal__actions">
