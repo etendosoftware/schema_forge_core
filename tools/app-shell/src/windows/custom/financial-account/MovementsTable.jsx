@@ -1,8 +1,8 @@
 import { Fragment, useState } from 'react';
-import { toast } from 'sonner';
-import { ArrowUpRight, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUI, useLocaleSwitch } from '@/i18n';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
@@ -18,28 +18,24 @@ import { MovementStatusBadge } from './MovementStatusBadge';
 import { PostingStatusDot } from './PostingStatusDot';
 import { MovementRowKebab } from './MovementRowKebab';
 
-/**
- * Formats an ISO date string using the user's locale.
- * es_ES → "06/05/2026", en_US → "5/6/2026".
- */
+/** Formats an ISO date string using the user's locale. */
 function formatDate(isoString, bcpLocale) {
   if (!isoString) return '—';
   const d = new Date(isoString);
   if (Number.isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat(bcpLocale, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
+    day: '2-digit', month: '2-digit', year: 'numeric',
   }).format(d);
 }
 
 const SKELETON_ROWS = [1, 2, 3, 4, 5];
 
-// Stable cell keys for skeleton rows (same order/length as the real header columns).
+// Stable cell keys for skeleton rows (same order/length as the header columns).
 const SKELETON_COL_KEYS = [
-  'expand', 'date', 'payment', 'contact', 'description',
+  'expand', 'select', 'date', 'payment', 'contact', 'description',
   'status', 'type', 'glItem', 'amount', 'balance', 'kebab',
 ];
+const COL_COUNT = SKELETON_COL_KEYS.length; // 12
 
 // Accounting dimension key → i18n label key, for the "more info" panel.
 const DIMENSION_LABEL_KEYS = {
@@ -54,10 +50,6 @@ const DIMENSION_LABEL_KEYS = {
   user2: 'financeAccountMovementsDimUser2',
 };
 
-/**
- * Decides what to render inside the table body: skeleton rows while loading,
- * an empty-state message when there are no movements, or the actual rows.
- */
 function renderBody({ loading, movements, emptyLabel, renderRow }) {
   if (loading) {
     return SKELETON_ROWS.map((n) => (
@@ -73,7 +65,7 @@ function renderBody({ loading, movements, emptyLabel, renderRow }) {
   if (movements.length === 0) {
     return (
       <TableRow>
-        <TableCell colSpan={11} className="py-16 text-center text-sm text-[#6c6c89]">
+        <TableCell colSpan={COL_COUNT} className="py-16 text-center text-sm text-[#6c6c89]">
           {emptyLabel}
         </TableCell>
       </TableRow>
@@ -94,32 +86,33 @@ function useTrxTypeLabel() {
 }
 
 /**
- * "More info" panel: the accounting dimensions enabled in the chart of accounts
- * (organization, project, etc.), rendered as a label/value grid under the row.
+ * "More info" panel — read-only accounting dimensions rendered as field-style
+ * boxes (label on top + bordered value box with a decorative chevron), in a
+ * 4-column grid with an elevated surface. Mirrors the Figma "Desplegado" spec.
+ *
+ * Shows only dimensions that are enabled in the chart of accounts AND have a
+ * value; the business partner is excluded (it has its own "Contacto" column).
  */
 function DimensionsPanel({ movement, enabledDimensions, ui }) {
   const dims = movement.dimensions || {};
-  // Show only dimensions enabled in the chart of accounts that have a value on
-  // this transaction. The business partner is excluded here because it already
-  // has its own "Contacto" column in the row above.
   const visible = enabledDimensions.filter((key) => key !== 'bpartner' && dims[key]);
 
   if (visible.length === 0) {
     return (
-      <div className="px-2 py-3 text-sm text-[#6C6C89]">
+      <div className="px-[52px] pb-8 pt-3 text-sm text-[#6C6C89]">
         {ui('financeAccountMovementsNoDimensions')}
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 gap-x-8 gap-y-3 px-2 py-3 sm:grid-cols-4">
+    <div className="grid grid-cols-1 gap-x-5 gap-y-4 px-[52px] pb-8 pt-3 sm:grid-cols-2 lg:grid-cols-4">
       {visible.map((key) => (
-        <div key={key} className="flex flex-col">
-          <span className="text-[10.5px] font-semibold uppercase tracking-[.04em] text-[#6C6C89]">
+        <div key={key} className="flex flex-col gap-1">
+          <span className="text-sm font-medium leading-6 text-[#121217]">
             {ui(DIMENSION_LABEL_KEYS[key] ?? key)}
           </span>
-          <span className="text-sm text-[#121217]">{dims[key]}</span>
+          <span className="text-sm leading-6 text-[#3F3F50]">{dims[key]}</span>
         </div>
       ))}
     </div>
@@ -127,16 +120,18 @@ function DimensionsPanel({ movement, enabledDimensions, ui }) {
 }
 
 /**
- * Table of account movements. Each row expands (chevron on the left) into a
- * "more info" panel showing the accounting dimensions enabled for the client.
+ * Table of account movements. Each row has a chevron (left) that expands a
+ * "more info" panel with the accounting dimensions, plus a selection checkbox.
  *
  * @param {{
  *   movements: Array<object>;
  *   loading: boolean;
  *   enabledDimensions?: string[];
+ *   selectedIds: Set<string>;
+ *   onSelectionChange: (id: string) => void;
  * }} props
  */
-export function MovementsTable({ movements, loading, enabledDimensions = [] }) {
+export function MovementsTable({ movements, loading, enabledDimensions = [], selectedIds, onSelectionChange }) {
   const ui = useUI();
   const navigate = useNavigate();
   const { locale: appLocale } = useLocaleSwitch();
@@ -145,10 +140,18 @@ export function MovementsTable({ movements, loading, enabledDimensions = [] }) {
   const [expandedId, setExpandedId] = useState(null);
   const hasDimensions = enabledDimensions.length > 0;
 
+  const allSelected = movements.length > 0 && selectedIds.size === movements.length;
+  const someSelected = selectedIds.size > 0 && !allSelected;
+  const handleSelectAll = () => {
+    if (allSelected) {
+      movements.forEach((m) => onSelectionChange(m.id));
+    } else {
+      movements.filter((m) => !selectedIds.has(m.id)).forEach((m) => onSelectionChange(m.id));
+    }
+  };
+
   const toggleExpand = (id) => setExpandedId((prev) => (prev === id ? null : id));
 
-  // Navigate to the related payment window (payment-in for received payments,
-  // payment-out for made payments). No-op when the movement has no payment.
   const openPayment = (movement) => {
     if (!movement.paymentId) return;
     const win = movement.paymentIsReceipt === 'Y' ? 'payment-in' : 'payment-out';
@@ -161,10 +164,14 @@ export function MovementsTable({ movements, loading, enabledDimensions = [] }) {
       <Fragment key={movement.id}>
         <TableRow
           data-testid={`movement-row-${movement.id}`}
-          className="group relative cursor-pointer bg-white transition-shadow hover:z-10 hover:bg-white hover:shadow-lg"
-          onClick={() => toast(ui('financeAccountMovementsRowViewDetailToast'))}
+          className={`group relative bg-white transition-shadow ${hasDimensions ? 'cursor-pointer' : ''} ${
+            expanded
+              ? 'z-20 border-b-0 [&>td]:border-b-0 hover:bg-white'
+              : 'hover:z-10 hover:bg-white hover:shadow-lg'
+          }`}
+          onClick={() => { if (hasDimensions) toggleExpand(movement.id); }}
         >
-          {/* Expand chevron (replaces the old selection checkbox) */}
+          {/* Expand chevron (circular button) */}
           <TableCell onClick={(e) => e.stopPropagation()}>
             {hasDimensions ? (
               <button
@@ -173,12 +180,20 @@ export function MovementsTable({ movements, loading, enabledDimensions = [] }) {
                 aria-expanded={expanded}
                 data-testid={`movement-expand-${movement.id}`}
                 onClick={() => toggleExpand(movement.id)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-[#6C6C89] transition-transform hover:bg-[#EDEFF3] hover:text-[#121217]"
-                style={{ transform: expanded ? 'rotate(90deg)' : undefined }}
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-[#D1D4DB] bg-white text-[#6C6C89] transition-transform hover:bg-[#F5F7F9] hover:text-[#121217]"
+                style={{ transform: expanded ? 'rotate(180deg)' : undefined }}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronDown className="h-4 w-4" />
               </button>
             ) : null}
+          </TableCell>
+
+          {/* Selection checkbox */}
+          <TableCell onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              checked={selectedIds.has(movement.id)}
+              onChange={() => onSelectionChange(movement.id)}
+            />
           </TableCell>
 
           {/* Date */}
@@ -259,9 +274,11 @@ export function MovementsTable({ movements, loading, enabledDimensions = [] }) {
         </TableRow>
 
         {expanded ? (
-          <TableRow className="bg-[#FAFBFC] hover:bg-[#FAFBFC]" data-testid={`movement-moreinfo-${movement.id}`}>
-            <TableCell />
-            <TableCell colSpan={10} className="py-0">
+          <TableRow
+            className="relative z-10 border-b-0 bg-white shadow-lg [&>td]:border-b-0 hover:bg-white"
+            data-testid={`movement-moreinfo-${movement.id}`}
+          >
+            <TableCell colSpan={COL_COUNT} className="p-0">
               <DimensionsPanel movement={movement} enabledDimensions={enabledDimensions} ui={ui} />
             </TableCell>
           </TableRow>
@@ -276,6 +293,9 @@ export function MovementsTable({ movements, loading, enabledDimensions = [] }) {
         <TableHeader>
           <TableRow className="h-10 [&_th]:text-xs [&_th]:font-semibold [&_th]:leading-4 [&_th]:text-[#121217]">
             <TableHead className="w-10" />
+            <TableHead className="w-10">
+              <Checkbox checked={allSelected} indeterminate={someSelected} onChange={handleSelectAll} />
+            </TableHead>
             <TableHead>{ui('financeAccountMovementsColDate')}</TableHead>
             <TableHead>{ui('financeAccountMovementsColDocument')}</TableHead>
             <TableHead>{ui('financeAccountMovementsColContact')}</TableHead>

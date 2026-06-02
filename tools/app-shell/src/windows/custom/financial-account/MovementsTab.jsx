@@ -135,10 +135,20 @@ export const MovementsTab = forwardRef(function MovementsTab(
     search: '',
   });
   const [advancedFilter, setAdvancedFilter] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
   const [newMovementOpen, setNewMovementOpen] = useState(false);
 
   const handleFilterChange = (key) => (val) => {
     setFilters((prev) => ({ ...prev, [key]: val }));
+  };
+
+  const handleSelectionChange = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   const filteredMovements = useMemo(
@@ -195,6 +205,8 @@ export const MovementsTab = forwardRef(function MovementsTab(
           movements={filteredMovements}
           loading={loading}
           enabledDimensions={enabledDimensions}
+          selectedIds={selectedIds}
+          onSelectionChange={handleSelectionChange}
         />
       </div>
 
