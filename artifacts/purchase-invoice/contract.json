@@ -1,8 +1,8 @@
 {
   "version": "0.30.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-28T18:10:43.900Z",
-  "checksum": "df36efd9375e5020",
+  "updatedAt": "2026-06-02T17:58:21.945Z",
+  "checksum": "4cbb94862751cace",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -16,16 +16,7 @@
         "headerTable": "InvoiceHeaderTable",
         "bottomSection": "PurchaseInvoiceBottomPanel"
       },
-      "menuActions": [
-        {
-          "key": "reactivate",
-          "label": "Reactivate",
-          "labelKey": "reactivate",
-          "visibleWhenStatus": "CO",
-          "documentAction": "RE",
-          "successKey": "reactivated"
-        }
-      ],
+      "menuActions": [],
       "processOverrides": {},
       "secondaryTabs": {
         "exchangeRates": {
@@ -3860,16 +3851,7 @@
         "headerTable": "InvoiceHeaderTable",
         "bottomSection": "PurchaseInvoiceBottomPanel"
       },
-      "menuActions": [
-        {
-          "key": "reactivate",
-          "label": "Reactivate",
-          "labelKey": "reactivate",
-          "visibleWhenStatus": "CO",
-          "documentAction": "RE",
-          "successKey": "reactivated"
-        }
-      ],
+      "menuActions": [],
       "processOverrides": {},
       "secondaryTabs": {
         "exchangeRates": {

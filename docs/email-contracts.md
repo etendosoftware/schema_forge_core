@@ -51,6 +51,8 @@ The browser must not send provider API keys, sender addresses, raw templates, or
 
 For the app-shell document send flow, `SendDocumentModal` posts only the contract command to `/sws/neo/email-contracts/{document-contract}/send`, such as `sales-invoice-send`, `sales-order-send`, or `sales-quotation-send`. The UI must not include `to`, `template`, `data`, `subject`, `body`, sender, Reply-To, or provider metadata in that request; those values are resolved by the server-side contract.
 
+Temporary preview-cache bridge: until document email downloads are stored in S3-backed storage, app-shell may cache an already generated PDF blob through `/sws/neo/preview-file` immediately before calling the email contract. This is only file preparation for the backend signed download link; it must not add provider payload fields or caller-provided download links to the contract command.
+
 For auth email flows, the browser does not send an email contract command at all. It calls `/sws/go/register`, `/sws/go/password-reset/request`, `/sws/go/password-reset/confirm`, or `/sws/go/change-password`; Etendo Go builds the `new-account`, `reset-password`, `password-changed`, and `environment-ready` commands server-side from trusted account/onboarding records.
 
 ## Response Contract

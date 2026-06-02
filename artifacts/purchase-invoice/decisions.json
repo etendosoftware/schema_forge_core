@@ -10,16 +10,7 @@
     "relatedDocuments": true,
     "notesField": "description",
     "noHeaderBorder": true,
-    "menuActions": [
-      {
-        "key": "reactivate",
-        "label": "Reactivate",
-        "labelKey": "reactivate",
-        "visibleWhenStatus": "CO",
-        "documentAction": "RE",
-        "successKey": "reactivated"
-      }
-    ],
+    "menuActions": [],
     "customComponents": {
       "headerTable": "InvoiceHeaderTable",
       "bottomSection": "PurchaseInvoiceBottomPanel"
