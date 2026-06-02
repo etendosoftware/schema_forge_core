@@ -18455,6 +18455,7 @@
     "productDistributedIn": "Distribuido en {count} almacenes",
     "productLast12Months": "Últimos 12 meses.",
     "expand": "Expandir",
+    "collapse": "Contraer",
     "paymentInGroup": "Cobro",
     "paymentOutGroup": "Pago",
     "payinAllow": "Cobro permitido",

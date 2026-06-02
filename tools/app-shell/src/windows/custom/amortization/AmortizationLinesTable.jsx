@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { ChevronRight, Box, Plus, Loader2, Pencil, Trash2, X } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { ChevronDown, Plus, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { useUI, useLabel } from '@/i18n';
-import { EntityForm } from '@/components/contract-ui';
 import SelectorInput from '@/components/contract-ui/SelectorInput';
 import { AddLineButton } from '@/components/ui/add-line-button';
+import { Checkbox } from '@/components/ui/checkbox';
+import LinesSelectionBar from '@/components/contract-ui/LinesSelectionBar';
 
 // ── field definitions ────────────────────────────────────────────────
 const CORE_FIELDS = [
@@ -24,19 +25,6 @@ const DIMENSION_FIELDS = [
 ];
 
 const VISIBLE_DIMENSION_FIELDS = DIMENSION_FIELDS.filter(f => !f.hidden);
-const DIM_KEYS = VISIBLE_DIMENSION_FIELDS.map(f => f.key);
-const TOTAL_DIMS = VISIBLE_DIMENSION_FIELDS.length;
-
-const DIM_SHORT_LABEL = {
-  project: 'Proy.',
-  costcenter: 'CC',
-  eTADASBpartner: 'Tercero',
-  stDimension: 'Dim. 1ª',
-  ndDimension: 'Dim. 2ª',
-  eTADASSalesRegion: 'Región',
-  eTADASActivity: 'Act.',
-  eTADASSalesCampaign: 'Camp.',
-};
 
 // ── DimensionGrid ────────────────────────────────────────────────────
 // Renders DIMENSION_FIELDS directly via SelectorInput so we can control
@@ -45,7 +33,7 @@ function DimensionGrid({ fields, data, onChange, onFieldSave, apiBaseUrl, token,
   const t = useLabel(labelOverrides);
   return (
     <div
-      className="[&_button[role=combobox]]:!bg-white [&_input]:!bg-white [&_input:disabled]:!opacity-100"
+      className="[&_button[role=combobox]]:!bg-white [&_button[role=combobox]:hover]:!bg-[#F5F7F9] [&_input]:!bg-white [&_input:disabled]:!opacity-100"
       style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}
     >
       {fields.filter(f => !f.hidden).map(f => {
@@ -91,20 +79,35 @@ function getIdentifier(line, key) {
   return line[`${key}$_identifier`] ?? (typeof line[key] === 'string' ? line[key] : null) ?? null;
 }
 
-function countFilled(line) {
-  return DIM_KEYS.filter(k => line[k] != null && line[k] !== '').length;
+// Badge with "Label: Value" format, matching the UX spec
+// (bg #F5F7F9, radius 8px, padding 4px 8px, label #3F3F50, Inter 14px/20px).
+function DimBadge({ label, value }) {
+  return (
+    <span className="inline-flex items-center px-2 py-1 rounded-lg bg-[#F5F7F9] text-sm leading-5 whitespace-nowrap max-w-full">
+      <span className="text-[#3F3F50]">{label}:</span>
+      <span className="ml-1 font-medium text-[#121217] truncate">{value}</span>
+    </span>
+  );
 }
 
-function DimSummary({ line, onClick }) {
+function DimSummary({ line, onClick, labelOverrides }) {
   const ui = useUI();
-  const filled = DIM_KEYS.map(k => ({ key: k, value: getIdentifier(line, k) })).filter(d => d.value);
-  const n = filled.length;
+  const t = useLabel(labelOverrides);
+  const org = line['organization$_identifier'];
+  const filled = VISIBLE_DIMENSION_FIELDS
+    .map(f => ({ column: f.column, value: getIdentifier(line, f.key) }))
+    .filter(d => d.value);
 
-  if (n === 0) {
+  // Organization always leads the badge list (per design), followed by filled dimensions.
+  const badges = [];
+  if (org) badges.push({ label: ui('organization'), value: org });
+  filled.forEach(d => badges.push({ label: t(d.column), value: d.value }));
+
+  if (badges.length === 0) {
     return (
       <button
         onClick={onClick}
-        className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md border border-dashed border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors"
+        className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg border border-dashed border-[#D1D4DB] text-xs font-medium text-muted-foreground hover:text-foreground hover:border-[#828FA3] transition-colors"
       >
         <Plus className="h-3 w-3" />
         {ui('amortizationDimensionsEmpty')}
@@ -112,18 +115,16 @@ function DimSummary({ line, onClick }) {
     );
   }
 
+  const MAX_BADGES = 2;
+  const shown = badges.slice(0, MAX_BADGES);
+  const extra = badges.length - shown.length;
+
   return (
     <button onClick={onClick} className="inline-flex items-center gap-1.5 bg-transparent border-0 p-0 cursor-pointer max-w-full">
-      {filled.slice(0, 2).map(d => (
-        <span key={d.key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted border border-border/40 text-xs font-medium text-foreground whitespace-nowrap">
-          <span className="text-muted-foreground">{DIM_SHORT_LABEL[d.key]}</span>
-          {d.value}
-        </span>
-      ))}
-      {n > 2 && (
-        <span className="px-1.5 py-0.5 rounded-md bg-primary/10 text-xs font-semibold text-primary">+{n - 2}</span>
+      {shown.map((b, i) => <DimBadge key={i} label={b.label} value={b.value} />)}
+      {extra > 0 && (
+        <span className="px-2 py-1 rounded-lg bg-[#F5F7F9] text-sm leading-5 font-medium text-[#3F3F50]">+{extra}</span>
       )}
-      <span className="text-xs text-muted-foreground ml-0.5">{n}/{TOTAL_DIMS}</span>
     </button>
   );
 }
@@ -138,6 +139,7 @@ export default function AmortizationLinesTable({
   editing,
   catalogs,
   onCountChange,
+  onRefresh,
 }) {
   const ui = useUI();
   const t = useLabel(api?.labelOverrides);
@@ -150,7 +152,70 @@ export default function AmortizationLinesTable({
   const [deleting, setDeleting] = useState(null);
   const [addingLine, setAddingLine] = useState(false);
   const [newLine, setNewLine] = useState({});
+  const [selectedRows, setSelectedRows] = useState(() => new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [selectionBarVisible, setSelectionBarVisible] = useState(false);
+  const [selectionBarClosing, setSelectionBarClosing] = useState(false);
+  const [barRect, setBarRect] = useState(null);
+  const addLineWrapperRef = useRef(null);
+  const addRowRef = useRef(null);
   const recordId = recordIdProp ?? data?.id;
+
+  // ── multi-select (Sales Order / Contacts pattern) ──
+  const { allSelected, someSelected } = useMemo(() => {
+    const all = lines.length > 0 && selectedRows.size === lines.length;
+    return { allSelected: all, someSelected: selectedRows.size > 0 && !all };
+  }, [lines.length, selectedRows]);
+
+  const toggleAll = useCallback(() => {
+    setSelectedRows(prev => (prev.size === lines.length ? new Set() : new Set(lines.map(l => l.id))));
+  }, [lines]);
+
+  const toggleRow = useCallback((id) => {
+    setSelectedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // Selection bar lifecycle (DetailView pattern: 250ms dismiss animation).
+  useEffect(() => {
+    if (selectedRows.size > 0) {
+      setSelectionBarVisible(true);
+      setSelectionBarClosing(false);
+      return undefined;
+    }
+    if (selectionBarVisible) {
+      setSelectionBarClosing(true);
+      const t = setTimeout(() => {
+        setSelectionBarVisible(false);
+        setSelectionBarClosing(false);
+      }, 250);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [selectedRows.size, selectionBarVisible]);
+
+  // Measure the footer wrapper so the bar floats over the "Add line" area.
+  useEffect(() => {
+    if (!selectionBarVisible) return undefined;
+    const el = addLineWrapperRef.current;
+    if (!el) return undefined;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setBarRect({ top: r.top, left: r.left, width: r.width, height: r.height });
+    };
+    measure();
+    let ro = null;
+    if (typeof ResizeObserver !== 'undefined') { ro = new ResizeObserver(measure); ro.observe(el); }
+    const events = ['scroll', 'resize'];
+    events.forEach(e => window.addEventListener(e, measure, true));
+    return () => {
+      ro?.disconnect();
+      events.forEach(e => window.removeEventListener(e, measure, true));
+    };
+  }, [selectionBarVisible]);
 
   const fetchLines = useCallback(() => {
     if (!recordId || !apiBaseUrl) return;
@@ -163,6 +228,13 @@ export default function AmortizationLinesTable({
         const rows = json?.response?.data ?? json?.data ?? json?.rows ?? [];
         const normalized = Array.isArray(rows) ? rows : [];
         setLines(normalized);
+        // Drop any selected ids that no longer exist after the refresh.
+        setSelectedRows(prev => {
+          if (prev.size === 0) return prev;
+          const ids = new Set(normalized.map(l => l.id));
+          const next = new Set([...prev].filter(id => ids.has(id)));
+          return next.size === prev.size ? prev : next;
+        });
         onCountChange?.(normalized.length);
       })
       .catch(() => setLines([]))
@@ -221,11 +293,30 @@ export default function AmortizationLinesTable({
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) fetchLines();
+      if (res.ok) { fetchLines(); onRefresh?.(); }
     } finally { setDeleting(null); }
   }
 
-  async function addLine() {
+  async function bulkDelete() {
+    const ids = [...selectedRows];
+    if (ids.length === 0) return;
+    setBulkDeleting(true);
+    try {
+      await Promise.all(ids.map(id =>
+        fetch(`${apiBaseUrl}/lines/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => null),
+      ));
+      setSelectedRows(new Set());
+      fetchLines();
+      onRefresh?.();
+    } finally { setBulkDeleting(false); }
+  }
+
+  // Inline draft-row submit (Sales Order InlineAddRow pattern).
+  // close=true closes the row; close=false resets and keeps it open for rapid entry.
+  async function submitNewLine({ close }) {
     if (!newLine.asset) return;
     setSaving('new');
     try {
@@ -234,9 +325,35 @@ export default function AmortizationLinesTable({
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ ...newLine, amortization: recordId }),
       });
-      if (res.ok) { setAddingLine(false); setNewLine({}); fetchLines(); }
+      if (res.ok) {
+        setNewLine({});
+        if (close) setAddingLine(false);
+        fetchLines();
+        onRefresh?.();   // sync parent hook.children → enables process button
+      }
     } finally { setSaving(null); }
   }
+
+  function onDraftKeyDown(e) {
+    if (e.key === 'Enter') { e.preventDefault(); submitNewLine({ close: false }); }
+    else if (e.key === 'Escape') { e.preventDefault(); setAddingLine(false); setNewLine({}); }
+  }
+
+  // Save (or cancel) the draft row when clicking outside it.
+  useEffect(() => {
+    if (!addingLine) return undefined;
+    function handler(e) {
+      const row = addRowRef.current;
+      if (!row || row.contains(e.target)) return;
+      const portals = ['[data-radix-popper-content-wrapper]', '[role="listbox"]', '[role="dialog"]'];
+      for (const sel of portals) { if (e.target.closest?.(sel)) return; }
+      const hasData = newLine.asset || newLine.amortizationPercentage || newLine.amortizationAmount;
+      if (hasData) submitNewLine({ close: true });
+      else { setAddingLine(false); setNewLine({}); }
+    }
+    document.addEventListener('mousedown', handler, true);
+    return () => document.removeEventListener('mousedown', handler, true);
+  }, [addingLine, newLine]);
 
   const processed = data?.processed === 'Y' || data?.processed === true;
   const isReadOnly = !editing || processed;
@@ -247,7 +364,12 @@ export default function AmortizationLinesTable({
         {/* header — matches inlineEditable: sticky top-0 z-20 bg-white */}
         <thead className="sticky top-0 z-20 bg-white">
           <tr className="border-b border-border/40">
-            <th className="h-10 w-8 px-2 align-middle" />
+            <th className="h-10 w-10 px-2 align-middle" />
+            <th className="h-10 w-10 px-2 align-middle">
+              <div className="flex items-center justify-center">
+                <Checkbox checked={allSelected} indeterminate={someSelected} onChange={toggleAll} disabled={isReadOnly} aria-label={ui('selectAll')} />
+              </div>
+            </th>
             <th className="h-10 px-3 text-left align-middle text-xs leading-4 font-semibold text-text-primary tracking-normal">
               {t('A_Asset_ID')}
             </th>
@@ -257,7 +379,7 @@ export default function AmortizationLinesTable({
             <th className="h-10 w-36 px-3 text-right align-middle text-xs leading-4 font-semibold text-text-primary tracking-normal">
               {t('Amortizationamt')}
             </th>
-            <th className="h-10 w-72 px-3 text-left align-middle text-xs leading-4 font-semibold text-text-primary tracking-normal">
+            <th className="h-10 w-96 px-3 text-left align-middle text-xs leading-4 font-semibold text-text-primary tracking-normal">
               {ui('amortizationDimensionsTitle')}
             </th>
             <th className="h-10 w-20 px-2" />
@@ -267,7 +389,7 @@ export default function AmortizationLinesTable({
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+              <td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin inline mr-1.5" />
               </td>
             </tr>
@@ -276,6 +398,7 @@ export default function AmortizationLinesTable({
               {lines.map(line => {
                 const isExpanded = expandedId === line.id;
                 const isEditing = editingLineId === line.id;
+                const isSelected = selectedRows.has(line.id);
                 const edits = pendingEdits[line.id] ?? {};
                 const lineData = { ...line, ...edits };
 
@@ -284,12 +407,32 @@ export default function AmortizationLinesTable({
                     {/* ── data row ── */}
                     <tr
                       data-row-id={line.id}
-                      className={`relative transition-colors h-12 group/row border-b border-border/30 ${isExpanded ? 'bg-primary/5 cursor-pointer' : 'hover:bg-muted/50 cursor-pointer'}`}
+                      className={`relative transition-colors h-12 group/row border-b border-border/30 cursor-pointer ${isSelected ? 'bg-primary/5' : 'hover:bg-muted/50'}`}
                       onClick={() => !isEditing && setExpandedId(isExpanded ? null : line.id)}
                     >
-                      {/* chevron */}
+                      {/* expand toggle — circular icon button */}
                       <td className="px-2 text-center align-middle">
-                        <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`} />
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); if (!isEditing) setExpandedId(isExpanded ? null : line.id); }}
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#D1D4DB] bg-white shadow-[0px_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:bg-[#F5F7F9]"
+                          aria-label={ui(isExpanded ? 'collapse' : 'expand')}
+                          aria-expanded={isExpanded}
+                        >
+                          <ChevronDown className={`h-5 w-5 text-[#828FA3] transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''}`} />
+                        </button>
+                      </td>
+
+                      {/* select row */}
+                      <td className="px-2 align-middle" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={isSelected}
+                            onChange={() => !isReadOnly && toggleRow(line.id)}
+                            disabled={isReadOnly}
+                            aria-label={ui('selectRow')}
+                          />
+                        </div>
                       </td>
 
                       {/* asset */}
@@ -356,7 +499,7 @@ export default function AmortizationLinesTable({
 
                       {/* dimension summary */}
                       <td className="px-3 align-middle" onClick={e => e.stopPropagation()}>
-                        <DimSummary line={line} onClick={() => setExpandedId(isExpanded ? null : line.id)} />
+                        <DimSummary line={line} onClick={() => setExpandedId(isExpanded ? null : line.id)} labelOverrides={api?.labelOverrides} />
                       </td>
 
                       {/* quick actions — always pencil + trash on hover */}
@@ -384,15 +527,7 @@ export default function AmortizationLinesTable({
                     {/* ── dimension expand ── */}
                     {isExpanded && (
                       <tr className="border-b border-border/30">
-                        <td colSpan={6} className="bg-primary/5 px-10 pb-5 pt-3">
-                          <div className="flex items-center gap-2 mb-4">
-                            <Box className="h-3.5 w-3.5 text-primary/60 shrink-0" />
-                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{ui('amortizationDimensionsTitle')}</span>
-                            <div className="flex-1 h-px bg-border/40" />
-                            <span className="text-xs text-muted-foreground">
-                              {ui('amortizationDimensionsFilled').replace('{n}', String(countFilled(lineData)))}
-                            </span>
-                          </div>
+                        <td colSpan={7} className="bg-white px-10 pb-5 pt-3">
                           {line['organization$_identifier'] && (
                             <div className="mb-4 grid grid-cols-4 gap-4">
                               <div>
@@ -414,29 +549,50 @@ export default function AmortizationLinesTable({
                 );
               })}
 
-              {/* ── add line form row ── */}
+              {/* ── inline add-line draft row (Sales Order InlineAddRow pattern) ── */}
               {addingLine && (
-                <tr className="border-b border-border/30">
-                  <td colSpan={6} className="bg-muted/30 px-8 py-4">
-                    <EntityForm entity="lines" fields={CORE_FIELDS} data={newLine}
-                      onChange={(k, v) => setNewLine(p => ({ ...p, [k]: v }))}
-                      catalogs={catalogs} api={api} token={token} apiBaseUrl={apiBaseUrl} readOnly={false} cols={3} />
-                    <div className="flex justify-end gap-2 mt-3">
-                      <button
-                        onClick={() => { setAddingLine(false); setNewLine({}); }}
-                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-white text-xs font-medium text-foreground hover:bg-muted/50 transition-colors"
-                      >
-                        <X className="h-3.5 w-3.5" />{ui('cancel')}
-                      </button>
-                      <button
-                        onClick={addLine}
-                        disabled={!newLine.asset || saving === 'new'}
-                        className="inline-flex items-center gap-1.5 h-8 px-4 rounded-md bg-foreground text-background text-xs font-semibold hover:bg-foreground/80 transition-colors disabled:opacity-50"
-                      >
-                        {saving === 'new' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-                        {ui('addLine')}
-                      </button>
-                    </div>
+                <tr ref={addRowRef} data-testid="inline-add-row" className="bg-blue-50/50 border-t-2 border-primary/20">
+                  <td className="px-2" aria-hidden="true" />
+                  <td className="px-2" aria-hidden="true" />
+                  <td className="py-1 px-2 align-middle">
+                    <SelectorInput
+                      entityName="lines"
+                      field={CORE_FIELDS[0]}
+                      compact
+                      value={newLine.asset ?? ''}
+                      displayValue={newLine['asset$_identifier'] ?? ''}
+                      resolvedLabel={t('A_Asset_ID')}
+                      onChange={(val, lbl) => setNewLine(p => ({ ...p, asset: val, 'asset$_identifier': lbl ?? '' }))}
+                      catalogs={catalogs}
+                      selectorUrl={`${apiBaseUrl}/lines/selectors/A_Asset_ID`}
+                      token={token}
+                    />
+                  </td>
+                  <td className="py-1 px-2 align-middle">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      placeholder={t('Amortization_Percentage')}
+                      className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 text-right tabular-nums focus:ring-2 focus:ring-primary focus:outline-none"
+                      value={newLine.amortizationPercentage ?? ''}
+                      onChange={e => setNewLine(p => ({ ...p, amortizationPercentage: e.target.value }))}
+                      onKeyDown={onDraftKeyDown}
+                    />
+                  </td>
+                  <td className="py-1 px-2 align-middle">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      placeholder={t('Amortizationamt')}
+                      className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 text-right tabular-nums focus:ring-2 focus:ring-primary focus:outline-none"
+                      value={newLine.amortizationAmount ?? ''}
+                      onChange={e => setNewLine(p => ({ ...p, amortizationAmount: e.target.value }))}
+                      onKeyDown={onDraftKeyDown}
+                    />
+                  </td>
+                  <td className="px-3 text-sm text-muted-foreground align-middle">—</td>
+                  <td className="px-2 text-center text-muted-foreground align-middle">
+                    {saving === 'new' ? <Loader2 className="h-4 w-4 animate-spin inline" /> : '—'}
                   </td>
                 </tr>
               )}
@@ -445,12 +601,34 @@ export default function AmortizationLinesTable({
         </tbody>
       </table>
 
-      {/* ── Add line button ── */}
-      {!isReadOnly && !addingLine && (
-        <div className="px-2 py-2">
-          <AddLineButton onClick={() => setAddingLine(true)} disabled={saving === 'new'} label={ui('addLine')} />
-        </div>
+      {/* ── inline-add hint (shown while the draft row is open) ── */}
+      {addingLine && (
+        <p className="text-xs text-muted-foreground mt-1 text-center">{ui('inlineAddHint')}</p>
       )}
+
+      {/* ── Add line button (always visible; wrapper measured for the selection bar) ── */}
+      <div ref={addLineWrapperRef}>
+        {!isReadOnly && (
+          <div className="px-2 py-2">
+            <AddLineButton onClick={() => setAddingLine(true)} disabled={saving === 'new'} label={ui('addLine')} />
+          </div>
+        )}
+      </div>
+
+      {/* ── shared floating selection bar (same as Sales Order) ── */}
+      <LinesSelectionBar
+        visible={selectionBarVisible}
+        closing={selectionBarClosing}
+        barRect={barRect}
+        count={selectedRows.size}
+        selectedLabel={ui('selected', { count: selectedRows.size })}
+        totalLabel={null}
+        deleting={bulkDeleting}
+        deleteTitle={ui('delete')}
+        closeTitle={ui('close')}
+        onDelete={bulkDelete}
+        onClose={() => setSelectedRows(new Set())}
+      />
     </div>
   );
 }
