@@ -68,41 +68,54 @@ const num = (v) => {
   return Number.isFinite(n) ? n : null;
 };
 
+/** Numeric comparison with the shared "both sides must be numbers" guard. */
+const numCmp = (test) => (raw, value) => {
+  const a = num(raw);
+  const b = num(value);
+  return a != null && b != null && test(a, b);
+};
+
+/** Normalizes an `inSet` value (array, or comma-separated string) to an array. */
+const toSet = (value) => (Array.isArray(value)
+  ? value
+  : String(value ?? '').split(',').map((s) => s.trim()));
+
+/**
+ * Operator → predicate dispatch table. Each handler receives
+ * `(raw, value, field)` and returns whether the row matches. Keeping them as
+ * separate functions (instead of one big switch) keeps each one simple.
+ */
+const OPERATORS = {
+  iContains:    (raw, value) => lc(raw).includes(lc(value)),
+  iNotContains: (raw, value) => !lc(raw).includes(lc(value)),
+  iEquals:      (raw, value) => lc(raw) === lc(value),
+  iNotEqual:    (raw, value) => lc(raw) !== lc(value),
+  isNull:       (raw) => raw == null || raw === '',
+  isNotNull:    (raw) => raw != null && raw !== '',
+  equals:       (raw, value) => (Array.isArray(value)
+    ? value.map(lc).includes(lc(raw))
+    : lc(raw) === lc(value)),
+  notEqual:     (raw, value) => lc(raw) !== lc(value),
+  inSet:        (raw, value) => toSet(value).map(lc).includes(lc(raw)),
+  greaterThan:    numCmp((a, b) => a > b),
+  greaterOrEqual: numCmp((a, b) => a >= b),
+  lessThan:       numCmp((a, b) => a < b),
+  lessOrEqual:    numCmp((a, b) => a <= b),
+  between: (raw, value, field) => {
+    const [a, b] = Array.isArray(value) ? value : [];
+    const isDate = field === 'date';
+    const r = isDate ? Date.parse(raw) : num(raw);
+    const lo = isDate ? Date.parse(a) : num(a);
+    const hi = isDate ? Date.parse(b) : num(b);
+    return r != null && !Number.isNaN(r) && r >= lo && r <= hi;
+  },
+};
+
 /** Evaluates a single condition against a (derived) movement row. */
 function matchesCondition(row, { field, operator, value }) {
-  const raw = row[field];
-
-  switch (operator) {
-    case 'iContains':    return lc(raw).includes(lc(value));
-    case 'iNotContains': return !lc(raw).includes(lc(value));
-    case 'iEquals':      return lc(raw) === lc(value);
-    case 'iNotEqual':    return lc(raw) !== lc(value);
-    case 'isNull':       return raw == null || raw === '';
-    case 'isNotNull':    return raw != null && raw !== '';
-    case 'equals':
-      if (Array.isArray(value)) return value.map(lc).includes(lc(raw));
-      return lc(raw) === lc(value);
-    case 'notEqual':     return lc(raw) !== lc(value);
-    case 'inSet': {
-      const set = Array.isArray(value)
-        ? value
-        : String(value ?? '').split(',').map((s) => s.trim());
-      return set.map(lc).includes(lc(raw));
-    }
-    case 'greaterThan':    return num(raw) != null && num(value) != null && num(raw) > num(value);
-    case 'greaterOrEqual': return num(raw) != null && num(value) != null && num(raw) >= num(value);
-    case 'lessThan':       return num(raw) != null && num(value) != null && num(raw) < num(value);
-    case 'lessOrEqual':    return num(raw) != null && num(value) != null && num(raw) <= num(value);
-    case 'between': {
-      const [a, b] = Array.isArray(value) ? value : [];
-      const r = field === 'date' ? Date.parse(raw) : num(raw);
-      const lo = field === 'date' ? Date.parse(a) : num(a);
-      const hi = field === 'date' ? Date.parse(b) : num(b);
-      return r != null && !Number.isNaN(r) && r >= lo && r <= hi;
-    }
-    default:
-      return true; // Unknown / incomplete operator → don't filter out.
-  }
+  const handler = OPERATORS[operator];
+  // Unknown / incomplete operator → don't filter out.
+  return handler ? handler(row[field], value, field) : true;
 }
 
 /**

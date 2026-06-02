@@ -187,10 +187,12 @@ Display the full detail of a financial account: a summary strip with KPIs, and t
 - Three tabs with counts: Movements (live data), Reconciliation (placeholder), Imported Statements (placeholder).
 - Export button at the right of the tab strip — fires a toast (real export is out of scope).
 - Movements toolbar: back arrow `←`, status filter (8 payment statuses, search-enabled), date range filter (preset list + dual calendar, same picker as grid views), type filter (BPD/BPW, search-enabled), amount filter (presets + manual min/max), search input, `+ Nuevo movimiento` button (yellow hover, fires toast — real action is T8).
-- Movements table: Checkbox | Date | Document | Contact | Description | Status (`MovementStatusBadge`) | Type (with `PostingStatusDot` sub-label) | Amount | Balance.
+- Movements table: Expand chevron | Checkbox | Date | Payment | Contact | Description | Status (`MovementStatusBadge`) | Type (with `PostingStatusDot` sub-label) | G/L Item | Amount | Balance | kebab.
+- **Payment column** (`Pago`): when the movement has a related payment, the document number renders as an underlined link (with an `ArrowUpRight` icon) that navigates to `/payment-in/:id` (received payments, `paymentIsReceipt === 'Y'`) or `/payment-out/:id` (made payments). Movements with no payment show plain text.
+- **Expandable "more info" panel**: the leading circular chevron (or a click anywhere on the row) toggles an inline panel showing the accounting dimensions enabled in the chart of accounts that have a value on the transaction (Organization, Project, Cost Center, Activity, Campaign, Sales Region, User1, User2). The business partner is excluded (it already has its own Contacto column). Dimensions are rendered read-only as label + value (no selector chrome), in a 1/2/4-column responsive grid. The header row and panel form one elevated card (shadow at the bottom only, no seam line — the header row sits at `z-20` over the panel's `z-10` to hide the shadow bleed). When no enabled dimension has a value, the panel shows a "no dimensions" message. The chevron only renders when the account reports at least one enabled dimension (`enabledDimensions`).
 - Locale-aware date format in the Date column (es_ES → `dd/MM/yyyy`, en_US → `M/d/yyyy`).
 - Individual row checkbox + select-all (indeterminate when partial).
-- Row hover: subtle shadow elevation + kebab appears (View detail active toast; Unreconcile / Post disabled with tooltip).
+- Row hover: subtle shadow elevation + kebab appears (Unreconcile / Post disabled with tooltip).
 - Back arrow in the toolbar runs `navigate(-1)`.
 - `+ Nuevo movimiento` button (yellow hover) — currently fires a "coming soon" toast.
 
@@ -223,9 +225,10 @@ index.jsx                          — receives { recordId }, sets page meta, mo
         AmountFilter.jsx           — presets + manual min/max + Apply/Cancel
       AccountSummaryStrip.jsx      — avatar, IBAN (chunked + copy), 3 KPI values
       MovementsTable.jsx           — header + rows / skeleton / empty-state; renderBody helper
+        DimensionsPanel (inline)   — expandable read-only accounting-dimensions grid
         MovementStatusBadge.jsx    — 8 status chips (5 color families)
         PostingStatusDot.jsx       — derived posting status (RPPC → posted/green, else → orange)
-        MovementRowKebab.jsx       — on-hover kebab (View detail active, Unreconcile/Post disabled)
+        MovementRowKebab.jsx       — on-hover kebab (Unreconcile/Post disabled)
     ReconciliacionTab.jsx          — placeholder (T6)
     ImportedStatementsTab.jsx      — orchestrates list ↔ lines state machine
       StatementsToolbar.jsx        — back ←, search, import button
@@ -253,7 +256,7 @@ index.jsx                          — receives { recordId }, sets page meta, mo
 |------|------|-------|
 | `useNeoResource({ path, deps, mapPayload, timeoutMs, label })` | `hooks/useNeoResource.js` | Generic NEO fetch with auth + abort + timeout. Returns `{ data, loading, error, reload }`. Passing `path: null` keeps the hook idle (useful when the path depends on a not-yet-known id). Consumed by `useFinancialAccount` and `useAccountMovements`. |
 | `useFinancialAccount(id)` | `hooks/useFinancialAccount.js` | Thin wrapper over `useNeoResource` — hits `/sws/neo/financial-accounts-page` and filters client-side by `id`. Returns `{ account, loading, error, reload }`. Follow-up: replace with dedicated `/sws/neo/financial-account/{id}` endpoint once that spec is live. |
-| `useAccountMovements(accountId)` | `hooks/useAccountMovements.js` | Thin wrapper over `useNeoResource` — hits `/sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}` (powered by `FinancialAccountTransactionsHandler` on the Etendo Go side). Returns `{ movements, totals, loading, error, reload }`. |
+| `useAccountMovements(accountId)` | `hooks/useAccountMovements.js` | Thin wrapper over `useNeoResource` — hits `/sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}` (powered by `FinancialAccountTransactionsHandler` on the Etendo Go side). Returns `{ movements, totals, enabledDimensions, loading, error, reload }`. Each movement carries `paymentId` / `paymentIsReceipt` (for the Payment link) and a `dimensions` object (per-row dimension values); `enabledDimensions` is the account-level list of dimension keys enabled in the chart of accounts. |
 | `useBankStatements(accountId)` | `hooks/useBankStatements.js` | Fetches imported bank statements — hits `GET /sws/neo/bank-statements?FIN_Financial_Account_ID={id}`. Returns `{ statements, loading, error, reload }`. |
 | `useBankStatementLines(statementId)` | `hooks/useBankStatementLines.js` | Fetches lines of one statement — hits `GET /sws/neo/bank-statements?action=lines&statementId={id}`. Returns `{ lines, loading, error, reload }`. |
 | `useStatementImport()` | `hooks/useStatementImport.js` | Mutation hook for C43 import — posts `{ FIN_Financial_Account_ID, fileName, contentBase64 }` to `POST /sws/neo/bank-statements?action=import`. Returns `{ importStatement, importing, error }`. |
@@ -269,6 +272,8 @@ GET /sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}
 Implemented by `com.etendoerp.go.schemaforge.FinancialAccountTransactionsHandler` (CDI bean registered via `@Named("financial-account-transactions")`). The handler:
 
 - Queries `FIN_Finacc_Transaction` joined with `FIN_Financial_Account`, `C_Currency`, `FIN_Payment`, and `C_BPartner` (resolved from either the transaction or its parent payment).
+- Joins the 9 accounting-dimension FK tables (`ad_org`, `c_bpartner`, `c_project`, `c_costcenter`, `c_activity`, `c_campaign`, `c_salesregion`, `user1`, `user2`) to marshal a `dimensions` object per row, and surfaces the related payment (`paymentId` + `paymentIsReceipt`) so the frontend can deep-link to the payment window.
+- Computes the account's `enabledDimensions` by reading `C_AcctSchema_Element` (the dimensions enabled in the chart of accounts), returned once at the payload level (not per row).
 - Computes a per-row running balance anchored to `FIN_Financial_Account.currentbalance` (window function: `currentbalance − SUM(subsequent)` over `statementdate ASC, line ASC`).
 - Returns a `totals` object with the current balance, 30-day inflows, 30-day outflows, and the account currency. The 30-day cutoff is **computed in Java** (`Instant.now().minus(30, ChronoUnit.DAYS)`) and bound as a `Timestamp` parameter — no PostgreSQL-specific `NOW() − INTERVAL` syntax, so the query stays portable across PostgreSQL and Oracle.
 
@@ -283,14 +288,17 @@ Response shape:
           "id": "...", "date": "2026-05-06T00:00:00Z", "documentNo": "PAY-001",
           "contact": "DHL Technologies SL", "description": "Invoice No.: ...",
           "paymentStatus": "RPPC", "trxType": "BPD",
+          "paymentId": "...", "paymentIsReceipt": "Y",
           "amount": 12450.00, "balance": 211841.01,
-          "currencyIso": "EUR", "posted": "Y"
+          "currencyIso": "EUR", "posted": "Y",
+          "dimensions": { "organization": "GOOrg", "project": "..." }
         }
       ],
       "totals": {
         "balance": 211841.01, "inflows": 47820.00,
         "outflows": 22398.82, "currency": "EUR"
-      }
+      },
+      "enabledDimensions": ["organization", "bpartner", "project"]
     }
   }
 }
@@ -385,8 +393,11 @@ All keys prefixed `financeAccountDetail*` and `financeAccountMovements*`, added 
 - `financeAccountMovementsFilter*` — filter labels and search placeholders.
 - `financeAccountMovementsStatus*` — labels for the 8 payment statuses.
 - `financeAccountMovementsType{BPD,BPW}` — trxType labels (Cobro / Pago in es).
-- `financeAccountMovementsCol*` — table column headers.
+- `financeAccountMovementsCol*` — table column headers (`ColDocument` now labels the **Payment** / Pago column).
 - `financeAccountMovementsRow*` — kebab actions + their disabled tooltips.
+- `financeAccountMovementsMoreInfo` — chevron aria-label for the expandable panel.
+- `financeAccountMovementsNoDimensions` — message shown when no enabled dimension has a value.
+- `financeAccountMovementsDim*` — accounting-dimension labels (`Organization`, `Bpartner`, `Project`, `Costcenter`, `Activity`, `Campaign`, `Salesregion`, `User1`, `User2`).
 - `financeAccountMovementsEmpty` — empty-state message.
 - `financeAccountStatements*` — all statements tab keys (search, import, column headers, status labels, dialog, toasts).
 - `financeAccountStatementLines*` — all lines sub-view keys (column headers, empty state, matched labels).
