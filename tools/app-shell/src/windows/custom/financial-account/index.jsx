@@ -56,7 +56,7 @@ export default function FinancialAccountWindow({ recordId }) {
       <div className="flex h-full flex-col overflow-hidden">
 
         {/* Tab strip + Export button */}
-        <div className="flex items-center justify-between border-b border-[#E8EAEF] px-4">
+        <div className="flex items-center justify-between border-b border-[#E8EAEF] pl-0 pr-2">
           <DetailTabs
             value={activeTab}
             onValueChange={setActiveTab}

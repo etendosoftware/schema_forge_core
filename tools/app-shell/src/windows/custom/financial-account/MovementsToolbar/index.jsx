@@ -21,7 +21,7 @@ export function MovementsToolbar({ filters, onFiltersChange, onNewMovement }) {
   const navigate = useNavigate();
 
   return (
-    <div className="flex h-auto min-h-[52px] flex-wrap items-center gap-2 px-4 py-2">
+    <div className="flex h-auto min-h-[52px] flex-wrap items-center gap-2 px-2 py-2">
       {/* Back */}
       <button
         type="button"

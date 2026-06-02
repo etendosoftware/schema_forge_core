@@ -52,7 +52,7 @@ export function TabsTrigger({ value, children, icon: Icon, badge, className }) {
       aria-selected={isActive}
       onClick={() => ctx?.onValueChange(value)}
       className={cn(
-        'inline-flex items-center gap-1 px-3 pt-2 pb-4 text-sm transition-colors',
+        'inline-flex items-center gap-1 px-3 py-3 text-sm transition-colors',
         'border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#121217] focus-visible:ring-offset-1',
         isActive
           ? 'border-[#121217] font-medium text-[#121217]'
