@@ -1,8 +1,8 @@
 {
   "version": "0.29.3",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-28T11:06:45.587Z",
-  "checksum": "23f7c62b397cb0bb",
+  "updatedAt": "2026-06-02T15:20:25.420Z",
+  "checksum": "407ca3f7afc1fd48",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -16,16 +16,7 @@
         "headerTable": "InvoiceHeaderTable",
         "bottomSection": "PurchaseInvoiceBottomPanel"
       },
-      "menuActions": [
-        {
-          "key": "reactivate",
-          "label": "Reactivate",
-          "labelKey": "reactivate",
-          "visibleWhenStatus": "CO",
-          "documentAction": "RE",
-          "successKey": "reactivated"
-        }
-      ],
+      "menuActions": [],
       "processOverrides": {},
       "labelOverrides": {
         "es_ES": {
@@ -3726,16 +3717,7 @@
         "headerTable": "InvoiceHeaderTable",
         "bottomSection": "PurchaseInvoiceBottomPanel"
       },
-      "menuActions": [
-        {
-          "key": "reactivate",
-          "label": "Reactivate",
-          "labelKey": "reactivate",
-          "visibleWhenStatus": "CO",
-          "documentAction": "RE",
-          "successKey": "reactivated"
-        }
-      ],
+      "menuActions": [],
       "processOverrides": {},
       "labelOverrides": {
         "es_ES": {
