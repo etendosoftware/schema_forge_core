@@ -199,7 +199,7 @@ export function applyContactNameDefaults(payload, source) {
 function applyContactsRequiredFields(entity, payload, source = {}) {
     if (!payload || typeof payload !== 'object') return payload;
 
-    if (entity === 'contact' || entity === 'adUser' || entity === 'user') { //TODO: Remove this specific window logic
+    if (entity === 'contact' || entity === 'adUser' || entity === 'user') {
         applyContactNameDefaults(payload, source);
     }
 
