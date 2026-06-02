@@ -23,7 +23,7 @@ export default function FinancialAccountWindow({ recordId }) {
   const ui = useUI();
   const [activeTab, setActiveTab] = useState('movements');
   const { account } = useFinancialAccount(recordId);
-  const { movements, totals, loading: movementsLoading, reload: reloadMovements } = useAccountMovements(recordId);
+  const { movements, totals, enabledDimensions, loading: movementsLoading, reload: reloadMovements } = useAccountMovements(recordId);
   const { statements } = useBankStatements(recordId);
   const movementsTabRef = useRef(null);
 
@@ -83,6 +83,7 @@ export default function FinancialAccountWindow({ recordId }) {
               account={account}
               totals={totals}
               movements={movements}
+              enabledDimensions={enabledDimensions}
               loading={movementsLoading}
               onReload={reloadMovements}
             />

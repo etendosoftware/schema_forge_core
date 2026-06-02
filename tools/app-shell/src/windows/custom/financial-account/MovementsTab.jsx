@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef, useState, useEffect, useMemo } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState, useMemo } from 'react';
 import { AccountSummaryStrip } from './AccountSummaryStrip';
 import { MovementsToolbar } from './MovementsToolbar/index';
 import { MovementsTable } from './MovementsTable';
@@ -126,7 +126,7 @@ function applyFilters(movements, filters) {
  * }} props
  */
 export const MovementsTab = forwardRef(function MovementsTab(
-  { account, totals, movements, loading, onReload },
+  { account, totals, movements, enabledDimensions = [], loading, onReload },
   ref,
 ) {
   const [filters, setFilters] = useState({
@@ -135,25 +135,10 @@ export const MovementsTab = forwardRef(function MovementsTab(
     search: '',
   });
   const [advancedFilter, setAdvancedFilter] = useState(null);
-  const [selectedIds, setSelectedIds] = useState(new Set());
   const [newMovementOpen, setNewMovementOpen] = useState(false);
-
-  // Clear selection when filters change
-  useEffect(() => {
-    setSelectedIds(new Set());
-  }, [filters, advancedFilter]);
 
   const handleFilterChange = (key) => (val) => {
     setFilters((prev) => ({ ...prev, [key]: val }));
-  };
-
-  const handleSelectionChange = (id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
   };
 
   const filteredMovements = useMemo(
@@ -209,8 +194,7 @@ export const MovementsTab = forwardRef(function MovementsTab(
         <MovementsTable
           movements={filteredMovements}
           loading={loading}
-          selectedIds={selectedIds}
-          onSelectionChange={handleSelectionChange}
+          enabledDimensions={enabledDimensions}
         />
       </div>
 

@@ -38,6 +38,7 @@ export function useAccountMovements(accountId, _filters) {
     () => (raw) => ({
       movements: Array.isArray(raw.transactions) ? raw.transactions : [],
       totals: normalizeTotals(raw.totals),
+      enabledDimensions: Array.isArray(raw.enabledDimensions) ? raw.enabledDimensions : [],
     }),
     [],
   );
@@ -52,6 +53,7 @@ export function useAccountMovements(accountId, _filters) {
   return {
     movements: data?.movements ?? [],
     totals: data?.totals ?? EMPTY_TOTALS,
+    enabledDimensions: data?.enabledDimensions ?? [],
     loading,
     error,
     reload,
