@@ -1,8 +1,8 @@
 {
-  "version": "0.22.0",
+  "version": "0.23.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-06-02T16:48:11.660Z",
-  "checksum": "3c9d3ebc34906751",
+  "updatedAt": "2026-06-02T18:47:21.059Z",
+  "checksum": "3c0ef53f60e0e063",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -584,7 +584,6 @@
               }
             },
             "cellType": "depreciationProgress",
-            "filterable": false,
             "displayLogic": {
               "raw": "@IsDepreciated@='Y'",
               "evaluable": true

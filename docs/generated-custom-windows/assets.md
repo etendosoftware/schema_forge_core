@@ -134,8 +134,20 @@ Changes landed in `feature/ETP-4103`. Covers visual polish, full-form restructur
 
 - `dot: false` on `depreciationStartDate` column — "Fecha inicio" shows only the date value, no colored dot indicator.
 - `fullyDepreciated` field: `columnType: "status"` **removed** — the "Todos los estados" global dropdown is no longer present in the list toolbar.
-- `fullyDepreciated` now has `badgeLabels: { true: { es_ES: "Totalmente depreciado", en_US: "Fully depreciated" }, false: { es_ES: "En progreso", en_US: "In progress" } }` and `filterable: false` — labels are resolved per locale via `createBadgeLabelResolver`; the field is hidden from the Advanced Filter.
+- `fullyDepreciated` now has `badgeLabels: { true: { es_ES: "Totalmente depreciado", en_US: "Fully depreciated" }, false: { es_ES: "En progreso", en_US: "In progress" } }` — labels are resolved per locale via `createBadgeLabelResolver`.
 - List toolbar now shows only: funnel (Advanced Filter) + "Nuevo activo" button. No status dropdown.
+
+#### ETP-4103 — "Depreciación completa" filter (DB-backed reliable flag)
+
+- `fullyDepreciated` is now `filterable: true` in `decisions.json` → it appears in the "Filtro por condicionales" (Advanced Filter) as a boolean Sí/No condition (mode `booleanLabel`, operator `equals`). The criteria `fieldName: "fullyDepreciated"` maps to the DAL property `fullyDepreciated` (column `IsFullyDepreciated`), so filtering is server-side and paginated — no `backendFilterKey` needed.
+- The list progress bar (`renderDepreciationProgress`) still computes its percentage live from `depreciatedValue / depreciationAmt` and does NOT depend on the boolean.
+- **Reliable flag via DB trigger** (`com.etendoerp.go`): the Etendo core never maintains `A_Asset.ISFULLYDEPRECIATED` (it stays `'N'`), so a `BEFORE INSERT OR UPDATE` row trigger `ETGO_A_ASSET_FULLYDEPR_TRG` (`modules/com.etendoerp.go/src-db/database/model/triggers/`) recomputes it on every asset row change, regardless of what writes `DEPRECIATEDVALUE`. Formula: `ISFULLYDEPRECIATED = 'Y'` when `AMORTIZATIONVALUEAMT > 0 AND DEPRECIATEDVALUE >= AMORTIZATIONVALUEAMT`, else `'N'`. `BEFORE` sets `:new` directly (no recursion); reactivating an amortization (which lowers `DEPRECIATEDVALUE`) flips the flag back to `'N'`.
+- Apply with `./gradlew update.database` (or `export.database` to version the trigger). **Backfill** existing assets once per environment:
+  ```sql
+  UPDATE A_ASSET SET ISFULLYDEPRECIATED = CASE
+    WHEN COALESCE(AMORTIZATIONVALUEAMT,0) > 0 AND COALESCE(DEPRECIATEDVALUE,0) >= AMORTIZATIONVALUEAMT
+    THEN 'Y' ELSE 'N' END;
+  ```
 
 ### Amortization plan tab — badge labels
 

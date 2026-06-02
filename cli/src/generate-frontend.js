@@ -248,11 +248,9 @@ export function generateTableComponent(entityName, contract) {
   const depreciationProgressHelper = neededCellTypes.has('depreciationProgress') ? `
 function renderDepreciationProgress(row) {
   const depreciatedValue = row.depreciatedValue ?? 0;
-  const depreciatedPlan = row.depreciatedPlan ?? 0;
   const depreciationAmt = row.depreciationAmt ?? 0;
-  const denominator = depreciatedPlan > 0 ? depreciatedPlan : depreciationAmt;
-  const pct = denominator > 0
-    ? Math.min(100, Math.round((depreciatedValue / denominator) * 100))
+  const pct = depreciationAmt > 0
+    ? Math.min(100, Math.round((depreciatedValue / depreciationAmt) * 100))
     : (depreciatedValue > 0 ? 100 : null);
   if (pct == null) return null;
   const color = pct === 100 ? '#10b981' : '#f59e0b';

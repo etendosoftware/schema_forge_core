@@ -210,7 +210,7 @@
             "true": { "es_ES": "Totalmente depreciado", "en_US": "Fully depreciated" },
             "false": { "es_ES": "En progreso", "en_US": "In progress" }
           },
-          "filterable": false,
+          "filterable": true,
           "form": false
         },
         "project": {

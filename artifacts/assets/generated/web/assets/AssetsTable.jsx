@@ -3,11 +3,9 @@ import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 
 function renderDepreciationProgress(row) {
   const depreciatedValue = row.depreciatedValue ?? 0;
-  const depreciatedPlan = row.depreciatedPlan ?? 0;
   const depreciationAmt = row.depreciationAmt ?? 0;
-  const denominator = depreciatedPlan > 0 ? depreciatedPlan : depreciationAmt;
-  const pct = denominator > 0
-    ? Math.min(100, Math.round((depreciatedValue / denominator) * 100))
+  const pct = depreciationAmt > 0
+    ? Math.min(100, Math.round((depreciatedValue / depreciationAmt) * 100))
     : (depreciatedValue > 0 ? 100 : null);
   if (pct == null) return null;
   const color = pct === 100 ? '#10b981' : '#f59e0b';
@@ -30,7 +28,7 @@ const columns = [
   { key: 'assetValue', column: 'AssetValueAmt', type: 'amount', label: 'Asset Value', summable: true },
   { key: 'depreciationAmt', column: 'Amortizationvalueamt', type: 'amount', label: 'Depreciation Amt.', summable: true },
   { key: 'depreciatedValue', column: 'Depreciatedvalue', type: 'amount', label: 'Depreciated Value', summable: true },
-  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'boolean', label: 'Fully Depreciated', badgeLabels: {"true":{"es_ES":"Totalmente depreciado","en_US":"Fully depreciated"},"false":{"es_ES":"En progreso","en_US":"In progress"}}, render: renderDepreciationProgress, required: true, filterable: false },
+  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'boolean', label: 'Fully Depreciated', badgeLabels: {"true":{"es_ES":"Totalmente depreciado","en_US":"Fully depreciated"},"false":{"es_ES":"En progreso","en_US":"In progress"}}, render: renderDepreciationProgress, required: true },
 ];
 // @sf-generated-end columns:assets
 
