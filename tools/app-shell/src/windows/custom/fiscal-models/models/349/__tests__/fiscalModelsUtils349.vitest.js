@@ -98,8 +98,12 @@ describe('generate349File', () => {
     );
 
     expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/fiscal349/generate?'),
-      expect.objectContaining({ headers: { Authorization: 'Bearer tok' } }),
+      expect.stringContaining('/fiscal349/generate'),
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({ Authorization: 'Bearer tok' }),
+        body: expect.stringContaining('year=2026'),
+      }),
     );
     appendSpy.mockRestore();
     removeSpy.mockRestore();
