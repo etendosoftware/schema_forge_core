@@ -422,6 +422,18 @@ function buildReadOnlyLogicPart(f) {
   return readOnlyLogicPart;
 }
 
+function getS(o) {
+  return `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`;
+}
+
+function getOptionsPart(type, f) {
+  if (type === 'select' && f.enumValues?.length) {
+    return `, options: [${f.enumValues.map(o => getS(o)).join(', ')}]`;
+  } else {
+    return '';
+  }
+}
+
 /**
  * Generate a detail/edit form component for an entity.
  * Produces a thin declarative component that imports EntityForm from contract-ui.
@@ -484,9 +496,7 @@ export function generateFormComponent(entityName, contract) {
     let displayLogicPart = buildDisplayLogicPart(f);
     let readOnlyLogicPart = buildReadOnlyLogicPart(f);
     const slotLines = [];
-    const optionsPart = (type === 'select' && f.enumValues?.length)
-      ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
-      : '';
+    const optionsPart = getOptionsPart(type, f);
     const formLabelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
     const valueTypePart = (type === 'select' && f.tsType === 'boolean') ? `, valueType: 'boolean'` : '';
     const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
@@ -752,19 +762,29 @@ function buildCustomComponentImportsAndProps(customComponents, specName, customP
   return { newActionsWithComponents, customCompImportBlock, customCompPropsBlock };
 }
 
+function getVis(visParts) {
+  return visParts.length > 0 ? `visible: ${visParts.join(' && ')}, ` : '';
+}
+
 function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
-  const menuActionsProp = menuActionsConfig.length > 0
-    ? `\n        menuActions={${menuActionsFnParams} => [\n${menuActionsConfig.map(a => {
-      const statusVis = a.visibleWhenStatus
-        ? Array.isArray(a.visibleWhenStatus)
+  let menuActionsProp;
+  if (menuActionsConfig.length > 0) {
+    menuActionsProp = `\n        menuActions={${menuActionsFnParams} => [\n${menuActionsConfig.map(a => {
+      let statusVis;
+      if (Array.isArray(a.visibleWhenStatus)) {
+        statusVis = a.visibleWhenStatus
           ? `${JSON.stringify(a.visibleWhenStatus)}.includes(status)`
-          : `status === '${a.visibleWhenStatus}'`
-        : '';
+          : '';
+      } else {
+        statusVis = a.visibleWhenStatus
+          ? `status === '${a.visibleWhenStatus}'`
+          : '';
+      }
       const fieldVisFalse = a.visibleWhenFieldFalse ? `!data?.${a.visibleWhenFieldFalse}` : '';
       const fieldVisTrue = a.visibleWhenFieldTrue ? `(data?.${a.visibleWhenFieldTrue} === 'Y' || data?.${a.visibleWhenFieldTrue} === true)` : '';
       const visParts = [statusVis, fieldVisFalse, fieldVisTrue].filter(Boolean);
-      const vis = visParts.length > 0 ? `visible: ${visParts.join(' && ')}, ` : '';
-      const destr = a.destructive ? 'destructive: true, ' : '';
+      const vis = getVis(visParts);
+      const destr = fragmentIf(a.destructive, 'destructive: true, ');
       // Handler precedence: documentAction (declarative DocAction) > columnName (AD process button) > onClick placeholder
       let handler;
       if (a.documentAction) {
@@ -779,21 +799,29 @@ function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
         ? `successKey: '${a.successKey}', `
         : a.successMessage ? `successMessage: '${String(a.successMessage).replace(/'/g, "\\'")}', ` : '';
       return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${handler} }`;
-    }).join(',\n')}\n        ]}`
-    : '';
+    }).join(',\n')}\n        ]}`;
+  } else {
+    menuActionsProp = '';
+  }
   return menuActionsProp;
 }
 
 function getHeaderContentProp(statusBar, headerName, isGallery, isSidebar) {
-  return statusBar
-    ? `\n        headerContent={(data) => <${headerName}StatusBar data={data} />}`
-    : (isGallery && !isSidebar ? `\n        headerContent={
+  if (isGallery && !isSidebar) {
+    return statusBar
+      ? `\n        headerContent={(data) => <${headerName}StatusBar data={data} />}`
+      : `\n        headerContent={
           <${headerName}DetailHeader
             recordId={recordId}
             token={props.token}
             apiBaseUrl={api.baseUrl}
           />
-        }` : '');
+        }`;
+  } else {
+    return statusBar
+      ? `\n        headerContent={(data) => <${headerName}StatusBar data={data} />}`
+      : '';
+  }
 }
 
 function buildSendDocumentProps(sendDocument) {
@@ -897,7 +925,13 @@ function resolveAttachmentsConfig(windowConfig, layoutType, headerTableName, hea
 }
 
 function getBreadcrumbLiteral(windowBreadcrumbOverride, windowCategory, windowLabel) {
-  return `'${windowBreadcrumbOverride !== undefined ? windowBreadcrumbOverride : `${windowCategory} / ${windowLabel}`}'`;
+  let bdcrum;
+  if (windowBreadcrumbOverride !== undefined) {
+    bdcrum = windowBreadcrumbOverride;
+  } else {
+    bdcrum = `${windowCategory} / ${windowLabel}`;
+  }
+  return `'${bdcrum}'`;
 }
 
 function buildGalleryImport(isGallery, headerName, specName, headerEntity, componentName) {
