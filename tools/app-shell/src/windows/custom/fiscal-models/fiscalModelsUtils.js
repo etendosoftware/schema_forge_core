@@ -320,11 +320,16 @@ export async function generate349File(decl, { token, apiBaseUrl, phone, contact 
   if (!token || !apiBaseUrl) return false;
   try {
     const base = apiBaseUrl.replace(/\/[^/]+$/, '');
-    const params = new URLSearchParams({ year: decl.year, period: decl.period });
-    if (phone)   params.set('phone',   phone);
-    if (contact) params.set('contact', contact);
-    const res = await fetch(`${base}/fiscal349/generate?${params}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const body = new URLSearchParams({ year: decl.year, period: decl.period });
+    if (phone)   body.set('phone',   phone);
+    if (contact) body.set('contact', contact);
+    const res = await fetch(`${base}/fiscal349/generate`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: body.toString(),
     });
     if (!res.ok) return false;
     const blob = await res.blob();

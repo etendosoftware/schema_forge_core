@@ -19727,7 +19727,7 @@
     "fm.m349.operators_filtered": "de {total}",
     "fm.m349.operators_sub": "Fuente de verdad del fichero .349 — cada fila será un registro reconciliable en el fichero generado.",
     "fm.m349.coming_soon": "{tab} — contenido disponible próximamente.",
-    "fm.m349.invoices.empty": "Recalculá para ver las facturas origen.",
+    "fm.m349.invoices.empty": "Recalcula para ver las facturas origen.",
     "fm.m349.invoices.none": "No hay facturas intracomunitarias en este período.",
     "fm.m349.invoices.filtering_by": "Filtrando por:",
     "fm.m349.invoices.filtered": "{visible} de {total}",
