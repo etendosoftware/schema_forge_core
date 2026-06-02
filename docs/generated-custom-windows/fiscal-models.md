@@ -104,7 +104,39 @@ A `GET /session` call on mount populates the NIF/nombre fields used in the gener
 
 ## Modelo 349 detail page (`FmModel349Page`)
 
-Uses a 4-step stepper including `pending` (index 0). The 349 page is structurally similar to 303 but does not have the auto-compute mechanism.
+Full intra-EU recapitulative declaration view. Auto-compute runs via `useFiscalAutoCompute` (same hook as 303) using `compute349Operators` / `checkModified349`.
+
+### Operator keys
+
+| Key | Direction | Tax category |
+|-----|-----------|--------------|
+| `E` | Sales — Goods (Entregas) | Intra-EU supplies |
+| `S` | Sales — Services (Servicios prestados) | Services supplied to EU |
+| `A` | Purchase — Goods (Adquisiciones) | Intra-EU acquisitions |
+| `I` | Purchase — Services (Inv. Sujeto Pasivo) | Reverse-charge services |
+
+### Tabs
+
+- **Operadores** — operator table with key filter chips and live name/NIF-IVA search. Null `name`/`nif` fields are guarded (`?? ''`) before case-folding to avoid runtime crashes.
+- **Facturas origen** — source invoice drill-down. Clicking an operator's origin link pre-filters by NIF-IVA. Filter state shows `fm.m349.invoices.filtering_by` + count badge.
+- **Rectificaciones / Incidencias / Ficheros / Historial** — coming soon.
+
+### KPIs
+
+Four cards (Operadores, Total operaciones, Rectificaciones, Pendientes VIES) sourced from `_precomputed.operators`.
+
+### PDF preview and file generation
+
+- `use349Pdf` hook renders a Modelo 349 draft PDF via Handlebars + `renderPdf`. Declarant NIF and org name are read from `_precomputed.orgNif` / `_precomputed.orgName`. The object URL is revoked on unmount to avoid memory leaks.
+- File generation (`generate349File`) prompts for contact name and phone via `FileGenModal` before calling `POST /fiscal349/generate`.
+
+### Result in list view
+
+349 declarations show total intracomm volume (`totalE + totalS + totalA + totalI`) with `kind: 'info'` — no "a ingresar / a compensar" label, since 349 is informational only.
+
+### Polling propagation
+
+`FiscalModelsPage` keeps `FmListPage` mounted (hidden) while in a detail view so the auto-compute polling interval stays alive. When polling fires, `onComputeUpdate` propagates the updated `_precomputed` to `FmModel349Page` via a `useEffect` on `decl._precomputed`.
 
 ## Key files
 
@@ -132,5 +164,8 @@ Uses a 4-step stepper including `pending` (index 0). The 349 page is structurall
 | `GET` | `/fiscal303/modified?year=&period=&since=` | `checkModified303` |
 | `GET` | `/fiscal303/generate?year=&period=&tipo=` | `generate303File` |
 | `GET` | `/session` | FmModel303Page — org NIF/nombre for file header |
+| `GET` | `/fiscal349/operators?orgId=&year=&period=` | `compute349Operators` — returns operators + invoices + orgNif/orgName |
+| `GET` | `/fiscal349/modified?orgId=&year=&period=&since=` | `checkModified349` |
+| `GET` | `/fiscal349/generate?orgId=&year=&period=&contact=&phone=` | `generate349File` |
 
 All query parameters are built with `URLSearchParams` to ensure correct encoding.
