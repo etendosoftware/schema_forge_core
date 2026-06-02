@@ -11,6 +11,29 @@ import AssetsSidebar from '@/windows/custom/assets/AssetsSidebar';
 
 const breadcrumb = 'Finance / Assets';
 
+const labelOverrides = {
+  "es_ES": {
+    "C_Project_ID": "Proyecto",
+    "EM_Etadas_Costcenter_ID": "Centro de coste",
+    "C_BPartner_ID": "Tercero",
+    "EM_Etadas_User1_ID": "1ª Dimensión",
+    "EM_Etadas_User2_ID": "2ª Dimensión",
+    "EM_Etadas_Salesregion_ID": "Región de ventas",
+    "EM_Etadas_C_Activity_ID": "Actividad",
+    "EM_Etadas_Campaign_ID": "Campaña"
+  },
+  "en_US": {
+    "C_Project_ID": "Project",
+    "EM_Etadas_Costcenter_ID": "Cost Center",
+    "C_BPartner_ID": "Business Partner",
+    "EM_Etadas_User1_ID": "1st Dimension",
+    "EM_Etadas_User2_ID": "2nd Dimension",
+    "EM_Etadas_Salesregion_ID": "Sales Region",
+    "EM_Etadas_C_Activity_ID": "Activity",
+    "EM_Etadas_Campaign_ID": "Sales Campaign"
+  }
+};
+
 
 // @sf-generated-start summary:assets
 const summary = [
@@ -101,6 +124,14 @@ export const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/assets/assets/selectors/currency"
+    },
+    {
+      "entity": "assets",
+      "field": "project",
+      "column": "C_Project_ID",
+      "reference": "Project",
+      "inputMode": "search",
+      "url": "/sws/neo/assets/assets/selectors/project"
     },
     {
       "entity": "assets",
@@ -232,6 +263,28 @@ export const api = {
   },
   "window": {
     "category": "finance"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "C_Project_ID": "Proyecto",
+      "EM_Etadas_Costcenter_ID": "Centro de coste",
+      "C_BPartner_ID": "Tercero",
+      "EM_Etadas_User1_ID": "1ª Dimensión",
+      "EM_Etadas_User2_ID": "2ª Dimensión",
+      "EM_Etadas_Salesregion_ID": "Región de ventas",
+      "EM_Etadas_C_Activity_ID": "Actividad",
+      "EM_Etadas_Campaign_ID": "Campaña"
+    },
+    "en_US": {
+      "C_Project_ID": "Project",
+      "EM_Etadas_Costcenter_ID": "Cost Center",
+      "C_BPartner_ID": "Business Partner",
+      "EM_Etadas_User1_ID": "1st Dimension",
+      "EM_Etadas_User2_ID": "2nd Dimension",
+      "EM_Etadas_Salesregion_ID": "Sales Region",
+      "EM_Etadas_C_Activity_ID": "Activity",
+      "EM_Etadas_Campaign_ID": "Sales Campaign"
+    }
   }
 };
 
@@ -269,6 +322,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
         detailSortBy="sEQNoAsset asc"
         titleField="name"
         lockWhenProcessed={false}
+        labelOverrides={labelOverrides}
         {...props}
         sidebarContent={(data) => (
           <AssetsSidebar
@@ -296,6 +350,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
       hideMoreMenu
       hideLink
       hideEyeCount
+      labelOverrides={labelOverrides}
       rowQuickActions={{}}
       {...props}
     />

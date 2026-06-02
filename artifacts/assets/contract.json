@@ -1,8 +1,8 @@
 {
-  "version": "0.20.0",
+  "version": "0.21.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-06-01T19:11:48.932Z",
-  "checksum": "7737fb3871502cd9",
+  "updatedAt": "2026-06-02T02:23:03.278Z",
+  "checksum": "424e5cddf093ee22",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -30,6 +30,28 @@
       "detailSortBy": "sEQNoAsset asc",
       "headerExtra": {
         "customForm": "AssetsDetailPanel"
+      },
+      "labelOverrides": {
+        "es_ES": {
+          "C_Project_ID": "Proyecto",
+          "EM_Etadas_Costcenter_ID": "Centro de coste",
+          "C_BPartner_ID": "Tercero",
+          "EM_Etadas_User1_ID": "1ª Dimensión",
+          "EM_Etadas_User2_ID": "2ª Dimensión",
+          "EM_Etadas_Salesregion_ID": "Región de ventas",
+          "EM_Etadas_C_Activity_ID": "Actividad",
+          "EM_Etadas_Campaign_ID": "Campaña"
+        },
+        "en_US": {
+          "C_Project_ID": "Project",
+          "EM_Etadas_Costcenter_ID": "Cost Center",
+          "C_BPartner_ID": "Business Partner",
+          "EM_Etadas_User1_ID": "1st Dimension",
+          "EM_Etadas_User2_ID": "2nd Dimension",
+          "EM_Etadas_Salesregion_ID": "Sales Region",
+          "EM_Etadas_C_Activity_ID": "Activity",
+          "EM_Etadas_Campaign_ID": "Sales Campaign"
+        }
       },
       "disableProcessedLock": true,
       "titleField": "name",
@@ -554,6 +576,26 @@
             }
           },
           {
+            "name": "project",
+            "apiKey": "project",
+            "column": "C_Project_ID",
+            "label": "Project",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": false,
+            "reference": "Project",
+            "inputMode": "search",
+            "displayLogic": {
+              "raw": "@$Element_PJ@='Y' & @IsDepreciated@='Y'",
+              "evaluable": false,
+              "reason": "accounting-dimension",
+              "js": null
+            }
+          },
+          {
             "name": "processAsset",
             "apiKey": "processAsset",
             "column": "Process_Asset",
@@ -585,7 +627,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "BPartner",
             "inputMode": "search",
             "displayLogic": {
@@ -603,7 +645,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Activity",
             "inputMode": "selector",
             "displayLogic": {
@@ -623,7 +665,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Costcenter",
             "inputMode": "selector",
             "displayLogic": {
@@ -643,7 +685,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Campaign",
             "inputMode": "selector",
             "displayLogic": {
@@ -663,7 +705,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "SalesRegion",
             "inputMode": "selector",
             "displayLogic": {
@@ -683,7 +725,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "User1",
             "inputMode": "selector",
             "displayLogic": {
@@ -703,7 +745,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "User2",
             "inputMode": "selector",
             "displayLogic": {
@@ -966,6 +1008,28 @@
       "detailSortBy": "sEQNoAsset asc",
       "headerExtra": {
         "customForm": "AssetsDetailPanel"
+      },
+      "labelOverrides": {
+        "es_ES": {
+          "C_Project_ID": "Proyecto",
+          "EM_Etadas_Costcenter_ID": "Centro de coste",
+          "C_BPartner_ID": "Tercero",
+          "EM_Etadas_User1_ID": "1ª Dimensión",
+          "EM_Etadas_User2_ID": "2ª Dimensión",
+          "EM_Etadas_Salesregion_ID": "Región de ventas",
+          "EM_Etadas_C_Activity_ID": "Actividad",
+          "EM_Etadas_Campaign_ID": "Campaña"
+        },
+        "en_US": {
+          "C_Project_ID": "Project",
+          "EM_Etadas_Costcenter_ID": "Cost Center",
+          "C_BPartner_ID": "Business Partner",
+          "EM_Etadas_User1_ID": "1st Dimension",
+          "EM_Etadas_User2_ID": "2nd Dimension",
+          "EM_Etadas_Salesregion_ID": "Sales Region",
+          "EM_Etadas_C_Activity_ID": "Activity",
+          "EM_Etadas_Campaign_ID": "Sales Campaign"
+        }
       },
       "disableProcessedLock": true,
       "titleField": "name",
@@ -1262,7 +1326,7 @@
             "apiKey": "project",
             "column": "C_Project_ID",
             "type": "foreignKey",
-            "visibility": "discarded",
+            "visibility": "editable",
             "required": false
           },
           {
@@ -2013,6 +2077,14 @@
       },
       {
         "entity": "assets",
+        "field": "project",
+        "column": "C_Project_ID",
+        "reference": "Project",
+        "inputMode": "search",
+        "url": "/sws/neo/assets/assets/selectors/project"
+      },
+      {
+        "entity": "assets",
         "field": "businessPartner",
         "column": "C_BPartner_ID",
         "reference": "BPartner",
@@ -2141,6 +2213,28 @@
     },
     "window": {
       "category": "finance"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "C_Project_ID": "Proyecto",
+        "EM_Etadas_Costcenter_ID": "Centro de coste",
+        "C_BPartner_ID": "Tercero",
+        "EM_Etadas_User1_ID": "1ª Dimensión",
+        "EM_Etadas_User2_ID": "2ª Dimensión",
+        "EM_Etadas_Salesregion_ID": "Región de ventas",
+        "EM_Etadas_C_Activity_ID": "Actividad",
+        "EM_Etadas_Campaign_ID": "Campaña"
+      },
+      "en_US": {
+        "C_Project_ID": "Project",
+        "EM_Etadas_Costcenter_ID": "Cost Center",
+        "C_BPartner_ID": "Business Partner",
+        "EM_Etadas_User1_ID": "1st Dimension",
+        "EM_Etadas_User2_ID": "2nd Dimension",
+        "EM_Etadas_Salesregion_ID": "Sales Region",
+        "EM_Etadas_C_Activity_ID": "Activity",
+        "EM_Etadas_Campaign_ID": "Sales Campaign"
+      }
     }
   },
   "testManifest": {
@@ -2439,6 +2533,14 @@
         "description": "Display logic for 'processed' in assets should have evaluable flag"
       },
       {
+        "id": "t-displaylogic-evaluable-assets-project",
+        "category": "displaylogic-evaluable",
+        "entity": "assets",
+        "field": "project",
+        "runner": "node",
+        "description": "Display logic for 'project' in assets should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-assets-purchaseDate",
         "category": "displaylogic-evaluable",
         "entity": "assets",
@@ -2653,6 +2755,14 @@
         "field": "processed",
         "runner": "node",
         "description": "Display logic for 'processed' in assets should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-assets-project",
+        "category": "displaylogic-valid",
+        "entity": "assets",
+        "field": "project",
+        "runner": "node",
+        "description": "Display logic for 'project' in assets should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-assets-purchaseDate",
@@ -2973,6 +3083,14 @@
         "field": "processed",
         "runner": "node",
         "description": "Field 'processed' should be present in assets"
+      },
+      {
+        "id": "t-field-presence-assets-project",
+        "category": "field-presence",
+        "entity": "assets",
+        "field": "project",
+        "runner": "node",
+        "description": "Field 'project' should be present in assets"
       },
       {
         "id": "t-field-presence-assets-purchaseDate",
@@ -3301,6 +3419,14 @@
         "field": "processed",
         "runner": "node",
         "description": "Field 'processed' should have type 'string' in assets"
+      },
+      {
+        "id": "t-field-type-assets-project",
+        "category": "field-type",
+        "entity": "assets",
+        "field": "project",
+        "runner": "node",
+        "description": "Field 'project' should have type 'string' in assets"
       },
       {
         "id": "t-field-type-assets-purchaseDate",
@@ -3648,6 +3774,14 @@
         "field": "eTADASUser2",
         "runner": "node",
         "description": "Selector endpoint for 'eTADASUser2' in assets should exist"
+      },
+      {
+        "id": "t-selector-endpoint-assets-project",
+        "category": "selector-endpoint",
+        "entity": "assets",
+        "field": "project",
+        "runner": "node",
+        "description": "Selector endpoint for 'project' in assets should exist"
       },
       {
         "id": "t-system-field-amortizationLine-active",
@@ -4074,14 +4208,6 @@
         "description": "System field 'profit' should exist in backend but not frontend for assets"
       },
       {
-        "id": "t-system-field-assets-project",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "project",
-        "runner": "node",
-        "description": "System field 'project' should exist in backend but not frontend for assets"
-      },
-      {
         "id": "t-system-field-assets-quantity",
         "category": "system-field",
         "entity": "assets",
@@ -4184,25 +4310,25 @@
       }
     ],
     "summary": {
-      "total": 257,
+      "total": 261,
       "byCategory": {
         "action-endpoint": 2,
         "crud-flags": 3,
         "default-value-type": 9,
-        "displaylogic-evaluable": 27,
-        "displaylogic-valid": 27,
-        "field-presence": 41,
-        "field-type": 41,
+        "displaylogic-evaluable": 28,
+        "displaylogic-valid": 28,
+        "field-presence": 42,
+        "field-type": 42,
         "readonlylogic-evaluable": 4,
         "readonlylogic-valid": 4,
         "rule-declared": 13,
         "searchable-filters": 5,
-        "selector-endpoint": 14,
-        "system-field": 64,
+        "selector-endpoint": 15,
+        "system-field": 63,
         "visibility": 3
       },
       "byRunner": {
-        "node": 257,
+        "node": 261,
         "junit": 0
       }
     }

@@ -103,6 +103,40 @@ describe('AssetsDetailPanel — field definitions', () => {
     assert.match(src, /depreciatedValue/);
     assert.match(src, /readOnlyLogic/);
   });
+
+  it('defines the 8 accounting dimension fields with their DB columns', () => {
+    assert.match(src, /dimensionFields/);
+    assert.match(src, /'C_Project_ID'/);
+    assert.match(src, /'EM_Etadas_Costcenter_ID'/);
+    assert.match(src, /'C_BPartner_ID'/);
+    assert.match(src, /'EM_Etadas_User1_ID'/);
+    assert.match(src, /'EM_Etadas_User2_ID'/);
+    assert.match(src, /'EM_Etadas_Salesregion_ID'/);
+    assert.match(src, /'EM_Etadas_C_Activity_ID'/);
+    assert.match(src, /'EM_Etadas_Campaign_ID'/);
+  });
+});
+
+describe('AssetsDetailPanel — accounting dimensions section', () => {
+  it('renders the dimensions group with assetsGroupDimensionsTitle', () => {
+    assert.match(src, /assetsGroupDimensionsTitle/);
+  });
+
+  it('renders dimensions in a 4-column grid', () => {
+    assert.match(src, /fields=\{dimensionFields\}/);
+    assert.match(src, /cols=\{4\}/);
+  });
+
+  it('only renders the dimensions section when depreciate is true', () => {
+    // The dimensions block is guarded by the same depreciate flag as Dates.
+    assert.match(src, /depreciate && \(\s*<GroupDivider title=\{ui\('assetsGroupDimensionsTitle'\)\}/);
+  });
+
+  it('includes the dimension keys in the read-only field set', () => {
+    assert.match(src, /'eTADASCostCenter'/);
+    assert.match(src, /'businessPartner'/);
+    assert.match(src, /'eTADASSalesCampaign'/);
+  });
 });
 
 describe('AssetsDetailPanel — visual style', () => {

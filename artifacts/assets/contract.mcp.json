@@ -1,8 +1,8 @@
 {
-  "version": "0.20.0",
+  "version": "0.21.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-06-01T19:11:48.932Z",
-  "contractChecksum": "7737fb3871502cd9",
+  "updatedAt": "2026-06-02T02:23:03.278Z",
+  "contractChecksum": "424e5cddf093ee22",
   "apiPrediction": {
     "specName": "assets",
     "baseUrl": "/sws/neo/assets",
@@ -63,6 +63,14 @@
         "reference": "Currency",
         "inputMode": "selector",
         "url": "/sws/neo/assets/assets/selectors/currency"
+      },
+      {
+        "entity": "assets",
+        "field": "project",
+        "column": "C_Project_ID",
+        "reference": "Project",
+        "inputMode": "search",
+        "url": "/sws/neo/assets/assets/selectors/project"
       },
       {
         "entity": "assets",
@@ -222,6 +230,28 @@
     },
     "window": {
       "category": "finance"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "C_Project_ID": "Proyecto",
+        "EM_Etadas_Costcenter_ID": "Centro de coste",
+        "C_BPartner_ID": "Tercero",
+        "EM_Etadas_User1_ID": "1ª Dimensión",
+        "EM_Etadas_User2_ID": "2ª Dimensión",
+        "EM_Etadas_Salesregion_ID": "Región de ventas",
+        "EM_Etadas_C_Activity_ID": "Actividad",
+        "EM_Etadas_Campaign_ID": "Campaña"
+      },
+      "en_US": {
+        "C_Project_ID": "Project",
+        "EM_Etadas_Costcenter_ID": "Cost Center",
+        "C_BPartner_ID": "Business Partner",
+        "EM_Etadas_User1_ID": "1st Dimension",
+        "EM_Etadas_User2_ID": "2nd Dimension",
+        "EM_Etadas_Salesregion_ID": "Sales Region",
+        "EM_Etadas_C_Activity_ID": "Activity",
+        "EM_Etadas_Campaign_ID": "Sales Campaign"
+      }
     }
   },
   "formState": {
@@ -288,6 +318,7 @@
             "required": true,
             "defaultValue": "N"
           },
+          "project": {},
           "processAsset": {
             "required": true,
             "defaultValue": "N"
@@ -412,5 +443,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "752f3ae258a1a66a"
+  "checksum": "6a1eec350f4c71b2"
 }

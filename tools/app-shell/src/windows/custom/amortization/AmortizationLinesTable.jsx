@@ -41,8 +41,8 @@ const DIM_SHORT_LABEL = {
 // ── DimensionGrid ────────────────────────────────────────────────────
 // Renders DIMENSION_FIELDS directly via SelectorInput so we can control
 // the placeholder (empty resolvedLabel → "Seleccionar..." / "Select...").
-function DimensionGrid({ fields, data, onChange, onFieldSave, apiBaseUrl, token, catalogs, readOnly }) {
-  const t = useLabel();
+function DimensionGrid({ fields, data, onChange, onFieldSave, apiBaseUrl, token, catalogs, readOnly, labelOverrides }) {
+  const t = useLabel(labelOverrides);
   return (
     <div
       className="[&_button[role=combobox]]:!bg-white [&_input]:!bg-white [&_input:disabled]:!opacity-100"
@@ -405,7 +405,8 @@ export default function AmortizationLinesTable({
                             fields={DIMENSION_FIELDS} data={lineData}
                             onChange={(k, v) => handleChange(line.id, k, v)}
                             onFieldSave={(k, v) => saveField(line.id, line, k, v)}
-                            apiBaseUrl={apiBaseUrl} token={token} catalogs={catalogs} readOnly={isReadOnly} />
+                            apiBaseUrl={apiBaseUrl} token={token} catalogs={catalogs} readOnly={isReadOnly}
+                            labelOverrides={api?.labelOverrides} />
                         </td>
                       </tr>
                     )}

@@ -16482,6 +16482,7 @@
     "assetsGroupFinancialTitle": "Financial Information",
     "assetsGroupDepreciationTitle": "Depreciation Setup",
     "assetsGroupDatesTitle": "Dates",
+    "assetsGroupDimensionsTitle": "Accounting dimensions",
     "assetsDepreciationDisabledHint": "Depreciation is disabled. Enable it to configure the method, calculation, and useful life.",
     "assetsAmortizationPlanTab": "Amortization Plan",
     "amortizationDimensionsTitle": "Accounting dimensions",

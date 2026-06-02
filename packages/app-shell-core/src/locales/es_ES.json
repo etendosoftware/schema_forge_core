@@ -16723,6 +16723,7 @@
     "assetsGroupFinancialTitle": "Información financiera",
     "assetsGroupDepreciationTitle": "Configuración de depreciación",
     "assetsGroupDatesTitle": "Fechas",
+    "assetsGroupDimensionsTitle": "Dimensiones contables",
     "assetsDepreciationDisabledHint": "La depreciación está desactivada. Activala para configurar el método, el cálculo y la vida útil.",
     "assetsAmortizationPlanTab": "Plan de amortización",
     "amortizationDimensionsTitle": "Dimensiones contables",
