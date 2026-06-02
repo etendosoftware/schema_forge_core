@@ -699,7 +699,7 @@ describe('handleSaveErrorResponse', () => {
     json: async () => body,
   });
 
-  it('maps a MISSING_REQUIRED_FIELDS error to per-field errors and returns null', async () => {
+  it('maps a MISSING_REQUIRED_FIELDS error to per-field errors', async () => {
     const fieldErrorCalls = [];
     const saveErrorCalls = [];
     const res = fakeResponse({
@@ -710,12 +710,12 @@ describe('handleSaveErrorResponse', () => {
       res, ui, (v) => fieldErrorCalls.push(v), (v) => saveErrorCalls.push(v)
     );
 
-    assert.equal(result, null);
+    assert.equal(result, undefined);
     assert.deepEqual(fieldErrorCalls, [{ name: 'fieldRequired', value: 'fieldRequired' }]);
     assert.deepEqual(saveErrorCalls, ['requiredFieldsMissing']);
   });
 
-  it('falls back to extractErrorMessage for a non-structured error and returns null', async () => {
+  it('falls back to extractErrorMessage for a non-structured error', async () => {
     const saveErrorCalls = [];
     let fieldErrorsCalled = false;
     const res = fakeResponse({ error: { message: 'Something broke' } });
@@ -724,7 +724,7 @@ describe('handleSaveErrorResponse', () => {
       res, ui, () => { fieldErrorsCalled = true; }, (v) => saveErrorCalls.push(v)
     );
 
-    assert.equal(result, null);
+    assert.equal(result, undefined);
     assert.equal(fieldErrorsCalled, false, 'setFieldErrors should not be called on the fallback path');
     assert.deepEqual(saveErrorCalls, ['Something broke']);
   });
@@ -738,7 +738,7 @@ describe('handleSaveErrorResponse', () => {
       res, ui, () => { fieldErrorsCalled = true; }, (v) => saveErrorCalls.push(v)
     );
 
-    assert.equal(result, null);
+    assert.equal(result, undefined);
     assert.equal(fieldErrorsCalled, false);
     assert.deepEqual(saveErrorCalls, ['bad']);
   });

@@ -682,6 +682,18 @@ function getNewActionsPropValue(hasNewActions, newActionsConfig) {
     : '';
 }
 
+function getSummaryFields(summaryFieldsOverride, readOnlyFields, statusField) {
+  if (Array.isArray(summaryFieldsOverride)) {
+    if (summaryFieldsOverride.length === 0) {
+      return [];
+    } else {
+      return readOnlyFields.filter(f => f !== statusField && summaryFieldsOverride.includes(f.name));
+    }
+  } else {
+    return readOnlyFields.filter(f => f !== statusField);
+  }
+}
+
 function resolveStatusAndSummaryFields(requiredHeaderFieldNames, allEntityFields, contract, readOnlyFields) {
   const quotedRequiredHeaderFields = requiredHeaderFieldNames.map(n => "'" + n + "'").join(', ');
   const requiredHeaderFieldsArray = requiredHeaderFieldNames.length > 0
@@ -693,11 +705,7 @@ function resolveStatusAndSummaryFields(requiredHeaderFieldNames, allEntityFields
     ? (allEntityFields.find(f => f.name === statusFieldOverride) ?? null)
     : (docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status')));
   const summaryFieldsOverride = contract.frontendContract.window.summaryFields;
-  const summaryFields = Array.isArray(summaryFieldsOverride)
-    ? summaryFieldsOverride.length === 0
-      ? []
-      : readOnlyFields.filter(f => f !== statusField && summaryFieldsOverride.includes(f.name))
-    : readOnlyFields.filter(f => f !== statusField);
+  const summaryFields = getSummaryFields(summaryFieldsOverride, readOnlyFields, statusField);
   return { requiredHeaderFieldsArray, statusField, summaryFields };
 }
 
@@ -766,6 +774,18 @@ function getVis(visParts) {
   return visParts.length > 0 ? `visible: ${visParts.join(' && ')}, ` : '';
 }
 
+function getSuccessPart(a) {
+  if (a.successKey) {
+    return `successKey: '${a.successKey}', `;
+  } else {
+    if (a.successMessage) {
+      return `successMessage: '${String(a.successMessage).replace(/'/g, "\\'")}', `;
+    } else {
+      return '';
+    }
+  }
+}
+
 function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
   let menuActionsProp;
   if (menuActionsConfig.length > 0) {
@@ -795,9 +815,7 @@ function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
         handler = `onClick: () => {},`;
       }
       const labelKeyPart = a.labelKey ? `labelKey: '${a.labelKey}', ` : '';
-      const successPart = a.successKey
-        ? `successKey: '${a.successKey}', `
-        : a.successMessage ? `successMessage: '${String(a.successMessage).replace(/'/g, "\\'")}', ` : '';
+      const successPart = getSuccessPart(a);
       return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${handler} }`;
     }).join(',\n')}\n        ]}`;
   } else {

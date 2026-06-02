@@ -370,14 +370,10 @@ export function shouldSkipPayloadField(key, value, backendDefaultKeysRef, userCh
     // for FK-like fields. These pseudo IDs are client-internal placeholders and are
     // invalid as persistent FK values in NEO POST payloads.
     const hasIdentifierCompanion = Object.prototype.hasOwnProperty.call(editing, `${key}$_identifier`);
-    if (
-        hasIdentifierCompanion
+    return hasIdentifierCompanion
         && typeof value === 'string'
-        && /^\d+_[A-Za-z][A-Za-z0-9]*$/.test(value)
-    ) {
-        return true;
-    }
-    return false;
+        && /^\d+_[A-Za-z][A-Za-z0-9]*$/.test(value);
+
 }
 
 export function getReadOnly(editing) {
@@ -444,12 +440,11 @@ export async function handleSaveErrorResponse(res, ui, setFieldErrors, setSaveEr
         const msg = ui('requiredFieldsMissing');
         setSaveError(msg);
         toast.error(msg);
-        return null;
+        return;
     }
     const msg = await extractErrorMessage(res, ui);
     setSaveError(msg);
     toast.error(msg);
-    return null;
 }
 
 export function getSaveSuccessMessage(isNew, ui) {
@@ -833,7 +828,8 @@ export function useEntity(entity, childEntity, {
                 showSaveSuccessToast(silent, isNew, ui);
                 return saved;
             } else {
-                return await handleSaveErrorResponse(res, ui, setFieldErrors, setSaveError);
+                await handleSaveErrorResponse(res, ui, setFieldErrors, setSaveError);
+                return null;
             }
         } catch (err) {
             const msg = err?.message || 'Network error';
