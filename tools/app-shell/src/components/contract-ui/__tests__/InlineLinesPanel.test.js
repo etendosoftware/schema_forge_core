@@ -161,4 +161,9 @@ describe('InlineLinesPanel', () => {
   it('emits onSelectionChange when checkbox state changes', () => {
     assert.match(src, /onSelectionChange\?\.\(/);
   });
+
+  it('right-aligns numeric column headers via NUMERIC_TYPES conditionals', () => {
+    assert.match(src, /NUMERIC_TYPES\.has\(col\.type\) \? 'flex-end' : 'flex-start'/);
+    assert.match(src, /NUMERIC_TYPES\.has\(col\.type\) \? 'right' : 'left'/);
+  });
 });
