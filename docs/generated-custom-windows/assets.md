@@ -134,7 +134,7 @@ Changes landed in `feature/ETP-4103`. Covers visual polish, full-form restructur
 
 - `dot: false` on `depreciationStartDate` column — "Fecha inicio" shows only the date value, no colored dot indicator.
 - `fullyDepreciated` field: `columnType: "status"` **removed** — the "Todos los estados" global dropdown is no longer present in the list toolbar.
-- `fullyDepreciated` now has `badgeLabels: { true: "Totalmente depreciado", false: "En progreso" }` and `filterable: false` — the field is available as a boolean (booleanLabel mode) but hidden from the Advanced Filter.
+- `fullyDepreciated` now has `badgeLabels: { true: { es_ES: "Totalmente depreciado", en_US: "Fully depreciated" }, false: { es_ES: "En progreso", en_US: "In progress" } }` and `filterable: false` — labels are resolved per locale via `createBadgeLabelResolver`; the field is hidden from the Advanced Filter.
 - List toolbar now shows only: funnel (Advanced Filter) + "Nuevo activo" button. No status dropdown.
 
 ### Amortization plan tab — badge labels

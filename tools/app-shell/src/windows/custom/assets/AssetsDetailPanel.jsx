@@ -143,7 +143,7 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
         />
       </div>
 
-      {/* Group 3 — Depreciation Config (includes Financial Info when depreciate=true) */}
+      {/* Group 3 — Depreciation Config */}
       <GroupDivider title={ui('assetsGroupDepreciationTitle')} description={ui('assetsConfigDesc')} />
       <div className="mb-5 space-y-4">
         <div className={`grid gap-4 ${depreciate ? 'grid-cols-2' : 'grid-cols-1 max-w-sm'}`}>
@@ -168,7 +168,7 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
         </div>
         {depreciate ? (
           <>
-            {/* Financial Info — only visible when depreciation is enabled */}
+            {/* Group 2 — Financial Info (only rendered when depreciation is enabled) */}
             <GroupDivider title={ui('assetsGroupFinancialTitle')} />
             <EntityForm
               fields={group2Fields}

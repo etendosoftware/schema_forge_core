@@ -1,8 +1,8 @@
 {
-  "version": "0.21.0",
+  "version": "0.22.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-06-02T13:48:52.466Z",
-  "checksum": "8dd213f36bb02615",
+  "updatedAt": "2026-06-02T16:48:11.660Z",
+  "checksum": "3c9d3ebc34906751",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -44,7 +44,7 @@
         "es_ES": {
           "C_Project_ID": "Proyecto",
           "EM_Etadas_Costcenter_ID": "Centro de coste",
-          "C_BPartner_ID": "Tercero",
+          "C_BPartner_ID": "Contacto",
           "EM_Etadas_User1_ID": "1ª Dimensión",
           "EM_Etadas_User2_ID": "2ª Dimensión",
           "EM_Etadas_Salesregion_ID": "Región de ventas",
@@ -574,8 +574,14 @@
             },
             "defaultValue": "N",
             "badgeLabels": {
-              "true": "Totalmente depreciado",
-              "false": "En progreso"
+              "true": {
+                "es_ES": "Totalmente depreciado",
+                "en_US": "Fully depreciated"
+              },
+              "false": {
+                "es_ES": "En progreso",
+                "en_US": "In progress"
+              }
             },
             "cellType": "depreciationProgress",
             "filterable": false,
@@ -1031,7 +1037,7 @@
         "es_ES": {
           "C_Project_ID": "Proyecto",
           "EM_Etadas_Costcenter_ID": "Centro de coste",
-          "C_BPartner_ID": "Tercero",
+          "C_BPartner_ID": "Contacto",
           "EM_Etadas_User1_ID": "1ª Dimensión",
           "EM_Etadas_User2_ID": "2ª Dimensión",
           "EM_Etadas_Salesregion_ID": "Región de ventas",
@@ -2236,7 +2242,7 @@
       "es_ES": {
         "C_Project_ID": "Proyecto",
         "EM_Etadas_Costcenter_ID": "Centro de coste",
-        "C_BPartner_ID": "Tercero",
+        "C_BPartner_ID": "Contacto",
         "EM_Etadas_User1_ID": "1ª Dimensión",
         "EM_Etadas_User2_ID": "2ª Dimensión",
         "EM_Etadas_Salesregion_ID": "Región de ventas",

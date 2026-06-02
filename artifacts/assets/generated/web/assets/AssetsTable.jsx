@@ -30,7 +30,7 @@ const columns = [
   { key: 'assetValue', column: 'AssetValueAmt', type: 'amount', label: 'Asset Value', summable: true },
   { key: 'depreciationAmt', column: 'Amortizationvalueamt', type: 'amount', label: 'Depreciation Amt.', summable: true },
   { key: 'depreciatedValue', column: 'Depreciatedvalue', type: 'amount', label: 'Depreciated Value', summable: true },
-  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'boolean', label: 'Fully Depreciated', badgeLabels: {"true":"Totalmente depreciado","false":"En progreso"}, render: renderDepreciationProgress, required: true, filterable: false },
+  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'boolean', label: 'Fully Depreciated', badgeLabels: {"true":{"es_ES":"Totalmente depreciado","en_US":"Fully depreciated"},"false":{"es_ES":"En progreso","en_US":"In progress"}}, render: renderDepreciationProgress, required: true, filterable: false },
 ];
 // @sf-generated-end columns:assets
 

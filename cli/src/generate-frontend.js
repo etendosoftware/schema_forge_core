@@ -1329,12 +1329,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\n        showDetailFooterTotals={${showDetailFooterTotalsValue}}`
     : '';
 
-  // labelOverrides support
+  // labelOverrides support — derive the standalone const from api.labelOverrides so
+  // the data lives in one place only (api object) and the prop reference is just an alias.
   const labelOverridesConfig = windowConfig.labelOverrides ?? null;
   const labelOverridesProp = labelOverridesConfig ? '\n        labelOverrides={labelOverrides}' : '';
   const labelOverridesListProp = labelOverridesConfig ? '\n      labelOverrides={labelOverrides}' : '';
   const labelOverridesBlock = labelOverridesConfig
-    ? `\nconst labelOverrides = ${JSON.stringify(labelOverridesConfig, null, 2)};\n`
+    ? `\nconst labelOverrides = api.labelOverrides;\n`
     : '';
 
   // ETP-3914 — rowQuickActions prop forwarded to ListView.
@@ -1404,7 +1405,7 @@ import ${headerName}Sidebar from ${resolveCustomImport(specName || headerEntity,
 import ${headerName}DetailHeader from ${resolveCustomImport(specName || headerEntity, `${headerName}DetailHeader`)};` : ''}${statusBarImport}${confirmModalImport}
 
 const breadcrumb = '${windowBreadcrumbOverride !== undefined ? windowBreadcrumbOverride : `${windowCategory} / ${windowLabel}`}';
-${labelOverridesBlock}${statusBarCode}
+${statusBarCode}
 
 ${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
 const summary = [
@@ -1446,7 +1447,7 @@ ${hiddenDefaultsArray}
 };
 ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
-${MARKERS.GENERATED_START(`component:${compName}`)}
+${labelOverridesBlock}${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}({ windowName, recordId, ...props }) {${customComponents.newRecordComponent ? `
   const [showNewModal, setShowNewModal] = useState(false);` : ''}${newActionsWithComponents.length > 0 ? `\n${newActionsStatements}` : ''}${confirmModalName ? `
   const [showConfirmModal, setShowConfirmModal] = useState(false);

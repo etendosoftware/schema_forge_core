@@ -12,49 +12,6 @@ import AmortizationConfirmModal from '../../../custom/AmortizationConfirmModal';
 
 const breadcrumb = 'Finance / Amortization';
 
-const labelOverrides = {
-  "es_ES": {
-    "Name": "Nombre",
-    "Description": "Descripción",
-    "DateAcct": "Fecha contable",
-    "StartDate": "Fecha de inicio",
-    "Totalamortization": "Amortización total",
-    "C_Currency_ID": "Moneda",
-    "A_Asset_ID": "Activo",
-    "Amortization_Percentage": "% Amortización",
-    "Amortizationamt": "Importe amortización",
-    "Line": "Nº línea",
-    "C_Project_ID": "Proyecto",
-    "C_Costcenter_ID": "Centro de costo",
-    "User1_ID": "1ª Dimensión",
-    "User2_ID": "2ª Dimensión",
-    "EM_Etadas_C_Bpartner_ID": "Contacto",
-    "EM_Etadas_Salesregion_ID": "Región de ventas",
-    "EM_Etadas_C_Activity_ID": "Actividad",
-    "EM_Etadas_Campaign_ID": "Campaña"
-  },
-  "en_US": {
-    "Name": "Name",
-    "Description": "Description",
-    "DateAcct": "Accounting Date",
-    "StartDate": "Starting Date",
-    "Totalamortization": "Total Amortization",
-    "C_Currency_ID": "Currency",
-    "A_Asset_ID": "Asset",
-    "Amortization_Percentage": "Amortization %",
-    "Amortizationamt": "Amortization Amount",
-    "Line": "Line No.",
-    "C_Project_ID": "Project",
-    "C_Costcenter_ID": "Cost Center",
-    "User1_ID": "1st Dimension",
-    "User2_ID": "2nd Dimension",
-    "EM_Etadas_C_Bpartner_ID": "Contact",
-    "EM_Etadas_Salesregion_ID": "Sales Region",
-    "EM_Etadas_C_Activity_ID": "Activity",
-    "EM_Etadas_Campaign_ID": "Sales Campaign"
-  }
-};
-
 
 // @sf-generated-start summary:header
 const summary = [
@@ -309,6 +266,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);

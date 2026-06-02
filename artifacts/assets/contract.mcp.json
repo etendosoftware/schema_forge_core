@@ -1,8 +1,8 @@
 {
-  "version": "0.21.0",
+  "version": "0.22.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-06-02T02:23:03.278Z",
-  "contractChecksum": "8dd213f36bb02615",
+  "updatedAt": "2026-06-02T16:48:11.660Z",
+  "contractChecksum": "3c9d3ebc34906751",
   "apiPrediction": {
     "specName": "assets",
     "baseUrl": "/sws/neo/assets",
@@ -235,7 +235,7 @@
       "es_ES": {
         "C_Project_ID": "Proyecto",
         "EM_Etadas_Costcenter_ID": "Centro de coste",
-        "C_BPartner_ID": "Tercero",
+        "C_BPartner_ID": "Contacto",
         "EM_Etadas_User1_ID": "1ª Dimensión",
         "EM_Etadas_User2_ID": "2ª Dimensión",
         "EM_Etadas_Salesregion_ID": "Región de ventas",
@@ -443,5 +443,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "6a1eec350f4c71b2"
+  "checksum": "12a2edd1faf62929"
 }
