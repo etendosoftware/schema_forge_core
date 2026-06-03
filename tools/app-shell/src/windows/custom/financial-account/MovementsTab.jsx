@@ -2,7 +2,7 @@ import { forwardRef, useImperativeHandle, useRef, useState, useMemo } from 'reac
 import { AccountSummaryStrip } from './AccountSummaryStrip';
 import { MovementsToolbar } from './MovementsToolbar/index';
 import { MovementsTable } from './MovementsTable';
-import { NewMovementDialog } from './NewMovementDialog';
+import { NewMovementWizard } from './NewMovementWizard/index.jsx';
 import { applyAdvancedFilter } from './movementAdvancedFilter';
 
 // ---------------------------------------------------------------------------
@@ -126,7 +126,7 @@ function applyFilters(movements, filters) {
  * }} props
  */
 export const MovementsTab = forwardRef(function MovementsTab(
-  { account, totals, movements, enabledDimensions = [], loading, onReload },
+  { account, totals, movements, enabledDimensions = [], headerDimensions = [], trxTypes = [], accountOrgId = null, paymentMethods = [], loading, onReload },
   ref,
 ) {
   const [filters, setFilters] = useState({
@@ -210,12 +210,16 @@ export const MovementsTab = forwardRef(function MovementsTab(
         />
       </div>
 
-      <NewMovementDialog
+      <NewMovementWizard
         open={newMovementOpen}
         accountId={account?.id}
         accountCurrency={account?.currencyIso
           ? { id: account?.currencyId, iso: account.currencyIso }
           : null}
+        dimensions={headerDimensions}
+        trxTypes={trxTypes}
+        defaultOrgId={accountOrgId}
+        paymentMethods={paymentMethods}
         onClose={() => setNewMovementOpen(false)}
         onSuccess={() => onReload?.()}
       />

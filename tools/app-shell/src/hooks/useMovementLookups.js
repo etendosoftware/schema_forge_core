@@ -13,7 +13,7 @@ const DEBOUNCE_MS = 200;
  * @param {{ action: 'bpartner-lookup' | 'glitem-lookup', resultKey: 'bpartners' | 'glItems' }} cfg
  * @param {string} query — the current search text (live, debounced internally)
  */
-function useDebouncedLookup({ action, resultKey }, query) {
+function useDebouncedLookup({ action, resultKey, extraParams = '' }, query) {
   const { token } = useAuth();
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -25,7 +25,7 @@ function useDebouncedLookup({ action, resultKey }, query) {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
 
-    const url = `${getApiBase()}/sws/neo/financial-account-transactions?action=${action}&q=${encodeURIComponent(q ?? '')}`;
+    const url = `${getApiBase()}/sws/neo/financial-account-transactions?action=${action}&q=${encodeURIComponent(q ?? '')}${extraParams}`;
     setLoading(true);
     setError(null);
     try {
@@ -41,7 +41,7 @@ function useDebouncedLookup({ action, resultKey }, query) {
     } finally {
       setLoading(false);
     }
-  }, [action, resultKey, token]);
+  }, [action, resultKey, extraParams, token]);
 
   useEffect(() => {
     if (!token) return undefined;
@@ -52,9 +52,14 @@ function useDebouncedLookup({ action, resultKey }, query) {
   return { results, loading, error };
 }
 
-export function useBPartnerLookup(query) {
+/**
+ * Lookup over C_BPartner, optionally filtered by role.
+ * @param {string} query - the search text
+ * @param {'customer'|'vendor'|''} [role] - filter by iscustomer/isvendor
+ */
+export function useBPartnerLookup(query, role = '') {
   return useDebouncedLookup(
-    { action: 'bpartner-lookup', resultKey: 'bpartners' },
+    { action: 'bpartner-lookup', resultKey: 'bpartners', extraParams: role ? `&role=${role}` : '' },
     query,
   );
 }
@@ -64,4 +69,47 @@ export function useGLItemLookup(query) {
     { action: 'glitem-lookup', resultKey: 'glItems' },
     query,
   );
+}
+
+/**
+ * Outstanding (unpaid) invoices for a business partner, filtered by direction:
+ *   doc='in'  → sales invoices    (receivables / cobro)
+ *   doc='out' → purchase invoices (payables / pago)
+ * Re-fetches whenever the partner or direction changes. When no partner is
+ * given it returns the invoices of ALL contacts (so a payment can be allocated
+ * to any of them). Shape per row matches the payment invoice table (id, no, bp,
+ * desc, fecha, venc, dias, metodo, proyecto, cc, mon, total, expected, pend).
+ *
+ * @param {string|null} bpartnerId - selected C_BPartner id (the payment tercero), or null for all
+ * @param {'in'|'out'} [doc] - cobro vs pago
+ */
+export function useOutstandingInvoices(bpartnerId, doc = 'in') {
+  const { token } = useAuth();
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const abortRef = useRef(null);
+
+  useEffect(() => {
+    if (!token) { setInvoices([]); setLoading(false); return undefined; }
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
+    // A blank bpartnerId returns invoices of all contacts (the backend treats it
+    // as "no partner scope"), so a payment can be allocated to any contact.
+    const url = `${getApiBase()}/sws/neo/financial-account-transactions?action=outstanding-invoices`
+      + `&bpartnerId=${encodeURIComponent(bpartnerId ?? '')}&doc=${doc === 'out' ? 'out' : 'in'}`;
+    setLoading(true);
+    setError(null);
+    fetch(url, { headers: { Authorization: `Bearer ${token}` }, signal: ctrl.signal })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
+      .then((json) => { if (!ctrl.signal.aborted) setInvoices(json?.response?.data?.invoices ?? []); })
+      .catch((err) => { if (err.name !== 'AbortError') setError(err); })
+      .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });
+
+    return () => ctrl.abort();
+  }, [bpartnerId, doc, token]);
+
+  return { invoices, loading, error };
 }

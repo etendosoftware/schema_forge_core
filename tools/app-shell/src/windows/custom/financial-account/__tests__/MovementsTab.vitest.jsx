@@ -90,12 +90,12 @@ vi.mock('../MovementsTable.jsx', () => ({
   ),
 }));
 
-// Stub the dialog — its internals (useCreateMovement → useAuth, lookups, etc.)
+// Stub the wizard — its internals (useCreateMovement → useAuth, lookups, etc.)
 // are out of scope for MovementsTab filtering behaviour and need a real
 // AuthProvider otherwise.
-vi.mock('../NewMovementDialog.jsx', () => ({
-  NewMovementDialog: ({ open }) => (
-    <div data-testid="new-movement-dialog" data-open={String(!!open)} />
+vi.mock('../NewMovementWizard/index.jsx', () => ({
+  NewMovementWizard: ({ open }) => (
+    <div data-testid="new-movement-wizard" data-open={String(!!open)} />
   ),
 }));
 
