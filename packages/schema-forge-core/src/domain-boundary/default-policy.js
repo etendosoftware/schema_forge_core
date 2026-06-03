@@ -1,3 +1,4 @@
+// Update this file to improve the classification
 export const DEFAULT_BOUNDARY_POLICY = {
   verticalWindows: {
     sales: [
