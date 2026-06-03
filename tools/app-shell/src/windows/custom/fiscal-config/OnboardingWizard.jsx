@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
-import { ChevronDown, ArrowRight, ArrowLeft, FileText, Check, ChevronRight, Pencil } from 'lucide-react';
+import { ArrowRight, ArrowLeft, FileText, Check, ChevronRight, Pencil } from 'lucide-react';
+import FiscalStepItem from './FiscalStepItem.jsx';
+import OrgDropdown from './FiscalOrgDropdown.jsx';
 import { Button } from '@/components/ui/button';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
@@ -84,11 +86,6 @@ const SYSTEM_BADGE = {
 };
 const SYSTEM_BADGE_LABEL = { SII: 'SII', TBAI: 'TicketBAI', 'SII+TBAI': 'SII + TicketBAI', VERIFACTU: 'VERI*FACTU' };
 
-const ORG_COLORS = ['bg-red-500', 'bg-blue-500', 'bg-green-600', 'bg-orange-500', 'bg-purple-500', 'bg-teal-500'];
-function orgAvatarColor(name) {
-  return ORG_COLORS[(name?.charCodeAt(0) ?? 0) % ORG_COLORS.length];
-}
-
 // ── Primitive components ──────────────────────────────────────────────────────
 
 function Stepper({ step, ui }) {
@@ -99,96 +96,16 @@ function Stepper({ step, ui }) {
   ];
   return (
     <div className="flex items-center flex-shrink-0" style={{ gap: 6 }}>
-      {steps.map(({ n, label }, i) => {
-        const done = step > n;
-        const active = step === n;
-        return (
-          <span key={n} className="flex items-center" style={{ gap: 6 }}>
-            {i > 0 && <span className="flex-shrink-0" style={{ width: 40, height: 1, background: '#E8EAEF' }} />}
-            <span className="flex items-center" style={{ gap: 6 }}>
-              {done ? (
-                <Check size={14} strokeWidth={2.5} className="text-green-500 flex-shrink-0" />
-              ) : (
-                <span
-                  className="flex items-center justify-center text-xs font-semibold flex-shrink-0"
-                  style={{
-                    width: 26, height: 24, borderRadius: 8,
-                    background: active ? '#121217' : '#F5F7F9',
-                    color:      active ? '#FFFFFF' : '#3F3F50',
-                    border:     active ? 'none' : '1px solid #D1D4DB',
-                  }}
-                >
-                  {n}
-                </span>
-              )}
-              <span
-                className="text-sm"
-                style={{
-                  color:          done ? '#9CA3AF' : (active ? '#121217' : '#555B6D'),
-                  fontWeight:     active ? 600 : 400,
-                  textDecoration: done ? 'line-through' : 'none',
-                }}
-              >
-                {label}
-              </span>
-            </span>
-          </span>
-        );
-      })}
-    </div>
-  );
-}
-
-function OrgDropdown({ selectedOrg, orgList, onSelect }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const filtered = (orgList || []).filter(o => o.name !== '*');
-
-  useEffect(() => {
-    if (!open) return;
-    function handleClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
-
-  if (!selectedOrg) return null;
-  const initial = selectedOrg.name?.[0]?.toUpperCase() ?? '?';
-  const avatarColor = orgAvatarColor(selectedOrg.name);
-  const canSwitch = filtered.length > 1;
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => canSwitch && setOpen(v => !v)}
-        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border transition-colors
-          ${canSwitch ? 'hover:bg-muted/40 cursor-pointer' : 'cursor-default'}`}
-      >
-        <span className={`w-5 h-5 rounded-full ${avatarColor} text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0`}>
-          {initial}
-        </span>
-        <span className="text-sm font-medium">{selectedOrg.name}</span>
-        {canSwitch && <ChevronDown size={13} className="text-muted-foreground" />}
-      </button>
-      {open && canSwitch && (
-        <div className="absolute top-full mt-1 left-0 z-50 min-w-[200px] rounded-xl border border-border bg-background shadow-lg py-1">
-          {filtered.map(org => (
-            <button
-              key={org.id}
-              type="button"
-              onClick={() => { onSelect(org); setOpen(false); }}
-              className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm hover:bg-muted/40 text-left transition-colors
-                ${org.id === selectedOrg.id ? 'font-semibold' : ''}`}
-            >
-              <span className={`w-5 h-5 rounded-full ${orgAvatarColor(org.name)} text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0`}>
-                {org.name[0]?.toUpperCase()}
-              </span>
-              {org.name}
-              {org.id === selectedOrg.id && <span className="ml-auto text-muted-foreground">✓</span>}
-            </button>
-          ))}
-        </div>
-      )}
+      {steps.map(({ n, label }, i) => (
+        <FiscalStepItem
+          key={n}
+          n={n}
+          label={label}
+          done={step > n}
+          active={step === n}
+          isFirst={i === 0}
+        />
+      ))}
     </div>
   );
 }
@@ -641,7 +558,7 @@ function NationalOptionCard({ label, desc, extra, selected, onPick }) {
   );
 }
 
-function ObligationCard({ label, paragraphs, note, info, selected, onPick }) {
+function SelectableCard({ selected, onPick, children }) {
   return (
     <button
       type="button"
@@ -665,6 +582,14 @@ function ObligationCard({ label, paragraphs, note, info, selected, onPick }) {
             : '#FFFFFF',
         }}
       />
+      {children}
+    </button>
+  );
+}
+
+function ObligationCard({ label, paragraphs, note, info, selected, onPick }) {
+  return (
+    <SelectableCard selected={selected} onPick={onPick}>
       <span className="text-sm font-semibold pr-5" style={{ color: '#121217' }}>{label}</span>
       <div className="flex flex-col gap-2">
         {paragraphs.map((p) => (
@@ -681,34 +606,13 @@ function ObligationCard({ label, paragraphs, note, info, selected, onPick }) {
           <span>{info}</span>
         </div>
       )}
-    </button>
+    </SelectableCard>
   );
 }
 
 function BulletOptionCard({ label, bullets, selected, onPick }) {
   return (
-    <button
-      type="button"
-      onClick={onPick}
-      className={`relative flex flex-col text-left cursor-pointer rounded-xl transition-all w-full
-        ${selected ? 'border-2 border-[#121217]' : 'border border-[#E8EAEF] hover:bg-muted/40'}`}
-      style={{
-        minHeight: 80, padding: 16, gap: 12,
-        boxShadow: selected
-          ? '0 4px 16px rgba(18,18,23,0.14), 0 1px 3px rgba(18,18,23,0.08)'
-          : '0 1px 2px rgba(18,18,23,0.05)',
-      }}
-    >
-      <span
-        className="absolute flex-shrink-0"
-        style={{
-          width: 15, height: 15, right: 8, top: 9, borderRadius: '50%',
-          border: selected ? '1.5px solid #121217' : '1.5px solid #D1D4DB',
-          background: selected
-            ? 'radial-gradient(circle at center, #121217 40%, #FFFFFF 40%)'
-            : '#FFFFFF',
-        }}
-      />
+    <SelectableCard selected={selected} onPick={onPick}>
       <span className="text-sm font-semibold pr-5" style={{ color: '#121217' }}>{label}</span>
       <ul className="flex flex-col gap-1.5">
         {bullets.map((b) => (
@@ -718,37 +622,16 @@ function BulletOptionCard({ label, bullets, selected, onPick }) {
           </li>
         ))}
       </ul>
-    </button>
+    </SelectableCard>
   );
 }
 
 function OptionCard({ label, desc, selected, onPick }) {
   return (
-    <button
-      type="button"
-      onClick={onPick}
-      className={`relative flex flex-col text-left cursor-pointer rounded-xl transition-all w-full
-        ${selected ? 'border-2 border-[#121217]' : 'border border-[#E8EAEF] hover:bg-muted/40'}`}
-      style={{
-        minHeight: 80, padding: 16, gap: 12,
-        boxShadow: selected
-          ? '0 4px 16px rgba(18,18,23,0.14), 0 1px 3px rgba(18,18,23,0.08)'
-          : '0 1px 2px rgba(18,18,23,0.05)',
-      }}
-    >
-      <span
-        className="absolute flex-shrink-0"
-        style={{
-          width: 15, height: 15, right: 8, top: 9, borderRadius: '50%',
-          border: selected ? '1.5px solid #121217' : '1.5px solid #D1D4DB',
-          background: selected
-            ? 'radial-gradient(circle at center, #121217 40%, #FFFFFF 40%)'
-            : '#FFFFFF',
-        }}
-      />
+    <SelectableCard selected={selected} onPick={onPick}>
       <span className="text-sm font-semibold pr-5" style={{ color: '#121217' }}>{label}</span>
       {desc && <span className="text-sm leading-5" style={{ color: '#555B6D' }}>{desc}</span>}
-    </button>
+    </SelectableCard>
   );
 }
 

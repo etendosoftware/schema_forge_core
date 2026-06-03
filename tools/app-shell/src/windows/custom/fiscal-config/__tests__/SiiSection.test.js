@@ -63,15 +63,14 @@ describe('SiiSection — certificate section', () => {
 });
 
 describe('SiiSection — save button', () => {
-  it('shows saving state while PUT is in flight', () => {
-    assert.match(src, /saving/);
-    assert.match(src, /fiscal\.saving/);
-    assert.match(src, /fiscal\.save/);
+  it('delegates save button rendering to SectionSaveButton', () => {
+    assert.match(src, /SectionSaveButton/);
+    assert.match(src, /saving=\{saving\}/);
   });
 
-  it('surfaces error message on failure', () => {
+  it('surfaces error message on failure via SectionSaveButton', () => {
     assert.match(src, /setError/);
-    assert.match(src, /text-destructive/);
+    assert.match(src, /error=\{error\}/);
   });
 
   it('hides the save button when hideSave prop is true', () => {

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUI } from '@/i18n';
 import { FileText, Upload, Eye, EyeOff, Lock, TriangleAlert, Check, Info } from 'lucide-react';
+import FiscalStepItem from './FiscalStepItem.jsx';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { useApiFetch } from '@/auth/useApiFetch.js';
 
@@ -53,42 +54,16 @@ function MiniStepper({ step, ui }) {
   const idx = STEPS.findIndex(s => s.key === displayStep);
   return (
     <div className="flex items-center px-6 pb-4" style={{ gap: 6 }}>
-      {STEPS.map((s, i) => {
-        const done   = i < idx;
-        const active = i === idx;
-        return (
-          <span key={s.key} className="flex items-center" style={{ gap: 6 }}>
-            {i > 0 && <span className="flex-shrink-0" style={{ width: 40, height: 1, background: '#E8EAEF' }} />}
-            <span className="flex items-center" style={{ gap: 6 }}>
-              {done ? (
-                <Check size={14} strokeWidth={2.5} className="text-green-500 flex-shrink-0" />
-              ) : (
-                <span
-                  className="flex items-center justify-center text-xs font-semibold flex-shrink-0"
-                  style={{
-                    width: 26, height: 24, borderRadius: 8,
-                    background: active ? '#121217' : '#F5F7F9',
-                    color:      active ? '#FFFFFF' : '#3F3F50',
-                    border:     active ? 'none' : '1px solid #D1D4DB',
-                  }}
-                >
-                  {s.n}
-                </span>
-              )}
-              <span
-                className="text-sm"
-                style={{
-                  color:          done ? '#9CA3AF' : (active ? '#121217' : '#555B6D'),
-                  fontWeight:     active ? 600 : 400,
-                  textDecoration: done ? 'line-through' : 'none',
-                }}
-              >
-                {s.label}
-              </span>
-            </span>
-          </span>
-        );
-      })}
+      {STEPS.map((s, i) => (
+        <FiscalStepItem
+          key={s.key}
+          n={s.n}
+          label={s.label}
+          done={i < idx}
+          active={i === idx}
+          isFirst={i === 0}
+        />
+      ))}
     </div>
   );
 }
@@ -234,11 +209,10 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
     return match ? match[1].trim() : dn;
   }
 
-  const dropzoneClass = drag
-    ? 'border-foreground bg-muted/40'
-    : file
-      ? 'border-[#121217] bg-white'
-      : 'border-dashed border-[#D1D4DB] hover:border-foreground/40 hover:bg-muted/20';
+  let dropzoneClass;
+  if (drag) dropzoneClass = 'border-foreground bg-muted/40';
+  else if (file) dropzoneClass = 'border-[#121217] bg-white';
+  else dropzoneClass = 'border-dashed border-[#D1D4DB] hover:border-foreground/40 hover:bg-muted/20';
 
   return (
     <div

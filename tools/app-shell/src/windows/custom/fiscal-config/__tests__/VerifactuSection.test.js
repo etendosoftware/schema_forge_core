@@ -38,8 +38,8 @@ describe('VerifactuSection — locked/unlocked badge', () => {
     assert.match(src, /disabled=\{isLocked\}/);
   });
 
-  it('hides the save button when record is locked', () => {
-    assert.match(src, /!isLocked/);
+  it('passes locked state to save button', () => {
+    assert.match(src, /locked=\{isLocked\}/);
   });
 });
 

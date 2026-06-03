@@ -7,6 +7,7 @@ import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { useApiFetch } from '@/auth/useApiFetch.js';
 import CertSection from './CertSection.jsx';
+import SectionSaveButton from './SectionSaveButton.jsx';
 import {
   buildVerifactuUpdatePayload,
   getFiscalRecordId,
@@ -141,20 +142,15 @@ const VerifactuSection = forwardRef(function VerifactuSection({ record, apiBaseU
         <CertSection context="verifactu" orgId={orgId} apiBaseUrl={apiBaseUrl} />
       </SectionRow>
 
-      {error && <p className="text-sm text-destructive mt-4">{error}</p>}
-
-      {!hideSave && !isLocked && (
-        <div className="pt-4">
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 rounded-lg bg-[#121217] text-white text-sm font-medium hover:bg-[#121217]/90 disabled:opacity-50 transition-colors"
-          >
-            {saving ? ui('fiscal.verifactu.saving') : ui('fiscal.save')}
-          </button>
-        </div>
-      )}
+      <SectionSaveButton
+        error={error}
+        hideSave={hideSave}
+        locked={isLocked}
+        save={handleSave}
+        saving={saving}
+        savingKey="fiscal.verifactu.saving"
+        ui={ui}
+      />
     </div>
   );
 });

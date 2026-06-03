@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
-import { ChevronDown, Save } from 'lucide-react';
+import { useState } from 'react';
+import { Save } from 'lucide-react';
+import OrgDropdown from './FiscalOrgDropdown.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,62 +18,6 @@ import TbaiSection from './TbaiSection.jsx';
 import VerifactuSection from './VerifactuSection.jsx';
 import FiscalConfigDebugPanel from './FiscalConfigDebugPanel.jsx';
 import TabBar from './TabBar.jsx';
-
-// ── Org avatar color (mirrors OnboardingWizard) ────────────────────────────────
-
-const ORG_COLORS = ['bg-red-500', 'bg-blue-500', 'bg-green-600', 'bg-orange-500', 'bg-purple-500', 'bg-teal-500'];
-
-function orgAvatarColor(name) {
-  return ORG_COLORS[(name?.charCodeAt(0) ?? 0) % ORG_COLORS.length];
-}
-
-// ── OrgDropdown ────────────────────────────────────────────────────────────────
-
-function OrgDropdown({ selectedOrg, orgList, onSelect }) {
-  const [open, setOpen] = useState(false);
-  const filtered = (orgList || []).filter(o => o.name !== '*');
-
-  if (!selectedOrg) return null;
-  const initial = selectedOrg.name?.[0]?.toUpperCase() ?? '?';
-  const avatarColor = orgAvatarColor(selectedOrg.name);
-  const canSwitch = filtered.length > 1;
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => canSwitch && setOpen(v => !v)}
-        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border transition-colors
-          ${canSwitch ? 'hover:bg-muted/40 cursor-pointer' : 'cursor-default'}`}
-      >
-        <span className={`w-5 h-5 rounded-full ${avatarColor} text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0`}>
-          {initial}
-        </span>
-        <span className="text-sm font-medium">{selectedOrg.name}</span>
-        {canSwitch && <ChevronDown size={13} className="text-muted-foreground" />}
-      </button>
-      {open && canSwitch && (
-        <div className="absolute top-full mt-1 left-0 z-50 min-w-[200px] rounded-xl border border-border bg-background shadow-lg py-1">
-          {filtered.map(org => (
-            <button
-              key={org.id}
-              type="button"
-              onClick={() => { onSelect(org); setOpen(false); }}
-              className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm hover:bg-muted/40 text-left transition-colors
-                ${org.id === selectedOrg.id ? 'font-semibold' : ''}`}
-            >
-              <span className={`w-5 h-5 rounded-full ${orgAvatarColor(org.name)} text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0`}>
-                {org.name[0]?.toUpperCase()}
-              </span>
-              {org.name}
-              {org.id === selectedOrg.id && <span className="ml-auto text-muted-foreground">✓</span>}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── FiscalConfigPage ───────────────────────────────────────────────────────────
 
@@ -188,11 +133,10 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
   }
 
   // ── Org bar ──────────────────────────────────────────────────────────────────
-  const saveLabel = saving
-    ? ui('fiscal.saving')
-    : savedOk
-      ? `✓ ${ui('fiscal.save')}`
-      : ui('fiscal.save');
+  let saveLabel;
+  if (saving) saveLabel = ui('fiscal.saving');
+  else if (savedOk) saveLabel = `✓ ${ui('fiscal.save')}`;
+  else saveLabel = ui('fiscal.save');
 
   const orgBar = (
     <div className="flex-shrink-0 border-b border-[#E8EAEF]">
