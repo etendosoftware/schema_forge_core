@@ -128,6 +128,14 @@ significant variable in the diff and flag:
   the name alone?" — if no, flag it.
 - **Misleading names** — the name claims something the body does not do (e.g. `validateInput` that
   also mutates and saves, `getX` that performs I/O). Flag the mismatch.
+- **Vague / context-free names** — real English, syntactically fine, but too generic to tell *what
+  domain object* they act on: `getClassName`, `getTitle`, `getValue`, `getData`, `getItems`,
+  `getResult`, `getConfig`, `formatText`, `buildUrl`, `handleClick`, `mapData`, `isValid`. The test:
+  if two unrelated helpers in the same file could plausibly share this name, it is too vague. Prefix
+  it with the subject it operates on (`getSelectorLabelClassName`, `getReportTitle`,
+  `buildProductSelectorUrl`). These are valid names — flag them as **vague**, not generic/placeholder
+  — but a refactor whose goal is readability is not done while a reader must open the body to learn
+  what `getTitle` titles.
 - **Lost meaning on rename** — a previously descriptive name replaced by a vaguer one.
 
 For each flagged identifier, **suggest a concrete better name** derived from what the function
@@ -139,6 +147,10 @@ options, e.g.:
 path/to/file.js:42  function extractedMethod1(order, lines)
   ⚠️ Generic auto-extract name.
   → suggests: calculateOrderTotal(order, lines)  |  sumLineAmounts(lines)
+
+path/to/file.js:88  function getTitle(multi, selectedItems, displayText)
+  ⚠️ Vague — "title" of what? Builds the selector button's tooltip.
+  → suggests: getSelectorButtonTitle(...)  |  getSelectorTooltip(...)
 ```
 
 Naming issues do **not** by themselves make a change "NOT innocuous" (behavior is unchanged), but
@@ -173,10 +185,28 @@ full suite for speed; fall back to the full suite when mapping is unclear.
    the headline of the report, not a footnote. Offer to run the full suite (`make test`) or to
    delegate writing a covering test to the `test-generator` subagent (Tester).
 
-4. If the change touches a window's `decisions.json` or generator, the relevant verification is the
+4. **Extracted-function coverage (MANDATORY for extraction refactors).** A green suite proves
+   nothing if it never calls the new code. For EACH function the refactor extracted, decide whether
+   the existing tests actually *exercise* it — not just whether they pass. A test that renders the
+   parent but never hits the branch/component the helper lives in does **not** cover it. Verify by
+   one of:
+   - the helper is exported and a test imports it directly, OR
+   - a test drives the code path that calls it (e.g. renders the component in the state that invokes
+     the helper) and asserts on its observable output.
+
+   List every extracted function as **covered** or **uncovered**. The goal is coverage for *all*
+   extracted functions, as much as the code allows — especially any with restructured logic (not a
+   verbatim move). Unexported module-private helpers with no exercising test count as **uncovered**;
+   to close the gap, either export them for a unit test or add a test that drives the calling path.
+   For uncovered extractions, delegate test-writing to the `test-generator` subagent (Tester) — never
+   write the tests inline (CLAUDE.md delegation rule).
+
+5. If the change touches a window's `decisions.json` or generator, the relevant verification is the
    Window Change Integrity Protocol (CLAUDE.md), not unit tests — point the user there.
 
 Report each test command and its real pass/fail result. Never claim tests pass without running them.
+A passing suite that does not exercise the extracted code is reported as such — it is not evidence
+the refactor is safe.
 
 ---
 
@@ -199,18 +229,22 @@ Risky hunks:
   • path:line — <what could change> — <covered by test? which?>
 
 Naming issues:
-  • path:line  <identifier> — <generic | placeholder | misleading> → <suggested name(s)>
+  • path:line  <identifier> — <generic | placeholder | misleading | vague> → <suggested name(s)>
 
 Tests run:
   • <command> → PASS/FAIL (X passed, Y failed)
 
+Extracted-function coverage:
+  • <fnName> — covered (which test) | uncovered
+
 Unverified risks:
   • <any RISKY hunk with no covering test>
+  • <any extracted function not exercised by a test>
 ```
 
 **Verdict rules:**
 - ✅ **INNOCUOUS** — every hunk is PURE (or every RISKY hunk is backed by a passing test), no INTENTIONAL hunks, AND no naming issues.
-- ⚠️ **REVIEW NEEDED** — RISKY hunks without covering tests, missing tests, generated files touched, OR any naming issue (generic/placeholder/misleading name). A clean-behavior refactor with a `extractedMethod1` is still ⚠️ until renamed.
+- ⚠️ **REVIEW NEEDED** — RISKY hunks without covering tests, missing tests, generated files touched, an extracted function not exercised by any test (especially one with restructured logic), OR any naming issue (generic/placeholder/misleading/vague name). A clean-behavior refactor with an `extractedMethod1` — or a too-vague `getTitle`/`getClassName`, or an untested extracted helper — is still ⚠️ until fixed.
 - ❌ **NOT INNOCUOUS** — a test fails, OR a hunk demonstrably changes behavior, OR INTENTIONAL changes are present while the user claimed a pure refactor.
 
 Be honest and specific. The value of this skill is catching the one inverted condition in a
