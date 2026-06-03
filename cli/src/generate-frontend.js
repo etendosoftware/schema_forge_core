@@ -695,11 +695,14 @@ function resolveStatusAndSummaryFields(requiredHeaderFieldNames, allEntityFields
     : '[]';
   const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
   const statusFieldOverride = contract.frontendContract.window.statusField;
-  const statusField = (statusFieldOverride === false || statusFieldOverride === 'none')
-    ? null
-    : statusFieldOverride
-      ? (allEntityFields.find(f => f.name === statusFieldOverride) ?? null)
-      : (docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status')));
+  let statusField;
+  if (statusFieldOverride === false || statusFieldOverride === 'none') {
+    statusField = null;
+  } else if (statusFieldOverride) {
+    statusField = allEntityFields.find(f => f.name === statusFieldOverride) ?? null;
+  } else {
+    statusField = docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status'));
+  }
   const summaryFieldsOverride = contract.frontendContract.window.summaryFields;
   const summaryFields = getSummaryFields(summaryFieldsOverride, readOnlyFields, statusField);
   return { requiredHeaderFieldsArray, statusField, summaryFields };

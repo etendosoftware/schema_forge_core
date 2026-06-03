@@ -133,7 +133,7 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
   ];
 
   return (
-    <div className="p-2 pb-6 bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50">
+    <div className="p-2 pb-6 bg-white overflow-y-auto max-h-[380px] [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50">
       {/* Group 1 — Asset Info (no subtitle) */}
       <div className="mb-5">
         <EntityForm
