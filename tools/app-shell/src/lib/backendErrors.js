@@ -10,7 +10,6 @@ const BACKEND_ERROR_MAP = {
   'Using the Generic Account No. for generating the Displayed Account requires to introduce a Generic Account Number': 'backendError.genericAccountRequired',
   'IBAN code entered is not correct. Please review the IBAN code and the country defined for the bank': 'backendError.ibanInvalid',
   'Using the SWIFT Code for generating the Displayed Account requires to introduce a SWIFT Code and the Generic Account No.': 'backendError.swiftRequired',
-  'Cannot read field "scale" because "divisor" is null': 'amortizationErrorFullyDepreciated',
 };
 
 export function translateBackendError(msg, t) {

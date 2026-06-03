@@ -55,7 +55,7 @@
         "add": true,
         "label": "Create Amortization",
         "style": "positive",
-        "displayLogicRaw": "@Depreciate@='Y'",
+        "displayLogicRaw": "@Depreciate@='Y' AND @etgoAmortizationStatus@!='100'",
         "requiresFieldMax": [
           {
             "field": "annualDepreciation",

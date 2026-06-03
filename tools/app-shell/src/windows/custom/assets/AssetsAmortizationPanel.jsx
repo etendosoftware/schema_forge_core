@@ -30,21 +30,12 @@ function StatusBadge({ isProcessed, ui }) {
   );
 }
 
-function getLineStatuses(lines, depreciatedValue) {
-  const statuses = new Map();
-  let cumulative = 0;
-  for (const line of lines) {
-    cumulative += Number(line.amortizationAmount ?? 0);
-    statuses.set(line.id ?? line.sEQNoAsset, cumulative <= depreciatedValue && depreciatedValue > 0);
-  }
-  return statuses;
-}
-
 export default function AssetsAmortizationPanel({ data, recordId: recordIdProp, token, apiBaseUrl, onCountChange }) {
   const ui = useUI();
   const navigate = useNavigate();
   const orgCurrency = useCurrency() ?? 'USD';
   const [lines, setLines] = useState([]);
+  const [processedMap, setProcessedMap] = useState(new Map());
   const [loading, setLoading] = useState(false);
   const recordId = recordIdProp ?? data?.id;
 
@@ -59,7 +50,21 @@ export default function AssetsAmortizationPanel({ data, recordId: recordIdProp, 
         const normalizedRows = Array.isArray(rows) ? rows : [];
         setLines(normalizedRows);
         onCountChange?.(normalizedRows.length);
+        const amortBase = apiBaseUrl.replace(/\/[^/]+$/, '/amortization');
+        const ids = [...new Set(normalizedRows.map(l => l.amortization).filter(Boolean))];
+        return Promise.all(
+          ids.map(id =>
+            fetch(`${amortBase}/header/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+              .then(r => r.ok ? r.json() : null)
+              .then(json => {
+                const record = json?.response?.data?.[0] ?? json?.data?.[0] ?? json;
+                return [id, record?.processed === 'Y'];
+              })
+              .catch(() => [id, false])
+          )
+        );
       })
+      .then(entries => setProcessedMap(new Map(entries ?? [])))
       .catch(() => setLines([]))
       .finally(() => setLoading(false));
   }, [recordId, apiBaseUrl, token]);
@@ -81,11 +86,6 @@ export default function AssetsAmortizationPanel({ data, recordId: recordIdProp, 
     window.addEventListener('neo:processSuccess', handleProcessSuccess);
     return () => window.removeEventListener('neo:processSuccess', handleProcessSuccess);
   }, [recordId, fetchLines]);
-
-  const depreciatedValue = Number(data?.depreciatedValue ?? 0);
-  const lineStatuses = getLineStatuses(lines, depreciatedValue);
-  const plannedCount = [...lineStatuses.values()].filter(v => !v).length;
-  const totalAmount = lines.reduce((sum, l) => sum + Number(l.amortizationAmount ?? 0), 0);
 
   return (
     <div className="pt-2 pb-5">
@@ -132,7 +132,7 @@ export default function AssetsAmortizationPanel({ data, recordId: recordIdProp, 
                   </td>
                   <td className="py-3 pr-4 text-foreground">{formatCurrency(orgCurrency, line.amortizationAmount)}</td>
                   <td className="py-3">
-                    <StatusBadge isProcessed={lineStatuses.get(line.id ?? line.sEQNoAsset)} ui={ui} />
+                    <StatusBadge isProcessed={processedMap.get(line.amortization) ?? false} ui={ui} />
                   </td>
                 </tr>
               ))}

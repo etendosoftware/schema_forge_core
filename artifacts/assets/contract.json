@@ -1,8 +1,8 @@
 {
   "version": "0.32.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-06-03T22:48:41.703Z",
-  "checksum": "bb0cbabb04dee243",
+  "updatedAt": "2026-06-03T23:36:50.960Z",
+  "checksum": "f236b671bb1bbffc",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -22,7 +22,7 @@
           "add": true,
           "label": "Create Amortization",
           "style": "positive",
-          "displayLogicRaw": "@Depreciate@='Y'",
+          "displayLogicRaw": "@Depreciate@='Y' AND @etgoAmortizationStatus@!='100'",
           "requiresFieldMax": [
             {
               "field": "annualDepreciation",
@@ -1002,7 +1002,7 @@
           "add": true,
           "label": "Create Amortization",
           "style": "positive",
-          "displayLogicRaw": "@Depreciate@='Y'",
+          "displayLogicRaw": "@Depreciate@='Y' AND @etgoAmortizationStatus@!='100'",
           "requiresFieldMax": [
             {
               "field": "annualDepreciation",
