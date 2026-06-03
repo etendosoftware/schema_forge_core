@@ -45,7 +45,10 @@
           "foreignAmount"
         ],
         "requireSavedRecord": true,
-        "readOnlyLogic": "@DocumentStatus@!='DR'"
+        "readOnlyLogic": "@DocumentStatus@!='DR'",
+        "addLineFieldExclusions": {
+          "toCurrency": "currency"
+        }
       }
     },
     "processOverrides": {},

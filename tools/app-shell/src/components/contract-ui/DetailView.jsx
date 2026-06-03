@@ -342,6 +342,22 @@ export function DetailView({
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
 
+  // "From" currency for secondary-tab inline add-rows. The parent document's
+  // currency is a read-only column on those tabs (e.g. exchange rates), so the
+  // inline add-row has no input to populate it and it renders "—" until the POST
+  // sets it. Seed it from the header so it shows immediately. Depend on the scalar
+  // values (not the header object) so the seed keeps a stable identity and does
+  // not reset the open add-row on every parent re-render.
+  const headerCurrencyId = (hook.selected ?? hook.editing)?.currency ?? null;
+  const headerCurrencyLabel = (hook.selected ?? hook.editing)?.['currency$_identifier'] ?? sessionCurrencyCode ?? null;
+  const secondaryAddRowSeed = useMemo(() => {
+    if (headerCurrencyId == null && headerCurrencyLabel == null) return undefined;
+    const seed = {};
+    if (headerCurrencyId != null) seed.currency = headerCurrencyId;
+    if (headerCurrencyLabel != null) seed['currency$_identifier'] = headerCurrencyLabel;
+    return seed;
+  }, [headerCurrencyId, headerCurrencyLabel]);
+
   const handleFieldBlur = useCallback(() => {
     if (!hook.editing || !hook.selected) return;
     const hasChanges = Object.entries(hook.editing).some(
@@ -2690,6 +2706,7 @@ export function DetailView({
                                         },
                                         onCancel: () => setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false })),
                                         catalogs,
+                                        seedValues: secondaryAddRowSeed,
                                       } : undefined}
                                     />
                                   </div>

@@ -1353,7 +1353,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
             : '';
           const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
-          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart} }`;
+          // Declarative selector exclusion: this entry's options drop the live value
+          // of another field in the same add-row (e.g. toCurrency excludes the
+          // document currency). Declared in secondaryTabs.<tab>.addLineFieldExclusions.
+          const excludeValueOf = cfg.addLineFieldExclusions?.[fk];
+          const excludeValueOfPart = excludeValueOf ? `, excludeValueOf: '${String(excludeValueOf).replace(/'/g, "\\'")}'` : '';
+          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${excludeValueOfPart} }`;
         }).filter(Boolean);
         // Tab-level readOnlyLogic — when truthy at runtime the tab still
         // renders existing rows but blocks add / edit / delete actions.

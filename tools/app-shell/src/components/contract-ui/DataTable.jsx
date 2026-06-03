@@ -358,7 +358,11 @@ function renderSelectorCell({
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, ilpHasNoAmountCol = false, ilpTrailing = false }, ref) {
+// Stable empty seed: a fresh `{}` default would change identity every render and
+// make buildEmpty's effect re-run, wiping in-progress input. Share one frozen ref.
+const EMPTY_SEED = {};
+
+const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, seedValues = EMPTY_SEED, ilpHasNoAmountCol = false, ilpTrailing = false }, ref) {
   const t = useLabel();
   const ui = useUI();
   const fieldMap = useMemo(() => {
@@ -384,8 +388,14 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         empty[f.key] = '';
       }
     }
+    // Seed display-only (non-editable) columns — e.g. a parent-derived currency —
+    // so they render their value immediately instead of "—" until the row is saved.
+    // Editable fields are never overwritten; the seed only fills keys with no input.
+    for (const [key, val] of Object.entries(seedValues)) {
+      if (!fieldMap[key]) empty[key] = val;
+    }
     return empty;
-  }, [fields, defaultLineNo]);
+  }, [fields, defaultLineNo, seedValues, fieldMap]);
 
   const [values, setValues] = useState(buildEmpty);
   const [isSaving, setIsSaving] = useState(false);
@@ -490,6 +500,12 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
             next[key] = '';
           }
         }
+        // Re-apply seeded display values so a parent-derived column (e.g. currency)
+        // stays populated for the next rapid entry instead of resetting to "—".
+        // Runs after the $_identifier clearing loop so seeded identifiers survive.
+        for (const [key, val] of Object.entries(seedValues)) {
+          if (!fieldMap[key]) next[key] = val;
+        }
 
         valuesRef.current = next;
         setValues(next);
@@ -504,7 +520,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     })();
     inflightRef.current = run;
     return run;
-  }, [data, fields, onAdd, onCancel, ui]);
+  }, [data, fields, onAdd, onCancel, ui, seedValues, fieldMap]);
 
   // Enter → confirm without closing (rapid entry). Outside-click / parent flush close.
   const handleConfirm = useCallback(() => submitLine({ closeAfterSave: false }), [submitLine]);
@@ -674,6 +690,9 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         if (field.type === 'search') {
           const options = getCatalogOptions(catalogs, entity, field);
           const selectorUrl = buildSelectorUrl(apiBaseUrl, entity, field);
+          // Declarative exclusion: drop the live value of a sibling field from this
+          // selector (e.g. To Currency must differ from the document/From Currency).
+          const excludeId = field.excludeValueOf ? (values[field.excludeValueOf] ?? null) : null;
           return (
             <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
               <InlineSearchCombo
@@ -681,6 +700,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
                 value={values[field.key] ?? ''}
                 displayLabel={values[field.key + '$_identifier'] || ''}
                 options={options}
+                excludeId={excludeId}
                 inputRef={isFirst ? firstInputRef : undefined}
                 placeholder={fieldLabel}
                 onChange={(id, label, selectedItem) => {
@@ -1795,6 +1815,7 @@ export function DataTable({
                 catalogs={addRow.catalogs}
                 onFieldChange={addRow.onFieldChange}
                 onValuesChange={addRow.onValuesChange}
+                seedValues={addRow.seedValues}
                 selectable={selectable}
                 hasDeleteColumn={!hoverRowActions && legacyDeleteEnabled}
                 hasCloneColumn={!hoverRowActions && !!onCloneRow && !quickActionsEnabled}

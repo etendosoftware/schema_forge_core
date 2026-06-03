@@ -1,8 +1,8 @@
 {
   "version": "0.27.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-05-28T18:10:44.538Z",
-  "checksum": "60d827df998eded8",
+  "updatedAt": "2026-06-03T17:59:10.541Z",
+  "checksum": "cf464df5696fea6d",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -39,7 +39,10 @@
             "foreignAmount"
           ],
           "requireSavedRecord": true,
-          "readOnlyLogic": "@DocumentStatus@!='DR'"
+          "readOnlyLogic": "@DocumentStatus@!='DR'",
+          "addLineFieldExclusions": {
+            "toCurrency": "currency"
+          }
         }
       },
       "salesTheme": true,
@@ -1762,7 +1765,10 @@
             "foreignAmount"
           ],
           "requireSavedRecord": true,
-          "readOnlyLogic": "@DocumentStatus@!='DR'"
+          "readOnlyLogic": "@DocumentStatus@!='DR'",
+          "addLineFieldExclusions": {
+            "toCurrency": "currency"
+          }
         }
       },
       "salesTheme": true,
