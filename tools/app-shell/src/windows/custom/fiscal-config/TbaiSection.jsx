@@ -8,6 +8,7 @@ import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { useApiFetch } from '@/auth/useApiFetch.js';
 import CertSection from './CertSection.jsx';
+import SectionSaveButton from './SectionSaveButton.jsx';
 import {
   getFiscalRecordId,
   isEtendoTrue,
@@ -169,20 +170,7 @@ const TbaiSection = forwardRef(function TbaiSection({ record, apiBaseUrl, orgId,
         </SectionRow>
       )}
 
-      {error && <p className="text-sm text-destructive mt-4">{error}</p>}
-
-      {!hideSave && (
-        <div className="pt-4">
-          <button
-            type="button"
-            onClick={save}
-            disabled={saving}
-            className="px-4 py-2 rounded-lg bg-[#121217] text-white text-sm font-medium hover:bg-[#121217]/90 disabled:opacity-50 transition-colors"
-          >
-            {saving ? ui('fiscal.saving') : ui('fiscal.save')}
-          </button>
-        </div>
-      )}
+      <SectionSaveButton error={error} hideSave={hideSave} save={save} saving={saving} ui={ui} />
     </div>
   );
 });

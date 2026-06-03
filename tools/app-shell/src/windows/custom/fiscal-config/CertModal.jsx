@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUI } from '@/i18n';
-import { FileText, Upload, Eye, EyeOff, Lock, TriangleAlert, CircleCheck, Check, Info } from 'lucide-react';
+import { FileText, Upload, Eye, EyeOff, Lock, TriangleAlert, Check, Info } from 'lucide-react';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { useApiFetch } from '@/auth/useApiFetch.js';
 
@@ -78,7 +78,7 @@ function MiniStepper({ step, ui }) {
               <span
                 className="text-sm"
                 style={{
-                  color:          done ? '#9CA3AF' : active ? '#121217' : '#555B6D',
+                  color:          done ? '#9CA3AF' : (active ? '#121217' : '#555B6D'),
                   fontWeight:     active ? 600 : 400,
                   textDecoration: done ? 'line-through' : 'none',
                 }}
@@ -234,6 +234,12 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
     return match ? match[1].trim() : dn;
   }
 
+  const dropzoneClass = drag
+    ? 'border-foreground bg-muted/40'
+    : file
+      ? 'border-[#121217] bg-white'
+      : 'border-dashed border-[#D1D4DB] hover:border-foreground/40 hover:bg-muted/20';
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
@@ -272,10 +278,7 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
                 onDragOver={e => { e.preventDefault(); setDrag(true); }}
                 onDragLeave={() => setDrag(false)}
                 onDrop={e => { e.preventDefault(); setDrag(false); pickFile(e.dataTransfer.files[0]); }}
-                className={`rounded-xl border-2 cursor-pointer p-7 text-center transition-all
-                  ${drag    ? 'border-foreground bg-muted/40' :
-                    file    ? 'border-[#121217] bg-white' :
-                              'border-dashed border-[#D1D4DB] hover:border-foreground/40 hover:bg-muted/20'}`}
+                className={`rounded-xl border-2 cursor-pointer p-7 text-center transition-all ${dropzoneClass}`}
               >
                 <div className={`w-11 h-11 mx-auto mb-3 rounded-xl flex items-center justify-center
                   ${file ? 'bg-[#121217]' : 'bg-muted text-foreground'}`}>

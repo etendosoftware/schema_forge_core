@@ -188,6 +188,12 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
   }
 
   // ── Org bar ──────────────────────────────────────────────────────────────────
+  const saveLabel = saving
+    ? ui('fiscal.saving')
+    : savedOk
+      ? `✓ ${ui('fiscal.save')}`
+      : ui('fiscal.save');
+
   const orgBar = (
     <div className="flex-shrink-0 border-b border-[#E8EAEF]">
       <div className="flex items-center justify-between px-6 h-[56px]">
@@ -209,7 +215,7 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
             className={savedOk ? 'bg-green-600 hover:bg-green-700 border-green-600' : ''}
           >
             <Save size={14} className="mr-1.5" />
-            {saving ? ui('fiscal.saving') : savedOk ? `✓ ${ui('fiscal.save')}` : ui('fiscal.save')}
+            {saveLabel}
           </Button>
         </div>
       </div>

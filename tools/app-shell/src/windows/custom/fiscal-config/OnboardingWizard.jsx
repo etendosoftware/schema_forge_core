@@ -124,7 +124,7 @@ function Stepper({ step, ui }) {
               <span
                 className="text-sm"
                 style={{
-                  color:          done ? '#9CA3AF' : active ? '#121217' : '#555B6D',
+                  color:          done ? '#9CA3AF' : (active ? '#121217' : '#555B6D'),
                   fontWeight:     active ? 600 : 400,
                   textDecoration: done ? 'line-through' : 'none',
                 }}
@@ -667,8 +667,8 @@ function ObligationCard({ label, paragraphs, note, info, selected, onPick }) {
       />
       <span className="text-sm font-semibold pr-5" style={{ color: '#121217' }}>{label}</span>
       <div className="flex flex-col gap-2">
-        {paragraphs.map((p, i) => (
-          <span key={i} className="text-sm leading-5" style={{ color: '#555B6D' }}>{p}</span>
+        {paragraphs.map((p) => (
+          <span key={p} className="text-sm leading-5" style={{ color: '#555B6D' }}>{p}</span>
         ))}
       </div>
       {note && <span className="text-sm font-medium" style={{ color: '#121217' }}>{note}</span>}
@@ -711,8 +711,8 @@ function BulletOptionCard({ label, bullets, selected, onPick }) {
       />
       <span className="text-sm font-semibold pr-5" style={{ color: '#121217' }}>{label}</span>
       <ul className="flex flex-col gap-1.5">
-        {bullets.map((b, i) => (
-          <li key={i} className="flex gap-2 text-sm leading-5" style={{ color: '#555B6D' }}>
+        {bullets.map((b) => (
+          <li key={b} className="flex gap-2 text-sm leading-5" style={{ color: '#555B6D' }}>
             <Check size={14} strokeWidth={2.5} className="flex-shrink-0 mt-0.5 text-green-500" />
             <span>{b}</span>
           </li>
@@ -986,8 +986,8 @@ function SubquestionScreen({ t, orgName, selectedOrg, orgList, onSelectOrg, onGo
                 ui('fiscal.onboarding.subq.sii.info.bullet2'),
                 ui('fiscal.onboarding.subq.sii.info.bullet3'),
                 ui('fiscal.onboarding.subq.sii.info.bullet4'),
-              ].map((b, i) => (
-                <div key={i} className="flex items-start gap-2">
+              ].map((b) => (
+                <div key={b} className="flex items-start gap-2">
                   <span className="flex-shrink-0" style={{ fontSize: 16, lineHeight: '20px' }}>•</span>
                   <span style={{ fontSize: 14, lineHeight: '20px' }}>{b}</span>
                 </div>
