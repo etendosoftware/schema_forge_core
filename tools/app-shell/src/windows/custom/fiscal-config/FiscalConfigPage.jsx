@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Save } from 'lucide-react';
 import OrgDropdown from './FiscalOrgDropdown.jsx';
 import { useNavigate } from 'react-router-dom';
