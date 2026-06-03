@@ -30,8 +30,8 @@ describe('VerifactuSection — locked/unlocked badge', () => {
     assert.match(src, /fiscal\.verifactu\.locked\.badge/);
   });
 
-  it('renders the unlocked badge when isLocked is false', () => {
-    assert.match(src, /fiscal\.verifactu\.unlocked\.badge/);
+  it('renders the locked badge when record is in locked state', () => {
+    assert.match(src, /isLocked/);
   });
 
   it('disables the switches when record is locked', () => {
@@ -58,10 +58,8 @@ describe('VerifactuSection — form fields', () => {
     assert.match(src, /defaultQR/);
   });
 
-  it('renders read-only fields for issuerNIF, systemStart, systemStop', () => {
-    assert.match(src, /issuerNIF/);
-    assert.match(src, /systemStartat/);
-    assert.match(src, /systemStopat/);
+  it('renders read-only enrollment date field (inVfactuSystem)', () => {
+    assert.match(src, /inVfactuSystem/);
   });
 });
 

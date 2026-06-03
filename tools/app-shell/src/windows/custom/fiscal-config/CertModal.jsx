@@ -1,40 +1,117 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUI } from '@/i18n';
-import { FileText, Upload, Eye, EyeOff, Lock, TriangleAlert, CircleCheck } from 'lucide-react';
+import { FileText, Upload, Eye, EyeOff, Lock, TriangleAlert, CircleCheck, Check, Info } from 'lucide-react';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { useApiFetch } from '@/auth/useApiFetch.js';
 
+function AlertBox({ type, title, body, onDismiss }) {
+  if (type === 'error') {
+    return (
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600">
+        <TriangleAlert size={16} className="text-red-500 flex-shrink-0" />
+        <span className="flex-1">{title}</span>
+        {onDismiss && (
+          <button type="button" onClick={onDismiss} className="flex-shrink-0 text-muted-foreground hover:text-foreground">✕</button>
+        )}
+      </div>
+    );
+  }
+  const styles = {
+    success: {
+      wrap: 'bg-green-50 border-l-[3px] border-l-green-500',
+      icon: <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-0.5"><Check size={13} strokeWidth={2.5} className="text-white" /></div>,
+      title: 'text-green-800 font-semibold',
+      body:  'text-green-700',
+    },
+    warning: {
+      wrap: 'bg-amber-50 border-l-[3px] border-l-amber-400',
+      icon: <div className="w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center flex-shrink-0 mt-0.5"><Info size={13} strokeWidth={2.5} className="text-white" /></div>,
+      title: 'text-amber-800 font-semibold',
+      body:  'text-amber-700',
+    },
+  };
+  const s = styles[type] ?? styles.warning;
+  return (
+    <div className={`flex gap-3 items-start p-4 rounded-r-xl ${s.wrap}`}>
+      {s.icon}
+      <div>
+        <p className={`text-xs ${s.title}`}>{title}</p>
+        {body && <p className={`text-xs mt-1 ${s.body}`}>{body}</p>}
+      </div>
+    </div>
+  );
+}
+
 function MiniStepper({ step, ui }) {
   const STEPS = [
-    { key: 'pick',   n: '1', label: ui('fiscal.cert.step.file') },
-    { key: 'verify', n: '2', label: ui('fiscal.cert.step.verify') },
-    { key: 'done',   n: '3', label: ui('fiscal.cert.step.confirm') },
+    { key: 'pick',   n: 1, label: ui('fiscal.cert.step.file') },
+    { key: 'verify', n: 2, label: ui('fiscal.cert.step.verify') },
+    { key: 'done',   n: 3, label: ui('fiscal.cert.step.confirm') },
   ];
-  // 'confirmNif' is logically part of the verification step
   const displayStep = step === 'confirmNif' ? 'verify' : step;
   const idx = STEPS.findIndex(s => s.key === displayStep);
   return (
-    <div className="flex items-center gap-2 px-6 pb-4 text-xs text-muted-foreground">
+    <div className="flex items-center px-6 pb-4" style={{ gap: 6 }}>
       {STEPS.map((s, i) => {
         const done   = i < idx;
         const active = i === idx;
         return (
-          <span key={s.key} className="flex items-center gap-2">
-            {i > 0 && <span className="flex-1 h-px bg-border w-6" />}
-            <span className={`flex items-center gap-1.5 font-medium ${active || done ? 'text-foreground' : 'text-muted-foreground'}`}>
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0
-                ${done   ? 'bg-foreground text-background' :
-                  active ? 'bg-yellow-400 text-foreground ring-2 ring-black/10' :
-                           'bg-muted text-muted-foreground'}`}>
-                {done ? '✓' : s.n}
+          <span key={s.key} className="flex items-center" style={{ gap: 6 }}>
+            {i > 0 && <span className="flex-shrink-0" style={{ width: 40, height: 1, background: '#E8EAEF' }} />}
+            <span className="flex items-center" style={{ gap: 6 }}>
+              {done ? (
+                <Check size={14} strokeWidth={2.5} className="text-green-500 flex-shrink-0" />
+              ) : (
+                <span
+                  className="flex items-center justify-center text-xs font-semibold flex-shrink-0"
+                  style={{
+                    width: 26, height: 24, borderRadius: 8,
+                    background: active ? '#121217' : '#F5F7F9',
+                    color:      active ? '#FFFFFF' : '#3F3F50',
+                    border:     active ? 'none' : '1px solid #D1D4DB',
+                  }}
+                >
+                  {s.n}
+                </span>
+              )}
+              <span
+                className="text-sm"
+                style={{
+                  color:          done ? '#9CA3AF' : active ? '#121217' : '#555B6D',
+                  fontWeight:     active ? 600 : 400,
+                  textDecoration: done ? 'line-through' : 'none',
+                }}
+              >
+                {s.label}
               </span>
-              {s.label}
             </span>
           </span>
         );
       })}
     </div>
+  );
+}
+
+function CircularProgress({ progress }) {
+  const r = 54;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (progress / 100) * circ;
+  return (
+    <svg width="140" height="140" viewBox="0 0 140 140" className="mx-auto">
+      <circle cx="70" cy="70" r={r} fill="none" stroke="#E8EAEF" strokeWidth="8" />
+      <circle
+        cx="70" cy="70" r={r}
+        fill="none" stroke="#121217" strokeWidth="8"
+        strokeDasharray={circ} strokeDashoffset={offset}
+        strokeLinecap="round"
+        transform="rotate(-90 70 70)"
+        style={{ transition: 'stroke-dashoffset 0.2s ease' }}
+      />
+      <text x="70" y="76" textAnchor="middle" fontSize="22" fontWeight="600" fill="#121217">
+        {progress}%
+      </text>
+    </svg>
   );
 }
 
@@ -56,9 +133,23 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
   const [errMsg,      setErrMsg]      = useState(debugInitialState?.errMsg ?? null);
   const [certDetails, setCertDetails] = useState(debugInitialState?.certDetails ?? null);
   const [pendingNif,  setPendingNif]  = useState(debugInitialState?.pendingNif ?? null);
+  const [progress,    setProgress]    = useState(0);
   const inputRef = useRef(null);
 
   const subtitle = CONTEXT_SUBTITLE[context] ?? ui('fiscal.cert.subtitle.default');
+
+  // Animate circular progress when in verify step
+  useEffect(() => {
+    if (step !== 'verify') { setProgress(0); return; }
+    setProgress(0);
+    const id = setInterval(() => {
+      setProgress(p => {
+        if (p >= 90) { clearInterval(id); return 90; }
+        return p + 4;
+      });
+    }, 80);
+    return () => clearInterval(id);
+  }, [step]);
 
   function pickFile(f) {
     if (!f) return;
@@ -78,6 +169,11 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
   async function performUpload(setOrgNif = false) {
     setStep('verify');
     setErrMsg(null);
+    const start = Date.now();
+    const waitMin = () => {
+      const remaining = 1500 - (Date.now() - start);
+      return remaining > 0 ? new Promise(r => setTimeout(r, remaining)) : Promise.resolve();
+    };
     try {
       const formData = new FormData();
       formData.append('certificate', file);
@@ -90,10 +186,10 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
         body: formData,
       });
 
+      await waitMin();
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        // 422 = NIF mismatch — use localized message; other errors show raw backend text
         const raw = data?.error?.message ?? data?.message;
         const errText = res.status === 422
           ? ui('fiscal.cert.err.nifMismatch')
@@ -113,6 +209,7 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
       setCertDetails(data.cert ?? null);
       setStep('done');
     } catch {
+      await waitMin();
       setErrMsg(ui('fiscal.cert.err.connection'));
       setStep('pick');
     }
@@ -175,24 +272,27 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
                 onDragOver={e => { e.preventDefault(); setDrag(true); }}
                 onDragLeave={() => setDrag(false)}
                 onDrop={e => { e.preventDefault(); setDrag(false); pickFile(e.dataTransfer.files[0]); }}
-                className={`rounded-xl border-2 border-dashed cursor-pointer p-7 text-center transition-all
+                className={`rounded-xl border-2 cursor-pointer p-7 text-center transition-all
                   ${drag    ? 'border-foreground bg-muted/40' :
-                    file    ? 'border-green-400 bg-green-50' :
-                              'border-border hover:border-foreground/40 hover:bg-muted/20'}`}
+                    file    ? 'border-[#121217] bg-white' :
+                              'border-dashed border-[#D1D4DB] hover:border-foreground/40 hover:bg-muted/20'}`}
               >
                 <div className={`w-11 h-11 mx-auto mb-3 rounded-xl flex items-center justify-center
-                  ${file ? 'bg-green-100 text-green-700' : 'bg-muted text-foreground'}`}>
-                  {file ? <FileText size={22} strokeWidth={1.5} /> : <Upload size={22} strokeWidth={1.5} />}
+                  ${file ? 'bg-[#121217]' : 'bg-muted text-foreground'}`}>
+                  {file
+                    ? <FileText size={20} strokeWidth={1.5} className="text-white" />
+                    : <Upload size={20} strokeWidth={1.5} />}
                 </div>
                 {file ? (
                   <>
                     <p className="text-sm font-semibold truncate w-full px-2">{file.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{(file.size / 1024).toFixed(1)} KB · {ui('fiscal.cert.dropzone.changeHint')}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{(file.size / 1024).toFixed(1)} KB</p>
+                    <p className="text-xs text-amber-600 mt-1">{ui('fiscal.cert.dropzone.changeHint')}</p>
                   </>
                 ) : (
                   <>
                     <p className="text-sm font-medium">{ui('fiscal.cert.dropzone.drag')}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{ui('fiscal.cert.dropzone.click')}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{ui('fiscal.cert.dropzone.formats')}</p>
                   </>
                 )}
                 <input
@@ -205,22 +305,21 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
               </div>
 
               {errMsg && (
-                <div className="flex gap-2 items-start p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-destructive">
-                  <span className="flex-shrink-0">✕</span>
-                  <span>{errMsg}</span>
-                </div>
+                <AlertBox type="error" title={errMsg} onDismiss={() => setErrMsg(null)} />
               )}
 
               {/* Password */}
               <div>
-                <label className="block text-sm font-medium mb-1.5">{ui('fiscal.cert.pwd.label')}</label>
+                <label className="block text-sm font-medium mb-1.5">
+                  {ui('fiscal.cert.pwd.label')} <span className="text-destructive">*</span>
+                </label>
                 <div className="relative">
                   <input
                     type={showPwd ? 'text' : 'password'}
                     value={pwd}
                     onChange={e => setPwd(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                    className="w-full h-10 rounded-lg border border-[#D1D4DB] bg-white px-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
                   />
                   <button
                     type="button"
@@ -231,26 +330,19 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
                     {showPwd ? <EyeOff size={14} strokeWidth={1.75} /> : <Eye size={14} strokeWidth={1.75} />}
                   </button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+                <p className="text-xs text-[#121217] mt-1.5 flex items-center gap-1">
                   <Lock size={11} strokeWidth={2} /> {ui('fiscal.cert.pwd.hint')}
                 </p>
               </div>
 
-              {/* Info */}
-              <div className="rounded-[10px] border border-blue-200 bg-blue-50 p-3 flex gap-2 text-xs text-blue-800">
-                <span className="flex-shrink-0">ℹ</span>
-                <div>
-                  <strong>{ui('fiscal.cert.info.title')}</strong>
-                  <p className="text-blue-700/80 mt-0.5">{ui('fiscal.cert.info.body')}</p>
-                </div>
-              </div>
+              <AlertBox type="warning" title={ui('fiscal.cert.info.title')} body={ui('fiscal.cert.info.body')} />
             </div>
           )}
 
           {step === 'verify' && (
-            <div className="py-12 text-center">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-full border-4 border-muted border-t-foreground animate-spin" />
-              <p className="text-sm font-semibold">{ui('fiscal.cert.verifying.title')}</p>
+            <div className="py-8 text-center">
+              <CircularProgress progress={progress} />
+              <p className="text-sm font-semibold mt-4">{ui('fiscal.cert.verifying.title')}</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
                 {ui('fiscal.cert.verifying.body')}
               </p>
@@ -259,15 +351,7 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
 
           {step === 'confirmNif' && (
             <div className="space-y-4">
-              <div className="flex gap-2.5 items-start p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-900">
-                <TriangleAlert size={16} strokeWidth={1.75} className="flex-shrink-0" />
-                <div>
-                  <p className="font-semibold">{ui('fiscal.cert.nif.warning.title')}</p>
-                  <p className="text-xs text-amber-800/80 mt-1">
-                    {ui('fiscal.cert.nif.warning.body', { nif: pendingNif })}
-                  </p>
-                </div>
-              </div>
+              <AlertBox type="warning" title={ui('fiscal.cert.nif.warning.title')} body={ui('fiscal.cert.nif.warning.body', { nif: pendingNif })} />
               <div className="rounded-xl border border-border divide-y divide-border text-sm">
                 <div className="flex items-center px-4 py-2.5 gap-4">
                   <span className="text-muted-foreground flex-shrink-0 min-w-[7rem]">{ui('fiscal.cert.nif.row.file')}</span>
@@ -283,13 +367,7 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
 
           {step === 'done' && (
             <div className="space-y-4">
-              <div className="flex gap-2.5 items-start p-3 rounded-lg bg-green-50 border border-green-200 text-sm text-green-800">
-                <CircleCheck size={16} strokeWidth={1.75} className="flex-shrink-0" />
-                <div>
-                  <strong>{ui('fiscal.cert.success.title')}</strong>
-                  <p className="text-xs text-green-700/80 mt-0.5">{ui('fiscal.cert.success.body')}</p>
-                </div>
-              </div>
+              <AlertBox type="success" title={ui('fiscal.cert.success.title')} body={ui('fiscal.cert.success.body')} />
 
               <div className="rounded-xl border border-border divide-y divide-border text-sm">
                 {[
@@ -317,13 +395,11 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-border gap-3">
           {step === 'pick' && (
-            <>
-              <span className="text-xs text-muted-foreground">{ui('fiscal.cert.footer.formats')}</span>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={onClose}>{ui('fiscal.cert.btn.cancel')}</Button>
-                <Button onClick={verify} disabled={!file || !pwd}>{ui('fiscal.cert.btn.verify')}</Button>
-              </div>
-            </>
+            <div className="flex items-center justify-end w-full">
+              <Button onClick={verify} disabled={!file || !pwd} className="rounded-full">
+                <Check size={14} className="mr-1.5" />{ui('fiscal.cert.btn.verify')}
+              </Button>
+            </div>
           )}
           {step === 'verify' && (
             <>
@@ -334,9 +410,9 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
           {step === 'confirmNif' && (
             <>
               <Button variant="outline" onClick={() => { setStep('pick'); setPendingNif(null); }}>
-                {ui('fiscal.cert.btn.cancel')}
+                {ui('fiscal.cert.btn.change')}
               </Button>
-              <Button onClick={confirmWithNif}>
+              <Button onClick={confirmWithNif} className="rounded-full">
                 {ui('fiscal.cert.btn.useNif', { nif: pendingNif })}
               </Button>
             </>
@@ -348,7 +424,7 @@ export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUploa
                 <Button variant="outline" onClick={() => { setStep('pick'); setFile(null); setPwd(''); setCertDetails(null); setPendingNif(null); }}>
                   {ui('fiscal.cert.btn.change')}
                 </Button>
-                <Button onClick={finish}>{ui('fiscal.cert.btn.use')}</Button>
+                <Button onClick={finish} className="rounded-full">{ui('fiscal.cert.btn.use')}</Button>
               </div>
             </>
           )}

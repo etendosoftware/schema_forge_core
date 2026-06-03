@@ -1,5 +1,4 @@
 import { useState, forwardRef, useImperativeHandle } from 'react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -21,14 +20,24 @@ import {
 // Confirmed from artifacts/verifactu-config/contract.json → backendContract.window.primaryEntity
 const VERIFACTU_ENTITY = 'cabeceraDeConfiguraciónVerifactu';
 
+// Two-column section row wrapper
+function SectionRow({ children, leftContent }) {
+  return (
+    <div className="flex items-start py-6 gap-6 border-t border-[#E8EAEF]">
+      <div className="w-[160px] flex-shrink-0">{leftContent}</div>
+      <div className="flex-1 min-w-0">{children}</div>
+    </div>
+  );
+}
+
 const VerifactuSection = forwardRef(function VerifactuSection({ record, apiBaseUrl, orgId, onSave, hideSave }, ref) {
   const ui = useUI();
   const apiFetch = useApiFetch(neoBase(apiBaseUrl));
   const isLocked = isEtendoTrue(record?.isReady);
 
   const [form, setForm] = useState({
-    tAXType:        normalizeVerifactuTaxType(record?.tAXType) ?? '',
-    defaultQR:      normalizeEtendoBoolean(record?.defaultQR),
+    tAXType:   normalizeVerifactuTaxType(record?.tAXType) ?? '',
+    defaultQR: normalizeEtendoBoolean(record?.defaultQR),
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -70,73 +79,81 @@ const VerifactuSection = forwardRef(function VerifactuSection({ record, apiBaseU
 
   useImperativeHandle(ref, () => ({ save: handleSave }));
 
-  const yesno = (field) => (
-    <Switch
-      checked={isEtendoTrue(form[field])}
-      onCheckedChange={v => set(field, v ? 'Y' : 'N')}
-      disabled={isLocked}
-    />
-  );
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <h3 className="text-base font-semibold">Verifactu</h3>
-        <Badge variant={isLocked ? 'default' : 'outline'}>
-          {isLocked ? ui('fiscal.verifactu.locked.badge') : ui('fiscal.verifactu.unlocked.badge')}
-        </Badge>
-      </div>
+    <div>
+      {/* Verifactu section — left: label + badge, right: 3-column grid */}
+      <SectionRow
+        leftContent={
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-semibold text-[#121217]">VERI*FACTU</span>
+            {isLocked && (
+              <Badge variant="default">{ui('fiscal.verifactu.locked.badge')}</Badge>
+            )}
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-4 items-end">
+            <div className="space-y-1">
+              <Label>{ui('fiscal.verifactu.field.tax')}</Label>
+              {isLocked ? (
+                <Input value={getVerifactuTaxTypeLabel(form.tAXType)} disabled />
+              ) : (
+                <select
+                  value={form.tAXType}
+                  onChange={e => set('tAXType', e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                >
+                  <option value="">{ui('fiscal.verifactu.field.selectTax')}</option>
+                  {VERIFACTU_TAX_TYPE_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div className="flex items-center gap-2 pb-1">
+              <Switch
+                checked={isEtendoTrue(form.defaultQR)}
+                onCheckedChange={v => set('defaultQR', v ? 'Y' : 'N')}
+                disabled={isLocked}
+              />
+              <span className="text-sm text-[#121217]">{ui('fiscal.verifactu.field.qr')}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <Label>{ui('fiscal.verifactu.field.enrollDate')}</Label>
+              <Input value={record?.inVfactuSystem ?? ''} disabled />
+            </div>
+          </div>
+        </div>
+      </SectionRow>
 
-      <div className="space-y-1">
-        <Label>{ui('fiscal.verifactu.field.tax')}</Label>
-        {isLocked ? (
-          <Input value={getVerifactuTaxTypeLabel(form.tAXType)} disabled />
-        ) : (
-          <select
-            value={form.tAXType}
-            onChange={e => set('tAXType', e.target.value)}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-          >
-            <option value="">{ui('fiscal.verifactu.field.selectTax')}</option>
-            {VERIFACTU_TAX_TYPE_OPTIONS.map(option => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-        )}
-      </div>
-      <div className="flex items-center justify-between">
-        <Label>{ui('fiscal.verifactu.field.qr')}</Label>
-        {yesno('defaultQR')}
-      </div>
-      <div className="space-y-1">
-        <Label>{ui('fiscal.verifactu.field.nif')}</Label>
-        <Input value={record?.issuerNIF ?? ''} disabled />
-      </div>
-      <div className="space-y-1">
-        <Label>{ui('fiscal.verifactu.field.systemStart')}</Label>
-        <Input value={record?.systemStartat ?? ''} disabled />
-      </div>
-      <div className="space-y-1">
-        <Label>{ui('fiscal.verifactu.field.systemStop')}</Label>
-        <Input value={record?.systemStopat ?? ''} disabled />
-      </div>
-      <div className="space-y-1">
-        <Label>{ui('fiscal.verifactu.field.incident')}</Label>
-        <Input value={record?.incidentReport ?? ''} disabled />
-      </div>
-      <div className="space-y-1">
-        <Label>{ui('fiscal.verifactu.field.enrollDate')}</Label>
-        <Input value={record?.inVfactuSystem ?? ''} disabled />
-      </div>
+      {/* Certificado digital */}
+      <SectionRow
+        leftContent={
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-semibold text-[#121217]">{ui('fiscal.cert.section.legend')}</span>
+            <span className="text-xs text-[#121217] leading-tight">{ui('fiscal.cert.section.hint')}</span>
+          </div>
+        }
+      >
+        <CertSection context="verifactu" orgId={orgId} apiBaseUrl={apiBaseUrl} />
+      </SectionRow>
 
-      <CertSection context="verifactu" orgId={orgId} apiBaseUrl={apiBaseUrl} />
-
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-sm text-destructive mt-4">{error}</p>}
 
       {!hideSave && !isLocked && (
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? ui('fiscal.verifactu.saving') : ui('fiscal.save')}
-        </Button>
+        <div className="pt-4">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 rounded-lg bg-[#121217] text-white text-sm font-medium hover:bg-[#121217]/90 disabled:opacity-50 transition-colors"
+          >
+            {saving ? ui('fiscal.verifactu.saving') : ui('fiscal.save')}
+          </button>
+        </div>
       )}
     </div>
   );

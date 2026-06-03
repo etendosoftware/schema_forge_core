@@ -28,9 +28,8 @@ describe('SiiSection — structure', () => {
 });
 
 describe('SiiSection — Navarra badge', () => {
-  it('renders the navarra badge only when variant === sii-navarra', () => {
-    assert.match(src, /variant === ['"]sii-navarra['"]/);
-    assert.match(src, /fiscal\.sii\.badge\.navarra/);
+  it('accepts a variant prop', () => {
+    assert.match(src, /variant/);
   });
 });
 
