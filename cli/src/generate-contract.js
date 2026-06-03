@@ -1216,7 +1216,7 @@ function extractRequiredSessionVariables(schema, rules = []) {
     addSessionVariablesFromExpression(rule.rawExpression, sessionVars);
   }
 
-  return Array.from(sessionVars).sort();
+  return Array.from(sessionVars).sort((a, b) => a.localeCompare(b));
 }
 
 /**
