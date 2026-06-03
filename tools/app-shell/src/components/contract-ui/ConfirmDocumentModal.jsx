@@ -204,7 +204,7 @@ export default function ConfirmDocumentModal({
           </div>
         )}
 
-        {subtitleKey && (
+        {subtitleKey && invoiceAction && (
           <div style={{ padding: '12px 20px 8px' }}>
             <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.5, margin: 0 }}>
               {ui(subtitleKey)}
@@ -212,15 +212,17 @@ export default function ConfirmDocumentModal({
           </div>
         )}
 
-        <div style={{ padding: '8px 20px 16px' }}>
-          <CheckboxCard
-            checked={createInvoice}
-            onChange={() => setCreateInvoice(v => !v)}
-            icon="🧾"
-            title={ui(cardTitleKey)}
-            subtitle={ui(cardSubtitleKey)}
-          />
-        </div>
+        {invoiceAction && (
+          <div style={{ padding: '8px 20px 16px' }}>
+            <CheckboxCard
+              checked={createInvoice}
+              onChange={() => setCreateInvoice(v => !v)}
+              icon="🧾"
+              title={ui(cardTitleKey)}
+              subtitle={ui(cardSubtitleKey)}
+            />
+          </div>
+        )}
 
         {error && (
           <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA' }}>

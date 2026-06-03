@@ -8,179 +8,8 @@ import SendDocumentModal from '@/components/contract-ui/SendDocumentModal';
 import { ConfirmResultModal } from '@/components/contract-ui';
 import { usePreviewAttachment } from '@/windows/custom/shared/usePreviewAttachment.js';
 import PurchaseReturnWizard from './PurchaseReturnWizard';
+import CreateInvoiceConfirmModal from '@/components/contract-ui/CreateInvoiceConfirmModal';
 
-// ── ReceiptInvoicePreview ─────────────────────────────────────────────────────
-
-function ReceiptInvoicePreview({ receiptId, receiptData, base, headers, loading, onConfirm, onClose }) {
-  const ui = useUI();
-  const [lines, setLines] = useState([]);
-  const [loadingLines, setLoadingLines] = useState(true);
-  const [orderLinePrices, setOrderLinePrices] = useState({});
-  const [lineQuantities, setLineQuantities] = useState({});
-
-  const bpName = receiptData?.['businessPartner$_identifier'] || '';
-  const receiptNo = receiptData?.documentNo || '';
-  const orderId = receiptData?.salesOrder;
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(
-          `${base}/goods-receipt/goodsReceiptLine?parentId=${receiptId}&_startRow=0&_endRow=200`,
-          { headers },
-        );
-        if (!cancelled && res.ok) {
-          setLines((await res.json())?.response?.data || []);
-        }
-      } catch { /* silent */ }
-      finally { if (!cancelled) setLoadingLines(false); }
-    })();
-    return () => { cancelled = true; };
-  }, [receiptId, base, headers]);
-
-  useEffect(() => {
-    if (!orderId || !base) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(
-          `${base}/purchase-order/lines?parentId=${orderId}&_startRow=0&_endRow=200`,
-          { headers },
-        );
-        if (res.ok && !cancelled) {
-          const olMap = {};
-          ((await res.json())?.response?.data || []).forEach(ol => { olMap[ol.id] = ol; });
-          setOrderLinePrices(olMap);
-        }
-      } catch { /* silent */ }
-    })();
-    return () => { cancelled = true; };
-  }, [orderId, base, headers]);
-
-  const enrichedLines = useMemo(() =>
-    lines.map(l => {
-      const ol = orderLinePrices[l.salesOrderLine] || {};
-      const unitPrice = Number(ol.unitPrice) || 0;
-      const maxQty = Number(l.movementQuantity) || 0;
-      const currentQty = lineQuantities[l.id] ?? maxQty;
-      return { ...l, unitPrice, maxQty, currentQty, lineTotal: unitPrice * currentQty };
-    }),
-    [lines, orderLinePrices, lineQuantities],
-  );
-
-  useEffect(() => {
-    if (lines.length > 0 && Object.keys(lineQuantities).length === 0) {
-      const defaults = {};
-      lines.forEach(l => { defaults[l.id] = Number(l.movementQuantity) || 0; });
-      setLineQuantities(defaults);
-    }
-  }, [lines]);
-
-  const total = useMemo(() => enrichedLines.reduce((sum, l) => sum + l.lineTotal, 0), [enrichedLines]);
-
-  const fmtNum = (v) => v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-
-  return (
-    <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-      <div onClick={e => e.stopPropagation()} style={{ width: 560, maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB' }}>
-
-        <div style={{ padding: '14px 16px', background: '#F4F5F7', borderBottom: '1px solid #E5E7EB', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>{ui('createInvoiceBtn')}</div>
-              <div style={{ fontSize: 13, color: '#6B7280', marginTop: 3 }}>
-                {receiptNo}{bpName ? ` · ${bpName}` : ''}
-              </div>
-            </div>
-            <button type="button" onClick={onClose} style={{ fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>&times;</button>
-          </div>
-        </div>
-
-        <div style={{ flex: 1, overflowY: 'auto', padding: 0 }}>
-          {loadingLines ? (
-            <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>{ui('loadingLines')}</p>
-          ) : enrichedLines.length === 0 ? (
-            <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>{ui('noLinesInThisReceipt')}</p>
-          ) : (
-            <>
-              <div style={{ display: 'flex', padding: '8px 16px', fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '0.5px solid #E5E7EB', background: '#F9FAFB' }}>
-                <span style={{ flex: 1 }}>{ui('product')}</span>
-                <span style={{ width: 70, textAlign: 'right' }}>{ui('qty')}</span>
-                <span style={{ width: 80, textAlign: 'right' }}>{ui('price')}</span>
-                <span style={{ width: 90, textAlign: 'right' }}>{ui('amount')}</span>
-              </div>
-              {enrichedLines.map(line => {
-                const qtyEdited = line.currentQty !== line.maxQty;
-                return (
-                  <div key={line.id} style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', borderBottom: '0.5px solid #F3F4F6' }}>
-                    <span style={{ flex: 1, fontSize: 13, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {line['product$_identifier'] || line.id}
-                    </span>
-                    <span style={{ width: 70, textAlign: 'right' }}>
-                      <input
-                        type="number"
-                        min={1}
-                        max={line.maxQty}
-                        value={line.currentQty}
-                        onChange={e => {
-                          const v = Math.max(1, Math.min(line.maxQty, Number(e.target.value) || 1));
-                          setLineQuantities(prev => ({ ...prev, [line.id]: v }));
-                        }}
-                        style={{
-                          width: 56, fontSize: 12, padding: '2px 4px', borderRadius: 4, textAlign: 'center',
-                          fontVariantNumeric: 'tabular-nums', outline: 'none',
-                          border: qtyEdited ? '1px solid #f59e0b' : '0.5px solid #d1d5db',
-                          background: qtyEdited ? '#fffbeb' : '#fff',
-                        }}
-                      />
-                    </span>
-                    <span style={{ width: 80, fontSize: 12, color: '#6B7280', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
-                      {fmtNum(line.unitPrice)}
-                    </span>
-                    <span style={{ width: 90, fontSize: 13, color: '#111827', fontVariantNumeric: 'tabular-nums', textAlign: 'right', fontWeight: 500 }}>
-                      {fmtNum(line.lineTotal)}
-                    </span>
-                  </div>
-                );
-              })}
-            </>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F5F5F5', borderTop: '1px solid #E5E5E5', padding: '10px 16px', flexShrink: 0 }}>
-          <span style={{ fontSize: 13, color: '#6B7280', fontVariantNumeric: 'tabular-nums' }}>
-            {enrichedLines.length > 0 && (
-              <>
-                {enrichedLines.length} {ui('line')}{enrichedLines.length !== 1 ? 's' : ''}
-                {' · '}<span style={{ fontWeight: 500, color: '#378ADD' }}>{ui('total')}: {fmtNum(total)}</span>
-              </>
-            )}
-          </span>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '6px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>
-              {ui('cancel')}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const payload = enrichedLines.map(l => ({
-                  receiptLineId: l.id,
-                  quantity: String(l.currentQty),
-                }));
-                onConfirm(payload);
-              }}
-              disabled={enrichedLines.length === 0 || loading}
-              style={{ fontSize: 13, fontWeight: 500, padding: '6px 14px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (enrichedLines.length === 0 || loading) ? 'not-allowed' : 'pointer', opacity: (enrichedLines.length === 0 || loading) ? 0.4 : 1 }}
-            >
-              {loading ? ui('creating') : ui('createInvoiceBtn')}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -189,7 +18,7 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
   const tMenu = useMenuLabel();
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
-  const [showInvoicePreview, setShowInvoicePreview] = useState(false);
+  const [showInvoiceConfirm, setShowInvoiceConfirm] = useState(false);
   const [showClone, setShowClone] = useState(false);
   const [showSend, setShowSend] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -201,6 +30,7 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
 
   const isCompleted = data?.documentStatus === 'CO';
   const isFullyInvoiced = (parseFloat(data?.invoiceStatus ?? 0)) >= 100;
+  const isFullyReturned = (parseFloat(data?.returnStatus ?? 0)) >= 100;
 
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const downloadLinkRef = useRef(null);
@@ -246,20 +76,19 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
     return () => { cancelled = true; };
   }, [wizardOpen, recordId, base, headers]);
 
-  const handleCreateInvoice = async (lines) => {
+  const handleCreateInvoice = async () => {
     if (creatingInvoice) return;
     setCreatingInvoice(true);
     try {
       const res = await fetch(
         `${base}/goods-receipt/goodsReceipt/${recordId}/action/createPurchaseInvoice`,
-        { method: 'POST', headers, body: JSON.stringify({ lines: lines || [] }) },
+        { method: 'POST', headers, body: JSON.stringify({}) },
       );
       if (!res.ok) {
         const err = await res.json().catch(() => null);
         throw new Error(err?.response?.message || err?.message || `Error (${res.status})`);
       }
       const invData = (await res.json())?.response?.data;
-      setShowInvoicePreview(false);
       setConfirmedDocs({ invoice: { id: invData?.id ?? null, documentNo: invData?.documentNo || '' } });
     } catch (err) {
       toast.error(err.message || ui('failedToCreateInvoice'));
@@ -287,7 +116,7 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
         </svg>
       </button>
 
-      {isCompleted && (
+      {isCompleted && !isFullyReturned && (
         <button
           type="button"
           onClick={() => setWizardOpen(true)}
@@ -307,7 +136,7 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
       {isCompleted && !isFullyInvoiced && (
         <button
           type="button"
-          onClick={() => setShowInvoicePreview(true)}
+          onClick={() => setShowInvoiceConfirm(true)}
           style={{ ...textBtn, border: '1px solid var(--color-border-info, #93c5fd)', background: 'var(--color-background-info, #eff6ff)', color: 'var(--color-text-info, #2563eb)' }}
           onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-background-info, #eff6ff)'; }}
@@ -322,37 +151,46 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
         </button>
       )}
 
-      {showConfirm && (
-        <ConfirmDocumentModal
-          base={base}
-          headers={headers}
-          recordId={recordId}
-          specName="goods-receipt"
-          entityName="goodsReceipt"
-          invoiceAction="createPurchaseInvoice"
-          defaultCreateInvoice={false}
-          titleKey="goodsReceipt.confirmModal.title"
-          subtitleKey="goodsReceipt.confirmModal.subtitle"
-          cardTitleKey="goodsReceipt.confirmModal.createInvoiceTitle"
-          cardSubtitleKey="goodsReceipt.confirmModal.createInvoiceDesc"
-          confirmBtnKey="goodsReceipt.confirmModal.confirmBtn"
-          docInfo={{ bpName: data?.['businessPartner$_identifier'], documentNo: data?.documentNo }}
-          onConfirmed={(docs) => { setShowConfirm(false); setConfirmedDocs(docs); }}
-          onClose={() => setShowConfirm(false)}
-        />
-      )}
+      {showConfirm && isFullyInvoiced
+        ? createPortal(
+            <ConfirmReceiptInvoicedModal
+              data={data}
+              base={base}
+              headers={headers}
+              recordId={recordId}
+              onConfirmed={(docs) => { setShowConfirm(false); setConfirmedDocs(docs); }}
+              onClose={() => setShowConfirm(false)}
+            />,
+            document.body,
+          )
+        : showConfirm && (
+            <ConfirmDocumentModal
+              base={base}
+              headers={headers}
+              recordId={recordId}
+              specName="goods-receipt"
+              entityName="goodsReceipt"
+              invoiceAction="createPurchaseInvoice"
+              defaultCreateInvoice={false}
+              titleKey="goodsReceipt.confirmModal.title"
+              subtitleKey="goodsReceipt.confirmModal.subtitle"
+              cardTitleKey="goodsReceipt.confirmModal.createInvoiceTitle"
+              cardSubtitleKey="goodsReceipt.confirmModal.createInvoiceDesc"
+              confirmBtnKey="goodsReceipt.confirmModal.confirmBtn"
+              docInfo={{ bpName: data?.['businessPartner$_identifier'], documentNo: data?.documentNo }}
+              onConfirmed={(docs) => { setShowConfirm(false); setConfirmedDocs(docs); }}
+              onClose={() => setShowConfirm(false)}
+            />
+          )
+      }
 
-      {showInvoicePreview && createPortal(
-        <ReceiptInvoicePreview
-          receiptId={recordId}
-          receiptData={data}
-          base={base}
-          headers={headers}
+      {showInvoiceConfirm && (
+        <CreateInvoiceConfirmModal
+          data={data}
           loading={creatingInvoice}
-          onConfirm={handleCreateInvoice}
-          onClose={() => setShowInvoicePreview(false)}
-        />,
-        document.body,
+          onConfirm={() => { setShowInvoiceConfirm(false); handleCreateInvoice(); }}
+          onClose={() => setShowInvoiceConfirm(false)}
+        />
       )}
 
       {confirmedDocs && createPortal(
@@ -455,6 +293,145 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
         document.body,
       )}
     </>
+  );
+}
+
+// ── ConfirmReceiptInvoicedModal (variant B — receipt already fully invoiced) ──
+
+function ConfirmReceiptInvoicedModal({ data, base, headers, recordId, onConfirmed, onClose }) {
+  const ui = useUI();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const invoices = Array.isArray(data?.linkedInvoices) ? data.linkedInvoices : [];
+  const inv = invoices[0] || null;
+  const docNo = data?.documentNo || '';
+  const bpName = data?.['businessPartner$_identifier'] || '';
+
+  const fmtAmount = (v, currency) => {
+    if (v == null) return '';
+    return `${Number(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency || ''}`.trim();
+  };
+
+  const statusLabel = { CO: ui('orderStatusCompleted'), DR: ui('orderStatusDraft') };
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `${base}/goods-receipt/goodsReceipt/${recordId}/action/documentAction`,
+        { method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }) },
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.response?.message || body?.message || `Error (${res.status})`);
+      }
+      onConfirmed({ invoice: null });
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(20,26,38,.45)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 460, borderRadius: 14, background: '#fff', boxShadow: '0 24px 60px -12px rgba(20,26,38,.35)', overflow: 'hidden' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px 14px' }}>
+          <span style={{ fontWeight: 600, fontSize: 15, color: '#1f2733' }}>{ui('goodsReceipt.confirmModal.titleConfirm')}</span>
+          <button type="button" onClick={onClose} style={{ fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#9aa1aa' }}>&times;</button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '0 20px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* Identity row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#1f2733' }}>{docNo}</span>
+            {bpName && <><span style={{ color: '#9aa1aa', fontSize: 13 }}>·</span><span style={{ fontSize: 13, color: '#6b7480' }}>{bpName}</span></>}
+          </div>
+
+          {/* Invoice card */}
+          {inv && (
+            <div style={{ border: '1px solid #e7e9ec', borderRadius: 11, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              {/* Icon box */}
+              <div style={{ width: 38, height: 38, borderRadius: 9, background: '#f3f0ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c5cff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+              </div>
+              {/* Info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#1f2733' }}>{ui('goodsReceipt.confirmModal.invoiceRef')} {inv.documentNo}</span>
+                  <span style={{ fontSize: 11, fontWeight: 500, padding: '3px 9px', borderRadius: 6, background: '#e6f6ec', color: '#1f9d57', whiteSpace: 'nowrap' }}>
+                    {statusLabel[inv.documentStatus] || inv.documentStatus}
+                  </span>
+                </div>
+                {inv.grandTotalAmount != null && (
+                  <div style={{ fontSize: 13, color: '#6b7480', marginTop: 2 }}>
+                    {fmtAmount(inv.grandTotalAmount, inv['currency$_identifier'])}
+                  </div>
+                )}
+              </div>
+              {/* Ver → link */}
+              <button
+                type="button"
+                onClick={() => { onClose(); navigate(`/purchase-invoice/${inv.id}`); }}
+                style={{ all: 'unset', fontSize: 13, fontWeight: 600, color: '#2f73d6', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#2a67c2'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#2f73d6'; }}
+              >
+                {ui('goodsReceipt.confirmModal.viewInvoice')}
+              </button>
+            </div>
+          )}
+
+          {/* Microcopy */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1f9d57" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <p style={{ fontSize: 13, color: '#6b7480', lineHeight: 1.5, margin: 0 }}>
+              {ui('goodsReceipt.confirmModal.fullyInvoicedInfo')}{' '}
+              <strong style={{ color: '#1f2733' }}>{ui('goodsReceipt.confirmModal.noNewInvoice')}</strong>
+            </p>
+          </div>
+
+          {error && (
+            <div style={{ fontSize: 12, color: '#DC2626', background: '#FEF2F2', padding: '8px 12px', borderRadius: 6 }}>
+              {error}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '12px 20px', background: '#fbfcfd', borderTop: '1px solid #eef0f2' }}>
+          <button type="button" onClick={onClose} disabled={loading} style={{ fontSize: 13, padding: '9px 16px', borderRadius: 9, border: '1px solid #e7e9ec', background: 'transparent', color: '#6b7480', cursor: 'pointer', opacity: loading ? 0.5 : 1 }}>
+            {ui('cancel')}
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={loading}
+            style={{ height: 40, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, padding: '0 18px', borderRadius: 9, border: 'none', background: loading ? '#aac4e8' : '#2f73d6', color: '#fff', cursor: loading ? 'not-allowed' : 'pointer' }}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#2a67c2'; }}
+            onMouseLeave={e => { if (!loading) e.currentTarget.style.background = '#2f73d6'; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            {loading ? ui('processing') : ui('goodsReceipt.confirmModal.confirmBtn')}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

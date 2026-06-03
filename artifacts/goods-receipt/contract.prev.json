@@ -1,8 +1,8 @@
 {
-  "version": "0.12.0",
+  "version": "0.13.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-05-22T14:25:01.656Z",
-  "checksum": "0f53f384042a50fe",
+  "updatedAt": "2026-05-22T14:28:42.357Z",
+  "checksum": "6b6db87e49fd32a5",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -689,7 +689,7 @@
             "label": "Order Quantity",
             "type": "quantity",
             "tsType": "number",
-            "visibility": "editable",
+            "visibility": "readOnly",
             "required": false,
             "grid": true,
             "form": true,
@@ -705,7 +705,7 @@
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
-              "js": "true"
+              "js": "record['processed'] === true"
             }
           },
           {
@@ -1556,7 +1556,7 @@
             "apiKey": "orderQuantity",
             "column": "QuantityOrder",
             "type": "quantity",
-            "visibility": "editable",
+            "visibility": "readOnly",
             "required": false
           },
           {

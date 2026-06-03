@@ -76,6 +76,7 @@
           "grid": true,
           "section": "principal",
           "seq": 40,
+          "defaultExpr": "@#M_Warehouse_ID@",
           "readOnlyLogic": "@Processed@='Y'"
         },
         "description": {

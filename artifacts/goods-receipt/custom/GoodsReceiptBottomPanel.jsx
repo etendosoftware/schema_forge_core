@@ -4,6 +4,7 @@ import { useUI } from '@/i18n';
 import { LinesBottomSection } from '@/components/contract-ui';
 import RelatedDocuments from '@/windows/custom/goods-receipt/RelatedDocuments';
 import ImportFromPurchaseOrderModal from './ImportFromPurchaseOrderModal';
+import ImportFromPurchaseInvoiceModal from './ImportFromPurchaseInvoiceModal';
 
 export default function GoodsReceiptBottomPanel(props) {
   return <LinesBottomSection {...props} relatedDocuments={RelatedDocuments} showTotals={false} />;
@@ -12,18 +13,19 @@ GoodsReceiptBottomPanel.showLineTotals = false;
 
 function GoodsReceiptLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, token, apiBaseUrl, onSave, forceOpen, onForceOpenHandled, onRefresh }) {
   const ui = useUI();
-  const [showImportModal, setShowImportModal] = useState(false);
+  const [showImportOrderModal, setShowImportOrderModal] = useState(false);
+  const [showImportInvoiceModal, setShowImportInvoiceModal] = useState(false);
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
-  const handleImportClick = async () => {
+  const handleImportClick = async (openFn) => {
     if (onSave) {
       const ok = await onSave();
       if (!ok) return;
     }
-    setShowImportModal(true);
+    openFn(true);
   };
 
   if (!isDraft) return null;
@@ -37,14 +39,14 @@ function GoodsReceiptLinesEmptyState({ data, onAddLine, canAddLine = true, recor
         </svg>
       </div>
       <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 4 }}>{ui('noLinesYet')}</span>
-      <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>{ui('addLinesManuallyOrImportFromPurchaseOrder')}</span>
+      <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>{ui('addLinesManuallyOrImportFromPurchaseOrderOrInvoice')}</span>
       {canAddLine && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
           <button type="button" onClick={onAddLine} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, background: '#18181b', color: '#fff', border: 'none', cursor: 'pointer' }}>
             + {ui('addLines')}
           </button>
           {bpId && (
-            <button type="button" onClick={handleImportClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
+            <button type="button" onClick={() => handleImportClick(setShowImportOrderModal)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
@@ -53,16 +55,36 @@ function GoodsReceiptLinesEmptyState({ data, onAddLine, canAddLine = true, recor
               {ui('importFromPurchaseOrder')}
             </button>
           )}
+          {bpId && (
+            <button type="button" onClick={() => handleImportClick(setShowImportInvoiceModal)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              {ui('importFromPurchaseInvoice')}
+            </button>
+          )}
         </div>
       )}
-      {showImportModal && createPortal(
+      {showImportOrderModal && createPortal(
         <ImportFromPurchaseOrderModal
           invoiceId={recordId}
           bpId={bpId}
           base={base}
           headers={headers}
-          onClose={() => setShowImportModal(false)}
-          onSuccess={() => { setShowImportModal(false); onRefresh?.(); }}
+          onClose={() => setShowImportOrderModal(false)}
+          onSuccess={() => { setShowImportOrderModal(false); onRefresh?.(); }}
+        />,
+        document.body,
+      )}
+      {showImportInvoiceModal && createPortal(
+        <ImportFromPurchaseInvoiceModal
+          invoiceId={recordId}
+          bpId={bpId}
+          base={base}
+          headers={headers}
+          onClose={() => setShowImportInvoiceModal(false)}
+          onSuccess={() => { setShowImportInvoiceModal(false); onRefresh?.(); }}
         />,
         document.body,
       )}
@@ -75,48 +97,84 @@ const GoodsReceiptLineActions = forwardRef(function GoodsReceiptLineActions(
   ref,
 ) {
   const ui = useUI();
-  const [showImportModal, setShowImportModal] = useState(false);
+  const [showImportOrderModal, setShowImportOrderModal] = useState(false);
+  const [showImportInvoiceModal, setShowImportInvoiceModal] = useState(false);
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
-  const openModal = async () => {
+  const openOrderModal = async () => {
     if (onSave) {
       const ok = await onSave();
       if (!ok) return;
     }
-    setShowImportModal(true);
+    setShowImportOrderModal(true);
   };
 
-  useImperativeHandle(ref, () => ({ openImportOrderModal: openModal }), [onSave]);
+  const openInvoiceModal = async () => {
+    if (onSave) {
+      const ok = await onSave();
+      if (!ok) return;
+    }
+    setShowImportInvoiceModal(true);
+  };
+
+  useImperativeHandle(ref, () => ({
+    openImportOrderModal: openOrderModal,
+    openImportInvoiceModal: openInvoiceModal,
+  }), [onSave]);
 
   if (!isDraft || !bpId) return null;
 
   return (
     <>
       {!hideTrigger && (
-        <button
-          type="button"
-          onClick={openModal}
-          style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
-          {ui('importFromPurchaseOrder')}
-        </button>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+          <button
+            type="button"
+            onClick={openOrderModal}
+            style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            {ui('importFromPurchaseOrder')}
+          </button>
+          <button
+            type="button"
+            onClick={openInvoiceModal}
+            style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            {ui('importFromPurchaseInvoice')}
+          </button>
+        </div>
       )}
-      {showImportModal && createPortal(
+      {showImportOrderModal && createPortal(
         <ImportFromPurchaseOrderModal
           invoiceId={recordId}
           bpId={bpId}
           base={base}
           headers={headers}
-          onClose={() => setShowImportModal(false)}
-          onSuccess={() => { setShowImportModal(false); onRefresh?.(); }}
+          onClose={() => setShowImportOrderModal(false)}
+          onSuccess={() => { setShowImportOrderModal(false); onRefresh?.(); }}
+        />,
+        document.body,
+      )}
+      {showImportInvoiceModal && createPortal(
+        <ImportFromPurchaseInvoiceModal
+          invoiceId={recordId}
+          bpId={bpId}
+          base={base}
+          headers={headers}
+          onClose={() => setShowImportInvoiceModal(false)}
+          onSuccess={() => { setShowImportInvoiceModal(false); onRefresh?.(); }}
         />,
         document.body,
       )}
@@ -136,6 +194,11 @@ GoodsReceiptBottomPanel.lineMenuActions = function lineMenuActions({ data, impor
       key: 'import-order',
       label: 'importFromPurchaseOrder',
       onClick: () => importRef.current?.openImportOrderModal?.(),
+    },
+    {
+      key: 'import-invoice',
+      label: 'importFromPurchaseInvoice',
+      onClick: () => importRef.current?.openImportInvoiceModal?.(),
     },
   ];
 };
