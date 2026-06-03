@@ -17,5 +17,6 @@ export function initSentry() {
     tracesSampleRate: 0.1,
     tracePropagationTargets: [/core\..+\.etendo\.cloud/, 'core.etendo.cloud'],
     sendDefaultPii: true,
+    autoSessionTracking: false,
   });
 }
