@@ -38,13 +38,7 @@ export default function AssetsSidebar({ data }) {
   const assetValue = Number(data?.assetValue ?? 0);
   const residualAssetValue = Number(data?.residualAssetValue ?? 0);
   const depreciatedPlan = Number(data?.depreciatedPlan ?? 0);
-  const depreciationAmt = Number(data?.depreciationAmt ?? 0);
-  const depreciatedValue = Number(data?.depreciatedValue ?? 0);
-  const denominator = depreciatedPlan > 0 ? depreciatedPlan : depreciationAmt;
-  const fallbackPct = depreciatedValue > 0 ? 100 : 0;
-  const pct = denominator > 0
-    ? Math.min(100, Math.round((depreciatedValue / denominator) * 100))
-    : fallbackPct;
+  const pct = Number(data?.etgoAmortizationStatus ?? 0);
   const isComplete = pct === 100;
 
   return (

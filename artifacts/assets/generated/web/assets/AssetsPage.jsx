@@ -58,8 +58,7 @@ export const api = {
         "searchKey",
         "name",
         "assetCategory",
-        "depreciate",
-        "fullyDepreciated"
+        "depreciate"
       ]
     },
     "amortizationLine": {

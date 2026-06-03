@@ -1,8 +1,8 @@
 {
-  "version": "0.23.0",
+  "version": "0.26.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-06-02T18:47:21.059Z",
-  "checksum": "3c0ef53f60e0e063",
+  "updatedAt": "2026-06-03T17:02:59.079Z",
+  "checksum": "168081057c346ac4",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -36,6 +36,7 @@
       },
       "secondaryTabs": {},
       "detailEntity": null,
+      "statusField": "none",
       "detailSortBy": "sEQNoAsset asc",
       "headerExtra": {
         "customForm": "AssetsDetailPanel"
@@ -557,39 +558,6 @@
             }
           },
           {
-            "name": "fullyDepreciated",
-            "apiKey": "fullyDepreciated",
-            "column": "IsFullyDepreciated",
-            "label": "Fully Depreciated",
-            "type": "boolean",
-            "tsType": "boolean",
-            "visibility": "readOnly",
-            "required": true,
-            "grid": true,
-            "form": false,
-            "sourceRequired": true,
-            "derivation": {
-              "type": "computed",
-              "source": "N"
-            },
-            "defaultValue": "N",
-            "badgeLabels": {
-              "true": {
-                "es_ES": "Totalmente depreciado",
-                "en_US": "Fully depreciated"
-              },
-              "false": {
-                "es_ES": "En progreso",
-                "en_US": "In progress"
-              }
-            },
-            "cellType": "depreciationProgress",
-            "displayLogic": {
-              "raw": "@IsDepreciated@='Y'",
-              "evaluable": true
-            }
-          },
-          {
             "name": "project",
             "apiKey": "project",
             "column": "C_Project_ID",
@@ -768,14 +736,32 @@
               "reason": "accounting-dimension",
               "js": null
             }
+          },
+          {
+            "name": "etgoAmortizationStatus",
+            "apiKey": "etgoAmortizationStatus",
+            "column": "EM_Etgo_Amortization_Status",
+            "label": "Amortization Status",
+            "type": "decimal",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": false,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
+            "columnType": "number",
+            "defaultValue": "0",
+            "cellType": "depreciationProgress"
           }
         ],
         "searchableFields": [
           "searchKey",
           "name",
           "assetCategory",
-          "depreciate",
-          "fullyDepreciated"
+          "depreciate"
         ],
         "computedFields": [
           {
@@ -821,17 +807,17 @@
             }
           },
           {
-            "name": "fullyDepreciated",
+            "name": "processAsset",
             "derivation": {
               "type": "computed",
               "source": "N"
             }
           },
           {
-            "name": "processAsset",
+            "name": "etgoAmortizationStatus",
             "derivation": {
               "type": "computed",
-              "source": "N"
+              "source": "0"
             }
           }
         ]
@@ -1028,6 +1014,7 @@
       },
       "secondaryTabs": {},
       "detailEntity": null,
+      "statusField": "none",
       "detailSortBy": "sEQNoAsset asc",
       "headerExtra": {
         "customForm": "AssetsDetailPanel"
@@ -1317,7 +1304,7 @@
             "apiKey": "fullyDepreciated",
             "column": "IsFullyDepreciated",
             "type": "boolean",
-            "visibility": "readOnly",
+            "visibility": "discarded",
             "required": true
           },
           {
@@ -1622,6 +1609,14 @@
             "column": "EM_Etadas_User2_ID",
             "type": "foreignKey",
             "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "etgoAmortizationStatus",
+            "apiKey": "etgoAmortizationStatus",
+            "column": "EM_Etgo_Amortization_Status",
+            "type": "decimal",
+            "visibility": "readOnly",
             "required": false
           }
         ]
@@ -1946,8 +1941,7 @@
           "searchKey",
           "name",
           "assetCategory",
-          "depreciate",
-          "fullyDepreciated"
+          "depreciate"
         ]
       },
       {
@@ -2054,8 +2048,7 @@
           "searchKey",
           "name",
           "assetCategory",
-          "depreciate",
-          "fullyDepreciated"
+          "depreciate"
         ]
       },
       "amortizationLine": {
@@ -2332,20 +2325,20 @@
         "description": "Default value for 'depreciatedValue' in assets should be a string"
       },
       {
+        "id": "t-default-value-type-assets-etgoAmortizationStatus",
+        "category": "default-value-type",
+        "entity": "assets",
+        "field": "etgoAmortizationStatus",
+        "runner": "node",
+        "description": "Default value for 'etgoAmortizationStatus' in assets should be a string"
+      },
+      {
         "id": "t-default-value-type-assets-everyMonthIs30Days",
         "category": "default-value-type",
         "entity": "assets",
         "field": "everyMonthIs30Days",
         "runner": "node",
         "description": "Default value for 'everyMonthIs30Days' in assets should be a string"
-      },
-      {
-        "id": "t-default-value-type-assets-fullyDepreciated",
-        "category": "default-value-type",
-        "entity": "assets",
-        "field": "fullyDepreciated",
-        "runner": "node",
-        "description": "Default value for 'fullyDepreciated' in assets should be a string"
       },
       {
         "id": "t-default-value-type-assets-previouslyDepreciatedAmt",
@@ -2522,14 +2515,6 @@
         "field": "everyMonthIs30Days",
         "runner": "node",
         "description": "Display logic for 'everyMonthIs30Days' in assets should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-evaluable-assets-fullyDepreciated",
-        "category": "displaylogic-evaluable",
-        "entity": "assets",
-        "field": "fullyDepreciated",
-        "runner": "node",
-        "description": "Display logic for 'fullyDepreciated' in assets should have evaluable flag"
       },
       {
         "id": "t-displaylogic-evaluable-assets-previouslyDepreciatedAmt",
@@ -2746,14 +2731,6 @@
         "field": "everyMonthIs30Days",
         "runner": "node",
         "description": "Display logic for 'everyMonthIs30Days' in assets should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-assets-fullyDepreciated",
-        "category": "displaylogic-valid",
-        "entity": "assets",
-        "field": "fullyDepreciated",
-        "runner": "node",
-        "description": "Display logic for 'fullyDepreciated' in assets should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-assets-previouslyDepreciatedAmt",
@@ -3060,20 +3037,20 @@
         "description": "Field 'eTADASUser2' should be present in assets"
       },
       {
+        "id": "t-field-presence-assets-etgoAmortizationStatus",
+        "category": "field-presence",
+        "entity": "assets",
+        "field": "etgoAmortizationStatus",
+        "runner": "node",
+        "description": "Field 'etgoAmortizationStatus' should be present in assets"
+      },
+      {
         "id": "t-field-presence-assets-everyMonthIs30Days",
         "category": "field-presence",
         "entity": "assets",
         "field": "everyMonthIs30Days",
         "runner": "node",
         "description": "Field 'everyMonthIs30Days' should be present in assets"
-      },
-      {
-        "id": "t-field-presence-assets-fullyDepreciated",
-        "category": "field-presence",
-        "entity": "assets",
-        "field": "fullyDepreciated",
-        "runner": "node",
-        "description": "Field 'fullyDepreciated' should be present in assets"
       },
       {
         "id": "t-field-presence-assets-name",
@@ -3396,20 +3373,20 @@
         "description": "Field 'eTADASUser2' should have type 'string' in assets"
       },
       {
+        "id": "t-field-type-assets-etgoAmortizationStatus",
+        "category": "field-type",
+        "entity": "assets",
+        "field": "etgoAmortizationStatus",
+        "runner": "node",
+        "description": "Field 'etgoAmortizationStatus' should have type 'number' in assets"
+      },
+      {
         "id": "t-field-type-assets-everyMonthIs30Days",
         "category": "field-type",
         "entity": "assets",
         "field": "everyMonthIs30Days",
         "runner": "node",
         "description": "Field 'everyMonthIs30Days' should have type 'boolean' in assets"
-      },
-      {
-        "id": "t-field-type-assets-fullyDepreciated",
-        "category": "field-type",
-        "entity": "assets",
-        "field": "fullyDepreciated",
-        "runner": "node",
-        "description": "Field 'fullyDepreciated' should have type 'boolean' in assets"
       },
       {
         "id": "t-field-type-assets-name",
@@ -3661,14 +3638,6 @@
         "field": "depreciate",
         "runner": "node",
         "description": "Field 'depreciate' should be a supported filter for assets"
-      },
-      {
-        "id": "t-searchable-filters-assets-fullyDepreciated",
-        "category": "searchable-filters",
-        "entity": "assets",
-        "field": "fullyDepreciated",
-        "runner": "node",
-        "description": "Field 'fullyDepreciated' should be a supported filter for assets"
       },
       {
         "id": "t-searchable-filters-assets-name",
@@ -4127,6 +4096,14 @@
         "description": "System field 'expirationDate' should exist in backend but not frontend for assets"
       },
       {
+        "id": "t-system-field-assets-fullyDepreciated",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "fullyDepreciated",
+        "runner": "node",
+        "description": "System field 'fullyDepreciated' should exist in backend but not frontend for assets"
+      },
+      {
         "id": "t-system-field-assets-helpComment",
         "category": "system-field",
         "entity": "assets",
@@ -4333,25 +4310,25 @@
       }
     ],
     "summary": {
-      "total": 261,
+      "total": 259,
       "byCategory": {
         "action-endpoint": 2,
         "crud-flags": 3,
         "default-value-type": 9,
-        "displaylogic-evaluable": 28,
-        "displaylogic-valid": 28,
+        "displaylogic-evaluable": 27,
+        "displaylogic-valid": 27,
         "field-presence": 42,
         "field-type": 42,
         "readonlylogic-evaluable": 4,
         "readonlylogic-valid": 4,
         "rule-declared": 13,
-        "searchable-filters": 5,
+        "searchable-filters": 4,
         "selector-endpoint": 15,
-        "system-field": 63,
+        "system-field": 64,
         "visibility": 3
       },
       "byRunner": {
-        "node": 261,
+        "node": 259,
         "junit": 0
       }
     }

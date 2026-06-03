@@ -293,12 +293,8 @@ export function generateTableComponent(entityName, contract) {
   // Render helper functions for custom cell types
   const depreciationProgressHelper = neededCellTypes.has('depreciationProgress') ? `
 function renderDepreciationProgress(row) {
-  const depreciatedValue = row.depreciatedValue ?? 0;
-  const depreciationAmt = row.depreciationAmt ?? 0;
-  const pct = depreciationAmt > 0
-    ? Math.min(100, Math.round((depreciatedValue / depreciationAmt) * 100))
-    : (depreciatedValue > 0 ? 100 : null);
-  if (pct == null) return null;
+  const pct = row.etgoAmortizationStatus ?? null;
+  if (pct == null || pct === 0) return null;
   const color = pct === 100 ? '#10b981' : '#f59e0b';
   return (
     <div className="flex items-center gap-1.5" style={{ minWidth: 80 }}>
@@ -699,9 +695,11 @@ function resolveStatusAndSummaryFields(requiredHeaderFieldNames, allEntityFields
     : '[]';
   const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
   const statusFieldOverride = contract.frontendContract.window.statusField;
-  const statusField = statusFieldOverride
-    ? (allEntityFields.find(f => f.name === statusFieldOverride) ?? null)
-    : (docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status')));
+  const statusField = (statusFieldOverride === false || statusFieldOverride === 'none')
+    ? null
+    : statusFieldOverride
+      ? (allEntityFields.find(f => f.name === statusFieldOverride) ?? null)
+      : (docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status')));
   const summaryFieldsOverride = contract.frontendContract.window.summaryFields;
   const summaryFields = getSummaryFields(summaryFieldsOverride, readOnlyFields, statusField);
   return { requiredHeaderFieldsArray, statusField, summaryFields };

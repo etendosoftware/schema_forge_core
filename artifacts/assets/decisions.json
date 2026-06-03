@@ -46,6 +46,7 @@
       }
     },
     "sidebarLayout": true,
+    "statusField": "none",
     "disableProcessedLock": true,
     "processOverrides": {
       "processAsset": {
@@ -203,13 +204,13 @@
           "form": false
         },
         "fullyDepreciated": {
+          "visibility": "discarded",
+          "reason": "Replaced by etgoAmortizationStatus — ISFULLYDEPRECIATED is no longer maintained"
+        },
+        "etgoAmortizationStatus": {
           "grid": true,
-          "searchable": true,
+          "columnType": "number",
           "cellType": "depreciationProgress",
-          "badgeLabels": {
-            "true": { "es_ES": "Totalmente depreciado", "en_US": "Fully depreciated" },
-            "false": { "es_ES": "En progreso", "en_US": "In progress" }
-          },
           "filterable": true,
           "form": false
         },

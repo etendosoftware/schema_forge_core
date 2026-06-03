@@ -1,8 +1,8 @@
 {
-  "version": "0.23.0",
+  "version": "0.26.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-06-02T16:48:11.660Z",
-  "contractChecksum": "3c0ef53f60e0e063",
+  "updatedAt": "2026-06-03T16:00:03.430Z",
+  "contractChecksum": "168081057c346ac4",
   "apiPrediction": {
     "specName": "assets",
     "baseUrl": "/sws/neo/assets",
@@ -20,8 +20,7 @@
           "searchKey",
           "name",
           "assetCategory",
-          "depreciate",
-          "fullyDepreciated"
+          "depreciate"
         ]
       },
       "amortizationLine": {
@@ -313,11 +312,6 @@
             "readOnly": true,
             "defaultValue": "0"
           },
-          "fullyDepreciated": {
-            "readOnly": true,
-            "required": true,
-            "defaultValue": "N"
-          },
           "project": {},
           "processAsset": {
             "required": true,
@@ -329,7 +323,11 @@
           "eTADASSalesCampaign": {},
           "eTADASSalesRegion": {},
           "eTADASUser1": {},
-          "eTADASUser2": {}
+          "eTADASUser2": {},
+          "etgoAmortizationStatus": {
+            "readOnly": true,
+            "defaultValue": "0"
+          }
         }
       },
       "amortizationLine": {
@@ -443,5 +441,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "12a2edd1faf62929"
+  "checksum": "74e857c6c0b3cd86"
 }

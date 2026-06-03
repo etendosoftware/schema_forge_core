@@ -85,8 +85,9 @@ The Assets window should let a finance user register fixed assets, define how ea
   - generated validation entries covering field presence, types, read-only/display logic, CRUD flags, and selector endpoints for the assets, amortizationLine, and assetAcct entities
 - `tools/app-shell/src/windows/custom/assets/AssetsConfigPanel.jsx` implements the visible setup logic that switches fields based on depreciation and calculation choices. All field labels — including currency, purchase/cancellation/depreciation dates, asset value, residual value, depreciation amount, previously depreciated amount, and **annual depreciation percentage** (`assetsAnnualDepreciationLabel`) — are resolved through `useUI()` with keys registered in both `en_US` and `es_ES` locales. On new records, a `useEffect` calls `onChange('currency', data.currency)` on mount to register the backend-defaulted currency value in the form's change tracking — preventing it from being silently dropped on first save. The currency default expression `@C_Currency_ID@` is configured in `artifacts/assets/decisions.json` and pushed to `ETGO_SF_FIELD.DefaultValue` so the NEO `/defaults` endpoint resolves the org's functional currency for new records.
 - `tools/app-shell/src/windows/custom/assets/AssetsAmortizationPanel.jsx` fetches amortization lines by `parentId`, refreshes on `neo:processSuccess`, and shows planned totals/status. Monetary amounts in the amortization table and footer total are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`. Each row is clickable: clicking navigates to `/amortization/{amortizationId}`, linking directly to the corresponding Amortization document.
-- `tools/app-shell/src/windows/custom/assets/AssetsSidebar.jsx` derives depreciation progress from the asset header plus amortization lines. The percentage uses `depreciatedPlan` (or `depreciationAmt` as fallback) as the denominator — not `assetValue`, which reaches 0 when fully deprecated. The same logic applies to `renderDepreciationProgress` in `cli/src/generate-frontend.js` (the "Fully Depreciated" list column).
-- `artifacts/assets/decisions.json` configures `fullyDepreciated` with `columnType: "status"`, `filterOnly: true` (hidden from display, present for `ListFilterBar` detection), and `filterable: false` (excluded from Conditional Filter). The status dropdown normalizes JS booleans (`true`/`false`) to canonical string codes (`"true"`/`"false"`) in `ListFilterBar.jsx`.
+- `tools/app-shell/src/windows/custom/assets/AssetsSidebar.jsx` reads `data.etgoAmortizationStatus` (the DB-backed percentage) directly — no frontend math. The `depreciatedPlan` variable is kept only for the "Planned Depreciation" monetary card.
+- `artifacts/assets/decisions.json` discards `fullyDepreciated` (ISFULLYDEPRECIATED is no longer maintained) and adds `etgoAmortizationStatus` with `cellType: "depreciationProgress"`, `columnType: "number"`, and `filterable: true`. The `statusField: "none"` setting disables the auto-detected status field to prevent the "All statuses" toolbar button from appearing.
+- `renderDepreciationProgress` in `cli/src/generate-frontend.js` reads `row.etgoAmortizationStatus` directly instead of computing `depreciatedValue / depreciationAmt` on the frontend.
 - No assets-specific browser or component test file was found in `tools/app-shell/test` or `tools/app-shell/src/**/__tests__`, so the automated evidence is structural/code-backed rather than end-to-end behavioral proof.
 - The generated `AssetsPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `A_Asset` AD table.
 
@@ -133,21 +134,24 @@ Changes landed in `feature/ETP-4103`. Covers visual polish, full-form restructur
 ### List view
 
 - `dot: false` on `depreciationStartDate` column — "Fecha inicio" shows only the date value, no colored dot indicator.
-- `fullyDepreciated` field: `columnType: "status"` **removed** — the "Todos los estados" global dropdown is no longer present in the list toolbar.
-- `fullyDepreciated` now has `badgeLabels: { true: { es_ES: "Totalmente depreciado", en_US: "Fully depreciated" }, false: { es_ES: "En progreso", en_US: "In progress" } }` — labels are resolved per locale via `createBadgeLabelResolver`.
+- `fullyDepreciated` field: **discarded** — `ISFULLYDEPRECIATED` is no longer maintained by the core and has been replaced by `EM_ETGO_AMORTIZATION_STATUS`.
 - List toolbar now shows only: funnel (Advanced Filter) + "Nuevo activo" button. No status dropdown.
 
-#### ETP-4103 — "Depreciación completa" filter (DB-backed reliable flag)
+#### ETP-4103 — DB-backed depreciation progress (`EM_ETGO_AMORTIZATION_STATUS`)
 
-- `fullyDepreciated` is now `filterable: true` in `decisions.json` → it appears in the "Filtro por condicionales" (Advanced Filter) as a boolean Sí/No condition (mode `booleanLabel`, operator `equals`). The criteria `fieldName: "fullyDepreciated"` maps to the DAL property `fullyDepreciated` (column `IsFullyDepreciated`), so filtering is server-side and paginated — no `backendFilterKey` needed.
-- The list progress bar (`renderDepreciationProgress`) still computes its percentage live from `depreciatedValue / depreciationAmt` and does NOT depend on the boolean.
-- **Reliable flag via DB trigger** (`com.etendoerp.go`): the Etendo core never maintains `A_Asset.ISFULLYDEPRECIATED` (it stays `'N'`), so a `BEFORE INSERT OR UPDATE` row trigger `ETGO_A_ASSET_FULLYDEPR_TRG` (`modules/com.etendoerp.go/src-db/database/model/triggers/`) recomputes it on every asset row change, regardless of what writes `DEPRECIATEDVALUE`. Formula: `ISFULLYDEPRECIATED = 'Y'` when `AMORTIZATIONVALUEAMT > 0 AND DEPRECIATEDVALUE >= AMORTIZATIONVALUEAMT`, else `'N'`. `BEFORE` sets `:new` directly (no recursion); reactivating an amortization (which lowers `DEPRECIATEDVALUE`) flips the flag back to `'N'`.
-- Apply with `./gradlew update.database` (or `export.database` to version the trigger). **Backfill** existing assets once per environment:
+- New column `EM_ETGO_AMORTIZATION_STATUS` (Number, default 0) added to `A_ASSET` via `com.etendoerp.go`. Registered as AD element/column and exposed as `etgoAmortizationStatus` through NEO Headless.
+- Maintained by `ETGO_A_ASSET_AMORT_STATUS_TRG` — a `BEFORE INSERT OR UPDATE` trigger that computes: `LEAST(ROUND((DEPRECIATEDVALUE + DEPRECIATEDPREVIOUSAMT) / AMORTIZATIONVALUEAMT * 100), 100)`. Returns 0 when `AMORTIZATIONVALUEAMT` is null or zero. `DEPRECIATEDPREVIOUSAMT` is included because `DEPRECIATEDVALUE` only tracks what the Etendo plan has processed — previously depreciated amounts are stored separately.
+- `decisions.json`: `etgoAmortizationStatus` → `cellType: "depreciationProgress"`, `columnType: "number"`, `filterable: true`. `statusField: "none"` disables the toolbar status dropdown. `fullyDepreciated` → `visibility: "discarded"`.
+- `renderDepreciationProgress` (generator) and `AssetsSidebar.jsx` both read the DB value directly — no frontend math.
+- **Backfill** existing assets once per environment after installing the trigger:
   ```sql
-  UPDATE A_ASSET SET ISFULLYDEPRECIATED = CASE
-    WHEN COALESCE(AMORTIZATIONVALUEAMT,0) > 0 AND COALESCE(DEPRECIATEDVALUE,0) >= AMORTIZATIONVALUEAMT
-    THEN 'Y' ELSE 'N' END;
+  UPDATE public.a_asset
+  SET em_etgo_amortization_status = CASE
+      WHEN COALESCE(amortizationvalueamt, 0) = 0 THEN 0
+      ELSE LEAST(ROUND((COALESCE(depreciatedvalue, 0) + COALESCE(depreciatedpreviousamt, 0)) / amortizationvalueamt * 100), 100)
+  END;
   ```
+
 
 ### Amortization plan tab — badge labels
 
