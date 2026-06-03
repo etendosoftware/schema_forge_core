@@ -249,7 +249,8 @@ export const api = {
       "EM_Etadas_User2_ID": "2ª Dimensión",
       "EM_Etadas_Salesregion_ID": "Región de ventas",
       "EM_Etadas_C_Activity_ID": "Actividad",
-      "EM_Etadas_Campaign_ID": "Campaña"
+      "EM_Etadas_Campaign_ID": "Campaña",
+      "EM_Etgo_Amortization_Status": "Estado de amortización"
     },
     "en_US": {
       "C_Project_ID": "Project",
@@ -259,7 +260,8 @@ export const api = {
       "EM_Etadas_User2_ID": "2nd Dimension",
       "EM_Etadas_Salesregion_ID": "Sales Region",
       "EM_Etadas_C_Activity_ID": "Activity",
-      "EM_Etadas_Campaign_ID": "Sales Campaign"
+      "EM_Etadas_Campaign_ID": "Sales Campaign",
+      "EM_Etgo_Amortization_Status": "Amortization Status"
     }
   }
 };

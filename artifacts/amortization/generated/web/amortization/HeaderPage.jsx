@@ -7,7 +7,6 @@ import AmortizationLinesTable from '@/windows/custom/amortization/AmortizationLi
 import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
-import HeaderSidebar from '../../../custom/HeaderSidebar';
 import AmortizationConfirmModal from '../../../custom/AmortizationConfirmModal';
 
 const breadcrumb = 'Finance / Amortization';
@@ -18,7 +17,7 @@ const summary = [
 
 ];
 
-const statusField = null;
+const statusField = 'processed';
 // @sf-generated-end summary:header
 
 // @sf-generated-start extraBadges:header
@@ -296,8 +295,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         hidePrint
         noHeaderBorder
         whiteFormBackground
-        sidebarAboveTabsOnly
-        sidebarClassName="w-[30%] shrink-0 border-l border-[#E8EAEF] p-2"
         toolbarButtonSize="default"
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "A_Amortization", config: {} } }]}
         menuActions={({ data, status }) => [
@@ -309,14 +306,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
         {...props}
-        sidebarContent={(data) => (
-          <HeaderSidebar
-            recordId={recordId}
-            data={data}
-            token={props.token}
-            apiBaseUrl={props.apiBaseUrl}
-          />
-        )}
       />
       {showConfirmModal && (
         <AmortizationConfirmModal

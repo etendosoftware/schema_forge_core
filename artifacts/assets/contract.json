@@ -1,8 +1,8 @@
 {
-  "version": "0.30.0",
+  "version": "0.32.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-06-03T19:03:52.078Z",
-  "checksum": "168081057c346ac4",
+  "updatedAt": "2026-06-03T22:48:41.703Z",
+  "checksum": "bb0cbabb04dee243",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -50,7 +50,8 @@
           "EM_Etadas_User2_ID": "2ª Dimensión",
           "EM_Etadas_Salesregion_ID": "Región de ventas",
           "EM_Etadas_C_Activity_ID": "Actividad",
-          "EM_Etadas_Campaign_ID": "Campaña"
+          "EM_Etadas_Campaign_ID": "Campaña",
+          "EM_Etgo_Amortization_Status": "Estado de amortización"
         },
         "en_US": {
           "C_Project_ID": "Project",
@@ -60,7 +61,8 @@
           "EM_Etadas_User2_ID": "2nd Dimension",
           "EM_Etadas_Salesregion_ID": "Sales Region",
           "EM_Etadas_C_Activity_ID": "Activity",
-          "EM_Etadas_Campaign_ID": "Sales Campaign"
+          "EM_Etadas_Campaign_ID": "Sales Campaign",
+          "EM_Etgo_Amortization_Status": "Amortization Status"
         }
       },
       "disableProcessedLock": true,
@@ -1028,7 +1030,8 @@
           "EM_Etadas_User2_ID": "2ª Dimensión",
           "EM_Etadas_Salesregion_ID": "Región de ventas",
           "EM_Etadas_C_Activity_ID": "Actividad",
-          "EM_Etadas_Campaign_ID": "Campaña"
+          "EM_Etadas_Campaign_ID": "Campaña",
+          "EM_Etgo_Amortization_Status": "Estado de amortización"
         },
         "en_US": {
           "C_Project_ID": "Project",
@@ -1038,7 +1041,8 @@
           "EM_Etadas_User2_ID": "2nd Dimension",
           "EM_Etadas_Salesregion_ID": "Sales Region",
           "EM_Etadas_C_Activity_ID": "Activity",
-          "EM_Etadas_Campaign_ID": "Sales Campaign"
+          "EM_Etadas_Campaign_ID": "Sales Campaign",
+          "EM_Etgo_Amortization_Status": "Amortization Status"
         }
       },
       "disableProcessedLock": true,
@@ -2239,7 +2243,8 @@
         "EM_Etadas_User2_ID": "2ª Dimensión",
         "EM_Etadas_Salesregion_ID": "Región de ventas",
         "EM_Etadas_C_Activity_ID": "Actividad",
-        "EM_Etadas_Campaign_ID": "Campaña"
+        "EM_Etadas_Campaign_ID": "Campaña",
+        "EM_Etgo_Amortization_Status": "Estado de amortización"
       },
       "en_US": {
         "C_Project_ID": "Project",
@@ -2249,7 +2254,8 @@
         "EM_Etadas_User2_ID": "2nd Dimension",
         "EM_Etadas_Salesregion_ID": "Sales Region",
         "EM_Etadas_C_Activity_ID": "Activity",
-        "EM_Etadas_Campaign_ID": "Sales Campaign"
+        "EM_Etadas_Campaign_ID": "Sales Campaign",
+        "EM_Etgo_Amortization_Status": "Amortization Status"
       }
     }
   },

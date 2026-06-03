@@ -1,15 +1,14 @@
 {
   "version": "0.22.0",
   "generatedAt": "2026-05-22T16:00:10.872Z",
-  "updatedAt": "2026-06-01T19:11:48.715Z",
-  "checksum": "08720f16521659f4",
+  "updatedAt": "2026-06-03T23:04:15.774Z",
+  "checksum": "213abbe45c8319bd",
   "frontendContract": {
     "window": {
       "id": "800026",
       "name": "Amortization",
       "primaryEntity": "header",
       "category": "finance",
-      "sidebarLayout": true,
       "hideDeleteWhenComplete": true,
       "hidePrint": true,
       "hideLink": true,
@@ -23,6 +22,7 @@
           "columnName": "Processed"
         }
       ],
+      "statusField": "processed",
       "labelOverrides": {
         "es_ES": {
           "Name": "Nombre",
@@ -68,15 +68,13 @@
       "titleField": "name",
       "noHeaderBorder": true,
       "whiteFormBackground": true,
-      "sidebarClassName": "w-[30%] shrink-0 border-l border-[#E8EAEF] p-2",
       "toolbarButtonSize": "default",
       "listbarPaddingX": "px-2",
       "tablePaddingX": "px-2",
       "layoutType": "default",
       "linesLayout": "inlineEditable",
       "customLinesComponent": "AmortizationLinesTable",
-      "customLinesLabel": "Lines",
-      "sidebarAboveTabsOnly": true
+      "customLinesLabel": "Lines"
     },
     "entities": {
       "header": {
@@ -525,7 +523,6 @@
       "name": "Amortization",
       "primaryEntity": "header",
       "category": "finance",
-      "sidebarLayout": true,
       "hideDeleteWhenComplete": true,
       "hidePrint": true,
       "hideLink": true,
@@ -539,6 +536,7 @@
           "columnName": "Processed"
         }
       ],
+      "statusField": "processed",
       "labelOverrides": {
         "es_ES": {
           "Name": "Nombre",
@@ -584,14 +582,12 @@
       "titleField": "name",
       "noHeaderBorder": true,
       "whiteFormBackground": true,
-      "sidebarClassName": "w-[30%] shrink-0 border-l border-[#E8EAEF] p-2",
       "toolbarButtonSize": "default",
       "listbarPaddingX": "px-2",
       "tablePaddingX": "px-2",
       "linesLayout": "inlineEditable",
       "customLinesComponent": "AmortizationLinesTable",
-      "customLinesLabel": "Lines",
-      "sidebarAboveTabsOnly": true
+      "customLinesLabel": "Lines"
     },
     "entities": {
       "header": {

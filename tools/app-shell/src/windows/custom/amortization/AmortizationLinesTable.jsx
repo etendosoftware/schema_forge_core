@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { ChevronDown, Plus, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { useUI, useLabel } from '@/i18n';
+import { useCurrency } from '@/hooks/useCurrency';
+import { formatCurrency } from '@/lib/formatCurrency';
 import SelectorInput from '@/components/contract-ui/SelectorInput';
 import { AddLineButton } from '@/components/ui/add-line-button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -143,6 +145,7 @@ export default function AmortizationLinesTable({
 }) {
   const ui = useUI();
   const t = useLabel(api?.labelOverrides);
+  const orgCurrency = useCurrency() ?? 'USD';
   const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
@@ -614,6 +617,15 @@ export default function AmortizationLinesTable({
           </div>
         )}
       </div>
+
+      {/* ── Total footer ── */}
+      {data?.totalAmortization != null && (
+        <div className="mt-2 pt-2 border-t border-border/50 flex justify-end pr-2">
+          <span className="text-sm font-semibold text-foreground">
+            {ui('totalAmortization')}: {formatCurrency(orgCurrency, data.totalAmortization)}
+          </span>
+        </div>
+      )}
 
       {/* ── shared floating selection bar (same as Sales Order) ── */}
       <LinesSelectionBar
