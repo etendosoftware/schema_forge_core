@@ -9,6 +9,27 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = resolve(__dirname, '../..');
 
+export function checkMatchings(contractFields, apiKeySet, apiKeys) {
+  const matched = [];
+  const missing = []; // In contract but not in API
+  const mismatched = [];
+
+  for (const contractKey of contractFields) {
+    if (apiKeySet.has(contractKey)) {
+      matched.push(contractKey);
+    } else {
+      // Check for case-insensitive match (potential mismatch)
+      const apiMatch = apiKeys.find(k => k.toLowerCase() === contractKey.toLowerCase());
+      if (apiMatch) {
+        mismatched.push({contract: contractKey, api: apiMatch});
+      } else {
+        missing.push(contractKey);
+      }
+    }
+  }
+  return {matched, missing, mismatched};
+}
+
 /**
  * Validate that contract field names match NEO API response keys.
  * Optional step (F7b) — skipped gracefully if Etendo is not running or no data exists.
@@ -98,23 +119,7 @@ export async function validateFieldNames(specName, opts = {}) {
   // Ignore common metadata keys that NEO adds but are not in the contract
   const metaKeys = new Set(['id', 'etag', '$ref', 'recordTime', '_identifier', '_entityName', 'updated', 'updatedBy', 'createdBy', 'creationDate']);
 
-  const matched = [];
-  const missing = []; // In contract but not in API
-  const mismatched = [];
-
-  for (const contractKey of contractFields) {
-    if (apiKeySet.has(contractKey)) {
-      matched.push(contractKey);
-    } else {
-      // Check for case-insensitive match (potential mismatch)
-      const apiMatch = apiKeys.find(k => k.toLowerCase() === contractKey.toLowerCase());
-      if (apiMatch) {
-        mismatched.push({ contract: contractKey, api: apiMatch });
-      } else {
-        missing.push(contractKey);
-      }
-    }
-  }
+  const {matched, missing, mismatched} = checkMatchings(contractFields, apiKeySet, apiKeys);
 
   // Extra: in API but not in contract (excluding meta keys)
   const extra = apiKeys.filter(k => !contractKeySet.has(k) && !metaKeys.has(k));
@@ -143,7 +148,7 @@ function getTokenFromScript() {
 /**
  * Print a human-readable summary of the validation result.
  */
-function printSummary(result, specName) {
+export function printSummary(result, specName) {
   if (result.skipped) {
     console.log(`[F7b] Field name validation skipped: ${result.reason}`);
     return;
