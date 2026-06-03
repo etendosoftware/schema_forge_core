@@ -199,6 +199,32 @@ describe('domain boundary classification', () => {
     );
   });
 
+  it('classifies CLI test runners with the generator boundary', () => {
+    assert.deepEqual(
+      classifyPath('cli/src/run-aggregate-tests.js', { knownWindows: WINDOWS }),
+      { kind: 'generator-change', scope: 'generator-change' },
+    );
+    assert.deepEqual(
+      classifyPath('cli/src/run-contract-tests.js', { knownWindows: WINDOWS }),
+      { kind: 'generator-change', scope: 'generator-change' },
+    );
+  });
+
+  it('classifies CLI migration and validation tooling with the generator boundary', () => {
+    for (const file of [
+      'cli/src/migrate-api-keys.js',
+      'cli/src/migrations/migrate-all.js',
+      'cli/src/validate-field-names.js',
+      'cli/src/validate-pipeline.js',
+    ]) {
+      assert.deepEqual(
+        classifyPath(file, { knownWindows: WINDOWS }),
+        { kind: 'generator-change', scope: 'generator-change' },
+        `expected ${file} to classify as generator-change`,
+      );
+    }
+  });
+
   it('classifies npm registry config as repo infra', () => {
     assert.deepEqual(
       classifyPath('.npmrc', { knownWindows: WINDOWS }),

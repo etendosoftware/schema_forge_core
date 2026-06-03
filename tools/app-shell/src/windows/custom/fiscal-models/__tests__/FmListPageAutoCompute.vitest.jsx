@@ -11,11 +11,13 @@ vi.mock('@/i18n', () => ({ useUI: () => (key) => key }));
 import useFiscalAutoCompute from '../useFiscalAutoCompute.js';
 
 describe('FmListPage — auto-compute wiring', () => {
-  it('calls useFiscalAutoCompute with enabled=false in demo mode', () => {
+  it('passes enabled=true when token and apiBaseUrl are present', () => {
     render(<FmListPage token="tok" apiBaseUrl="http://host/neo/fiscal-models" />);
     const calls = useFiscalAutoCompute.mock.calls;
     expect(calls.length).toBeGreaterThan(0);
-    const lastCall = calls[calls.length - 1];
-    expect(lastCall[1].enabled).toBe(false);
+    // Both auto-compute calls must gate on token+apiBaseUrl being present
+    calls.forEach(call => {
+      expect(call[1].enabled).toBe(true);
+    });
   });
 });

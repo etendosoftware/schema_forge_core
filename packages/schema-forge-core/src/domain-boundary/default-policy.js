@@ -1,3 +1,4 @@
+// Update this file to improve the classification
 export const DEFAULT_BOUNDARY_POLICY = {
   verticalWindows: {
     sales: [
@@ -109,9 +110,12 @@ export const DEFAULT_BOUNDARY_POLICY = {
         '^cli/src/extract-',
         '^cli/src/resolve-curated\\.js$',
         '^cli/src/pipeline\\.js$',
+        '^cli/src/run-[a-z0-9-]+-tests\\.js$',
         '^cli/src/regen-all\\.js$',
         '^cli/src/push-to-neo\\.js$',
-        '^cli/src/validate-pipeline\\.js$',
+        '^cli/src/validate-',
+        '^cli/src/migrate-',
+        '^cli/src/migrations/',
         '^cli/src/quality-gate(?:\\.js|/)',
         '^cli/test/',
         '^schemas/',

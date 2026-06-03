@@ -1558,13 +1558,13 @@ export function DataTable({
                   <TableHead
                     key={col.key}
                     data-testid={`column-header-${col.key}`}
-                    className="align-middle"
+                    className={['align-middle', NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right' : ''].filter(Boolean).join(' ')}
                     style={headStyle}
                   >
                     {onSort && isSortable ? (
                       <button
                         type="button"
-                        className="text-xs leading-4 font-semibold text-text-primary tracking-normal cursor-pointer select-none transition-colors bg-transparent border-0 p-0 text-left"
+                        className={`text-xs leading-4 font-semibold text-text-primary tracking-normal cursor-pointer select-none transition-colors bg-transparent border-0 p-0 ${NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right' : 'text-left'}`}
                         onClick={() => onSort(col.key)}
                       >
                         {colLabel}
@@ -1573,7 +1573,7 @@ export function DataTable({
                         )}
                       </button>
                     ) : (
-                      <span className="text-xs leading-4 font-semibold text-text-primary tracking-normal">
+                      <span className={`text-xs leading-4 font-semibold text-text-primary tracking-normal${NUMERIC_FIELD_TYPES.has(col.type) ? ' text-right' : ''}`}>
                         {colLabel}
                         {isSorted && (
                           <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
