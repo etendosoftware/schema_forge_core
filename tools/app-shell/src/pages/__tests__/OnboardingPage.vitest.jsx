@@ -26,13 +26,18 @@ Object.defineProperty(globalThis, 'alert', {
   value: vi.fn(),
 });
 
+const localeSwitchMock = vi.hoisted(() => ({
+  locale: 'en_US',
+  setLocale: vi.fn(),
+}));
+
 // Mock i18n
 vi.mock('@/i18n', () => ({
   useUI: () => (key, params) => {
     if (params) return `${key} ${JSON.stringify(params)}`;
     return key;
   },
-  useLocaleSwitch: () => ({ locale: 'en_US', setLocale: vi.fn() }),
+  useLocaleSwitch: () => localeSwitchMock,
   useMenuLabel: () => (key) => key,
 }));
 
@@ -41,7 +46,7 @@ vi.mock('../../i18n/index.js', () => ({
     if (params) return `${key} ${JSON.stringify(params)}`;
     return key;
   },
-  useLocaleSwitch: () => ({ locale: 'en_US', setLocale: vi.fn() }),
+  useLocaleSwitch: () => localeSwitchMock,
   useMenuLabel: () => (key) => key,
 }));
 
@@ -113,6 +118,8 @@ describe('OnboardingPage', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
+    localeSwitchMock.locale = 'en_US';
+    localeSwitchMock.setLocale.mockReset();
     fetchAccount.mockReset();
     fetchEnvironments.mockReset();
     fetchEnvironments.mockResolvedValue([]);
@@ -268,6 +275,43 @@ describe('OnboardingPage', () => {
     expect(serializedCalls).not.toContain('Ada Lovelace');
     expect(serializedCalls).not.toContain('ada@example.com');
     expect(serializedCalls).not.toContain('platform-token');
+  });
+
+  it('sends the selected onboarding language when registering an account', async () => {
+    registerAccount.mockResolvedValue({
+      token: 'platform-token',
+      account: { name: 'Ada Lovelace', email: 'ada@example.com' },
+    });
+
+    localStorage.removeItem('sf_platform_token');
+    render(<OnboardingPage />);
+
+    fireEvent.submit(screen.getByTestId('action-register-submit').closest('form'));
+
+    await waitFor(() => {
+      expect(registerAccount).toHaveBeenCalledWith(expect.any(Function), '', expect.objectContaining({
+        language: 'en_US',
+      }));
+    });
+  });
+
+  it('sends Spanish when Spanish is the active onboarding language', async () => {
+    localeSwitchMock.locale = 'es_ES';
+    registerAccount.mockResolvedValue({
+      token: 'platform-token',
+      account: { name: 'Ada Lovelace', email: 'ada@example.com' },
+    });
+
+    localStorage.removeItem('sf_platform_token');
+    render(<OnboardingPage />);
+
+    fireEvent.submit(screen.getByTestId('action-register-submit').closest('form'));
+
+    await waitFor(() => {
+      expect(registerAccount).toHaveBeenCalledWith(expect.any(Function), '', expect.objectContaining({
+        language: 'es_ES',
+      }));
+    });
   });
 
   it('tracks registration failures without user-entered values', async () => {
