@@ -1075,6 +1075,75 @@ function getLineConfigSymbol(lineEntityConfig, LINE_CONFIG_SYMBOLS) {
 }
 
 /**
+ * Build the `processes` registry literal for a page: backend process endpoints,
+ * button-type header fields, and extra processes declared only in decisions.json.
+ * `processOverrides` can relabel, restyle, exclude, or add entries.
+ */
+function buildProcessesArray({ processes, buttonFields, processOverrides }) {
+  return [
+    ...processes.map(p => {
+      const ovr = processOverrides[p.name] || processOverrides[p.columnName] || {};
+      if (ovr.exclude) return null;
+      const isDestructive = /void|cancel|reject/i.test(p.name);
+      const style = ovr.style || pick(isDestructive, 'destructive', 'positive');
+      const label = ovr.label || toLabel(p.name);
+      const colPart = wrapIf(", columnName: '", p.columnName, "'");
+      const paramsPart = p.params?.length ? `, params: ${JSON.stringify(p.params)}` : '';
+      const dlRaw = ovr.displayLogicRaw
+        ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
+        : '';
+      return `  { name: '${p.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${paramsPart}${dlRaw} },`;
+    }).filter(Boolean),
+    ...buttonFields.map(f => {
+      const ovr = processOverrides[f.name] || {};
+      if (ovr.exclude) return null;
+      const isDestructive = /void|cancel|reject/i.test(f.name);
+      const style = ovr.style || pick(isDestructive, 'destructive', 'positive');
+      const label = ovr.label || f.label || toLabel(f.name);
+      const dlRawVal = ovr.displayLogicRaw || f.displayLogic?.raw;
+      const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"')}"` : '';
+      const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
+      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart} },`;
+    }).filter(Boolean),
+    // Extra processes defined purely in decisions.json (not in backend contract)
+    ...Object.entries(processOverrides)
+      .filter(([, ovr]) => ovr.add && !ovr.exclude)
+      .map(([name, ovr]) => {
+        const style = ovr.style || 'positive';
+        const label = ovr.label || toLabel(name);
+        const colPart = wrapIf(", columnName: '", ovr.columnName, "'");
+        const dlRaw = ovr.displayLogicRaw
+          ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
+          : '';
+        const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
+        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart} },`;
+      }),
+  ].join('\n');
+}
+
+/**
+ * Build the hidden add-line defaults literal: form=false fields with a default.
+ * `@Column@` macros become `fromParent` references when the column maps to a
+ * header field; literal defaults pass through. `@SQL=`/session macros are skipped.
+ */
+function buildHiddenDefaultsArray(hiddenDefaultFields, allEntityFields) {
+  return hiddenDefaultFields
+    .filter(f => !String(f.defaultValue).startsWith('@SQL=') && !isEtendoSessionMacro(f.defaultValue))
+    .map(f => {
+      const rawDefault = String(f.defaultValue);
+      const parentColMatch = rawDefault.match(/^@(\w+)@$/);
+      const headerField = parentColMatch
+        ? allEntityFields.find(hf => hf.column === parentColMatch[1])
+        : null;
+      if (headerField) {
+        return `    { key: '${f.name}', fromParent: '${headerField.name}' },`;
+      }
+      const defaultValue = rawDefault.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
+      return `    { key: '${f.name}', value: '${defaultValue}' },`;
+    }).join('\n');
+}
+
+/**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
  */
@@ -1124,45 +1193,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // processOverrides from decisions.json allow label, style, displayLogicRaw, and exclude overrides
   const processOverrides = contract?.frontendContract?.window?.processOverrides ?? {};
   const buttonFields = allEntityFields.filter(f => f.type === 'button' && f.form);
-  const processesArray = [
-    ...processes.map(p => {
-      const ovr = processOverrides[p.name] || processOverrides[p.columnName] || {};
-      if (ovr.exclude) return null;
-      const isDestructive = /void|cancel|reject/i.test(p.name);
-      const style = ovr.style || pick(isDestructive, 'destructive', 'positive');
-      const label = ovr.label || toLabel(p.name);
-      const colPart = wrapIf(", columnName: '", p.columnName, "'");
-      const paramsPart = p.params?.length ? `, params: ${JSON.stringify(p.params)}` : '';
-      const dlRaw = ovr.displayLogicRaw
-        ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
-        : '';
-      return `  { name: '${p.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${paramsPart}${dlRaw} },`;
-    }).filter(Boolean),
-    ...buttonFields.map(f => {
-      const ovr = processOverrides[f.name] || {};
-      if (ovr.exclude) return null;
-      const isDestructive = /void|cancel|reject/i.test(f.name);
-      const style = ovr.style || pick(isDestructive, 'destructive', 'positive');
-      const label = ovr.label || f.label || toLabel(f.name);
-      const dlRawVal = ovr.displayLogicRaw || f.displayLogic?.raw;
-      const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"')}"` : '';
-      const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
-      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart} },`;
-    }).filter(Boolean),
-    // Extra processes defined purely in decisions.json (not in backend contract)
-    ...Object.entries(processOverrides)
-      .filter(([, ovr]) => ovr.add && !ovr.exclude)
-      .map(([name, ovr]) => {
-        const style = ovr.style || 'positive';
-        const label = ovr.label || toLabel(name);
-        const colPart = wrapIf(", columnName: '", ovr.columnName, "'");
-        const dlRaw = ovr.displayLogicRaw
-          ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
-          : '';
-        const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
-        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart} },`;
-      }),
-  ].join('\n');
+  const processesArray = buildProcessesArray({ processes, buttonFields, processOverrides });
 
   // Separate entry fields (user types) from auto-derived fields (price, tax, amount)
   // Note: discount is intentionally excluded — it is user-editable and triggers SL_Order_Amt recalculation.
@@ -1215,21 +1246,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${referencePart}${inputModePart} },`;
   }).join('\n');
 
-  const hiddenDefaultsArray = hiddenDefaultFields
-    .filter(f => !String(f.defaultValue).startsWith('@SQL=') && !isEtendoSessionMacro(f.defaultValue))
-    .map(f => {
-      const rawDefault = String(f.defaultValue);
-      const parentColMatch = rawDefault.match(/^@(\w+)@$/);
-      if (parentColMatch) {
-        const colName = parentColMatch[1];
-        const headerField = allEntityFields.find(hf => hf.column === colName);
-        if (headerField) {
-          return `    { key: '${f.name}', fromParent: '${headerField.name}' },`;
-        }
-      }
-      const defaultValue = rawDefault.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
-      return `    { key: '${f.name}', value: '${defaultValue}' },`;
-    }).join('\n');
+  const hiddenDefaultsArray = buildHiddenDefaultsArray(hiddenDefaultFields, allEntityFields);
 
   // API prediction config
   const { apiBlock, apiProp } = buildApiParts(contract);

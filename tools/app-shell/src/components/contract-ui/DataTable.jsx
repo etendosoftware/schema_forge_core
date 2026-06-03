@@ -354,6 +354,55 @@ function renderSelectorCell({
   );
 }
 
+// Two-decimal display formatter for amount/price inputs. Pure (only reads `raw`),
+// kept at module scope so it doesn't count against renderInputCell's complexity.
+function formatTwoDecimals(raw) {
+  if (raw == null || raw === '') return '';
+  const n = typeof raw === 'string' ? Number.parseFloat(raw) : raw;
+  return Number.isFinite(n) ? n.toFixed(2) : raw;
+}
+
+function renderInputCell({
+  field, col, values, invalidFields, isFirst, firstInputRef,
+  handleFieldChange, handleKeyDown, fieldLabel,
+}) {
+  const isNumeric = NUMERIC_FIELD_TYPES.has(field.type);
+  const isTwoDecimal = field.type === 'amount' || field.type === 'price';
+  // Numeric `inputMode` only for numeric fields — integers get the digits-only
+  // on-screen keyboard, the rest the decimal pad (Sonar S3358: flat conditional).
+  const numericInputMode = resolveNumericInputMode(field, isNumeric);
+  const displayValue = formatNumericInputValue(isTwoDecimal, values[field.key], formatTwoDecimals);
+  // Unambiguous partial-number patterns: no two adjacent unbounded `\d*`, so no
+  // super-linear backtracking (ReDoS-safe). Integer -> digits; decimal -> digits
+  // then an optional `.digits` group. Raw strings are kept while typing so
+  // in-progress decimals ("1.") survive; numeric coercion happens at commit.
+  const partialPattern = field.type === 'integer' ? /^-?\d*$/ : /^-?\d*(?:\.\d*)?$/;
+  const onChange = (e) => {
+    const raw = e.target.value;
+    if (!isNumeric || raw === '' || partialPattern.test(raw)) {
+      handleFieldChange(field.key, raw);
+    }
+  };
+  // Always type="text" — numeric type renders spinner buttons; the numeric
+  // on-screen keyboard is preserved via inputMode.
+  return (
+    <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
+      <input
+        data-testid={`inline-add-field-${field.key}`}
+        ref={isFirst ? firstInputRef : undefined}
+        type="text"
+        inputMode={numericInputMode}
+        value={displayValue}
+        onChange={onChange}
+        onKeyDown={handleKeyDown}
+        placeholder={fieldLabel}
+        required={field.required}
+        className={`w-full h-8 text-sm rounded-md border bg-white px-2 focus:ring-2 focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}${invalidFields.has(field.key) ? ' border-red-500 focus:ring-red-500' : ' border-input focus:ring-primary'}`}
+      />
+    </TableCell>
+  );
+}
+
 /**
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
@@ -599,7 +648,8 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     const calloutPromise = onFieldChange?.(key, val, snapshot, (updates, forceFields = new Set()) => {
       // Don't let the callout overwrite the field being typed: a cascade can echo
       // it back normalized (e.g. rate "11." -> 11), erasing in-progress decimals.
-      const { [key]: _trigger, ...derived } = updates;
+      const derived = { ...updates };
+      delete derived[key];
       const next = applyCalloutUpdates(valuesRef.current, derived, forceFields, key, touchedFieldsRef.current);
       valuesRef.current = next;
       setValues(next);
@@ -758,51 +808,10 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           });
         }
 
-        const isNumeric = NUMERIC_FIELD_TYPES.has(field.type);
-        const isTwoDecimal = field.type === 'amount' || field.type === 'price';
-        // Pick a numeric `inputMode` only for numeric fields. Integer fields
-        // surface the digits-only on-screen keyboard, the rest get the decimal
-        // pad. Resolved via an intermediate variable so the call site stays a
-        // flat conditional (Sonar S3358).
-        let numericInputMode = resolveNumericInputMode(field, isNumeric);
-        const formatTwoDecimals = (raw) => {
-          if (raw == null || raw === '') return '';
-          const n = typeof raw === 'string' ? Number.parseFloat(raw) : raw;
-          return Number.isFinite(n) ? n.toFixed(2) : raw;
-        };
-        // Always type="text" — numeric inputs would render browser spinner
-        // buttons; the numeric on-screen keyboard is preserved via inputMode.
-        const inputType = 'text';
-        const rawValue = values[field.key];
-        const displayValue = formatNumericInputValue(isTwoDecimal, rawValue, formatTwoDecimals);
-        return (
-          <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
-            <input
-              data-testid={`inline-add-field-${field.key}`}
-              ref={isFirst ? firstInputRef : undefined}
-              type={inputType}
-              inputMode={numericInputMode}
-              value={displayValue}
-              onChange={(e) => {
-                const raw = e.target.value;
-                if (isNumeric) {
-                  // Keep the raw string while typing so in-progress decimals ("1.")
-                  // survive; numeric coercion happens at commit.
-                  const partialPattern = field.type === 'integer' ? /^-?\d*$/ : /^-?\d*\.?\d*$/;
-                  if (raw === '' || partialPattern.test(raw)) {
-                    handleFieldChange(field.key, raw);
-                  }
-                } else {
-                  handleFieldChange(field.key, raw);
-                }
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder={fieldLabel}
-              required={field.required}
-              className={`w-full h-8 text-sm rounded-md border bg-white px-2 focus:ring-2 focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}${invalidFields.has(field.key) ? ' border-red-500 focus:ring-red-500' : ' border-input focus:ring-primary'}`}
-            />
-          </TableCell>
-        );
+        return renderInputCell({
+          field, col, values, invalidFields, isFirst, firstInputRef,
+          handleFieldChange, handleKeyDown, fieldLabel,
+        });
       })}
       {/* Skip action cells in inlineEditable add-row mode — actions belong to
           InlineLinesPanel's 160px slot, not to separate columns here. */}
