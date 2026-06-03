@@ -2,32 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Mail, Search } from 'lucide-react';
 import { useUI } from '@/i18n';
-
-function resolveNeoBaseUrl(apiBaseUrl) {
-  return apiBaseUrl ? apiBaseUrl.replace(/\/[^/]+$/, '') : '/sws/neo';
-}
-
-function resolveDocumentEmailContract(windowName) {
-  return windowName === 'sales-invoice' ? 'sales-invoice-send' : `${windowName}-send`;
-}
-
-function buildEmailContractCommand(contractName, documentId) {
-  return {
-    version: 'v1',
-    recordId: documentId,
-    intent: 'send-document',
-    idempotencyKey: `${contractName}:${documentId}:send:v1`,
-  };
-}
-
-async function readEmailContractResponse(res) {
-  try {
-    const payload = await res.json();
-    return payload?.response?.data ?? payload?.data ?? payload ?? {};
-  } catch {
-    return {};
-  }
-}
+import { sendDocumentEmail } from './documentEmailSend.js';
 
 function resolveEmailSendErrorMessage(ui, data, documentType) {
   if (data?.status === 'THROTTLED') {
@@ -55,6 +30,53 @@ function resolveEmailSendErrorMessage(ui, data, documentType) {
     return ui('sendModalProviderFailed');
   }
   return data?.message || ui('sendModalSendFailed', { documentType });
+}
+
+function resolveEmailSendSuccessMessage(ui, status, documentType) {
+  return status === 'DUPLICATE'
+    ? ui('sendModalDuplicate', { documentType })
+    : ui('sendModalSentSuccess', { documentType });
+}
+
+function resolveEmailSendExceptionMessage(ui, documentType) {
+  return ui('sendModalSendFailed', { documentType });
+}
+
+async function sendDocumentFromModal({
+  apiBaseUrl,
+  token,
+  documentId,
+  windowName,
+  documentNo,
+  pdfBlob,
+  pdfBlobUrl,
+  cachePreviewBeforeSend,
+  documentType,
+  ui,
+  setSendFeedback,
+  onClose,
+}) {
+  const data = await sendDocumentEmail({
+    apiBaseUrl,
+    token,
+    documentId,
+    windowName,
+    documentNo,
+    pdfBlob: cachePreviewBeforeSend ? pdfBlob : null,
+    pdfBlobUrl: cachePreviewBeforeSend ? pdfBlobUrl : null,
+  });
+
+  if (data.status === 'SENT' || data.status === 'DUPLICATE') {
+    const successMessage = resolveEmailSendSuccessMessage(ui, data.status, documentType);
+    toast.success(successMessage);
+    setSendFeedback({ type: 'success', message: successMessage });
+    onClose();
+    return;
+  }
+
+  const errorMessage = resolveEmailSendErrorMessage(ui, data, documentType);
+  setSendFeedback({ type: 'error', message: errorMessage });
+  toast.error(errorMessage);
 }
 
 async function renderPdfIntoIframe(node, reportId, documentId, token, setPdfLoading, setPdfError) {
@@ -140,6 +162,54 @@ async function fetchAndDownloadPdf(reportId, documentId, windowName, documentNo,
   URL.revokeObjectURL(url);
 }
 
+function resolveInitialEmail(bpEmail) {
+  return bpEmail?.includes('@') ? bpEmail : '';
+}
+
+function resolveContactsBaseUrl(apiBaseUrl) {
+  return apiBaseUrl.replace(/\/[^/]+$/, '/contacts');
+}
+
+async function loadBusinessPartnerEmail({ apiBaseUrl, token, bPartnerId, hasEmail, setTo, isCancelled }) {
+  const contactsBaseUrl = resolveContactsBaseUrl(apiBaseUrl);
+  const response = await fetch(`${contactsBaseUrl}/businessPartner/${bPartnerId}`, {
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  });
+  const data = response.ok ? await response.json() : null;
+  if (isCancelled()) return;
+  const records = data?.response?.data ?? data?.data ?? [];
+  const withEmail = records.filter(record => record?.etgoEmail?.includes('@'));
+  if (!hasEmail && withEmail.length > 0) setTo(withEmail[0].etgoEmail);
+}
+
+function renderPdfPreviewNode({ node, pdfBlobUrl, pdfBlobLoading, documentId, token, reportId, setPdfError, setPdfLoading }) {
+  if (pdfBlobUrl) {
+    node.src = `${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`;
+    setPdfError(null);
+    setPdfLoading(false);
+    return;
+  }
+
+  if (pdfBlobLoading) {
+    setPdfError(null);
+    setPdfLoading(true);
+    return;
+  }
+
+  if (documentId && token) {
+    renderPdfIntoIframe(node, reportId, documentId, token, setPdfLoading, setPdfError);
+  }
+}
+
+function downloadExistingPdfBlobUrl(pdfBlobUrl, windowName, documentNo) {
+  const a = document.createElement('a');
+  a.href = pdfBlobUrl;
+  a.download = `${windowName || 'invoice'}-${documentNo}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 /**
  * Reusable Send/Download modal for any document (invoice, order, quotation, shipment).
  *
@@ -155,14 +225,19 @@ async function fetchAndDownloadPdf(reportId, documentId, windowName, documentNo,
  * - token: auth token
  * - onClose: callback to close modal
  *
- * pdfBlobUrl — optional blob URL from jsreport (e.g. from useInvoicePdf).
- * When provided, the preview uses it directly and download triggers on the blob,
- * bypassing the /api/reports render endpoint entirely.
+ * Optional PDF preview support:
+ * - pdfBlobUrl: object URL created from a pre-rendered PDF blob.
+ * - pdfBlob: pre-rendered PDF blob to cache before sending.
+ * - pdfBlobLoading: disables send while a cacheable preview is still loading.
+ * - cachePreviewBeforeSend: caches pdfBlob/pdfBlobUrl through /preview-file before sending.
+ * When pdfBlobUrl is provided, preview and download use it directly and bypass
+ * the /api/reports render endpoint.
  */
-export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, pdfBlobLoading = false, isClosing = false, allowEmail = true }) {
+export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, pdfBlob, pdfBlobLoading = false, cachePreviewBeforeSend = true, isClosing = false, allowEmail = true }) {
   const ui = useUI();
-  const hasEmail = bpEmail && bpEmail.includes('@');
-  const [to, setTo] = useState(hasEmail ? bpEmail : '');
+  const initialEmail = resolveInitialEmail(bpEmail);
+  const hasEmail = Boolean(initialEmail);
+  const [to, setTo] = useState(initialEmail);
   const [emailLoading, setEmailLoading] = useState(false);
 
   // Fetch trusted contact data only to display the server-resolved recipient preview.
@@ -170,17 +245,14 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
     if (!bPartnerId || !apiBaseUrl || !token) return;
     let cancelled = false;
     setEmailLoading(true);
-    const contactsBaseUrl = apiBaseUrl.replace(/\/[^/]+$/, '/contacts');
-    fetch(`${contactsBaseUrl}/businessPartner/${bPartnerId}`, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    loadBusinessPartnerEmail({
+      apiBaseUrl,
+      token,
+      bPartnerId,
+      hasEmail,
+      setTo,
+      isCancelled: () => cancelled,
     })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (cancelled) return;
-        const records = d?.response?.data ?? d?.data ?? [];
-        const withEmail = records.filter(r => r?.etgoEmail?.includes('@'));
-        if (!hasEmail && withEmail.length > 0) setTo(withEmail[0].etgoEmail);
-      })
       .catch(() => {})
       .finally(() => { if (!cancelled) setEmailLoading(false); });
     return () => { cancelled = true; };
@@ -201,25 +273,16 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
 
   const iframeRef = useCallback(node => {
     if (!node) return;
-
-    // If a pre-rendered blob URL is provided, use it directly
-    if (pdfBlobUrl) {
-      node.src = `${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`;
-      setPdfError(null);
-      setPdfLoading(false);
-      return;
-    }
-
-    // Parent indicated a blob is being generated — wait for it instead of falling
-    // back to /api/reports which would set pdfError and show the sad-page card.
-    if (pdfBlobLoading) {
-      setPdfError(null);
-      setPdfLoading(true);
-      return;
-    }
-
-    if (!documentId || !token) return;
-    renderPdfIntoIframe(node, reportId, documentId, token, setPdfLoading, setPdfError);
+    renderPdfPreviewNode({
+      node,
+      pdfBlobUrl,
+      pdfBlobLoading,
+      documentId,
+      token,
+      reportId,
+      setPdfError,
+      setPdfLoading,
+    });
   }, [documentId, token, reportId, pdfBlobUrl, pdfBlobLoading]);
 
   const handleDownload = async () => {
@@ -227,12 +290,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
 
     // If a blob URL is already available, download it directly
     if (pdfBlobUrl) {
-      const a = document.createElement('a');
-      a.href = pdfBlobUrl;
-      a.download = `${windowName || 'invoice'}-${documentNo}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      downloadExistingPdfBlobUrl(pdfBlobUrl, windowName, documentNo);
       return;
     }
 
@@ -249,32 +307,23 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
     if (sending || !documentId) return;
     setSending(true);
     setSendFeedback(null);
-    const contractName = resolveDocumentEmailContract(windowName);
-    const endpoint = `${resolveNeoBaseUrl(apiBaseUrl)}/email-contracts/${contractName}/send`;
     try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(buildEmailContractCommand(contractName, documentId)),
+      await sendDocumentFromModal({
+        apiBaseUrl,
+        token,
+        documentId,
+        windowName,
+        documentNo,
+        pdfBlob,
+        pdfBlobUrl,
+        cachePreviewBeforeSend,
+        documentType,
+        ui,
+        setSendFeedback,
+        onClose,
       });
-      const data = await readEmailContractResponse(res);
-      if (data.status === 'SENT' || data.status === 'DUPLICATE') {
-        const successMessage = data.status === 'DUPLICATE'
-          ? ui('sendModalDuplicate', { documentType })
-          : ui('sendModalSentSuccess', { documentType });
-        toast.success(successMessage);
-        setSendFeedback({ type: 'success', message: successMessage });
-        onClose();
-        return;
-      }
-      const errorMessage = resolveEmailSendErrorMessage(ui, data, documentType);
-      setSendFeedback({ type: 'error', message: errorMessage });
-      toast.error(errorMessage);
-    } catch (err) {
-      const errorMessage = err?.message || ui('sendModalSendFailed', { documentType });
+    } catch {
+      const errorMessage = resolveEmailSendExceptionMessage(ui, documentType);
       setSendFeedback({ type: 'error', message: errorMessage });
       toast.error(errorMessage);
     } finally {
@@ -282,7 +331,10 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
     }
   };
 
-  const sendDisabled = !documentId || sending;
+  const shouldCachePreview = cachePreviewBeforeSend && Boolean(pdfBlob || pdfBlobUrl || pdfBlobLoading);
+  const hasCacheablePreview = Boolean(pdfBlob || pdfBlobUrl);
+  const waitingForCacheablePreview = shouldCachePreview && pdfBlobLoading && !hasCacheablePreview;
+  const sendDisabled = !documentId || sending || waitingForCacheablePreview;
 
   return (
     <>

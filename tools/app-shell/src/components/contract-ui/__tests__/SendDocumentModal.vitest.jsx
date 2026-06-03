@@ -28,6 +28,7 @@ const BASE = {
   onClose: vi.fn(),
   allowEmail: true,
   pdfBlobUrl: 'blob:test',
+  cachePreviewBeforeSend: false,
 };
 
 beforeEach(() => {
@@ -62,6 +63,34 @@ describe('SendDocumentModal', () => {
 
   it('Send button is enabled when bpEmail is a valid email', () => {
     render(<SendDocumentModal {...BASE} bpEmail="user@domain.com" />);
+    const btn = getSendButton();
+    expect(btn).not.toBeDisabled();
+  });
+
+  it('Send button is disabled while a cacheable preview is still loading', () => {
+    render(
+      <SendDocumentModal
+        {...BASE}
+        bpEmail="user@domain.com"
+        pdfBlobUrl={null}
+        pdfBlobLoading
+        cachePreviewBeforeSend
+      />,
+    );
+    const btn = getSendButton();
+    expect(btn).toBeDisabled();
+  });
+
+  it('Send button stays enabled while loading when a preview source is already available', () => {
+    render(
+      <SendDocumentModal
+        {...BASE}
+        bpEmail="user@domain.com"
+        pdfBlobUrl="blob:test"
+        pdfBlobLoading
+        cachePreviewBeforeSend
+      />,
+    );
     const btn = getSendButton();
     expect(btn).not.toBeDisabled();
   });
@@ -169,6 +198,43 @@ describe('SendDocumentModal', () => {
     expect(body.template).toBeUndefined();
     expect(body.data).toBeUndefined();
     expect(body.subject).toBeUndefined();
+    expect(toast.success).toHaveBeenCalledWith('sendModalSentSuccess:{"documentType":"Invoice"}');
+  });
+
+  it('caches the generated preview before sending when preview caching is enabled by default', async () => {
+    const user = userEvent.setup();
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        blob: async () => new Blob(['%PDF'], { type: 'application/pdf' }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'SENT' }) });
+
+    render(
+      <SendDocumentModal
+        {...BASE}
+        cachePreviewBeforeSend
+        bpEmail="user@domain.com"
+        apiBaseUrl="http://localhost:8080/etendo/neo/sales-invoice"
+      />,
+    );
+
+    await user.click(getSendButton());
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith('blob:test');
+    });
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8080/etendo/neo/preview-file',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:8080/etendo/neo/email-contracts/sales-invoice-send/send',
+      expect.objectContaining({ method: 'POST' }),
+    );
     expect(toast.success).toHaveBeenCalledWith('sendModalSentSuccess:{"documentType":"Invoice"}');
   });
 
@@ -343,5 +409,26 @@ describe('SendDocumentModal', () => {
       expect(toast.error).toHaveBeenCalledWith('sendModalProviderFailed');
     });
     expect(screen.getByRole('status')).toHaveTextContent('sendModalProviderFailed');
+  });
+
+  it('shows a user-facing send failure when preview cache throws internal diagnostics', async () => {
+    const user = userEvent.setup();
+    global.fetch.mockRejectedValueOnce(new Error('Preview file cache failed (500)'));
+
+    render(
+      <SendDocumentModal
+        {...BASE}
+        cachePreviewBeforeSend
+        bpEmail="user@domain.com"
+        apiBaseUrl="http://localhost:8080/etendo/neo/sales-invoice"
+      />,
+    );
+
+    await user.click(getSendButton());
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('sendModalSendFailed:{"documentType":"Invoice"}');
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('sendModalSendFailed');
   });
 });

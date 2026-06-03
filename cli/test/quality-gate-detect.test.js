@@ -236,6 +236,62 @@ describe('detectAffectedWindowsDetailed', () => {
     ]);
   });
 
+  it('keeps direct source when a window is also matched by a global rule', () => {
+    const affected = detectAffectedWindowsDetailed({
+      changedFiles: [
+        'artifacts/purchase-order/custom/Sidebar.jsx',
+        'tools/app-shell/src/windows/custom/shared/InvoicePaymentModal.jsx',
+      ],
+      blastRadius: SAMPLE_CONFIG.blastRadius,
+      availableWindows: ['purchase-order', 'sales-order'],
+    });
+
+    assert.deepEqual(affected, [
+      { window: 'purchase-order', source: 'direct' },
+      { window: 'sales-order', source: 'global' },
+    ]);
+  });
+
+  it('does not downgrade direct to global regardless of changed-file order', () => {
+    const reordered = detectAffectedWindowsDetailed({
+      changedFiles: [
+        'tools/app-shell/src/windows/custom/shared/InvoicePaymentModal.jsx',
+        'artifacts/purchase-order/custom/Sidebar.jsx',
+      ],
+      blastRadius: SAMPLE_CONFIG.blastRadius,
+      availableWindows: ['purchase-order', 'sales-order'],
+    });
+
+    assert.deepEqual(reordered, [
+      { window: 'purchase-order', source: 'direct' },
+      { window: 'sales-order', source: 'global' },
+    ]);
+  });
+
+  it('excludePatterns on a touched-window rule skips the excluded file', () => {
+    const blastRadius = [
+      {
+        pattern: 'artifacts/*/generated/**',
+        scope: 'touched-window',
+        excludePatterns: ['artifacts/*/generated/web/**/*.snap'],
+      },
+    ];
+
+    const excluded = detectAffectedWindowsDetailed({
+      changedFiles: ['artifacts/sales-order/generated/web/sales-order/HeaderPage.snap'],
+      blastRadius,
+      availableWindows: ['purchase-order', 'sales-order'],
+    });
+    assert.deepEqual(excluded, [], 'excluded snapshot file must not affect any window');
+
+    const included = detectAffectedWindowsDetailed({
+      changedFiles: ['artifacts/sales-order/generated/web/sales-order/HeaderPage.jsx'],
+      blastRadius,
+      availableWindows: ['purchase-order', 'sales-order'],
+    });
+    assert.deepEqual(included, [{ window: 'sales-order', source: 'direct' }]);
+  });
+
   it('excludePatterns prevents onboarding files from triggering app-shell:pages', () => {
     const onboardingPage = detectAffectedWindowsDetailed({
       changedFiles: ['tools/app-shell/src/pages/OnboardingPage.jsx'],

@@ -234,7 +234,7 @@ index.jsx                          — receives { recordId }, sets page meta, mo
         ProgressRing              — SVG circular progress indicator (new primitive)
       StatementLinesView.jsx       — sub-view: header with ← + lines table
         StatementLinesTable.jsx    — 7-column lines table (lineNo, date, desc, ref, bpartner, amount, matched)
-      UploadStatementDialog.jsx    — Dialog for C43 file upload (file input + base64 POST)
+      ImportStatementModal.jsx     — multi-step import modal (Upload → Review → Done): dropzone, preview KPIs + lines, base64 POST. White surface (var(--surface-overlay)), borderless footer, round red-hover remove button.
 ```
 
 ## Shared primitives introduced or used

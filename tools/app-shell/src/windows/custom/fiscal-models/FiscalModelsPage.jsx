@@ -17,38 +17,48 @@ export default function FiscalModelsPage({ token, apiBaseUrl }) {
     setView({ type: 'list' });
   }, []);
 
-  let content;
-  if (view.type === '303') {
-    content = (
-      <FmModel303Page
-        decl={view.decl}
-        onBack={handleBack}
-        token={token}
-        apiBaseUrl={apiBaseUrl}
-        onStatusChange={(id, newStatus) => {
-          setView(v => v.type === '303' ? { ...v, decl: { ...v.decl, status: newStatus } } : v);
-        }}
-      />
-    );
-  } else if (view.type === '349') {
-    content = (
-      <FmModel349Page
-        decl={view.decl}
-        onBack={handleBack}
-        token={token}
-        apiBaseUrl={apiBaseUrl}
-        onStatusChange={(id, newStatus) => {
-          setView(v => v.type === '349' ? { ...v, decl: { ...v.decl, status: newStatus } } : v);
-        }}
-      />
-    );
-  } else {
-    content = <FmListPage onSelect={handleSelect} token={token} apiBaseUrl={apiBaseUrl} />;
-  }
+  const handleComputeUpdate = useCallback((computedMap349) => {
+    setView(v => {
+      if (v.type !== '349') return v;
+      const updated = computedMap349[v.decl.id];
+      if (!updated) return v;
+      return { ...v, decl: { ...v.decl, _precomputed: updated } };
+    });
+  }, []);
+
+  const inDetail = view.type === '303' || view.type === '349';
 
   return (
     <>
-      {content}
+      {/* FmListPage stays mounted at all times so useFiscalAutoCompute keeps polling */}
+      <div style={inDetail ? { display: 'none' } : undefined}>
+        <FmListPage onSelect={handleSelect} token={token} apiBaseUrl={apiBaseUrl} onComputeUpdate={handleComputeUpdate} />
+      </div>
+
+      {view.type === '303' && (
+        <FmModel303Page
+          decl={view.decl}
+          onBack={handleBack}
+          token={token}
+          apiBaseUrl={apiBaseUrl}
+          onStatusChange={(id, newStatus) => {
+            setView(v => v.type === '303' ? { ...v, decl: { ...v.decl, status: newStatus } } : v);
+          }}
+        />
+      )}
+
+      {view.type === '349' && (
+        <FmModel349Page
+          decl={view.decl}
+          onBack={handleBack}
+          token={token}
+          apiBaseUrl={apiBaseUrl}
+          onStatusChange={(id, newStatus) => {
+            setView(v => v.type === '349' ? { ...v, decl: { ...v.decl, status: newStatus } } : v);
+          }}
+        />
+      )}
+
       {debugMode && <FmDebugPanel view={view} setView={setView} />}
     </>
   );

@@ -58,43 +58,51 @@ export function collectDecisionWindows(rootDir) {
     .sort((left, right) => left.localeCompare(right));
 }
 
+function checkTouchedWindowScope(rule, changedFile, allWindows, affected) {
+  const excluded = (rule.excludePatterns ?? []).some((p) => globToRegExp(p).test(changedFile));
+  if (!excluded) {
+    for (const entry of resolveTouchedWindows(changedFile, allWindows)) {
+      const current = affected.get(entry.window);
+      if (current !== 'direct') {
+        affected.set(entry.window, entry.source);
+      }
+    }
+  }
+}
+
+function checkByFilesAndRule(rule, changedFile, allWindows, affected) {
+  if (!globToRegExp(rule.pattern).test(changedFile)) {
+    return;
+  }
+
+  if (rule.scope === 'all-windows') {
+    for (const windowName of allWindows) {
+      if (!affected.has(windowName)) {
+        affected.set(windowName, 'global');
+      }
+    }
+    return;
+  }
+  if (rule.scope === 'touched-window') {
+    checkTouchedWindowScope(rule, changedFile, allWindows, affected);
+    return;
+  }
+
+  if (rule.scope === 'named-target' && rule.target) {
+    const excluded = (rule.excludePatterns ?? []).some((p) => globToRegExp(p).test(changedFile));
+    if (!excluded) {
+      affected.set(rule.target, 'direct');
+    }
+  }
+}
+
 export function detectAffectedWindowsDetailed({ changedFiles, blastRadius, availableWindows }) {
-  const affected = new Map();
   const allWindows = [...availableWindows].sort((left, right) => left.localeCompare(right));
+  const affected = new Map();
 
   for (const changedFile of changedFiles) {
     for (const rule of blastRadius) {
-      if (!globToRegExp(rule.pattern).test(changedFile)) {
-        continue;
-      }
-
-      if (rule.scope === 'all-windows') {
-        for (const windowName of allWindows) {
-          if (!affected.has(windowName)) {
-            affected.set(windowName, 'global');
-          }
-        }
-        continue;
-      }
-      if (rule.scope === 'touched-window') {
-        const excluded = (rule.excludePatterns ?? []).some((p) => globToRegExp(p).test(changedFile));
-        if (!excluded) {
-          for (const entry of resolveTouchedWindows(changedFile, allWindows)) {
-            const current = affected.get(entry.window);
-            if (current !== 'direct') {
-              affected.set(entry.window, entry.source);
-            }
-          }
-        }
-        continue;
-      }
-
-      if (rule.scope === 'named-target' && rule.target) {
-        const excluded = (rule.excludePatterns ?? []).some((p) => globToRegExp(p).test(changedFile));
-        if (!excluded) {
-          affected.set(rule.target, 'direct');
-        }
-      }
+      checkByFilesAndRule(rule, changedFile, allWindows, affected);
     }
   }
 
