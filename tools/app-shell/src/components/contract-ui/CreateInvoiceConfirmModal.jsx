@@ -35,9 +35,8 @@ export default function CreateInvoiceConfirmModal({
   const fmtNum = (v, dec = 2) =>
     v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec }) : '-';
 
-  const displayAmount = grandTotal > 0
-    ? (currency ? `${fmtNum(grandTotal)} ${currency}` : fmtNum(grandTotal))
-    : documentNo;
+  const formattedTotal = currency ? `${fmtNum(grandTotal)} ${currency}` : fmtNum(grandTotal);
+  const displayAmount = grandTotal > 0 ? formattedTotal : documentNo;
 
   useEffect(() => {
     if (!pendingQtyUrl) return;
