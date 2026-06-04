@@ -5,8 +5,8 @@
     "name": "Amortization",
     "breadcrumb": "Finance / Amortization",
     "titleField": "name",
-    "sidebarLayout": true,
     "linesLayout": "inlineEditable",
+    "statusField": "processed",
     "hideDeleteWhenComplete": true,
     "hidePrint": true,
     "hideLink": true,
@@ -15,7 +15,8 @@
     "whiteFormBackground": true,
     "listbarPaddingX": "px-2",
     "tablePaddingX": "px-2",
-    "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2",
+    "customLinesComponent": "AmortizationLinesTable",
+    "customLinesLabel": "Lines",
     "relatedDocuments": false,
     "draftMode": {
       "enabled": true,
@@ -45,7 +46,15 @@
         "A_Asset_ID": "Activo",
         "Amortization_Percentage": "% Amortización",
         "Amortizationamt": "Importe amortización",
-        "Line": "Nº línea"
+        "Line": "Nº línea",
+        "C_Project_ID": "Proyecto",
+        "C_Costcenter_ID": "Centro de costo",
+        "User1_ID": "1ª Dimensión",
+        "User2_ID": "2ª Dimensión",
+        "EM_Etadas_C_Bpartner_ID": "Contacto",
+        "EM_Etadas_Salesregion_ID": "Región de ventas",
+        "EM_Etadas_C_Activity_ID": "Actividad",
+        "EM_Etadas_Campaign_ID": "Campaña"
       },
       "en_US": {
         "Name": "Name",
@@ -57,7 +66,15 @@
         "A_Asset_ID": "Asset",
         "Amortization_Percentage": "Amortization %",
         "Amortizationamt": "Amortization Amount",
-        "Line": "Line No."
+        "Line": "Line No.",
+        "C_Project_ID": "Project",
+        "C_Costcenter_ID": "Cost Center",
+        "User1_ID": "1st Dimension",
+        "User2_ID": "2nd Dimension",
+        "EM_Etadas_C_Bpartner_ID": "Contact",
+        "EM_Etadas_Salesregion_ID": "Sales Region",
+        "EM_Etadas_C_Activity_ID": "Activity",
+        "EM_Etadas_Campaign_ID": "Sales Campaign"
       }
     }
   },
@@ -171,20 +188,60 @@
           "reason": "Inherited from header — shown in the header form, redundant on each line"
         },
         "project": {
-          "visibility": "discarded",
-          "reason": "Accounting dimension — out of MVP scope"
+          "visibility": "editable",
+          "grid": true,
+          "gridOrder": 4,
+          "form": true,
+          "lookup": true
         },
         "costcenter": {
-          "visibility": "discarded",
-          "reason": "Accounting dimension — out of MVP scope"
+          "visibility": "editable",
+          "grid": true,
+          "gridOrder": 5,
+          "form": true,
+          "lookup": true
         },
         "stDimension": {
-          "visibility": "discarded",
-          "reason": "Accounting dimension — out of MVP scope"
+          "visibility": "editable",
+          "grid": true,
+          "gridOrder": 6,
+          "form": true,
+          "lookup": true
         },
         "ndDimension": {
-          "visibility": "discarded",
-          "reason": "Accounting dimension — out of MVP scope"
+          "visibility": "editable",
+          "grid": true,
+          "gridOrder": 7,
+          "form": true,
+          "lookup": true
+        },
+        "eTADASBpartner": {
+          "visibility": "editable",
+          "grid": true,
+          "gridOrder": 8,
+          "form": true,
+          "lookup": true
+        },
+        "eTADASSalesRegion": {
+          "visibility": "editable",
+          "grid": true,
+          "gridOrder": 9,
+          "form": true,
+          "lookup": true
+        },
+        "eTADASActivity": {
+          "visibility": "editable",
+          "grid": true,
+          "gridOrder": 10,
+          "form": true,
+          "lookup": true
+        },
+        "eTADASSalesCampaign": {
+          "visibility": "editable",
+          "grid": true,
+          "gridOrder": 11,
+          "form": true,
+          "lookup": true
         }
       }
     },
@@ -408,9 +465,9 @@
     "A_Amortizationline-C_Project_ID-readOnlyLogic": {
       "type": "readOnlyLogic",
       "entity": "lines",
-      "decision": "Omit",
+      "decision": "Keep",
       "description": "Lock Project once posted",
-      "reason": "Field is discarded in MVP"
+      "reason": "Field is now visible — lock when accounting entry is posted"
     },
     "amortization-Lines-C_Costcenter_ID-displayLogic": {
       "type": "displayLogic",
@@ -422,9 +479,9 @@
     "A_Amortizationline-C_Costcenter_ID-readOnlyLogic": {
       "type": "readOnlyLogic",
       "entity": "lines",
-      "decision": "Omit",
+      "decision": "Keep",
       "description": "Lock Cost Center once posted",
-      "reason": "Field is discarded in MVP"
+      "reason": "Field is now visible — lock when accounting entry is posted"
     },
     "amortization-Lines-User1_ID-displayLogic": {
       "type": "displayLogic",
@@ -436,9 +493,9 @@
     "A_Amortizationline-User1_ID-readOnlyLogic": {
       "type": "readOnlyLogic",
       "entity": "lines",
-      "decision": "Omit",
+      "decision": "Keep",
       "description": "Lock 1st Dimension once posted",
-      "reason": "Field is discarded in MVP"
+      "reason": "Field is now visible — lock when accounting entry is posted"
     },
     "amortization-Lines-User2_ID-displayLogic": {
       "type": "displayLogic",
@@ -450,9 +507,9 @@
     "A_Amortizationline-User2_ID-readOnlyLogic": {
       "type": "readOnlyLogic",
       "entity": "lines",
-      "decision": "Omit",
+      "decision": "Keep",
       "description": "Lock 2nd Dimension once posted",
-      "reason": "Field is discarded in MVP"
+      "reason": "Field is now visible — lock when accounting entry is posted"
     },
     "A_Amortizationline-A_Amortizationline_ID-readOnlyLogic": {
       "type": "readOnlyLogic",

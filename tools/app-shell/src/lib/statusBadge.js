@@ -8,7 +8,7 @@ export function getStatusTone(status) {
     s === 'co' || s === 'ca' || s === 'etgo_ci' || s === 'pa' || s === 'rppc' || s === 'ppm' ||
     s === 'pwnc' || s === 'rdnc' ||
     s === 'completed' || s === 'complete' || s === 'confirmed' || s === 'booked' ||
-    s === 'paid' || s === 'true' || s === 'processed'
+    s === 'paid' || s === 'true' || s === 'processed' || s === 'y' || s === 'yes'
   ) return 'success';
   if (
     s === 'ip' || s === 'ue' || s === 'rpae' || s === 'rpap' || s === 'rpr' ||
@@ -101,6 +101,7 @@ export function statusLabel(status, dictionary, translate) {
   const MAP = {
     // Boolean processed fields
     true: 'Processed', false: 'Not Processed',
+    Y: 'statusProcessed', N: 'statusDraft',
     // Document statuses
     DR: 'statusDraft', CO: 'statusComplete', VO: 'statusVoid', IP: 'statusInProcess',
     CL: 'statusClosed', PA: 'statusPaid', UE: 'statusUnderEvaluation', CA: 'statusOrderCreated',

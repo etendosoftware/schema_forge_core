@@ -160,11 +160,14 @@ test.describe('Goods Shipment — Confirm modal (draft to complete)', () => {
 
     // Navigate to draft shipment detail
     await page.goto('/goods-shipment/gs-draft-001');
+    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
     await page.getByTestId('action-cancel').waitFor({ state: 'visible', timeout: 15_000 });
 
     // Open the confirm modal via the same event the draftMode confirm button dispatches.
     // We use dispatchEvent directly because the topbar "Confirmar" button calls
     // flushPendingLines() first, which can block in the mocked test environment.
+    // Brief wait ensures React's event listener is registered before dispatch.
+    await page.waitForTimeout(300);
     await page.evaluate(() =>
       window.dispatchEvent(new CustomEvent('goods-shipment:open-confirm-modal'))
     );
@@ -176,7 +179,9 @@ test.describe('Goods Shipment — Confirm modal (draft to complete)', () => {
     // The subtotal row is modal-specific (the form doesn't show a subtotal)
     await expect(page.getByText(/Subtotal/)).toBeVisible({ timeout: 5_000 });
     // Amount from linkedOrders[0].grandTotalAmount shown as 1,500.00 EUR
-    await expect(page.getByText(/1[.,]500/)).toBeVisible({ timeout: 5_000 });
+    await expect(
+      page.locator('div').filter({ hasText: /^1[.,]500[.,]00 EUR$/ }),
+    ).toBeVisible({ timeout: 5_000 });
 
     // ── Optional invoice section ───────────────────────────────────────────
     await expect(page.getByText('Generar documentos (opcional)')).toBeVisible({ timeout: 5_000 });

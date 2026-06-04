@@ -24,7 +24,7 @@ const PROFILE_LABELS = {
   tbai:         'TBAI',
   'sii+tbai':   'SII + TBAI',
   'sii-navarra':'SII Navarra',
-  verifactu:    'Verifactu',
+  verifactu:    'VERI*FACTU',
 };
 
 

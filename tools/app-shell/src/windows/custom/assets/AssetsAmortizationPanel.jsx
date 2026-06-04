@@ -1,10 +1,25 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowUpRight } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { StatusTag } from '@/components/ui/status-tag';
 import { useCurrency } from '@/hooks/useCurrency';
 import { formatCurrency } from '@/lib/formatCurrency';
+
+function PeriodLink({ label, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group inline-flex items-center gap-1 text-sm font-medium text-[#121217]"
+    >
+      <span className="border-b border-[#828FA3] group-hover:border-[#121217] transition-colors leading-6">
+        {label}
+      </span>
+      <ArrowUpRight className="h-4 w-4 text-[#121217]" />
+    </button>
+  );
+}
 
 function StatusBadge({ isProcessed, ui }) {
   return (
@@ -15,21 +30,12 @@ function StatusBadge({ isProcessed, ui }) {
   );
 }
 
-function getLineStatuses(lines, depreciatedValue) {
-  const statuses = new Map();
-  let cumulative = 0;
-  for (const line of lines) {
-    cumulative += Number(line.amortizationAmount ?? 0);
-    statuses.set(line.id ?? line.sEQNoAsset, cumulative <= depreciatedValue && depreciatedValue > 0);
-  }
-  return statuses;
-}
-
 export default function AssetsAmortizationPanel({ data, recordId: recordIdProp, token, apiBaseUrl, onCountChange }) {
   const ui = useUI();
   const navigate = useNavigate();
   const orgCurrency = useCurrency() ?? 'USD';
   const [lines, setLines] = useState([]);
+  const [processedMap, setProcessedMap] = useState(new Map());
   const [loading, setLoading] = useState(false);
   const recordId = recordIdProp ?? data?.id;
 
@@ -44,7 +50,21 @@ export default function AssetsAmortizationPanel({ data, recordId: recordIdProp, 
         const normalizedRows = Array.isArray(rows) ? rows : [];
         setLines(normalizedRows);
         onCountChange?.(normalizedRows.length);
+        const amortBase = apiBaseUrl.replace(/\/[^/]+$/, '/amortization');
+        const ids = [...new Set(normalizedRows.map(l => l.amortization).filter(Boolean))];
+        return Promise.all(
+          ids.map(id =>
+            fetch(`${amortBase}/header/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+              .then(r => r.ok ? r.json() : null)
+              .then(json => {
+                const record = json?.response?.data?.[0] ?? json?.data?.[0] ?? json;
+                return [id, record?.processed === 'Y'];
+              })
+              .catch(() => [id, false])
+          )
+        );
       })
+      .then(entries => setProcessedMap(new Map(entries ?? [])))
       .catch(() => setLines([]))
       .finally(() => setLoading(false));
   }, [recordId, apiBaseUrl, token]);
@@ -66,11 +86,6 @@ export default function AssetsAmortizationPanel({ data, recordId: recordIdProp, 
     window.addEventListener('neo:processSuccess', handleProcessSuccess);
     return () => window.removeEventListener('neo:processSuccess', handleProcessSuccess);
   }, [recordId, fetchLines]);
-
-  const depreciatedValue = Number(data?.depreciatedValue ?? 0);
-  const lineStatuses = getLineStatuses(lines, depreciatedValue);
-  const plannedCount = [...lineStatuses.values()].filter(v => !v).length;
-  const totalAmount = lines.reduce((sum, l) => sum + Number(l.amortizationAmount ?? 0), 0);
 
   return (
     <div className="pt-2 pb-5">
@@ -98,10 +113,18 @@ export default function AssetsAmortizationPanel({ data, recordId: recordIdProp, 
               {lines.map((line) => (
                 <tr
                   key={line.id ?? line.sEQNoAsset}
-                  className="hover:bg-muted/30 cursor-pointer"
-                  onClick={() => line.amortization && navigate(`/amortization/${line.amortization}`)}
+                  className="hover:bg-muted/30"
                 >
-                  <td className="py-3 pr-4 text-foreground">{line['amortization$_identifier'] ?? line.amortization ?? '—'}</td>
+                  <td className="py-3 pr-4">
+                    {line.amortization ? (
+                      <PeriodLink
+                        label={line['amortization$_identifier'] ?? line.amortization}
+                        onClick={() => navigate(`/amortization/${line.amortization}`)}
+                      />
+                    ) : (
+                      <span className="text-foreground">{line['amortization$_identifier'] ?? '—'}</span>
+                    )}
+                  </td>
                   <td className="py-3 pr-4 text-foreground">
                     {line.amortizationPercentage != null
                       ? `${Number(line.amortizationPercentage).toFixed(2)}%`
@@ -109,21 +132,11 @@ export default function AssetsAmortizationPanel({ data, recordId: recordIdProp, 
                   </td>
                   <td className="py-3 pr-4 text-foreground">{formatCurrency(orgCurrency, line.amortizationAmount)}</td>
                   <td className="py-3">
-                    <StatusBadge isProcessed={lineStatuses.get(line.id ?? line.sEQNoAsset)} ui={ui} />
+                    <StatusBadge isProcessed={processedMap.get(line.amortization) ?? false} ui={ui} />
                   </td>
                 </tr>
               ))}
             </tbody>
-            {totalAmount > 0 && (
-              <tfoot>
-                <tr className="border-t border-border/50">
-                  <td colSpan={2} />
-                  <td colSpan={2} className="py-3 text-right text-sm font-semibold text-foreground pr-4">
-                    {ui('assetsTotalPlanned')} {formatCurrency(orgCurrency, totalAmount)}
-                  </td>
-                </tr>
-              </tfoot>
-            )}
           </table>
         </div>
       )}

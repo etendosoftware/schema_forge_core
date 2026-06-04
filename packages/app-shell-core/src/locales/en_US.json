@@ -10365,7 +10365,7 @@
       "description": "SII Exercise"
     },
     "EM_Tbai_Nonsubjectcause": {
-      "label": "TBAI - Causa de No Sujeción",
+      "label": "TicketBAI - Causa de No Sujeción",
       "description": "Razón por la cual la factura no está sujeta a impuestos."
     },
     "Type_Operation": {
@@ -12069,8 +12069,8 @@
       "description": "Correct synchronization error"
     },
     "Etvfac_C_Invoice_Verifactu_ID": {
-      "label": "Datos Envío Verifactu",
-      "description": "Datos de envío de la factura a Verifactu."
+      "label": "Datos Envío VERI*FACTU",
+      "description": "Datos de envío de la factura a VERI*FACTU."
     },
     "Received_Documentno": {
       "label": "Document Number",
@@ -12158,7 +12158,7 @@
     },
     "Tbai_Syncinvoice_ID": {
       "label": "Syncronized Invoice ID",
-      "description": "Identificador de la factura sincronizada en el sistema TBAI."
+      "description": "Identificador de la factura sincronizada en el sistema TicketBAI."
     },
     "Conversion": {
       "label": "Conversion Rate",
@@ -12233,7 +12233,7 @@
       "description": "Sales invoice type key to send to AEAT SII."
     },
     "EM_Tbai_Ad_Sequence_ID": {
-      "label": "Secuencia de encadenamiento para TBAI",
+      "label": "Secuencia de encadenamiento para TicketBAI",
       "description": "Número de secuencia utilizado para el encadenamiento de las facturas."
     },
     "taxAmount": {
@@ -12254,7 +12254,7 @@
     },
     "Etvfac_Inv_Sent_Status_Mv_ID": {
       "label": "Estado de Envío de Factura",
-      "description": "Vista materializada que muestra datos de los registros de facturación enviados a Verifactu."
+      "description": "Vista materializada que muestra datos de los registros de facturación enviados a VERI*FACTU."
     },
     "Lastname1": {
       "label": "Primer Apellido",
@@ -12286,11 +12286,11 @@
     },
     "EM_Etvfac_Issued_Externally": {
       "label": "Factura Emitida en SIF Externo",
-      "description": "Indica si la factura ya ha sido emitida a Verifactu utilizando otro SIF"
+      "description": "Indica si la factura ya ha sido emitida a VERI*FACTU utilizando otro SIF"
     },
     "EM_Etvfac_Corrected_Inv": {
       "label": "Factura Corregida",
-      "description": "Casilla utilizada para enviar factura a Verifactu."
+      "description": "Casilla utilizada para enviar factura a VERI*FACTU."
     },
     "Notary_Name": {
       "label": "Notaría",
@@ -12381,12 +12381,12 @@
       "description": ""
     },
     "EM_Etvfac_Senttoverifac": {
-      "label": "Enviado a Verifactu",
-      "description": "Especifica si la factura fue enviada a Verifactu o no."
+      "label": "Enviado a VERI*FACTU",
+      "description": "Especifica si la factura fue enviada a VERI*FACTU o no."
     },
     "URL_Cancel_Test": {
       "label": "Url para anulacion de factura test",
-      "description": "URL utilizada en entornos de prueba para la anulación de facturas en TBAI."
+      "description": "URL utilizada en entornos de prueba para la anulación de facturas en TicketBAI."
     },
     "Fecha_Ultima_Modif_Sii": {
       "label": "SII last modification date",
@@ -12413,7 +12413,7 @@
       "description": "Invoice Cash VAT"
     },
     "EM_Tbai_Exemptioncause": {
-      "label": "TBAI - Causa de Exención",
+      "label": "TicketBAI - Causa de Exención",
       "description": "Razón por la cual la factura está exenta de impuestos."
     },
     "Nif": {
@@ -12421,7 +12421,7 @@
       "description": "NIF (Número de Identificación Fiscal)"
     },
     "Tbai_License_Test": {
-      "label": "Licencia TBAI test",
+      "label": "Licencia TicketBAI test",
       "description": "Licencia de prueba de TicketBAI para entornos de desarrollo."
     },
     "EM_Etvfac_Nif": {
@@ -12453,7 +12453,7 @@
       "description": "This Line is generated"
     },
     "EM_Etvfac_Exemption_Cause": {
-      "label": "Verifactu - Causa de Exención",
+      "label": "VERI*FACTU - Causa de Exención",
       "description": "Causa de exención."
     },
     "Lastname2": {
@@ -12474,7 +12474,7 @@
     },
     "Default_Qr": {
       "label": "QR Por Defecto",
-      "description": "Implementación por defecto del QR Verifactu en facturas."
+      "description": "Implementación por defecto del QR VERI*FACTU en facturas."
     },
     "EM_OBSPTI_Declaration": {
       "label": "Tax Book Type",
@@ -12521,8 +12521,8 @@
       "description": "Cash receipt transaction"
     },
     "EM_Etvfac_Invoice_Status": {
-      "label": "Estado de Envío a Verifactu",
-      "description": "Muestra el estado de envío a Verifactu de la factura."
+      "label": "Estado de Envío a VERI*FACTU",
+      "description": "Muestra el estado de envío a VERI*FACTU de la factura."
     },
     "EM_Tbai_Claveregimeniva": {
       "label": "Clave de Régimen Especial de IVA",
@@ -12589,8 +12589,8 @@
       "description": "Clona la factura pero con signo invertido."
     },
     "Etvfac_Verifactu_Config_ID": {
-      "label": "Configuración Verifactu",
-      "description": "Configuración general de Verifactu."
+      "label": "Configuración VERI*FACTU",
+      "description": "Configuración general de VERI*FACTU."
     },
     "Aeatsii_Payment_ID": {
       "label": "SII Payment",
@@ -12614,7 +12614,7 @@
     },
     "URL_Cancel": {
       "label": "Url para anulacion de factura",
-      "description": "URL utilizada para enviar una solicitud de anulación de una factura registrada en TBAI."
+      "description": "URL utilizada para enviar una solicitud de anulación de una factura registrada en TicketBAI."
     },
     "Intr_M_Product_ID": {
       "label": "Intr_M_Product_ID",
@@ -12858,7 +12858,7 @@
     },
     "EM_Etvfac_Inv_Type": {
       "label": "Tipo de Factura",
-      "description": "Tipo de clave de factura para enviar a AEAT Verifactu."
+      "description": "Tipo de clave de factura para enviar a AEAT VERI*FACTU."
     },
     "EM_Aeatsii_Fecha_Reg_Cont": {
       "label": "Accounting register date",
@@ -12942,7 +12942,7 @@
     },
     "Tbai_Valcode_ID": {
       "label": "Tbai_Valcode_ID",
-      "description": "Código de validación asignado por el sistema TBAI a la factura."
+      "description": "Código de validación asignado por el sistema TicketBAI a la factura."
     },
     "Isfinal": {
       "label": "Final",
@@ -12957,8 +12957,8 @@
       "description": "Double Cash Criteria"
     },
     "EM_Tbai_Xmlgenerator": {
-      "label": "Registrar Factura en TBAI",
-      "description": "Registro de la factura en el sistema TBAI."
+      "label": "Registrar Factura en TicketBAI",
+      "description": "Registro de la factura en el sistema TicketBAI."
     },
     "iscashvat": {
       "label": "Cash VAT",
@@ -12990,7 +12990,7 @@
     },
     "Tbai_Config_ID": {
       "label": "Tbai_Config_ID",
-      "description": "Identificador de configuración del sistema TBAI."
+      "description": "Identificador de configuración del sistema TicketBAI."
     },
     "Date_Found": {
       "label": "Fecha Detección",
@@ -13066,11 +13066,11 @@
     },
     "Refresh_Data": {
       "label": "Refrescar Datos",
-      "description": "Refrescar los datos de envío a Verifactu, organizados por estado."
+      "description": "Refrescar los datos de envío a VERI*FACTU, organizados por estado."
     },
     "EM_Tbai_Issent": {
-      "label": "Enviada a TBAI",
-      "description": "Estado de envío de la factura al sistema TBAI."
+      "label": "Enviada a TicketBAI",
+      "description": "Estado de envío de la factura al sistema TicketBAI."
     },
     "Adjuntos": {
       "label": "Attach XML files",
@@ -13094,7 +13094,7 @@
     },
     "Next_Send_Wait_Time": {
       "label": "Tiempo de Espera para el Siguiente Envío",
-      "description": "El tiempo de espera para enviar el siguiente grupo de facturas a Verifactu."
+      "description": "El tiempo de espera para enviar el siguiente grupo de facturas a VERI*FACTU."
     },
     "Error_Reason": {
       "label": "Descripción Error Registro",
@@ -13150,7 +13150,7 @@
     },
     "URL_Register": {
       "label": "Url para Alta Factura",
-      "description": " URL utilizada para registrar una nueva factura en el sistema TBAI."
+      "description": " URL utilizada para registrar una nueva factura en el sistema TicketBAI."
     },
     "FromDate": {
       "label": "Starting Date",
@@ -13221,7 +13221,7 @@
       "description": "Transaction type"
     },
     "Tbaisystemdate": {
-      "label": "Fecha Acogida TBAI",
+      "label": "Fecha Acogida TicketBAI",
       "description": "Fecha en la que la factura fue acogida por el sistema TicketBAI."
     },
     "IsProcessed": {
@@ -13273,7 +13273,7 @@
       "description": "Accepted payments with errors"
     },
     "EM_Etvfac_Void": {
-      "label": "Baja en Verifactu",
+      "label": "Baja en VERI*FACTU",
       "description": "Indica si el registro ha sido dado de baja."
     },
     "EM_Intr_Transaction_Type": {
@@ -13434,7 +13434,7 @@
     },
     "Registration_Status": {
       "label": "Estado",
-      "description": "Estado de registro en Verifactu."
+      "description": "Estado de registro en VERI*FACTU."
     },
     "EM_AEAT349_BP_BaseAmount": {
       "label": "Base Imponible del 349 Productos",
@@ -13453,11 +13453,11 @@
       "description": "Tipo de factura rectificativa."
     },
     "em_etvfac_cause_not_taxable": {
-      "label": "Verifactu - Causa No Sujeción",
+      "label": "VERI*FACTU - Causa No Sujeción",
       "description": "Tipos de transacciones según su tratamiento fiscal, en relación a si están sujetas o exentas del impuesto correspondiente."
     },
     "Tbai_License": {
-      "label": "Licencia TBAI",
+      "label": "Licencia TicketBAI",
       "description": "Este campo almacena la licencia que autoriza el uso del sistema TicketBAI para emitir facturas."
     },
     "conexiones": {
@@ -13486,7 +13486,7 @@
     },
     "IN_Vfactu_System": {
       "label": "Fecha de Acogida",
-      "description": "Indica la fecha de adhesión a Verifactu."
+      "description": "Indica la fecha de adhesión a VERI*FACTU."
     },
     "CheckNumber": {
       "label": "Check Number",
@@ -13498,7 +13498,7 @@
     },
     "URL_Register_Test": {
       "label": "Url para Alta Factura Test",
-      "description": "URL utilizada en entornos de prueba para el registro de facturas en TBAI."
+      "description": "URL utilizada en entornos de prueba para el registro de facturas en TicketBAI."
     },
     "Isincluded": {
       "label": "Included",
@@ -14417,7 +14417,7 @@
       "label": "SII Invoices Query"
     },
     "Configuración Verifactu": {
-      "label": "Configuración Verifactu"
+      "label": "Configuración VERI*FACTU"
     },
     "IAE Activity Type": {
       "label": "IAE Activity Type"
@@ -14453,7 +14453,7 @@
       "label": "SII Cash Receipts"
     },
     "TBAI Facturas Enviadas": {
-      "label": "TBAI Facturas Enviadas"
+      "label": "TicketBAI Facturas Enviadas"
     },
     "Tax key": {
       "label": "Tax key"
@@ -14468,7 +14468,7 @@
       "label": "Invoice Register Book"
     },
     "Destinos TBAI": {
-      "label": "Destinos TBAI"
+      "label": "Destinos TicketBAI"
     },
     "SII Descriptions": {
       "label": "SII Descriptions"
@@ -14477,7 +14477,7 @@
       "label": "SII Configuration"
     },
     "Configuración TBAI": {
-      "label": "Configuración TBAI"
+      "label": "Configuración TicketBAI"
     },
     "Epígrafes IAE": {
       "label": "Epígrafes IAE"
@@ -14492,7 +14492,7 @@
       "label": "Manual Cash VAT Settlement"
     },
     "Monitor Verifactu": {
-      "label": "Monitor Verifactu"
+      "label": "Monitor VERI*FACTU"
     },
     "Invoice Register Book Setup": {
       "label": "Invoice Register Book Setup"
@@ -15733,7 +15733,7 @@
       "label": "Issued Invoices (previous period) SII Data"
     },
     "Destinos TBAI": {
-      "label": "Destinos TBAI"
+      "label": "Destinos TicketBAI"
     },
     "SII cash receipt issues": {
       "label": "SII cash receipt issues"
@@ -15904,7 +15904,7 @@
       "label": "Issued Invoices (previous period)"
     },
     "Verifactu": {
-      "label": "Verifactu"
+      "label": "VERI*FACTU"
     },
     "SII Data": {
       "label": "SII Data"
@@ -15946,7 +15946,7 @@
       "label": "Analytics Synchronization Header"
     },
     "Cabecera de Configuración Verifactu": {
-      "label": "Cabecera de Configuración Verifactu"
+      "label": "Cabecera de Configuración VERI*FACTU"
     },
     "SII cash receipt": {
       "label": "SII cash receipt"
@@ -16482,8 +16482,15 @@
     "assetsGroupFinancialTitle": "Financial Information",
     "assetsGroupDepreciationTitle": "Depreciation Setup",
     "assetsGroupDatesTitle": "Dates",
+    "assetsGroupDimensionsTitle": "Accounting dimensions",
     "assetsDepreciationDisabledHint": "Depreciation is disabled. Enable it to configure the method, calculation, and useful life.",
     "assetsAmortizationPlanTab": "Amortization Plan",
+    "amortizationDimensionsTitle": "Accounting dimensions",
+    "amortizationDimensionsEmpty": "Add dimensions",
+    "amortizationDimensionsFilled": "{n} of 8 filled",
+    "amortizationDimensionsSave": "Save dimensions",
+    "editLine": "Edit line",
+    "noLines": "No lines",
     "backendError.amortizationCurrencyRequired": "Currency field cannot be empty",
     "backendError.amortizationAnnualDepreciationRequired": "Annual Depreciation field cannot be empty, zero or negative.",
     "backendError.amortizationUsableLifeYearsRequired": "Usable Life - Years field cannot be empty, zero or negative.",
@@ -16843,11 +16850,11 @@
     "invoicePreviewDueDate": "Due date",
     "invoicePreviewStatus": "Status",
     "invoicePreview.fiscalStatus.sii": "SII Status",
-    "invoicePreview.fiscalStatus.tbai": "TBAI Status",
-    "invoicePreview.fiscalStatus.verifactu": "Verifactu Status",
+    "invoicePreview.fiscalStatus.tbai": "TicketBAI Status",
+    "invoicePreview.fiscalStatus.verifactu": "VERI*FACTU Status",
     "invoiceList.col.siiStatus": "SII Status",
-    "invoiceList.col.tbaiStatus": "TBAI Status",
-    "invoiceList.col.verifactuStatus": "Verifactu Status",
+    "invoiceList.col.tbaiStatus": "TicketBAI Status",
+    "invoiceList.col.verifactuStatus": "VERI*FACTU Status",
     "invoicePreviewNoPaymentsRecorded": "No payments recorded",
     "invoicePreviewPendingSync": "pending sync",
     "invoicePreviewDropFileHere": "Drop file here",
@@ -18212,6 +18219,7 @@
     "productDistributedIn": "Distributed in {count} warehouses",
     "productLast12Months": "Last 12 months.",
     "expand": "Expand",
+    "collapse": "Collapse",
     "paymentInGroup": "Payment In",
     "paymentOutGroup": "Payment Out",
     "payinAllow": "Payment In Allowed",
@@ -18244,8 +18252,8 @@
     "assetsPercentage": "Percentage",
     "assetsStatus": "Status",
     "assetsTotalPlanned": "Total planned:",
-    "assetsStatusProcessed": "Processed",
-    "assetsStatusPlanned": "Planned",
+    "assetsStatusProcessed": "Confirmed",
+    "assetsStatusPlanned": "Pending",
     "assetsDepreciationSummary": "Depreciation Summary",
     "assetsCurrentValue": "Current Value",
     "assetsBookValue": "Asset book value",
@@ -18470,19 +18478,19 @@
     "fiscal.territory.paisvasco": "Basque Country",
     "fiscal.sii.question": "Is this organization enrolled in SII? (annual revenue > €6M or voluntary)",
     "fiscal.sii.enrolled": "Yes, enrolled in SII",
-    "fiscal.sii.notEnrolled": "No, use Verifactu",
+    "fiscal.sii.notEnrolled": "No, use VERI*FACTU",
     "fiscal.sii.badge.navarra": "Navarre Tax Authority",
     "fiscal.tbai.sii.question": "Also obligated for national SII? (revenue > €6M)",
-    "fiscal.tbai.with.sii": "Yes, SII + TBAI",
-    "fiscal.tbai.without.sii": "No, TBAI only",
+    "fiscal.tbai.with.sii": "Yes, SII + TicketBAI",
+    "fiscal.tbai.without.sii": "No, TicketBAI only",
     "fiscal.skip": "Skip for now",
     "fiscal.skip.hint": "You can configure the fiscal system later from this same menu.",
-    "fiscal.verifactu.ready.modal.title": "Activate Verifactu",
-    "fiscal.verifactu.ready.modal.body": "This will permanently lock the Verifactu configuration. Once activated, system parameters cannot be modified. Continue?",
+    "fiscal.verifactu.ready.modal.title": "Activate VERI*FACTU",
+    "fiscal.verifactu.ready.modal.body": "This will permanently lock the VERI*FACTU configuration. Once activated, system parameters cannot be modified. Continue?",
     "fiscal.verifactu.locked.badge": "Active",
     "fiscal.verifactu.unlocked.badge": "Not activated",
     "fiscal.conflict.title": "Invalid configuration",
-    "fiscal.conflict.body": "This organization has both Verifactu and SII/TBAI configured. These systems are incompatible. Remove one before continuing.",
+    "fiscal.conflict.body": "This organization has both VERI*FACTU and SII/TicketBAI configured. These systems are incompatible. Remove one before continuing.",
     "fiscal.save": "Save",
     "fiscal.saving": "Saving…",
     "fiscal.noOrg": "No organization selected in the current session.",
@@ -18490,17 +18498,17 @@
     "fiscal.loadError": "Error loading configuration: {error}",
     "fiscal.retry": "Retry",
     "fiscal.sii.error": "SII error: {error}",
-    "fiscal.tbai.error": "TBAI error: {error}",
+    "fiscal.tbai.error": "TicketBAI error: {error}",
     "fiscal.cert.modal.title": "Upload digital certificate",
     "fiscal.cert.subtitle.tbai": "Representative certificate (.p12 or .pfx) to sign TicketBAI invoices before sending to the Foral Tax Authority.",
-    "fiscal.cert.subtitle.sii": "Representative certificate (.p12 or .pfx) to authenticate the connection with the AEAT.",
-    "fiscal.cert.subtitle.verifactu": "Representative certificate (.p12 or .pfx) to sign and authenticate billing records with the AEAT (Verifactu).",
+    "fiscal.cert.subtitle.sii": "Electronic authentication certificate",
+    "fiscal.cert.subtitle.verifactu": "Representative certificate (.p12 or .pfx) to sign and authenticate billing records with the AEAT (VERI*FACTU).",
     "fiscal.cert.subtitle.default": "Organization representative digital certificate (.p12 or .pfx). It will be used to sign and authenticate fiscal submissions.",
     "fiscal.cert.step.file": "File",
     "fiscal.cert.step.verify": "Verification",
     "fiscal.cert.step.confirm": "Confirmation",
     "fiscal.cert.close": "Close",
-    "fiscal.cert.dropzone.drag": "Drag your certificate here",
+    "fiscal.cert.dropzone.drag": "Drag your file here or select one",
     "fiscal.cert.dropzone.click": "or click to select · .p12 or .pfx · max. 5 MB",
     "fiscal.cert.dropzone.changeHint": "click to change",
     "fiscal.cert.pwd.label": "Certificate password",
@@ -18546,6 +18554,12 @@
     "fiscal.cert.expiry.critical.title": "Certificate expires in {days} days",
     "fiscal.cert.expiry.body": "Renew your digital certificate to avoid interruptions in fiscal submissions.",
     "fiscal.cert.expiry.dismiss": "Dismiss",
+    "fiscal.cancel": "Cancel",
+    "fiscal.tab.sii": "SII",
+    "fiscal.tab.navarra": "Hacienda Foral de Navarra",
+    "fiscal.tab.tbai": "TicketBAI",
+    "fiscal.cert.section.hint": "Required to authenticate with the Tax Authority.",
+    "fiscal.cert.dropzone.formats": "Compatible formats: .p12, .pfx",
     "fiscal.sii.legend.status": "Status",
     "fiscal.sii.legend.env": "Environment",
     "fiscal.sii.legend.sends": "Submissions",
@@ -18569,18 +18583,19 @@
     "fiscal.tbai.legend.env": "Environment",
     "fiscal.tbai.legend.billing": "Billing",
     "fiscal.tbai.legend.technical": "Technical",
-    "fiscal.tbai.field.enrollDate": "TBAI enrollment date",
+    "fiscal.tbai.territory.label": "Territory",
+    "fiscal.tbai.field.enrollDate": "TicketBAI enrollment date",
     "fiscal.tbai.field.production": "Production environment",
     "fiscal.tbai.field.invoiceDesc": "Invoice description",
-    "fiscal.tbai.field.useAsProduct": "Use description as product name",
+    "fiscal.tbai.field.useAsProduct": "Use description as invoice name",
     "fiscal.tbai.field.autoSend": "Auto-send on invoice completion",
     "fiscal.tbai.field.jasper": "Jasper Report path",
     "fiscal.tbai.field.jasper.placeholder": "/path/to/report.jrxml",
     "fiscal.tbai.field.validatePrev": "Validate previous invoice",
-    "fiscal.tbai.err.enrollDate": "The TBAI enrollment date is required.",
+    "fiscal.tbai.err.enrollDate": "The TicketBAI enrollment date is required.",
     "fiscal.tbai.err.invoiceDesc": "The invoice description is required.",
-    "fiscal.tbai.err.noRecordId": "Missing TBAI record identifier.",
-    "fiscal.verifactu.err.noRecordId": "Missing Verifactu record identifier.",
+    "fiscal.tbai.err.noRecordId": "Missing TicketBAI record identifier.",
+    "fiscal.verifactu.err.noRecordId": "Missing VERI*FACTU record identifier.",
     "fiscal.verifactu.err.noTaxType": "Please select a tax type before saving.",
     "fiscal.verifactu.field.tax": "Applicable tax",
     "fiscal.verifactu.field.selectTax": "Select a tax",
@@ -18621,7 +18636,7 @@
     "fiscal.onboarding.applied.national.active": "Active",
     "fiscal.onboarding.applied.national.na": "Not applicable",
     "fiscal.onboarding.applied.chosen.sii": "SII voluntary",
-    "fiscal.onboarding.applied.chosen.verifactu": "Verifactu",
+    "fiscal.onboarding.applied.chosen.verifactu": "VERI*FACTU",
     "fiscal.onboarding.nextsteps.title": "Next steps",
     "fiscal.onboarding.cert.upload.title": "Upload digital certificate",
     "fiscal.onboarding.cert.loaded.title": "Digital certificate loaded",
@@ -18646,6 +18661,8 @@
     "fiscal.onboarding.breadcrumb.manual": "Manual configuration",
     "fiscal.onboarding.confirm.title": "Confirm configuration",
     "fiscal.onboarding.confirm.subtitle": "Review the data before continuing. You can edit any field later in Settings → Fiscal configuration.",
+    "fiscal.onboarding.confirm.subtitle.pre": "Review the data before continuing. You can edit any field later in ",
+    "fiscal.onboarding.confirm.subtitle.bold": "Settings → Fiscal configuration",
     "fiscal.onboarding.confirm.row.territory": "Territory",
     "fiscal.onboarding.confirm.row.hacienda": "Tax authority",
     "fiscal.onboarding.confirm.row.national.yes": "Yes · also declares SII",
@@ -18655,10 +18672,10 @@
     "fiscal.onboarding.confirm.row.volume.low": "≤ 6,010,121.04 €",
     "fiscal.onboarding.confirm.row.volume": "Annual volume",
     "fiscal.onboarding.confirm.row.choice.sii": "Voluntary SII",
-    "fiscal.onboarding.confirm.row.choice.verifactu": "Verifactu",
+    "fiscal.onboarding.confirm.row.choice.verifactu": "VERI*FACTU",
     "fiscal.onboarding.confirm.row.choice": "Choice",
     "fiscal.onboarding.confirm.row.system": "Fiscal system",
-    "fiscal.onboarding.confirm.next.title": "Next step",
+    "fiscal.onboarding.confirm.next.title": "Next step:",
     "fiscal.onboarding.confirm.next.body": "After confirming, you can add operational details (enrollment dates, submission cadences, test or production environment).",
     "fiscal.onboarding.confirm.creating": "Creating…",
     "fiscal.onboarding.confirm.btn": "Confirm",
@@ -18675,24 +18692,50 @@
     "fiscal.onboarding.skip": "Skip",
     "fiscal.onboarding.territory.prefer.manual.q": "Prefer to do it manually?",
     "fiscal.onboarding.territory.prefer.manual.link": "Select fiscal system",
-    "fiscal.onboarding.subq.also.title": "Do you also invoice in common territory?",
-    "fiscal.onboarding.subq.also.subtitle": "Companies based in {territory} use TicketBAI for their foral invoices. If you also operate with clients or suppliers in the rest of Spain, you will need to also declare through national SII.",
+    "fiscal.onboarding.subq.also.title": "Do you also need to report through SII?",
+    "fiscal.onboarding.subq.also.subtitle": "Select how your company must operate with TicketBAI. If you are also required to use SII, you will also need to report your VAT records.",
     "fiscal.onboarding.subq.tbai.label": "TicketBAI only",
-    "fiscal.onboarding.subq.tbai.desc": "All our invoicing is declared to the Foral Tax Authority of {territory}.",
-    "fiscal.onboarding.subq.sii.label": "SII + TicketBAI",
-    "fiscal.onboarding.subq.sii.desc": "We also issue invoices to clients in common territory — we need to declare through state SII.",
+    "fiscal.onboarding.subq.tbai.desc": "Choose this option if your company only needs to submit its invoices through TicketBAI and is not required to use SII.",
+    "fiscal.onboarding.subq.tbai.extra": "Typical case if you are not a large company, not registered in REDEME, do not belong to a VAT group and have not voluntarily opted into SII.",
+    "fiscal.onboarding.subq.sii.label": "TicketBAI + SII",
+    "fiscal.onboarding.subq.sii.desc": "Choose this option if, in addition to TicketBAI, your company also needs to operate under SII.",
+    "fiscal.onboarding.subq.sii.extra": "Normally applies if you are required to use SII or have voluntarily opted in.",
+    "fiscal.onboarding.subq.sii.info.title": "When does SII usually apply?",
+    "fiscal.onboarding.subq.sii.info.bullet1": "If you are a large company (transaction volume exceeding €6,010,121.04).",
+    "fiscal.onboarding.subq.sii.info.bullet2": "If you are registered in REDEME.",
+    "fiscal.onboarding.subq.sii.info.bullet3": "If you belong to a VAT group.",
+    "fiscal.onboarding.subq.sii.info.bullet4": "If you have voluntarily opted into SII.",
+    "fiscal.onboarding.subq.sii.footnote": "If none of these cases apply to you, you will normally only need to operate with TicketBAI.",
     "fiscal.onboarding.subq.volume.title": "What is your annual billing volume?",
-    "fiscal.onboarding.subq.volume.subtitle": "Companies exceeding €6,010,121.04 in transaction volume are required to submit SII. Below that, you can choose between SII (voluntary) or Verifactu.",
+    "fiscal.onboarding.subq.volume.subtitle": "If you exceed €6,010,121.04 in annual transaction volume, you will be classified as a Large Company from the following year and, as a general rule, will be required to use SII. If you do not reach that threshold and are not in REDEME, a VAT group or another mandatory SII situation, you may choose between voluntary SII or VERI*FACTU.",
     "fiscal.onboarding.subq.volume.low.label": "Up to 6,010,121.04 € per year",
-    "fiscal.onboarding.subq.volume.low.desc": "General regime · you can choose between SII (voluntary) or Verifactu in the next step.",
+    "fiscal.onboarding.subq.volume.low.desc": "Not a Large Company by volume · If you are not in REDEME, a VAT group or another mandatory SII situation, you may choose between voluntary SII or VERI*FACTU in the next step.",
     "fiscal.onboarding.subq.volume.high.label": "More than 6,010,121.04 € per year",
-    "fiscal.onboarding.subq.volume.high.desc": "Large company · SII mandatory (immediate submission to AEAT).",
+    "fiscal.onboarding.subq.volume.high.desc": "Large Company · SII mandatory from the following year for maintaining VAT record books through the AEAT.",
     "fiscal.onboarding.subq.system.title": "Which system do you prefer?",
-    "fiscal.onboarding.subq.system.subtitle": "Both options comply with AEAT regulations. SII sends each invoice instantly; Verifactu signs locally and allows deferred submission.",
-    "fiscal.onboarding.subq.verifactu.label": "Verifactu",
-    "fiscal.onboarding.subq.verifactu.desc": "AEAT anti-fraud · local signature + QR + deferred submission. Recommended for SMEs.",
+    "fiscal.onboarding.subq.system.subtitle": "There are options for both cases: one for companies not yet required to use SII. VERI*FACTU automatically forwards records to the AEAT; voluntary SII allows you to adopt SII and maintain VAT record books through that channel.",
+    "fiscal.onboarding.subq.verifactu.label": "VERI*FACTU",
+    "fiscal.onboarding.subq.verifactu.desc": "Automatic and immediate forwarding of billing records to the AEAT · Includes QR code on the invoice · Recommended for SMEs not enrolled in SII.",
     "fiscal.onboarding.subq.sii.vol.label": "Voluntary SII",
-    "fiscal.onboarding.subq.sii.vol.desc": "Voluntary enrollment · immediate submission (4 days). Useful if your main client requires it.",
+    "fiscal.onboarding.subq.sii.vol.desc": "Voluntary SII enrollment · Submission of billing records within SII deadlines · Useful if you need to operate under this system.",
+    "fiscal.onboarding.subq.obligation.title": "Are you required to use SII?",
+    "fiscal.onboarding.subq.obligation.subtitle": "SII is mandatory for large companies, VAT groups and those registered in REDEME. If you are not in any of these situations, you can choose another option.",
+    "fiscal.onboarding.subq.obligation.no.label": "No, I am not required to use SII",
+    "fiscal.onboarding.subq.obligation.no.desc1": "Up to €6,010,121.04 in annual transaction volume and not belonging to REDEME or a VAT group.",
+    "fiscal.onboarding.subq.obligation.no.desc2": "In this case, you can choose between voluntary SII or a VERI*FACTU system.",
+    "fiscal.onboarding.subq.obligation.yes.label": "Yes, I am required to use SII",
+    "fiscal.onboarding.subq.obligation.yes.desc": "If you are a Large Company (more than €6,010,121.04 in the previous year), belong to a VAT group or are registered in REDEME, SII will be mandatory and VERI*FACTU does not apply.",
+    "fiscal.onboarding.subq.obligation.yes.note": "SII will be mandatory; in this case VERI*FACTU does not apply.",
+    "fiscal.onboarding.subq.obligation.yes.info": "If you exceed the threshold in one year, you will be a Large Company from the following year.",
+    "fiscal.onboarding.subq.choice.title": "If you are not required to use SII, which option do you prefer?",
+    "fiscal.onboarding.subq.choice.subtitle": "Both options are valid, but they work differently. Choose the one that best fits your operations.",
+    "fiscal.onboarding.subq.verifactu.bullet1": "Your billing system generates registration and cancellation records, a hash fingerprint and QR code.",
+    "fiscal.onboarding.subq.verifactu.bullet2": "It also sends the records to the AEAT automatically, securely and continuously.",
+    "fiscal.onboarding.subq.verifactu.bullet3": "Recommended for companies and professionals not enrolled in SII who are looking for a simpler operation.",
+    "fiscal.onboarding.subq.sii.vol.bullet1": "You electronically send billing records to the AEAT's Electronic Office.",
+    "fiscal.onboarding.subq.sii.vol.bullet2": "The general submission deadline is 4 days.",
+    "fiscal.onboarding.subq.sii.vol.bullet3": "It is requested via form 036 and exempts you from submitting forms 347 and 390.",
+    "fiscal.onboarding.subq.important.note": "if you opt for SII, whether mandatory or voluntary, you are outside the scope of VERI*FACTU.",
     "fiscal.territory.alava": "Álava",
     "fiscal.territory.bizkaia": "Bizkaia",
     "fiscal.territory.gipuzkoa": "Gipuzkoa",
@@ -18711,15 +18754,15 @@
     "fiscal.territory.canarias.example": "Companies with IGIC instead of VAT",
     "fiscal.territory.ceuta.example": "Companies with IPSI instead of VAT",
     "fiscal.territory.system.sii": "SII",
-    "fiscal.territory.system.tbai": "TBAI / SII + TBAI",
-    "fiscal.territory.system.siiver": "SII / VERIFACTU",
+    "fiscal.territory.system.tbai": "TicketBAI / SII + TicketBAI",
+    "fiscal.territory.system.siiver": "SII / VERI*FACTU",
     "fiscal.territory.group.sii.label": "SII",
     "fiscal.territory.group.sii.desc": "Navarre Tax Authority",
-    "fiscal.territory.group.tbai.label": "TBAI / SII + TBAI",
+    "fiscal.territory.group.tbai.label": "TicketBAI / SII + TicketBAI",
     "fiscal.territory.group.tbai.desc": "You will be asked if you also operate under national SII",
-    "fiscal.territory.group.siiver.label": "SII / VERIFACTU",
+    "fiscal.territory.group.siiver.label": "SII / VERI*FACTU",
     "fiscal.territory.group.siiver.desc": "You will be asked based on your billing volume",
-    "fiscal.system.sii.long": "Immediate Information System",
+    "fiscal.system.sii.long": "SII - Immediate Information Supply",
     "fiscal.system.sii.desc": "Immediate VAT Information Supply · AEAT",
     "fiscal.system.tbai.long": "TicketBAI (Basque Country)",
     "fiscal.system.tbai.desc": "Anti-fraud system of the Basque Foral Tax Authorities",
@@ -18729,7 +18772,7 @@
     "fiscal.system.verifactu.desc": "AEAT anti-fraud (Billing Regulation)",
     "fiscalMonitor.title": "Fiscal Monitor",
     "fiscalMonitor.unconfigured": "No fiscal system configured for this organization.",
-    "fiscalMonitor.conflict": "Invalid configuration: Verifactu and SII/TBAI cannot coexist.",
+    "fiscalMonitor.conflict": "Invalid configuration: VERI*FACTU and SII/TicketBAI cannot coexist.",
     "fiscalMonitor.error": "Error loading monitor data: {error}",
     "fiscalMonitor.empty": "No records found.",
     "fiscalMonitor.prev": "Previous",
@@ -18747,7 +18790,7 @@
     "contactDetail.saveError": "Failed to save contact",
     "fiscalMonitor.col.invoiceNumber": "Invoice No.",
     "fiscalMonitor.section.sii": "SII",
-    "fiscalMonitor.section.tbai": "TBAI",
+    "fiscalMonitor.section.tbai": "TicketBAI",
     "fiscalMonitor.sii.period.current": "Current period",
     "fiscalMonitor.sii.period.previous": "Previous period",
     "fiscalMonitor.verifactu.tab.accepted": "Accepted",
@@ -18760,7 +18803,7 @@
     "fiscalMonitor.tbai.status.Error": "Error",
     "fiscalMonitor.kpi.sii.issued": "Issued invoices",
     "fiscalMonitor.kpi.sii.received": "Received invoices",
-    "fiscalMonitor.kpi.tbai.total": "TBAI sent",
+    "fiscalMonitor.kpi.tbai.total": "TicketBAI sent",
     "fiscalMonitor.kpi.verifactu.accepted": "Accepted",
     "fiscalMonitor.kpi.verifactu.partiallyAccepted": "Partially accepted",
     "fiscalMonitor.kpi.verifactu.rejected": "Rejected",
@@ -18785,7 +18828,7 @@
     "fiscalMonitor.orgMeta": "Invoice monitor · active fiscal system",
     "fiscalMonitor.synced": "Synchronized",
     "fiscalMonitor.refresh": "Refresh",
-    "fiscalMonitor.setupDescription": "This organization has no active telematic submission system (SII, TicketBAI or Verifactu). Configure it in Fiscal Configuration to start tracking your invoices.",
+    "fiscalMonitor.setupDescription": "This organization has no active telematic submission system (SII, TicketBAI or VERI*FACTU). Configure it in Fiscal Configuration to start tracking your invoices.",
     "fiscalMonitor.setupCta": "Configure fiscal system",
     "fiscalMonitor.errorTitle": "Error loading data",
     "fiscalMonitor.conflictTitle": "Invalid configuration",
@@ -18837,7 +18880,7 @@
     "fiscalMonitor.verifactu.pill.correct": "Correct",
     "fiscalMonitor.verifactu.pill.problems": "With problems",
     "fiscalMonitor.systemTab.sii": "SII",
-    "fiscalMonitor.systemTab.tbai": "TBAI",
+    "fiscalMonitor.systemTab.tbai": "TicketBAI",
     "fiscalMonitor.systemFiscal": "Active fiscal system",
     "fiscalDebug.title": "⚙ Debug · Fiscal Config",
     "fiscalDebug.org": "Org",
@@ -18858,12 +18901,12 @@
     "fiscalDebug.profile.wizard": "Wizard",
     "fiscalDebug.profile.sii": "SII",
     "fiscalDebug.profile.siiNav": "SII Nav",
-    "fiscalDebug.profile.tbai": "TBAI",
-    "fiscalDebug.profile.siiTbai": "SII+TBAI",
-    "fiscalDebug.profile.verifactu": "Verifactu",
+    "fiscalDebug.profile.tbai": "TicketBAI",
+    "fiscalDebug.profile.siiTbai": "SII+TicketBAI",
+    "fiscalDebug.profile.verifactu": "VERI*FACTU",
     "fiscalDebug.label.sii": "SII Config",
-    "fiscalDebug.label.tbai": "TBAI Config",
-    "fiscalDebug.label.verifactu": "Verifactu Config",
+    "fiscalDebug.label.tbai": "TicketBAI Config",
+    "fiscalDebug.label.verifactu": "VERI*FACTU Config",
     "fiscalDebug.label.cert": "Certificate",
     "fiscalDebug.deleteAll": "🗑 Delete ALL (current org)",
     "fiscalDebug.status.deleted": "✓ {count} del",
@@ -18880,9 +18923,9 @@
     "fmDebug.certExpiry.crit": "20d crit",
     "fmDebug.profile.sii": "SII",
     "fmDebug.profile.siiNavarra": "SII Navarra",
-    "fmDebug.profile.siiTbai": "SII + TBAI",
-    "fmDebug.profile.tbai": "TBAI",
-    "fmDebug.profile.verifactu": "Verifactu",
+    "fmDebug.profile.siiTbai": "SII + TicketBAI",
+    "fmDebug.profile.tbai": "TicketBAI",
+    "fmDebug.profile.verifactu": "VERI*FACTU",
     "purchaseOrder.topbar.deliveryStatus": "Delivery Status",
     "purchaseOrder.topbar.invoiceStatus": "Invoice Status",
     "quotationStatus.AE": "Automatic Evaluation",
@@ -18904,26 +18947,26 @@
     "sendToSif": "Send to SIF",
     "sendToSifTitle": "Send to Tax System",
     "sendToSifBodySii": "This invoice will be sent to SII.",
-    "sendToSifBodyTbai": "This invoice will be sent to TBAI.",
-    "sendToSifBodyBoth": "This invoice will be sent to SII and TBAI.",
+    "sendToSifBodyTbai": "This invoice will be sent to TicketBAI.",
+    "sendToSifBodyBoth": "This invoice will be sent to SII and TicketBAI.",
     "sendToSifConfirm": "Send",
     "sendToSifSending": "Sending… this may take a few seconds.",
     "sendToSifSuccessSii": "Sent to SII successfully.",
-    "sendToSifSuccessTbai": "Sent to TBAI successfully.",
+    "sendToSifSuccessTbai": "Sent to TicketBAI successfully.",
     "sendToSifErrorSii": "Error sending to SII.",
-    "sendToSifErrorTbai": "Error sending to TBAI.",
+    "sendToSifErrorTbai": "Error sending to TicketBAI.",
     "sifDataTabs.sectionTitle": "SIF",
     "sifDataTabs.tab.sii": "SII",
-    "sifDataTabs.tab.tbai": "TBAI",
-    "sifDataTabs.tab.verifactu": "Verifactu",
+    "sifDataTabs.tab.tbai": "TicketBAI",
+    "sifDataTabs.tab.verifactu": "VERI*FACTU",
     "sifDataTabs.rail.sii.subtitle": "Immediate Supply",
     "sifDataTabs.rail.tbai.subtitle": "TicketBAI",
-    "sifDataTabs.rail.verifactu.subtitle": "Verifactu",
+    "sifDataTabs.rail.verifactu.subtitle": "VERI*FACTU",
     "sifDataTabs.panel.sii.title": "Immediate Information Supply",
     "sifDataTabs.panel.sii.subtitle": "AEAT · Form 303",
     "sifDataTabs.panel.tbai.title": "TicketBAI · Bizkaia Provincial Treasury",
     "sifDataTabs.panel.tbai.subtitle": "Version 1.2 · Fingerprint chain active",
-    "sifDataTabs.panel.verifactu.title": "Verifactu",
+    "sifDataTabs.panel.verifactu.title": "VERI*FACTU",
     "sifDataTabs.panel.verifactu.subtitle": "AEAT · Real-time invoice reporting",
     "sifDataTabs.errorSavingField": "Error saving field",
     "sifDataTabs.option.invoice": "Invoice",
@@ -18958,7 +19001,7 @@
     "sifDataTabs.status.sii.dropped": "Dropped",
     "sifDataTabs.status.sii.notRegistrable": "Not registrable",
     "sifDataTabs.status.sii.notSent": "Not sent",
-    "sifDataTabs.status.tbai.sent": "Sent to TBAI",
+    "sifDataTabs.status.tbai.sent": "Sent to TicketBAI",
     "sifDataTabs.status.tbai.notSent": "Not sent",
     "sifDataTabs.status.verifactu.accepted": "Accepted",
     "sifDataTabs.status.verifactu.acceptedWithErrors": "Accepted with errors",
@@ -19295,6 +19338,11 @@
     "fm.filegen.title": "Generate declaration file",
     "fm.filegen.desc": "Generate the .303 / .349 submission file for",
     "fm.filegen.generate": "Generate",
+    "fm.filegen.contact_name": "Contact person",
+    "fm.filegen.contact_name_hint": "(for the .349 file)",
+    "fm.filegen.contact_name_placeholder": "Full name",
+    "fm.filegen.contact_phone": "Contact phone",
+    "fm.filegen.contact_phone_placeholder": "+34 91 000 00 00",
     "fm.new_decl.title": "New declaration",
     "fm.new_decl.model": "Model",
     "fm.new_decl.year": "Year",
@@ -19407,6 +19455,8 @@
     "fm.compare.row.exports": "Exports",
     "fm.action.compute": "Calculate",
     "fm.action.computing": "Calculating…",
+    "fm.action.generating": "Generating…",
+    "fm.action.clear": "Clear filter",
     "fm.action.filter": "Filter",
     "fm.action.sort": "Sort",
     "fm.list.mode.to_real": "Switch to real data",
@@ -19416,6 +19466,7 @@
     "fm.m349.type.com": "Supplementary",
     "fm.m349.periodicity": "Periodicity",
     "fm.m349.monthly": "Monthly",
+    "fm.m349.period.quarterly": "Quarterly",
     "fm.m349.key.E": "Intra-EU supplies",
     "fm.m349.key.S": "Services provided",
     "fm.m349.key.A": "Acquisitions",
@@ -19457,12 +19508,20 @@
     "fm.m349.col.vies": "VIES",
     "fm.m349.col.origin": "Origin",
     "fm.m349.col.action": "Action",
+    "fm.m349.col.date": "Date",
+    "fm.m349.col.ref": "Reference",
+    "fm.m349.col.invoice_type": "Type",
     "fm.m349.filter.all_keys": "All keys",
     "fm.m349.search_placeholder": "Search operator or VAT ID",
     "fm.m349.add_operator": "Add operator",
     "fm.m349.operators_count": "{count} operators",
+    "fm.m349.operators_filtered": "of {total}",
     "fm.m349.operators_sub": "Source of truth for the .349 file — each row will be a reconcilable record in the generated file.",
     "fm.m349.coming_soon": "{tab} — content available soon.",
+    "fm.m349.invoices.empty": "Recalculate to see the source invoices.",
+    "fm.m349.invoices.none": "No intra-EU invoices found for this period.",
+    "fm.m349.invoices.filtering_by": "Filtering by:",
+    "fm.m349.invoices.filtered": "{visible} of {total}",
     "amortization": "Amortization",
     "totalAmortization": "Total Amortization",
     "currency": "Currency",
@@ -19476,7 +19535,11 @@
     "amortizationRef": "Amortization",
     "amortizationLineCountLabel": "{count} line(s)",
     "amortizationConfirmWarning": "Once confirmed you will not be able to edit the amortization",
+    "amortizationErrorFullyDepreciated": "This asset is already fully depreciated. No new amortization lines can be generated.",
+    "assetsValidationAnnualDepreciationMax": "Annual Depreciation % cannot exceed 100%. Please correct the value before creating amortization.",
     "amortizationConfirmAction": "Confirm amortization",
+    "amortizationErrorLineAmountInvalid": "There are lines with a zero or negative amount. Please correct them before confirming.",
+    "amortizationErrorLinePercentageMissing": "There are lines with a missing amortization percentage. Please correct them before confirming.",
     "assetsAnnualDepreciationLabel": "Annual Depreciation %"
   },
   "menus": {
@@ -20591,7 +20654,7 @@
       "label": "Intrastat Declaration"
     },
     "Consulta Facturas Verifactu": {
-      "label": "Consulta Facturas Verifactu"
+      "label": "Consulta Facturas VERI*FACTU"
     },
     "Invoice Register Book Setup": {
       "label": "Invoice Register Book Setup"
@@ -20609,7 +20672,7 @@
       "label": "General Chart of Accounts Update"
     },
     "Configuración TBAI": {
-      "label": "Configuración TBAI"
+      "label": "Configuración TicketBAI"
     },
     "Suministro Inmediato de Información (SII)": {
       "label": "Suministro Inmediato de Información (SII)"
@@ -20624,7 +20687,7 @@
       "label": "Tax Report Launcher"
     },
     "Monitor Verifactu": {
-      "label": "Monitor Verifactu"
+      "label": "Monitor VERI*FACTU"
     },
     "Intrastat Launcher": {
       "label": "Intrastat Launcher"
@@ -20636,7 +20699,7 @@
       "label": "Intrastat"
     },
     "Verifactu": {
-      "label": "Verifactu"
+      "label": "VERI*FACTU"
     },
     "SII Invoices Query": {
       "label": "SII Invoices Query"
@@ -20666,10 +20729,10 @@
       "label": "Info.Conta.Impuestos"
     },
     "Configuración Verifactu": {
-      "label": "Configuración Verifactu"
+      "label": "Configuración VERI*FACTU"
     },
     "TBAI Facturas Enviadas": {
-      "label": "TBAI Facturas Enviadas"
+      "label": "TicketBAI Facturas Enviadas"
     },
     "Código de Actividad": {
       "label": "Código de Actividad"
