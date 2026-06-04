@@ -13,7 +13,7 @@ import { generatePageComponent } from '../src/generate-frontend.js';
 //   - specName             = contract.apiPrediction?.specName
 //   - customLinesComponent / customLinesLabel live on windowConfig
 //
-// The referenced component (AmortizationLinesTable) does not exist on disk, so
+// The referenced component (FakeCustomLinesGrid) does not exist on disk, so
 // resolveCustomImport falls through to the artifact-local default convention:
 //   '../../../custom/<Component>'
 // ---------------------------------------------------------------------------
@@ -57,7 +57,7 @@ function makeContract({ customLinesComponent, customLinesLabel, specName } = {})
   return contract;
 }
 
-const RESOLVED_IMPORT = "import AmortizationLinesTable from '../../../custom/AmortizationLinesTable';";
+const RESOLVED_IMPORT = "import FakeCustomLinesGrid from '../../../custom/FakeCustomLinesGrid';";
 
 // ---------------------------------------------------------------------------
 // buildCustomLinesParts — truthy branch (customLinesComponent + specName)
@@ -66,23 +66,23 @@ const RESOLVED_IMPORT = "import AmortizationLinesTable from '../../../custom/Amo
 describe('generatePageComponent - customLinesComponent', () => {
   it('emits an import for the custom lines component using the resolved path', () => {
     const code = generatePageComponent('amortization', 'amortizationLine', makeContract({
-      customLinesComponent: 'AmortizationLinesTable',
+      customLinesComponent: 'FakeCustomLinesGrid',
       specName: 'amortization',
     }));
-    assert.ok(code.includes(RESOLVED_IMPORT), 'should import AmortizationLinesTable from artifact-local custom dir');
+    assert.ok(code.includes(RESOLVED_IMPORT), 'should import FakeCustomLinesGrid from artifact-local custom dir');
   });
 
   it('passes CustomLines={<Comp>} prop to the rendered component', () => {
     const code = generatePageComponent('amortization', 'amortizationLine', makeContract({
-      customLinesComponent: 'AmortizationLinesTable',
+      customLinesComponent: 'FakeCustomLinesGrid',
       specName: 'amortization',
     }));
-    assert.match(code, /CustomLines=\{AmortizationLinesTable\}/);
+    assert.match(code, /CustomLines=\{FakeCustomLinesGrid\}/);
   });
 
   it('skips the standard lines Table/Form imports when customLinesComponent is set', () => {
     const code = generatePageComponent('amortization', 'amortizationLine', makeContract({
-      customLinesComponent: 'AmortizationLinesTable',
+      customLinesComponent: 'FakeCustomLinesGrid',
       specName: 'amortization',
     }));
     // buildDetailImports returns '' when a customLinesComp is present.
@@ -92,7 +92,7 @@ describe('generatePageComponent - customLinesComponent', () => {
 
   it('does not emit customLinesLabel when no label is configured', () => {
     const code = generatePageComponent('amortization', 'amortizationLine', makeContract({
-      customLinesComponent: 'AmortizationLinesTable',
+      customLinesComponent: 'FakeCustomLinesGrid',
       specName: 'amortization',
     }));
     assert.ok(!code.includes('customLinesLabel='), 'should not emit customLinesLabel prop without a label');
@@ -104,13 +104,13 @@ describe('generatePageComponent - customLinesComponent', () => {
 
   it('emits customLinesLabel="<value>" when customLinesLabel is configured', () => {
     const code = generatePageComponent('amortization', 'amortizationLine', makeContract({
-      customLinesComponent: 'AmortizationLinesTable',
+      customLinesComponent: 'FakeCustomLinesGrid',
       customLinesLabel: 'Amortization Plan',
       specName: 'amortization',
     }));
     assert.match(code, /customLinesLabel="Amortization Plan"/);
     // The label only makes sense alongside the CustomLines prop.
-    assert.match(code, /CustomLines=\{AmortizationLinesTable\}/);
+    assert.match(code, /CustomLines=\{FakeCustomLinesGrid\}/);
   });
 
   // -------------------------------------------------------------------------
@@ -119,11 +119,11 @@ describe('generatePageComponent - customLinesComponent', () => {
 
   it('does NOT emit CustomLines parts when specName is absent', () => {
     const code = generatePageComponent('amortization', 'amortizationLine', makeContract({
-      customLinesComponent: 'AmortizationLinesTable',
+      customLinesComponent: 'FakeCustomLinesGrid',
       // no specName
     }));
     assert.ok(!code.includes('CustomLines='), 'should not emit CustomLines prop without specName');
-    assert.ok(!code.includes('AmortizationLinesTable from'), 'should not import the custom lines component without specName');
+    assert.ok(!code.includes('FakeCustomLinesGrid from'), 'should not import the custom lines component without specName');
   });
 
   // -------------------------------------------------------------------------
@@ -136,6 +136,6 @@ describe('generatePageComponent - customLinesComponent', () => {
     }));
     assert.ok(!code.includes('CustomLines='), 'should not emit CustomLines prop');
     assert.ok(!code.includes('customLinesLabel='), 'should not emit customLinesLabel prop');
-    assert.ok(!code.includes('AmortizationLinesTable'), 'should not reference the custom lines component at all');
+    assert.ok(!code.includes('FakeCustomLinesGrid'), 'should not reference the custom lines component at all');
   });
 });
