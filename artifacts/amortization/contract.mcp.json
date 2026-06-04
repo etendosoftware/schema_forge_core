@@ -1,8 +1,8 @@
 {
-  "version": "0.18.0",
+  "version": "0.22.0",
   "generatedAt": "2026-05-22T16:00:10.872Z",
-  "updatedAt": "2026-05-27T16:04:02.229Z",
-  "contractChecksum": "1cdb2cae927ecb75",
+  "updatedAt": "2026-06-01T19:11:48.715Z",
+  "contractChecksum": "213abbe45c8319bd",
   "apiPrediction": {
     "specName": "amortization",
     "baseUrl": "/sws/neo/amortization",
@@ -58,6 +58,70 @@
         "reference": "Currency",
         "inputMode": "selector",
         "url": "/sws/neo/amortization/lines/selectors/currency"
+      },
+      {
+        "entity": "lines",
+        "field": "project",
+        "column": "C_Project_ID",
+        "reference": "Project",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/project"
+      },
+      {
+        "entity": "lines",
+        "field": "costcenter",
+        "column": "C_Costcenter_ID",
+        "reference": "Costcenter",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/costcenter"
+      },
+      {
+        "entity": "lines",
+        "field": "stDimension",
+        "column": "User1_ID",
+        "reference": "User1",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/stDimension"
+      },
+      {
+        "entity": "lines",
+        "field": "ndDimension",
+        "column": "User2_ID",
+        "reference": "User2",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/ndDimension"
+      },
+      {
+        "entity": "lines",
+        "field": "eTADASActivity",
+        "column": "EM_Etadas_C_Activity_ID",
+        "reference": "Activity",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/eTADASActivity"
+      },
+      {
+        "entity": "lines",
+        "field": "eTADASBpartner",
+        "column": "EM_Etadas_C_Bpartner_ID",
+        "reference": "BPartner",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/eTADASBpartner"
+      },
+      {
+        "entity": "lines",
+        "field": "eTADASSalesCampaign",
+        "column": "EM_Etadas_Campaign_ID",
+        "reference": "Campaign",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/eTADASSalesCampaign"
+      },
+      {
+        "entity": "lines",
+        "field": "eTADASSalesRegion",
+        "column": "EM_Etadas_Salesregion_ID",
+        "reference": "SalesRegion",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/eTADASSalesRegion"
       }
     ],
     "actions": [
@@ -149,7 +213,15 @@
         "A_Asset_ID": "Activo",
         "Amortization_Percentage": "% Amortización",
         "Amortizationamt": "Importe amortización",
-        "Line": "Nº línea"
+        "Line": "Nº línea",
+        "C_Project_ID": "Proyecto",
+        "C_Costcenter_ID": "Centro de costo",
+        "User1_ID": "1ª Dimensión",
+        "User2_ID": "2ª Dimensión",
+        "EM_Etadas_C_Bpartner_ID": "Contacto",
+        "EM_Etadas_Salesregion_ID": "Región de ventas",
+        "EM_Etadas_C_Activity_ID": "Actividad",
+        "EM_Etadas_Campaign_ID": "Campaña"
       },
       "en_US": {
         "Name": "Name",
@@ -161,7 +233,15 @@
         "A_Asset_ID": "Asset",
         "Amortization_Percentage": "Amortization %",
         "Amortizationamt": "Amortization Amount",
-        "Line": "Line No."
+        "Line": "Line No.",
+        "C_Project_ID": "Project",
+        "C_Costcenter_ID": "Cost Center",
+        "User1_ID": "1st Dimension",
+        "User2_ID": "2nd Dimension",
+        "EM_Etadas_C_Bpartner_ID": "Contact",
+        "EM_Etadas_Salesregion_ID": "Sales Region",
+        "EM_Etadas_C_Activity_ID": "Activity",
+        "EM_Etadas_Campaign_ID": "Sales Campaign"
       }
     }
   },
@@ -212,6 +292,30 @@
           "currency": {
             "readOnly": true,
             "readOnlyLogic": "@Processed@='Y'"
+          },
+          "project": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "costcenter": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "stDimension": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "ndDimension": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "eTADASActivity": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "eTADASBpartner": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "eTADASSalesCampaign": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "eTADASSalesRegion": {
+            "readOnlyLogic": "@Posted@='Y'"
           }
         }
       }
@@ -288,5 +392,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "2c40f4dad50defdb"
+  "checksum": "52ad731277edaf4d"
 }

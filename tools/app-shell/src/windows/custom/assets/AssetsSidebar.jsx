@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { useUI } from '@/i18n';
 import { useCurrency } from '@/hooks/useCurrency';
 import { formatCurrency } from '@/lib/formatCurrency';
@@ -31,81 +30,15 @@ function MetricCard({ label, value, subtitle, tint = null }) {
   );
 }
 
-function ProgressCard({ total, completed, pct, ui }) {
-  const pending = total - completed;
-  const isComplete = pct === 100;
-  const barColor = isComplete ? 'bg-emerald-500' : 'bg-blue-500';
-  const trackColor = isComplete ? 'bg-emerald-200' : 'bg-blue-100';
-
-  return (
-    <div className="rounded-xl border border-gray-100 bg-white p-3">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold text-gray-600">{ui('assetsDepreciationProgress')}</span>
-        <span className="text-xs text-blue-600 font-medium">{completed} / {total}</span>
-      </div>
-      <div className={`h-1.5 ${trackColor} rounded-full overflow-hidden mb-2`}>
-        <div
-          className={`h-full ${barColor} rounded-full transition-all`}
-          style={{ width: `${pct ?? 0}%` }}
-        />
-      </div>
-      <div className="flex justify-between text-xs text-gray-500">
-        <span>{ui('assetsPendingCount', { count: pending })}</span>
-        <span>{ui('assetsDoneCount', { count: completed })}</span>
-      </div>
-    </div>
-  );
-}
-
-function countCompletedLines(lines, depreciatedValue) {
-  if (!lines.length || depreciatedValue <= 0) return 0;
-  let cumulative = 0;
-  let completed = 0;
-  for (const line of lines) {
-    cumulative += Number(line.amortizationAmount ?? 0);
-    if (cumulative <= depreciatedValue) {
-      completed++;
-    } else {
-      break;
-    }
-  }
-  return completed;
-}
-
-export default function AssetsSidebar({ data, recordId, token, apiBaseUrl }) {
+export default function AssetsSidebar({ data }) {
   const ui = useUI();
   const orgCurrency = useCurrency() ?? 'USD';
-  const [lineStats, setLineStats] = useState({ total: 0, completed: 0 });
-
-  const depreciatedValue = Number(data?.depreciatedValue ?? 0);
-
-  useEffect(() => {
-    if (!recordId || !apiBaseUrl) return;
-
-    const url = `${apiBaseUrl}/amortizationLine?parentId=${recordId}&_startRow=0&_endRow=500&_sortBy=sEQNoAsset+asc`;
-    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : null)
-      .then(json => {
-        if (!json) return;
-        const lines = json?.response?.data ?? json?.data ?? json?.rows ?? [];
-        const sorted = Array.isArray(lines) ? lines : [];
-        const total = sorted.length;
-        const completed = countCompletedLines(sorted, depreciatedValue);
-        setLineStats({ total, completed });
-      })
-      .catch(() => {});
-  }, [recordId, apiBaseUrl, token, depreciatedValue]);
 
   const hasData = !!data;
   const assetValue = Number(data?.assetValue ?? 0);
+  const residualAssetValue = Number(data?.residualAssetValue ?? 0);
   const depreciatedPlan = Number(data?.depreciatedPlan ?? 0);
-  const depreciationAmt = Number(data?.depreciationAmt ?? 0);
-  // assetValue is the current book value (reaches 0 when fully depreciated) — not the denominator.
-  const denominator = depreciatedPlan > 0 ? depreciatedPlan : depreciationAmt;
-  const fallbackPct = depreciatedValue > 0 ? 100 : 0;
-  const pct = denominator > 0
-    ? Math.min(100, Math.round((depreciatedValue / denominator) * 100))
-    : fallbackPct;
+  const pct = Number(data?.etgoAmortizationStatus ?? 0);
   const isComplete = pct === 100;
 
   return (
@@ -121,6 +54,10 @@ export default function AssetsSidebar({ data, recordId, token, apiBaseUrl }) {
             subtitle={ui('assetsBookValue')}
           />
           <MetricCard
+            label={ui('assetsResidualValueLabel')}
+            value={hasData ? formatCurrency(orgCurrency, residualAssetValue) : '—'}
+          />
+          <MetricCard
             label={ui('assetsPlannedDepreciation')}
             value={hasData ? formatCurrency(orgCurrency, depreciatedPlan) : '—'}
             subtitle={ui('assetsTotalScheduled')}
@@ -131,12 +68,6 @@ export default function AssetsSidebar({ data, recordId, token, apiBaseUrl }) {
             value={hasData ? `${pct}%` : '—'}
             subtitle={hasData ? (isComplete ? ui('assetsFullyDepreciated') : ui('assetsStillInProgress')) : null}
             tint="amber"
-          />
-          <ProgressCard
-            total={lineStats.total}
-            completed={lineStats.completed}
-            pct={lineStats.total > 0 ? Math.round((lineStats.completed / lineStats.total) * 100) : 0}
-            ui={ui}
           />
         </div>
       </div>

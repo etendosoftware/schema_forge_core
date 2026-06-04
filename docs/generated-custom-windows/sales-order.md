@@ -129,3 +129,5 @@ See [Shared validation & UX changes — ETP-4005](app-shell-functional-flows.md#
 - The generated `HeaderPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `C_Order` AD table.
 - **ETP-3995 — Related Documents tab i18n**: The generated page file now uses `labelKey: 'relatedDocuments'` in the `customTabs` prop instead of a hardcoded `label: 'Related Documents'` string, so the tab title renders via the active UI language (e.g. "Documentos relacionados" in Spanish) regardless of the browser locale.
 - `tools/app-shell/src/windows/custom/shared/OrderPreview.jsx` and `useOrderPdf.js` prove the lateral preview panel with PDF generation, `RelatedDocumentsCard` wiring (specs for shipments, invoices, and chained payment-in fetch), and `!isDraft` caching strategy.
+
+- **ETP-4103 — Generator fix (labelOverrides deduplication)**: `const labelOverrides` in the generated page now references `api.labelOverrides` instead of re-embedding the full object. No functional change — field labels and selectors behave identically.

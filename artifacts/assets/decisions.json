@@ -16,20 +16,55 @@
     "compactSidebarPadding": true,
     "toolbarPaddingX": "px-2",
     "toolbarButtonSize": "default",
-    "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2",
+    "sidebarAboveTabsOnly": true,
+    "sidebarClassName": "w-[30%] shrink-0 border-l border-[#E8EAEF] p-2",
     "hideListFilters": false,
     "hideLink": true,
     "hideEyeCount": true,
     "hideMoreDetails": true,
     "detailSortBy": "sEQNoAsset asc",
+    "labelOverrides": {
+      "es_ES": {
+        "C_Project_ID": "Proyecto",
+        "EM_Etadas_Costcenter_ID": "Centro de coste",
+        "C_BPartner_ID": "Contacto",
+        "EM_Etadas_User1_ID": "1ª Dimensión",
+        "EM_Etadas_User2_ID": "2ª Dimensión",
+        "EM_Etadas_Salesregion_ID": "Región de ventas",
+        "EM_Etadas_C_Activity_ID": "Actividad",
+        "EM_Etadas_Campaign_ID": "Campaña",
+        "EM_Etgo_Amortization_Status": "Estado de amortización"
+      },
+      "en_US": {
+        "C_Project_ID": "Project",
+        "EM_Etadas_Costcenter_ID": "Cost Center",
+        "C_BPartner_ID": "Business Partner",
+        "EM_Etadas_User1_ID": "1st Dimension",
+        "EM_Etadas_User2_ID": "2nd Dimension",
+        "EM_Etadas_Salesregion_ID": "Sales Region",
+        "EM_Etadas_C_Activity_ID": "Activity",
+        "EM_Etadas_Campaign_ID": "Sales Campaign",
+        "EM_Etgo_Amortization_Status": "Amortization Status"
+      }
+    },
     "sidebarLayout": true,
+    "statusField": "none",
     "disableProcessedLock": true,
     "processOverrides": {
       "processAsset": {
         "add": true,
         "label": "Create Amortization",
         "style": "positive",
-        "displayLogicRaw": "@Depreciate@='Y'"
+        "displayLogicRaw": "@Depreciate@='Y' AND @etgoAmortizationStatus@!='100'",
+        "requiresFieldMax": [
+          {
+            "field": "annualDepreciation",
+            "max": 100,
+            "conditionalOnField": "calculateType",
+            "conditionalValue": "PE",
+            "errorKey": "assetsValidationAnnualDepreciationMax"
+          }
+        ]
       }
     },
     "secondaryTabs": {},
@@ -126,6 +161,7 @@
         "depreciationStartDate": {
           "grid": true,
           "form": false,
+          "dot": false,
           "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "depreciationEndDate": {
@@ -170,26 +206,47 @@
           "form": false
         },
         "fullyDepreciated": {
+          "visibility": "discarded",
+          "reason": "Replaced by etgoAmortizationStatus — ISFULLYDEPRECIATED is no longer maintained"
+        },
+        "etgoAmortizationStatus": {
           "grid": true,
-          "searchable": true,
+          "columnType": "number",
           "cellType": "depreciationProgress",
-          "columnType": "status",
-          "enumValues": [
-            {
-              "value": "true",
-              "name": "assetsFullyDepreciated"
-            },
-            {
-              "value": "false",
-              "name": "assetsStillInProgress"
-            }
-          ],
-          "filterable": false,
+          "filterable": true,
           "form": false
         },
         "project": {
-          "visibility": "discarded",
-          "reason": "Projects not included in this iteration per UX feedback"
+          "visibility": "editable",
+          "form": false
+        },
+        "eTADASCostCenter": {
+          "visibility": "editable",
+          "form": false
+        },
+        "businessPartner": {
+          "visibility": "editable",
+          "form": false
+        },
+        "eTADASUser1": {
+          "visibility": "editable",
+          "form": false
+        },
+        "eTADASUser2": {
+          "visibility": "editable",
+          "form": false
+        },
+        "eTADASSalesRegion": {
+          "visibility": "editable",
+          "form": false
+        },
+        "eTADASActivity": {
+          "visibility": "editable",
+          "form": false
+        },
+        "eTADASSalesCampaign": {
+          "visibility": "editable",
+          "form": false
         },
         "currency": {
           "form": false,

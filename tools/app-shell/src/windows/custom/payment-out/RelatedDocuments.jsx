@@ -6,6 +6,34 @@ import {
   neoBase, fetchById,
 } from '@/components/related-documents';
 
+async function resolveLinkedInvoice(seen, schedId, token, apiBaseUrl, result) {
+  seen.add(`inv-sched-${schedId}`);
+  try {
+    const sched = await fetchById('purchase-invoice', 'paymentPlan', schedId, token, apiBaseUrl);
+    const invId = sched?.invoice;
+    if (invId && !seen.has(`inv-${invId}`)) {
+      seen.add(`inv-${invId}`);
+      const inv = await fetchById('purchase-invoice', 'header', invId, token, apiBaseUrl);
+      if (inv) result.push({type: 'invoice', ...inv});
+    }
+  } catch { /* silent */
+  }
+}
+
+async function resolveLinkedOrder(seen, orderSchedId, token, apiBaseUrl, result) {
+  seen.add(`ord-sched-${orderSchedId}`);
+  try {
+    const sched = await fetchById('purchase-order', 'paymentPlan', orderSchedId, token, apiBaseUrl);
+    const ordId = sched?.salesOrder || sched?.order;
+    if (ordId && !seen.has(`ord-${ordId}`)) {
+      seen.add(`ord-${ordId}`);
+      const ord = await fetchById('purchase-order', 'header', ordId, token, apiBaseUrl);
+      if (ord) result.push({type: 'order', ...ord});
+    }
+  } catch { /* silent */
+  }
+}
+
 async function fetchLinkedDocuments(recordId, token, apiBaseUrl) {
   const base = neoBase(apiBaseUrl);
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -22,31 +50,13 @@ async function fetchLinkedDocuments(recordId, token, apiBaseUrl) {
     // Invoice payment schedule -> fetch schedule to get invoice ID
     const schedId = line.invoicePaymentSchedule;
     if (schedId && !seen.has(`inv-sched-${schedId}`)) {
-      seen.add(`inv-sched-${schedId}`);
-      try {
-        const sched = await fetchById('purchase-invoice', 'paymentPlan', schedId, token, apiBaseUrl);
-        const invId = sched?.invoice;
-        if (invId && !seen.has(`inv-${invId}`)) {
-          seen.add(`inv-${invId}`);
-          const inv = await fetchById('purchase-invoice', 'header', invId, token, apiBaseUrl);
-          if (inv) result.push({ type: 'invoice', ...inv });
-        }
-      } catch { /* silent */ }
+      await resolveLinkedInvoice(seen, schedId, token, apiBaseUrl, result);
     }
 
     // Order payment schedule -> fetch schedule to get order ID
     const orderSchedId = line.orderPaymentSchedule;
     if (orderSchedId && !seen.has(`ord-sched-${orderSchedId}`)) {
-      seen.add(`ord-sched-${orderSchedId}`);
-      try {
-        const sched = await fetchById('purchase-order', 'paymentPlan', orderSchedId, token, apiBaseUrl);
-        const ordId = sched?.salesOrder || sched?.order;
-        if (ordId && !seen.has(`ord-${ordId}`)) {
-          seen.add(`ord-${ordId}`);
-          const ord = await fetchById('purchase-order', 'header', ordId, token, apiBaseUrl);
-          if (ord) result.push({ type: 'order', ...ord });
-        }
-      } catch { /* silent */ }
+      await resolveLinkedOrder(seen, orderSchedId, token, apiBaseUrl, result);
     }
   }
 
