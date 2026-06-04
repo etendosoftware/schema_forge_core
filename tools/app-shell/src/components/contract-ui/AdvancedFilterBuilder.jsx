@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu.jsx';
 import { Trash2, Plus, Save, SlidersHorizontal, ChevronDown, Check, Bookmark, Loader2 } from 'lucide-react';
-import { useUI, useLabel, useLocale } from '@/i18n';
+import { useUI, useLabel, useLocale, useLocaleSwitch } from '@/i18n';
 import { resolveFilterMode, getDisplayText } from '@/lib/gridQuery';
 import { useDistinctValues } from '@/hooks/useDistinctValues.js';
 import { DistinctValuesList } from './DistinctValuesList.jsx';
@@ -565,7 +565,16 @@ function getJoinedValue(value) {
   return Array.isArray(value) ? value.join(',') : (value ?? '');
 }
 
+// badgeLabels may be a plain string or a per-locale object { es_ES, en_US }.
+// Resolve to the active locale's string so it can be rendered (mirrors
+// createBadgeLabelResolver in DataTable.jsx).
+function resolveBadgeText(raw, locale, fallback) {
+  if (raw && typeof raw === 'object') return raw[locale] ?? raw.en_US ?? fallback;
+  return raw ?? fallback;
+}
+
 function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows, entity, apiBaseUrl, labelOverrides }) {
+  const { locale } = useLocaleSwitch();
   if (mode === 'identifier' && !TEXTUAL_IDENT_OPS.has(operator)) {
     return (
       <IdentifierMultiPicker
@@ -612,8 +621,8 @@ function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows
   }
 
   if (mode === 'booleanLabel') {
-    const trueLabel = col.badgeLabels?.true ?? ui('yes') ?? 'Yes';
-    const falseLabel = col.badgeLabels?.false ?? ui('no') ?? 'No';
+    const trueLabel = resolveBadgeText(col.badgeLabels?.true, locale, ui('yes') ?? 'Yes');
+    const falseLabel = resolveBadgeText(col.badgeLabels?.false, locale, ui('no') ?? 'No');
     const selected = value === true || value === 'true' ? 'true' : value === false || value === 'false' ? 'false' : undefined;
     return (
       <Select value={selected} onValueChange={(v) => onChange(v === 'true')}>

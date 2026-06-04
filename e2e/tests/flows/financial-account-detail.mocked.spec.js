@@ -64,37 +64,44 @@ const SUMMARY = {
  *   - tx-4: BPW / RPVOID (Pago / Anulado)
  *   - tx-5: BPD / RPPC   (Cobro / Conciliado)
  */
+function recentMovementDate(daysAgo) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - daysAgo);
+  d.setUTCHours(12, 0, 0, 0);
+  return d.toISOString();
+}
+
 const MOVEMENTS = [
   {
-    id: 'tx-1', date: '2026-05-06T00:00:00Z', documentNo: 'PAY-001',
+    id: 'tx-1', date: recentMovementDate(1), documentNo: 'PAY-001',
     contact: 'DHL Technologies SL', description: 'Invoice No.: 100',
     paymentStatus: 'RPPC', trxType: 'BPD',
     amount: 12450.00, balance: 211841.01,
     currencyIso: 'EUR', posted: 'Y',
   },
   {
-    id: 'tx-2', date: '2026-05-05T00:00:00Z', documentNo: 'PAY-002',
+    id: 'tx-2', date: recentMovementDate(2), documentNo: 'PAY-002',
     contact: 'Acme Corp', description: 'Office rent April',
     paymentStatus: 'RPAP', trxType: 'BPW',
     amount: -1800.00, balance: 199391.01,
     currencyIso: 'EUR', posted: 'N',
   },
   {
-    id: 'tx-3', date: '2026-05-04T00:00:00Z', documentNo: 'PAY-003',
+    id: 'tx-3', date: recentMovementDate(3), documentNo: 'PAY-003',
     contact: 'Foo Industries', description: 'Refund #45',
     paymentStatus: 'RPR', trxType: 'BPD',
     amount: 500.00, balance: 201191.01,
     currencyIso: 'EUR', posted: 'Y',
   },
   {
-    id: 'tx-4', date: '2026-05-03T00:00:00Z', documentNo: 'PAY-004',
+    id: 'tx-4', date: recentMovementDate(4), documentNo: 'PAY-004',
     contact: 'Bar SL', description: 'Voided payment',
     paymentStatus: 'RPVOID', trxType: 'BPW',
     amount: -250.00, balance: 200691.01,
     currencyIso: 'EUR', posted: 'N',
   },
   {
-    id: 'tx-5', date: '2026-05-02T00:00:00Z', documentNo: 'PAY-005',
+    id: 'tx-5', date: recentMovementDate(5), documentNo: 'PAY-005',
     contact: 'DHL Technologies SL', description: 'Invoice No.: 99',
     paymentStatus: 'RPPC', trxType: 'BPD',
     amount: 2500.00, balance: 200941.01,

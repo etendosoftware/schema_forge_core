@@ -214,6 +214,8 @@ test.describe('Sales Quotation — ETP-4006 regressions (mocked)', () => {
     await page.getByTestId('action-clone-record').click();
     await expect.poll(() => state.cloneCalls, { timeout: 5_000 }).toBe(1);
     await page.waitForURL(new RegExp(`/sales-quotation/${CLONE_ID}$`), { timeout: 10_000 });
+    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+    await expect(page.getByText(CLONED_QUOTE.documentNo, { exact: true })).toBeVisible({ timeout: 10_000 });
 
     await expect(page.getByTestId('field-priceList')).toContainText(CLONED_QUOTE['priceList$_identifier']);
 

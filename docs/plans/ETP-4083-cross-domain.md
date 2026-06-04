@@ -1,62 +1,64 @@
-# ETP-4083 Cross-Domain Plan: i18n + Behavior-Preserving Refactors
+# ETP-4083 Cross-Domain Plan: Cognitive-Complexity Refactor Sweep
 
 ## Domains
 
-- `window:price-list`: internationalize the price list product prices panel
-  (`PriceListProductPrices.jsx`) — replace hardcoded strings with i18n hooks.
-- `app-shell-core`: add the i18n keys consumed by the price list panel and the
-  price list load error to `locales/en_US.json` and `locales/es_ES.json`.
-- `platform-change`: behavior-preserving refactors in shared app-shell code —
-  extract line net and tax factor helpers in `useLineGrossAmount.js`, and rename
-  the onboarding stream helpers in `onboardingApi.js` for clarity.
-- `generator-change`: behavior-preserving refactors in the CLI — extract the
-  i18n check predicates in `quality-gate/checks/i18n.js`, and refactor argument
-  parsing in `pipeline.js`'s `parseArgs`.
-- `unknown`: extract field/entity helpers in the `neo-writer.js` populate
-  functions (no behavior change).
+- `generator-change`: behavior-preserving cognitive-complexity refactors in the
+  CLI — restructure the quality-gate runner (`cli/src/quality-gate/runner.js`)
+  and extract the per-step validators in `cli/src/validate-processes.js` into
+  named helpers. Both land alongside their tests
+  (`cli/test/quality-gate-runner.test.js`, `cli/test/validate-processes.test.js`).
+- `platform-change`: extract the report selector helpers in shared app-shell
+  code (`tools/app-shell/src/pages/ReportViewerPage.jsx`) with a dedicated test
+  (`tools/app-shell/src/pages/__tests__/ReportViewerPage.helpers.vitest.jsx`) —
+  no rendering or data-flow change.
+- `window:payment-out`: extract the linked-document helpers in the payment-out
+  custom window (`RelatedDocuments.jsx`) and add unit coverage
+  (`__tests__/RelatedDocuments.vitest.jsx`).
+- `unknown`: add the `innocuous-check` skill (`.claude/skills/innocuous-check/SKILL.md`)
+  — the behavior-preservation gate authored to verify exactly the refactors in
+  this PR. Documentation/tooling only, no runtime effect.
 
-Detected vertical: `finance` (single window: `price-list`).
+Detected vertical: `finance` (single window: `payment-out`).
 
 ## Why This Cannot Be Split Cleanly
 
-This PR is a single follow-up pass on ETP-4083 that finishes the price list
-panel internationalization and lands the small, behavior-preserving readability
-refactors that fell out of it. The i18n change spans the window component
-(`window:price-list`) and the shared locale catalogs (`app-shell-core`) as one
-inseparable unit — the new keys are meaningless without the component that reads
-them, and vice versa. The accompanying refactors (`platform-change`,
-`generator-change`, `unknown`) are pure structural cleanups discovered while
-touching those files; they carry no functional change and have no independent
-review value as standalone PRs. Splitting per scope would produce several
-trivial PRs that only make sense reviewed together.
+This PR is one ETP-4083 readability sweep: a set of pure, behavior-preserving
+extractions made to lower cognitive complexity and clear SonarQube findings,
+each paired with the tests that prove the extracted code is exercised. The
+`innocuous-check` skill is the verification harness created in the same effort
+to gate these refactors, so it ships with them rather than as a standalone
+tooling PR. None of the individual extractions carry functional change or have
+independent review value; splitting per scope would yield several trivial PRs
+that only make sense reviewed together as "the complexity-reduction pass."
 
 ## Review Order
 
-1. Review the price list panel i18n (`PriceListProductPrices.jsx`) together with
-   the new keys in `en_US.json` / `es_ES.json` — confirm every user-visible
-   string resolves through a hook and both locales have matching keys.
-2. Review the platform refactors (`useLineGrossAmount.js`, `onboardingApi.js`) —
-   confirm extracted helpers and renamed functions preserve behavior.
-3. Review the generator refactors (`pipeline.js` `parseArgs`,
-   `quality-gate/checks/i18n.js` predicates) — confirm no CLI behavior change.
-4. Review the `neo-writer.js` helper extraction — confirm populate output is
-   unchanged.
+1. Generator refactors — `cli/src/quality-gate/runner.js` and
+   `cli/src/validate-processes.js`: confirm extracted helpers are called
+   identically and the suites (`quality-gate-runner.test.js`,
+   `validate-processes.test.js`) exercise each one.
+2. Platform refactor — `ReportViewerPage.jsx` selector helpers: confirm the
+   extracted helpers preserve behavior, covered by
+   `ReportViewerPage.helpers.vitest.jsx`.
+3. Window refactor — payment-out `RelatedDocuments.jsx` linked-doc helpers:
+   confirm output is unchanged, covered by `RelatedDocuments.vitest.jsx`.
+4. Tooling — `innocuous-check/SKILL.md`: read-only verification skill, no
+   runtime impact.
 5. Review this plan.
 
 ## Tests
 
-- `make test` (CLI test suite, covers `pipeline.js`, `quality-gate/checks/i18n.js`,
-  and `neo-writer.js`).
-- `npm test --workspace=tools/app-shell` (app-shell vitest suite, covers
-  `useLineGrossAmount` and the price list panel).
-- i18n quality gate clean — no hardcoded strings, both locales in sync.
-- Manual smoke of the price list window in `make dev` (panel labels render in
-  Spanish, load error message is translated).
+- `make test` (CLI suite — covers `quality-gate/runner.js` and
+  `validate-processes.js`; both targeted files run green).
+- `npm test --workspace=tools/app-shell` (app-shell vitest — covers the
+  ReportViewer selector helpers and the payment-out RelatedDocuments helpers).
+- No DB, NEO push, or `export.database` involved — these are source-level
+  refactors and test additions only.
 
 ## Rollback
 
-Every change is behavior-preserving (i18n + structural refactors), so rollback is
-a straight revert of the PR merge commit. If a single refactor regresses, revert
-that file to its pre-PR state; no data migration, NEO re-push, or
-`export.database` is involved. Reverting the i18n change restores the prior
-hardcoded strings without breaking the panel.
+Every change is behavior-preserving (helper extractions, added tests, a new
+read-only skill doc), so rollback is a straight revert of the PR merge commit.
+If a single extraction regresses, revert that one file to its pre-PR state; no
+data migration, NEO re-push, or `export.database` is required. Reverting the
+skill addition removes the doc with no runtime effect.

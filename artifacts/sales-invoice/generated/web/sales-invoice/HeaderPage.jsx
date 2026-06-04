@@ -16,19 +16,6 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Invoice';
 
-const labelOverrides = {
-  "es_ES": {
-    "OutstandingAmt": "Pendiente de pago",
-    "EM_Etgo_Due_Date": "Vencimiento",
-    "em_etgo_delivery_status": "Estado de entrega"
-  },
-  "en_US": {
-    "OutstandingAmt": "Pending Payment",
-    "EM_Etgo_Due_Date": "Due Date",
-    "em_etgo_delivery_status": "Delivery Status"
-  }
-};
-
 
 // @sf-generated-start summary:header
 const summary = [
@@ -493,6 +480,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
   if (recordId) {

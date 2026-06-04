@@ -108,6 +108,6 @@ describe('isDeleteVisibleForRecord', () => {
   });
 
   it('exposes the deletable status whitelist', () => {
-    assert.deepEqual(DELETABLE_DOC_STATUSES, ['DR', 'RPAP']);
+    assert.deepEqual(DELETABLE_DOC_STATUSES, ['DR', 'RPAP', 'N']);
   });
 });

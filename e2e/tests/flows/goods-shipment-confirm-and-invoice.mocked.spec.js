@@ -176,7 +176,9 @@ test.describe('Goods Shipment — Confirm modal (draft to complete)', () => {
     // The subtotal row is modal-specific (the form doesn't show a subtotal)
     await expect(page.getByText(/Subtotal/)).toBeVisible({ timeout: 5_000 });
     // Amount from linkedOrders[0].grandTotalAmount shown as 1,500.00 EUR
-    await expect(page.getByText(/1[.,]500/)).toBeVisible({ timeout: 5_000 });
+    await expect(
+      page.locator('div').filter({ hasText: /^1[.,]500[.,]00 EUR$/ }),
+    ).toBeVisible({ timeout: 5_000 });
 
     // ── Optional invoice section ───────────────────────────────────────────
     await expect(page.getByText('Generar documentos (opcional)')).toBeVisible({ timeout: 5_000 });

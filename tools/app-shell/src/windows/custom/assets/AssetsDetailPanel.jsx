@@ -75,6 +75,8 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
     'depreciate','everyMonthIs30Days','depreciationType','calculateType','annualDepreciation',
     'amortize','usableLifeYears','usableLifeMonths',
     'purchaseDate','cancellationDate','depreciationStartDate','depreciationEndDate',
+    'project','eTADASCostCenter','businessPartner','eTADASUser1','eTADASUser2',
+    'eTADASSalesRegion','eTADASActivity','eTADASSalesCampaign',
   ].map(k => [k, true])), visibility: {} } : { readOnly: {}, visibility: {} };
 
   const group1Fields = [
@@ -112,6 +114,17 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
     return { readOnly, visibility };
   }
 
+  const dimensionFields = [
+    { key: 'project', column: 'C_Project_ID', type: 'selector', section: 'principal', reference: 'Project', inputMode: 'selector' },
+    { key: 'eTADASCostCenter', column: 'EM_Etadas_Costcenter_ID', type: 'selector', section: 'principal', reference: 'Costcenter', inputMode: 'selector' },
+    { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', section: 'principal', reference: 'BPartner', inputMode: 'selector' },
+    { key: 'eTADASUser1', column: 'EM_Etadas_User1_ID', type: 'selector', section: 'principal', reference: 'User1', inputMode: 'selector' },
+    { key: 'eTADASUser2', column: 'EM_Etadas_User2_ID', type: 'selector', section: 'principal', reference: 'User2', inputMode: 'selector' },
+    { key: 'eTADASSalesRegion', column: 'EM_Etadas_Salesregion_ID', type: 'selector', section: 'principal', reference: 'SalesRegion', inputMode: 'selector' },
+    { key: 'eTADASActivity', column: 'EM_Etadas_C_Activity_ID', type: 'selector', section: 'principal', reference: 'Activity', inputMode: 'selector' },
+    { key: 'eTADASSalesCampaign', column: 'EM_Etadas_Campaign_ID', type: 'selector', section: 'principal', reference: 'Campaign', inputMode: 'selector' },
+  ];
+
   const dateFields = [
     { key: 'purchaseDate', column: 'Datepurchased', type: 'date', label: ui('assetsPurchaseDateLabel'), section: 'principal' },
     { key: 'cancellationDate', column: 'Cancellationdate', type: 'date', label: ui('assetsCancellationDateLabel'), section: 'principal' },
@@ -120,22 +133,11 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
   ];
 
   return (
-    <div className="p-2 pb-6 bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50">
-      {/* Group 1 — Asset Info */}
+    <div className="p-2 pb-6 bg-white overflow-y-auto max-h-[380px] [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50">
+      {/* Group 1 — Asset Info (no subtitle) */}
       <div className="mb-5">
-        <GroupHead title={ui('assetsGroupInfoTitle')} />
         <EntityForm
           fields={group1Fields}
-          {...common}
-          displayLogic={readOnlyAll}
-        />
-      </div>
-
-      {/* Group 2 — Financial Info */}
-      <GroupDivider title={ui('assetsGroupFinancialTitle')} />
-      <div className="mb-5">
-        <EntityForm
-          fields={group2Fields}
           {...common}
           displayLogic={readOnlyAll}
         />
@@ -165,11 +167,20 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
           )}
         </div>
         {depreciate ? (
-          <EntityForm
-            fields={deprecFields}
-            {...common}
-            displayLogic={makeDisplayLogic(deprecFields)}
-          />
+          <>
+            {/* Group 2 — Financial Info (only rendered when depreciation is enabled) */}
+            <GroupDivider title={ui('assetsGroupFinancialTitle')} />
+            <EntityForm
+              fields={group2Fields}
+              {...common}
+              displayLogic={readOnlyAll}
+            />
+            <EntityForm
+              fields={deprecFields}
+              {...common}
+              displayLogic={makeDisplayLogic(deprecFields)}
+            />
+          </>
         ) : (
           <p className="text-xs text-[#6C6C89]">{ui('assetsDepreciationDisabledHint')}</p>
         )}
@@ -185,6 +196,21 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
           {...common}
           displayLogic={readOnlyAll}
         />
+      )}
+
+      {/* Group 5 — Accounting dimensions (optional, last section) */}
+      {depreciate && (
+        <GroupDivider title={ui('assetsGroupDimensionsTitle')} />
+      )}
+      {depreciate && (
+        <div className="[&_button[role=combobox]]:!bg-white [&_input]:!bg-white">
+          <EntityForm
+            fields={dimensionFields}
+            {...common}
+            cols={4}
+            displayLogic={readOnlyAll}
+          />
+        </div>
       )}
     </div>
   );

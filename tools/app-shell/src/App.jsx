@@ -185,11 +185,11 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="artifacts/:windowName" element={<ArtifactViewerPage />} />
         <Route
           path=":windowName/:recordId"
-          element={<WindowLoader windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
+          element={<WindowLoader key="with-record" windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
         />
         <Route
           path=":windowName"
-          element={<WindowLoader windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
+          element={<WindowLoader key="list" windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
         />
       </Route>
     </Routes>
