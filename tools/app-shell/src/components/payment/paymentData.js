@@ -58,7 +58,8 @@ function parseDate(s) {
 }
 
 export function estadoOf(r) {
-  return r.dias < 0 ? 'vencida' : (r.dias <= 7 ? 'proxima' : 'aldia');
+  if (r.dias < 0) return 'vencida';
+  return r.dias <= 7 ? 'proxima' : 'aldia';
 }
 
 function matchCond(r, c) {

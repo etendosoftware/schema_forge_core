@@ -7,7 +7,7 @@
 //
 // Stage 1 fields drive the real movement-create call. The payment / G/L
 // association persistence is wired in a later phase (see TODO in handleCreate).
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { X, Check, ChevronDown, Wallet, Percent, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -145,29 +145,47 @@ function GLItemBlock({ value, onChange }) {
 }
 
 // ── Stepper ──────────────────────────────────────────────────────────────────
+const STEP_CIRCLE_CLASS = {
+  on: 'bg-[#121217] text-white',
+  done: 'border-[1.5px] border-[#B2EECC] bg-[#EEFBF4] text-[#17663A]',
+  todo: 'bg-[#E8E8ED] text-[#6C6C89]',
+};
+const STEP_LABEL_CLASS = { on: 'text-[#121217]', done: 'text-[#3F3F50]', todo: 'text-[#6C6C89]' };
+
+function stepState(stage, n) {
+  if (stage === n) return 'on';
+  return stage > n ? 'done' : 'todo';
+}
+
 function Stepper({ stage }) {
   const steps = [{ n: 1, l: 'Movimiento' }, { n: 2, l: 'Pago o concepto' }];
   return (
     <div className="flex items-center gap-2 py-[18px] pb-4">
       {steps.map((s, i) => {
-        const on = stage === s.n;
-        const done = stage > s.n;
+        const state = stepState(stage, s.n);
+        const done = state === 'done';
+        const connectorClass = done ? 'bg-[#B2EECC]' : 'bg-[#E8EAEF]';
         return (
           <Fragment key={s.n}>
             <div className="inline-flex items-center gap-2.5">
-              <span className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-xs font-bold ${
-                on ? 'bg-[#121217] text-white' : done ? 'border-[1.5px] border-[#B2EECC] bg-[#EEFBF4] text-[#17663A]' : 'bg-[#E8E8ED] text-[#6C6C89]'
-              }`}>
+              <span className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-xs font-bold ${STEP_CIRCLE_CLASS[state]}`}>
                 {done ? <Check className="h-3.5 w-3.5" /> : s.n}
               </span>
-              <span className={`whitespace-nowrap text-[13px] font-semibold leading-[18px] ${on ? 'text-[#121217]' : done ? 'text-[#3F3F50]' : 'text-[#6C6C89]'}`}>{s.l}</span>
+              <span className={`whitespace-nowrap text-[13px] font-semibold leading-[18px] ${STEP_LABEL_CLASS[state]}`}>{s.l}</span>
             </div>
-            {i < steps.length - 1 ? <span className={`h-0.5 min-w-6 flex-1 rounded-sm ${done ? 'bg-[#B2EECC]' : 'bg-[#E8EAEF]'}`} /> : null}
+            {i < steps.length - 1 ? <span className={`h-0.5 min-w-6 flex-1 rounded-sm ${connectorClass}`} /> : null}
           </Fragment>
         );
       })}
     </div>
   );
+}
+
+// Picks the default Organization dimension: the account's org when it's among
+// the options, otherwise the only option when there is a single one (else none).
+function pickDefaultOrg(orgs, defaultOrgId) {
+  if (defaultOrgId && orgs.some((o) => o.id === defaultOrgId)) return defaultOrgId;
+  return orgs.length === 1 ? orgs[0].id : null;
 }
 
 const initialForm = (currencyIso) => ({
@@ -200,7 +218,9 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
   const [choice, setChoice] = useState(null); // 'pay' | 'gl'
   const [form, setForm] = useState(() => initialForm(accountCurrency?.iso));
   const [glItem, setGlItem] = useState(null); // selected C_GLItem { id, name }
-  const [paymentSnapshot, setPaymentSnapshot] = useState(null); // payment workspace state (for future persistence)
+  // Latest PaymentForm snapshot, kept in a ref (write-only for now; consumed in
+  // a later phase to persist the payment — see handleCreate).
+  const paymentSnapshotRef = useRef(null);
 
   useEffect(() => {
     if (!open) {
@@ -208,7 +228,7 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
       setChoice(null);
       setForm(initialForm(accountCurrency?.iso));
       setGlItem(null);
-      setPaymentSnapshot(null);
+      paymentSnapshotRef.current = null;
     }
   }, [open, accountCurrency?.iso]);
 
@@ -218,9 +238,7 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
   useEffect(() => {
     const orgs = optionsByDim.organization;
     if (!open || !orgs || orgs.length === 0 || form.dims.organization) return;
-    const ctx = (defaultOrgId && orgs.some((o) => o.id === defaultOrgId))
-      ? defaultOrgId
-      : (orgs.length === 1 ? orgs[0].id : null);
+    const ctx = pickDefaultOrg(orgs, defaultOrgId);
     if (ctx) setForm((f) => ({ ...f, dims: { ...f.dims, organization: ctx } }));
   }, [open, optionsByDim, defaultOrgId, form.dims.organization]);
 
@@ -262,13 +280,75 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
       // TODO(phase 2): when choice==='pay' register the payment with the
       // captured `paymentSnapshot` (selected invoices/commissions/totals);
       // when choice==='gl' attach the G/L concept.
-      void paymentSnapshot;
       toast.success('Movimiento creado');
       onSuccess?.();
       onClose();
     } catch {
       toast.error('No se pudo crear el movimiento');
     }
+  };
+
+  const trxBadgeClass = doc === 'in'
+    ? 'border-[#B2EECC] bg-[#EEFBF4] text-[#17663A]'
+    : 'border-[#FBB1C4] bg-[#FEF0F4] text-[#D50B3E]';
+  const assocLabel = choice === 'gl' ? 'concepto contable' : 'pago';
+
+  // Stage body — split into if/return branches to avoid a nested ternary and to
+  // keep the component's cognitive complexity low.
+  const renderBody = () => {
+    if (stage === 1) {
+      return <MovementBasics form={form} set={set} dimensions={dimensions} optionsByDim={optionsByDim} trxTypes={trxOptions} />;
+    }
+    if (!choice) {
+      return (
+        <>
+          <div className="mb-4 mt-1">
+            <h3 className="m-0 mb-1 text-base font-bold leading-[22px] text-[#121217]">¿Cómo se concilia este movimiento?</h3>
+            <p className="m-0 max-w-[620px] text-[13px] leading-[18px] text-[#6C6C89]">Solo se puede registrar un pago <b className="font-semibold text-[#121217]">o</b> asignar un concepto contable, no ambos.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3.5">
+            {CHOICES.map((c) => (
+              <ChoiceCard key={c.id} choice={c} active={choice === c.id} onClick={() => setChoice(c.id)} />
+            ))}
+          </div>
+        </>
+      );
+    }
+    return (
+      <>
+        {/* Summary line — collapsed choice with a "Cambiar" button */}
+        <div className="flex items-center gap-3 rounded-lg border border-[#E8EAEF] bg-[#F5F7F9] px-3.5 py-3">
+          <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-md bg-[#121217] text-white">
+            <choiceMeta.Icon className="h-4 w-4" />
+          </span>
+          <span className="flex flex-col gap-px">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[#8A8AA3]">Tipo de asociación</span>
+            <span className="text-sm font-bold leading-5 text-[#121217]">{choiceMeta.t}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setChoice(null)}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-[#D1D4DB] bg-white px-3 py-[7px] text-[13px] font-semibold text-[#3F3F50] hover:border-[#A9A9BC] hover:bg-[#F5F7F9]"
+          >
+            <ChevronDown className="h-3.5 w-3.5" /> Cambiar
+          </button>
+        </div>
+        <div className="mt-4">
+          {choice === 'gl'
+            ? <GLItemBlock value={glItem} onChange={setGlItem} />
+            : (
+              <PaymentForm
+                doc={doc}
+                initialAmount={movementAmount}
+                initialTercero={movementContact}
+                paymentMethods={paymentMethods}
+                showAccountField={false}
+                onChange={(snap) => { paymentSnapshotRef.current = snap; }}
+              />
+            )}
+        </div>
+      </>
+    );
   };
 
   return (
@@ -282,13 +362,7 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
                 <h2 className="m-0 flex items-center gap-2.5 text-lg font-bold leading-6 tracking-[-0.01em] text-[#121217]">
                   Nuevo movimiento
                   {stage === 2 && trxLabel ? (
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                        doc === 'in'
-                          ? 'border-[#B2EECC] bg-[#EEFBF4] text-[#17663A]'
-                          : 'border-[#FBB1C4] bg-[#FEF0F4] text-[#D50B3E]'
-                      }`}
-                    >
+                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${trxBadgeClass}`}>
                       {trxLabel}
                     </span>
                   ) : null}
@@ -309,55 +383,7 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
 
         {/* Body */}
         <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-5 pt-2">
-          {stage === 1 ? (
-            <MovementBasics form={form} set={set} dimensions={dimensions} optionsByDim={optionsByDim} trxTypes={trxOptions} />
-          ) : choice ? (
-            <>
-              {/* Summary line — collapsed choice with a "Cambiar" button */}
-              <div className="flex items-center gap-3 rounded-lg border border-[#E8EAEF] bg-[#F5F7F9] px-3.5 py-3">
-                <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-md bg-[#121217] text-white">
-                  <choiceMeta.Icon className="h-4 w-4" />
-                </span>
-                <span className="flex flex-col gap-px">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[#8A8AA3]">Tipo de asociación</span>
-                  <span className="text-sm font-bold leading-5 text-[#121217]">{choiceMeta.t}</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setChoice(null)}
-                  className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-[#D1D4DB] bg-white px-3 py-[7px] text-[13px] font-semibold text-[#3F3F50] hover:border-[#A9A9BC] hover:bg-[#F5F7F9]"
-                >
-                  <ChevronDown className="h-3.5 w-3.5" /> Cambiar
-                </button>
-              </div>
-              <div className="mt-4">
-                {choice === 'gl'
-                  ? <GLItemBlock value={glItem} onChange={setGlItem} />
-                  : (
-                    <PaymentForm
-                      doc={doc}
-                      initialAmount={movementAmount}
-                      initialTercero={movementContact}
-                      paymentMethods={paymentMethods}
-                      showAccountField={false}
-                      onChange={setPaymentSnapshot}
-                    />
-                  )}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="mb-4 mt-1">
-                <h3 className="m-0 mb-1 text-base font-bold leading-[22px] text-[#121217]">¿Cómo se concilia este movimiento?</h3>
-                <p className="m-0 max-w-[620px] text-[13px] leading-[18px] text-[#6C6C89]">Solo se puede registrar un pago <b className="font-semibold text-[#121217]">o</b> asignar un concepto contable, no ambos.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3.5">
-                {CHOICES.map((c) => (
-                  <ChoiceCard key={c.id} choice={c} active={choice === c.id} onClick={() => setChoice(c.id)} />
-                ))}
-              </div>
-            </>
-          )}
+          {renderBody()}
         </div>
 
         {/* Footer */}
@@ -371,7 +397,7 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
           ) : (
             <>
               <span className="mr-auto inline-flex items-center gap-1.5 text-xs leading-4 text-[#6C6C89]">
-                <Info className="h-[13px] w-[13px]" /> Se creará el movimiento {choice ? <>con <span className="font-semibold text-[#121217]">{choice === 'gl' ? 'concepto contable' : 'pago'}</span></> : 'y su asociación'}
+                <Info className="h-[13px] w-[13px]" /> Se creará el movimiento {choice ? <>con <span className="font-semibold text-[#121217]">{assocLabel}</span></> : 'y su asociación'}
               </span>
               <button type="button" className={BTN_GHOST} onClick={() => setStage(1)}>Atrás</button>
               <button type="button" className={BTN_PRIMARY} disabled={!choice || creating} onClick={handleCreate}>

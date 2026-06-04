@@ -103,7 +103,10 @@ export function useOutstandingInvoices(bpartnerId, doc = 'in') {
     setLoading(true);
     setError(null);
     fetch(url, { headers: { Authorization: `Bearer ${token}` }, signal: ctrl.signal })
-      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
+      .then((res) => {
+        if (!res.ok) { throw new Error(`HTTP ${res.status}`); }
+        return res.json();
+      })
       .then((json) => { if (!ctrl.signal.aborted) setInvoices(json?.response?.data?.invoices ?? []); })
       .catch((err) => { if (err.name !== 'AbortError') setError(err); })
       .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });

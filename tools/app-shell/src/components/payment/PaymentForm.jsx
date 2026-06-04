@@ -162,6 +162,14 @@ function PaymentFields({
 // project, cost center) stay in the expandable detail row.
 const NCOLS = 11;
 
+// Message shown when the table has no rows: loading vs. no invoices at all vs.
+// filtered-out. Extracted to avoid a nested ternary in the JSX.
+function invoiceEmptyMessage(loading, total, emptyHint) {
+  if (loading) return 'Cargando facturas…';
+  if (total === 0) return emptyHint || 'Sin facturas pendientes.';
+  return 'Ninguna factura coincide con los filtros.';
+}
+
 function InvoiceTable({ invoices, sel, toggle, setAmt, exp, setExp, wo, setWo, q, setQ, advFilter, setAdvFilter, filterRows, loading, emptyHint }) {
   // Free-text search + advanced "by conditions" filter (the payment-method
   // default is seeded into advFilter as a condition by PaymentForm).
@@ -282,11 +290,7 @@ function InvoiceTable({ invoices, sel, toggle, setAmt, exp, setExp, wo, setWo, q
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={NCOLS} className="px-3.5 py-[22px] text-center text-[13px] text-[#8A8AA3]">
-                  {loading
-                    ? 'Cargando facturas…'
-                    : invoices.length === 0
-                      ? (emptyHint || 'Sin facturas pendientes.')
-                      : 'Ninguna factura coincide con los filtros.'}
+                  {invoiceEmptyMessage(loading, invoices.length, emptyHint)}
                 </td>
               </tr>
             ) : null}
@@ -356,14 +360,16 @@ function Commissions({ gl, addGl, delGl, setGlField }) {
 }
 
 export function TotalsBar({ totF, totGL, total, pago, diff, cuadra }) {
+  const glSign = totGL < 0 ? '−' : '';
+  const diffText = `${diff < 0 ? '−' : ''}${fmtAmount(Math.abs(diff))} €`;
   return (
     <div className="flex items-center gap-0 rounded-xl border border-[#E8EAEF] bg-white px-1.5">
       <span className="flex items-baseline gap-1.5 whitespace-nowrap px-[11px] py-[11px] text-xs text-[#6C6C89]">Facturas <b className="text-[13px] font-semibold tabular-nums text-[#121217]">{fmtAmount(totF)} €</b></span>
-      <span className="flex items-baseline gap-1.5 whitespace-nowrap px-[11px] py-[11px] text-xs text-[#6C6C89]">Comisiones <b className={`text-[13px] font-semibold tabular-nums ${totGL < 0 ? 'text-[#D50B3E]' : 'text-[#121217]'}`}>{totGL < 0 ? '−' : ''}{fmtAmount(Math.abs(totGL))} €</b></span>
+      <span className="flex items-baseline gap-1.5 whitespace-nowrap px-[11px] py-[11px] text-xs text-[#6C6C89]">Comisiones <b className={`text-[13px] font-semibold tabular-nums ${totGL < 0 ? 'text-[#D50B3E]' : 'text-[#121217]'}`}>{glSign}{fmtAmount(Math.abs(totGL))} €</b></span>
       <span className="flex items-baseline gap-1.5 whitespace-nowrap px-[11px] py-[11px] text-xs text-[#6C6C89]">Total <b className="text-[13px] font-semibold tabular-nums text-[#121217]">{fmtAmount(total)} €</b></span>
       <span className="flex items-baseline gap-1.5 whitespace-nowrap px-[11px] py-[11px] text-xs text-[#6C6C89]">Pago <b className="text-[13px] font-semibold tabular-nums text-[#121217]">{fmtAmount(pago)} €</b></span>
       <span className={`my-[7px] ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-semibold ${cuadra ? 'border-[#B2EECC] bg-[#EEFBF4] text-[#17663A]' : 'border-[#FBB1C4] bg-[#FEF0F4] text-[#D50B3E]'}`}>
-        {cuadra ? '✓ Cuadra' : <>Dif. <span className="tabular-nums">{diff < 0 ? '−' : ''}{fmtAmount(Math.abs(diff))} €</span></>}
+        {cuadra ? '✓ Cuadra' : <>Dif. <span className="tabular-nums">{diffText}</span></>}
       </span>
     </div>
   );
@@ -484,6 +490,13 @@ export function PaymentForm({
     { id: 'refund', name: doc === 'in' ? 'Devolver el importe al cliente' : 'Devolver el importe al proveedor' },
   ], [doc]);
 
+  // Empty-state hint for the invoice table (kept out of the JSX to avoid a
+  // nested ternary): scoped to a contact vs. all contacts.
+  const partyNoun = doc === 'in' ? 'Este cliente' : 'Este proveedor';
+  const invoiceEmptyHint = tercero
+    ? `${partyNoun} no tiene facturas pendientes.`
+    : 'No hay facturas pendientes.';
+
   const toggle = (r) => setSel((s) => {
     const n = { ...s };
     if (n[r.id] != null) { delete n[r.id]; return n; }
@@ -544,9 +557,7 @@ export function PaymentForm({
       <InvoiceTable
         invoices={invoiceRows}
         loading={invoicesLoading}
-        emptyHint={tercero
-          ? `${doc === 'in' ? 'Este cliente' : 'Este proveedor'} no tiene facturas pendientes.`
-          : 'No hay facturas pendientes.'}
+        emptyHint={invoiceEmptyHint}
         sel={sel} toggle={toggle} setAmt={setAmt}
         exp={exp} setExp={setExp} wo={wo} setWo={setWo}
         q={q} setQ={setQ} advFilter={advFilter} setAdvFilter={setAdvFilter}
