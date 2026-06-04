@@ -1115,6 +1115,15 @@ function getCustomTabItems(relatedDocuments, customPanelTabs, attachmentsEnabled
 }
 
 /**
+ * Build the `detailEntity="..."` JSX attribute fragment (with leading newline
+ * and indentation) when a detail entity is present, or an empty string otherwise.
+ */
+export function buildDetailEntityAttr(detailEntity) {
+  return detailEntity ? `
+        detailEntity="${detailEntity}"` : '';
+}
+
+/**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
  */
@@ -1734,8 +1743,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${fragm
     return (${fragmentIf(confirmModalName, `
       <>`)}
       <DetailView
-        entity="${headerEntity}"${detailEntity ? `
-        detailEntity="${detailEntity}"` : ''}
+        entity="${headerEntity}"${buildDetailEntityAttr(detailEntity)}
         Form={${headerName}Form}${detailEntity && !customLinesComp ? `
         DetailTable={${detailName}Table}
         DetailForm={${detailName}Form}` : ''}
