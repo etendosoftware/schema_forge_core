@@ -97,4 +97,58 @@ describe('ConfirmResultModal', () => {
     renderModal({ docs: [DOCS[0]] });
     expect(screen.queryByRole('button', { name: /view/i })).not.toBeInTheDocument();
   });
+
+  it('activates doc card with Enter key', () => {
+    const navigate = vi.fn();
+    const onClose  = vi.fn();
+    renderModal({ navigate, onClose });
+    fireEvent.keyDown(screen.getByText('GR-001').closest('[role="button"]'), { key: 'Enter' });
+    expect(onClose).toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith('/goods-receipt/1');
+  });
+
+  it('activates doc card with Space key', () => {
+    const navigate = vi.fn();
+    const onClose  = vi.fn();
+    renderModal({ navigate, onClose });
+    fireEvent.keyDown(screen.getByText('GR-001').closest('[role="button"]'), { key: ' ' });
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('ignores other keys on doc card', () => {
+    const navigate = vi.fn();
+    renderModal({ navigate });
+    fireEvent.keyDown(screen.getByText('GR-001').closest('[role="button"]'), { key: 'Tab' });
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('triggers hover state on mouse enter/leave', () => {
+    renderModal({ docs: [DOCS[0]] });
+    const card = screen.getByText('GR-001').closest('[role="button"]');
+    fireEvent.mouseEnter(card);
+    fireEvent.mouseLeave(card);
+  });
+
+  it('triggers focus/blur handlers on doc card', () => {
+    renderModal({ docs: [DOCS[0]] });
+    const card = screen.getByText('GR-001').closest('[role="button"]');
+    fireEvent.focus(card);
+    fireEvent.blur(card);
+  });
+
+  it('shows doc.status badge when provided', () => {
+    renderModal({ docs: [{ type: 'entrada', num: 'GR-X', status: 'Completado', route: '/r' }] });
+    expect(screen.getByText('Completado')).toBeInTheDocument();
+  });
+
+  it('falls back to statusDraft when doc.status is not provided', () => {
+    renderModal({ docs: [{ type: 'entrada', num: 'GR-Y', route: '/r' }] });
+    expect(screen.getByText('statusDraft')).toBeInTheDocument();
+  });
+
+  it('renders amount span when amount is provided', () => {
+    renderModal({ docs: [{ type: 'entrada', num: 'GR-Z', amount: 1234.5, route: '/r' }], currency: '' });
+    const card = screen.getByText('GR-Z').closest('[role="button"]');
+    expect(card.querySelector('span[style*="color"]')).toBeTruthy();
+  });
 });
