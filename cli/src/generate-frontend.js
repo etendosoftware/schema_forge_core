@@ -1078,6 +1078,42 @@ function getLineConfigSymbol(lineEntityConfig, LINE_CONFIG_SYMBOLS) {
   return lineEntityConfig ? (LINE_CONFIG_SYMBOLS[lineEntityConfig] ?? null) : null;
 }
 
+function buildCustomLinesParts(windowConfig, specName) {
+  const customLinesComp = windowConfig.customLinesComponent ?? null;
+  const customLinesLabelValue = windowConfig.customLinesLabel ?? null;
+  let customLinesImport = '';
+  let customLinesProp = '';
+  if (customLinesComp && specName) {
+    customLinesImport = `import ${customLinesComp} from ${resolveCustomImport(specName, customLinesComp)};\n`;
+    customLinesProp = `\n        CustomLines={${customLinesComp}}`;
+    if (customLinesLabelValue) {
+      customLinesProp += `\n        customLinesLabel="${customLinesLabelValue}"`;
+    }
+  }
+  return {customLinesComp, customLinesImport, customLinesProp};
+}
+
+function getCustomTabItems(relatedDocuments, customPanelTabs, attachmentsEnabled, attachmentsOpts, headerTableName, extraTabs) {
+  const customTabItems = [];
+  if (relatedDocuments) {
+    customTabItems.push(`{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }`);
+  }
+  customPanelTabs.forEach(pt => {
+    const labelPart = pt.labelKey ? `labelKey: '${pt.labelKey}'` : `label: '${pt.label}'`;
+    customTabItems.push(
+        `{ key: '${pt.key}', ${labelPart}, Component: ${pt.component}, placement: 'tab' }`
+    );
+  });
+  pushAttachmentsTab(attachmentsEnabled, attachmentsOpts, customTabItems, headerTableName);
+  extraTabs.forEach(et => {
+    const labelPart = et.labelKey ? `labelKey: '${et.labelKey}'` : `label: '${JSON.stringify(et.label)}'`;
+    customTabItems.push(
+        `{ key: '${et.key}', ${labelPart}, Component: ${et.component}, placement: 'tab' }`
+    );
+  });
+  return customTabItems;
+}
+
 /**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
@@ -1443,23 +1479,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   //   { key, label, Component, placement?: 'tab' | 'footer', props?: {} }
   // `placement: 'tab'` renders as a main tab (Lines/Notes style);
   // `placement: 'footer'` (default) keeps the legacy chip-footer behavior.
-  const customTabItems = [];
-  if (relatedDocuments) {
-    customTabItems.push(`{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }`);
-  }
-  customPanelTabs.forEach(pt => {
-    const labelPart = pt.labelKey ? `labelKey: '${pt.labelKey}'` : `label: '${pt.label}'`;
-    customTabItems.push(
-      `{ key: '${pt.key}', ${labelPart}, Component: ${pt.component}, placement: 'tab' }`
-    );
-  });
-  pushAttachmentsTab(attachmentsEnabled, attachmentsOpts, customTabItems, headerTableName);
-  extraTabs.forEach(et => {
-    const labelPart = et.labelKey ? `labelKey: '${et.labelKey}'` : `label: '${JSON.stringify(et.label)}'`;
-    customTabItems.push(
-      `{ key: '${et.key}', ${labelPart}, Component: ${et.component}, placement: 'tab' }`
-    );
-  });
+  const customTabItems = getCustomTabItems(relatedDocuments, customPanelTabs, attachmentsEnabled, attachmentsOpts, headerTableName, extraTabs);
   const customTabsProp = getCustomTabsProp(customTabItems);
 
   // hideDeleteWhenComplete prop
@@ -1594,17 +1614,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   let { formFooterImport, formFooterProp } = buildFormFooterParts(headerExtraConfig, specName);
 
   // customLinesComponent → CustomLines prop
-  const customLinesComp = windowConfig.customLinesComponent ?? null;
-  const customLinesLabelValue = windowConfig.customLinesLabel ?? null;
-  let customLinesImport = '';
-  let customLinesProp = '';
-  if (customLinesComp && specName) {
-    customLinesImport = `import ${customLinesComp} from ${resolveCustomImport(specName, customLinesComp)};\n`;
-    customLinesProp = `\n        CustomLines={${customLinesComp}}`;
-    if (customLinesLabelValue) {
-      customLinesProp += `\n        customLinesLabel="${customLinesLabelValue}"`;
-    }
-  }
+  let {customLinesComp, customLinesImport, customLinesProp} = buildCustomLinesParts(windowConfig, specName);
 
   // primaryTabs support
   const primaryTabsConfig = windowConfig.primaryTabs ?? null;
