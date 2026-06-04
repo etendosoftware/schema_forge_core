@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDown, Plus, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { useUI, useLabel } from '@/i18n';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -142,10 +143,14 @@ export default function AmortizationLinesTable({
   catalogs,
   onCountChange,
   onRefresh,
+  isNew,
+  onSave,
 }) {
   const ui = useUI();
   const t = useLabel(api?.labelOverrides);
   const orgCurrency = useCurrency() ?? 'USD';
+  const navigate = useNavigate();
+  const location = useLocation();
   const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
@@ -246,6 +251,13 @@ export default function AmortizationLinesTable({
 
   useEffect(() => { fetchLines(); }, [fetchLines]);
 
+  // Mirror DetailView's openAddLine pattern: auto-open inline form after header auto-save navigation.
+  useEffect(() => {
+    if (!location.state?.openAddLine || isNew) return;
+    setAddingLine(true);
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state?.openAddLine, isNew, navigate, location.pathname]);
+
   useEffect(() => {
     if (!recordId) return undefined;
     function onProcess(e) {
@@ -269,7 +281,7 @@ export default function AmortizationLinesTable({
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ [fieldKey]: value }),
       });
-      if (res.ok) fetchLines();
+      if (res.ok) { fetchLines(); onRefresh?.(); }
     } catch { /* silencioso */ }
   }
 
@@ -326,7 +338,7 @@ export default function AmortizationLinesTable({
       const res = await fetch(`${apiBaseUrl}/lines`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ...newLine, amortization: recordId }),
+        body: JSON.stringify({ ...newLine, amortization: recordId, currency: data?.currency }),
       });
       if (res.ok) {
         setNewLine({});
@@ -362,7 +374,7 @@ export default function AmortizationLinesTable({
   const isReadOnly = !editing || processed;
 
   return (
-    <div className="flex-1 min-w-0">
+    <div className="flex-1 min-w-0" data-testid="inline-lines-panel">
       <table className="w-full">
         {/* header — matches inlineEditable: sticky top-0 z-20 bg-white */}
         <thead className="sticky top-0 z-20 bg-white">
@@ -613,16 +625,23 @@ export default function AmortizationLinesTable({
       <div ref={addLineWrapperRef}>
         {!isReadOnly && (
           <div className="px-2 py-2">
-            <AddLineButton onClick={() => setAddingLine(true)} disabled={saving === 'new'} label={ui('addLine')} />
+            <AddLineButton
+              onClick={async () => {
+                if (isNew && onSave) { await onSave(); return; }
+                setAddingLine(true);
+              }}
+              disabled={saving === 'new'}
+              label={ui('addLine')}
+            />
           </div>
         )}
       </div>
 
-      {/* ── Total footer — reads DB-backed totalAmortization kept in sync by trigger ── */}
-      {data?.totalAmortization != null && (
+      {/* ── Total footer — always computed from visible lines for immediate accuracy ── */}
+      {lines.length > 0 && (
         <div className="mt-2 pt-2 border-t border-border/50 flex justify-end pr-2">
           <span className="text-sm font-semibold text-foreground">
-            {ui('totalAmortization')}: {formatCurrency(orgCurrency, data.totalAmortization)}
+            {ui('totalAmortization')}: {formatCurrency(orgCurrency, lines.reduce((s, l) => s + Number(l.amortizationAmount ?? 0), 0))}
           </span>
         </div>
       )}
