@@ -29,7 +29,7 @@ vi.mock('@/windows/custom/shared/usePreviewAttachment.js', () => ({
 }));
 
 vi.mock('../../shared/GenericPreviewModal.jsx', () => ({
-  default: vi.fn(({ title, subtitle, tabs, actionButtons, onClose, attachmentConfig }) => {
+  default: vi.fn(({ title, subtitle, tabs, actionButtons, onClose, onEdit, attachmentConfig }) => {
     // Simulate ManagedLeftPanel calling onFileChange when storedFile changes
     // by exposing attachmentConfig so tests can inspect it
     return (
@@ -47,6 +47,11 @@ vi.mock('../../shared/GenericPreviewModal.jsx', () => ({
         {onClose && (
           <button data-testid="close-btn" onClick={onClose}>
             Close
+          </button>
+        )}
+        {onEdit && (
+          <button data-testid="trigger-on-edit" onClick={onEdit}>
+            TriggerEdit
           </button>
         )}
         {attachmentConfig?.onFileChange && (
@@ -256,5 +261,155 @@ describe('closeEmailModal', () => {
 
     await act(async () => { vi.runAllTimers(); });
     expect(screen.queryByTestId('send-modal')).not.toBeInTheDocument();
+  });
+});
+
+// ── subtitle branch ───────────────────────────────────────────────────────────
+
+describe('subtitle prop', () => {
+  it('passes subtitle to GenericPreviewModal when businessPartner$_identifier is set', () => {
+    renderPreview();
+    expect(screen.getByTestId('modal-subtitle')).toBeInTheDocument();
+  });
+
+  it('passes no subtitle when businessPartner$_identifier is absent (shows "—")', () => {
+    renderPreview({
+      receipt: { ...defaultReceipt, 'businessPartner$_identifier': undefined },
+    });
+    expect(screen.queryByTestId('modal-subtitle')).not.toBeInTheDocument();
+  });
+});
+
+// ── movementDate fallback ─────────────────────────────────────────────────────
+
+describe('movementDate fallback', () => {
+  it('shows "—" when receipt.movementDate is null', () => {
+    renderPreview({ receipt: { ...defaultReceipt, movementDate: null } });
+    // The value ends up inside an InfoRow — look for the fallback dash
+    const infoRows = screen.getAllByTestId('info-row');
+    const dateRow = infoRows.find(el => el.textContent.includes('goodsReceiptPreview.movementDate'));
+    expect(dateRow).toBeTruthy();
+    expect(dateRow.textContent).toContain('—');
+  });
+
+  it('shows "—" when receipt.movementDate is undefined', () => {
+    const { movementDate: _omit, ...receiptWithout } = defaultReceipt;
+    renderPreview({ receipt: receiptWithout });
+    const infoRows = screen.getAllByTestId('info-row');
+    const dateRow = infoRows.find(el => el.textContent.includes('goodsReceiptPreview.movementDate'));
+    expect(dateRow.textContent).toContain('—');
+  });
+});
+
+// ── onEdit callback ───────────────────────────────────────────────────────────
+
+describe('onEdit callback', () => {
+  it('calls onEdit with receipt.id when GenericPreviewModal triggers onEdit', () => {
+    const onEdit = vi.fn();
+    renderPreview({ onEdit });
+    fireEvent.click(screen.getByTestId('trigger-on-edit'));
+    expect(onEdit).toHaveBeenCalledWith(defaultReceipt.id);
+  });
+
+  it('does not throw when onEdit is not provided', () => {
+    expect(() => {
+      renderPreview({ onEdit: undefined });
+      fireEvent.click(screen.getByTestId('trigger-on-edit'));
+    }).not.toThrow();
+  });
+});
+
+// ── edit button visibility ────────────────────────────────────────────────────
+
+describe('edit button', () => {
+  it('is visible when documentStatus is CO', () => {
+    renderPreview({ receipt: { ...defaultReceipt, documentStatus: 'CO' } });
+    expect(screen.getByTestId('icon-edit2')).toBeInTheDocument();
+  });
+
+  it('is visible when documentStatus is DR', () => {
+    renderPreview({ receipt: { ...defaultReceipt, documentStatus: 'DR' } });
+    expect(screen.getByTestId('icon-edit2')).toBeInTheDocument();
+  });
+
+  it('is visible when documentStatus is undefined', () => {
+    renderPreview({ receipt: { ...defaultReceipt, documentStatus: undefined } });
+    expect(screen.getByTestId('icon-edit2')).toBeInTheDocument();
+  });
+});
+
+// ── ReceiptStatsPanel — statusLabel fallback chain ────────────────────────────
+
+describe('ReceiptStatsPanel — statusLabel', () => {
+  it('uses STATUS_KEYS translation key when STATUS_KEYS has an entry for docStatus', async () => {
+    const { default: GenericPreviewModal } = await import('../../shared/GenericPreviewModal.jsx');
+    const { STATUS_KEYS } = await import('@/components/related-documents/constants.jsx');
+    // Override STATUS_KEYS to have a CO entry
+    STATUS_KEYS['CO'] = 'statusCompleted';
+    renderPreview({ receipt: { ...defaultReceipt, documentStatus: 'CO' } });
+    // ui returns the key itself; so the badge shows 'statusCompleted'
+    expect(screen.getByText('statusCompleted')).toBeInTheDocument();
+    STATUS_KEYS['CO'] = undefined;
+  });
+
+  it('falls back to documentStatus$_identifier when STATUS_KEYS has no entry', () => {
+    renderPreview({
+      receipt: {
+        ...defaultReceipt,
+        documentStatus: 'UNKNOWN_STATUS',
+        'documentStatus$_identifier': 'Unknown Label',
+      },
+    });
+    expect(screen.getByText('Unknown Label')).toBeInTheDocument();
+  });
+
+  it('falls back to raw docStatus when identifier is also absent', () => {
+    renderPreview({
+      receipt: {
+        ...defaultReceipt,
+        documentStatus: 'XYZ',
+        'documentStatus$_identifier': undefined,
+      },
+    });
+    expect(screen.getByText('XYZ')).toBeInTheDocument();
+  });
+});
+
+// ── ReceiptStatsPanel — purchaseOrderNo null ──────────────────────────────────
+
+describe('ReceiptStatsPanel — purchaseOrderNo', () => {
+  it('renders no link button when salesOrder$_identifier is null', () => {
+    renderPreview({
+      receipt: { ...defaultReceipt, 'salesOrder$_identifier': null },
+    });
+    // No clickable PO link in the origin order row
+    expect(screen.queryByRole('button', { name: /PO-001/i })).not.toBeInTheDocument();
+  });
+});
+
+// ── ReceiptStatsPanel — invoiceStatus PercentBar ──────────────────────────────
+
+describe('ReceiptStatsPanel — invoiceStatus', () => {
+  it('renders PercentBar with the numeric invoiceStatus value', () => {
+    renderPreview({ receipt: { ...defaultReceipt, invoiceStatus: 75 } });
+    expect(screen.getByTestId('percent-bar')).toBeInTheDocument();
+    expect(screen.getByTestId('percent-bar').textContent).toBe('75');
+  });
+
+  it('renders PercentBar with 0 when invoiceStatus is absent', () => {
+    const { invoiceStatus: _omit, ...receiptWithout } = defaultReceipt;
+    renderPreview({ receipt: receiptWithout });
+    expect(screen.getByTestId('percent-bar').textContent).toBe('0');
+  });
+});
+
+// ── ReceiptStatsPanel — statusBadgeClass fallback ─────────────────────────────
+
+describe('ReceiptStatsPanel — statusBadgeClass', () => {
+  it('uses fallback class when STATUS_BADGE has no entry for docStatus', () => {
+    // The mock has STATUS_BADGE = {} so unknown statuses get the fallback
+    renderPreview({ receipt: { ...defaultReceipt, documentStatus: 'UNKNOWN' } });
+    const badge = document.querySelector('.bg-gray-50.text-gray-600.border-gray-200');
+    expect(badge).not.toBeNull();
   });
 });

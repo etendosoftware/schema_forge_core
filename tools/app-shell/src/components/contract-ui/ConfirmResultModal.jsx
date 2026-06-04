@@ -10,8 +10,10 @@ const TYPE_CONFIG = {
   entrada:       { iconBg: '#e9f7ee', iconColor: '#157a43', labelKey: 'confirmResultModal.docType.entrada',       Icon: EntradaIcon },
 };
 
-const fmtAmount = (v, cur) =>
-  `${Number(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${cur ? ` ${cur}` : ''}`;
+const fmtAmount = (v, cur) => {
+  const formatted = Number(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return cur ? `${formatted} ${cur}` : formatted;
+};
 
 // ── Doc card ──────────────────────────────────────────────────────────────────
 
@@ -72,11 +74,9 @@ function DocCard({ doc, currency, ui, navigate, onClose }) {
 export function ConfirmResultModal({ title, docs = [], primary, navigate, currency = '', onClose }) {
   const ui = useUI();
 
-  const subtitle = docs.length === 1
-    ? ui('confirmResultModal.subtitleOne')
-    : docs.length > 1
-      ? ui('confirmResultModal.subtitleMany', { count: docs.length })
-      : null;
+  let subtitle = null;
+  if (docs.length === 1) subtitle = ui('confirmResultModal.subtitleOne');
+  else if (docs.length > 1) subtitle = ui('confirmResultModal.subtitleMany', { count: docs.length });
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)' }}>
@@ -100,8 +100,8 @@ export function ConfirmResultModal({ title, docs = [], primary, navigate, curren
         {/* Doc cards */}
         {docs.length > 0 && (
           <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {docs.map((doc, i) => (
-              <DocCard key={i} doc={doc} currency={currency} ui={ui} navigate={navigate} onClose={onClose} />
+            {docs.map((doc) => (
+              <DocCard key={doc.type + '-' + doc.num} doc={doc} currency={currency} ui={ui} navigate={navigate} onClose={onClose} />
             ))}
           </div>
         )}

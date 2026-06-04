@@ -23,52 +23,31 @@ export default function GoodsReceiptBottomPanel(props) {
 }
 GoodsReceiptBottomPanel.showLineTotals = false;
 
-function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl, onRefresh }) {
-  const ui = useUI();
+function UploadArrowIcon({ size }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" y1="3" x2="12" y2="15" />
+    </svg>
+  );
+}
+
+function InvoiceDocIcon({ size }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+    </svg>
+  );
+}
+
+function useImportModals({ recordId, bpId, base, headers, onRefresh }) {
   const [showImportOrderModal, setShowImportOrderModal] = useState(false);
   const [showImportInvoiceModal, setShowImportInvoiceModal] = useState(false);
-  const bpId = data?.businessPartner;
-  const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
-  const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
-  const secondaryActions = bpId ? (
-    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-      <button
-        type="button"
-        data-testid="action-import-purchase-order-empty-state"
-        onClick={() => setShowImportOrderModal(true)}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}
-      >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="17 8 12 3 7 8" />
-          <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
-        {ui('importFromPurchaseOrder')}
-      </button>
-      <button
-        type="button"
-        data-testid="action-import-purchase-invoice-empty-state"
-        onClick={() => setShowImportInvoiceModal(true)}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}
-      >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-        </svg>
-        {ui('importFromPurchaseInvoice')}
-      </button>
-    </div>
-  ) : null;
-
-  return (
+  const importModals = (
     <>
-      <LinesEmptyState
-        data={data}
-        onAddLine={onAddLine}
-        description={ui('addLinesManuallyOrImportFromPurchaseOrderOrInvoice')}
-        secondaryAction={secondaryActions}
-      />
       {showImportOrderModal && createPortal(
         <ImportFromPurchaseOrderModal
           receiptId={recordId}
@@ -93,6 +72,51 @@ function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl, 
       )}
     </>
   );
+
+  return { importModals, setShowImportOrderModal, setShowImportInvoiceModal };
+}
+
+function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl, onRefresh }) {
+  const ui = useUI();
+  const bpId = data?.businessPartner;
+  const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
+  const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
+  const { importModals, setShowImportOrderModal, setShowImportInvoiceModal } = useImportModals({ recordId, bpId, base, headers, onRefresh });
+
+  const secondaryActions = bpId ? (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+      <button
+        type="button"
+        data-testid="action-import-purchase-order-empty-state"
+        onClick={() => setShowImportOrderModal(true)}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}
+      >
+        <UploadArrowIcon size={13} />
+        {ui('importFromPurchaseOrder')}
+      </button>
+      <button
+        type="button"
+        data-testid="action-import-purchase-invoice-empty-state"
+        onClick={() => setShowImportInvoiceModal(true)}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}
+      >
+        <InvoiceDocIcon size={13} />
+        {ui('importFromPurchaseInvoice')}
+      </button>
+    </div>
+  ) : null;
+
+  return (
+    <>
+      <LinesEmptyState
+        data={data}
+        onAddLine={onAddLine}
+        description={ui('addLinesManuallyOrImportFromPurchaseOrderOrInvoice')}
+        secondaryAction={secondaryActions}
+      />
+      {importModals}
+    </>
+  );
 }
 
 // forwardRef so DetailView can imperatively trigger the import modal from a
@@ -104,12 +128,11 @@ const ReceiptLineActions = forwardRef(function ReceiptLineActions(
   ref,
 ) {
   const ui = useUI();
-  const [showImportOrderModal, setShowImportOrderModal] = useState(false);
-  const [showImportInvoiceModal, setShowImportInvoiceModal] = useState(false);
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
+  const { importModals, setShowImportOrderModal, setShowImportInvoiceModal } = useImportModals({ recordId, bpId, base, headers, onRefresh });
 
   useImperativeHandle(ref, () => ({
     openImportModal: () => setShowImportOrderModal(true),
@@ -127,11 +150,7 @@ const ReceiptLineActions = forwardRef(function ReceiptLineActions(
             onClick={() => setShowImportOrderModal(true)}
             style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
+            <UploadArrowIcon size={12} />
             {ui('importFromPurchaseOrder')}
           </button>
           <button
@@ -139,37 +158,12 @@ const ReceiptLineActions = forwardRef(function ReceiptLineActions(
             onClick={() => setShowImportInvoiceModal(true)}
             style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-            </svg>
+            <InvoiceDocIcon size={12} />
             {ui('importFromPurchaseInvoice')}
           </button>
         </div>
       )}
-
-      {showImportOrderModal && createPortal(
-        <ImportFromPurchaseOrderModal
-          receiptId={recordId}
-          bpId={bpId}
-          base={base}
-          headers={headers}
-          onClose={() => setShowImportOrderModal(false)}
-          onSuccess={() => { setShowImportOrderModal(false); onRefresh?.(); }}
-        />,
-        document.body,
-      )}
-      {showImportInvoiceModal && createPortal(
-        <ImportFromPurchaseInvoiceModal
-          receiptId={recordId}
-          bpId={bpId}
-          base={base}
-          headers={headers}
-          onClose={() => setShowImportInvoiceModal(false)}
-          onSuccess={() => { setShowImportInvoiceModal(false); onRefresh?.(); }}
-        />,
-        document.body,
-      )}
+      {importModals}
     </>
   );
 });

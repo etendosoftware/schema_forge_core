@@ -35,6 +35,10 @@ export default function CreateInvoiceConfirmModal({
   const fmtNum = (v, dec = 2) =>
     v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec }) : '-';
 
+  const displayAmount = grandTotal > 0
+    ? (currency ? `${fmtNum(grandTotal)} ${currency}` : fmtNum(grandTotal))
+    : documentNo;
+
   useEffect(() => {
     if (!pendingQtyUrl) return;
     let cancelled = false;
@@ -69,7 +73,7 @@ export default function CreateInvoiceConfirmModal({
           <div style={{ background: '#E6F1FB', border: '0.5px solid #B5D4F4', borderRadius: 10, padding: '14px 16px' }}>
             {bpName && <div style={{ fontSize: 11, color: '#185FA5' }}>{bpName}</div>}
             <div style={{ fontSize: 28, fontWeight: 500, color: '#042C53', lineHeight: 1, marginTop: 4 }}>
-              {grandTotal > 0 ? `${fmtNum(grandTotal)}${currency ? ` ${currency}` : ''}` : documentNo}
+              {displayAmount}
             </div>
           </div>
         </div>

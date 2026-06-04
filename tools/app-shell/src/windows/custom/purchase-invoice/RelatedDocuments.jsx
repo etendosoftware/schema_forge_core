@@ -42,11 +42,14 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     // Prefer backend-enriched linkedReceipts (covers no-PO invoices too).
     // Fall back to criteria fetch when not yet available.
     const backendReceipts = Array.isArray(data?.linkedReceipts) ? data.linkedReceipts : null;
-    const receiptPromise = backendReceipts !== null
-      ? Promise.resolve(backendReceipts)
-      : (orderId
-          ? fetchByCriteria('goods-receipt', 'goodsReceipt', 'salesOrder', orderId, token, apiBaseUrl)
-          : Promise.resolve([]));
+    let receiptPromise;
+    if (backendReceipts !== null) {
+      receiptPromise = Promise.resolve(backendReceipts);
+    } else if (orderId) {
+      receiptPromise = fetchByCriteria('goods-receipt', 'goodsReceipt', 'salesOrder', orderId, token, apiBaseUrl);
+    } else {
+      receiptPromise = Promise.resolve([]);
+    }
     Promise.all([orderPromise, receiptPromise, fetchPayments(recordId, token, apiBaseUrl)])
       .then(([orderResult, receiptRows, paymentResults]) => {
         setPurchaseOrder(orderResult);
