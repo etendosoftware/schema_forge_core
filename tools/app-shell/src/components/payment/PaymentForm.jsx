@@ -127,6 +127,19 @@ function PaymentFields({
 }) {
   const bpartnerHook = doc === 'in' ? useBPartnerCustomer : useBPartnerVendor;
   const accountLabel = doc === 'in' ? 'Ingresar en' : 'Pagar desde';
+
+  // "Ingresar en / Pagar desde": hidden when the account is fixed by context,
+  // read-only when an account is provided, or a required selector otherwise.
+  const renderAccountField = () => {
+    if (!showAccountField) return null;
+    if (account) {
+      return <Field label={accountLabel}><ReadOnly>{account.label}</ReadOnly></Field>;
+    }
+    return (
+      <Select label={accountLabel} required={requireAccount} value={accountId} onChange={setAccountId} options={accountOptions} placeholder="Seleccionar cuenta…" />
+    );
+  };
+
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-[#E8EAEF] bg-white p-[18px]">
       <div className="flex items-center gap-3">
@@ -139,13 +152,7 @@ function PaymentFields({
           <LookupPicker value={tercero} onChange={setTercero} useLookup={bpartnerHook} placeholder="Buscar contacto…" />
         </Field>
         <Select label="Método de pago" value={metodo} onChange={setMetodo} options={methodOptions} />
-        {showAccountField ? (
-          account ? (
-            <Field label={accountLabel}><ReadOnly>{account.label}</ReadOnly></Field>
-          ) : (
-            <Select label={accountLabel} required={requireAccount} value={accountId} onChange={setAccountId} options={accountOptions} placeholder="Seleccionar cuenta…" />
-          )
-        ) : null}
+        {renderAccountField()}
         <AmountInput label="Importe del pago" value={fmtAmount(pago)} onChange={onPagoChange} />
         <DateInput label="Fecha de pago" value={fechaPago} onChange={setFechaPago} />
         <Field label="Nº de referencia">
