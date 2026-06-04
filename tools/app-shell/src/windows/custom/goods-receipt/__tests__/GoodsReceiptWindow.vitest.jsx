@@ -137,7 +137,7 @@ vi.mock('react-router-dom', () => ({
   useSearchParams: () => [mockSearchParams],
 }));
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import GoodsReceiptWindow from '../index.jsx';
 
@@ -241,17 +241,11 @@ describe('GoodsReceiptWindow', () => {
 
   // ── refreshKey increments on delete success ────────────────────────────────
 
-  it('refreshKey increments when useRowDelete onSuccess is called', () => {
-    // Render once so capturedOnSuccess is set
-    const { rerender } = render(<GoodsReceiptWindow {...DEFAULT_PROPS} />);
-
-    // Capture the initial filter attribute (should be empty)
+  it('refreshKey increments when useRowDelete onSuccess is called', async () => {
+    render(<GoodsReceiptWindow {...DEFAULT_PROPS} />);
     expect(capturedOnSuccess).toBeTypeOf('function');
-
-    // Trigger onSuccess — this increments refreshTrigger passed to GeneratedApp
-    // We verify the component re-renders without throwing
-    expect(() => {
+    await act(async () => {
       capturedOnSuccess();
-    }).not.toThrow();
+    });
   });
 });
