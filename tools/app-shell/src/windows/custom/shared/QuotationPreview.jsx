@@ -7,7 +7,6 @@ import { useQuotationPdf } from './useQuotationPdf.js';
 import PreviewActionButtons, { PreviewEmptyPanel, PreviewPdfPanel } from './PreviewActionButtons.jsx';
 import SummaryCard from './preview-cards/SummaryCard.jsx';
 import EmailsCard from './preview-cards/EmailsCard.jsx';
-import CategorizationCard from './preview-cards/CategorizationCard.jsx';
 import RelatedDocumentsCard from './preview-cards/RelatedDocumentsCard.jsx';
 import { fetchByCriteria } from '@/components/related-documents';
 
@@ -39,8 +38,6 @@ function QuotationGeneralTab({ quotation, onSend, token, apiBaseUrl }) {
       />
 
       <EmailsCard onSend={onSend} />
-
-      <CategorizationCard rows={[]} />
 
       <RelatedDocumentsCard
         documentId={quotation.id}
