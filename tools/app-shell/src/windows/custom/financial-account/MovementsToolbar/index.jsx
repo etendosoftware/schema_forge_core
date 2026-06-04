@@ -29,6 +29,7 @@ export function MovementsToolbar({
   advancedFilter,
   onAdvancedFilterChange,
   onNewMovement,
+  rows = [],
 }) {
   const ui = useUI();
   const navigate = useNavigate();
@@ -73,6 +74,7 @@ export function MovementsToolbar({
         <PopoverContent align="start" className="w-auto p-4">
           <AdvancedFilterBuilder
             columns={columns}
+            rows={rows}
             value={advancedFilter}
             onApply={(next) => onAdvancedFilterChange?.(next)}
             onClear={() => onAdvancedFilterChange?.(null)}

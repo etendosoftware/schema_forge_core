@@ -229,7 +229,7 @@ describe('buildMovementFilterColumns', () => {
     expect(byKey).toEqual({
       date: 'date',
       documentNo: 'string',
-      contact: 'string',
+      contact: 'selector',
       description: 'string',
       statusFamily: 'enum',
       trxType: 'enum',

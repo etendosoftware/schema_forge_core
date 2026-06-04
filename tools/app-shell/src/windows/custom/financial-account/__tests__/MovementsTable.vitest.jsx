@@ -104,16 +104,16 @@ describe('MovementsTable — expandable dimensions panel', () => {
     expect(screen.queryByTestId('movement-moreinfo-m1')).not.toBeInTheDocument();
   });
 
-  it('shows only enabled dimensions that have a value, and excludes bpartner', () => {
+  it('shows enabled dimensions (even empty) as read-only fields, excluding bpartner', () => {
     renderTable({
       enabledDimensions: ['project', 'costcenter', 'campaign', 'bpartner'],
       movements: [
         baseMovement({
           dimensions: {
             project: 'Proj A',
-            costcenter: '', // enabled but empty → hidden
+            costcenter: '', // enabled but empty → still shown as an empty field
             campaign: 'Camp Z',
-            bpartner: 'Should Not Show', // excluded by design
+            bpartner: 'Should Not Show', // excluded — it has its own Contacto column
           },
         }),
       ],
@@ -126,17 +126,18 @@ describe('MovementsTable — expandable dimensions panel', () => {
     expect(within(panel).getByDisplayValue('Camp Z')).toBeInTheDocument();
     expect(within(panel).getByDisplayValue('Proj A')).toBeDisabled();
     expect(within(panel).queryByDisplayValue('Should Not Show')).not.toBeInTheDocument();
-    // Labels are still plain text.
+    // Every enabled non-bpartner dimension renders its label — even the empty one.
     expect(within(panel).getByText('financeAccountMovementsDimProject')).toBeInTheDocument();
     expect(within(panel).getByText('financeAccountMovementsDimCampaign')).toBeInTheDocument();
-    // Empty costcenter renders no label.
-    expect(within(panel).queryByText('financeAccountMovementsDimCostcenter')).not.toBeInTheDocument();
+    expect(within(panel).getByText('financeAccountMovementsDimCostcenter')).toBeInTheDocument();
+    // bpartner is never rendered in the panel.
+    expect(within(panel).queryByText('financeAccountMovementsDimBpartner')).not.toBeInTheDocument();
   });
 
-  it('shows the no-dimensions message when no enabled dimension has a value', () => {
+  it('shows the no-dimensions message when the only enabled dimension is bpartner', () => {
     renderTable({
-      enabledDimensions: ['project', 'bpartner'],
-      movements: [baseMovement({ dimensions: { bpartner: 'Acme', project: '' } })],
+      enabledDimensions: ['bpartner'],
+      movements: [baseMovement({ dimensions: { bpartner: 'Acme' } })],
     });
     fireEvent.click(screen.getByTestId('movement-expand-m1'));
     const panel = screen.getByTestId('movement-moreinfo-m1');

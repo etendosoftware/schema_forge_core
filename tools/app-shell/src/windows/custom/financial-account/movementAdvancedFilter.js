@@ -47,7 +47,9 @@ export function buildMovementFilterColumns(ui) {
   return [
     { key: 'date',         label: ui('financeAccountMovementsColDate'),        type: 'date' },
     { key: 'documentNo',   label: ui('financeAccountMovementsColDocument'),    type: 'string' },
-    { key: 'contact',      label: ui('financeAccountMovementsColContact'),     type: 'string' },
+    // 'selector' → identifier mode: a checkbox multi-picker listing the contacts
+    // present in the movements, so the user can filter by one or several.
+    { key: 'contact',      label: ui('financeAccountMovementsColContact'),     type: 'selector' },
     { key: 'description',  label: ui('financeAccountMovementsColDescription'), type: 'string' },
     { key: 'statusFamily', label: ui('financeAccountMovementsColStatus'),      type: 'enum', enumLabels: statusLabels },
     { key: 'trxType',      label: ui('financeAccountMovementsColType'),        type: 'enum', enumLabels: trxTypeLabels },
@@ -95,7 +97,9 @@ const OPERATORS = {
   equals:       (raw, value) => (Array.isArray(value)
     ? value.map(lc).includes(lc(raw))
     : lc(raw) === lc(value)),
-  notEqual:     (raw, value) => lc(raw) !== lc(value),
+  notEqual:     (raw, value) => (Array.isArray(value)
+    ? !value.map(lc).includes(lc(raw))
+    : lc(raw) !== lc(value)),
   inSet:        (raw, value) => toSet(value).map(lc).includes(lc(raw)),
   greaterThan:    numCmp((a, b) => a > b),
   greaterOrEqual: numCmp((a, b) => a >= b),

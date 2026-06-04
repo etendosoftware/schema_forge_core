@@ -198,6 +198,7 @@ export const MovementsTab = forwardRef(function MovementsTab(
         advancedFilter={advancedFilter}
         onAdvancedFilterChange={setAdvancedFilter}
         onNewMovement={() => setNewMovementOpen(true)}
+        rows={movements}
       />
       <AccountSummaryStrip account={account} totals={dateScopedTotals} loading={loading} />
       <div className="flex-1 overflow-y-auto [&>div]:overflow-visible">

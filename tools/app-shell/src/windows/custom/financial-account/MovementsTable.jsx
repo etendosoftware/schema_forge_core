@@ -101,12 +101,13 @@ function useTrxTypeLabel() {
  * form fields (label on top + greyed-out bordered box, same look as a read-only
  * field in the document forms), in a 4-column grid with an elevated surface.
  *
- * Shows only dimensions that are enabled in the chart of accounts AND have a
- * value; the business partner is excluded (it has its own "Contacto" column).
+ * Shows the dimensions enabled in the chart of accounts (even when empty, like
+ * Classic), as read-only fields. The business partner is excluded — it already
+ * has its own "Contacto" column.
  */
 function DimensionsPanel({ movement, enabledDimensions, ui }) {
   const dims = movement.dimensions || {};
-  const visible = enabledDimensions.filter((key) => key !== 'bpartner' && dims[key]);
+  const visible = enabledDimensions.filter((key) => key !== 'bpartner');
 
   if (visible.length === 0) {
     return (
@@ -123,7 +124,7 @@ function DimensionsPanel({ movement, enabledDimensions, ui }) {
           <span className="text-sm font-medium leading-6 text-[#121217]">
             {ui(DIMENSION_LABEL_KEYS[key] ?? key)}
           </span>
-          <Input className="items-center" value={dims[key]} disabled readOnly />
+          <Input className="items-center" value={dims[key] || ''} disabled readOnly />
         </div>
       ))}
     </div>
