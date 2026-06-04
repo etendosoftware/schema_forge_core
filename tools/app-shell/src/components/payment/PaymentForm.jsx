@@ -524,12 +524,13 @@ export function PaymentForm({
       referencia,
       accountId: account?.id ?? accountId,
       selectedInvoices: sel,
+      writeoffs: wo,
       commissions: gl,
       overpaymentAction: overpaid ? overpayAction : null,
       totals: { totF, totGL, total, pago, diff, cuadra },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tercero, metodo, fechaPago, referencia, accountId, sel, gl, pago, totF, totGL, total, diff, cuadra, overpaid, overpayAction]);
+  }, [tercero, metodo, fechaPago, referencia, accountId, sel, wo, gl, pago, totF, totGL, total, diff, cuadra, overpaid, overpayAction]);
 
   return (
     <div className="flex flex-col gap-4">

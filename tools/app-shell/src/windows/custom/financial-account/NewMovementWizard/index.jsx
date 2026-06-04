@@ -5,14 +5,15 @@
 //   Stage 2 — choose "Registrar pago" (embedded payment workspace) OR
 //             "Concepto contable (G/L)" (simple form), mutually exclusive.
 //
-// Stage 1 fields drive the real movement-create call. The payment / G/L
-// association persistence is wired in a later phase (see TODO in handleCreate).
+// "Registrar pago" creates+processes a real FIN_Payment (Classic "Add Payment",
+// which auto-creates the bank transaction); "Concepto contable (G/L)" creates the
+// manual finacc transaction with a G/L item. See handleCreate / submitPayment.
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { X, Check, ChevronDown, Wallet, Percent, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useUI } from '@/i18n';
-import { useCreateMovement } from '@/hooks/useCreateMovement';
+import { useCreateMovement, useCreatePayment } from '@/hooks/useCreateMovement';
 import { useDimensionValues } from '@/hooks/useDimensionValues';
 import { useGLItemLookup } from '@/hooks/useMovementLookups';
 import {
@@ -205,6 +206,7 @@ const initialForm = (currencyIso) => ({
 export function NewMovementWizard({ open, accountId, accountCurrency, dimensions = [], trxTypes = [], defaultOrgId = null, paymentMethods = [], onClose, onSuccess }) {
   const ui = useUI();
   const { createMovement, creating } = useCreateMovement();
+  const { createPayment, creating: creatingPayment } = useCreatePayment();
   const { optionsByDim } = useDimensionValues(dimensions, open);
 
   // Only Cobro (BPD) and Pago (BPW) are shown; labels localized via i18n.
@@ -218,8 +220,8 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
   const [choice, setChoice] = useState(null); // 'pay' | 'gl'
   const [form, setForm] = useState(() => initialForm(accountCurrency?.iso));
   const [glItem, setGlItem] = useState(null); // selected C_GLItem { id, name }
-  // Latest PaymentForm snapshot, kept in a ref (write-only for now; consumed in
-  // a later phase to persist the payment — see handleCreate).
+  // Latest PaymentForm snapshot (tercero, selected invoices, commissions,
+  // overpayment action, totals); consumed by submitPayment to register the payment.
   const paymentSnapshotRef = useRef(null);
 
   useEffect(() => {
@@ -257,34 +259,74 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
   const trxLabel = trxOptions.find((t) => t.value === form.trxType)?.label ?? '';
   const choiceMeta = CHOICES.find((c) => c.id === choice);
 
-  const handleCreate = async () => {
+  // choice==='pay' → create+process a FIN_Payment (Classic "Add Payment"); the
+  // processing auto-creates the bank transaction. choice==='gl' (or none) →
+  // create the manual finacc transaction (optionally with a G/L concept).
+  const submitMovement = async () => {
     const depositEditable = form.trxType !== 'BPW';
     const dep = depositEditable ? parseAmount(form.deposit) : 0;
     const pay = depositEditable ? 0 : parseAmount(form.withdrawal);
     if (dep <= 0 && pay <= 0) {
-      toast.error('Indica un importe de depósito o retiro.');
-      return;
+      throw new Error('Indica un importe de depósito o retiro.');
     }
+    await createMovement({
+      FIN_Financial_Account_ID: accountId,
+      trxType: form.trxType || 'BPD',
+      transactionDate: `${form.trxDate}T00:00:00Z`,
+      accountingDate: `${form.acctDate}T00:00:00Z`,
+      depositAmount: dep,
+      paymentAmount: pay,
+      currencyId: accountCurrency?.id,
+      description: form.description,
+      glItemId: choice === 'gl' ? (glItem?.id ?? null) : null,
+    });
+    toast.success('Movimiento creado');
+  };
+
+  const submitPayment = async () => {
+    const snap = paymentSnapshotRef.current || {};
+    if (!snap.tercero?.id) {
+      throw new Error(`Selecciona un contacto en "${doc === 'in' ? 'Recibido de' : 'Pagado a'}".`);
+    }
+    const amount = snap.totals?.pago ?? movementAmount;
+    if (!amount || amount <= 0) {
+      throw new Error('Indica el importe del pago.');
+    }
+    if ((snap.totals?.diff ?? 0) > 0.005 && !snap.overpaymentAction) {
+      throw new Error('Elige una acción por el excedente.');
+    }
+    const glItems = (snap.commissions || [])
+      .filter((g) => g.item?.id && ((Number(g.receivedIn) || 0) !== 0 || (Number(g.paidOut) || 0) !== 0))
+      .map((g) => ({ glItemId: g.item.id, receivedIn: Number(g.receivedIn) || 0, paidOut: Number(g.paidOut) || 0 }));
+    await createPayment({
+      FIN_Financial_Account_ID: accountId,
+      isReceipt: doc === 'in',
+      bpartnerId: snap.tercero.id,
+      paymentMethodId: snap.paymentMethodId || null,
+      amount,
+      paymentDate: snap.fechaPago,
+      referenceNo: snap.referencia || '',
+      description: form.description || '',
+      organizationId: form.dims.organization || null,
+      selectedInvoices: snap.selectedInvoices || {},
+      writeoffs: snap.writeoffs || {},
+      glItems,
+      overpaymentAction: snap.overpaymentAction || null,
+    });
+    toast.success('Pago registrado');
+  };
+
+  const handleCreate = async () => {
     try {
-      await createMovement({
-        FIN_Financial_Account_ID: accountId,
-        trxType: form.trxType || 'BPD',
-        transactionDate: `${form.trxDate}T00:00:00Z`,
-        accountingDate: `${form.acctDate}T00:00:00Z`,
-        depositAmount: dep,
-        paymentAmount: pay,
-        currencyId: accountCurrency?.id,
-        description: form.description,
-        glItemId: choice === 'gl' ? (glItem?.id ?? null) : null,
-      });
-      // TODO(phase 2): when choice==='pay' register the payment with the
-      // captured `paymentSnapshot` (selected invoices/commissions/totals);
-      // when choice==='gl' attach the G/L concept.
-      toast.success('Movimiento creado');
+      if (choice === 'pay') {
+        await submitPayment();
+      } else {
+        await submitMovement();
+      }
       onSuccess?.();
       onClose();
-    } catch {
-      toast.error('No se pudo crear el movimiento');
+    } catch (e) {
+      toast.error(e?.message || (choice === 'pay' ? 'No se pudo registrar el pago' : 'No se pudo crear el movimiento'));
     }
   };
 
@@ -400,8 +442,8 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
                 <Info className="h-[13px] w-[13px]" /> Se creará el movimiento {choice ? <>con <span className="font-semibold text-[#121217]">{assocLabel}</span></> : 'y su asociación'}
               </span>
               <button type="button" className={BTN_GHOST} onClick={() => setStage(1)}>Atrás</button>
-              <button type="button" className={BTN_PRIMARY} disabled={!choice || creating} onClick={handleCreate}>
-                {creating ? 'Creando…' : 'Crear movimiento'}
+              <button type="button" className={BTN_PRIMARY} disabled={!choice || creating || creatingPayment} onClick={handleCreate}>
+                {(creating || creatingPayment) ? 'Creando…' : 'Crear movimiento'}
               </button>
             </>
           )}
