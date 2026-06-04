@@ -2,14 +2,8 @@ import { forwardRef } from 'react';
 import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 
 function renderDepreciationProgress(row) {
-  const depreciatedValue = row.depreciatedValue ?? 0;
-  const depreciatedPlan = row.depreciatedPlan ?? 0;
-  const depreciationAmt = row.depreciationAmt ?? 0;
-  const denominator = depreciatedPlan > 0 ? depreciatedPlan : depreciationAmt;
-  const pct = denominator > 0
-    ? Math.min(100, Math.round((depreciatedValue / denominator) * 100))
-    : (depreciatedValue > 0 ? 100 : null);
-  if (pct == null) return null;
+  const pct = row.etgoAmortizationStatus ?? null;
+  if (pct == null || pct === 0) return null;
   const color = pct === 100 ? '#10b981' : '#f59e0b';
   return (
     <div className="flex items-center gap-1.5" style={{ minWidth: 80 }}>
@@ -26,15 +20,15 @@ const columns = [
   { key: 'name', column: 'Name', type: 'string', label: 'Name', required: true },
   { key: 'assetCategory', column: 'A_Asset_Group_ID', type: 'selector', label: 'Asset Category', required: true },
   { key: 'purchaseDate', column: 'Datepurchased', type: 'date', label: 'Purchase Date' },
-  { key: 'depreciationStartDate', column: 'Amortizationstartdate', type: 'date', label: 'Depreciation Start Date' },
+  { key: 'depreciationStartDate', column: 'Amortizationstartdate', type: 'date', label: 'Depreciation Start Date', dot: false },
   { key: 'assetValue', column: 'AssetValueAmt', type: 'amount', label: 'Asset Value', summable: true },
   { key: 'depreciationAmt', column: 'Amortizationvalueamt', type: 'amount', label: 'Depreciation Amt.', summable: true },
   { key: 'depreciatedValue', column: 'Depreciatedvalue', type: 'amount', label: 'Depreciated Value', summable: true },
-  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'status', label: 'Fully Depreciated', enumLabels: { 'true': 'assetsFullyDepreciated', 'false': 'assetsStillInProgress' }, render: renderDepreciationProgress, required: true, filterable: false },
+  { key: 'etgoAmortizationStatus', column: 'EM_Etgo_Amortization_Status', type: 'number', label: 'Amortization Status', render: renderDepreciationProgress },
 ];
 // @sf-generated-end columns:assets
 
-const filters = ['searchKey', 'name', 'assetCategory', 'depreciate', 'fullyDepreciated'];
+const filters = ['searchKey', 'name', 'assetCategory', 'depreciate'];
 
 // @sf-generated-start component:AssetsTable
 const AssetsTable = forwardRef(function AssetsTable(props, ref) {

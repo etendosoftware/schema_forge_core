@@ -163,3 +163,5 @@ The following issues in the **Cuenta Bancaria** inline add-row form were resolve
 - Country field empty when IBAN format is selected.
 - IBAN code invalid for the selected country.
 - SWIFT code or generic account number empty when SWIFT format is selected.
+
+- **ETP-4103 — Generator fix (labelOverrides deduplication)**: `const labelOverrides` in the generated page now references `api.labelOverrides` instead of re-embedding the full object. No functional change — field labels and selectors behave identically.

@@ -211,3 +211,7 @@ The `invoiceExchangeRateHandler` (`modules/com.etendoerp.go/src/com/etendoerp/go
 - `artifacts/sales-invoice/contract.json` resolves the `exchangeRates` secondary entity and its currency/toCurrency/rate/foreignAmount fields.
 - `modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/InvoiceExchangeRateHandler.java` (POST default/compute + PATCH change-detection) and `InvoiceExchangeRateValidator.java` (`checkRateForCompletion`, consumed by `SalesInvoiceHeaderHandler`), with source-level coverage in `modules/com.etendoerp.go/src-test/.../InvoiceExchangeRateHandlerTest.java` and `InvoiceExchangeRateValidatorTest.java`.
 - `tools/app-shell/src/components/contract-ui/DetailView.jsx` unwraps the NEO `{response:{data:[…]}}` envelope on secondary-tab save for live refresh.
+
+## Generator fix (labelOverrides deduplication) — ETP-4103
+
+`const labelOverrides` in the generated page now references `api.labelOverrides` instead of re-embedding the full object. No functional change — field labels and selectors behave identically.

@@ -10,16 +10,6 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Settings / Price List';
 
-const labelOverrides = {
-  "es_ES": {
-    "Name": "Nombre",
-    "C_Currency_ID": "Moneda",
-    "Costbased": "Basado en coste",
-    "IsTaxIncluded": "Precio incluye impuesto",
-    "IsDefault": "Por defecto"
-  }
-};
-
 
 // @sf-generated-start summary:priceList
 const summary = [
@@ -185,6 +175,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:PriceListPage
 export default function PriceListPage({ windowName, recordId, ...props }) {
   if (recordId) {

@@ -265,3 +265,7 @@ The block surfaces the message `SMFCR_NoRateOnComplete` followed by the currency
 - `artifacts/purchase-invoice/generated/web/purchase-invoice/ExchangeRatesTable.jsx` and `ExchangeRatesForm.jsx` are the generated secondary-tab surfaces.
 - `modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/InvoiceExchangeRateHandler.java` implements the POST default/compute and PATCH change-detection recompute; `InvoiceExchangeRateValidator.java` implements `checkRateForCompletion` consumed by `PurchaseInvoiceHeaderHandler`. Source-level coverage in `modules/com.etendoerp.go/src-test/.../InvoiceExchangeRateHandlerTest.java` and `InvoiceExchangeRateValidatorTest.java`.
 - `tools/app-shell/src/components/contract-ui/DetailView.jsx` unwraps the NEO `{response:{data:[…]}}` envelope on secondary-tab save for live refresh.
+
+## Generator fix (labelOverrides deduplication) — ETP-4103
+
+`const labelOverrides` in the generated page now references `api.labelOverrides` instead of re-embedding the full object. No functional change — field labels and selectors behave identically.

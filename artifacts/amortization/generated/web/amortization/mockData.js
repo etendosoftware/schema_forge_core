@@ -130,6 +130,14 @@ export const lines = [
     "amortizationPercentage": 99.44,
     "amortizationAmount": 38907,
     "currency": "USD",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASBpartner": "Acme Corp",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
     "headerId": "mock-header-001"
   },
   {
@@ -138,6 +146,14 @@ export const lines = [
     "amortizationPercentage": 96.94,
     "amortizationAmount": 9306,
     "currency": "EUR",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASBpartner": "TechFlow Inc",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
     "headerId": "mock-header-002"
   },
   {
@@ -146,6 +162,14 @@ export const lines = [
     "amortizationPercentage": 12.48,
     "amortizationAmount": 11544,
     "currency": "GBP",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASBpartner": "Global Trade Ltd",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
     "headerId": "mock-header-003"
   },
   {
@@ -154,6 +178,14 @@ export const lines = [
     "amortizationPercentage": 96.31,
     "amortizationAmount": 11872,
     "currency": "USD",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASBpartner": "Summit Industries",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
     "headerId": "mock-header-004"
   },
   {
@@ -162,6 +194,14 @@ export const lines = [
     "amortizationPercentage": 31.27,
     "amortizationAmount": 48460,
     "currency": "EUR",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASBpartner": "Pacific Partners",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
     "headerId": "mock-header-005"
   },
   {
@@ -170,6 +210,14 @@ export const lines = [
     "amortizationPercentage": 76.52,
     "amortizationAmount": 45418,
     "currency": "GBP",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASBpartner": "Alpine Solutions",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
     "headerId": "mock-header-006"
   },
   {
@@ -178,6 +226,14 @@ export const lines = [
     "amortizationPercentage": 2.66,
     "amortizationAmount": 33840,
     "currency": "USD",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASBpartner": "Meridian Group",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
     "headerId": "mock-header-007"
   },
   {
@@ -186,6 +242,14 @@ export const lines = [
     "amortizationPercentage": 10.03,
     "amortizationAmount": 25716,
     "currency": "EUR",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASBpartner": "Vertex Systems",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
     "headerId": "mock-header-008"
   },
   {
@@ -194,6 +258,14 @@ export const lines = [
     "amortizationPercentage": 93.97,
     "amortizationAmount": 44780,
     "currency": "GBP",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASBpartner": "Atlas Manufacturing",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
     "headerId": "mock-header-009"
   },
   {
@@ -202,6 +274,14 @@ export const lines = [
     "amortizationPercentage": 1.1,
     "amortizationAmount": 12483,
     "currency": "USD",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASBpartner": "Nova Enterprises",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
     "headerId": "mock-header-010"
   },
   {
@@ -210,6 +290,14 @@ export const lines = [
     "amortizationPercentage": 79.99,
     "amortizationAmount": 46022,
     "currency": "EUR",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASBpartner": "Pinnacle Services",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
     "headerId": "mock-header-011"
   },
   {
@@ -218,6 +306,14 @@ export const lines = [
     "amortizationPercentage": 53.61,
     "amortizationAmount": 38634,
     "currency": "GBP",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "eTADASActivity": "Sample eTADASActivity",
+    "eTADASBpartner": "Horizon Labs",
+    "eTADASSalesCampaign": "Sample eTADASSalesCampaign",
+    "eTADASSalesRegion": "Sample eTADASSalesRegion",
     "headerId": "mock-header-012"
   }
 ];

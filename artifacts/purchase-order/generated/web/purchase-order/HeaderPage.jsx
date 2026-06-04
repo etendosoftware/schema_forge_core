@@ -14,21 +14,6 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Purchases / Purchase Order';
 
-const labelOverrides = {
-  "es_ES": {
-    "C_BPartner_ID": "Contacto",
-    "DatePromised": "Fecha de entrega esperada",
-    "DeliveryStatusPurchase": "Estado de entrega",
-    "InvoiceStatus": "Estado de facturación"
-  },
-  "en_US": {
-    "C_BPartner_ID": "Contact",
-    "DatePromised": "Expected Delivery Date",
-    "DeliveryStatusPurchase": "Delivery Status",
-    "InvoiceStatus": "Invoicing Status"
-  }
-};
-
 
 // @sf-generated-start summary:header
 const summary = [
@@ -729,6 +714,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
   if (recordId) {

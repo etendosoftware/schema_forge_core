@@ -14,7 +14,7 @@
  * - 'RPAP' = Pending payment approval (transient pre-completion state used by
  *            some Etendo flows; treated as draft-like for delete purposes).
  */
-export const DELETABLE_DOC_STATUSES = ['DR', 'RPAP'];
+export const DELETABLE_DOC_STATUSES = ['DR', 'RPAP', 'N'];
 
 /**
  * Returns true when the Delete action should be visible for a record.

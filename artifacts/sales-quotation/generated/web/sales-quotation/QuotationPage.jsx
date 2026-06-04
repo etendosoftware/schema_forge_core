@@ -14,19 +14,6 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Quotation';
 
-const labelOverrides = {
-  "es_ES": {
-    "C_BPartner_ID": "Contacto",
-    "C_Reject_Reason_ID": "Razón de rechazo",
-    "DateOrdered": "Fecha de presupuesto"
-  },
-  "en_US": {
-    "C_BPartner_ID": "Contact",
-    "C_Reject_Reason_ID": "Reject Reason",
-    "DateOrdered": "Quotation Date"
-  }
-};
-
 
 // @sf-generated-start summary:quotation
 const summary = [
@@ -434,6 +421,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:QuotationPage
 export default function QuotationPage({ windowName, recordId, ...props }) {
   if (recordId) {
