@@ -78,6 +78,7 @@ describe('onboardingApi', () => {
       name: 'New User',
       email: 'new@example.com',
       password: 'secret',
+      language: 'es_ES',
     });
 
     assert.equal(result.token, 'platform-token');
@@ -88,6 +89,7 @@ describe('onboardingApi', () => {
       name: 'New User',
       email: 'new@example.com',
       password: 'secret',
+      language: 'es_ES',
     }));
   });
 
