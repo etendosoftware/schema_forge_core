@@ -618,7 +618,7 @@ export default function AmortizationLinesTable({
         )}
       </div>
 
-      {/* ── Total footer ── */}
+      {/* ── Total footer — reads DB-backed totalAmortization kept in sync by trigger ── */}
       {data?.totalAmortization != null && (
         <div className="mt-2 pt-2 border-t border-border/50 flex justify-end pr-2">
           <span className="text-sm font-semibold text-foreground">

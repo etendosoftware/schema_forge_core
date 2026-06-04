@@ -19756,6 +19756,7 @@
     "assetsValidationAnnualDepreciationMax": "El % de Amortización Anual no puede ser superior al 100%. Corregí el valor antes de crear la amortización.",
     "amortizationConfirmAction": "Confirmar amortización",
     "amortizationErrorLineAmountInvalid": "Hay líneas con importe cero o negativo. Corregilas antes de confirmar.",
+    "amortizationErrorLinePercentageMissing": "Hay líneas sin porcentaje de amortización. Corregilas antes de confirmar.",
     "assetsAnnualDepreciationLabel": "% Amortización anual"
   },
   "menus": {

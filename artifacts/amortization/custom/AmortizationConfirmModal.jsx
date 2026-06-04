@@ -9,6 +9,7 @@ export default function AmortizationConfirmModal({ recordId, token, apiBaseUrl, 
   const [lineCount,  setLineCount]  = useState(null);
   const [linesTotal, setLinesTotal] = useState(null);
   const [invalidCount, setInvalidCount] = useState(0);
+  const [missingPctCount, setMissingPctCount] = useState(0);
 
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,
@@ -33,8 +34,8 @@ export default function AmortizationConfirmModal({ recordId, token, apiBaseUrl, 
           const lines = json?.response?.data ?? [];
           setLineCount(lines.length);
           setLinesTotal(lines.reduce((acc, l) => acc + Number(l.amortizationAmount ?? 0), 0));
-          // Lines with a zero or negative amount cannot be confirmed (backend does not validate this).
           setInvalidCount(lines.filter(l => Number(l.amortizationAmount ?? 0) <= 0).length);
+          setMissingPctCount(lines.filter(l => l.amortizationPercentage == null || l.amortizationPercentage === '').length);
         }
       } catch { /* silent */ }
     })();
@@ -51,7 +52,10 @@ export default function AmortizationConfirmModal({ recordId, token, apiBaseUrl, 
 
   const handleConfirm = async () => {
     if (loading) return;
-    // Block confirmation when any line has a zero or negative amount.
+    if (missingPctCount > 0) {
+      setError(ui('amortizationErrorLinePercentageMissing'));
+      return;
+    }
     if (invalidCount > 0) {
       setError(ui('amortizationErrorLineAmountInvalid'));
       return;

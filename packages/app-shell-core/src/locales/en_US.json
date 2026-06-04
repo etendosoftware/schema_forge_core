@@ -19490,6 +19490,7 @@
     "assetsValidationAnnualDepreciationMax": "Annual Depreciation % cannot exceed 100%. Please correct the value before creating amortization.",
     "amortizationConfirmAction": "Confirm amortization",
     "amortizationErrorLineAmountInvalid": "There are lines with a zero or negative amount. Please correct them before confirming.",
+    "amortizationErrorLinePercentageMissing": "There are lines with a missing amortization percentage. Please correct them before confirming.",
     "assetsAnnualDepreciationLabel": "Annual Depreciation %"
   },
   "menus": {
