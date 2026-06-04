@@ -9,20 +9,6 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Settings / Payment Method';
 
-const labelOverrides = {
-  "es_ES": {
-    "Name": "Nombre",
-    "Description": "Descripción",
-    "Isactive": "Activo",
-    "Payin_Allow": "Cobro permitido",
-    "Automatic_Receipt": "Cobro automático",
-    "Automatic_Deposit": "Depósito automático",
-    "Payout_Allow": "Pago permitido",
-    "Automatic_Payment": "Pago automático",
-    "Automatic_Withdrawn": "Retiro automático"
-  }
-};
-
 
 // @sf-generated-start summary:paymentMethod
 const summary = [
@@ -103,6 +89,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:PaymentMethodPage
 export default function PaymentMethodPage({ windowName, recordId, ...props }) {
   if (recordId) {
