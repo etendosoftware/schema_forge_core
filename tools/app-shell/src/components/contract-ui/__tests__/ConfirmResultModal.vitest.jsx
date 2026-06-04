@@ -1,22 +1,24 @@
 vi.mock('@/i18n', () => ({
-  useUI: () => (key) => key,
+  useUI: () => (key, vars) => {
+    if (vars) return key.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`);
+    return key;
+  },
 }));
 
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ConfirmResultModal } from '../ConfirmResultModal.jsx';
 
-const CARDS = [
-  { icon: '📦', label: 'Receipt 001', color: 'blue', route: '/goods-receipt/1', amount: 100 },
-  { icon: '🧾', label: 'Invoice 002', color: 'green', route: '/purchase-invoice/2', amount: 200 },
+const DOCS = [
+  { type: 'entrada',      num: 'GR-001', amount: 100,  route: '/goods-receipt/1' },
+  { type: 'facturaCompra', num: 'PI-002', amount: 200,  route: '/purchase-invoice/2' },
 ];
 
 function renderModal(overrides = {}) {
   const defaults = {
     title: 'Operation complete',
-    cards: CARDS,
+    docs: DOCS,
     navigate: vi.fn(),
-    ui: (key) => key,
     currency: 'EUR',
     onClose: vi.fn(),
   };
@@ -31,30 +33,68 @@ describe('ConfirmResultModal', () => {
     expect(screen.getByText('Operation complete')).toBeInTheDocument();
   });
 
-  it('renders one card per entry', () => {
+  it('renders the type label for each doc', () => {
     renderModal();
-    expect(screen.getByText('Receipt 001')).toBeInTheDocument();
-    expect(screen.getByText('Invoice 002')).toBeInTheDocument();
+    expect(screen.getByText('confirmResultModal.docType.entrada')).toBeInTheDocument();
+    expect(screen.getByText('confirmResultModal.docType.facturaCompra')).toBeInTheDocument();
   });
 
-  it('does not render the subtitle when cards is empty', () => {
-    renderModal({ cards: [] });
-    expect(screen.queryByText('soConfirmedSubtitle')).not.toBeInTheDocument();
+  it('renders doc numbers', () => {
+    renderModal();
+    expect(screen.getByText('GR-001')).toBeInTheDocument();
+    expect(screen.getByText('PI-002')).toBeInTheDocument();
   });
 
-  it('calls onClose and navigate when a card is clicked', () => {
+  it('shows plural subtitle for multiple docs', () => {
+    renderModal();
+    expect(screen.getByText('confirmResultModal.subtitleMany')).toBeInTheDocument();
+  });
+
+  it('shows singular subtitle for a single doc', () => {
+    renderModal({ docs: [DOCS[0]] });
+    expect(screen.getByText('confirmResultModal.subtitleOne')).toBeInTheDocument();
+  });
+
+  it('shows no subtitle when docs is empty', () => {
+    renderModal({ docs: [] });
+    expect(screen.queryByText('confirmResultModal.subtitleOne')).not.toBeInTheDocument();
+    expect(screen.queryByText('confirmResultModal.subtitleMany')).not.toBeInTheDocument();
+  });
+
+  it('navigates and closes when a doc card is clicked', () => {
     const navigate = vi.fn();
-    const onClose = vi.fn();
+    const onClose  = vi.fn();
     renderModal({ navigate, onClose });
-    fireEvent.click(screen.getByText('Receipt 001'));
+    fireEvent.click(screen.getByText('GR-001'));
     expect(onClose).toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith('/goods-receipt/1');
   });
 
-  it('calls onClose when the close button is clicked', () => {
+  it('closes when the close button is clicked (without reloading)', () => {
     const onClose = vi.fn();
     renderModal({ onClose });
     fireEvent.click(screen.getByText('soClose'));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('shows primary button for a single doc when primary is provided', () => {
+    const navigate = vi.fn();
+    const onClose  = vi.fn();
+    renderModal({ docs: [DOCS[0]], primary: 'View receipt', navigate, onClose });
+    const btn = screen.getByText('View receipt');
+    expect(btn).toBeInTheDocument();
+    fireEvent.click(btn);
+    expect(onClose).toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith('/goods-receipt/1');
+  });
+
+  it('does not show primary button for multiple docs', () => {
+    renderModal({ primary: 'View' });
+    expect(screen.queryByText('View')).not.toBeInTheDocument();
+  });
+
+  it('does not show primary button when primary is not provided', () => {
+    renderModal({ docs: [DOCS[0]] });
+    expect(screen.queryByRole('button', { name: /view/i })).not.toBeInTheDocument();
   });
 });

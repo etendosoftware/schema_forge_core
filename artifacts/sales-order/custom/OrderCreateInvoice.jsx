@@ -106,13 +106,13 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
     ? createPortal(
         <ConfirmResultModal
           title={confirmedTitle || ui('soConfirmedTitle')}
-          cards={[
-            confirmedDocs?.shipment?.id && { icon: '🚚', label: ui('shipmentDoc', { number: confirmedDocs.shipment.documentNo }), color: 'blue', route: `/goods-shipment/${confirmedDocs.shipment.id}`, amount: confirmedDocs.shipment.amount },
-            confirmedDocs?.invoice?.id && { icon: '🧾', label: ui('invoiceDoc', { number: confirmedDocs.invoice.documentNo }), color: 'green', route: `/sales-invoice/${confirmedDocs.invoice.id}`, amount: confirmedDocs.invoice.amount },
+          docs={[
+            confirmedDocs?.shipment?.id && { type: 'salida', num: confirmedDocs.shipment.documentNo, amount: confirmedDocs.shipment.amount, route: `/goods-shipment/${confirmedDocs.shipment.id}` },
+            confirmedDocs?.invoice?.id && { type: 'facturaVenta', num: confirmedDocs.invoice.documentNo, amount: confirmedDocs.invoice.amount, route: `/sales-invoice/${confirmedDocs.invoice.id}` },
           ].filter(Boolean)}
+          primary={ui('soViewInvoice')}
           currency={data?.['currency$_identifier'] || ''}
           navigate={navigate}
-          ui={ui}
           onClose={() => { setConfirmedDocs(null); setConfirmedTitle(null); }}
         />,
         document.body,

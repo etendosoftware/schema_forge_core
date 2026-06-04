@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useUI, useMenuLabel } from '@/i18n';
-import ConfirmDocumentModal from '@/components/contract-ui/ConfirmDocumentModal';
+import ConfirmGoodsReceiptModal from './ConfirmGoodsReceiptModal';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal';
 import { ConfirmResultModal } from '@/components/contract-ui';
 import { usePreviewAttachment } from '@/windows/custom/shared/usePreviewAttachment.js';
@@ -164,20 +164,11 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
             document.body,
           )
         : showConfirm && (
-            <ConfirmDocumentModal
+            <ConfirmGoodsReceiptModal
+              data={data}
               base={base}
               headers={headers}
               recordId={recordId}
-              specName="goods-receipt"
-              entityName="goodsReceipt"
-              invoiceAction="createPurchaseInvoice"
-              defaultCreateInvoice={false}
-              titleKey="goodsReceipt.confirmModal.title"
-              subtitleKey="goodsReceipt.confirmModal.subtitle"
-              cardTitleKey="goodsReceipt.confirmModal.createInvoiceTitle"
-              cardSubtitleKey="goodsReceipt.confirmModal.createInvoiceDesc"
-              confirmBtnKey="goodsReceipt.confirmModal.confirmBtn"
-              docInfo={{ bpName: data?.['businessPartner$_identifier'], documentNo: data?.documentNo }}
               onConfirmed={(docs) => { setShowConfirm(false); setConfirmedDocs(docs); }}
               onClose={() => setShowConfirm(false)}
             />
@@ -196,12 +187,13 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
       {confirmedDocs && createPortal(
         <ConfirmResultModal
           title={ui('goodsReceipt.confirmModal.confirmedTitle')}
-          cards={[
-            confirmedDocs?.invoice?.id && { icon: '🧾', label: ui('poPurchaseInvoiceDoc', { number: confirmedDocs.invoice.documentNo }), color: 'green', route: `/purchase-invoice/${confirmedDocs.invoice.id}`, amount: confirmedDocs.invoice.amount },
-          ].filter(Boolean)}
+          docs={confirmedDocs?.invoice?.id
+            ? [{ type: 'facturaCompra', num: confirmedDocs.invoice.documentNo, amount: confirmedDocs.invoice.amount, route: `/purchase-invoice/${confirmedDocs.invoice.id}` }]
+            : []
+          }
+          primary={ui('soViewInvoice')}
           currency={data?.['currency$_identifier'] || ''}
           navigate={navigate}
-          ui={ui}
           onClose={() => setConfirmedDocs(null)}
         />,
         document.body,
@@ -210,10 +202,9 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
       {returnedDoc && createPortal(
         <ConfirmResultModal
           title={ui('purchaseReturnCreatedTitle')}
-          cards={[{ icon: '📦', label: ui('purchaseReturnDocLabel', { number: returnedDoc.documentNo }), color: 'blue', route: `/return-to-vendor-shipment/${returnedDoc.id}` }]}
-          currency=""
+          docs={[{ type: 'salida', num: returnedDoc.documentNo, route: `/return-to-vendor-shipment/${returnedDoc.id}` }]}
+          primary={ui('soViewShipment')}
           navigate={navigate}
-          ui={ui}
           onClose={() => setReturnedDoc(null)}
         />,
         document.body,

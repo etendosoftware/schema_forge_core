@@ -243,11 +243,14 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
 
       {invoiceResult && createPortal(
         <ConfirmResultModal
-          docs={invoiceResult}
-          ui={ui}
-          navigate={navigate}
-          currency={data?.['currency$_identifier'] || ''}
           title={ui('soInvoiceCreated')}
+          docs={invoiceResult.invoice?.id
+            ? [{ type: 'facturaVenta', num: invoiceResult.invoice.documentNo, amount: invoiceResult.invoice.amount, route: `/sales-invoice/${invoiceResult.invoice.id}` }]
+            : []
+          }
+          primary={ui('soViewInvoice')}
+          currency={data?.['currency$_identifier'] || ''}
+          navigate={navigate}
           onClose={() => setInvoiceResult(null)}
         />,
         document.body,

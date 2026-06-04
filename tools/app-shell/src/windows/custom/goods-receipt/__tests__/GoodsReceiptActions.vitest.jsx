@@ -25,10 +25,18 @@ vi.mock('@/windows/custom/shared/usePreviewAttachment.js', () => ({
   })),
 }));
 
-vi.mock('@/components/contract-ui/ConfirmDocumentModal', () => ({
+vi.mock('@generated/goods-receipt/custom/ConfirmGoodsReceiptModal', () => ({
   default: ({ onClose }) => (
-    <div data-testid="confirm-document-modal">
+    <div data-testid="confirm-goods-receipt-modal">
       <button data-testid="confirm-modal-close" onClick={onClose}>Close</button>
+    </div>
+  ),
+}));
+
+vi.mock('@/components/contract-ui/CreateInvoiceConfirmModal', () => ({
+  default: ({ onClose }) => (
+    <div data-testid="create-invoice-confirm-modal">
+      <button data-testid="invoice-confirm-close" onClick={onClose}>Close</button>
     </div>
   ),
 }));
@@ -210,205 +218,40 @@ describe('GoodsReceiptActions', () => {
     });
   });
 
-  describe('ReceiptInvoicePreview modal', () => {
-    const linesResponse = {
-      response: {
-        data: [
-          { id: 'line-1', 'product$_identifier': 'Product A', movementQuantity: 3, salesOrderLine: 'ol-1' },
-          { id: 'line-2', 'product$_identifier': 'Product B', movementQuantity: 1, salesOrderLine: 'ol-2' },
-        ],
-      },
-    };
-    const orderLinesResponse = {
-      response: {
-        data: [
-          { id: 'ol-1', unitPrice: '10.00' },
-          { id: 'ol-2', unitPrice: '25.00' },
-        ],
-      },
-    };
-
-    beforeEach(() => {
-      vi.stubGlobal('fetch', vi.fn((url) => {
-        if (url.includes('goodsReceiptLine')) {
-          return Promise.resolve({ ok: true, json: async () => linesResponse });
-        }
-        if (url.includes('purchase-order/lines')) {
-          return Promise.resolve({ ok: true, json: async () => orderLinesResponse });
-        }
-        return Promise.resolve({ ok: true, json: async () => ({ response: { data: [] } }) });
-      }));
+  describe('"Create Invoice" button opens CreateInvoiceConfirmModal', () => {
+    it('opens CreateInvoiceConfirmModal when "Create Invoice" button is clicked', () => {
+      renderActions();
+      expect(screen.queryByTestId('create-invoice-confirm-modal')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByText('createInvoiceBtn'));
+      expect(screen.getByTestId('create-invoice-confirm-modal')).toBeInTheDocument();
     });
 
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
-    it('opens ReceiptInvoicePreview when "Create Invoice" button is clicked', async () => {
+    it('closes CreateInvoiceConfirmModal when onClose is called', () => {
       renderActions();
       fireEvent.click(screen.getByText('createInvoiceBtn'));
-      // cancel button is always in the modal footer once open
-      expect(await screen.findByText('cancel')).toBeInTheDocument();
-    });
-
-    it('closes the preview when the overlay backdrop is clicked', async () => {
-      renderActions();
-      fireEvent.click(screen.getByText('createInvoiceBtn'));
-      await screen.findByText('cancel');
-      // Click the fixed overlay div (the portal root, not the inner card)
-      fireEvent.click(document.querySelector('.fixed'));
-      expect(screen.queryByText('cancel')).not.toBeInTheDocument();
-    });
-
-    it('renders line rows after fetch resolves', async () => {
-      renderActions();
-      fireEvent.click(screen.getByText('createInvoiceBtn'));
-      expect(await screen.findByText('Product A')).toBeInTheDocument();
-      expect(screen.getByText('Product B')).toBeInTheDocument();
-    });
-
-    it('shows empty-state message when receipt has no lines', async () => {
-      global.fetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ response: { data: [] } }),
-      });
-      renderActions();
-      fireEvent.click(screen.getByText('createInvoiceBtn'));
-      expect(await screen.findByText('noLinesInThisReceipt')).toBeInTheDocument();
-    });
-
-    it('Confirm button is disabled when there are no lines', async () => {
-      global.fetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ response: { data: [] } }),
-      });
-      renderActions();
-      fireEvent.click(screen.getByText('createInvoiceBtn'));
-      await screen.findByText('noLinesInThisReceipt');
-      // The confirm button renders ui('createInvoiceBtn') text — same key as the outer btn.
-      // After modal opens there are two: the topbar btn + the modal confirm btn.
-      const buttons = screen.getAllByText('createInvoiceBtn');
-      const confirmBtn = buttons.find(b => b.tagName === 'BUTTON' && b.disabled);
-      expect(confirmBtn).toBeTruthy();
-    });
-  });
-
-  describe('handleCreateInvoice — invoice creation API call', () => {
-    beforeEach(() => {
-      vi.stubGlobal('fetch', vi.fn((url) => {
-        if (url.includes('goodsReceiptLine')) {
-          return Promise.resolve({
-            ok: true,
-            json: async () => ({
-              response: {
-                data: [
-                  { id: 'line-1', 'product$_identifier': 'Product A', movementQuantity: 2, salesOrderLine: 'ol-1' },
-                ],
-              },
-            }),
-          });
-        }
-        if (url.includes('purchase-order/lines')) {
-          return Promise.resolve({
-            ok: true,
-            json: async () => ({ response: { data: [{ id: 'ol-1', unitPrice: '15.00' }] } }),
-          });
-        }
-        if (url.includes('createPurchaseInvoice')) {
-          return Promise.resolve({
-            ok: true,
-            json: async () => ({ response: { data: { id: 'inv-42', documentNo: 'FAC-2026-001' } } }),
-          });
-        }
-        return Promise.resolve({ ok: true, json: async () => ({}) });
-      }));
-    });
-
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
-    it('calls POST createPurchaseInvoice with line payload and shows ConfirmResultModal on success', async () => {
-      const { toast } = await import('sonner');
-      renderActions();
-
-      // Open preview and wait for lines to load
-      fireEvent.click(screen.getByText('createInvoiceBtn'));
-      await screen.findByText('Product A');
-
-      // The topbar button and the modal confirm button both have text 'createInvoiceBtn'.
-      // The confirm button is the last one in DOM order (portal appends after main tree).
-      const modalConfirmBtn = screen.getAllByRole('button', { name: 'createInvoiceBtn' }).at(-1);
-      fireEvent.click(modalConfirmBtn);
-
-      // Should show the result modal
-      expect(await screen.findByTestId('confirm-result-modal')).toBeInTheDocument();
-
-      // Verify the API call
-      const invoiceCall = global.fetch.mock.calls.find(([url]) => url.includes('createPurchaseInvoice'));
-      expect(invoiceCall).toBeTruthy();
-      expect(invoiceCall[1].method).toBe('POST');
-      const body = JSON.parse(invoiceCall[1].body);
-      expect(body.lines).toEqual([{ receiptLineId: 'line-1', quantity: '2' }]);
-
-      expect(toast.error).not.toHaveBeenCalled();
-    });
-
-    it('calls toast.error and keeps preview open when createPurchaseInvoice fails', async () => {
-      const { toast } = await import('sonner');
-      global.fetch.mockImplementation((url) => {
-        if (url.includes('goodsReceiptLine')) {
-          return Promise.resolve({
-            ok: true,
-            json: async () => ({
-              response: {
-                data: [{ id: 'line-1', 'product$_identifier': 'Product A', movementQuantity: 2, salesOrderLine: 'ol-1' }],
-              },
-            }),
-          });
-        }
-        if (url.includes('purchase-order/lines')) {
-          return Promise.resolve({ ok: true, json: async () => ({ response: { data: [] } }) });
-        }
-        if (url.includes('createPurchaseInvoice')) {
-          return Promise.resolve({
-            ok: false,
-            json: async () => ({ response: { message: 'Invoice already exists' } }),
-          });
-        }
-        return Promise.resolve({ ok: true, json: async () => ({}) });
-      });
-
-      renderActions();
-      fireEvent.click(screen.getByText('createInvoiceBtn'));
-      await screen.findByText('Product A');
-
-      const modalConfirmBtn = screen.getAllByRole('button', { name: 'createInvoiceBtn' }).at(-1);
-      fireEvent.click(modalConfirmBtn);
-
-      await vi.waitFor(() => expect(toast.error).toHaveBeenCalledWith('Invoice already exists'));
-      // Preview stays open (no result modal)
-      expect(screen.queryByTestId('confirm-result-modal')).not.toBeInTheDocument();
+      expect(screen.getByTestId('create-invoice-confirm-modal')).toBeInTheDocument();
+      fireEvent.click(screen.getByTestId('invoice-confirm-close'));
+      expect(screen.queryByTestId('create-invoice-confirm-modal')).not.toBeInTheDocument();
     });
   });
 
   describe('goods-receipt:open-confirm-modal event', () => {
-    it('opens ConfirmDocumentModal when event is dispatched', () => {
+    it('opens ConfirmGoodsReceiptModal when event is dispatched', () => {
       renderActions();
-      expect(screen.queryByTestId('confirm-document-modal')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('confirm-goods-receipt-modal')).not.toBeInTheDocument();
       act(() => {
         window.dispatchEvent(new CustomEvent('goods-receipt:open-confirm-modal'));
       });
-      expect(screen.getByTestId('confirm-document-modal')).toBeInTheDocument();
+      expect(screen.getByTestId('confirm-goods-receipt-modal')).toBeInTheDocument();
     });
 
-    it('closes ConfirmDocumentModal when onClose is called', () => {
+    it('closes ConfirmGoodsReceiptModal when onClose is called', () => {
       renderActions();
       act(() => {
         window.dispatchEvent(new CustomEvent('goods-receipt:open-confirm-modal'));
       });
       fireEvent.click(screen.getByTestId('confirm-modal-close'));
-      expect(screen.queryByTestId('confirm-document-modal')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('confirm-goods-receipt-modal')).not.toBeInTheDocument();
     });
   });
 });

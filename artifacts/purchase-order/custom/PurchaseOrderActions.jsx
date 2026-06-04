@@ -102,13 +102,13 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
     ? createPortal(
         <ConfirmResultModal
           title={confirmedTitle || ui('poConfirmedTitle')}
-          cards={[
-            confirmedDocs?.receipt?.id && { icon: '📦', label: ui('poReceiptDoc', { number: confirmedDocs.receipt.documentNo }), color: 'blue', route: `/goods-receipt/${confirmedDocs.receipt.id}`, amount: confirmedDocs.receipt.amount },
-            confirmedDocs?.invoice?.id && { icon: '🧾', label: ui('poPurchaseInvoiceDoc', { number: confirmedDocs.invoice.documentNo }), color: 'green', route: `/purchase-invoice/${confirmedDocs.invoice.id}`, amount: confirmedDocs.invoice.amount },
+          docs={[
+            confirmedDocs?.receipt?.id && { type: 'entrada', num: confirmedDocs.receipt.documentNo, amount: confirmedDocs.receipt.amount, route: `/goods-receipt/${confirmedDocs.receipt.id}` },
+            confirmedDocs?.invoice?.id && { type: 'facturaCompra', num: confirmedDocs.invoice.documentNo, amount: confirmedDocs.invoice.amount, route: `/purchase-invoice/${confirmedDocs.invoice.id}` },
           ].filter(Boolean)}
+          primary={ui('soViewInvoice')}
           currency={data?.['currency$_identifier'] || ''}
           navigate={navigate}
-          ui={ui}
           onClose={() => { setConfirmedDocs(null); setConfirmedTitle(null); }}
         />,
         document.body,
