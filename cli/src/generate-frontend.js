@@ -293,14 +293,8 @@ export function generateTableComponent(entityName, contract) {
   // Render helper functions for custom cell types
   const depreciationProgressHelper = neededCellTypes.has('depreciationProgress') ? `
 function renderDepreciationProgress(row) {
-  const depreciatedValue = row.depreciatedValue ?? 0;
-  const depreciatedPlan = row.depreciatedPlan ?? 0;
-  const depreciationAmt = row.depreciationAmt ?? 0;
-  const denominator = depreciatedPlan > 0 ? depreciatedPlan : depreciationAmt;
-  const pct = denominator > 0
-    ? Math.min(100, Math.round((depreciatedValue / denominator) * 100))
-    : (depreciatedValue > 0 ? 100 : null);
-  if (pct == null) return null;
+  const pct = row.etgoAmortizationStatus ?? null;
+  if (pct == null || pct === 0) return null;
   const color = pct === 100 ? '#10b981' : '#f59e0b';
   return (
     <div className="flex items-center gap-1.5" style={{ minWidth: 80 }}>
@@ -701,9 +695,14 @@ function resolveStatusAndSummaryFields(requiredHeaderFieldNames, allEntityFields
     : '[]';
   const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
   const statusFieldOverride = contract.frontendContract.window.statusField;
-  const statusField = statusFieldOverride
-    ? (allEntityFields.find(f => f.name === statusFieldOverride) ?? null)
-    : (docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status')));
+  let statusField;
+  if (statusFieldOverride === false || statusFieldOverride === 'none') {
+    statusField = null;
+  } else if (statusFieldOverride) {
+    statusField = allEntityFields.find(f => f.name === statusFieldOverride) ?? null;
+  } else {
+    statusField = docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status'));
+  }
   const summaryFieldsOverride = contract.frontendContract.window.summaryFields;
   const summaryFields = getSummaryFields(summaryFieldsOverride, readOnlyFields, statusField);
   return { requiredHeaderFieldsArray, statusField, summaryFields };
@@ -970,8 +969,11 @@ function getLabelOverridesParts(windowConfig) {
   const labelOverridesConfig = windowConfig.labelOverrides ?? null;
   const labelOverridesProp = labelOverridesConfig ? '\n        labelOverrides={labelOverrides}' : '';
   const labelOverridesListProp = labelOverridesConfig ? '\n      labelOverrides={labelOverrides}' : '';
+  // Derive the standalone const from api.labelOverrides so the data lives in one
+  // place only (the api object) and the prop reference is just an alias. The block
+  // is emitted after the `api` declaration (see page template) so the reference resolves.
   const labelOverridesBlock = labelOverridesConfig
-    ? `\nconst labelOverrides = ${JSON.stringify(labelOverridesConfig, null, 2)};\n`
+    ? `\nconst labelOverrides = api.labelOverrides;\n`
     : '';
   return { labelOverridesProp, labelOverridesListProp, labelOverridesBlock };
 }
@@ -1063,8 +1065,11 @@ function getRowQuickActionsProp(rowQuickActions) {
   return rowQuickActionsProp;
 }
 
-function buildDetailImports(detailEntity, detailName) {
-  return detailEntity ? `
+function buildDetailImports(detailEntity, detailName, customLinesComp) {
+  // When a window declares a customLinesComponent (e.g. AmortizationLinesTable),
+  // it replaces the standard lines Table/Form — skip those imports to avoid
+  // referencing generated files that are not produced.
+  return (detailEntity && !customLinesComp) ? `
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';` : '';
 }
@@ -1159,7 +1164,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
           : '';
         const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
-        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart} },`;
+        const fieldMaxPart = ovr.requiresFieldMax
+          ? `, requiresFieldMax: ${JSON.stringify(ovr.requiresFieldMax)}`
+          : '';
+        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart}${fieldMaxPart} },`;
       }),
   ].join('\n');
 
@@ -1253,6 +1261,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const compactSidebarPadding = windowConfig.compactSidebarPadding ?? false;
   const whiteFormBackground = windowConfig.whiteFormBackground ?? false;
   const hideFormCard = windowConfig.hideFormCard ?? false;
+  const sidebarAboveTabsOnly = windowConfig.sidebarAboveTabsOnly ?? false;
   const sidebarClassName = windowConfig.sidebarClassName ?? null;
   const tabsBarPaddingX = windowConfig.tabsBarPaddingX ?? null;
   const primaryTabsVariant = windowConfig.primaryTabsVariant ?? null;
@@ -1475,6 +1484,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const whiteFormBackgroundProp = fragmentIf(whiteFormBackground, '\n        whiteFormBackground');
   // hideFormCard prop (DetailView)
   const hideFormCardProp = fragmentIf(hideFormCard, '\n        hideFormCard');
+  // sidebarAboveTabsOnly prop (DetailView)
+  const sidebarAboveTabsOnlyProp = fragmentIf(sidebarAboveTabsOnly, '\n        sidebarAboveTabsOnly');
   // sidebarClassName prop (DetailView)
   const sidebarClassNameProp = wrapIf('\n        sidebarClassName="', sidebarClassName, '"');
   // tabsBarPaddingX prop (DetailView)
@@ -1582,6 +1593,19 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const headerExtraConfig = windowConfig.headerExtra ?? null;
   let { formFooterImport, formFooterProp } = buildFormFooterParts(headerExtraConfig, specName);
 
+  // customLinesComponent → CustomLines prop
+  const customLinesComp = windowConfig.customLinesComponent ?? null;
+  const customLinesLabelValue = windowConfig.customLinesLabel ?? null;
+  let customLinesImport = '';
+  let customLinesProp = '';
+  if (customLinesComp && specName) {
+    customLinesImport = `import ${customLinesComp} from ${resolveCustomImport(specName, customLinesComp)};\n`;
+    customLinesProp = `\n        CustomLines={${customLinesComp}}`;
+    if (customLinesLabelValue) {
+      customLinesProp += `\n        customLinesLabel="${customLinesLabelValue}"`;
+    }
+  }
+
   // primaryTabs support
   const primaryTabsConfig = windowConfig.primaryTabs ?? null;
   let { primaryTabsImports, primaryTabsProp } = buildPrimaryTabsProps(primaryTabsConfig, specName);
@@ -1644,12 +1668,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   return `import { ${useStateImport}useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
 ${headerTableImport}
-import ${headerName}Form from './${headerName}Form';${(buildDetailImports(detailEntity, detailName))}
-${fragmentIf(secondaryTabDefs.length > 0, `${secondaryTabsImports}\n`)}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
+import ${headerName}Form from './${headerName}Form';${(buildDetailImports(detailEntity, detailName, customLinesComp))}
+${fragmentIf(secondaryTabDefs.length > 0, `${secondaryTabsImports}\n`)}${formFooterImport}${customLinesImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
 ${(buildGalleryImport(isGallery, headerName, specName, headerEntity, galleryComponentName))}${(buildSidebarImport(isSidebar, headerName, specName, headerEntity, sidebarComponentName))}${(buildDetailHeaderImport(isGallery, isSidebar, headerName, specName, headerEntity, detailHeaderComponentName))}${statusBarImport}${confirmModalImport}
 
 const breadcrumb = ${getBreadcrumbLiteral(windowBreadcrumbOverride, windowCategory, windowLabel)};
-${labelOverridesBlock}${statusBarCode}
+${statusBarCode}
 
 ${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
 const summary = [
@@ -1691,7 +1715,7 @@ ${hiddenDefaultsArray}
 };
 ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
-${MARKERS.GENERATED_START(`component:${compName}`)}
+${labelOverridesBlock}${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}({ windowName, recordId, ...props }) {${fragmentIf(customComponents.newRecordComponent, `
   const [showNewModal, setShowNewModal] = useState(false);`)}${fragmentIf(newActionsWithComponents.length > 0, `\n${newActionsStatements}`)}${fragmentIf(confirmModalName, `
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -1702,20 +1726,20 @@ export default function ${compName}({ windowName, recordId, ...props }) {${fragm
       <DetailView
         entity="${headerEntity}"${detailEntity ? `
         detailEntity="${detailEntity}"` : ''}
-        Form={${headerName}Form}${detailEntity ? `
+        Form={${headerName}Form}${detailEntity && !customLinesComp ? `
         DetailTable={${detailName}Table}
         DetailForm={${detailName}Form}` : ''}
         summary={summary}
         statusField={statusField}
         extraBadges={extraBadges}
-        processes={processes}${detailEntity ? `
+        processes={processes}${detailEntity && !customLinesComp ? `
         addLineFields={addLineFields}` : ''}
         catalogs={catalogs}
         entityLabel="${entityLabel}"${detailEntity ? `
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${hideFormCardProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
         {...props}${sidebarContentProp}
       />${confirmModalName ? `
       {showConfirmModal && (

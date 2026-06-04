@@ -8,7 +8,7 @@ import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 const SELECTOR_PAGE = 50;
 
 function buildSelectPlaceholder(ui, label) {
-  return `${ui('selectLabelPrefix')} ${label}...`;
+  return label ? `${ui('selectLabelPrefix')} ${label}...` : ui('selectPlaceholder');
 }
 
 /**

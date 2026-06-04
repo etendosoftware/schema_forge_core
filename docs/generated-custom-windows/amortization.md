@@ -25,9 +25,9 @@ Records are typically created from the **Assets** window via the **Create Amorti
 
 - Route: `/amortization` for the list and `/amortization/:recordId` for detail.
 - Visibility: Finance menu as **Amortización**, immediately below **Assets**.
-- Implementation type: generated window with custom sidebar (`HeaderSidebar`) and confirm modal (`AmortizationConfirmModal`).
+- Implementation type: generated window with confirm modal (`AmortizationConfirmModal`). No sidebar — status shown as a `DocumentStatusPill` in the toolbar next to Cancel; total shown as a footer in the lines table.
 - Window shape: master-detail. Header (`A_Amortization`) + lines (`A_Amortizationline`). Accounting tab (Fact_Acct) excluded.
-- Detail layout: sidebar panel on the right showing summary metrics; **Adjuntos** tab in the tab strip.
+- Detail layout: full-width form (no sidebar); **Adjuntos** tab in the tab strip.
 - Lines layout: `inlineEditable` — existing rows use InlineLinesPanel (flex), new rows use a DataTable add-row form. Hovering a row reveals pencil/trash icons in a dedicated 160px action slot (not a trailing-column swap, because `amortizationAmount` has `noTrailing: true`).
 - Confirm button: black primary button on the far right, disabled when no lines exist. Opens `AmortizationConfirmModal` rather than executing directly.
 - List toolbar: Print and Link buttons are hidden (`hidePrint: true`, `hideLink: true`). Only the status dropdown, funnel, and "New amortization" button are shown.
@@ -37,7 +37,8 @@ Records are typically created from the **Assets** window via the **Create Amorti
 - **Draft/processed lock**: all editable header fields and all line fields carry `readOnlyLogic: @Processed@='Y'`. Delete is suppressed on processed documents.
 - **Confirmar button**: wired via `draftMode.processField: "Processed"`. Only visible while draft; disabled when no lines; opens the confirm modal. The modal fetches the record and line count independently, calculates the total from line amounts (not from the stored header field), shows a warning, and submits `POST /action/Processed`. On success, the detail view refetches the header.
 - **Reactivar menu action**: appears in the three-dot menu only when `processed='Y'`. Calls `/action/Processed` again, which the backend interprets as an unprocess request. After success, the page reloads.
-- **Sidebar totals**: `HeaderSidebar` fetches all lines on mount and whenever `data` changes. The displayed total is always computed from the sum of line `amortizationAmount` values — not from the header's `totalAmortization` field, which can be stale after reactivation and line edits.
+- **Status pill**: `statusField: "processed"` in `decisions.json` causes DetailView to render a `DocumentStatusPill` next to the Cancel button. Values: `'Y'` → "✓ Procesado" (green/success), `'N'` → "Borrador" (neutral/grey). Tone mapping lives in `tools/app-shell/src/lib/statusBadge.js` (`getStatusTone`).
+- **Lines total footer**: `AmortizationLinesTable` reads `data.totalAmortization` (header field) and renders a right-aligned `"{ui('totalAmortization')}: X €"` footer below the lines. Only shown when the field is non-null. `TOTALAMORTIZATION` is kept in sync by `ETGO_A_AMORTLINE_TOTAL_TRG` (AFTER trigger on `A_AMORTIZATIONLINE`) — fires on every INSERT/UPDATE/DELETE and recalculates the header total from the current lines sum.
 - **New record currency default**: the `currency` field defaults to the org's functional currency via `defaultExpr: "@$C_Currency_ID@"` in decisions.json. The currency is editable until the document is processed.
 - **Main list total**: the `totalAmortization` column uses `type: 'amount'` (with `summable: true`) so it renders with the currency symbol and a column footer total.
 - **Status filter dropdown**: the list toolbar shows an "All statuses ▾" dropdown (same mechanism as Sales Order). It filters by `processed` column value: 'N' → Borrador/Draft, 'Y' → Procesado/Processed. The `processed` column is in the table schema (type `status`, `filterOnly: true`) so `ListFilterBar` can detect it, but is hidden from visual display via `hiddenColumns` and excluded from the Conditional Filter via `filterable: false`.
@@ -56,10 +57,15 @@ Records are typically created from the **Assets** window via the **Create Amorti
 2. From Assets, trigger **Create Amortization** on a depreciation-enabled asset. Open the new record in `/amortization`.
 3. Confirm the record is in draft:
    - Header fields (name, accounting date, starting date, currency) are editable.
-   - Lines can be added/edited inline (asset selector, % and amount fields appear in the add-row form).
-   - Sidebar shows total (computed from lines), currency, line count, and "Borrador" status.
+   - Lines render in the custom `AmortizationLinesTable` — columns: Asset | Amortization % | Amount | Accounting dimensions.
+   - Toolbar shows a grey "Borrador" pill next to the Cancel button (no sidebar).
+   - Below the lines table a right-aligned footer shows "Amortización total: X €".
    - **Confirmar** button is black/primary on the far right; **Guardar** is grey.
-4. Edit a line amount and save. Verify the sidebar total updates to reflect the new sum.
+4. Click the pencil icon on an existing line and confirm the Asset, %, and Amount fields become editable inline within the same row. Edit the amount and click outside (blur) — confirm the value saves without pressing a confirm button. Verify the sidebar total updates to reflect the new sum.
+4a. Click the circular chevron button on a line row — confirm it rotates and a white panel expands below (no section title, no filled-count counter). The panel shows the Organisation field (read-only) and 7 dimension selectors. Hover a selector — confirm the background changes to `#F5F7F9`. Select a value in one selector (e.g., Cost Center) and confirm it auto-saves immediately without a Save button. Collapse the panel and verify the Accounting dimensions column now shows a "Label: Value" badge for the filled dimension.
+4b. Select one or more rows using the row checkboxes — confirm the shared `LinesSelectionBar` appears at the bottom with the count and a red trash button. Click × to clear the selection. In processed/read-only state, confirm the checkboxes are visible but disabled.
+4c. Click "+ Añadir línea" — confirm an inline draft row appears aligned to the table columns (asset buscador, % and amount inputs with column-name placeholders). The "+ Añadir línea" button must remain visible. Type a value, press Enter — confirm the line saves and the draft row stays open. Press Esc — confirm the draft row closes. Click outside with a value entered — confirm it saves and closes.
+4d. Add the first line to a new draft record and confirm the **Confirmar** button becomes enabled immediately (without page reload).
 5. Press **Confirmar** with no lines and confirm the button is disabled.
 6. With at least one line, press **Confirmar** and verify the modal opens showing the correct total (matching the line sum, not the old header value).
 7. Confirm in the modal. Verify:
@@ -84,6 +90,8 @@ Records are typically created from the **Assets** window via the **Create Amorti
 - `cli/config/regen-windows.json` — `amortization` entry.
 - `artifacts/amortization/decisions.json` — source of truth:
   - `linesLayout: "inlineEditable"` with `noTrailing: true` on `amortizationAmount` (dedicated 160px action slot).
+  - `customLinesComponent: "AmortizationLinesTable"` — replaces the standard InlineLinesPanel with the custom component.
+  - `statusField: "processed"` — drives the `DocumentStatusPill` in the toolbar (green for 'Y', grey for 'N').
   - `asset.grow: true` and `amortizationPercentage.grow: true` for balanced column distribution.
   - `draftMode: { processField: "Processed", label: "confirm", confirmModal: "AmortizationConfirmModal", disableWhenEmpty: true }`.
   - `menuActions: [{ key: "reactivate", visibleWhenFieldTrue: "processed", columnName: "Processed" }]`.
@@ -91,29 +99,54 @@ Records are typically created from the **Assets** window via the **Create Amorti
   - `currency.defaultExpr: "@$C_Currency_ID@"`.
   - `processed` header field: `grid: true`, `filterOnly: true`, `columnType: "status"`, `filterable: false` — feeds the status dropdown without showing as a column.
   - Accounting entity excluded; accounting dimensions discarded.
-- `artifacts/amortization/custom/HeaderSidebar.jsx` — sidebar with three metric cards: total (sum of line amounts, calculated client-side), currency, line count + status badge. Refetches lines when `data` changes.
-- `artifacts/amortization/custom/AmortizationConfirmModal.jsx` — confirmation modal. Fetches lines to calculate current total independently. Calls `POST /action/Processed` on confirm. On success calls `onClose(true)` which triggers `window.location.reload()`.
+- `tools/app-shell/src/lib/statusBadge.js` — `getStatusTone` maps `'y'`/`'yes'` → `'success'`; `statusLabel` MAP includes `Y: 'statusProcessed'` and `N: 'statusDraft'` so `DocumentStatusPill` resolves tones and labels for `processed` field values.
+- `tools/app-shell/src/windows/custom/amortization/AmortizationLinesTable.jsx` — custom lines component. Renders Asset | Amortization % | Amount | Accounting dimensions columns. Per-row and select-all checkboxes for multi-select (disabled, not hidden, in read-only state); shared `LinesSelectionBar` for bulk delete. Circular icon button toggles a white-background expand panel with Organisation (read-only) + 7 dimension selectors (auto-save on `onChange`). Pencil activates inline editing for 3 core fields (blur-saves). Add-line uses inline draft row (Sales Order pattern). Footer below lines shows `totalAmortization` from header data via `formatCurrency`. Calls `onRefresh()` after mutations. Test coverage: `__tests__/AmortizationLinesTable.vitest.jsx` (27 tests).
+- `artifacts/amortization/custom/AmortizationConfirmModal.jsx` — confirmation modal. Fetches lines to calculate current total independently. Calls `POST /action/Processed` on confirm. On success calls `onClose(true)` which triggers `window.location.reload()`. Blocks confirmation when any line has a zero/negative amount (`amortizationErrorLineAmountInvalid`) or a missing percentage (`amortizationErrorLinePercentageMissing`). Both i18n keys are in `packages/app-shell-core/src/locales/`.
 
-## Visual polish — ETP-4103
+## ETP-4103 changes
 
-Changes landed in `feature/ETP-4103`. All items below affect the Amortization window specifically or in common with Assets.
+Changes landed in `feature/ETP-4103`. Covers visual polish, sidebar simplification, custom lines table, and a Java process bug fix for the Amortization window.
+
+### Visual polish
 
 - `toolbarBorderBottom: true` in `decisions.json` — adds a horizontal divider line below the toolbar buttons row.
-- `sidebarClassName: "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2"` in `decisions.json` — sidebar is now proportional (30% of detail width) with a left-border divider and 8 px internal padding. Previously fixed at `w-96`.
 - `toolbarButtonSize: "default"` in `decisions.json` — toolbar buttons (including the kebab menu) are now `h-10 w-10`, matching the Contacts window. Previously `sm` (`h-9`).
 - `listbarPaddingX: "px-2"` and `tablePaddingX: "px-2"` in `decisions.json` — list-view toolbar and table horizontal padding reduced from 24 px to 8 px.
-- `artifacts/amortization/custom/HeaderSidebar.jsx` — outer `rounded-2xl border bg-white shadow-sm` card wrapper removed; the sidebar `border-l` divider from `sidebarClassName` makes the wrapper border redundant.
 - `whiteFormBackground: true` in `decisions.json` — forces white background on form inputs and textareas, overriding the `bg-[#F5F7F9]` default on inputs and `bg-background` on textareas. Disabled textareas use `opacity-50` instead of `bg-muted/50` for visual consistency.
 - `noHeaderBorder: true` in `decisions.json` — removes the rounded card border around the header form fields, matching the Contacts window layout.
 - `primaryTabsVariant: "pill"` in `decisions.json` — tab strip uses pill style, matching Contacts.
 - `tabsBarPaddingX: "px-2"` in `decisions.json` — tabs bar horizontal padding set to 8 px.
 - `toolbarPaddingX: "px-2"` in `decisions.json` — toolbar horizontal padding set to 8 px.
 
-## v3 UX redesign — ETP-4103
+### Status pill + total footer (replaces sidebar)
 
-Changes landed in `feature/ETP-4103`. Item below covers the sidebar style change specific to the Amortization window.
+- Sidebar removed. `statusField: "processed"` in `decisions.json` — DetailView renders a `DocumentStatusPill` next to the Cancel button showing "✓ Procesado" (green) or "Borrador" (grey).
+- `AmortizationLinesTable` now renders a right-aligned total footer below the lines using `data.totalAmortization` from the header record.
+- `getStatusTone` in `statusBadge.js` extended: `'y'`/`'yes'` → `'success'`; `statusLabel` MAP extended: `Y: 'statusProcessed'`, `N: 'statusDraft'`.
 
-- `artifacts/amortization/custom/HeaderSidebar.jsx` — "Moneda" and "Líneas" MetricCards changed from `bg-gray-50` to `bg-white border border-gray-100` to maintain visual separation against the white sidebar background.
+### Lines tab — custom AmortizationLinesTable
+
+- `customLinesComponent: "AmortizationLinesTable"` in `decisions.json` — the standard InlineLinesPanel is replaced by a custom component at `tools/app-shell/src/windows/custom/amortization/AmortizationLinesTable.jsx`.
+- Table shows columns: Asset | Amortization % | Amount | Accounting dimensions.
+- **Multi-select checkboxes**: every row has a checkbox; the header has a select-all checkbox (indeterminate when partially selected). In read-only/processed mode checkboxes remain visible but are disabled (matching Sales Order behaviour). Selecting ≥1 row shows the shared `LinesSelectionBar` (same as Sales Order) — a floating bottom bar with the selection count, a red trash/delete button, and an × cancel button. Bulk delete issues concurrent DELETE requests via `Promise.all`.
+- **Circular expand toggle**: each row has a circular icon button (24 px, border `#D1D4DB`, rounded-full, shadow xs, `ChevronDown #828FA3`) that toggles the accounting dimensions panel. Rotates 180° when expanded.
+- **Inline editing** (pencil icon): clicking the pencil on a row makes the 3 core fields (Asset, %, Amount) editable inline within the same row. Save happens on blur — no confirm button needed. Same pattern as Sales Order.
+- **Expandable dimensions panel**: expanding a row reveals a white-background panel (no section title, no filled-count counter) with a read-only Organisation field and 7 dimension selectors: Cost Center, Contact/Business Partner, 1st Dimension, 2nd Dimension, Sales Region, Activity, Sales Campaign. Project is hidden (`displayLogic: @ACCT_DIMENSION_DISPLAY@`). Selectors have a hover background (`#F5F7F9`) on pointer-over.
+- Dimension selectors auto-save on `onChange` — immediate PUT per field, no Save button required.
+- **Accounting dimensions column summary**: badges in "Label: Value" format (`#F5F7F9` background, 8px radius, `#3F3F50` label text). Organisation always leads when filled. Up to 2 badges shown; remaining are collapsed into a `+N` badge. Empty rows show a dashed "+ Añadir dimensiones" button.
+- **Add line — inline draft row** (Sales Order pattern): clicking "+ Añadir línea" inserts an inline editable row aligned to the table columns. Field placeholders are the column labels (e.g. "Activo", "Amortization %", "Amortization Amount"). Enter saves and keeps the row open for rapid entry; Esc cancels; clicking outside saves (or cancels if empty). The "+ Añadir línea" button stays visible while the draft row is open. The hint "Enter o clic fuera para guardar · Esc para cancelar" (`inlineAddHint`) appears below the table while the draft row is active.
+- After any line mutation (create, delete, bulk delete), the component calls `onRefresh()` to trigger `hook.fetchChildren()` in the parent DetailView — this keeps the **Confirmar** button state in sync without a page reload (`hook.children.length > 0` enables the button).
+- Delete individual line via trash icon on row hover.
+- Dimension fields are also exposed as columns in the list view: Project, Cost Center, 1st Dimension, 2nd Dimension, Business Partner, Sales Region, Activity, Sales Campaign.
+
+### Lines — badge labels
+
+- Status badge "Planificado" renamed to **"Pendiente"**.
+- Status badge "Procesado" renamed to **"Confirmado"**.
+
+### Java bug fix (NeoProcessService.java)
+
+- Fixed: the "Crear amortizaciones" process was failing with `JSONObject["A_Asset_ID"] not found`. Root cause: `AssetLinearGroupedDepreciationMethodProcess.doExecute()` reads the record id from the table's key column name (`A_Asset_ID`) in the content JSON, but `NeoProcessService` was only providing it under `inpRecordId`. Fix: `NeoProcessService` now resolves the key column from the tab's table and exposes the record id under the DB column name. This fix is generic — works for any OBUIAPP process that reads the record id by table key column name.
 
 ## Iteration backlog (out of current scope)
 

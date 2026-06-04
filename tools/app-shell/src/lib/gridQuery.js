@@ -157,7 +157,10 @@ function tryBooleanText(raw, col) {
   if ((col.type !== 'boolean' && col.filterMode !== 'booleanLabel') || !col.badgeLabels) return null;
   const boolKey = raw === true || raw === 'true' || raw === 'Y' ? 'true' : 'false';
   const label = col.badgeLabels[boolKey];
-  return label == null ? null : String(label);
+  if (label == null) return null;
+  // badgeLabels may be a per-locale object { es_ES, en_US }; pick a string.
+  if (typeof label === 'object') return String(label.es_ES ?? label.en_US ?? Object.values(label)[0] ?? '');
+  return String(label);
 }
 
 /**
