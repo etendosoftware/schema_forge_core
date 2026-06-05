@@ -377,6 +377,210 @@ export function getSecondarySelectionChangeHandler(linesLayout, setSecondarySele
       : undefined;
 }
 
+export function getSecondaryRowUpdateHandler(st, linesLayout, ctx) {
+  const { api, apiBaseUrl, secondaryHooks, stIdx, token, ui, extractErrorMessage } = ctx;
+  return !st.customAddModal && linesLayout === 'inlineEditable' ? async (row, fieldKey, value, opts) => {
+    const childUrl = api?.crud?.[st.key]?.detailUrl?.replace('{id}', row.id)
+        || `${apiBaseUrl}/${st.key}/${row.id}`;
+    const includesIdentifier = opts?.identifier !== undefined;
+    const optimistic = includesIdentifier
+        ? {[fieldKey]: value, [`${fieldKey}$_identifier`]: opts.identifier}
+        : {[fieldKey]: value};
+    // Snapshot the previous values so we can revert on failure.
+    const previous = includesIdentifier
+        ? {[fieldKey]: row[fieldKey], [`${fieldKey}$_identifier`]: row[`${fieldKey}$_identifier`]}
+        : {[fieldKey]: row[fieldKey]};
+    secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, optimistic);
+    let res;
+    try {
+      res = await fetch(childUrl, {
+        method: 'PATCH',
+        headers: {...(token ? {Authorization: `Bearer ${token}`} : {}), 'Content-Type': 'application/json'},
+        body: JSON.stringify({[fieldKey]: value}),
+      });
+    } catch (err) {
+      secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, previous);
+      toast.error(err?.message || ui('networkError'));
+      throw err;
+    }
+    if (res.ok) {
+      const updated = await res.json().catch(() => null);
+      // Server response wins over the optimistic cache when present
+      // — keeps any callout-driven fields the backend computed.
+      if (updated) secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, updated);
+    } else {
+      secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, previous);
+      const msg = await extractErrorMessage(res);
+      toast.error(msg || ui('networkError'));
+      throw new Error(msg || 'PATCH failed');
+    }
+  } : undefined;
+}
+
+export function SecondaryFormTab(props) {
+  return <div className="flex-1 min-w-0">
+    <props.st.Form
+        data={props.data ?? {}}
+        readOnly={!props.hook.editing}
+        onChange={props.onChange}
+        entity={props.st.key}
+        catalogs={props.catalogs}
+        token={props.token}
+        apiBaseUrl={props.apiBaseUrl}
+        selectorContext={props.selectorContextByEntity[props.st.key]}
+        labelOverrides={props.labelOverrides}
+    />
+  </div>;
+}
+
+export function SecondaryPanelTab(props) {
+  return <div className="flex-1 min-w-0">
+    <props.st.Panel
+        parentId={props.data?.id}
+        token={props.token}
+        apiBaseUrl={props.apiBaseUrl}
+        onCount={props.onCount}
+    />
+  </div>;
+}
+
+export function SecondaryTableTab(props) {
+  return <>
+    <div className="flex items-start gap-4">
+      <div className="flex-1 min-w-0">
+        <props.st.Table
+            ref={getSecondaryLinesTableRef(props.linesLayout, props.secondaryInlineLinesRef, props.st)}
+            data={props.secondaryHooks[props.stIdx]?.children ?? []}
+            entity={props.st.key}
+            token={props.token}
+            apiBaseUrl={props.apiBaseUrl}
+            selectorContext={props.selectorContextByEntity[props.st.key]}
+            linesLayout={props.linesLayout}
+            onRowClick={resolveSecondaryRowClickHandler(props.st, {
+              openCustomModal: props.openCustomModal,
+              openSecondaryLine: props.openSecondaryLine,
+              linesLayout: props.linesLayout,
+            })}
+            // Pencil action for customAddModal tabs (Dirección) opens
+            // the popup editor — rows are not editable in place.
+            onEditRow={getSecondaryEditRowHandler(props.st, props.setCustomModalState)}
+            selectedRowId={props.selectedSecondaryLine?._tabKey === props.st.key ? props.selectedSecondaryLine?.id : undefined}
+            onSelectionChange={getSecondarySelectionChangeHandler(props.linesLayout, props.setSecondarySelectedRows, props.st)}
+            onDeleteRow={props.enableSecondaryRowDelete && (props.crud?.[props.st.key]?.delete ?? true) ? props.onDeleteRow : undefined}
+            // Inline edit save for secondary-tab rows. Fires when a
+            // cell loses focus while in edit mode. Optimistic flow:
+            // we update the local cache FIRST so the Radix Select
+            // (and read-mode label) reflect the new pick instantly,
+            // then PATCH the server and roll back if it rejects.
+            onUpdateRow={getSecondaryRowUpdateHandler(props.st, props.linesLayout, {
+              api: props.api,
+              apiBaseUrl: props.apiBaseUrl,
+              secondaryHooks: props.secondaryHooks,
+              stIdx: props.stIdx,
+              token: props.token,
+              ui: props.ui,
+              extractErrorMessage: props.extractErrorMessage,
+            })}
+            addRow={props.st.addLineFields?.entry?.length > 0 ? {
+              ref: props.secondaryAddRowRef,
+              active: props.addingSecondaryLine[props.st.key] ?? false,
+              fields: props.st.addLineFields.entry,
+              onAdd: props.onAdd,
+              onCancel: props.onCancel,
+              catalogs: props.catalogs,
+            } : undefined}
+        />
+      </div>
+      {props.st.Form && !props.st.Panel && (props.selectedSecondaryLine?._tabKey === props.st.key || props.closingSecondaryLine) && (
+          <div
+              className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${props.closingSecondaryLine ? "sidebar-slide-out" : "sidebar-slide-in"}`}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-foreground">{props.detailPanelTitle}</span>
+              <button
+                  onClick={props.onCloseDetailPanel}
+                  className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-3.5 w-3.5"/>
+              </button>
+            </div>
+            <props.st.Form
+                data={props.secondaryLineEdits ?? props.selectedSecondaryLine}
+                readOnly={!props.hook.editing}
+                onChange={props.onChange}
+                entity={props.st.key}
+                catalogs={props.catalogs}
+                token={props.token}
+                apiBaseUrl={props.apiBaseUrl}
+                selectorContext={props.selectorContextByEntity[props.st.key]}
+                excludeFields={props.st.key === "contact" ? ["active"] : []}
+                labelOverrides={props.labelOverrides}
+            />
+            {props.hook.editing && (props.secondaryLineEdits || props.selectedSecondaryLine?.id) && (
+                <div className="flex gap-2 mt-4">
+                  {props.secondaryLineEdits && (
+                      <>
+                        <button
+                            disabled={props.savingLine}
+                            onClick={props.onSaveLine}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                        >
+                          {props.savingLine ? props.loadingLabel : props.saveLabel}
+                        </button>
+                        <button
+                            onClick={props.onDiscardLine}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
+                        >
+                          {props.discardLabel}
+                        </button>
+                      </>
+                  )}
+                  {(props.crud?.[props.st.key]?.delete ?? true) && props.selectedSecondaryLine?.id && (
+                      <button
+                          disabled={props.savingLine}
+                          onClick={props.onDeleteLine}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
+                      >
+                        <Trash2 className="h-4 w-4"/>
+                        {props.deleteLabel}
+                      </button>
+                  )}
+                </div>
+            )}
+          </div>
+      )}
+    </div>
+    {(props.st.addLineFields?.entry?.length > 0 || props.st.customAddModal) && props.hook.editing && (
+        // Wrapper measured by the secondary selection bar — its
+        // `position: fixed` portal overlays exactly this region.
+        <div ref={props.secondaryAddLineWrapperRef} className="relative">
+          <span data-inline-add-portal="true">
+            <AddLineButton
+                onClick={props.onAddLineClick}
+                label={props.addLineLabel}
+                hideChevron={props.hideChevron}
+            />
+          </span>
+          {props.linesLayout === "inlineEditable" && (props.crud?.[props.st.key]?.delete ?? true) && (
+              <LinesSelectionBar
+                  visible={props.secondaryBarVisible[props.st.key] ?? false}
+                  closing={props.secondaryBarClosing[props.st.key] ?? false}
+                  barRect={props.secondaryBarRects[props.st.key]}
+                  count={(props.secondarySelectedRows[props.st.key] ?? []).length}
+                  selectedLabel={props.selectedLabel}
+                  totalLabel={null}
+                  deleting={props.secondaryDeleting[props.st.key] ?? false}
+                  deleteTitle={props.deleteLabel}
+                  closeTitle={props.closeTitle}
+                  compact
+                  onDelete={props.onDelete}
+                  onClose={props.onClose}
+              />
+          )}
+        </div>
+    )}
+  </>;
+}
+
 /**
  * Full-page detail view for a single entity record.
  * Two-zone layout: gray top bar + white content card with rounded corner.
@@ -2715,289 +2919,162 @@ export function DetailView({
                         {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
                           <div key={st.key} className={getSecondaryTabContentClassName(secondaryTabContentPaddingT, embedded)}>
                             {st.isFormTab ? (
-                              <div className="flex-1 min-w-0">
-                                <st.Form
-                                  data={data ?? {}}
-                                  readOnly={!hook.editing}
-                                  onChange={(key, val, column) => {
-                                    setSecondaryLineEdits(prev => ({ ...(prev ?? {}), [key]: val }));
-                                    if (column) setSecondaryLineEditColumns(prev => ({ ...prev, [key]: column }));
-                                  }}
-                                  entity={st.key}
-                                  catalogs={catalogs}
-                                  token={token}
-                                  apiBaseUrl={apiBaseUrl}
-                                  selectorContext={selectorContextByEntity[st.key]}
-                                  labelOverrides={labelOverrides}
-                                />
-                              </div>
+                              <SecondaryFormTab data={data} hook={hook} onChange={(key, val, column) => {
+                                setSecondaryLineEdits(prev => ({...(prev ?? {}), [key]: val}));
+                                if (column) setSecondaryLineEditColumns(prev => ({...prev, [key]: column}));
+                              }} st={st} catalogs={catalogs} token={token} apiBaseUrl={apiBaseUrl}
+                                                selectorContextByEntity={selectorContextByEntity}
+                                                labelOverrides={labelOverrides}/>
                             ) : st.Panel ? (
-                              <div className="flex-1 min-w-0">
-                                <st.Panel
-                                  parentId={data?.id}
-                                  token={token}
-                                  apiBaseUrl={apiBaseUrl}
-                                  onCount={(n) => setPanelCounts(prev => ({ ...prev, [st.key]: n }))}
-                                />
-                              </div>
+                              <SecondaryPanelTab st={st} data={data} token={token} apiBaseUrl={apiBaseUrl}
+                                                 onCount={(n) => setPanelCounts(prev => ({...prev, [st.key]: n}))}/>
                             ) : (
-                              <>
-                                <div className="flex items-start gap-4">
-                                  <div className="flex-1 min-w-0">
-                                    <st.Table
-                                      ref={getSecondaryLinesTableRef(linesLayout, getSecondaryInlineLinesRef, st)}
-                                      data={secondaryHooks[stIdx]?.children ?? []}
-                                      entity={st.key}
-                                      token={token}
-                                      apiBaseUrl={apiBaseUrl}
-                                      selectorContext={selectorContextByEntity[st.key]}
-                                      linesLayout={linesLayout}
-                                      onRowClick={resolveSecondaryRowClickHandler(st, {
-                                        openCustomModal: (row) => setCustomModalState({ key: st.key, rowId: row.id }),
-                                        openSecondaryLine: (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); },
-                                        linesLayout,
-                                      })}
-                                      // Pencil action for customAddModal tabs (Dirección) opens
-                                      // the popup editor — rows are not editable in place.
-                                      onEditRow={getSecondaryEditRowHandler(st, setCustomModalState)}
-                                      selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
-                                      onSelectionChange={getSecondarySelectionChangeHandler(linesLayout, setSecondarySelectedRows, st)}
-                                      onDeleteRow={enableSecondaryRowDelete && (api?.crud?.[st.key]?.delete ?? true) ? (row) => {
-                                        setSecondaryDeleteConfirm({
-                                          tabKey: st.key,
-                                          tabIndex: stIdx,
-                                          id: row.id,
-                                        });
-                                      } : undefined}
-                                      // Inline edit save for secondary-tab rows. Fires when a
-                                      // cell loses focus while in edit mode. Optimistic flow:
-                                      // we update the local cache FIRST so the Radix Select
-                                      // (and read-mode label) reflect the new pick instantly,
-                                      // then PATCH the server and roll back if it rejects.
-                                      onUpdateRow={!st.customAddModal && linesLayout === 'inlineEditable' ? async (row, fieldKey, value, opts) => {
-                                        const childUrl = api?.crud?.[st.key]?.detailUrl?.replace('{id}', row.id)
-                                          || `${apiBaseUrl}/${st.key}/${row.id}`;
-                                        const includesIdentifier = opts?.identifier !== undefined;
-                                        const optimistic = includesIdentifier
-                                          ? { [fieldKey]: value, [`${fieldKey}$_identifier`]: opts.identifier }
-                                          : { [fieldKey]: value };
-                                        // Snapshot the previous values so we can revert on failure.
-                                        const previous = includesIdentifier
-                                          ? { [fieldKey]: row[fieldKey], [`${fieldKey}$_identifier`]: row[`${fieldKey}$_identifier`] }
-                                          : { [fieldKey]: row[fieldKey] };
-                                        secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, optimistic);
-                                        let res;
-                                        try {
-                                          res = await fetch(childUrl, {
-                                            method: 'PATCH',
-                                            headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ [fieldKey]: value }),
-                                          });
-                                        } catch (err) {
-                                          secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, previous);
-                                          toast.error(err?.message || ui('networkError'));
-                                          throw err;
+                              <SecondaryTableTab
+                                st={st}
+                                stIdx={stIdx}
+                                linesLayout={linesLayout}
+                                secondaryInlineLinesRef={getSecondaryInlineLinesRef}
+                                secondaryHooks={secondaryHooks}
+                                token={token}
+                                apiBaseUrl={apiBaseUrl}
+                                selectorContextByEntity={selectorContextByEntity}
+                                catalogs={catalogs}
+                                api={api}
+                                crud={api?.crud}
+                                ui={ui}
+                                hook={hook}
+                                labelOverrides={labelOverrides}
+                                extractErrorMessage={extractErrorMessage}
+                                enableSecondaryRowDelete={enableSecondaryRowDelete}
+                                selectedSecondaryLine={selectedSecondaryLine}
+                                secondaryLineEdits={secondaryLineEdits}
+                                closingSecondaryLine={isClosingSecondaryLine}
+                                addingSecondaryLine={addingSecondaryLine}
+                                savingLine={savingSecondaryLine}
+                                secondaryAddRowRef={getSecondaryAddRowRef(st.key)}
+                                secondaryAddLineWrapperRef={getSecondaryAddLineWrapperRef(st.key)}
+                                hideChevron={hideAddLineChevron}
+                                secondaryBarVisible={secondaryBarVisible}
+                                secondaryBarClosing={secondaryBarClosing}
+                                secondaryBarRects={secondaryBarRects}
+                                secondaryDeleting={secondaryDeleting}
+                                secondarySelectedRows={secondarySelectedRows}
+                                setSecondarySelectedRows={setSecondarySelectedRows}
+                                setCustomModalState={setCustomModalState}
+                                detailPanelTitle={ui('entityDetail', {label: tMenu(st.label)})}
+                                addLineLabel={ui('addEntity', {label: tMenu(st.label)})}
+                                selectedLabel={ui('selected', {count: (secondarySelectedRows[st.key] ?? []).length})}
+                                loadingLabel={ui('loading')}
+                                saveLabel={ui('save')}
+                                discardLabel={ui('discard')}
+                                deleteLabel={ui('delete')}
+                                closeTitle={ui('close')}
+                                openCustomModal={(row) => setCustomModalState({key: st.key, rowId: row.id})}
+                                openSecondaryLine={(row) => {
+                                  setSelectedSecondaryLine({...row, _tabKey: st.key});
+                                  setSecondaryLineEdits(null);
+                                }}
+                                onDeleteRow={(row) => setSecondaryDeleteConfirm({tabKey: st.key, tabIndex: stIdx, id: row.id})}
+                                onCloseDetailPanel={closeSecondaryLine}
+                                onChange={(key, val, column) => {
+                                  setSecondaryLineEdits(prev => ({...(prev ?? selectedSecondaryLine), [key]: val}));
+                                  if (column) setSecondaryLineEditColumns(prev => ({...prev, [key]: column}));
+                                }}
+                                onAdd={async (lineData) => {
+                                  const entryKeys = new Set(st.addLineFields.entry.map(f => f.key));
+                                  const filtered = {};
+                                  for (const [k, v] of Object.entries(lineData)) {
+                                    if (entryKeys.has(k)) filtered[k] = v;
+                                  }
+                                  const result = await secondaryHooks[stIdx]?.handleAddChild?.(filtered);
+                                  if (result) setAddingSecondaryLine(prev => ({...prev, [st.key]: false}));
+                                  return result;
+                                }}
+                                onCancel={() => setAddingSecondaryLine(prev => ({...prev, [st.key]: false}))}
+                                onAddLineClick={() => runAddLineAction(st, {
+                                  handleCustomModalAddClick,
+                                  handleSecondaryAddLineToggle,
+                                })}
+                                onSaveLine={async () => {
+                                  setSavingSecondaryLine(true);
+                                  try {
+                                    const secUrl = `${apiBaseUrl}/${st.key}/${selectedSecondaryLine.id}`;
+                                    const fieldValues = {};
+                                    for (const [k, v] of Object.entries(secondaryLineEdits)) {
+                                      if (k.endsWith('$_identifier')) continue;
+                                      // NEO Headless PATCH expects camelCase API keys, not DB column names.
+                                      // Always use k (the API key) as the field name.
+                                      // Convert numeric strings to numbers for BigDecimal compatibility.
+                                      // Only strip when the value is already in standard format (no commas).
+                                      // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
+                                      if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
+                                        fieldValues[k] = parseFloat(v);
+                                      } else {
+                                        fieldValues[k] = v;
+                                      }
+                                    }
+                                    const res = await fetch(secUrl, {
+                                      method: 'PATCH',
+                                      headers: {'Content-Type': 'application/json', ...(token ? {Authorization: `Bearer ${token}`} : {})},
+                                      body: JSON.stringify(fieldValues),
+                                    });
+                                    if (res.ok) {
+                                      setSelectedSecondaryLine(prev => ({...prev, ...secondaryLineEdits}));
+                                      setSecondaryLineEdits(null);
+                                      setSecondaryLineEditColumns({});
+                                      toast.success('Record saved');
+                                    } else {
+                                      toast.error(await extractErrorMessage(res));
+                                    }
+                                  } catch (err) {
+                                    toast.error(err.message || 'Network error');
+                                  } finally {
+                                    setSavingSecondaryLine(false);
+                                  }
+                                }}
+                                onDiscardLine={() => setSecondaryLineEdits(null)}
+                                onDeleteLine={() => setSecondaryDeleteConfirm({tabKey: st.key, tabIndex: stIdx, id: selectedSecondaryLine.id})}
+                                onDelete={async () => {
+                                  if (!(await confirmDelete())) return;
+                                  setSecondaryDeleting(prev => ({...prev, [st.key]: true}));
+                                  const rows = secondarySelectedRows[st.key] ?? [];
+                                  try {
+                                    const results = await Promise.allSettled(
+                                        rows.map(row => {
+                                          const childUrl = api?.crud?.[st.key]?.detailUrl?.replace('{id}', row.id)
+                                              || `${apiBaseUrl}/${st.key}/${row.id}`;
+                                          return fetch(childUrl, {
+                                            method: 'DELETE',
+                                            headers: {...(token ? {Authorization: `Bearer ${token}`} : {})},
+                                          }).then(res => ({res, row}));
+                                        })
+                                    );
+                                    let deleted = 0;
+                                    for (const result of results) {
+                                      if (result.status === 'fulfilled' && result.value.res.ok) {
+                                        secondaryHooks[stIdx]?.handleDeleteChild?.(result.value.row.id);
+                                        if (selectedSecondaryLine?._tabKey === st.key && selectedSecondaryLine?.id === result.value.row.id) {
+                                          setSelectedSecondaryLine(null);
                                         }
-                                        if (res.ok) {
-                                          const updated = await res.json().catch(() => null);
-                                          // Server response wins over the optimistic cache when present
-                                          // — keeps any callout-driven fields the backend computed.
-                                          if (updated) secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, updated);
-                                        } else {
-                                          secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, previous);
-                                          const msg = await extractErrorMessage(res);
-                                          toast.error(msg || ui('networkError'));
-                                          throw new Error(msg || 'PATCH failed');
-                                        }
-                                      } : undefined}
-                                      addRow={st.addLineFields?.entry?.length > 0 ? {
-                                        ref: getSecondaryAddRowRef(st.key),
-                                        active: addingSecondaryLine[st.key] ?? false,
-                                        fields: st.addLineFields.entry,
-                                        onAdd: async (lineData) => {
-                                          const entryKeys = new Set(st.addLineFields.entry.map(f => f.key));
-                                          const filtered = {};
-                                          for (const [k, v] of Object.entries(lineData)) {
-                                            if (entryKeys.has(k)) filtered[k] = v;
-                                          }
-                                          const result = await secondaryHooks[stIdx]?.handleAddChild?.(filtered);
-                                          if (result) setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false }));
-                                          return result;
-                                        },
-                                        onCancel: () => setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false })),
-                                        catalogs,
-                                      } : undefined}
-                                    />
-                                  </div>
-                                  {st.Form && !st.Panel && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
-                                    <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
-                                      <div className="flex items-center justify-between mb-3">
-                                        <span className="text-sm font-medium text-foreground">{ui('entityDetail', { label: tMenu(st.label) })}</span>
-                                        <button
-                                          onClick={closeSecondaryLine}
-                                          className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
-                                        >
-                                          <X className="h-3.5 w-3.5" />
-                                        </button>
-                                      </div>
-                                      <st.Form
-                                        data={secondaryLineEdits ?? selectedSecondaryLine}
-                                        readOnly={!hook.editing}
-                                        onChange={(key, val, column) => {
-                                          setSecondaryLineEdits(prev => ({ ...(prev ?? selectedSecondaryLine), [key]: val }));
-                                          if (column) setSecondaryLineEditColumns(prev => ({ ...prev, [key]: column }));
-                                        }}
-                                        entity={st.key}
-                                        catalogs={catalogs}
-                                        token={token}
-                                        apiBaseUrl={apiBaseUrl}
-                                        selectorContext={selectorContextByEntity[st.key]}
-                                        excludeFields={st.key === 'contact' ? ['active'] : []}
-                                        labelOverrides={labelOverrides}
-                                      />
-                                      {hook.editing && (secondaryLineEdits || selectedSecondaryLine?.id) && (
-                                        <div className="flex gap-2 mt-4">
-                                          {secondaryLineEdits && (
-                                            <>
-                                              <button
-                                                disabled={savingSecondaryLine}
-                                                onClick={async () => {
-                                                  setSavingSecondaryLine(true);
-                                                  try {
-                                                    const secUrl = `${apiBaseUrl}/${st.key}/${selectedSecondaryLine.id}`;
-                                                    const fieldValues = {};
-                                                    for (const [k, v] of Object.entries(secondaryLineEdits)) {
-                                                      if (k.endsWith('$_identifier')) continue;
-                                                      // NEO Headless PATCH expects camelCase API keys, not DB column names.
-                                                      // Always use k (the API key) as the field name.
-                                                      // Convert numeric strings to numbers for BigDecimal compatibility.
-                                                      // Only strip when the value is already in standard format (no commas).
-                                                      // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
-                                                      if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
-                                                        fieldValues[k] = parseFloat(v);
-                                                      } else {
-                                                        fieldValues[k] = v;
-                                                      }
-                                                    }
-                                                    const res = await fetch(secUrl, {
-                                                      method: 'PATCH',
-                                                      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                                                      body: JSON.stringify(fieldValues),
-                                                    });
-                                                    if (res.ok) {
-                                                      setSelectedSecondaryLine(prev => ({ ...prev, ...secondaryLineEdits }));
-                                                      setSecondaryLineEdits(null);
-                                                      setSecondaryLineEditColumns({});
-                                                      toast.success('Record saved');
-                                                    } else {
-                                                      toast.error(await extractErrorMessage(res));
-                                                    }
-                                                  } catch (err) {
-                                                    toast.error(err.message || 'Network error');
-                                                  } finally { setSavingSecondaryLine(false); }
-                                                }}
-                                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                                              >
-                                                {savingSecondaryLine ? ui('loading') : ui('save')}
-                                              </button>
-                                              <button
-                                                onClick={() => setSecondaryLineEdits(null)}
-                                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
-                                              >
-                                                {ui('discard')}
-                                              </button>
-                                            </>
-                                          )}
-                                          {(api?.crud?.[st.key]?.delete ?? true) && selectedSecondaryLine?.id && (
-                                            <button
-                                              disabled={savingSecondaryLine}
-                                              onClick={() => setSecondaryDeleteConfirm({
-                                                tabKey: st.key,
-                                                tabIndex: stIdx,
-                                                id: selectedSecondaryLine.id,
-                                              })}
-                                              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
-                                            >
-                                              <Trash2 className="h-4 w-4" />
-                                              {ui('delete')}
-                                            </button>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                                {(st.addLineFields?.entry?.length > 0 || st.customAddModal) && hook.editing && (
-                                  // Wrapper measured by the secondary selection bar — its
-                                  // `position: fixed` portal overlays exactly this region.
-                                  <div ref={getSecondaryAddLineWrapperRef(st.key)} className="relative">
-                                    <span data-inline-add-portal="true">
-                                      <AddLineButton
-                                        onClick={() => runAddLineAction(st, {
-                                          handleCustomModalAddClick,
-                                          handleSecondaryAddLineToggle,
-                                        })}
-                                        label={ui('addEntity', { label: tMenu(st.label) })}
-                                        hideChevron={hideAddLineChevron}
-                                      />
-                                    </span>
-                                    {linesLayout === 'inlineEditable' && (api?.crud?.[st.key]?.delete ?? true) && (
-                                      <LinesSelectionBar
-                                        visible={secondaryBarVisible[st.key] ?? false}
-                                        closing={secondaryBarClosing[st.key] ?? false}
-                                        barRect={secondaryBarRects[st.key]}
-                                        count={(secondarySelectedRows[st.key] ?? []).length}
-                                        selectedLabel={ui('selected', { count: (secondarySelectedRows[st.key] ?? []).length })}
-                                        totalLabel={null}
-                                        deleting={secondaryDeleting[st.key] ?? false}
-                                        deleteTitle={ui('delete')}
-                                        closeTitle={ui('close')}
-                                        compact
-                                        onDelete={async () => {
-                                          if (!(await confirmDelete())) return;
-                                          setSecondaryDeleting(prev => ({ ...prev, [st.key]: true }));
-                                          const rows = secondarySelectedRows[st.key] ?? [];
-                                          try {
-                                            const results = await Promise.allSettled(
-                                              rows.map(row => {
-                                                const childUrl = api?.crud?.[st.key]?.detailUrl?.replace('{id}', row.id)
-                                                  || `${apiBaseUrl}/${st.key}/${row.id}`;
-                                                return fetch(childUrl, {
-                                                  method: 'DELETE',
-                                                  headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                                                }).then(res => ({ res, row }));
-                                              })
-                                            );
-                                            let deleted = 0;
-                                            for (const result of results) {
-                                              if (result.status === 'fulfilled' && result.value.res.ok) {
-                                                secondaryHooks[stIdx]?.handleDeleteChild?.(result.value.row.id);
-                                                if (selectedSecondaryLine?._tabKey === st.key && selectedSecondaryLine?.id === result.value.row.id) {
-                                                  setSelectedSecondaryLine(null);
-                                                }
-                                                deleted++;
-                                              }
-                                            }
-                                            secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
-                                            setSecondarySelectedRows(prev => ({ ...prev, [st.key]: [] }));
-                                            if (deleted > 0) toast.success(ui('recordsDeleted', { count: deleted }));
-                                            const failed = results.length - deleted;
-                                            if (failed > 0) toast.error(ui('recordsCouldNotBeDeleted', { count: failed }));
-                                          } catch (err) {
-                                            toast.error(err.message || ui('networkError'));
-                                          } finally {
-                                            setSecondaryDeleting(prev => ({ ...prev, [st.key]: false }));
-                                          }
-                                        }}
-                                        onClose={() => {
-                                          secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
-                                          setSecondarySelectedRows(prev => ({ ...prev, [st.key]: [] }));
-                                        }}
-                                      />
-                                    )}
-                                  </div>
-                                )}
-                              </>
+                                        deleted++;
+                                      }
+                                    }
+                                    secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
+                                    setSecondarySelectedRows(prev => ({...prev, [st.key]: []}));
+                                    if (deleted > 0) toast.success(ui('recordsDeleted', {count: deleted}));
+                                    const failed = results.length - deleted;
+                                    if (failed > 0) toast.error(ui('recordsCouldNotBeDeleted', {count: failed}));
+                                  } catch (err) {
+                                    toast.error(err.message || ui('networkError'));
+                                  } finally {
+                                    setSecondaryDeleting(prev => ({...prev, [st.key]: false}));
+                                  }
+                                }}
+                                onClose={() => {
+                                  secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
+                                  setSecondarySelectedRows(prev => ({...prev, [st.key]: []}));
+                                }}
+                              />
                             )}
                           </div>
                         ))}
