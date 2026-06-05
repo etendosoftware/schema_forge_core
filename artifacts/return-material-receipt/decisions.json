@@ -91,7 +91,8 @@
           "inputMode": "search",
           "readOnlyLogic": null,
           "section": "principal",
-          "seq": 4
+          "seq": 4,
+          "defaultExpr": "@#M_Warehouse_ID@"
         },
         "salesOrder": {
           "visibility": "discarded"

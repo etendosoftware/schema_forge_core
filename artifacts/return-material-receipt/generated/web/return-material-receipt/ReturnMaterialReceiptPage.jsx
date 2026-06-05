@@ -13,19 +13,6 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Return Material Receipt';
 
-const labelOverrides = {
-  "es_ES": {
-    "sourceShipmentDocNo": "Albarán origen",
-    "movementQuantity": "Cant. a devolver",
-    "orderQuantity": "Cant. entregada original"
-  },
-  "en_US": {
-    "sourceShipmentDocNo": "Source Shipment",
-    "movementQuantity": "Return Qty",
-    "orderQuantity": "Original Delivered Qty"
-  }
-};
-
 
 // @sf-generated-start summary:returnMaterialReceipt
 const summary = [
@@ -285,6 +272,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:ReturnMaterialReceiptPage
 export default function ReturnMaterialReceiptPage({ windowName, recordId, ...props }) {
   if (recordId) {
