@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { Edit2, FileText, Loader2, AlertCircle, Mail, Download, Wallet, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { useMenuLabel, useUI } from '@/i18n';
@@ -16,6 +16,8 @@ import SummaryCard, { InfoRow } from './preview-cards/SummaryCard.jsx';
 import PaymentsCard from './preview-cards/PaymentsCard.jsx';
 import EmailsCard from './preview-cards/EmailsCard.jsx';
 import CategorizationCard from './preview-cards/CategorizationCard.jsx';
+import RelatedDocumentsCard from './preview-cards/RelatedDocumentsCard.jsx';
+import { fetchByCriteria, fetchById } from '@/components/related-documents';
 
 /**
  * InvoicePreview — wires useInvoicePreview data into GenericPreviewModal.
@@ -107,6 +109,15 @@ function InvoiceGeneralTab({ invoice, partnerName, badgeProps, statusLabel, inst
   );
   const [accountingAccount, setAccountingAccount] = useState(null);
 
+  const invoiceRelatedSpecs = useMemo(() => {
+    const orderId = invoice?.salesOrder;
+    if (!orderId) return [];
+    return [
+      { key: 'sales-order', type: 'sales-order', fetch: (_id, tok, base) => fetchById('sales-order', 'header', orderId, tok, base).then(r => r ? [r] : []) },
+      { key: 'shipment',    type: 'shipment',     fetch: (_id, tok, base) => fetchByCriteria('goods-shipment', 'goodsShipment', 'salesOrder', orderId, tok, base) },
+    ];
+  }, [invoice?.salesOrder]);
+
   const latestDueDate = getLatestInstallmentDueDate(installments);
   const currencyCode = installments[0]?.['currency$_identifier'] || invoice?.['currency$_identifier'] || '';
 
@@ -167,6 +178,13 @@ function InvoiceGeneralTab({ invoice, partnerName, badgeProps, statusLabel, inst
 
       <CategorizationCard
         rows={[{ label: ui('invoicePreviewAccountingAccount'), value: accountingAccount }]}
+      />
+
+      <RelatedDocumentsCard
+        documentId={invoice?.id}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        specs={invoiceRelatedSpecs}
       />
     </div>
   );

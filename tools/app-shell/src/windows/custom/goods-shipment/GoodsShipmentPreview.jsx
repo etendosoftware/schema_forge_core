@@ -148,8 +148,7 @@ export default function GoodsShipmentPreview({ shipment, token, apiBaseUrl, wind
 
   // ── Tabs ────────────────────────────────────────────────────────────────────
 
-  // Fetch the full header record once (cache the promise so all 3 specs share 1 HTTP call).
-  // `base` received by RelatedDocumentsCard fetch fns = apiBaseUrl = '/sws/neo/{spec}'.
+  // Fetch the full header record once; all 3 specs share 1 HTTP call via the cached promise.
   const shipmentDocSpecs = useMemo(() => {
     let detailPromise = null;
     const getDetail = (id, tok, base) => {

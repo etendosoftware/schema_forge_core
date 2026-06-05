@@ -63,6 +63,10 @@ vi.mock('@/components/contract-ui/SendDocumentModal.jsx', () => ({
   default: () => <div data-testid="send-modal">Send Modal</div>,
 }));
 
+vi.mock('@/windows/custom/shared/preview-cards/RelatedDocumentsCard.jsx', () => ({
+  default: ({ documentId }) => <div data-testid="related-docs-card" data-doc-id={documentId} />,
+}));
+
 vi.mock('@/windows/custom/fiscal-config/useFiscalConfig.js', () => ({
   useFiscalConfig: () => ({ profile: 'tbai' }),
 }));
