@@ -89,6 +89,13 @@ export const DOCUMENT_CHIP_TYPES = {
     statusField: 'documentStatus',
     routePrefix: '/return-material-receipt',
   },
+  'return-to-vendor': {
+    iconKey: 'returnDoc',
+    titleKey: 'returnDoc',
+    titleField: 'documentNo',
+    statusField: 'documentStatus',
+    routePrefix: '/return-to-vendor-shipment',
+  },
 };
 
 /**

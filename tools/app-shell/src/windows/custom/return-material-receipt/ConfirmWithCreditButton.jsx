@@ -51,12 +51,11 @@ function Spinner() {
 function buildInvoiceResult(inv, ui) {
   return {
     title: ui('rmrInvoiceCreatedTitle'),
-    cards: inv.id ? [{
-      route: `/sales-invoice/${inv.id}`,
-      icon: '🧾',
-      label: ui('rmrReturnInvoiceDoc').replace('{number}', inv.documentNo),
+    docs: inv.id ? [{
+      type: 'facturaVenta',
+      num: inv.documentNo,
       amount: inv.grandTotal,
-      color: 'green',
+      route: `/sales-invoice/${inv.id}`,
     }] : [],
   };
 }
@@ -248,8 +247,8 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
         document.body,
       )}
       {result && createPortal(
-        <ConfirmResultModal title={result.title} cards={result.cards} currency={currency}
-          navigate={navigate} ui={ui} onClose={() => setResult(null)} />,
+        <ConfirmResultModal title={result.title} docs={result.docs} currency={currency}
+          navigate={navigate} onClose={() => setResult(null)} />,
         document.body,
       )}
       {cloneOpen && createPortal(
