@@ -78,6 +78,28 @@ export default function GoodsShipmentPreview({ shipment, token, apiBaseUrl, wind
     token,
   );
 
+  // Fetch the full header record once; all 3 specs share 1 HTTP call via the cached promise.
+  const shipmentDocSpecs = useMemo(() => {
+    let detailPromise = null;
+    const getDetail = (id, tok, base) => {
+      if (!detailPromise) {
+        detailPromise = fetch(`${base}/goodsShipment/${id}`, {
+          headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
+        })
+          .then(r => r.ok ? r.json() : null)
+          .then(j => j?.response?.data?.[0] ?? {})
+          .catch(() => ({}));
+      }
+      return detailPromise;
+    };
+    return [
+      { key: 'orders',   type: 'sales-order',            fetch: (id, tok, base) => getDetail(id, tok, base).then(r => r.linkedOrders   ?? []) },
+      { key: 'invoices', type: 'sales-invoice',           fetch: (id, tok, base) => getDetail(id, tok, base).then(r => r.linkedInvoices ?? []) },
+      { key: 'returns',  type: 'return-material-receipt', fetch: (id, tok, base) => getDetail(id, tok, base).then(r => r.returnReceipts ?? []) },
+    ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shipment?.id]);
+
   if (!shipment) return null;
 
   // ── Left panel ──────────────────────────────────────────────────────────────
@@ -147,28 +169,6 @@ export default function GoodsShipmentPreview({ shipment, token, apiBaseUrl, wind
   );
 
   // ── Tabs ────────────────────────────────────────────────────────────────────
-
-  // Fetch the full header record once; all 3 specs share 1 HTTP call via the cached promise.
-  const shipmentDocSpecs = useMemo(() => {
-    let detailPromise = null;
-    const getDetail = (id, tok, base) => {
-      if (!detailPromise) {
-        detailPromise = fetch(`${base}/goodsShipment/${id}`, {
-          headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
-        })
-          .then(r => r.ok ? r.json() : null)
-          .then(j => j?.response?.data?.[0] ?? {})
-          .catch(() => ({}));
-      }
-      return detailPromise;
-    };
-    return [
-      { key: 'orders',   type: 'sales-order',            fetch: (id, tok, base) => getDetail(id, tok, base).then(r => r.linkedOrders   ?? []) },
-      { key: 'invoices', type: 'sales-invoice',           fetch: (id, tok, base) => getDetail(id, tok, base).then(r => r.linkedInvoices ?? []) },
-      { key: 'returns',  type: 'return-material-receipt', fetch: (id, tok, base) => getDetail(id, tok, base).then(r => r.returnReceipts ?? []) },
-    ];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shipment?.id]);
 
   const tabs = [
     {
