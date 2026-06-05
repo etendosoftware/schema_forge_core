@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Download, Edit2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
@@ -148,11 +148,28 @@ export default function GoodsShipmentPreview({ shipment, token, apiBaseUrl, wind
 
   // ── Tabs ────────────────────────────────────────────────────────────────────
 
-  const shipmentDocSpecs = [
-    { key: 'orders',   type: 'sales-order',            fetch: () => Promise.resolve(Array.isArray(shipment.linkedOrders)   ? shipment.linkedOrders   : []) },
-    { key: 'invoices', type: 'sales-invoice',           fetch: () => Promise.resolve(Array.isArray(shipment.linkedInvoices) ? shipment.linkedInvoices : []) },
-    { key: 'returns',  type: 'return-material-receipt', fetch: () => Promise.resolve(Array.isArray(shipment.returnReceipts) ? shipment.returnReceipts : []) },
-  ];
+  // Fetch the full header record once (cache the promise so all 3 specs share 1 HTTP call).
+  // `base` received by RelatedDocumentsCard fetch fns = apiBaseUrl = '/sws/neo/{spec}'.
+  const shipmentDocSpecs = useMemo(() => {
+    let detailPromise = null;
+    const getDetail = (id, tok, base) => {
+      if (!detailPromise) {
+        detailPromise = fetch(`${base}/goodsShipment/${id}`, {
+          headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
+        })
+          .then(r => r.ok ? r.json() : null)
+          .then(j => j?.response?.data?.[0] ?? {})
+          .catch(() => ({}));
+      }
+      return detailPromise;
+    };
+    return [
+      { key: 'orders',   type: 'sales-order',            fetch: (id, tok, base) => getDetail(id, tok, base).then(r => r.linkedOrders   ?? []) },
+      { key: 'invoices', type: 'sales-invoice',           fetch: (id, tok, base) => getDetail(id, tok, base).then(r => r.linkedInvoices ?? []) },
+      { key: 'returns',  type: 'return-material-receipt', fetch: (id, tok, base) => getDetail(id, tok, base).then(r => r.returnReceipts ?? []) },
+    ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shipment?.id]);
 
   const tabs = [
     {
