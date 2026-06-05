@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef } from 'react';
 import { Edit2, FileText, Loader2, AlertCircle, Mail, Download, Wallet, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { useMenuLabel, useUI } from '@/i18n';
@@ -15,7 +15,6 @@ import SifSendingModal from './SifSendingModal.jsx';
 import SummaryCard, { InfoRow } from './preview-cards/SummaryCard.jsx';
 import PaymentsCard from './preview-cards/PaymentsCard.jsx';
 import EmailsCard from './preview-cards/EmailsCard.jsx';
-import CategorizationCard from './preview-cards/CategorizationCard.jsx';
 
 /**
  * InvoicePreview — wires useInvoicePreview data into GenericPreviewModal.
@@ -105,19 +104,8 @@ function InvoiceGeneralTab({ invoice, partnerName, badgeProps, statusLabel, inst
   const { sii: siiStatus, tbai: tbaiStatus, verifactu: vfStatus, loading: fiscalLoading } = useFiscalStatus(
     invoice?.id, specName, profile, apiBaseUrl, orgId,
   );
-  const [accountingAccount, setAccountingAccount] = useState(null);
-
   const latestDueDate = getLatestInstallmentDueDate(installments);
   const currencyCode = installments[0]?.['currency$_identifier'] || invoice?.['currency$_identifier'] || '';
-
-  useEffect(() => {
-    if (!invoice?.id || !apiBaseUrl || !token) return;
-    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-    fetch(`${apiBaseUrl}/lines?parentId=${invoice.id}&_startRow=0&_endRow=1`, { headers })
-      .then((r) => (r.ok ? r.json() : {}))
-      .then((d) => { setAccountingAccount(d?.response?.data?.[0]?.['account$_identifier'] || null); })
-      .catch(() => {});
-  }, [invoice?.id, apiBaseUrl, token]);
 
   return (
     <div className="pb-4">
@@ -165,9 +153,6 @@ function InvoiceGeneralTab({ invoice, partnerName, badgeProps, statusLabel, inst
 
       {specName !== 'purchase-invoice' && <EmailsCard onSend={onSend} />}
 
-      <CategorizationCard
-        rows={[{ label: ui('invoicePreviewAccountingAccount'), value: accountingAccount }]}
-      />
     </div>
   );
 }
