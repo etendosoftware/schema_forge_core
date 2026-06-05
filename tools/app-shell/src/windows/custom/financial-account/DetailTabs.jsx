@@ -11,10 +11,9 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
  *   onValueChange: (v: string) => void;
  *   movementsCount: number;
  *   reconciliationCount: number;
- *   statementsCount: number;
  * }} props
  */
-export function DetailTabs({ value, onValueChange, movementsCount, reconciliationCount, statementsCount }) {
+export function DetailTabs({ value, onValueChange, movementsCount, reconciliationCount }) {
   const ui = useUI();
 
   return (
@@ -26,7 +25,7 @@ export function DetailTabs({ value, onValueChange, movementsCount, reconciliatio
         <TabsTrigger value="reconciliation" icon={Scale} badge={reconciliationCount}>
           {ui('financeAccountDetailTabReconciliation')}
         </TabsTrigger>
-        <TabsTrigger value="statements" icon={FileText} badge={statementsCount}>
+        <TabsTrigger value="statements" icon={FileText}>
           {ui('financeAccountDetailTabStatements')}
         </TabsTrigger>
       </TabsList>

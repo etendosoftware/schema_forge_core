@@ -10,8 +10,9 @@ vi.mock('@/i18n', () => ({
   },
 }));
 
+const mockSetPageMeta = vi.fn();
 vi.mock('@/components/layout/PageMetaContext', () => ({
-  useSetPageMeta: vi.fn(),
+  useSetPageMeta: (...args) => mockSetPageMeta(...args),
 }));
 
 vi.mock('sonner', () => ({
@@ -51,6 +52,7 @@ const baseAccounts = [
     currentBalance: 1000,
     currencyIso: 'EUR',
     pendingCount: 3,
+    active: true,
   },
   {
     id: 'acc-2',
@@ -59,6 +61,7 @@ const baseAccounts = [
     currentBalance: 50,
     currencyIso: 'EUR',
     pendingCount: 0,
+    active: true,
   },
   {
     id: 'acc-3',
@@ -67,6 +70,30 @@ const baseAccounts = [
     currentBalance: -120,
     currencyIso: 'USD',
     pendingCount: 1,
+    active: true,
+  },
+];
+
+// A mix that includes archived (inactive) accounts of different types.
+const mixedAccounts = [
+  ...baseAccounts,
+  {
+    id: 'acc-4',
+    name: 'Santander Cerrada',
+    type: 'B',
+    currentBalance: 0,
+    currencyIso: 'EUR',
+    pendingCount: 0,
+    active: false,
+  },
+  {
+    id: 'acc-5',
+    name: 'Caja Antigua',
+    type: 'C',
+    currentBalance: 0,
+    currencyIso: 'EUR',
+    pendingCount: 0,
+    active: false,
   },
 ];
 
@@ -91,6 +118,7 @@ describe('FinancialAccountsPage', () => {
   beforeEach(() => {
     mockNavigate.mockReset();
     mockUseFinancialAccounts.mockReset();
+    mockSetPageMeta.mockReset();
   });
 
   it('renders the toolbar, sidebar and all account rows', () => {
@@ -179,5 +207,99 @@ describe('FinancialAccountsPage', () => {
     // Clicking opens the wizard modal, not a navigation.
     fireEvent.click(button);
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('hides archived (inactive) accounts in the default view', () => {
+    mockUseFinancialAccounts.mockReturnValue({
+      accounts: mixedAccounts,
+      summary: baseSummary,
+      loading: false,
+      error: null,
+      reload: vi.fn(),
+    });
+
+    renderPage();
+
+    // Active accounts are visible…
+    expect(screen.getByTestId('account-row-acc-1')).toBeInTheDocument();
+    expect(screen.getByTestId('account-row-acc-2')).toBeInTheDocument();
+    expect(screen.getByTestId('account-row-acc-3')).toBeInTheDocument();
+    // …archived ones are not.
+    expect(screen.queryByTestId('account-row-acc-4')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('account-row-acc-5')).not.toBeInTheDocument();
+  });
+
+  it('shows only archived accounts regardless of type when the Inactive filter is selected', () => {
+    mockUseFinancialAccounts.mockReturnValue({
+      accounts: mixedAccounts,
+      summary: baseSummary,
+      loading: false,
+      error: null,
+      reload: vi.fn(),
+    });
+
+    renderPage();
+    fireEvent.click(screen.getByTestId('account-type-filter-trigger'));
+    fireEvent.click(screen.getByTestId('account-type-filter-option-inactive'));
+
+    // Active accounts are hidden…
+    expect(screen.queryByTestId('account-row-acc-1')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('account-row-acc-2')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('account-row-acc-3')).not.toBeInTheDocument();
+    // …only the archived ones show, across both bank and cash types.
+    expect(screen.getByTestId('account-row-acc-4')).toBeInTheDocument();
+    expect(screen.getByTestId('account-row-acc-5')).toBeInTheDocument();
+  });
+
+  it('still applies the search term inside the Inactive view', () => {
+    mockUseFinancialAccounts.mockReturnValue({
+      accounts: mixedAccounts,
+      summary: baseSummary,
+      loading: false,
+      error: null,
+      reload: vi.fn(),
+    });
+
+    renderPage();
+    fireEvent.click(screen.getByTestId('account-type-filter-trigger'));
+    fireEvent.click(screen.getByTestId('account-type-filter-option-inactive'));
+    fireEvent.change(screen.getByTestId('cuentas-search-input'), {
+      target: { value: 'antigua' },
+    });
+
+    expect(screen.queryByTestId('account-row-acc-4')).not.toBeInTheDocument();
+    expect(screen.getByTestId('account-row-acc-5')).toBeInTheDocument();
+  });
+
+  it('treats accounts with a missing active flag as active', () => {
+    const accountsNoFlag = [
+      { id: 'acc-x', name: 'Sin Flag', type: 'B', currentBalance: 10, currencyIso: 'EUR', pendingCount: 0 },
+    ];
+    mockUseFinancialAccounts.mockReturnValue({
+      accounts: accountsNoFlag,
+      summary: baseSummary,
+      loading: false,
+      error: null,
+      reload: vi.fn(),
+    });
+
+    renderPage();
+    expect(screen.getByTestId('account-row-acc-x')).toBeInTheDocument();
+  });
+
+  it('sets the header record count to the number of active accounts only', () => {
+    mockUseFinancialAccounts.mockReturnValue({
+      accounts: mixedAccounts,
+      summary: baseSummary,
+      loading: false,
+      error: null,
+      reload: vi.fn(),
+    });
+
+    renderPage();
+
+    // mixedAccounts has 3 active + 2 archived → badge must read 3.
+    const meta = mockSetPageMeta.mock.calls.at(-1)?.[0];
+    expect(meta?.recordCount).toBe(3);
   });
 });

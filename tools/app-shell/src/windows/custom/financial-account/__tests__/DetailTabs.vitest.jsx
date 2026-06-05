@@ -21,7 +21,6 @@ describe('DetailTabs', () => {
         onValueChange={() => {}}
         movementsCount={0}
         reconciliationCount={0}
-        statementsCount={0}
       />,
     );
     expect(screen.getByText('Movimientos')).toBeInTheDocument();
@@ -29,19 +28,19 @@ describe('DetailTabs', () => {
     expect(screen.getByText('Extractos')).toBeInTheDocument();
   });
 
-  it('displays the counts as badges', () => {
+  it('displays the movements and reconciliation counts as badges (statements has none)', () => {
     render(
       <DetailTabs
         value="movements"
         onValueChange={() => {}}
         movementsCount={12}
         reconciliationCount={3}
-        statementsCount={7}
       />,
     );
     expect(screen.getByText('12')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
-    expect(screen.getByText('7')).toBeInTheDocument();
+    // The statements trigger has no numeric badge.
+    expect(screen.queryByText('7')).not.toBeInTheDocument();
   });
 
   it('marks the active tab with aria-selected="true"', () => {
@@ -51,7 +50,6 @@ describe('DetailTabs', () => {
         onValueChange={() => {}}
         movementsCount={0}
         reconciliationCount={0}
-        statementsCount={0}
       />,
     );
     const reconciliation = screen.getByText('Conciliación').closest('button');
@@ -68,7 +66,6 @@ describe('DetailTabs', () => {
         onValueChange={onValueChange}
         movementsCount={0}
         reconciliationCount={0}
-        statementsCount={0}
       />,
     );
     fireEvent.click(screen.getByText('Extractos'));
@@ -82,10 +79,9 @@ describe('DetailTabs', () => {
         onValueChange={() => {}}
         movementsCount={0}
         reconciliationCount={0}
-        statementsCount={0}
       />,
     );
-    // Three "0" badges expected — one per tab
-    expect(screen.getAllByText('0')).toHaveLength(3);
+    // Two "0" badges expected — movements and reconciliation (statements has none).
+    expect(screen.getAllByText('0')).toHaveLength(2);
   });
 });

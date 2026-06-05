@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, FileText } from 'lucide-react';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusTag } from '@/components/ui/status-tag';
@@ -142,8 +142,16 @@ function renderBody({ loading, statements, ui, currency, bcpLocale, openId, togg
   }
   if (statements.length === 0) {
     return (
-      <div className="px-4 py-16 text-center text-sm text-[#6C6C89]">
-        {ui('financeAccountStatementsEmpty')}
+      <div className="flex flex-col items-center gap-2 px-4 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F5F7F9]">
+          <FileText className="h-5 w-5 text-[#828FA3]" />
+        </div>
+        <p className="text-sm font-medium text-[#121217]">
+          {ui('financeAccountStatementsEmpty')}
+        </p>
+        <p className="max-w-sm text-sm text-[#6C6C89]">
+          {ui('financeAccountStatementsEmptyHint')}
+        </p>
       </div>
     );
   }
