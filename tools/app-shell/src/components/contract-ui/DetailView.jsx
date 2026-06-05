@@ -274,6 +274,110 @@ export function applyCalloutComboUpdates(combos, ctx) {
 }
 
 /**
+ * Folds the selector item's top-level fields into the callout snapshot:
+ * maps standardPrice to gross/net price keys based on isTaxIncluded, and
+ * exposes every other scalar field as a `${fieldKey}_${name}` context key
+ * (without overwriting one the snapshot already has).
+ */
+export function mergeSelectorContextFields(selectedItem, snapshot, fieldKey) {
+  for (const [topField, topVal] of Object.entries(selectedItem)) {
+    if (topField === 'id' || topField === '_aux' || topField === 'label'
+        || topField === 'name' || topField === 'searchKey'
+        || typeof topVal === 'object' || topVal === null) continue;
+    if (topField === 'standardPrice' && topVal != null) {
+      const isGross = selectedItem.isTaxIncluded !== false;
+      if (isGross) {
+        snapshot.grossUnitPrice = topVal;
+        snapshot.grossListPrice = topVal;
+      } else {
+        snapshot.unitPrice = topVal;
+        snapshot.listPrice = topVal;
+      }
+      continue;
+    }
+    const ctxKey = `${fieldKey}_${topField}`;
+    if (!(ctxKey in snapshot)) snapshot[ctxKey] = topVal;
+  }
+}
+
+/**
+ * Folds the selector item's `_aux` suffixed values (e.g. _PSTD, _PLIM, _UOM)
+ * into the callout snapshot, keyed as `${fieldKey}${suffix}`.
+ */
+export function mergeSelectorAuxFields(selectedItem, snapshot, fieldKey) {
+  if (selectedItem._aux) {
+    for (const [suffix, auxVal] of Object.entries(selectedItem._aux)) {
+      snapshot[fieldKey + suffix] = auxVal;
+    }
+  }
+}
+
+/**
+ * Applies an optimistic local update to a child row after a successful PATCH,
+ * folding in the callout-derived values (incl. $_identifier keys for FK
+ * outputs like tax$_identifier) so the row UI reflects the full snapshot
+ * without a refetch.
+ */
+export function applyLocalChildRowUpdate(derivedUpdates, fieldKey, payloadValue, fieldValues, opts, hook, row) {
+  const localUpdate = {...derivedUpdates, [fieldKey]: payloadValue};
+  if (fieldValues.unitPrice !== undefined) localUpdate.unitPrice = fieldValues.unitPrice;
+  if (opts?.identifier !== undefined) {
+    localUpdate[fieldKey + '$_identifier'] = opts.identifier;
+  }
+  hook.handleUpdateChild?.(row.id, localUpdate);
+}
+
+/**
+ * Seeds the PATCH body from a cleaned row, coercing each value and skipping
+ * `$_identifier` keys and internal markers/metadata (_identifier, _entityName,
+ * $ref, id) that are not valid persisted fields.
+ */
+export function collectRowFieldValues(cleanRow, fieldValues, coerce) {
+  for (const [k, v] of Object.entries(cleanRow)) {
+    if (k.endsWith('$_identifier')) continue;
+    // Skip internal markers and metadata that aren't valid fields.
+    if (k === '_identifier' || k === '_entityName' || k === '$ref' || k === 'id') continue;
+    fieldValues[k] = coerce(v);
+  }
+}
+
+/**
+ * Builds the className for a secondary tab's content wrapper, disabling pointer
+ * events when the view is embedded (read-only) inside another detail view.
+ */
+export function getSecondaryTabContentClassName(secondaryTabContentPaddingT, embedded) {
+  return `${secondaryTabContentPaddingT} flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`;
+}
+
+/**
+ * Returns the inline-lines table ref for a secondary tab when the lines layout
+ * is `inlineEditable`, otherwise undefined (no ref wiring for read-only tables).
+ */
+export function getSecondaryLinesTableRef(linesLayout, getSecondaryInlineLinesRef, st) {
+  return linesLayout === 'inlineEditable' ? getSecondaryInlineLinesRef(st.key) : undefined;
+}
+
+/**
+ * Returns the `onEditRow` handler for a secondary tab: tabs that use a custom
+ * add/edit modal open the popup editor; other tabs edit in place (undefined).
+ */
+export function getSecondaryEditRowHandler(st, setCustomModalState) {
+  return st.customAddModal
+      ? (row) => setCustomModalState({key: st.key, rowId: row.id})
+      : undefined;
+}
+
+/**
+ * Returns the `onSelectionChange` handler for a secondary tab when the lines
+ * layout is `inlineEditable` (tracks selected rows per tab), otherwise undefined.
+ */
+export function getSecondarySelectionChangeHandler(linesLayout, setSecondarySelectedRows, st) {
+  return linesLayout === 'inlineEditable'
+      ? (rows) => setSecondarySelectedRows(prev => ({...prev, [st.key]: rows}))
+      : undefined;
+}
+
+/**
  * Full-page detail view for a single entity record.
  * Two-zone layout: gray top bar + white content card with rounded corner.
  *
@@ -2141,29 +2245,8 @@ export function DetailView({
                                     // callout has no access to the price-list metadata and returns 0.
                                     const selectedItem = opts?.selectedItem;
                                     if (selectedItem && typeof selectedItem === 'object') {
-                                      if (selectedItem._aux) {
-                                        for (const [suffix, auxVal] of Object.entries(selectedItem._aux)) {
-                                          snapshot[fieldKey + suffix] = auxVal;
-                                        }
-                                      }
-                                      for (const [topField, topVal] of Object.entries(selectedItem)) {
-                                        if (topField === 'id' || topField === '_aux' || topField === 'label'
-                                          || topField === 'name' || topField === 'searchKey'
-                                          || typeof topVal === 'object' || topVal === null) continue;
-                                        if (topField === 'standardPrice' && topVal != null) {
-                                          const isGross = selectedItem.isTaxIncluded !== false;
-                                          if (isGross) {
-                                            snapshot.grossUnitPrice = topVal;
-                                            snapshot.grossListPrice = topVal;
-                                          } else {
-                                            snapshot.unitPrice = topVal;
-                                            snapshot.listPrice = topVal;
-                                          }
-                                          continue;
-                                        }
-                                        const ctxKey = `${fieldKey}_${topField}`;
-                                        if (!(ctxKey in snapshot)) snapshot[ctxKey] = topVal;
-                                      }
+                                      mergeSelectorAuxFields(selectedItem, snapshot, fieldKey);
+                                      mergeSelectorContextFields(selectedItem, snapshot, fieldKey);
                                     }
 
                                     // Run callout (no-op for fields without one). Captures derived fields
@@ -2185,12 +2268,7 @@ export function DetailView({
                                     // reason, so we mirror that here for parity.
                                     const fieldValues = {};
                                     // 1. Start from the cleaned row (skips already-null inherited keys).
-                                    for (const [k, v] of Object.entries(cleanRow)) {
-                                      if (k.endsWith('$_identifier')) continue;
-                                      // Skip internal markers and metadata that aren't valid fields.
-                                      if (k === '_identifier' || k === '_entityName' || k === '$ref' || k === 'id') continue;
-                                      fieldValues[k] = coerce(v);
-                                    }
+                                    collectRowFieldValues(cleanRow, fieldValues, coerce);
                                     // 2. Overlay derived fields from the callout (incl. lineGrossAmount,
                                     //    standardPrice, unitPrice, listPrice).
                                     for (const [k, v] of Object.entries(derivedUpdates)) {
@@ -2212,15 +2290,7 @@ export function DetailView({
                                       body: JSON.stringify(fieldValues),
                                     });
                                     if (res.ok) {
-                                      // Local update folds in derived values (incl. $_identifier keys for
-                                      // FK callout outputs like tax$_identifier) so the row UI reflects
-                                      // the full snapshot without a refetch.
-                                      const localUpdate = { ...derivedUpdates, [fieldKey]: payloadValue };
-                                      if (fieldValues.unitPrice !== undefined) localUpdate.unitPrice = fieldValues.unitPrice;
-                                      if (opts?.identifier !== undefined) {
-                                        localUpdate[fieldKey + '$_identifier'] = opts.identifier;
-                                      }
-                                      hook.handleUpdateChild?.(row.id, localUpdate);
+                                      applyLocalChildRowUpdate(derivedUpdates, fieldKey, payloadValue, fieldValues, opts, hook, row);
                                     } else {
                                       const msg = await extractErrorMessage(res);
                                       toast.error(msg || ui('networkError'));
@@ -2643,7 +2713,7 @@ export function DetailView({
 
                         {/* Tab content: secondary child entity tabs (or form-only tabs) */}
                         {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
-                          <div key={st.key} className={`${secondaryTabContentPaddingT} flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`}>
+                          <div key={st.key} className={getSecondaryTabContentClassName(secondaryTabContentPaddingT, embedded)}>
                             {st.isFormTab ? (
                               <div className="flex-1 min-w-0">
                                 <st.Form
@@ -2675,7 +2745,7 @@ export function DetailView({
                                 <div className="flex items-start gap-4">
                                   <div className="flex-1 min-w-0">
                                     <st.Table
-                                      ref={linesLayout === 'inlineEditable' ? getSecondaryInlineLinesRef(st.key) : undefined}
+                                      ref={getSecondaryLinesTableRef(linesLayout, getSecondaryInlineLinesRef, st)}
                                       data={secondaryHooks[stIdx]?.children ?? []}
                                       entity={st.key}
                                       token={token}
@@ -2689,13 +2759,9 @@ export function DetailView({
                                       })}
                                       // Pencil action for customAddModal tabs (Dirección) opens
                                       // the popup editor — rows are not editable in place.
-                                      onEditRow={st.customAddModal
-                                        ? (row) => setCustomModalState({ key: st.key, rowId: row.id })
-                                        : undefined}
+                                      onEditRow={getSecondaryEditRowHandler(st, setCustomModalState)}
                                       selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
-                                      onSelectionChange={linesLayout === 'inlineEditable'
-                                        ? (rows) => setSecondarySelectedRows(prev => ({ ...prev, [st.key]: rows }))
-                                        : undefined}
+                                      onSelectionChange={getSecondarySelectionChangeHandler(linesLayout, setSecondarySelectedRows, st)}
                                       onDeleteRow={enableSecondaryRowDelete && (api?.crud?.[st.key]?.delete ?? true) ? (row) => {
                                         setSecondaryDeleteConfirm({
                                           tabKey: st.key,
