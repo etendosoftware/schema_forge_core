@@ -18,6 +18,7 @@ import { useUI } from '@/i18n';
  *   successToastKey                 → string  i18n key for success toast ({count})
  *   dateField                       → string  field name for date display
  *   showAmount                      → boolean show amount column in doc list
+ *   qtyStep                         → number  spinner step for qty input (default 1)
  */
 export default function ImportReturnLinesModal({ targetId, bpId, base, headers, onClose, onSuccess, config }) {
   const ui = useUI();
@@ -45,6 +46,7 @@ export default function ImportReturnLinesModal({ targetId, bpId, base, headers, 
     successToastKey,
     dateField = 'movementDate',
     showAmount = false,
+    qtyStep = 1,
   } = config;
 
   useEffect(() => {
@@ -160,7 +162,7 @@ export default function ImportReturnLinesModal({ targetId, bpId, base, headers, 
       for (const doc of docs) {
         for (const line of (docLines[doc.id] || [])) {
           if (!selected.has(line.id)) continue;
-          const qty = Math.max(0.01, Math.min(line._maxQty, Number(lineQuantities[line.id] ?? line._maxQty)));
+          const qty = Math.max(qtyStep, Math.min(line._maxQty, Number(lineQuantities[line.id] ?? line._maxQty)));
           lines.push({ sourceLineId: line.id, returnQuantity: qty });
         }
       }
@@ -304,12 +306,13 @@ export default function ImportReturnLinesModal({ targetId, bpId, base, headers, 
                                 <span style={{ width: 90, flexShrink: 0, textAlign: 'right' }}>
                                   <input
                                     type="number"
-                                    min={0.01}
+                                    min={qtyStep}
                                     max={maxQty}
+                                    step={qtyStep}
                                     value={currentQty}
                                     onClick={(e) => e.stopPropagation()}
                                     onChange={(e) => {
-                                      const value = Math.max(0.01, Math.min(maxQty, Number(e.target.value) || 0.01));
+                                      const value = Math.max(qtyStep, Math.min(maxQty, Number(e.target.value) || qtyStep));
                                       setLineQuantities((prev) => ({ ...prev, [line.id]: value }));
                                     }}
                                     style={{ width: 72, fontSize: 12, padding: '3px 4px', borderRadius: 4, textAlign: 'center', fontVariantNumeric: 'tabular-nums', outline: 'none', border: '0.5px solid var(--color-border-secondary, #d1d5db)', background: '#fff' }}

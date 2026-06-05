@@ -31,6 +31,7 @@ const SHIPMENT_CONFIG = {
   successToastKey: 'linesImportedFromShipment',
   dateField: 'movementDate',
   showAmount: false,
+  qtyStep: 1,
 };
 
 export default function ImportFromShipmentModal(props) {
