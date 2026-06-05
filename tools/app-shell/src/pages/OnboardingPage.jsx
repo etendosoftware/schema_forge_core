@@ -591,7 +591,10 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     setRegisterError(null);
     setRegisterLoading(true);
     try {
-      const data = await registerAccount(fetch, BASE_URL, registerForm);
+      const data = await registerAccount(fetch, BASE_URL, {
+        ...registerForm,
+        language: locale || form.language,
+      });
       if (data.token) {
         trackOnboarding('onboarding_auth_succeeded', {
           action: 'register',
