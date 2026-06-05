@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { toSpecName } from './push-to-neo.js';
+import { toSpecName, pushProcessToNeo } from './push-to-neo.js';
 
 /**
  * Resolve a window's spec name (kebab-case) from its AD_Window_ID by querying
@@ -288,7 +288,6 @@ async function runProcessPipeline({ processId, processName, dryRun, isReport, sp
           break;
         }
         case 'push-process-to-neo': {
-          const { pushProcessToNeo } = await import('./push-to-neo.js');
           const pushSpecType = specType || (isReport ? 'R' : 'P');
           const result = await pushProcessToNeo(processName, { dryRun, specType: pushSpecType });
           logDryRunOutcome(dryRun, result);
