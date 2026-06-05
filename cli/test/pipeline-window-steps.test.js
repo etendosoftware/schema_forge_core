@@ -293,12 +293,14 @@ describe('scaffoldSecondaryTabCustomForms', () => {
     const mkdirs = [];
     const contract = { frontendContract: { window: {} } };
 
-    const result = await scaffoldSecondaryTabCustomForms(
-      contract, fileURLToPathMod, resolvePath, dirnamePath, 'win',
-      async (...a) => { mkdirs.push(a); },
-      async () => { throw new Error('missing'); },
-      async (...a) => { writes.push(a); },
-    );
+    const result = await scaffoldSecondaryTabCustomForms(contract, 'win', {
+      fileURLToPath: fileURLToPathMod,
+      resolve: resolvePath,
+      dirname: dirnamePath,
+      mkdir: async (...a) => { mkdirs.push(a); },
+      access: async () => { throw new Error('missing'); },
+      writeFile: async (...a) => { writes.push(a); },
+    });
 
     assert.equal(result, true);
     assert.equal(writes.length, 0);
@@ -314,12 +316,14 @@ describe('scaffoldSecondaryTabCustomForms', () => {
       },
     };
 
-    const result = await scaffoldSecondaryTabCustomForms(
-      contract, fileURLToPathMod, resolvePath, dirnamePath, 'my-window',
-      async (...a) => { mkdirs.push(a); },
-      async () => { throw new Error('missing'); }, // form does not exist
-      async (path, content) => { writes.push([path, content]); },
-    );
+    const result = await scaffoldSecondaryTabCustomForms(contract, 'my-window', {
+      fileURLToPath: fileURLToPathMod,
+      resolve: resolvePath,
+      dirname: dirnamePath,
+      mkdir: async (...a) => { mkdirs.push(a); },
+      access: async () => { throw new Error('missing'); }, // form does not exist
+      writeFile: async (path, content) => { writes.push([path, content]); },
+    });
 
     assert.equal(result, true);
     assert.equal(mkdirs.length, 1);
@@ -338,12 +342,14 @@ describe('scaffoldSecondaryTabCustomForms', () => {
       },
     };
 
-    const result = await scaffoldSecondaryTabCustomForms(
-      contract, fileURLToPathMod, resolvePath, dirnamePath, 'win',
-      async () => {},
-      async () => undefined, // access resolves => form exists
-      async (path, content) => { writes.push([path, content]); },
-    );
+    const result = await scaffoldSecondaryTabCustomForms(contract, 'win', {
+      fileURLToPath: fileURLToPathMod,
+      resolve: resolvePath,
+      dirname: dirnamePath,
+      mkdir: async () => {},
+      access: async () => undefined, // access resolves => form exists
+      writeFile: async (path, content) => { writes.push([path, content]); },
+    });
 
     assert.equal(result, true);
     assert.equal(writes.length, 0);
@@ -357,12 +363,14 @@ describe('scaffoldSecondaryTabCustomForms', () => {
       },
     };
 
-    const result = await scaffoldSecondaryTabCustomForms(
-      contract, fileURLToPathMod, resolvePath, dirnamePath, 'win',
-      async () => {},
-      async () => { throw new Error('missing'); },
-      async (...a) => { writes.push(a); },
-    );
+    const result = await scaffoldSecondaryTabCustomForms(contract, 'win', {
+      fileURLToPath: fileURLToPathMod,
+      resolve: resolvePath,
+      dirname: dirnamePath,
+      mkdir: async () => {},
+      access: async () => { throw new Error('missing'); },
+      writeFile: async (...a) => { writes.push(a); },
+    });
 
     assert.equal(result, true);
     assert.equal(writes.length, 0);

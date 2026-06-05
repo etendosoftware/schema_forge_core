@@ -393,6 +393,11 @@ export async function runAdvisoryVersionCheck(windowName) {
 }
 
 export async function loadPreviousContract(readFile, windowName, prevVersion, prevContract, prevContractRaw) {
+  // Local working copies; the parameters are the fallback returned when no
+  // existing contract is on disk (the catch branch leaves these untouched).
+  let version = prevVersion;
+  let contract = prevContract;
+  let contractRaw = prevContractRaw;
   try {
     const existingRaw = await readFile(`artifacts/${windowName}/contract.json`, 'utf-8');
     const existingContract = JSON.parse(existingRaw);
@@ -402,23 +407,26 @@ export async function loadPreviousContract(readFile, windowName, prevVersion, pr
     while (rawVersion !== null && typeof rawVersion === 'object') {
       rawVersion = rawVersion.version ?? null;
     }
-    prevVersion = rawVersion;
-    prevContract = existingContract;
-    prevContractRaw = existingRaw;
+    version = rawVersion;
+    contract = existingContract;
+    contractRaw = existingRaw;
   } catch {
     // No existing contract — first generation, no prev needed
   }
-  return {prevVersion, prevContract, prevContractRaw};
+  return {prevVersion: version, prevContract: contract, prevContractRaw: contractRaw};
 }
 
 export async function loadPreviousMcpContract(readFile, windowName, prevMcpContract) {
+  // Local working copy; the parameter is the fallback returned when no existing
+  // MCP contract is on disk (the catch branch leaves this untouched).
+  let mcpContract = prevMcpContract;
   try {
     const existingMcpRaw = await readFile(`artifacts/${windowName}/contract.mcp.json`, 'utf-8');
-    prevMcpContract = JSON.parse(existingMcpRaw);
+    mcpContract = JSON.parse(existingMcpRaw);
   } catch {
     // No existing MCP contract — first split generation
   }
-  return prevMcpContract;
+  return mcpContract;
 }
 
 export async function runPushToNeoStep(windowName, { pushToNeoFn } = {}) {
@@ -509,17 +517,20 @@ export async function writeCustomScaffoldFiles(access, indexPath, catalogPath, f
 }
 
 export async function loadOrMigrateDecisions(readFile, curatedPath, windowName, decisions, decisionsPath) {
+  // Local working copy; the parameter is the fallback returned when migration
+  // is not attempted. handleMissingDecisionsError exits/throws on failure.
+  let resolvedDecisions = decisions;
   try {
     await readFile(curatedPath, 'utf8');
     console.warn(`  ⚠ decisions.json not found — auto-migrating from curated files...`);
     const {migrateWindow} = await import('./migrate-to-decisions.js');
     await migrateWindow(windowName);
-    decisions = JSON.parse(await readFile(decisionsPath, 'utf8'));
+    resolvedDecisions = JSON.parse(await readFile(decisionsPath, 'utf8'));
     console.log(`  ✓ Auto-migrated to decisions.json`);
   } catch (e2) {
     handleMissingDecisionsError(e2, decisionsPath);
   }
-  return decisions;
+  return resolvedDecisions;
 }
 
 // Load decisions.json for a window, auto-migrating the schema version when needed
@@ -550,7 +561,8 @@ export async function loadWindowDecisions(readFile, windowName, schemaRaw, decis
   return decisions;
 }
 
-export async function scaffoldSecondaryTabCustomForms(contract, fileURLToPathMod, resolvePath, dirnamePath, windowName, mkdir, access, writeFile) {
+export async function scaffoldSecondaryTabCustomForms(contract, windowName, deps) {
+  const {fileURLToPath: fileURLToPathMod, resolve: resolvePath, dirname: dirnamePath, mkdir, access, writeFile} = deps;
   const secondaryTabsDecl = contract.frontendContract?.window?.secondaryTabs;
   if (secondaryTabsDecl) {
     const customForms = Object.values(secondaryTabsDecl)
@@ -748,7 +760,14 @@ export async function runGenerateFrontendStep(windowName, result) {
     console.log(`  ✓ ${Object.keys(files).filter(k => !k.startsWith('__')).length} frontend components generated`);
 
     // Scaffold customForm stubs for secondary tabs that declare a custom form
-    result.frontendGenerated = await scaffoldSecondaryTabCustomForms(contract, fileURLToPathMod, resolvePath, dirnamePath, windowName, mkdir, access, writeFile);
+    result.frontendGenerated = await scaffoldSecondaryTabCustomForms(contract, windowName, {
+      fileURLToPath: fileURLToPathMod,
+      resolve: resolvePath,
+      dirname: dirnamePath,
+      mkdir,
+      access,
+      writeFile,
+    });
   }
 }
 
