@@ -4,6 +4,7 @@ import { StatementsToolbar } from './StatementsToolbar';
 import { StatementsTable } from './StatementsTable';
 import { StatementLinesView } from './StatementLinesView';
 import { ImportStatementModal } from './ImportStatementModal';
+import { ManualStatementModal } from './ManualStatementModal';
 
 function presetBounds(presetId) {
   const today = new Date();
@@ -64,6 +65,7 @@ export function ImportedStatementsTab({ account }) {
   const [dateRange, setDateRange] = useState(null);
   const [status, setStatus] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
 
   const selectedStatement = statements.find((s) => s.id === selectedStatementId) ?? null;
 
@@ -111,6 +113,7 @@ export function ImportedStatementsTab({ account }) {
         status={status}
         onStatusChange={setStatus}
         onImportClick={() => setImportOpen(true)}
+        onManualClick={() => setManualOpen(true)}
       />
 
       <div className="flex-1 overflow-y-auto [&>div]:overflow-visible">
@@ -126,6 +129,14 @@ export function ImportedStatementsTab({ account }) {
         accountId={accountId}
         accountCurrency={currency}
         onClose={() => setImportOpen(false)}
+        onSuccess={reload}
+      />
+
+      <ManualStatementModal
+        open={manualOpen}
+        accountId={accountId}
+        accountCurrency={currency}
+        onClose={() => setManualOpen(false)}
         onSuccess={reload}
       />
     </div>

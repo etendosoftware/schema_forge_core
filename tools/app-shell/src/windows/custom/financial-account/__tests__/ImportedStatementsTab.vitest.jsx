@@ -24,13 +24,14 @@ vi.mock('@/hooks/useBankStatements', () => ({
 vi.mock('../StatementsToolbar', () => ({
   StatementsToolbar: ({
     search, onSearchChange, dateRange, onDateRangeChange,
-    status, onStatusChange, onImportClick,
+    status, onStatusChange, onImportClick, onManualClick,
   }) => (
     <div data-testid="stub-toolbar" data-search={search} data-status={status ?? ''}>
       <button type="button" data-testid="toolbar-search" onClick={() => onSearchChange('mayo')} />
       <button type="button" data-testid="toolbar-status" onClick={() => onStatusChange('PARTIAL')} />
       <button type="button" data-testid="toolbar-daterange" onClick={() => onDateRangeChange({ presetId: 'last7' })} />
       <button type="button" data-testid="toolbar-import" onClick={onImportClick} />
+      <button type="button" data-testid="toolbar-manual" onClick={onManualClick} />
     </div>
   ),
 }));
@@ -80,6 +81,20 @@ vi.mock('../ImportStatementModal', () => ({
     >
       <button type="button" data-testid="import-close" onClick={onClose} />
       <button type="button" data-testid="import-success" onClick={onSuccess} />
+    </div>
+  ),
+}));
+
+vi.mock('../ManualStatementModal', () => ({
+  ManualStatementModal: ({ open, accountId, accountCurrency, onClose, onSuccess }) => (
+    <div
+      data-testid="stub-manual-modal"
+      data-open={open ? 'true' : 'false'}
+      data-account={accountId ?? ''}
+      data-currency={accountCurrency}
+    >
+      <button type="button" data-testid="manual-close" onClick={onClose} />
+      <button type="button" data-testid="manual-success" onClick={onSuccess} />
     </div>
   ),
 }));
@@ -185,6 +200,22 @@ describe('ImportedStatementsTab', () => {
     render(<ImportedStatementsTab account={ACCOUNT} />);
     await user.click(screen.getByTestId('toolbar-import'));
     await user.click(screen.getByTestId('import-success'));
+    expect(reloadFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the manual-create modal when toolbar emits onManualClick', async () => {
+    const user = userEvent.setup();
+    render(<ImportedStatementsTab account={ACCOUNT} />);
+    expect(screen.getByTestId('stub-manual-modal')).toHaveAttribute('data-open', 'false');
+    await user.click(screen.getByTestId('toolbar-manual'));
+    expect(screen.getByTestId('stub-manual-modal')).toHaveAttribute('data-open', 'true');
+  });
+
+  it('reloads the list when the manual-create modal reports success', async () => {
+    const user = userEvent.setup();
+    render(<ImportedStatementsTab account={ACCOUNT} />);
+    await user.click(screen.getByTestId('toolbar-manual'));
+    await user.click(screen.getByTestId('manual-success'));
     expect(reloadFn).toHaveBeenCalledTimes(1);
   });
 

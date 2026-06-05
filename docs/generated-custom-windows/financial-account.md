@@ -231,13 +231,15 @@ index.jsx                          — receives { recordId }, sets page meta, mo
         MovementRowKebab.jsx       — on-hover kebab (Unreconcile/Post disabled)
     ReconciliacionTab.jsx          — placeholder (T6)
     ImportedStatementsTab.jsx      — orchestrates list ↔ lines state machine
-      StatementsToolbar.jsx        — back ←, search, import button
+      StatementsToolbar.jsx        — back ←, search, import split-button (▾ → "Create manually")
       StatementsTable.jsx          — 7-column table (file, data, period, lines, progress, status, imported)
         StatementStatusBadge.jsx   — 3 status chips (COMPLETED / WITH_ISSUES / IN_PROGRESS)
         ProgressRing              — SVG circular progress indicator (new primitive)
       StatementLinesView.jsx       — sub-view: header with ← + lines table
         StatementLinesTable.jsx    — 7-column lines table (lineNo, date, desc, ref, bpartner, amount, matched)
       ImportStatementModal.jsx     — multi-step import modal (Upload → Review → Done): dropzone, preview KPIs + lines, base64 POST. White surface (var(--surface-overlay)), borderless footer, round red-hover remove button.
+      ManualStatementModal.jsx     — "Create statement" modal (Classic field parity): header (name, transaction/import dates, file name, notes) + per-line cards (date, reference, contact name + Business Partner lookup, G/L item lookup, out, in, description) + add/remove + live totals bar. POSTs ?action=create. No file involved.
+      LookupPicker.jsx             — shared text-input + dropdown lookup (BP / G/L item), used by NewMovementDialog and ManualStatementModal.
 ```
 
 ## Shared primitives introduced or used
@@ -260,6 +262,7 @@ index.jsx                          — receives { recordId }, sets page meta, mo
 | `useBankStatements(accountId)` | `hooks/useBankStatements.js` | Fetches imported bank statements — hits `GET /sws/neo/bank-statements?FIN_Financial_Account_ID={id}`. Returns `{ statements, loading, error, reload }`. |
 | `useBankStatementLines(statementId)` | `hooks/useBankStatementLines.js` | Fetches lines of one statement — hits `GET /sws/neo/bank-statements?action=lines&statementId={id}`. Returns `{ lines, loading, error, reload }`. |
 | `useStatementImport()` | `hooks/useStatementImport.js` | Mutation hook for C43 import — posts `{ FIN_Financial_Account_ID, fileName, contentBase64 }` to `POST /sws/neo/bank-statements?action=import`. Returns `{ importStatement, importing, error }`. |
+| `useCreateStatement()` | `hooks/useCreateStatement.js` | Mutation hook for manual statement creation — posts `{ FIN_Financial_Account_ID, name, transactionDate, importDate, fileName, notes, lines[] }` to `POST /sws/neo/bank-statements?action=create`. Returns `{ createStatement, creating, error }`. |
 
 ## Backend endpoints
 
@@ -308,14 +311,22 @@ The spec + entity records that wire this endpoint live in `src-db/database/sourc
 
 ### Imported statements
 
-Three operations routed by HTTP method + `action` query param, all served by `BankStatementsHandler` (`@Named("bank-statements")`):
+Operations routed by HTTP method + `action` query param, all served by `BankStatementsHandler` (`@Named("bank-statements")`):
 
 ```
 GET  /sws/neo/bank-statements?FIN_Financial_Account_ID={id}          → list
 GET  /sws/neo/bank-statements?action=lines&statementId={id}          → lines
-POST /sws/neo/bank-statements?action=import                          → C43 import
+POST /sws/neo/bank-statements?action=preview                         → in-memory parse (no persist)
+POST /sws/neo/bank-statements?action=import                          → C43 / CSV import
      body: { FIN_Financial_Account_ID, fileName, contentBase64 }
+POST /sws/neo/bank-statements?action=create                          → manual create (header + lines, no file)
+     body: { FIN_Financial_Account_ID, name, transactionDate, importDate,
+             fileName, notes, process,
+             lines: [{ date, reference, bpartnerName, bpartnerId,
+                       glItemId, in, out }] }
 ```
+
+The manual-create handler builds the `FIN_BankStatement` (name, dates, `fileName`, `notes`), one `FIN_BankStatementLine` per non-blank line (`in`→`cramount`, `out`→`dramount`, `bpartnerName`→`bpartnername`, `bpartnerId`→`businessPartner` FK, `glItemId`→`gLItem` FK, blank `reference` defaults to `**`). The `process` flag (default `true`) drives the save modal's split button: **Save and process** (`true`) runs the same `processStatement` as import so the lines become reconcilable; **Save as draft** (`false`) just persists the statement with `processed='N'`. Mirrors Classic's manual bank-statement header + line fields.
 
 The import handler:
 - Decodes base64 → `ByteArrayInputStream`
