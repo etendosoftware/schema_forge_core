@@ -174,6 +174,24 @@ function resolveSecondaryRowClickHandler(st, { openCustomModal, openSecondaryLin
   return undefined;
 }
 
+/**
+ * Run the add-line action for a secondary tab and surface any rejection.
+ *
+ * `customAddModal` tabs open the popup editor; the rest toggle the inline
+ * add-line row. Both handlers are async — if their promise rejects we log the
+ * failure (with the offending tab key) instead of swallowing it silently.
+ *
+ * @returns {Promise} the (already error-handled) promise, so callers/tests can await it.
+ */
+export function runAddLineAction(st, { handleCustomModalAddClick, handleSecondaryAddLineToggle }) {
+  const run = st.customAddModal
+    ? handleCustomModalAddClick(st.key)
+    : handleSecondaryAddLineToggle(st.key);
+  return run.catch((err) => {
+    console.error(`Add line action failed for tab '${st.key}':`, err);
+  });
+}
+
 function deriveTaxRateFromGross(gross, lineConfig, selectedLine) {
   if (gross <= 0) return null;
   const disc = lineConfig.discountField ? (parseFloat(String(selectedLine[lineConfig.discountField] ?? '')) || 0) : 0;
@@ -189,6 +207,70 @@ function deriveTaxRateFromGross(gross, lineConfig, selectedLine) {
   const lineNet = qty * price * (1 - disc / 100);
   if (lineNet > 0) return (gross / lineNet - 1) * 100;
   return null;
+}
+
+export function normalizePatchFieldValues(patchEdits, fieldValues) {
+  for (const [k, v] of Object.entries(patchEdits)) {
+    if (k.endsWith('$_identifier')) continue;
+    // NEO Headless PATCH expects camelCase API keys, not DB column names.
+    // Always use k (the API key) as the field name.
+    // Convert numeric strings to numbers for BigDecimal compatibility.
+    // Only strip when the value is already in standard format (no commas).
+    // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
+    if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
+      fieldValues[k] = parseFloat(v);
+    } else {
+      fieldValues[k] = v;
+    }
+  }
+}
+
+export function applyCalloutFieldUpdates(updates, ctx) {
+  const { data, triggerField, userTouchedRef, appliedFields, hook, api, catalogs } = ctx;
+  for (const [key, entry] of Object.entries(updates)) {
+    // Skip empty callout values if the field already has a non-empty value
+    // (e.g., callout clears warehouse but defaults already set it)
+    const currentVal = data[key];
+    const userHasValue = currentVal !== '' && currentVal != null;
+    if ((entry.value === '' || entry.value == null) && userHasValue) {
+      continue;
+    }
+    // Protect user-touched fields from being overwritten by collateral updates
+    // coming from a callout triggered by a different field. The trigger field
+    // itself always wins (it was just changed by the user).
+    if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
+      continue;
+    }
+    appliedFields.set(key, entry.value);
+    hook.handleChange(key, entry.value);
+    handleEntryIdentifierChange(entry, hook, key, api, catalogs);
+  }
+}
+
+export function applyCalloutComboUpdates(combos, ctx) {
+  const { data, triggerField, userTouchedRef, appliedFields, hook } = ctx;
+  for (const [key, combo] of Object.entries(combos)) {
+    let selectedVal = combo.selected;
+    let selectedLabel = combo._identifier;
+    // Auto-select first entry if no explicit selection (e.g., BP address combo)
+    if (selectedVal == null && Array.isArray(combo.entries) && combo.entries.length > 0) {
+      selectedVal = combo.entries[0].id;
+      selectedLabel = combo.entries[0].identifier || combo.entries[0]._identifier;
+    }
+    if (selectedVal != null) {
+      // Protect user-touched fields from collateral combo updates
+      const currentVal = data[key];
+      const userHasValue = currentVal !== '' && currentVal != null;
+      if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
+        continue;
+      }
+      appliedFields.set(key, selectedVal);
+      hook.handleChange(key, selectedVal);
+      if (selectedLabel) {
+        hook.handleChange(key + '$_identifier', selectedLabel);
+      }
+    }
+  }
 }
 
 /**
@@ -1038,50 +1120,13 @@ export function DetailView({
     if (!calloutResult) return;
     const { updates, combos, triggerField } = calloutResult;
     const appliedFields = new Map();
+    const ctx = { data, triggerField, userTouchedRef, appliedFields, hook, api, catalogs };
 
     if (updates) {
-      for (const [key, entry] of Object.entries(updates)) {
-        // Skip empty callout values if the field already has a non-empty value
-        // (e.g., callout clears warehouse but defaults already set it)
-        const currentVal = data[key];
-        const userHasValue = currentVal !== '' && currentVal != null;
-        if ((entry.value === '' || entry.value == null) && userHasValue) {
-          continue;
-        }
-        // Protect user-touched fields from being overwritten by collateral updates
-        // coming from a callout triggered by a different field. The trigger field
-        // itself always wins (it was just changed by the user).
-        if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
-          continue;
-        }
-        appliedFields.set(key, entry.value);
-        hook.handleChange(key, entry.value);
-        handleEntryIdentifierChange(entry, hook, key, api, catalogs);
-      }
+      applyCalloutFieldUpdates(updates, ctx);
     }
     if (combos) {
-      for (const [key, combo] of Object.entries(combos)) {
-        let selectedVal = combo.selected;
-        let selectedLabel = combo._identifier;
-        // Auto-select first entry if no explicit selection (e.g., BP address combo)
-        if (selectedVal == null && Array.isArray(combo.entries) && combo.entries.length > 0) {
-          selectedVal = combo.entries[0].id;
-          selectedLabel = combo.entries[0].identifier || combo.entries[0]._identifier;
-        }
-        if (selectedVal != null) {
-          // Protect user-touched fields from collateral combo updates
-          const currentVal = data[key];
-          const userHasValue = currentVal !== '' && currentVal != null;
-          if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
-            continue;
-          }
-          appliedFields.set(key, selectedVal);
-          hook.handleChange(key, selectedVal);
-          if (selectedLabel) {
-            hook.handleChange(key + '$_identifier', selectedLabel);
-          }
-        }
-      }
+      applyCalloutComboUpdates(combos, ctx);
     }
 
     // Mark these fields so the next onChange doesn't re-trigger callout
@@ -2480,19 +2525,7 @@ export function DetailView({
                                                 const patchEdits = { ...lineEdits };
                                                 if (patchData.unitPrice !== undefined) patchEdits.unitPrice = patchData.unitPrice;
                                                 const fieldValues = {};
-                                                for (const [k, v] of Object.entries(patchEdits)) {
-                                                  if (k.endsWith('$_identifier')) continue;
-                                                  // NEO Headless PATCH expects camelCase API keys, not DB column names.
-                                                  // Always use k (the API key) as the field name.
-                                                  // Convert numeric strings to numbers for BigDecimal compatibility.
-                                                  // Only strip when the value is already in standard format (no commas).
-                                                  // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
-                                                  if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
-                                                    fieldValues[k] = parseFloat(v);
-                                                  } else {
-                                                    fieldValues[k] = v;
-                                                  }
-                                                }
+                                                normalizePatchFieldValues(patchEdits, fieldValues);
                                                 const res = await fetch(childUrl, {
                                                   method: 'PATCH',
                                                   headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -2834,13 +2867,10 @@ export function DetailView({
                                   <div ref={getSecondaryAddLineWrapperRef(st.key)} className="relative">
                                     <span data-inline-add-portal="true">
                                       <AddLineButton
-                                        onClick={() => {
-                                          if (st.customAddModal) {
-                                            void handleCustomModalAddClick(st.key);
-                                          } else {
-                                            void handleSecondaryAddLineToggle(st.key);
-                                          }
-                                        }}
+                                        onClick={() => runAddLineAction(st, {
+                                          handleCustomModalAddClick,
+                                          handleSecondaryAddLineToggle,
+                                        })}
                                         label={ui('addEntity', { label: tMenu(st.label) })}
                                         hideChevron={hideAddLineChevron}
                                       />
