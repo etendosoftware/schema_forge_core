@@ -327,14 +327,14 @@ async function runProcessPipeline({ processId, processName, dryRun, isReport, sp
   printNextSteps({ pushToNeoRan, frontendGenerated });
 }
 
-function logTestResults(result) {
+export function logTestResults(result) {
   if (result.failed > 0) {
     console.error(`  ✗ ${result.failed} tests failed`);
     result.results.filter(r => !r.passed).forEach(r => console.error(`    - ${r.description}: ${r.reason}`));
   }
 }
 
-function logDryRunOutcome(dryRun, result) {
+export function logDryRunOutcome(dryRun, result) {
   if (dryRun) {
     //dry run true, so the pushToneo is false
     console.log(`  ✓ Dry run: push plan logged`);
@@ -343,11 +343,11 @@ function logDryRunOutcome(dryRun, result) {
   }
 }
 
-function getPipelineLabel(isReport) {
+export function getPipelineLabel(isReport) {
   return isReport ? 'Report' : 'Process';
 }
 
-async function createDirectoryAndWriteFiles(mkdir, outDir, files, writeFile) {
+export async function createDirectoryAndWriteFiles(mkdir, outDir, files, writeFile) {
   await mkdir(outDir, { recursive: true });
   for (const [filename, code] of Object.entries(files)) {
     await writeFile(`${outDir}/${filename}`, code, 'utf8');
@@ -374,6 +374,308 @@ async function runReportPipeline({ reportId, reportName, dryRun }) {
   });
 
   console.log('\n=== Report Pipeline complete ===\n');
+}
+
+export async function runAdvisoryVersionCheck(windowName) {
+  try {
+    const {checkVersion} = await import('./check-version.js');
+    const versionResult = await checkVersion(windowName, 'pipeline');
+    if (versionResult) {
+      console.log(`  ✓ Version: ${versionResult.changelog.from} → ${versionResult.newVersion} (${versionResult.classification.level})`);
+      if (versionResult.classification.level === 'breaking') {
+        console.warn('  ⚠ BREAKING CHANGE detected. Review contract-changelog.json before proceeding.');
+      }
+    }
+  } catch (err) {
+    // Version check is advisory, don't fail the pipeline
+    console.log(`  → Version check skipped: ${err.message}`);
+  }
+}
+
+export async function loadPreviousContract(readFile, windowName, prevVersion, prevContract, prevContractRaw) {
+  try {
+    const existingRaw = await readFile(`artifacts/${windowName}/contract.json`, 'utf-8');
+    const existingContract = JSON.parse(existingRaw);
+    // Guard: version may be a nested object if a previous run had a bug.
+    // Drill down until we reach a string.
+    let rawVersion = existingContract.version ?? null;
+    while (rawVersion !== null && typeof rawVersion === 'object') {
+      rawVersion = rawVersion.version ?? null;
+    }
+    prevVersion = rawVersion;
+    prevContract = existingContract;
+    prevContractRaw = existingRaw;
+  } catch {
+    // No existing contract — first generation, no prev needed
+  }
+  return {prevVersion, prevContract, prevContractRaw};
+}
+
+export async function loadPreviousMcpContract(readFile, windowName, prevMcpContract) {
+  try {
+    const existingMcpRaw = await readFile(`artifacts/${windowName}/contract.mcp.json`, 'utf-8');
+    prevMcpContract = JSON.parse(existingMcpRaw);
+  } catch {
+    // No existing MCP contract — first split generation
+  }
+  return prevMcpContract;
+}
+
+export async function runPushToNeoStep(windowName, { pushToNeoFn } = {}) {
+  const pushToNeo = pushToNeoFn ?? (await import('./push-to-neo.js')).pushToNeo;
+  const dryRun = process.argv.includes('--dry-run');
+  const result = await pushToNeo(windowName, {dryRun});
+  if (dryRun) {
+    console.log(`  ✓ Dry run: ${result.summary.totalFields} fields planned`);
+  } else {
+    console.log(`  ✓ NEO Headless configured (${result.fieldsUpdated} fields)`);
+    return true;
+  }
+}
+
+export async function runValidateFieldNamesStep(windowName, { validateFieldNamesFn } = {}) {
+  const validateFieldNames = validateFieldNamesFn ?? (await import('./validate-field-names.js')).validateFieldNames;
+  const result = await validateFieldNames(windowName);
+  if (result.skipped) {
+    console.log(`  → Skipped: ${result.reason}`);
+  } else {
+    console.log(`  ✓ ${result.matched.length} fields matched`);
+    if (result.mismatched.length > 0) {
+      console.warn(`  ⚠ ${result.mismatched.length} field name mismatches:`);
+      result.mismatched.forEach(m => console.warn(`    ${m.contract} → API returns: ${m.api}`));
+    }
+    if (result.missing.length > 0) {
+      console.log(`  → ${result.missing.length} contract fields not in API: ${result.missing.join(', ')}`);
+    }
+    if (result.extra.length > 0) {
+      console.log(`  → ${result.extra.length} extra API fields (not in contract): ${result.extra.join(', ')}`);
+    }
+  }
+}
+
+export function handleMissingDecisionsError(error, decisionsPath) {
+  if (error.code === 'ENOENT') {
+    console.error(`  ✗ decisions.json not found at ${decisionsPath}`);
+    console.error('  Run /classify to generate decisions.json first.');
+    process.exit(1);
+  }
+  throw error;
+}
+
+export async function runResolveCuratedStep(resolveCurated, schemaRaw, rulesRaw, decisions, pipelineContext) {
+  const resolved = await resolveCurated(schemaRaw, rulesRaw, decisions);
+  pipelineContext.schema = resolved.schema;
+  pipelineContext.rules = resolved.rules;
+
+  // Count unclassified fields (no decision, using defaults)
+  const totalFields = resolved.schema.entities.reduce((sum, e) => sum + e.fields.length, 0);
+  console.log(`  ✓ Resolved ${totalFields} fields across ${resolved.schema.entities.length} entities`);
+  if (resolved.unclassifiedCount > 0) {
+    console.warn(`  ⚠ ${resolved.unclassifiedCount} fields using defaults (no decision) — run /classify to review`);
+  }
+}
+
+export async function writeCustomScaffoldFiles(access, indexPath, catalogPath, files, writeFile) {
+  let indexExists = false;
+  let catalogExists = false;
+  try {
+    await access(indexPath);
+    indexExists = true;
+  } catch { /* first run */
+  }
+  try {
+    await access(catalogPath);
+    catalogExists = true;
+  } catch { /* first run */
+  }
+
+  const indexCode = files['index.jsx'];
+  const catalogCode = files['mockCatalogs.js'];
+
+  if (indexExists) {
+    await writeFile(`${indexPath}.new`, indexCode, 'utf8');
+    console.log(`  Custom scaffold updated at ${indexPath}.new (existing index.jsx preserved)`);
+    console.log('  Use AI to diff index.jsx vs index.jsx.new and adapt changes');
+  } else {
+    await writeFile(indexPath, indexCode, 'utf8');
+    console.log(`  Custom scaffold created at ${indexPath}`);
+  }
+
+  if (catalogExists) {
+    await writeFile(`${catalogPath}.new`, catalogCode, 'utf8');
+  } else {
+    await writeFile(catalogPath, catalogCode, 'utf8');
+  }
+}
+
+export async function loadOrMigrateDecisions(readFile, curatedPath, windowName, decisions, decisionsPath) {
+  try {
+    await readFile(curatedPath, 'utf8');
+    console.warn(`  ⚠ decisions.json not found — auto-migrating from curated files...`);
+    const {migrateWindow} = await import('./migrate-to-decisions.js');
+    await migrateWindow(windowName);
+    decisions = JSON.parse(await readFile(decisionsPath, 'utf8'));
+    console.log(`  ✓ Auto-migrated to decisions.json`);
+  } catch (e2) {
+    handleMissingDecisionsError(e2, decisionsPath);
+  }
+  return decisions;
+}
+
+export async function scaffoldSecondaryTabCustomForms(contract, fileURLToPathMod, resolvePath, dirnamePath, windowName, mkdir, access, writeFile) {
+  const secondaryTabsDecl = contract.frontendContract?.window?.secondaryTabs;
+  if (secondaryTabsDecl) {
+    const customForms = Object.values(secondaryTabsDecl)
+        .filter(cfg => cfg.customForm)
+        .map(cfg => cfg.customForm);
+    if (customForms.length > 0) {
+      const __filename = fileURLToPathMod(import.meta.url);
+      const repoRoot = resolvePath(dirnamePath(__filename), '../../');
+      const customDir = resolvePath(repoRoot, `tools/app-shell/src/windows/custom/${windowName}`);
+      await mkdir(customDir, {recursive: true});
+      for (const formName of customForms) {
+        const formPath = resolvePath(customDir, `${formName}.jsx`);
+        let formExists = false;
+        try {
+          await access(formPath);
+          formExists = true;
+        } catch { /* first run */
+        }
+        if (!formExists) {
+          const stub = `// Custom form for the "${windowName}" window.\n// This file is NOT regenerated by the pipeline — edit it directly.\nimport { EntityForm } from '@/components/contract-ui';\n\nexport default function ${formName}(props) {\n  return <div>{/* TODO: implement custom form */}</div>;\n}\n`;
+          await writeFile(formPath, stub, 'utf8');
+          console.log(`  Scaffolded custom form: tools/app-shell/src/windows/custom/${windowName}/${formName}.jsx`);
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+export async function autoRegisterCustomLoader(resolvePath, repoRoot, readFile, windowName, writeFile) {
+  const registryPath = resolvePath(repoRoot, 'tools/app-shell/src/windows/registry.js');
+  const registryContent = await readFile(registryPath, 'utf8');
+  const loaderEntry = `  '${windowName}': () => import('./custom/${windowName}/index.jsx'),`;
+  if (!registryContent.includes(`'${windowName}'`)) {
+    // Insert after the customLoaders opening brace
+    const updated = registryContent.replace(
+        /const customLoaders = \{(\s*)\/\/ Auto-registered by pipeline/,
+        `const customLoaders = {$1// Auto-registered by pipeline\n${loaderEntry}`,
+    );
+    await writeFile(registryPath, updated, 'utf8');
+    console.log(`  Auto-registered '${windowName}' in registry.js customLoaders`);
+  }
+}
+
+export async function writeGeneratedFiles(files, resolvePath, outDir, writeFile) {
+  for (const [filename, code] of Object.entries(files)) {
+    // Skip internal marker keys
+    if (filename.startsWith('__')) continue;
+    const filePath = resolvePath(outDir, filename);
+    await writeFile(filePath, code, 'utf8');
+  }
+}
+
+export function handleStepError(step, err) {
+  if (step.optional) {
+    console.log(`  → ${step.name} failed (optional, continuing): ${err.message}`);
+  } else {
+    console.error(`  ✗ ${step.name} failed: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function runValidateSchemaStep(windowName, deps = {}) {
+  const {validateSchema} = deps.validateSchemaFn
+    ? { validateSchema: deps.validateSchemaFn }
+    : await import('./validate-schema.js');
+  const {readFile} = deps.readFile
+    ? { readFile: deps.readFile }
+    : await import('node:fs/promises');
+  const exit = deps.exit || process.exit;
+  const schema = JSON.parse(await readFile(`artifacts/${windowName}/schema-raw.json`, 'utf8'));
+  const result = await validateSchema(schema);
+  if (result.errors.length > 0) {
+    console.error('  ✗ Schema validation failed');
+    result.errors.forEach(e => console.error(`    - [L${e.level}] ${e.code}: ${e.message} (${e.path})`));
+    exit(1);
+  }
+  console.log(`  ✓ Validation passed (${result.warnings.length} warnings)`);
+}
+
+export async function ensureProcessesFile(access, processesPath, mkdir, windowName, writeFile) {
+  try {
+    await access(processesPath);
+  } catch {
+    await mkdir(`artifacts/${windowName}`, {recursive: true});
+    await writeFile(processesPath, JSON.stringify({processes: []}, null, 2) + '\n');
+  }
+}
+
+export async function runContractTestsStep(windowName, deps = {}) {
+  const {runContractTests} = deps.runContractTestsFn
+    ? { runContractTests: deps.runContractTestsFn }
+    : await import('./run-contract-tests.js');
+  const {readFile} = deps.readFile
+    ? { readFile: deps.readFile }
+    : await import('node:fs/promises');
+  const contract = JSON.parse(await readFile(`artifacts/${windowName}/contract.json`, 'utf8'));
+  const result = runContractTests(contract);
+  console.log(`  ✓ ${result.passed}/${result.total} passed, ${result.skipped} skipped`);
+  if (result.failed > 0) {
+    console.error(`  ✗ ${result.failed} tests failed`);
+    result.results.filter(r => !r.passed).forEach(r => console.error(`    - ${r.description}: ${r.reason}`));
+  }
+}
+
+export async function runGenerateContractStep(windowName, pipelineContext, deps = {}) {
+  const {generateContract, splitWindowContractArtifacts} =
+    (deps.generateContractFn || deps.splitWindowContractArtifactsFn)
+      ? {
+          generateContract: deps.generateContractFn,
+          splitWindowContractArtifacts: deps.splitWindowContractArtifactsFn,
+        }
+      : await import('./generate-contract.js');
+  const {readFile, writeFile, access, mkdir} = deps.fs
+    ? deps.fs
+    : await import('node:fs/promises');
+  const versionCheck = deps.runAdvisoryVersionCheckFn || runAdvisoryVersionCheck;
+  const processesPath = `artifacts/${windowName}/processes.json`;
+  await ensureProcessesFile(access, processesPath, mkdir, windowName, writeFile);
+  const schema = pipelineContext.schema;
+  const rules = pipelineContext.rules || [];
+  const processes = JSON.parse(await readFile(processesPath, 'utf8'));
+
+  // Read existing version before overwriting, so the new contract preserves it
+  // and check-version can bump from the correct baseline.
+  let prevVersion = null;
+  let prevContract = null;
+  let prevContractRaw = null;
+  let prevMcpContract = null;
+  const loadedContract = await loadPreviousContract(readFile, windowName, prevVersion, prevContract, prevContractRaw);
+  prevVersion = loadedContract.prevVersion;
+  prevContract = loadedContract.prevContract;
+  prevContractRaw = loadedContract.prevContractRaw;
+  prevMcpContract = await loadPreviousMcpContract(readFile, windowName, prevMcpContract);
+  const generatedContract = generateContract(schema, Array.isArray(rules) ? rules : rules.rules || [], processes.processes || [], prevVersion, prevContract);
+  const {contract, mcpContract} = splitWindowContractArtifacts(generatedContract, prevContract, prevMcpContract);
+  if (prevContractRaw) {
+    await writeFile(`artifacts/${windowName}/contract.prev.json`, prevContractRaw, 'utf-8');
+  }
+  await writeFile(`artifacts/${windowName}/contract.json`, JSON.stringify(contract, null, 2) + '\n');
+  await writeFile(`artifacts/${windowName}/contract.mcp.json`, JSON.stringify(mcpContract, null, 2) + '\n');
+  console.log(`  ✓ Contract generated (${contract.testManifest.summary.total} tests)`);
+  // Version check
+  await versionCheck(windowName);
+}
+
+export function printTranslateTodosGuidance(step) {
+  if (step.name === 'translate-todos') {
+    console.log('  → Review generated TODO comments in the frontend components');
+    console.log('  → Use AI or manual translation to implement callout/onchange logic');
+    console.log('  → Re-run pipeline with --skip-to=run-tests when done');
+  }
 }
 
 async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive }) {
@@ -405,12 +707,11 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
   for (const step of steps) {
     // --skip-to: skip steps until we reach the target
     if (skipping) {
-      if (step.name === skipTo) {
-        skipping = false;
-        console.log(`  (skipped to ${step.name})`);
-      } else {
+      if (step.name !== skipTo) {
         continue;
       }
+      skipping = false;
+      console.log(`  (skipped to ${step.name})`);
     }
 
     if (step.interactive) {
@@ -420,11 +721,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
       }
 
       console.log(`\n[${step.phase}] ${step.description}`);
-      if (step.name === 'translate-todos') {
-        console.log('  → Review generated TODO comments in the frontend components');
-        console.log('  → Use AI or manual translation to implement callout/onchange logic');
-        console.log('  → Re-run pipeline with --skip-to=run-tests when done');
-      }
+      printTranslateTodosGuidance(step);
       break;
     }
 
@@ -443,16 +740,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           break;
         }
         case 'validate': {
-          const { validateSchema } = await import('./validate-schema.js');
-          const { readFile } = await import('node:fs/promises');
-          const schema = JSON.parse(await readFile(`artifacts/${windowName}/schema-raw.json`, 'utf8'));
-          const result = await validateSchema(schema);
-          if (result.errors.length > 0) {
-            console.error('  ✗ Schema validation failed');
-            result.errors.forEach(e => console.error(`    - [L${e.level}] ${e.code}: ${e.message} (${e.path})`));
-            process.exit(1);
-          }
-          console.log(`  ✓ Validation passed (${result.warnings.length} warnings)`);
+          await runValidateSchemaStep(windowName);
           break;
         }
         case 'pre-classify': {
@@ -490,130 +778,22 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
 
             // No decisions.json — auto-migrate from curated files if they exist
             const curatedPath = `artifacts/${windowName}/schema-curated.json`;
-            try {
-              await readFile(curatedPath, 'utf8');
-              console.warn(`  ⚠ decisions.json not found — auto-migrating from curated files...`);
-              const { migrateWindow } = await import('./migrate-to-decisions.js');
-              await migrateWindow(windowName);
-              decisions = JSON.parse(await readFile(decisionsPath, 'utf8'));
-              console.log(`  ✓ Auto-migrated to decisions.json`);
-            } catch (e2) {
-              if (e2.code === 'ENOENT') {
-                console.error(`  ✗ decisions.json not found at ${decisionsPath}`);
-                console.error('  Run /classify to generate decisions.json first.');
-                process.exit(1);
-              }
-              throw e2;
-            }
+            decisions = await loadOrMigrateDecisions(readFile, curatedPath, windowName, decisions, decisionsPath);
           }
 
-          const resolved = await resolveCurated(schemaRaw, rulesRaw, decisions);
-          pipelineContext.schema = resolved.schema;
-          pipelineContext.rules = resolved.rules;
-
-          // Count unclassified fields (no decision, using defaults)
-          const totalFields = resolved.schema.entities.reduce((sum, e) => sum + e.fields.length, 0);
-          console.log(`  ✓ Resolved ${totalFields} fields across ${resolved.schema.entities.length} entities`);
-          if (resolved.unclassifiedCount > 0) {
-            console.warn(`  ⚠ ${resolved.unclassifiedCount} fields using defaults (no decision) — run /classify to review`);
-          }
+          await runResolveCuratedStep(resolveCurated, schemaRaw, rulesRaw, decisions, pipelineContext);
           break;
         }
         case 'generate-contract': {
-          const { generateContract, splitWindowContractArtifacts } = await import('./generate-contract.js');
-          const { readFile, writeFile, access, mkdir } = await import('node:fs/promises');
-          const processesPath = `artifacts/${windowName}/processes.json`;
-          try {
-            await access(processesPath);
-          } catch {
-            await mkdir(`artifacts/${windowName}`, { recursive: true });
-            await writeFile(processesPath, JSON.stringify({ processes: [] }, null, 2) + '\n');
-          }
-          const schema = pipelineContext.schema;
-          const rules = pipelineContext.rules || [];
-          const processes = JSON.parse(await readFile(processesPath, 'utf8'));
-
-          // Read existing version before overwriting, so the new contract preserves it
-          // and check-version can bump from the correct baseline.
-          let prevVersion = null;
-          let prevContract = null;
-          let prevContractRaw = null;
-          let prevMcpContract = null;
-          try {
-            const existingRaw = await readFile(`artifacts/${windowName}/contract.json`, 'utf-8');
-            const existingContract = JSON.parse(existingRaw);
-            // Guard: version may be a nested object if a previous run had a bug.
-            // Drill down until we reach a string.
-            let rawVersion = existingContract.version ?? null;
-            while (rawVersion !== null && typeof rawVersion === 'object') {
-              rawVersion = rawVersion.version ?? null;
-            }
-            prevVersion = rawVersion;
-            prevContract = existingContract;
-            prevContractRaw = existingRaw;
-          } catch {
-            // No existing contract — first generation, no prev needed
-          }
-          try {
-            const existingMcpRaw = await readFile(`artifacts/${windowName}/contract.mcp.json`, 'utf-8');
-            prevMcpContract = JSON.parse(existingMcpRaw);
-          } catch {
-            // No existing MCP contract — first split generation
-          }
-          const generatedContract = generateContract(schema, Array.isArray(rules) ? rules : rules.rules || [], processes.processes || [], prevVersion, prevContract);
-          const { contract, mcpContract } = splitWindowContractArtifacts(generatedContract, prevContract, prevMcpContract);
-          if (prevContractRaw) {
-            await writeFile(`artifacts/${windowName}/contract.prev.json`, prevContractRaw, 'utf-8');
-          }
-          await writeFile(`artifacts/${windowName}/contract.json`, JSON.stringify(contract, null, 2) + '\n');
-          await writeFile(`artifacts/${windowName}/contract.mcp.json`, JSON.stringify(mcpContract, null, 2) + '\n');
-          console.log(`  ✓ Contract generated (${contract.testManifest.summary.total} tests)`);
-          // Version check
-          try {
-            const { checkVersion } = await import('./check-version.js');
-            const versionResult = await checkVersion(windowName, 'pipeline');
-            if (versionResult) {
-              console.log(`  ✓ Version: ${versionResult.changelog.from} → ${versionResult.newVersion} (${versionResult.classification.level})`);
-              if (versionResult.classification.level === 'breaking') {
-                console.warn('  ⚠ BREAKING CHANGE detected. Review contract-changelog.json before proceeding.');
-              }
-            }
-          } catch (err) {
-            // Version check is advisory, don't fail the pipeline
-            console.log(`  → Version check skipped: ${err.message}`);
-          }
+          await runGenerateContractStep(windowName, pipelineContext);
           break;
         }
         case 'push-to-neo': {
-          const { pushToNeo } = await import('./push-to-neo.js');
-          const dryRun = process.argv.includes('--dry-run');
-          const result = await pushToNeo(windowName, { dryRun });
-          if (dryRun) {
-            console.log(`  ✓ Dry run: ${result.summary.totalFields} fields planned`);
-          } else {
-            console.log(`  ✓ NEO Headless configured (${result.fieldsUpdated} fields)`);
-            pushToNeoRan = true;
-          }
+          pushToNeoRan = await runPushToNeoStep(windowName);
           break;
         }
         case 'validate-field-names': {
-          const { validateFieldNames } = await import('./validate-field-names.js');
-          const result = await validateFieldNames(windowName);
-          if (result.skipped) {
-            console.log(`  → Skipped: ${result.reason}`);
-          } else {
-            console.log(`  ✓ ${result.matched.length} fields matched`);
-            if (result.mismatched.length > 0) {
-              console.warn(`  ⚠ ${result.mismatched.length} field name mismatches:`);
-              result.mismatched.forEach(m => console.warn(`    ${m.contract} → API returns: ${m.api}`));
-            }
-            if (result.missing.length > 0) {
-              console.log(`  → ${result.missing.length} contract fields not in API: ${result.missing.join(', ')}`);
-            }
-            if (result.extra.length > 0) {
-              console.log(`  → ${result.extra.length} extra API fields (not in contract): ${result.extra.join(', ')}`);
-            }
-          }
+          await runValidateFieldNamesStep(windowName);
           break;
         }
         case 'generate-frontend': {
@@ -637,42 +817,10 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
             const catalogPath = resolvePath(customDir, 'mockCatalogs.js');
 
             // Regeneration safety: existing files are preserved; new content gets .new suffix
-            let indexExists = false;
-            let catalogExists = false;
-            try { await access(indexPath); indexExists = true; } catch { /* first run */ }
-            try { await access(catalogPath); catalogExists = true; } catch { /* first run */ }
-
-            const indexCode = files['index.jsx'];
-            const catalogCode = files['mockCatalogs.js'];
-
-            if (indexExists) {
-              await writeFile(`${indexPath}.new`, indexCode, 'utf8');
-              console.log(`  Custom scaffold updated at ${indexPath}.new (existing index.jsx preserved)`);
-              console.log('  Use AI to diff index.jsx vs index.jsx.new and adapt changes');
-            } else {
-              await writeFile(indexPath, indexCode, 'utf8');
-              console.log(`  Custom scaffold created at ${indexPath}`);
-            }
-
-            if (catalogExists) {
-              await writeFile(`${catalogPath}.new`, catalogCode, 'utf8');
-            } else {
-              await writeFile(catalogPath, catalogCode, 'utf8');
-            }
+            await writeCustomScaffoldFiles(access, indexPath, catalogPath, files, writeFile);
 
             // Auto-register the custom loader in registry.js
-            const registryPath = resolvePath(repoRoot, 'tools/app-shell/src/windows/registry.js');
-            const registryContent = await readFile(registryPath, 'utf8');
-            const loaderEntry = `  '${windowName}': () => import('./custom/${windowName}/index.jsx'),`;
-            if (!registryContent.includes(`'${windowName}'`)) {
-              // Insert after the customLoaders opening brace
-              const updated = registryContent.replace(
-                /const customLoaders = \{(\s*)\/\/ Auto-registered by pipeline/,
-                `const customLoaders = {$1// Auto-registered by pipeline\n${loaderEntry}`,
-              );
-              await writeFile(registryPath, updated, 'utf8');
-              console.log(`  Auto-registered '${windowName}' in registry.js customLoaders`);
-            }
+            await autoRegisterCustomLoader(resolvePath, repoRoot, readFile, windowName, writeFile);
 
             console.log(`  ✓ Custom scaffold ready (layoutType: custom)`);
             frontendGenerated = true;
@@ -682,12 +830,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           const outDir = `artifacts/${windowName}/generated/web/${windowName}`;
           await mkdir(outDir, { recursive: true });
 
-          for (const [filename, code] of Object.entries(files)) {
-            // Skip internal marker keys
-            if (filename.startsWith('__')) continue;
-            const filePath = resolvePath(outDir, filename);
-            await writeFile(filePath, code, 'utf8');
-          }
+          await writeGeneratedFiles(files, resolvePath, outDir, writeFile);
 
           // Generate mockData.js (entity record data for local development)
           const { generateMockDataFile } = await import('./generate-mock-data.js');
@@ -697,52 +840,16 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           console.log(`  ✓ ${Object.keys(files).filter(k => !k.startsWith('__')).length} frontend components generated`);
 
           // Scaffold customForm stubs for secondary tabs that declare a custom form
-          const secondaryTabsDecl = contract.frontendContract?.window?.secondaryTabs;
-          if (secondaryTabsDecl) {
-            const customForms = Object.values(secondaryTabsDecl)
-              .filter(cfg => cfg.customForm)
-              .map(cfg => cfg.customForm);
-            if (customForms.length > 0) {
-              const __filename = fileURLToPathMod(import.meta.url);
-              const repoRoot = resolvePath(dirnamePath(__filename), '../../');
-              const customDir = resolvePath(repoRoot, `tools/app-shell/src/windows/custom/${windowName}`);
-              await mkdir(customDir, { recursive: true });
-              for (const formName of customForms) {
-                const formPath = resolvePath(customDir, `${formName}.jsx`);
-                let formExists = false;
-                try { await access(formPath); formExists = true; } catch { /* first run */ }
-                if (!formExists) {
-                  const stub = `// Custom form for the "${windowName}" window.\n// This file is NOT regenerated by the pipeline — edit it directly.\nimport { EntityForm } from '@/components/contract-ui';\n\nexport default function ${formName}(props) {\n  return <div>{/* TODO: implement custom form */}</div>;\n}\n`;
-                  await writeFile(formPath, stub, 'utf8');
-                  console.log(`  Scaffolded custom form: tools/app-shell/src/windows/custom/${windowName}/${formName}.jsx`);
-                }
-              }
-            }
-          }
-
-          frontendGenerated = true;
+          frontendGenerated = await scaffoldSecondaryTabCustomForms(contract, fileURLToPathMod, resolvePath, dirnamePath, windowName, mkdir, access, writeFile);
           break;
         }
         case 'run-tests': {
-          const { runContractTests } = await import('./run-contract-tests.js');
-          const { readFile } = await import('node:fs/promises');
-          const contract = JSON.parse(await readFile(`artifacts/${windowName}/contract.json`, 'utf8'));
-          const result = runContractTests(contract);
-          console.log(`  ✓ ${result.passed}/${result.total} passed, ${result.skipped} skipped`);
-          if (result.failed > 0) {
-            console.error(`  ✗ ${result.failed} tests failed`);
-            result.results.filter(r => !r.passed).forEach(r => console.error(`    - ${r.description}: ${r.reason}`));
-          }
+          await runContractTestsStep(windowName);
           break;
         }
       }
     } catch (err) {
-      if (step.optional) {
-        console.log(`  → ${step.name} failed (optional, continuing): ${err.message}`);
-      } else {
-        console.error(`  ✗ ${step.name} failed: ${err.message}`);
-        process.exit(1);
-      }
+      handleStepError(step, err);
     }
   }
 
