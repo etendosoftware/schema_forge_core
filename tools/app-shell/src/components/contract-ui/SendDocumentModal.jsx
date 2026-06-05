@@ -2,27 +2,81 @@ import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Mail, Search } from 'lucide-react';
 import { useUI } from '@/i18n';
+import { sendDocumentEmail } from './documentEmailSend.js';
 
-const isValidEmail = (v) => {
-  const s = v.trim();
-  if (s.length > 254) return false;
-  const at = s.indexOf('@');
-  if (at < 1 || s.indexOf('@', at + 1) !== -1) return false;
-  const domain = s.slice(at + 1);
-  const dot = domain.lastIndexOf('.');
-  return dot > 0 && dot < domain.length - 1;
-};
-
-function getContactLabel(c) {
-  const full = [c.etgoFirstname, c.etgoLastname].filter(Boolean).join(' ') || c.name || '';
-  return full ? `${full} <${c.etgoEmail}>` : c.etgoEmail;
+function resolveEmailSendErrorMessage(ui, data, documentType) {
+  if (data?.status === 'THROTTLED') {
+    return ui('sendModalThrottled', { seconds: data.retryAfterSeconds ?? '' });
+  }
+  if (data?.status === 'DUPLICATE') {
+    return ui('sendModalDuplicate', { documentType });
+  }
+  if (data?.status === 'UNAUTHORIZED') {
+    return ui('sendModalUnauthorized');
+  }
+  if (data?.status === 'VALIDATION_FAILED') {
+    return data.message || ui('sendModalValidationFailed');
+  }
+  if (data?.status === 'NO_RECIPIENT') {
+    return ui('sendModalNoRecipient', { documentType });
+  }
+  if (data?.status === 'SUPPRESSED') {
+    return ui('sendModalSuppressed');
+  }
+  if (data?.status === 'KILL_SWITCHED') {
+    return ui('sendModalUnavailable');
+  }
+  if (data?.status === 'PROVIDER_FAILED') {
+    return ui('sendModalProviderFailed');
+  }
+  return data?.message || ui('sendModalSendFailed', { documentType });
 }
 
-function contactMatchesQuery(c, q) {
-  return (c.etgoEmail || '').toLowerCase().includes(q)
-    || (c.etgoFirstname || '').toLowerCase().includes(q)
-    || (c.etgoLastname || '').toLowerCase().includes(q)
-    || (c.name || '').toLowerCase().includes(q);
+function resolveEmailSendSuccessMessage(ui, status, documentType) {
+  return status === 'DUPLICATE'
+    ? ui('sendModalDuplicate', { documentType })
+    : ui('sendModalSentSuccess', { documentType });
+}
+
+function resolveEmailSendExceptionMessage(ui, documentType) {
+  return ui('sendModalSendFailed', { documentType });
+}
+
+async function sendDocumentFromModal({
+  apiBaseUrl,
+  token,
+  documentId,
+  windowName,
+  documentNo,
+  pdfBlob,
+  pdfBlobUrl,
+  cachePreviewBeforeSend,
+  documentType,
+  ui,
+  setSendFeedback,
+  onClose,
+}) {
+  const data = await sendDocumentEmail({
+    apiBaseUrl,
+    token,
+    documentId,
+    windowName,
+    documentNo,
+    pdfBlob: cachePreviewBeforeSend ? pdfBlob : null,
+    pdfBlobUrl: cachePreviewBeforeSend ? pdfBlobUrl : null,
+  });
+
+  if (data.status === 'SENT' || data.status === 'DUPLICATE') {
+    const successMessage = resolveEmailSendSuccessMessage(ui, data.status, documentType);
+    toast.success(successMessage);
+    setSendFeedback({ type: 'success', message: successMessage });
+    onClose();
+    return;
+  }
+
+  const errorMessage = resolveEmailSendErrorMessage(ui, data, documentType);
+  setSendFeedback({ type: 'error', message: errorMessage });
+  toast.error(errorMessage);
 }
 
 async function renderPdfIntoIframe(node, reportId, documentId, token, setPdfLoading, setPdfError) {
@@ -47,7 +101,7 @@ async function renderPdfIntoIframe(node, reportId, documentId, token, setPdfLoad
   setPdfLoading(false);
 }
 
-function EmailFormPanel({ to, setTo, emailLoading, contacts, filteredContacts, showDropdown, setShowDropdown, toPristine, setToPristine, subject, setSubject, message, setMessage, ui }) {
+function EmailFormPanel({ to, emailLoading, subject, message, ui }) {
   return (
     <div style={{ width: '40%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
       <div style={{ position: 'relative' }}>
@@ -56,50 +110,29 @@ function EmailFormPanel({ to, setTo, emailLoading, contacts, filteredContacts, s
           <input
             type="text"
             value={to}
-            onChange={e => { setTo(e.target.value); setShowDropdown(true); setToPristine(false); }}
-            onFocus={() => { contacts.length > 0 && setShowDropdown(true); setToPristine(false); }}
-            onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+            readOnly
             placeholder={emailLoading ? '' : 'email@company.com'}
-            style={{ width: '100%', fontSize: 13, padding: '8px 32px 8px 10px', border: `0.5px solid ${!isValidEmail(to) && !emailLoading && !toPristine && !showDropdown ? '#ef4444' : '#d1d5db'}`, borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
+            style={{ width: '100%', fontSize: 13, padding: '8px 32px 8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', background: '#f9fafb', boxSizing: 'border-box' }}
           />
           <Search size={13} strokeWidth={1.5} color="#9ca3af" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
         </div>
-        {showDropdown && filteredContacts.length > 0 && (
-          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, background: '#fff', border: '0.5px solid #d1d5db', borderRadius: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: 160, overflowY: 'auto', marginTop: 2 }}>
-            {filteredContacts.map(c => (
-              <button
-                key={c.id}
-                type="button"
-                onMouseDown={() => { setTo(c.etgoEmail); setShowDropdown(false); }}
-                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 10px', fontSize: 12, color: '#111827', background: 'none', border: 'none', borderBottom: '0.5px solid #f3f4f6', cursor: 'pointer' }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#F3F4F6'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
-              >
-                {getContactLabel(c)}
-              </button>
-            ))}
-          </div>
-        )}
-        {!isValidEmail(to) && !emailLoading && !toPristine && !showDropdown && (
-          <span style={{ fontSize: 11, color: '#ef4444', marginTop: 3, display: 'block' }}>{ui('sendModalNoEmail')}</span>
-        )}
       </div>
       <div>
         <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalSubject')}</label>
         <input
           type="text"
           value={subject}
-          onChange={e => setSubject(e.target.value)}
-          style={{ width: '100%', fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
+          readOnly
+          style={{ width: '100%', fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', background: '#f9fafb', boxSizing: 'border-box' }}
         />
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalMessage')}</label>
         <textarea
           value={message}
-          onChange={e => setMessage(e.target.value)}
+          readOnly
           placeholder={ui('sendModalMessagePlaceholder')}
-          style={{ width: '100%', flex: 1, minHeight: 80, fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', resize: 'none', boxSizing: 'border-box' }}
+          style={{ width: '100%', flex: 1, minHeight: 80, fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', background: '#f9fafb', resize: 'none', boxSizing: 'border-box' }}
         />
       </div>
     </div>
@@ -129,6 +162,54 @@ async function fetchAndDownloadPdf(reportId, documentId, windowName, documentNo,
   URL.revokeObjectURL(url);
 }
 
+function resolveInitialEmail(bpEmail) {
+  return bpEmail?.includes('@') ? bpEmail : '';
+}
+
+function resolveContactsBaseUrl(apiBaseUrl) {
+  return apiBaseUrl.replace(/\/[^/]+$/, '/contacts');
+}
+
+async function loadBusinessPartnerEmail({ apiBaseUrl, token, bPartnerId, hasEmail, setTo, isCancelled }) {
+  const contactsBaseUrl = resolveContactsBaseUrl(apiBaseUrl);
+  const response = await fetch(`${contactsBaseUrl}/businessPartner/${bPartnerId}`, {
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  });
+  const data = response.ok ? await response.json() : null;
+  if (isCancelled()) return;
+  const records = data?.response?.data ?? data?.data ?? [];
+  const withEmail = records.filter(record => record?.etgoEmail?.includes('@'));
+  if (!hasEmail && withEmail.length > 0) setTo(withEmail[0].etgoEmail);
+}
+
+function renderPdfPreviewNode({ node, pdfBlobUrl, pdfBlobLoading, documentId, token, reportId, setPdfError, setPdfLoading }) {
+  if (pdfBlobUrl) {
+    node.src = `${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`;
+    setPdfError(null);
+    setPdfLoading(false);
+    return;
+  }
+
+  if (pdfBlobLoading) {
+    setPdfError(null);
+    setPdfLoading(true);
+    return;
+  }
+
+  if (documentId && token) {
+    renderPdfIntoIframe(node, reportId, documentId, token, setPdfLoading, setPdfError);
+  }
+}
+
+function downloadExistingPdfBlobUrl(pdfBlobUrl, windowName, documentNo) {
+  const a = document.createElement('a');
+  a.href = pdfBlobUrl;
+  a.download = `${windowName || 'invoice'}-${documentNo}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 /**
  * Reusable Send/Download modal for any document (invoice, order, quotation, shipment).
  *
@@ -144,47 +225,43 @@ async function fetchAndDownloadPdf(reportId, documentId, windowName, documentNo,
  * - token: auth token
  * - onClose: callback to close modal
  *
- * pdfBlobUrl — optional blob URL from jsreport (e.g. from useInvoicePdf).
- * When provided, the preview uses it directly and download triggers on the blob,
- * bypassing the /api/reports render endpoint entirely.
+ * Optional PDF preview support:
+ * - pdfBlobUrl: object URL created from a pre-rendered PDF blob.
+ * - pdfBlob: pre-rendered PDF blob to cache before sending.
+ * - pdfBlobLoading: disables send while a cacheable preview is still loading.
+ * - cachePreviewBeforeSend: caches pdfBlob/pdfBlobUrl through /preview-file before sending.
+ * When pdfBlobUrl is provided, preview and download use it directly and bypass
+ * the /api/reports render endpoint.
  */
-export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, pdfBlobLoading = false, isClosing = false, allowEmail = true }) {
+export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, pdfBlob, pdfBlobLoading = false, cachePreviewBeforeSend = true, isClosing = false, allowEmail = true }) {
   const ui = useUI();
-  const hasEmail = bpEmail && bpEmail.includes('@');
-  const [to, setTo] = useState(hasEmail ? bpEmail : '');
+  const initialEmail = resolveInitialEmail(bpEmail);
+  const hasEmail = Boolean(initialEmail);
+  const [to, setTo] = useState(initialEmail);
   const [emailLoading, setEmailLoading] = useState(false);
-  const [contacts, setContacts] = useState([]);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [toPristine, setToPristine] = useState(true);
 
-  // Fetch all contacts for the current BP to populate the "Para" search dropdown.
+  // Fetch trusted contact data only to display the server-resolved recipient preview.
   useEffect(() => {
     if (!bPartnerId || !apiBaseUrl || !token) return;
     let cancelled = false;
     setEmailLoading(true);
-    const contactsBaseUrl = apiBaseUrl.replace(/\/[^/]+$/, '/contacts');
-    fetch(`${contactsBaseUrl}/businessPartner/${bPartnerId}`, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    loadBusinessPartnerEmail({
+      apiBaseUrl,
+      token,
+      bPartnerId,
+      hasEmail,
+      setTo,
+      isCancelled: () => cancelled,
     })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (cancelled) return;
-        const records = d?.response?.data ?? d?.data ?? [];
-        const withEmail = records.filter(r => r?.etgoEmail?.includes('@'));
-        setContacts(withEmail);
-        if (!hasEmail && withEmail.length > 0) setTo(withEmail[0].etgoEmail);
-      })
       .catch(() => {})
       .finally(() => { if (!cancelled) setEmailLoading(false); });
     return () => { cancelled = true; };
   }, [hasEmail, bPartnerId, apiBaseUrl, token]);
 
-  const q = to.toLowerCase();
-  const filteredContacts = contacts.filter(c => contactMatchesQuery(c, q));
-
-  const [subject, setSubject] = useState(`${documentType} #${documentNo} — ${bpName}`);
-  const [message, setMessage] = useState('');
+  const subject = `${documentType} #${documentNo} — ${bpName}`;
+  const message = '';
   const [sending, setSending] = useState(false);
+  const [sendFeedback, setSendFeedback] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(!pdfBlobUrl);
   // True while the parent is still generating the blob via useInvoicePdf — suppress
   // the fallback report-render fetch and show a spinner instead of the error card.
@@ -196,25 +273,16 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
 
   const iframeRef = useCallback(node => {
     if (!node) return;
-
-    // If a pre-rendered blob URL is provided, use it directly
-    if (pdfBlobUrl) {
-      node.src = `${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`;
-      setPdfError(null);
-      setPdfLoading(false);
-      return;
-    }
-
-    // Parent indicated a blob is being generated — wait for it instead of falling
-    // back to /api/reports which would set pdfError and show the sad-page card.
-    if (pdfBlobLoading) {
-      setPdfError(null);
-      setPdfLoading(true);
-      return;
-    }
-
-    if (!documentId || !token) return;
-    renderPdfIntoIframe(node, reportId, documentId, token, setPdfLoading, setPdfError);
+    renderPdfPreviewNode({
+      node,
+      pdfBlobUrl,
+      pdfBlobLoading,
+      documentId,
+      token,
+      reportId,
+      setPdfError,
+      setPdfLoading,
+    });
   }, [documentId, token, reportId, pdfBlobUrl, pdfBlobLoading]);
 
   const handleDownload = async () => {
@@ -222,12 +290,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
 
     // If a blob URL is already available, download it directly
     if (pdfBlobUrl) {
-      const a = document.createElement('a');
-      a.href = pdfBlobUrl;
-      a.download = `${windowName || 'invoice'}-${documentNo}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      downloadExistingPdfBlobUrl(pdfBlobUrl, windowName, documentNo);
       return;
     }
 
@@ -240,14 +303,38 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
     setDownloading(false);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
+    if (sending || !documentId) return;
     setSending(true);
-    setTimeout(() => {
-      toast.success(ui('sendModalSentSuccess', { documentType }));
+    setSendFeedback(null);
+    try {
+      await sendDocumentFromModal({
+        apiBaseUrl,
+        token,
+        documentId,
+        windowName,
+        documentNo,
+        pdfBlob,
+        pdfBlobUrl,
+        cachePreviewBeforeSend,
+        documentType,
+        ui,
+        setSendFeedback,
+        onClose,
+      });
+    } catch {
+      const errorMessage = resolveEmailSendExceptionMessage(ui, documentType);
+      setSendFeedback({ type: 'error', message: errorMessage });
+      toast.error(errorMessage);
+    } finally {
       setSending(false);
-      onClose();
-    }, 800);
+    }
   };
+
+  const shouldCachePreview = cachePreviewBeforeSend && Boolean(pdfBlob || pdfBlobUrl || pdfBlobLoading);
+  const hasCacheablePreview = Boolean(pdfBlob || pdfBlobUrl);
+  const waitingForCacheablePreview = shouldCachePreview && pdfBlobLoading && !hasCacheablePreview;
+  const sendDisabled = !documentId || sending || waitingForCacheablePreview;
 
   return (
     <>
@@ -299,13 +386,10 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
 
           {allowEmail && (
             <EmailFormPanel
-              to={to} setTo={setTo}
+              to={to}
               emailLoading={emailLoading}
-              contacts={contacts} filteredContacts={filteredContacts}
-              showDropdown={showDropdown} setShowDropdown={setShowDropdown}
-              toPristine={toPristine} setToPristine={setToPristine}
-              subject={subject} setSubject={setSubject}
-              message={message} setMessage={setMessage}
+              subject={subject}
+              message={message}
               ui={ui}
             />
           )}
@@ -313,12 +397,17 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: allowEmail ? 'space-between' : 'flex-end', background: '#F5F5F5', borderTop: '1px solid #E5E5E5', padding: '10px 16px', flexShrink: 0 }}>
           <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '6px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>{allowEmail ? ui('cancel') : ui('close')}</button>
+          {sendFeedback && (
+            <span role="status" style={{ flex: 1, marginLeft: 12, marginRight: 12, fontSize: 12, color: sendFeedback.type === 'error' ? '#dc2626' : '#15803d', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {sendFeedback.message}
+            </span>
+          )}
           {allowEmail && (
           <button
             type="button"
             onClick={handleSend}
-            disabled={!isValidEmail(to) || sending}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, padding: '6px 16px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (!isValidEmail(to) || sending) ? 'not-allowed' : 'pointer', opacity: (!isValidEmail(to) || sending) ? 0.4 : 1 }}
+            disabled={sendDisabled}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, padding: '6px 16px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: sendDisabled ? 'not-allowed' : 'pointer', opacity: sendDisabled ? 0.4 : 1 }}
           >
             {sending ? ui('sendModalSending') : (
               <>
@@ -345,6 +434,7 @@ export function SendDocumentButton({ onClick }) {
     <div style={{ position: 'relative' }} className="group">
       <button
         type="button"
+        data-testid="action-send-email"
         onClick={onClick}
         aria-label={label}
         className="flex items-center justify-center p-[7px] rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors"

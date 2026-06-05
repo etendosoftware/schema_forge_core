@@ -351,29 +351,6 @@
         "processType": "classic"
       },
       {
-        "name": "generateTemplate",
-        "actionType": "createFrom",
-        "entity": "quotation",
-        "column": "Generatetemplate",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
-        "parameters": [],
-        "preconditions": [],
-        "effects": [
-          "Creates child or related records",
-          "May copy data from source document"
-        ],
-        "dryRunSupported": false,
-        "edgeCases": [
-          "Source document has no valid lines to copy",
-          "Target entity already has linked records",
-          "Required reference data is missing (price list, warehouse, etc.)"
-        ],
-        "processId": "800022",
-        "processType": "classic"
-      },
-      {
         "name": "processNow",
         "actionType": "documentAction",
         "entity": "quotation",
@@ -452,6 +429,29 @@
         ],
         "processId": "57496FB9CF9E4E8F847224017941570E",
         "processType": "obuiapp"
+      },
+      {
+        "name": "generateTemplate",
+        "actionType": "createFrom",
+        "entity": "quotation",
+        "column": "Generatetemplate",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates child or related records",
+          "May copy data from source document"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Source document has no valid lines to copy",
+          "Target entity already has linked records",
+          "Required reference data is missing (price list, warehouse, etc.)"
+        ],
+        "processId": "800022",
+        "processType": "classic"
       },
       {
         "name": "cancelandreplace",
@@ -909,9 +909,9 @@
       "copyFromPO",
       "documentAction",
       "createOrder",
-      "generateTemplate",
       "processNow",
       "posted",
+      "generateTemplate",
       "createPOLines",
       "rMPickfromreceipt"
     ],

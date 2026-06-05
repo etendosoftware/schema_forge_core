@@ -11,6 +11,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
 import { resolve, join } from 'node:path';
+import { registerReportHelpers } from '../../../templates/reports/helpers/report-html-helpers.js';
 
 const ARTIFACTS_DIR = resolve(import.meta.dirname, '../../../artifacts');
 const ROOT = resolve(ARTIFACTS_DIR, '..');
@@ -598,22 +599,12 @@ export default function reportApiPlugin() {
             if (format === 'html') {
               const Handlebars = _require('handlebars');
 
-              // Execute helpers.js in an isolated scope and extract all functions
-              if (helpersCode) {
-                // eslint-disable-next-line no-new-func
-                const helperFn = new Function(helpersCode + `
-                  var _out = {};
-                  ['isGroupBreak','resetGroupTracking','formatDate','formatCurrency',
-                   'formatBoolean','formatNumber','ifCond','eq','sumField','formatDateDisplay','sumRowsByCategory']
-                  .forEach(function(n) { try { var f = eval(n); if (typeof f === 'function') _out[n] = f; } catch(e) {} });
-                  return _out;
-                `);
-                const helpers = helperFn();
-                if (typeof helpers.resetGroupTracking === 'function') helpers.resetGroupTracking();
-                Object.entries(helpers).forEach(([name, fn]) => {
-                  if (typeof fn === 'function') Handlebars.registerHelper(name, fn);
-                });
-              }
+              // Register the trusted in-repo helper set — no dynamic code execution.
+              // helpersCode is read (not executed) only to preserve a report's
+              // formatNumber decimals. Report-specific helpers (e.g. qrCode) are only
+              // needed by the jsreport PDF/XLSX path below, which consumes the artifact
+              // helpers.js string directly.
+              registerReportHelpers(Handlebars, helpersCode);
 
               const template = Handlebars.compile(templateContent);
               const html = template(templateData);

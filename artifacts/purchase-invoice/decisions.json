@@ -10,16 +10,7 @@
     "relatedDocuments": true,
     "notesField": "description",
     "noHeaderBorder": true,
-    "menuActions": [
-      {
-        "key": "reactivate",
-        "label": "Reactivate",
-        "labelKey": "reactivate",
-        "visibleWhenStatus": "CO",
-        "documentAction": "RE",
-        "successKey": "reactivated"
-      }
-    ],
+    "menuActions": [],
     "customComponents": {
       "headerTable": "InvoiceHeaderTable",
       "bottomSection": "PurchaseInvoiceBottomPanel"
@@ -45,7 +36,7 @@
     ],
     "labelOverrides": {
       "es_ES": {
-        "POReference": "Nº documento",
+        "POReference": "N\u00ba documento",
         "OutstandingAmt": "Pendiente de pago",
         "EM_Etgo_Due_Date": "Vencimiento",
         "em_etgo_delivery_status": "Estado de entrega"
@@ -379,7 +370,8 @@
         },
         "aeatsiiEstado": {
           "visibility": "readOnly",
-          "form": false
+          "form": false,
+          "grid": true
         },
         "etsgDateOperation": {
           "visibility": "editable",
@@ -799,28 +791,72 @@
     },
     "intrastat": {
       "fields": {
-        "client": { "order": 1 },
-        "organization": { "order": 2 },
-        "invoiceLine": { "order": 3 },
-        "product": { "order": 4 },
-        "incoterms": { "order": 5 },
-        "transactionType": { "order": 6 },
-        "transportationType": { "order": 7 },
-        "portAirport": { "order": 8 },
-        "statisticalRegime": { "order": 9 },
-        "origCountry": { "order": 10 },
-        "nC8Code": { "order": 11 },
-        "netMassKg": { "order": 12 },
-        "hasSuplementaryUnit": { "order": 13 },
-        "conversionRate": { "order": 14 },
-        "staticalValue": { "order": 15 },
-        "supplementaryUOM": { "order": 16 },
-        "active": { "order": 17 },
-        "intrCInvoiceline": { "order": 18 },
-        "creationDate": { "order": 19 },
-        "createdBy": { "order": 20 },
-        "updated": { "order": 21 },
-        "updatedBy": { "order": 22 }
+        "client": {
+          "order": 1
+        },
+        "organization": {
+          "order": 2
+        },
+        "invoiceLine": {
+          "order": 3
+        },
+        "product": {
+          "order": 4
+        },
+        "incoterms": {
+          "order": 5
+        },
+        "transactionType": {
+          "order": 6
+        },
+        "transportationType": {
+          "order": 7
+        },
+        "portAirport": {
+          "order": 8
+        },
+        "statisticalRegime": {
+          "order": 9
+        },
+        "origCountry": {
+          "order": 10
+        },
+        "nC8Code": {
+          "order": 11
+        },
+        "netMassKg": {
+          "order": 12
+        },
+        "hasSuplementaryUnit": {
+          "order": 13
+        },
+        "conversionRate": {
+          "order": 14
+        },
+        "staticalValue": {
+          "order": 15
+        },
+        "supplementaryUOM": {
+          "order": 16
+        },
+        "active": {
+          "order": 17
+        },
+        "intrCInvoiceline": {
+          "order": 18
+        },
+        "creationDate": {
+          "order": 19
+        },
+        "createdBy": {
+          "order": 20
+        },
+        "updated": {
+          "order": 21
+        },
+        "updatedBy": {
+          "order": 22
+        }
       }
     }
   },

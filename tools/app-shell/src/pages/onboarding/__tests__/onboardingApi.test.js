@@ -2,8 +2,11 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildAuthHeaders,
+  changePassword,
+  confirmPasswordReset,
   registerAccount,
   loginAccount,
+  requestPasswordReset,
   fetchAccount,
   fetchEnvironments,
   loginEnvironment,
@@ -40,6 +43,19 @@ function streamResponse(lines) {
   };
 }
 
+function assertNoProviderPayload(body) {
+  const payload = JSON.parse(body);
+  const serialized = JSON.stringify(payload).toLowerCase();
+
+  assert.equal(Object.hasOwn(payload, 'to'), false);
+  assert.equal(Object.hasOwn(payload, 'template'), false);
+  assert.equal(Object.hasOwn(payload, 'data'), false);
+  assert.equal(serialized.includes('sender'), false);
+  assert.equal(serialized.includes('reply-to'), false);
+  assert.equal(serialized.includes('replyto'), false);
+  assert.equal(serialized.includes('provider'), false);
+}
+
 describe('onboardingApi', () => {
   it('buildAuthHeaders includes content type and optional bearer token', () => {
     assert.deepEqual(buildAuthHeaders('platform-token'), {
@@ -62,6 +78,7 @@ describe('onboardingApi', () => {
       name: 'New User',
       email: 'new@example.com',
       password: 'secret',
+      language: 'es_ES',
     });
 
     assert.equal(result.token, 'platform-token');
@@ -72,6 +89,7 @@ describe('onboardingApi', () => {
       name: 'New User',
       email: 'new@example.com',
       password: 'secret',
+      language: 'es_ES',
     }));
   });
 
@@ -90,6 +108,71 @@ describe('onboardingApi', () => {
     assert.equal(result.token, 'platform-token');
     assert.equal(calls[0].url, '/sws/go/login');
     assert.equal(calls[0].options.method, 'POST');
+  });
+
+  it('requestPasswordReset posts only the account email to the neutral reset endpoint', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, options });
+      return jsonResponse({ success: true });
+    };
+
+    const result = await requestPasswordReset(fetchImpl, '/etendo', 'user@example.com');
+
+    assert.equal(result.success, true);
+    assert.equal(calls[0].url, '/etendo/sws/go/password-reset/request');
+    assert.equal(calls[0].options.method, 'POST');
+    assert.equal(calls[0].options.headers['Content-Type'], 'application/json');
+    assert.equal(calls[0].options.body, JSON.stringify({ email: 'user@example.com' }));
+    assertNoProviderPayload(calls[0].options.body);
+  });
+
+  it('confirmPasswordReset posts only the reset token and new password', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, options });
+      return jsonResponse({ success: true });
+    };
+
+    await confirmPasswordReset(fetchImpl, '', {
+      token: 'reset-token',
+      password: 'new-secret',
+      confirmPassword: 'new-secret',
+      ignored: 'not-sent',
+    });
+
+    assert.equal(calls[0].url, '/sws/go/password-reset/confirm');
+    assert.equal(calls[0].options.method, 'POST');
+    assert.equal(calls[0].options.body, JSON.stringify({
+      token: 'reset-token',
+      password: 'new-secret',
+    }));
+    assertNoProviderPayload(calls[0].options.body);
+  });
+
+  it('changePassword uses the platform token and local password fields only', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, options });
+      return jsonResponse({ token: 'rotated-platform-token' });
+    };
+
+    const result = await changePassword(fetchImpl, '', 'platform-token', {
+      currentPassword: 'old-secret',
+      newPassword: 'new-secret',
+      confirmPassword: 'new-secret',
+      ignored: 'not-sent',
+    });
+
+    assert.equal(result.token, 'rotated-platform-token');
+    assert.equal(calls[0].url, '/sws/go/change-password');
+    assert.equal(calls[0].options.method, 'POST');
+    assert.equal(calls[0].options.headers.Authorization, 'Bearer platform-token');
+    assert.equal(calls[0].options.body, JSON.stringify({
+      currentPassword: 'old-secret',
+      newPassword: 'new-secret',
+    }));
+    assertNoProviderPayload(calls[0].options.body);
   });
 
   it('fetchAccount uses the platform token against /sws/go/me', async () => {

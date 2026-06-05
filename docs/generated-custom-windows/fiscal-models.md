@@ -4,12 +4,11 @@
 
 Use this window to manage Spanish tax declarations (modelos fiscales) — creating, tracking, and filing periodic returns such as Modelo 303 (quarterly VAT) and Modelo 349 (intra-community operations). It combines a declaration list with per-model detail pages that guide the user through a status lifecycle ending in submission.
 
-The window supports two data modes: **demo** (read-only mock data for exploration) and **real** (live declarations fetched from the NEO Headless fiscal API). In real mode, fiscal boxes are auto-computed in the background by polling for invoice changes.
+The window fetches declarations from the NEO Headless fiscal API and auto-computes fiscal boxes in the background by polling for invoice changes.
 
 ## What this window should allow
 
-- Switch between demo and real data modes via a toolbar toggle; mode persists in `sessionStorage` across navigation.
-- In real mode, fetch all declarations from `GET /fiscal303/declarations` and keep status changes in sync via `PUT /fiscal303/declarations?id=`.
+- Fetch all declarations from `GET /fiscal303/declarations` and keep status changes in sync via `PUT /fiscal303/declarations?id=`.
 - Auto-compute fiscal boxes for Modelo 303 draft declarations in the background every 3 minutes, updating the result column in the list without user interaction.
 - Display an upcoming deadlines panel for unsubmitted declarations.
 - Filter declarations by model type (303, 349) and status.
@@ -18,15 +17,6 @@ The window supports two data modes: **demo** (read-only mock data for exploratio
 - Generate and download the submission file (`.txt`) for Modelo 303.
 - Show blocking and warning incident counts inline; a blocking count prevents file generation.
 
-## Data modes
-
-| Mode | Source | Auto-compute | Status writes |
-|------|--------|--------------|---------------|
-| `demo` | `MOCK_DECLARATIONS` constant in `FmListPage.jsx` | Disabled | Local state only |
-| `real` | `GET /fiscal303/declarations` (NEO Headless) | Enabled for 303 borrador | `PUT /fiscal303/declarations?id=` |
-
-The toggle renders as `Demo` / `Real` pill in the toolbar. The selected mode is stored in `sessionStorage` under key `fm-data-mode` so it survives page navigation within the session.
-
 ## Auto-compute architecture (`useFiscalAutoCompute`)
 
 ```
@@ -34,7 +24,7 @@ FmListPage
   └── useFiscalAutoCompute(decls, { computeFn, checkModifiedFn, token, apiBaseUrl, pollIntervalMs=180_000 })
         ├── On mount: calls computeFn for every decl in parallel
         │     result → computedMap[decl.id] = { boxes, summary, error, computedAt }
-        │     null result → { boxes: null, summary: null, error: null, computedAt }  ← not "computing"
+        │     null result → { boxes: null, summary: null, error: 'compute_failed', computedAt }  ← not "computing"
         └── Polling (every 3 min): calls checkModifiedFn per decl
               if modified → calls computeFn and updates computedMap
 ```
@@ -42,32 +32,31 @@ FmListPage
 - `computeFn` = `computeBoxes303(decl, { token, apiBaseUrl })` → `GET /fiscal303/boxes?year=&period=`
 - `checkModifiedFn` = `checkModified303(decl, sinceMs, { token, apiBaseUrl })` → `GET /fiscal303/modified?year=&period=&since=`
 - `computedAtRef` tracks the last **successful** compute timestamp per declaration to bound the `since` query parameter. It is intentionally not updated on errors, so `sinceMs` stays at the last success and any subsequent invoice change still triggers a retry.
-- The hook is disabled (`enabled=false`) in demo mode.
 - Precomputed data (`decl._precomputed`) is seeded from `computedMap` when a row is opened, so the detail page loads instantly.
 
 ## Status lifecycle
 
 ```
 Modelo 303:
-(new) → borrador → listo → presentado
-                          ↘ presentadoOtra
-                          ↘ presentadoAcuse
+(new) → draft → ready → submitted
+                        ↘ submitted_ext
+                        ↘ submitted_ack
           ↓
-        omitido  (can be set from any non-submitted state)
+        skipped  (can be set from any non-submitted state)
 
 Modelo 349:
-(new) → pendiente → borrador → listo → presentado
+(new) → pending → draft → ready → submitted
 ```
 
 | Status | Color | Meaning |
 |--------|-------|---------|
-| `pendiente` | orange | Pending — initial state for Modelo 349 before drafting begins |
-| `borrador` | blue | Draft — boxes may still be computing |
-| `listo` | green | Ready — review complete, file can be generated |
-| `presentado` | teal | Filed via the standard channel |
-| `presentadoOtra` | violet | Filed via an alternative channel |
-| `presentadoAcuse` | emerald | Filed with receipt acknowledgement |
-| `omitido` | grey | Intentionally skipped |
+| `pending` | orange | Pending — initial state for Modelo 349 before drafting begins |
+| `draft` | blue | Draft — boxes may still be computing |
+| `ready` | green | Ready — review complete, file can be generated |
+| `submitted` | teal | Filed via the standard channel |
+| `submitted_ext` | violet | Filed via an alternative channel |
+| `submitted_ack` | emerald | Filed with receipt acknowledgement |
+| `skipped` | grey | Intentionally skipped |
 
 Status transitions are driven by `StatusPillMenu` inline in the list and by the detail page action buttons.
 
@@ -79,11 +68,11 @@ Three steps (0-based index):
 
 | Step | Index | Status |
 |------|-------|--------|
-| Borrador | 0 | `borrador` |
-| Listo | 1 | `listo` |
-| Presentado | 2 | `presentado*` |
+| Draft | 0 | `draft` |
+| Ready | 1 | `ready` |
+| Submitted | 2 | `submitted*` |
 
-(`omitido` uses index `-1` — no step is highlighted.)
+(`skipped` uses index `-1` — no step is highlighted.)
 
 ### Tabs
 
@@ -104,14 +93,46 @@ A `GET /session` call on mount populates the NIF/nombre fields used in the gener
 
 ## Modelo 349 detail page (`FmModel349Page`)
 
-Uses a 4-step stepper including `pendiente` (index 0). The 349 page is structurally similar to 303 but does not have the auto-compute mechanism.
+Full intra-EU recapitulative declaration view. Auto-compute runs via `useFiscalAutoCompute` (same hook as 303) using `compute349Operators` / `checkModified349`.
+
+### Operator keys
+
+| Key | Direction | Tax category |
+|-----|-----------|--------------|
+| `E` | Sales — Goods (Entregas) | Intra-EU supplies |
+| `S` | Sales — Services (Servicios prestados) | Services supplied to EU |
+| `A` | Purchase — Goods (Adquisiciones) | Intra-EU acquisitions |
+| `I` | Purchase — Services (Inv. Sujeto Pasivo) | Reverse-charge services |
+
+### Tabs
+
+- **Operadores** — operator table with key filter chips and live name/NIF-IVA search. Null `name`/`nif` fields are guarded (`?? ''`) before case-folding to avoid runtime crashes.
+- **Facturas origen** — source invoice drill-down. Clicking an operator's origin link pre-filters by NIF-IVA. Filter state shows `fm.m349.invoices.filtering_by` + count badge.
+- **Rectificaciones / Incidencias / Ficheros / Historial** — coming soon.
+
+### KPIs
+
+Four cards (Operadores, Total operaciones, Rectificaciones, Pendientes VIES) sourced from `_precomputed.operators`.
+
+### PDF preview and file generation
+
+- `use349Pdf` hook renders a Modelo 349 draft PDF via Handlebars + `renderPdf`. Declarant NIF and org name are read from `_precomputed.orgNif` / `_precomputed.orgName`. The object URL is revoked on unmount to avoid memory leaks.
+- File generation (`generate349File`) prompts for contact name and phone via `FileGenModal` before calling `POST /fiscal349/generate`. Contact/phone are sent in the request body to avoid PII in server logs.
+
+### Result in list view
+
+349 declarations show total intracomm volume (`totalE + totalS + totalA + totalI`) with `kind: 'info'` — no "a ingresar / a compensar" label, since 349 is informational only.
+
+### Polling propagation
+
+`FiscalModelsPage` keeps `FmListPage` mounted (hidden) while in a detail view so the auto-compute polling interval stays alive. When polling fires, `onComputeUpdate` propagates the updated `_precomputed` to `FmModel349Page` via a `useEffect` on `decl._precomputed`.
 
 ## Key files
 
 | File | Role |
 |------|------|
 | `FiscalModelsPage.jsx` | Root — routes between list and per-model detail |
-| `FmListPage.jsx` | Declaration table, toolbar, data mode toggle, auto-compute wiring |
+| `FmListPage.jsx` | Declaration table, toolbar, auto-compute wiring |
 | `useFiscalAutoCompute.js` | Background compute + polling hook |
 | `fiscalModelsUtils.js` | `computeBoxes303`, `checkModified303`, `generate303File`, formatters, deadline logic |
 | `models/303/FmModel303Page.jsx` | Modelo 303 detail — boxes, sources, stepper, file gen |
@@ -132,5 +153,8 @@ Uses a 4-step stepper including `pendiente` (index 0). The 349 page is structura
 | `GET` | `/fiscal303/modified?year=&period=&since=` | `checkModified303` |
 | `GET` | `/fiscal303/generate?year=&period=&tipo=` | `generate303File` |
 | `GET` | `/session` | FmModel303Page — org NIF/nombre for file header |
+| `GET` | `/fiscal349/operators?year=&period=` | `compute349Operators` — returns operators + invoices + orgNif/orgName |
+| `GET` | `/fiscal349/modified?year=&period=&since=` | `checkModified349` |
+| `POST` | `/fiscal349/generate` (body: year, period, phone, contact) | `generate349File` |
 
 All query parameters are built with `URLSearchParams` to ensure correct encoding.

@@ -50,13 +50,7 @@ async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
 
-  const specificWindows = [];
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--window' && args[i + 1]) {
-      specificWindows.push(args[i + 1]);
-      i++;
-    }
-  }
+  const specificWindows = extractWindowArguments(args);
 
   const files = await findDecisionsFiles(specificWindows);
 
@@ -111,7 +105,26 @@ async function main() {
   if (dryRun) console.log('(dry-run mode — no files were written)');
 }
 
-main().catch(err => {
-  console.error('Fatal:', err.message);
-  process.exit(1);
-});
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isMain) {
+  main().catch(err => {
+    console.error('Fatal:', err.message);
+    process.exit(1);
+  });
+}
+function extractWindowArguments(args) {
+  const specificWindows = [];
+  let i = 0;
+  while (i < args.length) {
+    if (args[i] === '--window' && args[i + 1]) {
+      specificWindows.push(args[i + 1]);
+      i += 2;
+    } else {
+      i += 1;
+    }
+  }
+  return specificWindows;
+}
+
+export { findDecisionsFiles, extractWindowArguments, main };
+

@@ -25,6 +25,34 @@ export const RETURN_ORDER_LINE_CONFIG = LINE_CONFIGS.returnOrder;
 
 // ─── Pure helpers (no React, fully testable) ──────────────────────────────────
 
+function resolveTaxFactorFromSiblings(taxId, siblings, grossField, discountField) {
+  if (taxId != null) {
+    const ref = (siblings || []).find(l => {
+      if (l.tax !== taxId) return false;
+      const gross = parseFloat(String(l[grossField] ?? l.grossAmount ?? l.lineGrossAmount ?? '')) || 0;
+      if (gross <= 0) return false;
+      const net = parseFloat(String(l.lineNetAmount ?? '')) || 0;
+      if (net > 0) return true;
+      const qty = parseFloat(String(l.orderedQuantity ?? l.invoicedQuantity ?? '')) || 0;
+      const price = parseFloat(String(l.unitPrice ?? '')) || 0;
+      return qty > 0 && price > 0;
+    });
+    if (ref) {
+      const gross = parseFloat(String(ref[grossField] ?? ref.grossAmount ?? ref.lineGrossAmount ?? '')) || 0;
+      const net = parseFloat(String(ref.lineNetAmount ?? '')) || 0;
+      const disc = parseFloat(String(ref[discountField] ?? '')) || 0;
+      const factor = disc > 0 ? (1 - disc / 100) : 1;
+      if (net > 0) return gross / (net * factor);
+      const qty = parseFloat(String(ref.orderedQuantity ?? ref.invoicedQuantity ?? '')) || 0;
+      const price = parseFloat(String(ref.unitPrice ?? '')) || 0;
+      const base = qty * price * factor;
+      if (base > 0) return gross / base;
+    }
+  }
+
+  return null;
+}
+
 /**
  * Resolves the tax factor (e.g. 1.21 for 21% VAT) from up to 5 sources:
  *   0. taxRate injected into calloutResult by the backend
@@ -68,31 +96,22 @@ export function resolveTaxFactor(taxId, calloutResult, rowValues, taxRateCache, 
   if (savedGross > 0 && savedNet > 0) return savedGross / savedNet;
 
   // 4. Any sibling line with the same tax
-  if (taxId != null) {
-    const ref = (siblings || []).find(l => {
-      if (l.tax !== taxId) return false;
-      const gross = parseFloat(String(l[grossField] ?? l.grossAmount ?? l.lineGrossAmount ?? '')) || 0;
-      if (gross <= 0) return false;
-      const net = parseFloat(String(l.lineNetAmount ?? '')) || 0;
-      if (net > 0) return true;
-      const qty   = parseFloat(String(l.orderedQuantity ?? l.invoicedQuantity ?? '')) || 0;
-      const price = parseFloat(String(l.unitPrice ?? '')) || 0;
-      return qty > 0 && price > 0;
-    });
-    if (ref) {
-      const gross   = parseFloat(String(ref[grossField] ?? ref.grossAmount ?? ref.lineGrossAmount ?? '')) || 0;
-      const net     = parseFloat(String(ref.lineNetAmount ?? '')) || 0;
-      const disc    = parseFloat(String(ref[discountField] ?? '')) || 0;
-      const factor  = disc > 0 ? (1 - disc / 100) : 1;
-      if (net > 0) return gross / (net * factor);
-      const qty   = parseFloat(String(ref.orderedQuantity ?? ref.invoicedQuantity ?? '')) || 0;
-      const price = parseFloat(String(ref.unitPrice ?? '')) || 0;
-      const base  = qty * price * factor;
-      if (base > 0) return gross / base;
-    }
-  }
+  return resolveTaxFactorFromSiblings(taxId, siblings, grossField, discountField);
+}
 
-  return null;
+function deriveNetFromProductChange(calloutResult, priceField, rowValues, discountField, qty) {
+  const calloutNet = parseFloat(String(calloutResult.lineNetAmount ?? calloutResult.lineNetAmt ?? '')) || 0;
+  if (calloutNet > 0) return calloutNet;
+  const priceStr = calloutResult[priceField] != null
+      ? String(calloutResult[priceField])
+      : String(rowValues[priceField] ?? '');
+  const p = parseFloat(priceStr) || 0;
+  const d = parseFloat(String(calloutResult[discountField] ?? rowValues[discountField] ?? '')) || 0;
+  return qty > 0 && p > 0 ? qty * p * (1 - d / 100) : 0;
+}
+
+function calculateBasicLineNet(qty, price, discFactor) {
+  return qty > 0 && price > 0 ? qty * price * discFactor : 0;
 }
 
 /**
@@ -135,18 +154,11 @@ export function deriveLineNet(field, value, calloutResult, rowValues, qtyField, 
   }
 
   if (field === 'product') {
-    const calloutNet = parseFloat(String(calloutResult.lineNetAmount ?? calloutResult.lineNetAmt ?? '')) || 0;
-    if (calloutNet > 0) return calloutNet;
-    const priceStr = calloutResult[priceField] != null
-      ? String(calloutResult[priceField])
-      : String(rowValues[priceField] ?? '');
-    const p = parseFloat(priceStr) || 0;
-    const d = parseFloat(String(calloutResult[discountField] ?? rowValues[discountField] ?? '')) || 0;
-    return qty > 0 && p > 0 ? qty * p * (1 - d / 100) : 0;
+    return deriveNetFromProductChange(calloutResult, priceField, rowValues, discountField, qty);
   }
 
   if (field === 'tax') {
-    return qty > 0 && price > 0 ? qty * price * discFactor : 0;
+    return calculateBasicLineNet(qty, price, discFactor);
   }
 
   return parseFloat(String(

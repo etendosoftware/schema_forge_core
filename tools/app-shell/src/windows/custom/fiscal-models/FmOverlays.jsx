@@ -26,9 +26,9 @@ function parseCityLine(cityLine) {
 }
 
 // PresentModal — 3-path submission:
-//   1. presentadoAcuse  — upload PDF/XML receipt; status → presentadoAcuse
-//   2. presentado       — submitted without receipt; status → presentado
-//   3. presentadoOtra   — submitted via external agency; status → presentadoOtra
+//   1. submitted_ack — upload PDF/XML receipt; status → submitted_ack
+//   2. submitted     — submitted without receipt; status → submitted
+//   3. submitted_ext — submitted via external agency; status → submitted_ext
 export function PresentModal({ decl, onConfirm, onClose }) {
   const ui = useUI();
   const t = ui;
@@ -36,10 +36,10 @@ export function PresentModal({ decl, onConfirm, onClose }) {
   const [acuseFile, setAcuseFile] = useState(null);
   const fileRef = useRef(null);
 
-  const canConfirm = path === 'presentadoOtra' || path === 'presentado' || (path === 'presentadoAcuse' && acuseFile);
+  const canConfirm = path === 'submitted_ext' || path === 'submitted' || (path === 'submitted_ack' && acuseFile);
 
   function handleConfirm() {
-    onConfirm({ status: path, acuseFile: path === 'presentadoAcuse' ? acuseFile : null });
+    onConfirm({ status: path, acuseFile: path === 'submitted_ack' ? acuseFile : null });
     onClose();
   }
 
@@ -49,12 +49,12 @@ export function PresentModal({ decl, onConfirm, onClose }) {
         <div className="fm-present-modal__title">{t('fm.present.title')}</div>
         <div className="fm-present-modal__paths">
           <div
-            className={`fm-present-modal__path${path === 'presentadoAcuse' ? ' fm-present-modal__path--selected' : ''}`}
-            onClick={() => setPath('presentadoAcuse')}
+            className={`fm-present-modal__path${path === 'submitted_ack' ? ' fm-present-modal__path--selected' : ''}`}
+            onClick={() => setPath('submitted_ack')}
           >
             <div className="fm-present-modal__path-title"><Star size={12} /> {t('fm.present.path.acuse')}</div>
             <div className="fm-present-modal__path-desc">{t('fm.present.path.acuse_desc')}</div>
-            {path === 'presentadoAcuse' && (
+            {path === 'submitted_ack' && (
               <div className="fm-present-modal__upload">
                 <button
                   type="button"
@@ -75,16 +75,16 @@ export function PresentModal({ decl, onConfirm, onClose }) {
           </div>
 
           <div
-            className={`fm-present-modal__path${path === 'presentado' ? ' fm-present-modal__path--selected' : ''}`}
-            onClick={() => setPath('presentado')}
+            className={`fm-present-modal__path${path === 'submitted' ? ' fm-present-modal__path--selected' : ''}`}
+            onClick={() => setPath('submitted')}
           >
             <div className="fm-present-modal__path-title"><Play size={12} /> {t('fm.present.path.sin_acuse')}</div>
             <div className="fm-present-modal__path-desc">{t('fm.present.path.sin_acuse_desc')}</div>
           </div>
 
           <div
-            className={`fm-present-modal__path${path === 'presentadoOtra' ? ' fm-present-modal__path--selected' : ''}`}
-            onClick={() => setPath('presentadoOtra')}
+            className={`fm-present-modal__path${path === 'submitted_ext' ? ' fm-present-modal__path--selected' : ''}`}
+            onClick={() => setPath('submitted_ext')}
           >
             <div className="fm-present-modal__path-title"><ArrowUpRight size={12} /> {t('fm.present.path.otra')}</div>
             <div className="fm-present-modal__path-desc">{t('fm.present.path.otra_desc')}</div>
@@ -109,18 +109,31 @@ export function PresentModal({ decl, onConfirm, onClose }) {
 export function FileGenModal({ decl, onConfirm, onClose }) {
   const ui = useUI();
   const t = ui;
+  const [phone,   setPhone]   = React.useState(decl?.phone   ?? '');
+  const [contact, setContact] = React.useState(decl?.contact ?? '');
+  const FIELD = { fontSize: 12, padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: 4, width: '100%', outline: 'none' };
   return (
     <div className="fm-modal-overlay" role="dialog" aria-modal="true">
       <div className="fm-present-modal">
         <div className="fm-present-modal__title">{t('fm.filegen.title')}</div>
         <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 16 }}>
-          {t('fm.filegen.desc')} <strong>{decl?.model} {decl?.year}</strong>
+          {t('fm.filegen.desc')} <strong>{decl?.model} {decl?.year} {decl?.period}</strong>
         </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+          <label style={{ fontSize: 11, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {t('fm.filegen.contact_name')} <span style={{ fontSize: 10, color: '#9ca3af' }}>{t('fm.filegen.contact_name_hint')}</span>
+            <input style={FIELD} value={contact} onChange={e => setContact(e.target.value)} placeholder={t('fm.filegen.contact_name_placeholder')} />
+          </label>
+          <label style={{ fontSize: 11, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {t('fm.filegen.contact_phone')}
+            <input style={FIELD} value={phone} onChange={e => setPhone(e.target.value)} placeholder={t('fm.filegen.contact_phone_placeholder')} />
+          </label>
+        </div>
         <div className="fm-present-modal__actions">
           <button className="fm-present-modal__btn" onClick={onClose}>{t('fm.action.cancel')}</button>
           <button
             className="fm-present-modal__btn fm-present-modal__btn--primary"
-            onClick={() => { onConfirm?.(); onClose(); }}
+            onClick={() => { onConfirm?.({ phone, contact }); onClose(); }}
           >
             {t('fm.filegen.generate')}
           </button>
@@ -172,7 +185,7 @@ export function NewDeclModal({ onConfirm, onClose }) {
           <button className="fm-present-modal__btn" onClick={onClose}>{t('fm.action.cancel')}</button>
           <button
             className="fm-present-modal__btn fm-present-modal__btn--primary"
-            onClick={() => { onConfirm?.({ model, year, period, status: 'borrador' }); onClose(); }}
+            onClick={() => { onConfirm?.({ model, year, period, status: 'draft' }); onClose(); }}
           >
             {t('fm.action.create')}
           </button>

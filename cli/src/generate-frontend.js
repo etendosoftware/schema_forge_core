@@ -186,6 +186,53 @@ function optProp(name, val) {
 }
 
 /**
+ * Return `fragment` when `cond` is truthy, otherwise an empty string.
+ * Used to conditionally append optional prop fragments to generated code.
+ */
+export function fragmentIf(cond, fragment) {
+  return cond ? fragment : '';
+}
+
+/**
+ * Return `${prefix}${value}${suffix}` when the gate is truthy, otherwise an
+ * empty string. Used to build optional JSX props whose injected content is the
+ * value itself (e.g. `name="value"` or `name={value}`). The parameter order
+ * mirrors the produced string, keeping call sites readable.
+ *
+ * By default the gate IS `value` (the common case: emit only when there is a
+ * value). Pass `cond` to gate on a custom expression while still injecting
+ * `value` — for props where the condition differs from the value, e.g.
+ * `wrapIf('\n  tabIndex={', idx, '}', idx != null)` (must emit when idx === 0).
+ */
+export function wrapIf(prefix, value, suffix = '', cond = value) {
+  return cond ? `${prefix}${value}${suffix}` : '';
+}
+
+/**
+ * Like {@link wrapIf}, but serializes `value` with `JSON.stringify` — for
+ * optional expression props such as `name={${JSON.stringify(value)}}`. Accepts
+ * the same optional `cond` gate (e.g. `arr.length > 0` so empty arrays, which
+ * are truthy, are not emitted).
+ */
+export function jsonWrapIf(prefix, value, suffix = '', cond = value) {
+  return cond ? `${prefix}${JSON.stringify(value)}${suffix}` : '';
+}
+
+/**
+ * Return `whenTrue` when `cond` is truthy, otherwise `whenFalse`. A binary
+ * choice between two ready values — moves the ternary out of the calling
+ * function to keep cognitive complexity down.
+ *
+ * IMPORTANT: both branches are evaluated eagerly (it's a plain function call,
+ * not a lazy `?:`). Use ONLY with cheap, side-effect-free values that are safe
+ * to compute unconditionally — typically string literals. For branches that
+ * interpolate possibly-null values or call functions, keep the ternary.
+ */
+export function pick(cond, whenTrue, whenFalse) {
+  return cond ? whenTrue : whenFalse;
+}
+
+/**
  * Generate a data table component for an entity.
  * Produces a thin declarative component that imports DataTable from contract-ui.
  */
@@ -209,20 +256,20 @@ export function generateTableComponent(entityName, contract) {
 
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
-    const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
+    const selectionPart = fragmentIf(f.isSelectionColumn, ', isSelectionColumn: true');
     const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
       ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
-    const togglePart = f.inlineToggle ? ', toggle: true' : '';
-    const badgePart = (f.badge && !f.cellType) ? ', badge: true' : '';
-    const badgeLabelsPart = f.badgeLabels ? `, badgeLabels: ${JSON.stringify(f.badgeLabels)}` : '';
-    const badgeColorsPart = f.badgeColors ? `, badgeColors: ${JSON.stringify(f.badgeColors)}` : '';
-    const badgeVariantsPart = f.badgeVariants ? `, badgeVariants: ${JSON.stringify(f.badgeVariants)}` : '';
-    const enumVariantsPart = f.enumVariants ? `, enumVariants: ${JSON.stringify(f.enumVariants)}` : '';
-    const labelsPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
-    const summablePart = f.summable ? ', summable: true' : '';
-    const displayPart = f.display ? `, display: '${f.display}'` : '';
+    const togglePart = fragmentIf(f.inlineToggle, ', toggle: true');
+    const badgePart = fragmentIf(f.badge && !f.cellType, ', badge: true');
+    const badgeLabelsPart = jsonWrapIf(', badgeLabels: ', f.badgeLabels);
+    const badgeColorsPart = jsonWrapIf(', badgeColors: ', f.badgeColors);
+    const badgeVariantsPart = jsonWrapIf(', badgeVariants: ', f.badgeVariants);
+    const enumVariantsPart = jsonWrapIf(', enumVariants: ', f.enumVariants);
+    const labelsPart = jsonWrapIf(', labels: ', f.labels);
+    const summablePart = fragmentIf(f.summable, ', summable: true');
+    const displayPart = wrapIf(", display: '", f.display, "'");
     let renderPart = '';
     if (f.cellType === 'depreciationProgress') renderPart = ', render: renderDepreciationProgress';
     else if (f.cellType === 'taxRate') renderPart = ', render: renderTaxRate';
@@ -230,11 +277,15 @@ export function generateTableComponent(entityName, contract) {
     // Flags consumed by InlineLinesPanel to drive inline-edit affordances:
     //  - required → suppress the empty option in the SelectorInput dropdown.
     //  - lookup / popup → swap the dropdown for a ProductSearchDrawer modal.
-    const requiredPart = f.required ? ', required: true' : '';
-    const lookupPart = f.lookup ? ', lookup: true' : '';
-    const popupPart = f.popup ? ', popup: true' : '';
+    const requiredPart = fragmentIf(f.required, ', required: true');
+    const lookupPart = fragmentIf(f.lookup, ', lookup: true');
+    const popupPart = fragmentIf(f.popup, ', popup: true');
     const minColPart = optProp('min', f.min);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart}${minColPart} },`;
+    const growPart = fragmentIf(f.grow, ', grow: true');
+    const noTrailingPart = fragmentIf(f.noTrailing, ', noTrailing: true');
+    const filterOnlyPart = fragmentIf((f.filterOnly || f.filterable === false), ', filterable: false');
+    const dotPart = fragmentIf(f.dot === false, ', dot: false');
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart}${minColPart}${growPart}${noTrailingPart}${filterOnlyPart}${dotPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -242,10 +293,8 @@ export function generateTableComponent(entityName, contract) {
   // Render helper functions for custom cell types
   const depreciationProgressHelper = neededCellTypes.has('depreciationProgress') ? `
 function renderDepreciationProgress(row) {
-  const pct = row.assetValue > 0
-    ? Math.min(100, Math.round(((row.depreciatedValue ?? 0) / row.assetValue) * 100))
-    : null;
-  if (pct == null) return null;
+  const pct = row.etgoAmortizationStatus ?? null;
+  if (pct == null || pct === 0) return null;
   const color = pct === 100 ? '#10b981' : '#f59e0b';
   return (
     <div className="flex items-center gap-1.5" style={{ minWidth: 80 }}>
@@ -327,6 +376,58 @@ ${MARKERS.GENERATED_END(`component:${compName}`)}
 `;
 }
 
+function getDefaultValuePart(skipCheckboxDefault, skipServerMacro, f) {
+  if (typeof f.defaultValue === 'number') {
+    if (!skipCheckboxDefault && !skipServerMacro && f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '') {
+      return `, defaultValue: ${f.defaultValue}`;
+    } else {
+      return '';
+    }
+  } else {
+    if (!skipCheckboxDefault && !skipServerMacro && f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '') {
+      return `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'`;
+    } else {
+      return '';
+    }
+  }
+}
+
+function buildDisplayLogicPart(f) {
+  let displayLogicPart = '';
+  if (f.displayLogic) {
+    if (f.displayLogic.js) {
+      displayLogicPart = `, displayLogic: (record) => ${f.displayLogic.js}`;
+    } else if (f.displayLogic.evaluable === false) {
+      displayLogicPart = `, visible: null, visibilitySource: 'server', displayLogicReason: '${f.displayLogic.reason || 'unknown'}'`;
+    }
+  }
+  return displayLogicPart;
+}
+
+function buildReadOnlyLogicPart(f) {
+  let readOnlyLogicPart = '';
+  if (f.readOnlyLogic) {
+    if (f.readOnlyLogic.evaluable === false) {
+      readOnlyLogicPart = `, readOnlySource: 'server', readOnlyLogicReason: '${f.readOnlyLogic.reason || 'unknown'}'`;
+    } else if (f.readOnlyLogic.js) {
+      readOnlyLogicPart = `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`;
+    }
+  }
+  return readOnlyLogicPart;
+}
+
+function getS(o) {
+  return `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`;
+}
+
+function getOptionsPart(type, f) {
+  if (type === 'select' && f.enumValues?.length) {
+    return `, options: [${f.enumValues.map(o => getS(o)).join(', ')}]`;
+  } else {
+    return '';
+  }
+}
+
 /**
  * Generate a detail/edit form component for an entity.
  * Produces a thin declarative component that imports EntityForm from contract-ui.
@@ -365,12 +466,12 @@ export function generateFormComponent(entityName, contract) {
 
   const fieldsArray = formFields.map((f, idx) => {
     const type = mapFormFieldType(f);
-    const requiredPart = f.required ? ', required: true' : '';
-    const lookupPart = f.lookup ? ', lookup: true' : '';
-    const popupPart = f.popup ? ', popup: true' : '';
-    const readOnlyPart = f.visibility === 'readOnly' ? ', readOnly: true' : '';
-    const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
-    const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+    const requiredPart = fragmentIf(f.required, ', required: true');
+    const lookupPart = fragmentIf(f.lookup, ', lookup: true');
+    const popupPart = fragmentIf(f.popup, ', popup: true');
+    const readOnlyPart = fragmentIf(f.visibility === 'readOnly', ', readOnly: true');
+    const referencePart = wrapIf(", reference: '", f.reference, "'");
+    const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
@@ -381,35 +482,15 @@ export function generateFormComponent(entityName, contract) {
     // already coerces missing/'N'/false to false, so emitting them only bloats generated files.
     const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
     const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
-    const defaultValuePart = (!skipCheckboxDefault && !skipServerMacro && f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '')
-      ? (typeof f.defaultValue === 'number'
-          ? `, defaultValue: ${f.defaultValue}`
-          : `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'`)
-      : '';
+    const defaultValuePart = getDefaultValuePart(skipCheckboxDefault, skipServerMacro, f);
     const helpPart = f.help ? `, help: '${f.help.replace(/'/g, "\\'")}'` : '';
     const fieldGroupPart = f.fieldGroup ? `, fieldGroup: '${f.fieldGroup.replace(/'/g, "\\'")}'` : '';
-    const precisionPart = f.precision ? `, precision: ${f.precision}` : '';
+    const precisionPart = wrapIf(', precision: ', f.precision);
     // Behavioral metadata: displayLogic and readOnlyLogic
-    let displayLogicPart = '';
-    if (f.displayLogic) {
-      if (f.displayLogic.js) {
-        displayLogicPart = `, displayLogic: (record) => ${f.displayLogic.js}`;
-      } else if (f.displayLogic.evaluable === false) {
-        displayLogicPart = `, visible: null, visibilitySource: 'server', displayLogicReason: '${f.displayLogic.reason || 'unknown'}'`;
-      }
-    }
-    let readOnlyLogicPart = '';
-    if (f.readOnlyLogic) {
-      if (f.readOnlyLogic.evaluable === false) {
-        readOnlyLogicPart = `, readOnlySource: 'server', readOnlyLogicReason: '${f.readOnlyLogic.reason || 'unknown'}'`;
-      } else if (f.readOnlyLogic.js) {
-        readOnlyLogicPart = `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`;
-      }
-    }
+    let displayLogicPart = buildDisplayLogicPart(f);
+    let readOnlyLogicPart = buildReadOnlyLogicPart(f);
     const slotLines = [];
-    const optionsPart = (type === 'select' && f.enumValues?.length)
-      ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
-      : '';
+    const optionsPart = getOptionsPart(type, f);
     const formLabelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
     const valueTypePart = (type === 'select' && f.tsType === 'boolean') ? `, valueType: 'boolean'` : '';
     const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
@@ -460,7 +541,10 @@ function generateStatusBarComponent(headerEntity, statusBarConfig) {
 
   // Build cards array literal
   const cardsLiteral = cards.map(card => {
-    return `    { label: '${card.label}', value: fmt(data.${card.field}), color: '${card.color}',  Icon: ${card.icon} },`;
+    const valueExpr = card.display === 'identifier'
+      ? `(data['${card.field}$_identifier'] || data['${card.field}'] || '—')`
+      : `fmt(data.${card.field})`;
+    return `    { label: '${card.label}', value: ${valueExpr}, color: '${card.color}',  Icon: ${card.icon} },`;
   }).join('\n');
 
   // Build progress section
@@ -529,6 +613,7 @@ ${MARKERS.GENERATED_END(`statusBar:${headerEntity}`)}`;
   // No progress section
   const componentCode = `${MARKERS.GENERATED_START(`statusBar:${headerEntity}`)}
 function ${headerName}StatusBar({ data }) {
+  const ui = useUI();
   if (!data) return null;
   const fmt = (v) => v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
   const colorMap = {
@@ -549,7 +634,7 @@ ${cardsLiteral}
             <Icon size={18} className={c.icon} />
             <div>
               <div className={\`text-lg font-semibold leading-tight \${c.text}\`}>{value}</div>
-              <div className={\`text-xs \${c.sub} mt-0.5\`}>{label}</div>
+              <div className={\`text-xs \${c.sub} mt-0.5\`}>{ui(label)}</div>
             </div>
           </div>
         );
@@ -563,12 +648,443 @@ ${MARKERS.GENERATED_END(`statusBar:${headerEntity}`)}`;
 }
 
 /**
+ * Build the lookup-related entry-field prop fragments (drawer, title,
+ * onSelect mappings and displayFromCatalog) for an addLineFields entry.
+ */
+export function buildLookupEntryParts(f) {
+  const lookupDrawerPart = f.lookupDrawer ? `, lookupDrawer: '${String(f.lookupDrawer).replace(/'/g, "\\'")}'` : '';
+  const lookupTitlePart = f.lookupTitle ? `, lookupTitle: '${String(f.lookupTitle).replace(/'/g, "\\'")}'` : '';
+  const onSelectMappingsPart = Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0
+    ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
+    : '';
+  const displayFromCatalogPart = fragmentIf(f.displayFromCatalog, ', displayFromCatalog: true');
+  return { lookupDrawerPart, lookupTitlePart, onSelectMappingsPart, displayFromCatalogPart };
+}
+
+function getNewActionsPropValue(hasNewActions, newActionsConfig) {
+  return hasNewActions
+    ? `\n      newActions={[${newActionsConfig.map(a => {
+      const hasComp = !!a.component;
+      const stateSetter = hasComp
+        ? `set${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`
+        : null;
+      const onClick = hasComp
+        ? `() => ${stateSetter}(true)`
+        : `() => {}`;
+      return `\n        { key: '${a.key}', label: '${a.label}', onClick: ${onClick} }`;
+    }).join(',')}\n      ]}`
+    : '';
+}
+
+function getSummaryFields(summaryFieldsOverride, readOnlyFields, statusField) {
+  if (Array.isArray(summaryFieldsOverride)) {
+    if (summaryFieldsOverride.length === 0) {
+      return [];
+    } else {
+      return readOnlyFields.filter(f => f !== statusField && summaryFieldsOverride.includes(f.name));
+    }
+  } else {
+    return readOnlyFields.filter(f => f !== statusField);
+  }
+}
+
+function resolveStatusAndSummaryFields(requiredHeaderFieldNames, allEntityFields, contract, readOnlyFields) {
+  const quotedRequiredHeaderFields = requiredHeaderFieldNames.map(n => "'" + n + "'").join(', ');
+  const requiredHeaderFieldsArray = requiredHeaderFieldNames.length > 0
+    ? `[${quotedRequiredHeaderFields}]`
+    : '[]';
+  const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
+  const statusFieldOverride = contract.frontendContract.window.statusField;
+  let statusField;
+  if (statusFieldOverride === false || statusFieldOverride === 'none') {
+    statusField = null;
+  } else if (statusFieldOverride) {
+    statusField = allEntityFields.find(f => f.name === statusFieldOverride) ?? null;
+  } else {
+    statusField = docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status'));
+  }
+  const summaryFieldsOverride = contract.frontendContract.window.summaryFields;
+  const summaryFields = getSummaryFields(summaryFieldsOverride, readOnlyFields, statusField);
+  return { requiredHeaderFieldsArray, statusField, summaryFields };
+}
+
+function resolveSendDocumentConfig(windowConfig, allEntityFields) {
+  const sendDocumentOverride = windowConfig.sendDocument || null;
+  const isDocumentalWindow = allEntityFields.some(
+    f => f.name === 'documentNo' && f.visibility !== 'discarded',
+  );
+  const sdEnabled = sendDocumentOverride?.enabled !== undefined
+    ? !!sendDocumentOverride.enabled
+    : isDocumentalWindow;
+  const sdAllowEmail = sendDocumentOverride?.allowEmail !== false;
+  const sendDocument = sdEnabled ? { enabled: true, allowEmail: sdAllowEmail } : null;
+  return sendDocument;
+}
+
+function buildCustomComponentImportsAndProps(customComponents, specName, customPanelTabs, newActionsConfig) {
+  const customComponentImports = [];
+  const customComponentProps = [];
+  if (customComponents.bottomSection) {
+    customComponentImports.push(`import ${customComponents.bottomSection} from ${resolveCustomImport(specName, customComponents.bottomSection)};`);
+    customComponentProps.push(`\n        bottomSection={${customComponents.bottomSection}}`);
+  }
+  if (customComponents.topbarRight) {
+    customComponentImports.push(`import ${customComponents.topbarRight} from ${resolveCustomImport(specName, customComponents.topbarRight)};`);
+    customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
+  }
+  if (customComponents.topbarExtra) {
+    customComponentImports.push(`import ${customComponents.topbarExtra} from ${resolveCustomImport(specName, customComponents.topbarExtra)};`);
+    customComponentProps.push(`\n        topbarExtra={${customComponents.topbarExtra}}`);
+  }
+  if (customComponents.bulkActions) {
+    customComponentImports.push(`import ${customComponents.bulkActions} from ${resolveCustomImport(specName, customComponents.bulkActions)};`);
+  }
+  if (customComponents.sidePanel) {
+    customComponentImports.push(`import ${customComponents.sidePanel} from ${resolveCustomImport(specName, customComponents.sidePanel)};`);
+    customComponentProps.push(`\n        sidePanel={${customComponents.sidePanel}}`);
+    if (customComponents.sidePanelStyle) {
+      customComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
+    }
+  }
+  if (customComponents.moreMenuContent) {
+    customComponentImports.push(`import ${customComponents.moreMenuContent} from ${resolveCustomImport(specName, customComponents.moreMenuContent)};`);
+    customComponentProps.push(`\n        customMenuContent={${customComponents.moreMenuContent}}`);
+  }
+  if (customComponents.newRecordComponent) {
+    customComponentImports.push(`import ${customComponents.newRecordComponent} from ${resolveCustomImport(specName, customComponents.newRecordComponent)};`);
+  }
+  // customPanelTabs — import each panel component
+  for (const pt of customPanelTabs) {
+    customComponentImports.push(`import ${pt.component} from ${resolveCustomImport(specName, pt.component)};`);
+  }
+  // newActions — import component modals if declared
+  const newActionsWithComponents = newActionsConfig.filter(a => a.component);
+  for (const action of newActionsWithComponents) {
+    customComponentImports.push(`import ${action.component} from ${resolveCustomImport(specName, action.component)};`);
+  }
+  const customCompImportBlock = customComponentImports.length > 0
+    ? customComponentImports.join('\n') + '\n'
+    : '';
+  const customCompPropsBlock = customComponentProps.join('');
+  return { newActionsWithComponents, customCompImportBlock, customCompPropsBlock };
+}
+
+function getVis(visParts) {
+  return visParts.length > 0 ? `visible: ${visParts.join(' && ')}, ` : '';
+}
+
+function getSuccessPart(a) {
+  if (a.successKey) {
+    return `successKey: '${a.successKey}', `;
+  } else {
+    if (a.successMessage) {
+      return `successMessage: '${String(a.successMessage).replace(/'/g, "\\'")}', `;
+    } else {
+      return '';
+    }
+  }
+}
+
+function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
+  let menuActionsProp;
+  if (menuActionsConfig.length > 0) {
+    menuActionsProp = `\n        menuActions={${menuActionsFnParams} => [\n${menuActionsConfig.map(a => {
+      let statusVis;
+      if (Array.isArray(a.visibleWhenStatus)) {
+        statusVis = a.visibleWhenStatus
+          ? `${JSON.stringify(a.visibleWhenStatus)}.includes(status)`
+          : '';
+      } else {
+        statusVis = a.visibleWhenStatus
+          ? `status === '${a.visibleWhenStatus}'`
+          : '';
+      }
+      const fieldVisFalse = a.visibleWhenFieldFalse ? `!data?.${a.visibleWhenFieldFalse}` : '';
+      const fieldVisTrue = a.visibleWhenFieldTrue ? `(data?.${a.visibleWhenFieldTrue} === 'Y' || data?.${a.visibleWhenFieldTrue} === true)` : '';
+      const visParts = [statusVis, fieldVisFalse, fieldVisTrue].filter(Boolean);
+      const vis = getVis(visParts);
+      const destr = fragmentIf(a.destructive, 'destructive: true, ');
+      // Handler precedence: documentAction (declarative DocAction) > columnName (AD process button) > onClick placeholder
+      let handler;
+      if (a.documentAction) {
+        handler = `documentAction: '${a.documentAction}', `;
+      } else if (a.columnName) {
+        handler = `columnName: '${a.columnName}', `;
+      } else {
+        handler = `onClick: () => {},`;
+      }
+      const labelKeyPart = a.labelKey ? `labelKey: '${a.labelKey}', ` : '';
+      const successPart = getSuccessPart(a);
+      return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${handler} }`;
+    }).join(',\n')}\n        ]}`;
+  } else {
+    menuActionsProp = '';
+  }
+  return menuActionsProp;
+}
+
+function getHeaderContentProp(statusBar, headerName, isGallery, isSidebar) {
+  if (isGallery && !isSidebar) {
+    return statusBar
+      ? `\n        headerContent={(data) => <${headerName}StatusBar data={data} />}`
+      : `\n        headerContent={
+          <${headerName}DetailHeader
+            recordId={recordId}
+            token={props.token}
+            apiBaseUrl={api.baseUrl}
+          />
+        }`;
+  } else {
+    return statusBar
+      ? `\n        headerContent={(data) => <${headerName}StatusBar data={data} />}`
+      : '';
+  }
+}
+
+function buildSendDocumentProps(sendDocument) {
+  let sendDocumentProp = '';
+  let sendDocumentDetailProp = '';
+  if (sendDocument) {
+    const isDefaults = sendDocument.enabled === true && sendDocument.allowEmail === true;
+    const propValue = isDefaults ? '' : `={${JSON.stringify(sendDocument)}}`;
+    sendDocumentProp = `\n      sendDocument${propValue}`;
+    sendDocumentDetailProp = `\n        sendDocument${propValue}`;
+  }
+  return { sendDocumentProp, sendDocumentDetailProp };
+}
+
+function buildPrimaryTabsProps(primaryTabsConfig, specName) {
+  let primaryTabsImports = '';
+  let primaryTabsProp = '';
+  if (primaryTabsConfig && specName) {
+    const imports = [];
+    const tabEntries = primaryTabsConfig.map(tab => {
+      if (tab.panel) {
+        imports.push(`import ${tab.panel} from ${resolveCustomImport(specName, tab.panel)};`);
+        return `{ key: '${tab.key}', label: '${tab.label}', Panel: ${tab.panel} }`;
+      }
+      return `{ key: '${tab.key}', label: '${tab.label}' }`;
+    });
+    primaryTabsImports = imports.length > 0 ? imports.join('\n') + '\n' : '';
+    primaryTabsProp = `\n        primaryTabs={[\n          ${tabEntries.join(',\n          ')},\n        ]}`;
+  }
+  return { primaryTabsImports, primaryTabsProp };
+}
+
+function getExtraTabsImport(extraTabs) {
+  return extraTabs.length > 0
+    ? extraTabs.map(et => `import ${et.component} from '${et.importFrom}';\n`).join('')
+    : '';
+}
+
+function validateAttachmentsEnabled(attachmentsEnabled, headerTableName, headerEntity) {
+  if (attachmentsEnabled && !headerTableName) {
+    console.warn(
+      `[generate-frontend] AttachmentsTab disabled for "${headerEntity}": header entity has no tableName in contract.`
+    );
+    attachmentsEnabled = false;
+  }
+  return attachmentsEnabled;
+}
+
+function getCustomTabsProp(customTabItems) {
+  const customTabsProp = customTabItems.length > 0
+    ? `\n        customTabs={[${customTabItems.join(', ')}]}`
+    : '';
+  return customTabsProp;
+}
+
+function buildApiParts(contract) {
+  const apiPrediction = projectApiPredictionForFrontend(contract.apiPrediction);
+  const apiBlock = apiPrediction
+    ? `\nexport const api = ${JSON.stringify(apiPrediction, null, 2)};\n`
+    : '';
+  const apiProp = apiPrediction ? '\n      api={api}' : '';
+  return { apiBlock, apiProp };
+}
+
+function getBulkActionsProp(customComponents) {
+  return customComponents.bulkActions
+    ? `\n      bulkActions={(ctx) => <${customComponents.bulkActions} {...ctx} />}`
+    : '';
+}
+
+function buildFormFooterParts(headerExtraConfig, specName) {
+  let formFooterImport = '';
+  let formFooterProp = '';
+  if (headerExtraConfig?.customForm && specName) {
+    const compName = headerExtraConfig.customForm;
+    formFooterImport = `import ${compName} from ${resolveCustomImport(specName, compName)};\n`;
+    formFooterProp = `\n        formFooter={${compName}}`;
+  }
+  return { formFooterImport, formFooterProp };
+}
+
+function resolveAttachmentsConfig(windowConfig, layoutType, headerTableName, headerEntity) {
+  // Attachments tab — enabled by default on standard (default) layout windows.
+  // Opt out per-window via `window.attachments: false` in decisions.json, or
+  // pass an object to forward options to the AttachmentsTab component (e.g.
+  // `{ enabled: true, accept: '.pdf', maxSizeMb: 10 }`).
+  const attachmentsCfg = windowConfig.attachments ?? true;
+  // attachments are auto-enabled on default layout; on other layouts they must be
+  // explicitly opted-in via `window.attachments: true` (or an options object) in decisions.json.
+  const attachmentsExplicit = windowConfig.attachments !== undefined;
+  let attachmentsEnabled =
+    (layoutType === 'default' || attachmentsExplicit) &&
+    attachmentsCfg !== false &&
+    (typeof attachmentsCfg !== 'object' || attachmentsCfg?.enabled !== false);
+  const attachmentsOpts = typeof attachmentsCfg === 'object' && attachmentsCfg !== null
+    ? attachmentsCfg
+    : {};
+
+  attachmentsEnabled = validateAttachmentsEnabled(attachmentsEnabled, headerTableName, headerEntity);
+  return { attachmentsEnabled, attachmentsOpts };
+}
+
+function getBreadcrumbLiteral(windowBreadcrumbOverride, windowCategory, windowLabel) {
+  let bdcrum;
+  if (windowBreadcrumbOverride !== undefined) {
+    bdcrum = windowBreadcrumbOverride;
+  } else {
+    bdcrum = `${windowCategory} / ${windowLabel}`;
+  }
+  return `'${bdcrum}'`;
+}
+
+function buildGalleryImport(isGallery, headerName, specName, headerEntity, componentName) {
+  return isGallery ? `import ${headerName}Gallery from ${resolveCustomImport(specName || headerEntity, componentName)};` : '';
+}
+
+function buildSidebarImport(isSidebar, headerName, specName, headerEntity, componentName) {
+  return isSidebar ? `
+import ${headerName}Sidebar from ${resolveCustomImport(specName || headerEntity, componentName)};` : '';
+}
+
+function buildDetailHeaderImport(isGallery, isSidebar, headerName, specName, headerEntity, componentName) {
+  return isGallery && !isSidebar ? `
+import ${headerName}DetailHeader from ${resolveCustomImport(specName || headerEntity, componentName)};` : '';
+}
+
+function getLabelOverridesParts(windowConfig) {
+  const labelOverridesConfig = windowConfig.labelOverrides ?? null;
+  const labelOverridesProp = labelOverridesConfig ? '\n        labelOverrides={labelOverrides}' : '';
+  const labelOverridesListProp = labelOverridesConfig ? '\n      labelOverrides={labelOverrides}' : '';
+  // Derive the standalone const from api.labelOverrides so the data lives in one
+  // place only (the api object) and the prop reference is just an alias. The block
+  // is emitted after the `api` declaration (see page template) so the reference resolves.
+  const labelOverridesBlock = labelOverridesConfig
+    ? `\nconst labelOverrides = api.labelOverrides;\n`
+    : '';
+  return { labelOverridesProp, labelOverridesListProp, labelOverridesBlock };
+}
+
+function getRelatedDocsImport(relatedDocuments, specName) {
+  return relatedDocuments
+    ? `import RelatedDocuments from ${resolveCustomImport(specName, 'RelatedDocuments')};\n`
+    : '';
+}
+
+function getEntityDetailLabel(detailEntity, windowConfig, contract) {
+  return detailEntity
+    ? (windowConfig.detailLabel || contract.frontendContract.entities[detailEntity]?.tabName || toLabel(detailEntity))
+    : '';
+}
+
+function getHeaderTableImport(customHeaderTable, headerName, specName) {
+  return customHeaderTable
+    ? `import ${headerName}Table from ${resolveCustomImport(specName, customHeaderTable)};`
+    : `import ${headerName}Table from './${headerName}Table';`;
+}
+
+function getMenuActionsFnParams(menuActionsNeedsData) {
+  return pick(menuActionsNeedsData, '({ data, status })', '({ status })');
+}
+
+function getStatusBarParts(statusBar, headerEntity, confirmModalName, specName, headerName, isGallery, isSidebar) {
+  const statusBarResult = statusBar ? generateStatusBarComponent(headerEntity, statusBar) : null;
+  const statusBarImport = statusBarResult ? `\nimport { useUI } from '@/i18n';\n${statusBarResult.lucideImports}` : '';
+  const confirmModalImport = confirmModalName
+    ? `\nimport ${confirmModalName} from ${resolveCustomImport(specName || headerEntity, confirmModalName)};`
+    : '';
+  const statusBarCode = statusBarResult ? `\n${statusBarResult.componentCode}\n` : '';
+  const headerContentProp = getHeaderContentProp(statusBar, headerName, isGallery, isSidebar);
+  const sidebarContentProp = isSidebar
+    ? `\n        sidebarContent={(data) => (
+          <${headerName}Sidebar
+            recordId={recordId}
+            data={data}
+            token={props.token}
+            apiBaseUrl={props.apiBaseUrl}
+          />
+        )}`
+    : '';
+  return { statusBarImport, confirmModalImport, statusBarCode, headerContentProp, sidebarContentProp };
+}
+
+function getDraftModeParts(draftModeConfig) {
+  const draftModeStaticConfig = draftModeConfig
+    ? Object.fromEntries(Object.entries(draftModeConfig).filter(([k]) => k !== 'confirmModal'))
+    : null;
+  const draftModeValue = draftModeStaticConfig?.enabled
+    ? JSON.stringify(draftModeStaticConfig, null, 2)
+    : 'null';
+  return { draftModeStaticConfig, draftModeValue };
+}
+
+function getDetailName(detailEntity) {
+  return detailEntity ? toJsIdentifier(detailEntity) : null;
+}
+
+function pushAttachmentsTab(attachmentsEnabled, attachmentsOpts, customTabItems, headerTableName) {
+  if (attachmentsEnabled) {
+    const optsLiteral = JSON.stringify(attachmentsOpts);
+    customTabItems.push(
+      `{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: ${JSON.stringify(headerTableName)}, config: ${optsLiteral} } }`
+    );
+  }
+}
+
+function getListKpiCardsParts(windowConfig, specName) {
+  const listKpiCardsConfig = windowConfig.listKpiCards ?? null;
+  let listKpiCardsImport = '';
+  let listKpiCardsProp = '';
+  if (listKpiCardsConfig?.customComponent && specName) {
+    const kpiComp = listKpiCardsConfig.customComponent;
+    listKpiCardsImport = `import ${kpiComp} from ${resolveCustomImport(specName, kpiComp)};\n`;
+    listKpiCardsProp = `\n      headerContent={(p) => <${kpiComp} {...p} />}`;
+  }
+  return { listKpiCardsImport, listKpiCardsProp };
+}
+
+function getRowQuickActionsProp(rowQuickActions) {
+  let rowQuickActionsProp = '';
+  if (!rowQuickActions || rowQuickActions.enabled !== false) {
+    const declarativePart = rowQuickActions ?? {};
+    rowQuickActionsProp = `\n      rowQuickActions={${JSON.stringify(declarativePart)}}`;
+  }
+  return rowQuickActionsProp;
+}
+
+function buildDetailImports(detailEntity, detailName, customLinesComp) {
+  // When a window declares a customLinesComponent (e.g. AmortizationLinesTable),
+  // it replaces the standard lines Table/Form — skip those imports to avoid
+  // referencing generated files that are not produced.
+  return (detailEntity && !customLinesComp) ? `
+import ${detailName}Table from './${detailName}Table';
+import ${detailName}Form from './${detailName}Form';` : '';
+}
+
+function getLineConfigSymbol(lineEntityConfig, LINE_CONFIG_SYMBOLS) {
+  return lineEntityConfig ? (LINE_CONFIG_SYMBOLS[lineEntityConfig] ?? null) : null;
+}
+
+/**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
  */
 export function generatePageComponent(headerEntity, detailEntity, contract) {
   const headerName = toJsIdentifier(headerEntity);
-  const detailName = detailEntity ? toJsIdentifier(detailEntity) : null;
+  const detailName = getDetailName(detailEntity);
   const compName = `${headerName}Page`;
   const layoutType = contract?.frontendContract?.window?.layoutType ?? 'default';
   const isGallery = layoutType === 'gallery';
@@ -593,21 +1109,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     .map(f => f.name);
   // Built without a nested template literal (Sonar S4624): plain concat
   // around each name keeps the outer template flat.
-  const quotedRequiredHeaderFields = requiredHeaderFieldNames.map(n => "'" + n + "'").join(', ');
-  const requiredHeaderFieldsArray = requiredHeaderFieldNames.length > 0
-    ? `[${quotedRequiredHeaderFields}]`
-    : '[]';
-  const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
-  const statusFieldOverride = contract.frontendContract.window.statusField;
-  const statusField = statusFieldOverride
-    ? (allEntityFields.find(f => f.name === statusFieldOverride) ?? null)
-    : (docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status')));
-  const summaryFieldsOverride = contract.frontendContract.window.summaryFields;
-  const summaryFields = Array.isArray(summaryFieldsOverride)
-    ? summaryFieldsOverride.length === 0
-      ? []
-      : readOnlyFields.filter(f => f !== statusField && summaryFieldsOverride.includes(f.name))
-    : readOnlyFields.filter(f => f !== statusField);
+  const {
+    requiredHeaderFieldsArray,
+    statusField,
+    summaryFields
+  } = resolveStatusAndSummaryFields(requiredHeaderFieldNames, allEntityFields, contract, readOnlyFields);
 
   // Summary config
   const summaryArray = summaryFields.map(f => {
@@ -627,9 +1133,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       const ovr = processOverrides[p.name] || processOverrides[p.columnName] || {};
       if (ovr.exclude) return null;
       const isDestructive = /void|cancel|reject/i.test(p.name);
-      const style = ovr.style || (isDestructive ? 'destructive' : 'positive');
+      const style = ovr.style || pick(isDestructive, 'destructive', 'positive');
       const label = ovr.label || toLabel(p.name);
-      const colPart = p.columnName ? `, columnName: '${p.columnName}'` : '';
+      const colPart = wrapIf(", columnName: '", p.columnName, "'");
       const paramsPart = p.params?.length ? `, params: ${JSON.stringify(p.params)}` : '';
       const dlRaw = ovr.displayLogicRaw
         ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
@@ -640,11 +1146,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       const ovr = processOverrides[f.name] || {};
       if (ovr.exclude) return null;
       const isDestructive = /void|cancel|reject/i.test(f.name);
-      const style = ovr.style || (isDestructive ? 'destructive' : 'positive');
+      const style = ovr.style || pick(isDestructive, 'destructive', 'positive');
       const label = ovr.label || f.label || toLabel(f.name);
       const dlRawVal = ovr.displayLogicRaw || f.displayLogic?.raw;
       const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"')}"` : '';
-      const requiresLinesPart = ovr.requiresLines ? `, requiresLines: true` : '';
+      const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
       return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart} },`;
     }).filter(Boolean),
     // Extra processes defined purely in decisions.json (not in backend contract)
@@ -653,12 +1159,15 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       .map(([name, ovr]) => {
         const style = ovr.style || 'positive';
         const label = ovr.label || toLabel(name);
-        const colPart = ovr.columnName ? `, columnName: '${ovr.columnName}'` : '';
+        const colPart = wrapIf(", columnName: '", ovr.columnName, "'");
         const dlRaw = ovr.displayLogicRaw
           ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
           : '';
-        const requiresLinesPart = ovr.requiresLines ? `, requiresLines: true` : '';
-        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart} },`;
+        const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
+        const fieldMaxPart = ovr.requiresFieldMax
+          ? `, requiresFieldMax: ${JSON.stringify(ovr.requiresFieldMax)}`
+          : '';
+        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart}${fieldMaxPart} },`;
       }),
   ].join('\n');
 
@@ -679,11 +1188,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const firstSearchIdx = entryFields.findIndex(f => mapFormFieldType(f) === 'search');
   const entryArray = entryFields.map((f, i) => {
     const type = mapFormFieldType(f);
-    const requiredPart = f.required ? ', required: true' : '';
-    const lookupPart = (i === firstSearchIdx && firstSearchIdx !== -1) ? ', lookup: true' : '';
-    const labelPart = f.label ? `, label: '${f.label}'` : '';
-    const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
-    const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+    const requiredPart = fragmentIf(f.required, ', required: true');
+    const lookupPart = fragmentIf(i === firstSearchIdx && firstSearchIdx !== -1, ', lookup: true');
+    const labelPart = wrapIf(", label: '", f.label, "'");
+    const referencePart = wrapIf(", reference: '", f.reference, "'");
+    const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
@@ -700,46 +1209,37 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const forceCalloutFieldsPart = Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0
       ? `, forceCalloutFields: ${JSON.stringify(f.forceCalloutFields)}`
       : '';
-    const lookupDrawerPart = f.lookupDrawer ? `, lookupDrawer: '${String(f.lookupDrawer).replace(/'/g, "\\'")}'` : '';
-    const lookupTitlePart = f.lookupTitle ? `, lookupTitle: '${String(f.lookupTitle).replace(/'/g, "\\'")}'` : '';
-    const onSelectMappingsPart = Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0
-      ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
-      : '';
-    const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
+    const { lookupDrawerPart, lookupTitlePart, onSelectMappingsPart, displayFromCatalogPart } = buildLookupEntryParts(f);
     const minEntryPart = optProp('min', f.min);
     return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
     const type = mapFormFieldType(f);
-    const labelPart = f.label ? `, label: '${f.label}'` : '';
-    const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
-    const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+    const labelPart = wrapIf(", label: '", f.label, "'");
+    const referencePart = wrapIf(", reference: '", f.reference, "'");
+    const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
     return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${referencePart}${inputModePart} },`;
   }).join('\n');
 
   const hiddenDefaultsArray = hiddenDefaultFields
     .filter(f => !String(f.defaultValue).startsWith('@SQL=') && !isEtendoSessionMacro(f.defaultValue))
     .map(f => {
-    const rawDefault = String(f.defaultValue);
-    const parentColMatch = rawDefault.match(/^@(\w+)@$/);
-    if (parentColMatch) {
-      const colName = parentColMatch[1];
-      const headerField = allEntityFields.find(hf => hf.column === colName);
-      if (headerField) {
-        return `    { key: '${f.name}', fromParent: '${headerField.name}' },`;
+      const rawDefault = String(f.defaultValue);
+      const parentColMatch = rawDefault.match(/^@(\w+)@$/);
+      if (parentColMatch) {
+        const colName = parentColMatch[1];
+        const headerField = allEntityFields.find(hf => hf.column === colName);
+        if (headerField) {
+          return `    { key: '${f.name}', fromParent: '${headerField.name}' },`;
+        }
       }
-    }
-    const defaultValue = rawDefault.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
-    return `    { key: '${f.name}', value: '${defaultValue}' },`;
-  }).join('\n');
+      const defaultValue = rawDefault.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
+      return `    { key: '${f.name}', value: '${defaultValue}' },`;
+    }).join('\n');
 
   // API prediction config
-  const apiPrediction = projectApiPredictionForFrontend(contract.apiPrediction);
-  const apiBlock = apiPrediction
-    ? `\nexport const api = ${JSON.stringify(apiPrediction, null, 2)};\n`
-    : '';
-  const apiProp = apiPrediction ? '\n      api={api}' : '';
+  const { apiBlock, apiProp } = buildApiParts(contract);
 
   const windowBreadcrumbOverride = contract?.frontendContract?.window?.breadcrumb;
   const windowCategory = capitalize(contract?.frontendContract?.window?.category ?? 'general');
@@ -757,6 +1257,18 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
   const hideMoreDetails = windowConfig.hideMoreDetails ?? false;
   const noHeaderBorder = windowConfig.noHeaderBorder ?? false;
+  const toolbarBorderBottom = windowConfig.toolbarBorderBottom ?? false;
+  const compactSidebarPadding = windowConfig.compactSidebarPadding ?? false;
+  const whiteFormBackground = windowConfig.whiteFormBackground ?? false;
+  const hideFormCard = windowConfig.hideFormCard ?? false;
+  const sidebarAboveTabsOnly = windowConfig.sidebarAboveTabsOnly ?? false;
+  const sidebarClassName = windowConfig.sidebarClassName ?? null;
+  const tabsBarPaddingX = windowConfig.tabsBarPaddingX ?? null;
+  const primaryTabsVariant = windowConfig.primaryTabsVariant ?? null;
+  const toolbarPaddingX = windowConfig.toolbarPaddingX ?? null;
+  const toolbarButtonSize = windowConfig.toolbarButtonSize ?? null;
+  const listbarPaddingX = windowConfig.listbarPaddingX ?? null;
+  const tablePaddingX = windowConfig.tablePaddingX ?? null;
   const linesLayout = windowConfig.linesLayout ?? 'classic';
   const listViewOptions = windowConfig.listViewOptions ?? null;
   const listBaseFilter = windowConfig.listBaseFilter ?? null;
@@ -775,6 +1287,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const titleField = windowConfig.titleField ?? null;
   const salesTheme = windowConfig.salesTheme ?? false;
   const extraTabs = windowConfig.extraTabs ?? [];
+  const customPanelTabs = windowConfig.customPanelTabs ?? [];
   const lineEntityConfig = windowConfig.lineEntityConfig ?? null;
   // ETP-3914 — Row Quick Actions overlay config (defaults injected by resolve-curated.js).
   // When the entire feature is disabled we skip emitting the prop so the list view is
@@ -791,41 +1304,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   //   { allowEmail: false }           → keep eligibility, hide email column
   // Both fields default to `true` when omitted. We only emit the JSX prop when
   // the feature is on, so non-eligible windows render no envelope.
-  const sendDocumentOverride = windowConfig.sendDocument || null;
-  const isDocumentalWindow = allEntityFields.some(
-    f => f.name === 'documentNo' && f.visibility !== 'discarded',
-  );
-  const sdEnabled = sendDocumentOverride?.enabled !== undefined
-    ? !!sendDocumentOverride.enabled
-    : isDocumentalWindow;
-  const sdAllowEmail = sendDocumentOverride?.allowEmail !== false;
-  const sendDocument = sdEnabled ? { enabled: true, allowEmail: sdAllowEmail } : null;
-
-  // Attachments tab — enabled by default on standard (default) layout windows.
-  // Opt out per-window via `window.attachments: false` in decisions.json, or
-  // pass an object to forward options to the AttachmentsTab component (e.g.
-  // `{ enabled: true, accept: '.pdf', maxSizeMb: 10 }`).
-  const attachmentsCfg = windowConfig.attachments ?? true;
-  // attachments are auto-enabled on default layout; on other layouts they must be
-  // explicitly opted-in via `window.attachments: true` (or an options object) in decisions.json.
-  const attachmentsExplicit = windowConfig.attachments !== undefined;
-  let attachmentsEnabled =
-    (layoutType === 'default' || attachmentsExplicit) &&
-    attachmentsCfg !== false &&
-    (typeof attachmentsCfg !== 'object' || attachmentsCfg?.enabled !== false);
-  const attachmentsOpts = typeof attachmentsCfg === 'object' && attachmentsCfg !== null
-    ? attachmentsCfg
-    : {};
+  const sendDocument = resolveSendDocumentConfig(windowConfig, allEntityFields);
   // Resolve header DB table name from the contract — required by AttachmentsTab
   // to build the NEO endpoint `/sws/neo/attachments/{tableName}/{recordId}`.
   const headerEntityContract = contract?.frontendContract?.entities?.[headerEntity];
   const headerTableName = headerEntityContract?.tableName ?? null;
-  if (attachmentsEnabled && !headerTableName) {
-    console.warn(
-      `[generate-frontend] AttachmentsTab disabled for "${headerEntity}": header entity has no tableName in contract.`
-    );
-    attachmentsEnabled = false;
-  }
+
+  let { attachmentsEnabled, attachmentsOpts } = resolveAttachmentsConfig(windowConfig, layoutType, headerTableName, headerEntity);
 
   // Detect secondary child entities for additional tabs
   const secondaryTabsDecl = windowConfig.secondaryTabs;
@@ -849,10 +1334,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           const f = entityFields.find(ef => ef.name === fk);
           if (!f) return null;
           const type = mapFormFieldType(f);
-          const requiredPart = f.required ? ', required: true' : '';
-          const labelPart = f.label ? `, label: '${f.label}'` : '';
-          const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
-          const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+          const requiredPart = fragmentIf(f.required, ', required: true');
+          const labelPart = wrapIf(", label: '", f.label, "'");
+          const referencePart = wrapIf(", reference: '", f.reference, "'");
+          const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
           // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
           const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
           const defaultValuePart = (!skipCheckboxDefault && f.defaultValue) ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
@@ -939,22 +1424,21 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const addLinePart = t.addLineEntries.length > 0
       ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
       : '';
-    const customAddModalPart = t.CustomAddModalName ? `, customAddModal: ${t.CustomAddModalName}` : '';
+    const customAddModalPart = wrapIf(', customAddModal: ', t.CustomAddModalName);
     const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
     return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart} },`;
   }).join('\n');
 
-  const secondaryTabsProp = secondaryTabDefs.length > 0
-    ? `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
-    : '';
+  const secondaryTabsProp = wrapIf('\n        secondaryTabs={[\n', secondaryTabsPropEntries, '\n        ]}', secondaryTabDefs.length > 0);
 
   // Build optional DetailView props from window-level decisions config
-  const documentPreviewProp = documentPreview
-    ? `\n        documentPreview={{ titlePrefix: '${documentPreview.titlePrefix || ''}', pdfUrl: null }}`
-    : '';
-  const notesFieldProp = notesField
-    ? `\n        notesField="${notesField}"`
-    : '';
+  const documentPreviewProp = wrapIf(
+    "\n        documentPreview={{ titlePrefix: '",
+    documentPreview?.titlePrefix || '',
+    "', pdfUrl: null }}",
+    documentPreview
+  );
+  const notesFieldProp = wrapIf('\n        notesField="', notesField, '"');
   // customTabs accumulator — DetailView supports items with shape
   //   { key, label, Component, placement?: 'tab' | 'footer', props?: {} }
   // `placement: 'tab'` renders as a main tab (Lines/Notes style);
@@ -963,287 +1447,186 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   if (relatedDocuments) {
     customTabItems.push(`{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }`);
   }
-  if (attachmentsEnabled) {
-    const optsLiteral = JSON.stringify(attachmentsOpts);
+  customPanelTabs.forEach(pt => {
+    const labelPart = pt.labelKey ? `labelKey: '${pt.labelKey}'` : `label: '${pt.label}'`;
     customTabItems.push(
-      `{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: ${JSON.stringify(headerTableName)}, config: ${optsLiteral} } }`
+      `{ key: '${pt.key}', ${labelPart}, Component: ${pt.component}, placement: 'tab' }`
     );
-  }
+  });
+  pushAttachmentsTab(attachmentsEnabled, attachmentsOpts, customTabItems, headerTableName);
   extraTabs.forEach(et => {
     const labelPart = et.labelKey ? `labelKey: '${et.labelKey}'` : `label: '${JSON.stringify(et.label)}'`;
     customTabItems.push(
       `{ key: '${et.key}', ${labelPart}, Component: ${et.component}, placement: 'tab' }`
     );
   });
-  const customTabsProp = customTabItems.length > 0
-    ? `\n        customTabs={[${customTabItems.join(', ')}]}`
-    : '';
+  const customTabsProp = getCustomTabsProp(customTabItems);
 
   // hideDeleteWhenComplete prop
-  const hideDeleteProp = hideDeleteWhenComplete ? '\n        hideDeleteWhenComplete' : '';
+  const hideDeleteProp = fragmentIf(hideDeleteWhenComplete, '\n        hideDeleteWhenComplete');
   // customTabsAfterBottom prop
-  const customTabsAfterBottomProp = customTabsAfterBottom ? '\n        customTabsAfterBottom' : '';
+  const customTabsAfterBottomProp = fragmentIf(customTabsAfterBottom, '\n        customTabsAfterBottom');
 
   // hidePrint prop (DetailView)
-  const hidePrintProp = hidePrint ? '\n        hidePrint' : '';
+  const hidePrintProp = fragmentIf(hidePrint, '\n        hidePrint');
   // hideSaveStatuses prop (DetailView)
-  const hideSaveStatusesProp = hideSaveStatuses.length > 0
-    ? `\n        hideSaveStatuses={${JSON.stringify(hideSaveStatuses)}}`
-    : '';
+  const hideSaveStatusesProp = jsonWrapIf('\n        hideSaveStatuses={', hideSaveStatuses, '}', hideSaveStatuses.length > 0);
   // hideMoreMenu prop (DetailView)
-  const hideMoreMenuProp = hideMoreMenu ? '\n        hideMoreMenu' : '';
+  const hideMoreMenuProp = fragmentIf(hideMoreMenu, '\n        hideMoreMenu');
   // hideMoreDetails prop (DetailView)
-  const hideMoreDetailsProp = hideMoreDetails ? '\n        hideMoreDetails' : '';
+  const hideMoreDetailsProp = fragmentIf(hideMoreDetails, '\n        hideMoreDetails');
   // noHeaderBorder prop (DetailView)
-  const noHeaderBorderProp = noHeaderBorder ? '\n        noHeaderBorder' : '';
+  const noHeaderBorderProp = fragmentIf(noHeaderBorder, '\n        noHeaderBorder');
+  // toolbarBorderBottom prop (DetailView)
+  const toolbarBorderBottomProp = fragmentIf(toolbarBorderBottom, '\n        toolbarBorderBottom');
+  // compactSidebarPadding prop (DetailView)
+  const compactSidebarPaddingProp = fragmentIf(compactSidebarPadding, '\n        compactSidebarPadding');
+  const whiteFormBackgroundProp = fragmentIf(whiteFormBackground, '\n        whiteFormBackground');
+  // hideFormCard prop (DetailView)
+  const hideFormCardProp = fragmentIf(hideFormCard, '\n        hideFormCard');
+  // sidebarAboveTabsOnly prop (DetailView)
+  const sidebarAboveTabsOnlyProp = fragmentIf(sidebarAboveTabsOnly, '\n        sidebarAboveTabsOnly');
+  // sidebarClassName prop (DetailView)
+  const sidebarClassNameProp = wrapIf('\n        sidebarClassName="', sidebarClassName, '"');
+  // tabsBarPaddingX prop (DetailView)
+  const tabsBarPaddingXProp = wrapIf('\n        tabsBarPaddingX="', tabsBarPaddingX, '"');
+  // primaryTabsVariant prop (DetailView)
+  const primaryTabsVariantProp = wrapIf('\n        primaryTabsVariant="', primaryTabsVariant, '"');
+  // toolbarPaddingX prop (DetailView)
+  const toolbarPaddingXProp = wrapIf('\n        toolbarPaddingX="', toolbarPaddingX, '"');
+  // toolbarButtonSize prop (DetailView)
+  const toolbarButtonSizeProp = wrapIf('\n        toolbarButtonSize="', toolbarButtonSize, '"');
+  // listbarPaddingX / tablePaddingX props (ListView)
+  const listbarPaddingXProp = wrapIf('\n      listbarPaddingX="', listbarPaddingX, '"');
+  const tablePaddingXProp = wrapIf('\n      tablePaddingX="', tablePaddingX, '"');
   // linesLayout prop (DetailView). Only emit when non-default to keep generated
   // output diff-free for windows that don't opt in.
-  const linesLayoutProp = linesLayout && linesLayout !== 'classic'
-    ? `\n        linesLayout="${linesLayout}"`
-    : '';
+  const cond = linesLayout && linesLayout !== 'classic';
+  const linesLayoutProp = wrapIf('\n        linesLayout="', linesLayout, '"', cond);
   // listViewOptions props
-  const listViewOptionsProp = listViewOptions
-    ? `\n      listViewOptions={${JSON.stringify(listViewOptions)}}`
-    : '';
-  const listBaseFilterProp = listBaseFilter
-    ? `\n      baseFilter="${listBaseFilter}"`
-    : '';
-  const quickFiltersProp = quickFilters
-    ? `\n      quickFilters={${JSON.stringify(quickFilters)}}`
-    : '';
-  const subsetFiltersProp = subsetFilters
-    ? `\n      subsetFilters={${JSON.stringify(subsetFilters)}}`
-    : '';
-  const dateFilterKeyProp = dateFilterKey
-    ? `\n      dateFilterKey="${dateFilterKey}"`
-    : '';
+  const listViewOptionsProp = jsonWrapIf('\n      listViewOptions={', listViewOptions, '}');
+  const listBaseFilterProp = wrapIf('\n      baseFilter="', listBaseFilter, '"');
+  const quickFiltersProp = jsonWrapIf('\n      quickFilters={', quickFilters, '}');
+  const subsetFiltersProp = jsonWrapIf('\n      subsetFilters={', subsetFilters, '}');
+  const dateFilterKeyProp = wrapIf('\n      dateFilterKey="', dateFilterKey, '"');
+  // filterOnly fields are in the table columns (so ListFilterBar detects them)
+  // but should not be visually rendered. Pass as initialHiddenColumns to DataTable.
+  const filterOnlyFields = allEntityFields.filter(f => f.filterOnly && f.grid);
+  const initialHiddenColumnsProp = jsonWrapIf('\n      hiddenColumns={', filterOnlyFields.map(f => f.name), '}', filterOnlyFields.length > 0);
   // contentBg prop
-  const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
+  const contentBgProp = wrapIf('\n        contentBg="', contentBg, '"');
   // lineConfig prop — emitted when the window uses a non-default line pricing config
   const LINE_CONFIG_SYMBOLS = { invoice: 'INVOICE_LINE_CONFIG', returnOrder: 'RETURN_ORDER_LINE_CONFIG' };
-  const lineConfigSymbol = lineEntityConfig ? (LINE_CONFIG_SYMBOLS[lineEntityConfig] ?? null) : null;
-  const lineConfigProp = lineConfigSymbol ? `\n        lineConfig={${lineConfigSymbol}}` : '';
+  const lineConfigSymbol = getLineConfigSymbol(lineEntityConfig, LINE_CONFIG_SYMBOLS);
+  const lineConfigProp = wrapIf('\n        lineConfig={', lineConfigSymbol, '}');
   // ListView toolbar props
-  const hidePrintListProp = hidePrint ? '\n      hidePrint' : '';
-  const hideMoreMenuListProp = hideMoreMenu ? '\n      hideMoreMenu' : '';
-  const hideListFiltersProp = hideListFilters ? '\n      hideListFilters' : '';
-  const hideLinkProp = hideLink ? '\n      hideLink' : '';
-  const hideEyeCountProp = hideEyeCount ? '\n      hideEyeCount' : '';
+  const hidePrintListProp = fragmentIf(hidePrint, '\n      hidePrint');
+  const hideMoreMenuListProp = fragmentIf(hideMoreMenu, '\n      hideMoreMenu');
+  const hideListFiltersProp = fragmentIf(hideListFilters, '\n      hideListFilters');
+  const hideLinkProp = fragmentIf(hideLink, '\n      hideLink');
+  const hideEyeCountProp = fragmentIf(hideEyeCount, '\n      hideEyeCount');
 
   // Custom component props (bottomSection, topbarRight)
-  const customComponentImports = [];
-  const customComponentProps = [];
-  if (customComponents.bottomSection) {
-    customComponentImports.push(`import ${customComponents.bottomSection} from ${resolveCustomImport(specName, customComponents.bottomSection)};`);
-    customComponentProps.push(`\n        bottomSection={${customComponents.bottomSection}}`);
-  }
-  if (customComponents.topbarRight) {
-    customComponentImports.push(`import ${customComponents.topbarRight} from ${resolveCustomImport(specName, customComponents.topbarRight)};`);
-    customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
-  }
-  if (customComponents.topbarExtra) {
-    customComponentImports.push(`import ${customComponents.topbarExtra} from ${resolveCustomImport(specName, customComponents.topbarExtra)};`);
-    customComponentProps.push(`\n        topbarExtra={${customComponents.topbarExtra}}`);
-  }
-  if (customComponents.bulkActions) {
-    customComponentImports.push(`import ${customComponents.bulkActions} from ${resolveCustomImport(specName, customComponents.bulkActions)};`);
-  }
-  if (customComponents.sidePanel) {
-    customComponentImports.push(`import ${customComponents.sidePanel} from ${resolveCustomImport(specName, customComponents.sidePanel)};`);
-    customComponentProps.push(`\n        sidePanel={${customComponents.sidePanel}}`);
-    if (customComponents.sidePanelStyle) {
-      customComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
-    }
-  }
-  if (customComponents.moreMenuContent) {
-    customComponentImports.push(`import ${customComponents.moreMenuContent} from ${resolveCustomImport(specName, customComponents.moreMenuContent)};`);
-    customComponentProps.push(`\n        customMenuContent={${customComponents.moreMenuContent}}`);
-  }
-  if (customComponents.newRecordComponent) {
-    customComponentImports.push(`import ${customComponents.newRecordComponent} from ${resolveCustomImport(specName, customComponents.newRecordComponent)};`);
-  }
-  // newActions — import component modals if declared
-  const newActionsWithComponents = newActionsConfig.filter(a => a.component);
-  for (const action of newActionsWithComponents) {
-    customComponentImports.push(`import ${action.component} from ${resolveCustomImport(specName, action.component)};`);
-  }
-  const customCompImportBlock = customComponentImports.length > 0
-    ? customComponentImports.join('\n') + '\n'
-    : '';
-  const customCompPropsBlock = customComponentProps.join('');
+  const {
+    newActionsWithComponents,
+    customCompImportBlock,
+    customCompPropsBlock
+  } = buildCustomComponentImportsAndProps(customComponents, specName, customPanelTabs, newActionsConfig);
 
   // Custom headerTable override
   const customHeaderTable = customComponents.headerTable ?? null;
-  const headerTableImport = customHeaderTable
-    ? `import ${headerName}Table from ${resolveCustomImport(specName, customHeaderTable)};`
-    : `import ${headerName}Table from './${headerName}Table';`;
+  const headerTableImport = getHeaderTableImport(customHeaderTable, headerName, specName);
 
   // menuActions prop
-  const menuActionsNeedsData = menuActionsConfig.some(a => a.visibleWhenFieldFalse);
-  const menuActionsFnParams = menuActionsNeedsData ? '({ data, status })' : '({ status })';
-  const menuActionsProp = menuActionsConfig.length > 0
-    ? `\n        menuActions={${menuActionsFnParams} => [\n${menuActionsConfig.map(a => {
-        const statusVis = a.visibleWhenStatus
-          ? Array.isArray(a.visibleWhenStatus)
-            ? `${JSON.stringify(a.visibleWhenStatus)}.includes(status)`
-            : `status === '${a.visibleWhenStatus}'`
-          : '';
-        const fieldVis = a.visibleWhenFieldFalse ? `!data?.${a.visibleWhenFieldFalse}` : '';
-        const visParts = [statusVis, fieldVis].filter(Boolean);
-        const vis = visParts.length > 0 ? `visible: ${visParts.join(' && ')}, ` : '';
-        const destr = a.destructive ? 'destructive: true, ' : '';
-        // Handler precedence: documentAction (declarative DocAction) > columnName (AD process button) > onClick placeholder
-        let handler;
-        if (a.documentAction) {
-          handler = `documentAction: '${a.documentAction}', `;
-        } else if (a.columnName) {
-          handler = `columnName: '${a.columnName}', `;
-        } else {
-          handler = `onClick: () => {},`;
-        }
-        const labelKeyPart = a.labelKey ? `labelKey: '${a.labelKey}', ` : '';
-        const successPart = a.successKey
-          ? `successKey: '${a.successKey}', `
-          : a.successMessage ? `successMessage: '${String(a.successMessage).replace(/'/g, "\\'")}', ` : '';
-        return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${handler} }`;
-      }).join(',\n')}\n        ]}`
-    : '';
+  const menuActionsNeedsData = menuActionsConfig.some(a => a.visibleWhenFieldFalse || a.visibleWhenFieldTrue);
+  const menuActionsFnParams = getMenuActionsFnParams(menuActionsNeedsData);
+  const menuActionsProp = getMenuActionsProp(menuActionsConfig, menuActionsFnParams);
 
   // Build optional import for RelatedDocuments
-  const relatedDocsImport = relatedDocuments
-    ? `import RelatedDocuments from ${resolveCustomImport(specName, 'RelatedDocuments')};\n`
-    : '';
+  const relatedDocsImport = getRelatedDocsImport(relatedDocuments, specName);
 
   // Build optional import for the generic AttachmentsTab component
-  const attachmentsImport = attachmentsEnabled
-    ? `import { AttachmentsTab } from '@/components/attachments';\n`
-    : '';
+  const attachmentsImport = fragmentIf(attachmentsEnabled, `import { AttachmentsTab } from '@/components/attachments';\n`);
 
   // Build optional imports for extra custom tabs (window.extraTabs in decisions.json)
-  const extraTabsImport = extraTabs.length > 0
-    ? extraTabs.map(et => `import ${et.component} from '${et.importFrom}';\n`).join('')
-    : '';
+  const extraTabsImport = getExtraTabsImport(extraTabs);
 
   // Draft mode config from frontend contract
   const draftModeConfig = contract.frontendContract.entities[headerEntity]?.draftMode;
-  const draftModeValue = draftModeConfig?.enabled
-    ? JSON.stringify(draftModeConfig, null, 2)
-    : 'null';
-  const draftModeProp = draftModeConfig?.enabled ? '\n        draftMode={draftMode}' : '';
-  const requiredHeaderFieldsProp = requiredHeaderFieldNames.length > 0
-    ? '\n        requiredHeaderFields={requiredHeaderFields}'
-    : '';
+  const confirmModalName = draftModeConfig?.confirmModal || null;
+  // Strip confirmModal from the static config — it's runtime-only (resolved via useState in the component)
+  const { draftModeStaticConfig, draftModeValue } = getDraftModeParts(draftModeConfig);
+  const draftModePropName = pick(confirmModalName, 'draftModeWithConfirm', 'draftMode');
+  const draftModeProp = wrapIf('\n        draftMode={', draftModePropName, '}', !!draftModeStaticConfig?.enabled);
+  const requiredHeaderFieldsProp = fragmentIf(requiredHeaderFieldNames.length > 0, '\n        requiredHeaderFields={requiredHeaderFields}');
 
   // entityLabel / detailLabel / detailTabIndex from window decisions config
-  const entityLabel = windowConfig.entityLabel || toLabel(headerEntity);
-  const entityDetailLabel = detailEntity
-    ? (windowConfig.detailLabel || contract.frontendContract.entities[detailEntity]?.tabName || toLabel(detailEntity))
-    : '';
-  const detailTabIndexProp = windowConfig.detailTabIndex != null
-    ? `\n        detailTabIndex={${windowConfig.detailTabIndex}}`
-    : '';
+  let entityLabel = windowConfig.entityLabel || toLabel(headerEntity);
+  const entityDetailLabel = getEntityDetailLabel(detailEntity, windowConfig, contract);
+  const detailTabIndexProp = wrapIf('\n        detailTabIndex={', windowConfig.detailTabIndex, '}', windowConfig.detailTabIndex != null);
 
   // StatusBar component generation
-  const statusBarResult = statusBar ? generateStatusBarComponent(headerEntity, statusBar) : null;
-  const statusBarImport = statusBarResult ? `\n${statusBarResult.lucideImports}` : '';
-  const statusBarCode = statusBarResult ? `\n${statusBarResult.componentCode}\n` : '';
-  const headerContentProp = statusBar
-    ? `\n        headerContent={(data) => <${headerName}StatusBar data={data} />}`
-    : (isGallery && !isSidebar ? `\n        headerContent={
-          <${headerName}DetailHeader
-            recordId={recordId}
-            token={props.token}
-            apiBaseUrl={api.baseUrl}
-          />
-        }` : '');
-  const sidebarContentProp = isSidebar
-    ? `\n        sidebarContent={(data) => (
-          <${headerName}Sidebar
-            recordId={recordId}
-            data={data}
-            token={props.token}
-            apiBaseUrl={props.apiBaseUrl}
-          />
-        )}`
-    : '';
+  const {
+    statusBarImport,
+    confirmModalImport,
+    statusBarCode,
+    headerContentProp,
+    sidebarContentProp
+  } = getStatusBarParts(statusBar, headerEntity, confirmModalName, specName, headerName, isGallery, isSidebar);
 
   // detailSortBy prop
-  const detailSortByProp = detailSortBy ? `\n        detailSortBy="${detailSortBy}"` : '';
+  const detailSortByProp = wrapIf('\n        detailSortBy="', detailSortBy, '"');
 
   // titleField prop
-  const titleFieldProp = titleField ? `\n        titleField="${titleField}"` : '';
+  const titleFieldProp = wrapIf('\n        titleField="', titleField, '"');
 
   // salesTheme prop
-  const salesThemeProp = salesTheme ? '\n        salesTheme' : '';
+  const salesThemeProp = fragmentIf(salesTheme, '\n        salesTheme');
 
   // listKpiCards → headerContent prop in ListView
-  const listKpiCardsConfig = windowConfig.listKpiCards ?? null;
-  let listKpiCardsImport = '';
-  let listKpiCardsProp = '';
-  if (listKpiCardsConfig?.customComponent && specName) {
-    const kpiComp = listKpiCardsConfig.customComponent;
-    listKpiCardsImport = `import ${kpiComp} from ${resolveCustomImport(specName, kpiComp)};\n`;
-    listKpiCardsProp = `\n      headerContent={(p) => <${kpiComp} {...p} />}`;
-  }
+  let { listKpiCardsImport, listKpiCardsProp } = getListKpiCardsParts(windowConfig, specName);
 
   // bulkActions → render function prop in ListView
-  const bulkActionsProp = customComponents.bulkActions
-    ? `\n      bulkActions={(ctx) => <${customComponents.bulkActions} {...ctx} />}`
-    : '';
+  const bulkActionsProp = getBulkActionsProp(customComponents);
 
   // headerExtra → formFooter prop
   const headerExtraConfig = windowConfig.headerExtra ?? null;
-  let formFooterImport = '';
-  let formFooterProp = '';
-  if (headerExtraConfig?.customForm && specName) {
-    const compName = headerExtraConfig.customForm;
-    formFooterImport = `import ${compName} from ${resolveCustomImport(specName, compName)};\n`;
-    formFooterProp = `\n        formFooter={${compName}}`;
+  let { formFooterImport, formFooterProp } = buildFormFooterParts(headerExtraConfig, specName);
+
+  // customLinesComponent → CustomLines prop
+  const customLinesComp = windowConfig.customLinesComponent ?? null;
+  const customLinesLabelValue = windowConfig.customLinesLabel ?? null;
+  let customLinesImport = '';
+  let customLinesProp = '';
+  if (customLinesComp && specName) {
+    customLinesImport = `import ${customLinesComp} from ${resolveCustomImport(specName, customLinesComp)};\n`;
+    customLinesProp = `\n        CustomLines={${customLinesComp}}`;
+    if (customLinesLabelValue) {
+      customLinesProp += `\n        customLinesLabel="${customLinesLabelValue}"`;
+    }
   }
 
   // primaryTabs support
   const primaryTabsConfig = windowConfig.primaryTabs ?? null;
-  let primaryTabsImports = '';
-  let primaryTabsProp = '';
-  if (primaryTabsConfig && specName) {
-    const imports = [];
-    const tabEntries = primaryTabsConfig.map(tab => {
-      if (tab.panel) {
-        imports.push(`import ${tab.panel} from ${resolveCustomImport(specName, tab.panel)};`);
-        return `{ key: '${tab.key}', label: '${tab.label}', Panel: ${tab.panel} }`;
-      }
-      return `{ key: '${tab.key}', label: '${tab.label}' }`;
-    });
-    primaryTabsImports = imports.length > 0 ? imports.join('\n') + '\n' : '';
-    primaryTabsProp = `\n        primaryTabs={[\n          ${tabEntries.join(',\n          ')},\n        ]}`;
-  }
+  let { primaryTabsImports, primaryTabsProp } = buildPrimaryTabsProps(primaryTabsConfig, specName);
 
   // othersLabel support
   const othersLabelValue = windowConfig.othersLabel ?? null;
-  const othersLabelProp = othersLabelValue ? `\n        othersLabel="${othersLabelValue}"` : '';
+  const othersLabelProp = wrapIf('\n        othersLabel="', othersLabelValue, '"');
 
   // disableProcessedLock support
-  const disableProcessedLockProp = windowConfig.disableProcessedLock ? `\n        lockWhenProcessed={false}` : '';
+  const disableProcessedLockProp = fragmentIf(windowConfig.disableProcessedLock, `\n        lockWhenProcessed={false}`);
 
   // statusEnumLabels support
   const statusEnumLabelsConfig = windowConfig.statusEnumLabels ?? null;
-  const statusEnumLabelsProp = statusEnumLabelsConfig
-    ? `\n        statusEnumLabels={${JSON.stringify(statusEnumLabelsConfig)}}`
-    : '';
+  const statusEnumLabelsProp = jsonWrapIf('\n        statusEnumLabels={', statusEnumLabelsConfig, '}');
 
   // showDetailFooterTotals support
   const showDetailFooterTotalsValue = windowConfig.showDetailFooterTotals;
-  const showDetailFooterTotalsProp = showDetailFooterTotalsValue !== undefined
-    ? `\n        showDetailFooterTotals={${showDetailFooterTotalsValue}}`
-    : '';
+  const showDetailFooterTotalsProp = wrapIf('\n        showDetailFooterTotals={', showDetailFooterTotalsValue, '}', showDetailFooterTotalsValue !== undefined);
 
   // labelOverrides support
-  const labelOverridesConfig = windowConfig.labelOverrides ?? null;
-  const labelOverridesProp = labelOverridesConfig ? '\n        labelOverrides={labelOverrides}' : '';
-  const labelOverridesListProp = labelOverridesConfig ? '\n      labelOverrides={labelOverrides}' : '';
-  const labelOverridesBlock = labelOverridesConfig
-    ? `\nconst labelOverrides = ${JSON.stringify(labelOverridesConfig, null, 2)};\n`
-    : '';
+  const { labelOverridesProp, labelOverridesListProp, labelOverridesBlock } = getLabelOverridesParts(windowConfig);
 
   // ETP-3914 — rowQuickActions prop forwarded to ListView.
   // The feature is ON by default for every window. The contract only carries a block
@@ -1251,11 +1634,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // The generator forwards whatever is declared verbatim; an empty `{}` is enough to
   // mount the overlay since DataTable + RowQuickActions resolve defaults at runtime.
   // We skip emission entirely only when the user explicitly set `enabled: false`.
-  let rowQuickActionsProp = '';
-  if (!rowQuickActions || rowQuickActions.enabled !== false) {
-    const declarativePart = rowQuickActions ?? {};
-    rowQuickActionsProp = `\n      rowQuickActions={${JSON.stringify(declarativePart)}}`;
-  }
+  let rowQuickActionsProp = getRowQuickActionsProp(rowQuickActions);
 
   // ETP-3914 — Send/Download envelope prop. ListView routes it into DataTable →
   // RowQuickActions to control the email quick action, and mounts the generic
@@ -1264,14 +1643,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // JSX treats as `={true}` — runtime gates use `enabled !== false` and optional
   // chaining, so a plain `true` behaves identically to `{enabled:true,allowEmail:true}`
   // while keeping generated files clean of redundant default objects.
-  let sendDocumentProp = '';
-  let sendDocumentDetailProp = '';
-  if (sendDocument) {
-    const isDefaults = sendDocument.enabled === true && sendDocument.allowEmail === true;
-    const propValue = isDefaults ? '' : `={${JSON.stringify(sendDocument)}}`;
-    sendDocumentProp = `\n      sendDocument${propValue}`;
-    sendDocumentDetailProp = `\n        sendDocument${propValue}`;
-  }
+  let { sendDocumentProp, sendDocumentDetailProp } = buildSendDocumentProps(sendDocument);
 
   // newActions support — split button dropdown on the list view
   const hasNewActions = newActionsConfig.length > 0;
@@ -1279,40 +1651,29 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const stateName = `show${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`;
     return `  const [${stateName}, set${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal] = useState(false);`;
   }).join('\n');
-  const newActionsPropValue = hasNewActions
-    ? `\n      newActions={[${newActionsConfig.map(a => {
-        const hasComp = !!a.component;
-        const stateSetter = hasComp
-          ? `set${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`
-          : null;
-        const onClick = hasComp
-          ? `() => ${stateSetter}(true)`
-          : `() => {}`;
-        return `\n        { key: '${a.key}', label: '${a.label}', onClick: ${onClick} }`;
-      }).join(',')}\n      ]}`
-    : '';
+  const newActionsPropValue = getNewActionsPropValue(hasNewActions, newActionsConfig);
   const newActionsModals = newActionsWithComponents.map(a => {
     const stateName = `show${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`;
     const setterName = `set${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`;
     return `    {${stateName} && <${a.component} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => ${setterName}(false)} />}`;
   }).join('\n');
 
-  const needsUseState = customComponents.newRecordComponent || newActionsWithComponents.length > 0;
+  const needsUseState = customComponents.newRecordComponent || newActionsWithComponents.length > 0 || !!confirmModalName;
   const needsFragment = customComponents.newRecordComponent || newActionsWithComponents.length > 0;
 
-  return `import { ${needsUseState ? 'useState, ' : ''}useEffect } from 'react';
-import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}${lineConfigSymbol ? `\nimport { ${lineConfigSymbol} } from '@/hooks/useLineGrossAmount';` : ''}
+  const galleryComponentName = `${headerName}Gallery`;
+  const sidebarComponentName = `${headerName}Sidebar`;
+  const detailHeaderComponentName = `${headerName}DetailHeader`;
+  const useStateImport = fragmentIf(needsUseState, 'useState, ');
+  return `import { ${useStateImport}useEffect } from 'react';
+import { ListView, DetailView } from '@/components/contract-ui';${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
 ${headerTableImport}
-import ${headerName}Form from './${headerName}Form';${detailEntity ? `
-import ${detailName}Table from './${detailName}Table';
-import ${detailName}Form from './${detailName}Form';` : ''}
-${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
-${isGallery ? `import ${headerName}Gallery from ${resolveCustomImport(specName || headerEntity, `${headerName}Gallery`)};` : ''}${isSidebar ? `
-import ${headerName}Sidebar from ${resolveCustomImport(specName || headerEntity, `${headerName}Sidebar`)};` : (isGallery ? `
-import ${headerName}DetailHeader from ${resolveCustomImport(specName || headerEntity, `${headerName}DetailHeader`)};` : '')}${statusBarImport}
+import ${headerName}Form from './${headerName}Form';${(buildDetailImports(detailEntity, detailName, customLinesComp))}
+${fragmentIf(secondaryTabDefs.length > 0, `${secondaryTabsImports}\n`)}${formFooterImport}${customLinesImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
+${(buildGalleryImport(isGallery, headerName, specName, headerEntity, galleryComponentName))}${(buildSidebarImport(isSidebar, headerName, specName, headerEntity, sidebarComponentName))}${(buildDetailHeaderImport(isGallery, isSidebar, headerName, specName, headerEntity, detailHeaderComponentName))}${statusBarImport}${confirmModalImport}
 
-const breadcrumb = '${windowBreadcrumbOverride !== undefined ? windowBreadcrumbOverride : `${windowCategory} / ${windowLabel}`}';
-${labelOverridesBlock}${statusBarCode}
+const breadcrumb = ${getBreadcrumbLiteral(windowBreadcrumbOverride, windowCategory, windowLabel)};
+${statusBarCode}
 
 ${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
 const summary = [
@@ -1354,30 +1715,45 @@ ${hiddenDefaultsArray}
 };
 ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
-${MARKERS.GENERATED_START(`component:${compName}`)}
-export default function ${compName}({ windowName, recordId, ...props }) {${customComponents.newRecordComponent ? `
-  const [showNewModal, setShowNewModal] = useState(false);` : ''}${newActionsWithComponents.length > 0 ? `\n${newActionsStatements}` : ''}
+${labelOverridesBlock}${MARKERS.GENERATED_START(`component:${compName}`)}
+export default function ${compName}({ windowName, recordId, ...props }) {${fragmentIf(customComponents.newRecordComponent, `
+  const [showNewModal, setShowNewModal] = useState(false);`)}${fragmentIf(newActionsWithComponents.length > 0, `\n${newActionsStatements}`)}${fragmentIf(confirmModalName, `
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const draftModeWithConfirm = { ...draftMode, onConfirm: () => setShowConfirmModal(true) };`)}
   if (recordId) {
-    return (
+    return (${fragmentIf(confirmModalName, `
+      <>`)}
       <DetailView
         entity="${headerEntity}"${detailEntity ? `
         detailEntity="${detailEntity}"` : ''}
-        Form={${headerName}Form}${detailEntity ? `
+        Form={${headerName}Form}${detailEntity && !customLinesComp ? `
         DetailTable={${detailName}Table}
         DetailForm={${detailName}Form}` : ''}
         summary={summary}
         statusField={statusField}
         extraBadges={extraBadges}
-        processes={processes}${detailEntity ? `
+        processes={processes}${detailEntity && !customLinesComp ? `
         addLineFields={addLineFields}` : ''}
         catalogs={catalogs}
         entityLabel="${entityLabel}"${detailEntity ? `
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
         {...props}${sidebarContentProp}
-      />
+      />${confirmModalName ? `
+      {showConfirmModal && (
+        <${confirmModalName}
+          recordId={recordId}
+          token={props.token}
+          apiBaseUrl={props.apiBaseUrl}
+          onClose={(success) => {
+            setShowConfirmModal(false);
+            if (success) window.location.reload();
+          }}
+        />
+      )}
+      </>` : ''}
     );
   }
 
@@ -1389,12 +1765,12 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `
-    {showNewModal && <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => setShowNewModal(false)} />}` : ''}${newActionsWithComponents.length > 0 ? `\n${newActionsModals}` : ''}${needsFragment ? `
-    </>` : ''}
+    {showNewModal && <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => setShowNewModal(false)} />}` : ''}${fragmentIf(newActionsWithComponents.length > 0, `\n${newActionsModals}`)}${fragmentIf(needsFragment, `
+    </>`)}
   );
 }
 ${MARKERS.GENERATED_END(`component:${compName}`)}
@@ -1518,9 +1894,9 @@ export function generateProcessFormComponent(contract) {
   const compName = toPascalCase(proc.specName) + 'Process';
 
   const paramsArray = contract.parameters.map(p => {
-    const requiredPart = p.required ? ', required: true' : '';
+    const requiredPart = fragmentIf(p.required, ', required: true');
     const defaultPart = p.defaultValue ? `, defaultValue: '${p.defaultValue.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
-    const referencePart = p.referenceValueId ? `, reference: '${p.referenceValueId}'` : '';
+    const referencePart = wrapIf(", reference: '", p.referenceValueId, "'");
     return `  { key: '${p.name}', column: '${p.column}', type: '${p.inputMode}'${requiredPart}${defaultPart}${referencePart} },`;
   }).join('\n');
 
@@ -1587,9 +1963,9 @@ export function generateReportFormComponent(contract) {
   const compName = toPascalCase(proc.specName) + 'Report';
 
   const paramsArray = contract.parameters.map(p => {
-    const requiredPart = p.required ? ', required: true' : '';
+    const requiredPart = fragmentIf(p.required, ', required: true');
     const defaultPart = p.defaultValue ? `, defaultValue: '${p.defaultValue.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
-    const referencePart = p.referenceValueId ? `, reference: '${p.referenceValueId}'` : '';
+    const referencePart = wrapIf(", reference: '", p.referenceValueId, "'");
     return `  { key: '${p.name}', column: '${p.column}', type: '${p.inputMode}'${requiredPart}${defaultPart}${referencePart} },`;
   }).join('\n');
 

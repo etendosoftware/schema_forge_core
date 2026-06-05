@@ -387,7 +387,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
   // ALWAYS reserve the 160px slot, so values don't reflow when hovering.
   const trailingColumn = useMemo(() => {
     for (let i = visibleColumns.length - 1; i >= 0; i--) {
-      if (visibleColumns[i].type === 'amount') return visibleColumns[i];
+      if (visibleColumns[i].type === 'amount' && !visibleColumns[i].noTrailing) return visibleColumns[i];
     }
     return null;
   }, [visibleColumns]);
@@ -561,8 +561,8 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
             style={{
               padding: `0 ${TOKENS.cellPaddingX}px`,
               flex: columnFlex(col, idx),
-              justifyContent: 'flex-start',
-              textAlign: 'left',
+              justifyContent: NUMERIC_TYPES.has(col.type) ? 'flex-end' : 'flex-start',
+              textAlign: NUMERIC_TYPES.has(col.type) ? 'right' : 'left',
               minWidth: 0,
             }}
           >

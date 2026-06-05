@@ -74,10 +74,6 @@ vi.mock('../preview-cards/EmailsCard.jsx', () => ({
   default: () => <div data-testid="emails-card" />,
 }));
 
-vi.mock('../preview-cards/CategorizationCard.jsx', () => ({
-  default: () => <div data-testid="cat-card" />,
-}));
-
 vi.mock('../preview-cards/RelatedDocumentsCard.jsx', () => ({
   default: () => <div data-testid="rel-docs-card" />,
 }));

@@ -22,6 +22,20 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu.jsx';
 
+function resolveQuickFilterIndicesFromPreset(quickFilters, preset, setActiveFilterIndices) {
+  if (quickFilters?.length) {
+    const labels = Array.isArray(preset.quickFilterLabels) ? preset.quickFilterLabels : [];
+    const next = new Set();
+    for (const label of labels) {
+      const idx = quickFilters.findIndex((f) => f?.label === label);
+      if (idx >= 0) next.add(idx);
+    }
+    setActiveFilterIndices(next);
+  } else {
+    setActiveFilterIndices(new Set());
+  }
+}
+
 /**
  * Full-width list view for an entity.
  */
@@ -81,6 +95,7 @@ export function ListView({
   renderPreview = null,
   externalPreviewRow = null,
   onExternalPreviewClose = null,
+  hiddenColumns = [],
 }) {
   // Subset filters — radio-style, always one active, applied first.
   const [activeSubsetIndex, setActiveSubsetIndex] = useState(() => {
@@ -229,17 +244,7 @@ export function ListView({
       setActiveSubsetIndex(target >= 0 ? target : (subsetFilters[0] ? 0 : null));
     }
 
-    if (quickFilters?.length) {
-      const labels = Array.isArray(preset.quickFilterLabels) ? preset.quickFilterLabels : [];
-      const next = new Set();
-      for (const label of labels) {
-        const idx = quickFilters.findIndex((f) => f?.label === label);
-        if (idx >= 0) next.add(idx);
-      }
-      setActiveFilterIndices(next);
-    } else {
-      setActiveFilterIndices(new Set());
-    }
+    resolveQuickFilterIndicesFromPreset(quickFilters, preset, setActiveFilterIndices);
   }, [filterPresets, subsetFilters, quickFilters]);
 
   const saveCurrentAsPreset = useCallback((name) => {
@@ -761,6 +766,7 @@ export function ListView({
                     hoverRowActions={hoverRowActions}
                     clearSelectionTrigger={clearSelectionCounter}
                     rowQuickActions={effectiveRowQuickActions}
+                    hiddenColumns={hiddenColumns}
                   />
                 )
               }

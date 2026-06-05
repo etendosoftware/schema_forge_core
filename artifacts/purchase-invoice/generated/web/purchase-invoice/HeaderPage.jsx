@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
-import { toast } from 'sonner';
 import { INVOICE_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import HeaderTable from '../../../custom/InvoiceHeaderTable';
 import HeaderForm from './HeaderForm';
@@ -22,21 +21,6 @@ import catalogs from './mockCatalogs';
 
 
 const breadcrumb = 'Purchases / Purchase Invoice';
-
-const labelOverrides = {
-  "es_ES": {
-    "POReference": "Nº documento",
-    "OutstandingAmt": "Pendiente de pago",
-    "EM_Etgo_Due_Date": "Vencimiento",
-    "em_etgo_delivery_status": "Estado de entrega"
-  },
-  "en_US": {
-    "POReference": "Document No.",
-    "OutstandingAmt": "Pending Payment",
-    "EM_Etgo_Due_Date": "Due Date",
-    "em_etgo_delivery_status": "Delivery Status"
-  }
-};
 
 
 // @sf-generated-start summary:header
@@ -916,6 +900,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
   if (recordId) {
@@ -949,9 +935,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         notesField="description"
         customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Invoice", config: {} } }, { key: 'sif', labelKey: 'sifDataTabs.sectionTitle', Component: SifTab, placement: 'tab' }]}
         bottomSection={PurchaseInvoiceBottomPanel}
-        menuActions={({ status }) => [
-          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
-        ]}
         draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}

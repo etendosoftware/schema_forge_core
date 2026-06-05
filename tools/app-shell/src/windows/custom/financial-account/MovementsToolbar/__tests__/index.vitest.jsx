@@ -11,24 +11,6 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
-const mockToast = vi.fn();
-vi.mock('sonner', () => ({
-  toast: (...args) => mockToast(...args),
-}));
-
-vi.mock('../StatusFilter', () => ({
-  StatusFilter: ({ value, onChange }) => (
-    <button
-      type="button"
-      data-testid="status-filter"
-      data-value={String(value)}
-      onClick={() => onChange('RPPC')}
-    >
-      status-filter
-    </button>
-  ),
-}));
-
 vi.mock('../DateRangeFilter', () => ({
   DateRangeFilter: ({ value, onChange }) => (
     <button
@@ -55,26 +37,17 @@ vi.mock('../TypeFilter', () => ({
   ),
 }));
 
-vi.mock('../AmountFilter', () => ({
-  AmountFilter: ({ value, onChange }) => (
-    <button
-      type="button"
-      data-testid="amount-filter"
-      data-value={String(value)}
-      onClick={() => onChange('gt:100')}
-    >
-      amount-filter
-    </button>
-  ),
+// AdvancedFilterBuilder is lazy inside a closed Popover, but mock it minimally
+// so the real import never breaks the render.
+vi.mock('@/components/contract-ui/AdvancedFilterBuilder.jsx', () => ({
+  AdvancedFilterBuilder: () => <div data-testid="advanced-filter-builder" />,
 }));
 
 import { MovementsToolbar } from '../index.jsx';
 
 const defaultFilters = {
-  status: null,
   dateRange: '',
   type: null,
-  amount: null,
   search: '',
 };
 
@@ -92,19 +65,19 @@ const makeOnFiltersChange = () => {
 describe('MovementsToolbar', () => {
   beforeEach(() => {
     mockNavigate.mockClear();
-    mockToast.mockClear();
   });
 
-  it('renders the back button and all four filter triggers', () => {
+  it('renders the back button, filter triggers, search and new-movement button', () => {
     render(
       <MovementsToolbar filters={defaultFilters} onFiltersChange={() => () => {}} />,
     );
 
     expect(screen.getByTestId('movements-toolbar-back')).toBeInTheDocument();
-    expect(screen.getByTestId('status-filter')).toBeInTheDocument();
     expect(screen.getByTestId('date-range-filter')).toBeInTheDocument();
     expect(screen.getByTestId('type-filter')).toBeInTheDocument();
-    expect(screen.getByTestId('amount-filter')).toBeInTheDocument();
+    expect(screen.getByTestId('movements-advanced-filter')).toBeInTheDocument();
+    expect(screen.getByTestId('movements-search-input')).toBeInTheDocument();
+    expect(screen.getByTestId('new-movement-button')).toBeInTheDocument();
   });
 
   it('renders search input and new-movement button using i18n keys', () => {
@@ -152,36 +125,34 @@ describe('MovementsToolbar', () => {
     expect(lastCall[0]).toBe('c');
   });
 
-  it('fires a toast when the new-movement button is clicked', async () => {
+  it('invokes onNewMovement when the new-movement button is clicked', async () => {
     const user = userEvent.setup();
+    const onNewMovement = vi.fn();
     render(
-      <MovementsToolbar filters={defaultFilters} onFiltersChange={() => () => {}} />,
+      <MovementsToolbar
+        filters={defaultFilters}
+        onFiltersChange={() => () => {}}
+        onNewMovement={onNewMovement}
+      />,
     );
 
-    await user.click(
-      screen.getByRole('button', { name: 'financeAccountMovementsNew' }),
-    );
+    await user.click(screen.getByTestId('new-movement-button'));
 
-    expect(mockToast).toHaveBeenCalledTimes(1);
-    expect(mockToast).toHaveBeenCalledWith('financeAccountMovementsNewToast');
+    expect(onNewMovement).toHaveBeenCalledTimes(1);
   });
 
   it('passes the active filter values to child filter components', () => {
     const filters = {
-      status: 'RPPC',
       dateRange: 'preset:last7',
       type: 'IN',
-      amount: 'gt:100',
       search: 'hello',
     };
     render(
       <MovementsToolbar filters={filters} onFiltersChange={() => () => {}} />,
     );
 
-    expect(screen.getByTestId('status-filter')).toHaveAttribute('data-value', 'RPPC');
     expect(screen.getByTestId('date-range-filter')).toHaveAttribute('data-value', 'preset:last7');
     expect(screen.getByTestId('type-filter')).toHaveAttribute('data-value', 'IN');
-    expect(screen.getByTestId('amount-filter')).toHaveAttribute('data-value', 'gt:100');
     expect(screen.getByTestId('movements-search-input')).toHaveValue('hello');
   });
 
@@ -193,14 +164,53 @@ describe('MovementsToolbar', () => {
       <MovementsToolbar filters={defaultFilters} onFiltersChange={onFiltersChange} />,
     );
 
-    await user.click(screen.getByTestId('status-filter'));
     await user.click(screen.getByTestId('date-range-filter'));
     await user.click(screen.getByTestId('type-filter'));
-    await user.click(screen.getByTestId('amount-filter'));
 
-    expect(onFiltersChange.calls.status).toHaveBeenCalledWith('RPPC');
     expect(onFiltersChange.calls.dateRange).toHaveBeenCalledWith('preset:last7');
     expect(onFiltersChange.calls.type).toHaveBeenCalledWith('IN');
-    expect(onFiltersChange.calls.amount).toHaveBeenCalledWith('gt:100');
+  });
+
+  it('shows the active-conditions count badge on the advanced filter trigger', () => {
+    const advancedFilter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'greaterThan', value: 0 }],
+    };
+    render(
+      <MovementsToolbar
+        filters={defaultFilters}
+        onFiltersChange={() => () => {}}
+        advancedFilter={advancedFilter}
+      />,
+    );
+
+    const trigger = screen.getByTestId('movements-advanced-filter');
+    expect(trigger).toHaveTextContent('1');
+  });
+
+  it('renders no count badge when there are no advanced conditions', () => {
+    render(
+      <MovementsToolbar
+        filters={defaultFilters}
+        onFiltersChange={() => () => {}}
+        advancedFilter={{ rowOperator: 'and', conditions: [] }}
+      />,
+    );
+
+    const trigger = screen.getByTestId('movements-advanced-filter');
+    expect(trigger).not.toHaveTextContent(/\d/);
+  });
+
+  it('renders no count badge when advancedFilter is null', () => {
+    render(
+      <MovementsToolbar
+        filters={defaultFilters}
+        onFiltersChange={() => () => {}}
+        advancedFilter={null}
+      />,
+    );
+
+    const trigger = screen.getByTestId('movements-advanced-filter');
+    expect(trigger).not.toHaveTextContent(/\d/);
   });
 });

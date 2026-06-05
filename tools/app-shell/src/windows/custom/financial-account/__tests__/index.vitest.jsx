@@ -10,18 +10,34 @@ vi.mock('@/components/layout/PageMetaContext', () => ({
 }));
 
 const toastFn = vi.fn();
-vi.mock('sonner', () => ({
-  toast: (...args) => toastFn(...args),
+const toastSuccessFn = vi.fn();
+const toastErrorFn = vi.fn();
+vi.mock('sonner', () => {
+  const toast = (...args) => toastFn(...args);
+  toast.success = (...args) => toastSuccessFn(...args);
+  toast.error = (...args) => toastErrorFn(...args);
+  return { toast };
+});
+
+// downloadMovementsCsv touches the DOM/URL APIs — stub it so we only need to
+// assert it was invoked with the expected payload.
+const downloadCsvMock = vi.fn();
+vi.mock('../movementsCsvExport', () => ({
+  downloadMovementsCsv: (...args) => downloadCsvMock(...args),
 }));
 
 // Stub the hook layer so the test runs without HTTP
 const useFinancialAccountMock = vi.fn();
 const useAccountMovementsMock = vi.fn();
+const useBankStatementsMock = vi.fn();
 vi.mock('@/hooks/useFinancialAccount', () => ({
   useFinancialAccount: (...args) => useFinancialAccountMock(...args),
 }));
 vi.mock('@/hooks/useAccountMovements', () => ({
   useAccountMovements: (...args) => useAccountMovementsMock(...args),
+}));
+vi.mock('@/hooks/useBankStatements', () => ({
+  useBankStatements: (...args) => useBankStatementsMock(...args),
 }));
 
 // Stub the three tabs so we can assert which one is mounted
@@ -43,24 +59,30 @@ vi.mock('../ImportedStatementsTab.jsx', () => ({
 
 import FinancialAccountWindow from '../index.jsx';
 
-function setHooks({ account = { id: 'acc-1', name: 'BBVA', pendingCount: 4 }, movements = [], totals = { balance: 0, inflows: 0, outflows: 0, currency: 'EUR' }, loading = false } = {}) {
+function setHooks({ account = { id: 'acc-1', name: 'BBVA', pendingCount: 4 }, movements = [], totals = { balance: 0, inflows: 0, outflows: 0, currency: 'EUR' }, loading = false, statements = [] } = {}) {
   useFinancialAccountMock.mockReturnValue({ account, loading: false, error: null, reload: vi.fn() });
   useAccountMovementsMock.mockReturnValue({ movements, totals, loading, error: null, reload: vi.fn() });
+  useBankStatementsMock.mockReturnValue({ statements, loading: false, error: null, reload: vi.fn() });
 }
 
 describe('FinancialAccountWindow', () => {
   beforeEach(() => {
     setMetaMock.mockClear();
     toastFn.mockClear();
+    toastSuccessFn.mockClear();
+    toastErrorFn.mockClear();
+    downloadCsvMock.mockClear();
     useFinancialAccountMock.mockReset();
     useAccountMovementsMock.mockReset();
+    useBankStatementsMock.mockReset();
   });
 
-  it('passes the recordId to both hooks', () => {
+  it('passes the recordId to all three data hooks', () => {
     setHooks();
     render(<FinancialAccountWindow recordId="acc-1" />);
     expect(useFinancialAccountMock).toHaveBeenCalledWith('acc-1');
     expect(useAccountMovementsMock).toHaveBeenCalledWith('acc-1');
+    expect(useBankStatementsMock).toHaveBeenCalledWith('acc-1');
   });
 
   it('mounts the movements tab by default and passes account + movements + loading through', () => {
@@ -98,12 +120,42 @@ describe('FinancialAccountWindow', () => {
     expect(screen.getByTestId('tab-statements')).toBeInTheDocument();
   });
 
-  it('renders the export button and toasts on click', () => {
+  it('shows the "not on movements tab" toast when exporting from another tab', () => {
     setHooks();
     render(<FinancialAccountWindow recordId="acc-1" />);
 
+    // Switch away from the movements tab first.
+    fireEvent.click(screen.getByText('financeAccountDetailTabReconciliation'));
     fireEvent.click(screen.getByText('financeAccountDetailExport'));
+
     expect(toastFn).toHaveBeenCalledWith('financeAccountDetailExportToast');
+    expect(downloadCsvMock).not.toHaveBeenCalled();
+  });
+
+  it('shows an error toast when exporting an empty movements list', () => {
+    setHooks({ movements: [] });
+    render(<FinancialAccountWindow recordId="acc-1" />);
+
+    fireEvent.click(screen.getByText('financeAccountDetailExport'));
+
+    expect(toastErrorFn).toHaveBeenCalledWith('financeAccountDetailExportEmpty');
+    expect(downloadCsvMock).not.toHaveBeenCalled();
+  });
+
+  it('downloads CSV and toasts success when exporting non-empty movements', () => {
+    setHooks({
+      account: { id: 'acc-1', name: 'BBVA' },
+      movements: [{ id: 'm1' }, { id: 'm2' }],
+    });
+    render(<FinancialAccountWindow recordId="acc-1" />);
+
+    fireEvent.click(screen.getByText('financeAccountDetailExport'));
+
+    expect(downloadCsvMock).toHaveBeenCalledTimes(1);
+    const [rows, filename] = downloadCsvMock.mock.calls[0];
+    expect(rows).toEqual([{ id: 'm1' }, { id: 'm2' }]);
+    expect(filename).toBe('BBVA_movements');
+    expect(toastSuccessFn).toHaveBeenCalledWith('financeAccountDetailExportDone');
   });
 
   it('calls useSetPageMeta with the account name in the breadcrumb', () => {
@@ -133,5 +185,17 @@ describe('FinancialAccountWindow', () => {
     // (The movements count badge "3" can collide with the stubbed tab content,
     // so we only assert on the unambiguous reconciliation badge here.)
     expect(screen.getByText('9')).toBeInTheDocument();
+  });
+
+  it('renders the statements tab trigger without a numeric badge', () => {
+    setHooks({
+      account: { id: 'acc-1', name: 'BBVA', pendingCount: 0 },
+      statements: [{ id: 's1' }, { id: 's2' }, { id: 's3' }, { id: 's4' }, { id: 's5' }, { id: 's6' }, { id: 's7' }],
+    });
+    render(<FinancialAccountWindow recordId="acc-1" />);
+    // The statements trigger renders, but DetailTabs no longer shows a count badge
+    // for it — so the statements count (7) must not appear anywhere.
+    expect(screen.getByText('financeAccountDetailTabStatements')).toBeInTheDocument();
+    expect(screen.queryByText('7')).not.toBeInTheDocument();
   });
 });

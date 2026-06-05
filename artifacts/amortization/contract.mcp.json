@@ -1,0 +1,396 @@
+{
+  "version": "0.22.0",
+  "generatedAt": "2026-05-22T16:00:10.872Z",
+  "updatedAt": "2026-06-01T19:11:48.715Z",
+  "contractChecksum": "213abbe45c8319bd",
+  "apiPrediction": {
+    "specName": "amortization",
+    "baseUrl": "/sws/neo/amortization",
+    "crud": {
+      "header": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/amortization/header",
+        "detailUrl": "/sws/neo/amortization/header/{id}",
+        "supportedFilters": [
+          "name",
+          "accountingDate",
+          "startingDate"
+        ]
+      },
+      "lines": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/amortization/lines",
+        "detailUrl": "/sws/neo/amortization/lines/{id}",
+        "supportedFilters": []
+      }
+    },
+    "selectors": [
+      {
+        "entity": "header",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/header/selectors/currency"
+      },
+      {
+        "entity": "lines",
+        "field": "asset",
+        "column": "A_Asset_ID",
+        "reference": "Asset",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/asset"
+      },
+      {
+        "entity": "lines",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/currency"
+      },
+      {
+        "entity": "lines",
+        "field": "project",
+        "column": "C_Project_ID",
+        "reference": "Project",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/project"
+      },
+      {
+        "entity": "lines",
+        "field": "costcenter",
+        "column": "C_Costcenter_ID",
+        "reference": "Costcenter",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/costcenter"
+      },
+      {
+        "entity": "lines",
+        "field": "stDimension",
+        "column": "User1_ID",
+        "reference": "User1",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/stDimension"
+      },
+      {
+        "entity": "lines",
+        "field": "ndDimension",
+        "column": "User2_ID",
+        "reference": "User2",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/ndDimension"
+      },
+      {
+        "entity": "lines",
+        "field": "eTADASActivity",
+        "column": "EM_Etadas_C_Activity_ID",
+        "reference": "Activity",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/eTADASActivity"
+      },
+      {
+        "entity": "lines",
+        "field": "eTADASBpartner",
+        "column": "EM_Etadas_C_Bpartner_ID",
+        "reference": "BPartner",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/eTADASBpartner"
+      },
+      {
+        "entity": "lines",
+        "field": "eTADASSalesCampaign",
+        "column": "EM_Etadas_Campaign_ID",
+        "reference": "Campaign",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/eTADASSalesCampaign"
+      },
+      {
+        "entity": "lines",
+        "field": "eTADASSalesRegion",
+        "column": "EM_Etadas_Salesregion_ID",
+        "reference": "SalesRegion",
+        "inputMode": "selector",
+        "url": "/sws/neo/amortization/lines/selectors/eTADASSalesRegion"
+      }
+    ],
+    "actions": [
+      {
+        "name": "processed",
+        "actionType": "utilityAction",
+        "entity": "header",
+        "column": "Processed",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/amortization/header/{id}/action/processed",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "processId": "800134",
+        "processType": "classic"
+      },
+      {
+        "name": "posted",
+        "actionType": "documentAction",
+        "entity": "header",
+        "column": "Posted",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/amortization/header/{id}/action/posted",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ]
+      }
+    ],
+    "queryParams": {
+      "pagination": {
+        "startRow": "_startRow",
+        "endRow": "_endRow",
+        "default": "0-100"
+      },
+      "sorting": {
+        "param": "_sortBy",
+        "example": "_sortBy=creationDate desc"
+      },
+      "filtering": "Use field name as query param: ?fieldName=value",
+      "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "finance"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "Name": "Nombre",
+        "Description": "Descripción",
+        "DateAcct": "Fecha contable",
+        "StartDate": "Fecha de inicio",
+        "Totalamortization": "Amortización total",
+        "C_Currency_ID": "Moneda",
+        "A_Asset_ID": "Activo",
+        "Amortization_Percentage": "% Amortización",
+        "Amortizationamt": "Importe amortización",
+        "Line": "Nº línea",
+        "C_Project_ID": "Proyecto",
+        "C_Costcenter_ID": "Centro de costo",
+        "User1_ID": "1ª Dimensión",
+        "User2_ID": "2ª Dimensión",
+        "EM_Etadas_C_Bpartner_ID": "Contacto",
+        "EM_Etadas_Salesregion_ID": "Región de ventas",
+        "EM_Etadas_C_Activity_ID": "Actividad",
+        "EM_Etadas_Campaign_ID": "Campaña"
+      },
+      "en_US": {
+        "Name": "Name",
+        "Description": "Description",
+        "DateAcct": "Accounting Date",
+        "StartDate": "Starting Date",
+        "Totalamortization": "Total Amortization",
+        "C_Currency_ID": "Currency",
+        "A_Asset_ID": "Asset",
+        "Amortization_Percentage": "Amortization %",
+        "Amortizationamt": "Amortization Amount",
+        "Line": "Line No.",
+        "C_Project_ID": "Project",
+        "C_Costcenter_ID": "Cost Center",
+        "User1_ID": "1st Dimension",
+        "User2_ID": "2nd Dimension",
+        "EM_Etadas_C_Bpartner_ID": "Contact",
+        "EM_Etadas_Salesregion_ID": "Sales Region",
+        "EM_Etadas_C_Activity_ID": "Activity",
+        "EM_Etadas_Campaign_ID": "Sales Campaign"
+      }
+    }
+  },
+  "formState": {
+    "entities": {
+      "header": {
+        "fields": {
+          "name": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y'"
+          },
+          "description": {
+            "readOnlyLogic": "@Processed@='Y'"
+          },
+          "accountingDate": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y'"
+          },
+          "startingDate": {
+            "readOnlyLogic": "@Processed@='Y'"
+          },
+          "totalAmortization": {
+            "readOnly": true,
+            "readOnlyLogic": "@Processed@='Y'"
+          },
+          "currency": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y'"
+          },
+          "processed": {
+            "required": true,
+            "defaultValue": "N"
+          }
+        }
+      },
+      "lines": {
+        "fields": {
+          "asset": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "amortizationPercentage": {
+            "readOnlyLogic": "@Processed@='Y'"
+          },
+          "amortizationAmount": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y'"
+          },
+          "currency": {
+            "readOnly": true,
+            "readOnlyLogic": "@Processed@='Y'"
+          },
+          "project": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "costcenter": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "stDimension": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "ndDimension": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "eTADASActivity": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "eTADASBpartner": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "eTADASSalesCampaign": {
+            "readOnlyLogic": "@Posted@='Y'"
+          },
+          "eTADASSalesRegion": {
+            "readOnlyLogic": "@Posted@='Y'"
+          }
+        }
+      }
+    },
+    "requiredSessionVariables": [],
+    "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Manage amortization financial records.",
+    "whenToUse": [
+      "Use for amortization management."
+    ],
+    "minimumCreate": {
+      "headerFields": [
+        "name",
+        "accountingDate",
+        "currency",
+        "processed"
+      ],
+      "lineFields": [
+        "amortizationAmount"
+      ],
+      "recommendedOrder": [
+        "createHeader",
+        "createLines"
+      ]
+    },
+    "selectorContexts": [],
+    "actions": [
+      "posted"
+    ],
+    "workflow": [
+      "Create draft header with required fields",
+      "Add at least one valid line",
+      "Validate form state",
+      "Complete the document"
+    ],
+    "edgeCases": [
+      "Required context is missing",
+      "User lacks permission",
+      "Record is in an incompatible state",
+      "Document is already completed or closed",
+      "Document has pending lines or missing required fields",
+      "User lacks permission to execute the action",
+      "Required field without default value must be provided",
+      "Validate the current form state before running lifecycle actions",
+      "Do not run destructive lifecycle actions without explicit user confirmation"
+    ],
+    "examples": [
+      {
+        "operation": "createHeader",
+        "description": "Create a draft header with the minimum required editable fields.",
+        "fields": [
+          "name",
+          "accountingDate",
+          "currency",
+          "processed"
+        ]
+      },
+      {
+        "operation": "createLine",
+        "description": "Add a line after the header exists and parent context is available.",
+        "fields": [
+          "amortizationAmount"
+        ]
+      },
+      {
+        "operation": "completeDocument",
+        "description": "Validate form state and run the document lifecycle action when the draft is complete.",
+        "action": "posted"
+      }
+    ],
+    "warnings": [],
+    "knownLimitations": [],
+    "dangerousOperations": []
+  },
+  "checksum": "52ad731277edaf4d"
+}

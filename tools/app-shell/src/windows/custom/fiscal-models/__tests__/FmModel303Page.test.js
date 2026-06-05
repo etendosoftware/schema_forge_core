@@ -25,8 +25,8 @@ describe('FmModel303Page — composition', () => {
 describe('FmModel303Page — stepper', () => {
   it('defines all 7 statuses in STEPPER_INDEX', () => assert.match(src, /STEPPER_INDEX/));
   it('passes steps from i18n keys', () => assert.match(src, /fm\.stepper\./));
-  it('uses fm.stepper.ready (not listo)', () => assert.match(src, /fm\.stepper\.ready/));
-  it('uses fm.stepper.presented (not presentado)', () => assert.match(src, /fm\.stepper\.presented/));
+  it('uses fm.stepper.ready', () => assert.match(src, /fm\.stepper\.ready/));
+  it('uses fm.stepper.presented', () => assert.match(src, /fm\.stepper\.presented/));
   it('derives current from status via STEPPER_INDEX', () => assert.match(src, /STEPPER_INDEX\[status\]/));
 });
 

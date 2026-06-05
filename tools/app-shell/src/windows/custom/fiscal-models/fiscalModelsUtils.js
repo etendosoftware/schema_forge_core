@@ -65,30 +65,30 @@ export async function generate303File(decl, { token, apiBaseUrl } = {}) {
   }
 }
 
-// 'pendiente' is kept intentionally: Modelo 349 uses it as its initial draft state.
+// 'pending' is kept intentionally: Modelo 349 uses it as its initial draft state.
 export const STATUSES = [
-  'omitido', 'pendiente', 'borrador', 'listo',
-  'presentado', 'presentadoOtra', 'presentadoAcuse',
+  'skipped', 'pending', 'draft', 'ready',
+  'submitted', 'submitted_ext', 'submitted_ack',
 ];
 
 export const STATUS_COLOR = {
-  omitido:         'grey',
-  pendiente:       'orange',
-  borrador:        'blue',
-  listo:           'green',
-  presentado:      'teal',
-  presentadoOtra:  'violet',
-  presentadoAcuse: 'emerald',
+  skipped:       'grey',
+  pending:       'orange',
+  draft:         'blue',
+  ready:         'green',
+  submitted:     'teal',
+  submitted_ext: 'violet',
+  submitted_ack: 'emerald',
 };
 
 export const STATUS_ICON = {
-  omitido:         '×',
-  pendiente:       '○',
-  borrador:        '✎',
-  listo:           '✓',
-  presentado:      '✓',
-  presentadoOtra:  '↗',
-  presentadoAcuse: '☑',
+  skipped:       '×',
+  pending:       '○',
+  draft:         '✎',
+  ready:         '✓',
+  submitted:     '✓',
+  submitted_ext: '↗',
+  submitted_ack: '☑',
 };
 
 export const STATUS_ORDER = [...STATUSES];
@@ -244,7 +244,7 @@ export function deriveBoxes303(data) {
 }
 
 const COMPLETED_STATUSES = new Set([
-  'presentado', 'presentadoOtra', 'presentadoAcuse', 'omitido',
+  'submitted', 'submitted_ext', 'submitted_ack', 'skipped',
 ]);
 
 function getDeadlineDate(model, year, period) {
@@ -274,6 +274,87 @@ export async function checkModified303(decl, sinceMs, { token, apiBaseUrl } = {}
     const params = new URLSearchParams({ year: decl.year, period: decl.period, since: sinceMs });
     const url = `${base}/fiscal303/modified?${params}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data.modified === true;
+  } catch (_) {
+    return false;
+  }
+}
+
+// ── Model 349 utilities ───────────────────────────────────────────
+
+export async function compute349Operators(decl, { token, apiBaseUrl } = {}) {
+  if (token && apiBaseUrl) {
+    try {
+      const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+      const params = new URLSearchParams({ year: decl.year, period: decl.period });
+      const res = await fetch(`${base}/fiscal349/operators?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Mock fallback — demo mode only (no token)
+  await new Promise(r => setTimeout(r, 700));
+  if (decl.year === 2026 && (decl.period === 'T1' || decl.period === 'T2')) {
+    return {
+      operators: [
+        { bpId: '1', nif: 'IT12345678901', name: 'Bramini Vino S.r.l.',      key: 'A', base: '12450.00' },
+        { bpId: '2', nif: 'FR40123456789', name: 'Olives de Provence SARL',   key: 'A', base: '6800.00'  },
+        { bpId: '3', nif: 'DE123456789',   name: 'Bayern Technik GmbH',        key: 'E', base: '17600.00' },
+        { bpId: '4', nif: 'PT501234567',   name: 'Lusitana Serviços Lda',      key: 'S', base: '650.00'   },
+        { bpId: '5', nif: 'NL123456789B01',name: 'Amsterdam Trading BV',       key: 'I', base: '1450.00'  },
+      ],
+      summary: { totalE: '17600.00', totalS: '650.00', totalA: '19250.00', totalI: '1450.00' },
+    };
+  }
+  return null;
+}
+
+export async function generate349File(decl, { token, apiBaseUrl, phone, contact } = {}) {
+  if (!token || !apiBaseUrl) return false;
+  try {
+    const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+    const body = new URLSearchParams({ year: decl.year, period: decl.period });
+    if (phone)   body.set('phone',   phone);
+    if (contact) body.set('contact', contact);
+    const res = await fetch(`${base}/fiscal349/generate`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: body.toString(),
+    });
+    if (!res.ok) return false;
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = `349_${decl.period}_${decl.year}.349`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+export async function checkModified349(decl, sinceMs, { token, apiBaseUrl } = {}) {
+  if (!token || !apiBaseUrl) return false;
+  try {
+    const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+    const params = new URLSearchParams({ year: decl.year, period: decl.period, since: sinceMs });
+    const res = await fetch(`${base}/fiscal349/modified?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     if (!res.ok) return false;
     const data = await res.json();
     return data.modified === true;

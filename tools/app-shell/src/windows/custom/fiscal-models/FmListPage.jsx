@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { useUI } from '@/i18n';
+import { useUI } from '@etendosoftware/app-shell-core';
 import { LayoutGrid, Settings2, ListFilter, ArrowUpDown } from 'lucide-react';
 import { StatusPillMenu, ResultPill, EmptyState } from './FmCommon.jsx';
 import { ConfigDrawer, NewDeclModal } from './FmOverlays.jsx';
 import FmCatalogPage from './FmCatalogPage.jsx';
-import { formatAmount, STATUS_COLOR, computeUpcomingDeadlines, checkModified303 } from './fiscalModelsUtils.js';
+import { formatAmount, STATUS_COLOR, computeUpcomingDeadlines, checkModified303, checkModified349, compute349Operators } from './fiscalModelsUtils.js';
 import useFiscalAutoCompute from './useFiscalAutoCompute.js';
 
 // Real-mode only: throws on fetch failure instead of falling back to mock data.
@@ -17,6 +17,10 @@ async function computeBoxes303Real(decl, { token, apiBaseUrl } = {}) {
   });
   if (!res.ok) throw new Error(`boxes fetch failed: ${res.status}`);
   return await res.json();
+}
+
+async function computeOperators349Real(decl, { token, apiBaseUrl } = {}) {
+  return compute349Operators(decl, { token, apiBaseUrl });
 }
 
 function StatusSelect({ value, options, onChange }) {
@@ -69,70 +73,6 @@ function StatusSelect({ value, options, onChange }) {
   );
 }
 
-const MOCK_DECLARATIONS = [
-  { id:'349-2025-12', model:'349', year:2025, period:'12', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_12.349',  updatedAt:'19/01/2026' },
-  { id:'349-2025-11', model:'349', year:2025, period:'11', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_11.349',  updatedAt:'18/12/2025' },
-  { id:'349-2025-10', model:'349', year:2025, period:'10', type:'ord', status:'presentadoOtra',   result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null, fileExternal:true, updatedAt:'15/11/2025' },
-  { id:'349-2025-09', model:'349', year:2025, period:'09', type:'ord', status:'omitido',          result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null,           updatedAt:'12/10/2025' },
-  { id:'349-2025-08', model:'349', year:2025, period:'08', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_08.349',  updatedAt:'18/09/2025' },
-  { id:'349-2025-07', model:'349', year:2025, period:'07', type:'ord', status:'presentado',       result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:1}, file:'2025_07.349',  updatedAt:'18/08/2025' },
-  { id:'349-2025-06', model:'349', year:2025, period:'06', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_06.349',  updatedAt:'19/07/2025' },
-  { id:'349-2025-05', model:'349', year:2025, period:'05', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_05.349',  updatedAt:'18/06/2025' },
-  { id:'349-2025-04', model:'349', year:2025, period:'04', type:'ord', status:'omitido',          result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null,           updatedAt:'10/05/2025' },
-  { id:'349-2025-03', model:'349', year:2025, period:'03', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_03.349',  updatedAt:'19/04/2025' },
-  { id:'303-2026-T2', model:'303', year:2026, period:'T2', type:'ord', status:'borrador',
-    result:{kind:'compensar',amount:35479.08}, incidents:{blocking:0,warning:1,items:[
-      { severity:'warn', origin:'Casilla 4', message:'El tipo aplicado (7%) difiere del tipo registrado para el período anterior (10%)', suggestion:'Verifica si se trata de una operación a tipo reducido correcta' },
-    ]},
-    file:null,
-    boxes:{ 1:44, 3:1.76, 4:201, 6:14.07, 7:6162.60, 9:1294.15, 27:1309.98, 28:175186, 29:36789.06, 45:36789.06, 46:-35479.08, 59:23, 60:36 },
-    summary:{ accrued:1309.98, deductible:36789.06, result:-35479.08 },
-    sources: [
-      { date:'12/04/2026', ref:'10000015', type:'Venta',  party:'Laura Morat',          regime:'IVA Normal (21%)',  base:4060.00,    vat:852.60,  total:4912.60,   boxes:'07, 09' },
-      { date:'16/04/2026', ref:'10000014', type:'Venta',  party:'Juan Perez',            regime:'IVA Normal (21%)',  base:1120.00,    vat:235.20,  total:1355.20,   boxes:'07, 09' },
-      { date:'17/04/2026', ref:'10000016', type:'Venta',  party:'Juan Perez',            regime:'Entregas IVA 21%', base:23.00,      vat:4.83,    total:27.83,     boxes:'07, 09' },
-      { date:'07/05/2026', ref:'10000018', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:44.00,      vat:9.24,    total:53.24,     boxes:'07, 09' },
-      { date:'07/05/2026', ref:'10000019', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:44.00,      vat:9.24,    total:53.24,     boxes:'07, 09' },
-      { date:'07/05/2026', ref:'10000020', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:44.00,      vat:9.24,    total:53.24,     boxes:'07, 09' },
-      { date:'07/05/2026', ref:'10000021', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:44.00,      vat:9.24,    total:53.24,     boxes:'07, 09' },
-      { date:'07/05/2026', ref:'10000022', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:201.00,     vat:42.21,   total:243.21,    boxes:'07, 09' },
-      { date:'07/05/2026', ref:'10000023', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:23.00,      vat:4.83,    total:27.83,     boxes:'07, 09' },
-      { date:'08/05/2026', ref:'10000024', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:44.00,      vat:9.24,    total:53.24,     boxes:'07, 09' },
-      { date:'08/05/2026', ref:'10000025', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:44.00,      vat:9.24,    total:53.24,     boxes:'07, 09' },
-      { date:'08/05/2026', ref:'10000026', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:44.00,      vat:9.24,    total:53.24,     boxes:'07, 09' },
-      { date:'08/05/2026', ref:'10000027', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:44.00,      vat:9.24,    total:53.24,     boxes:'07, 09' },
-      { date:'08/05/2026', ref:'10000028', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:44.00,      vat:9.24,    total:53.24,     boxes:'07, 09' },
-      { date:'11/05/2026', ref:'10000029', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:44.00,      vat:9.24,    total:53.24,     boxes:'07, 09' },
-      { date:'11/05/2026', ref:'10000030', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:144.00,     vat:30.24,   total:174.24,    boxes:'07, 09' },
-      { date:'11/05/2026', ref:'10000031', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:44.00,      vat:9.24,    total:53.24,     boxes:'07, 09' },
-      { date:'11/05/2026', ref:'10000032', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:40.00,      vat:8.40,    total:48.40,     boxes:'07, 09' },
-      { date:'11/05/2026', ref:'10000034', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:23.60,      vat:4.96,    total:28.56,     boxes:'07, 09' },
-      { date:'13/05/2026', ref:'10000035', type:'Venta',  party:'Tercero España',        regime:'IVA Normal (21%)',  base:44.00,      vat:9.24,    total:53.24,     boxes:'07, 09' },
-      { date:'18/05/2026', ref:'10000036', type:'Venta',  party:'Tercero España',        regime:'Entregas IVA 4%',  base:44.00,      vat:1.76,    total:45.76,     boxes:'01, 03' },
-      { date:'18/05/2026', ref:'10000037', type:'Venta',  party:'Tercero España',        regime:'Entregas IVA 7%',  base:201.00,     vat:14.07,   total:215.07,    boxes:'04, 06' },
-      { date:'16/04/2026', ref:'10000003', type:'Compra', party:'Blanquiceleste S.A.',   regime:'IVA Normal (21%)',  base:171600.00,  vat:36036.00,total:207636.00, boxes:'28, 29' },
-      { date:'16/04/2026', ref:'10000004', type:'Compra', party:'Proveedor Mayorista',   regime:'IVA Normal (21%)',  base:660.00,     vat:138.60,  total:798.60,    boxes:'28, 29' },
-      { date:'16/04/2026', ref:'10000007', type:'Compra', party:'Proveedor Mayorista',   regime:'IVA Normal (21%)',  base:2750.00,    vat:577.50,  total:3327.50,   boxes:'28, 29' },
-      { date:'05/05/2026', ref:'10000008', type:'Compra', party:'Blanquiceleste S.A.',   regime:'IVA Normal (21%)',  base:33.00,      vat:6.93,    total:39.93,     boxes:'28, 29' },
-      { date:'05/05/2026', ref:'10000009', type:'Compra', party:'Blanquiceleste S.A.',   regime:'IVA Normal (21%)',  base:33.00,      vat:6.93,    total:39.93,     boxes:'28, 29' },
-      { date:'08/05/2026', ref:'10000016', type:'Compra', party:'Tercero España',        regime:'IVA Normal (21%)',  base:33.00,      vat:6.93,    total:39.93,     boxes:'28, 29' },
-      { date:'08/05/2026', ref:'10000017', type:'Compra', party:'Tercero España',        regime:'IVA Normal (21%)',  base:33.00,      vat:6.93,    total:39.93,     boxes:'28, 29' },
-      { date:'08/05/2026', ref:'10000018', type:'Compra', party:'Tercero España',        regime:'IVA Normal (21%)',  base:11.00,      vat:2.31,    total:13.31,     boxes:'28, 29' },
-      { date:'11/05/2026', ref:'10000019', type:'Compra', party:'Tercero España',        regime:'IVA Normal (21%)',  base:33.00,      vat:6.93,    total:39.93,     boxes:'28, 29' },
-      { date:'19/05/2026', ref:'10000038', type:'Venta',  party:'Italia',                regime:'Entrega intracom. (%N→0%)', base:23.00, vat:0,       total:23.00,     boxes:'59' },
-      { date:'19/05/2026', ref:'10000039', type:'Venta',  party:'Juan Perez',            regime:'Exportación (%N→0%)',       base:36.00, vat:0,       total:36.00,     boxes:'60' },
-    ],
-    updatedAt:'19/05/2026' },
-  { id:'349-2026-T1', model:'349', year:2026, period:'T1', type:'ord', status:'borrador',    result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null, updatedAt:'—' },
-  { id:'303-2026-T1', model:'303', year:2026, period:'T1', type:'ord', status:'presentadoAcuse',         result:{kind:'compensar',amount:2816.31}, incidents:{blocking:2,warning:3,items:[
-    { severity:'block', origin:'Casilla 28', message:'El total de cuota devengada no coincide con la suma de las cuotas parciales', suggestion:'Revisa las cuotas de los tipos 21%, 10% y 4%' },
-    { severity:'block', origin:'Casilla 69', message:'El resultado de la liquidación está pendiente de confirmar', suggestion:'Verifica que el resultado neto sea correcto antes de generar el fichero' },
-    { severity:'warn',  origin:'Casilla 48', message:'No se han detectado facturas de compra para este período', suggestion:'Comprueba si hay facturas de compra no registradas' },
-    { severity:'warn',  origin:'Casilla 64', message:'El total deducible es inferior al período anterior en más de un 30%', suggestion:'Verifica si es coherente con la actividad del trimestre' },
-    { severity:'warn',  origin:'NIF declarante', message:'El NIF del declarante no está verificado en la AEAT', suggestion:'Confirma el NIF en la configuración del declarante' },
-  ]}, file:null, boxes:{ 7:3248, 9:682.08, 27:682.08, 28:16659, 29:3498.39, 45:3498.39, 46:-2816.31 }, summary:{ accrued:682.08, deductible:3498.39, result:-2816.31 }, updatedAt:'14/05/2026', current:true },
-  { id:'303-2025-T4', model:'303', year:2025, period:'T4', type:'ord', status:'presentadoAcuse',  result:{kind:'compensar',amount:2100}, incidents:{blocking:0,warning:0}, file:'2025_T4.303', updatedAt:'28/01/2026' },
-];
 
 const DEFAULT_ACTIVE = { '303': true, '349': true };
 
@@ -232,10 +172,16 @@ function ResultCell({ isComputing, error, result, t }) {
     );
   }
   if (!result?.kind) return <span style={{ color: '#9ca3af' }}>—</span>;
+  // 349 is informational — show total volume without a payment label
+  if (result.kind === 'info') {
+    return result.amount > 0
+      ? <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>{formatAmount(result.amount)}</span>
+      : <span style={{ color: '#9ca3af' }}>—</span>;
+  }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
       <ResultPill kind={result.kind} label={t(`fm.result.${result.kind}`) ?? result.kind} />
-      {result.kind !== 'informativa' && result.amount != null && (
+      {result.kind !== 'N' && result.amount != null && (
         <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>
           {formatAmount(result.amount)}
         </span>
@@ -245,35 +191,31 @@ function ResultCell({ isComputing, error, result, t }) {
 }
 
 // ── Main component ───────────────────────────────────────────────
-export default function FmListPage({ declarations: propDecls, onSelect, onStatusChange, token, apiBaseUrl }) {
+export default function FmListPage({ declarations: propDecls, onSelect, onStatusChange, onComputeUpdate, token, apiBaseUrl }) {
   const ui = useUI();
   const t  = ui;
 
-  const [dataMode, setDataMode]          = useState(() => {
-    try { return sessionStorage.getItem('fm-data-mode') ?? 'demo'; } catch { return 'demo'; }
-  });
-  const [demoDecls, setDemoDecls]        = useState(propDecls ?? MOCK_DECLARATIONS);
-  const [realDecls, setRealDecls]        = useState([]);
-  const decls = dataMode === 'demo' ? demoDecls : realDecls;
+  const [decls, setDecls] = useState(propDecls ?? []);
 
   useEffect(() => {
-    try { sessionStorage.setItem('fm-data-mode', dataMode); } catch {}
-  }, [dataMode]);
-
-  useEffect(() => {
-    if (dataMode !== 'real' || !token || !apiBaseUrl) return;
+    if (!token || !apiBaseUrl) return;
     const base = apiBaseUrl.replace(/\/[^/]+$/, '');
     fetch(`${base}/fiscal303/declarations`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then(data => setRealDecls((Array.isArray(data) ? data : (data?.data ?? [])).map(normDecl)))
+      .then(data => setDecls((Array.isArray(data) ? data : (data?.data ?? [])).map(normDecl)))
       .catch(() => {});
-  }, [dataMode, token, apiBaseUrl]);
+  }, [token, apiBaseUrl]);
 
   const draftDecls303 = useMemo(
-    () => realDecls.filter(d => d.model === '303' && d.status === 'borrador'),
-    [realDecls]
+    () => decls.filter(d => d.model === '303' && d.status === 'draft'),
+    [decls]
+  );
+
+  const draftDecls349 = useMemo(
+    () => decls.filter(d => d.model === '349' && d.status === 'draft'),
+    [decls]
   );
 
   const { computedMap } = useFiscalAutoCompute(draftDecls303, {
@@ -281,9 +223,24 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
     checkModifiedFn: checkModified303,
     token,
     apiBaseUrl,
-    enabled:         dataMode === 'real',
     pollIntervalMs:  180_000,
+    enabled:         Boolean(token && apiBaseUrl),
   });
+
+  const { computedMap: computedMap349 } = useFiscalAutoCompute(draftDecls349, {
+    computeFn:       computeOperators349Real,
+    checkModifiedFn: checkModified349,
+    token,
+    apiBaseUrl,
+    pollIntervalMs:  180_000,
+    enabled:         Boolean(token && apiBaseUrl),
+  });
+
+  useEffect(() => {
+    if (onComputeUpdate && Object.keys(computedMap349).length > 0) {
+      onComputeUpdate(computedMap349);
+    }
+  }, [computedMap349, onComputeUpdate]);
 
   const [modelFilter, setModelFilter]   = useState('all');
   const [yearFilter,  setYearFilter]    = useState('all');
@@ -295,7 +252,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
   const [selected,     setSelected]     = useState(new Set());
 
   const handleStatusChange = useCallback((id, newStatus) => {
-    if (dataMode === 'real' && token && apiBaseUrl) {
+    if (token && apiBaseUrl) {
       const base = apiBaseUrl.replace(/\/[^/]+$/, '');
       fetch(`${base}/fiscal303/declarations?id=${encodeURIComponent(id)}`, {
         method: 'PUT',
@@ -304,7 +261,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
       })
         .then(r => {
           if (!r.ok) throw new Error(r.status);
-          setRealDecls(ds =>
+          setDecls(ds =>
             ds.map(d => d.id === id
               ? { ...d, status: newStatus, updatedAt: new Date().toLocaleDateString('es-ES') }
               : d)
@@ -312,18 +269,11 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
           onStatusChange?.(id, newStatus);
         })
         .catch(() => {});
-    } else {
-      setDemoDecls(ds =>
-        ds.map(d => d.id === id
-          ? { ...d, status: newStatus, updatedAt: new Date().toLocaleDateString('es-ES') }
-          : d)
-      );
-      onStatusChange?.(id, newStatus);
     }
-  }, [dataMode, onStatusChange, token, apiBaseUrl]);
+  }, [onStatusChange, token, apiBaseUrl]);
 
   const handleNewDecl = useCallback(({ model, year, period, status }) => {
-    if (dataMode === 'real' && token && apiBaseUrl) {
+    if (token && apiBaseUrl) {
       const base = apiBaseUrl.replace(/\/[^/]+$/, '');
       fetch(`${base}/fiscal303/declarations`, {
         method: 'POST',
@@ -331,18 +281,10 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
         body: JSON.stringify({ model, year: parseInt(year, 10), period, status }),
       })
         .then(r => r.ok ? r.json() : Promise.reject(r.status))
-        .then(created => setRealDecls(ds => [normDecl(created?.data ?? created), ...ds]))
+        .then(created => setDecls(ds => [normDecl(created?.data ?? created), ...ds]))
         .catch(() => {});
-    } else {
-      const id = `${model}-${year}-${period}`;
-      setDemoDecls(ds => [
-        { id, model, year, period, type: 'ord', status,
-          result: { kind: 'informativa', amount: 0 }, incidents: { blocking: 0, warning: 0 },
-          file: null, updatedAt: new Date().toLocaleDateString('es-ES') },
-        ...ds,
-      ]);
     }
-  }, [dataMode, token, apiBaseUrl]);
+  }, [token, apiBaseUrl]);
 
   const years = ['all', ...Array.from(new Set(decls.map(d => String(d.year)))).sort((a,b) => b - a)];
   const statuses = ['all', ...Array.from(new Set(decls.map(d => d.status)))];
@@ -392,15 +334,6 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
 
         <div className="fm-toolbar__space" />
 
-        {/* Data mode toggle */}
-        <button
-          className={`fm-toolbar__pill${dataMode === 'real' ? ' fm-toolbar__pill--active-dark' : ''}`}
-          onClick={() => setDataMode(m => m === 'demo' ? 'real' : 'demo')}
-          title={dataMode === 'demo' ? t('fm.list.mode.to_real') : t('fm.list.mode.to_demo')}
-        >
-          {dataMode === 'demo' ? 'Demo' : 'Real'}
-        </button>
-
         {/* Catalog */}
         <button className="fm-toolbar__btn" onClick={() => setShowCatalog(true)}>
           <LayoutGrid size={14} strokeWidth={1.75} />
@@ -426,7 +359,10 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
 
         <UpcomingDeadlines
           decls={modelYearFiltered}
-          onSelect={decl => onSelect?.({ ...decl, _precomputed: dataMode === 'real' ? computedMap[decl.id] : undefined })}
+          onSelect={decl => {
+            const precomputed = decl.model === '349' ? computedMap349[decl.id] : computedMap[decl.id];
+            onSelect?.({ ...decl, _precomputed: precomputed });
+          }}
           t={t}
         />
 
@@ -465,26 +401,32 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
               </thead>
               <tbody>
                 {filtered.map(decl => {
-                  const computed = dataMode === 'real' ? computedMap[decl.id] : undefined;
-                  const isComputingThis = dataMode === 'real' && decl.model === '303'
-                    && decl.status === 'borrador' && !computed;
+                  const computed = decl.model === '349' ? computedMap349[decl.id] : computedMap[decl.id];
+                  const isComputingThis = (decl.model === '303' || decl.model === '349')
+                    && decl.status === 'draft' && !computed;
                   const computeError = computed?.error ?? null;
 
                   let displayResult = decl.result;
                   if (computed?.summary && !computed.error) {
-                    const r = computed.summary.result;
-                    let kind;
-                    if (r > 0) kind = 'ingresar';
-                    else if (r < 0) kind = 'compensar';
-                    else kind = 'informativa';
-                    displayResult = { kind, amount: Math.abs(r) };
+                    if (decl.model === '349') {
+                      const total = ['totalE','totalS','totalA','totalI']
+                        .reduce((s, k) => s + (parseFloat(computed.summary[k]) || 0), 0);
+                      displayResult = { kind: 'info', amount: total };
+                    } else {
+                      const r = computed.summary.result;
+                      let kind;
+                      if (r > 0) kind = 'I';
+                      else if (r < 0) kind = 'C';
+                      else kind = 'N';
+                      displayResult = { kind, amount: Math.abs(r) };
+                    }
                   }
 
                   return (
                   <tr
                     key={decl.id}
                     className={decl.current ? 'fm-table__row--current' : ''}
-                    onClick={() => onSelect?.({ ...decl, _precomputed: dataMode === 'real' ? computedMap[decl.id] : undefined })}
+                    onClick={() => onSelect?.({ ...decl, _precomputed: computed })}
                   >
                     <td onClick={e => e.stopPropagation()}>
                       <input type="checkbox" className="fm-table__cb" checked={selected.has(decl.id)} onChange={() => toggleSelect(decl.id)} />
@@ -507,7 +449,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
                     <td><FileCell file={decl.file} fileExternal={decl.fileExternal} /></td>
                     <td><span className="fm-date">{decl.updatedAt ?? '—'}</span></td>
                     <td onClick={e => e.stopPropagation()}>
-                      <button className="fm-table-action" onClick={() => onSelect?.({ ...decl, _precomputed: computedMap[decl.id] })}>
+                      <button className="fm-table-action" onClick={() => onSelect?.({ ...decl, _precomputed: computed })}>
                         {t('fm.action.open')} ›
                       </button>
                     </td>

@@ -2,6 +2,10 @@
   "$comment": "Canonical registry of windows the regen pipeline must process. Single source of truth for regen-all.js. Each entry: { name (kebab-case, must match artifacts/<name>/), windowId (AD_Window_ID), menuName (optional, AD label when it differs from name) }. To add a window: append here and run make regen ONLY=<name>.",
   "windows": [
     {
+      "name": "amortization",
+      "windowId": "800026"
+    },
+    {
       "name": "assets",
       "windowId": "800027"
     },

@@ -96,6 +96,7 @@ async function loadAllMockData() {
     import('@generated/bank-reconciliation/generated/web/bank-reconciliation/mockData.js'),
     import('@generated/chart-of-accounts/generated/web/chart-of-accounts/mockData.js'),
     import('@generated/assets/generated/web/assets/mockData.js'),
+    import('@generated/amortization/generated/web/amortization/mockData.js'),
     import('@generated/deal/generated/web/deal/mockData.js'),
     import('@generated/activity/generated/web/activity/mockData.js'),
     import('@generated/lead/generated/web/lead/mockData.js'),
@@ -184,11 +185,11 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="artifacts/:windowName" element={<ArtifactViewerPage />} />
         <Route
           path=":windowName/:recordId"
-          element={<WindowLoader windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
+          element={<WindowLoader key="with-record" windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
         />
         <Route
           path=":windowName"
-          element={<WindowLoader windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
+          element={<WindowLoader key="list" windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
         />
       </Route>
     </Routes>

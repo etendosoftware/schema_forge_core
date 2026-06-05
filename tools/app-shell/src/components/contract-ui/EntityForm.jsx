@@ -470,6 +470,185 @@ function LookupFormField({ field, value, displayValue, selectorUrl, selectorCont
   );
 }
 
+function applyLookupAuxData(auxData, isGross, onChange, f) {
+  for (const [suffix, auxVal] of Object.entries(auxData)) {
+    // Price from the document's price list. Mapping depends on price list type:
+    //   - Gross list (isTaxIncluded=true): standardPrice is the gross price → grossUnitPrice
+    //   - Net list   (isTaxIncluded=false): standardPrice is the net price   → unitPrice
+    if (suffix === 'standardPrice' && auxVal != null) {
+      if (isGross) {
+        onChange?.('grossUnitPrice', auxVal);
+      } else {
+        // Mirror InlineAddRow: for net price lists, standardPrice is the net price →
+        // populate both unitPrice and listPrice so sidebar and add-row behave identically.
+        onChange?.('unitPrice', auxVal);
+        onChange?.('listPrice', auxVal);
+      }
+    } else if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
+      for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
+        onChange?.(f.key + auxSuffix, auxSuffixVal);
+      }
+    } else {
+      onChange?.(f.key + suffix, auxVal);
+    }
+  }
+}
+
+function renderSelectField(f, data, label, isReadOnly, onChange, ui, tMenu) {
+  let selectValue;
+  if (f.valueType === 'boolean') {
+    if (data?.[f.key] === true || data?.[f.key] === 'Y' || data?.[f.key] === 'true') {
+      selectValue = 'true';
+    } else {
+      if (data?.[f.key] === false || data?.[f.key] === 'N' || data?.[f.key] === 'false') {
+        selectValue = 'false';
+      } else {
+        selectValue = '';
+      }
+    }
+  } else {
+    selectValue = data?.[f.key] ?? '';
+  }
+  return (
+      <div key={f.key} className="space-y-1.5">
+        <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+          {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
+        </Label>
+        <Select
+            value={selectValue || '__empty__'}
+            onValueChange={(val) => {
+              if (val === '__empty__') {
+                onChange?.(f.key, '', f.column);
+                return;
+              }
+              onChange?.(f.key, f.valueType === 'boolean' ? val === 'true' : val, f.column);
+            }}
+            disabled={isReadOnly}
+            required={f.required}
+        >
+          <SelectTrigger id={f.key} data-testid={`field-${f.key}`} className="focus:ring-2 focus:ring-primary">
+            <SelectValue placeholder={buildSelectPlaceholder(ui, label)}/>
+          </SelectTrigger>
+          <SelectContent>
+            {!f.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
+            {f.options.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>{tMenu(opt.label)}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+  );
+}
+
+function PopupSearchField(props) {
+  return <div className="space-y-1.5">
+    <Label className="text-sm text-foreground font-medium">
+      {props.label}{props.f.required ? <span className="text-red-500 ml-0.5">*</span> : ""}
+    </Label>
+    <PopupSearchInput
+        field={props.f}
+        value={props.data?.[props.f.key] ?? ""}
+        displayValue={props.data?.[props.f.key + "$_identifier"]}
+        onChange={props.onChange}
+        label={props.label}
+        selectorUrl={props.selectorUrl}
+        selectorContext={props.selectorContext}
+        token={props.token}
+    />
+  </div>;
+}
+
+function getCheckboxStateClass(checked) {
+  return checked
+      ? 'bg-primary text-primary-foreground'
+      : 'bg-transparent';
+}
+
+function requiredAsterisk(f) {
+  return f.required ? <span className="text-red-500 ml-0.5">*</span> : '';
+}
+
+function formatReadOnlyDisplayValue(f, isReadOnly, rawDisplayValue) {
+  if (!(f.type === 'number' && isReadOnly && Number.isFinite(Number(rawDisplayValue)))) {
+    return rawDisplayValue;
+  }
+    return parseFloat(Number(rawDisplayValue).toFixed(10));
+}
+
+function buildSearchSelectorUrl(apiBaseUrl, entity, f, apiSelectorEntry) {
+  return apiBaseUrl ? (() => {
+    const base = `${apiBaseUrl}/${entity}/selectors/${f.column}`;
+    if (apiSelectorEntry?.url?.includes('?')) {
+      return `${base}?${apiSelectorEntry.url.split('?')[1]}`;
+    }
+    return base;
+  })() : null;
+}
+
+function requiredAsteriskIfEditable(f, isReadOnly) {
+  return f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : '';
+}
+
+function getInputStateClass(isReadOnly) {
+  return isReadOnly ? 'bg-muted/50' : 'focus:ring-2 focus:ring-primary focus:outline-none';
+}
+
+function DependentFkField(props) {
+  return <div className="space-y-1.5">
+    <Label htmlFor={props.f.key} className="text-sm text-foreground font-medium">
+      {props.label}{requiredAsterisk(props.f)}
+    </Label>
+    {props.f.column === "C_BPartner_Location_ID" ? (
+        <PartnerAddressPicker
+            field={props.f}
+            value={props.data?.[props.f.key] ?? ""}
+            displayValue={props.data?.[props.f.key + "$_identifier"]}
+            onChange={props.onChange}
+            formData={props.data}
+            resolvedLabel={props.label}
+            selectorUrl={props.selectorUrl}
+            selectorContext={props.selectorContext}
+            token={props.token}
+            apiBaseUrl={props.apiBaseUrl}
+        />
+    ) : (
+        <DependentSelect
+            field={props.f}
+            value={props.data?.[props.f.key] ?? ""}
+            displayValue={props.data?.[props.f.key + "$_identifier"]}
+            onChange={props.onChange}
+            catalogs={props.catalogs}
+            formData={props.data}
+            resolvedLabel={props.label}
+            selectorUrl={props.selectorUrl}
+            selectorContext={props.selectorContext}
+            token={props.token}
+        />
+    )}
+  </div>;
+}
+
+function buildDependentSelectorUrl(apiBaseUrl, entity, f) {
+  return apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null;
+}
+
+function isSelectFieldWithOptions(f) {
+  return f.type === 'select' && f.options?.length;
+}
+
+function getInputType(f) {
+  return f.type === 'number' ? 'number' : 'text';
+}
+
+
+function getFieldValue(isReadOnly, displayValue, data, f) {
+  return isReadOnly ? displayValue : (data?.[f.key] ?? '');
+}
+
+function getReadOnlyBgClass(isReadOnly) {
+  return isReadOnly ? 'bg-muted/50 cursor-default' : 'bg-background';
+}
+
 /**
  * Generic Entity Form component.
  * Layouts: 'horizontal' (grid-based edit form) | 'vertical' (stack-based sidebar)
@@ -553,9 +732,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     const rawDisplayValue = resolveIdentifier(data, f.key) ?? data?.[f.key] ?? '';
     // Strip floating-point noise (e.g. 243.20999999999998 → 243.21) for read-only number fields.
     // toFixed(10) preserves up to 10 significant decimal places while eliminating IEEE 754 drift.
-    const displayValue = f.type === 'number' && isReadOnly && Number.isFinite(Number(rawDisplayValue))
-      ? parseFloat(Number(rawDisplayValue).toFixed(10))
-      : rawDisplayValue;
+    const displayValue = formatReadOnlyDisplayValue(f, isReadOnly, rawDisplayValue);
     // Shared read-only rendering for FK-style fields (dependent, selector, search).
     const renderReadOnlyFk = () => (
       <div key={f.key} data-testid={`field-${f.key}`} className="space-y-1.5">
@@ -589,9 +766,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow',
               'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
               'disabled:cursor-not-allowed disabled:opacity-50',
-              checked
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-transparent',
+              getCheckboxStateClass(checked),
             ].join(' ')}
           >
             {checked && (
@@ -617,90 +792,66 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     }
     if (f.type === 'dependent') {
       if (isReadOnly) return renderReadOnlyFk();
-      const fieldSelectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null;
+      const fieldSelectorUrl = buildDependentSelectorUrl(apiBaseUrl, entity, f);
       const fieldOnChange = (val, lbl) => {
         onChange?.(f.key, val, f.column);
         if (lbl) onChange?.(f.key + '$_identifier', lbl);
         else if (!val) onChange?.(f.key + '$_identifier', '');
       };
       return (
-        <div key={f.key} className="space-y-1.5">
-          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-            {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
-          </Label>
-          {f.column === 'C_BPartner_Location_ID' ? (
-            <PartnerAddressPicker
-              field={f}
-              value={data?.[f.key] ?? ''}
-              displayValue={data?.[f.key + '$_identifier']}
-              onChange={fieldOnChange}
-              formData={data}
-              resolvedLabel={label}
-              selectorUrl={fieldSelectorUrl}
-              selectorContext={effectiveSelectorContext}
-              token={token}
-              apiBaseUrl={apiBaseUrl}
-            />
-          ) : (
-            <DependentSelect
-              field={f}
-              value={data?.[f.key] ?? ''}
-              displayValue={data?.[f.key + '$_identifier']}
-              onChange={fieldOnChange}
-              catalogs={catalogs}
-              formData={data}
-              resolvedLabel={label}
-              selectorUrl={fieldSelectorUrl}
-              selectorContext={effectiveSelectorContext}
-              token={token}
-            />
-          )}
-        </div>
+        <DependentFkField key={f.key} f={f} label={label} data={data} onChange={fieldOnChange}
+                        selectorUrl={fieldSelectorUrl} selectorContext={effectiveSelectorContext} token={token}
+                        apiBaseUrl={apiBaseUrl} catalogs={catalogs}/>
       );
     }
-    if (f.type === 'selector') {
+
+    function renderSelectorField() {
       if (isReadOnly) return renderReadOnlyFk();
       return (
-        <div key={f.key} className="space-y-1.5">
-          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-            {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
-          </Label>
-          <SelectorInput
-            entityName={entity}
-            field={f}
-            value={data?.[f.key] ?? ''}
-            displayValue={resolveIdentifier(data, f.key)}
-            onChange={(val, label, auxData) => {
-              onChange?.(f.key, val, f.column);
-              if (label) onChange?.(f.key + '$_identifier', label);
-              else if (!val) onChange?.(f.key + '$_identifier', '');
-              if (auxData) {
-                for (const [suffix, auxVal] of Object.entries(auxData)) {
-                  if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
-                    for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
-                      onChange?.(f.key + auxSuffix, auxSuffixVal);
+          <div key={f.key} className="space-y-1.5">
+            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+              {label}{requiredAsterisk(f)}
+            </Label>
+            <SelectorInput
+                entityName={entity}
+                field={f}
+                value={data?.[f.key] ?? ''}
+                displayValue={resolveIdentifier(data, f.key)}
+                onChange={(val, label, auxData) => {
+                  onChange?.(f.key, val, f.column);
+                  if (label) onChange?.(f.key + '$_identifier', label);
+                  else if (!val) onChange?.(f.key + '$_identifier', '');
+                  if (auxData) {
+                    for (const [suffix, auxVal] of Object.entries(auxData)) {
+                      if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
+                        for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
+                          onChange?.(f.key + auxSuffix, auxSuffixVal);
+                        }
+                      } else {
+                        onChange?.(f.key + suffix, auxVal);
+                      }
                     }
-                  } else {
-                    onChange?.(f.key + suffix, auxVal);
                   }
-                }
-              }
-            }}
-            catalogs={catalogs}
-            resolvedLabel={label}
-            selectorUrl={(() => {
-              if (!apiBaseUrl) return null;
-              // Always compute from apiBaseUrl so the full server path is included.
-              // Append query params from api.selectors entry if present (e.g. ?isSOTrx=Y).
-              const entry = api?.selectors?.find(s => s.entity === entity && s.field === f.key);
-              const base = `${apiBaseUrl}/${entity}/selectors/${f.column}`;
-              return entry?.url?.includes('?') ? `${base}?${entry.url.split('?')[1]}` : base;
-            })()}
-            selectorContext={effectiveSelectorContext}
-            token={token}
-          />
-        </div>
+                }}
+                catalogs={catalogs}
+                resolvedLabel={label}
+                selectorUrl={(() => {
+                  if (!apiBaseUrl) return null;
+                  // Always compute from apiBaseUrl so the full server path is included.
+                  // Append query params from api.selectors entry if present (e.g. ?isSOTrx=Y).
+                  const entry = api?.selectors?.find(s => s.entity === entity && s.field === f.key);
+                  const base = `${apiBaseUrl}/${entity}/selectors/${f.column}`;
+                  return entry?.url?.includes('?') ? `${base}?${entry.url.split('?')[1]}` : base;
+                })()}
+                selectorContext={effectiveSelectorContext}
+                token={token}
+            />
+          </div>
       );
+    }
+
+    if (f.type === 'selector') {
+      return renderSelectorField();
     }
     if (f.type === 'search') {
       if (isReadOnly) return renderReadOnlyFk();
@@ -711,63 +862,23 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       // computed base URL instead of using the entry URL as-is (which would be a relative
       // path that breaks on servers where the app context differs from the API context).
       const apiSelectorEntry = api?.selectors?.find(s => s.entity === entity && s.field === f.key);
-      const selectorUrl = apiBaseUrl ? (() => {
-        const base = `${apiBaseUrl}/${entity}/selectors/${f.column}`;
-        if (apiSelectorEntry?.url?.includes('?')) {
-          return `${base}?${apiSelectorEntry.url.split('?')[1]}`;
-        }
-        return base;
-      })() : null;
+      const selectorUrl = buildSearchSelectorUrl(apiBaseUrl, entity, f, apiSelectorEntry);
       const searchOnChange = (val, lbl, auxData) => {
         onChange?.(f.key, val, f.column);
         if (lbl) onChange?.(f.key + '$_identifier', lbl);
         else if (!val) onChange?.(f.key + '$_identifier', '');
         if (auxData) {
           const isGross = auxData.isTaxIncluded !== false;
-          for (const [suffix, auxVal] of Object.entries(auxData)) {
-            // Price from the document's price list. Mapping depends on price list type:
-            //   - Gross list (isTaxIncluded=true): standardPrice is the gross price → grossUnitPrice
-            //   - Net list   (isTaxIncluded=false): standardPrice is the net price   → unitPrice
-            if (suffix === 'standardPrice' && auxVal != null) {
-              if (isGross) {
-                onChange?.('grossUnitPrice', auxVal);
-              } else {
-                // Mirror InlineAddRow: for net price lists, standardPrice is the net price →
-                // populate both unitPrice and listPrice so sidebar and add-row behave identically.
-                onChange?.('unitPrice', auxVal);
-                onChange?.('listPrice', auxVal);
-              }
-            } else if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
-              for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
-                onChange?.(f.key + auxSuffix, auxSuffixVal);
-              }
-            } else {
-              onChange?.(f.key + suffix, auxVal);
-            }
-          }
+          applyLookupAuxData(auxData, isGross, onChange, f);
         }
       };
       // Popup fields open a full ProductSearchDrawer instead of inline dropdown
       if (f.popup) {
         return (
-          <div key={f.key} className="space-y-1.5">
-            <Label className="text-sm text-foreground font-medium">
-              {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
-            </Label>
-            <PopupSearchInput
-              field={f}
-              value={data?.[f.key] ?? ''}
-              displayValue={data?.[f.key + '$_identifier']}
-              onChange={(val, lbl) => {
-                onChange?.(f.key, val, f.column);
-                if (lbl) onChange?.(f.key + '$_identifier', lbl);
-              }}
-              label={label}
-              selectorUrl={selectorUrl}
-              selectorContext={effectiveSelectorContext}
-              token={token}
-            />
-          </div>
+          <PopupSearchField key={f.key} label={label} f={f} data={data} onChange={(val, lbl) => {
+            onChange?.(f.key, val, f.column);
+            if (lbl) onChange?.(f.key + '$_identifier', lbl);
+          }} selectorUrl={selectorUrl} selectorContext={effectiveSelectorContext} token={token}/>
         );
       }
       // Lookup fields open a full ProductSearchDrawer instead of inline dropdown
@@ -775,7 +886,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         return (
           <div key={f.key} className="space-y-1.5">
             <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-              {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
+              {label}{requiredAsterisk(f)}
             </Label>
             <LookupFormField
               field={f}
@@ -793,7 +904,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       return (
         <div key={f.key} className="space-y-1.5">
           <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-            {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
+            {label}{requiredAsterisk(f)}
           </Label>
           <SearchInput
             entityName={entity}
@@ -810,56 +921,21 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         </div>
       );
     }
-    if (f.type === 'select' && f.options?.length) {
-      const selectValue = f.valueType === 'boolean'
-        ? (data?.[f.key] === true || data?.[f.key] === 'Y' || data?.[f.key] === 'true'
-          ? 'true'
-          : (data?.[f.key] === false || data?.[f.key] === 'N' || data?.[f.key] === 'false'
-            ? 'false'
-            : ''))
-        : (data?.[f.key] ?? '');
-      return (
-        <div key={f.key} className="space-y-1.5">
-          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-            {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
-          </Label>
-          <Select
-            value={selectValue || '__empty__'}
-            onValueChange={(val) => {
-              if (val === '__empty__') {
-                onChange?.(f.key, '', f.column);
-                return;
-              }
-              onChange?.(f.key, f.valueType === 'boolean' ? val === 'true' : val, f.column);
-            }}
-            disabled={isReadOnly}
-            required={f.required}
-          >
-            <SelectTrigger id={f.key} data-testid={`field-${f.key}`} className="focus:ring-2 focus:ring-primary">
-              <SelectValue placeholder={buildSelectPlaceholder(ui, label)} />
-            </SelectTrigger>
-            <SelectContent>
-              {!f.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
-              {f.options.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>{tMenu(opt.label)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      );
+    if (isSelectFieldWithOptions(f)) {
+      return renderSelectField(f, data, label, isReadOnly, onChange, ui, tMenu);
     }
     if (f.type === 'textarea') {
       return (
         <div key={f.key} className="space-y-1.5 h-full flex flex-col">
           <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-            {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
+            {label}{requiredAsteriskIfEditable(f, isReadOnly)}
           </Label>
           <textarea
             id={f.key}
             name={f.key}
             data-testid={`field-${f.key}`}
             rows={4}
-            value={isReadOnly ? displayValue : (data?.[f.key] ?? '')}
+            value={getFieldValue(isReadOnly, displayValue, data, f)}
             onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
             onBlur={() => onFieldBlur?.(f.key)}
             disabled={isReadOnly}
@@ -867,7 +943,8 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               'flex w-full rounded-lg border border-[#D1D4DB] p-2 text-sm shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
               'placeholder:text-muted-foreground resize-none flex-1 min-h-[96px]',
               'focus:outline-none focus:ring-2 focus:ring-primary',
-              isReadOnly ? 'bg-muted/50 cursor-default' : 'bg-background',
+              'disabled:bg-muted/50 disabled:cursor-not-allowed',
+              getReadOnlyBgClass(isReadOnly),
             ].join(' ')}
           />
         </div>
@@ -877,7 +954,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       return (
         <div key={f.key} className="space-y-1.5">
           <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-            {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
+            {label}{requiredAsteriskIfEditable(f, isReadOnly)}
           </Label>
           <DateField
             id={f.key}
@@ -892,21 +969,21 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         </div>
       );
     }
-    const inputType = f.type === 'number' ? 'number' : 'text';
+    const inputType = getInputType(f);
     return (
       <div key={f.key} className="space-y-1.5">
         <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-          {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
+          {label}{requiredAsteriskIfEditable(f, isReadOnly)}
         </Label>
         <Input
           id={f.key}
           name={f.key}
           data-testid={`field-${f.key}`}
           type={inputType}
-          value={isReadOnly ? displayValue : (data?.[f.key] ?? '')}
+          value={getFieldValue(isReadOnly, displayValue, data, f)}
           onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
           onBlur={() => onFieldBlur?.(f.key)}
-          className={isReadOnly ? 'bg-muted/50' : 'focus:ring-2 focus:ring-primary focus:outline-none'}
+          className={getInputStateClass(isReadOnly)}
           required={f.required && !isReadOnly}
           disabled={isReadOnly || savingField === f.key}
         />

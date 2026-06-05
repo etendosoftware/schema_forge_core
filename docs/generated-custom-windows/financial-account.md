@@ -1,3 +1,176 @@
+# Financial Account — Account Management (ETP-4096)
+
+> This section covers the **create / edit / archive** flows introduced in ETP-4096. The detail view (movements, reconciliation, statements) is documented below.
+
+## What ETP-4096 adds
+
+- `+ Nueva cuenta` button in the Cuentas list opens a **multi-step wizard** (`NewAccountWizard.jsx`) for offline account creation.
+- Each row kebab gains **Edit account** (opens `EditAccountModal.jsx`) and **Archive account** (opens `ArchiveAccountDialog.jsx`).
+- A new backend spec `financial-account` (`FinancialAccountHandler`) powers create / update / archive / defaults over a single report-style endpoint.
+
+## New Account Wizard — step flow
+
+```
+TYPE          → 3 cards: Bank / Cash / Card
+  Bank        → CONNECTION (toggle Connected[disabled] / Without connection)
+                  Without connection → BANK      (flag-area search + popular grid + skip link)
+                                        → INSTITUTION (bank display field + institution list)
+                                           → FORM-BANK (Name* / IBAN / BIC-SWIFT / Currency)
+  Cash        → FORM-CASH (Name* / Currency)
+  Card        → CARD-SOON (placeholder — PSD2 required)
+```
+
+- State is kept in a single `{ step, accountType, connection, selectedBank, selectedInstitution, query }` object inside `NewAccountWizard.jsx`. No external store.
+- The back `←` button reverts one step. For the form step the target depends on `selectedBank`: if the user skipped bank selection (`null`), back goes to BANK; if they chose one, it goes to INSTITUTION.
+- The `+` button in `AccountsToolbar.jsx` opens the wizard; on success the Cuentas list reloads via `useFinancialAccounts().reload`.
+
+### Bank picker (BANK step)
+
+- Flag-area input field: left side shows `<Landmark>` + `<ChevronDown>` in a 60 px border-right box; right side is a plain `<input>` that filters `bankCatalog.js`.
+- Popular grid: 3-column, `gap-5` (20 px). Each card is 104 px tall: 40 px icon button + bank name. No bank logo yet — uses `<Landmark>` placeholder.
+- "Continue without selecting a bank" link skips BANK → INSTITUTION and sets `selectedBank = null`.
+
+### Institution step (INSTITUTION step)
+
+- Top section displays the selected bank's name in the same flag-area input used in BANK (read-only `<span>` instead of `<input>`).
+- Institution list: `gap-4` (16 px) rows; each row has a 24 px circular avatar, institution name, and `<ChevronRight>`. Clicking any row advances to the form.
+- There is **no** "Añadir · Sin conexión" row — the user is already in the offline flow.
+
+### Account form (FORM-BANK / FORM-CASH)
+
+- Bank mode fields: Name (required), IBAN (optional, validated with `validateIban`), BIC/SWIFT (optional), Currency (required, populated from `fetchDefaults()`).
+- Cash mode fields: Name (required), Currency (required). No IBAN / BIC.
+- Form layout: `gap-5` (20 px) between fields; `gap-2` (8 px) between label and input; white inputs (`bg-white`) with `shadow-[0_1px_2px_rgba(18,18,23,0.05)]`.
+- Submit button: pill-shaped (`rounded-full`), black background, yellow hover, `#D1D4DB` when disabled.
+- Submit calls `createAccount(payload)` from `useAccountMutations`. On 409 the duplicate-name error shows as an inline validation message (not a toast).
+
+## Edit Account Modal
+
+`EditAccountModal.jsx` — rendered from the row kebab "Edit account" action.
+
+- **Account data** section: editable Name, IBAN, BIC/SWIFT, Currency. Same field styling as the wizard form.
+- **Bank connection** section: labelled "Available in the next iteration" — shown but non-interactive (T3 PSD2 scope).
+- Submit calls `updateAccount(id, payload)`. Only fields present in the payload overwrite the stored value (IBAN / BIC omitted → server keeps existing values).
+
+## Archive Dialog
+
+`ArchiveAccountDialog.jsx` — rendered from the row kebab "Archive account" action.
+
+- Confirmation dialog: title + body copy + Cancel / Archive buttons.
+- Archive calls `archiveAccount(id)`. On 409 (open reconciliations) the backend message surfaces as a toast error — the dialog stays open.
+- On success the dialog closes and the list reloads.
+
+## Backend endpoint — `financial-account` spec
+
+`FinancialAccountHandler` (`@Named("financial-account")`) is a report-style spec (`SPEC_TYPE=R`). It routes internally on HTTP method + `action` query param:
+
+| Operation | HTTP | Query params | Notes |
+|-----------|------|--------------|-------|
+| Create | `POST` | — | body: `{ name, currencyId, type?, iban?, swiftCode? }` |
+| Update | `POST` | `action=update&id=<id>` | same body shape; omitting `iban`/`swiftCode` keys preserves stored values |
+| Archive | `POST` | `action=archive&id=<id>` | soft-delete; 409 if open reconciliations |
+| Defaults | `GET` | `action=defaults` | returns session currency + active currency list |
+
+**Create / Update validations:**
+- `name` required, max 60 chars, unique per org (active accounts).
+- `currencyId` required and must resolve to an active `Currency`.
+- `iban` max 34 chars, `swiftCode` max 20 chars.
+- `type` normalised: `'C'` → Cash, anything else → `'B'` (Bank, default).
+
+**Create auto-assigns matching algorithm:** the handler calls `listMatchingAlgorithms()` (active, sorted by name) and assigns the first result. If no algorithm exists the field is left null. This wires up the reconciliation engine automatically — no frontend field.
+
+**Defaults response shape:**
+```json
+{
+  "response": {
+    "data": {
+      "defaultCurrencyId": "102",
+      "defaultCurrencyIso": "EUR",
+      "currencies": [
+        { "id": "102", "iso": "EUR", "symbol": "€" }
+      ]
+    }
+  }
+}
+```
+
+The spec + entity source-data records live in `src-db/database/sourcedata/ETGO_SF_SPEC.xml` and `ETGO_SF_ENTITY.xml` of `com.etendoerp.go`.
+
+## New components
+
+| File | Role |
+|------|------|
+| `windows/custom/financial-account/NewAccountWizard.jsx` | Wizard shell — step state, back/forward logic, dialog chrome |
+| `windows/custom/financial-account/AccountFormStep.jsx` | Shared form for Bank (Name/IBAN/BIC/Currency) and Cash (Name/Currency) modes |
+| `windows/custom/financial-account/EditAccountModal.jsx` | Edit modal — Account data section + read-only Bank connection section |
+| `windows/custom/financial-account/ArchiveAccountDialog.jsx` | Confirmation dialog for soft-delete |
+| `windows/custom/financial-account/bankCatalog.js` | Static popular-bank list (`{ id, name, country, institutions[] }`); designed for swap to a live endpoint |
+
+## New hooks
+
+| Hook | Operations |
+|------|------------|
+| `hooks/useAccountMutations.js` | `createAccount(payload)`, `updateAccount(id, payload)`, `archiveAccount(id)`, `fetchDefaults()` — plain `fetch` with bearer-token auth (same pattern as `useNeoResource` but for writes). Errors carry `.status` so callers can branch (e.g. 409 → inline message). |
+
+## New utilities
+
+| File | Purpose |
+|------|---------|
+| `validateIban.js` (root `src/`) | `isValidIban(str)` — strips spaces, uppercases, rearranges, runs mod-97. Returns `true` for valid IBANs. Used by `AccountFormStep` to gate the submit button. |
+
+## i18n keys — account management
+
+All keys added to both `en_US.json` and `es_ES.json`.
+
+| Key group | Covers |
+|-----------|--------|
+| `financeAccountsNew*` | Wizard steps, type picker, connection toggle, bank picker, institution list, form fields, validation messages, toasts |
+| `financeAccountsEdit*` | Edit modal sections, save button, success/error toasts |
+| `financeAccountsArchive*` | Confirmation dialog copy, button labels, success/error toasts including the 409 open-reconciliation message |
+| `financeAccountsMenu*` | Row kebab actions (`financeAccountsMenuEdit`, `financeAccountsMenuArchive`) |
+
+Key reference (English):
+
+```
+financeAccountsNewTitle              "New account"
+financeAccountsNewTypeBank           "Bank"
+financeAccountsNewTypeCash           "Cash"
+financeAccountsNewTypeCard           "Card"
+financeAccountsNewConnectionOffline  "Without connection"
+financeAccountsNewConnectionSoon     "Available in the next iteration"   (PSD2 badge)
+financeAccountsNewBankTitle          "Choose which bank the account belongs to"
+financeAccountsNewBankSkip           "Continue without selecting a bank"
+financeAccountsNewBankPopular        "Popular"
+financeAccountsNewInstitutions       "Institutions"
+financeAccountsNewFieldName          "Account name"
+financeAccountsNewFieldIban          "IBAN"
+financeAccountsNewFieldBic           "BIC/SWIFT"
+financeAccountsNewFieldCurrency      "Currency"
+financeAccountsNewIbanInvalid        "The IBAN is not valid"
+financeAccountsNewSubmit             "Add account"
+financeAccountsNewCreateSuccess      "Account created"
+financeAccountsNewNameExists         "An account with this name already exists"
+financeAccountsEditTitle             "Edit account"
+financeAccountsEditConnectionSoon    "Available in the next iteration"
+financeAccountsEditSave              "Save changes"
+financeAccountsEditSuccess           "Changes saved"
+financeAccountsArchiveConfirmTitle   "Archive account"
+financeAccountsArchiveConfirm        "Archive"
+financeAccountsArchiveSuccess        "Account archived"
+financeAccountsArchiveOpenRecon      "Cannot archive an account with open reconciliations"
+financeAccountsMenuEdit              "Edit account"
+financeAccountsMenuArchive           "Archive account"
+```
+
+## Not implemented yet (follow-up tasks)
+
+- **PSD2 / Connected mode** (T3): connection toggle is visible but both the "Connected" option and the Bank connection section in the edit modal are disabled.
+- **Real bank logos**: `bankCatalog.js` uses `<Landmark>` as a placeholder icon for all banks.
+- **Card accounts**: the CARD step shows a "Coming soon" placeholder — actual card creation requires PSD2.
+- **Bank catalog from endpoint**: `bankCatalog.js` is a static list; the component is designed so the data source can be swapped to a live endpoint without changing the layout.
+
+---
+
 # Financial Account Detail
 
 Detail view for a single `FIN_Financial_Account` reached from the Cuentas list page.
@@ -14,21 +187,23 @@ Display the full detail of a financial account: a summary strip with KPIs, and t
 - Three tabs with counts: Movements (live data), Reconciliation (placeholder), Imported Statements (placeholder).
 - Export button at the right of the tab strip — fires a toast (real export is out of scope).
 - Movements toolbar: back arrow `←`, status filter (8 payment statuses, search-enabled), date range filter (preset list + dual calendar, same picker as grid views), type filter (BPD/BPW, search-enabled), amount filter (presets + manual min/max), search input, `+ Nuevo movimiento` button (yellow hover, fires toast — real action is T8).
-- Movements table: Checkbox | Date | Document | Contact | Description | Status (`MovementStatusBadge`) | Type (with `PostingStatusDot` sub-label) | Amount | Balance.
+- Movements table: Expand chevron | Checkbox | Date | Payment | Contact | Description | Status (`MovementStatusBadge`) | Type (with `PostingStatusDot` sub-label) | G/L Item | Amount | Balance | kebab.
+- **Payment column** (`Pago`): when the movement has a related payment, the document number renders as an underlined link (with an `ArrowUpRight` icon) that navigates to `/payment-in/:id` (received payments, `paymentIsReceipt === 'Y'`) or `/payment-out/:id` (made payments). Movements with no payment show plain text.
+- **Expandable "more info" panel**: the leading circular chevron (or a click anywhere on the row) toggles an inline panel showing the accounting dimensions enabled in the chart of accounts that have a value on the transaction (Organization, Project, Cost Center, Activity, Campaign, Sales Region, User1, User2). The business partner is excluded (it already has its own Contacto column). Dimensions are rendered read-only as label + value (no selector chrome), in a 1/2/4-column responsive grid. The header row and panel form one elevated card (shadow at the bottom only, no seam line — the header row sits at `z-20` over the panel's `z-10` to hide the shadow bleed). When no enabled dimension has a value, the panel shows a "no dimensions" message. The chevron only renders when the account reports at least one enabled dimension (`enabledDimensions`).
 - Locale-aware date format in the Date column (es_ES → `dd/MM/yyyy`, en_US → `M/d/yyyy`).
 - Individual row checkbox + select-all (indeterminate when partial).
-- Row hover: subtle shadow elevation + kebab appears (View detail active toast; Unreconcile / Post disabled with tooltip).
+- Row hover: subtle shadow elevation + kebab appears (Unreconcile / Post disabled with tooltip).
 - Back arrow in the toolbar runs `navigate(-1)`.
 - `+ Nuevo movimiento` button (yellow hover) — currently fires a "coming soon" toast.
 
 ## Not implemented yet
 
 - `+ Nuevo movimiento` real action — toast placeholder for now.
-- Reconciliation tab body — placeholder with Scale icon.
-- Imported Statements tab body — placeholder with FileText icon.
+- Reconciliation tab body — placeholder (T6/T7).
+- Statement matching / reconciliation — import leaves statements with `processed='N'` (T6/T7).
 - Unreconcile / Post row actions — visible but disabled, with tooltip.
 - Real bank logos (Santander, BBVA, etc.) — uses the generic `AccountLogoAvatar` for all accounts.
-- Server-side filtering for movements — filters are applied client-side over the full movement list returned by the endpoint.
+- Server-side filtering for movements and statements — filters are applied client-side.
 
 ## Routing
 
@@ -50,11 +225,19 @@ index.jsx                          — receives { recordId }, sets page meta, mo
         AmountFilter.jsx           — presets + manual min/max + Apply/Cancel
       AccountSummaryStrip.jsx      — avatar, IBAN (chunked + copy), 3 KPI values
       MovementsTable.jsx           — header + rows / skeleton / empty-state; renderBody helper
+        DimensionsPanel (inline)   — expandable read-only accounting-dimensions grid
         MovementStatusBadge.jsx    — 8 status chips (5 color families)
         PostingStatusDot.jsx       — derived posting status (RPPC → posted/green, else → orange)
-        MovementRowKebab.jsx       — on-hover kebab (View detail active, Unreconcile/Post disabled)
-    ReconciliacionTab.jsx          — placeholder
-    ExtractosImportadosTab.jsx     — placeholder
+        MovementRowKebab.jsx       — on-hover kebab (Unreconcile/Post disabled)
+    ReconciliacionTab.jsx          — placeholder (T6)
+    ImportedStatementsTab.jsx      — orchestrates list ↔ lines state machine
+      StatementsToolbar.jsx        — back ←, search, import button
+      StatementsTable.jsx          — 7-column table (file, data, period, lines, progress, status, imported)
+        StatementStatusBadge.jsx   — 3 status chips (COMPLETED / WITH_ISSUES / IN_PROGRESS)
+        ProgressRing              — SVG circular progress indicator (new primitive)
+      StatementLinesView.jsx       — sub-view: header with ← + lines table
+        StatementLinesTable.jsx    — 7-column lines table (lineNo, date, desc, ref, bpartner, amount, matched)
+      ImportStatementModal.jsx     — multi-step import modal (Upload → Review → Done): dropzone, preview KPIs + lines, base64 POST. White surface (var(--surface-overlay)), borderless footer, round red-hover remove button.
 ```
 
 ## Shared primitives introduced or used
@@ -65,6 +248,7 @@ index.jsx                          — receives { recordId }, sets page meta, mo
 | `MoneyAmount` | `components/ui/money-amount.jsx` | Props: `value`, `currency`, `tone` (`auto`/`positive`/`negative`/`neutral`), `compact`. Locale: `es-ES`. `tone='auto'` colors positive green (`#1E874C`), negative red (`#D50B3E`), zero neutral. Sign prefix `+`/`-` applied automatically. |
 | `DateRangePopover` / `DateRangePopoverContent` | `components/ui/date-range-popover.jsx` | Canonical date range picker — same UX as the grid views (Sales Order, etc.). Presets list (Hoy / Ayer / Últimos 7/30 días / Últimos 12 meses / Todo el tiempo / Personalizado) + dual-month calendar with year selector. Value shape: `null \| { presetId } \| { from, to }`. `DateRangePopoverContent` is the inner panel — use it when you need a custom trigger button (as `ListFilterBar.jsx` does). |
 | `DistinctValuesFilter` | `components/ui/distinct-values-filter.jsx` | Reusable Popover-wrapped `DistinctValuesList` for in-memory fixed code lists (no backend pagination). Used by `StatusFilter` and `TypeFilter`. |
+| `ProgressRing` | `components/ui/progress-ring.jsx` | SVG circular progress ring. Props: `value` (0–100), `size` (default 32), `strokeWidth` (default 3). Track is `#E8EAEF`, fill is `#26A95F`. |
 
 ## Hooks
 
@@ -72,9 +256,14 @@ index.jsx                          — receives { recordId }, sets page meta, mo
 |------|------|-------|
 | `useNeoResource({ path, deps, mapPayload, timeoutMs, label })` | `hooks/useNeoResource.js` | Generic NEO fetch with auth + abort + timeout. Returns `{ data, loading, error, reload }`. Passing `path: null` keeps the hook idle (useful when the path depends on a not-yet-known id). Consumed by `useFinancialAccount` and `useAccountMovements`. |
 | `useFinancialAccount(id)` | `hooks/useFinancialAccount.js` | Thin wrapper over `useNeoResource` — hits `/sws/neo/financial-accounts-page` and filters client-side by `id`. Returns `{ account, loading, error, reload }`. Follow-up: replace with dedicated `/sws/neo/financial-account/{id}` endpoint once that spec is live. |
-| `useAccountMovements(accountId)` | `hooks/useAccountMovements.js` | Thin wrapper over `useNeoResource` — hits `/sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}` (powered by `FinancialAccountTransactionsHandler` on the Etendo Go side). Returns `{ movements, totals, loading, error, reload }`. |
+| `useAccountMovements(accountId)` | `hooks/useAccountMovements.js` | Thin wrapper over `useNeoResource` — hits `/sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}` (powered by `FinancialAccountTransactionsHandler` on the Etendo Go side). Returns `{ movements, totals, enabledDimensions, loading, error, reload }`. Each movement carries `paymentId` / `paymentIsReceipt` (for the Payment link) and a `dimensions` object (per-row dimension values); `enabledDimensions` is the account-level list of dimension keys enabled in the chart of accounts. |
+| `useBankStatements(accountId)` | `hooks/useBankStatements.js` | Fetches imported bank statements — hits `GET /sws/neo/bank-statements?FIN_Financial_Account_ID={id}`. Returns `{ statements, loading, error, reload }`. |
+| `useBankStatementLines(statementId)` | `hooks/useBankStatementLines.js` | Fetches lines of one statement — hits `GET /sws/neo/bank-statements?action=lines&statementId={id}`. Returns `{ lines, loading, error, reload }`. |
+| `useStatementImport()` | `hooks/useStatementImport.js` | Mutation hook for C43 import — posts `{ FIN_Financial_Account_ID, fileName, contentBase64 }` to `POST /sws/neo/bank-statements?action=import`. Returns `{ importStatement, importing, error }`. |
 
-## Backend endpoint
+## Backend endpoints
+
+### Movements
 
 ```
 GET /sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}
@@ -83,6 +272,8 @@ GET /sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}
 Implemented by `com.etendoerp.go.schemaforge.FinancialAccountTransactionsHandler` (CDI bean registered via `@Named("financial-account-transactions")`). The handler:
 
 - Queries `FIN_Finacc_Transaction` joined with `FIN_Financial_Account`, `C_Currency`, `FIN_Payment`, and `C_BPartner` (resolved from either the transaction or its parent payment).
+- Joins the 9 accounting-dimension FK tables (`ad_org`, `c_bpartner`, `c_project`, `c_costcenter`, `c_activity`, `c_campaign`, `c_salesregion`, `user1`, `user2`) to marshal a `dimensions` object per row, and surfaces the related payment (`paymentId` + `paymentIsReceipt`) so the frontend can deep-link to the payment window.
+- Computes the account's `enabledDimensions` by reading `C_AcctSchema_Element` (the dimensions enabled in the chart of accounts), returned once at the payload level (not per row).
 - Computes a per-row running balance anchored to `FIN_Financial_Account.currentbalance` (window function: `currentbalance − SUM(subsequent)` over `statementdate ASC, line ASC`).
 - Returns a `totals` object with the current balance, 30-day inflows, 30-day outflows, and the account currency. The 30-day cutoff is **computed in Java** (`Instant.now().minus(30, ChronoUnit.DAYS)`) and bound as a `Timestamp` parameter — no PostgreSQL-specific `NOW() − INTERVAL` syntax, so the query stays portable across PostgreSQL and Oracle.
 
@@ -97,20 +288,66 @@ Response shape:
           "id": "...", "date": "2026-05-06T00:00:00Z", "documentNo": "PAY-001",
           "contact": "DHL Technologies SL", "description": "Invoice No.: ...",
           "paymentStatus": "RPPC", "trxType": "BPD",
+          "paymentId": "...", "paymentIsReceipt": "Y",
           "amount": 12450.00, "balance": 211841.01,
-          "currencyIso": "EUR", "posted": "Y"
+          "currencyIso": "EUR", "posted": "Y",
+          "dimensions": { "organization": "GOOrg", "project": "..." }
         }
       ],
       "totals": {
         "balance": 211841.01, "inflows": 47820.00,
         "outflows": 22398.82, "currency": "EUR"
-      }
+      },
+      "enabledDimensions": ["organization", "bpartner", "project"]
     }
   }
 }
 ```
 
 The spec + entity records that wire this endpoint live in `src-db/database/sourcedata/ETGO_SF_SPEC.xml` and `ETGO_SF_ENTITY.xml` of `com.etendoerp.go` (so the records survive `update.database`).
+
+### Imported statements
+
+Three operations routed by HTTP method + `action` query param, all served by `BankStatementsHandler` (`@Named("bank-statements")`):
+
+```
+GET  /sws/neo/bank-statements?FIN_Financial_Account_ID={id}          → list
+GET  /sws/neo/bank-statements?action=lines&statementId={id}          → lines
+POST /sws/neo/bank-statements?action=import                          → C43 import
+     body: { FIN_Financial_Account_ID, fileName, contentBase64 }
+```
+
+The import handler:
+- Decodes base64 → `ByteArrayInputStream`
+- Instantiates the Cuaderno 43 parser (`org.openbravo.module.cuaderno43.es.utility.Cuaderno43`) via reflection (no compile-time dependency on the commercial JAR)
+- Calls `init(account)` + `loadFile(stream, statement)` headlessly (no servlet context needed)
+- Saves `FIN_BankStatement` + `FIN_BankStatementLine` rows in one transaction
+- Returns `201 { id, fileName, lineCount }` on success
+
+#### Cuaderno 43 lookup requirements (MANDATORY)
+
+The Cuaderno 43 parser does **not** read fields from `c_bank` / `c_bankaccount`. It runs an OBCriteria over `FIN_FinancialAccount` looking for an **exact match** on three fields, scoped to the **current user's client** (organization filter is disabled via `setFilterOnReadableOrganization(false)`):
+
+| Header record 11 position | `FIN_FinancialAccount` property | DB column |
+|---------------------------|---------------------------------|-----------|
+| Entity (pos 3–6, 4 digits) | `bankCode` | `codebank` |
+| Branch (pos 7–10, 4 digits) | `branchCode` | `codebranch` |
+| Account (pos 11–20, 10 digits) | `partialAccountNo` | `codeaccount` |
+
+Additionally, after the lookup the parser asserts that the account returned is the **same instance** as `statement.getAccount()` (i.e. the financial account from which the user triggered the import). If either check fails, the import aborts with `Error en la cuenta bancaria. La cuenta bancaria no existe. ({entity}-{branch}-{account})`.
+
+**Therefore, to enable C43 import on a financial account:**
+1. The user's session must belong to the same `ad_client_id` as the account.
+2. `codebank`, `codebranch`, and `codeaccount` must be populated and match the values encoded in the file header record (type 11).
+3. `bank_digitcontrol` + `account_digitcontrol` are used to render the displayed IBAN/CCC but do not participate in the lookup; they must still be consistent with the IBAN if you want the UI to display it correctly.
+4. The user must trigger the import from the same financial account whose codes match the file. Importing a file from a different account will fail even if the codes exist somewhere else in the database.
+
+Local dev account that is already configured: **Cuenta de Banco** (client GOClient, id `5521767A6D3C47E1957AF82D1334BFE4`) — `codebank=2100`, `codebranch=0418`, `codeaccount=0200051332`, DC `45`. The C43 fixtures under `e2e/fixtures/bank-statements/` target this account.
+
+Status derivation in list response: `COMPLETED` = processed=Y AND posted=Y; `WITH_ISSUES` = processed=Y AND matchedCount < lineCount; `IN_PROGRESS` = processed=N.
+
+#### Statement status config
+`statementStatusConfig.js` — 3 statuses: `COMPLETED` (green `#EEFBF4`), `WITH_ISSUES` (orange `#FFF1D6`), `IN_PROGRESS` (yellow `#FFF7E0`).
 
 ## Pipeline / artifact status
 
@@ -156,9 +393,14 @@ All keys prefixed `financeAccountDetail*` and `financeAccountMovements*`, added 
 - `financeAccountMovementsFilter*` — filter labels and search placeholders.
 - `financeAccountMovementsStatus*` — labels for the 8 payment statuses.
 - `financeAccountMovementsType{BPD,BPW}` — trxType labels (Cobro / Pago in es).
-- `financeAccountMovementsCol*` — table column headers.
+- `financeAccountMovementsCol*` — table column headers (`ColDocument` now labels the **Payment** / Pago column).
 - `financeAccountMovementsRow*` — kebab actions + their disabled tooltips.
+- `financeAccountMovementsMoreInfo` — chevron aria-label for the expandable panel.
+- `financeAccountMovementsNoDimensions` — message shown when no enabled dimension has a value.
+- `financeAccountMovementsDim*` — accounting-dimension labels (`Organization`, `Bpartner`, `Project`, `Costcenter`, `Activity`, `Campaign`, `Salesregion`, `User1`, `User2`).
 - `financeAccountMovementsEmpty` — empty-state message.
+- `financeAccountStatements*` — all statements tab keys (search, import, column headers, status labels, dialog, toasts).
+- `financeAccountStatementLines*` — all lines sub-view keys (column headers, empty state, matched labels).
 
 ## Known deviations from the Figma frame
 

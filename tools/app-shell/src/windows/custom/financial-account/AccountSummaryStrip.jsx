@@ -2,6 +2,7 @@ import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 import { AccountLogoAvatar } from '@/components/financial-accounts/AccountLogoAvatar';
+import { ACCOUNT_TYPE } from '@/components/financial-accounts/tokens';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MoneyAmount } from '@/components/ui/money-amount';
 
@@ -15,10 +16,27 @@ function formatIban(iban) {
  * Horizontal strip shown under the movements toolbar.
  * Displays IBAN with copy button + three KPI figures (balance, inflows, outflows).
  *
- * @param {{ account: object|null, totals: { balance: number, inflows: number, outflows: number, currency: string }, loading: boolean }} props
+ * `totals.windowSuffix` is an optional `{ key, params }` descriptor used to render
+ * the date-range hint next to Inflows/Outflows (e.g. "(7D)", "(hoy)", "(rango)").
+ *
+ * @param {{
+ *   account: object|null,
+ *   totals: {
+ *     balance: number,
+ *     inflows: number,
+ *     outflows: number,
+ *     currency: string,
+ *     windowSuffix?: { key: string, params: object|null } | null,
+ *   },
+ *   loading: boolean,
+ * }} props
  */
 export function AccountSummaryStrip({ account, totals, loading }) {
   const ui = useUI();
+  const suffixText = totals.windowSuffix
+    ? ui(totals.windowSuffix.key, totals.windowSuffix.params ?? undefined)
+    : null;
+  const suffix = suffixText ? ` (${suffixText})` : '';
 
   const handleCopyIban = () => {
     if (account?.iban) {
@@ -48,32 +66,36 @@ export function AccountSummaryStrip({ account, totals, loading }) {
     <div className="px-2 py-1">
       <div className="flex items-center gap-5 rounded-lg border border-[#E8EAEF] px-3 py-2">
 
-        {/* Avatar + IBAN — fixed width, never grows or shrinks */}
-        <div className="flex w-[364px] shrink-0 items-center gap-2">
-          <AccountLogoAvatar account={account} className="h-8 w-8 shrink-0" />
-          <div className="flex min-w-0 flex-col">
-            <span className="text-xs leading-4 text-[#3F3F50]">IBAN</span>
-            <div className="flex items-center gap-0.5">
-              <span
-                data-testid="iban-text"
-                className="truncate text-xs leading-4 text-[#6C6C89]"
-              >
-                {formatIban(account?.iban)}
-              </span>
-              {account?.iban ? (
-                <button
-                  type="button"
-                  onClick={handleCopyIban}
-                  data-testid="iban-copy-button"
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9]"
-                  aria-label={ui('financeAccountDetailIbanCopyAria')}
+        {/* Avatar + IBAN — fixed width, never grows or shrinks. Hidden for cash
+            accounts (Caja), which have no IBAN, leaving only the KPIs. Bank/card
+            accounts still show the field (with "—" when no IBAN is stored). */}
+        {account?.type !== ACCOUNT_TYPE.CASH ? (
+          <div className="flex w-[364px] shrink-0 items-center gap-2">
+            <AccountLogoAvatar account={account} className="h-8 w-8 shrink-0" />
+            <div className="flex min-w-0 flex-col">
+              <span className="text-xs leading-4 text-[#3F3F50]">IBAN</span>
+              <div className="flex items-center gap-0.5">
+                <span
+                  data-testid="iban-text"
+                  className="truncate text-xs leading-4 text-[#6C6C89]"
                 >
-                  <Copy className="h-4 w-4" />
-                </button>
-              ) : null}
+                  {formatIban(account?.iban)}
+                </span>
+                {account?.iban ? (
+                  <button
+                    type="button"
+                    onClick={handleCopyIban}
+                    data-testid="iban-copy-button"
+                    className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9]"
+                    aria-label={ui('financeAccountDetailIbanCopyAria')}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
-        </div>
+        ) : null}
 
         {/* Saldo total */}
         <div data-testid="kpi-balance" className="flex flex-1 flex-col gap-0.5">
@@ -88,10 +110,10 @@ export function AccountSummaryStrip({ account, totals, loading }) {
           />
         </div>
 
-        {/* Entradas (30D) */}
+        {/* Entradas — sufijo dinámico según el filtro de fecha activo */}
         <div data-testid="kpi-inflows" className="flex flex-1 flex-col gap-0.5">
           <span className="text-xs leading-4 text-[#3F3F50]">
-            {ui('financeAccountDetailKpiInflows')}
+            {ui('financeAccountDetailKpiInflows')}{suffix}
           </span>
           <MoneyAmount
             value={totals.inflows}
@@ -101,10 +123,10 @@ export function AccountSummaryStrip({ account, totals, loading }) {
           />
         </div>
 
-        {/* Salidas (30D) */}
+        {/* Salidas — mismo sufijo que Entradas */}
         <div data-testid="kpi-outflows" className="flex flex-1 flex-col gap-0.5">
           <span className="text-xs leading-4 text-[#3F3F50]">
-            {ui('financeAccountDetailKpiOutflows')}
+            {ui('financeAccountDetailKpiOutflows')}{suffix}
           </span>
           <MoneyAmount
             value={totals.outflows}

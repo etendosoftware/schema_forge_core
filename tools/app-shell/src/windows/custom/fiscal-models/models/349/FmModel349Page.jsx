@@ -3,14 +3,16 @@ import { useUI } from '@/i18n';
 import { ArrowLeft, Download, FileDown, Play, OctagonAlert, CircleCheck, Search, RefreshCw, Globe, Eye, Lock } from 'lucide-react';
 import { StatusPillMenu } from '../../FmCommon.jsx';
 import { PresentModal, FileGenModal } from '../../FmOverlays.jsx';
-import { formatAmount } from '../../fiscalModelsUtils.js';
+import { formatAmount, compute349Operators, generate349File } from '../../fiscalModelsUtils.js';
+import { use349Pdf } from './use349Pdf.js';
+import { DocumentPreview } from '../../../../../components/contract-ui/DocumentPreview.jsx';
 import '../../fiscal-models.css';
 
 // ── Constants ────────────────────────────────────────────────────
 const STEPPER_INDEX = {
-  pendiente:0, borrador:1, listo:2,
-  presentado:3, presentadoOtra:3, presentadoAcuse:3,
-  omitido:-1,
+  pending:0, draft:1, ready:2,
+  submitted:3, submitted_ext:3, submitted_ack:3,
+  skipped:-1,
 };
 
 const KEY_IDS = ['E', 'S', 'A', 'I'];
@@ -77,7 +79,7 @@ function Banner349({ type, icon, title, sub, actions }) {
 function TotalsCard({ operators }) {
   const t = useUI();
   const totals = {};
-  KEY_IDS.forEach(k => { totals[k] = operators.filter(o => o.key === k).reduce((s,o) => s + o.base, 0); });
+  KEY_IDS.forEach(k => { totals[k] = operators.filter(o => o.key === k).reduce((s,o) => s + (parseFloat(o.base) || 0), 0); });
   return (
     <div className="fm-349-totals">
       <div className="fm-349-totals__header">
@@ -104,19 +106,100 @@ function TotalsCard({ operators }) {
   );
 }
 
+// ── InvoicesTab ───────────────────────────────────────────────────
+function InvoicesTab({ liveInvoices, invoiceNifFilter, setInvoiceNifFilter, t }) {
+  if (!liveInvoices) {
+    return (
+      <div style={{ padding: '32px 0', textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>
+        {t('fm.m349.invoices.empty')}
+      </div>
+    );
+  }
+  if (liveInvoices.length === 0) {
+    return (
+      <div style={{ padding: '32px 0', textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>
+        {t('fm.m349.invoices.none')}
+      </div>
+    );
+  }
+  const visibleInvoices = invoiceNifFilter
+    ? liveInvoices.filter(inv => inv.nifIva === invoiceNifFilter)
+    : liveInvoices;
+  return (
+    <>
+      {invoiceNifFilter && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <span style={{ fontSize: 11, color: '#6b7280' }}>{t('fm.m349.invoices.filtering_by')}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#1e40af', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 4, padding: '2px 8px' }}>
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{invoiceNifFilter}</span>
+            <button onClick={() => setInvoiceNifFilter(null)} aria-label={t('fm.action.clear')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', lineHeight: 1, padding: 0, fontSize: 13 }}>×</button>
+          </span>
+          <span style={{ fontSize: 11, color: '#9ca3af' }}>{t('fm.m349.invoices.filtered', { visible: visibleInvoices.length, total: liveInvoices.length })}</span>
+        </div>
+      )}
+      <div className="fm-table-wrap" style={{ flex: 'none' }}>
+        <table className="fm-table">
+          <thead>
+            <tr>
+              <th>{t('fm.m349.col.date')}</th>
+              <th>{t('fm.m349.col.ref')}</th>
+              <th>{t('fm.m349.col.invoice_type')}</th>
+              <th>{t('fm.m349.col.operator')}</th>
+              <th>{t('fm.m349.col.nif_iva')}</th>
+              <th style={{ textAlign: 'right' }}>{t('fm.m349.col.taxable_base')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleInvoices.map((inv, i) => (
+              <tr key={`${inv.ref}-${i}`}>
+                <td><span className="fm-date">{inv.date}</span></td>
+                <td><span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }}>{inv.ref}</span></td>
+                <td>
+                  <span style={{ fontSize: 11, color: inv.type === 'Venta' ? '#059669' : '#2563eb', fontWeight: 500 }}>
+                    {inv.type}
+                  </span>
+                </td>
+                <td style={{ fontWeight: 500, color: '#0f172a' }}>{inv.party}</td>
+                <td><span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#374151' }}>{inv.nifIva}</span></td>
+                <td style={{ textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>
+                  {formatAmount(parseFloat(inv.base))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 // ── Main ─────────────────────────────────────────────────────────
-export default function FmModel349Page({ decl, onBack, onStatusChange }) {
+export default function FmModel349Page({ decl, onBack, onStatusChange, token, apiBaseUrl }) {
   const ui = useUI();
   const t = ui;
 
   const [status,      setStatus]      = useState(decl.status);
   const [activeTab,   setActiveTab]   = useState('operators');
   const [keyFilter,   setKeyFilter]   = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showPresent, setShowPresent] = useState(false);
   const [showFilegen, setShowFilegen] = useState(false);
-  const [selected,    setSelected]    = useState(new Set());
+  const [selected,     setSelected]     = useState(new Set());
+  const [liveOperators, setLiveOperators] = useState(decl._precomputed?.operators ?? null);
+  const [liveInvoices,  setLiveInvoices]  = useState(decl._precomputed?.invoices  ?? null);
 
-  const operators = decl.operators ?? MOCK_OPERATORS;
+  // Sync when background polling updates _precomputed in the parent
+  React.useEffect(() => {
+    if (decl._precomputed?.operators) setLiveOperators(decl._precomputed.operators);
+    if (decl._precomputed?.invoices)  setLiveInvoices(decl._precomputed.invoices);
+  }, [decl._precomputed]);
+  const [invoiceNifFilter, setInvoiceNifFilter] = useState(null);
+  const [computing,    setComputing]    = useState(false);
+  const [generating,   setGenerating]   = useState(false);
+  const [showPdf,      setShowPdf]      = useState(false);
+  const { pdfUrl, loading: pdfLoading, generatePdf, clearPdf } = use349Pdf();
+
+  const operators = liveOperators ?? decl.operators ?? MOCK_OPERATORS;
   const stepIdx   = STEPPER_INDEX[status] ?? 0;
 
   const monthNum  = /^\d{2}$/.test(decl.period) ? parseInt(decl.period, 10) : null;
@@ -127,26 +210,79 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
 
   const blocking     = decl.incidents?.blocking ?? 0;
   const viesPending  = operators.filter(o => o.vies === 'pending').length;
-  const totalBase    = operators.reduce((s,o) => s + o.base, 0);
+  const totalBase    = operators.reduce((s,o) => s + (parseFloat(o.base) || 0), 0);
   const rectifications = decl.rectifications ?? 1;
 
-  const stepLabels = ['pendiente', 'borrador', 'listo', 'presentado'].map(id => t(`fm.status.${id}`));
+  const stepLabels = ['pending', 'draft', 'ready', 'submitted'].map(id => t(`fm.status.${id}`));
 
   function handleStatusChange(newStatus) {
     setStatus(newStatus);
     onStatusChange?.(decl.id, newStatus);
   }
 
-  const filteredOps  = keyFilter === 'all' ? operators : operators.filter(o => o.key === keyFilter);
+  async function handleCompute() {
+    setComputing(true);
+    try {
+      const res = await compute349Operators(decl, { token, apiBaseUrl });
+      if (res?.operators) setLiveOperators(res.operators);
+      if (res?.invoices)  setLiveInvoices(res.invoices);
+    } finally {
+      setComputing(false);
+    }
+  }
+
+  async function handleGenerate({ phone, contact } = {}) {
+    setGenerating(true);
+    const ok = await generate349File(decl, { token, apiBaseUrl, phone, contact });
+    setGenerating(false);
+    if (!ok) console.error('generate349File failed for', decl.year, decl.period);
+  }
+
+  async function handlePreviewPdf() {
+    const url = await generatePdf(decl, operators);
+    if (url) setShowPdf(true);
+  }
+
+  const searchLower  = searchQuery.trim().toLowerCase();
+  const filteredOps  = operators
+    .filter(o => keyFilter === 'all' || o.key === keyFilter)
+    .filter(o => !searchLower ||
+      (o.name ?? '').toLowerCase().includes(searchLower) ||
+      (o.nif  ?? '').toLowerCase().includes(searchLower)
+    );
   const toggleSelect = id => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const allSelected  = filteredOps.length > 0 && filteredOps.every(o => selected.has(o.id));
+
+  // Derive invoice counts per NIF from liveInvoices (same compute, no extra request)
+  const originByNif = React.useMemo(() => {
+    if (!liveInvoices) return {};
+    const map = {};
+    liveInvoices.forEach(inv => {
+      const k = inv.nifIva;
+      if (!map[k]) map[k] = { Compra: 0, Venta: 0 };
+      map[k][inv.type] = (map[k][inv.type] ?? 0) + 1;
+    });
+    return map;
+  }, [liveInvoices]);
+
+  function formatOrigin(op) {
+    if (op.origin) return op.origin; // mock or manually set
+    const counts = originByNif[op.nif];
+    if (!counts) return null;
+    const c = counts['Compra'] ?? 0;
+    const v = counts['Venta']  ?? 0;
+    if (c > 0 && v > 0) return `${c} compra, ${v} venta`;
+    if (c > 0) return `${c} factura${c !== 1 ? 's' : ''} compra`;
+    if (v > 0) return `${v} factura${v !== 1 ? 's' : ''} venta`;
+    return null;
+  }
 
   const declNif = decl.nif ?? '';
 
   const TABS = [
     { id:'operators', label: t('fm.m349.tab.operators'), count: operators.length },
     { id:'rectif',    label: t('fm.m349.tab.rectif'),    count: rectifications },
-    { id:'invoices',  label: t('fm.m349.tab.invoices'),  count: null },
+    { id:'invoices',  label: t('fm.m349.tab.invoices'),  count: liveInvoices?.length ?? null },
     { id:'incidents', label: t('fm.m349.tab.incidents'), count: blocking },
     { id:'files',     label: t('fm.m349.tab.files'),     count: 1 },
     { id:'history',   label: t('fm.m349.tab.history'),   count: null },
@@ -173,14 +309,23 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
             </div>
             <div className="fm-349-header__subtitle">
               {t('fm.m349.subtitle')} · {decl.type === 'ord' ? t('fm.m349.type.ord') : t('fm.m349.type.com')}
-              {declNif && ` · NIF: ${declNif}`} · {t('fm.m349.periodicity')}: {t('fm.m349.monthly')}
+              {declNif && ` · NIF: ${declNif}`} · {t('fm.m349.periodicity')}: {/^T\d$/.test(decl.period) ? t('fm.m349.period.quarterly') : t('fm.m349.monthly')}
             </div>
           </div>
           <div className="fm-349-header__actions">
-            <button className="fm-349-header__btn"><RefreshCw size={14} strokeWidth={1.75} /> {t('fm.action.recalc')}</button>
+            <button className="fm-349-header__btn" onClick={handleCompute} disabled={computing}>
+              <RefreshCw size={14} strokeWidth={1.75} style={computing ? { animation: 'spin 1s linear infinite' } : {}} />
+              {computing ? (t('fm.action.computing') ?? 'Calculando…') : t('fm.action.recalc')}
+            </button>
             <button className="fm-349-header__btn"><Globe size={14} strokeWidth={1.75} /> VIES</button>
-            <button className="fm-349-header__btn"><Eye size={14} strokeWidth={1.75} /> {t('fm.action.preview_pdf')}</button>
-            <button className="fm-349-header__btn" onClick={() => setShowFilegen(true)}><FileDown size={14} strokeWidth={1.75} /> {t('fm.action.generate_file')}</button>
+            <button className="fm-349-header__btn" onClick={handlePreviewPdf} disabled={pdfLoading}>
+              <Eye size={14} strokeWidth={1.75} />
+              {pdfLoading ? (t('fm.action.generating') ?? 'Generando…') : t('fm.action.preview_pdf')}
+            </button>
+            <button className="fm-349-header__btn" onClick={() => setShowFilegen(true)} disabled={generating}>
+              <FileDown size={14} strokeWidth={1.75} />
+              {generating ? (t('fm.action.generating') ?? 'Generando…') : t('fm.action.generate_file')}
+            </button>
             <button className="fm-349-header__btn fm-349-header__btn--primary" onClick={() => setShowPresent(true)}>
               <Play size={13} strokeWidth={1.75} fill="currentColor" /> {t('fm.action.present')}
             </button>
@@ -213,7 +358,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
             actions={<button className="fm-349-banner__btn fm-349-banner__btn--outline"><RefreshCw size={13} strokeWidth={1.75} style={{ display:'inline',verticalAlign:'middle',marginRight:4 }} />{t('fm.m349.banner.vies_action')}</button>}
           />
         )}
-        {status === 'listo' && (
+        {status === 'ready' && (
           <Banner349
             type="success"
             icon={<CircleCheck size={18} strokeWidth={1.75} />}
@@ -258,7 +403,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
             <button
               key={tab.id}
               className={`fm-tabs-bar__tab${activeTab === tab.id ? ' fm-tabs-bar__tab--active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => { setActiveTab(tab.id); if (tab.id !== 'invoices') setInvoiceNifFilter(null); }}
             >
               {tab.label}
               {tab.count != null && <span className="fm-tabs-bar__count">{tab.count}</span>}
@@ -281,13 +426,17 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
                 ))}
               </div>
               <div style={{ flex: 1 }} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12, color: '#6b7280', background: '#fff' }}>
-                  <Search size={13} strokeWidth={1.75} style={{ flexShrink: 0 }} /> <span>{t('fm.m349.search_placeholder')}</span>
-                </div>
-                <button className="fm-toolbar__btn fm-toolbar__btn--primary" style={{ fontSize: 12, padding: '5px 12px' }}>
-                  + {t('fm.m349.add_operator')}
-                </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', border: `1px solid ${searchQuery ? '#6366f1' : '#e2e8f0'}`, borderRadius: 6, fontSize: 12, color: '#6b7280', background: '#fff', minWidth: 220 }}>
+                <Search size={13} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+                <input
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder={t('fm.m349.search_placeholder')}
+                  style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 12, color: '#374151', width: '100%' }}
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0, lineHeight: 1, fontSize: 14 }}>×</button>
+                )}
               </div>
             </div>
 
@@ -296,7 +445,14 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
 
             {/* Operators table */}
             <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', marginBottom: 2 }}>{t('fm.m349.operators_count', { count: operators.length })}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', marginBottom: 2 }}>
+                {t('fm.m349.operators_count', { count: filteredOps.length })}
+                {filteredOps.length !== operators.length && (
+                  <span style={{ fontWeight: 400, color: '#6b7280', marginLeft: 6 }}>
+                    {t('fm.m349.operators_filtered', { total: operators.length }) ?? `de ${operators.length}`}
+                  </span>
+                )}
+              </div>
               <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 10 }}>
                 {t('fm.m349.operators_sub')}
               </div>
@@ -329,7 +485,12 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
                       <td><KeyBadge k={op.key} /><span style={{ marginLeft: 5, fontSize: 11, color: '#6b7280' }}>{t(`fm.m349.key.${op.key}`)}</span></td>
                       <td style={{ textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>{formatAmount(op.base)}</td>
                       <td><ViesBadge status={op.vies} /></td>
-                      <td><span className="fm-origin-link">{op.origin}</span></td>
+                      <td>
+                        {formatOrigin(op)
+                          ? <button className="fm-origin-link" onClick={() => { setInvoiceNifFilter(op.nif); setActiveTab('invoices'); }}>{formatOrigin(op)}</button>
+                          : <span style={{ color: '#d1d5db' }}>—</span>
+                        }
+                      </td>
                       <td><button className="fm-table-action"><Eye size={12} strokeWidth={1.75} style={{ display:'inline',verticalAlign:'middle',marginRight:4 }} />{t('fm.action.open')}</button></td>
                     </tr>
                   ))}
@@ -339,7 +500,18 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
           </div>
         )}
 
-        {activeTab !== 'operators' && (
+        {activeTab === 'invoices' && (
+          <div style={{ marginTop: 12 }}>
+            <InvoicesTab
+              liveInvoices={liveInvoices}
+              invoiceNifFilter={invoiceNifFilter}
+              setInvoiceNifFilter={setInvoiceNifFilter}
+              t={t}
+            />
+          </div>
+        )}
+
+        {activeTab !== 'operators' && activeTab !== 'invoices' && (
           <div style={{ padding: '32px 0', textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>
             {t('fm.m349.coming_soon', { tab: TABS.find(tab => tab.id === activeTab)?.label ?? '' })}
           </div>
@@ -351,7 +523,19 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
         <PresentModal decl={decl} onConfirm={({ status: s }) => handleStatusChange(s)} onClose={() => setShowPresent(false)} />
       )}
       {showFilegen && (
-        <FileGenModal decl={decl} onConfirm={() => {}} onClose={() => setShowFilegen(false)} />
+        <FileGenModal
+          decl={decl}
+          onConfirm={({ phone, contact }) => handleGenerate({ phone, contact })}
+          onClose={() => setShowFilegen(false)}
+        />
+      )}
+      {showPdf && (
+        <DocumentPreview
+          open={showPdf}
+          onClose={() => { setShowPdf(false); clearPdf(); }}
+          title={`Modelo 349 · ${decl.year} ${decl.period}`}
+          pdfUrl={pdfUrl}
+        />
       )}
     </div>
   );

@@ -14,19 +14,6 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Quotation';
 
-const labelOverrides = {
-  "es_ES": {
-    "C_BPartner_ID": "Contacto",
-    "C_Reject_Reason_ID": "Razón de rechazo",
-    "DateOrdered": "Fecha de presupuesto"
-  },
-  "en_US": {
-    "C_BPartner_ID": "Contact",
-    "C_Reject_Reason_ID": "Reject Reason",
-    "DateOrdered": "Quotation Date"
-  }
-};
-
 
 // @sf-generated-start summary:quotation
 const summary = [
@@ -301,14 +288,6 @@ export const api = {
     },
     {
       "entity": "quotation",
-      "field": "generateTemplate",
-      "column": "Generatetemplate",
-      "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
-      "processId": "800022",
-      "processType": "classic"
-    },
-    {
-      "entity": "quotation",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/processNow",
@@ -322,6 +301,14 @@ export const api = {
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/posted",
       "processId": "57496FB9CF9E4E8F847224017941570E",
       "processType": "obuiapp"
+    },
+    {
+      "entity": "quotation",
+      "field": "generateTemplate",
+      "column": "Generatetemplate",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
+      "processId": "800022",
+      "processType": "classic"
     },
     {
       "entity": "quotation",
@@ -434,6 +421,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:QuotationPage
 export default function QuotationPage({ windowName, recordId, ...props }) {
   if (recordId) {
