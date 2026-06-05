@@ -21,6 +21,11 @@ describe('buildHeaders', () => {
   it('sets Content-Type to application/json', () => {
     assert.match(src, /Content-Type.*application\/json/);
   });
+
+  it('sets Accept-Language header using getStoredLocale for backend i18n', () => {
+    assert.match(src, /Accept-Language/);
+    assert.match(src, /getStoredLocale/);
+  });
 });
 
 describe('isTokenExpired', () => {
