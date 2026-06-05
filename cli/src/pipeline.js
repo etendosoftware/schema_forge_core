@@ -522,6 +522,34 @@ export async function loadOrMigrateDecisions(readFile, curatedPath, windowName, 
   return decisions;
 }
 
+// Load decisions.json for a window, auto-migrating the schema version when needed
+// and falling back to migrating from legacy curated files when the file is absent.
+// Non-ENOENT errors propagate to the caller exactly as before (single returned value).
+export async function loadWindowDecisions(readFile, windowName, schemaRaw, decisionsPath) {
+  let decisions;
+  try {
+    decisions = JSON.parse(await readFile(decisionsPath, 'utf8'));
+
+    // Auto-migrate decisions schema version if needed
+    const { needsMigration: needsMig, getVersion: getVer, migrateDecisions: migDec } = await import('./migrations/index.js');
+    if (needsMig(decisions)) {
+      const fromV = getVer(decisions);
+      const result = migDec(decisions, { schemaRaw });
+      decisions = result.decisions;
+      const { writeFile } = await import('node:fs/promises');
+      await writeFile(decisionsPath, JSON.stringify(decisions, null, 2) + '\n', 'utf-8');
+      console.log(`  ✓ decisions.json auto-migrated: v${fromV} → v${result.toVersion}`);
+    }
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+
+    // No decisions.json — auto-migrate from curated files if they exist
+    const curatedPath = `artifacts/${windowName}/schema-curated.json`;
+    decisions = await loadOrMigrateDecisions(readFile, curatedPath, windowName, decisions, decisionsPath);
+  }
+  return decisions;
+}
+
 export async function scaffoldSecondaryTabCustomForms(contract, fileURLToPathMod, resolvePath, dirnamePath, windowName, mkdir, access, writeFile) {
   const secondaryTabsDecl = contract.frontendContract?.window?.secondaryTabs;
   if (secondaryTabsDecl) {
@@ -678,10 +706,125 @@ export function printTranslateTodosGuidance(step) {
   }
 }
 
+export async function runGenerateFrontendStep(windowName, result) {
+  const {generateAll} = await import('./generate-frontend.js');
+  const {readFile, writeFile, mkdir, access} = await import('node:fs/promises');
+  const {resolve: resolvePath, dirname: dirnamePath} = await import('node:path');
+  const {fileURLToPath: fileURLToPathMod} = await import('node:url');
+  const contract = JSON.parse(await readFile(`artifacts/${windowName}/contract.json`, 'utf8'));
+  const layoutType = contract.frontendContract?.window?.layoutType ?? 'default';
+  const files = generateAll(contract);
+
+  if (layoutType === 'custom') {
+    // Custom scaffold path: write to windows/custom/{windowName}/
+    // Resolve the app-shell src directory relative to this file's location
+    const __filename = fileURLToPathMod(import.meta.url);
+    const repoRoot = resolvePath(dirnamePath(__filename), '../../');
+    const customDir = resolvePath(repoRoot, `tools/app-shell/src/windows/custom/${windowName}`);
+    await mkdir(customDir, {recursive: true});
+
+    const indexPath = resolvePath(customDir, 'index.jsx');
+    const catalogPath = resolvePath(customDir, 'mockCatalogs.js');
+
+    // Regeneration safety: existing files are preserved; new content gets .new suffix
+    await writeCustomScaffoldFiles(access, indexPath, catalogPath, files, writeFile);
+
+    // Auto-register the custom loader in registry.js
+    await autoRegisterCustomLoader(resolvePath, repoRoot, readFile, windowName, writeFile);
+
+    console.log(`  ✓ Custom scaffold ready (layoutType: custom)`);
+    result.frontendGenerated = true;
+  } else {
+    const outDir = `artifacts/${windowName}/generated/web/${windowName}`;
+    await mkdir(outDir, {recursive: true});
+
+    await writeGeneratedFiles(files, resolvePath, outDir, writeFile);
+
+    // Generate mockData.js (entity record data for local development)
+    const {generateMockDataFile} = await import('./generate-mock-data.js');
+    const mockDataPath = resolvePath(outDir, 'mockData.js');
+    await writeFile(mockDataPath, generateMockDataFile(contract), 'utf8');
+
+    console.log(`  ✓ ${Object.keys(files).filter(k => !k.startsWith('__')).length} frontend components generated`);
+
+    // Scaffold customForm stubs for secondary tabs that declare a custom form
+    result.frontendGenerated = await scaffoldSecondaryTabCustomForms(contract, fileURLToPathMod, resolvePath, dirnamePath, windowName, mkdir, access, writeFile);
+  }
+}
+
+export async function loadDecisionsAndResolve(windowName, pipelineContext) {
+  const {resolveCurated} = await import('./resolve-curated.js');
+  const {readFile} = await import('node:fs/promises');
+
+  const schemaRaw = JSON.parse(await readFile(`artifacts/${windowName}/schema-raw.json`, 'utf8'));
+  const rulesRaw = JSON.parse(await readFile(`artifacts/${windowName}/rules-raw.json`, 'utf8'));
+
+  const decisionsPath = `artifacts/${windowName}/decisions.json`;
+  const decisions = await loadWindowDecisions(readFile, windowName, schemaRaw, decisionsPath);
+
+  await runResolveCuratedStep(resolveCurated, schemaRaw, rulesRaw, decisions, pipelineContext);
+}
+
+export async function executePipelineStep(step, windowId, windowName, pipelineContext, result) {
+  try {
+    switch (step.name) {
+      case 'extract-fields': {
+        const {main: extractFields} = await import('./extract-fields.js');
+        await extractFields(windowId, windowName);
+        break;
+      }
+      case 'extract-rules': {
+        const {main: extractRules} = await import('./extract-rules.js');
+        await extractRules(windowId, windowName);
+        break;
+      }
+      case 'validate': {
+        await runValidateSchemaStep(windowName);
+        break;
+      }
+      case 'pre-classify': {
+        const {classifyRules} = await import('./pre-classify.js');
+        const {readFile} = await import('node:fs/promises');
+        const rules = JSON.parse(await readFile(`artifacts/${windowName}/rules-raw.json`, 'utf8'));
+        const classified = classifyRules(rules.rules || rules, {skipAi: true});
+        console.log(`  ✓ ${classified.summary.autoClassified} auto, ${classified.summary.humanReview} human`);
+        break;
+      }
+      case 'resolve-curated': {
+        await loadDecisionsAndResolve(windowName, pipelineContext);
+        break;
+      }
+      case 'generate-contract': {
+        await runGenerateContractStep(windowName, pipelineContext);
+        break;
+      }
+      case 'push-to-neo': {
+        result.pushToNeoRan = await runPushToNeoStep(windowName);
+        break;
+      }
+      case 'validate-field-names': {
+        await runValidateFieldNamesStep(windowName);
+        break;
+      }
+      case 'generate-frontend': {
+        await runGenerateFrontendStep(windowName, result);
+        break;
+      }
+      case 'run-tests': {
+        await runContractTestsStep(windowName);
+        break;
+      }
+    }
+  } catch (err) {
+    handleStepError(step, err);
+  }
+}
+
 async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive }) {
   const steps = buildPipelineSteps();
-  let pushToNeoRan = false;
-  let frontendGenerated = false;
+  // Single mutable result object so executePipelineStep can record outcomes
+  // (pushToNeoRan / frontendGenerated) without returning multiple values.
+  const result = { pushToNeoRan: false, frontendGenerated: false };
   console.log(`\n=== Schema Forge Pipeline: ${windowName} ===\n`);
 
   // Holds resolved curated schema and rules between steps (set by resolve-curated, consumed by generate-contract)
@@ -727,134 +870,11 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
 
     console.log(`[${step.phase}] ${step.description}...`);
 
-    try {
-      switch (step.name) {
-        case 'extract-fields': {
-          const { main: extractFields } = await import('./extract-fields.js');
-          await extractFields(windowId, windowName);
-          break;
-        }
-        case 'extract-rules': {
-          const { main: extractRules } = await import('./extract-rules.js');
-          await extractRules(windowId, windowName);
-          break;
-        }
-        case 'validate': {
-          await runValidateSchemaStep(windowName);
-          break;
-        }
-        case 'pre-classify': {
-          const { classifyRules } = await import('./pre-classify.js');
-          const { readFile } = await import('node:fs/promises');
-          const rules = JSON.parse(await readFile(`artifacts/${windowName}/rules-raw.json`, 'utf8'));
-          const classified = classifyRules(rules.rules || rules, { skipAi: true });
-          console.log(`  ✓ ${classified.summary.autoClassified} auto, ${classified.summary.humanReview} human`);
-          break;
-        }
-        case 'resolve-curated': {
-          const { resolveCurated } = await import('./resolve-curated.js');
-          const { readFile } = await import('node:fs/promises');
-
-          const schemaRaw = JSON.parse(await readFile(`artifacts/${windowName}/schema-raw.json`, 'utf8'));
-          const rulesRaw = JSON.parse(await readFile(`artifacts/${windowName}/rules-raw.json`, 'utf8'));
-
-          const decisionsPath = `artifacts/${windowName}/decisions.json`;
-          let decisions;
-          try {
-            decisions = JSON.parse(await readFile(decisionsPath, 'utf8'));
-
-            // Auto-migrate decisions schema version if needed
-            const { needsMigration: needsMig, getVersion: getVer, migrateDecisions: migDec } = await import('./migrations/index.js');
-            if (needsMig(decisions)) {
-              const fromV = getVer(decisions);
-              const result = migDec(decisions, { schemaRaw });
-              decisions = result.decisions;
-              const { writeFile } = await import('node:fs/promises');
-              await writeFile(decisionsPath, JSON.stringify(decisions, null, 2) + '\n', 'utf-8');
-              console.log(`  ✓ decisions.json auto-migrated: v${fromV} → v${result.toVersion}`);
-            }
-          } catch (err) {
-            if (err.code !== 'ENOENT') throw err;
-
-            // No decisions.json — auto-migrate from curated files if they exist
-            const curatedPath = `artifacts/${windowName}/schema-curated.json`;
-            decisions = await loadOrMigrateDecisions(readFile, curatedPath, windowName, decisions, decisionsPath);
-          }
-
-          await runResolveCuratedStep(resolveCurated, schemaRaw, rulesRaw, decisions, pipelineContext);
-          break;
-        }
-        case 'generate-contract': {
-          await runGenerateContractStep(windowName, pipelineContext);
-          break;
-        }
-        case 'push-to-neo': {
-          pushToNeoRan = await runPushToNeoStep(windowName);
-          break;
-        }
-        case 'validate-field-names': {
-          await runValidateFieldNamesStep(windowName);
-          break;
-        }
-        case 'generate-frontend': {
-          const { generateAll } = await import('./generate-frontend.js');
-          const { readFile, writeFile, mkdir, access } = await import('node:fs/promises');
-          const { resolve: resolvePath, dirname: dirnamePath } = await import('node:path');
-          const { fileURLToPath: fileURLToPathMod } = await import('node:url');
-          const contract = JSON.parse(await readFile(`artifacts/${windowName}/contract.json`, 'utf8'));
-          const layoutType = contract.frontendContract?.window?.layoutType ?? 'default';
-          const files = generateAll(contract);
-
-          if (layoutType === 'custom') {
-            // Custom scaffold path: write to windows/custom/{windowName}/
-            // Resolve the app-shell src directory relative to this file's location
-            const __filename = fileURLToPathMod(import.meta.url);
-            const repoRoot = resolvePath(dirnamePath(__filename), '../../');
-            const customDir = resolvePath(repoRoot, `tools/app-shell/src/windows/custom/${windowName}`);
-            await mkdir(customDir, { recursive: true });
-
-            const indexPath = resolvePath(customDir, 'index.jsx');
-            const catalogPath = resolvePath(customDir, 'mockCatalogs.js');
-
-            // Regeneration safety: existing files are preserved; new content gets .new suffix
-            await writeCustomScaffoldFiles(access, indexPath, catalogPath, files, writeFile);
-
-            // Auto-register the custom loader in registry.js
-            await autoRegisterCustomLoader(resolvePath, repoRoot, readFile, windowName, writeFile);
-
-            console.log(`  ✓ Custom scaffold ready (layoutType: custom)`);
-            frontendGenerated = true;
-            break;
-          }
-
-          const outDir = `artifacts/${windowName}/generated/web/${windowName}`;
-          await mkdir(outDir, { recursive: true });
-
-          await writeGeneratedFiles(files, resolvePath, outDir, writeFile);
-
-          // Generate mockData.js (entity record data for local development)
-          const { generateMockDataFile } = await import('./generate-mock-data.js');
-          const mockDataPath = resolvePath(outDir, 'mockData.js');
-          await writeFile(mockDataPath, generateMockDataFile(contract), 'utf8');
-
-          console.log(`  ✓ ${Object.keys(files).filter(k => !k.startsWith('__')).length} frontend components generated`);
-
-          // Scaffold customForm stubs for secondary tabs that declare a custom form
-          frontendGenerated = await scaffoldSecondaryTabCustomForms(contract, fileURLToPathMod, resolvePath, dirnamePath, windowName, mkdir, access, writeFile);
-          break;
-        }
-        case 'run-tests': {
-          await runContractTestsStep(windowName);
-          break;
-        }
-      }
-    } catch (err) {
-      handleStepError(step, err);
-    }
+    await executePipelineStep(step, windowId, windowName, pipelineContext, result);
   }
 
   console.log('\n=== Pipeline complete ===\n');
-  printNextSteps({ pushToNeoRan, frontendGenerated });
+  printNextSteps(result);
 }
 
 // Only run main if executed directly
