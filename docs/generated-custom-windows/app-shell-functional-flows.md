@@ -35,7 +35,7 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
   - `AuthGuard` redirects unauthenticated protected traffic to `/onboarding`.
   - `OnboardingPage` validates the platform token in `localStorage`.
   - Register/login calls the `/sws/go/register` or `/sws/go/login` endpoints.
-  - Successful registration stores the platform token and Etendo Go sends the `new-account` transactional email best-effort after the account commit.
+  - Successful registration stores the platform token and Etendo Go sends the `new-account` transactional email best-effort after the account commit, including the selected onboarding language as the allowlisted `language` template variable.
   - After platform auth, the page fetches `/sws/go/environments`.
   - If at least one environment exists, it auto-enters the first one, stores `sf_auth_token`, user, role, and org context, clears caches, and redirects to `/dashboard`.
   - During new-environment creation, the onboarding backend runs the sequence generator for the selected organization using the new client's admin user/role context, seeds a default customer programmatically, commits the onboarding transaction, and then sends the `environment-ready` transactional email best-effort; the page then logs in, checks Sales Invoice readiness, and redirects.

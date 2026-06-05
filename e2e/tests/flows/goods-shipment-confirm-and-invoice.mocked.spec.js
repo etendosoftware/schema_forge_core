@@ -160,11 +160,14 @@ test.describe('Goods Shipment — Confirm modal (draft to complete)', () => {
 
     // Navigate to draft shipment detail
     await page.goto('/goods-shipment/gs-draft-001');
+    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
     await page.getByTestId('action-cancel').waitFor({ state: 'visible', timeout: 15_000 });
 
     // Open the confirm modal via the same event the draftMode confirm button dispatches.
     // We use dispatchEvent directly because the topbar "Confirmar" button calls
     // flushPendingLines() first, which can block in the mocked test environment.
+    // Brief wait ensures React's event listener is registered before dispatch.
+    await page.waitForTimeout(300);
     await page.evaluate(() =>
       window.dispatchEvent(new CustomEvent('goods-shipment:open-confirm-modal'))
     );

@@ -8,7 +8,6 @@ import { usePurchaseOrderPdf } from './usePurchaseOrderPdf.js';
 import PreviewActionButtons, { PreviewEmptyPanel, PreviewPdfPanel } from './PreviewActionButtons.jsx';
 import SummaryCard from './preview-cards/SummaryCard.jsx';
 import EmailsCard from './preview-cards/EmailsCard.jsx';
-import CategorizationCard from './preview-cards/CategorizationCard.jsx';
 import RelatedDocumentsCard from './preview-cards/RelatedDocumentsCard.jsx';
 import { fetchByCriteria, fetchChild, fetchById } from '@/components/related-documents';
 
@@ -67,8 +66,6 @@ function OrderGeneralTab({ order, specName, token, apiBaseUrl }) {
       />
 
       <EmailsCard onSend={undefined} />
-
-      <CategorizationCard rows={[]} />
 
       {isSalesOrder && (
         <RelatedDocumentsCard

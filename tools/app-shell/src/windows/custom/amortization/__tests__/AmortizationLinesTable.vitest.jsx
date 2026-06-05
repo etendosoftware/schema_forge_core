@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 
 // ── mock heavy children so we exercise AmortizationLinesTable's own logic ──
 vi.mock('@/i18n', () => ({
@@ -103,6 +104,9 @@ function getTrashButton(container, rowId) {
   return buttons[1];
 }
 
+const renderInRouter = (ui, options) =>
+  render(ui, { wrapper: MemoryRouter, ...options });
+
 beforeEach(() => {
   global.fetch = mockFetchReturning([LINE_FILLED, LINE_EMPTY]);
 });
@@ -113,7 +117,7 @@ afterEach(() => {
 
 describe('AmortizationLinesTable — fetch + render', () => {
   it('fetches lines on mount and renders one row per line', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByText('AS_Module')).toBeInTheDocument());
     expect(screen.getByText('Mobiliario')).toBeInTheDocument();
     // fetch URL targets the lines sub-endpoint with the parent id
@@ -125,12 +129,12 @@ describe('AmortizationLinesTable — fetch + render', () => {
 
   it('reports the line count via onCountChange', async () => {
     const onCountChange = vi.fn();
-    render(<AmortizationLinesTable {...BASE_PROPS} onCountChange={onCountChange} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} onCountChange={onCountChange} />);
     await waitFor(() => expect(onCountChange).toHaveBeenCalledWith(2));
   });
 
   it('renders the column headers from labelOverrides', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByText('A_Asset_ID')).toBeInTheDocument());
     expect(screen.getByText('Amortization_Percentage')).toBeInTheDocument();
     expect(screen.getByText('Amortizationamt')).toBeInTheDocument();
@@ -139,7 +143,7 @@ describe('AmortizationLinesTable — fetch + render', () => {
 
 describe('AmortizationLinesTable — dimension summary', () => {
   it('shows filled-dimension badges for a line with dimensions', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByText('Juan Perez')).toBeInTheDocument());
     // The redesigned summary shows "Label: Value" badges instead of the old n/7 counter.
     // Organization always leads (label = i18n key 'organization', value = 'GOOrg').
@@ -148,7 +152,7 @@ describe('AmortizationLinesTable — dimension summary', () => {
   });
 
   it('shows the empty "add dimensions" affordance for a line without dimensions', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByText('Mobiliario')).toBeInTheDocument());
     expect(screen.getAllByText('amortizationDimensionsEmpty').length).toBeGreaterThan(0);
   });
@@ -156,7 +160,7 @@ describe('AmortizationLinesTable — dimension summary', () => {
 
 describe('AmortizationLinesTable — dimension expand', () => {
   it('expands the dimensions panel when the row is clicked', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByText('AS_Module')).toBeInTheDocument());
 
     fireEvent.click(screen.getByText('AS_Module'));
@@ -173,7 +177,7 @@ describe('AmortizationLinesTable — dimension expand', () => {
 
 describe('AmortizationLinesTable — inline editing', () => {
   it('shows inline core inputs after clicking the edit pencil', async () => {
-    const { container } = render(<AmortizationLinesTable {...BASE_PROPS} />);
+    const { container } = renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByText('AS_Module')).toBeInTheDocument());
 
     fireEvent.click(getPencilButton(container, 'line-1'));
@@ -185,7 +189,7 @@ describe('AmortizationLinesTable — inline editing', () => {
   });
 
   it('saves a field via PUT when an inline number input loses focus', async () => {
-    const { container } = render(<AmortizationLinesTable {...BASE_PROPS} />);
+    const { container } = renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByText('AS_Module')).toBeInTheDocument());
 
     fireEvent.click(getPencilButton(container, 'line-1'));
@@ -209,19 +213,19 @@ describe('AmortizationLinesTable — inline editing', () => {
 
 describe('AmortizationLinesTable — add and delete', () => {
   it('renders the Add line button when the document is editable', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByTestId('add-line-btn')).toBeInTheDocument());
     expect(screen.getByTestId('add-line-btn')).toHaveTextContent('addLine');
   });
 
   it('hides the Add line button when the document is processed (read-only)', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} data={{ id: 'amort-1', processed: 'Y' }} editing={false} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} data={{ id: 'amort-1', processed: 'Y' }} editing={false} />);
     await waitFor(() => expect(screen.getByText('AS_Module')).toBeInTheDocument());
     expect(screen.queryByTestId('add-line-btn')).not.toBeInTheDocument();
   });
 
   it('opens the inline add-line form when Add line is clicked', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByTestId('add-line-btn')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('add-line-btn'));
 
@@ -240,7 +244,7 @@ describe('AmortizationLinesTable — add and delete', () => {
 
 describe('AmortizationLinesTable — inline draft row behavior', () => {
   it('shows the hint text while the draft row is open and hides it otherwise', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByTestId('add-line-btn')).toBeInTheDocument());
 
     // Hint absent before opening.
@@ -252,7 +256,7 @@ describe('AmortizationLinesTable — inline draft row behavior', () => {
   });
 
   it('pressing Enter on a number input POSTs the line when asset is set and keeps the row open', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByTestId('add-line-btn')).toBeInTheDocument());
 
     fireEvent.click(screen.getByTestId('add-line-btn'));
@@ -280,7 +284,7 @@ describe('AmortizationLinesTable — inline draft row behavior', () => {
   });
 
   it('pressing Escape on a number input closes the draft row without POSTing', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByTestId('add-line-btn')).toBeInTheDocument());
 
     fireEvent.click(screen.getByTestId('add-line-btn'));
@@ -301,7 +305,7 @@ describe('AmortizationLinesTable — inline draft row behavior', () => {
   });
 
   it('outside-click with asset set POSTs and closes the draft row', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByTestId('add-line-btn')).toBeInTheDocument());
 
     fireEvent.click(screen.getByTestId('add-line-btn'));
@@ -330,7 +334,7 @@ describe('AmortizationLinesTable — inline draft row behavior', () => {
 
 describe('AmortizationLinesTable — delete', () => {
   it('deletes a line via DELETE when the trash button is clicked', async () => {
-    const { container } = render(<AmortizationLinesTable {...BASE_PROPS} />);
+    const { container } = renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByText('AS_Module')).toBeInTheDocument());
 
     global.fetch.mockClear();
@@ -347,7 +351,7 @@ describe('AmortizationLinesTable — delete', () => {
 
 describe('AmortizationLinesTable — dimension save', () => {
   it('saves a dimension via PUT when a selector value is chosen in the expand panel', async () => {
-    const { container } = render(<AmortizationLinesTable {...BASE_PROPS} />);
+    const { container } = renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByText('AS_Module')).toBeInTheDocument());
 
     // Expand the dimensions panel for the editable line.
@@ -366,7 +370,7 @@ describe('AmortizationLinesTable — dimension save', () => {
   });
 
   it('renders dimension selectors read-only when the document is processed', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} data={{ id: 'amort-1', processed: 'Y' }} editing={false} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} data={{ id: 'amort-1', processed: 'Y' }} editing={false} />);
     await waitFor(() => expect(screen.getByText('AS_Module')).toBeInTheDocument());
     fireEvent.click(screen.getByText('AS_Module'));
     // Read-only path renders plain inputs, not SelectorInput stubs.
@@ -380,7 +384,7 @@ describe('AmortizationLinesTable — empty + error states', () => {
   it('reports zero count and renders no data rows when the fetch returns no rows', async () => {
     global.fetch = mockFetchReturning([]);
     const onCountChange = vi.fn();
-    const { container } = render(<AmortizationLinesTable {...BASE_PROPS} onCountChange={onCountChange} />);
+    const { container } = renderInRouter(<AmortizationLinesTable {...BASE_PROPS} onCountChange={onCountChange} />);
     await waitFor(() => expect(onCountChange).toHaveBeenCalledWith(0));
     expect(container.querySelector('[data-row-id]')).toBeNull();
     // Add line button still available since the document is editable.
@@ -389,7 +393,7 @@ describe('AmortizationLinesTable — empty + error states', () => {
 
   it('falls back to empty (no rows) when the fetch rejects', async () => {
     global.fetch = vi.fn().mockRejectedValue(new Error('network'));
-    const { container } = render(<AmortizationLinesTable {...BASE_PROPS} />);
+    const { container } = renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByTestId('add-line-btn')).toBeInTheDocument());
     expect(container.querySelector('[data-row-id]')).toBeNull();
   });
@@ -398,7 +402,7 @@ describe('AmortizationLinesTable — empty + error states', () => {
 describe('AmortizationLinesTable — onRefresh sync', () => {
   it('create → calls onRefresh after a successful POST', async () => {
     const onRefresh = vi.fn();
-    render(<AmortizationLinesTable {...BASE_PROPS} onRefresh={onRefresh} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} onRefresh={onRefresh} />);
     await waitFor(() => expect(screen.getByTestId('add-line-btn')).toBeInTheDocument());
 
     // Open the draft row.
@@ -426,7 +430,7 @@ describe('AmortizationLinesTable — onRefresh sync', () => {
 
   it('delete → calls onRefresh after a successful DELETE', async () => {
     const onRefresh = vi.fn();
-    const { container } = render(<AmortizationLinesTable {...BASE_PROPS} onRefresh={onRefresh} />);
+    const { container } = renderInRouter(<AmortizationLinesTable {...BASE_PROPS} onRefresh={onRefresh} />);
     await waitFor(() => expect(screen.getByText('AS_Module')).toBeInTheDocument());
 
     global.fetch.mockClear();
@@ -444,7 +448,7 @@ describe('AmortizationLinesTable — onRefresh sync', () => {
 
   it('bulk delete → calls onRefresh after all DELETEs complete', async () => {
     const onRefresh = vi.fn();
-    render(<AmortizationLinesTable {...BASE_PROPS} onRefresh={onRefresh} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} onRefresh={onRefresh} />);
     await waitFor(() => expect(screen.getByText('AS_Module')).toBeInTheDocument());
 
     // Select one row.
@@ -466,7 +470,7 @@ describe('AmortizationLinesTable — onRefresh sync', () => {
 
 describe('AmortizationLinesTable — multi-select', () => {
   it('toggling a row checkbox shows the bulk action bar with the correct count', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByText('AS_Module')).toBeInTheDocument());
 
     // Per-row checkboxes have aria-label="selectRow" (i18n returns the key).
@@ -485,7 +489,7 @@ describe('AmortizationLinesTable — multi-select', () => {
   });
 
   it('select-all checkbox selects all rows and updates the bar count', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByText('AS_Module')).toBeInTheDocument());
 
     const selectAllCheckbox = screen.getByRole('checkbox', { name: 'selectAll' });
@@ -501,7 +505,7 @@ describe('AmortizationLinesTable — multi-select', () => {
   });
 
   it('clicking bulk Delete issues a DELETE fetch for each selected row id', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} />);
     await waitFor(() => expect(screen.getByText('AS_Module')).toBeInTheDocument());
 
     // Select both rows via select-all.
@@ -525,7 +529,7 @@ describe('AmortizationLinesTable — multi-select', () => {
   });
 
   it('renders selection checkboxes as disabled when the document is read-only', async () => {
-    render(<AmortizationLinesTable {...BASE_PROPS} data={{ id: 'amort-1', processed: 'Y' }} editing={false} />);
+    renderInRouter(<AmortizationLinesTable {...BASE_PROPS} data={{ id: 'amort-1', processed: 'Y' }} editing={false} />);
     await waitFor(() => expect(screen.getByText('AS_Module')).toBeInTheDocument());
 
     // Checkboxes are visible but disabled in read-only mode (matches Sales Order behaviour).

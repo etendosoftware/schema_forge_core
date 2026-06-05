@@ -2594,7 +2594,16 @@ export function DetailView({
                               catalogs={catalogs}
                               entity={detailEntity}
                               onCountChange={(n) => setCustomLinesCount(n)}
-                              onRefresh={() => hook.fetchChildren?.(data?.id || recordId)}
+                              onRefresh={() => { hook.fetchChildren?.(data?.id || recordId); hook.fetchById?.(data?.id || recordId); }}
+                              isNew={isNew}
+                              onSave={async () => {
+                                const saved = await hook.handleSave(data);
+                                if (saved?.id && isNew) {
+                                  hook.primeSaved?.(saved);
+                                  navigate(`/${windowName}/${saved.id}`, { replace: true, state: { openAddLine: true } });
+                                }
+                                return saved;
+                              }}
                             />
                           </div>
                         )}
