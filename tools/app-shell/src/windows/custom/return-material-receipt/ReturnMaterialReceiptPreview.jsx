@@ -7,10 +7,9 @@ import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { useReturnReceiptPdf } from './useReturnReceiptPdf.js';
 import RelatedDocumentsCard from '../shared/preview-cards/RelatedDocumentsCard.jsx';
 import { STATUS_BADGE, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
-import { InfoRow, CardShell } from '../shared/preview-cards/SummaryCard.jsx';
+import { MovementSummaryCard } from '../shared/preview-cards/SummaryCard.jsx';
 
 function ReturnReceiptStatsPanel({ receipt, partnerName, movementDate, token, apiBaseUrl, ui }) {
-  const warehouseLabel = receipt['warehouse$_identifier'] || '—';
   const docStatus = receipt.documentStatus;
   const statusLabel = ui(STATUS_KEYS[docStatus]) || receipt['documentStatus$_identifier'] || docStatus || '—';
   const statusBadgeClass = STATUS_BADGE[docStatus] || 'bg-gray-50 text-gray-600 border-gray-200';
@@ -20,25 +19,22 @@ function ReturnReceiptStatsPanel({ receipt, partnerName, movementDate, token, ap
     { key: 'returnInvoices', type: 'sales-invoice', fetch: async () => receipt?.returnInvoices ?? [] },
   ];
 
+  const rows = [
+    { label: ui('shipmentPreviewDocNo'), value: receipt.documentNo || '—' },
+    { label: ui('shipmentPreviewContact'), value: partnerName },
+    { label: ui('shipmentPreviewWarehouse'), value: receipt['warehouse$_identifier'] || '—' },
+    { label: ui('shipmentPreviewDate'), value: movementDate },
+  ];
+
   return (
     <div className="pb-4">
-      <CardShell>
-        <div className="px-4 py-3 border-b border-gray-100">
-          <span className="font-bold text-gray-900 text-sm">{ui('shipmentPreviewStatus')}</span>
-        </div>
-        <div className="px-4 py-2">
-          <InfoRow label={ui('shipmentPreviewDocNo')} value={receipt.documentNo || '—'} />
-          <InfoRow label={ui('shipmentPreviewContact')} value={partnerName} />
-          <InfoRow label={ui('shipmentPreviewWarehouse')} value={warehouseLabel} />
-          <InfoRow label={ui('shipmentPreviewDate')} value={movementDate} />
-          <InfoRow label={ui('shipmentPreviewStatus')}>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusBadgeClass}`}>
-              {statusLabel}
-            </span>
-          </InfoRow>
-        </div>
-      </CardShell>
-
+      <MovementSummaryCard
+        title={ui('shipmentPreviewStatus')}
+        rows={rows}
+        statusRowLabel={ui('shipmentPreviewStatus')}
+        statusLabel={statusLabel}
+        statusBadgeClass={statusBadgeClass}
+      />
       <RelatedDocumentsCard
         documentId={receipt.id}
         token={token}

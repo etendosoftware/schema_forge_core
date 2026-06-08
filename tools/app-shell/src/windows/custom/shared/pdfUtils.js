@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { buildLocationAddressLines } from '@/lib/locationAddress.js';
 
 // ---------------------------------------------------------------------------
@@ -102,4 +103,53 @@ export async function renderPdf(content, css, helpers, data) {
   }
 
   return res.blob();
+}
+
+// ---------------------------------------------------------------------------
+// Generic PDF hook — shared by all per-window pdf hooks
+// ---------------------------------------------------------------------------
+export function usePdfGenerator(recordId, apiBaseUrl, token, buildBlobFn) {
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfBlob, setPdfBlob] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const prevUrlRef = useRef(null);
+  const buildRef = useRef(buildBlobFn);
+  buildRef.current = buildBlobFn;
+
+  useEffect(() => {
+    if (!recordId || !apiBaseUrl || !token) return;
+    const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    setPdfUrl(null);
+    setPdfBlob(null);
+
+    (async () => {
+      try {
+        const blob = await buildRef.current(recordId, base, token);
+        if (cancelled) return;
+        const url = URL.createObjectURL(blob);
+        prevUrlRef.current = url;
+        setPdfUrl(url);
+        setPdfBlob(blob);
+      } catch (err) {
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      setPdfBlob(null);
+      if (prevUrlRef.current) {
+        URL.revokeObjectURL(prevUrlRef.current);
+        prevUrlRef.current = null;
+      }
+    };
+  }, [recordId, apiBaseUrl, token]);
+
+  return { pdfUrl, pdfBlob, loading, error };
 }

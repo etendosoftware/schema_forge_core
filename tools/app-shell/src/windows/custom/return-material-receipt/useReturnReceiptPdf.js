@@ -1,4 +1,3 @@
-import { useState, useEffect, useRef } from 'react';
 import { useUI } from '@/i18n';
 import {
   COMMON_HANDLEBARS_HELPERS,
@@ -9,6 +8,7 @@ import {
   fetchImageDataUrl,
   buildLocationAddressLines,
   renderPdf,
+  usePdfGenerator,
 } from '../shared/pdfUtils.js';
 
 const HELPERS = `
@@ -229,51 +229,10 @@ async function buildReceiptData(receiptId, base, token) {
 
 export function useReturnReceiptPdf(receiptId, apiBaseUrl, token) {
   const ui = useUI();
-  const [pdfUrl, setPdfUrl] = useState(null);
-  const [pdfBlob, setPdfBlob] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const prevUrlRef = useRef(null);
-
-  useEffect(() => {
-    if (!receiptId || !apiBaseUrl || !token) return;
-
+  return usePdfGenerator(receiptId, apiBaseUrl, token, (id, base, tok) => {
     const labels = getReturnReceiptPdfLabels(ui);
-    const base = apiBaseUrl.replace(/\/[^/]+$/, '');
-
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    setPdfUrl(null);
-    setPdfBlob(null);
-
-    (async () => {
-      try {
-        const data = await buildReceiptData(receiptId, base, token);
-        const blob = await renderPdf(TEMPLATE, CSS, HELPERS, { ...data, labels });
-        if (cancelled) return;
-        const url = URL.createObjectURL(blob);
-        prevUrlRef.current = url;
-        setPdfUrl(url);
-        setPdfBlob(blob);
-      } catch (err) {
-        if (!cancelled) setError(err.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      setPdfBlob(null);
-      if (prevUrlRef.current) {
-        URL.revokeObjectURL(prevUrlRef.current);
-        prevUrlRef.current = null;
-      }
-    };
-  }, [receiptId, apiBaseUrl, token]);
-
-  return { pdfUrl, pdfBlob, loading, error };
+    return buildReceiptData(id, base, tok).then((data) => renderPdf(TEMPLATE, CSS, HELPERS, { ...data, labels }));
+  });
 }
 
 export async function generateReturnReceiptPdf(receiptId, apiBaseUrl, token, labels) {

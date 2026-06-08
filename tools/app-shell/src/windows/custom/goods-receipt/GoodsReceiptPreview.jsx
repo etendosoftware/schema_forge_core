@@ -7,13 +7,12 @@ import { formatCalendarDate } from '@/lib/dateOnly';
 import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
 import { PreviewEmptyPanel } from '../shared/PreviewActionButtons.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
-import { InfoRow, CardShell, PercentBar } from '../shared/preview-cards/SummaryCard.jsx';
+import { InfoRow, PercentBar, MovementSummaryCard } from '../shared/preview-cards/SummaryCard.jsx';
 import { STATUS_BADGE, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
 import RelatedDocumentsCard from '../shared/preview-cards/RelatedDocumentsCard.jsx';
 
 function ReceiptStatsPanel({ receipt, partnerName, movementDate, token, apiBaseUrl, ui, onOrderClick }) {
   const invoiceStatusPct = Number(receipt.invoiceStatus ?? 0);
-  const warehouseLabel = receipt['warehouse$_identifier'] || '—';
   const docStatus = receipt.documentStatus;
   const statusLabel = ui(STATUS_KEYS[docStatus]) || receipt['documentStatus$_identifier'] || docStatus || '—';
   const statusBadgeClass = STATUS_BADGE[docStatus] || 'bg-gray-50 text-gray-600 border-gray-200';
@@ -25,38 +24,37 @@ function ReceiptStatsPanel({ receipt, partnerName, movementDate, token, apiBaseU
     { key: 'linkedReturns', type: 'return-to-vendor', fetch: async () => receipt?.linkedReturns ?? [] },
   ];
 
+  const rows = [
+    { label: ui('shipmentPreviewDocNo'), value: receipt.documentNo || '—' },
+    { label: ui('goodsReceiptPreview.supplier'), value: partnerName },
+    { label: ui('goodsReceiptPreview.warehouse'), value: receipt['warehouse$_identifier'] || '—' },
+    { label: ui('goodsReceiptPreview.movementDate'), value: movementDate },
+  ];
+
   return (
     <div className="pb-4">
-      <CardShell>
-        <div className="px-4 py-3 border-b border-gray-100">
-          <span className="font-bold text-gray-900 text-sm">{ui('shipmentPreviewStatus')}</span>
-        </div>
-        <div className="px-4 py-2">
-          <InfoRow label={ui('shipmentPreviewDocNo')} value={receipt.documentNo || '—'} />
-          <InfoRow label={ui('goodsReceiptPreview.supplier')} value={partnerName} />
-          <InfoRow label={ui('goodsReceiptPreview.warehouse')} value={warehouseLabel} />
-          <InfoRow label={ui('goodsReceiptPreview.movementDate')} value={movementDate} />
-          <InfoRow label={ui('shipmentPreviewStatus')}>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusBadgeClass}`}>
-              {statusLabel}
-            </span>
-          </InfoRow>
-          <InfoRow label={ui('goodsReceiptPreview.originOrder')}>
-            {purchaseOrderNo ? (
-              <button
-                type="button"
-                onClick={onOrderClick}
-                className="text-blue-600 font-medium text-right max-w-[55%] truncate hover:underline bg-transparent border-none p-0 cursor-pointer"
-              >
-                {purchaseOrderNo}
-              </button>
-            ) : null}
-          </InfoRow>
-          <InfoRow label={ui('shipmentPreviewInvoiceStatus')}>
-            <PercentBar value={invoiceStatusPct} />
-          </InfoRow>
-        </div>
-      </CardShell>
+      <MovementSummaryCard
+        title={ui('shipmentPreviewStatus')}
+        rows={rows}
+        statusRowLabel={ui('shipmentPreviewStatus')}
+        statusLabel={statusLabel}
+        statusBadgeClass={statusBadgeClass}
+      >
+        <InfoRow label={ui('goodsReceiptPreview.originOrder')}>
+          {purchaseOrderNo ? (
+            <button
+              type="button"
+              onClick={onOrderClick}
+              className="text-blue-600 font-medium text-right max-w-[55%] truncate hover:underline bg-transparent border-none p-0 cursor-pointer"
+            >
+              {purchaseOrderNo}
+            </button>
+          ) : null}
+        </InfoRow>
+        <InfoRow label={ui('shipmentPreviewInvoiceStatus')}>
+          <PercentBar value={invoiceStatusPct} />
+        </InfoRow>
+      </MovementSummaryCard>
 
       <RelatedDocumentsCard
         documentId={receipt.id}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
+import ImportModalFooter from './ImportModalFooter.jsx';
 
 /**
  * Generic modal for importing lines into a return document from source documents.
@@ -331,22 +332,14 @@ export default function ImportReturnLinesModal({ targetId, bpId, base, headers, 
           })}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F8F9FA', borderTop: '1px solid #E5E7EB', padding: '10px 16px' }}>
-          <span style={{ fontSize: 12, color: selected.size > 0 ? 'var(--color-text-info, #2563eb)' : '#6B7280', fontWeight: selected.size > 0 ? 500 : 400 }}>
-            {selected.size > 0 ? ui('selectedLinesCount').replace('{count}', String(selected.size)) : ui('selectLinesToImport')}
-          </span>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '5px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>{ui('cancel')}</button>
-            <button
-              type="button"
-              onClick={handleImport}
-              disabled={selected.size === 0 || importing}
-              style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (selected.size === 0 || importing) ? 'not-allowed' : 'pointer', opacity: (selected.size === 0 || importing) ? 0.4 : 1 }}
-            >
-              {importButtonLabel}
-            </button>
-          </div>
-        </div>
+        <ImportModalFooter
+          selectedCount={selected.size}
+          importing={importing}
+          importButtonLabel={importButtonLabel}
+          onClose={onClose}
+          onImport={handleImport}
+          ui={ui}
+        />
       </div>
     </div>,
     document.body,
