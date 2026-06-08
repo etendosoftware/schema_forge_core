@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
-import { PreviewEmptyPanel, usePreviewSendModal, makeStaticPreviewTabs } from '../shared/PreviewActionButtons.jsx';
-import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
+import { usePreviewSendModal, makeStaticPreviewTabs, PreviewSendModal } from '../shared/PreviewActionButtons.jsx';
 import { InfoRow, PercentBar, MovementSummaryCard } from '../shared/preview-cards/SummaryCard.jsx';
 import { STATUS_BADGE, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
 import RelatedDocumentsCard from '../shared/preview-cards/RelatedDocumentsCard.jsx';
@@ -155,22 +154,21 @@ export default function GoodsReceiptPreview({ receipt, token, apiBaseUrl, window
         tabs={tabs}
         actionButtons={actionButtons}
       />
-      {showSendModal && (
-        <SendDocumentModal
-          documentType={windowLabel}
-          documentNo={receipt.documentNo}
-          bpName={partnerName}
-          bPartnerId={receipt.businessPartner}
-          apiBaseUrl={apiBaseUrl}
-          documentId={receipt.id}
-          windowName="goods-receipt"
-          token={token}
-          pdfBlobUrl={previewFile?.objectUrl}
-          pdfBlobLoading={false}
-          isClosing={sendModalClosing}
-          onClose={closeEmailModal}
-        />
-      )}
+      <PreviewSendModal
+        show={showSendModal}
+        closing={sendModalClosing}
+        documentType={windowLabel}
+        documentNo={receipt.documentNo}
+        bpName={partnerName}
+        bPartnerId={receipt.businessPartner}
+        apiBaseUrl={apiBaseUrl}
+        documentId={receipt.id}
+        windowName="goods-receipt"
+        token={token}
+        pdfBlobUrl={previewFile?.objectUrl}
+        pdfBlobLoading={false}
+        onClose={closeEmailModal}
+      />
     </>
   );
 }

@@ -1,16 +1,5 @@
 import { useUI } from '@/i18n';
-import {
-  COMMON_HANDLEBARS_HELPERS,
-  COMMON_PDF_CSS,
-  fetchJson,
-  fetchAll,
-  fetchOptionalJson,
-  fetchLocationAddress,
-  fetchImageDataUrl,
-  buildLocationAddressLines,
-  renderPdf,
-  usePdfGenerator,
-} from '../shared/pdfUtils.js';
+import { COMMON_HANDLEBARS_HELPERS, COMMON_PDF_CSS, fetchJson, fetchAll, fetchOptionalJson, fetchLocationAddress, fetchImageDataUrl, buildLocationAddressLines, renderPdf, usePdfGenerator } from '../shared/pdfUtils.js';
 
 // ---------------------------------------------------------------------------
 // Handlebars helpers — fmt formats as 0–3 decimal places (quantities, no prices)
