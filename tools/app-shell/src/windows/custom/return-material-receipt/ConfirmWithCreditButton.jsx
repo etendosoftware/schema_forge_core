@@ -4,14 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 import { ConfirmResultModal } from '@/components/contract-ui/ConfirmResultModal';
+import ConfirmInOutModal from '@/components/contract-ui/ConfirmInOutModal';
 import CloneButton from '@/windows/custom/shared/CloneButton';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import { generateReturnReceiptPdf, getReturnReceiptPdfLabels } from './useReturnReceiptPdf';
 
 const overlayStyle = {
-  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 60,
+  position: 'fixed', inset: 0, zIndex: 50,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
-  backgroundColor: 'rgba(0,0,0,0.3)',
+  background: 'rgba(20,26,38,.45)',
 };
 
 const cardStyle = {
@@ -54,7 +55,7 @@ function buildInvoiceResult(inv, ui) {
     docs: inv.id ? [{
       type: 'facturaVenta',
       num: inv.documentNo,
-      amount: inv.grandTotal,
+      amount: inv.amount ?? inv.grandTotal,
       route: `/sales-invoice/${inv.id}`,
     }] : [],
   };
@@ -70,52 +71,6 @@ async function fetchCreateInvoice(apiBaseUrl, id, headers, ui) {
   return { id: inv?.id || null, documentNo: inv?.documentNo || '', grandTotal: inv?.grandTotal ?? null };
 }
 
-async function performDocumentAction({ id, apiBaseUrl, headers, createInvoice, ui }) {
-  const docRes = await fetch(`${apiBaseUrl}/returnMaterialReceipt/${id}/action/documentAction`, {
-    method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }),
-  });
-  if (!docRes.ok) {
-    const payload = await docRes.json().catch(() => null);
-    throw new Error(payload?.response?.message || payload?.message || ui('couldNotConfirmReceipt'));
-  }
-  if (!createInvoice) return { title: ui('receiptConfirmed'), cards: [] };
-  const inv = await fetchCreateInvoice(apiBaseUrl, id, headers, ui);
-  return buildInvoiceResult(inv, ui);
-}
-
-function DRConfirmModal({ busy, createInvoice, setCreateInvoice, onConfirm, onClose, ui }) {
-  return (
-    <div
-      onClick={() => !busy && onClose()}
-      style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)' }}
-    >
-      <div onClick={e => e.stopPropagation()}
-        style={{ width: 420, borderRadius: 12, background: '#fff', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB', padding: '24px' }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 6px', color: '#111827' }}>{ui('manageCreditTitle')}</h3>
-        <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 18px', lineHeight: 1.5 }}>{ui('manageCreditDescription')}</p>
-        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '12px 14px', borderRadius: 8,
-          border: `1px solid ${createInvoice ? '#93c5fd' : '#E5E7EB'}`, background: createInvoice ? '#eff6ff' : '#fff', transition: 'all 0.15s' }}>
-          <input type="checkbox" checked={createInvoice} onChange={e => setCreateInvoice(e.target.checked)}
-            style={{ accentColor: '#3b82f6', marginTop: 3, flexShrink: 0 }} />
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: '#111827' }}>{ui('createReturnInvoice')}</div>
-            <div style={{ fontSize: 12, color: '#6B7280', marginTop: 3, lineHeight: 1.4 }}>{ui('createReturnInvoiceDescription')}</div>
-          </div>
-        </label>
-        <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end' }}>
-          <button type="button" onClick={onClose} disabled={busy}
-            style={{ fontSize: 13, padding: '7px 16px', borderRadius: 6, border: '1px solid #E5E7EB', background: '#fff', color: '#6B7280', cursor: busy ? 'not-allowed' : 'pointer' }}>
-            {ui('cancel')}
-          </button>
-          <button type="button" onClick={onConfirm} disabled={busy}
-            style={{ fontSize: 13, fontWeight: 500, padding: '7px 16px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.7 : 1 }}>
-            {busy ? ui('confirming') : ui('confirm')}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function COInvoiceModal({ busy, data, onConfirm, onClose, ui }) {
   return (
@@ -155,11 +110,11 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
   const ui = useUI();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
-  const [createInvoice, setCreateInvoice] = useState(true);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [cloneOpen, setCloneOpen] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
 
   const status = data?.documentStatus;
   const currency = data?.['currency$_identifier'] || '';
@@ -199,21 +154,6 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
     }
   }, [data, recordId, apiBaseUrl, headers, ui]);
 
-  const handleConfirmAndClose = useCallback(async () => {
-    if (busy) return;
-    setBusy(true);
-    try {
-      const id = data?.id || recordId;
-      const res = await performDocumentAction({ id, apiBaseUrl, headers, createInvoice, ui });
-      setShowModal(false);
-      setResult(res);
-    } catch (err) {
-      toast.error(err.message || ui('couldNotConfirmReceipt'));
-    } finally {
-      setBusy(false);
-    }
-  }, [busy, data, recordId, apiBaseUrl, headers, createInvoice, ui]);
-
   if (status !== 'DR' && status !== 'CO') return null;
 
   return (
@@ -237,10 +177,34 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
       )}
       <PrintButton onClick={handlePrint} loading={pdfLoading} ui={ui} />
 
-      {showModal && status === 'DR' && createPortal(
-        <DRConfirmModal busy={busy} createInvoice={createInvoice} setCreateInvoice={setCreateInvoice}
-          onConfirm={handleConfirmAndClose} onClose={() => setShowModal(false)} ui={ui} />,
-        document.body,
+      {showModal && status === 'DR' && (
+        <ConfirmInOutModal
+          base={base}
+          headers={headers}
+          recordId={data?.id || recordId}
+          specName="return-material-receipt"
+          entityName="returnMaterialReceipt"
+          invoiceAction="createReturnInvoice"
+          defaultCreateInvoice={true}
+          title={ui('returnReceipt.confirmModal.title')}
+          docInfo={{ bpName: data?.['businessPartner$_identifier'], documentNo: data?.documentNo }}
+          infoRowPre={ui('returnReceipt.confirmModal.infoRowPre')}
+          infoRowBold={ui('returnReceipt.confirmModal.infoRowBold')}
+          infoRowPost={ui('returnReceipt.confirmModal.infoRowPost')}
+          cardTitle={ui('createReturnInvoice')}
+          cardDesc={ui('createReturnInvoiceDescription')}
+          confirmLabel={ui('processReceipt')}
+          confirmWithInvoiceLabel={ui('returnReceipt.confirmModal.confirmWithInvoice')}
+          processingLabel={ui('processing')}
+          cancelLabel={ui('cancel')}
+          onConfirmed={({ invoice }) => {
+            setShowModal(false);
+            setResult(invoice?.id
+              ? buildInvoiceResult(invoice, ui)
+              : { title: ui('receiptConfirmed'), docs: [] });
+          }}
+          onClose={() => setShowModal(false)}
+        />
       )}
       {showModal && status === 'CO' && createPortal(
         <COInvoiceModal busy={busy} data={data} onConfirm={handleCreateConfirmed} onClose={() => setShowModal(false)} ui={ui} />,

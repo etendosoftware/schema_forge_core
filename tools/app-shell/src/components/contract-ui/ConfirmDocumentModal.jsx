@@ -169,7 +169,11 @@ export default function ConfirmDocumentModal({
           throw new Error(err?.response?.message || err?.message || `Error (${invRes.status})`);
         }
         const invData = (await invRes.json())?.response?.data;
-        invoice = { id: invData?.id ?? null, documentNo: invData?.documentNo || '' };
+        invoice = {
+          id: invData?.id ?? null,
+          documentNo: invData?.documentNo || '',
+          amount: invData?.grandTotalAmount ?? null,
+        };
       }
 
       onConfirmed({ invoice });
