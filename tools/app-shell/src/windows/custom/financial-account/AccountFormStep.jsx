@@ -15,6 +15,10 @@ import { isValidIban, normalizeIban } from '@/lib/validateIban.js';
 
 const EMPTY = { name: '', iban: '', swiftCode: '', currencyId: '' };
 
+// Form mode → persisted FIN_FinancialAccount.type value. Unmapped modes
+// (e.g. 'cash') fall back to 'C'.
+const TYPE_BY_MODE = { bank: 'B', card: 'CA' };
+
 const FIELD_LABEL = 'text-sm font-medium leading-6 text-[#121217]';
 const FIELD_INPUT = 'bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]';
 
@@ -60,7 +64,7 @@ export function AccountFormStep({
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!canSubmit) return;
-    const typeCode = mode === 'bank' ? 'B' : mode === 'card' ? 'CA' : 'C';
+    const typeCode = TYPE_BY_MODE[mode] ?? 'C';
     const payload = { name: name.trim(), type: typeCode, currencyId };
     if (isBank) {
       payload.iban = normalizeIban(iban);
