@@ -28,7 +28,7 @@ function isSourceFile(path) {
 }
 
 function isTestFile(path) {
-  return /\.(test|spec)\.(js|jsx|ts|tsx)$/.test(path);
+  return /\.(test|spec|vitest)\.(js|jsx|ts|tsx)$/.test(path);
 }
 
 function isTestDirectory(path) {
