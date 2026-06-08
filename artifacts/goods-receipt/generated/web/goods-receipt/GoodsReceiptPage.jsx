@@ -7,6 +7,8 @@ import GoodsReceiptLineForm from './GoodsReceiptLineForm';
 import RelatedDocuments from '@/windows/custom/goods-receipt/RelatedDocuments';
 import { AttachmentsTab } from '@/components/attachments';
 import GoodsReceiptBottomPanel from '../../../custom/GoodsReceiptBottomPanel';
+import GoodsReceiptActions from '../../../custom/GoodsReceiptActions';
+import GoodsReceiptDraftChips from '../../../custom/GoodsReceiptDraftChips';
 import catalogs from './mockCatalogs';
 
 
@@ -15,7 +17,7 @@ const breadcrumb = 'Purchases / Goods Receipt';
 
 // @sf-generated-start summary:goodsReceipt
 const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+
 ];
 
 const statusField = 'documentStatus';
@@ -41,22 +43,20 @@ const draftMode = {
 // @sf-generated-end draftMode:goodsReceipt
 
 // @sf-generated-start requiredHeaderFields:goodsReceipt
-const requiredHeaderFields = ['documentNo', 'warehouse', 'businessPartner', 'partnerAddress', 'movementDate'];
+const requiredHeaderFields = ['warehouse', 'businessPartner', 'movementDate'];
 // @sf-generated-end requiredHeaderFields:goodsReceipt
 
 // @sf-generated-start addLineFields:goodsReceiptLine
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', label: 'Attribute Set Value' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
     { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 0 },
-    { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin', reference: 'Locator', inputMode: 'selector', defaultValue: '@OnHandLocatorDefault@' },
-    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
 
   ],
   hidden: [
+    { key: 'storageBin', value: '@OnHandLocatorDefault@' },
     { key: 'invoiceQuantity', value: '0' },
   ],
 };
@@ -435,12 +435,17 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        hideDeleteWhenComplete
+        hidePrint
+        noHeaderBorder
         customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
         bottomSection={GoodsReceiptBottomPanel}
+        topbarRight={GoodsReceiptActions}
+        topbarExtra={GoodsReceiptDraftChips}
         draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         linesLayout="inlineEditable"
-        sendDocument={{"enabled":true,"allowEmail":false}}
+        sendDocument
         {...props}
       />
     );
@@ -455,8 +460,9 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="movementDate"
+      hidePrint
       rowQuickActions={{}}
-      sendDocument={{"enabled":true,"allowEmail":false}}
+      sendDocument
       {...props}
     />
   );

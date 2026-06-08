@@ -1,10 +1,12 @@
-import { ChevronDown, Check, Landmark, Wallet, CreditCard, Building2 } from 'lucide-react';
+import { ChevronDown, Check, Landmark, Wallet, CreditCard, Building2, Archive } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useUI } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { ACCOUNT_TYPE } from './tokens';
 
 const ALL = 'ALL';
+// Cross-type view that lists every archived (inactive) account regardless of type.
+const INACTIVE = 'INACTIVE';
 
 function useTypeOptions() {
   const ui = useUI();
@@ -13,6 +15,7 @@ function useTypeOptions() {
     { value: ACCOUNT_TYPE.BANK, label: ui('financeAccountsTypeBank'), Icon: Landmark },
     { value: ACCOUNT_TYPE.CASH, label: ui('financeAccountsTypeCash'), Icon: Wallet },
     { value: ACCOUNT_TYPE.CARD, label: ui('financeAccountsTypeCard'), Icon: CreditCard },
+    { value: INACTIVE, label: ui('financeAccountsFilterInactive'), Icon: Archive, divider: true },
   ];
 }
 
@@ -39,23 +42,25 @@ export function AccountTypeFilter({ value, onChange }) {
           {options.map((opt) => {
             const selected = opt.value === current;
             return (
-              <button
-                key={opt.value}
-                type="button"
-                role="option"
-                aria-selected={selected}
-                onClick={() => onChange?.(opt.value === ALL ? null : opt.value)}
-                className={cn(
-                  'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm',
-                  'hover:bg-[#f5f7f9]',
-                  selected ? 'font-semibold text-[#121217]' : 'text-[#3f3f50]',
-                )}
-                data-testid={`account-type-filter-option-${opt.value.toLowerCase()}`}
-              >
-                <opt.Icon className="h-4 w-4 text-[#6c6c89]" />
-                <span className="flex-1 text-left">{opt.label}</span>
-                {selected ? <Check className="h-4 w-4 text-[#121217]" /> : null}
-              </button>
+              <div key={opt.value}>
+                {opt.divider ? <div className="my-1 h-px bg-[#E8EAEF]" aria-hidden="true" /> : null}
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  onClick={() => onChange?.(opt.value === ALL ? null : opt.value)}
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm',
+                    'hover:bg-[#f5f7f9]',
+                    selected ? 'font-semibold text-[#121217]' : 'text-[#3f3f50]',
+                  )}
+                  data-testid={`account-type-filter-option-${opt.value.toLowerCase()}`}
+                >
+                  <opt.Icon className="h-4 w-4 text-[#6c6c89]" />
+                  <span className="flex-1 text-left">{opt.label}</span>
+                  {selected ? <Check className="h-4 w-4 text-[#121217]" /> : null}
+                </button>
+              </div>
             );
           })}
         </div>
@@ -65,3 +70,4 @@ export function AccountTypeFilter({ value, onChange }) {
 }
 
 AccountTypeFilter.ALL = ALL;
+AccountTypeFilter.INACTIVE = INACTIVE;

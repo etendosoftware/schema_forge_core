@@ -187,14 +187,15 @@ describe('FinancialAccountWindow', () => {
     expect(screen.getByText('9')).toBeInTheDocument();
   });
 
-  it('passes the statements count through DetailTabs as the statements badge', () => {
+  it('renders the statements tab trigger without a numeric badge', () => {
     setHooks({
       account: { id: 'acc-1', name: 'BBVA', pendingCount: 0 },
       statements: [{ id: 's1' }, { id: 's2' }, { id: 's3' }, { id: 's4' }, { id: 's5' }, { id: 's6' }, { id: 's7' }],
     });
     render(<FinancialAccountWindow recordId="acc-1" />);
-    // DetailTabs renders a "7" badge next to the statements trigger.
-    // pendingCount is 0 and movements is empty so "7" is unambiguous here.
-    expect(screen.getByText('7')).toBeInTheDocument();
+    // The statements trigger renders, but DetailTabs no longer shows a count badge
+    // for it — so the statements count (7) must not appear anywhere.
+    expect(screen.getByText('financeAccountDetailTabStatements')).toBeInTheDocument();
+    expect(screen.queryByText('7')).not.toBeInTheDocument();
   });
 });

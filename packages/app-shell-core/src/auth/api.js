@@ -1,3 +1,5 @@
+import { getStoredLocale } from '../i18n/useLocaleState.js';
+
 export function detectBaseUrl() {
   const path = window.location.pathname;
   const webIdx = path.indexOf('/web/');
@@ -9,7 +11,12 @@ const DEFAULT_BASE_URL = detectBaseUrl();
 console.log('[api.js] DEFAULT_BASE_URL:', JSON.stringify(DEFAULT_BASE_URL), 'pathname:', window.location.pathname, 'VITE_API_BASE:', import.meta.env.VITE_API_BASE);
 
 export function buildHeaders(token) {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = {
+    'Content-Type': 'application/json',
+    // Propagate the UI locale so the backend resolves AD_Message translations
+    // in the language the user selected in the frontend.
+    'Accept-Language': getStoredLocale(),
+  };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }

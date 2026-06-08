@@ -7,6 +7,7 @@ vi.mock('@/i18n', () => ({
       financeAccountsTypeBank: 'Banco',
       financeAccountsTypeCash: 'Caja',
       financeAccountsTypeCard: 'Tarjeta',
+      financeAccountsFilterInactive: 'Inactivas',
     };
     return map[key] ?? key;
   },
@@ -26,13 +27,39 @@ describe('AccountTypeFilter', () => {
     expect(screen.getByTestId('account-type-filter-trigger')).toHaveTextContent('Banco');
   });
 
-  it('opens the popover and shows all type options', () => {
+  it('opens the popover and shows all type options plus the inactive option', () => {
     render(<AccountTypeFilter value={null} onChange={vi.fn()} />);
     fireEvent.click(screen.getByTestId('account-type-filter-trigger'));
     expect(screen.getByTestId('account-type-filter-option-all')).toBeInTheDocument();
     expect(screen.getByTestId('account-type-filter-option-b')).toBeInTheDocument();
     expect(screen.getByTestId('account-type-filter-option-c')).toBeInTheDocument();
     expect(screen.getByTestId('account-type-filter-option-t')).toBeInTheDocument();
+    expect(screen.getByTestId('account-type-filter-option-inactive')).toBeInTheDocument();
+  });
+
+  it('renders the inactive option with its label after the type options', () => {
+    render(<AccountTypeFilter value={null} onChange={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('account-type-filter-trigger'));
+    const inactive = screen.getByTestId('account-type-filter-option-inactive');
+    expect(inactive).toHaveTextContent('Inactivas');
+  });
+
+  it('reports the INACTIVE value (not null) when the inactive option is chosen', () => {
+    const onChange = vi.fn();
+    render(<AccountTypeFilter value={null} onChange={onChange} />);
+    fireEvent.click(screen.getByTestId('account-type-filter-trigger'));
+    fireEvent.click(screen.getByTestId('account-type-filter-option-inactive'));
+    expect(onChange).toHaveBeenCalledWith('INACTIVE');
+  });
+
+  it('exposes ALL and INACTIVE as static constants', () => {
+    expect(AccountTypeFilter.ALL).toBe('ALL');
+    expect(AccountTypeFilter.INACTIVE).toBe('INACTIVE');
+  });
+
+  it('shows the inactive label in the trigger when INACTIVE is the selected value', () => {
+    render(<AccountTypeFilter value="INACTIVE" onChange={vi.fn()} />);
+    expect(screen.getByTestId('account-type-filter-trigger')).toHaveTextContent('Inactivas');
   });
 
   it('reports null when "all" is selected', () => {

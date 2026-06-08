@@ -6,9 +6,10 @@ import { useUI, useMenuLabel } from '@/i18n';
 import ReturnWizard from './ReturnWizard';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 import GoodsShipmentConfirmModal from './GoodsShipmentConfirmModal';
-import { ConfirmResultModal } from '@generated/sales-order/custom/OrderCreateInvoice';
+import { ConfirmResultModal } from '@/components/contract-ui';
 import { generateShipmentPdf, getShipmentPdfLabels } from '@/windows/custom/goods-shipment/useShipmentPdf';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
+import CreateInvoiceConfirmModal from '@/components/contract-ui/CreateInvoiceConfirmModal';
 
 export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl, api }) {
   const ui = useUI();
@@ -230,26 +231,26 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
         />
       )}
 
-      {showInvoiceConfirm && createPortal(
+      {showInvoiceConfirm && (
         <CreateInvoiceConfirmModal
           data={data}
-          recordId={recordId}
-          base={base}
-          headers={headers}
           loading={creatingInvoice}
+          pendingQtyUrl={`${base}/goods-shipment/goodsShipment/${recordId}/action/pendingInvoiceLines`}
           onConfirm={() => { setShowInvoiceConfirm(false); handleCreateInvoice(); }}
           onClose={() => setShowInvoiceConfirm(false)}
-        />,
-        document.body,
+        />
       )}
 
       {invoiceResult && createPortal(
         <ConfirmResultModal
-          docs={invoiceResult}
-          ui={ui}
-          navigate={navigate}
-          currency={data?.['currency$_identifier'] || ''}
           title={ui('soInvoiceCreated')}
+          docs={invoiceResult.invoice?.id
+            ? [{ type: 'facturaVenta', num: invoiceResult.invoice.documentNo, amount: invoiceResult.invoice.amount, route: `/sales-invoice/${invoiceResult.invoice.id}` }]
+            : []
+          }
+          primary={ui('soViewInvoice')}
+          currency={data?.['currency$_identifier'] || ''}
+          navigate={navigate}
           onClose={() => setInvoiceResult(null)}
         />,
         document.body,
@@ -306,170 +307,4 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
   );
 }
 
-function CreateInvoiceConfirmModal({ data, recordId, base, headers, loading, onConfirm, onClose }) {
-  const ui = useUI();
-  const [checked, setChecked] = useState(true);
-  const [pendingQty, setPendingQty] = useState(null);
-
-  const documentNo  = data?.documentNo || '';
-  const bpName      = data?.['businessPartner$_identifier'] || '';
-  // M_InOut has no grandTotalAmount — fall back to the linked order's total
-  const linkedOrder = Array.isArray(data?.linkedOrders) ? data.linkedOrders[0] : null;
-  const currency    = linkedOrder?.['currency$_identifier'] || data?.['currency$_identifier'] || '';
-  const grandTotal  = Number(linkedOrder?.grandTotalAmount ?? data?.grandTotalAmount ?? 0);
-
-  const fmtNum = (v, dec = 2) =>
-    v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec }) : '-';
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(
-          `${base}/goods-shipment/goodsShipment/${recordId}/action/pendingInvoiceLines`,
-          { headers },
-        );
-        if (!res.ok || cancelled) return;
-        const lines = (await res.json())?.response?.data || [];
-        const total = lines.reduce((sum, l) => sum + Number(l.pendingQty || 0), 0);
-        if (!cancelled) setPendingQty(total);
-      } catch { /* silent */ }
-    })();
-    return () => { cancelled = true; };
-  }, [recordId, base, headers]);
-
-  const subtitle = pendingQty != null
-    ? ui('soAmountPendingInvoice', { pending: `${fmtNum(pendingQty, 0)} ${ui('units')}` })
-    : ui('soCreateInvoiceCheckDesc');
-
-  return (
-    <div onClick={onClose} style={overlayStyle}>
-      <div onClick={e => e.stopPropagation()} style={{ ...cardStyle, width: 460 }}>
-
-        {/* Title row */}
-        <div style={{ padding: '16px 20px 14px', borderBottom: '0.5px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>
-            {ui('soManageDocsTitle')}
-          </div>
-          <button type="button" onClick={onClose} style={closeBtnStyle}>&times;</button>
-        </div>
-
-        {/* Blue summary card */}
-        <div style={{ padding: '14px 20px' }}>
-          <div style={{ background: '#E6F1FB', border: '0.5px solid #B5D4F4', borderRadius: 10, padding: '14px 16px' }}>
-            {bpName && <div style={{ fontSize: 11, color: '#185FA5' }}>{bpName}</div>}
-            <div style={{ fontSize: 28, fontWeight: 500, color: '#042C53', lineHeight: 1, marginTop: 4 }}>
-              {grandTotal > 0 ? `${fmtNum(grandTotal)}${currency ? ` ${currency}` : ''}` : documentNo}
-            </div>
-          </div>
-        </div>
-
-        {/* Invoice checkbox card */}
-        <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', marginBottom: 2 }}>
-            {ui('soGenerateDocs')}
-          </div>
-          <InvoiceCheckboxCard
-            checked={checked}
-            onChange={() => setChecked(v => !v)}
-            subtitle={subtitle}
-          />
-        </div>
-
-        {/* Footer */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: '0.5px solid #E5E7EB' }}>
-          <button type="button" onClick={onClose} disabled={loading} style={{ ...btnSecondary, opacity: loading ? 0.5 : 1 }}>
-            {ui('cancel')}
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={loading || !checked}
-            style={{ ...btnPrimary, opacity: (loading || !checked) ? 0.6 : 1, cursor: (loading || !checked) ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-          >
-            {loading && <Spinner />}
-            {loading ? ui('soProcessing') : ui('soCreateDocsBtn')}
-          </button>
-          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function InvoiceCheckboxCard({ checked, onChange, subtitle }) {
-  const ui = useUI();
-  return (
-    <div
-      onClick={onChange}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: checked ? '11px 13px' : '12px 14px', borderRadius: 8,
-        cursor: 'pointer',
-        border: checked ? '2px solid #3B82F6' : '1px solid #E5E7EB',
-        background: checked ? '#EFF6FF' : '#fff',
-        transition: 'border-color 0.15s, background 0.15s',
-      }}
-    >
-      <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>🧾</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: checked ? '#2563EB' : '#111827' }}>
-          {ui('soCreateInvoiceTitle')}
-        </div>
-        <div style={{ fontSize: 12, color: '#6B7280', marginTop: 3, lineHeight: 1.4 }}>
-          {subtitle}
-        </div>
-      </div>
-      <div style={{
-        width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-        border: checked ? 'none' : '1.5px solid #D1D5DB',
-        background: checked ? '#3B82F6' : '#fff',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        {checked && (
-          <svg width="11" height="9" viewBox="0 0 11 9" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="1 4 4 7.5 10 1" />
-          </svg>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Spinner() {
-  return (
-    <svg style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }}
-      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-    </svg>
-  );
-}
-
-const overlayStyle = {
-  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50,
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  backgroundColor: 'rgba(0,0,0,0.3)',
-};
-
-const cardStyle = {
-  width: 480, maxHeight: '85vh', display: 'flex', flexDirection: 'column',
-  overflow: 'hidden', borderRadius: 12, backgroundColor: '#fff',
-  boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB',
-};
-
-const closeBtnStyle = {
-  position: 'absolute', top: 10, right: 12,
-  fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4,
-  background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF',
-};
-
-const btnSecondary = {
-  fontSize: 12, padding: '7px 14px', borderRadius: 6,
-  border: '1px solid #D1D5DB', background: 'transparent', color: '#6B7280', cursor: 'pointer',
-};
-
-const btnPrimary = {
-  fontSize: 12, fontWeight: 500, padding: '7px 16px', borderRadius: 6,
-  border: 'none', background: '#185FA5', color: '#fff', cursor: 'pointer',
-};
 

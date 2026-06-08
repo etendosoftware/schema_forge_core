@@ -38,6 +38,11 @@ export function useAccountMovements(accountId, _filters) {
     () => (raw) => ({
       movements: Array.isArray(raw.transactions) ? raw.transactions : [],
       totals: normalizeTotals(raw.totals),
+      enabledDimensions: Array.isArray(raw.enabledDimensions) ? raw.enabledDimensions : [],
+      headerDimensions: Array.isArray(raw.headerDimensions) ? raw.headerDimensions : [],
+      trxTypes: Array.isArray(raw.trxTypes) ? raw.trxTypes : [],
+      accountOrgId: raw.accountOrgId || null,
+      paymentMethods: Array.isArray(raw.paymentMethods) ? raw.paymentMethods : [],
     }),
     [],
   );
@@ -52,6 +57,11 @@ export function useAccountMovements(accountId, _filters) {
   return {
     movements: data?.movements ?? [],
     totals: data?.totals ?? EMPTY_TOTALS,
+    enabledDimensions: data?.enabledDimensions ?? [],
+    headerDimensions: data?.headerDimensions ?? [],
+    trxTypes: data?.trxTypes ?? [],
+    accountOrgId: data?.accountOrgId ?? null,
+    paymentMethods: data?.paymentMethods ?? [],
     loading,
     error,
     reload,

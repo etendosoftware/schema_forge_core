@@ -1,8 +1,9 @@
-import { forwardRef, useImperativeHandle, useRef, useState, useEffect, useMemo } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState, useMemo } from 'react';
 import { AccountSummaryStrip } from './AccountSummaryStrip';
 import { MovementsToolbar } from './MovementsToolbar/index';
 import { MovementsTable } from './MovementsTable';
-import { NewMovementDialog } from './NewMovementDialog';
+import { NewMovementWizard } from './NewMovementWizard/index.jsx';
+import { applyAdvancedFilter } from './movementAdvancedFilter';
 
 // ---------------------------------------------------------------------------
 // Date range helpers
@@ -76,29 +77,8 @@ function kpiWindowSuffix(dateRange) {
 }
 
 // ---------------------------------------------------------------------------
-// Amount range helper
-// ---------------------------------------------------------------------------
-
-function matchesAmount(amount, filter) {
-  if (!filter) return true;
-
-  // Preset (only inflows / only outflows)
-  if ('presetId' in filter) {
-    if (filter.presetId === 'gt0') return amount > 0;
-    if (filter.presetId === 'lt0') return amount < 0;
-    return true;
-  }
-
-  // Manual range — signed comparison so min:0 means "only inflows (>= 0)"
-  // and max:0 means "only outflows (<= 0)".
-  return (
-    (filter.min == null || amount >= filter.min)
-    && (filter.max == null || amount <= filter.max)
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Main filter function
+// Main filter function — quick filters (date range, type, search). Status and
+// amount moved to the advanced "by conditions" filter (applyAdvancedFilter).
 // ---------------------------------------------------------------------------
 
 function applyFilters(movements, filters) {
@@ -106,9 +86,6 @@ function applyFilters(movements, filters) {
   const q = filters.search.trim().toLowerCase();
 
   return movements.filter((m) => {
-    // Status
-    if (filters.status && m.paymentStatus !== filters.status) return false;
-
     // Date range
     if (from || to) {
       const d = new Date(m.date);
@@ -118,9 +95,6 @@ function applyFilters(movements, filters) {
 
     // Type (BPD / BPW)
     if (filters.type && m.trxType !== filters.type) return false;
-
-    // Amount
-    if (!matchesAmount(m.amount, filters.amount)) return false;
 
     // Full-text search on document, contact, description
     if (q) {
@@ -152,23 +126,17 @@ function applyFilters(movements, filters) {
  * }} props
  */
 export const MovementsTab = forwardRef(function MovementsTab(
-  { account, totals, movements, loading, onReload },
+  { account, totals, movements, enabledDimensions = [], headerDimensions = [], trxTypes = [], accountOrgId = null, paymentMethods = [], loading, onReload },
   ref,
 ) {
   const [filters, setFilters] = useState({
-    status: null,
     dateRange: { presetId: 'last30' },
     type: null,
-    amount: null,
     search: '',
   });
+  const [advancedFilter, setAdvancedFilter] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [newMovementOpen, setNewMovementOpen] = useState(false);
-
-  // Clear selection when filters change
-  useEffect(() => {
-    setSelectedIds(new Set());
-  }, [filters]);
 
   const handleFilterChange = (key) => (val) => {
     setFilters((prev) => ({ ...prev, [key]: val }));
@@ -184,8 +152,8 @@ export const MovementsTab = forwardRef(function MovementsTab(
   };
 
   const filteredMovements = useMemo(
-    () => applyFilters(movements, filters),
-    [movements, filters],
+    () => applyAdvancedFilter(applyFilters(movements, filters), advancedFilter),
+    [movements, filters, advancedFilter],
   );
 
   // Latest filtered list is also reachable via ref so the parent's Export
@@ -227,24 +195,32 @@ export const MovementsTab = forwardRef(function MovementsTab(
       <MovementsToolbar
         filters={filters}
         onFiltersChange={handleFilterChange}
+        advancedFilter={advancedFilter}
+        onAdvancedFilterChange={setAdvancedFilter}
         onNewMovement={() => setNewMovementOpen(true)}
+        rows={movements}
       />
       <AccountSummaryStrip account={account} totals={dateScopedTotals} loading={loading} />
       <div className="flex-1 overflow-y-auto [&>div]:overflow-visible">
         <MovementsTable
           movements={filteredMovements}
           loading={loading}
+          enabledDimensions={enabledDimensions}
           selectedIds={selectedIds}
           onSelectionChange={handleSelectionChange}
         />
       </div>
 
-      <NewMovementDialog
+      <NewMovementWizard
         open={newMovementOpen}
         accountId={account?.id}
         accountCurrency={account?.currencyIso
           ? { id: account?.currencyId, iso: account.currencyIso }
           : null}
+        dimensions={headerDimensions}
+        trxTypes={trxTypes}
+        defaultOrgId={accountOrgId}
+        paymentMethods={paymentMethods}
         onClose={() => setNewMovementOpen(false)}
         onSuccess={() => onReload?.()}
       />
