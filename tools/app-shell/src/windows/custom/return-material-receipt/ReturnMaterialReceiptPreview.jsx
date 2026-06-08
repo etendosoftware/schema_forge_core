@@ -5,16 +5,20 @@ import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
 import PreviewActionButtons, { PreviewPdfPanel, PreviewEmptyPanel } from '../shared/PreviewActionButtons.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { useReturnReceiptPdf } from './useReturnReceiptPdf.js';
-import RelatedDocuments from '@generated/return-material-receipt/custom/RelatedDocuments';
+import RelatedDocumentsCard from '../shared/preview-cards/RelatedDocumentsCard.jsx';
 import { STATUS_BADGE, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
 import { InfoRow, CardShell } from '../shared/preview-cards/SummaryCard.jsx';
 
-function ReturnReceiptStatsPanel({ receipt, partnerName, movementDate, ui }) {
+function ReturnReceiptStatsPanel({ receipt, partnerName, movementDate, token, apiBaseUrl, ui }) {
   const warehouseLabel = receipt['warehouse$_identifier'] || '—';
   const docStatus = receipt.documentStatus;
   const statusLabel = ui(STATUS_KEYS[docStatus]) || receipt['documentStatus$_identifier'] || docStatus || '—';
   const statusBadgeClass = STATUS_BADGE[docStatus] || 'bg-gray-50 text-gray-600 border-gray-200';
-  const sourceShipmentRef = receipt.sourceShipmentDocNo || null;
+
+  const specs = [
+    { key: 'sourceShipments', type: 'shipment', fetch: async () => receipt?.sourceShipments ?? [] },
+    { key: 'returnInvoices', type: 'sales-invoice', fetch: async () => receipt?.returnInvoices ?? [] },
+  ];
 
   return (
     <div className="pb-4">
@@ -32,11 +36,15 @@ function ReturnReceiptStatsPanel({ receipt, partnerName, movementDate, ui }) {
               {statusLabel}
             </span>
           </InfoRow>
-          {sourceShipmentRef && (
-            <InfoRow label={ui('returnReceiptPreviewSourceShipment')} value={sourceShipmentRef} />
-          )}
         </div>
       </CardShell>
+
+      <RelatedDocumentsCard
+        documentId={receipt.id}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        specs={specs}
+      />
     </div>
   );
 }
@@ -112,6 +120,8 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
           receipt={receipt}
           partnerName={partnerName}
           movementDate={movementDate}
+          token={token}
+          apiBaseUrl={apiBaseUrl}
           ui={ui}
         />
       ),
@@ -125,18 +135,6 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
       key: 'history',
       label: ui('invoicePreviewHistory'),
       content: <PreviewEmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />,
-    },
-    {
-      key: 'documents',
-      label: ui('shipmentPreviewDocuments'),
-      content: (
-        <RelatedDocuments
-          recordId={receipt.id}
-          data={receipt}
-          token={token}
-          apiBaseUrl={apiBaseUrl}
-        />
-      ),
     },
   ];
 

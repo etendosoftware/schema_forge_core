@@ -9,14 +9,21 @@ import { PreviewEmptyPanel } from '../shared/PreviewActionButtons.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { InfoRow, CardShell, PercentBar } from '../shared/preview-cards/SummaryCard.jsx';
 import { STATUS_BADGE, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
+import RelatedDocumentsCard from '../shared/preview-cards/RelatedDocumentsCard.jsx';
 
-function ReceiptStatsPanel({ receipt, partnerName, movementDate, ui, onOrderClick }) {
+function ReceiptStatsPanel({ receipt, partnerName, movementDate, token, apiBaseUrl, ui, onOrderClick }) {
   const invoiceStatusPct = Number(receipt.invoiceStatus ?? 0);
   const warehouseLabel = receipt['warehouse$_identifier'] || '—';
   const docStatus = receipt.documentStatus;
   const statusLabel = ui(STATUS_KEYS[docStatus]) || receipt['documentStatus$_identifier'] || docStatus || '—';
   const statusBadgeClass = STATUS_BADGE[docStatus] || 'bg-gray-50 text-gray-600 border-gray-200';
   const purchaseOrderNo = receipt['salesOrder$_identifier'] || null;
+
+  const specs = [
+    { key: 'linkedOrders', type: 'order', fetch: async () => receipt?.linkedOrders ?? [] },
+    { key: 'linkedInvoices', type: 'invoice', fetch: async () => receipt?.linkedInvoices ?? [] },
+    { key: 'linkedReturns', type: 'return-to-vendor', fetch: async () => receipt?.linkedReturns ?? [] },
+  ];
 
   return (
     <div className="pb-4">
@@ -50,6 +57,13 @@ function ReceiptStatsPanel({ receipt, partnerName, movementDate, ui, onOrderClic
           </InfoRow>
         </div>
       </CardShell>
+
+      <RelatedDocumentsCard
+        documentId={receipt.id}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        specs={specs}
+      />
     </div>
   );
 }
@@ -115,6 +129,8 @@ export default function GoodsReceiptPreview({ receipt, token, apiBaseUrl, window
           receipt={receipt}
           partnerName={partnerName}
           movementDate={movementDate}
+          token={token}
+          apiBaseUrl={apiBaseUrl}
           ui={ui}
           onOrderClick={purchaseOrderId
             ? () => { onClose?.(); navigate(`/purchase-order/${purchaseOrderId}`); }

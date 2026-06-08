@@ -8,7 +8,7 @@ import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
 import { PreviewPdfPanel } from '../shared/PreviewActionButtons.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { useShipmentPdf } from './useShipmentPdf.js';
-import RelatedDocuments from '@generated/goods-shipment/custom/RelatedDocuments';
+import RelatedDocumentsCard from '../shared/preview-cards/RelatedDocumentsCard.jsx';
 import { STATUS_BADGE, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
 import { InfoRow, CardShell, PercentBar } from '../shared/preview-cards/SummaryCard.jsx';
 
@@ -23,13 +23,18 @@ function EmptyPanel({ icon, text }) {
 
 // ── Tab content components ────────────────────────────────────────────────────
 
-function ShipmentStatsPanel({ shipment, partnerName, movementDate, ui, onOrderClick }) {
+function ShipmentStatsPanel({ shipment, partnerName, movementDate, token, apiBaseUrl, ui, onOrderClick }) {
   const invoiceStatusPct = Number(shipment.invoiceStatus ?? 0);
   const warehouseLabel = shipment['warehouse$_identifier'] || '—';
   const docStatus = shipment.documentStatus;
   const statusLabel = ui(STATUS_KEYS[docStatus]) || shipment['documentStatus$_identifier'] || docStatus || '—';
   const statusBadgeClass = STATUS_BADGE[docStatus] || 'bg-gray-50 text-gray-600 border-gray-200';
   const salesOrderNo = shipment['salesOrder$_identifier']?.split(' ')[0] || null;
+
+  const specs = [
+    { key: 'linkedOrders', type: 'sales-order', fetch: async () => shipment?.linkedOrders ?? [] },
+    { key: 'linkedInvoices', type: 'sales-invoice', fetch: async () => shipment?.linkedInvoices ?? [] },
+  ];
 
   return (
     <div className="pb-4">
@@ -63,6 +68,13 @@ function ShipmentStatsPanel({ shipment, partnerName, movementDate, ui, onOrderCl
           </InfoRow>
         </div>
       </CardShell>
+
+      <RelatedDocumentsCard
+        documentId={shipment.id}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        specs={specs}
+      />
     </div>
   );
 }
@@ -170,6 +182,8 @@ export default function GoodsShipmentPreview({ shipment, token, apiBaseUrl, wind
           shipment={shipment}
           partnerName={partnerName}
           movementDate={movementDate}
+          token={token}
+          apiBaseUrl={apiBaseUrl}
           ui={ui}
           onOrderClick={salesOrderId ? () => { onClose?.(); navigate(`/sales-order/${salesOrderId}`); } : undefined}
         />
@@ -184,18 +198,6 @@ export default function GoodsShipmentPreview({ shipment, token, apiBaseUrl, wind
       key: 'history',
       label: ui('invoicePreviewHistory'),
       content: <EmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />,
-    },
-    {
-      key: 'documents',
-      label: ui('shipmentPreviewDocuments'),
-      content: (
-        <RelatedDocuments
-          recordId={shipment.id}
-          data={shipment}
-          token={token}
-          apiBaseUrl={apiBaseUrl}
-        />
-      ),
     },
   ];
 
