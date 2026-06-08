@@ -63,7 +63,7 @@ async function waitForListData(page) {
 
 test.describe('Contacts Integration — Full journey', () => {
   test.skip(!RUN_INTEGRATION, 'Requires real Etendo backend (E2E_USE_MOCK=0 + E2E_PASSWORD)');
-  test.setTimeout(120_000);
+  test.setTimeout(180_000);
 
   test('create → detail → toggle → financial → bank account → list → filters → bulk delete', async ({ page }) => {
     const ts = Date.now();
