@@ -17644,6 +17644,7 @@
     "financeAccountDetailKpiWindowDays": "{count}D",
     "financeAccountDetailKpiWindowMonths": "{count}M",
     "financeAccountDetailKpiWindowRange": "rango",
+    "financeAccountDetailCardNumber": "Número de tarjeta",
     "financeAccountDetailIbanCopied": "IBAN copiado",
     "financeAccountDetailIbanCopyAria": "Copiar IBAN",
     "financeAccountMovementsEmpty": "Aún no hay movimientos",

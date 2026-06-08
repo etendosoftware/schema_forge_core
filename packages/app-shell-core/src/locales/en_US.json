@@ -17393,6 +17393,7 @@
     "financeAccountDetailKpiWindowDays": "{count}D",
     "financeAccountDetailKpiWindowMonths": "{count}M",
     "financeAccountDetailKpiWindowRange": "range",
+    "financeAccountDetailCardNumber": "Card number",
     "financeAccountDetailIbanCopied": "IBAN copied",
     "financeAccountDetailIbanCopyAria": "Copy IBAN",
     "financeAccountMovementsEmpty": "No movements yet",
