@@ -4,7 +4,7 @@ import { useUI } from '@/i18n';
 export default function ProductAdditionalInfoPanel({ entity, data, token, apiBaseUrl, catalogs, api, editing, onChange }) {
   const ui = useUI();
   return (
-    <div className="space-y-2 pb-6">
+    <div className="space-y-2 pb-6 [&_input]:bg-white">
       <div className="flex flex-row items-start p-2 gap-5">
         <div className="flex flex-col gap-1 w-[148px] shrink-0">
           <div className="text-sm font-semibold text-[#121217]">{ui('commercial')}</div>

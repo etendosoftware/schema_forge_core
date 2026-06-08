@@ -19,6 +19,7 @@
     "toolbarPaddingX": "px-2",
     "toolbarBorderBottom": true,
     "noHeaderBorder": true,
+    "whiteFormBackground": true,
     "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto pt-2 pl-0 pr-4 pb-5 border-l border-[#E8EAEF]",
     "attachments": true,
     "customTabsAfterBottom": true,

@@ -51,9 +51,9 @@ function buildSearchPlaceholder(ui, label) {
  * distinct visual contracts and should read as independent statements.
  */
 function resolveGridClass(cols, layout) {
-  if (cols) return 'grid items-start';
-  if (layout === 'horizontal') return 'grid grid-cols-2 gap-x-5 gap-y-5 md:grid-cols-4 items-start';
-  return 'grid grid-cols-2 gap-3 md:grid-cols-3 items-start';
+  if (cols) return 'grid';
+  if (layout === 'horizontal') return 'grid grid-cols-2 gap-x-5 gap-y-5 md:grid-cols-4';
+  return 'grid grid-cols-2 gap-3 md:grid-cols-3';
 }
 
 /**
@@ -926,7 +926,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     }
     if (f.type === 'textarea') {
       return (
-        <div key={f.key} className="space-y-1.5 h-full flex flex-col">
+        <div key={f.key} className="space-y-1.5">
           <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
             {label}{requiredAsteriskIfEditable(f, isReadOnly)}
           </Label>
@@ -941,7 +941,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             disabled={isReadOnly}
             className={[
               'flex w-full rounded-lg border border-[#D1D4DB] p-2 text-sm shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
-              'placeholder:text-muted-foreground resize-none flex-1 min-h-[96px]',
+              'placeholder:text-muted-foreground resize-none min-h-[96px]',
               'focus:outline-none focus:ring-2 focus:ring-primary',
               'disabled:bg-muted/50 disabled:cursor-not-allowed',
               getReadOnlyBgClass(isReadOnly),
@@ -971,7 +971,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     }
     if (f.type === 'image') {
       return (
-        <div key={f.key} className="space-y-1.5">
+        <div key={f.key} className="space-y-1.5 row-span-2 flex flex-col h-full">
           <Label className="text-sm text-foreground font-medium">{label}</Label>
           <ImageField
             imageId={data?.[f.key] ?? ''}
@@ -980,6 +980,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             apiBaseUrl={apiBaseUrl}
             readOnly={isReadOnly}
             fieldKey={f.key}
+            stretch
           />
         </div>
       );

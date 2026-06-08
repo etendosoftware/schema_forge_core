@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUI } from '@/i18n';
 import { formatDashboardAxisTick } from '@/lib/dashboardNumberFormat';
@@ -82,19 +83,31 @@ function buildChartData(transactions, currentStock, maxMonths = 12) {
 
 const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-function ChartSVG({ months, values, W, H, PAD_X, PAD_Y, gradId, fontSize = 10 }) {
+function smoothPath(xs, ys) {
+  if (xs.length < 2) return xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x},${ys[i]}`).join(' ');
+  const d = [`M${xs[0]},${ys[0]}`];
+  for (let i = 1; i < xs.length; i++) {
+    const cpX = (xs[i - 1] + xs[i]) / 2;
+    d.push(`C${cpX},${ys[i - 1]} ${cpX},${ys[i]} ${xs[i]},${ys[i]}`);
+  }
+  return d.join(' ');
+}
+
+function ChartSVG({ months, values, W, H, PAD_X, PAD_Y, gradId, fontSize = 10, PAD_R = PAD_X, preserveAspectRatio = 'xMidYMid meet' }) {
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
   const maxVal = Math.max(...values, 1);
   const minVal = Math.min(...values, 0);
   const range = maxVal - minVal || 1;
 
-  const xStep = (W - PAD_X * 2) / Math.max(values.length - 1, 1);
+  const xStep = (W - PAD_X - PAD_R) / Math.max(values.length - 1, 1);
   const toY = v => PAD_Y + (H - PAD_Y * 2) * (1 - (v - minVal) / range);
   const toX = i => PAD_X + i * xStep;
 
-  const pts = values.map((v, i) => `${toX(i)},${toY(v)}`).join(' ');
-  const areaPts = `${toX(0)},${H} ${pts} ${toX(values.length - 1)},${H}`;
+  const xs = values.map((_, i) => toX(i));
+  const ys = values.map(v => toY(v));
+  const linePath = smoothPath(xs, ys);
+  const areaPath = `${linePath} L${xs[xs.length - 1]},${H} L${xs[0]},${H} Z`;
 
   const yLabels = [
     { v: maxVal, label: formatDashboardAxisTick(maxVal) },
@@ -156,7 +169,7 @@ function ChartSVG({ months, values, W, H, PAD_X, PAD_Y, gradId, fontSize = 10 })
   const hVal = hoveredIdx !== null ? values[hoveredIdx].toLocaleString() : null;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H + 20}`} className="w-full h-full cursor-crosshair"
+    <svg viewBox={`0 0 ${W} ${H + 20}`} preserveAspectRatio={preserveAspectRatio} className="w-full h-full cursor-crosshair"
       onMouseMove={handleMouseMove} onMouseLeave={() => setHoveredIdx(null)}>
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
@@ -164,14 +177,14 @@ function ChartSVG({ months, values, W, H, PAD_X, PAD_Y, gradId, fontSize = 10 })
           <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.02" />
         </linearGradient>
       </defs>
-      <line x1={PAD_X} y1={PAD_Y} x2={W - PAD_X} y2={PAD_Y} stroke="#f3f4f6" strokeWidth="1" />
-      <line x1={PAD_X} y1={H - PAD_Y} x2={W - PAD_X} y2={H - PAD_Y} stroke="#f3f4f6" strokeWidth="1" />
       {yLabels.map((yl, i) => (
-        <text key={i} x={PAD_X - 5} y={toY(yl.v) + 4} textAnchor="end" fontSize={fontSize} fill="#6b7280">{yl.label}</text>
+        <line key={i} x1={PAD_X} y1={toY(yl.v)} x2={W - PAD_R} y2={toY(yl.v)} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="4,3" />
       ))}
-      <line x1={PAD_X} y1={toY(0)} x2={W - PAD_X} y2={toY(0)} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="4,3" />
-      <polygon points={areaPts} fill={`url(#${gradId})`} />
-      <polyline points={pts} fill="none" stroke="#3b82f6" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+      {yLabels.map((yl, i) => (
+        <text key={i} x={PAD_X - 5} y={toY(yl.v) + 4} textAnchor="end" fontSize={fontSize} fill="#9ca3af">{yl.label}</text>
+      ))}
+      <path d={areaPath} fill={`url(#${gradId})`} />
+      <path d={linePath} fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       {hoveredIdx !== null && (
         <>
           <line x1={hx} y1={PAD_Y} x2={hx} y2={H} stroke="#94a3b8" strokeWidth="1" strokeDasharray="3,2" />
@@ -180,9 +193,6 @@ function ChartSVG({ months, values, W, H, PAD_X, PAD_Y, gradId, fontSize = 10 })
           <text x={tooltipX + TW / 2} y={tooltipY + fontSize + 2} textAnchor="middle" fontSize={fontSize} fill="#94a3b8">{hMonth}</text>
           <text x={tooltipX + TW / 2} y={tooltipY + TH - 4} textAnchor="middle" fontSize={fontSize + 1} fontWeight="700" fill="white">{hVal}</text>
         </>
-      )}
-      {hoveredIdx === null && (
-        <circle cx={toX(values.length - 1)} cy={toY(values[values.length - 1])} r="4" fill="#3b82f6" />
       )}
       {xLabels.map((l, i) => l.text && (
         <text key={i} x={l.x} y={H + 14} textAnchor="middle"
@@ -256,14 +266,14 @@ function StockChart({
           <div className="text-sm font-semibold text-gray-800">{ui('stockMovement')}</div>
           <button
             onClick={() => setInternalOpen(true)}
-            className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors border border-gray-200 rounded-lg px-3 py-1"
+            className="inline-flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-700 underline underline-offset-2 transition-colors"
           >
-            {ui('expand')}
+            {ui('expand')} <ExternalLink size={13} />
           </button>
         </div>
         <div className="text-xs text-gray-400 mb-2">{ui('productLast12Months')}</div>
-        <div style={{ height: 120 }}>
-          <ChartSVG {...chart} W={340} H={100} PAD_X={36} PAD_Y={8} gradId="sbGrad" fontSize={10} />
+        <div style={{ height: 170 }}>
+          <ChartSVG {...chart} W={340} H={100} PAD_X={36} PAD_R={8} PAD_Y={12} gradId="sbGrad" fontSize={10} preserveAspectRatio="none" />
         </div>
       </div>
 
@@ -274,10 +284,10 @@ function StockChart({
             <DialogTitle>
               <div className="flex items-center justify-between gap-4 pr-8">
                 <span>{ui('stockMovement')}</span>
-                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
                   {PERIOD_OPTIONS.map(opt => (
                     <button key={opt.label} onClick={() => setPeriod(opt.label)}
-                      className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${period === opt.label ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${period === opt.label ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                       {opt.label}
                     </button>
                   ))}

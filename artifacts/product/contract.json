@@ -1,8 +1,8 @@
 {
   "version": "0.6.0",
   "generatedAt": "2026-04-29T18:11:24.842Z",
-  "updatedAt": "2026-06-08T14:41:55.573Z",
-  "checksum": "9c1c7ffd4bb96543",
+  "updatedAt": "2026-06-08T16:50:20.597Z",
+  "checksum": "376e6951a1e0bcca",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -43,6 +43,7 @@
       "noHeaderBorder": true,
       "toolbarBorderBottom": true,
       "compactSidebarPadding": true,
+      "whiteFormBackground": true,
       "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto pt-2 pl-0 pr-4 pb-5 border-l border-[#E8EAEF]",
       "formCardPadding": "px-2 pb-2",
       "tabsBarPaddingX": "px-2",
@@ -1754,6 +1755,7 @@
       "noHeaderBorder": true,
       "toolbarBorderBottom": true,
       "compactSidebarPadding": true,
+      "whiteFormBackground": true,
       "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto pt-2 pl-0 pr-4 pb-5 border-l border-[#E8EAEF]",
       "formCardPadding": "px-2 pb-2",
       "tabsBarPaddingX": "px-2",
