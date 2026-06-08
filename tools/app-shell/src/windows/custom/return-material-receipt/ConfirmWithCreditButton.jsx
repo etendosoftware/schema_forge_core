@@ -6,8 +6,6 @@ import { useUI } from '@/i18n';
 import { ConfirmResultModal } from '@/components/contract-ui/ConfirmResultModal';
 import ConfirmInOutModal from '@/components/contract-ui/ConfirmInOutModal';
 import CreateInvoiceConfirmModal from '@/components/contract-ui/CreateInvoiceConfirmModal';
-import CloneButton from '@/windows/custom/shared/CloneButton';
-import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import { generateReturnReceiptPdf, getReturnReceiptPdfLabels } from './useReturnReceiptPdf';
 
 function buildInvoiceResult(inv, ui) {
@@ -28,14 +26,14 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
   const [showModal, setShowModal] = useState(false);
   const [creatingInvoice, setCreatingInvoice] = useState(false);
   const [result, setResult] = useState(null);
-  const [cloneOpen, setCloneOpen] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
 
   const status = data?.documentStatus;
   const currency = data?.['currency$_identifier'] || '';
+  const confirmDisabled = typeof data?.linesCount === 'number' && data.linesCount === 0;
   const hasReturnInvoice = Array.isArray(data?.returnInvoices)
-    ? data.returnInvoices.length > 0
+    ? data.returnInvoices.some(inv => inv.documentStatus === 'CO')
     : data?.hasReturnInvoice === true;
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,
@@ -86,21 +84,18 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
   return (
     <>
       {status === 'DR' && (
-        <button type="button" data-testid="action-confirm-with-credit" onClick={() => setShowModal(true)}
-          style={{ fontSize: 14, fontWeight: 500, padding: '8px 18px', borderRadius: 8, background: '#18181b', color: '#fff', border: 'none', cursor: 'pointer', lineHeight: 1.4 }}>
+        <button type="button" data-testid="action-confirm-with-credit"
+          onClick={() => !confirmDisabled && setShowModal(true)}
+          disabled={confirmDisabled}
+          style={{ fontSize: 14, fontWeight: 500, padding: '8px 18px', borderRadius: 8, background: confirmDisabled ? '#9ca3af' : '#18181b', color: '#fff', border: 'none', cursor: confirmDisabled ? 'not-allowed' : 'pointer', lineHeight: 1.4, opacity: confirmDisabled ? 0.6 : 1 }}>
           {ui('processReceipt')}
         </button>
       )}
-      {status === 'CO' && (
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          {!hasReturnInvoice && (
-            <button type="button" data-testid="action-create-return-invoice" onClick={() => setShowModal(true)}
-              style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: '#185FA5', color: '#fff', fontWeight: 500, fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              {ui('createReturnInvoice')}
-            </button>
-          )}
-          <CloneButton onClick={() => setCloneOpen(true)} title={ui('cloneOrderBtn')} />
-        </div>
+      {status === 'CO' && !hasReturnInvoice && (
+        <button type="button" data-testid="action-create-return-invoice" onClick={() => setShowModal(true)}
+          style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: '#185FA5', color: '#fff', fontWeight: 500, fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          {ui('createReturnInvoice')}
+        </button>
       )}
       <PrintButton onClick={handlePrint} loading={pdfLoading} ui={ui} />
 
@@ -160,12 +155,6 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
         document.body,
       )}
 
-      {cloneOpen && createPortal(
-        <CloneOrderModal recordId={data?.id || recordId} data={data} apiBaseUrl={apiBaseUrl}
-          headers={headers} headerEntity="returnMaterialReceipt" routePrefix="/return-material-receipt/"
-          onClose={() => setCloneOpen(false)} />,
-        document.body,
-      )}
     </>
   );
 }
