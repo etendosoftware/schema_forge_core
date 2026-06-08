@@ -18,8 +18,12 @@ vi.mock('../useShipmentPdf.js', () => ({
   useShipmentPdf: vi.fn(() => ({ pdfUrl: null, pdfBlob: null, loading: false, error: null })),
 }));
 
-vi.mock('@generated/goods-shipment/custom/RelatedDocuments', () => ({
-  default: () => <div data-testid="related-docs" />,
+const capturedSpecs = { current: null };
+vi.mock('../../shared/preview-cards/RelatedDocumentsCard.jsx', () => ({
+  default: ({ documentId, specs }) => {
+    capturedSpecs.current = specs;
+    return <div data-testid="related-docs-card" data-doc-id={documentId} />;
+  },
 }));
 
 vi.mock('../../shared/GenericPreviewModal.jsx', () => ({
@@ -146,17 +150,20 @@ describe('GoodsShipmentPreview', () => {
     expect(title).toContain('ALB-001');
   });
 
-  it('renders 4 tabs: general, messages, history, documents', () => {
+  it('renders 3 tabs: general, messages, history (no standalone documents tab)', () => {
     renderGSPreview();
     expect(screen.getByTestId('tab-general')).toBeInTheDocument();
     expect(screen.getByTestId('tab-messages')).toBeInTheDocument();
     expect(screen.getByTestId('tab-history')).toBeInTheDocument();
-    expect(screen.getByTestId('tab-documents')).toBeInTheDocument();
+    expect(screen.queryByTestId('tab-documents')).not.toBeInTheDocument();
   });
 
-  it('renders related documents component in the documents tab', () => {
+  it('renders RelatedDocumentsCard inside the general tab with the shipment id', () => {
     renderGSPreview();
-    expect(screen.getByTestId('related-docs')).toBeInTheDocument();
+    const card = screen.getByTestId('related-docs-card');
+    expect(card).toBeInTheDocument();
+    expect(card.closest('[data-testid="tab-general"]')).toBeInTheDocument();
+    expect(card.getAttribute('data-doc-id')).toBe('ship-1');
   });
 
   it('shows send modal when email button is clicked', () => {
@@ -185,5 +192,114 @@ describe('GoodsShipmentPreview', () => {
     renderGSPreview();
     const downloadBtn = screen.getByTestId('icon-download').closest('button');
     expect(downloadBtn).not.toBeDisabled();
+  });
+
+  describe('shipmentDocSpecs fetch functions', () => {
+    const shipmentId = 'ship-1';
+    const token = 'tok';
+    const base = '/api/goods-shipment';
+
+    function mockDetailFetch(detail) {
+      global.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ response: { data: [detail] } }),
+        }),
+      );
+    }
+
+    beforeEach(() => {
+      capturedSpecs.current = null;
+    });
+
+    it('orders spec fetches linkedOrders from the detail endpoint', async () => {
+      mockDetailFetch({ linkedOrders: [{ id: 'ord-1' }], linkedInvoices: [], returnReceipts: [] });
+      renderGSPreview();
+      const specs = capturedSpecs.current;
+      expect(specs).toHaveLength(3);
+      const result = await specs[0].fetch(shipmentId, token, base);
+      expect(result).toEqual([{ id: 'ord-1' }]);
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${base}/goodsShipment/${shipmentId}`,
+        expect.objectContaining({ headers: expect.objectContaining({ Authorization: `Bearer ${token}` }) }),
+      );
+    });
+
+    it('invoices spec fetches linkedInvoices from the detail endpoint', async () => {
+      mockDetailFetch({ linkedOrders: [], linkedInvoices: [{ id: 'inv-1' }], returnReceipts: [] });
+      renderGSPreview();
+      const specs = capturedSpecs.current;
+      const result = await specs[1].fetch(shipmentId, token, base);
+      expect(result).toEqual([{ id: 'inv-1' }]);
+    });
+
+    it('returns spec fetches returnReceipts from the detail endpoint', async () => {
+      mockDetailFetch({ linkedOrders: [], linkedInvoices: [], returnReceipts: [{ id: 'ret-1' }] });
+      renderGSPreview();
+      const specs = capturedSpecs.current;
+      const result = await specs[2].fetch(shipmentId, token, base);
+      expect(result).toEqual([{ id: 'ret-1' }]);
+    });
+
+    it('all three specs share one HTTP call (caching)', async () => {
+      mockDetailFetch({ linkedOrders: [{ id: 'ord-1' }], linkedInvoices: [{ id: 'inv-1' }], returnReceipts: [] });
+      renderGSPreview();
+      const specs = capturedSpecs.current;
+      await Promise.all([
+        specs[0].fetch(shipmentId, token, base),
+        specs[1].fetch(shipmentId, token, base),
+        specs[2].fetch(shipmentId, token, base),
+      ]);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns empty arrays when the fetch response is missing fields', async () => {
+      mockDetailFetch({});
+      renderGSPreview();
+      const specs = capturedSpecs.current;
+      const [orders, invoices, returns] = await Promise.all([
+        specs[0].fetch(shipmentId, token, base),
+        specs[1].fetch(shipmentId, token, base),
+        specs[2].fetch(shipmentId, token, base),
+      ]);
+      expect(orders).toEqual([]);
+      expect(invoices).toEqual([]);
+      expect(returns).toEqual([]);
+    });
+
+    it('resolves to empty arrays when fetch rejects (error path)', async () => {
+      global.fetch = vi.fn(() => Promise.reject(new Error('Network error')));
+      renderGSPreview();
+      const specs = capturedSpecs.current;
+      const [orders, invoices, returns] = await Promise.all([
+        specs[0].fetch(shipmentId, token, base),
+        specs[1].fetch(shipmentId, token, base),
+        specs[2].fetch(shipmentId, token, base),
+      ]);
+      expect(orders).toEqual([]);
+      expect(invoices).toEqual([]);
+      expect(returns).toEqual([]);
+    });
+
+    it('resolves to empty arrays when fetch returns a non-ok response', async () => {
+      global.fetch = vi.fn(() =>
+        Promise.resolve({ ok: false, status: 500, json: () => Promise.resolve({}) }),
+      );
+      renderGSPreview();
+      const specs = capturedSpecs.current;
+      const result = await specs[0].fetch(shipmentId, token, base);
+      expect(result).toEqual([]);
+    });
+
+    it('spec keys and types are set correctly', () => {
+      renderGSPreview();
+      const specs = capturedSpecs.current;
+      expect(specs[0].key).toBe('orders');
+      expect(specs[0].type).toBe('sales-order');
+      expect(specs[1].key).toBe('invoices');
+      expect(specs[1].type).toBe('sales-invoice');
+      expect(specs[2].key).toBe('returns');
+      expect(specs[2].type).toBe('return-material-receipt');
+    });
   });
 });

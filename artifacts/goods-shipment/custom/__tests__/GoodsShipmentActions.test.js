@@ -79,6 +79,20 @@ describe('GoodsShipmentActions', () => {
     });
   });
 
+  describe('Create Return button visibility — partial return support', () => {
+    it('derives canCreateReturn from data?.canCreateReturn === true (backend-computed)', () => {
+      assert.match(src, /canCreateReturn\s*=\s*data\?\.canCreateReturn\s*===\s*true/);
+    });
+
+    it('does not use hasReturn to gate the create-return button', () => {
+      assert.doesNotMatch(src, /\bhasReturn\b/);
+    });
+
+    it('gates the create-return button on isCompleted && canCreateReturn', () => {
+      assert.match(src, /isCompleted\s*&&\s*canCreateReturn/);
+    });
+  });
+
   describe('SendDocumentModal integration', () => {
     it('imports SendDocumentModal and SendDocumentButton', () => {
       assert.match(src, /import\s+SendDocumentModal\s*,\s*\{[^}]*SendDocumentButton[^}]*\}\s*from/);

@@ -91,6 +91,28 @@ describe('StatementLinesInline', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders the contact name, the contact FK and the G/L item columns', () => {
+    linesMock.mockReturnValue({
+      lines: [
+        {
+          id: 'l1', date: '2026-05-06T00:00:00Z', description: 'Transfer',
+          bpartnerName: 'Acme typed', bpartnerFkName: 'Acme S.L.',
+          glItemName: 'Comisiones', amount: 100, matched: false,
+        },
+      ],
+      loading: false,
+    });
+    render(<StatementLinesInline statementId="s1" />);
+    // The header exposes the three distinct columns.
+    expect(screen.getByText('financeAccountStatementLinesColBpartner')).toBeInTheDocument();
+    expect(screen.getByText('financeAccountStatementLinesColContact')).toBeInTheDocument();
+    expect(screen.getByText('financeAccountStatementLinesColGlItem')).toBeInTheDocument();
+    // The row shows the free-text name, the resolved BP and the G/L item.
+    expect(screen.getByText('Acme typed')).toBeInTheDocument();
+    expect(screen.getByText('Acme S.L.')).toBeInTheDocument();
+    expect(screen.getByText('Comisiones')).toBeInTheDocument();
+  });
+
   it('falls back to "—" for empty description', () => {
     linesMock.mockReturnValue({
       lines: [
