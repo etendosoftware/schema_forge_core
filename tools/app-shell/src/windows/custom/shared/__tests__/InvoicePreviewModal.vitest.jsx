@@ -63,8 +63,31 @@ vi.mock('@/components/contract-ui/SendDocumentModal.jsx', () => ({
   default: () => <div data-testid="send-modal">Send Modal</div>,
 }));
 
+const capturedRelatedSpecs = { current: null };
 vi.mock('@/windows/custom/shared/preview-cards/RelatedDocumentsCard.jsx', () => ({
-  default: ({ documentId }) => <div data-testid="related-docs-card" data-doc-id={documentId} />,
+  default: ({ documentId, specs }) => {
+    capturedRelatedSpecs.current = specs;
+    return <div data-testid="related-docs-card" data-doc-id={documentId} />;
+  },
+}));
+
+vi.mock('@/components/related-documents', () => ({
+  fetchById: vi.fn(),
+  fetchByCriteria: vi.fn(),
+}));
+
+vi.mock('@/components/ui/tooltip', () => ({
+  Tooltip: ({ children }) => children,
+  TooltipContent: ({ children }) => children,
+  TooltipProvider: ({ children }) => children,
+  TooltipTrigger: ({ children }) => children,
+}));
+
+vi.mock('@/components/ui/tooltip.jsx', () => ({
+  Tooltip: ({ children }) => children,
+  TooltipContent: ({ children }) => children,
+  TooltipProvider: ({ children }) => children,
+  TooltipTrigger: ({ children }) => children,
 }));
 
 vi.mock('@/windows/custom/fiscal-config/useFiscalConfig.js', () => ({
@@ -112,6 +135,7 @@ vi.mock('lucide-react', () => ({
 // --- Import under test ----------------------------------------------------
 
 import InvoicePreviewModal from '../InvoicePreviewModal.jsx';
+import { fetchById, fetchByCriteria } from '@/components/related-documents';
 
 // --- Helpers --------------------------------------------------------------
 
@@ -302,5 +326,72 @@ describe('InvoicePreviewModal', () => {
   it('renders drop zone for purchase invoice', () => {
     renderPreview({ specName: 'purchase-invoice' });
     expect(screen.getByTestId('preview-drop-zone')).toBeInTheDocument();
+  });
+
+  describe('invoiceRelatedSpecs — salesOrder branch', () => {
+    const invoiceWithOrder = {
+      ...sampleInvoice,
+      salesOrder: 'so-42',
+    };
+
+    beforeEach(() => {
+      capturedRelatedSpecs.current = null;
+      fetchById.mockReset();
+      fetchByCriteria.mockReset();
+    });
+
+    it('renders RelatedDocumentsCard when invoice has a salesOrder', () => {
+      renderPreview({ invoice: invoiceWithOrder });
+      expect(screen.getByTestId('related-docs-card')).toBeInTheDocument();
+    });
+
+    it('passes 2 specs when invoice has a salesOrder', () => {
+      renderPreview({ invoice: invoiceWithOrder });
+      expect(capturedRelatedSpecs.current).toHaveLength(2);
+    });
+
+    it('spec keys are sales-order and shipment', () => {
+      renderPreview({ invoice: invoiceWithOrder });
+      const specs = capturedRelatedSpecs.current;
+      expect(specs[0].key).toBe('sales-order');
+      expect(specs[0].type).toBe('sales-order');
+      expect(specs[1].key).toBe('shipment');
+      expect(specs[1].type).toBe('shipment');
+    });
+
+    it('passes empty specs array when invoice has no salesOrder', () => {
+      renderPreview({ invoice: sampleInvoice });
+      expect(capturedRelatedSpecs.current).toEqual([]);
+    });
+
+    it('sales-order spec calls fetchById and resolves to a 1-item array', async () => {
+      const orderRecord = { id: 'so-42', documentNo: 'SO-042' };
+      fetchById.mockResolvedValue(orderRecord);
+      renderPreview({ invoice: invoiceWithOrder });
+      const specs = capturedRelatedSpecs.current;
+      const result = await specs[0].fetch('inv-1', 'tok', '/api/sales-invoice');
+      expect(fetchById).toHaveBeenCalledWith('sales-order', 'header', 'so-42', 'tok', '/api/sales-invoice');
+      expect(result).toEqual([orderRecord]);
+    });
+
+    it('sales-order spec resolves to empty array when fetchById returns null', async () => {
+      fetchById.mockResolvedValue(null);
+      renderPreview({ invoice: invoiceWithOrder });
+      const specs = capturedRelatedSpecs.current;
+      const result = await specs[0].fetch('inv-1', 'tok', '/api/sales-invoice');
+      expect(result).toEqual([]);
+    });
+
+    it('shipment spec calls fetchByCriteria with the correct arguments', async () => {
+      const shipmentRows = [{ id: 'ship-1' }, { id: 'ship-2' }];
+      fetchByCriteria.mockResolvedValue(shipmentRows);
+      renderPreview({ invoice: invoiceWithOrder });
+      const specs = capturedRelatedSpecs.current;
+      const result = await specs[1].fetch('inv-1', 'tok', '/api/sales-invoice');
+      expect(fetchByCriteria).toHaveBeenCalledWith(
+        'goods-shipment', 'goodsShipment', 'salesOrder', 'so-42', 'tok', '/api/sales-invoice',
+      );
+      expect(result).toEqual(shipmentRows);
+    });
   });
 });
