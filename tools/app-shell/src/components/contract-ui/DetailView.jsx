@@ -848,6 +848,32 @@ function getLineMenuActionsRef(getLineMenuActions, extraActionsRef) {
   return getLineMenuActions ? extraActionsRef : undefined;
 }
 
+export function getWindowTitle(breadcrumb, tMenu, windowName) {
+  return breadcrumb
+      ? tMenu(breadcrumb.split(' / ').at(-1).trim()) || breadcrumb.split(' / ').at(-1).trim()
+      : tMenu(windowName) || windowName || '';
+}
+
+export function getRecordTitle(isNew, ui, data, titleField) {
+  return isNew
+      ? ui('newRecord')
+      : `${resolveIdentifier(data, titleField) || data._identifier || data.id || ''}`;
+}
+
+export function getFullBreadcrumb(breadcrumb, tMenu, title, windowTitle) {
+  return breadcrumb
+      ? `${breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}${title ? ` / ${title}` : ''}`
+      : windowTitle;
+}
+
+export function getOnAddToFavorites(favKey, toggleFavorite, entityLabel, breadcrumb, windowName) {
+  return favKey ? () => toggleFavorite(favKey, entityLabel || breadcrumb?.split(' / ').at(-1).trim() || windowName) : undefined;
+}
+
+export function getLinesContainerClassName(linesLayout, embedded) {
+  return `${linesLayout === 'inlineEditable' ? '' : 'pt-3 '}flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`;
+}
+
 /**
  * Full-page detail view for a single entity record.
  * Two-zone layout: gray top bar + white content card with rounded corner.
@@ -1886,24 +1912,18 @@ export function DetailView({
   //    appears once the header form is complete.
   // 3. Otherwise (no metadata at all), allow.
   let canAddLines = resolveCanAddLines(addLineGuard, data, requiredHeaderFields);
-  const windowTitle = breadcrumb
-    ? tMenu(breadcrumb.split(' / ').at(-1).trim()) || breadcrumb.split(' / ').at(-1).trim()
-    : tMenu(windowName) || windowName || '';
+  const windowTitle = getWindowTitle(breadcrumb, tMenu, windowName);
   const { toggleFavorite, isFavorite } = useFavorites();
   const favKey = windowName || windowTitle;
   const favActive = isFavorite(favKey);
 
-  const title = isNew
-    ? ui('newRecord')
-    : `${resolveIdentifier(data, titleField) || data._identifier || data.id || ''}`;
-  const fullBreadcrumb = breadcrumb
-    ? `${breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}${title ? ` / ${title}` : ''}`
-    : windowTitle;
+  const title = getRecordTitle(isNew, ui, data, titleField);
+  const fullBreadcrumb = getFullBreadcrumb(breadcrumb, tMenu, title, windowTitle);
 
   useSetPageMeta({
     title: title || windowTitle,
     breadcrumb: fullBreadcrumb,
-    onAddToFavorites: favKey ? () => toggleFavorite(favKey, entityLabel || breadcrumb?.split(' / ').at(-1).trim() || windowName) : undefined,
+    onAddToFavorites: getOnAddToFavorites(favKey, toggleFavorite, entityLabel, breadcrumb, windowName),
     isFavorite: favActive,
   }, [favActive, title]);
 
@@ -2603,7 +2623,7 @@ export function DetailView({
                               onForceOpenHandled={() => setForceOpenImport(false)}
                             />
                           ) : (
-                            <div className={`${linesLayout === 'inlineEditable' ? '' : 'pt-3 '}flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
+                            <div className={getLinesContainerClassName(linesLayout, embedded)}>
                               {/* Table + add button */}
                               <div className="flex-1 min-w-0">
                                 {/* Bulk delete bar (classic only) */}
