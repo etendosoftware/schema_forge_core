@@ -51,9 +51,9 @@ function buildSearchPlaceholder(ui, label) {
  * distinct visual contracts and should read as independent statements.
  */
 function resolveGridClass(cols, layout) {
-  if (cols) return 'grid';
-  if (layout === 'horizontal') return 'grid grid-cols-2 gap-x-5 gap-y-5 md:grid-cols-4';
-  return 'grid grid-cols-2 gap-3 md:grid-cols-3';
+  if (cols) return 'grid items-start';
+  if (layout === 'horizontal') return 'grid grid-cols-2 gap-x-5 gap-y-5 md:grid-cols-4 items-start';
+  return 'grid grid-cols-2 gap-3 md:grid-cols-3 items-start';
 }
 
 /**
@@ -717,9 +717,9 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   const gridClass = resolveGridClass(cols, layout);
   const gridStyle = cols ? { gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 } : undefined;
 
-  // If there's an image field, pin it to the right — rest of fields render in a 3-col grid on the left
-  const imageField = displayFields.find(f => f.type === 'image');
-  const fieldsToRender = imageField ? displayFields.filter(f => f.type !== 'image') : displayFields;
+  // If there's an image field (not inline), pin it to the right — rest of fields render in a 3-col grid on the left
+  const imageField = displayFields.find(f => f.type === 'image' && !f.inline);
+  const fieldsToRender = imageField ? displayFields.filter(f => f.type !== 'image' || f.inline) : displayFields;
 
   const renderField = (f) => {
     // Resolution order: per-window AD_Field label (most specific) → global locale by column → camelCase key
@@ -965,6 +965,21 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             onBlur={() => onFieldBlur?.(f.key)}
             disabled={isReadOnly || savingField === f.key}
             required={f.required && !isReadOnly}
+          />
+        </div>
+      );
+    }
+    if (f.type === 'image') {
+      return (
+        <div key={f.key} className="space-y-1.5">
+          <Label className="text-sm text-foreground font-medium">{label}</Label>
+          <ImageField
+            imageId={data?.[f.key] ?? ''}
+            onChange={(newId) => onChange?.(f.key, newId, f.column)}
+            token={token}
+            apiBaseUrl={apiBaseUrl}
+            readOnly={isReadOnly}
+            fieldKey={f.key}
           />
         </div>
       );

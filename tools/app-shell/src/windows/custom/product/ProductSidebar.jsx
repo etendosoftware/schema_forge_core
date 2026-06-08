@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Boxes, Lock, PackageCheck } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUI } from '@/i18n';
 import { formatDashboardAxisTick } from '@/lib/dashboardNumberFormat';
@@ -13,16 +12,15 @@ const COLORS = {
   red:   { bg: 'bg-red-50',   icon: 'text-red-400'   },
 };
 
-function StatCard({ icon: Icon, label, value, subtitle, color = 'blue' }) {
+function StatCard({ label, value, subtitle, color = 'blue' }) {
   const c = COLORS[color] ?? COLORS.blue;
   return (
-    <div className={`rounded-2xl p-4 ${c.bg}`}>
-      <Icon size={18} className={`${c.icon} mb-2`} />
+    <div className={`rounded-2xl p-3 ${c.bg}`}>
       <div className="text-sm font-medium text-gray-600 mb-0.5">{label}</div>
-      <div className="text-3xl font-bold leading-none tracking-tight text-gray-900">
+      <div className="text-xl font-bold leading-none tracking-tight text-gray-900">
         {value === null ? <span className="text-gray-300">—</span> : value}
       </div>
-      {subtitle && <div className="text-sm mt-1.5 text-gray-500">{subtitle}</div>}
+      {subtitle && <div className="text-xs mt-1 text-gray-500">{subtitle}</div>}
     </div>
   );
 }
@@ -253,7 +251,7 @@ function StockChart({
   return (
     <>
       {/* Mini chart shown in Summary tab */}
-      <div className="rounded-2xl border border-gray-100 bg-white p-4">
+      <div className="px-4 pt-1">
         <div className="flex items-center justify-between mb-1">
           <div className="text-sm font-semibold text-gray-800">{ui('stockMovement')}</div>
           <button
@@ -412,8 +410,8 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
   return (
     <div className="flex flex-col gap-3">
 
-      {/* ── Inventory overview pill ── */}
-      <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm">
+      {/* ── Inventory overview ── */}
+      <div>
 
         {/* Header inside the pill */}
         <div className="flex items-center justify-between px-4 pt-4 pb-3">
@@ -432,43 +430,54 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
         {/* Summary tab content */}
         {activeTab === 'summary' && (
           <div className="px-4 pb-4 flex flex-col gap-3">
-            <StatCard icon={Boxes} label={ui('onHand')} value={fmt(onHand)} subtitle={onHandSubtitle} color={onHandColor} />
-            <StatCard icon={PackageCheck} label={ui('available')} value={fmt(available)} subtitle={availablePct !== null ? ui('productPctFree', { pct: availablePct }) : null} color={availableColor} />
-            <StatCard icon={Lock} label={ui('reserved')} value={fmt(reserved)} subtitle={reserved !== null && reserved > 0 ? ui('unitsHeld') : null} color="amber" />
+            <StatCard label={ui('onHand')} value={fmt(onHand)} subtitle={onHandSubtitle} color={onHandColor} />
+            {(reserved === null || reserved > 0) && (
+              <StatCard label={ui('available')} value={fmt(available)} subtitle={availablePct !== null ? ui('productPctFree', { pct: availablePct }) : null} color={availableColor} />
+            )}
+            {(reserved === null || reserved > 0) && (
+              <StatCard label={ui('reserved')} value={fmt(reserved)} subtitle={reserved !== null && reserved > 0 ? ui('unitsHeld') : null} color="amber" />
+            )}
           </div>
         )}
 
         {/* Warehouses tab content */}
         {activeTab === 'warehouses' && (
-          <div className="px-4 pb-4 flex flex-col gap-3">
-            {/* Total on hand */}
-            <div className="rounded-xl bg-blue-50/60 border-l-4 border-l-blue-400 px-4 py-3">
-              <div className="text-xs font-semibold uppercase tracking-widest text-blue-500 mb-1">{ui('productTotalOnHand')}</div>
-              <div className="text-3xl font-bold text-gray-900 leading-none tracking-tight">{fmt(onHand)}</div>
-              {binCount > 0 && (
-                <div className="text-sm text-gray-500 mt-1.5">
-                  {binCount === 1 ? ui('productInWarehouse', { name: locationRows[0]?.binName }) : ui('productDistributedIn', { count: binCount })}
-                </div>
-              )}
+          <div className="px-4 pb-4 flex flex-col gap-2">
+            {/* Column headers — shown once, aligned with the 3-col value grid inside each card */}
+            <div className="grid grid-cols-3 gap-1.5 px-2.5 pt-1 pb-0.5">
+              <div className="text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400">{ui('onHand')}</div>
+              <div className="text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400">{ui('available')}</div>
+              <div className="text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400">{ui('reserved')}</div>
             </div>
 
-            {/* Per-warehouse cards */}
+            {/* Per-warehouse rows */}
             {sortedRows.map((b, i) => {
               const wAvailable = b.quantityOnHand - b.reservedQty;
               const wAvailableColor = wAvailable <= 0 ? 'red'
                 : b.quantityOnHand > 0 && wAvailable <= b.quantityOnHand * 0.1 ? 'amber'
                 : 'green';
+              const c = {
+                onHand: COLORS[b.quantityOnHand === 0 ? 'red' : 'blue'].bg,
+                available: COLORS[wAvailableColor].bg,
+                reserved: COLORS.amber.bg,
+              };
               return (
-                <div key={b.binName} className="rounded-xl border border-gray-100 p-3">
-                  <div className="flex items-center gap-2 mb-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                <div key={b.binName} className="rounded-xl border border-gray-100 p-2.5">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0"
                       style={{ backgroundColor: DOT_COLORS[i % DOT_COLORS.length] }} />
-                    <span className="text-sm font-semibold text-gray-700">{b.binName}</span>
+                    <span className="text-xs font-semibold text-gray-700 truncate">{b.binName}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-1.5">
-                    <MiniStat label={ui('onHand')}    value={fmt(b.quantityOnHand)} color={b.quantityOnHand === 0 ? 'red' : 'blue'} />
-                    <MiniStat label={ui('available')} value={fmt(wAvailable)}       color={wAvailableColor} />
-                    <MiniStat label={ui('reserved')}  value={fmt(b.reservedQty)}    color="amber" />
+                    <div className={`rounded-md px-1.5 py-1.5 ${c.onHand} text-center`}>
+                      <div className="text-sm font-bold leading-none text-gray-900">{fmt(b.quantityOnHand)}</div>
+                    </div>
+                    <div className={`rounded-md px-1.5 py-1.5 ${c.available} text-center`}>
+                      <div className="text-sm font-bold leading-none text-gray-900">{fmt(wAvailable)}</div>
+                    </div>
+                    <div className={`rounded-md px-1.5 py-1.5 ${c.reserved} text-center`}>
+                      <div className="text-sm font-bold leading-none text-gray-900">{fmt(b.reservedQty)}</div>
+                    </div>
                   </div>
                 </div>
               );
@@ -477,7 +486,14 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
         )}
       </div>
 
-      {/* ── Stock movement pill (separate) ── */}
+      {/* ── Divider ── */}
+      {hasChart && (
+        <div className="px-4">
+          <div className="border-t border-[#E8EAEF]" />
+        </div>
+      )}
+
+      {/* ── Stock movement ── */}
       {hasChart && <StockChart {...stockChartProps} />}
 
       {/* Hidden StockChart for warehouse tab modal trigger */}

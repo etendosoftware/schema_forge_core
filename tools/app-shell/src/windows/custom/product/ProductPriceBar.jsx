@@ -483,21 +483,14 @@ function PricingDialog({
     }
   };
 
-  const renderSection = (title, rows, pending, setPending, options, variant = 'neutral') => {
+  const renderSection = (title, rows, pending, setPending, options) => {
     const showTable = rows.length > 0 || pending;
-    const tone = variant === 'sales'
-      ? {
-        shell: 'border-blue-200 bg-blue-50/70',
-        badge: 'bg-blue-100 text-blue-700',
-        focus: 'focus:ring-blue-500',
-        pending: 'border-t border-blue-100 bg-blue-50/30',
-      }
-      : {
-        shell: 'border-emerald-200 bg-emerald-50/70',
-        badge: 'bg-emerald-100 text-emerald-700',
-        focus: 'focus:ring-emerald-500',
-        pending: 'border-t border-emerald-100 bg-emerald-50/30',
-      };
+    const tone = {
+      shell: 'border-gray-200 bg-gray-50',
+      badge: 'bg-gray-100 text-gray-700',
+      focus: 'focus:ring-gray-400',
+      pending: 'border-t border-gray-100 bg-gray-50/50',
+    };
 
     return (
       <div className={`flex-1 min-w-0 rounded-2xl border p-3 ${tone.shell}`}>
@@ -673,8 +666,8 @@ function PricingDialog({
           </DialogHeader>
 
           <div className="flex gap-4 pt-2 max-h-[60vh] overflow-y-auto items-start">
-            {renderSection(ui('priceSalesLists'), saleRows, pendingSale, setPendingSale, saleOptions, 'sales')}
-            {renderSection(ui('pricePurchaseLists'), purchaseRows, pendingPurchase, setPendingPurchase, purchaseOptions, 'purchase')}
+            {renderSection(ui('priceSalesLists'), saleRows, pendingSale, setPendingSale, saleOptions)}
+            {renderSection(ui('pricePurchaseLists'), purchaseRows, pendingPurchase, setPendingPurchase, purchaseOptions)}
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 mt-1">
@@ -732,7 +725,7 @@ function PricingDialog({
   );
 }
 
-export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api }) {
+export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api, onCountChange }) {
   const ui = useUI();
   const recordId = data?.id;
   const [priceRows, setPriceRows] = useState(null);
@@ -776,6 +769,10 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
       setLoading(false);
     }
   }, [recordId, token, apiBaseUrl]);
+
+  useEffect(() => {
+    if (priceRows !== null) onCountChange?.(priceRows.length);
+  }, [priceRows, onCountChange]);
 
   useEffect(() => {
     refreshPrices();
@@ -1016,7 +1013,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
     if (creating && !hasRows) {
       return (
         <div className="flex gap-3">
-          <div className="flex-1 rounded-xl border border-blue-200 bg-blue-50/40 p-4">
+          <div className="flex-1 rounded-xl border border-gray-200 bg-gray-50/40 p-4">
             <div className="text-sm font-semibold text-gray-800 mb-1">{ui('priceSalesPrice')}</div>
             <p className="text-xs text-gray-400 mb-3">{ui('priceSalesDescription')}</p>
             <div className="flex gap-3">
@@ -1029,7 +1026,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
                   onChange={e => setSaleStandardDraft(e.target.value)}
                   onKeyDown={handleCreateKeyDown}
                   placeholder={ui('priceZeroPlaceholder')}
-                  className="w-full text-xl font-bold text-gray-900 bg-white border border-gray-200 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full text-xl font-bold text-gray-900 bg-white border border-gray-200 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-gray-400"
                   autoFocus
                 />
               </label>
@@ -1042,12 +1039,12 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
                   onChange={e => setSaleListDraft(e.target.value)}
                   onKeyDown={handleCreateKeyDown}
                   placeholder={ui('priceZeroPlaceholder')}
-                  className="w-full text-xl font-bold text-gray-900 bg-white border border-gray-200 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full text-xl font-bold text-gray-900 bg-white border border-gray-200 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-gray-400"
                 />
               </label>
             </div>
           </div>
-          <div className="flex-1 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
+          <div className="flex-1 rounded-xl border border-gray-200 bg-gray-50/40 p-4">
             <div className="text-sm font-semibold text-gray-800 mb-1">{ui('pricePurchasePrice')}</div>
             <p className="text-xs text-gray-400 mb-3">{ui('pricePurchaseDescription')}</p>
             <div className="flex gap-3">
@@ -1060,7 +1057,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
                   onChange={e => setPurchaseStandardDraft(e.target.value)}
                   onKeyDown={handleCreateKeyDown}
                   placeholder={ui('priceZeroPlaceholder')}
-                  className="w-full text-xl font-bold text-gray-900 bg-white border border-gray-200 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full text-xl font-bold text-gray-900 bg-white border border-gray-200 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-gray-400"
                 />
               </label>
               <label className="flex-1 text-xs text-gray-500">
@@ -1072,7 +1069,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
                   onChange={e => setPurchaseListDraft(e.target.value)}
                   onKeyDown={handleCreateKeyDown}
                   placeholder={ui('priceZeroPlaceholder')}
-                  className="w-full text-xl font-bold text-gray-900 bg-white border border-gray-200 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full text-xl font-bold text-gray-900 bg-white border border-gray-200 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-gray-400"
                 />
               </label>
             </div>
@@ -1089,16 +1086,15 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
     }
     return (
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 items-start">
-        <PriceTable title={ui('priceSalesLists')} rows={displaySaleRows} variant="sales" />
-        <PriceTable title={ui('pricePurchaseLists')} rows={displayPurchaseRows} variant="purchase" />
+        <PriceTable title={ui('priceSalesLists')} rows={displaySaleRows} variant="neutral" />
+        <PriceTable title={ui('pricePurchaseLists')} rows={displayPurchaseRows} variant="neutral" />
       </div>
     );
   };
 
   if (!recordId) {
     return (
-      <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm p-5 mb-2">
-        <div className="text-sm font-semibold text-gray-800">{ui('pricing')}</div>
+      <div className="p-2">
         <div className="text-sm text-gray-500 mt-1">
           {ui('saveProductFirstPricing')}
         </div>
@@ -1107,13 +1103,10 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm pt-2 pb-5 px-5">
+    <div className="p-2">
       <div className="flex items-start justify-between mb-4">
-        <div>
-          <div className="text-base font-semibold text-gray-800">{ui('pricing')}</div>
-          <div className="text-sm text-gray-400 mt-0.5">
-            {ui('configureMainSaleAndPurchasePrice')}
-          </div>
+        <div className="text-sm text-gray-400 mt-0.5">
+          {ui('priceTabDesc')}
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-4">
           {creating ? (
@@ -1140,7 +1133,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
               disabled={loading}
               className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 transition-colors font-medium"
             >
-              {hasRows ? ui('editPricing') : ui('setPricing')}
+              {hasRows ? ui('editPrice') : ui('setPrice')}
             </button>
           )}
         </div>

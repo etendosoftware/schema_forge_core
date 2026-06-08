@@ -1,8 +1,8 @@
 {
-  "version": "0.2.0",
+  "version": "0.6.0",
   "generatedAt": "2026-04-29T18:11:24.842Z",
-  "updatedAt": "2026-05-20T11:45:15.301Z",
-  "checksum": "9f67b1a0e223cab2",
+  "updatedAt": "2026-06-08T14:41:55.573Z",
+  "checksum": "9c1c7ffd4bb96543",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -13,12 +13,21 @@
       "customTabsAfterBottom": true,
       "hidePrint": true,
       "hideMoreMenu": true,
-      "contentBg": "bg-slate-50",
+      "contentBg": "bg-white",
+      "hideLink": true,
       "breadcrumb": "Inventory / Product",
       "secondaryTabs": {},
       "detailEntity": null,
-      "headerExtra": {
-        "customForm": "ProductPriceBar"
+      "headerExtra": {},
+      "labelOverrides": {
+        "en_US": {
+          "M_Product_Category_ID": "Category",
+          "ProductType": "Type"
+        },
+        "es_ES": {
+          "M_Product_Category_ID": "Categoría",
+          "ProductType": "Tipo"
+        }
       },
       "primaryTabs": [
         {
@@ -31,7 +40,24 @@
           "panel": "ProductAdditionalInfoPanel"
         }
       ],
+      "noHeaderBorder": true,
+      "toolbarBorderBottom": true,
+      "compactSidebarPadding": true,
+      "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto pt-2 pl-0 pr-4 pb-5 border-l border-[#E8EAEF]",
+      "formCardPadding": "px-2 pb-2",
+      "tabsBarPaddingX": "px-2",
+      "primaryTabsVariant": "pill",
+      "toolbarPaddingX": "px-2",
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
       "attachments": true,
+      "customPanelTabs": [
+        {
+          "key": "pricing",
+          "labelKey": "price",
+          "component": "ProductPriceBar"
+        }
+      ],
       "layoutType": "gallery"
     },
     "entities": {
@@ -83,7 +109,8 @@
             "grid": false,
             "form": true,
             "section": "principal",
-            "seq": 7
+            "seq": 4,
+            "inline": true
           },
           {
             "name": "uOM",
@@ -100,7 +127,7 @@
             "reference": "UOM",
             "inputMode": "selector",
             "section": "principal",
-            "seq": 6
+            "seq": 7
           },
           {
             "name": "productCategory",
@@ -122,7 +149,7 @@
             "inputMode": "selector",
             "defaultValue": "@SQL=SELECT MAX(M_PRODUCT_CATEGORY_ID) FROM M_PRODUCT_CATEGORY WHERE AD_ISORGINCLUDED(@AD_ORG_ID@, AD_ORG_ID, @#AD_CLIENT_ID@) <> -1 AND ISDEFAULT = 'Y' AND AD_CLIENT_ID = @#AD_CLIENT_ID@ AND ISSUMMARY='N'",
             "section": "principal",
-            "seq": 5,
+            "seq": 6,
             "validationRule": {
               "code": "Issummary='N'",
               "contextParams": [],
@@ -233,7 +260,7 @@
             ],
             "defaultValue": "I",
             "section": "principal",
-            "seq": 4,
+            "seq": 5,
             "enumVariants": {
               "I": "blue",
               "S": "purple",
@@ -1697,12 +1724,21 @@
       "customTabsAfterBottom": true,
       "hidePrint": true,
       "hideMoreMenu": true,
-      "contentBg": "bg-slate-50",
+      "contentBg": "bg-white",
+      "hideLink": true,
       "breadcrumb": "Inventory / Product",
       "secondaryTabs": {},
       "detailEntity": null,
-      "headerExtra": {
-        "customForm": "ProductPriceBar"
+      "headerExtra": {},
+      "labelOverrides": {
+        "en_US": {
+          "M_Product_Category_ID": "Category",
+          "ProductType": "Type"
+        },
+        "es_ES": {
+          "M_Product_Category_ID": "Categoría",
+          "ProductType": "Tipo"
+        }
       },
       "primaryTabs": [
         {
@@ -1715,7 +1751,24 @@
           "panel": "ProductAdditionalInfoPanel"
         }
       ],
+      "noHeaderBorder": true,
+      "toolbarBorderBottom": true,
+      "compactSidebarPadding": true,
+      "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto pt-2 pl-0 pr-4 pb-5 border-l border-[#E8EAEF]",
+      "formCardPadding": "px-2 pb-2",
+      "tabsBarPaddingX": "px-2",
+      "primaryTabsVariant": "pill",
+      "toolbarPaddingX": "px-2",
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
       "attachments": true,
+      "customPanelTabs": [
+        {
+          "key": "pricing",
+          "labelKey": "price",
+          "component": "ProductPriceBar"
+        }
+      ],
       "layoutType": "gallery"
     },
     "entities": {
@@ -5002,6 +5055,16 @@
     },
     "window": {
       "category": "inventory"
+    },
+    "labelOverrides": {
+      "en_US": {
+        "M_Product_Category_ID": "Category",
+        "ProductType": "Type"
+      },
+      "es_ES": {
+        "M_Product_Category_ID": "Categoría",
+        "ProductType": "Tipo"
+      }
     }
   },
   "testManifest": {

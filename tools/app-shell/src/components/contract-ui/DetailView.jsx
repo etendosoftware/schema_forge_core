@@ -1860,7 +1860,7 @@ export function DetailView({
                       <>
                         {/* Principal + collapsed fields wrapped in a card */}
                         <div className={`${hideFormCard ? 'hidden' : ''}${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${whiteFormBackground ? ' bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50' : ''}${embedded ? ' pointer-events-none' : ''}`}>
-                          <div className={linesLayout === 'inlineEditable' ? 'p-2' : 'p-6'}>
+                          <div className={linesLayout === 'inlineEditable' ? 'p-2' : formCardPadding}>
                             <Form
                               entity={entity}
                               data={data}

@@ -211,6 +211,7 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.gridOrder != null) mapped.gridOrder = f.gridOrder;
       if (f.grow) mapped.grow = true;
       if (f.noTrailing) mapped.noTrailing = true;
+      if (f.inline) mapped.inline = true;
       if (f.filterOnly) mapped.filterOnly = true;
       if (f.filterable === false) mapped.filterable = false;
       if (f.dot === false) mapped.dot = false;
