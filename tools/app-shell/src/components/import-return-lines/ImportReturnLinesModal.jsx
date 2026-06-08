@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
-import ImportModalFooter from './ImportModalFooter.jsx';
+import ImportModalFooter, { ImportModalHeader } from './ImportModalFooter.jsx';
 
 /**
  * Generic modal for importing lines into a return document from source documents.
@@ -202,13 +202,7 @@ export default function ImportReturnLinesModal({ targetId, bpId, base, headers, 
   return createPortal(
     <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
       <div onClick={(e) => e.stopPropagation()} style={{ width: 600, maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB' }}>
-        <div style={{ padding: '14px 16px', borderBottom: '2px solid #E5E7EB' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{ui(titleKey)}</span>
-            <button type="button" onClick={onClose} style={{ fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}>&times;</button>
-          </div>
-          {bpName && <div style={{ fontSize: 13, color: '#9ca3af', marginTop: 2 }}>{bpName}</div>}
-        </div>
+        <ImportModalHeader title={ui(titleKey)} bpName={bpName} onClose={onClose} />
 
         <div style={{ padding: '10px 16px 0' }}>
           <input

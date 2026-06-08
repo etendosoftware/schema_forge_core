@@ -2,6 +2,76 @@ import { useState, useEffect, useRef } from 'react';
 import { buildLocationAddressLines } from '@/lib/locationAddress.js';
 
 // ---------------------------------------------------------------------------
+// Shared PDF CSS (A4 document layout — used by all delivery-note hooks)
+// ---------------------------------------------------------------------------
+export const COMMON_PDF_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --gray-50:#F8F8FA; --gray-100:#E8E8ED; --gray-400:#8A8AA3; --gray-500:#6C6C89; --gray-700:#3F3F50; --gray-900:#121217;
+  --fg-1:var(--gray-900); --fg-2:var(--gray-700); --fg-3:var(--gray-500); --fg-4:var(--gray-400);
+  --border-1:var(--gray-100);
+  --radius-sm:8px; --radius-lg:12px;
+  --font-sans:'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--font-sans); font-size:13px; line-height:18px; color:var(--fg-2); background:#fff; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+
+.doc { width:794px; padding:56px 56px 48px; background:#fff; color:var(--fg-1); display:flex; flex-direction:column; gap:24px; }
+
+/* ── Header ─────────────────────────────────────── */
+.doc-header { display:flex; justify-content:space-between; align-items:center; padding-bottom:20px; border-bottom:2px solid var(--border-1); }
+.doc-header-left { display:flex; align-items:center; gap:16px; }
+.doc-logo-img { width:160px; height:64px; object-fit:contain; object-position:left center; display:block; flex-shrink:0; }
+.doc-header-company .company-name { font-weight:700; font-size:15px; line-height:20px; color:var(--fg-1); }
+.doc-header-company .company-cif { font-size:11px; color:var(--fg-3); margin-top:3px; }
+.doc-header-meta { text-align:right; }
+.doc-header-meta .doc-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--fg-3); }
+.doc-header-meta .doc-num { font-size:22px; font-weight:700; letter-spacing:-0.01em; color:var(--fg-1); line-height:28px; margin-top:2px; font-variant-numeric:tabular-nums; }
+
+/* ── Parties ─────────────────────────────────────── */
+.doc-parties { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.doc-party-card { border:1px solid var(--border-1); border-radius:var(--radius-lg); padding:16px 18px; }
+.doc-party-card .eyebrow { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--fg-3); margin-bottom:8px; }
+.doc-party-card .party-name { font-weight:600; font-size:14px; color:var(--fg-1); line-height:20px; }
+.doc-party-card .party-line { font-size:12px; line-height:18px; color:var(--fg-2); margin-top:2px; }
+.doc-party-card .party-line.muted { color:var(--fg-3); }
+
+/* ── Movement band ───────────────────────────────── */
+.doc-movement { display:grid; grid-template-columns:1fr 1fr 1fr; background:var(--gray-50); border-radius:var(--radius-lg); padding:14px 20px; gap:16px; }
+.doc-movement-cell .cell-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--fg-3); margin-bottom:4px; }
+.doc-movement-cell .cell-value { font-size:13px; font-weight:500; color:var(--fg-1); }
+
+/* ── Table ───────────────────────────────────────── */
+.doc-table { width:100%; border-collapse:collapse; font-size:13px; }
+.doc-table thead tr { background:var(--gray-50); }
+.doc-table thead th { text-align:left; font-size:10px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--fg-3); padding:10px 12px; }
+.doc-table thead th:first-child { border-radius:var(--radius-sm) 0 0 var(--radius-sm); }
+.doc-table thead th:last-child { border-radius:0 var(--radius-sm) var(--radius-sm) 0; }
+.doc-table thead th.num, .doc-table tbody td.num { text-align:right; font-variant-numeric:tabular-nums; }
+.doc-table tbody td { padding:12px 12px; color:var(--fg-2); vertical-align:top; }
+.doc-table tbody tr + tr td { border-top:1px solid var(--border-1); }
+.doc-table tbody td.code { color:var(--fg-3); font-size:12px; font-variant-numeric:tabular-nums; }
+.doc-table tbody td.desc { color:var(--fg-1); font-weight:500; }
+
+/* ── Observations ────────────────────────────────── */
+.doc-observ { border:1px solid var(--border-1); border-radius:var(--radius-lg); padding:14px 18px; }
+.doc-observ .eyebrow { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--fg-3); margin-bottom:6px; }
+.doc-observ .body { font-size:12px; line-height:18px; color:var(--fg-2); }
+
+/* ── Signature ───────────────────────────────────── */
+.doc-signature { border-top:1px solid var(--border-1); padding-top:24px; display:grid; grid-template-columns:1fr 1fr; gap:32px; }
+.doc-sig-field .sig-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--fg-3); margin-bottom:72px; display:block; }
+.doc-sig-field .sig-line { border-top:1px solid var(--gray-400); }
+
+/* ── Footer ──────────────────────────────────────── */
+.doc-footer { padding-top:20px; border-top:1px solid var(--border-1); display:flex; justify-content:space-between; font-size:10px; color:var(--fg-4); text-transform:uppercase; letter-spacing:0.08em; }
+
+@page { size:A4 portrait; margin:0; }
+`;
+
+// ---------------------------------------------------------------------------
 // Shared Handlebars helpers (date + conditional — no fmt, which differs per doc)
 // ---------------------------------------------------------------------------
 export const COMMON_HANDLEBARS_HELPERS = `

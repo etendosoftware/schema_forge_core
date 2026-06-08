@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { Edit2, Mail, Download, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import PdfViewer from './PdfViewer.jsx';
@@ -53,6 +54,40 @@ export function PreviewEmptyPanel({ icon, text }) {
       <p className="text-sm">{text}</p>
     </div>
   );
+}
+
+/**
+ * Shared hook for the send-via-email modal state used in preview components.
+ * Returns { showSendModal, sendModalClosing, openEmailModal, closeEmailModal }.
+ */
+export function usePreviewSendModal() {
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [sendModalClosing, setSendModalClosing] = useState(false);
+  const openEmailModal = useCallback(() => setShowSendModal(true), []);
+  const closeEmailModal = useCallback(() => {
+    setSendModalClosing(true);
+    setTimeout(() => { setSendModalClosing(false); setShowSendModal(false); }, 280);
+  }, []);
+  return { showSendModal, sendModalClosing, openEmailModal, closeEmailModal };
+}
+
+/**
+ * Returns the shared messages + history tab definitions used in all preview modals.
+ * @param {function} ui — the useUI() hook result
+ */
+export function makeStaticPreviewTabs(ui) {
+  return [
+    {
+      key: 'messages',
+      label: ui('invoicePreviewMessages'),
+      content: <PreviewEmptyPanel icon="💬" text={ui('invoicePreviewNoMessagesYet')} />,
+    },
+    {
+      key: 'history',
+      label: ui('invoicePreviewHistory'),
+      content: <PreviewEmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />,
+    },
+  ];
 }
 
 /** Shared PDF left-panel for document preview modals: spinner → error → iframe. */

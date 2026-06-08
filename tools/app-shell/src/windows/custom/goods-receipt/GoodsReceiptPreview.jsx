@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
-import { PreviewEmptyPanel } from '../shared/PreviewActionButtons.jsx';
+import { PreviewEmptyPanel, usePreviewSendModal, makeStaticPreviewTabs } from '../shared/PreviewActionButtons.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { InfoRow, PercentBar, MovementSummaryCard } from '../shared/preview-cards/SummaryCard.jsx';
 import { STATUS_BADGE, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
@@ -73,14 +73,8 @@ export default function GoodsReceiptPreview({ receipt, token, apiBaseUrl, window
   const navigate = useNavigate();
   const modalRef = useRef(null);
 
-  const [showSendModal, setShowSendModal] = useState(false);
-  const [sendModalClosing, setSendModalClosing] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
-  const openEmailModal = useCallback(() => setShowSendModal(true), []);
-  const closeEmailModal = useCallback(() => {
-    setSendModalClosing(true);
-    setTimeout(() => { setSendModalClosing(false); setShowSendModal(false); }, 280);
-  }, []);
+  const { showSendModal, sendModalClosing, openEmailModal, closeEmailModal } = usePreviewSendModal();
   const handleFileChange = useCallback((f) => setPreviewFile(f), []);
 
   if (!receipt) return null;
@@ -136,16 +130,7 @@ export default function GoodsReceiptPreview({ receipt, token, apiBaseUrl, window
         />
       ),
     },
-    {
-      key: 'messages',
-      label: ui('invoicePreviewMessages'),
-      content: <PreviewEmptyPanel icon="💬" text={ui('invoicePreviewNoMessagesYet')} />,
-    },
-    {
-      key: 'history',
-      label: ui('invoicePreviewHistory'),
-      content: <PreviewEmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />,
-    },
+    ...makeStaticPreviewTabs(ui),
   ];
 
   const attachmentConfig = {

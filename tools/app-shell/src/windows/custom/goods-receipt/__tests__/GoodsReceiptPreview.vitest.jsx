@@ -69,6 +69,21 @@ vi.mock('../../shared/GenericPreviewModal.jsx', () => ({
 
 vi.mock('../../shared/PreviewActionButtons.jsx', () => ({
   PreviewEmptyPanel: ({ icon, text }) => <div data-testid="preview-empty-panel">{icon} {text}</div>,
+  usePreviewSendModal: () => {
+    const { useState, useCallback } = require('react');
+    const [showSendModal, setShowSendModal] = useState(false);
+    const [sendModalClosing, setSendModalClosing] = useState(false);
+    const openEmailModal = useCallback(() => setShowSendModal(true), []);
+    const closeEmailModal = useCallback(() => {
+      setSendModalClosing(true);
+      setTimeout(() => { setSendModalClosing(false); setShowSendModal(false); }, 280);
+    }, []);
+    return { showSendModal, sendModalClosing, openEmailModal, closeEmailModal };
+  },
+  makeStaticPreviewTabs: (ui) => [
+    { key: 'messages', label: ui('invoicePreviewMessages'), content: <div data-testid="preview-empty-panel">💬 {ui('invoicePreviewNoMessagesYet')}</div> },
+    { key: 'history', label: ui('invoicePreviewHistory'), content: <div data-testid="preview-empty-panel">🕐 {ui('invoicePreviewNoActivityRecorded')}</div> },
+  ],
 }));
 
 vi.mock('@/components/contract-ui/SendDocumentModal.jsx', () => ({

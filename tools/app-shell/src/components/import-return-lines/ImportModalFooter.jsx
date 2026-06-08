@@ -1,3 +1,15 @@
+export function ImportModalHeader({ title, bpName, onClose }) {
+  return (
+    <div style={{ padding: '14px 16px', borderBottom: '2px solid #E5E7EB' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{title}</span>
+        <button type="button" onClick={onClose} style={{ fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}>&times;</button>
+      </div>
+      {bpName && <div style={{ fontSize: 13, color: '#9ca3af', marginTop: 2 }}>{bpName}</div>}
+    </div>
+  );
+}
+
 export default function ImportModalFooter({ selectedCount, importing, importButtonLabel, onClose, onImport, ui }) {
   const disabled = selectedCount === 0 || importing;
   return (

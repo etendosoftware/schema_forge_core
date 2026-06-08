@@ -1,8 +1,8 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef } from 'react';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
-import PreviewActionButtons, { PreviewPdfPanel, PreviewEmptyPanel } from '../shared/PreviewActionButtons.jsx';
+import PreviewActionButtons, { PreviewPdfPanel, usePreviewSendModal, makeStaticPreviewTabs } from '../shared/PreviewActionButtons.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { useReturnReceiptPdf } from './useReturnReceiptPdf.js';
 import RelatedDocumentsCard from '../shared/preview-cards/RelatedDocumentsCard.jsx';
@@ -51,13 +51,7 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
   const { locale } = useLocaleSwitch();
   const modalRef = useRef(null);
 
-  const [showSendModal, setShowSendModal] = useState(false);
-  const [sendModalClosing, setSendModalClosing] = useState(false);
-  const openEmailModal = useCallback(() => setShowSendModal(true), []);
-  const closeEmailModal = useCallback(() => {
-    setSendModalClosing(true);
-    setTimeout(() => { setSendModalClosing(false); setShowSendModal(false); }, 280);
-  }, []);
+  const { showSendModal, sendModalClosing, openEmailModal, closeEmailModal } = usePreviewSendModal();
 
   const { pdfUrl, pdfBlob, loading: pdfLoading, error: pdfError } = useReturnReceiptPdf(
     receipt?.id ?? null,
@@ -122,16 +116,7 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
         />
       ),
     },
-    {
-      key: 'messages',
-      label: ui('invoicePreviewMessages'),
-      content: <PreviewEmptyPanel icon="💬" text={ui('invoicePreviewNoMessagesYet')} />,
-    },
-    {
-      key: 'history',
-      label: ui('invoicePreviewHistory'),
-      content: <PreviewEmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />,
-    },
+    ...makeStaticPreviewTabs(ui),
   ];
 
   return (
