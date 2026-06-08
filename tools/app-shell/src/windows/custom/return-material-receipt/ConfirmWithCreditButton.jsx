@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 import { ConfirmResultModal } from '@/components/contract-ui/ConfirmResultModal';
 import ConfirmInOutModal from '@/components/contract-ui/ConfirmInOutModal';
+import CreateInvoiceConfirmModal from '@/components/contract-ui/CreateInvoiceConfirmModal';
 import CloneButton from '@/windows/custom/shared/CloneButton';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import { generateReturnReceiptPdf, getReturnReceiptPdfLabels } from './useReturnReceiptPdf';
@@ -25,6 +26,7 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
   const ui = useUI();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+  const [creatingInvoice, setCreatingInvoice] = useState(false);
   const [result, setResult] = useState(null);
   const [cloneOpen, setCloneOpen] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -55,23 +57,31 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
     }
   }, [data, recordId, apiBaseUrl, token, pdfLabels, ui]);
 
-  if (status !== 'DR' && status !== 'CO') return null;
+  const handleCreateReturnInvoice = useCallback(async () => {
+    if (creatingInvoice) return;
+    setCreatingInvoice(true);
+    try {
+      const res = await fetch(
+        `${apiBaseUrl}/returnMaterialReceipt/${data?.id || recordId}/action/createReturnInvoice`,
+        { method: 'POST', headers, body: JSON.stringify({}) },
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.response?.message || err?.message || `Error (${res.status})`);
+      }
+      const invData = (await res.json())?.response?.data;
+      setResult(buildInvoiceResult(
+        { id: invData?.id ?? null, documentNo: invData?.documentNo || '', amount: invData?.grandTotalAmount ?? null },
+        ui,
+      ));
+    } catch (err) {
+      toast.error(err.message || ui('couldNotCreateReturnInvoice'));
+    } finally {
+      setCreatingInvoice(false);
+    }
+  }, [data, recordId, apiBaseUrl, headers, ui, creatingInvoice]);
 
-  const sharedModalProps = {
-    base,
-    headers,
-    recordId: data?.id || recordId,
-    specName: 'return-material-receipt',
-    entityName: 'returnMaterialReceipt',
-    invoiceAction: 'createReturnInvoice',
-    docInfo: { bpName: data?.['businessPartner$_identifier'], documentNo: data?.documentNo },
-    cardTitle: ui('createReturnInvoice'),
-    cardDesc: ui('createReturnInvoiceDescription'),
-    confirmWithInvoiceLabel: ui('returnReceipt.confirmModal.confirmWithInvoice'),
-    processingLabel: ui('processing'),
-    cancelLabel: ui('cancel'),
-    onClose: () => setShowModal(false),
-  };
+  if (status !== 'DR' && status !== 'CO') return null;
 
   return (
     <>
@@ -94,15 +104,27 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
       )}
       <PrintButton onClick={handlePrint} loading={pdfLoading} ui={ui} />
 
+      {/* DR: confirm receipt (+ optional return invoice) */}
       {showModal && status === 'DR' && (
         <ConfirmInOutModal
-          {...sharedModalProps}
+          base={base}
+          headers={headers}
+          recordId={data?.id || recordId}
+          specName="return-material-receipt"
+          entityName="returnMaterialReceipt"
+          invoiceAction="createReturnInvoice"
           defaultCreateInvoice={true}
           title={ui('returnReceipt.confirmModal.title')}
+          docInfo={{ bpName: data?.['businessPartner$_identifier'], documentNo: data?.documentNo }}
           infoRowPre={ui('returnReceipt.confirmModal.infoRowPre')}
           infoRowBold={ui('returnReceipt.confirmModal.infoRowBold')}
           infoRowPost={ui('returnReceipt.confirmModal.infoRowPost')}
+          cardTitle={ui('createReturnInvoice')}
+          cardDesc={ui('createReturnInvoiceDescription')}
           confirmLabel={ui('processReceipt')}
+          confirmWithInvoiceLabel={ui('returnReceipt.confirmModal.confirmWithInvoice')}
+          processingLabel={ui('processing')}
+          cancelLabel={ui('cancel')}
           onConfirmed={({ invoice }) => {
             setShowModal(false);
             if (invoice?.id) {
@@ -111,27 +133,33 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
               window.location.reload();
             }
           }}
+          onClose={() => setShowModal(false)}
         />
       )}
 
-      {showModal && status === 'CO' && (
-        <ConfirmInOutModal
-          {...sharedModalProps}
-          skipDocumentAction={true}
-          title={ui('createReturnInvoice')}
-          confirmLabel={ui('createReturnInvoice')}
-          onConfirmed={({ invoice }) => {
-            setShowModal(false);
-            setResult(buildInvoiceResult(invoice, ui));
-          }}
-        />
+      {/* CO: create return invoice for already-confirmed receipt */}
+      {showModal && status === 'CO' && createPortal(
+        <CreateInvoiceConfirmModal
+          data={data}
+          loading={creatingInvoice}
+          onConfirm={() => { setShowModal(false); handleCreateReturnInvoice(); }}
+          onClose={() => setShowModal(false)}
+        />,
+        document.body,
       )}
 
       {result && createPortal(
-        <ConfirmResultModal title={result.title} docs={result.docs} currency={currency}
-          navigate={navigate} onClose={() => { setResult(null); window.location.reload(); }} />,
+        <ConfirmResultModal
+          title={result.title}
+          docs={result.docs}
+          currency={currency}
+          navigate={navigate}
+          primary={result.docs.length > 0 ? ui('soViewInvoice') : undefined}
+          onClose={() => setResult(null)}
+        />,
         document.body,
       )}
+
       {cloneOpen && createPortal(
         <CloneOrderModal recordId={data?.id || recordId} data={data} apiBaseUrl={apiBaseUrl}
           headers={headers} headerEntity="returnMaterialReceipt" routePrefix="/return-material-receipt/"
