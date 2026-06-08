@@ -6,9 +6,14 @@ import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
 
 function buildHeaders(token) {
+    let locale = 'es_ES';
+    try { locale = localStorage.getItem('schema-forge-locale') || 'es_ES'; } catch { /* SSR/test */ }
     return {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
+        // Propagate the UI locale so backend AD_Message translations match the
+        // language the user selected in the frontend.
+        'Accept-Language': locale,
     };
 }
 

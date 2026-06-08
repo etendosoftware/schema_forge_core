@@ -4,6 +4,19 @@ const STORAGE_KEY = 'schema-forge-locale';
 const DEFAULT_LOCALE = 'es_ES';
 
 /**
+ * Read the active locale outside of React (for non-hook code such as request
+ * header builders). Mirrors the persistence used by {@link useLocaleState}.
+ * Returns an Etendo language code like 'es_ES'.
+ */
+export function getStoredLocale() {
+  try {
+    return localStorage.getItem(STORAGE_KEY) || DEFAULT_LOCALE;
+  } catch {
+    return DEFAULT_LOCALE;
+  }
+}
+
+/**
  * Hook that manages the active locale with localStorage persistence.
  * Returns [locale, setLocale] similar to useState.
  *

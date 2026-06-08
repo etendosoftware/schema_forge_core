@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useUI } from '@/i18n';
+import { useUI, getStoredLocale } from '@/i18n';
 
 export default function AmortizationConfirmModal({ recordId, token, apiBaseUrl, onClose }) {
   const ui = useUI();
@@ -14,6 +14,9 @@ export default function AmortizationConfirmModal({ recordId, token, apiBaseUrl, 
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
+    // Propagate the UI locale so backend AD_Message translations match the
+    // language the user selected in the frontend.
+    'Accept-Language': getStoredLocale(),
   }), [token]);
 
   useEffect(() => {

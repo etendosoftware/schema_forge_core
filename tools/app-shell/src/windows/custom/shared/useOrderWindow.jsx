@@ -126,10 +126,14 @@ export function useOrderWindow({
 
   const confirmResultPortal = confirmedDocs ? createPortal(
     <ConfirmResultModal
-      docs={confirmedDocs}
-      ui={ui}
-      navigate={navigate}
+      title={ui('soConfirmedTitle')}
+      docs={[
+        confirmedDocs.shipment?.id && { type: 'salida', num: confirmedDocs.shipment.documentNo, amount: confirmedDocs.shipment.amount, route: `/goods-shipment/${confirmedDocs.shipment.id}` },
+        confirmedDocs.invoice?.id  && { type: 'facturaVenta', num: confirmedDocs.invoice.documentNo, amount: confirmedDocs.invoice.amount, route: `/sales-invoice/${confirmedDocs.invoice.id}` },
+      ].filter(Boolean)}
+      primary={ui('soViewInvoice')}
       currency={confirmRow?.['currency$_identifier'] || ''}
+      navigate={navigate}
       onClose={() => {
         setConfirmedDocs(null);
         setConfirmRow(null);
