@@ -193,9 +193,10 @@ export default function ImportReturnLinesModal({ targetId, bpId, base, headers, 
 
   const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-');
   const fmtQty = (v) => Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const selectedCountSuffix = selected.size > 0 ? ` (${selected.size})` : '';
   const importButtonLabel = importing
     ? ui('importing')
-    : ui('importSelected').replace('{count}', selected.size > 0 ? ` (${selected.size})` : '');
+    : ui('importSelected').replace('{count}', selectedCountSuffix);
 
   return createPortal(
     <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">

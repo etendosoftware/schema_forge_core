@@ -115,7 +115,7 @@ export default function ConfirmInOutModal({
             {subtitleParts.length > 0 && (
               <div style={{ marginTop: 6, fontSize: 13, color: '#697079', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                 {subtitleParts.map((part, i) => (
-                  <span key={i} style={{ display: 'contents' }}>
+                  <span key={part} style={{ display: 'contents' }}>
                     {i > 0 && <span style={{ color: '#d0d4da', userSelect: 'none' }}>·</span>}
                     <span style={i === 0 ? { fontWeight: 700, color: '#1d2530' } : undefined}>{part}</span>
                   </span>
