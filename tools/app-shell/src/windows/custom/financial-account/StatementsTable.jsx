@@ -175,9 +175,13 @@ function renderBody({ loading, statements, ui, currency, bcpLocale, openId, togg
 // Internals
 // ─────────────────────────────────────────────────────────────────────────────
 function StatementRow({ statement: s, currency, bcpLocale, ui, open, onToggle }) {
-  const rangeName = s.periodFrom || s.periodTo
-    ? formatRange(s.periodFrom, s.periodTo, bcpLocale)
-    : (s.name || '—');
+  // The "Nombre" column shows the statement's own name. Manually-created and
+  // most imported statements carry a meaningful name; only fall back to the
+  // line date range (and finally an em dash) when no name is set.
+  const displayName = s.name
+    || (s.periodFrom || s.periodTo
+      ? formatRange(s.periodFrom, s.periodTo, bcpLocale)
+      : '—');
 
   return (
     <>
@@ -203,7 +207,7 @@ function StatementRow({ statement: s, currency, bcpLocale, ui, open, onToggle })
           <ChevronRight className="h-4 w-4" />
         </span>
         <span className="whitespace-nowrap font-semibold text-[#121217]">{s.documentNo || '—'}</span>
-        <span className="truncate text-[#121217]">{rangeName}</span>
+        <span className="truncate text-[#121217]">{displayName}</span>
         <span className="whitespace-nowrap text-[#121217]">{formatDate(s.importDate, bcpLocale)}</span>
         <span className="whitespace-nowrap text-[#121217]">{formatDate(s.transactionDate, bcpLocale)}</span>
         <span className="text-right tabular-nums text-[#121217]">{s.lineCount ?? 0}</span>
