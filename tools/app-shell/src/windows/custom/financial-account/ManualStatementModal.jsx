@@ -16,12 +16,15 @@ import { FieldRow, inputClass } from './formFields';
 // ─────────────────────────────────────────────────────────────────────────────
 
 let lineSeq = 0;
-const newLine = () => ({
-  id: `l${(lineSeq += 1)}`,
-  // Pre-fill the line date with today; it is excluded from the blank-line check
-  // so a row with only the default date still counts as empty.
-  date: toLocalIso(new Date()), reference: '', contactName: '', contact: null, glItem: null, out: '', in: '',
-});
+const newLine = () => {
+  lineSeq += 1;
+  return {
+    id: `l${lineSeq}`,
+    // Pre-fill the line date with today; it is excluded from the blank-line check
+    // so a row with only the default date still counts as empty.
+    date: toLocalIso(new Date()), reference: '', contactName: '', contact: null, glItem: null, out: '', in: '',
+  };
+};
 
 /** Browser-native date input yields `YYYY-MM-DD`. */
 function toLocalIso(d) {
