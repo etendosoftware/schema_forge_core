@@ -9,10 +9,9 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: false,           // sequential — UI flows depend on state
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: 1,
   reporter: [
     ['html', { open: 'never', outputFolder: '../artifacts/e2e-report' }],
     ['list'],
@@ -23,16 +22,24 @@ export default defineConfig({
     baseURL: process.env.BASE_URL || 'http://localhost:3100',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'on-first-retry',
-    headless: !!process.env.CI,   // headless en CI, con ventana en local
+    video: process.env.E2E_VIDEO ? 'on' : 'on-first-retry',
+    headless: !!process.env.CI,
     viewport: { width: 1440, height: 900 },
     actionTimeout: 15_000,
   },
 
   projects: [
     {
-      name: 'chromium',
+      name: 'mocked',
+      testMatch: '**/*.mocked.spec.js',
       use: { ...devices['Desktop Chrome'] },
+      workers: process.env.CI ? 4 : undefined,
+    },
+    {
+      name: 'integration',
+      testIgnore: '**/*.mocked.spec.js',
+      use: { ...devices['Desktop Chrome'] },
+      workers: 1,
     },
   ],
 });
