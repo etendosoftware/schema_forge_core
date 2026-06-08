@@ -304,6 +304,12 @@
           "favname": "Fiscal Monitor"
         },
         {
+          "name": "conversion-rates",
+          "label": "Conversion Rates",
+          "favname": "Conversion Rates",
+          "windowId": "116"
+        },
+        {
           "name": "fiscal-models",
           "label": "Fiscal Models",
           "favname": "Fiscal Models"
@@ -384,6 +390,12 @@
           "name": "fiscal-config",
           "label": "Fiscal Configuration",
           "favname": "Fiscal Configuration"
+        },
+        {
+          "name": "conversion-rate-downloader-log",
+          "label": "Conversion Rate Downloader Log",
+          "favname": "Conversion Rate Downloader Log",
+          "windowId": "6FEBA130CDE24CC09041FFA6117ADFA9"
         }
       ]
     },

@@ -161,6 +161,10 @@ export function detectDuplicatedBlocks(diffText, { minLines = DUPLICATE_MIN_LINE
 
   for (const run of runs) {
     if (run.path.startsWith('artifacts/')) continue;
+    // Generated AD metadata cache (offline-regen snapshot): a data dump where
+    // standard columns/records legitimately repeat across entities — DRY/extract
+    // rules do not apply, same as the artifacts/ skip above.
+    if (run.path.startsWith('cli/cache/')) continue;
     if (isGeneratedDependencyManifest(run.path)) continue;
     const normalizedLines = run.lines
       .map((entry) => ({ ...entry, normalized: normalizeDuplicateLine(entry.text) }))
@@ -306,6 +310,11 @@ function analyzeLargeFiles(changedFiles) {
     // Generated contract snapshots are intentionally verbose and are checked
     // by schema/quality gates instead of the handwritten-source size gate.
     if (/^artifacts\/[^/]+\/(?:contract|contract\.prev|contract\.mcp|report-contract|aggregate-contract)\.json$/.test(path)) {
+      continue;
+    }
+    // Generated AD metadata cache (offline-regen snapshot): intentionally large
+    // and machine-generated — same rationale as the contract snapshots above.
+    if (path.startsWith('cli/cache/')) {
       continue;
     }
     if (!existsSync(path)) {

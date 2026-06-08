@@ -49,6 +49,8 @@ const windowLoaders = {
   'bank-reconciliation': () => import('@generated/bank-reconciliation/generated/web/bank-reconciliation/index.jsx'),
   'chart-of-accounts': () => import('@generated/chart-of-accounts/generated/web/chart-of-accounts/index.jsx'),
   'assets': () => import('@generated/assets/generated/web/assets/index.jsx'),
+  'conversion-rates': () => import('@generated/conversion-rates/generated/web/conversion-rates/index.jsx'),
+  'conversion-rate-downloader-log': () => import('@generated/conversion-rate-downloader-log/generated/web/conversion-rate-downloader-log/index.jsx'),
   'amortization': () => import('@generated/amortization/generated/web/amortization/index.jsx'),
 };
 

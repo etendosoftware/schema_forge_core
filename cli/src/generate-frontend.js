@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { MARKERS } from './custom-section-markers.js';
+import { convertLogicToJs } from './generate-contract.js';
 
 const FRONTEND_ACTION_PROJECTION = [
   ['entity', 'entity'],
@@ -1079,6 +1080,78 @@ function getLineConfigSymbol(lineEntityConfig, LINE_CONFIG_SYMBOLS) {
 }
 
 /**
+ * Build the `processes` registry literal for a page: backend process endpoints,
+ * button-type header fields, and extra processes declared only in decisions.json.
+ * `processOverrides` can relabel, restyle, exclude, or add entries.
+ */
+function buildProcessesArray({ processes, buttonFields, processOverrides }) {
+  return [
+    ...processes.map(p => {
+      const ovr = processOverrides[p.name] || processOverrides[p.columnName] || {};
+      if (ovr.exclude) return null;
+      const isDestructive = /void|cancel|reject/i.test(p.name);
+      const style = ovr.style || pick(isDestructive, 'destructive', 'positive');
+      const label = ovr.label || toLabel(p.name);
+      const colPart = wrapIf(", columnName: '", p.columnName, "'");
+      const paramsPart = p.params?.length ? `, params: ${JSON.stringify(p.params)}` : '';
+      const dlRaw = ovr.displayLogicRaw
+        ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
+        : '';
+      return `  { name: '${p.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${paramsPart}${dlRaw} },`;
+    }).filter(Boolean),
+    ...buttonFields.map(f => {
+      const ovr = processOverrides[f.name] || {};
+      if (ovr.exclude) return null;
+      const isDestructive = /void|cancel|reject/i.test(f.name);
+      const style = ovr.style || pick(isDestructive, 'destructive', 'positive');
+      const label = ovr.label || f.label || toLabel(f.name);
+      const dlRawVal = ovr.displayLogicRaw || f.displayLogic?.raw;
+      const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"')}"` : '';
+      const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
+      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart} },`;
+    }).filter(Boolean),
+    // Extra processes defined purely in decisions.json (not in backend contract)
+    ...Object.entries(processOverrides)
+      .filter(([, ovr]) => ovr.add && !ovr.exclude)
+      .map(([name, ovr]) => {
+        const style = ovr.style || 'positive';
+        const label = ovr.label || toLabel(name);
+        const colPart = wrapIf(", columnName: '", ovr.columnName, "'");
+        const dlRaw = ovr.displayLogicRaw
+          ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
+          : '';
+        const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
+        const fieldMaxPart = ovr.requiresFieldMax
+          ? `, requiresFieldMax: ${JSON.stringify(ovr.requiresFieldMax)}`
+          : '';
+        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart}${fieldMaxPart} },`;
+      }),
+  ].join('\n');
+}
+
+/**
+ * Build the hidden add-line defaults literal: form=false fields with a default.
+ * `@Column@` macros become `fromParent` references when the column maps to a
+ * header field; literal defaults pass through. `@SQL=`/session macros are skipped.
+ */
+function buildHiddenDefaultsArray(hiddenDefaultFields, allEntityFields) {
+  return hiddenDefaultFields
+    .filter(f => !String(f.defaultValue).startsWith('@SQL=') && !isEtendoSessionMacro(f.defaultValue))
+    .map(f => {
+      const rawDefault = String(f.defaultValue);
+      const parentColMatch = rawDefault.match(/^@(\w+)@$/);
+      const headerField = parentColMatch
+        ? allEntityFields.find(hf => hf.column === parentColMatch[1])
+        : null;
+      if (headerField) {
+        return `    { key: '${f.name}', fromParent: '${headerField.name}' },`;
+      }
+      const defaultValue = rawDefault.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
+      return `    { key: '${f.name}', value: '${defaultValue}' },`;
+    }).join('\n');
+}
+
+/**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
  */
@@ -1128,48 +1201,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // processOverrides from decisions.json allow label, style, displayLogicRaw, and exclude overrides
   const processOverrides = contract?.frontendContract?.window?.processOverrides ?? {};
   const buttonFields = allEntityFields.filter(f => f.type === 'button' && f.form);
-  const processesArray = [
-    ...processes.map(p => {
-      const ovr = processOverrides[p.name] || processOverrides[p.columnName] || {};
-      if (ovr.exclude) return null;
-      const isDestructive = /void|cancel|reject/i.test(p.name);
-      const style = ovr.style || pick(isDestructive, 'destructive', 'positive');
-      const label = ovr.label || toLabel(p.name);
-      const colPart = wrapIf(", columnName: '", p.columnName, "'");
-      const paramsPart = p.params?.length ? `, params: ${JSON.stringify(p.params)}` : '';
-      const dlRaw = ovr.displayLogicRaw
-        ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
-        : '';
-      return `  { name: '${p.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${paramsPart}${dlRaw} },`;
-    }).filter(Boolean),
-    ...buttonFields.map(f => {
-      const ovr = processOverrides[f.name] || {};
-      if (ovr.exclude) return null;
-      const isDestructive = /void|cancel|reject/i.test(f.name);
-      const style = ovr.style || pick(isDestructive, 'destructive', 'positive');
-      const label = ovr.label || f.label || toLabel(f.name);
-      const dlRawVal = ovr.displayLogicRaw || f.displayLogic?.raw;
-      const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"')}"` : '';
-      const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
-      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart} },`;
-    }).filter(Boolean),
-    // Extra processes defined purely in decisions.json (not in backend contract)
-    ...Object.entries(processOverrides)
-      .filter(([, ovr]) => ovr.add && !ovr.exclude)
-      .map(([name, ovr]) => {
-        const style = ovr.style || 'positive';
-        const label = ovr.label || toLabel(name);
-        const colPart = wrapIf(", columnName: '", ovr.columnName, "'");
-        const dlRaw = ovr.displayLogicRaw
-          ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
-          : '';
-        const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
-        const fieldMaxPart = ovr.requiresFieldMax
-          ? `, requiresFieldMax: ${JSON.stringify(ovr.requiresFieldMax)}`
-          : '';
-        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart}${fieldMaxPart} },`;
-      }),
-  ].join('\n');
+  const processesArray = buildProcessesArray({ processes, buttonFields, processOverrides });
 
   // Separate entry fields (user types) from auto-derived fields (price, tax, amount)
   // Note: discount is intentionally excluded — it is user-editable and triggers SL_Order_Amt recalculation.
@@ -1222,21 +1254,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${referencePart}${inputModePart} },`;
   }).join('\n');
 
-  const hiddenDefaultsArray = hiddenDefaultFields
-    .filter(f => !String(f.defaultValue).startsWith('@SQL=') && !isEtendoSessionMacro(f.defaultValue))
-    .map(f => {
-      const rawDefault = String(f.defaultValue);
-      const parentColMatch = rawDefault.match(/^@(\w+)@$/);
-      if (parentColMatch) {
-        const colName = parentColMatch[1];
-        const headerField = allEntityFields.find(hf => hf.column === colName);
-        if (headerField) {
-          return `    { key: '${f.name}', fromParent: '${headerField.name}' },`;
-        }
-      }
-      const defaultValue = rawDefault.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
-      return `    { key: '${f.name}', value: '${defaultValue}' },`;
-    }).join('\n');
+  const hiddenDefaultsArray = buildHiddenDefaultsArray(hiddenDefaultFields, allEntityFields);
 
   // API prediction config
   const { apiBlock, apiProp } = buildApiParts(contract);
@@ -1316,6 +1334,17 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const secondaryTabsDecl = windowConfig.secondaryTabs;
   let secondaryTabDefs;
 
+  // Column→property and boolean-field maps built from the header entity, used
+  // to compile tab-level readOnlyLogic expressions the same way field-level
+  // readOnlyLogic is compiled in generate-contract.js.
+  const headerEntityForLogic = contract.frontendContract.entities[headerEntity] ?? {};
+  const headerColumnMap = {};
+  const headerBooleanFields = [];
+  for (const hf of (headerEntityForLogic.fields ?? [])) {
+    if (hf.column && hf.name) headerColumnMap[hf.column] = hf.name;
+    if (hf.tsType === 'boolean' || hf.type === 'boolean') headerBooleanFields.push(hf.name);
+  }
+
   if (secondaryTabsDecl) {
     // Declarative config from decisions.json — sorted by tabOrder
     secondaryTabDefs = Object.entries(secondaryTabsDecl)
@@ -1350,9 +1379,20 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
             : '';
           const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
-          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart} }`;
+          // Declarative selector exclusion: this entry's options drop the live value
+          // of another field in the same add-row (e.g. toCurrency excludes the
+          // document currency). Declared in secondaryTabs.<tab>.addLineFieldExclusions.
+          const excludeValueOf = cfg.addLineFieldExclusions?.[fk];
+          const excludeValueOfPart = excludeValueOf ? `, excludeValueOf: '${String(excludeValueOf).replace(/'/g, "\\'")}'` : '';
+          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${excludeValueOfPart} }`;
         }).filter(Boolean);
-        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName };
+        // Tab-level readOnlyLogic — when truthy at runtime the tab still
+        // renders existing rows but blocks add / edit / delete actions.
+        // Compiled using the same translator as field-level readOnlyLogic.
+        const readOnlyLogicJs = cfg.readOnlyLogic
+          ? convertLogicToJs(cfg.readOnlyLogic, headerColumnMap, headerBooleanFields)
+          : null;
+        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs };
       });
   } else {
     // Fallback: hardcoded known list + entity inference (backward compat)
@@ -1415,18 +1455,21 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   const secondaryTabsPropEntries = secondaryTabDefs.map(t => {
     const requireSavedPart = t.requireSavedRecord ? ', requireSavedRecord: true' : '';
+    const readOnlyLogicPart = t.readOnlyLogicJs
+      ? `, readOnlyLogic: (record) => ${t.readOnlyLogicJs}`
+      : '';
     if (t.isFormTab) {
-      return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart} },`;
+      return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart} },`;
     }
     if (t.isPanelTab) {
-      return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart} },`;
+      return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart}${readOnlyLogicPart} },`;
     }
     const addLinePart = t.addLineEntries.length > 0
       ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
       : '';
     const customAddModalPart = wrapIf(', customAddModal: ', t.CustomAddModalName);
     const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
-    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart} },`;
+    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart} },`;
   }).join('\n');
 
   const secondaryTabsProp = wrapIf('\n        secondaryTabs={[\n', secondaryTabsPropEntries, '\n        ]}', secondaryTabDefs.length > 0);

@@ -30,7 +30,7 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
 
   const isCompleted = data?.documentStatus === 'CO';
   const isFullyInvoiced = data?.invoiceStatus >= 100;
-  const hasReturn = Array.isArray(data?.returnReceipts) && data.returnReceipts.length > 0;
+  const canCreateReturn = data?.canCreateReturn === true;
 
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({
@@ -151,7 +151,7 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
         </button>
       )}
 
-      {isCompleted && !hasReturn && (
+      {isCompleted && canCreateReturn && (
         <button
           type="button"
           onClick={() => setWizardOpen(true)}

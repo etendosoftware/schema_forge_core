@@ -82,7 +82,11 @@ const LazyOcrInlineUploader = lazy(() => import('@/components/copilot/ocr/OcrInl
  * Returns true (visible) if the expression cannot be parsed or if the field is missing from data.
  */
 function sidePanelWrapperCls(hasSidePanel, linesLayout) {
-  if (hasSidePanel) return 'flex items-start gap-0';
+  // Stack the side panel below the content on narrow viewports (e.g. when the
+  // devtools console is open) and only place it beside the content once there
+  // is room (lg+). A rigid side-by-side row would otherwise overlap the
+  // header/lines when the panel can't shrink.
+  if (hasSidePanel) return 'flex flex-col lg:flex-row items-start gap-0';
   if (linesLayout === 'inlineEditable') return 'flex flex-col';
   return '';
 }
@@ -338,6 +342,22 @@ export function DetailView({
   const secondaryHook3 = useEntity(entity, (secondaryTabs[3]?.isFormTab || secondaryTabs[3]?.Panel) ? null : (secondaryTabs[3]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
+
+  // "From" currency for secondary-tab inline add-rows. The parent document's
+  // currency is a read-only column on those tabs (e.g. exchange rates), so the
+  // inline add-row has no input to populate it and it renders "—" until the POST
+  // sets it. Seed it from the header so it shows immediately. Depend on the scalar
+  // values (not the header object) so the seed keeps a stable identity and does
+  // not reset the open add-row on every parent re-render.
+  const headerCurrencyId = (hook.selected ?? hook.editing)?.currency ?? null;
+  const headerCurrencyLabel = (hook.selected ?? hook.editing)?.['currency$_identifier'] ?? sessionCurrencyCode ?? null;
+  const secondaryAddRowSeed = useMemo(() => {
+    if (headerCurrencyId == null && headerCurrencyLabel == null) return undefined;
+    const seed = {};
+    if (headerCurrencyId != null) seed.currency = headerCurrencyId;
+    if (headerCurrencyLabel != null) seed['currency$_identifier'] = headerCurrencyLabel;
+    return seed;
+  }, [headerCurrencyId, headerCurrencyLabel]);
 
   const handleFieldBlur = useCallback(() => {
     if (!hook.editing || !hook.selected) return;
@@ -2663,7 +2683,7 @@ export function DetailView({
                                       onSelectionChange={linesLayout === 'inlineEditable'
                                         ? (rows) => setSecondarySelectedRows(prev => ({ ...prev, [st.key]: rows }))
                                         : undefined}
-                                      onDeleteRow={enableSecondaryRowDelete && (api?.crud?.[st.key]?.delete ?? true) ? (row) => {
+                                      onDeleteRow={(enableSecondaryRowDelete || (linesLayout === 'inlineEditable' && !st.customAddModal)) && (api?.crud?.[st.key]?.delete ?? true) ? (row) => {
                                         setSecondaryDeleteConfirm({
                                           tabKey: st.key,
                                           tabIndex: stIdx,
@@ -2703,7 +2723,9 @@ export function DetailView({
                                           const updated = await res.json().catch(() => null);
                                           // Server response wins over the optimistic cache when present
                                           // — keeps any callout-driven fields the backend computed.
-                                          if (updated) secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, updated);
+                                          // NEO wraps the saved record in {response:{data:[...]}}.
+                                          const serverRow = updated?.response?.data?.[0] ?? null;
+                                          if (serverRow) secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, serverRow);
                                         } else {
                                           secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, previous);
                                           const msg = await extractErrorMessage(res);
@@ -2727,6 +2749,7 @@ export function DetailView({
                                         },
                                         onCancel: () => setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false })),
                                         catalogs,
+                                        seedValues: secondaryAddRowSeed,
                                       } : undefined}
                                     />
                                   </div>
@@ -2786,7 +2809,16 @@ export function DetailView({
                                                       body: JSON.stringify(fieldValues),
                                                     });
                                                     if (res.ok) {
-                                                      setSelectedSecondaryLine(prev => ({ ...prev, ...secondaryLineEdits }));
+                                                      // Server response wins over the local edits: it carries
+                                                      // callout-computed fields (e.g. the recalculated foreignAmount
+                                                      // on an exchange-rate row) that the edited values don't have.
+                                                      // NEO wraps the saved record in {response:{data:[...]}}.
+                                                      const updated = await res.json().catch(() => null);
+                                                      const serverValues = updated?.response?.data?.[0] ?? null;
+                                                      setSelectedSecondaryLine(prev => ({ ...prev, ...secondaryLineEdits, ...(serverValues ?? {}) }));
+                                                      // Refresh the grid row cache so the list reflects the saved and
+                                                      // derived values without having to reopen the record.
+                                                      secondaryHooks[stIdx]?.handleUpdateChild?.(selectedSecondaryLine.id, serverValues ?? secondaryLineEdits);
                                                       setSecondaryLineEdits(null);
                                                       setSecondaryLineEditColumns({});
                                                       toast.success('Record saved');
@@ -3106,7 +3138,7 @@ export function DetailView({
                 </div>
                 {sidePanel && (
                   <div
-                    className="w-[280px] shrink-0 self-stretch border-l border-gray-200 pl-3 pr-3"
+                    className="w-full max-w-full shrink-0 self-stretch border-t lg:border-t-0 lg:w-[280px] lg:border-l border-gray-200 pt-3 lg:pt-0 pl-0 lg:pl-3 pr-0 lg:pr-3"
                     style={sidePanelStyle}
                   >
                     {typeof sidePanel === 'function'
