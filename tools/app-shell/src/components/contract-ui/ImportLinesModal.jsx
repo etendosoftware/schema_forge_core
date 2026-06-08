@@ -145,7 +145,11 @@ export default function ImportLinesModal({
     } catch (err) { toast.error(err.message || 'Failed to import'); } finally { setImporting(false); }
   };
 
-  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+  const fmtDate = (d) => {
+    if (!d) return '-';
+    const [year, month, day] = String(d).slice(0, 10).split('-').map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
   const fmtNum = (v) => v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
 
   return (
