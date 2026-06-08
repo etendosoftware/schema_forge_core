@@ -102,6 +102,16 @@ vi.mock('../../shared/preview-cards/SummaryCard.jsx', () => ({
   ),
   CardShell: ({ children }) => <div data-testid="card-shell">{children}</div>,
   PercentBar: ({ value }) => <div data-testid="percent-bar">{value}</div>,
+  MovementSummaryCard: ({ title, rows, statusRowLabel, statusLabel, statusBadgeClass, children }) => (
+    <div data-testid="movement-summary-card">
+      <span>{title}</span>
+      {(rows || []).map(({ label, value }) => (
+        <div key={label} data-testid="info-row">{label}: {value}</div>
+      ))}
+      <div data-testid="info-row">{statusRowLabel}: <span className={statusBadgeClass}>{statusLabel}</span></div>
+      {children}
+    </div>
+  ),
 }));
 
 vi.mock('@/components/related-documents/constants.jsx', () => ({
