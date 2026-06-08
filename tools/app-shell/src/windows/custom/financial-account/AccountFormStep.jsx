@@ -22,10 +22,12 @@ const FIELD_INPUT = 'bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]';
  * Reusable account form for the offline flow (ETP-4096). Used both by the New
  * Account wizard (bank/cash creation) and the Edit Account modal.
  *
- * - `mode='bank'` shows IBAN + BIC/SWIFT; `mode='cash'` shows only Name + Currency.
+ * - `mode='bank'` shows IBAN + BIC/SWIFT; `mode='cash'` and `mode='card'` show
+ *   only Name + Currency.
  * - Name is required; IBAN is optional but, when present, must pass mod-97.
- * - `onSubmit` receives `{ name, type, currencyId, iban, swiftCode }` (iban/swift
- *   are normalised and only included for bank accounts).
+ * - `onSubmit` receives `{ name, type, currencyId, iban, swiftCode }` — type is
+ *   'B' (bank) / 'C' (cash) / 'CA' (card); iban/swift are normalised and only
+ *   included for bank accounts.
  */
 export function AccountFormStep({
   mode = 'bank',
@@ -58,7 +60,8 @@ export function AccountFormStep({
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!canSubmit) return;
-    const payload = { name: name.trim(), type: isBank ? 'B' : 'C', currencyId };
+    const typeCode = mode === 'bank' ? 'B' : mode === 'card' ? 'CA' : 'C';
+    const payload = { name: name.trim(), type: typeCode, currencyId };
     if (isBank) {
       payload.iban = normalizeIban(iban);
       // Only emit swiftCode when the field is shown — the edit modal hides it and
@@ -149,7 +152,10 @@ export function AccountFormStep({
             >
               <SelectValue placeholder={ui('financeAccountsNewFieldCurrencyPlaceholder')} />
             </SelectTrigger>
-            <SelectContent>
+            {/* Force the (long) currency list to open BELOW the trigger instead
+                of flipping up — the form sits near the bottom of the dialog so
+                Radix's collision avoidance would otherwise open it upward. */}
+            <SelectContent side="bottom" avoidCollisions={false}>
               {currencies.map((currency) => (
                 <SelectItem key={currency.id} value={currency.id}>
                   {currency.iso}
