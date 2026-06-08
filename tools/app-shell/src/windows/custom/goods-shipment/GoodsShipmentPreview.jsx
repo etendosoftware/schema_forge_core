@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Download, Edit2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
@@ -8,9 +8,9 @@ import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
 import { PreviewPdfPanel } from '../shared/PreviewActionButtons.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { useShipmentPdf } from './useShipmentPdf.js';
-import RelatedDocuments from '@generated/goods-shipment/custom/RelatedDocuments';
 import { STATUS_BADGE, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
 import { InfoRow, CardShell, PercentBar } from '../shared/preview-cards/SummaryCard.jsx';
+import RelatedDocumentsCard from '../shared/preview-cards/RelatedDocumentsCard.jsx';
 
 function EmptyPanel({ icon, text }) {
   return (
@@ -23,13 +23,12 @@ function EmptyPanel({ icon, text }) {
 
 // ── Tab content components ────────────────────────────────────────────────────
 
-function ShipmentStatsPanel({ shipment, partnerName, movementDate, ui, onOrderClick }) {
+function ShipmentStatsPanel({ shipment, partnerName, movementDate, ui }) {
   const invoiceStatusPct = Number(shipment.invoiceStatus ?? 0);
   const warehouseLabel = shipment['warehouse$_identifier'] || '—';
   const docStatus = shipment.documentStatus;
   const statusLabel = ui(STATUS_KEYS[docStatus]) || shipment['documentStatus$_identifier'] || docStatus || '—';
   const statusBadgeClass = STATUS_BADGE[docStatus] || 'bg-gray-50 text-gray-600 border-gray-200';
-  const salesOrderNo = shipment['salesOrder$_identifier']?.split(' ')[0] || null;
 
   return (
     <div className="pb-4">
@@ -46,17 +45,6 @@ function ShipmentStatsPanel({ shipment, partnerName, movementDate, ui, onOrderCl
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusBadgeClass}`}>
               {statusLabel}
             </span>
-          </InfoRow>
-          <InfoRow label={ui('shipmentPreviewSalesOrder')}>
-            {salesOrderNo ? (
-              <button
-                type="button"
-                onClick={onOrderClick}
-                className="text-blue-600 font-medium text-right max-w-[55%] truncate hover:underline bg-transparent border-none p-0 cursor-pointer"
-              >
-                {salesOrderNo}
-              </button>
-            ) : null}
           </InfoRow>
           <InfoRow label={ui('shipmentPreviewInvoiceStatus')}>
             <PercentBar value={invoiceStatusPct} />
@@ -90,6 +78,28 @@ export default function GoodsShipmentPreview({ shipment, token, apiBaseUrl, wind
     token,
   );
 
+  // Fetch the full header record once; all 3 specs share 1 HTTP call via the cached promise.
+  const shipmentDocSpecs = useMemo(() => {
+    let detailPromise = null;
+    const getDetail = (id, tok, base) => {
+      if (!detailPromise) {
+        detailPromise = fetch(`${base}/goodsShipment/${id}`, {
+          headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
+        })
+          .then(r => r.ok ? r.json() : null)
+          .then(j => j?.response?.data?.[0] ?? {})
+          .catch(() => ({}));
+      }
+      return detailPromise;
+    };
+    return [
+      { key: 'orders',   type: 'sales-order',            fetch: (id, tok, base) => getDetail(id, tok, base).then(r => r.linkedOrders   ?? []) },
+      { key: 'invoices', type: 'sales-invoice',           fetch: (id, tok, base) => getDetail(id, tok, base).then(r => r.linkedInvoices ?? []) },
+      { key: 'returns',  type: 'return-material-receipt', fetch: (id, tok, base) => getDetail(id, tok, base).then(r => r.returnReceipts ?? []) },
+    ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shipment?.id]);
+
   if (!shipment) return null;
 
   // ── Left panel ──────────────────────────────────────────────────────────────
@@ -111,7 +121,6 @@ export default function GoodsShipmentPreview({ shipment, token, apiBaseUrl, wind
     ? formatCalendarDate(shipment.movementDate, locale)
     : '—';
   const windowLabel = tMenu('Goods Shipment');
-  const salesOrderId = shipment.salesOrder || null;
 
   // ── Action buttons ──────────────────────────────────────────────────────────
 
@@ -166,13 +175,20 @@ export default function GoodsShipmentPreview({ shipment, token, apiBaseUrl, wind
       key: 'general',
       label: ui('invoicePreviewGeneral'),
       content: (
-        <ShipmentStatsPanel
-          shipment={shipment}
-          partnerName={partnerName}
-          movementDate={movementDate}
-          ui={ui}
-          onOrderClick={salesOrderId ? () => { onClose?.(); navigate(`/sales-order/${salesOrderId}`); } : undefined}
-        />
+        <div className="pb-4">
+          <ShipmentStatsPanel
+            shipment={shipment}
+            partnerName={partnerName}
+            movementDate={movementDate}
+            ui={ui}
+          />
+          <RelatedDocumentsCard
+            documentId={shipment.id}
+            token={token}
+            apiBaseUrl={apiBaseUrl}
+            specs={shipmentDocSpecs}
+          />
+        </div>
       ),
     },
     {
@@ -184,18 +200,6 @@ export default function GoodsShipmentPreview({ shipment, token, apiBaseUrl, wind
       key: 'history',
       label: ui('invoicePreviewHistory'),
       content: <EmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />,
-    },
-    {
-      key: 'documents',
-      label: ui('shipmentPreviewDocuments'),
-      content: (
-        <RelatedDocuments
-          recordId={shipment.id}
-          data={shipment}
-          token={token}
-          apiBaseUrl={apiBaseUrl}
-        />
-      ),
     },
   ];
 

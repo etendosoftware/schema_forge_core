@@ -4,8 +4,8 @@ import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
 import OrderReactivateBulkAction from '@generated/sales-order/custom/OrderReactivateBulkAction';
 import BulkOrderMoreMenu from '@generated/sales-order/custom/BulkOrderMoreMenu';
-import { ConfirmModal, ConfirmResultModal, ManageDocsLauncher } from '@generated/sales-order/custom/OrderCreateInvoice';
-import { ListView } from '@/components/contract-ui';
+import { ConfirmModal, ManageDocsLauncher } from '@generated/sales-order/custom/OrderCreateInvoice';
+import { ConfirmResultModal, ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.jsx';
