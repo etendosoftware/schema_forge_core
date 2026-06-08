@@ -423,6 +423,144 @@ export function getSecondaryRowUpdateHandler(st, linesLayout, ctx) {
   } : undefined;
 }
 
+/**
+ * Build the add / save-line / delete handlers for a secondary table tab.
+ * Extracted verbatim from the SecondaryTableTab call site so the logic is
+ * unit-testable without a replica. Called once per tab per render with the
+ * current render's values, preserving the original closure-over-render-scope
+ * behavior of the former inline closures.
+ *
+ * @param {object} deps
+ * @param {object} deps.st - current secondary tab descriptor
+ * @param {number} deps.stIdx - current secondary tab index
+ * @param {object} deps.api - resolved API config (for crud detail URLs)
+ * @param {string} deps.apiBaseUrl - base URL for NEO Headless requests
+ * @param {string} [deps.token] - bearer token
+ * @param {object} deps.secondaryHooks - per-tab child entity hooks
+ * @param {Function} deps.ui - i18n label resolver
+ * @param {Function} deps.extractErrorMessage - response error extractor
+ * @param {Function} deps.confirmDelete - delete confirmation prompt
+ * @param {object} deps.secondaryInlineLinesRefs - refs to inline line tables
+ * @param {object} deps.selectedSecondaryLine - currently open secondary line
+ * @param {object} deps.secondaryLineEdits - pending edits for the open line
+ * @param {object} deps.secondarySelectedRows - selected rows per tab key
+ * @param {Function} deps.setAddingSecondaryLine
+ * @param {Function} deps.setSavingSecondaryLine
+ * @param {Function} deps.setSelectedSecondaryLine
+ * @param {Function} deps.setSecondaryLineEdits
+ * @param {Function} deps.setSecondaryLineEditColumns
+ * @param {Function} deps.setSecondaryDeleting
+ * @param {Function} deps.setSecondarySelectedRows
+ * @returns {{onAdd: Function, onSaveLine: Function, onDelete: Function}}
+ */
+export function buildSecondaryLineHandlers(deps) {
+  const {
+    st, stIdx, api, apiBaseUrl, token, secondaryHooks, ui,
+    extractErrorMessage, confirmDelete, secondaryInlineLinesRefs,
+    selectedSecondaryLine, secondaryLineEdits, secondarySelectedRows,
+    setAddingSecondaryLine, setSavingSecondaryLine, setSelectedSecondaryLine,
+    setSecondaryLineEdits, setSecondaryLineEditColumns, setSecondaryDeleting,
+    setSecondarySelectedRows,
+  } = deps;
+
+  const onAdd = async (lineData) => {
+    const entryKeys = new Set(st.addLineFields.entry.map(f => f.key));
+    const filtered = {};
+    for (const [k, v] of Object.entries(lineData)) {
+      if (entryKeys.has(k)) filtered[k] = v;
+    }
+    const result = await secondaryHooks[stIdx]?.handleAddChild?.(filtered);
+    if (result) setAddingSecondaryLine(prev => ({...prev, [st.key]: false}));
+    return result;
+  };
+
+  const onSaveLine = async () => {
+    setSavingSecondaryLine(true);
+    try {
+      const secUrl = `${apiBaseUrl}/${st.key}/${selectedSecondaryLine.id}`;
+      const fieldValues = {};
+      for (const [k, v] of Object.entries(secondaryLineEdits)) {
+        if (k.endsWith('$_identifier')) continue;
+        // NEO Headless PATCH expects camelCase API keys, not DB column names.
+        // Always use k (the API key) as the field name.
+        // Convert numeric strings to numbers for BigDecimal compatibility.
+        // Only strip when the value is already in standard format (no commas).
+        // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
+        if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
+          fieldValues[k] = parseFloat(v);
+        } else {
+          fieldValues[k] = v;
+        }
+      }
+      const res = await fetch(secUrl, {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json', ...(token ? {Authorization: `Bearer ${token}`} : {})},
+        body: JSON.stringify(fieldValues),
+      });
+      if (res.ok) {
+        // Server response wins over the local edits: it carries
+        // callout-computed fields (e.g. the recalculated foreignAmount
+        // on an exchange-rate row) that the edited values don't have.
+        // NEO wraps the saved record in {response:{data:[...]}}.
+        const updated = await res.json().catch(() => null);
+        const serverValues = updated?.response?.data?.[0] ?? null;
+        setSelectedSecondaryLine(prev => ({...prev, ...secondaryLineEdits, ...(serverValues ?? {})}));
+        // Refresh the grid row cache so the list reflects the saved and
+        // derived values without having to reopen the record.
+        secondaryHooks[stIdx]?.handleUpdateChild?.(selectedSecondaryLine.id, serverValues ?? secondaryLineEdits);
+        setSecondaryLineEdits(null);
+        setSecondaryLineEditColumns({});
+        toast.success('Record saved');
+      } else {
+        toast.error(await extractErrorMessage(res));
+      }
+    } catch (err) {
+      toast.error(err.message || 'Network error');
+    } finally {
+      setSavingSecondaryLine(false);
+    }
+  };
+
+  const onDelete = async () => {
+    if (!(await confirmDelete())) return;
+    setSecondaryDeleting(prev => ({...prev, [st.key]: true}));
+    const rows = secondarySelectedRows[st.key] ?? [];
+    try {
+      const results = await Promise.allSettled(
+          rows.map(row => {
+            const childUrl = api?.crud?.[st.key]?.detailUrl?.replace('{id}', row.id)
+                || `${apiBaseUrl}/${st.key}/${row.id}`;
+            return fetch(childUrl, {
+              method: 'DELETE',
+              headers: {...(token ? {Authorization: `Bearer ${token}`} : {})},
+            }).then(res => ({res, row}));
+          })
+      );
+      let deleted = 0;
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value.res.ok) {
+          secondaryHooks[stIdx]?.handleDeleteChild?.(result.value.row.id);
+          if (selectedSecondaryLine?._tabKey === st.key && selectedSecondaryLine?.id === result.value.row.id) {
+            setSelectedSecondaryLine(null);
+          }
+          deleted++;
+        }
+      }
+      secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
+      setSecondarySelectedRows(prev => ({...prev, [st.key]: []}));
+      if (deleted > 0) toast.success(ui('recordsDeleted', {count: deleted}));
+      const failed = results.length - deleted;
+      if (failed > 0) toast.error(ui('recordsCouldNotBeDeleted', {count: failed}));
+    } catch (err) {
+      toast.error(err.message || ui('networkError'));
+    } finally {
+      setSecondaryDeleting(prev => ({...prev, [st.key]: false}));
+    }
+  };
+
+  return { onAdd, onSaveLine, onDelete };
+}
+
 export function SecondaryFormTab(props) {
   return <div className="flex-1 min-w-0">
     <props.st.Form
@@ -2939,7 +3077,17 @@ export function DetailView({
                         )}
 
                         {/* Tab content: secondary child entity tabs (or form-only tabs) */}
-                        {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
+                        {secondaryTabs.map((st, stIdx) => {
+                          if (tabs[activeTab]?.key !== st.key) return false;
+                          const secondaryLineHandlers = buildSecondaryLineHandlers({
+                            st, stIdx, api, apiBaseUrl, token, secondaryHooks, ui,
+                            extractErrorMessage, confirmDelete, secondaryInlineLinesRefs,
+                            selectedSecondaryLine, secondaryLineEdits, secondarySelectedRows,
+                            setAddingSecondaryLine, setSavingSecondaryLine, setSelectedSecondaryLine,
+                            setSecondaryLineEdits, setSecondaryLineEditColumns, setSecondaryDeleting,
+                            setSecondarySelectedRows,
+                          });
+                          return (
                           <div key={st.key} className={getSecondaryTabContentClassName(secondaryTabContentPaddingT, embedded)}>
                             {st.isFormTab ? (
                               <SecondaryFormTab data={data} hook={hook} onChange={(key, val, column) => {
@@ -3004,105 +3152,16 @@ export function DetailView({
                                   setSecondaryLineEdits(prev => ({...(prev ?? selectedSecondaryLine), [key]: val}));
                                   if (column) setSecondaryLineEditColumns(prev => ({...prev, [key]: column}));
                                 }}
-                                onAdd={async (lineData) => {
-                                  const entryKeys = new Set(st.addLineFields.entry.map(f => f.key));
-                                  const filtered = {};
-                                  for (const [k, v] of Object.entries(lineData)) {
-                                    if (entryKeys.has(k)) filtered[k] = v;
-                                  }
-                                  const result = await secondaryHooks[stIdx]?.handleAddChild?.(filtered);
-                                  if (result) setAddingSecondaryLine(prev => ({...prev, [st.key]: false}));
-                                  return result;
-                                }}
+                                onAdd={secondaryLineHandlers.onAdd}
                                 onCancel={() => setAddingSecondaryLine(prev => ({...prev, [st.key]: false}))}
                                 onAddLineClick={() => runAddLineAction(st, {
                                   handleCustomModalAddClick,
                                   handleSecondaryAddLineToggle,
                                 })}
-                                onSaveLine={async () => {
-                                  setSavingSecondaryLine(true);
-                                  try {
-                                    const secUrl = `${apiBaseUrl}/${st.key}/${selectedSecondaryLine.id}`;
-                                    const fieldValues = {};
-                                    for (const [k, v] of Object.entries(secondaryLineEdits)) {
-                                      if (k.endsWith('$_identifier')) continue;
-                                      // NEO Headless PATCH expects camelCase API keys, not DB column names.
-                                      // Always use k (the API key) as the field name.
-                                      // Convert numeric strings to numbers for BigDecimal compatibility.
-                                      // Only strip when the value is already in standard format (no commas).
-                                      // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
-                                      if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
-                                        fieldValues[k] = parseFloat(v);
-                                      } else {
-                                        fieldValues[k] = v;
-                                      }
-                                    }
-                                    const res = await fetch(secUrl, {
-                                      method: 'PATCH',
-                                      headers: {'Content-Type': 'application/json', ...(token ? {Authorization: `Bearer ${token}`} : {})},
-                                      body: JSON.stringify(fieldValues),
-                                    });
-                                    if (res.ok) {
-                                      // Server response wins over the local edits: it carries
-                                      // callout-computed fields (e.g. the recalculated foreignAmount
-                                      // on an exchange-rate row) that the edited values don't have.
-                                      // NEO wraps the saved record in {response:{data:[...]}}.
-                                      const updated = await res.json().catch(() => null);
-                                      const serverValues = updated?.response?.data?.[0] ?? null;
-                                      setSelectedSecondaryLine(prev => ({...prev, ...secondaryLineEdits, ...(serverValues ?? {})}));
-                                      // Refresh the grid row cache so the list reflects the saved and
-                                      // derived values without having to reopen the record.
-                                      secondaryHooks[stIdx]?.handleUpdateChild?.(selectedSecondaryLine.id, serverValues ?? secondaryLineEdits);
-                                      setSecondaryLineEdits(null);
-                                      setSecondaryLineEditColumns({});
-                                      toast.success('Record saved');
-                                    } else {
-                                      toast.error(await extractErrorMessage(res));
-                                    }
-                                  } catch (err) {
-                                    toast.error(err.message || 'Network error');
-                                  } finally {
-                                    setSavingSecondaryLine(false);
-                                  }
-                                }}
+                                onSaveLine={secondaryLineHandlers.onSaveLine}
                                 onDiscardLine={() => setSecondaryLineEdits(null)}
                                 onDeleteLine={() => setSecondaryDeleteConfirm({tabKey: st.key, tabIndex: stIdx, id: selectedSecondaryLine.id})}
-                                onDelete={async () => {
-                                  if (!(await confirmDelete())) return;
-                                  setSecondaryDeleting(prev => ({...prev, [st.key]: true}));
-                                  const rows = secondarySelectedRows[st.key] ?? [];
-                                  try {
-                                    const results = await Promise.allSettled(
-                                        rows.map(row => {
-                                          const childUrl = api?.crud?.[st.key]?.detailUrl?.replace('{id}', row.id)
-                                              || `${apiBaseUrl}/${st.key}/${row.id}`;
-                                          return fetch(childUrl, {
-                                            method: 'DELETE',
-                                            headers: {...(token ? {Authorization: `Bearer ${token}`} : {})},
-                                          }).then(res => ({res, row}));
-                                        })
-                                    );
-                                    let deleted = 0;
-                                    for (const result of results) {
-                                      if (result.status === 'fulfilled' && result.value.res.ok) {
-                                        secondaryHooks[stIdx]?.handleDeleteChild?.(result.value.row.id);
-                                        if (selectedSecondaryLine?._tabKey === st.key && selectedSecondaryLine?.id === result.value.row.id) {
-                                          setSelectedSecondaryLine(null);
-                                        }
-                                        deleted++;
-                                      }
-                                    }
-                                    secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
-                                    setSecondarySelectedRows(prev => ({...prev, [st.key]: []}));
-                                    if (deleted > 0) toast.success(ui('recordsDeleted', {count: deleted}));
-                                    const failed = results.length - deleted;
-                                    if (failed > 0) toast.error(ui('recordsCouldNotBeDeleted', {count: failed}));
-                                  } catch (err) {
-                                    toast.error(err.message || ui('networkError'));
-                                  } finally {
-                                    setSecondaryDeleting(prev => ({...prev, [st.key]: false}));
-                                  }
-                                }}
+                                onDelete={secondaryLineHandlers.onDelete}
                                 onClose={() => {
                                   secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
                                   setSecondarySelectedRows(prev => ({...prev, [st.key]: []}));
@@ -3110,7 +3169,8 @@ export function DetailView({
                               />
                             )}
                           </div>
-                        ))}
+                          );
+                        })}
 
                         {/* Tab content: Others (secondary header fields) */}
                         {tabs[activeTab]?.key === 'others' && (
