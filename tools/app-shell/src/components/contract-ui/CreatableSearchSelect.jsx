@@ -234,7 +234,10 @@ export function CreatableSearchSelect({
       structure as SearchInput so the chip + chevron-right pattern is consistent
       across all FK pickers (Contacto, Tarifa, Dirección, etc.).
     */
-    <div className={`relative flex h-10 w-full items-center rounded-lg border border-[#D1D4DB] bg-transparent shadow-[0px_1px_2px_rgba(18,18,23,0.05)] pl-2 pr-2 gap-1 focus-within:ring-2 focus-within:ring-primary${isDisabled ? ' opacity-50 cursor-not-allowed' : ''}`}>
+    <div
+      className={`relative flex h-10 w-full items-center rounded-lg border border-[#D1D4DB] bg-transparent shadow-[0px_1px_2px_rgba(18,18,23,0.05)] pl-2 pr-2 gap-1 focus-within:ring-2 focus-within:ring-primary${isDisabled ? ' opacity-50 cursor-not-allowed' : ''}`}
+      onClick={showChip && !isDisabled ? handleChipClick : undefined}
+    >
       {showChip ? (
         <SelectorChip
           label={displayValue || query}
@@ -282,7 +285,22 @@ export function CreatableSearchSelect({
       {loading ? (
         <Loader2 className="h-4 w-4 text-[#828FA3] animate-spin shrink-0 ml-auto" />
       ) : (
-        <ChevronDown className="h-4 w-4 text-[#828FA3] pointer-events-none shrink-0 ml-auto" />
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            if (showChip) { handleChipClick(); return; }
+            if (open) {
+              setOpen(false);
+            } else {
+              setOpen(true);
+              inputRef.current?.focus();
+            }
+          }}
+          className="shrink-0 ml-auto flex items-center"
+        >
+          <ChevronDown className="h-4 w-4 text-[#828FA3]" />
+        </button>
       )}
 
       {showDropdown && (

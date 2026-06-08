@@ -242,7 +242,10 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
       and transparent so DevTools highlights this same wrapper as the field box
       — matching the SelectorInput inspector experience.
     */
-    <div className="relative flex h-10 w-full items-center rounded-lg border border-[#D1D4DB] bg-transparent shadow-[0px_1px_2px_rgba(18,18,23,0.05)] pl-2 pr-2 gap-1 focus-within:ring-2 focus-within:ring-primary">
+    <div
+      className="relative flex h-10 w-full items-center rounded-lg border border-[#D1D4DB] bg-transparent shadow-[0px_1px_2px_rgba(18,18,23,0.05)] pl-2 pr-2 gap-1 focus-within:ring-2 focus-within:ring-primary"
+      onClick={showChip ? handleChipClick : undefined}
+    >
       {showChip ? (
         <SelectorChip
           label={displayValue || query}
@@ -296,7 +299,23 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
       {fetching ? (
         <Loader2 className="h-4 w-4 text-[#828FA3] animate-spin shrink-0 ml-auto" />
       ) : (
-        <ChevronDown className="h-4 w-4 text-[#828FA3] pointer-events-none shrink-0 ml-auto" />
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            if (showChip) { handleChipClick(); return; }
+            if (open) {
+              setOpen(false);
+            } else {
+              setOpen(true);
+              inputRef.current?.focus();
+              if (!catalogOptions && !serverResults) triggerServerSearch(query);
+            }
+          }}
+          className="shrink-0 ml-auto flex items-center"
+        >
+          <ChevronDown className="h-4 w-4 text-[#828FA3]" />
+        </button>
       )}
       {open && (canCreate || filtered.length > 0) && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
