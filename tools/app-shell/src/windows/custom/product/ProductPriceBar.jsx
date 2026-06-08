@@ -150,7 +150,7 @@ const PRICE_TABLE_TONES = {
   },
 };
 
-function PriceTable({ title, rows, variant = 'neutral', onAdd }) {
+function PriceTable({ title, rows, variant = 'neutral', onAdd, testId }) {
   const ui = useUI();
   const orgCurrency = useCurrency() ?? 'USD';
   const isEmpty = !rows || rows.length === 0;
@@ -171,6 +171,7 @@ function PriceTable({ title, rows, variant = 'neutral', onAdd }) {
           <button
             type="button"
             onClick={onAdd}
+            data-testid={testId}
             className="w-6 h-6 flex items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 transition-colors shrink-0"
           >
             <Pencil size={12} />
@@ -835,12 +836,14 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
             rows={displaySaleRows}
             variant="neutral"
             onAdd={openDialogForSale}
+            testId="price-sales-edit"
           />
           <PriceTable
             title={ui('pricePurchaseLists')}
             rows={displayPurchaseRows}
             variant="neutral"
             onAdd={openDialogForPurchase}
+            testId="price-purchase-edit"
           />
         </div>
       )}
