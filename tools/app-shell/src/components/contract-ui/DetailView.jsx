@@ -726,6 +726,128 @@ export function SecondaryTableTab(props) {
   </>;
 }
 
+export function getSaveButtonLabel(savingLine, ui) {
+  return savingLine ? ui('loading') : ui('save');
+}
+
+export function getSelectedLinesTotalLabel(bottomSection, selectedChildRows, lineConfig, data) {
+  return bottomSection?.showLineTotals !== false ? (() => {
+    const total = selectedChildRows.reduce((acc, row) => {
+      const v = parseFloat(String(row?.[lineConfig.grossField] ?? row?.lineGrossAmount ?? 0));
+      return acc + (Number.isFinite(v) ? v : 0);
+    }, 0);
+    const formatted = total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const curr = data?.['currency$_identifier'] || '';
+    return curr ? `${formatted} ${curr}` : formatted;
+  })() : null;
+}
+
+export function getChildSaveButtonLabel(savingChild, ui) {
+  return savingChild ? ui('loading') : ui('save');
+}
+
+export function getAddLineWrapperClassName(linesLayout) {
+  return linesLayout === 'inlineEditable' ? 'sticky bottom-0 bg-white z-10' : 'relative';
+}
+
+export function getAddLineWrapperStyle(linesLayout) {
+  return {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+    borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)',
+    padding: linesLayout === 'inlineEditable' ? 8 : '10px 16px'
+  };
+}
+
+export function resolveCanAddLines(addLineGuard, data, requiredHeaderFields) {
+  let canAddLines;
+  if (addLineGuard) {
+    return addLineGuard(data);
+  } else if (Array.isArray(requiredHeaderFields) && requiredHeaderFields.length > 0) {
+    return requiredHeaderFields.every((k) => {
+      const v = data?.[k];
+      return v != null && v !== '' && !(typeof v === 'string' && v.trim() === '');
+    });
+  } else {
+    return true;
+  }
+}
+
+export async function parseBackendErrorMessage(res) {
+  let raw;
+  try {
+    const data = await res.json();
+    // NEO Headless top-level format: { error: { message, status } }
+    if (data?.error?.message) raw = data.error.message;
+    else {
+      // Etendo JsonDataService format: { response: { error: { message } | string } }
+      const err = data?.response?.error;
+      if (err?.message) raw = err.message;
+      else if (typeof err === 'string') raw = err;
+      else if (data?.message) raw = data.message;
+    }
+  } catch {
+    // Ignore non-JSON error bodies.
+  }
+  return raw;
+}
+
+export function getDocumentIds(recordId) {
+  return recordId ? [recordId] : [];
+}
+
+export function resolveSidebarContent(sidebarContent, data) {
+  return typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent;
+}
+
+export function renderSidePanel(sidePanel, data, recordId, token, apiBaseUrl, api, isNew) {
+  return typeof sidePanel === 'function'
+      ? React.createElement(sidePanel, {recordId: data?.id || recordId, data, token, apiBaseUrl, api, isNew})
+      : sidePanel;
+}
+
+export function getNotesRowClassName(embedded) {
+  return `flex items-start gap-3 px-4 py-2.5${embedded ? ' pointer-events-none' : ''}`;
+}
+
+export function getDocsRowClassName(embedded) {
+  return `flex items-start gap-3 px-4 py-2.5 border-b border-border/30${embedded ? ' pointer-events-none' : ''}`;
+}
+
+export function getAddLineMenuActions(getLineMenuActions, data, extraActionsRef, ui) {
+  return getLineMenuActions
+      ? getLineMenuActions({data, importRef: extraActionsRef}).map(a => ({
+        ...a,
+        label: typeof a.label === 'string' ? (ui(a.label) || a.label) : a.label,
+      }))
+      : undefined;
+}
+
+export function getInlineEditableShrinkClassName(linesLayout) {
+  return linesLayout === 'inlineEditable' ? 'shrink-0' : '';
+}
+
+export function getOthersTabClassName(embedded) {
+  return `pt-5${embedded ? ' pointer-events-none' : ''}`;
+}
+
+export function getCustomLinesTabClassName(embedded) {
+  return `pt-3${embedded ? ' pointer-events-none' : ''}`;
+}
+
+function getSidebarSlideClassName(isClosingLine) {
+  return isClosingLine ? 'sidebar-slide-out' : 'sidebar-slide-in';
+}
+
+function getLinesToolbarClassName(linesLayout, toolbarPaddingX, toolbarBorderBottom) {
+  return `flex items-center justify-between ${linesLayout === 'inlineEditable' ? 'p-2' : toolbarPaddingX + ' py-3'}${toolbarBorderBottom || linesLayout === 'inlineEditable' ? ' border-b border-[#E8EAEF]' : ''}`;
+}
+
+function getLineMenuActionsRef(getLineMenuActions, extraActionsRef) {
+  return getLineMenuActions ? extraActionsRef : undefined;
+}
+
 /**
  * Full-page detail view for a single entity record.
  * Two-zone layout: gray top bar + white content card with rounded corner.
@@ -1298,21 +1420,7 @@ export function DetailView({
   const [secondaryDeleteConfirm, setSecondaryDeleteConfirm] = useState(null);
 
   const extractErrorMessage = useCallback(async (res) => {
-    let raw;
-    try {
-      const data = await res.json();
-      // NEO Headless top-level format: { error: { message, status } }
-      if (data?.error?.message) raw = data.error.message;
-      else {
-        // Etendo JsonDataService format: { response: { error: { message } | string } }
-        const err = data?.response?.error;
-        if (err?.message) raw = err.message;
-        else if (typeof err === 'string') raw = err;
-        else if (data?.message) raw = data.message;
-      }
-    } catch {
-      // Ignore non-JSON error bodies.
-    }
+    let raw = await parseBackendErrorMessage(res);
     return translateBackendError(raw ?? `Error ${res.status}`, ui);
   }, [ui]);
 
@@ -1777,17 +1885,7 @@ export function DetailView({
   //    pipeline). This matches the UX where the add-lines button only
   //    appears once the header form is complete.
   // 3. Otherwise (no metadata at all), allow.
-  let canAddLines;
-  if (addLineGuard) {
-    canAddLines = addLineGuard(data);
-  } else if (Array.isArray(requiredHeaderFields) && requiredHeaderFields.length > 0) {
-    canAddLines = requiredHeaderFields.every((k) => {
-      const v = data?.[k];
-      return v != null && v !== '' && !(typeof v === 'string' && v.trim() === '');
-    });
-  } else {
-    canAddLines = true;
-  }
+  let canAddLines = resolveCanAddLines(addLineGuard, data, requiredHeaderFields);
   const windowTitle = breadcrumb
     ? tMenu(breadcrumb.split(' / ').at(-1).trim()) || breadcrumb.split(' / ').at(-1).trim()
     : tMenu(windowName) || windowName || '';
@@ -1954,7 +2052,7 @@ export function DetailView({
             </div>
           ) : null
         ) : (
-        <div className={`flex items-center justify-between ${linesLayout === 'inlineEditable' ? 'p-2' : toolbarPaddingX + ' py-3'}${toolbarBorderBottom || linesLayout === 'inlineEditable' ? ' border-b border-[#E8EAEF]' : ''}`}>
+        <div className={getLinesToolbarClassName(linesLayout, toolbarPaddingX, toolbarBorderBottom)}>
           <div className="flex items-center gap-3">
             <Button
               className="h-10 px-3 rounded-lg bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_rgba(18,18,23,0.05)] text-[#121217] text-sm font-medium hover:bg-[#F5F7F9] transition-colors"
@@ -2443,7 +2541,7 @@ export function DetailView({
                   {/* Tabs: child entities + Others */}
                   {tabs.length > 0 && (
                     <div className={linesLayout === 'inlineEditable' ? 'mt-1 flex flex-col relative' : 'mt-6'}>
-                      <div className={`flex items-center justify-between border-b border-border/50 ${linesLayout === 'inlineEditable' ? 'shrink-0' : ''}`}>
+                      <div className={`flex items-center justify-between border-b border-border/50 ${(getInlineEditableShrinkClassName(linesLayout))}`}>
                         <div className="flex items-center gap-0">
                           {tabs.map((tab, idx) => {
                             const tabIndicatorCls = linesLayout === 'inlineEditable'
@@ -2752,7 +2850,7 @@ export function DetailView({
                                         }}
                                         className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                                       >
-                                        {savingChild ? ui('loading') : ui('save')}
+                                        {getChildSaveButtonLabel(savingChild, ui)}
                                       </button>
                                       <button
                                         onClick={() => setEditingChild(null)}
@@ -2786,8 +2884,8 @@ export function DetailView({
                                 {hook.editing && !isDocumentReadOnly && (allEntryFields.length > 0 || DetailExtraActions) && canAddLines && (
                                   <div
                                     ref={addLineWrapperRef}
-                                    className={linesLayout === 'inlineEditable' ? 'sticky bottom-0 bg-white z-10' : 'relative'}
-                                    style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)', padding: linesLayout === 'inlineEditable' ? 8 : '10px 16px' }}
+                                    className={getAddLineWrapperClassName(linesLayout)}
+                                    style={getAddLineWrapperStyle(linesLayout)}
                                   >
                                     {allEntryFields.length > 0 && (
                                       // alignSelf:flex-start keeps this span from being stretched by
@@ -2797,18 +2895,13 @@ export function DetailView({
                                         <AddLineButton
                                           onClick={handleAddLineClick}
                                           label={ui('addLine')}
-                                          menuActions={getLineMenuActions
-                                            ? getLineMenuActions({ data, importRef: extraActionsRef }).map(a => ({
-                                              ...a,
-                                              label: typeof a.label === 'string' ? (ui(a.label) || a.label) : a.label,
-                                            }))
-                                            : undefined}
+                                          menuActions={getAddLineMenuActions(getLineMenuActions, data, extraActionsRef, ui)}
                                         />
                                       </span>
                                     )}
                                     {DetailExtraActions && (
                                       <DetailExtraActions
-                                        ref={getLineMenuActions ? extraActionsRef : undefined}
+                                        ref={getLineMenuActionsRef(getLineMenuActions, extraActionsRef)}
                                         hideTrigger={!!getLineMenuActions}
                                         data={data}
                                         recordId={data?.id || recordId}
@@ -2835,15 +2928,7 @@ export function DetailView({
                                         barRect={barRect}
                                         count={selectedChildRows.length}
                                         selectedLabel={ui('selected', { count: selectedChildRows.length })}
-                                        totalLabel={bottomSection?.showLineTotals !== false ? (() => {
-                                          const total = selectedChildRows.reduce((acc, row) => {
-                                            const v = parseFloat(String(row?.[lineConfig.grossField] ?? row?.lineGrossAmount ?? 0));
-                                            return acc + (Number.isFinite(v) ? v : 0);
-                                          }, 0);
-                                          const formatted = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                                          const curr = data?.['currency$_identifier'] || '';
-                                          return curr ? `${formatted} ${curr}` : formatted;
-                                        })() : null}
+                                        totalLabel={getSelectedLinesTotalLabel(bottomSection, selectedChildRows, lineConfig, data)}
                                         deleting={deletingChildren}
                                         deleteTitle={ui('delete')}
                                         closeTitle={ui('close')}
@@ -2893,7 +2978,7 @@ export function DetailView({
                               {/* Right sidebar: line detail form. Suppressed in inlineEditable mode —
                         edit happens inside the row via InlineLinesPanel. */}
                               {linesLayout !== 'inlineEditable' && DetailForm && (selectedLine || isClosingLine) && (
-                                <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
+                                <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${(getSidebarSlideClassName(isClosingLine))}`}>
                                   <div className="flex items-center justify-between mb-3">
                                     <span className="text-sm font-medium text-foreground">{ui('entityDetail', { label: tMenu(detailLabel || 'Line') })}</span>
                                     <button
@@ -3000,7 +3085,7 @@ export function DetailView({
                                             }}
                                             className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                                           >
-                                            {savingLine ? ui('loading') : ui('save')}
+                                            {getSaveButtonLabel(savingLine, ui)}
                                           </button>
                                           <button
                                             onClick={() => setLineEdits(null)}
@@ -3050,7 +3135,7 @@ export function DetailView({
 
                         {/* Tab content: CustomLines (replaces standard lines table) */}
                         {tabs[activeTab]?.key === 'customLines' && CustomLines && (
-                          <div className={`pt-3${embedded ? ' pointer-events-none' : ''}`}>
+                          <div className={getCustomLinesTabClassName(embedded)}>
                             <CustomLines
                               recordId={data?.id || recordId}
                               data={data}
@@ -3174,7 +3259,7 @@ export function DetailView({
 
                         {/* Tab content: Others (secondary header fields) */}
                         {tabs[activeTab]?.key === 'others' && (
-                          <div className={`pt-5${embedded ? ' pointer-events-none' : ''}`}>
+                          <div className={getOthersTabClassName(embedded)}>
                             <Form
                               entity={entity}
                               data={data}
@@ -3232,7 +3317,7 @@ export function DetailView({
                   {/* Bottom section: hidden when a custom tab (Adjuntos, etc.) is active.
                 In inlineEditable mode the wrapper is shrink-0 so it stays fixed
                 at the bottom while the lines area scrolls in the middle. */}
-                  <div ref={bottomSectionRef} className={linesLayout === 'inlineEditable' ? 'shrink-0' : ''}>
+                  <div ref={bottomSectionRef} className={getInlineEditableShrinkClassName(linesLayout)}>
                     {!isCustomTabActive && (bottomSection ? (() => {
                       const BottomComponent = bottomSection;
                       return (
@@ -3289,7 +3374,7 @@ export function DetailView({
                         {(footerCustomTabs.length > 0 || !!notesField) && (
                           <div className="mt-1 bg-muted/20 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
                             {footerCustomTabs.length > 0 && (
-                              <div className={`flex items-start gap-3 px-4 py-2.5 border-b border-border/30${embedded ? ' pointer-events-none' : ''}`} style={{ borderBottomWidth: '0.5px' }}>
+                              <div className={getDocsRowClassName(embedded)} style={{ borderBottomWidth: '0.5px' }}>
                                 <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-24">{ui('docs')}</span>
                                 <div className="flex-1">
                                   {footerCustomTabs.map(ct => {
@@ -3311,7 +3396,7 @@ export function DetailView({
                               </div>
                             )}
                             {notesField && (
-                              <div className={`flex items-start gap-3 px-4 py-2.5${embedded ? ' pointer-events-none' : ''}`}>
+                              <div className={getNotesRowClassName(embedded)}>
                                 <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-24">{ui('notes')}</span>
                                 <div data-testid="notes-textarea" className={`flex-1 flex flex-col border border-border/40 rounded bg-white transition-all py-1.5`} style={{ borderWidth: '0.5px' }}>
                                   {notesFocused ? (
@@ -3375,9 +3460,7 @@ export function DetailView({
                     className="w-full max-w-full shrink-0 self-stretch border-t lg:border-t-0 lg:w-[280px] lg:border-l border-gray-200 pt-3 lg:pt-0 pl-0 lg:pl-3 pr-0 lg:pr-3"
                     style={sidePanelStyle}
                   >
-                    {typeof sidePanel === 'function'
-                      ? React.createElement(sidePanel, { recordId: data?.id || recordId, data, token, apiBaseUrl, api, isNew })
-                      : sidePanel}
+                    {renderSidePanel(sidePanel, data, recordId, token, apiBaseUrl, api, isNew)}
                   </div>
                 )}
               </div>
@@ -3385,7 +3468,7 @@ export function DetailView({
           </div>{/* end content column wrapper */}
           {sidebarContent && !sidebarAboveTabsOnly && (
             <div className={sidebarClassName}>
-              {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
+              {resolveSidebarContent(sidebarContent, data)}
             </div>
           )}
         </div>
@@ -3394,7 +3477,7 @@ export function DetailView({
         open={showPrint}
         onClose={() => setShowPrint(false)}
         windowName={windowName}
-        documentIds={recordId ? [recordId] : []}
+        documentIds={getDocumentIds(recordId)}
         token={token}
       />
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
