@@ -7,6 +7,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DateField } from '@/components/ui/date-field';
 import { cn } from '@/lib/utils';
 import { useCreateStatement } from '@/hooks/useCreateStatement';
+import { useStatementActions } from '@/hooks/useStatementActions';
+import { useBankStatementLines } from '@/hooks/useBankStatementLines';
 import { useBPartnerLookup, useGLItemLookup } from '@/hooks/useMovementLookups';
 import { LookupPicker } from './LookupPicker';
 import { FieldRow, inputClass } from './formFields';
@@ -37,6 +39,31 @@ function toLocalIso(d) {
 /** Sends UTC midnight so the backend parses the same calendar day regardless of TZ. */
 function toIsoUtc(localDate) {
   return localDate ? `${localDate}T00:00:00Z` : '';
+}
+
+/** "2026-06-07T00:00:00Z" (or any ISO) → local "YYYY-MM-DD". Blank-safe. */
+function isoToLocal(iso) {
+  if (!iso) return '';
+  return String(iso).split('T')[0];
+}
+
+/**
+ * Maps a backend statement line (from `?action=lines`) into the editable row
+ * shape used by the grid. The committed FK pickers need a `{ id, name }`; the
+ * line carries both the id and the joined name (bpartnerFkName / glItemName).
+ */
+function lineToRow(l) {
+  lineSeq += 1;
+  return {
+    id: `e${lineSeq}`,
+    date: isoToLocal(l.date) || toLocalIso(new Date()),
+    reference: l.reference && l.reference !== '**' ? l.reference : '',
+    contactName: l.bpartnerName || '',
+    contact: l.bpartnerId ? { id: l.bpartnerId, name: l.bpartnerFkName || l.bpartnerName || '' } : null,
+    glItem: l.glItemId ? { id: l.glItemId, name: l.glItemName || '' } : null,
+    out: l.out ? String(l.out) : '',
+    in: l.in ? String(l.in) : '',
+  };
 }
 
 /**
@@ -485,24 +512,52 @@ const initialForm = (today) => ({ name: '', transactionDate: today, importDate: 
  *   onSuccess: () => void;
  * }} props
  */
-export function ManualStatementModal({ open, accountId, accountCurrency = 'EUR', onClose, onSuccess }) {
+export function ManualStatementModal({
+  open, accountId, accountCurrency = 'EUR', statement = null, onClose, onSuccess,
+}) {
   const ui = useUI();
   const { locale: appLocale } = useLocaleSwitch();
   const bcpLocale = (appLocale || 'es_ES').replace('_', '-');
   const money = useMemo(() => makeMoneyFormatter(accountCurrency, bcpLocale), [accountCurrency, bcpLocale]);
 
+  const editing = !!statement;
   const { createStatement, creating } = useCreateStatement();
+  const { updateStatement, busy } = useStatementActions();
+  // Only fetch lines while editing an open draft.
+  const { lines: loadedLines, loading: linesLoading } =
+    useBankStatementLines(editing && open ? statement.id : null);
+  const saving = creating || busy;
 
   const today = useMemo(() => toLocalIso(new Date()), []);
   const [form, setForm] = useState(() => initialForm(today));
   const [rows, setRows] = useState(() => []);
+  // Guards single hydration per open so user edits aren't clobbered on re-render.
+  const hydratedRef = useRef(false);
 
   useEffect(() => {
     if (!open) {
+      hydratedRef.current = false;
       setForm(initialForm(today));
       setRows([]);
+      return;
     }
-  }, [open, today]);
+    if (hydratedRef.current) return;
+    if (editing) {
+      // Wait for the lines to arrive before seeding the grid.
+      if (linesLoading) return;
+      setForm({
+        name: statement.name || '',
+        transactionDate: isoToLocal(statement.transactionDate) || today,
+        importDate: isoToLocal(statement.importDate) || today,
+        fileName: statement.fileName || '',
+        notes: statement.notes || '',
+      });
+      setRows(loadedLines.map(lineToRow));
+      hydratedRef.current = true;
+    } else {
+      hydratedRef.current = true;
+    }
+  }, [open, editing, linesLoading, loadedLines, statement, today]);
 
   const handleSave = async (process) => {
     if (!form.name.trim()) {
@@ -514,25 +569,30 @@ export function ManualStatementModal({ open, accountId, accountCurrency = 'EUR',
       toast.error(ui('financeAccountStatementsManualErrorLines'));
       return;
     }
+    const payloadLines = usable.map((r) => ({
+      date: toIsoUtc(r.date),
+      reference: r.reference.trim(),
+      bpartnerName: r.contactName.trim(),
+      bpartnerId: r.contact?.id ?? null,
+      glItemId: r.glItem?.id ?? null,
+      in: parseAmount(r.in),
+      out: parseAmount(r.out),
+    }));
+    const header = {
+      name: form.name.trim(),
+      transactionDate: toIsoUtc(form.transactionDate),
+      importDate: toIsoUtc(form.importDate),
+      fileName: form.fileName.trim(),
+      notes: form.notes.trim(),
+      process,
+      lines: payloadLines,
+    };
     try {
-      await createStatement({
-        accountId,
-        name: form.name.trim(),
-        transactionDate: toIsoUtc(form.transactionDate),
-        importDate: toIsoUtc(form.importDate),
-        fileName: form.fileName.trim(),
-        notes: form.notes.trim(),
-        process,
-        lines: usable.map((r) => ({
-          date: toIsoUtc(r.date),
-          reference: r.reference.trim(),
-          bpartnerName: r.contactName.trim(),
-          bpartnerId: r.contact?.id ?? null,
-          glItemId: r.glItem?.id ?? null,
-          in: parseAmount(r.in),
-          out: parseAmount(r.out),
-        })),
-      });
+      if (editing) {
+        await updateStatement({ id: statement.id, ...header });
+      } else {
+        await createStatement({ accountId, ...header });
+      }
       toast.success(ui('financeAccountStatementsManualSuccess'));
       onSuccess();
       onClose();
@@ -550,10 +610,10 @@ export function ManualStatementModal({ open, accountId, accountCurrency = 'EUR',
       >
         <div className="bg-white px-6 pt-6">
           <h2 className="text-lg font-semibold leading-6 text-[#121217]">
-            {ui('financeAccountStatementsManualTitle')}
+            {ui(editing ? 'financeAccountStatementsManualEditTitle' : 'financeAccountStatementsManualTitle')}
           </h2>
           <p className="mt-1 text-[13px] leading-[19px] text-[#6C6C89]">
-            {ui('financeAccountStatementsManualSubtitle')}
+            {ui(editing ? 'financeAccountStatementsManualEditSubtitle' : 'financeAccountStatementsManualSubtitle')}
           </p>
         </div>
 
@@ -579,7 +639,7 @@ export function ManualStatementModal({ open, accountId, accountCurrency = 'EUR',
               {ui('financeAccountStatementsManualCancel')}
             </button>
             <SaveSplitButton
-              creating={creating}
+              creating={saving}
               onProcess={() => handleSave(true)}
               onDraft={() => handleSave(false)}
               ui={ui}

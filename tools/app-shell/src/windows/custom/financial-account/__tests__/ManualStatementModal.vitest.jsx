@@ -33,6 +33,19 @@ vi.mock('@/hooks/useCreateStatement', () => ({
   useCreateStatement: () => ({ createStatement, creating: creatingRef.value, error: null }),
 }));
 
+const updateStatement = vi.fn();
+vi.mock('@/hooks/useStatementActions', () => ({
+  useStatementActions: () => ({
+    updateStatement, processStatement: vi.fn(), deleteStatement: vi.fn(), busy: false, error: null,
+  }),
+}));
+
+// Edit mode loads the draft's lines; default to an empty, settled list.
+const linesRef = { value: [], loading: false };
+vi.mock('@/hooks/useBankStatementLines', () => ({
+  useBankStatementLines: () => ({ lines: linesRef.value, loading: linesRef.loading, reload: vi.fn() }),
+}));
+
 // The per-line BP / G/L Item lookups hit the network via useAuth; stub them out.
 vi.mock('@/hooks/useMovementLookups', () => ({
   useBPartnerLookup: () => ({ results: [], loading: false }),
@@ -56,9 +69,12 @@ function renderModal(overrides = {}) {
 describe('ManualStatementModal', () => {
   beforeEach(() => {
     createStatement.mockReset().mockResolvedValue({ id: 'stmt-1', name: 'X', lineCount: 1 });
+    updateStatement.mockReset().mockResolvedValue({ id: 'stmt-1', name: 'X', lineCount: 1 });
     toastSuccess.mockReset();
     toastError.mockReset();
     creatingRef.value = false;
+    linesRef.value = [];
+    linesRef.loading = false;
   });
 
   it('renders the header fields and the add-lines call-to-action when open', () => {
@@ -184,5 +200,42 @@ describe('ManualStatementModal', () => {
     await user.type(screen.getByTestId('manual-line-in'), '10');
     await user.click(screen.getByTestId('manual-statement-save'));
     await waitFor(() => expect(toastError).toHaveBeenCalledWith('financeAccountStatementsManualError'));
+  });
+
+  describe('edit mode', () => {
+    const STATEMENT = {
+      id: 'st-9', name: 'Extracto mayo', documentNo: '1000025',
+      transactionDate: '2026-05-10T00:00:00Z', importDate: '2026-05-11T00:00:00Z',
+      fileName: 'mayo.csv', notes: 'Notas',
+    };
+
+    it('hydrates the header + lines from the draft and updates on save', async () => {
+      linesRef.value = [{
+        id: 'ln-1', date: '2026-05-09T00:00:00Z', reference: 'REF9', description: '',
+        bpartnerName: 'Acme', bpartnerId: 'bp-1', bpartnerFkName: 'Acme S.L.',
+        glItemId: 'gl-1', glItemName: 'Comisiones', in: 250, out: 0,
+      }];
+      const user = userEvent.setup();
+      const { props } = renderModal({ statement: STATEMENT });
+
+      // Header is seeded from the statement.
+      expect(screen.getByTestId('manual-statement-name')).toHaveValue('Extracto mayo');
+      // The committed line is shown read-only (not the empty CTA).
+      expect(screen.getByTestId('manual-line-row')).toHaveTextContent('Acme');
+
+      await user.click(screen.getByTestId('manual-statement-save'));
+
+      await waitFor(() => expect(updateStatement).toHaveBeenCalledTimes(1));
+      expect(createStatement).not.toHaveBeenCalled();
+      const payload = updateStatement.mock.calls[0][0];
+      expect(payload.id).toBe('st-9');
+      expect(payload.name).toBe('Extracto mayo');
+      expect(payload.process).toBe(true);
+      expect(payload.lines).toHaveLength(1);
+      expect(payload.lines[0].bpartnerId).toBe('bp-1');
+      expect(payload.lines[0].glItemId).toBe('gl-1');
+      expect(payload.lines[0].in).toBe(250);
+      expect(props.onSuccess).toHaveBeenCalled();
+    });
   });
 });

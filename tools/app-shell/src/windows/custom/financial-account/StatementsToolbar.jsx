@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ChevronDown, Pencil, Upload } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, ChevronDown, Filter, Pencil, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUI } from '@/i18n';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { AdvancedFilterBuilder } from '@/components/contract-ui/AdvancedFilterBuilder.jsx';
 import { DateRangePopover } from '@/components/ui/date-range-popover';
 import { StatementStatusFilter } from './StatementStatusFilter';
+import { buildStatementFilterColumns } from './statementAdvancedFilter';
 
 /**
  * Split-button: a primary "Importar extracto" action plus a ▾ trigger that
@@ -88,6 +91,9 @@ function ImportSplitButton({ ui, onImportClick, onManualClick }) {
  *   onDateRangeChange: (v: null | { presetId: string } | { from: Date, to: Date }) => void;
  *   status: string|null;
  *   onStatusChange: (v: string|null) => void;
+ *   advancedFilter?: object|null;
+ *   onAdvancedFilterChange?: (next: object|null) => void;
+ *   rows?: Array<object>;
  *   onImportClick: () => void;
  *   onManualClick: () => void;
  * }} props
@@ -99,11 +105,17 @@ export function StatementsToolbar({
   onDateRangeChange,
   status,
   onStatusChange,
+  advancedFilter,
+  onAdvancedFilterChange,
+  rows = [],
   onImportClick,
   onManualClick,
 }) {
   const ui = useUI();
   const navigate = useNavigate();
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const columns = useMemo(() => buildStatementFilterColumns(ui), [ui]);
+  const activeConditions = advancedFilter?.conditions?.length ?? 0;
 
   return (
     <div className="flex h-auto min-h-[52px] flex-wrap items-center gap-2 px-4 py-2">
@@ -127,6 +139,37 @@ export function StatementsToolbar({
 
       {/* Status filter */}
       <StatementStatusFilter value={status} onChange={onStatusChange} />
+
+      {/* Advanced "by conditions" filter */}
+      {onAdvancedFilterChange ? (
+        <Popover open={advancedOpen} onOpenChange={setAdvancedOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              data-testid="statements-advanced-filter"
+              title={ui('advancedFilterTitle')}
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white text-[#6c6c89] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9] hover:text-[#121217]"
+            >
+              <Filter className="h-4 w-4" />
+              {activeConditions > 0 ? (
+                <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#121217] px-1 text-[10px] font-semibold leading-none text-white">
+                  {activeConditions}
+                </span>
+              ) : null}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-auto p-4">
+            <AdvancedFilterBuilder
+              columns={columns}
+              rows={rows}
+              value={advancedFilter}
+              onApply={(next) => onAdvancedFilterChange(next)}
+              onClear={() => onAdvancedFilterChange(null)}
+              onClose={() => setAdvancedOpen(false)}
+            />
+          </PopoverContent>
+        </Popover>
+      ) : null}
 
       {/* Spacer */}
       <div className="flex-1" />
