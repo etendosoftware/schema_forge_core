@@ -11,53 +11,8 @@ import {
 } from '@/components/ui/dialog';
 import { useCreateMovement } from '@/hooks/useCreateMovement';
 import { useBPartnerLookup, useGLItemLookup } from '@/hooks/useMovementLookups';
-
-/**
- * Picker with text input + dropdown list. Caller passes a `lookupHook` that
- * accepts the query string and returns `{ results, loading }`. Selection is
- * reported via `onSelect(item)` and `onClear()`.
- */
-function LookupPicker({ value, onSelect, onClear, placeholder, useLookup, dataTestId }) {
-  const [query, setQuery] = useState(value?.name ?? '');
-  const [open, setOpen] = useState(false);
-  const { results, loading } = useLookup(query);
-
-  useEffect(() => {
-    setQuery(value?.name ?? '');
-  }, [value]);
-
-  return (
-    <div className="relative">
-      <input
-        type="text"
-        value={query}
-        placeholder={placeholder}
-        data-testid={dataTestId}
-        onChange={(e) => { setQuery(e.target.value); setOpen(true); if (value) onClear(); }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 120)}
-        className="h-10 w-full rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm text-[#121217] placeholder:text-[#8a8aa3] shadow-[0_1px_2px_rgba(18,18,23,0.05)] focus:outline-none focus:ring-2 focus:ring-[#121217] focus:ring-offset-1"
-      />
-      {open && (results.length > 0 || loading) ? (
-        <div className="absolute left-0 right-0 top-11 z-50 max-h-56 overflow-auto rounded-lg border border-[#D1D4DB] bg-white shadow-lg">
-          {loading && results.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-[#6c6c89]">…</div>
-          ) : null}
-          {results.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              onMouseDown={(e) => { e.preventDefault(); onSelect(r); setOpen(false); }}
-              className="block w-full px-3 py-2 text-left text-sm text-[#121217] hover:bg-[#F5F7F9]"
-            >
-              {r.name}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
+import { LookupPicker } from './LookupPicker';
+import { FieldRow, inputClass, selectClass } from './formFields';
 
 /**
  * Modal form to create a single manual movement on the active account.
@@ -269,19 +224,6 @@ export function NewMovementDialog({ open, accountId, accountCurrency, onClose, o
 // ---------------------------------------------------------------------------
 // Internals
 // ---------------------------------------------------------------------------
-
-function FieldRow({ label, children }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-[#3F3F50]">{label}</span>
-      {children}
-    </label>
-  );
-}
-
-const inputClass =
-  'h-10 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm text-[#121217] placeholder:text-[#8a8aa3] shadow-[0_1px_2px_rgba(18,18,23,0.05)] focus:outline-none focus:ring-2 focus:ring-[#121217] focus:ring-offset-1';
-const selectClass = inputClass;
 
 function initialForm(_accountCurrency, today) {
   return {
