@@ -47,6 +47,22 @@
         "EM_Etgo_Due_Date": "Due Date",
         "em_etgo_delivery_status": "Delivery Status"
       }
+    },
+    "secondaryTabs": {
+      "exchangeRates": {
+        "label": "Exchange Rates",
+        "tabOrder": 50,
+        "addLineFields": [
+          "toCurrency",
+          "rate",
+          "foreignAmount"
+        ],
+        "requireSavedRecord": true,
+        "readOnlyLogic": "@DocumentStatus@!='DR'",
+        "addLineFieldExclusions": {
+          "toCurrency": "currency"
+        }
+      }
     }
   },
   "entities": {
@@ -786,9 +802,6 @@
         }
       }
     },
-    "exchangeRates": {
-      "exclude": true
-    },
     "intrastat": {
       "fields": {
         "client": {
@@ -858,6 +871,27 @@
           "order": 22
         }
       }
+    },
+    "exchangeRates": {
+      "fields": {
+        "active": {
+          "visibility": "system"
+        },
+        "currency": {
+          "grid": true,
+          "form": false
+        },
+        "toCurrency": {
+          "grid": true
+        },
+        "rate": {
+          "grid": true
+        },
+        "foreignAmount": {
+          "grid": true
+        }
+      },
+      "javaQualifier": "invoiceExchangeRateHandler"
     }
   },
   "rules": {

@@ -215,4 +215,57 @@ Added `"hideDeleteWhenComplete": true` to `artifacts/purchase-invoice/decisions.
 
 Open a completed purchase invoice (`✓ Completado` badge). Confirm the trash icon is **not** visible in the detail toolbar. Open a draft invoice and confirm the trash icon **is** visible.
 
-- **ETP-4103 — Generator fix (labelOverrides deduplication)**: `const labelOverrides` in the generated page now references `api.labelOverrides` instead of re-embedding the full object. No functional change — field labels and selectors behave identically.
+## Exchange rates and completion currency guard — ETP-4030
+
+When a purchase invoice is issued in a currency other than the organization's base currency, it needs a conversion rate so the document can be valued in the base currency. ETP-4030 adds an **Exchange Rates** secondary tab to enter/maintain that document-level rate, recomputes the rate ⇄ foreign-amount pair server-side, and blocks completion when no usable rate exists. The same behavior is shared with `sales-invoice.md`.
+
+### Exchange Rates secondary tab
+
+- Declared in `artifacts/purchase-invoice/decisions.json → window.secondaryTabs.exchangeRates` (`label: "Exchange Rates"`, `tabOrder: 50`) and resolved as the `exchangeRates` child entity (`javaQualifier: "invoiceExchangeRateHandler"`). The tab maps to the document conversion-rate records (`C_Conversion_Rate_Doc`) tied to the invoice header.
+- **Visible columns:** Currency (derived from the document, `form: false`), To Currency, Rate, and Foreign Amount. The inline add-row exposes `addLineFields: ["toCurrency", "rate", "foreignAmount"]` — Currency is filled from the parent rather than typed.
+- **`requireSavedRecord: true`** — the tab is only usable once the invoice header has been saved (a document rate needs a persisted invoice to attach to).
+- **`readOnlyLogic: "@DocumentStatus@!='DR'"`** — rows are editable only while the invoice is in Draft (`DR`); once completed, the tab is read-only.
+
+### Server-side rate ⇄ foreign-amount recompute
+
+The `invoiceExchangeRateHandler` (`modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/InvoiceExchangeRateHandler.java`) keeps `rate` and `foreignAmount` consistent against the invoice grand total so the user only ever has to type one side:
+
+- **On create (POST):** defaults `currency` and `toCurrency`, then computes the missing side from the invoice grand total.
+- **On edit (PATCH/PUT):** the inline editor submits **both** `rate` and `foreignAmount` (including the stale side), so the handler uses change-detection — it compares the incoming values against the persisted record and recomputes only the side that actually changed:
+  - rate changed → `foreignAmount = grandTotal × rate`
+  - foreignAmount changed → `rate = foreignAmount ÷ grandTotal` (scale `RATE_SCALE`, `HALF_UP`)
+  - both unchanged, both supplied equal, or a zero grand total → no-op (returns `null`, default CRUD proceeds).
+
+### Frontend live refresh
+
+NEO wraps the saved row as `{ response: { data: [ … ] } }`. `tools/app-shell/src/components/contract-ui/DetailView.jsx` unwraps `updated?.response?.data?.[0]` on secondary-tab save (both the inline and form-save paths) and merges the server values back into the row and the grid, so the recomputed amount appears immediately — the user no longer has to leave the form and reopen the invoice to see it.
+
+### Completion currency guard
+
+`InvoiceExchangeRateValidator.checkRateForCompletion(invoice)` runs as a pre-hook from `PurchaseInvoiceHeaderHandler` and blocks completion when:
+
+1. the document currency differs from the organization's base currency (`OBCurrencyUtils.getOrgCurrency`), **and**
+2. there is no document-level rate (`C_Conversion_Rate_Doc` with a non-zero rate), **and**
+3. there is no general rate for the pair on the invoice date (the `conversion-rates` window / AD `C_Conversion_Rate`, via `FinancialUtils.getConversionRate`).
+
+The block surfaces the message `SMFCR_NoRateOnComplete` followed by the currency pair (e.g. `USD → EUR`). When the currencies match, or any rate is available, completion proceeds. See `conversion-rates.md` for the general-rate catalog this guard consults.
+
+### Manual verification
+
+1. Open a draft purchase invoice in a foreign currency and save it. Confirm the **Exchange Rates** tab appears (and is absent / disabled until the header is saved).
+2. Add a row: set To Currency and type a Rate. Save and confirm Foreign Amount is computed = grand total × rate and shown without reopening the invoice.
+3. Edit the row's Foreign Amount. Save and confirm Rate is recomputed = foreign amount ÷ grand total, live.
+4. Complete the invoice with **no** rate present and no general rate for the pair: confirm completion is blocked with `SMFCR_NoRateOnComplete <FROM> → <TO>`.
+5. Add the document rate (or a matching `conversion-rates` record) and confirm completion now succeeds.
+6. On a completed invoice, confirm the Exchange Rates tab is read-only.
+
+### Automated evidence
+
+- `artifacts/purchase-invoice/decisions.json` declares `window.secondaryTabs.exchangeRates` and the `exchangeRates` entity (`javaQualifier: "invoiceExchangeRateHandler"`, `active` system-hidden, grid fields currency/toCurrency/rate/foreignAmount).
+- `artifacts/purchase-invoice/generated/web/purchase-invoice/ExchangeRatesTable.jsx` and `ExchangeRatesForm.jsx` are the generated secondary-tab surfaces.
+- `modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/InvoiceExchangeRateHandler.java` implements the POST default/compute and PATCH change-detection recompute; `InvoiceExchangeRateValidator.java` implements `checkRateForCompletion` consumed by `PurchaseInvoiceHeaderHandler`. Source-level coverage in `modules/com.etendoerp.go/src-test/.../InvoiceExchangeRateHandlerTest.java` and `InvoiceExchangeRateValidatorTest.java`.
+- `tools/app-shell/src/components/contract-ui/DetailView.jsx` unwraps the NEO `{response:{data:[…]}}` envelope on secondary-tab save for live refresh.
+
+## Generator fix (labelOverrides deduplication) — ETP-4103
+
+`const labelOverrides` in the generated page now references `api.labelOverrides` instead of re-embedding the full object. No functional change — field labels and selectors behave identically.

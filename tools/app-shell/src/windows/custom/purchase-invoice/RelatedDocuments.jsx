@@ -39,9 +39,17 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     const orderPromise = orderId
       ? fetchById('purchase-order', 'header', orderId, token, apiBaseUrl).catch(() => null)
       : Promise.resolve(null);
-    const receiptPromise = orderId
-      ? fetchByCriteria('goods-receipt', 'goodsReceipt', 'salesOrder', orderId, token, apiBaseUrl)
-      : Promise.resolve([]);
+    // Prefer backend-enriched linkedReceipts (covers no-PO invoices too).
+    // Fall back to criteria fetch when not yet available.
+    const backendReceipts = Array.isArray(data?.linkedReceipts) ? data.linkedReceipts : null;
+    let receiptPromise;
+    if (backendReceipts !== null) {
+      receiptPromise = Promise.resolve(backendReceipts);
+    } else if (orderId) {
+      receiptPromise = fetchByCriteria('goods-receipt', 'goodsReceipt', 'salesOrder', orderId, token, apiBaseUrl);
+    } else {
+      receiptPromise = Promise.resolve([]);
+    }
     Promise.all([orderPromise, receiptPromise, fetchPayments(recordId, token, apiBaseUrl)])
       .then(([orderResult, receiptRows, paymentResults]) => {
         setPurchaseOrder(orderResult);
@@ -49,7 +57,7 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
         setPayments(paymentResults);
       })
       .finally(() => setLoading(false));
-  }, [recordId, data?.salesOrder, token, apiBaseUrl, refreshKey]);
+  }, [recordId, data?.salesOrder, data?.linkedReceipts, token, apiBaseUrl, refreshKey]);
 
   const chips = [];
 
