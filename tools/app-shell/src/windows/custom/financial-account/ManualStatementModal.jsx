@@ -10,12 +10,17 @@ import { useCreateStatement } from '@/hooks/useCreateStatement';
 import { useStatementActions } from '@/hooks/useStatementActions';
 import { useBankStatementLines } from '@/hooks/useBankStatementLines';
 import { useBPartnerLookup, useGLItemLookup } from '@/hooks/useMovementLookups';
+import { AddLineButton } from '@/components/ui/add-line-button';
 import { LookupPicker } from './LookupPicker';
 import { FieldRow, inputClass } from './formFields';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Amounts (out / in) default to "0,00" so the required amount fields already
+// carry a value — a new line then only needs a Reference No to be complete.
+const DEFAULT_AMOUNT = '0,00';
 
 let lineSeq = 0;
 const newLine = () => {
@@ -24,7 +29,8 @@ const newLine = () => {
     id: `l${lineSeq}`,
     // Pre-fill the line date with today; it is excluded from the blank-line check
     // so a row with only the default date still counts as empty.
-    date: toLocalIso(new Date()), reference: '', contactName: '', contact: null, glItem: null, out: '', in: '',
+    date: toLocalIso(new Date()), reference: '', contactName: '', contact: null, glItem: null,
+    out: DEFAULT_AMOUNT, in: DEFAULT_AMOUNT,
   };
 };
 
@@ -61,8 +67,9 @@ function lineToRow(l) {
     contactName: l.bpartnerName || '',
     contact: l.bpartnerId ? { id: l.bpartnerId, name: l.bpartnerFkName || l.bpartnerName || '' } : null,
     glItem: l.glItemId ? { id: l.glItemId, name: l.glItemName || '' } : null,
-    out: l.out ? String(l.out) : '',
-    in: l.in ? String(l.in) : '',
+    // Keep "0" as a value (not blank) so a hydrated line stays "complete".
+    out: l.out != null ? String(l.out) : '',
+    in: l.in != null ? String(l.in) : '',
   };
 }
 
@@ -93,6 +100,19 @@ function isBlankLine(r) {
   // The auto-filled date is ignored: a row with only the default date is empty.
   return !r.reference.trim() && !r.contactName.trim() && !r.contact && !r.glItem
     && parseAmount(r.in) === 0 && parseAmount(r.out) === 0;
+}
+
+/**
+ * A line is "complete" (committable / saveable) when every required field has a
+ * value: transaction date, Reference No, and both amounts (out & in) — 0 counts
+ * as a value, but an empty amount field does not. The contact/G/L item are
+ * optional. Mirrors the asterisked columns in the lines header.
+ */
+function isLineComplete(r) {
+  return !!r.date
+    && r.reference.trim() !== ''
+    && String(r.out).trim() !== ''
+    && String(r.in).trim() !== '';
 }
 
 function computeTotals(rows) {
@@ -195,16 +215,25 @@ function formatDisplayDate(iso, bcpLocale) {
 // Column header styled like the invoices table in the New movement modal:
 // normal case (no uppercase), small semibold dark labels on a white row with a
 // bottom border.
+/** A column header label with an optional red required asterisk. */
+function ColHead({ label, required }) {
+  return (
+    <span>
+      {label}{required ? <span className="text-[#9A1B1B]"> *</span> : null}
+    </span>
+  );
+}
+
 function LinesHeader({ ui }) {
   return (
     <div className={cn(LINES_GRID, 'items-center rounded-t-xl border-b border-[#E8EAEF] bg-white px-3 py-2.5 text-xs font-semibold tracking-normal text-[#121217]')}>
-      <span>{ui('financeAccountStatementsManualColDate')}</span>
-      <span>{ui('financeAccountStatementsManualColReference')}</span>
-      <span>{ui('financeAccountStatementsManualColContactName')}</span>
-      <span>{ui('financeAccountStatementsManualColContact')}</span>
-      <span>{ui('financeAccountStatementsManualColGlItem')}</span>
-      <span>{ui('financeAccountStatementsManualColOut')}</span>
-      <span>{ui('financeAccountStatementsManualColIn')}</span>
+      <ColHead label={ui('financeAccountStatementsManualColDate')} required />
+      <ColHead label={ui('financeAccountStatementsManualColReference')} required />
+      <ColHead label={ui('financeAccountStatementsManualColContactName')} />
+      <ColHead label={ui('financeAccountStatementsManualColContact')} />
+      <ColHead label={ui('financeAccountStatementsManualColGlItem')} />
+      <ColHead label={ui('financeAccountStatementsManualColOut')} required />
+      <ColHead label={ui('financeAccountStatementsManualColIn')} required />
       <span />
     </div>
   );
@@ -228,16 +257,16 @@ function DisplayRow({ row, money, bcpLocale, onEdit, onRemove, ui }) {
       <span className={cn('truncate font-medium tabular-nums', inc > 0 ? 'text-green-700' : MUTED)}>
         {inc > 0 ? `+${money(inc)}` : '—'}
       </span>
-      <span className="flex items-center justify-end gap-0.5">
+      <span className="flex items-center justify-end gap-1">
         <button type="button" onClick={() => onEdit(row.id)}
           aria-label={ui('financeAccountStatementsManualEditLine')} data-testid="manual-line-edit"
-          className="flex h-7 w-7 items-center justify-center rounded-md text-[#6C6C89] hover:bg-[#F0F2F5] hover:text-[#121217]">
-          <Pencil className="h-3.5 w-3.5" />
+          className="flex h-7 w-7 items-center justify-center rounded-full text-[#6C6C89] hover:bg-[#F0F2F5] hover:text-[#121217]">
+          <Pencil className="h-4 w-4" />
         </button>
         <button type="button" onClick={() => onRemove(row.id)}
           aria-label={ui('financeAccountStatementsManualRemoveLine')} data-testid="manual-line-remove"
-          className="flex h-7 w-7 items-center justify-center rounded-md text-[#6C6C89] hover:bg-[#FEF0F4] hover:text-[#9A1B1B]">
-          <Trash2 className="h-3.5 w-3.5" />
+          className="flex h-7 w-7 items-center justify-center rounded-full text-[#D50B3E] hover:bg-[#FEF0F4]">
+          <Trash2 className="h-4 w-4" />
         </button>
       </span>
     </div>
@@ -245,11 +274,11 @@ function DisplayRow({ row, money, bcpLocale, onEdit, onRemove, ui }) {
 }
 
 /** The single line currently being edited — full input row, lightly highlighted. */
-function EditRow({ row, onChange, onRemove, ui }) {
+function EditRow({ row, onChange, onRemove, ui, rowRef }) {
   const set = (field) => (e) => onChange(row.id, field, e.target.value);
   const setVal = (field) => (value) => onChange(row.id, field, value);
   return (
-    <div className={cn(LINES_GRID, 'items-center bg-[#F5F7F9] px-3 py-2.5')} data-testid="manual-line-editrow">
+    <div ref={rowRef} className={cn(LINES_GRID, 'items-center bg-[#F5F7F9] px-3 py-2.5')} data-testid="manual-line-editrow">
       <DateField value={row.date} onChange={setVal('date')} data-testid="manual-line-date" className="w-full" />
       <input type="text" value={row.reference} onChange={set('reference')} className={cellInput} data-testid="manual-line-ref" />
       <input type="text" value={row.contactName} onChange={set('contactName')}
@@ -268,7 +297,7 @@ function EditRow({ row, onChange, onRemove, ui }) {
       <span className="flex items-center justify-end">
         <button type="button" onClick={() => onRemove(row.id)}
           aria-label={ui('financeAccountStatementsManualRemoveLine')} data-testid="manual-line-remove"
-          className="flex h-9 w-8 items-center justify-center rounded-md text-[#6C6C89] hover:bg-[#FEF0F4] hover:text-[#9A1B1B]">
+          className="flex h-9 w-8 items-center justify-center rounded-full text-[#D50B3E] hover:bg-[#FEF0F4]">
           <Trash2 className="h-4 w-4" />
         </button>
       </span>
@@ -278,6 +307,7 @@ function EditRow({ row, onChange, onRemove, ui }) {
 
 function EditableLines({ rows, setRows, money, bcpLocale, ui }) {
   const [editingId, setEditingId] = useState(null);
+  const editRowRef = useRef(null);
 
   const change = (id, field, value) => setRows((rs) => rs.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
 
@@ -286,22 +316,59 @@ function EditableLines({ rows, setRows, money, bcpLocale, ui }) {
     setEditingId((cur) => (cur === id ? null : cur));
   };
 
-  // Commit the current draft (if filled) and open a fresh editable line. A blank
-  // draft is kept as-is so blanks never pile up.
+  // Commit the row being edited: a blank draft is discarded, a complete one
+  // becomes a read-only display row, and an incomplete one stays in edit mode
+  // (the user must finish its required fields — date, Reference No, both amounts).
+  const commitDraft = () => {
+    if (editingId == null) return;
+    const current = rows.find((r) => r.id === editingId);
+    if (!current) { setEditingId(null); return; }
+    if (isBlankLine(current)) {
+      setRows((rs) => rs.filter((r) => r.id !== editingId));
+      setEditingId(null);
+    } else if (isLineComplete(current)) {
+      setEditingId(null);
+    }
+    // incomplete → keep editing
+  };
+
+  // Clicking outside the edit row commits it (same rules as commitDraft). The
+  // lookup dropdowns are portalled out of the row, so clicks inside them must NOT
+  // count as "outside" — they're part of editing the row.
+  useEffect(() => {
+    if (editingId == null) return undefined;
+    const onDown = (e) => {
+      const t = e.target;
+      if (editRowRef.current?.contains(t)) return;
+      if (t?.closest?.('[data-lookup-dropdown]')) return;
+      commitDraft();
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingId, rows]);
+
+  // Add a fresh editable line. Refuses while the current draft is incomplete so
+  // the user finishes (or empties) it first; an empty draft is reused as-is.
   const add = () => {
     const current = rows.find((r) => r.id === editingId);
     if (current && isBlankLine(current)) return;
+    if (current && !isLineComplete(current)) return;
     const nl = newLine();
     setRows((rs) => [...rs, nl]);
     setEditingId(nl.id);
   };
 
-  // Reopen a committed row for editing; discard the current draft if it is blank
-  // so switching away from an untouched line doesn't leave an empty row behind.
+  // Reopen a committed row for editing. Discards the current draft if it is blank;
+  // refuses to switch away from an incomplete (non-blank) draft.
   const edit = (id) => {
     const current = rows.find((r) => r.id === editingId);
-    if (current && current.id !== id && isBlankLine(current)) {
-      setRows((rs) => rs.filter((r) => r.id !== current.id));
+    if (current && current.id !== id) {
+      if (isBlankLine(current)) {
+        setRows((rs) => rs.filter((r) => r.id !== current.id));
+      } else if (!isLineComplete(current)) {
+        return;
+      }
     }
     setEditingId(id);
   };
@@ -333,27 +400,19 @@ function EditableLines({ rows, setRows, money, bcpLocale, ui }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="rounded-xl border border-[#E8EAEF]">
+      <div className="overflow-hidden rounded-xl border border-[#E8EAEF]">
         <LinesHeader ui={ui} />
         <div className="divide-y divide-[#F0F2F5]">
           {rows.map((r) => (
             r.id === editingId
-              ? <EditRow key={r.id} row={r} onChange={change} onRemove={remove} ui={ui} />
+              ? <EditRow key={r.id} row={r} onChange={change} onRemove={remove} ui={ui} rowRef={editRowRef} />
               : <DisplayRow key={r.id} row={r} money={money} bcpLocale={bcpLocale} onEdit={edit} onRemove={remove} ui={ui} />
           ))}
         </div>
       </div>
-      <button
-        type="button"
-        onClick={add}
-        data-testid="manual-statement-add-line"
-        className="inline-flex h-10 w-fit items-center gap-2 rounded-lg border border-[#D1D4DB] bg-[#F5F7F9] px-4 text-sm font-semibold text-[#121217] transition-colors hover:border-[#121217] hover:bg-[#EEF0F3]"
-      >
-        <span className="grid h-5 w-5 place-items-center rounded-md bg-[#121217] text-white">
-          <Plus className="h-3.5 w-3.5" />
-        </span>
-        {ui('financeAccountStatementsManualAddLine')}
-      </button>
+      <div className="w-fit">
+        <AddLineButton onClick={add} label={ui('financeAccountStatementsManualAddLine')} hideChevron />
+      </div>
     </div>
   );
 }
@@ -531,19 +590,36 @@ export function ManualStatementModal({
   const today = useMemo(() => toLocalIso(new Date()), []);
   const [form, setForm] = useState(() => initialForm(today));
   const [rows, setRows] = useState(() => []);
+  // Tracks whether the user has touched anything since opening (drives the
+  // discard-changes prompt) and whether that prompt is currently shown.
+  const [dirty, setDirty] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
   // Guards single hydration per open so user edits aren't clobbered on re-render.
   const hydratedRef = useRef(false);
 
+  // setForm/setRows variants that flag the form as dirty. Hydration/reset use the
+  // raw setters so seeding the modal never counts as a user edit.
+  const setFormDirty = (updater) => { setDirty(true); setForm(updater); };
+  const setRowsDirty = (updater) => { setDirty(true); setRows(updater); };
+
+  // Reset everything when the modal closes. Deps are stable (open/today) so this
+  // never re-runs on every render — keeping `loadedLines` out avoids an update loop
+  // (the lines hook returns a fresh [] each render when there's no data).
   useEffect(() => {
-    if (!open) {
-      hydratedRef.current = false;
-      setForm(initialForm(today));
-      setRows([]);
-      return;
-    }
-    if (hydratedRef.current) return;
+    if (open) return;
+    hydratedRef.current = false;
+    setForm(initialForm(today));
+    setRows([]);
+    setDirty(false);
+    setConfirmClose(false);
+  }, [open, today]);
+
+  // Hydrate once per open. In edit mode, seed the header + lines from the draft
+  // (after they load). The hydratedRef guard makes re-runs (e.g. loadedLines
+  // getting a new reference) a no-op, so there's no render loop.
+  useEffect(() => {
+    if (!open || hydratedRef.current) return;
     if (editing) {
-      // Wait for the lines to arrive before seeding the grid.
       if (linesLoading) return;
       setForm({
         name: statement.name || '',
@@ -553,10 +629,8 @@ export function ManualStatementModal({
         notes: statement.notes || '',
       });
       setRows(loadedLines.map(lineToRow));
-      hydratedRef.current = true;
-    } else {
-      hydratedRef.current = true;
     }
+    hydratedRef.current = true;
   }, [open, editing, linesLoading, loadedLines, statement, today]);
 
   const handleSave = async (process) => {
@@ -567,6 +641,12 @@ export function ManualStatementModal({
     const usable = rows.filter((r) => !isBlankLine(r));
     if (usable.length === 0) {
       toast.error(ui('financeAccountStatementsManualErrorLines'));
+      return;
+    }
+    // Every non-blank line must have its required fields (date, Reference No,
+    // both amounts) — an incomplete line cannot be saved.
+    if (usable.some((r) => !isLineComplete(r))) {
+      toast.error(ui('financeAccountStatementsManualErrorIncompleteLine'));
       return;
     }
     const payloadLines = usable.map((r) => ({
@@ -601,12 +681,20 @@ export function ManualStatementModal({
     }
   };
 
+  // Closing (X / Escape / Cancel) with unsaved edits asks for confirmation first.
+  const requestClose = () => {
+    if (dirty) setConfirmClose(true);
+    else onClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) requestClose(); }}>
       <DialogContent
         className="w-[96vw] max-w-[1440px] overflow-hidden p-0"
         style={{ background: 'var(--surface-overlay, #FFFFFF)' }}
         onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => { e.preventDefault(); requestClose(); }}
       >
         <div className="bg-white px-6 pt-6">
           <h2 className="text-lg font-semibold leading-6 text-[#121217]">
@@ -618,14 +706,14 @@ export function ManualStatementModal({
         </div>
 
         <div className="max-h-[62vh] overflow-y-auto bg-white px-6 py-4">
-          <HeaderFields form={form} setForm={setForm} ui={ui} />
+          <HeaderFields form={form} setForm={setFormDirty} ui={ui} />
 
           <div className="mt-6">
             <SectionLabel count={computeTotals(rows).n}>
               {ui('financeAccountStatementsManualSectionLines')}
             </SectionLabel>
           </div>
-          <EditableLines rows={rows} setRows={setRows} money={money} bcpLocale={bcpLocale} ui={ui} />
+          <EditableLines rows={rows} setRows={setRowsDirty} money={money} bcpLocale={bcpLocale} ui={ui} />
         </div>
 
         <div className="flex items-center justify-between gap-4 border-t border-[#E8EAEF] bg-white px-6 py-4">
@@ -633,7 +721,8 @@ export function ManualStatementModal({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
+              data-testid="manual-statement-cancel"
               className="inline-flex h-10 items-center rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium text-[#121217] hover:bg-[#F5F7F9]"
             >
               {ui('financeAccountStatementsManualCancel')}
@@ -646,7 +735,40 @@ export function ManualStatementModal({
             />
           </div>
         </div>
+
       </DialogContent>
     </Dialog>
+
+    <Dialog open={confirmClose} onOpenChange={(v) => { if (!v) setConfirmClose(false); }}>
+      <DialogContent className="max-w-sm bg-white">
+        <div data-testid="manual-discard-overlay">
+          <h3 className="text-base font-semibold text-[#121217]">
+            {ui('financeAccountStatementsManualDiscardTitle')}
+          </h3>
+          <p className="mt-1 text-sm text-[#6C6C89]">
+            {ui('financeAccountStatementsManualDiscardBody')}
+          </p>
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmClose(false)}
+              data-testid="manual-discard-keep"
+              className="inline-flex h-10 items-center rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium text-[#121217] hover:bg-[#F5F7F9]"
+            >
+              {ui('financeAccountStatementsManualDiscardKeep')}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setConfirmClose(false); onClose(); }}
+              data-testid="manual-discard-confirm"
+              className="inline-flex h-10 items-center rounded-lg bg-[#D50B3E] px-3 text-sm font-medium text-white hover:bg-[#B50934]"
+            >
+              {ui('financeAccountStatementsManualDiscardConfirm')}
+            </button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
