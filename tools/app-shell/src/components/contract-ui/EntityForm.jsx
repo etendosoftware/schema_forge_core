@@ -969,22 +969,6 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         </div>
       );
     }
-    if (f.type === 'image') {
-      return (
-        <div key={f.key} className="space-y-1.5 row-span-2 flex flex-col h-full">
-          <Label className="text-sm text-foreground font-medium">{label}</Label>
-          <ImageField
-            imageId={data?.[f.key] ?? ''}
-            onChange={(newId) => onChange?.(f.key, newId, f.column)}
-            token={token}
-            apiBaseUrl={apiBaseUrl}
-            readOnly={isReadOnly}
-            fieldKey={f.key}
-            stretch
-          />
-        </div>
-      );
-    }
     const inputType = getInputType(f);
     return (
       <div key={f.key} className="space-y-1.5">
@@ -1011,6 +995,24 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   // fieldErrors. Uses cloneElement so we don't have to thread the prop through every
   // branch in renderField — the wrapper <div key={f.key}> already exists for each.
   const renderFieldWithError = (f) => {
+    if (f.type === 'image') {
+      const label = t(f.column) ?? f.label ?? f.key;
+      const isReadOnly = formReadOnly || f.readOnly || displayLogic?.readOnly?.[f.key] === true || evalReadOnlyLogic(f, data);
+      return (
+        <div key={f.key} className="space-y-1.5 row-span-2 flex flex-col h-full">
+          <Label className="text-sm text-foreground font-medium">{label}</Label>
+          <ImageField
+            imageId={data?.[f.key] ?? ''}
+            onChange={(newId) => onChange?.(f.key, newId, f.column)}
+            token={token}
+            apiBaseUrl={apiBaseUrl}
+            readOnly={isReadOnly}
+            fieldKey={f.key}
+            stretch
+          />
+        </div>
+      );
+    }
     const node = renderField(f);
     const err = fieldErrors?.[f.key];
     if (!err || !React.isValidElement(node)) return node;

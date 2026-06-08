@@ -177,11 +177,11 @@ function ChartSVG({ months, values, W, H, PAD_X, PAD_Y, gradId, fontSize = 10, P
           <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.02" />
         </linearGradient>
       </defs>
-      {yLabels.map((yl, i) => (
-        <line key={i} x1={PAD_X} y1={toY(yl.v)} x2={W - PAD_R} y2={toY(yl.v)} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="4,3" />
+      {yLabels.map((yl) => (
+        <line key={yl.v} x1={PAD_X} y1={toY(yl.v)} x2={W - PAD_R} y2={toY(yl.v)} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="4,3" />
       ))}
-      {yLabels.map((yl, i) => (
-        <text key={i} x={PAD_X - 5} y={toY(yl.v) + 4} textAnchor="end" fontSize={fontSize} fill="#9ca3af">{yl.label}</text>
+      {yLabels.map((yl) => (
+        <text key={yl.label} x={PAD_X - 5} y={toY(yl.v) + 4} textAnchor="end" fontSize={fontSize} fill="#9ca3af">{yl.label}</text>
       ))}
       <path d={areaPath} fill={`url(#${gradId})`} />
       <path d={linePath} fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
