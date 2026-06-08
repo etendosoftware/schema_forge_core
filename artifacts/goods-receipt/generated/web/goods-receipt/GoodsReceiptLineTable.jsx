@@ -3,12 +3,9 @@ import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 
 // @sf-generated-start columns:goodsReceiptLine
 const columns = [
-  { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.', required: true },
-  { key: 'product', column: 'M_Product_ID', type: 'selector', label: 'Product' },
+  { key: 'product', column: 'M_Product_ID', type: 'selector', label: 'Product', required: true },
   { key: 'movementQuantity', column: 'MovementQty', type: 'number', label: 'Movement Quantity', required: true },
-  { key: 'uOM', column: 'C_UOM_ID', type: 'selector', label: 'UOM', required: true },
-  { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin' },
-  { key: 'invoiceQuantity', column: 'Qtyinvoiced', type: 'number', label: 'Invoiced Quantity', required: true },
+  { key: 'orderQuantity', column: 'QuantityOrder', type: 'number', label: 'Order Quantity' },
 ];
 // @sf-generated-end columns:goodsReceiptLine
 

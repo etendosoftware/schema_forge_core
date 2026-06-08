@@ -8,6 +8,7 @@ import {
   AccountsSidebar,
   AccountsToolbar,
   AccountsTable,
+  AccountTypeFilter,
 } from '@/components/financial-accounts';
 import { NewAccountWizard } from '@/windows/custom/financial-account/NewAccountWizard.jsx';
 import { EditAccountModal } from '@/windows/custom/financial-account/EditAccountModal.jsx';
@@ -16,8 +17,17 @@ import { ArchiveAccountDialog } from '@/windows/custom/financial-account/Archive
 function filterAccounts(accounts, typeFilter, search) {
   if (!Array.isArray(accounts)) return [];
   const needle = (search ?? '').trim().toLowerCase();
+  const inactiveView = typeFilter === AccountTypeFilter.INACTIVE;
   return accounts.filter((account) => {
-    if (typeFilter && account.type !== typeFilter) return false;
+    const isActive = account.active !== false;
+    if (inactiveView) {
+      // "Inactivas": every archived account, regardless of type.
+      if (isActive) return false;
+    } else {
+      // Normal views hide archived accounts and filter by type.
+      if (!isActive) return false;
+      if (typeFilter && account.type !== typeFilter) return false;
+    }
     if (!needle) return true;
     return [account.name, account.iban, account.currencyIso]
       .filter(Boolean)
@@ -35,11 +45,18 @@ export default function FinancialAccountsPage() {
   const [editAccount, setEditAccount] = useState(null);
   const [archiveTarget, setArchiveTarget] = useState(null);
 
+  // The header badge counts active accounts only (archived ones live behind the
+  // dedicated "inactive" filter and shouldn't inflate the headline figure).
+  const activeCount = useMemo(
+    () => accounts.filter((a) => a.active !== false).length,
+    [accounts],
+  );
+
   useSetPageMeta({
     title: ui('financeAccountsPageTitle'),
     breadcrumb: `${ui('financeMenuLabel')} / ${ui('financeAccountsPageTitle')}`,
-    recordCount: accounts.length,
-  }, [accounts.length]);
+    recordCount: activeCount,
+  }, [activeCount]);
 
   const visibleAccounts = useMemo(
     () => filterAccounts(accounts, typeFilter, search),

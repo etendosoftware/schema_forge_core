@@ -101,7 +101,7 @@ Records are typically created from the **Assets** window via the **Create Amorti
   - Accounting entity excluded; accounting dimensions discarded.
 - `tools/app-shell/src/lib/statusBadge.js` — `getStatusTone` maps `'y'`/`'yes'` → `'success'`; `statusLabel` MAP includes `Y: 'statusProcessed'` and `N: 'statusDraft'` so `DocumentStatusPill` resolves tones and labels for `processed` field values.
 - `tools/app-shell/src/windows/custom/amortization/AmortizationLinesTable.jsx` — custom lines component. Renders Asset | Amortization % | Amount | Accounting dimensions columns. Per-row and select-all checkboxes for multi-select (disabled, not hidden, in read-only state); shared `LinesSelectionBar` for bulk delete. Circular icon button toggles a white-background expand panel with Organisation (read-only) + 7 dimension selectors (auto-save on `onChange`). Pencil activates inline editing for 3 core fields (blur-saves; calls `onRefresh` after each save to keep header in sync). Add-line auto-saves the header first when `isNew` (mirrors Sales Order `openAddLine` pattern: saves → navigates to real recordId → useEffect opens inline form on re-mount). New lines include `currency` from header. Footer computed from `lines.reduce()` for immediate accuracy. Test coverage: `__tests__/AmortizationLinesTable.vitest.jsx` (27 tests).
-- `artifacts/amortization/custom/AmortizationConfirmModal.jsx` — confirmation modal. Fetches lines to calculate current total independently. Calls `POST /action/Processed` on confirm. On success calls `onClose(true)` which triggers `window.location.reload()`. Blocks confirmation when any line has a zero/negative amount (`amortizationErrorLineAmountInvalid`) or a missing percentage (`amortizationErrorLinePercentageMissing`). Both i18n keys are in `packages/app-shell-core/src/locales/`.
+- `artifacts/amortization/custom/AmortizationConfirmModal.jsx` — confirmation modal. Fetches lines to calculate current total independently. Calls `POST /action/Processed` on confirm. On success calls `onClose(true)` which triggers `window.location.reload()`. Blocks confirmation when any line has a zero/negative amount (`amortizationErrorLineAmountInvalid`) or a missing percentage (`amortizationErrorLinePercentageMissing`). Both i18n keys are in `packages/app-shell-core/src/locales/`. Headers include `Accept-Language: getStoredLocale()` so backend process errors (e.g. closed accounting period) are returned in the user's UI language.
 
 ## ETP-4103 changes
 
@@ -147,6 +147,16 @@ Changes landed in `feature/ETP-4103`. Covers visual polish, sidebar simplificati
 ### Java bug fix (NeoProcessService.java)
 
 - Fixed: the "Crear amortizaciones" process was failing with `JSONObject["A_Asset_ID"] not found`. Root cause: `AssetLinearGroupedDepreciationMethodProcess.doExecute()` reads the record id from the table's key column name (`A_Asset_ID`) in the content JSON, but `NeoProcessService` was only providing it under `inpRecordId`. Fix: `NeoProcessService` now resolves the key column from the tab's table and exposes the record id under the DB column name. This fix is generic — works for any OBUIAPP process that reads the record id by table key column name.
+
+## ETP-4173 changes
+
+Changes landed in `feature/ETP-4173`. Covers AD_Message error token resolution and UI locale propagation.
+
+### Confirm modal — locale-aware error messages
+
+- `AmortizationConfirmModal.jsx` now includes `Accept-Language: getStoredLocale()` in its fetch headers. The `getStoredLocale()` helper (added to `packages/app-shell-core/src/i18n/useLocaleState.js`) reads the active locale from `localStorage` (`schema-forge-locale`) without requiring a React hook — safe to use in `useMemo` and outside the render cycle.
+- Backend (`NeoAuthenticator.java`): after JWT validation, reads the `Accept-Language` header, validates it matches the Etendo language code format (`xx_YY`), looks up an active `AD_Language` record, and calls `OBContext.setLanguage()`. This makes `OBMessageUtils.parseTranslation()` resolve AD_Message tokens in the user's language for the duration of the request.
+- Backend (`NeoProcessService.java`): all three result-translation methods (`translatePInstanceResult`, `translateClassicResult`, `translateObuiappResult`) now wrap error messages with `OBMessageUtils.parseTranslation()`, which resolves Etendo AD_Message key tokens (`@KeyName@`) to their translated text. Previously, tokens like `@PeriodNotAvailable@` were forwarded as-is and shown raw in the UI.
 
 ## Iteration backlog (out of current scope)
 

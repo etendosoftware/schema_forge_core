@@ -18,6 +18,7 @@ A user should be able to:
 - confirm the receipt from draft so the document moves out of intake mode
 - open linked purchasing documents to understand where the receipt came from and whether invoices already exist for the same order
 - complete multiple draft receipts at once from the list selection bar using the bulk action (labeled "Confirmar" / i18n key `confirmBulk`), which processes each receipt through the standard `documentAction=CO` endpoint
+- preview a completed receipt from the list row quick-action or by selecting a row, and create a purchase invoice directly from that preview panel
 
 ## Interaction model
 
@@ -27,6 +28,11 @@ A user should be able to:
 - Window shape: master-child window with a header record (`goodsReceipt`) and child received lines (`goodsReceiptLine`).
 - An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 - Lines tab layout: this window uses `window.linesLayout = "inlineEditable"`. Rows render at 40 px with pencil and trash hover-action icons on the right; clicking pencil flips the row into inline edit; trash removes the row after confirmation. When the add-row form is open, existing rows stay in `InlineLinesPanel` so column widths remain stable; the form renders in a header-hidden `DataTable` below that handles callouts, selectors, and focus. Clicking "Añadir línea" while a form is already open saves the current line and opens a fresh form scrolled into view. See `docs/ui-customization.md` section 13 for the full reference.
+- **Preview panel** (`GoodsReceiptPreview.jsx`): rendered via `renderPreview` prop on the generated app. Opens from a list row hover action or row selection. Shows document header, a General tab with receipt stats (BP, warehouse, PO link, invoice %, date), a Messages tab, and a History tab. Completed receipts show an email (send PDF) action and a Create Invoice action that opens `ReceiptInvoicePreview`. The PO identifier in the stats panel is a clickable link that closes the preview and navigates to `/purchase-order/:id`.
+- **Invoice preview before creation** (`ReceiptInvoicePreview`, built inside `GoodsReceiptPreview.jsx`): when the user clicks "Create Invoice" from a completed receipt preview, a confirmation/preview modal appears showing the receipt summary and a "Confirm" button that calls the purchase-invoice creation endpoint and then displays the result via `ConfirmResultModal`.
+- **Topbar invoice-status pill** (`GoodsReceiptTopbar.jsx`): renders an `InvoiceStatusPill` in the form topbar for completed receipts, showing the invoice percentage with color coding (gray = 0%, amber = partial, green = 100%). Hidden for draft receipts.
+- **Draft status chips** (`GoodsReceiptDraftChips.jsx`): custom chip set shown in the draft-mode banner, providing at-a-glance receipt progress indicators while the document is in draft.
+- **Purchase Return Wizard** (`PurchaseReturnWizard.jsx`): wizard component available for initiating a purchase return from a completed receipt. Accessed via menu action.
 
 In practice, the header behaves like the receipt execution record and the child area behaves like the intake workspace. The custom implementation narrows the visible line table to receipt-focused columns and adds receipt-specific actions for line import and related-document navigation.
 
@@ -77,15 +83,25 @@ No current evidence shows:
 ## Automated evidence
 
 - `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-complete component (CO only, via `buildInOutActions`) mounted in the list selection bar for goods receipts with `labelKey="confirmBulk"` so the button renders as "Confirmar" / "Confirm".
-- No dedicated goods-receipt UI test was found in `tools/app-shell`.
+- `tools/app-shell/src/windows/custom/goods-receipt/__tests__/GoodsReceiptWindow.vitest.jsx` — Vitest unit tests for the main window wrapper (email send modal triggered via `rowQuickActions.onEmail`).
+- `tools/app-shell/src/windows/custom/goods-receipt/__tests__/GoodsReceiptPreview.vitest.jsx` — Vitest unit tests for the preview panel: null guard, title, send-button visibility by status, send modal open/close with exit animation, PO navigation, tab rendering.
+- `tools/app-shell/src/windows/custom/goods-receipt/__tests__/GoodsReceiptTopbar.vitest.jsx` — Vitest unit tests for the invoice-status pill: null guard for missing data / non-CO status, correct % display for 0/partial/full cases.
+- `tools/app-shell/src/windows/custom/goods-receipt/__tests__/GoodsReceiptActions.vitest.jsx` — Vitest unit tests for window actions.
+- `tools/app-shell/src/windows/custom/goods-receipt/__tests__/ImportFromPurchaseOrderModal.vitest.jsx` — Vitest unit tests for the import modal.
 - Shared route loading, authenticated shell behavior, and generic entity behavior are documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - Source evidence for this document:
   - `tools/app-shell/src/menu.json`
   - `tools/app-shell/src/windows/registry.js`
   - `artifacts/goods-receipt/contract.json`
   - `tools/app-shell/src/windows/custom/goods-receipt/index.jsx`
+  - `tools/app-shell/src/windows/custom/goods-receipt/GoodsReceiptPreview.jsx`
   - `tools/app-shell/src/windows/custom/goods-receipt/GoodsReceiptBottomPanel.jsx`
   - `tools/app-shell/src/windows/custom/goods-receipt/ImportFromPurchaseOrderModal.jsx` — order totals shown in the import modal are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`.
   - `tools/app-shell/src/windows/custom/goods-receipt/RelatedDocuments.jsx`
+  - `artifacts/goods-receipt/custom/GoodsReceiptTopbar.jsx`
+  - `artifacts/goods-receipt/custom/GoodsReceiptDraftChips.jsx`
+  - `artifacts/goods-receipt/custom/PurchaseReturnWizard.jsx`
+  - `tools/app-shell/src/components/contract-ui/ConfirmResultModal.jsx` — shared result modal used after invoice creation from receipt
 - The generated `GoodsReceiptPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_InOut` AD table.
 - **ETP-3995 — Related Documents tab i18n**: The generated page file now uses `labelKey: 'relatedDocuments'` in the `customTabs` prop instead of a hardcoded `label: 'Related Documents'` string, so the tab title renders via the active UI language (e.g. "Documentos relacionados" in Spanish) regardless of the browser locale.
+- **ETP-4032 — Receipt invoice preview modal**: `GoodsReceiptPreview.jsx` now exposes a "Create Invoice" action for completed receipts. `GoodsReceiptTopbar.jsx` shows an invoice-status pill. `ConfirmResultModal` was extracted to `tools/app-shell/src/components/contract-ui/` and is now shared across goods-receipt, goods-shipment, purchase-order, and sales-order.

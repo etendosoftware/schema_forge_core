@@ -83,7 +83,8 @@ describe('getSecondaryRowUpdateHandler', () => {
   it('handler success path: optimistic update then server-wins update', async () => {
     const ctx = baseCtx();
     const updatedRow = { id: 'r1', qty: 5, qty$_identifier: 'five' };
-    global.fetch = vi.fn(async () => ({ ok: true, json: async () => updatedRow }));
+    // NEO wraps the saved record in {response:{data:[...]}}; the handler unwraps it.
+    global.fetch = vi.fn(async () => ({ ok: true, json: async () => ({ response: { data: [updatedRow] } }) }));
 
     const handler = getSecondaryRowUpdateHandler({ key: 'line' }, 'inlineEditable', ctx);
     await handler({ id: 'r1', qty: 1 }, 'qty', 5, { identifier: 'five' });

@@ -148,7 +148,8 @@ function BulkInvoiceModal({ shipments, bpName, token, apiBaseUrl, onClose, onSuc
       const lines = (linesByShipment[s.id] || []).map(l => {
         const ol = orderLinePrices[l.salesOrderLine] || {};
         const unitPrice = Number(ol.unitPrice) || 0;
-        const maxQty = Number(l.movementQuantity) || 0;
+        const invoiced = Number(l.invoicedQuantity) || 0;
+        const maxQty = Math.max(0, (Number(l.movementQuantity) || 0) - invoiced);
         const currentQty = lineQuantities[l.id] ?? maxQty;
         const isSel = selectedLines.has(l.id);
         return { ...l, unitPrice, maxQty, currentQty, lineTotal: isSel ? unitPrice * currentQty : 0, productName: l['product$_identifier'] || l.id, isSelected: isSel };
