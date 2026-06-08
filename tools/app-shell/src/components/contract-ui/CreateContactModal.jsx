@@ -71,6 +71,32 @@ function ContactModeToggle({ contactType, onChange }) {
   );
 }
 
+export function getBillingPatch(opts, form) {
+  const first = (key) => opts[key]?.options?.[0]?.id;
+  const salesPriceList = form.salesPriceList || first('salesPriceLists');
+  const paymentMethod = form.paymentMethod || first('paymentMethods');
+  const paymentTerm = form.paymentTerm || first('paymentTerms');
+  const financialAccount = form.financialAccount || first('financialAccounts');
+  const purchasePriceList = form.purchasePriceList || first('purchasePriceLists');
+  const paymentMethodPO = form.paymentMethodPO || first('paymentMethods');
+  const paymentTermPO = form.paymentTermPO || first('paymentTerms');
+  const financialAccountPO = form.financialAccountPO || first('financialAccounts');
+
+  const billingPatch = {
+    ...(form.isCustomer && salesPriceList && {priceList: salesPriceList}),
+    ...(form.isCustomer && paymentMethod && {paymentMethod}),
+    ...(form.isCustomer && paymentTerm && {paymentTerms: paymentTerm}),
+    ...(form.isCustomer && financialAccount && {account: financialAccount}),
+    ...(form.isCustomer && {customerBlocking: form.customerBlock}),
+    ...(form.isVendor && purchasePriceList && {purchasePricelist: purchasePriceList}),
+    ...(form.isVendor && paymentMethodPO && {pOPaymentMethod: paymentMethodPO}),
+    ...(form.isVendor && paymentTermPO && {pOPaymentTerms: paymentTermPO}),
+    ...(form.isVendor && financialAccountPO && {pOFinancialAccount: financialAccountPO}),
+    ...(form.isVendor && {vendorBlocking: form.paymentBlock}),
+  };
+  return billingPatch;
+}
+
 /**
  * Thin wrapper around EntityCreationModal for creating Business Partners.
  *
@@ -389,28 +415,7 @@ export default function CreateContactModal({
       const contacts = (repeatables.contacts ?? []).filter(c => c.firstName || c.lastName || c.email || c.phone);
       const banks = (repeatables.bankAccount ?? []).filter(b => b.bankName || b.iban || b.genericAccountNo);
 
-      const first = (key) => opts[key]?.options?.[0]?.id;
-      const salesPriceList    = form.salesPriceList    || first('salesPriceLists');
-      const paymentMethod     = form.paymentMethod     || first('paymentMethods');
-      const paymentTerm       = form.paymentTerm       || first('paymentTerms');
-      const financialAccount  = form.financialAccount  || first('financialAccounts');
-      const purchasePriceList = form.purchasePriceList || first('purchasePriceLists');
-      const paymentMethodPO   = form.paymentMethodPO   || first('paymentMethods');
-      const paymentTermPO     = form.paymentTermPO     || first('paymentTerms');
-      const financialAccountPO = form.financialAccountPO || first('financialAccounts');
-
-      const billingPatch = {
-        ...(form.isCustomer && salesPriceList    && { priceList: salesPriceList }),
-        ...(form.isCustomer && paymentMethod     && { paymentMethod }),
-        ...(form.isCustomer && paymentTerm       && { paymentTerms: paymentTerm }),
-        ...(form.isCustomer && financialAccount  && { account: financialAccount }),
-        ...(form.isCustomer && { customerBlocking: form.customerBlock }),
-        ...(form.isVendor   && purchasePriceList && { purchasePricelist: purchasePriceList }),
-        ...(form.isVendor   && paymentMethodPO   && { pOPaymentMethod: paymentMethodPO }),
-        ...(form.isVendor   && paymentTermPO     && { pOPaymentTerms: paymentTermPO }),
-        ...(form.isVendor   && financialAccountPO && { pOFinancialAccount: financialAccountPO }),
-        ...(form.isVendor   && { vendorBlocking: form.paymentBlock }),
-      };
+      const billingPatch = getBillingPatch(opts, form);
 
       await Promise.all([
         // Step 3 — contact persons (C_BPartner_Contact)

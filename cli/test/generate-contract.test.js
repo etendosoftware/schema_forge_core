@@ -164,6 +164,59 @@ describe('generateFrontendContract — behavioral metadata', () => {
     assert.equal(pl.readOnlyLogic.js, 'record.processed === true');
   });
 
+  it('non-evaluable readOnlyLogic is flagged with reason and null js', () => {
+    // @#User_Level@ matches the @#\w+@ session-preference pattern in
+    // classifyEvaluability, so the expression cannot be evaluated client-side.
+    const nonEvaluableSchema = {
+      version: '0.1.0',
+      window: { id: '510', name: 'Non Evaluable', primaryEntity: 'order', category: 'test' },
+      entities: [{
+        name: 'order',
+        table: 'C_Order',
+        level: 'header',
+        fields: [
+          { name: 'priceList', column: 'M_PriceList_ID', type: 'foreignKey', visibility: 'editable',
+            required: true, searchable: false, grid: false, form: true,
+            readOnlyLogic: "@#User_Level@='S'" },
+        ],
+      }],
+    };
+    const fc = generateFrontendContract(nonEvaluableSchema);
+    const pl = fc.entities.order.fields.find(f => f.name === 'priceList');
+    assert.ok(pl.readOnlyLogic, 'readOnlyLogic metadata should be present');
+    assert.equal(pl.readOnlyLogic.evaluable, false, 'should be flagged non-evaluable');
+    assert.equal(pl.readOnlyLogic.reason, 'session-preference', 'reason should be set');
+    assert.equal(pl.readOnlyLogic.js, null, 'js should be nulled for non-evaluable logic');
+  });
+
+  it('readOnlyLogic.js uses matching rule.translated when the expression is evaluable', () => {
+    // The expression is evaluable (a plain field reference), so applyReadOnlyLogic
+    // keeps the matchingRule.translated value instead of recomputing the JS.
+    const translatedSchema = {
+      version: '0.1.0',
+      window: { id: '520', name: 'Translated RO', primaryEntity: 'order', category: 'test' },
+      entities: [{
+        name: 'order',
+        table: 'C_Order',
+        level: 'header',
+        fields: [
+          { name: 'priceList', column: 'M_PriceList_ID', type: 'foreignKey', visibility: 'editable',
+            required: true, searchable: false, grid: false, form: true,
+            readOnlyLogic: '@Processed@=Y' },
+        ],
+      }],
+    };
+    const translatedRules = [
+      { name: '@Processed@=Y', type: 'readOnlyLogic', className: '@Processed@=Y',
+        translated: 'record.customProcessedFlag === true' },
+    ];
+    const fc = generateFrontendContract(translatedSchema, translatedRules);
+    const pl = fc.entities.order.fields.find(f => f.name === 'priceList');
+    assert.equal(pl.readOnlyLogic.evaluable, true, 'expression should be evaluable');
+    assert.equal(pl.readOnlyLogic.js, 'record.customProcessedFlag === true',
+      'js should come from the matching rule translated value');
+  });
+
   it('callout without matching rule has only className, no effects', () => {
     const fc = generateFrontendContract(behavioralSchema, []);
     const bp = fc.entities.order.fields.find(f => f.name === 'businessPartner');
@@ -1132,6 +1185,61 @@ describe('generateFrontendContract — UI hints', () => {
     assert.equal(plain.precision, undefined);
     assert.equal(plain.isTranslated, undefined);
   });
+
+  it('maps the full set of grid/display UI hints onto the contract field', () => {
+    // Covers applyFieldUIHints + applyBasicFieldUIHints branches that the other
+    // tests do not assert (gridOrder, cellType, summable, seq, statusBar, badge,
+    // badge*, enumVariants, labels, display, grow, noTrailing, filterOnly,
+    // filterable:false, dot:false, min). Note the exact mapping rules:
+    //   summable/grow/statusBar/badge/noTrailing/filterOnly -> boolean true
+    //   filterable === false -> filterable: false ; dot === false -> dot: false
+    //   gridOrder/seq use != null ; min uses !== undefined
+    const richHintsSchema = {
+      version: '0.1.0',
+      window: { id: '610', name: 'Rich Hints', primaryEntity: 'order', category: 'test' },
+      entities: [{
+        name: 'order',
+        table: 'C_Order',
+        level: 'header',
+        fields: [
+          { name: 'amount', column: 'Amount', type: 'amount', visibility: 'editable',
+            required: false, searchable: false, grid: true, form: true,
+            gridOrder: 0, seq: 0, min: 0,
+            cellType: 'currency', summable: true, precision: 4,
+            statusBar: true, badge: true,
+            badgeLabels: { CO: 'Completed' }, badgeColors: { CO: 'green' },
+            badgeVariants: { CO: 'solid' }, enumVariants: { A: 'primary' },
+            labels: { en: 'Amount' }, display: 'inline', grow: true,
+            noTrailing: true, filterOnly: true, filterable: false, dot: false },
+        ],
+      }],
+    };
+    const fc = generateFrontendContract(richHintsSchema);
+    const amount = fc.entities.order.fields.find(f => f.name === 'amount');
+    // != null / !== undefined branches with falsy-but-present values
+    assert.equal(amount.gridOrder, 0);
+    assert.equal(amount.seq, 0);
+    assert.equal(amount.min, 0);
+    // straight passthroughs
+    assert.equal(amount.cellType, 'currency');
+    assert.equal(amount.precision, 4);
+    assert.equal(amount.display, 'inline');
+    assert.deepStrictEqual(amount.badgeLabels, { CO: 'Completed' });
+    assert.deepStrictEqual(amount.badgeColors, { CO: 'green' });
+    assert.deepStrictEqual(amount.badgeVariants, { CO: 'solid' });
+    assert.deepStrictEqual(amount.enumVariants, { A: 'primary' });
+    assert.deepStrictEqual(amount.labels, { en: 'Amount' });
+    // truthy hints normalized to boolean true
+    assert.equal(amount.summable, true);
+    assert.equal(amount.statusBar, true);
+    assert.equal(amount.badge, true);
+    assert.equal(amount.grow, true);
+    assert.equal(amount.noTrailing, true);
+    assert.equal(amount.filterOnly, true);
+    // explicit-false branches
+    assert.equal(amount.filterable, false);
+    assert.equal(amount.dot, false);
+  });
 });
 
 // ─── F3 refactor — drawer + display passthroughs ─────────────────────────────
@@ -1335,6 +1443,82 @@ describe('generateApiPrediction — selector context metadata (ETP-3955)', () =>
     const catSelector = prediction.selectors.find(s => s.field === 'category');
     // No dependsOn, no validationRule cascade params, not a priceList -> no context
     assert.equal(catSelector.context, undefined, 'simple FK without context should have no context metadata');
+  });
+
+  it('non-sales/purchases category puts the isSOTrx trx param into optional, not required', () => {
+    // assignTrxParamByCategory else branch: when windowCategory is neither
+    // 'sales' nor 'purchases', the isSOTrx param must land in context.optional.
+    const neutralSchema = {
+      version: '0.1.0',
+      window: { id: '910', name: 'Neutral Category', primaryEntity: 'doc', category: 'inventory' },
+      entities: [{
+        name: 'doc',
+        table: 'C_Doc',
+        level: 'header',
+        fields: [
+          { name: 'priceList', column: 'M_PriceList_ID', type: 'foreignKey',
+            reference: 'PriceList', inputMode: 'selector',
+            validationRule: { cascadeParams: ['isSOTrx'] },
+            visibility: 'editable', required: true, searchable: false, grid: false, form: true },
+        ],
+      }],
+    };
+    const fc = generateFrontendContract(neutralSchema);
+    const bc = generateBackendContract(neutralSchema);
+    const prediction = generateApiPrediction(neutralSchema, fc, bc);
+    const plSelector = prediction.selectors.find(s => s.field === 'priceList');
+    assert.ok(plSelector.context, 'priceList should have context metadata');
+    assert.ok(plSelector.context.optional, 'context should expose optional entries');
+    const optTrx = plSelector.context.optional.find(r => r.param === 'isSOTrx');
+    assert.ok(optTrx, 'isSOTrx should be in optional for a neutral category');
+    assert.equal(optTrx.source, 'windowCategory');
+    // and it must NOT be required for a neutral category
+    const reqTrx = (plSelector.context.required ?? []).find(r => r.param === 'isSOTrx');
+    assert.equal(reqTrx, undefined, 'isSOTrx must not be required for a neutral category');
+  });
+
+  it('canonical date param (dateParams[0]) is added to required exactly once', () => {
+    // addCanonicalDateParam: with cascadeParams containing several date params,
+    // only the first one (DateInvoiced) becomes the canonical required entry.
+    const dateCascadeSchema = {
+      version: '0.1.0',
+      window: { id: '920', name: 'Date Cascade', primaryEntity: 'header', category: 'test' },
+      entities: [
+        {
+          name: 'header',
+          table: 'C_Header',
+          level: 'header',
+          fields: [
+            { name: 'invoiceDate', column: 'DateInvoiced', type: 'date',
+              visibility: 'editable', required: true, searchable: false, grid: true, form: true },
+            { name: 'orderDate', column: 'DateOrdered', type: 'date',
+              visibility: 'editable', required: true, searchable: false, grid: true, form: true },
+          ],
+        },
+        {
+          name: 'line',
+          table: 'C_Line',
+          level: 'line',
+          fields: [
+            { name: 'tax', column: 'C_Tax_ID', type: 'foreignKey',
+              reference: 'Tax', inputMode: 'selector',
+              validationRule: { cascadeParams: ['DateInvoiced', 'DateOrdered'] },
+              visibility: 'editable', required: true, searchable: false, grid: true, form: true },
+          ],
+        },
+      ],
+    };
+    const fc = generateFrontendContract(dateCascadeSchema);
+    const bc = generateBackendContract(dateCascadeSchema);
+    const prediction = generateApiPrediction(dateCascadeSchema, fc, bc);
+    const taxSelector = prediction.selectors.find(s => s.field === 'tax' && s.entity === 'line');
+    assert.ok(taxSelector.context, 'tax should have context metadata');
+    const canonical = taxSelector.context.required.filter(r => r.param === 'DateInvoiced');
+    assert.equal(canonical.length, 1, 'canonical date param must appear exactly once');
+    assert.equal(canonical[0].format, 'DD-MM-YYYY', 'canonical date entry should carry date format');
+    // the non-canonical date param must not be added as its own required entry
+    const nonCanonical = taxSelector.context.required.filter(r => r.param === 'DateOrdered');
+    assert.equal(nonCanonical.length, 0, 'only the first date param is canonical');
   });
 });
 
