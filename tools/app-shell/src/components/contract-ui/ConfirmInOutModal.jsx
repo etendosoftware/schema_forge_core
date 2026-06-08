@@ -15,6 +15,7 @@ export default function ConfirmInOutModal({
   entityName,
   invoiceAction,
   defaultCreateInvoice = false,
+  skipDocumentAction = false,
   title,
   docInfo,
   infoRowPre,
@@ -29,7 +30,7 @@ export default function ConfirmInOutModal({
   onConfirmed,
   onClose,
 }) {
-  const [createInvoice, setCreateInvoice] = useState(defaultCreateInvoice);
+  const [createInvoice, setCreateInvoice] = useState(skipDocumentAction ? true : defaultCreateInvoice);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -49,27 +50,32 @@ export default function ConfirmInOutModal({
     setError(null);
     try {
       const actionBase = `${base}/${specName}/${entityName}/${recordId}/action`;
-      const res = await fetch(`${actionBase}/documentAction`, {
-        method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.response?.message || body?.message || `Error (${res.status})`);
+
+      if (!skipDocumentAction) {
+        const res = await fetch(`${actionBase}/documentAction`, {
+          method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.response?.message || body?.message || `Error (${res.status})`);
+        }
       }
 
       let invoice = null;
-      if (createInvoice && invoiceAction) {
+      if ((skipDocumentAction || createInvoice) && invoiceAction) {
         const invRes = await fetch(`${actionBase}/${invoiceAction}`, {
           method: 'POST', headers, body: JSON.stringify({}),
         });
-        if (invRes.ok) {
-          const invData = (await invRes.json())?.response?.data;
-          invoice = {
-            id: invData?.id ?? null,
-            documentNo: invData?.documentNo || '',
-            amount: invData?.grandTotalAmount ?? null,
-          };
+        if (!invRes.ok) {
+          const body = await invRes.json().catch(() => null);
+          throw new Error(body?.response?.message || body?.message || `Error (${invRes.status})`);
         }
+        const invData = (await invRes.json())?.response?.data;
+        invoice = {
+          id: invData?.id ?? null,
+          documentNo: invData?.documentNo || '',
+          amount: invData?.grandTotalAmount ?? null,
+        };
       }
 
       onConfirmed({ invoice });
@@ -79,8 +85,10 @@ export default function ConfirmInOutModal({
     }
   };
 
-  const toggle = () => setCreateInvoice(v => !v);
-  const primaryLabel = createInvoice && confirmWithInvoiceLabel ? confirmWithInvoiceLabel : confirmLabel;
+  const toggle = () => { if (!skipDocumentAction) setCreateInvoice(v => !v); };
+  const primaryLabel = (skipDocumentAction || createInvoice) && confirmWithInvoiceLabel
+    ? confirmWithInvoiceLabel
+    : confirmLabel;
 
   return createPortal(
     <div
@@ -129,8 +137,8 @@ export default function ConfirmInOutModal({
         {/* Body */}
         <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          {/* Info row (optional) */}
-          {infoRowBold && (
+          {/* Info row — hidden when only creating invoice (skipDocumentAction) */}
+          {!skipDocumentAction && infoRowBold && (
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#e9f7ee', border: '1px solid #bfe8cd', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
                 <svg width="12" height="10" viewBox="0 0 12 10" fill="none" stroke="#157a43" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -145,8 +153,8 @@ export default function ConfirmInOutModal({
             </div>
           )}
 
-          {/* Toggle card */}
-          <div
+          {/* Toggle card — hidden when only creating invoice (skipDocumentAction) */}
+          {!skipDocumentAction && <div
             role="switch"
             aria-checked={createInvoice}
             tabIndex={0}
@@ -180,7 +188,7 @@ export default function ConfirmInOutModal({
               </div>
             </div>
             <ToggleSwitch on={createInvoice} />
-          </div>
+          </div>}
 
           {error && (
             <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', padding: '8px 12px', borderRadius: 6 }}>
