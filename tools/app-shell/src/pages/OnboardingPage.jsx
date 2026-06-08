@@ -120,15 +120,15 @@ function AuthSsoOptions({ providers, buttonRef, error, loading, label, loadingLa
   }
   return (
     <div className="mb-5 space-y-3">
-      <div className="flex items-center gap-3">
+      <div className={loading ? 'pointer-events-none opacity-60' : ''}>
+        <div ref={buttonRef} className="flex min-h-11 justify-center" />
+      </div>
+      <div className="mx-auto flex w-full max-w-[400px] items-center gap-3">
         <div className="h-px flex-1 bg-slate-200" />
-        <span className="text-xs font-medium uppercase tracking-[0.08em] text-slate-400">
+        <span className="shrink-0 text-sm font-medium normal-case text-slate-400">
           {label}
         </span>
         <div className="h-px flex-1 bg-slate-200" />
-      </div>
-      <div className={loading ? 'pointer-events-none opacity-60' : ''}>
-        <div ref={buttonRef} className="flex min-h-11 justify-center" />
       </div>
       {loading && (
         <div className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500">
