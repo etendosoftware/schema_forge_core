@@ -110,6 +110,8 @@ async function loadAllMockData() {
     import('@generated/fiscal-config/custom/mockData.js'),
     import('@generated/fiscal-monitor/custom/mockData.js'),
     import('@generated/fiscal-models/custom/mockData.js'),
+    import('@generated/conversion-rates/generated/web/conversion-rates/mockData.js'),
+    import('@generated/conversion-rate-downloader-log/generated/web/conversion-rate-downloader-log/mockData.js'),
   ]);
 
   const merged = {};
