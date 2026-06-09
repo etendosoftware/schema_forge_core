@@ -102,6 +102,9 @@ import {
   getSecondaryLinesTableRef,
   getSecondaryEditRowHandler,
   getSecondarySelectionChangeHandler,
+  insertLinesTab,
+  renderExtraActionButtons,
+  getDetailContentContainerClassName,
 } from '../DetailView.jsx';
 
 describe('mergeSelectorContextFields', () => {
@@ -335,5 +338,149 @@ describe('getSecondarySelectionChangeHandler', () => {
     expect(
       getSecondarySelectionChangeHandler('readOnly', vi.fn(), { key: 'lines' }),
     ).toBeUndefined();
+  });
+});
+
+describe('insertLinesTab', () => {
+  it('falls back detailLabel -> detailEntity -> "Lines" for the label', () => {
+    const a = [];
+    insertLinesTab('My Label', 'Entity', { children: [] }, undefined, a);
+    expect(a[0].label).toBe('My Label');
+
+    const b = [];
+    insertLinesTab('', 'Entity', { children: [] }, undefined, b);
+    expect(b[0].label).toBe('Entity');
+
+    const c = [];
+    insertLinesTab(undefined, undefined, { children: [] }, undefined, c);
+    expect(c[0].label).toBe('Lines');
+  });
+
+  it('sets count to hook.children.length', () => {
+    const tabs = [];
+    insertLinesTab('L', 'E', { children: [{}, {}, {}] }, undefined, tabs);
+    expect(tabs[0].count).toBe(3);
+  });
+
+  it('sets count to 0 when children is empty or undefined', () => {
+    const tabs = [];
+    insertLinesTab('L', 'E', { children: [] }, undefined, tabs);
+    expect(tabs[0].count).toBe(0);
+
+    const tabs2 = [];
+    insertLinesTab('L', 'E', {}, undefined, tabs2);
+    expect(tabs2[0].count).toBe(0);
+  });
+
+  it('splices at a valid numeric detailTabIndex within [0, tabs.length]', () => {
+    const tabs = [{ key: 'a' }, { key: 'b' }];
+    insertLinesTab('L', 'E', { children: [] }, 1, tabs);
+    expect(tabs.map((t) => t.key)).toEqual(['a', 'lines', 'b']);
+
+    const atEnd = [{ key: 'a' }, { key: 'b' }];
+    insertLinesTab('L', 'E', { children: [] }, 2, atEnd);
+    expect(atEnd.map((t) => t.key)).toEqual(['a', 'b', 'lines']);
+  });
+
+  it('unshifts to the front for out-of-range or non-number index', () => {
+    const negative = [{ key: 'a' }];
+    insertLinesTab('L', 'E', { children: [] }, -1, negative);
+    expect(negative.map((t) => t.key)).toEqual(['lines', 'a']);
+
+    const tooBig = [{ key: 'a' }];
+    insertLinesTab('L', 'E', { children: [] }, 5, tooBig);
+    expect(tooBig.map((t) => t.key)).toEqual(['lines', 'a']);
+
+    const nonNumber = [{ key: 'a' }];
+    insertLinesTab('L', 'E', { children: [] }, undefined, nonNumber);
+    expect(nonNumber.map((t) => t.key)).toEqual(['lines', 'a']);
+  });
+
+  it('mutates the tabs array in place (same reference) and returns nothing', () => {
+    const tabs = [{ key: 'a' }];
+    const result = insertLinesTab('L', 'E', { children: [] }, 0, tabs);
+    expect(result).toBeUndefined();
+    expect(tabs.length).toBe(2);
+    expect(tabs[0].key).toBe('lines');
+  });
+});
+
+describe('renderExtraActionButtons', () => {
+  it('calls extraActions once with { data, children } when it is a function', () => {
+    const data = { id: 'rec-1' };
+    const hook = { children: [{ id: 'c1' }] };
+    const extraActions = vi.fn(() => [{ key: 'x', label: 'X' }]);
+    renderExtraActionButtons(extraActions, data, hook, 'save-cls');
+    expect(extraActions).toHaveBeenCalledTimes(1);
+    expect(extraActions).toHaveBeenCalledWith({ data, children: hook.children });
+  });
+
+  it('returns one entry per action', () => {
+    const actions = [{ key: 'a', label: 'A' }, { key: 'b', label: 'B' }];
+    const result = renderExtraActionButtons(actions, {}, { children: [] }, 'save-cls');
+    expect(result).toHaveLength(2);
+  });
+
+  it('maps an action with visible === false to a falsy entry (not a Button)', () => {
+    const actions = [
+      { key: 'a', label: 'A' },
+      { key: 'b', label: 'B', visible: false },
+    ];
+    const result = renderExtraActionButtons(actions, {}, { children: [] }, 'save-cls');
+    expect(result).toHaveLength(2);
+    expect(result[1]).toBe(false);
+    expect(result.filter(Boolean)).toHaveLength(1);
+  });
+
+  it('result length equals input length (array form)', () => {
+    const actions = [{ key: 'a' }, { key: 'b' }, { key: 'c' }];
+    const result = renderExtraActionButtons(actions, {}, { children: [] }, 'save-cls');
+    expect(result.length).toBe(actions.length);
+  });
+});
+
+describe('getDetailContentContainerClassName', () => {
+  it('always starts with "flex-1 min-w-0 "', () => {
+    const cls = getDetailContentContainerClassName(
+      'readOnly', false, false, false, false, false, 'general',
+    );
+    expect(cls.startsWith('flex-1 min-w-0 ')).toBe(true);
+  });
+
+  it('includes the inlineEditable layout classes when linesLayout is inlineEditable', () => {
+    const cls = getDetailContentContainerClassName(
+      'inlineEditable', false, false, false, false, false, 'general',
+    );
+    expect(cls).toContain('flex flex-col overflow-y-auto');
+    expect(cls).not.toContain('overflow-auto pb-6');
+  });
+
+  it('includes the default layout classes when linesLayout is not inlineEditable', () => {
+    const cls = getDetailContentContainerClassName(
+      'readOnly', false, false, false, false, false, 'general',
+    );
+    expect(cls).toContain('overflow-auto pb-6');
+    expect(cls).not.toContain('flex flex-col overflow-y-auto');
+  });
+
+  it('appends " hidden" only when primaryTabs is truthy and activePrimaryTab !== "general"', () => {
+    const hidden = getDetailContentContainerClassName(
+      'readOnly', false, false, false, false, true, 'lines',
+    );
+    expect(hidden.endsWith(' hidden')).toBe(true);
+  });
+
+  it('does not append " hidden" when activePrimaryTab === "general"', () => {
+    const cls = getDetailContentContainerClassName(
+      'readOnly', false, false, false, false, true, 'general',
+    );
+    expect(cls).not.toContain(' hidden');
+  });
+
+  it('does not append " hidden" when primaryTabs is falsy', () => {
+    const cls = getDetailContentContainerClassName(
+      'readOnly', false, false, false, false, false, 'lines',
+    );
+    expect(cls).not.toContain(' hidden');
   });
 });

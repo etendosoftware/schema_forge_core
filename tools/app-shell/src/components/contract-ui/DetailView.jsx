@@ -874,6 +874,189 @@ export function getLinesContainerClassName(linesLayout, embedded) {
   return `${linesLayout === 'inlineEditable' ? '' : 'pt-3 '}flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`;
 }
 
+export function buildInlineRowUpdateHandler(linesLayout, isDocumentReadOnly, api, detailEntity, apiBaseUrl, hook, handleLineFieldChange, prepareLineForPost, token, extractErrorMessage, ui) {
+  return linesLayout === 'inlineEditable' && !isDocumentReadOnly ? async (row, fieldKey, value, opts) => {
+    // Inline autosave with callout chain. NEO Headless expects API keys
+    // (camelCase), an unwrapped body, and numeric strings coerced for
+    // BigDecimal — mirrors the side-panel save at line ~1750. When a
+    // trigger field changes (e.g., product), `handleLineFieldChange`
+    // populates `derivedUpdates` with all callout-driven fields (price,
+    // tax, description, etc.) so they can be PATCHed in one shot.
+    const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
+        || `${apiBaseUrl}/${detailEntity}/${row.id}`;
+    const coerce = (v) => (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v) ? parseFloat(v) : v);
+    const payloadValue = coerce(value);
+
+    // Build the row snapshot the callout sees: existing row + the change.
+    // Strip null/empty inherited keys that the parent has set (e.g.
+    // businessPartner, priceList on OrderLine). buildCalloutFormState
+    // by contract does NOT overwrite a row value with the header's,
+    // so without this prune the callout would receive
+    // businessPartner=null and NEO returns listPrice=0. The addRow
+    // flow doesn't hit this because it starts from an empty values
+    // object, but existing rows include denormalized parent keys.
+    const headerSnapshot = hook.editing || hook.selected || {};
+    const cleanRow = {...row};
+    for (const k of Object.keys(headerSnapshot)) {
+      const v = cleanRow[k];
+      if (v === null || v === undefined || v === '') {
+        delete cleanRow[k];
+      }
+    }
+    const snapshot = {...cleanRow, [fieldKey]: payloadValue};
+    if (opts?.identifier !== undefined) {
+      snapshot[fieldKey + '$_identifier'] = opts.identifier;
+    }
+    // Mirror DataTable's selector-aux merge (lines 468–512). The
+    // selector item carries `_aux` (product_PSTD, _PLIM, _UOM, _CURR)
+    // and top-level fields (standardPrice, isTaxIncluded, currency)
+    // that the callout needs to compute the price. Without this, the
+    // callout has no access to the price-list metadata and returns 0.
+    const selectedItem = opts?.selectedItem;
+    if (selectedItem && typeof selectedItem === 'object') {
+      mergeSelectorAuxFields(selectedItem, snapshot, fieldKey);
+      mergeSelectorContextFields(selectedItem, snapshot, fieldKey);
+    }
+
+    // Run callout (no-op for fields without one). Captures derived fields
+    // through the applyUpdates callback so we can fold them into the PATCH.
+    let derivedUpdates = {};
+    try {
+      await handleLineFieldChange(fieldKey, payloadValue, snapshot, (updates) => {
+        derivedUpdates = {...updates};
+      });
+    } catch {
+      // Callout is best-effort; PATCH continues with the user-typed value only.
+    }
+
+    // PATCH body: send the full row + derived + change. NEO Headless
+    // doesn't reliably recompute derived fields (lineGrossAmount,
+    // standardPrice) when only a partial body arrives — observed
+    // when changing product to one with a different price. The
+    // side-panel save (line ~1750) sends the whole row for the same
+    // reason, so we mirror that here for parity.
+    const fieldValues = {};
+    // 1. Start from the cleaned row (skips already-null inherited keys).
+    collectRowFieldValues(cleanRow, fieldValues, coerce);
+    // 2. Overlay derived fields from the callout (incl. lineGrossAmount,
+    //    standardPrice, unitPrice, listPrice).
+    for (const [k, v] of Object.entries(derivedUpdates)) {
+      if (k.endsWith('$_identifier')) continue;
+      fieldValues[k] = coerce(v);
+    }
+    // 3. The user-changed field always wins (last-write).
+    fieldValues[fieldKey] = payloadValue;
+
+    // Derive unitPrice (PriceActual) = listPrice × (1 - discount/100).
+    // Without this the backend keeps the pre-discount PriceActual and
+    // confirmed totals don't match the discounted lineNetAmount we just
+    // computed — matches the side-panel save flow.
+    prepareLineForPost(fieldValues);
+
+    const res = await fetch(childUrl, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json', ...(token ? {Authorization: `Bearer ${token}`} : {})},
+      body: JSON.stringify(fieldValues),
+    });
+    if (res.ok) {
+      applyLocalChildRowUpdate(derivedUpdates, fieldKey, payloadValue, fieldValues, opts, hook, row);
+    } else {
+      const msg = await extractErrorMessage(res);
+      toast.error(msg || ui('networkError'));
+      throw new Error(msg || 'PATCH failed');
+    }
+  } : undefined;
+}
+
+export function buildDeleteRowHandler(api, detailEntity, isDocumentReadOnly, confirmDelete, apiBaseUrl, token, hook, selectedLine, setSelectedLine, ui, extractErrorMessage) {
+  return (api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly ? async (row) => {
+    if (!(await confirmDelete())) return;
+    try {
+      const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
+          || `${apiBaseUrl}/${detailEntity}/${row.id}`;
+      const res = await fetch(childUrl, {
+        method: 'DELETE',
+        headers: {...(token ? {Authorization: `Bearer ${token}`} : {})},
+      });
+      if (res.ok) {
+        hook.handleDeleteChild(row.id);
+        if (selectedLine?.id === row.id) setSelectedLine(null);
+        toast.success(ui('recordDeleted'));
+      } else {
+        toast.error(await extractErrorMessage(res));
+      }
+    } catch (err) {
+      toast.error(err.message || ui('networkError'));
+    }
+  } : undefined;
+}
+
+export function getDeleteChildButtonLabel(deletingChildren, ui) {
+  return deletingChildren ? ui('loading') : ui('delete');
+}
+
+export function buildLineRowClickHandler(DetailForm, linesLayout, setSelectedLine) {
+  return DetailForm && linesLayout !== 'inlineEditable' ? (row) => {
+    const line = {...row};
+    roundAmounts(line);
+    setSelectedLine(line);
+  } : undefined;
+}
+
+function getSqBtnSize(toolbarButtonSize) {
+  return toolbarButtonSize === 'default' ? 'h-10 w-10' : 'h-9 w-9';
+}
+
+function getSaveBtnCls(toolbarButtonSize) {
+  return toolbarButtonSize === 'default' ? 'h-10 gap-2' : 'gap-1.5';
+}
+
+function getDraftModeCompleted(draftMode, _headerData, isProcessed) {
+  return Boolean(
+      draftMode?.enabled && (
+          Array.isArray(draftMode.completedStatuses)
+              ? draftMode.completedStatuses.includes(_headerData?.documentStatus)
+              : (isProcessed || _headerData?.documentStatus === 'CO')
+      )
+  );
+}
+
+function getDocumentReadOnly(lockWhenProcessed, _headerData) {
+  return lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
+}
+
+export function insertLinesTab(detailLabel, detailEntity, hook, detailTabIndex, tabs) {
+  const linesTab = {key: 'lines', label: detailLabel || detailEntity || 'Lines', count: hook.children?.length || 0};
+  if (typeof detailTabIndex === 'number' && detailTabIndex >= 0 && detailTabIndex <= tabs.length) {
+    tabs.splice(detailTabIndex, 0, linesTab);
+  } else {
+    tabs.unshift(linesTab);
+  }
+}
+
+export function renderExtraActionButtons(extraActions, data, hook, saveBtnCls) {
+  return (typeof extraActions === 'function' ? extraActions({
+    data,
+    children: hook.children
+  }) : extraActions).map((action, i) => (
+      action.visible !== false && (
+          <Button
+              key={action.key || i}
+              variant="outline"
+              size="default"
+              className={`${action.className || ''} ${saveBtnCls}`.trim()}
+              onClick={action.onClick}
+          >
+            {action.label}
+          </Button>
+      )
+  ));
+}
+
+export function getDetailContentContainerClassName(linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab) {
+  return `flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`;
+}
+
 /**
  * Full-page detail view for a single entity record.
  * Two-zone layout: gray top bar + white content card with rounded corner.
@@ -1174,21 +1357,15 @@ export function DetailView({
     } : null
   ), [_headerData, windowName, _detailTabTitle, hook.editing, _isFormEditing]);
   useRegisterWindowContext(_windowContextInfo);
-  const isDocumentReadOnly = lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
+  const isDocumentReadOnly = getDocumentReadOnly(lockWhenProcessed, _headerData);
   const isProcessed = _headerData?.processed === true || _headerData?.processed === 'Y';
   // When draftMode declares an explicit completedStatuses array, only those documentStatus
   // values hide the Save/Confirm pair. This lets windows like sales-quotation keep the
   // pair visible during intermediate processed states (UE) while still hiding it in
   // terminal states (CA, ETGO_CI, CL, VO).
-  const isDraftModeCompleted = Boolean(
-    draftMode?.enabled && (
-      Array.isArray(draftMode.completedStatuses)
-        ? draftMode.completedStatuses.includes(_headerData?.documentStatus)
-        : (isProcessed || _headerData?.documentStatus === 'CO')
-    )
-  );
-  const sqBtnSize = toolbarButtonSize === 'default' ? 'h-10 w-10' : 'h-9 w-9';
-  const saveBtnCls = toolbarButtonSize === 'default' ? 'h-10 gap-2' : 'gap-1.5';
+  const isDraftModeCompleted = getDraftModeCompleted(draftMode, _headerData, isProcessed);
+  const sqBtnSize = getSqBtnSize(toolbarButtonSize);
+  const saveBtnCls = getSaveBtnCls(toolbarButtonSize);
   const [showPrint, setShowPrint] = useState(false);
   // showNotes state removed — notes panel is always visible in side-by-side layout
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -1954,12 +2131,7 @@ export function DetailView({
     tabs.push({ key: st.key, label: st.label, count: childCount });
   });
   if (DetailTable) {
-    const linesTab = { key: 'lines', label: detailLabel || detailEntity || 'Lines', count: hook.children?.length || 0 };
-    if (typeof detailTabIndex === 'number' && detailTabIndex >= 0 && detailTabIndex <= tabs.length) {
-      tabs.splice(detailTabIndex, 0, linesTab);
-    } else {
-      tabs.unshift(linesTab);
-    }
+    insertLinesTab(detailLabel, detailEntity, hook, detailTabIndex, tabs);
   } else if (CustomLines) {
     tabs.unshift({ key: 'customLines', label: customLinesLabel, count: customLinesCount ?? null });
   }
@@ -2233,19 +2405,7 @@ export function DetailView({
                 })()}
               </div>}
               {/* Extra action buttons from page */}
-              {(typeof extraActions === 'function' ? extraActions({ data, children: hook.children }) : extraActions).map((action, i) => (
-                action.visible !== false && (
-                  <Button
-                    key={action.key || i}
-                    variant="outline"
-                    size="default"
-                    className={`${action.className || ''} ${saveBtnCls}`.trim()}
-                    onClick={action.onClick}
-                  >
-                    {action.label}
-                  </Button>
-                )
-              ))}
+              {renderExtraActionButtons(extraActions, data, hook, saveBtnCls)}
               {/* Process buttons — only shown for existing records, evaluated locally or by server visibility */}
               {!isNew && processes
                 .filter(p => p.displayLogicRaw
@@ -2438,7 +2598,7 @@ export function DetailView({
                 </div>
               ) : null;
             })() : null}
-            <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+            <div className={getDetailContentContainerClassName(linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab)}>
               {typeof headerContent === 'function' ? headerContent(data) : headerContent}
               {(() => {
                 const slotProps = {
@@ -2670,7 +2830,7 @@ export function DetailView({
                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 transition-colors"
                                       >
                                         <Trash2 className="h-3.5 w-3.5" />
-                                        {deletingChildren ? ui('loading') : ui('delete')}
+                                        {getDeleteChildButtonLabel(deletingChildren, ui)}
                                       </button>
                                     </div>
                                   </div>
@@ -2683,123 +2843,14 @@ export function DetailView({
                                   apiBaseUrl={apiBaseUrl}
                                   linesLayout={linesLayout}
                                   isDocumentReadOnly={isDocumentReadOnly}
-                                  onRowClick={DetailForm && linesLayout !== 'inlineEditable' ? (row) => { const line = { ...row }; roundAmounts(line); setSelectedLine(line); } : undefined}
+                                  onRowClick={buildLineRowClickHandler(DetailForm, linesLayout, setSelectedLine)}
                                   selectedRowId={selectedLine?.id}
                                   onSelectionChange={setSelectedChildRows}
                                   showFooterTotals={showDetailFooterTotals ?? !summary.some(f => f.type === 'amount')}
                                   selectorContext={selectorContextByEntity[detailEntity]}
                                   hiddenColumns={[]}
-                                  onUpdateRow={linesLayout === 'inlineEditable' && !isDocumentReadOnly ? async (row, fieldKey, value, opts) => {
-                                    // Inline autosave with callout chain. NEO Headless expects API keys
-                                    // (camelCase), an unwrapped body, and numeric strings coerced for
-                                    // BigDecimal — mirrors the side-panel save at line ~1750. When a
-                                    // trigger field changes (e.g., product), `handleLineFieldChange`
-                                    // populates `derivedUpdates` with all callout-driven fields (price,
-                                    // tax, description, etc.) so they can be PATCHed in one shot.
-                                    const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
-                                      || `${apiBaseUrl}/${detailEntity}/${row.id}`;
-                                    const coerce = (v) => (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v) ? parseFloat(v) : v);
-                                    const payloadValue = coerce(value);
-
-                                    // Build the row snapshot the callout sees: existing row + the change.
-                                    // Strip null/empty inherited keys that the parent has set (e.g.
-                                    // businessPartner, priceList on OrderLine). buildCalloutFormState
-                                    // by contract does NOT overwrite a row value with the header's,
-                                    // so without this prune the callout would receive
-                                    // businessPartner=null and NEO returns listPrice=0. The addRow
-                                    // flow doesn't hit this because it starts from an empty values
-                                    // object, but existing rows include denormalized parent keys.
-                                    const headerSnapshot = hook.editing || hook.selected || {};
-                                    const cleanRow = { ...row };
-                                    for (const k of Object.keys(headerSnapshot)) {
-                                      const v = cleanRow[k];
-                                      if (v === null || v === undefined || v === '') {
-                                        delete cleanRow[k];
-                                      }
-                                    }
-                                    const snapshot = { ...cleanRow, [fieldKey]: payloadValue };
-                                    if (opts?.identifier !== undefined) {
-                                      snapshot[fieldKey + '$_identifier'] = opts.identifier;
-                                    }
-                                    // Mirror DataTable's selector-aux merge (lines 468–512). The
-                                    // selector item carries `_aux` (product_PSTD, _PLIM, _UOM, _CURR)
-                                    // and top-level fields (standardPrice, isTaxIncluded, currency)
-                                    // that the callout needs to compute the price. Without this, the
-                                    // callout has no access to the price-list metadata and returns 0.
-                                    const selectedItem = opts?.selectedItem;
-                                    if (selectedItem && typeof selectedItem === 'object') {
-                                      mergeSelectorAuxFields(selectedItem, snapshot, fieldKey);
-                                      mergeSelectorContextFields(selectedItem, snapshot, fieldKey);
-                                    }
-
-                                    // Run callout (no-op for fields without one). Captures derived fields
-                                    // through the applyUpdates callback so we can fold them into the PATCH.
-                                    let derivedUpdates = {};
-                                    try {
-                                      await handleLineFieldChange(fieldKey, payloadValue, snapshot, (updates) => {
-                                        derivedUpdates = { ...updates };
-                                      });
-                                    } catch {
-                                      // Callout is best-effort; PATCH continues with the user-typed value only.
-                                    }
-
-                                    // PATCH body: send the full row + derived + change. NEO Headless
-                                    // doesn't reliably recompute derived fields (lineGrossAmount,
-                                    // standardPrice) when only a partial body arrives — observed
-                                    // when changing product to one with a different price. The
-                                    // side-panel save (line ~1750) sends the whole row for the same
-                                    // reason, so we mirror that here for parity.
-                                    const fieldValues = {};
-                                    // 1. Start from the cleaned row (skips already-null inherited keys).
-                                    collectRowFieldValues(cleanRow, fieldValues, coerce);
-                                    // 2. Overlay derived fields from the callout (incl. lineGrossAmount,
-                                    //    standardPrice, unitPrice, listPrice).
-                                    for (const [k, v] of Object.entries(derivedUpdates)) {
-                                      if (k.endsWith('$_identifier')) continue;
-                                      fieldValues[k] = coerce(v);
-                                    }
-                                    // 3. The user-changed field always wins (last-write).
-                                    fieldValues[fieldKey] = payloadValue;
-
-                                    // Derive unitPrice (PriceActual) = listPrice × (1 - discount/100).
-                                    // Without this the backend keeps the pre-discount PriceActual and
-                                    // confirmed totals don't match the discounted lineNetAmount we just
-                                    // computed — matches the side-panel save flow.
-                                    prepareLineForPost(fieldValues);
-
-                                    const res = await fetch(childUrl, {
-                                      method: 'PATCH',
-                                      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                                      body: JSON.stringify(fieldValues),
-                                    });
-                                    if (res.ok) {
-                                      applyLocalChildRowUpdate(derivedUpdates, fieldKey, payloadValue, fieldValues, opts, hook, row);
-                                    } else {
-                                      const msg = await extractErrorMessage(res);
-                                      toast.error(msg || ui('networkError'));
-                                      throw new Error(msg || 'PATCH failed');
-                                    }
-                                  } : undefined}
-                                  onDeleteRow={(api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly ? async (row) => {
-                                    if (!(await confirmDelete())) return;
-                                    try {
-                                      const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
-                                        || `${apiBaseUrl}/${detailEntity}/${row.id}`;
-                                      const res = await fetch(childUrl, {
-                                        method: 'DELETE',
-                                        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                                      });
-                                      if (res.ok) {
-                                        hook.handleDeleteChild(row.id);
-                                        if (selectedLine?.id === row.id) setSelectedLine(null);
-                                        toast.success(ui('recordDeleted'));
-                                      } else {
-                                        toast.error(await extractErrorMessage(res));
-                                      }
-                                    } catch (err) {
-                                      toast.error(err.message || ui('networkError'));
-                                    }
-                                  } : undefined}
+                                  onUpdateRow={buildInlineRowUpdateHandler(linesLayout, isDocumentReadOnly, api, detailEntity, apiBaseUrl, hook, handleLineFieldChange, prepareLineForPost, token, extractErrorMessage, ui)}
+                                  onDeleteRow={buildDeleteRowHandler(api, detailEntity, isDocumentReadOnly, confirmDelete, apiBaseUrl, token, hook, selectedLine, setSelectedLine, ui, extractErrorMessage)}
                                   addRow={{
                                     ref: primaryAddRowRef,
                                     active: addingLine,
