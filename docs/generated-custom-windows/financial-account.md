@@ -17,8 +17,14 @@ TYPE          → 3 cards: Bank / Cash / Card
                                         → INSTITUTION (bank display field + institution list)
                                            → FORM-BANK (Name* / IBAN / BIC-SWIFT / Currency)
   Cash        → FORM-CASH (Name* / Currency)
-  Card        → CARD-SOON (placeholder — PSD2 required)
+  Card        → CONNECTION (toggle Connected[disabled, future PSD2] / Without connection)
+                  Without connection → BANK → INSTITUTION → FORM-CARD (Name* / Currency)
 ```
+
+The **Card** type comes from the **PSD2 module**, which adds the `AD_Ref_List` value `VALUE=CA` ("Card")
+to the core "Financial account type" reference (`A6BDFA712FF948CE903C4C463E832FC1`). Schema Forge reuses it
+(it does NOT define its own). `FinancialAccountHandler.normalizeType` keeps `C`/`CA` and coerces everything
+else to `B`; the frontend `ACCOUNT_TYPE.CARD` is `'CA'`.
 
 - State is kept in a single `{ step, accountType, connection, selectedBank, selectedInstitution, query }` object inside `NewAccountWizard.jsx`. No external store.
 - The back `←` button reverts one step. For the form step the target depends on `selectedBank`: if the user skipped bank selection (`null`), back goes to BANK; if they chose one, it goes to INSTITUTION.
@@ -231,13 +237,20 @@ index.jsx                          — receives { recordId }, sets page meta, mo
         MovementRowKebab.jsx       — on-hover kebab (Unreconcile/Post disabled)
     ReconciliacionTab.jsx          — placeholder (T6)
     ImportedStatementsTab.jsx      — orchestrates list ↔ lines state machine
-      StatementsToolbar.jsx        — back ←, search, import button
-      StatementsTable.jsx          — 7-column table (file, data, period, lines, progress, status, imported)
+      StatementsToolbar.jsx        — back ←, date range, status filter, "Filtro por condicionales" (AdvancedFilterBuilder, same as movements), search, import split-button (▾ → "Create manually")
+      StatementsTable.jsx          — columns: docNo, name (falls back to line date range), file name, notes, import/transaction dates, lines, total, status pill (DRAFT/PENDING/PARTIAL/RECONCILED), per-row kebab (when `actions` is passed); expand chevron is a round bordered button rotating 180° (same as movements)
+      statementAdvancedFilter.js   — column metadata + applyAdvancedFilter for the statements list (delegates to the shared advancedFilterApply evaluator)
+      advancedFilterApply.js       — generic client-side evaluator for the AdvancedFilterBuilder condition tree (OPERATORS + applyConditions), shared by movements and statements
         StatementStatusBadge.jsx   — 3 status chips (COMPLETED / WITH_ISSUES / IN_PROGRESS)
+        StatementRowKebab.jsx      — per-row "…" menu: Edit / Process / Delete, enabled ONLY for drafts (processed='N'); disabled with tooltip on processed statements
         ProgressRing              — SVG circular progress indicator (new primitive)
+      StatementLinesInline.jsx     — lines table shown in the expanded accordion row: date, description, contact name (free text), contact (BP FK name), G/L item (concepto contable), out, in, match status
       StatementLinesView.jsx       — sub-view: header with ← + lines table
         StatementLinesTable.jsx    — 7-column lines table (lineNo, date, desc, ref, bpartner, amount, matched)
       ImportStatementModal.jsx     — multi-step import modal (Upload → Review → Done): dropzone, preview KPIs + lines, base64 POST. White surface (var(--surface-overlay)), borderless footer, round red-hover remove button.
+      ManualStatementModal.jsx     — "Create/Edit statement" modal (Classic field parity): header (name, transaction/import dates, file name, notes) + per-line cards (date, reference, contact name + Business Partner lookup, G/L item lookup, out, in) + add/remove + live totals bar. Create POSTs ?action=create; when given a `statement` prop it hydrates from the draft (header + lines) and POSTs ?action=update. No file involved.
+      StatementConfirmDialog.jsx   — shared confirm dialog for the Process / Delete row actions (destructive tone for delete)
+      LookupPicker.jsx             — shared text-input + dropdown lookup (BP / G/L item), used by NewMovementDialog and ManualStatementModal.
 ```
 
 ## Shared primitives introduced or used
@@ -260,6 +273,8 @@ index.jsx                          — receives { recordId }, sets page meta, mo
 | `useBankStatements(accountId)` | `hooks/useBankStatements.js` | Fetches imported bank statements — hits `GET /sws/neo/bank-statements?FIN_Financial_Account_ID={id}`. Returns `{ statements, loading, error, reload }`. |
 | `useBankStatementLines(statementId)` | `hooks/useBankStatementLines.js` | Fetches lines of one statement — hits `GET /sws/neo/bank-statements?action=lines&statementId={id}`. Returns `{ lines, loading, error, reload }`. |
 | `useStatementImport()` | `hooks/useStatementImport.js` | Mutation hook for C43 import — posts `{ FIN_Financial_Account_ID, fileName, contentBase64 }` to `POST /sws/neo/bank-statements?action=import`. Returns `{ importStatement, importing, error }`. |
+| `useCreateStatement()` | `hooks/useCreateStatement.js` | Mutation hook for manual statement creation — posts `{ FIN_Financial_Account_ID, name, transactionDate, importDate, fileName, notes, lines[] }` to `POST /sws/neo/bank-statements?action=create`. Returns `{ createStatement, creating, error }`. |
+| `useStatementActions()` | `hooks/useStatementActions.js` | Mutation hook for the draft row actions — `processStatement(id)` (`?action=process`), `updateStatement({ id, ...header, lines })` (`?action=update`), `deleteStatement(id)` (`?action=delete`). All only valid for drafts (backend returns 400 otherwise). Returns `{ processStatement, updateStatement, deleteStatement, busy, error }`. |
 
 ## Backend endpoints
 
@@ -308,14 +323,29 @@ The spec + entity records that wire this endpoint live in `src-db/database/sourc
 
 ### Imported statements
 
-Three operations routed by HTTP method + `action` query param, all served by `BankStatementsHandler` (`@Named("bank-statements")`):
+Operations routed by HTTP method + `action` query param, all served by `BankStatementsHandler` (`@Named("bank-statements")`):
 
 ```
 GET  /sws/neo/bank-statements?FIN_Financial_Account_ID={id}          → list
 GET  /sws/neo/bank-statements?action=lines&statementId={id}          → lines
-POST /sws/neo/bank-statements?action=import                          → C43 import
+POST /sws/neo/bank-statements?action=preview                         → in-memory parse (no persist)
+POST /sws/neo/bank-statements?action=import                          → C43 / CSV import
      body: { FIN_Financial_Account_ID, fileName, contentBase64 }
+POST /sws/neo/bank-statements?action=create                          → manual create (header + lines, no file)
+     body: { FIN_Financial_Account_ID, name, transactionDate, importDate,
+             fileName, notes, process,
+             lines: [{ date, reference, bpartnerName, bpartnerId,
+                       glItemId, in, out }] }
+POST /sws/neo/bank-statements?action=process   body: { id }            → process a draft
+POST /sws/neo/bank-statements?action=update    body: { id, ...create }  → edit a draft (replaces all lines)
+POST /sws/neo/bank-statements?action=delete    body: { id }            → delete a draft (+ its lines)
 ```
+
+The manual-create handler builds the `FIN_BankStatement` (name, dates, `fileName`, `notes`), one `FIN_BankStatementLine` per non-blank line (`in`→`cramount`, `out`→`dramount`, `bpartnerName`→`bpartnername`, `bpartnerId`→`businessPartner` FK, `glItemId`→`gLItem` FK, blank `reference` defaults to `**`). The `process` flag (default `true`) drives the save modal's split button: **Save and process** (`true`) runs the same `processStatement` as import so the lines become reconcilable; **Save as draft** (`false`) just persists the statement with `processed='N'`. Mirrors Classic's manual bank-statement header + line fields.
+
+**Draft row actions** (`process` / `update` / `delete`) are guarded by `requireDraft(id)`, which 400s when the id is missing, the statement does not exist, or it has already been processed (`isProcessed()`). So only drafts can be processed, edited or deleted; processed statements are immutable. `update` re-applies the editable header and **replaces all lines** (deletes the existing ones, then recreates from the body), optionally processing afterwards when `process=true`. `delete` removes the lines then the statement.
+
+**Status derivation** — the list endpoint derives each row's `status` via `BankStatementsSupport.deriveStatementStatus(processed, lineCount, matchedCount)`: not processed → `DRAFT`; otherwise `PENDING` (no matched lines) / `PARTIAL` / `RECONCILED` (all matched). The list also returns `notes`, and `?action=lines` returns each line's `bpartnerId`/`glItemId` (+ joined `bpartnerFkName`/`glItemName`) and separate `in`/`out` so the edit modal can hydrate the FK pickers.
 
 The import handler:
 - Decodes base64 → `ByteArrayInputStream`

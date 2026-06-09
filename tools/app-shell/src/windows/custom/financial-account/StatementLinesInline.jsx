@@ -7,18 +7,20 @@ import { useBankStatementLines } from '@/hooks/useBankStatementLines';
 
 // Grid for the `mini` variant of the lines table.
 //   100        · date (fixed)
-//   minmax(220, 1fr) · description (capped at 1fr so it doesn't dominate)
-//   minmax(140, 1fr) · contact      (capped at 1fr — same fraction)
-//   120        · withdrawal (out)
-//   120        · deposit (in)
-//   110        · status pill
+//   minmax(160, 1fr) · description
+//   minmax(120, 1fr) · contact name (free text)
+//   minmax(120, 1fr) · contact (business partner FK)
+//   minmax(120, 1fr) · G/L item (concepto contable)
+//   110        · withdrawal (out)
+//   110        · deposit (in)
+//   100        · status pill
 //   minmax(0, 1fr)  · trailing flexible spacer — absorbs leftover width on
 //                    wide viewports so the data columns stay close to each other.
 const MINI_GRID =
-  'grid grid-cols-[100px_minmax(220px,1fr)_minmax(140px,1fr)_120px_120px_110px_minmax(0,1fr)] gap-3';
+  'grid grid-cols-[100px_minmax(160px,1fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(120px,1fr)_110px_110px_100px_minmax(0,1fr)] gap-3';
 
-// Stable keys for the 6 skeleton cells of each loading row (matches MINI_GRID).
-const SKELETON_CELL_KEYS = ['date', 'desc', 'bp', 'out', 'in', 'matched'];
+// Stable keys for the skeleton cells of each loading row (matches MINI_GRID).
+const SKELETON_CELL_KEYS = ['date', 'desc', 'bpname', 'contact', 'glitem', 'out', 'in', 'matched'];
 
 // kind → (StatusTag tone, i18n key). Reusing the shared StatusTag keeps the
 // look consistent with the statement-level status pills above and the rest of
@@ -100,6 +102,8 @@ export function StatementLinesInline({ statementId, currency = 'EUR' }) {
         <span>{ui('financeAccountStatementLinesColDate')}</span>
         <span>{ui('financeAccountStatementLinesColDescription')}</span>
         <span>{ui('financeAccountStatementLinesColBpartner')}</span>
+        <span>{ui('financeAccountStatementLinesColContact')}</span>
+        <span>{ui('financeAccountStatementLinesColGlItem')}</span>
         <span>{ui('financeAccountStatementLinesColDramount')}</span>
         <span>{ui('financeAccountStatementLinesColCramount')}</span>
         <span>{ui('financeAccountStatementLinesColMatched')}</span>
@@ -158,7 +162,15 @@ function LineRow({ line, ui, currency, bcpLocale }) {
     >
       <span className="whitespace-nowrap text-[#121217]">{formatDate(line.date, bcpLocale)}</span>
       <span className="truncate font-medium text-[#121217]">{line.description || '—'}</span>
-      <span className="truncate text-[#3F3F50]">{line.bpartnerName || ''}</span>
+      <span className={cn('truncate', line.bpartnerName ? 'text-[#3F3F50]' : 'text-[#C1C3CC]')} title={line.bpartnerName || ''}>
+        {line.bpartnerName || '—'}
+      </span>
+      <span className={cn('truncate', line.bpartnerFkName ? 'text-[#3F3F50]' : 'text-[#C1C3CC]')} title={line.bpartnerFkName || ''}>
+        {line.bpartnerFkName || '—'}
+      </span>
+      <span className={cn('truncate', line.glItemName ? 'text-[#3F3F50]' : 'text-[#C1C3CC]')} title={line.glItemName || ''}>
+        {line.glItemName || '—'}
+      </span>
       <span className="text-right tabular-nums">
         <AmountCell value={out} sign="−" toneClass="font-semibold text-red-700" currency={currency} bcpLocale={bcpLocale} />
       </span>
