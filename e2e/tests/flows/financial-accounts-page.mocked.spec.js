@@ -29,7 +29,7 @@ const ACCOUNTS = [
   {
     id: 'acc-2',
     name: 'Galicia',
-    type: 'T',
+    type: 'CA',
     currentBalance: -95.59,
     currencyId: '102',
     currencyIso: 'EUR',
@@ -125,7 +125,7 @@ test.describe('Financial Accounts page — Cuentas (T1)', () => {
 
   test('account-type filter narrows the table to Tarjeta', async ({ page }) => {
     await page.getByTestId('account-type-filter-trigger').click();
-    await page.getByTestId('account-type-filter-option-t').click();
+    await page.getByTestId('account-type-filter-option-ca').click();
 
     // Only the Tarjeta row (acc-2) remains
     await expect(page.getByTestId('account-row-acc-2')).toBeVisible();

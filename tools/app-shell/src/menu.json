@@ -352,22 +352,10 @@
           "windowId": "141"
         },
         {
-          "name": "payment-method",
-          "label": "Payment Method",
-          "favname": "Payment Method",
-          "windowId": "3CAAC7D54593489384452416ACF356DD"
-        },
-        {
           "name": "tax",
           "label": "Tax",
           "favname": "Tax",
           "windowId": "137"
-        },
-        {
-          "name": "unit-of-measure",
-          "label": "Unit of Measure",
-          "favname": "Unit of Measure",
-          "windowId": "120"
         },
         {
           "name": "user",
