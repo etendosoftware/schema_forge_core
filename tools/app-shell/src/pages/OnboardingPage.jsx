@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import {
   ONBOARDING_ERROR_CODES,
-  changePassword,
   confirmPasswordReset,
   fetchAccount,
   fetchEnvironments,
@@ -440,15 +439,6 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   const [resetSuccess, setResetSuccess] = useState(false);
   const [resetError, setResetError] = useState(null);
   const [showResetPassword, setShowResetPassword] = useState(false);
-  const [showChangePassword, setShowChangePassword] = useState(false);
-  const [changePasswordForm, setChangePasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
-  const [changePasswordError, setChangePasswordError] = useState(null);
-  const [changePasswordMessage, setChangePasswordMessage] = useState(null);
 
   // Environments state
   const [environments, setEnvironments] = useState([]);
@@ -566,10 +556,6 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     setResetSuccess(false);
     setResetError(null);
     setShowResetPassword(false);
-    setShowChangePassword(false);
-    setChangePasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setChangePasswordError(null);
-    setChangePasswordMessage(null);
     setForm(DEFAULT_ONBOARDING_FORM);
     setCreateStep(1);
     setRegisterError(null);
@@ -686,29 +672,6 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       setResetError(err.userMessage || ui(err.code || 'onboardingCredentialResetFailed'));
     } finally {
       setResetLoading(false);
-    }
-  };
-
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    setChangePasswordError(null);
-    setChangePasswordMessage(null);
-    if (changePasswordForm.newPassword !== changePasswordForm.confirmPassword) {
-      setChangePasswordError(ui('onboardingCredentialsMustMatch'));
-      return;
-    }
-    setChangePasswordLoading(true);
-    try {
-      const data = await changePassword(fetch, BASE_URL, getPlatformToken(), changePasswordForm);
-      if (data.token) {
-        handleAuthSuccess(data.token, data.account, { route: false });
-      }
-      setChangePasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setChangePasswordMessage(ui('onboardingCredentialChangeSuccess'));
-    } catch (err) {
-      setChangePasswordError(err.userMessage || ui(err.code || 'onboardingCredentialChangeFailed'));
-    } finally {
-      setChangePasswordLoading(false);
     }
   };
 
@@ -881,22 +844,6 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   const setupHeaderContent = (
     <div className="flex flex-wrap items-end justify-end gap-3">
       {localeControl}
-      {accountName && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setShowChangePassword(value => !value);
-            setChangePasswordError(null);
-            setChangePasswordMessage(null);
-          }}
-          className="h-10 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-        >
-          <Lock className="mr-2 h-4 w-4" />
-          {ui('onboardingChangePasswordAction')}
-        </Button>
-      )}
     </div>
   );
   const isStepOneValid = isProfileStepValid(form);
@@ -1456,77 +1403,6 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       headerContent={setupHeaderContent}
       brandLabel={ui('onboardingBrandName')}
     >
-      {showChangePassword && (
-        <form
-          onSubmit={handleChangePassword}
-          className="mb-8 space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-        >
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">{ui('onboardingChangePasswordTitle')}</h2>
-            <p className="mt-1 text-sm text-slate-500">{ui('onboardingChangePasswordSubtitle')}</p>
-          </div>
-          <SetupField
-            id="change-current-password"
-            type="password"
-            label={ui('onboardingCurrentPasswordLabel')}
-            required
-            value={changePasswordForm.currentPassword}
-            onChange={e => setChangePasswordForm(f => ({ ...f, currentPassword: e.target.value }))}
-            disabled={changePasswordLoading}
-            autoComplete="current-password"
-          />
-          <SetupField
-            id="change-new-password"
-            type="password"
-            label={ui('onboardingNewPasswordLabel')}
-            required
-            value={changePasswordForm.newPassword}
-            onChange={e => setChangePasswordForm(f => ({ ...f, newPassword: e.target.value }))}
-            disabled={changePasswordLoading}
-            autoComplete="new-password"
-          />
-          <SetupField
-            id="change-confirm-password"
-            type="password"
-            label={ui('onboardingConfirmPasswordLabel')}
-            required
-            value={changePasswordForm.confirmPassword}
-            onChange={e => setChangePasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
-            disabled={changePasswordLoading}
-            autoComplete="new-password"
-          />
-          {changePasswordError && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
-              {changePasswordError}
-            </div>
-          )}
-          {changePasswordMessage && (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-              {changePasswordMessage}
-            </div>
-          )}
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setShowChangePassword(false)}
-              disabled={changePasswordLoading}
-              className="h-10 rounded-xl"
-            >
-              {ui('cancel')}
-            </Button>
-            <Button
-              type="submit"
-              disabled={changePasswordLoading}
-              className="h-10 rounded-xl bg-gray-900 text-white hover:bg-gray-800"
-            >
-              {changePasswordLoading
-                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{ui('onboardingSavingPassword')}</>
-                : ui('onboardingSavePasswordAction')}
-            </Button>
-          </div>
-        </form>
-      )}
       {createStep === 1 ? (
         <div>
           <div className="mb-10">

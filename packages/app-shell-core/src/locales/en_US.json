@@ -18100,6 +18100,7 @@
     "onboardingChangePasswordAction": "Change password",
     "onboardingChangePasswordTitle": "Change password",
     "onboardingChangePasswordSubtitle": "Update your local account password.",
+    "changePasswordLogoutNotice": "After changing your password you'll be signed out and need to log in again.",
     "onboardingCurrentPasswordLabel": "Current password",
     "onboardingCredentialChangeSuccess": "Password updated.",
     "onboardingCredentialChangeFailed": "Could not change the password.",

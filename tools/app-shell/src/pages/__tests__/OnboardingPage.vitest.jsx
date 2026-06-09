@@ -101,7 +101,6 @@ vi.mock('@/components/ui/label', () => ({
 
 import OnboardingPage from '../OnboardingPage.jsx';
 import {
-  changePassword,
   confirmPasswordReset,
   fetchAccount,
   fetchEnvironments,
@@ -125,7 +124,6 @@ describe('OnboardingPage', () => {
     fetchEnvironments.mockResolvedValue([]);
     requestPasswordReset.mockReset();
     confirmPasswordReset.mockReset();
-    changePassword.mockReset();
     loginAccount.mockReset();
     loginEnvironment.mockReset();
     registerAccount.mockReset();
@@ -562,60 +560,6 @@ describe('OnboardingPage', () => {
     fireEvent.submit(screen.getByTestId('action-reset-password-submit').closest('form'));
 
     expect(await screen.findByText('Invalid or expired reset link')).toBeInTheDocument();
-  });
-
-  it('changes the account password and stores the rotated platform token', async () => {
-    localStorage.setItem('sf_platform_token', 'platform-token');
-    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
-    fetchEnvironments.mockResolvedValue([]);
-    changePassword.mockResolvedValue({ token: 'rotated-platform-token' });
-
-    render(<OnboardingPage />);
-
-    fireEvent.click(await screen.findByText('onboardingChangePasswordAction'));
-    fireEvent.change(screen.getByLabelText(/onboardingCurrentPasswordLabel/), {
-      target: { value: 'old-secret' },
-    });
-    fireEvent.change(screen.getByLabelText(/onboardingNewPasswordLabel/), {
-      target: { value: 'new-secret' },
-    });
-    fireEvent.change(screen.getByLabelText(/onboardingConfirmPasswordLabel/), {
-      target: { value: 'new-secret' },
-    });
-    fireEvent.submit(screen.getByText('onboardingSavePasswordAction').closest('form'));
-
-    await waitFor(() => {
-      expect(changePassword).toHaveBeenCalledWith(expect.any(Function), '', 'platform-token', {
-        currentPassword: 'old-secret',
-        newPassword: 'new-secret',
-        confirmPassword: 'new-secret',
-      });
-    });
-    expect(localStorage.setItem).toHaveBeenCalledWith('sf_platform_token', 'rotated-platform-token');
-    expect(screen.getByText('onboardingCredentialChangeSuccess')).toBeInTheDocument();
-  });
-
-  it('renders current-password failures from change password', async () => {
-    localStorage.setItem('sf_platform_token', 'platform-token');
-    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
-    fetchEnvironments.mockResolvedValue([]);
-    changePassword.mockRejectedValue({ userMessage: 'Wrong current password' });
-
-    render(<OnboardingPage />);
-
-    fireEvent.click(await screen.findByText('onboardingChangePasswordAction'));
-    fireEvent.change(screen.getByLabelText(/onboardingCurrentPasswordLabel/), {
-      target: { value: 'bad-secret' },
-    });
-    fireEvent.change(screen.getByLabelText(/onboardingNewPasswordLabel/), {
-      target: { value: 'new-secret' },
-    });
-    fireEvent.change(screen.getByLabelText(/onboardingConfirmPasswordLabel/), {
-      target: { value: 'new-secret' },
-    });
-    fireEvent.submit(screen.getByText('onboardingSavePasswordAction').closest('form'));
-
-    expect(await screen.findByText('Wrong current password')).toBeInTheDocument();
   });
 
   it('tracks setup back navigation from company step', async () => {

@@ -1,4 +1,5 @@
-import { ChevronRight, LogOut, User, Languages } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronRight, LogOut, User, Languages, KeyRound } from 'lucide-react';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
 import { useLocaleSwitch } from '@/i18n/index.js';
@@ -9,6 +10,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu.jsx';
+import { ChangePasswordDialog } from './ChangePasswordDialog.jsx';
+
+const PLATFORM_TOKEN_KEY = 'sf_platform_token';
 
 const LOCALES = [
   { code: 'en_US', flag: '🇺🇸', label: 'English' },
@@ -24,6 +28,12 @@ export function UserAvatarButton({ expanded = false }) {
   const { username, selectedRole, selectedOrg, logout } = useAuth();
   const ui = useUI();
   const { locale, setLocale } = useLocaleSwitch();
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+
+  // Change Password targets the platform account, so it's only offered when a
+  // platform token is present (it provides the credential the endpoint rotates).
+  const canChangePassword =
+    typeof window !== 'undefined' && !!window.localStorage?.getItem(PLATFORM_TOKEN_KEY);
 
   const initial = username?.charAt(0).toUpperCase() || '?';
   const roleInitial = selectedRole?.name?.charAt(0).toUpperCase() || '';
@@ -59,6 +69,7 @@ export function UserAvatarButton({ expanded = false }) {
   );
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {expanded ? (
@@ -115,6 +126,15 @@ export function UserAvatarButton({ expanded = false }) {
         )}
 
         <div className="px-2 py-2">
+          {canChangePassword && (
+            <DropdownMenuItem
+              onSelect={() => setChangePasswordOpen(true)}
+              data-testid="menu-change-password"
+            >
+              <KeyRound className="h-3.5 w-3.5 mr-2" />
+              {ui('onboardingChangePasswordAction')}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             onClick={logout}
             className="text-red-500 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
@@ -125,5 +145,12 @@ export function UserAvatarButton({ expanded = false }) {
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <ChangePasswordDialog
+      open={changePasswordOpen}
+      onOpenChange={setChangePasswordOpen}
+      onSuccess={logout}
+    />
+    </>
   );
 }
