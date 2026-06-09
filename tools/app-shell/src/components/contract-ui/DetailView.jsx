@@ -1054,7 +1054,16 @@ export function renderExtraActionButtons(extraActions, data, hook, saveBtnCls) {
   ));
 }
 
-export function getDetailContentContainerClassName(linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab, formScrollPaddingX = null) {
+export function getDetailContentContainerClassName({
+  linesLayout,
+  sidePanel,
+  sidebarContent,
+  sidebarAboveTabsOnly,
+  compactSidebarPadding,
+  primaryTabs,
+  activePrimaryTab,
+  formScrollPaddingX = null,
+} = {}) {
   return `flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding, formScrollPaddingX)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`;
 }
 
@@ -2727,7 +2736,7 @@ export function DetailView({
                 </div>
               ) : null;
             })() : null}
-            <div className={getDetailContentContainerClassName(linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab, formScrollPaddingX)}>
+            <div className={getDetailContentContainerClassName({ linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab, formScrollPaddingX })}>
               {resolveHeaderContent(headerContent, data)}
               {(() => {
                 const slotProps = {

@@ -465,60 +465,60 @@ describe('renderExtraActionButtons', () => {
 
 describe('getDetailContentContainerClassName', () => {
   it('always starts with "flex-1 min-w-0 "', () => {
-    const cls = getDetailContentContainerClassName(
-      'readOnly', false, false, false, false, false, 'general',
-    );
+    const cls = getDetailContentContainerClassName({
+      linesLayout: 'readOnly', activePrimaryTab: 'general',
+    });
     expect(cls.startsWith('flex-1 min-w-0 ')).toBe(true);
   });
 
   it('includes the inlineEditable layout classes when linesLayout is inlineEditable', () => {
-    const cls = getDetailContentContainerClassName(
-      'inlineEditable', false, false, false, false, false, 'general',
-    );
+    const cls = getDetailContentContainerClassName({
+      linesLayout: 'inlineEditable', activePrimaryTab: 'general',
+    });
     expect(cls).toContain('flex flex-col overflow-y-auto');
     expect(cls).not.toContain('overflow-auto pb-6');
   });
 
   it('includes the default layout classes when linesLayout is not inlineEditable', () => {
-    const cls = getDetailContentContainerClassName(
-      'readOnly', false, false, false, false, false, 'general',
-    );
+    const cls = getDetailContentContainerClassName({
+      linesLayout: 'readOnly', activePrimaryTab: 'general',
+    });
     expect(cls).toContain('overflow-auto pb-6');
     expect(cls).not.toContain('flex flex-col overflow-y-auto');
   });
 
   it('appends " hidden" only when primaryTabs is truthy and activePrimaryTab !== "general"', () => {
-    const hidden = getDetailContentContainerClassName(
-      'readOnly', false, false, false, false, true, 'lines',
-    );
+    const hidden = getDetailContentContainerClassName({
+      linesLayout: 'readOnly', primaryTabs: true, activePrimaryTab: 'lines',
+    });
     expect(hidden.endsWith(' hidden')).toBe(true);
   });
 
   it('does not append " hidden" when activePrimaryTab === "general"', () => {
-    const cls = getDetailContentContainerClassName(
-      'readOnly', false, false, false, false, true, 'general',
-    );
+    const cls = getDetailContentContainerClassName({
+      linesLayout: 'readOnly', primaryTabs: true, activePrimaryTab: 'general',
+    });
     expect(cls).not.toContain(' hidden');
   });
 
   it('does not append " hidden" when primaryTabs is falsy', () => {
-    const cls = getDetailContentContainerClassName(
-      'readOnly', false, false, false, false, false, 'lines',
-    );
+    const cls = getDetailContentContainerClassName({
+      linesLayout: 'readOnly', primaryTabs: false, activePrimaryTab: 'lines',
+    });
     expect(cls).not.toContain(' hidden');
   });
 
   it('uses the default px-6 padding when no formScrollPaddingX override is given', () => {
-    const cls = getDetailContentContainerClassName(
-      'readOnly', false, false, false, false, false, 'general',
-    );
+    const cls = getDetailContentContainerClassName({
+      linesLayout: 'readOnly', activePrimaryTab: 'general',
+    });
     expect(cls).toContain('px-6');
   });
 
   it('forwards formScrollPaddingX as the horizontal padding override', () => {
-    const cls = getDetailContentContainerClassName(
-      'readOnly', false, false, false, false, false, 'general', 'px-10',
-    );
+    const cls = getDetailContentContainerClassName({
+      linesLayout: 'readOnly', activePrimaryTab: 'general', formScrollPaddingX: 'px-10',
+    });
     expect(cls).toContain('px-10');
     expect(cls).not.toContain('px-6');
   });
