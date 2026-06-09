@@ -16,6 +16,7 @@ import {
   wrapIf,
   jsonWrapIf,
   pick,
+  buildHeaderLogicMaps,
 } from '../src/generate-frontend.js';
 
 // ---------------------------------------------------------------------------
@@ -1870,5 +1871,94 @@ describe('pick', () => {
     assert.equal(pick(false, '#10b981', '#f59e0b'), '#f59e0b');
     assert.equal(pick(null, 'draftModeWithConfirm', 'draftMode'), 'draftMode');
     assert.equal(pick(undefined, '({ data, status })', '({ status })'), '({ status })');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildHeaderLogicMaps
+// ---------------------------------------------------------------------------
+
+describe('buildHeaderLogicMaps', () => {
+  it('maps column to name for fields that have both column and name', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          header: {
+            fields: [
+              { name: 'documentNo', column: 'DocumentNo', type: 'string' },
+              { name: 'grandTotal', column: 'GrandTotal', type: 'amount' },
+            ],
+          },
+        },
+      },
+    };
+    const { headerColumnMap } = buildHeaderLogicMaps(contract, 'header');
+    assert.deepEqual(headerColumnMap, { DocumentNo: 'documentNo', GrandTotal: 'grandTotal' });
+  });
+
+  it('skips fields missing column or missing name', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          header: {
+            fields: [
+              { name: 'documentNo', column: 'DocumentNo', type: 'string' },
+              { name: 'noColumn', type: 'string' },
+              { column: 'NoName', type: 'string' },
+            ],
+          },
+        },
+      },
+    };
+    const { headerColumnMap } = buildHeaderLogicMaps(contract, 'header');
+    assert.deepEqual(headerColumnMap, { DocumentNo: 'documentNo' });
+    assert.ok(!('NoName' in headerColumnMap), 'field without name should be skipped');
+  });
+
+  it('collects boolean fields when tsType is boolean or type is boolean', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          header: {
+            fields: [
+              { name: 'isActive', column: 'IsActive', tsType: 'boolean' },
+              { name: 'processed', column: 'Processed', type: 'boolean' },
+            ],
+          },
+        },
+      },
+    };
+    const { headerBooleanFields } = buildHeaderLogicMaps(contract, 'header');
+    assert.ok(headerBooleanFields.includes('isActive'), 'tsType boolean should be collected');
+    assert.ok(headerBooleanFields.includes('processed'), 'type boolean should be collected');
+  });
+
+  it('does not collect non-boolean fields into headerBooleanFields', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          header: {
+            fields: [
+              { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string' },
+              { name: 'grandTotal', column: 'GrandTotal', type: 'amount', tsType: 'number' },
+            ],
+          },
+        },
+      },
+    };
+    const { headerBooleanFields } = buildHeaderLogicMaps(contract, 'header');
+    assert.deepEqual(headerBooleanFields, []);
+  });
+
+  it('returns empty maps without throwing when the entity is absent', () => {
+    const contract = { frontendContract: { entities: {} } };
+    const result = buildHeaderLogicMaps(contract, 'header');
+    assert.deepEqual(result, { headerColumnMap: {}, headerBooleanFields: [] });
+  });
+
+  it('returns empty maps when the entity exists but has no fields array', () => {
+    const contract = { frontendContract: { entities: { header: {} } } };
+    const result = buildHeaderLogicMaps(contract, 'header');
+    assert.deepEqual(result, { headerColumnMap: {}, headerBooleanFields: [] });
   });
 });
