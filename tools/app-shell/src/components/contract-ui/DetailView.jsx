@@ -1782,7 +1782,7 @@ export function DetailView({
   // 3. Otherwise (no metadata at all), allow.
   let canAddLines;
   if (addLineGuard) {
-    canAddLines = addLineGuard(data);
+    canAddLines = addLineGuard(data, hook.children ?? []);
   } else if (Array.isArray(requiredHeaderFields) && requiredHeaderFields.length > 0) {
     canAddLines = requiredHeaderFields.every((k) => {
       const v = data?.[k];

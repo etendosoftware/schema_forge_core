@@ -1,8 +1,8 @@
 {
   "version": "0.13.1",
   "generatedAt": "2026-04-29T18:11:26.703Z",
-  "updatedAt": "2026-06-09T14:33:32.298Z",
-  "checksum": "dd0560f3dc7a3ebb",
+  "updatedAt": "2026-06-09T15:22:56.654Z",
+  "checksum": "06c1fdafac2d7a61",
   "frontendContract": {
     "window": {
       "id": "144",
@@ -23,7 +23,8 @@
       "tablePaddingX": "px-2",
       "layoutType": "default",
       "linesLayout": "inlineEditable",
-      "autoSaveOnBlur": true
+      "autoSaveOnBlur": true,
+      "maxDetailLines": 1
     },
     "entities": {
       "productCategory": {
@@ -205,6 +206,7 @@
         ],
         "searchableFields": [],
         "computedFields": [],
+        "javaQualifier": "productCategoryAccountingHandler",
         "addLineHiddenFromSibling": [
           "accountingSchema"
         ]
@@ -230,7 +232,8 @@
       "listbarPaddingX": "px-2",
       "tablePaddingX": "px-2",
       "linesLayout": "inlineEditable",
-      "autoSaveOnBlur": true
+      "autoSaveOnBlur": true,
+      "maxDetailLines": 1
     },
     "entities": {
       "productCategory": {
@@ -557,7 +560,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "productCategoryAccountingHandler"
       }
     },
     "endpoints": [

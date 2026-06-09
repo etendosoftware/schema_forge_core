@@ -16,7 +16,8 @@
     "hidePrint": true,
     "hideLink": true,
     "listbarPaddingX": "px-2",
-    "tablePaddingX": "px-2"
+    "tablePaddingX": "px-2",
+    "maxDetailLines": 1
   },
   "entities": {
     "productCategory": {
@@ -60,6 +61,7 @@
       }
     },
     "accounting": {
+      "javaQualifier": "productCategoryAccountingHandler",
       "fields": {
         "accountingSchema": { "visibility": "system", "addLineFromSibling": true },
         "fixedAsset": {
