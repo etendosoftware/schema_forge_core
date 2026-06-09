@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { login, navigateTo } from '../helpers/auth.js';
 
 /**
@@ -25,7 +27,21 @@ import { login, navigateTo } from '../helpers/auth.js';
  * Skipped automatically if env vars are not set.
  */
 
-const RUN_INTEGRATION = process.env.E2E_USE_MOCK === '0' && !!process.env.E2E_PASSWORD;
+/**
+ * Load credentials from the onboarding test if available (.auth-credentials.json),
+ * otherwise fall back to E2E_PASSWORD / E2E_USER env vars.
+ */
+function loadCredentials() {
+  try {
+    const credPath = resolve(import.meta.dirname, '../../.auth-credentials.json');
+    const creds = JSON.parse(readFileSync(credPath, 'utf-8'));
+    if (creds.email && creds.password) return creds;
+  } catch { /* file doesn't exist — fall back to env vars */ }
+  return null;
+}
+
+const onboardingCreds = loadCredentials();
+const RUN_INTEGRATION = process.env.E2E_USE_MOCK === '0' && !!(process.env.E2E_PASSWORD || onboardingCreds);
 
 /** Wait for detail view fully loaded (spinner gone, networkidle). */
 async function waitForDetailReady(page) {
@@ -70,7 +86,11 @@ test.describe('Contacts Integration — Full journey', () => {
     const CONTACT_A = `E2E Contact A ${ts}`;
     const CONTACT_B = `E2E Contact B ${ts}`;
 
-    await login(page);
+    // Use onboarding-created credentials if available, otherwise env vars
+    const loginOpts = onboardingCreds
+      ? { user: onboardingCreds.email, password: onboardingCreds.password }
+      : {};
+    await login(page, loginOpts);
 
     // ═══════════════════════════════════════════════════════════════════════
     // PART 1: Validation error — save without required field
@@ -422,13 +442,15 @@ test.describe('Contacts Integration — Full journey', () => {
     // The country picker dialog has a search input "Buscar país..."
     const countrySearch = page.getByPlaceholder(/buscar pa[ií]s/i);
     await expect(countrySearch).toBeVisible({ timeout: 5_000 });
-    await countrySearch.fill('Spain');
+    await countrySearch.fill('Espa');
 
-    // Wait for search results to filter
-    const spainOption = page.getByRole('button', { name: /^spain$/i })
+    // Wait for search results to filter — country name depends on locale (España / Spain)
+    const countryOption = page.getByRole('button', { name: /^espa[nñ]a$/i })
+      .or(page.getByRole('button', { name: /^spain$/i }))
+      .or(page.locator('button').filter({ hasText: /^España$/ }))
       .or(page.locator('button').filter({ hasText: /^Spain$/ }));
-    await expect(spainOption.first()).toBeVisible({ timeout: 5_000 });
-    await spainOption.first().click();
+    await expect(countryOption.first()).toBeVisible({ timeout: 5_000 });
+    await countryOption.first().click();
 
     // Click Guardar in the address modal
     const modalGuardar = page.getByRole('button', { name: /^guardar$/i }).last();

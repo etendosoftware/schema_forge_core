@@ -7,9 +7,9 @@ import {
 const ui = (key) => key; // identity translator
 
 const STATEMENTS = [
-  { id: 's1', documentNo: '1000025', name: 'Test borrador', fileName: 'mayo.csv', notes: 'urgente', importDate: '2026-06-07T00:00:00Z', transactionDate: '2026-06-07T00:00:00Z', lineCount: 1, totalAmount: 500, status: 'DRAFT' },
-  { id: 's2', documentNo: '1000024', name: 'Test', fileName: '', notes: '', importDate: '2026-06-04T00:00:00Z', transactionDate: '2026-06-04T00:00:00Z', lineCount: 2, totalAmount: 25, status: 'PENDING' },
-  { id: 's3', documentNo: '1000019', name: 'extracto-prueba', fileName: 'extracto-prueba.csv', notes: 'revisar', importDate: '2026-06-01T00:00:00Z', transactionDate: '2026-06-01T00:00:00Z', lineCount: 10, totalAmount: 14064.05, status: 'RECONCILED' },
+  { id: 's1', documentNo: '1000025', name: 'Test borrador', fileName: 'mayo.csv', notes: 'urgente', importDate: '2026-06-07T00:00:00Z', transactionDate: '2026-06-07T00:00:00Z', lineCount: 1, totalIn: 500, totalOut: 0, totalAmount: 500, status: 'DRAFT' },
+  { id: 's2', documentNo: '1000024', name: 'Test', fileName: '', notes: '', importDate: '2026-06-04T00:00:00Z', transactionDate: '2026-06-04T00:00:00Z', lineCount: 2, totalIn: 25, totalOut: 100, totalAmount: 125, status: 'PENDING' },
+  { id: 's3', documentNo: '1000019', name: 'extracto-prueba', fileName: 'extracto-prueba.csv', notes: 'revisar', importDate: '2026-06-01T00:00:00Z', transactionDate: '2026-06-01T00:00:00Z', lineCount: 10, totalIn: 14064.05, totalOut: 3200, totalAmount: 17264.05, status: 'RECONCILED' },
 ];
 
 const filter = (conditions, rowOperator = 'and') => ({ rowOperator, conditions });
@@ -31,7 +31,11 @@ describe('buildStatementFilterColumns', () => {
     const byKey = Object.fromEntries(buildStatementFilterColumns(ui).map((c) => [c.key, c]));
     expect(byKey.importDate.type).toBe('date');
     expect(byKey.lineCount.type).toBe('number');
-    expect(byKey.totalAmount.type).toBe('number');
+    // The list shows Salida/Entrada (out/in), so those are the filterable
+    // amount columns — the old single totalAmount column is gone.
+    expect(byKey.totalAmount).toBeUndefined();
+    expect(byKey.totalOut.type).toBe('number');
+    expect(byKey.totalIn.type).toBe('number');
   });
 });
 
@@ -59,6 +63,16 @@ describe('applyAdvancedFilter', () => {
   it('filters by lineCount (greaterThan)', () => {
     const out = applyAdvancedFilter(STATEMENTS, filter([{ field: 'lineCount', operator: 'greaterThan', value: 1 }]));
     expect(out.map((s) => s.id)).toEqual(['s2', 's3']);
+  });
+
+  it('filters by totalOut (greaterThan)', () => {
+    const out = applyAdvancedFilter(STATEMENTS, filter([{ field: 'totalOut', operator: 'greaterThan', value: 50 }]));
+    expect(out.map((s) => s.id)).toEqual(['s2', 's3']);
+  });
+
+  it('filters by totalIn (greaterThan)', () => {
+    const out = applyAdvancedFilter(STATEMENTS, filter([{ field: 'totalIn', operator: 'greaterThan', value: 100 }]));
+    expect(out.map((s) => s.id)).toEqual(['s1', 's3']);
   });
 
   it('filters by importDate (between)', () => {

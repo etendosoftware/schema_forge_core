@@ -9,13 +9,32 @@ import {
 import { Button } from '@/components/ui/button';
 import { useUI } from '@/i18n';
 
+// i18n key triples per variant. Keeps the JSX free of nested ternaries.
+const VARIANT_KEYS = {
+  process: {
+    title: 'financeAccountStatementsProcessTitle',
+    body: 'financeAccountStatementsProcessBody',
+    confirm: 'financeAccountStatementsProcessConfirm',
+  },
+  reactivate: {
+    title: 'financeAccountStatementsReactivateTitle',
+    body: 'financeAccountStatementsReactivateBody',
+    confirm: 'financeAccountStatementsReactivateConfirm',
+  },
+  delete: {
+    title: 'financeAccountStatementsDeleteTitle',
+    body: 'financeAccountStatementsDeleteBody',
+    confirm: 'financeAccountStatementsDeleteConfirm',
+  },
+};
+
 /**
- * Confirmation dialog shared by the "Process" and "Delete" row actions of an
- * imported statement. The copy and the confirm button's tone switch on
- * {@code variant}; deletion is destructive.
+ * Confirmation dialog shared by the "Process", "Reactivate" and "Delete" row
+ * actions of an imported statement. The copy switches on {@code variant} and the
+ * confirm button is destructive only for deletion.
  *
  * @param {{
- *   variant: 'process' | 'delete' | null,
+ *   variant: 'process' | 'reactivate' | 'delete' | null,
  *   statement: object | null,
  *   busy: boolean,
  *   onConfirm: () => void,
@@ -28,15 +47,10 @@ export function StatementConfirmDialog({ variant, statement, busy, onConfirm, on
   const isDelete = variant === 'delete';
   const name = statement?.name || statement?.documentNo || '';
 
-  const title = ui(isDelete
-    ? 'financeAccountStatementsDeleteTitle'
-    : 'financeAccountStatementsProcessTitle');
-  const body = ui(isDelete
-    ? 'financeAccountStatementsDeleteBody'
-    : 'financeAccountStatementsProcessBody', { name });
-  const confirmLabel = ui(isDelete
-    ? 'financeAccountStatementsDeleteConfirm'
-    : 'financeAccountStatementsProcessConfirm');
+  const keys = VARIANT_KEYS[variant] ?? VARIANT_KEYS.process;
+  const title = ui(keys.title);
+  const body = ui(keys.body, { name });
+  const confirmLabel = ui(keys.confirm);
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>

@@ -80,6 +80,7 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 | `hidePrint` | boolean | `false` | — | Hides the print button in the detail view action bar. |
 | `hideMoreMenu` | boolean | `false` | — | Hides the triple-dot "more" menu in the detail view action bar. |
 | `contentBg` | string | `"bg-white"` | Any Tailwind bg class | Background color of the main content card in the detail view (e.g., `"bg-slate-50"` for a light gray tone). |
+| `formCardPadding` | string | `null` | Any Tailwind padding class | Override the Tailwind padding class applied to the form card div in the detail view. When `null`, `DetailView` falls back to `p-6`. Use `"px-2 pb-2"` for tighter (8px horizontal) padding, for example on windows with dense form layouts. |
 | `hideDeleteWhenComplete` | boolean | `false` | — | Hides the delete button in the detail view when the document status is not Draft. Prevents accidental deletion of completed/processed records. |
 | `customComponents` | object | `null` | See below | Override generated components with custom ones from `artifacts/{window}/custom/`. The generator emits the correct imports and props automatically. |
 | `menuActions` | array | `[]` | See below | Additional actions in the detail view's "more" menu (triple dot). Each action can have visibility conditions based on document status. |
@@ -183,6 +184,28 @@ Adds a generic "Attachments" tab to the detail view, sitting alongside the stand
 | `allowedMimeTypes` | string[] | `undefined` (any) | MIME-type allow-list applied client-side. Supports wildcards like `"image/*"`, `"application/*"`. When omitted, every MIME type is accepted. |
 
 **Note:** the frontend resolves the target `tableName` from `frontendContract.entities.header.tableName` automatically — you do **not** configure it in `decisions.json`. The tab does a lazy fetch on activation (no request until the user opens it). Backend storage uses the standard Etendo `AttachImplementationManager` and the `C_FILE` table.
+
+### Custom Panel Tabs (`window.customPanelTabs`)
+
+Adds custom tabs to the bottom tab strip in the detail view, alongside the standard Attachments tab. The generator reads this array and emits the corresponding `customTabs` prop on `DetailView`. Each tab maps to a component imported from `tools/app-shell/src/windows/custom/{window}/`.
+
+Use this when a window needs supplementary panels (e.g., a pricing breakdown, a related-document viewer, a custom notes area) that sit at the same level as Attachments without modifying generated code.
+
+```json
+{
+  "customPanelTabs": [
+    { "key": "pricing", "labelKey": "price", "component": "ProductPriceBar" }
+  ]
+}
+```
+
+| Property | Type | Purpose |
+|----------|------|---------|
+| `key` | string | Unique tab identifier. Used as the tab's `key` prop. |
+| `labelKey` | string | i18n key resolved through `useUI()`. Rendered as the tab label. |
+| `component` | string | Component name from `tools/app-shell/src/windows/custom/{window}/`. The generator imports it automatically. |
+
+**Note:** Use `customTabsAfterBottom: true` alongside this property to position the custom tabs after the standard bottom section (lines, notes, etc.) rather than interleaved with primary tabs.
 
 ### Subset Filters (`window.subsetFilters`)
 
@@ -461,6 +484,7 @@ Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"order
 | `form` | boolean | Per visibility | `true`/`false` | Show in detail/form view. |
 | `searchable` | boolean | `false` | `true`/`false` | Enable as filter parameter in list API. |
 | `section` | string | `null` | `"principal"`, `"other"`, custom | Group fields into form sections. |
+| `inline` | boolean | `false` | `true`/`false` | When `true`, keeps the field in the normal form grid flow even if the generator would otherwise pull it out. Currently relevant for image-type fields: an image field with `inline: true` renders inside the form grid using `row-span-2`, spanning two rows for visual balance instead of being extracted to a separate slot. |
 
 **Visibility defaults** (when not overridden):
 

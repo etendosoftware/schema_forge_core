@@ -36,8 +36,15 @@ export default defineConfig({
       workers: process.env.CI ? 4 : undefined,
     },
     {
+      name: 'onboarding-setup',
+      testMatch: '**/onboarding-register.integration.spec.js',
+      use: { ...devices['Desktop Chrome'] },
+      workers: 1,
+    },
+    {
       name: 'integration',
-      testIgnore: '**/*.mocked.spec.js',
+      testIgnore: ['**/*.mocked.spec.js', '**/onboarding-register.integration.spec.js'],
+      dependencies: ['onboarding-setup'],
       use: { ...devices['Desktop Chrome'] },
       workers: 1,
     },

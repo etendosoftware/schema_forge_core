@@ -3,17 +3,20 @@ import { useAuth } from '@/auth/AuthContext.jsx';
 import { getApiBase } from './useNeoResource';
 
 /**
- * Write actions for an existing bank statement: process, update and delete.
- * All three target the same NEO endpoint with a different `action` and are
- * only valid for drafts (the backend rejects processed statements with 400).
+ * Write actions for an existing bank statement: process, reactivate, update and
+ * delete. All target the same NEO endpoint with a different `action`. process /
+ * update / delete are only valid for drafts; reactivate is only valid for
+ * processed statements (the backend rejects the wrong state with 400).
  *
- * - process: POST ?action=process  body { id }
- * - update:  POST ?action=update   body { id, name, transactionDate, importDate,
- *                                          fileName, notes, process, lines }
- * - delete:  POST ?action=delete   body { id }
+ * - process:    POST ?action=process    body { id }
+ * - reactivate: POST ?action=reactivate body { id }
+ * - update:     POST ?action=update     body { id, name, transactionDate, importDate,
+ *                                              fileName, notes, process, lines }
+ * - delete:     POST ?action=delete     body { id }
  *
  * @returns {{
  *   processStatement: (id: string) => Promise<object>,
+ *   reactivateStatement: (id: string) => Promise<object>,
  *   updateStatement: (payload: object) => Promise<object>,
  *   deleteStatement: (id: string) => Promise<object>,
  *   busy: boolean,
@@ -55,6 +58,8 @@ export function useStatementActions() {
 
   const processStatement = useCallback((id) => post('process', { id }), [post]);
 
+  const reactivateStatement = useCallback((id) => post('reactivate', { id }), [post]);
+
   const updateStatement = useCallback(({
     id, name, transactionDate, importDate, fileName, notes, process = false, lines,
   }) => post('update', {
@@ -63,5 +68,5 @@ export function useStatementActions() {
 
   const deleteStatement = useCallback((id) => post('delete', { id }), [post]);
 
-  return { processStatement, updateStatement, deleteStatement, busy, error };
+  return { processStatement, reactivateStatement, updateStatement, deleteStatement, busy, error };
 }

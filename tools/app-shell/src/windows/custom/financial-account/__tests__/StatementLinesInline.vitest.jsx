@@ -25,12 +25,13 @@ describe('StatementLinesInline', () => {
     linesMock.mockReset();
   });
 
-  it('renders the inline title with the lines count badge', () => {
+  it('renders the column headers and no longer shows the inline title/count badge', () => {
     linesMock.mockReturnValue({ lines: [], loading: false });
     render(<StatementLinesInline statementId="s1" />);
-    expect(screen.getByText('financeAccountStatementsInlineTitle')).toBeInTheDocument();
-    // The badge shows "0" for an empty list
-    expect(screen.getByText('0')).toBeInTheDocument();
+    // The "Líneas del extracto (N)" header was removed — the detail starts at the
+    // column header row.
+    expect(screen.queryByText('financeAccountStatementsInlineTitle')).not.toBeInTheDocument();
+    expect(screen.getByText('financeAccountStatementLinesColDate')).toBeInTheDocument();
   });
 
   it('forwards the statementId to the useBankStatementLines hook', () => {
@@ -70,8 +71,6 @@ describe('StatementLinesInline', () => {
     render(<StatementLinesInline statementId="s1" />);
     expect(screen.getByTestId('statement-line-row-l1')).toBeInTheDocument();
     expect(screen.getByTestId('statement-line-row-l2')).toBeInTheDocument();
-    // The header badge should also reflect 2 lines.
-    expect(screen.getByText('2')).toBeInTheDocument();
   });
 
   it('renders a success-tone match pill for matched=true and a neutral one for matched=false', () => {
