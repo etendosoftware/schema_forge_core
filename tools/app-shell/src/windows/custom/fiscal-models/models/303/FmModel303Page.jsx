@@ -6,9 +6,7 @@ import {
   Calculator, Loader2, MoreVertical, TrendingUp, TrendingDown, Clock,
   ClipboardCheck, ReceiptText, Folder,
 } from 'lucide-react';
-import {
-  StatusPillMenu, ResultPill, SummaryCard, Tabs, Banner, SectionCard, EmptyState, KpiWidget,
-} from '../../FmCommon.jsx';
+import { Tabs, KpiWidget } from '../../FmCommon.jsx';
 import { SourcesTab, IncidentsTab, FilesTab, HistoryTab } from '../../FmTabContent.jsx';
 import FmBoxes303 from './FmBoxes303.jsx';
 import { PresentModal, FileGenModal, ConfigDrawer, CompareDrawer } from '../../FmOverlays.jsx';

@@ -970,8 +970,8 @@
   font-variant-numeric: tabular-nums;
 }
 .fm-aeat-cell--empty { border-color: #E8EAEF; background: #F5F7F9; box-shadow: none; width: 260px; height: 52px; flex-shrink: 0; }
-.fm-aeat-cell--fixed { }
-.fm-aeat-cell--editable { }
+.fm-aeat-cell--fixed { color: inherit; }
+.fm-aeat-cell--editable { color: inherit; }
 .fm-aeat-cell__unit {
   font: 400 13px/20px var(--fm-font-sans, system-ui); color: #6C6C89;
   flex-shrink: 0; padding-right: 8px; align-self: center;

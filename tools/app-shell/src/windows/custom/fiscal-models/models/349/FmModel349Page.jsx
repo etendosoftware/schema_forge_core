@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import {
-  Download, FileDown, CircleCheck, Search,
+  Download, CircleCheck, Search,
   RefreshCw, Globe, Eye, MoreVertical, ChevronDown, Users, FileEdit, Clock,
   TriangleAlert, Folder, ReceiptText, Calculator, PenLine, ShieldAlert, Info,
 } from 'lucide-react';
-import { StatusPillMenu, KpiWidget, Tabs, Banner } from '../../FmCommon.jsx';
+import { KpiWidget, Tabs } from '../../FmCommon.jsx';
 import { SourcesTab, IncidentsTab, FilesTab, HistoryTab } from '../../FmTabContent.jsx';
 import { Checkbox } from '@/components/ui/checkbox';
 import { PresentModal, FileGenModal } from '../../FmOverlays.jsx';
@@ -95,7 +95,7 @@ function KeyFilterDropdown({ value, onChange, t }) {
   const allLabel = t('fm.m349.filter.all_keys') ?? 'Todas las claves';
   const selectedLabel = value === 'all'
     ? allLabel
-    : `${value} — ${t(`fm.m349.key.${value}`) ?? value}`;
+    : `${value} — ${t('fm.m349.key.' + value) ?? value}`;
 
   const keyColors = { E: '#F0FAFF', S: '#FEECFB', A: '#FFF2EE', I: '#F4F1FD' };
   const keyFgColors = { E: '#0075AD', S: '#A5088C', A: '#B82E00', I: '#4316CA' };

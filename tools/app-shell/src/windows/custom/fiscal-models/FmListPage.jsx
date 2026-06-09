@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useUI } from '@/i18n';
 import {
-  LayoutGrid, Settings, ListFilter, ArrowUpDown,
-  ChevronDown, MoreHorizontal, MoreVertical, Calendar, Clock, TriangleAlert, OctagonAlert, ArrowUpRight, Search, Play, Check,
+  LayoutGrid, Settings, ArrowUpDown,
+  ChevronDown, MoreVertical, Calendar, Clock, TriangleAlert, OctagonAlert, ArrowUpRight, Search, Play, Check,
 } from 'lucide-react';
-import { StatusPillMenu, ResultPill, EmptyState, KpiWidget } from './FmCommon.jsx';
+import { EmptyState, KpiWidget } from './FmCommon.jsx';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfigDrawer, NewDeclModal } from './FmOverlays.jsx';
 import FmCatalogPage from './FmCatalogPage.jsx';
@@ -384,6 +384,12 @@ function ResultCell({ isComputing, error, result, t }) {
   );
 }
 
+function getResultKind(r) {
+  if (r > 0) return 'I';
+  if (r < 0) return 'C';
+  return 'N';
+}
+
 // ── Main component ───────────────────────────────────────────────
 export default function FmListPage({ declarations: propDecls, onSelect, onStatusChange, onComputeUpdate, token, apiBaseUrl }) {
   const ui = useUI();
@@ -622,10 +628,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
                       displayResult = { kind: 'info', amount: total };
                     } else {
                       const r = computed.summary.result;
-                      let kind;
-                      if (r > 0) kind = 'I';
-                      else if (r < 0) kind = 'C';
-                      else kind = 'N';
+                      const kind = getResultKind(r);
                       displayResult = { kind, amount: Math.abs(r) };
                     }
                   }
