@@ -63,23 +63,28 @@ function FilterDropdown({ label, value, options, onChange }) {
             {value === 'all' && <Check size={14} strokeWidth={2} style={{ color: '#121217', flexShrink: 0 }} />}
           </button>
           <div style={{ height: 1, background: '#E8EAEF', margin: '2px 8px' }} />
-          {options.map(opt => (
-            <button
-              key={opt.value}
-              className="fm-status-select__item"
-              style={{ justifyContent: 'space-between' }}
-              role="option" aria-selected={value === opt.value}
-              onClick={() => { onChange(opt.value); setOpen(false); }}
-            >
-              {opt.badge
-                ? <span className={`fm-model-badge fm-model-badge--${opt.value}`}>{opt.badge}</span>
-                : opt.statusStyle
-                  ? <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 12px', borderRadius: 20, fontSize: 13, fontWeight: 400, ...opt.statusStyle }}>{opt.label}</span>
-                  : <span style={{ fontSize: 14, color: '#121217' }}>{opt.label}</span>
-              }
-              {value === opt.value && <Check size={14} strokeWidth={2} style={{ color: '#121217', flexShrink: 0 }} />}
-            </button>
-          ))}
+          {options.map(opt => {
+            let optLabel;
+            if (opt.badge) {
+              optLabel = <span className={`fm-model-badge fm-model-badge--${opt.value}`}>{opt.badge}</span>;
+            } else if (opt.statusStyle) {
+              optLabel = <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 12px', borderRadius: 20, fontSize: 13, fontWeight: 400, ...opt.statusStyle }}>{opt.label}</span>;
+            } else {
+              optLabel = <span style={{ fontSize: 14, color: '#121217' }}>{opt.label}</span>;
+            }
+            return (
+              <button
+                key={opt.value}
+                className="fm-status-select__item"
+                style={{ justifyContent: 'space-between' }}
+                role="option" aria-selected={value === opt.value}
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+              >
+                {optLabel}
+                {value === opt.value && <Check size={14} strokeWidth={2} style={{ color: '#121217', flexShrink: 0 }} />}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

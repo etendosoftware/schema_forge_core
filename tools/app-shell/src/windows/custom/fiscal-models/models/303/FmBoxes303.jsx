@@ -245,9 +245,9 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
                 return <div key={key} className={rowClass}>{rowContent}</div>;
               };
 
-              return items.map((item, idx) =>
+              return items.map((item) =>
                 item.isBracket
-                  ? <div key={`bracket-${idx}`} className="fm-aeat-group-bracket">{item.rows.map(([r, i]) => renderRow(r, i))}</div>
+                  ? <div key={`bracket-${item.rows[0][0].cells?.[0] ?? item.rows[0][1]}`} className="fm-aeat-group-bracket">{item.rows.map(([r, i]) => renderRow(r, i))}</div>
                   : renderRow(item.row, item.i)
               );
             })()}
