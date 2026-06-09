@@ -934,14 +934,14 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             id={f.key}
             name={f.key}
             data-testid={`field-${f.key}`}
-            rows={4}
+            rows={f.rows ?? 4}
             value={getFieldValue(isReadOnly, displayValue, data, f)}
             onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
             onBlur={() => onFieldBlur?.(f.key)}
             disabled={isReadOnly}
             className={[
               'flex w-full rounded-lg border border-[#D1D4DB] p-2 text-sm shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
-              'placeholder:text-muted-foreground resize-none min-h-[96px]',
+              `placeholder:text-muted-foreground resize-none${f.rows ? '' : ' min-h-[96px]'}`,
               'focus:outline-none focus:ring-2 focus:ring-primary',
               'disabled:bg-muted/50 disabled:cursor-not-allowed',
               getReadOnlyBgClass(isReadOnly),
@@ -995,11 +995,14 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   // fieldErrors. Uses cloneElement so we don't have to thread the prop through every
   // branch in renderField — the wrapper <div key={f.key}> already exists for each.
   const renderFieldWithError = (f) => {
+    const SPAN_CLASS = { 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4' };
+    const spanClass = f.span ? (SPAN_CLASS[f.span] ?? '') : '';
+
     if (f.type === 'image') {
       const label = t(f.column) ?? f.label ?? f.key;
       const isReadOnly = formReadOnly || f.readOnly || displayLogic?.readOnly?.[f.key] === true || evalReadOnlyLogic(f, data);
       return (
-        <div key={f.key} className="space-y-1.5 row-span-2 flex flex-col h-full">
+        <div key={f.key} className={`space-y-1.5 row-span-2 flex flex-col h-full${spanClass ? ` ${spanClass}` : ''}`}>
           <Label className="text-sm text-foreground font-medium">{label}</Label>
           <ImageField
             imageId={data?.[f.key] ?? ''}
@@ -1013,20 +1016,29 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         </div>
       );
     }
-    const node = renderField(f);
+
+    let node = renderField(f);
     const err = fieldErrors?.[f.key];
-    if (!err || !React.isValidElement(node)) return node;
-    const existing = node.props.children;
-    return React.cloneElement(
-      node,
-      { className: `${node.props.className ?? ''}`.trim() },
-      existing,
-      React.createElement(
-        'p',
-        { key: '__err', className: 'text-xs text-red-500 mt-0.5', 'data-testid': `error-${f.key}` },
-        err
-      )
-    );
+
+    if (err && React.isValidElement(node)) {
+      const existing = node.props.children;
+      node = React.cloneElement(
+        node,
+        { className: `${node.props.className ?? ''}`.trim() },
+        existing,
+        React.createElement(
+          'p',
+          { key: '__err', className: 'text-xs text-red-500 mt-0.5', 'data-testid': `error-${f.key}` },
+          err
+        )
+      );
+    }
+
+    if (spanClass && React.isValidElement(node)) {
+      return React.cloneElement(node, { className: `${node.props.className ?? ''} ${spanClass}`.trim() });
+    }
+
+    return node;
   };
 
   if (imageField) {

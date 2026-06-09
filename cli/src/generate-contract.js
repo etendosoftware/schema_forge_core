@@ -183,6 +183,9 @@ function applyBasicFieldUIHints(f, mapped) {
   if (f.isTranslated) mapped.isTranslated = true;
   if (f.section) mapped.section = f.section;
   if (f.seq != null) mapped.seq = f.seq;
+  if (f.span != null && f.span >= 1 && f.span <= 4) mapped.span = f.span;
+  if (f.rows != null) mapped.rows = f.rows;
+  if (f.explicitType) mapped.explicitType = true;
   if (f.statusBar) mapped.statusBar = true;
   if (f.badge) mapped.badge = true;
 }

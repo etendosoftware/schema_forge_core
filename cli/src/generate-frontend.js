@@ -168,6 +168,7 @@ function mapFieldType(field) {
  * FK fields use inputMode (search/selector/dependent); non-FK fields use type.
  */
 function mapFormFieldType(field) {
+  if (field.explicitType) return field.type;
   if (field.type === 'foreignKey') {
     if (field.inputMode === 'selector') return 'selector';
     if (field.inputMode === 'dependent') return 'dependent';
@@ -495,7 +496,9 @@ export function generateFormComponent(entityName, contract) {
     const optionsPart = getOptionsPart(type, f);
     const formLabelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
     const valueTypePart = (type === 'select' && f.tsType === 'boolean') ? `, valueType: 'boolean'` : '';
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const spanPart = (f.span && f.span > 1) ? `, span: ${f.span}` : '';
+    const rowsPart = f.rows != null ? `, rows: ${f.rows}` : '';
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -1474,7 +1477,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     secondaryTabDefs = [
       ...knownSecondaryTabDefs.map(t => ({ ...t, isFormTab: false, addLineEntries: [] })),
       ...inferredSecondaryTabDefs,
-    ].slice(0, 4);
+    ].filter(t => t.key !== detailEntity).slice(0, 4);
   }
 
   const specName = contract.apiPrediction?.specName;
@@ -1591,6 +1594,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const contentBgProp = wrapIf('\n        contentBg="', contentBg, '"');
   // formCardPadding prop (DetailView)
   const formCardPaddingProp = wrapIf('\n        formCardPadding="', formCardPadding, '"');
+  // formScrollPaddingX prop (DetailView) — overrides the horizontal padding of the content scroll column
+  const formScrollPaddingX = windowConfig.formScrollPaddingX ?? null;
+  const formScrollPaddingXProp = wrapIf('\n        formScrollPaddingX="', formScrollPaddingX, '"');
   // lineConfig prop — emitted when the window uses a non-default line pricing config
   const LINE_CONFIG_SYMBOLS = { invoice: 'INVOICE_LINE_CONFIG', returnOrder: 'RETURN_ORDER_LINE_CONFIG' };
   const lineConfigSymbol = getLineConfigSymbol(lineEntityConfig, LINE_CONFIG_SYMBOLS);
@@ -1804,7 +1810,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${fragm
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
         {...props}${sidebarContentProp}
       />${confirmModalName ? `
       {showConfirmModal && (

@@ -155,11 +155,11 @@ function CollapsibleSection({ title, children }) {
  * Extracted from inline JSX to avoid the nested-ternary anti-pattern Sonar
  * S3358 was flagging inside the className templates.
  */
-function detailContentPadding(linesLayout, hasSidebar, variant, compact = false) {
+function detailContentPadding(linesLayout, hasSidebar, variant, compact = false, paddingXOverride = null) {
   const isInline = linesLayout === 'inlineEditable';
   if (hasSidebar) return (isInline || compact) ? 'p-2' : 'pl-6 pr-2';
-  if (variant === 'panel') return isInline ? 'pr-6' : 'px-6';
-  return isInline ? '' : 'px-6';
+  if (variant === 'panel') return isInline ? 'pr-6' : (paddingXOverride ?? 'px-6');
+  return isInline ? '' : (paddingXOverride ?? 'px-6');
 }
 
 /**
@@ -2315,12 +2315,12 @@ export function DetailView({
             {primaryTabs && activePrimaryTab !== 'general' ? (() => {
               const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
               return activeTab?.Panel ? (
-                <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel', compactSidebarPadding)}`}>
+                <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel', compactSidebarPadding, formScrollPaddingX)}`}>
                   <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
                 </div>
               ) : null;
             })() : null}
-            <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+            <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding, formScrollPaddingX)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
               {typeof headerContent === 'function' ? headerContent(data) : headerContent}
               {(() => {
                 const slotProps = {
