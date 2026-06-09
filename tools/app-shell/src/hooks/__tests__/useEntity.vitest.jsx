@@ -739,4 +739,39 @@ describe('useEntity', () => {
       expect(result.current.selected).toBeNull();
     });
   });
+
+  describe('buildHeaders — Accept-Language locale propagation', () => {
+    beforeEach(() => {
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ response: { data: [] } }),
+      });
+    });
+
+    it('includes Accept-Language header derived from localStorage locale', async () => {
+      localStorage.setItem('schema-forge-locale', 'es_ES');
+      const { result } = renderEntity('header', null, { skipListFetch: true });
+
+      await act(async () => { await result.current.handleNew(); });
+      act(() => { result.current.handleChange('name', 'Test'); });
+      await act(async () => { await result.current.handleSave(); });
+
+      const postCall = globalThis.fetch.mock.calls.find(c => c[1]?.method === 'POST');
+      expect(postCall).toBeTruthy();
+      expect(postCall[1].headers['Accept-Language']).toBe('es_ES');
+    });
+
+    it('falls back to es_ES when localStorage has no locale', async () => {
+      localStorage.removeItem('schema-forge-locale');
+      const { result } = renderEntity('header', null, { skipListFetch: true });
+
+      await act(async () => { await result.current.handleNew(); });
+      act(() => { result.current.handleChange('name', 'Test'); });
+      await act(async () => { await result.current.handleSave(); });
+
+      const postCall = globalThis.fetch.mock.calls.find(c => c[1]?.method === 'POST');
+      expect(postCall).toBeTruthy();
+      expect(postCall[1].headers['Accept-Language']).toBe('es_ES');
+    });
+  });
 });

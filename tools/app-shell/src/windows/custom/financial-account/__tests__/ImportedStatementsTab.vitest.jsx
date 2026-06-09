@@ -1,9 +1,39 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.mock('@/i18n', () => ({
   useUI: () => (key) => key,
   useLocaleSwitch: () => ({ locale: 'es_ES' }),
+}));
+
+const toastSuccess = vi.fn();
+const toastError = vi.fn();
+vi.mock('sonner', () => ({
+  toast: { success: (...a) => toastSuccess(...a), error: (...a) => toastError(...a) },
+}));
+
+const processStatement = vi.fn();
+const reactivateStatement = vi.fn();
+const deleteStatement = vi.fn();
+vi.mock('@/hooks/useStatementActions', () => ({
+  useStatementActions: () => ({
+    processStatement, reactivateStatement, deleteStatement, updateStatement: vi.fn(),
+    busy: false, error: null,
+  }),
+}));
+
+// Capture the confirm dialog props so we can assert which action was requested.
+const confirmProps = { value: null };
+vi.mock('../StatementConfirmDialog', () => ({
+  StatementConfirmDialog: (props) => {
+    confirmProps.value = props;
+    return props.variant ? (
+      <div data-testid="stub-confirm" data-variant={props.variant}>
+        <button type="button" data-testid="confirm-run" onClick={props.onConfirm} />
+        <button type="button" data-testid="confirm-close" onClick={props.onClose} />
+      </div>
+    ) : null;
+  },
 }));
 
 // Stub all heavy children — each has its own test suite. We assert wiring at
@@ -24,34 +54,45 @@ vi.mock('@/hooks/useBankStatements', () => ({
 vi.mock('../StatementsToolbar', () => ({
   StatementsToolbar: ({
     search, onSearchChange, dateRange, onDateRangeChange,
-    status, onStatusChange, onImportClick,
+    status, onStatusChange, onAdvancedFilterChange, onImportClick, onManualClick,
   }) => (
     <div data-testid="stub-toolbar" data-search={search} data-status={status ?? ''}>
       <button type="button" data-testid="toolbar-search" onClick={() => onSearchChange('mayo')} />
       <button type="button" data-testid="toolbar-status" onClick={() => onStatusChange('PARTIAL')} />
       <button type="button" data-testid="toolbar-daterange" onClick={() => onDateRangeChange({ presetId: 'last7' })} />
+      <button
+        type="button"
+        data-testid="toolbar-advanced"
+        onClick={() => onAdvancedFilterChange({
+          rowOperator: 'and',
+          conditions: [{ field: 'status', operator: 'equals', value: 'RECONCILED' }],
+        })}
+      />
       <button type="button" data-testid="toolbar-import" onClick={onImportClick} />
+      <button type="button" data-testid="toolbar-manual" onClick={onManualClick} />
     </div>
   ),
 }));
 
 vi.mock('../StatementsTable', () => ({
-  StatementsTable: ({ statements, loading, currency }) => (
+  StatementsTable: ({ statements, loading, currency, actions }) => (
     <div
       data-testid="stub-table"
       data-len={statements.length}
       data-loading={loading ? 'true' : 'false'}
       data-currency={currency}
+      data-has-actions={actions ? 'true' : 'false'}
     >
       {statements.map((s) => (
-        <button
-          key={s.id}
-          type="button"
-          data-testid={`row-${s.id}`}
-          onClick={() => s.__select?.()}
-        >
-          {s.documentNo}
-        </button>
+        <div key={s.id}>
+          <button type="button" data-testid={`row-${s.id}`} onClick={() => s.__select?.()}>
+            {s.documentNo}
+          </button>
+          <button type="button" data-testid={`row-edit-${s.id}`} onClick={() => actions?.onEdit(s)} />
+          <button type="button" data-testid={`row-process-${s.id}`} onClick={() => actions?.onProcess(s)} />
+          <button type="button" data-testid={`row-reactivate-${s.id}`} onClick={() => actions?.onReactivate(s)} />
+          <button type="button" data-testid={`row-delete-${s.id}`} onClick={() => actions?.onDelete(s)} />
+        </div>
       ))}
     </div>
   ),
@@ -84,6 +125,21 @@ vi.mock('../ImportStatementModal', () => ({
   ),
 }));
 
+vi.mock('../ManualStatementModal', () => ({
+  ManualStatementModal: ({ open, accountId, accountCurrency, statement, onClose, onSuccess }) => (
+    <div
+      data-testid="stub-manual-modal"
+      data-open={open ? 'true' : 'false'}
+      data-account={accountId ?? ''}
+      data-currency={accountCurrency}
+      data-statement={statement?.id ?? ''}
+    >
+      <button type="button" data-testid="manual-close" onClick={onClose} />
+      <button type="button" data-testid="manual-success" onClick={onSuccess} />
+    </div>
+  ),
+}));
+
 import { ImportedStatementsTab } from '../ImportedStatementsTab.jsx';
 
 const ACCOUNT = { id: 'acc-1', currencyIso: 'USD' };
@@ -106,7 +162,9 @@ const STATEMENTS = [
   },
   {
     id: 's3', documentNo: 'BS-003', fileName: 'old.c43', name: 'Antiguo',
-    importDate: isoDaysAgo(400), status: 'RECONCILED',
+    // 25 days ago: still inside the default 30-day window (so row actions can
+    // reach it) but outside last7 (so the date-filter test still drops it).
+    importDate: isoDaysAgo(25), status: 'RECONCILED',
   },
 ];
 
@@ -115,6 +173,11 @@ describe('ImportedStatementsTab', () => {
     statementsRef.value = STATEMENTS;
     loadingRef.value = false;
     reloadFn.mockReset();
+    processStatement.mockReset();
+    reactivateStatement.mockReset();
+    deleteStatement.mockReset();
+    toastSuccess.mockReset();
+    toastError.mockReset();
   });
 
   it('renders the toolbar + table by default and forwards currency from the account', () => {
@@ -135,11 +198,23 @@ describe('ImportedStatementsTab', () => {
     expect(screen.getByTestId('stub-table')).toHaveAttribute('data-loading', 'true');
   });
 
-  it('passes through all statements when no filters are active', () => {
+  it('passes through all statements inside the default 30-day window', () => {
     render(<ImportedStatementsTab account={ACCOUNT} />);
+    // All fixtures are <= 25 days old, so the default last-30 window keeps them.
     expect(screen.getByTestId('stub-table')).toHaveAttribute(
       'data-len', String(STATEMENTS.length),
     );
+  });
+
+  it('applies the last-30-days window by default, hiding older statements', () => {
+    statementsRef.value = [
+      ...STATEMENTS,
+      { id: 's-old', documentNo: 'BS-OLD', fileName: 'viejo.c43', name: 'Muy antiguo',
+        importDate: isoDaysAgo(400), status: 'RECONCILED' },
+    ];
+    render(<ImportedStatementsTab account={ACCOUNT} />);
+    // The 400-day-old statement is dropped by the default window; the 3 recent ones stay.
+    expect(screen.getByTestId('stub-table')).toHaveAttribute('data-len', String(STATEMENTS.length));
   });
 
   it('filters by status when the toolbar emits onStatusChange', async () => {
@@ -149,7 +224,7 @@ describe('ImportedStatementsTab', () => {
     expect(screen.getByTestId('stub-table')).toHaveAttribute('data-len', '1');
   });
 
-  it('filters by date range when the toolbar emits a preset (last7 drops the 20- and 400-day-old rows)', async () => {
+  it('filters by date range when the toolbar emits a preset (last7 drops the 20- and 25-day-old rows)', async () => {
     const user = userEvent.setup();
     render(<ImportedStatementsTab account={ACCOUNT} />);
     await user.click(screen.getByTestId('toolbar-daterange'));
@@ -188,6 +263,22 @@ describe('ImportedStatementsTab', () => {
     expect(reloadFn).toHaveBeenCalledTimes(1);
   });
 
+  it('opens the manual-create modal when toolbar emits onManualClick', async () => {
+    const user = userEvent.setup();
+    render(<ImportedStatementsTab account={ACCOUNT} />);
+    expect(screen.getByTestId('stub-manual-modal')).toHaveAttribute('data-open', 'false');
+    await user.click(screen.getByTestId('toolbar-manual'));
+    expect(screen.getByTestId('stub-manual-modal')).toHaveAttribute('data-open', 'true');
+  });
+
+  it('reloads the list when the manual-create modal reports success', async () => {
+    const user = userEvent.setup();
+    render(<ImportedStatementsTab account={ACCOUNT} />);
+    await user.click(screen.getByTestId('toolbar-manual'));
+    await user.click(screen.getByTestId('manual-success'));
+    expect(reloadFn).toHaveBeenCalledTimes(1);
+  });
+
   it('passes accountId + currency through to the import modal', () => {
     render(<ImportedStatementsTab account={ACCOUNT} />);
     const modal = screen.getByTestId('stub-import-modal');
@@ -198,5 +289,82 @@ describe('ImportedStatementsTab', () => {
   it('passes accountId=null to the import modal when the account is null', () => {
     render(<ImportedStatementsTab account={null} />);
     expect(screen.getByTestId('stub-import-modal')).toHaveAttribute('data-account', '');
+  });
+
+  it('wires row actions through to the table', () => {
+    render(<ImportedStatementsTab account={ACCOUNT} />);
+    expect(screen.getByTestId('stub-table')).toHaveAttribute('data-has-actions', 'true');
+  });
+
+  it('narrows the table when the advanced "by conditions" filter is applied', async () => {
+    const user = userEvent.setup();
+    render(<ImportedStatementsTab account={ACCOUNT} />);
+    expect(screen.getByTestId('stub-table')).toHaveAttribute('data-len', String(STATEMENTS.length));
+    // The stub emits a status=RECONCILED condition — only s3 matches.
+    await user.click(screen.getByTestId('toolbar-advanced'));
+    expect(screen.getByTestId('stub-table')).toHaveAttribute('data-len', '1');
+  });
+
+  it('opens the manual modal in edit mode when a row requests Edit', async () => {
+    const user = userEvent.setup();
+    render(<ImportedStatementsTab account={ACCOUNT} />);
+    expect(screen.getByTestId('stub-manual-modal')).toHaveAttribute('data-statement', '');
+    await user.click(screen.getByTestId('row-edit-s1'));
+    const modal = screen.getByTestId('stub-manual-modal');
+    expect(modal).toHaveAttribute('data-open', 'true');
+    expect(modal).toHaveAttribute('data-statement', 's1');
+  });
+
+  it('confirms then processes a statement and reloads on success', async () => {
+    processStatement.mockResolvedValueOnce({ id: 's2', processed: true });
+    const user = userEvent.setup();
+    render(<ImportedStatementsTab account={ACCOUNT} />);
+
+    await user.click(screen.getByTestId('row-process-s2'));
+    expect(screen.getByTestId('stub-confirm')).toHaveAttribute('data-variant', 'process');
+
+    await user.click(screen.getByTestId('confirm-run'));
+    expect(processStatement).toHaveBeenCalledWith('s2');
+    await waitFor(() => expect(reloadFn).toHaveBeenCalledTimes(1));
+    expect(toastSuccess).toHaveBeenCalledWith('financeAccountStatementsProcessSuccess');
+  });
+
+  it('confirms then deletes a statement and reloads on success', async () => {
+    deleteStatement.mockResolvedValueOnce({ id: 's3' });
+    const user = userEvent.setup();
+    render(<ImportedStatementsTab account={ACCOUNT} />);
+
+    await user.click(screen.getByTestId('row-delete-s3'));
+    expect(screen.getByTestId('stub-confirm')).toHaveAttribute('data-variant', 'delete');
+
+    await user.click(screen.getByTestId('confirm-run'));
+    expect(deleteStatement).toHaveBeenCalledWith('s3');
+    await waitFor(() => expect(reloadFn).toHaveBeenCalledTimes(1));
+    expect(toastSuccess).toHaveBeenCalledWith('financeAccountStatementsDeleteSuccess');
+  });
+
+  it('confirms then reactivates a statement and reloads on success', async () => {
+    reactivateStatement.mockResolvedValueOnce({ id: 's3', processed: false });
+    const user = userEvent.setup();
+    render(<ImportedStatementsTab account={ACCOUNT} />);
+
+    await user.click(screen.getByTestId('row-reactivate-s3'));
+    expect(screen.getByTestId('stub-confirm')).toHaveAttribute('data-variant', 'reactivate');
+
+    await user.click(screen.getByTestId('confirm-run'));
+    expect(reactivateStatement).toHaveBeenCalledWith('s3');
+    await waitFor(() => expect(reloadFn).toHaveBeenCalledTimes(1));
+    expect(toastSuccess).toHaveBeenCalledWith('financeAccountStatementsReactivateSuccess');
+  });
+
+  it('surfaces an error toast and keeps the dialog open when the action fails', async () => {
+    deleteStatement.mockRejectedValueOnce(new Error('HTTP 400'));
+    const user = userEvent.setup();
+    render(<ImportedStatementsTab account={ACCOUNT} />);
+
+    await user.click(screen.getByTestId('row-delete-s1'));
+    await user.click(screen.getByTestId('confirm-run'));
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith('financeAccountStatementsDeleteError'));
+    expect(reloadFn).not.toHaveBeenCalled();
   });
 });

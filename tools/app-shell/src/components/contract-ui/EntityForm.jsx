@@ -242,7 +242,10 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
       and transparent so DevTools highlights this same wrapper as the field box
       — matching the SelectorInput inspector experience.
     */
-    <div className="relative flex h-10 w-full items-center rounded-lg border border-[#D1D4DB] bg-transparent shadow-[0px_1px_2px_rgba(18,18,23,0.05)] pl-2 pr-2 gap-1 focus-within:ring-2 focus-within:ring-primary">
+    <div
+      className="relative flex h-10 w-full items-center rounded-lg border border-[#D1D4DB] bg-transparent shadow-[0px_1px_2px_rgba(18,18,23,0.05)] pl-2 pr-2 gap-1 focus-within:ring-2 focus-within:ring-primary"
+      onClick={showChip ? handleChipClick : undefined}
+    >
       {showChip ? (
         <SelectorChip
           label={displayValue || query}
@@ -296,7 +299,23 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
       {fetching ? (
         <Loader2 className="h-4 w-4 text-[#828FA3] animate-spin shrink-0 ml-auto" />
       ) : (
-        <ChevronDown className="h-4 w-4 text-[#828FA3] pointer-events-none shrink-0 ml-auto" />
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            if (showChip) { handleChipClick(); return; }
+            if (open) {
+              setOpen(false);
+            } else {
+              setOpen(true);
+              inputRef.current?.focus();
+              if (!catalogOptions && !serverResults) triggerServerSearch(query);
+            }
+          }}
+          className="shrink-0 ml-auto flex items-center"
+        >
+          <ChevronDown className="h-4 w-4 text-[#828FA3]" />
+        </button>
       )}
       {open && (canCreate || filtered.length > 0) && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
@@ -717,9 +736,9 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   const gridClass = resolveGridClass(cols, layout);
   const gridStyle = cols ? { gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 } : undefined;
 
-  // If there's an image field, pin it to the right — rest of fields render in a 3-col grid on the left
-  const imageField = displayFields.find(f => f.type === 'image');
-  const fieldsToRender = imageField ? displayFields.filter(f => f.type !== 'image') : displayFields;
+  // If there's an image field (not inline), pin it to the right — rest of fields render in a 3-col grid on the left
+  const imageField = displayFields.find(f => f.type === 'image' && !f.inline);
+  const fieldsToRender = imageField ? displayFields.filter(f => f.type !== 'image' || f.inline) : displayFields;
 
   const renderField = (f) => {
     // Resolution order: per-window AD_Field label (most specific) → global locale by column → camelCase key
@@ -764,6 +783,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             onClick={() => !isReadOnly && onChange?.(f.key, !checked, f.column)}
             className={[
               'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow',
+              'flex items-center justify-center',
               'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
               'disabled:cursor-not-allowed disabled:opacity-50',
               getCheckboxStateClass(checked),
@@ -924,9 +944,13 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     if (isSelectFieldWithOptions(f)) {
       return renderSelectField(f, data, label, isReadOnly, onChange, ui, tMenu);
     }
+    function buildTextareaAttrs(rows) {
+      return { rowCount: rows ?? 4, minHeightClass: rows ? '' : ' min-h-[96px]' };
+    }
     if (f.type === 'textarea') {
+      const { rowCount, minHeightClass } = buildTextareaAttrs(f.rows);
       return (
-        <div key={f.key} className="space-y-1.5 h-full flex flex-col">
+        <div key={f.key} className="space-y-1.5">
           <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
             {label}{requiredAsteriskIfEditable(f, isReadOnly)}
           </Label>
@@ -934,14 +958,14 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             id={f.key}
             name={f.key}
             data-testid={`field-${f.key}`}
-            rows={4}
+            rows={rowCount}
             value={getFieldValue(isReadOnly, displayValue, data, f)}
             onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
             onBlur={() => onFieldBlur?.(f.key)}
             disabled={isReadOnly}
             className={[
               'flex w-full rounded-lg border border-[#D1D4DB] p-2 text-sm shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
-              'placeholder:text-muted-foreground resize-none flex-1 min-h-[96px]',
+              `placeholder:text-muted-foreground resize-none${minHeightClass}`,
               'focus:outline-none focus:ring-2 focus:ring-primary',
               'disabled:bg-muted/50 disabled:cursor-not-allowed',
               getReadOnlyBgClass(isReadOnly),
@@ -995,20 +1019,51 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   // fieldErrors. Uses cloneElement so we don't have to thread the prop through every
   // branch in renderField — the wrapper <div key={f.key}> already exists for each.
   const renderFieldWithError = (f) => {
-    const node = renderField(f);
+    const SPAN_CLASS = { 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4' };
+    const spanClass = f.span ? (SPAN_CLASS[f.span] ?? '') : '';
+
+    if (f.type === 'image') {
+      const label = t(f.column) ?? f.label ?? f.key;
+      const isReadOnly = formReadOnly || f.readOnly || displayLogic?.readOnly?.[f.key] === true || evalReadOnlyLogic(f, data);
+      const imageClass = ['space-y-1.5 row-span-2 flex flex-col h-full', spanClass].filter(Boolean).join(' ');
+      return (
+        <div key={f.key} className={imageClass}>
+          <Label className="text-sm text-foreground font-medium">{label}</Label>
+          <ImageField
+            imageId={data?.[f.key] ?? ''}
+            onChange={(newId) => onChange?.(f.key, newId, f.column)}
+            token={token}
+            apiBaseUrl={apiBaseUrl}
+            readOnly={isReadOnly}
+            fieldKey={f.key}
+            stretch
+          />
+        </div>
+      );
+    }
+
+    let node = renderField(f);
     const err = fieldErrors?.[f.key];
-    if (!err || !React.isValidElement(node)) return node;
-    const existing = node.props.children;
-    return React.cloneElement(
-      node,
-      { className: `${node.props.className ?? ''}`.trim() },
-      existing,
-      React.createElement(
-        'p',
-        { key: '__err', className: 'text-xs text-red-500 mt-0.5', 'data-testid': `error-${f.key}` },
-        err
-      )
-    );
+
+    if (err && React.isValidElement(node)) {
+      const existing = node.props.children;
+      node = React.cloneElement(
+        node,
+        { className: `${node.props.className ?? ''}`.trim() },
+        existing,
+        React.createElement(
+          'p',
+          { key: '__err', className: 'text-xs text-red-500 mt-0.5', 'data-testid': `error-${f.key}` },
+          err
+        )
+      );
+    }
+
+    if (spanClass && React.isValidElement(node)) {
+      return React.cloneElement(node, { className: `${node.props.className ?? ''} ${spanClass}`.trim() });
+    }
+
+    return node;
   };
 
   if (imageField) {

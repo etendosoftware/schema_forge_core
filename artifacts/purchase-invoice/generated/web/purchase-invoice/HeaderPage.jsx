@@ -1,19 +1,12 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
-import { toast } from 'sonner';
 import { INVOICE_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import HeaderTable from '../../../custom/InvoiceHeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
-import BasicDiscountsTable from './BasicDiscountsTable';
-import BasicDiscountsForm from './BasicDiscountsForm';
-import PaymentPlanTable from './PaymentPlanTable';
-import PaymentPlanForm from './PaymentPlanForm';
-import AccountingTable from './AccountingTable';
-import AccountingForm from './AccountingForm';
-import ReversedInvoicesTable from './ReversedInvoicesTable';
-import ReversedInvoicesForm from './ReversedInvoicesForm';
+import ExchangeRatesTable from './ExchangeRatesTable';
+import ExchangeRatesForm from './ExchangeRatesForm';
 import RelatedDocuments from '@/windows/custom/purchase-invoice/RelatedDocuments';
 import { AttachmentsTab } from '@/components/attachments';
 import SifTab from '@/windows/custom/shared/SifTab.jsx';
@@ -22,21 +15,6 @@ import catalogs from './mockCatalogs';
 
 
 const breadcrumb = 'Purchases / Purchase Invoice';
-
-const labelOverrides = {
-  "es_ES": {
-    "POReference": "Nº documento",
-    "OutstandingAmt": "Pendiente de pago",
-    "EM_Etgo_Due_Date": "Vencimiento",
-    "em_etgo_delivery_status": "Estado de entrega"
-  },
-  "en_US": {
-    "POReference": "Document No.",
-    "OutstandingAmt": "Pending Payment",
-    "EM_Etgo_Due_Date": "Due Date",
-    "em_etgo_delivery_status": "Delivery Status"
-  }
-};
 
 
 // @sf-generated-start summary:header
@@ -197,6 +175,17 @@ export const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-invoice/reversedInvoices",
       "detailUrl": "/sws/neo/purchase-invoice/reversedInvoices/{id}",
+      "supportedFilters": []
+    },
+    "exchangeRates": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/exchangeRates",
+      "detailUrl": "/sws/neo/purchase-invoice/exchangeRates/{id}",
       "supportedFilters": []
     },
     "accounting": {
@@ -592,6 +581,36 @@ export const api = {
       "url": "/sws/neo/purchase-invoice/reversedInvoices/selectors/reversedInvoice"
     },
     {
+      "entity": "exchangeRates",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/exchangeRates/selectors/currency",
+      "context": {
+        "required": [
+          {
+            "param": "C_Invoice_ID",
+            "source": "parentField",
+            "field": "invoice"
+          },
+          {
+            "param": "FIN_Payment_ID",
+            "source": "parentField",
+            "field": "payment"
+          }
+        ]
+      }
+    },
+    {
+      "entity": "exchangeRates",
+      "field": "toCurrency",
+      "column": "C_Currency_Id_To",
+      "reference": "Currency",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/exchangeRates/selectors/toCurrency"
+    },
+    {
       "entity": "accounting",
       "field": "accountingSchema",
       "column": "C_AcctSchema_ID",
@@ -916,6 +935,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
   if (recordId) {
@@ -939,19 +960,17 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         secondaryTabs={[
-          { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable, Form: BasicDiscountsForm },
-          { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
-          { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
-          { key: 'reversedInvoices', label: 'Reversed Invoices', Table: ReversedInvoicesTable, Form: ReversedInvoicesForm },
+          { key: 'exchangeRates', label: 'Exchange Rates', Table: ExchangeRatesTable, Form: ExchangeRatesForm, addLineFields: { entry: [
+          { key: 'toCurrency', column: 'C_Currency_Id_To', type: 'search', required: true, label: 'To Currency', reference: 'Currency', inputMode: 'search', excludeValueOf: 'currency' },
+          { key: 'rate', column: 'Rate', type: 'text', label: 'Rate' },
+          { key: 'foreignAmount', column: 'Foreign_Amount', type: 'number', required: true, label: 'Foreign  Amount', defaultValue: '0' },
+          ], derived: [], hidden: [] }, requireSavedRecord: true, readOnlyLogic: (record) => record['documentStatus'] !== 'DR' },
         ]}
         hideDeleteWhenComplete
         noHeaderBorder
         notesField="description"
         customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Invoice", config: {} } }, { key: 'sif', labelKey: 'sifDataTabs.sectionTitle', Component: SifTab, placement: 'tab' }]}
         bottomSection={PurchaseInvoiceBottomPanel}
-        menuActions={({ status }) => [
-          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
-        ]}
         draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}

@@ -17,12 +17,12 @@ describe('GoodsReceiptBottomPanel', () => {
       assert.match(src, /<LinesEmptyState/);
     });
 
-    it('passes description prop with addLinesManuallyOrImportFromPurchaseOrder i18n key', () => {
-      assert.match(src, /description=\{ui\('addLinesManuallyOrImportFromPurchaseOrder'\)\}/);
+    it('passes description prop with addLinesManuallyOrImportFromPurchaseOrderOrInvoice i18n key', () => {
+      assert.match(src, /description=\{ui\('addLinesManuallyOrImportFromPurchaseOrderOrInvoice'\)\}/);
     });
 
     it('passes secondaryAction prop to LinesEmptyState', () => {
-      assert.match(src, /secondaryAction=\{importButton\}/);
+      assert.match(src, /secondaryAction=\{secondaryActions\}/);
     });
 
     it('derives importButton from businessPartner field', () => {
@@ -45,8 +45,8 @@ describe('GoodsReceiptBottomPanel', () => {
       assert.match(src, /ui\('importFromPurchaseOrder'\)/);
     });
 
-    it('opens the import modal when import button is clicked', () => {
-      assert.match(src, /setShowImportModal\(true\)/);
+    it('opens the import order modal when import button is clicked', () => {
+      assert.match(src, /setShowImportOrderModal\(true\)/);
     });
 
     it('passes data and onAddLine through to LinesEmptyState', () => {

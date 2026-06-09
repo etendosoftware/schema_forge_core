@@ -280,7 +280,7 @@ function FileRow({ file, format, lineCount, analyzing, onRemove, ui }) {
         type="button"
         onClick={onRemove}
         aria-label={ui('financeAccountStatementsImportRemove')}
-        className="flex h-8 w-8 items-center justify-center rounded-md text-[#6C6C89] hover:bg-[#F5F7F9] hover:text-[#121217]"
+        className="flex h-8 w-8 items-center justify-center rounded-full text-[#6C6C89] transition-colors hover:bg-[#FEF0F4] hover:text-[#9A1B1B]"
       >
         <Trash2 className="h-4 w-4" />
       </button>
@@ -707,7 +707,7 @@ function ModalFooter({
   }
 
   return (
-    <div className="flex items-center justify-between border-t border-[#E8EAEF] px-6 py-4">
+    <div className="flex items-center justify-between px-6 py-4">
       {view === 'preview' ? (
         <button
           type="button"
@@ -827,6 +827,7 @@ export function ImportStatementModal({
           'imp-modal-enter overflow-hidden p-0',
           wide ? 'max-w-[720px]' : 'max-w-[600px]',
         )}
+        style={{ background: 'var(--surface-overlay, #FFFFFF)' }}
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         <style>{ANIMATIONS_CSS}</style>

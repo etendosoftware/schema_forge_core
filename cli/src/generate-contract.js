@@ -89,7 +89,7 @@ function findMatchingRule(rules, identifier, type) {
  * Uses a column→propertyName map built from the schema to resolve @Column@ references.
  * Falls back to camelCase of the column name when not found in the map.
  */
-function convertLogicToJs(rawExpr, columnMap, booleanFields) {
+export function convertLogicToJs(rawExpr, columnMap, booleanFields) {
   const boolSet = new Set(booleanFields || []);
   // Helper: for Y/N comparisons on boolean fields, use true/false instead of string
   function eqExpr(col, val) {
@@ -156,6 +156,59 @@ function classifyEvaluability(rawExpr) {
   return { evaluable: true };
 }
 
+function applyReadOnlyLogic(mapped, f, rules, columnMap, booleanFields) {
+  mapped.readOnlyLogic = {raw: f.readOnlyLogic};
+  const matchingRule = findMatchingRule(rules, f.readOnlyLogic, 'readOnlyLogic');
+  if (matchingRule && matchingRule.translated) {
+    mapped.readOnlyLogic.js = matchingRule.translated;
+  }
+  const evalInfo = classifyEvaluability(f.readOnlyLogic);
+  mapped.readOnlyLogic.evaluable = evalInfo.evaluable;
+  if (!evalInfo.evaluable) {
+    mapped.readOnlyLogic.reason = evalInfo.reason;
+    mapped.readOnlyLogic.js = null;
+  } else if (!mapped.readOnlyLogic.js) {
+    mapped.readOnlyLogic.js = convertLogicToJs(f.readOnlyLogic, columnMap, booleanFields);
+  }
+}
+
+function applyBasicFieldUIHints(f, mapped) {
+  if (f.defaultValue !== undefined) mapped.defaultValue = f.defaultValue;
+  if (f.isIdentifier) mapped.isIdentifier = true;
+  if (f.help) mapped.help = f.help;
+  if (f.fieldGroup) mapped.fieldGroup = f.fieldGroup;
+  if (f.isSelectionColumn) mapped.isSelectionColumn = true;
+  if (f.isFilterable) mapped.isFilterable = true;
+  if (f.precision) mapped.precision = f.precision;
+  if (f.isTranslated) mapped.isTranslated = true;
+  if (f.section) mapped.section = f.section;
+  if (f.seq != null) mapped.seq = f.seq;
+  if (f.span) mapped.span = f.span;
+  if (f.rows != null) mapped.rows = f.rows;
+  if (f.explicitType) mapped.explicitType = true;
+  if (f.statusBar) mapped.statusBar = true;
+  if (f.badge) mapped.badge = true;
+}
+
+function applyFieldUIHints(f, mapped) {
+  applyBasicFieldUIHints(f, mapped);
+  if (f.badgeLabels) mapped.badgeLabels = f.badgeLabels;
+  if (f.badgeColors) mapped.badgeColors = f.badgeColors;
+  if (f.badgeVariants) mapped.badgeVariants = f.badgeVariants;
+  if (f.enumVariants) mapped.enumVariants = f.enumVariants;
+  if (f.labels) mapped.labels = f.labels;
+  if (f.summable) mapped.summable = true;
+  if (f.display) mapped.display = f.display;
+  if (f.cellType) mapped.cellType = f.cellType;
+  if (f.gridOrder != null) mapped.gridOrder = f.gridOrder;
+  if (f.grow) mapped.grow = true;
+  if (f.noTrailing) mapped.noTrailing = true;
+  if (f.filterOnly) mapped.filterOnly = true;
+  if (f.filterable === false) mapped.filterable = false;
+  if (f.dot === false) mapped.dot = false;
+  if (f.min !== undefined) mapped.min = f.min;
+}
+
 /**
  * Generate frontend contract: visible fields, searchable fields, computed fields.
  * Includes behavioral metadata (callout, displayLogic, readOnlyLogic) when present.
@@ -188,33 +241,8 @@ export function generateFrontendContract(schema, rules = []) {
       mapFieldAttributes(f, mapped);
 
       // UI hints
-      if (f.defaultValue !== undefined) mapped.defaultValue = f.defaultValue;
-      if (f.isIdentifier) mapped.isIdentifier = true;
-      if (f.help) mapped.help = f.help;
-      if (f.fieldGroup) mapped.fieldGroup = f.fieldGroup;
-      if (f.isSelectionColumn) mapped.isSelectionColumn = true;
-      if (f.isFilterable) mapped.isFilterable = true;
-      if (f.precision) mapped.precision = f.precision;
-      if (f.isTranslated) mapped.isTranslated = true;
-      if (f.section) mapped.section = f.section;
-      if (f.seq != null) mapped.seq = f.seq;
-      if (f.statusBar) mapped.statusBar = true;
-      if (f.badge) mapped.badge = true;
-      if (f.badgeLabels) mapped.badgeLabels = f.badgeLabels;
-      if (f.badgeColors) mapped.badgeColors = f.badgeColors;
-      if (f.badgeVariants) mapped.badgeVariants = f.badgeVariants;
-      if (f.enumVariants) mapped.enumVariants = f.enumVariants;
-      if (f.labels) mapped.labels = f.labels;
-      if (f.summable) mapped.summable = true;
-      if (f.display) mapped.display = f.display;
-      if (f.cellType) mapped.cellType = f.cellType;
-      if (f.gridOrder != null) mapped.gridOrder = f.gridOrder;
-      if (f.grow) mapped.grow = true;
-      if (f.noTrailing) mapped.noTrailing = true;
-      if (f.filterOnly) mapped.filterOnly = true;
-      if (f.filterable === false) mapped.filterable = false;
-      if (f.dot === false) mapped.dot = false;
-      if (f.min !== undefined) mapped.min = f.min;
+      applyFieldUIHints(f, mapped);
+      if (f.inline) mapped.inline = true;
 
       // Behavioral metadata: validationRule (e.g. M_PriceList.issopricelist = @isSOTrx@)
       if (f.validationRule) mapped.validationRule = f.validationRule;
@@ -236,19 +264,7 @@ export function generateFrontendContract(schema, rules = []) {
 
       // Behavioral metadata: readOnlyLogic
       if (f.readOnlyLogic) {
-        mapped.readOnlyLogic = { raw: f.readOnlyLogic };
-        const matchingRule = findMatchingRule(rules, f.readOnlyLogic, 'readOnlyLogic');
-        if (matchingRule && matchingRule.translated) {
-          mapped.readOnlyLogic.js = matchingRule.translated;
-        }
-        const evalInfo = classifyEvaluability(f.readOnlyLogic);
-        mapped.readOnlyLogic.evaluable = evalInfo.evaluable;
-        if (!evalInfo.evaluable) {
-          mapped.readOnlyLogic.reason = evalInfo.reason;
-          mapped.readOnlyLogic.js = null;
-        } else if (!mapped.readOnlyLogic.js) {
-          mapped.readOnlyLogic.js = convertLogicToJs(f.readOnlyLogic, columnMap, booleanFields);
-        }
+        applyReadOnlyLogic(mapped, f, rules, columnMap, booleanFields);
       }
       // Prefer explicit readOnlyLogicJs from decisions over AD-expression translation
       if (f.readOnlyLogicJs != null) {
@@ -272,6 +288,8 @@ export function generateFrontendContract(schema, rules = []) {
     if (entity.javaQualifier) feEntity.javaQualifier = entity.javaQualifier;
     if (entity.draftMode?.enabled) feEntity.draftMode = entity.draftMode;
     if (entity.formCols != null) feEntity.formCols = entity.formCols;
+    const siblingFields = entity.fields.filter(f => isSystem(f) && f.addLineFromSibling).map(f => f.name);
+    if (siblingFields.length > 0) feEntity.addLineHiddenFromSibling = siblingFields;
     entities[entity.name] = feEntity;
   }
 
@@ -741,6 +759,63 @@ function isDateContextEntry(entry, contextIndex) {
   return match?.field?.type === 'date' || match?.field?.type === 'datetime';
 }
 
+function assignTrxParamByCategory(windowCategory, required, trxParam, optional) {
+  if (windowCategory === 'sales' || windowCategory === 'purchases') {
+    required.push({
+      param: trxParam,
+      source: 'windowCategory',
+    });
+  } else {
+    optional.push({
+      param: trxParam,
+      source: 'windowCategory',
+    });
+  }
+}
+
+function addCanonicalDateParam(dateParams, contextIndex, required) {
+  const dateEntry = dateParams
+      .map(param => buildCascadeContextEntry(param, contextIndex))
+      .find(entry => entry && isDateContextEntry(entry, contextIndex));
+  const canonicalParam = dateParams[0];
+  if (dateEntry && !required.some(r => r.param === canonicalParam)) {
+    required.push({
+      ...dateEntry,
+      param: canonicalParam,
+    });
+  }
+}
+
+function applyCascadeParamsToContext(field, windowCategory, required, optional, contextIndex) {
+  const cascadeParams = field.validationRule.cascadeParams;
+
+  // IsSOTrx / isSOTrx -> window category derived.
+  // Preserve the exact validation-rule parameter name because NEO selector
+  // context keys are consumed by classic validation SQL.
+  let trxParam = null;
+  if (cascadeParams.includes('isSOTrx')) {
+    trxParam = 'isSOTrx';
+  } else if (cascadeParams.includes('IsSOTrx')) {
+    trxParam = 'IsSOTrx';
+  }
+  if (trxParam) {
+    assignTrxParamByCategory(windowCategory, required, trxParam, optional);
+  }
+
+  const dateParams = cascadeParams.filter(param => /date/i.test(param));
+  for (const param of cascadeParams) {
+    if (param === 'isSOTrx' || param === 'IsSOTrx') continue;
+    if (/date/i.test(param)) continue;
+    if (required.some(r => r.param === param)) continue;
+    const entry = buildCascadeContextEntry(param, contextIndex);
+    if (entry) required.push(entry);
+  }
+
+  if (dateParams.length > 0) {
+    addCanonicalDateParam(dateParams, contextIndex, required);
+  }
+}
+
 /**
  * Build selector context metadata from field dependsOn, validationRule params,
  * and window category. Returns a context object with required/optional entries.
@@ -761,52 +836,7 @@ function buildSelectorContext(field, windowCategory, contextIndex) {
 
   // validationRule cascadeParams -> derive context requirements
   if (field.validationRule && Array.isArray(field.validationRule.cascadeParams)) {
-    const cascadeParams = field.validationRule.cascadeParams;
-
-    // IsSOTrx / isSOTrx -> window category derived.
-    // Preserve the exact validation-rule parameter name because NEO selector
-    // context keys are consumed by classic validation SQL.
-    let trxParam = null;
-    if (cascadeParams.includes('isSOTrx')) {
-      trxParam = 'isSOTrx';
-    } else if (cascadeParams.includes('IsSOTrx')) {
-      trxParam = 'IsSOTrx';
-    }
-    if (trxParam) {
-      if (windowCategory === 'sales' || windowCategory === 'purchases') {
-        required.push({
-          param: trxParam,
-          source: 'windowCategory',
-        });
-      } else {
-        optional.push({
-          param: trxParam,
-          source: 'windowCategory',
-        });
-      }
-    }
-
-    const dateParams = cascadeParams.filter(param => /date/i.test(param));
-    for (const param of cascadeParams) {
-      if (param === 'isSOTrx' || param === 'IsSOTrx') continue;
-      if (/date/i.test(param)) continue;
-      if (required.some(r => r.param === param)) continue;
-      const entry = buildCascadeContextEntry(param, contextIndex);
-      if (entry) required.push(entry);
-    }
-
-    if (dateParams.length > 0) {
-      const dateEntry = dateParams
-        .map(param => buildCascadeContextEntry(param, contextIndex))
-        .find(entry => entry && isDateContextEntry(entry, contextIndex));
-      const canonicalParam = dateParams[0];
-      if (dateEntry && !required.some(r => r.param === canonicalParam)) {
-        required.push({
-          ...dateEntry,
-          param: canonicalParam,
-        });
-      }
-    }
+    applyCascadeParamsToContext(field, windowCategory, required, optional, contextIndex);
   }
 
   if (required.length > 0) context.required = required;
@@ -1216,7 +1246,7 @@ function extractRequiredSessionVariables(schema, rules = []) {
     addSessionVariablesFromExpression(rule.rawExpression, sessionVars);
   }
 
-  return Array.from(sessionVars).sort();
+  return Array.from(sessionVars).sort((a, b) => a.localeCompare(b));
 }
 
 /**

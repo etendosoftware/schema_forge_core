@@ -17,8 +17,14 @@ TYPE          → 3 cards: Bank / Cash / Card
                                         → INSTITUTION (bank display field + institution list)
                                            → FORM-BANK (Name* / IBAN / BIC-SWIFT / Currency)
   Cash        → FORM-CASH (Name* / Currency)
-  Card        → CARD-SOON (placeholder — PSD2 required)
+  Card        → CONNECTION (toggle Connected[disabled, future PSD2] / Without connection)
+                  Without connection → BANK → INSTITUTION → FORM-CARD (Name* / Currency)
 ```
+
+The **Card** type comes from the **PSD2 module**, which adds the `AD_Ref_List` value `VALUE=CA` ("Card")
+to the core "Financial account type" reference (`A6BDFA712FF948CE903C4C463E832FC1`). Schema Forge reuses it
+(it does NOT define its own). `FinancialAccountHandler.normalizeType` keeps `C`/`CA` and coerces everything
+else to `B`; the frontend `ACCOUNT_TYPE.CARD` is `'CA'`.
 
 - State is kept in a single `{ step, accountType, connection, selectedBank, selectedInstitution, query }` object inside `NewAccountWizard.jsx`. No external store.
 - The back `←` button reverts one step. For the form step the target depends on `selectedBank`: if the user skipped bank selection (`null`), back goes to BANK; if they chose one, it goes to INSTITUTION.
@@ -187,10 +193,12 @@ Display the full detail of a financial account: a summary strip with KPIs, and t
 - Three tabs with counts: Movements (live data), Reconciliation (placeholder), Imported Statements (placeholder).
 - Export button at the right of the tab strip — fires a toast (real export is out of scope).
 - Movements toolbar: back arrow `←`, status filter (8 payment statuses, search-enabled), date range filter (preset list + dual calendar, same picker as grid views), type filter (BPD/BPW, search-enabled), amount filter (presets + manual min/max), search input, `+ Nuevo movimiento` button (yellow hover, fires toast — real action is T8).
-- Movements table: Checkbox | Date | Document | Contact | Description | Status (`MovementStatusBadge`) | Type (with `PostingStatusDot` sub-label) | Amount | Balance.
+- Movements table: Expand chevron | Checkbox | Date | Payment | Contact | Description | Status (`MovementStatusBadge`) | Type (with `PostingStatusDot` sub-label) | G/L Item | Amount | Balance | kebab.
+- **Payment column** (`Pago`): when the movement has a related payment, the document number renders as an underlined link (with an `ArrowUpRight` icon) that navigates to `/payment-in/:id` (received payments, `paymentIsReceipt === 'Y'`) or `/payment-out/:id` (made payments). Movements with no payment show plain text.
+- **Expandable "more info" panel**: the leading circular chevron (or a click anywhere on the row) toggles an inline panel showing the accounting dimensions enabled in the chart of accounts that have a value on the transaction (Organization, Project, Cost Center, Activity, Campaign, Sales Region, User1, User2). The business partner is excluded (it already has its own Contacto column). Dimensions are rendered read-only as label + value (no selector chrome), in a 1/2/4-column responsive grid. The header row and panel form one elevated card (shadow at the bottom only, no seam line — the header row sits at `z-20` over the panel's `z-10` to hide the shadow bleed). When no enabled dimension has a value, the panel shows a "no dimensions" message. The chevron only renders when the account reports at least one enabled dimension (`enabledDimensions`).
 - Locale-aware date format in the Date column (es_ES → `dd/MM/yyyy`, en_US → `M/d/yyyy`).
 - Individual row checkbox + select-all (indeterminate when partial).
-- Row hover: subtle shadow elevation + kebab appears (View detail active toast; Unreconcile / Post disabled with tooltip).
+- Row hover: subtle shadow elevation + kebab appears (Unreconcile / Post disabled with tooltip).
 - Back arrow in the toolbar runs `navigate(-1)`.
 - `+ Nuevo movimiento` button (yellow hover) — currently fires a "coming soon" toast.
 
@@ -223,18 +231,26 @@ index.jsx                          — receives { recordId }, sets page meta, mo
         AmountFilter.jsx           — presets + manual min/max + Apply/Cancel
       AccountSummaryStrip.jsx      — avatar, IBAN (chunked + copy), 3 KPI values
       MovementsTable.jsx           — header + rows / skeleton / empty-state; renderBody helper
+        DimensionsPanel (inline)   — expandable read-only accounting-dimensions grid
         MovementStatusBadge.jsx    — 8 status chips (5 color families)
         PostingStatusDot.jsx       — derived posting status (RPPC → posted/green, else → orange)
-        MovementRowKebab.jsx       — on-hover kebab (View detail active, Unreconcile/Post disabled)
+        MovementRowKebab.jsx       — on-hover kebab (Unreconcile/Post disabled)
     ReconciliacionTab.jsx          — placeholder (T6)
     ImportedStatementsTab.jsx      — orchestrates list ↔ lines state machine
-      StatementsToolbar.jsx        — back ←, search, import button
-      StatementsTable.jsx          — 7-column table (file, data, period, lines, progress, status, imported)
+      StatementsToolbar.jsx        — back ←, date range, status filter, "Filtro por condicionales" (AdvancedFilterBuilder, same as movements), search, import split-button (▾ → "Create manually")
+      StatementsTable.jsx          — columns: docNo, name (falls back to line date range), file name, notes, import/transaction dates, lines, out (red, −) / in (green, +), status pill (DRAFT/PENDING/PARTIAL/RECONCILED), per-row kebab (when `actions` is passed); expand chevron is a round bordered button rotating 180° (same as movements)
+      statementAdvancedFilter.js   — column metadata + applyAdvancedFilter for the statements list (delegates to the shared advancedFilterApply evaluator)
+      advancedFilterApply.js       — generic client-side evaluator for the AdvancedFilterBuilder condition tree (OPERATORS + applyConditions), shared by movements and statements
         StatementStatusBadge.jsx   — 3 status chips (COMPLETED / WITH_ISSUES / IN_PROGRESS)
+        StatementRowKebab.jsx      — per-row "…" menu: Edit / Process / Delete, enabled ONLY for drafts (processed='N'); disabled with tooltip on processed statements
         ProgressRing              — SVG circular progress indicator (new primitive)
+      StatementLinesInline.jsx     — lines table shown in the expanded accordion row: date, description, contact name (free text), contact (BP FK name), G/L item (concepto contable), out, in, match status
       StatementLinesView.jsx       — sub-view: header with ← + lines table
         StatementLinesTable.jsx    — 7-column lines table (lineNo, date, desc, ref, bpartner, amount, matched)
-      UploadStatementDialog.jsx    — Dialog for C43 file upload (file input + base64 POST)
+      ImportStatementModal.jsx     — multi-step import modal (Upload → Review → Done): dropzone, preview KPIs + lines, base64 POST. White surface (var(--surface-overlay)), borderless footer, round red-hover remove button.
+      ManualStatementModal.jsx     — "Create/Edit statement" modal (Classic field parity): header (name, transaction/import dates, file name, notes) + per-line grid (date, Reference No, contact name + Business Partner lookup, G/L item lookup, out, in) + live totals bar. Per line the required fields are **date, Reference No, out and in** (marked with `*`); contact/G/L item are optional. A line auto-commits to a read-only row when you click outside it (re-edit via the pencil), but only when complete — an incomplete line stays editable and blocks save. Create POSTs ?action=create; with a `statement` prop it hydrates from the draft and POSTs ?action=update. No file involved.
+      StatementConfirmDialog.jsx   — shared confirm dialog for the Process / Delete row actions (destructive tone for delete)
+      LookupPicker.jsx             — shared text-input + dropdown lookup (BP / G/L item), used by NewMovementDialog and ManualStatementModal.
 ```
 
 ## Shared primitives introduced or used
@@ -253,10 +269,12 @@ index.jsx                          — receives { recordId }, sets page meta, mo
 |------|------|-------|
 | `useNeoResource({ path, deps, mapPayload, timeoutMs, label })` | `hooks/useNeoResource.js` | Generic NEO fetch with auth + abort + timeout. Returns `{ data, loading, error, reload }`. Passing `path: null` keeps the hook idle (useful when the path depends on a not-yet-known id). Consumed by `useFinancialAccount` and `useAccountMovements`. |
 | `useFinancialAccount(id)` | `hooks/useFinancialAccount.js` | Thin wrapper over `useNeoResource` — hits `/sws/neo/financial-accounts-page` and filters client-side by `id`. Returns `{ account, loading, error, reload }`. Follow-up: replace with dedicated `/sws/neo/financial-account/{id}` endpoint once that spec is live. |
-| `useAccountMovements(accountId)` | `hooks/useAccountMovements.js` | Thin wrapper over `useNeoResource` — hits `/sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}` (powered by `FinancialAccountTransactionsHandler` on the Etendo Go side). Returns `{ movements, totals, loading, error, reload }`. |
+| `useAccountMovements(accountId)` | `hooks/useAccountMovements.js` | Thin wrapper over `useNeoResource` — hits `/sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}` (powered by `FinancialAccountTransactionsHandler` on the Etendo Go side). Returns `{ movements, totals, enabledDimensions, loading, error, reload }`. Each movement carries `paymentId` / `paymentIsReceipt` (for the Payment link) and a `dimensions` object (per-row dimension values); `enabledDimensions` is the account-level list of dimension keys enabled in the chart of accounts. |
 | `useBankStatements(accountId)` | `hooks/useBankStatements.js` | Fetches imported bank statements — hits `GET /sws/neo/bank-statements?FIN_Financial_Account_ID={id}`. Returns `{ statements, loading, error, reload }`. |
 | `useBankStatementLines(statementId)` | `hooks/useBankStatementLines.js` | Fetches lines of one statement — hits `GET /sws/neo/bank-statements?action=lines&statementId={id}`. Returns `{ lines, loading, error, reload }`. |
 | `useStatementImport()` | `hooks/useStatementImport.js` | Mutation hook for C43 import — posts `{ FIN_Financial_Account_ID, fileName, contentBase64 }` to `POST /sws/neo/bank-statements?action=import`. Returns `{ importStatement, importing, error }`. |
+| `useCreateStatement()` | `hooks/useCreateStatement.js` | Mutation hook for manual statement creation — posts `{ FIN_Financial_Account_ID, name, transactionDate, importDate, fileName, notes, lines[] }` to `POST /sws/neo/bank-statements?action=create`. Returns `{ createStatement, creating, error }`. |
+| `useStatementActions()` | `hooks/useStatementActions.js` | Mutation hook for the draft row actions — `processStatement(id)` (`?action=process`), `updateStatement({ id, ...header, lines })` (`?action=update`), `deleteStatement(id)` (`?action=delete`). All only valid for drafts (backend returns 400 otherwise). Returns `{ processStatement, updateStatement, deleteStatement, busy, error }`. |
 
 ## Backend endpoints
 
@@ -269,6 +287,8 @@ GET /sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}
 Implemented by `com.etendoerp.go.schemaforge.FinancialAccountTransactionsHandler` (CDI bean registered via `@Named("financial-account-transactions")`). The handler:
 
 - Queries `FIN_Finacc_Transaction` joined with `FIN_Financial_Account`, `C_Currency`, `FIN_Payment`, and `C_BPartner` (resolved from either the transaction or its parent payment).
+- Joins the 9 accounting-dimension FK tables (`ad_org`, `c_bpartner`, `c_project`, `c_costcenter`, `c_activity`, `c_campaign`, `c_salesregion`, `user1`, `user2`) to marshal a `dimensions` object per row, and surfaces the related payment (`paymentId` + `paymentIsReceipt`) so the frontend can deep-link to the payment window.
+- Computes the account's `enabledDimensions` by reading `C_AcctSchema_Element` (the dimensions enabled in the chart of accounts), returned once at the payload level (not per row).
 - Computes a per-row running balance anchored to `FIN_Financial_Account.currentbalance` (window function: `currentbalance − SUM(subsequent)` over `statementdate ASC, line ASC`).
 - Returns a `totals` object with the current balance, 30-day inflows, 30-day outflows, and the account currency. The 30-day cutoff is **computed in Java** (`Instant.now().minus(30, ChronoUnit.DAYS)`) and bound as a `Timestamp` parameter — no PostgreSQL-specific `NOW() − INTERVAL` syntax, so the query stays portable across PostgreSQL and Oracle.
 
@@ -283,14 +303,17 @@ Response shape:
           "id": "...", "date": "2026-05-06T00:00:00Z", "documentNo": "PAY-001",
           "contact": "DHL Technologies SL", "description": "Invoice No.: ...",
           "paymentStatus": "RPPC", "trxType": "BPD",
+          "paymentId": "...", "paymentIsReceipt": "Y",
           "amount": 12450.00, "balance": 211841.01,
-          "currencyIso": "EUR", "posted": "Y"
+          "currencyIso": "EUR", "posted": "Y",
+          "dimensions": { "organization": "GOOrg", "project": "..." }
         }
       ],
       "totals": {
         "balance": 211841.01, "inflows": 47820.00,
         "outflows": 22398.82, "currency": "EUR"
-      }
+      },
+      "enabledDimensions": ["organization", "bpartner", "project"]
     }
   }
 }
@@ -300,14 +323,29 @@ The spec + entity records that wire this endpoint live in `src-db/database/sourc
 
 ### Imported statements
 
-Three operations routed by HTTP method + `action` query param, all served by `BankStatementsHandler` (`@Named("bank-statements")`):
+Operations routed by HTTP method + `action` query param, all served by `BankStatementsHandler` (`@Named("bank-statements")`):
 
 ```
 GET  /sws/neo/bank-statements?FIN_Financial_Account_ID={id}          → list
 GET  /sws/neo/bank-statements?action=lines&statementId={id}          → lines
-POST /sws/neo/bank-statements?action=import                          → C43 import
+POST /sws/neo/bank-statements?action=preview                         → in-memory parse (no persist)
+POST /sws/neo/bank-statements?action=import                          → C43 / CSV import
      body: { FIN_Financial_Account_ID, fileName, contentBase64 }
+POST /sws/neo/bank-statements?action=create                          → manual create (header + lines, no file)
+     body: { FIN_Financial_Account_ID, name, transactionDate, importDate,
+             fileName, notes, process,
+             lines: [{ date, reference, bpartnerName, bpartnerId,
+                       glItemId, in, out }] }
+POST /sws/neo/bank-statements?action=process   body: { id }            → process a draft
+POST /sws/neo/bank-statements?action=update    body: { id, ...create }  → edit a draft (replaces all lines)
+POST /sws/neo/bank-statements?action=delete    body: { id }            → delete a draft (+ its lines)
 ```
+
+The manual-create handler builds the `FIN_BankStatement` (name, dates, `fileName`, `notes`), one `FIN_BankStatementLine` per non-blank line (`in`→`cramount`, `out`→`dramount`, `bpartnerName`→`bpartnername`, `bpartnerId`→`businessPartner` FK, `glItemId`→`gLItem` FK, blank `reference` defaults to `**`). The `process` flag (default `true`) drives the save modal's split button: **Save and process** (`true`) runs the same `processStatement` as import so the lines become reconcilable; **Save as draft** (`false`) just persists the statement with `processed='N'`. Mirrors Classic's manual bank-statement header + line fields.
+
+**Draft row actions** (`process` / `update` / `delete`) are guarded by `requireDraft(id)`, which 400s when the id is missing, the statement does not exist, or it has already been processed (`isProcessed()`). So only drafts can be processed, edited or deleted; processed statements are immutable. `update` re-applies the editable header and **replaces all lines** (deletes the existing ones, then recreates from the body), optionally processing afterwards when `process=true`. `delete` removes the lines then the statement.
+
+**Status derivation** — the list endpoint derives each row's `status` via `BankStatementsSupport.deriveStatementStatus(processed, lineCount, matchedCount)`: not processed → `DRAFT`; otherwise `PENDING` (no matched lines) / `PARTIAL` / `RECONCILED` (all matched). The list also returns `notes`, and `?action=lines` returns each line's `bpartnerId`/`glItemId` (+ joined `bpartnerFkName`/`glItemName`) and separate `in`/`out` so the edit modal can hydrate the FK pickers.
 
 The import handler:
 - Decodes base64 → `ByteArrayInputStream`
@@ -385,8 +423,11 @@ All keys prefixed `financeAccountDetail*` and `financeAccountMovements*`, added 
 - `financeAccountMovementsFilter*` — filter labels and search placeholders.
 - `financeAccountMovementsStatus*` — labels for the 8 payment statuses.
 - `financeAccountMovementsType{BPD,BPW}` — trxType labels (Cobro / Pago in es).
-- `financeAccountMovementsCol*` — table column headers.
+- `financeAccountMovementsCol*` — table column headers (`ColDocument` now labels the **Payment** / Pago column).
 - `financeAccountMovementsRow*` — kebab actions + their disabled tooltips.
+- `financeAccountMovementsMoreInfo` — chevron aria-label for the expandable panel.
+- `financeAccountMovementsNoDimensions` — message shown when no enabled dimension has a value.
+- `financeAccountMovementsDim*` — accounting-dimension labels (`Organization`, `Bpartner`, `Project`, `Costcenter`, `Activity`, `Campaign`, `Salesregion`, `User1`, `User2`).
 - `financeAccountMovementsEmpty` — empty-state message.
 - `financeAccountStatements*` — all statements tab keys (search, import, column headers, status labels, dialog, toasts).
 - `financeAccountStatementLines*` — all lines sub-view keys (column headers, empty state, matched labels).

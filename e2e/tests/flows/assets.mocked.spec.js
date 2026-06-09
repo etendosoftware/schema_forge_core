@@ -273,13 +273,13 @@ test.describe('Assets — AmortizationPlan row navigation', () => {
     await page.goto(`/assets/${ASSET_WITH_DEPRECIATION.id}`);
     await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
-    // Locate the row that contains the amortization identifier and click it
+    // Locate the PeriodLink button inside the row (only the button navigates, not the whole row)
     const amortRow = page
       .locator('tr, [role="row"]')
       .filter({ hasText: '08-04-2026' })
       .first();
     await expect(amortRow).toBeVisible({ timeout: 5_000 });
-    await amortRow.click();
+    await amortRow.locator('button').first().click();
 
     // URL must change to /amortization/mock-amort-001
     await expect(page).toHaveURL(

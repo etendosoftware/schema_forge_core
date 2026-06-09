@@ -354,11 +354,64 @@ function renderSelectorCell({
   );
 }
 
+// Two-decimal display formatter for amount/price inputs. Pure (only reads `raw`),
+// kept at module scope so it doesn't count against renderInputCell's complexity.
+function formatTwoDecimals(raw) {
+  if (raw == null || raw === '') return '';
+  const n = typeof raw === 'string' ? Number.parseFloat(raw) : raw;
+  return Number.isFinite(n) ? n.toFixed(2) : raw;
+}
+
+function renderInputCell({
+  field, col, values, invalidFields, isFirst, firstInputRef,
+  handleFieldChange, handleKeyDown, fieldLabel,
+}) {
+  const isNumeric = NUMERIC_FIELD_TYPES.has(field.type);
+  const isTwoDecimal = field.type === 'amount' || field.type === 'price';
+  // Numeric `inputMode` only for numeric fields — integers get the digits-only
+  // on-screen keyboard, the rest the decimal pad (Sonar S3358: flat conditional).
+  const numericInputMode = resolveNumericInputMode(field, isNumeric);
+  const displayValue = formatNumericInputValue(isTwoDecimal, values[field.key], formatTwoDecimals);
+  // Unambiguous partial-number patterns: no two adjacent unbounded `\d*`, so no
+  // super-linear backtracking (ReDoS-safe). Integer -> digits; decimal -> digits
+  // then an optional `.digits` group. Raw strings are kept while typing so
+  // in-progress decimals ("1.") survive; numeric coercion happens at commit.
+  const partialPattern = field.type === 'integer' ? /^-?\d*$/ : /^-?\d*(?:\.\d*)?$/;
+  const onChange = (e) => {
+    const raw = e.target.value;
+    if (!isNumeric || raw === '' || partialPattern.test(raw)) {
+      handleFieldChange(field.key, raw);
+    }
+  };
+  // Always type="text" — numeric type renders spinner buttons; the numeric
+  // on-screen keyboard is preserved via inputMode.
+  return (
+    <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
+      <input
+        data-testid={`inline-add-field-${field.key}`}
+        ref={isFirst ? firstInputRef : undefined}
+        type="text"
+        inputMode={numericInputMode}
+        value={displayValue}
+        onChange={onChange}
+        onKeyDown={handleKeyDown}
+        placeholder={fieldLabel}
+        required={field.required}
+        className={`w-full h-8 text-sm rounded-md border bg-white px-2 focus:ring-2 focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}${invalidFields.has(field.key) ? ' border-red-500 focus:ring-red-500' : ' border-input focus:ring-primary'}`}
+      />
+    </TableCell>
+  );
+}
+
 /**
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, ilpHasNoAmountCol = false, ilpTrailing = false }, ref) {
+// Stable empty seed: a fresh `{}` default would change identity every render and
+// make buildEmpty's effect re-run, wiping in-progress input. Share one frozen ref.
+const EMPTY_SEED = {};
+
+const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, seedValues = EMPTY_SEED, ilpHasNoAmountCol = false, ilpTrailing = false }, ref) {
   const t = useLabel();
   const ui = useUI();
   const fieldMap = useMemo(() => {
@@ -384,8 +437,14 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         empty[f.key] = '';
       }
     }
+    // Seed display-only (non-editable) columns — e.g. a parent-derived currency —
+    // so they render their value immediately instead of "—" until the row is saved.
+    // Editable fields are never overwritten; the seed only fills keys with no input.
+    for (const [key, val] of Object.entries(seedValues)) {
+      if (!fieldMap[key]) empty[key] = val;
+    }
     return empty;
-  }, [fields, defaultLineNo]);
+  }, [fields, defaultLineNo, seedValues, fieldMap]);
 
   const [values, setValues] = useState(buildEmpty);
   const [isSaving, setIsSaving] = useState(false);
@@ -490,6 +549,12 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
             next[key] = '';
           }
         }
+        // Re-apply seeded display values so a parent-derived column (e.g. currency)
+        // stays populated for the next rapid entry instead of resetting to "—".
+        // Runs after the $_identifier clearing loop so seeded identifiers survive.
+        for (const [key, val] of Object.entries(seedValues)) {
+          if (!fieldMap[key]) next[key] = val;
+        }
 
         valuesRef.current = next;
         setValues(next);
@@ -504,7 +569,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     })();
     inflightRef.current = run;
     return run;
-  }, [data, fields, onAdd, onCancel, ui]);
+  }, [data, fields, onAdd, onCancel, ui, seedValues, fieldMap]);
 
   // Enter → confirm without closing (rapid entry). Outside-click / parent flush close.
   const handleConfirm = useCallback(() => submitLine({ closeAfterSave: false }), [submitLine]);
@@ -581,7 +646,11 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     // applyUpdates updates valuesRef synchronously so submitLine always reads the latest
     // values even if React hasn't re-rendered yet when Enter is pressed.
     const calloutPromise = onFieldChange?.(key, val, snapshot, (updates, forceFields = new Set()) => {
-      const next = applyCalloutUpdates(valuesRef.current, updates, forceFields, key, touchedFieldsRef.current);
+      // Don't let the callout overwrite the field being typed: a cascade can echo
+      // it back normalized (e.g. rate "11." -> 11), erasing in-progress decimals.
+      const derived = { ...updates };
+      delete derived[key];
+      const next = applyCalloutUpdates(valuesRef.current, derived, forceFields, key, touchedFieldsRef.current);
       valuesRef.current = next;
       setValues(next);
     });
@@ -671,6 +740,9 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         if (field.type === 'search') {
           const options = getCatalogOptions(catalogs, entity, field);
           const selectorUrl = buildSelectorUrl(apiBaseUrl, entity, field);
+          // Declarative exclusion: drop the live value of a sibling field from this
+          // selector (e.g. To Currency must differ from the document/From Currency).
+          const excludeId = field.excludeValueOf ? (values[field.excludeValueOf] ?? null) : null;
           return (
             <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
               <InlineSearchCombo
@@ -678,6 +750,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
                 value={values[field.key] ?? ''}
                 displayLabel={values[field.key + '$_identifier'] || ''}
                 options={options}
+                excludeId={excludeId}
                 inputRef={isFirst ? firstInputRef : undefined}
                 placeholder={fieldLabel}
                 onChange={(id, label, selectedItem) => {
@@ -735,47 +808,10 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           });
         }
 
-        const isNumeric = NUMERIC_FIELD_TYPES.has(field.type);
-        const isTwoDecimal = field.type === 'amount' || field.type === 'price';
-        // Pick a numeric `inputMode` only for numeric fields. Integer fields
-        // surface the digits-only on-screen keyboard, the rest get the decimal
-        // pad. Resolved via an intermediate variable so the call site stays a
-        // flat conditional (Sonar S3358).
-        let numericInputMode = resolveNumericInputMode(field, isNumeric);
-        const formatTwoDecimals = (raw) => {
-          if (raw == null || raw === '') return '';
-          const n = typeof raw === 'string' ? Number.parseFloat(raw) : raw;
-          return Number.isFinite(n) ? n.toFixed(2) : raw;
-        };
-        // Always type="text" — numeric inputs would render browser spinner
-        // buttons; the numeric on-screen keyboard is preserved via inputMode.
-        const inputType = 'text';
-        const rawValue = values[field.key];
-        const displayValue = formatNumericInputValue(isTwoDecimal, rawValue, formatTwoDecimals);
-        return (
-          <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
-            <input
-              data-testid={`inline-add-field-${field.key}`}
-              ref={isFirst ? firstInputRef : undefined}
-              type={inputType}
-              inputMode={numericInputMode}
-              value={displayValue}
-              onChange={(e) => {
-                const raw = e.target.value;
-                if (isNumeric && raw !== '' && raw !== '-') {
-                  const parsed = field.type === 'integer' ? Number.parseInt(raw, 10) : Number.parseFloat(raw);
-                  handleFieldChange(field.key, Number.isNaN(parsed) ? raw : parsed);
-                } else {
-                  handleFieldChange(field.key, raw);
-                }
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder={fieldLabel}
-              required={field.required}
-              className={`w-full h-8 text-sm rounded-md border bg-white px-2 focus:ring-2 focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}${invalidFields.has(field.key) ? ' border-red-500 focus:ring-red-500' : ' border-input focus:ring-primary'}`}
-            />
-          </TableCell>
-        );
+        return renderInputCell({
+          field, col, values, invalidFields, isFirst, firstInputRef,
+          handleFieldChange, handleKeyDown, fieldLabel,
+        });
       })}
       {/* Skip action cells in inlineEditable add-row mode — actions belong to
           InlineLinesPanel's 160px slot, not to separate columns here. */}
@@ -1551,13 +1587,13 @@ export function DataTable({
                   <TableHead
                     key={col.key}
                     data-testid={`column-header-${col.key}`}
-                    className="align-middle"
+                    className={['align-middle', NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right' : ''].filter(Boolean).join(' ')}
                     style={headStyle}
                   >
                     {onSort && isSortable ? (
                       <button
                         type="button"
-                        className="text-xs leading-4 font-semibold text-text-primary tracking-normal cursor-pointer select-none transition-colors bg-transparent border-0 p-0 text-left"
+                        className={`text-xs leading-4 font-semibold text-text-primary tracking-normal cursor-pointer select-none transition-colors bg-transparent border-0 p-0 ${NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right' : 'text-left'}`}
                         onClick={() => onSort(col.key)}
                       >
                         {colLabel}
@@ -1566,7 +1602,7 @@ export function DataTable({
                         )}
                       </button>
                     ) : (
-                      <span className="text-xs leading-4 font-semibold text-text-primary tracking-normal">
+                      <span className={`text-xs leading-4 font-semibold text-text-primary tracking-normal${NUMERIC_FIELD_TYPES.has(col.type) ? ' text-right' : ''}`}>
                         {colLabel}
                         {isSorted && (
                           <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
@@ -1693,6 +1729,7 @@ export function DataTable({
                                 }}
                                 className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 h-8 w-8 flex items-center justify-center rounded-full text-[#D50B3E] hover:bg-[#FEF0F4] transition-all"
                                 aria-label={ui('deleteRowTooltip')}
+                                data-testid={`row-delete-${row.id}`}
                               >
                                 {deletingRows[row.id]
                                   ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -1725,6 +1762,7 @@ export function DataTable({
                               className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                               title={ui('deleteRowTooltip')}
                               aria-label={ui('deleteRowTooltip')}
+                              data-testid={`row-delete-${row.id}`}
                             >
                               {deletingRows[row.id] ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />}
                             </button>
@@ -1786,6 +1824,7 @@ export function DataTable({
                 catalogs={addRow.catalogs}
                 onFieldChange={addRow.onFieldChange}
                 onValuesChange={addRow.onValuesChange}
+                seedValues={addRow.seedValues}
                 selectable={selectable}
                 hasDeleteColumn={!hoverRowActions && legacyDeleteEnabled}
                 hasCloneColumn={!hoverRowActions && !!onCloneRow && !quickActionsEnabled}

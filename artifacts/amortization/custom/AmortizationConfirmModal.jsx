@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useUI } from '@/i18n';
+import { useUI, getStoredLocale } from '@/i18n';
 
 export default function AmortizationConfirmModal({ recordId, token, apiBaseUrl, onClose }) {
   const ui = useUI();
@@ -8,10 +8,15 @@ export default function AmortizationConfirmModal({ recordId, token, apiBaseUrl, 
   const [freshData,  setFreshData]  = useState(null);
   const [lineCount,  setLineCount]  = useState(null);
   const [linesTotal, setLinesTotal] = useState(null);
+  const [invalidCount, setInvalidCount] = useState(0);
+  const [missingPctCount, setMissingPctCount] = useState(0);
 
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
+    // Propagate the UI locale so backend AD_Message translations match the
+    // language the user selected in the frontend.
+    'Accept-Language': getStoredLocale(),
   }), [token]);
 
   useEffect(() => {
@@ -32,6 +37,8 @@ export default function AmortizationConfirmModal({ recordId, token, apiBaseUrl, 
           const lines = json?.response?.data ?? [];
           setLineCount(lines.length);
           setLinesTotal(lines.reduce((acc, l) => acc + Number(l.amortizationAmount ?? 0), 0));
+          setInvalidCount(lines.filter(l => Number(l.amortizationAmount ?? 0) <= 0).length);
+          setMissingPctCount(lines.filter(l => l.amortizationPercentage == null || l.amortizationPercentage === '').length);
         }
       } catch { /* silent */ }
     })();
@@ -48,6 +55,14 @@ export default function AmortizationConfirmModal({ recordId, token, apiBaseUrl, 
 
   const handleConfirm = async () => {
     if (loading) return;
+    if (missingPctCount > 0) {
+      setError(ui('amortizationErrorLinePercentageMissing'));
+      return;
+    }
+    if (invalidCount > 0) {
+      setError(ui('amortizationErrorLineAmountInvalid'));
+      return;
+    }
     setLoading(true);
     setError(null);
     try {

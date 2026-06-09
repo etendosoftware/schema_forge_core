@@ -167,6 +167,8 @@ const FIELD_DECISION_COPY_PROPS = [
   'cellType',
   'grow',
   'noTrailing',
+  'inline',
+  'addLineFromSibling',
 ];
 
 const FIELD_RAW_COPY_PROPS = [
@@ -200,6 +202,7 @@ function buildBaseField(rawField, fieldDecision, visibility) {
     searchable: decisionOrDefault(fieldDecision, 'searchable', defaults),
   };
   if (rawField.mandatory === true) field.sourceRequired = true;
+  if (fieldDecision.type) field.explicitType = true;
   return field;
 }
 
@@ -218,6 +221,8 @@ function copyRawProps(field, rawField, props) {
 function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.section) field.section = fieldDecision.section;
   if (fieldDecision.seq != null) field.seq = fieldDecision.seq;
+  if (fieldDecision.span != null && fieldDecision.span >= 2 && fieldDecision.span <= 4) field.span = fieldDecision.span;
+  if (fieldDecision.rows != null && fieldDecision.rows > 0) field.rows = fieldDecision.rows;
   if (fieldDecision.filterable === false) field.filterable = false;
   if (fieldDecision.dot === false) field.dot = false;
   if (fieldDecision.badge) field.badge = true;
@@ -566,12 +571,14 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'compactSidebarPadding',
   'whiteFormBackground',
   'hideFormCard',
+  'sidebarAboveTabsOnly',
+  'autoSaveOnBlur',
 ];
 
 // `attachments` is defined-only (not truthy) so an explicit `false` from
 // decisions.json reaches the contract and disables the AttachmentsTab in the
 // generator. Accepted shapes: boolean | { enabled?: boolean, ...options }.
-const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX'];
+const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'customLinesComponent', 'customLinesLabel', 'formCardPadding', 'formScrollPaddingX', 'maxDetailLines'];
 const WINDOW_NOT_NULL_PROPS = ['detailTabIndex', 'salesTheme'];
 
 // Canonical key order for the contract window object. Stabilizes contract.json
@@ -591,7 +598,7 @@ export const WINDOW_KEY_ORDER = [
   'labelOverrides', 'primaryTabs', 'othersLabel',
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
-  'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
+  'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
   'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
   'layoutType', 'linesLayout',

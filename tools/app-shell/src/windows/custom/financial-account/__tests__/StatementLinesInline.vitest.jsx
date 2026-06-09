@@ -25,12 +25,13 @@ describe('StatementLinesInline', () => {
     linesMock.mockReset();
   });
 
-  it('renders the inline title with the lines count badge', () => {
+  it('renders the column headers and no longer shows the inline title/count badge', () => {
     linesMock.mockReturnValue({ lines: [], loading: false });
     render(<StatementLinesInline statementId="s1" />);
-    expect(screen.getByText('financeAccountStatementsInlineTitle')).toBeInTheDocument();
-    // The badge shows "0" for an empty list
-    expect(screen.getByText('0')).toBeInTheDocument();
+    // The "Líneas del extracto (N)" header was removed — the detail starts at the
+    // column header row.
+    expect(screen.queryByText('financeAccountStatementsInlineTitle')).not.toBeInTheDocument();
+    expect(screen.getByText('financeAccountStatementLinesColDate')).toBeInTheDocument();
   });
 
   it('forwards the statementId to the useBankStatementLines hook', () => {
@@ -70,8 +71,6 @@ describe('StatementLinesInline', () => {
     render(<StatementLinesInline statementId="s1" />);
     expect(screen.getByTestId('statement-line-row-l1')).toBeInTheDocument();
     expect(screen.getByTestId('statement-line-row-l2')).toBeInTheDocument();
-    // The header badge should also reflect 2 lines.
-    expect(screen.getByText('2')).toBeInTheDocument();
   });
 
   it('renders a success-tone match pill for matched=true and a neutral one for matched=false', () => {
@@ -89,6 +88,28 @@ describe('StatementLinesInline', () => {
     expect(
       screen.getByText('financeAccountStatementLinesStatusUnmatched'),
     ).toBeInTheDocument();
+  });
+
+  it('renders the contact name, the contact FK and the G/L item columns', () => {
+    linesMock.mockReturnValue({
+      lines: [
+        {
+          id: 'l1', date: '2026-05-06T00:00:00Z', description: 'Transfer',
+          bpartnerName: 'Acme typed', bpartnerFkName: 'Acme S.L.',
+          glItemName: 'Comisiones', amount: 100, matched: false,
+        },
+      ],
+      loading: false,
+    });
+    render(<StatementLinesInline statementId="s1" />);
+    // The header exposes the three distinct columns.
+    expect(screen.getByText('financeAccountStatementLinesColBpartner')).toBeInTheDocument();
+    expect(screen.getByText('financeAccountStatementLinesColContact')).toBeInTheDocument();
+    expect(screen.getByText('financeAccountStatementLinesColGlItem')).toBeInTheDocument();
+    // The row shows the free-text name, the resolved BP and the G/L item.
+    expect(screen.getByText('Acme typed')).toBeInTheDocument();
+    expect(screen.getByText('Acme S.L.')).toBeInTheDocument();
+    expect(screen.getByText('Comisiones')).toBeInTheDocument();
   });
 
   it('falls back to "—" for empty description', () => {

@@ -41,11 +41,25 @@ describe('getDisplayText', () => {
     expect(getDisplayText({ status: 'XX' }, col)).toBe('XX');
   });
 
-  it('maps boolean badge labels', () => {
+  it('maps boolean badge labels (plain strings)', () => {
     const col = { key: 'active', type: 'boolean', badgeLabels: { true: 'Yes', false: 'No' } };
     expect(getDisplayText({ active: true }, col)).toBe('Yes');
     expect(getDisplayText({ active: false }, col)).toBe('No');
     expect(getDisplayText({ active: 'Y' }, col)).toBe('Yes');
+  });
+
+  it('maps boolean badge labels (multilingual objects) — picks es_ES or en_US', () => {
+    const col = {
+      key: 'fullyDepreciated', type: 'boolean',
+      badgeLabels: {
+        true: { es_ES: 'Totalmente depreciado', en_US: 'Fully deprecated' },
+        false: { es_ES: 'En progreso', en_US: 'In progress' },
+      },
+    };
+    // tryBooleanText should not return "[object Object]"
+    const result = getDisplayText({ fullyDepreciated: true }, col);
+    expect(result).toBe('Totalmente depreciado');
+    expect(getDisplayText({ fullyDepreciated: false }, col)).toBe('En progreso');
   });
 
   it('returns empty string for null row or col', () => {

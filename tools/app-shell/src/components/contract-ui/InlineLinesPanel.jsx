@@ -561,8 +561,8 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
             style={{
               padding: `0 ${TOKENS.cellPaddingX}px`,
               flex: columnFlex(col, idx),
-              justifyContent: 'flex-start',
-              textAlign: 'left',
+              justifyContent: NUMERIC_TYPES.has(col.type) ? 'flex-end' : 'flex-start',
+              textAlign: NUMERIC_TYPES.has(col.type) ? 'right' : 'left',
               minWidth: 0,
             }}
           >

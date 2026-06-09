@@ -1,8 +1,8 @@
 {
-  "version": "0.29.3",
+  "version": "0.30.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-19T17:48:14.122Z",
-  "contractChecksum": "23f7c62b397cb0bb",
+  "updatedAt": "2026-05-28T18:10:43.900Z",
+  "contractChecksum": "040cf302366d66b6",
   "apiPrediction": {
     "specName": "purchase-invoice",
     "baseUrl": "/sws/neo/purchase-invoice",
@@ -111,6 +111,17 @@
         "delete": true,
         "listUrl": "/sws/neo/purchase-invoice/reversedInvoices",
         "detailUrl": "/sws/neo/purchase-invoice/reversedInvoices/{id}",
+        "supportedFilters": []
+      },
+      "exchangeRates": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-invoice/exchangeRates",
+        "detailUrl": "/sws/neo/purchase-invoice/exchangeRates/{id}",
         "supportedFilters": []
       },
       "accounting": {
@@ -504,6 +515,36 @@
         "reference": "Invoice",
         "inputMode": "search",
         "url": "/sws/neo/purchase-invoice/reversedInvoices/selectors/reversedInvoice"
+      },
+      {
+        "entity": "exchangeRates",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-invoice/exchangeRates/selectors/currency",
+        "context": {
+          "required": [
+            {
+              "param": "C_Invoice_ID",
+              "source": "parentField",
+              "field": "invoice"
+            },
+            {
+              "param": "FIN_Payment_ID",
+              "source": "parentField",
+              "field": "payment"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "exchangeRates",
+        "field": "toCurrency",
+        "column": "C_Currency_Id_To",
+        "reference": "Currency",
+        "inputMode": "search",
+        "url": "/sws/neo/purchase-invoice/exchangeRates/selectors/toCurrency"
       },
       {
         "entity": "accounting",
@@ -1698,6 +1739,27 @@
           }
         }
       },
+      "exchangeRates": {
+        "fields": {
+          "currency": {
+            "readOnly": true,
+            "required": true,
+            "readOnlyLogic": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'"
+          },
+          "toCurrency": {
+            "required": true,
+            "readOnlyLogic": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'"
+          },
+          "rate": {
+            "readOnlyLogic": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'"
+          },
+          "foreignAmount": {
+            "required": true,
+            "readOnlyLogic": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
+            "defaultValue": "0"
+          }
+        }
+      },
       "accounting": {
         "fields": {
           "accountingSchema": {
@@ -1822,6 +1884,8 @@
         "cascade",
         "expectedDate",
         "amount2",
+        "toCurrency",
+        "foreignAmount",
         "estadoRegistro",
         "active"
       ],
@@ -1927,6 +1991,24 @@
             }
           ]
         }
+      },
+      {
+        "entity": "exchangeRates",
+        "field": "currency",
+        "context": {
+          "required": [
+            {
+              "param": "C_Invoice_ID",
+              "source": "parentField",
+              "field": "invoice"
+            },
+            {
+              "param": "FIN_Payment_ID",
+              "source": "parentField",
+              "field": "payment"
+            }
+          ]
+        }
       }
     ],
     "actions": [
@@ -1990,6 +2072,8 @@
           "cascade",
           "expectedDate",
           "amount2",
+          "toCurrency",
+          "foreignAmount",
           "estadoRegistro",
           "active"
         ]
@@ -2006,5 +2090,5 @@
       "tbaiVoidxmlgenerator"
     ]
   },
-  "checksum": "ed063d00257b42aa"
+  "checksum": "fb0bb4959d98731c"
 }

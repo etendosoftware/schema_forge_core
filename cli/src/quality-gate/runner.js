@@ -9,6 +9,67 @@ function normalizeCheckResult(check, severity, result) {
   };
 }
 
+function getVerdict(blockerChecks, skippedBlockers, blockerFailures) {
+  if (blockerChecks > 0 && blockerChecks === skippedBlockers) {
+    return 'NO-OP';
+  } else {
+    return blockerFailures.length > 0
+        ? 'FAIL'
+        : 'PASS';
+  }
+}
+
+async function runChecker(checkers, check, windowName, rootDir, windowDir, config) {
+
+  try {
+    const checker = checkers[check];
+    if (checker) {
+      return await checker(windowName, {rootDir, windowDir, config});
+    } else {
+      return {status: 'skip', detail: `Check '${check}' is not registered`};
+    }
+  } catch (error) {
+    return {
+      status: 'error',
+      detail: error?.stack || error?.message || String(error),
+    };
+  }
+}
+
+async function evaluateWindowChecks(enabledChecks, checkers, windowName, rootDir, windowDir, config) {
+  const checks = [];
+  const blockerFailures = [];
+  let applicableChecks = 0;
+  let passingChecks = 0;
+  let blockerChecks = 0;
+  let skippedBlockers = 0;
+
+  for (const {check, severity} of enabledChecks) {
+    let result = await runChecker(checkers, check, windowName, rootDir, windowDir, config);
+
+    const normalized = normalizeCheckResult(check, severity, result);
+    checks.push(normalized);
+
+    if (normalized.status !== 'skip') {
+      applicableChecks += 1;
+    }
+    if (normalized.status === 'pass') {
+      passingChecks += 1;
+    }
+
+    if (severity === 'blocker') {
+      blockerChecks += 1;
+      if (normalized.status === 'skip') {
+        skippedBlockers += 1;
+      }
+      if (normalized.status === 'fail' || normalized.status === 'error') {
+        blockerFailures.push(check);
+      }
+    }
+  }
+  return {checks, blockerFailures, applicableChecks, passingChecks, blockerChecks, skippedBlockers};
+}
+
 export async function runQualityGate({ windowNames, rootDir, config, checkers }) {
   const enabledChecks = Object.entries(config.checks ?? {})
     .filter(([, definition]) => definition?.enabled)
@@ -18,55 +79,16 @@ export async function runQualityGate({ windowNames, rootDir, config, checkers })
 
   for (const windowName of windowNames) {
     const windowDir = join(rootDir, 'artifacts', windowName);
-    const checks = [];
-    const blockerFailures = [];
-    let applicableChecks = 0;
-    let passingChecks = 0;
-    let blockerChecks = 0;
-    let skippedBlockers = 0;
+    let {
+      checks,
+      blockerFailures,
+      applicableChecks,
+      passingChecks,
+      blockerChecks,
+      skippedBlockers
+    } = await evaluateWindowChecks(enabledChecks, checkers, windowName, rootDir, windowDir, config);
 
-    for (const { check, severity } of enabledChecks) {
-      let result;
-      try {
-        const checker = checkers[check];
-        if (!checker) {
-          result = { status: 'skip', detail: `Check '${check}' is not registered` };
-        } else {
-          result = await checker(windowName, { rootDir, windowDir, config });
-        }
-      } catch (error) {
-        result = {
-          status: 'error',
-          detail: error?.stack || error?.message || String(error),
-        };
-      }
-
-      const normalized = normalizeCheckResult(check, severity, result);
-      checks.push(normalized);
-
-      if (normalized.status !== 'skip') {
-        applicableChecks += 1;
-      }
-      if (normalized.status === 'pass') {
-        passingChecks += 1;
-      }
-
-      if (severity === 'blocker') {
-        blockerChecks += 1;
-        if (normalized.status === 'skip') {
-          skippedBlockers += 1;
-        }
-        if (normalized.status === 'fail' || normalized.status === 'error') {
-          blockerFailures.push(check);
-        }
-      }
-    }
-
-    const verdict = blockerChecks > 0 && blockerChecks === skippedBlockers
-      ? 'NO-OP'
-      : blockerFailures.length > 0
-        ? 'FAIL'
-        : 'PASS';
+    let verdict = getVerdict(blockerChecks, skippedBlockers, blockerFailures);
 
     windows.push({
       window: windowName,

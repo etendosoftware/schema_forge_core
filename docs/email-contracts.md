@@ -51,7 +51,16 @@ The browser must not send provider API keys, sender addresses, raw templates, or
 
 For the app-shell document send flow, `SendDocumentModal` posts only the contract command to `/sws/neo/email-contracts/{document-contract}/send`, such as `sales-invoice-send`, `sales-order-send`, or `sales-quotation-send`. The UI must not include `to`, `template`, `data`, `subject`, `body`, sender, Reply-To, or provider metadata in that request; those values are resolved by the server-side contract.
 
+Temporary preview-cache bridge: until document email downloads are stored in S3-backed storage, app-shell may cache an already generated PDF blob through `/sws/neo/preview-file` immediately before calling the email contract. This is only file preparation for the backend signed download link; it must not add provider payload fields or caller-provided download links to the contract command.
+
 For auth email flows, the browser does not send an email contract command at all. It calls `/sws/go/register`, `/sws/go/password-reset/request`, `/sws/go/password-reset/confirm`, or `/sws/go/change-password`; Etendo Go builds the `new-account`, `reset-password`, `password-changed`, and `environment-ready` commands server-side from trusted account/onboarding records.
+
+Registration may include the active onboarding locale. Etendo Go forwards it
+through the closed `new-account` contract as the allowlisted `language` variable
+so welcome content can be rendered in the user's selected language. The provider
+template used by `new-account`, `environment-ready`, and `password-changed` is
+`custom`, but those contracts generate fixed subject/body values server-side and
+do not expose a generic custom email payload to the browser.
 
 ## Response Contract
 
@@ -174,6 +183,7 @@ Required edge cases:
 - Registration commits before the email attempt; provider failure is audited and must not roll back account creation.
 - Inactive account records are rejected by the contract resolver.
 - Duplicate registration email commands return `DUPLICATE`.
+- The selected UI language is forwarded only as the allowlisted `language` template variable; it does not let the browser override recipient, template, subject, body, sender, or provider metadata.
 
 Email verification is not part of the local account flow. There are no verification fields and login/onboarding is not gated by email verification because SSO is the next authentication step.
 

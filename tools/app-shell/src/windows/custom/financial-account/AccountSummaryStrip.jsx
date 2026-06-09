@@ -2,6 +2,7 @@ import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 import { AccountLogoAvatar } from '@/components/financial-accounts/AccountLogoAvatar';
+import { ACCOUNT_TYPE } from '@/components/financial-accounts/tokens';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MoneyAmount } from '@/components/ui/money-amount';
 
@@ -37,6 +38,12 @@ export function AccountSummaryStrip({ account, totals, loading }) {
     : null;
   const suffix = suffixText ? ` (${suffixText})` : '';
 
+  const isCash = account?.type === ACCOUNT_TYPE.CASH;
+  const isCard = account?.type === ACCOUNT_TYPE.CARD;
+  // Cash has no IBAN; a card shows its masked card number instead of an IBAN.
+  // Hide the whole identifier block for cash, and for a card without a PAN.
+  const showIdentifier = !isCash && (!isCard || !!account?.maskedPan);
+
   const handleCopyIban = () => {
     if (account?.iban) {
       navigator.clipboard.writeText(account.iban).then(() => {
@@ -65,32 +72,38 @@ export function AccountSummaryStrip({ account, totals, loading }) {
     <div className="px-2 py-1">
       <div className="flex items-center gap-5 rounded-lg border border-[#E8EAEF] px-3 py-2">
 
-        {/* Avatar + IBAN — fixed width, never grows or shrinks */}
-        <div className="flex w-[364px] shrink-0 items-center gap-2">
-          <AccountLogoAvatar account={account} className="h-8 w-8 shrink-0" />
-          <div className="flex min-w-0 flex-col">
-            <span className="text-xs leading-4 text-[#3F3F50]">IBAN</span>
-            <div className="flex items-center gap-0.5">
-              <span
-                data-testid="iban-text"
-                className="truncate text-xs leading-4 text-[#6C6C89]"
-              >
-                {formatIban(account?.iban)}
+        {/* Avatar + identifier — fixed width, never grows or shrinks. Hidden for
+            cash accounts (no IBAN) and for cards without a masked PAN. Banks show
+            the IBAN (with "—" when none stored); cards show their card number. */}
+        {showIdentifier ? (
+          <div className="flex w-[364px] shrink-0 items-center gap-2">
+            <AccountLogoAvatar account={account} className="h-8 w-8 shrink-0" />
+            <div className="flex min-w-0 flex-col">
+              <span className="text-xs leading-4 text-[#3F3F50]">
+                {isCard ? ui('financeAccountDetailCardNumber') : 'IBAN'}
               </span>
-              {account?.iban ? (
-                <button
-                  type="button"
-                  onClick={handleCopyIban}
-                  data-testid="iban-copy-button"
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9]"
-                  aria-label={ui('financeAccountDetailIbanCopyAria')}
+              <div className="flex items-center gap-0.5">
+                <span
+                  data-testid="iban-text"
+                  className="truncate text-xs leading-4 text-[#6C6C89]"
                 >
-                  <Copy className="h-4 w-4" />
-                </button>
-              ) : null}
+                  {isCard ? account?.maskedPan : formatIban(account?.iban)}
+                </span>
+                {!isCard && account?.iban ? (
+                  <button
+                    type="button"
+                    onClick={handleCopyIban}
+                    data-testid="iban-copy-button"
+                    className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9]"
+                    aria-label={ui('financeAccountDetailIbanCopyAria')}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
-        </div>
+        ) : null}
 
         {/* Saldo total */}
         <div data-testid="kpi-balance" className="flex flex-1 flex-col gap-0.5">

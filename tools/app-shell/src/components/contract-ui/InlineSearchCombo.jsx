@@ -8,7 +8,7 @@ import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
  * Text input with filtered dropdown — lightweight alternative to full SearchInput.
  * Used by both DataTable's InlineAddRow and InlineLinesPanel's edit cells.
  */
-export function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeholder, inputRef, selectorUrl, selectorContext, token, displayLabel, clearOnType = true }) {
+export function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeholder, inputRef, selectorUrl, selectorContext, token, displayLabel, excludeId = null, clearOnType = true }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [openUp, setOpenUp] = useState(false);
@@ -40,14 +40,27 @@ export function InlineSearchCombo({ field, value, options, onChange, onKeyDown, 
   }, [selectorUrl, selectorContext, token]);
 
   const filtered = useMemo(() => {
-    if (serverResults) return serverResults.slice(0, 20);
-    if (!query) return options.slice(0, 15);
-    const q = query.toLowerCase();
-    return options.filter(o => {
-      const name = o.name || o.label || o._identifier || '';
-      return name.toLowerCase().includes(q);
-    }).slice(0, 15);
-  }, [query, options, serverResults]);
+    let base;
+    let limit;
+    if (serverResults) {
+      base = serverResults;
+      limit = 20;
+    } else if (!query) {
+      base = options;
+      limit = 15;
+    } else {
+      const q = query.toLowerCase();
+      base = options.filter(o => {
+        const name = o.name || o.label || o._identifier || '';
+        return name.toLowerCase().includes(q);
+      });
+      limit = 15;
+    }
+    // Drop the excluded value (e.g. the document currency) from both the local
+    // catalog and any server-side results so it can never be chosen here.
+    if (excludeId != null) base = base.filter(o => o.id !== excludeId);
+    return base.slice(0, limit);
+  }, [query, options, serverResults, excludeId]);
 
   const handleSelect = (opt) => {
     setQuery(opt.name || opt.label || opt._identifier || '');
@@ -130,7 +143,7 @@ export function InlineSearchCombo({ field, value, options, onChange, onKeyDown, 
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative w-full">
       <input
         data-testid={`inline-add-field-${field.key}`}
         ref={inputRef}

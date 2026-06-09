@@ -170,3 +170,48 @@ See [Shared validation & UX changes — ETP-4005](app-shell-functional-flows.md#
 - `e2e/tests/flows/invoice-preview-persistence.spec.js` — 7 Playwright tests covering completed and draft sales invoice cases in mock mode: completed invoice fires `GET /sws/neo/preview-file` with `specName=sales-invoice`, draft invoice does NOT fire the GET (storeCondition=false).
 - **ETP-4125 — Fiscal status inline in list (nginx URL-length fix)**: Eliminated the `useInvoiceListFiscalStatus` batch-fetch hook that was making large GET requests with many invoice IDs in the `inSet` query parameter, causing HTTP 403 errors on lists of 53+ invoices (nginx URL-length limit). SII (`aeatsiiEstado`) and Verifactu (`etvfacInvoiceStatus`) statuses now come from the list API response as inline fields. TBAI (`tbaiSyncEstado`) is injected server-side by `TbaiSyncStatusInjector.inject()` called from `SalesInvoiceHeaderHandler.afterHandle()` using a single `ROW_NUMBER() OVER (PARTITION BY c_invoice_id ORDER BY created DESC)` query (Oracle + PostgreSQL portable). `FiscalStatusBadge` was extended with BA and NR SII codes and the `vf_pending` Verifactu entry; `normalizeVerifactuStatus()` was exported to map raw Verifactu short codes (AC/AE/ER/IN/PE) to badge config keys. Normalized SII and TBAI i18n labels (CO→Aceptado, IN→Rechazado, etc.) were aligned across both locales. Fiscal status badges are sales-only for TBAI and Verifactu; purchase invoices only show an SII badge.
 - **ETP-4007 — Discount display fixes in PDF and server-side totals**: `tools/app-shell/src/windows/custom/shared/useInvoicePdf.js` was corrected to read `l.etgoDiscount` (not `l.discount`) for the DESC.% column, `l.listPrice ?? l.unitPrice` for P. UNITARIO (list price before discount, not net price), and `l.grossAmount ?? l.lineNetAmount` for TOTAL (gross amount including tax). The tax amount in the totals section now uses `adjustedGrand − netAmount` instead of the previous `bruto × factor` formula. Discount breakdown rows ("Subtotal sin descuento", "Descuento por producto −X", "Descuento total Y% −Z") were added to the PDF totals section with conditional rendering and the `.inv-totals .row.discount` CSS style. `modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/SalesInvoiceHeaderHandler.java` was extended with an `afterHandle()` implementation that adjusts `grandTotalAmount` and `outstandingAmount` in GET responses for **draft** invoices with `etgoTotalDiscount > 0`, so the list view and side panel show the discounted total before DB confirmation. Confirmed invoices (where `TotalDiscountService` already created negative ETGO_DTO lines at completion time) are left untouched.
+
+## Exchange rates and completion currency guard — ETP-4030
+
+When a sales invoice is issued in a currency other than the organization's base currency, it needs a conversion rate so the document can be valued in the base currency. ETP-4030 adds an **Exchange Rates** secondary tab to enter/maintain that document-level rate, recomputes the rate ⇄ foreign-amount pair server-side, and blocks completion when no usable rate exists. The behavior is identical to the purchase-invoice flow — see `purchase-invoice.md` for the shared handler/validator detail; only the spec name and header handler differ.
+
+### Exchange Rates secondary tab
+
+- Declared in `artifacts/sales-invoice/decisions.json → window.secondaryTabs.exchangeRates` (`label: "Exchange Rates"`, `tabOrder: 50`) and resolved as the `exchangeRates` child entity (`javaQualifier: "invoiceExchangeRateHandler"`), mapping to the document conversion-rate records (`C_Conversion_Rate_Doc`) tied to the invoice header.
+- **Visible columns:** Currency (derived from the document, `form: false`), To Currency, Rate, and Foreign Amount. The inline add-row exposes `addLineFields: ["toCurrency", "rate", "foreignAmount"]`.
+- **`requireSavedRecord: true`** — usable only after the invoice header is saved.
+- **`readOnlyLogic: "@DocumentStatus@!='DR'"`** — editable only while the invoice is in Draft (`DR`); read-only once completed.
+
+### Server-side rate ⇄ foreign-amount recompute
+
+The `invoiceExchangeRateHandler` (`modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/InvoiceExchangeRateHandler.java`) keeps both sides consistent against the invoice grand total:
+
+- **On create (POST):** defaults `currency`/`toCurrency`, then computes the missing side from the grand total.
+- **On edit (PATCH/PUT):** the inline editor submits **both** values, so the handler uses change-detection against the persisted record — rate changed → `foreignAmount = grandTotal × rate`; foreignAmount changed → `rate = foreignAmount ÷ grandTotal`; otherwise no-op.
+
+### Frontend live refresh
+
+`tools/app-shell/src/components/contract-ui/DetailView.jsx` unwraps the NEO `{ response: { data: [ … ] } }` envelope (`updated?.response?.data?.[0]`) on secondary-tab save and merges the server values back into the row and grid, so the recomputed amount appears immediately without reopening the invoice.
+
+### Completion currency guard
+
+`InvoiceExchangeRateValidator.checkRateForCompletion(invoice)` runs as a pre-hook from `SalesInvoiceHeaderHandler` and blocks completion when the document currency differs from the organization's base currency **and** neither a document-level rate (`C_Conversion_Rate_Doc`) nor a general rate (the `conversion-rates` window / AD `C_Conversion_Rate`) exists for the pair on the invoice date. The block surfaces `SMFCR_NoRateOnComplete` followed by the currency pair (e.g. `USD → EUR`). See `conversion-rates.md` for the general-rate catalog.
+
+### Manual verification
+
+1. Open a draft sales invoice in a foreign currency and save it. Confirm the **Exchange Rates** tab appears (disabled/absent until the header is saved).
+2. Add a row: set To Currency and type a Rate. Save and confirm Foreign Amount = grand total × rate, shown live.
+3. Edit Foreign Amount. Save and confirm Rate = foreign amount ÷ grand total, live.
+4. Complete with no rate present and no general rate: confirm the block `SMFCR_NoRateOnComplete <FROM> → <TO>`.
+5. Add the rate and confirm completion succeeds; on a completed invoice confirm the tab is read-only.
+
+### Automated evidence
+
+- `artifacts/sales-invoice/decisions.json` declares `window.secondaryTabs.exchangeRates` and the `exchangeRates` entity (`javaQualifier: "invoiceExchangeRateHandler"`).
+- `artifacts/sales-invoice/contract.json` resolves the `exchangeRates` secondary entity and its currency/toCurrency/rate/foreignAmount fields.
+- `modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/InvoiceExchangeRateHandler.java` (POST default/compute + PATCH change-detection) and `InvoiceExchangeRateValidator.java` (`checkRateForCompletion`, consumed by `SalesInvoiceHeaderHandler`), with source-level coverage in `modules/com.etendoerp.go/src-test/.../InvoiceExchangeRateHandlerTest.java` and `InvoiceExchangeRateValidatorTest.java`.
+- `tools/app-shell/src/components/contract-ui/DetailView.jsx` unwraps the NEO `{response:{data:[…]}}` envelope on secondary-tab save for live refresh.
+
+## Generator fix (labelOverrides deduplication) — ETP-4103
+
+`const labelOverrides` in the generated page now references `api.labelOverrides` instead of re-embedding the full object. No functional change — field labels and selectors behave identically.

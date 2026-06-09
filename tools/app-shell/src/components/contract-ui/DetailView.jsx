@@ -82,7 +82,11 @@ const LazyOcrInlineUploader = lazy(() => import('@/components/copilot/ocr/OcrInl
  * Returns true (visible) if the expression cannot be parsed or if the field is missing from data.
  */
 function sidePanelWrapperCls(hasSidePanel, linesLayout) {
-  if (hasSidePanel) return 'flex items-start gap-0';
+  // Stack the side panel below the content on narrow viewports (e.g. when the
+  // devtools console is open) and only place it beside the content once there
+  // is room (lg+). A rigid side-by-side row would otherwise overlap the
+  // header/lines when the panel can't shrink.
+  if (hasSidePanel) return 'flex flex-col lg:flex-row items-start gap-0';
   if (linesLayout === 'inlineEditable') return 'flex flex-col';
   return '';
 }
@@ -151,11 +155,11 @@ function CollapsibleSection({ title, children }) {
  * Extracted from inline JSX to avoid the nested-ternary anti-pattern Sonar
  * S3358 was flagging inside the className templates.
  */
-function detailContentPadding(linesLayout, hasSidebar, variant, compact = false) {
+function detailContentPadding(linesLayout, hasSidebar, variant, compact = false, paddingXOverride = null) {
   const isInline = linesLayout === 'inlineEditable';
   if (hasSidebar) return (isInline || compact) ? 'p-2' : 'pl-6 pr-2';
-  if (variant === 'panel') return isInline ? 'pr-6' : 'px-6';
-  return isInline ? '' : 'px-6';
+  if (variant === 'panel') return isInline ? 'pr-6' : (paddingXOverride ?? 'px-6');
+  return isInline ? '' : (paddingXOverride ?? 'px-6');
 }
 
 /**
@@ -174,6 +178,24 @@ function resolveSecondaryRowClickHandler(st, { openCustomModal, openSecondaryLin
   return undefined;
 }
 
+/**
+ * Run the add-line action for a secondary tab and surface any rejection.
+ *
+ * `customAddModal` tabs open the popup editor; the rest toggle the inline
+ * add-line row. Both handlers are async — if their promise rejects we log the
+ * failure (with the offending tab key) instead of swallowing it silently.
+ *
+ * @returns {Promise} the (already error-handled) promise, so callers/tests can await it.
+ */
+export function runAddLineAction(st, { handleCustomModalAddClick, handleSecondaryAddLineToggle }) {
+  const run = st.customAddModal
+    ? handleCustomModalAddClick(st.key)
+    : handleSecondaryAddLineToggle(st.key);
+  return run.catch((err) => {
+    console.error(`Add line action failed for tab '${st.key}':`, err);
+  });
+}
+
 function deriveTaxRateFromGross(gross, lineConfig, selectedLine) {
   if (gross <= 0) return null;
   const disc = lineConfig.discountField ? (parseFloat(String(selectedLine[lineConfig.discountField] ?? '')) || 0) : 0;
@@ -189,6 +211,519 @@ function deriveTaxRateFromGross(gross, lineConfig, selectedLine) {
   const lineNet = qty * price * (1 - disc / 100);
   if (lineNet > 0) return (gross / lineNet - 1) * 100;
   return null;
+}
+
+export function normalizePatchFieldValues(patchEdits, fieldValues) {
+  for (const [k, v] of Object.entries(patchEdits)) {
+    if (k.endsWith('$_identifier')) continue;
+    // NEO Headless PATCH expects camelCase API keys, not DB column names.
+    // Always use k (the API key) as the field name.
+    // Convert numeric strings to numbers for BigDecimal compatibility.
+    // Only strip when the value is already in standard format (no commas).
+    // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
+    if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
+      fieldValues[k] = parseFloat(v);
+    } else {
+      fieldValues[k] = v;
+    }
+  }
+}
+
+export function applyCalloutFieldUpdates(updates, ctx) {
+  const { data, triggerField, userTouchedRef, appliedFields, hook, api, catalogs } = ctx;
+  for (const [key, entry] of Object.entries(updates)) {
+    // Skip empty callout values if the field already has a non-empty value
+    // (e.g., callout clears warehouse but defaults already set it)
+    const currentVal = data[key];
+    const userHasValue = currentVal !== '' && currentVal != null;
+    if ((entry.value === '' || entry.value == null) && userHasValue) {
+      continue;
+    }
+    // Protect user-touched fields from being overwritten by collateral updates
+    // coming from a callout triggered by a different field. The trigger field
+    // itself always wins (it was just changed by the user).
+    if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
+      continue;
+    }
+    appliedFields.set(key, entry.value);
+    hook.handleChange(key, entry.value);
+    handleEntryIdentifierChange(entry, hook, key, api, catalogs);
+  }
+}
+
+export function applyCalloutComboUpdates(combos, ctx) {
+  const { data, triggerField, userTouchedRef, appliedFields, hook } = ctx;
+  for (const [key, combo] of Object.entries(combos)) {
+    let selectedVal = combo.selected;
+    let selectedLabel = combo._identifier;
+    // Auto-select first entry if no explicit selection (e.g., BP address combo)
+    if (selectedVal == null && Array.isArray(combo.entries) && combo.entries.length > 0) {
+      selectedVal = combo.entries[0].id;
+      selectedLabel = combo.entries[0].identifier || combo.entries[0]._identifier;
+    }
+    if (selectedVal != null) {
+      // Protect user-touched fields from collateral combo updates
+      const currentVal = data[key];
+      const userHasValue = currentVal !== '' && currentVal != null;
+      if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
+        continue;
+      }
+      appliedFields.set(key, selectedVal);
+      hook.handleChange(key, selectedVal);
+      if (selectedLabel) {
+        hook.handleChange(key + '$_identifier', selectedLabel);
+      }
+    }
+  }
+}
+
+/**
+ * Folds the selector item's top-level fields into the callout snapshot:
+ * maps standardPrice to gross/net price keys based on isTaxIncluded, and
+ * exposes every other scalar field as a `${fieldKey}_${name}` context key
+ * (without overwriting one the snapshot already has).
+ */
+export function mergeSelectorContextFields(selectedItem, snapshot, fieldKey) {
+  for (const [topField, topVal] of Object.entries(selectedItem)) {
+    if (topField === 'id' || topField === '_aux' || topField === 'label'
+        || topField === 'name' || topField === 'searchKey'
+        || typeof topVal === 'object' || topVal === null) continue;
+    if (topField === 'standardPrice' && topVal != null) {
+      const isGross = selectedItem.isTaxIncluded !== false;
+      if (isGross) {
+        snapshot.grossUnitPrice = topVal;
+        snapshot.grossListPrice = topVal;
+      } else {
+        snapshot.unitPrice = topVal;
+        snapshot.listPrice = topVal;
+      }
+      continue;
+    }
+    const ctxKey = `${fieldKey}_${topField}`;
+    if (!(ctxKey in snapshot)) snapshot[ctxKey] = topVal;
+  }
+}
+
+/**
+ * Folds the selector item's `_aux` suffixed values (e.g. _PSTD, _PLIM, _UOM)
+ * into the callout snapshot, keyed as `${fieldKey}${suffix}`.
+ */
+export function mergeSelectorAuxFields(selectedItem, snapshot, fieldKey) {
+  if (selectedItem._aux) {
+    for (const [suffix, auxVal] of Object.entries(selectedItem._aux)) {
+      snapshot[fieldKey + suffix] = auxVal;
+    }
+  }
+}
+
+/**
+ * Applies an optimistic local update to a child row after a successful PATCH,
+ * folding in the callout-derived values (incl. $_identifier keys for FK
+ * outputs like tax$_identifier) so the row UI reflects the full snapshot
+ * without a refetch.
+ */
+export function applyLocalChildRowUpdate(derivedUpdates, fieldKey, payloadValue, fieldValues, opts, hook, row) {
+  const localUpdate = {...derivedUpdates, [fieldKey]: payloadValue};
+  if (fieldValues.unitPrice !== undefined) localUpdate.unitPrice = fieldValues.unitPrice;
+  if (opts?.identifier !== undefined) {
+    localUpdate[fieldKey + '$_identifier'] = opts.identifier;
+  }
+  hook.handleUpdateChild?.(row.id, localUpdate);
+}
+
+/**
+ * Seeds the PATCH body from a cleaned row, coercing each value and skipping
+ * `$_identifier` keys and internal markers/metadata (_identifier, _entityName,
+ * $ref, id) that are not valid persisted fields.
+ */
+export function collectRowFieldValues(cleanRow, fieldValues, coerce) {
+  for (const [k, v] of Object.entries(cleanRow)) {
+    if (k.endsWith('$_identifier')) continue;
+    // Skip internal markers and metadata that aren't valid fields.
+    if (k === '_identifier' || k === '_entityName' || k === '$ref' || k === 'id') continue;
+    fieldValues[k] = coerce(v);
+  }
+}
+
+/**
+ * Builds the className for a secondary tab's content wrapper, disabling pointer
+ * events when the view is embedded (read-only) inside another detail view.
+ */
+export function getSecondaryTabContentClassName(secondaryTabContentPaddingT, embedded) {
+  return `${secondaryTabContentPaddingT} flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`;
+}
+
+/**
+ * Returns the inline-lines table ref for a secondary tab when the lines layout
+ * is `inlineEditable`, otherwise undefined (no ref wiring for read-only tables).
+ */
+export function getSecondaryLinesTableRef(linesLayout, getSecondaryInlineLinesRef, st) {
+  return linesLayout === 'inlineEditable' ? getSecondaryInlineLinesRef(st.key) : undefined;
+}
+
+/**
+ * Returns the `onEditRow` handler for a secondary tab: tabs that use a custom
+ * add/edit modal open the popup editor; other tabs edit in place (undefined).
+ */
+export function getSecondaryEditRowHandler(st, setCustomModalState) {
+  return st.customAddModal
+      ? (row) => setCustomModalState({key: st.key, rowId: row.id})
+      : undefined;
+}
+
+/**
+ * Returns the `onSelectionChange` handler for a secondary tab when the lines
+ * layout is `inlineEditable` (tracks selected rows per tab), otherwise undefined.
+ */
+export function getSecondarySelectionChangeHandler(linesLayout, setSecondarySelectedRows, st) {
+  return linesLayout === 'inlineEditable'
+      ? (rows) => setSecondarySelectedRows(prev => ({...prev, [st.key]: rows}))
+      : undefined;
+}
+
+export function getSecondaryRowUpdateHandler(st, linesLayout, ctx) {
+  const { api, apiBaseUrl, secondaryHooks, stIdx, token, ui, extractErrorMessage } = ctx;
+  return !st.customAddModal && linesLayout === 'inlineEditable' ? async (row, fieldKey, value, opts) => {
+    const childUrl = api?.crud?.[st.key]?.detailUrl?.replace('{id}', row.id)
+        || `${apiBaseUrl}/${st.key}/${row.id}`;
+    const includesIdentifier = opts?.identifier !== undefined;
+    const optimistic = includesIdentifier
+        ? {[fieldKey]: value, [`${fieldKey}$_identifier`]: opts.identifier}
+        : {[fieldKey]: value};
+    // Snapshot the previous values so we can revert on failure.
+    const previous = includesIdentifier
+        ? {[fieldKey]: row[fieldKey], [`${fieldKey}$_identifier`]: row[`${fieldKey}$_identifier`]}
+        : {[fieldKey]: row[fieldKey]};
+    secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, optimistic);
+    let res;
+    try {
+      res = await fetch(childUrl, {
+        method: 'PATCH',
+        headers: {...(token ? {Authorization: `Bearer ${token}`} : {}), 'Content-Type': 'application/json'},
+        body: JSON.stringify({[fieldKey]: value}),
+      });
+    } catch (err) {
+      secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, previous);
+      toast.error(err?.message || ui('networkError'));
+      throw err;
+    }
+    if (res.ok) {
+      const updated = await res.json().catch(() => null);
+      // Server response wins over the optimistic cache when present
+      // — keeps any callout-driven fields the backend computed.
+      // NEO wraps the saved record in {response:{data:[...]}}.
+      const serverRow = updated?.response?.data?.[0] ?? null;
+      if (serverRow) secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, serverRow);
+    } else {
+      secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, previous);
+      const msg = await extractErrorMessage(res);
+      toast.error(msg || ui('networkError'));
+      throw new Error(msg || 'PATCH failed');
+    }
+  } : undefined;
+}
+
+/**
+ * Build the add / save-line / delete handlers for a secondary table tab.
+ * Extracted verbatim from the SecondaryTableTab call site so the logic is
+ * unit-testable without a replica. Called once per tab per render with the
+ * current render's values, preserving the original closure-over-render-scope
+ * behavior of the former inline closures.
+ *
+ * @param {object} deps
+ * @param {object} deps.st - current secondary tab descriptor
+ * @param {number} deps.stIdx - current secondary tab index
+ * @param {object} deps.api - resolved API config (for crud detail URLs)
+ * @param {string} deps.apiBaseUrl - base URL for NEO Headless requests
+ * @param {string} [deps.token] - bearer token
+ * @param {object} deps.secondaryHooks - per-tab child entity hooks
+ * @param {Function} deps.ui - i18n label resolver
+ * @param {Function} deps.extractErrorMessage - response error extractor
+ * @param {Function} deps.confirmDelete - delete confirmation prompt
+ * @param {object} deps.secondaryInlineLinesRefs - refs to inline line tables
+ * @param {object} deps.selectedSecondaryLine - currently open secondary line
+ * @param {object} deps.secondaryLineEdits - pending edits for the open line
+ * @param {object} deps.secondarySelectedRows - selected rows per tab key
+ * @param {Function} deps.setAddingSecondaryLine
+ * @param {Function} deps.setSavingSecondaryLine
+ * @param {Function} deps.setSelectedSecondaryLine
+ * @param {Function} deps.setSecondaryLineEdits
+ * @param {Function} deps.setSecondaryLineEditColumns
+ * @param {Function} deps.setSecondaryDeleting
+ * @param {Function} deps.setSecondarySelectedRows
+ * @returns {{onAdd: Function, onSaveLine: Function, onDelete: Function}}
+ */
+export function buildSecondaryLineHandlers(deps) {
+  const {
+    st, stIdx, api, apiBaseUrl, token, secondaryHooks, ui,
+    extractErrorMessage, confirmDelete, secondaryInlineLinesRefs,
+    selectedSecondaryLine, secondaryLineEdits, secondarySelectedRows,
+    setAddingSecondaryLine, setSavingSecondaryLine, setSelectedSecondaryLine,
+    setSecondaryLineEdits, setSecondaryLineEditColumns, setSecondaryDeleting,
+    setSecondarySelectedRows,
+  } = deps;
+
+  const onAdd = async (lineData) => {
+    const entryKeys = new Set(st.addLineFields.entry.map(f => f.key));
+    const filtered = {};
+    for (const [k, v] of Object.entries(lineData)) {
+      if (entryKeys.has(k)) filtered[k] = v;
+    }
+    const result = await secondaryHooks[stIdx]?.handleAddChild?.(filtered);
+    if (result) setAddingSecondaryLine(prev => ({...prev, [st.key]: false}));
+    return result;
+  };
+
+  const onSaveLine = async () => {
+    setSavingSecondaryLine(true);
+    try {
+      const secUrl = `${apiBaseUrl}/${st.key}/${selectedSecondaryLine.id}`;
+      const fieldValues = {};
+      for (const [k, v] of Object.entries(secondaryLineEdits)) {
+        if (k.endsWith('$_identifier')) continue;
+        // NEO Headless PATCH expects camelCase API keys, not DB column names.
+        // Always use k (the API key) as the field name.
+        // Convert numeric strings to numbers for BigDecimal compatibility.
+        // Only strip when the value is already in standard format (no commas).
+        // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
+        if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
+          fieldValues[k] = parseFloat(v);
+        } else {
+          fieldValues[k] = v;
+        }
+      }
+      const res = await fetch(secUrl, {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json', ...(token ? {Authorization: `Bearer ${token}`} : {})},
+        body: JSON.stringify(fieldValues),
+      });
+      if (res.ok) {
+        // Server response wins over the local edits: it carries
+        // callout-computed fields (e.g. the recalculated foreignAmount
+        // on an exchange-rate row) that the edited values don't have.
+        // NEO wraps the saved record in {response:{data:[...]}}.
+        const updated = await res.json().catch(() => null);
+        const serverValues = updated?.response?.data?.[0] ?? null;
+        setSelectedSecondaryLine(prev => ({...prev, ...secondaryLineEdits, ...(serverValues ?? {})}));
+        // Refresh the grid row cache so the list reflects the saved and
+        // derived values without having to reopen the record.
+        secondaryHooks[stIdx]?.handleUpdateChild?.(selectedSecondaryLine.id, serverValues ?? secondaryLineEdits);
+        setSecondaryLineEdits(null);
+        setSecondaryLineEditColumns({});
+        toast.success('Record saved');
+      } else {
+        toast.error(await extractErrorMessage(res));
+      }
+    } catch (err) {
+      toast.error(err.message || 'Network error');
+    } finally {
+      setSavingSecondaryLine(false);
+    }
+  };
+
+  const onDelete = async () => {
+    if (!(await confirmDelete())) return;
+    setSecondaryDeleting(prev => ({...prev, [st.key]: true}));
+    const rows = secondarySelectedRows[st.key] ?? [];
+    try {
+      const results = await Promise.allSettled(
+          rows.map(row => {
+            const childUrl = api?.crud?.[st.key]?.detailUrl?.replace('{id}', row.id)
+                || `${apiBaseUrl}/${st.key}/${row.id}`;
+            return fetch(childUrl, {
+              method: 'DELETE',
+              headers: {...(token ? {Authorization: `Bearer ${token}`} : {})},
+            }).then(res => ({res, row}));
+          })
+      );
+      let deleted = 0;
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value.res.ok) {
+          secondaryHooks[stIdx]?.handleDeleteChild?.(result.value.row.id);
+          if (selectedSecondaryLine?._tabKey === st.key && selectedSecondaryLine?.id === result.value.row.id) {
+            setSelectedSecondaryLine(null);
+          }
+          deleted++;
+        }
+      }
+      secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
+      setSecondarySelectedRows(prev => ({...prev, [st.key]: []}));
+      if (deleted > 0) toast.success(ui('recordsDeleted', {count: deleted}));
+      const failed = results.length - deleted;
+      if (failed > 0) toast.error(ui('recordsCouldNotBeDeleted', {count: failed}));
+    } catch (err) {
+      toast.error(err.message || ui('networkError'));
+    } finally {
+      setSecondaryDeleting(prev => ({...prev, [st.key]: false}));
+    }
+  };
+
+  return { onAdd, onSaveLine, onDelete };
+}
+
+export function SecondaryFormTab(props) {
+  return <div className="flex-1 min-w-0">
+    <props.st.Form
+        data={props.data ?? {}}
+        readOnly={!props.hook.editing}
+        onChange={props.onChange}
+        entity={props.st.key}
+        catalogs={props.catalogs}
+        token={props.token}
+        apiBaseUrl={props.apiBaseUrl}
+        selectorContext={props.selectorContextByEntity[props.st.key]}
+        labelOverrides={props.labelOverrides}
+    />
+  </div>;
+}
+
+export function SecondaryPanelTab(props) {
+  return <div className="flex-1 min-w-0">
+    <props.st.Panel
+        parentId={props.data?.id}
+        token={props.token}
+        apiBaseUrl={props.apiBaseUrl}
+        onCount={props.onCount}
+    />
+  </div>;
+}
+
+export function SecondaryTableTab(props) {
+  return <>
+    <div className="flex items-start gap-4">
+      <div className="flex-1 min-w-0">
+        <props.st.Table
+            ref={getSecondaryLinesTableRef(props.linesLayout, props.secondaryInlineLinesRef, props.st)}
+            data={props.secondaryHooks[props.stIdx]?.children ?? []}
+            entity={props.st.key}
+            token={props.token}
+            apiBaseUrl={props.apiBaseUrl}
+            selectorContext={props.selectorContextByEntity[props.st.key]}
+            linesLayout={props.linesLayout}
+            onRowClick={resolveSecondaryRowClickHandler(props.st, {
+              openCustomModal: props.openCustomModal,
+              openSecondaryLine: props.openSecondaryLine,
+              linesLayout: props.linesLayout,
+            })}
+            // Pencil action for customAddModal tabs (Dirección) opens
+            // the popup editor — rows are not editable in place.
+            onEditRow={getSecondaryEditRowHandler(props.st, props.setCustomModalState)}
+            selectedRowId={props.selectedSecondaryLine?._tabKey === props.st.key ? props.selectedSecondaryLine?.id : undefined}
+            onSelectionChange={getSecondarySelectionChangeHandler(props.linesLayout, props.setSecondarySelectedRows, props.st)}
+            onDeleteRow={(props.enableSecondaryRowDelete || (props.linesLayout === 'inlineEditable' && !props.st.customAddModal)) && (props.crud?.[props.st.key]?.delete ?? true) ? props.onDeleteRow : undefined}
+            // Inline edit save for secondary-tab rows. Fires when a
+            // cell loses focus while in edit mode. Optimistic flow:
+            // we update the local cache FIRST so the Radix Select
+            // (and read-mode label) reflect the new pick instantly,
+            // then PATCH the server and roll back if it rejects.
+            onUpdateRow={getSecondaryRowUpdateHandler(props.st, props.linesLayout, {
+              api: props.api,
+              apiBaseUrl: props.apiBaseUrl,
+              secondaryHooks: props.secondaryHooks,
+              stIdx: props.stIdx,
+              token: props.token,
+              ui: props.ui,
+              extractErrorMessage: props.extractErrorMessage,
+            })}
+            addRow={props.st.addLineFields?.entry?.length > 0 ? {
+              ref: props.secondaryAddRowRef,
+              active: props.addingSecondaryLine[props.st.key] ?? false,
+              fields: props.st.addLineFields.entry,
+              onAdd: props.onAdd,
+              onCancel: props.onCancel,
+              catalogs: props.catalogs,
+              seedValues: props.secondaryAddRowSeed,
+            } : undefined}
+        />
+      </div>
+      {props.st.Form && !props.st.Panel && (props.selectedSecondaryLine?._tabKey === props.st.key || props.closingSecondaryLine) && (
+          <div
+              className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${props.closingSecondaryLine ? "sidebar-slide-out" : "sidebar-slide-in"}`}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-foreground">{props.detailPanelTitle}</span>
+              <button
+                  onClick={props.onCloseDetailPanel}
+                  className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-3.5 w-3.5"/>
+              </button>
+            </div>
+            <props.st.Form
+                data={props.secondaryLineEdits ?? props.selectedSecondaryLine}
+                readOnly={!props.hook.editing}
+                onChange={props.onChange}
+                entity={props.st.key}
+                catalogs={props.catalogs}
+                token={props.token}
+                apiBaseUrl={props.apiBaseUrl}
+                selectorContext={props.selectorContextByEntity[props.st.key]}
+                excludeFields={props.st.key === "contact" ? ["active"] : []}
+                labelOverrides={props.labelOverrides}
+            />
+            {props.hook.editing && (props.secondaryLineEdits || props.selectedSecondaryLine?.id) && (
+                <div className="flex gap-2 mt-4">
+                  {props.secondaryLineEdits && (
+                      <>
+                        <button
+                            disabled={props.savingLine}
+                            onClick={props.onSaveLine}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                        >
+                          {props.savingLine ? props.loadingLabel : props.saveLabel}
+                        </button>
+                        <button
+                            onClick={props.onDiscardLine}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
+                        >
+                          {props.discardLabel}
+                        </button>
+                      </>
+                  )}
+                  {(props.crud?.[props.st.key]?.delete ?? true) && props.selectedSecondaryLine?.id && (
+                      <button
+                          disabled={props.savingLine}
+                          onClick={props.onDeleteLine}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
+                      >
+                        <Trash2 className="h-4 w-4"/>
+                        {props.deleteLabel}
+                      </button>
+                  )}
+                </div>
+            )}
+          </div>
+      )}
+    </div>
+    {(props.st.addLineFields?.entry?.length > 0 || props.st.customAddModal) && props.hook.editing && (
+        // Wrapper measured by the secondary selection bar — its
+        // `position: fixed` portal overlays exactly this region.
+        <div ref={props.secondaryAddLineWrapperRef} className="relative">
+          <span data-inline-add-portal="true">
+            <AddLineButton
+                onClick={props.onAddLineClick}
+                label={props.addLineLabel}
+                hideChevron={props.hideChevron}
+            />
+          </span>
+          {props.linesLayout === "inlineEditable" && (props.crud?.[props.st.key]?.delete ?? true) && (
+              <LinesSelectionBar
+                  visible={props.secondaryBarVisible[props.st.key] ?? false}
+                  closing={props.secondaryBarClosing[props.st.key] ?? false}
+                  barRect={props.secondaryBarRects[props.st.key]}
+                  count={(props.secondarySelectedRows[props.st.key] ?? []).length}
+                  selectedLabel={props.selectedLabel}
+                  totalLabel={null}
+                  deleting={props.secondaryDeleting[props.st.key] ?? false}
+                  deleteTitle={props.deleteLabel}
+                  closeTitle={props.closeTitle}
+                  compact
+                  onDelete={props.onDelete}
+                  onClose={props.onClose}
+              />
+          )}
+        </div>
+    )}
+  </>;
 }
 
 /**
@@ -258,6 +793,7 @@ export function DetailView({
   customLinesLabel = 'Invoices',
   sidePanel = null,
   sidePanelStyle = null,
+  sidebarAboveTabsOnly = false,
   afterTotals = null,
   bottomSection = null,
   linesEmptyState = null,
@@ -337,6 +873,22 @@ export function DetailView({
   const secondaryHook3 = useEntity(entity, (secondaryTabs[3]?.isFormTab || secondaryTabs[3]?.Panel) ? null : (secondaryTabs[3]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
+
+  // "From" currency for secondary-tab inline add-rows. The parent document's
+  // currency is a read-only column on those tabs (e.g. exchange rates), so the
+  // inline add-row has no input to populate it and it renders "—" until the POST
+  // sets it. Seed it from the header so it shows immediately. Depend on the scalar
+  // values (not the header object) so the seed keeps a stable identity and does
+  // not reset the open add-row on every parent re-render.
+  const headerCurrencyId = (hook.selected ?? hook.editing)?.currency ?? null;
+  const headerCurrencyLabel = (hook.selected ?? hook.editing)?.['currency$_identifier'] ?? sessionCurrencyCode ?? null;
+  const secondaryAddRowSeed = useMemo(() => {
+    if (headerCurrencyId == null && headerCurrencyLabel == null) return undefined;
+    const seed = {};
+    if (headerCurrencyId != null) seed.currency = headerCurrencyId;
+    if (headerCurrencyLabel != null) seed['currency$_identifier'] = headerCurrencyLabel;
+    return seed;
+  }, [headerCurrencyId, headerCurrencyLabel]);
 
   const handleFieldBlur = useCallback(() => {
     if (!hook.editing || !hook.selected) return;
@@ -774,15 +1326,16 @@ export function DetailView({
     }, 250);
   }, []);
 
-  // Track fields whose values were set by a callout response to avoid re-triggering
-  const calloutAppliedRef = useRef(new Set());
+  // Track fields whose values were set by a callout response, keyed by field with
+  // the applied value, so we only skip the echo (same value) and not genuine edits.
+  const calloutAppliedRef = useRef(new Map());
   // Track fields the user has manually changed in this record session — protected
   // from being overwritten by callouts triggered from other fields.
   const userTouchedRef = useRef(new Set());
   // Reset both refs when the record context changes (new record / different existing record)
   useEffect(() => {
     userTouchedRef.current = new Set();
-    calloutAppliedRef.current = new Set();
+    calloutAppliedRef.current = new Map();
   }, [recordId]);
   // Guard: fire default callouts only once per new-record session
   const defaultCalloutsTriggeredRef = useRef(false);
@@ -996,6 +1549,9 @@ export function DetailView({
       && String(hook.selected?.id) === String(justSaved.id)
     ) {
       setDirectFetched(true);
+      // Fetch children even on the justSaved fast-path — the header is already
+      // primed but children (e.g. auto-created accounting lines) must be loaded.
+      hook.fetchChildren?.(recordId);
       // One-shot: clear the marker so a manual reload of /:id still fetches.
       navigate(location.pathname, {
         replace: true,
@@ -1016,7 +1572,7 @@ export function DetailView({
     // intentionally omitted from the dep list to avoid re-running on every
     // navigation tick.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentItem, directFetched, hook.fetchById, hook.handleSelect, hook.loading, hook.selected, isNew, recordId]);
+  }, [currentItem, directFetched, hook.fetchById, hook.fetchChildren, hook.handleSelect, hook.loading, hook.selected, isNew, recordId]);
 
   // Reset selected line when the parent record changes
   useEffect(() => {
@@ -1035,51 +1591,14 @@ export function DetailView({
   useEffect(() => {
     if (!calloutResult) return;
     const { updates, combos, triggerField } = calloutResult;
-    const appliedFields = new Set();
+    const appliedFields = new Map();
+    const ctx = { data, triggerField, userTouchedRef, appliedFields, hook, api, catalogs };
 
     if (updates) {
-      for (const [key, entry] of Object.entries(updates)) {
-        // Skip empty callout values if the field already has a non-empty value
-        // (e.g., callout clears warehouse but defaults already set it)
-        const currentVal = data[key];
-        const userHasValue = currentVal !== '' && currentVal != null;
-        if ((entry.value === '' || entry.value == null) && userHasValue) {
-          continue;
-        }
-        // Protect user-touched fields from being overwritten by collateral updates
-        // coming from a callout triggered by a different field. The trigger field
-        // itself always wins (it was just changed by the user).
-        if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
-          continue;
-        }
-        appliedFields.add(key);
-        hook.handleChange(key, entry.value);
-        handleEntryIdentifierChange(entry, hook, key, api, catalogs);
-      }
+      applyCalloutFieldUpdates(updates, ctx);
     }
     if (combos) {
-      for (const [key, combo] of Object.entries(combos)) {
-        let selectedVal = combo.selected;
-        let selectedLabel = combo._identifier;
-        // Auto-select first entry if no explicit selection (e.g., BP address combo)
-        if (selectedVal == null && Array.isArray(combo.entries) && combo.entries.length > 0) {
-          selectedVal = combo.entries[0].id;
-          selectedLabel = combo.entries[0].identifier || combo.entries[0]._identifier;
-        }
-        if (selectedVal != null) {
-          // Protect user-touched fields from collateral combo updates
-          const currentVal = data[key];
-          const userHasValue = currentVal !== '' && currentVal != null;
-          if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
-            continue;
-          }
-          appliedFields.add(key);
-          hook.handleChange(key, selectedVal);
-          if (selectedLabel) {
-            hook.handleChange(key + '$_identifier', selectedLabel);
-          }
-        }
-      }
+      applyCalloutComboUpdates(combos, ctx);
     }
 
     // Mark these fields so the next onChange doesn't re-trigger callout
@@ -1097,17 +1616,20 @@ export function DetailView({
     // from other triggers cannot overwrite the user's choice.
     userTouchedRef.current.add(field);
 
-    // If this field was just set by a callout response, don't re-trigger
+    // If this field was just set by a callout response to THIS exact value, it's
+    // the echo of the callout write — skip to avoid a re-trigger loop. A different
+    // value means the user genuinely edited it → let the callout run.
     if (calloutAppliedRef.current.has(field)) {
+      const appliedVal = calloutAppliedRef.current.get(field);
       calloutAppliedRef.current.delete(field);
-      return;
+      if (String(appliedVal) === String(value)) return;
     }
 
     // Only trigger callout for meaningful value changes (not empty/typing artifacts).
     // Skip partial search text — only trigger when value looks like an Etendo ID
-    // (32-char hex UUID or legacy numeric ID), not user-typed search strings.
+    // (32-char hex UUID or legacy numeric ID) or a numeric/amount value (integer or decimal).
     if (!value || value === '') return;
-    if (!/^[0-9A-Fa-f]{32}$/.test(value) && !/^\d+$/.test(value)) return;
+    if (!/^[0-9A-Fa-f]{32}$/.test(value) && !/^-?\d+(\.\d+)?$/.test(value) && !/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
 
     // Trigger callout — the backend returns empty if no callout is registered
     executeCallout(field, value, hook.editing);
@@ -1260,7 +1782,7 @@ export function DetailView({
   // 3. Otherwise (no metadata at all), allow.
   let canAddLines;
   if (addLineGuard) {
-    canAddLines = addLineGuard(data);
+    canAddLines = addLineGuard(data, hook.children ?? []);
   } else if (Array.isArray(requiredHeaderFields) && requiredHeaderFields.length > 0) {
     canAddLines = requiredHeaderFields.every((k) => {
       const v = data?.[k];
@@ -1304,6 +1826,7 @@ export function DetailView({
   const footerCustomTabs = customTabs.filter(ct => (ct?.placement ?? 'footer') === 'footer');
   const tabCustomTabs = customTabs.filter(ct => ct?.placement === 'tab');
   const [customTabCounts, setCustomTabCounts] = useState({});
+  const [customLinesCount, setCustomLinesCount] = useState(null);
   const [activeCustomBelowTab, setActiveCustomBelowTab] = useState(0);
   // Reuse the secondaryTabs/lines/others activeTab state for custom tabs by prefixing
   // their keys with `custom:` so they cannot collide with secondaryTabs/lines/others/customLines.
@@ -1323,7 +1846,7 @@ export function DetailView({
       tabs.unshift(linesTab);
     }
   } else if (CustomLines) {
-    tabs.unshift({ key: 'customLines', label: customLinesLabel });
+    tabs.unshift({ key: 'customLines', label: customLinesLabel, count: customLinesCount ?? null });
   }
   // Append 'tab' placement custom items after lines/secondary tabs but before Others.
   // Items may pass `labelKey` to resolve a generic i18n label via useUI() instead of a
@@ -1623,7 +2146,16 @@ export function DetailView({
                       variant={isPrimary ? 'default' : 'outline'}
                       size="default"
                       className={`${btnClass} ${saveBtnCls}`.trim()}
-                      onClick={() => hook.handleProcess?.(p)}
+                      onClick={() => {
+                        for (const g of (p.requiresFieldMax ?? [])) {
+                          const condOk = !g.conditionalOnField || data?.[g.conditionalOnField] === g.conditionalValue;
+                          if (condOk && Number(data?.[g.field] ?? 0) > Number(g.max)) {
+                            toast.error(ui(g.errorKey));
+                            return;
+                          }
+                        }
+                        hook.handleProcess?.(p);
+                      }}
                     >
                       {tMenu(p.label)}
                     </Button>
@@ -1786,12 +2318,12 @@ export function DetailView({
             {primaryTabs && activePrimaryTab !== 'general' ? (() => {
               const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
               return activeTab?.Panel ? (
-                <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel', compactSidebarPadding)}`}>
+                <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel', compactSidebarPadding, formScrollPaddingX)}`}>
                   <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
                 </div>
               ) : null;
             })() : null}
-            <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'content', compactSidebarPadding)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+            <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding, formScrollPaddingX)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
               {typeof headerContent === 'function' ? headerContent(data) : headerContent}
               {(() => {
                 const slotProps = {
@@ -1839,61 +2371,77 @@ export function DetailView({
               <div className={sidePanelWrapperCls(!!sidePanel, linesLayout)}>
                 <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`}>
 
-                  {/* Principal + collapsed fields wrapped in a card */}
-                  <div className={`${hideFormCard ? 'hidden' : ''}${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${whiteFormBackground ? ' bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50' : ''}${embedded ? ' pointer-events-none' : ''}`}>
-                    <div className={linesLayout === 'inlineEditable' ? 'p-2' : 'p-6'}>
-                      <Form
-                        entity={entity}
-                        data={data}
-                        onChange={handleChangeWithCallout}
-                        catalogs={catalogs}
-                        layout="horizontal"
-                        section="principal"
-                        displayLogic={{ readOnly: displayLogic?.readOnly ?? {}, visibility: {} }}
-                        api={api}
-                        token={token}
-                        apiBaseUrl={apiBaseUrl}
-                        selectorContext={selectorContextByEntity[entity]}
-                        labelOverrides={labelOverrides}
-                        registerFields={hook.registerFields}
-                        fieldErrors={hook.fieldErrors}
-                        onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
-                      />
-                    </div>
+                  {/* Form section — conditionally wrapped with sidebar when sidebarAboveTabsOnly */}
+                  {(() => {
+                    const formSection = (
+                      <>
+                        {/* Principal + collapsed fields wrapped in a card */}
+                        <div className={`${hideFormCard ? 'hidden' : ''}${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${whiteFormBackground ? ' bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50' : ''}${embedded ? ' pointer-events-none' : ''}`}>
+                          <div className={linesLayout === 'inlineEditable' ? 'p-2' : formCardPadding}>
+                            <Form
+                              entity={entity}
+                              data={data}
+                              onChange={handleChangeWithCallout}
+                              catalogs={catalogs}
+                              layout="horizontal"
+                              section="principal"
+                              displayLogic={{ readOnly: displayLogic?.readOnly ?? {}, visibility: {} }}
+                              api={api}
+                              token={token}
+                              apiBaseUrl={apiBaseUrl}
+                              selectorContext={selectorContextByEntity[entity]}
+                              labelOverrides={labelOverrides}
+                              registerFields={hook.registerFields}
+                              fieldErrors={hook.fieldErrors}
+                              onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
+                            />
+                          </div>
 
-                    {/* Collapsible secondary header fields (hidden if no collapsed fields or sidebarContent) */}
-                    {!hideMoreDetails && !sidebarContent && (
-                      <CollapsibleSection title={ui('moreDetails')}>
-                        <div className={`px-6 pb-6${embedded ? ' pointer-events-none' : ''}`}>
-                          <Form
-                            entity={entity}
-                            data={data}
-                            onChange={handleChangeWithCallout}
-                            catalogs={catalogs}
-                            layout="horizontal"
-                            section="collapsed"
-                            excludeFields={notesField ? [notesField] : []}
-                            displayLogic={displayLogic}
-                            api={api}
-                            token={token}
-                            apiBaseUrl={apiBaseUrl}
-                            selectorContext={selectorContextByEntity[entity]}
-                            labelOverrides={labelOverrides}
-                            registerFields={hook.registerFields}
-                            fieldErrors={hook.fieldErrors}
-                            onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
-                          />
+                          {/* Collapsible secondary header fields (hidden if no collapsed fields or sidebarContent) */}
+                          {!hideMoreDetails && !sidebarContent && (
+                            <CollapsibleSection title={ui('moreDetails')}>
+                              <div className={`px-6 pb-6${embedded ? ' pointer-events-none' : ''}`}>
+                                <Form
+                                  entity={entity}
+                                  data={data}
+                                  onChange={handleChangeWithCallout}
+                                  catalogs={catalogs}
+                                  layout="horizontal"
+                                  section="collapsed"
+                                  excludeFields={notesField ? [notesField] : []}
+                                  displayLogic={displayLogic}
+                                  api={api}
+                                  token={token}
+                                  apiBaseUrl={apiBaseUrl}
+                                  selectorContext={selectorContextByEntity[entity]}
+                                  labelOverrides={labelOverrides}
+                                  registerFields={hook.registerFields}
+                                  fieldErrors={hook.fieldErrors}
+                                  onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
+                                />
+                              </div>
+                            </CollapsibleSection>
+                          )}
                         </div>
-                      </CollapsibleSection>
-                    )}
-                  </div>
 
-                  {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
-                  {formFooter && (
-                    <div className={embedded ? 'pointer-events-none' : ''}>
-                      {React.createElement(formFooter, { data, entity, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl, editing: hook.editing })}
-                    </div>
-                  )}
+                        {/* Form footer: inline content below form, above tabs */}
+                        {formFooter && (
+                          <div className={embedded ? 'pointer-events-none' : ''}>
+                            {React.createElement(formFooter, { data, entity, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl, editing: hook.editing })}
+                          </div>
+                        )}
+                      </>
+                    );
+                    if (sidebarAboveTabsOnly && sidebarContent) {
+                      return (
+                        <div className="flex items-start">
+                          <div className="flex-1 min-w-0 space-y-2">{formSection}</div>
+                          <div className={sidebarClassName}>{sidebarContent(data)}</div>
+                        </div>
+                      );
+                    }
+                    return formSection;
+                  })()}
 
                   {/* Tabs: child entities + Others */}
                   {tabs.length > 0 && (
@@ -2065,29 +2613,8 @@ export function DetailView({
                                     // callout has no access to the price-list metadata and returns 0.
                                     const selectedItem = opts?.selectedItem;
                                     if (selectedItem && typeof selectedItem === 'object') {
-                                      if (selectedItem._aux) {
-                                        for (const [suffix, auxVal] of Object.entries(selectedItem._aux)) {
-                                          snapshot[fieldKey + suffix] = auxVal;
-                                        }
-                                      }
-                                      for (const [topField, topVal] of Object.entries(selectedItem)) {
-                                        if (topField === 'id' || topField === '_aux' || topField === 'label'
-                                          || topField === 'name' || topField === 'searchKey'
-                                          || typeof topVal === 'object' || topVal === null) continue;
-                                        if (topField === 'standardPrice' && topVal != null) {
-                                          const isGross = selectedItem.isTaxIncluded !== false;
-                                          if (isGross) {
-                                            snapshot.grossUnitPrice = topVal;
-                                            snapshot.grossListPrice = topVal;
-                                          } else {
-                                            snapshot.unitPrice = topVal;
-                                            snapshot.listPrice = topVal;
-                                          }
-                                          continue;
-                                        }
-                                        const ctxKey = `${fieldKey}_${topField}`;
-                                        if (!(ctxKey in snapshot)) snapshot[ctxKey] = topVal;
-                                      }
+                                      mergeSelectorAuxFields(selectedItem, snapshot, fieldKey);
+                                      mergeSelectorContextFields(selectedItem, snapshot, fieldKey);
                                     }
 
                                     // Run callout (no-op for fields without one). Captures derived fields
@@ -2109,12 +2636,7 @@ export function DetailView({
                                     // reason, so we mirror that here for parity.
                                     const fieldValues = {};
                                     // 1. Start from the cleaned row (skips already-null inherited keys).
-                                    for (const [k, v] of Object.entries(cleanRow)) {
-                                      if (k.endsWith('$_identifier')) continue;
-                                      // Skip internal markers and metadata that aren't valid fields.
-                                      if (k === '_identifier' || k === '_entityName' || k === '$ref' || k === 'id') continue;
-                                      fieldValues[k] = coerce(v);
-                                    }
+                                    collectRowFieldValues(cleanRow, fieldValues, coerce);
                                     // 2. Overlay derived fields from the callout (incl. lineGrossAmount,
                                     //    standardPrice, unitPrice, listPrice).
                                     for (const [k, v] of Object.entries(derivedUpdates)) {
@@ -2136,15 +2658,7 @@ export function DetailView({
                                       body: JSON.stringify(fieldValues),
                                     });
                                     if (res.ok) {
-                                      // Local update folds in derived values (incl. $_identifier keys for
-                                      // FK callout outputs like tax$_identifier) so the row UI reflects
-                                      // the full snapshot without a refetch.
-                                      const localUpdate = { ...derivedUpdates, [fieldKey]: payloadValue };
-                                      if (fieldValues.unitPrice !== undefined) localUpdate.unitPrice = fieldValues.unitPrice;
-                                      if (opts?.identifier !== undefined) {
-                                        localUpdate[fieldKey + '$_identifier'] = opts.identifier;
-                                      }
-                                      hook.handleUpdateChild?.(row.id, localUpdate);
+                                      applyLocalChildRowUpdate(derivedUpdates, fieldKey, payloadValue, fieldValues, opts, hook, row);
                                     } else {
                                       const msg = await extractErrorMessage(res);
                                       toast.error(msg || ui('networkError'));
@@ -2181,9 +2695,13 @@ export function DetailView({
                                       // Also include hidden entry defaults (e.g., fields with predefined values).
                                       for (const hiddenField of hiddenEntryDefaults) {
                                         if (!(hiddenField.key in lineData)) {
-                                          lineData[hiddenField.key] = hiddenField.fromParent
-                                            ? _headerData?.[hiddenField.fromParent]
-                                            : hiddenField.value;
+                                          if (hiddenField.fromParent) {
+                                            lineData[hiddenField.key] = _headerData?.[hiddenField.fromParent];
+                                          } else if (hiddenField.fromSibling != null) {
+                                            lineData[hiddenField.key] = hook.children?.[0]?.[hiddenField.fromSibling];
+                                          } else {
+                                            lineData[hiddenField.key] = hiddenField.value;
+                                          }
                                         }
                                       }
                                       // Derive unitPrice = listPrice × (1-discount/100) before POST.
@@ -2449,19 +2967,7 @@ export function DetailView({
                                                 const patchEdits = { ...lineEdits };
                                                 if (patchData.unitPrice !== undefined) patchEdits.unitPrice = patchData.unitPrice;
                                                 const fieldValues = {};
-                                                for (const [k, v] of Object.entries(patchEdits)) {
-                                                  if (k.endsWith('$_identifier')) continue;
-                                                  // NEO Headless PATCH expects camelCase API keys, not DB column names.
-                                                  // Always use k (the API key) as the field name.
-                                                  // Convert numeric strings to numbers for BigDecimal compatibility.
-                                                  // Only strip when the value is already in standard format (no commas).
-                                                  // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
-                                                  if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
-                                                    fieldValues[k] = parseFloat(v);
-                                                  } else {
-                                                    fieldValues[k] = v;
-                                                  }
-                                                }
+                                                normalizePatchFieldValues(patchEdits, fieldValues);
                                                 const res = await fetch(childUrl, {
                                                   method: 'PATCH',
                                                   headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -2560,308 +3066,118 @@ export function DetailView({
                               apiBaseUrl={apiBaseUrl}
                               api={api}
                               editing={hook.editing}
-                              onRefresh={() => hook.fetchChildren?.(data?.id || recordId)}
+                              catalogs={catalogs}
+                              entity={detailEntity}
+                              onCountChange={(n) => setCustomLinesCount(n)}
+                              onRefresh={() => { hook.fetchChildren?.(data?.id || recordId); hook.fetchById?.(data?.id || recordId); }}
+                              isNew={isNew}
+                              onSave={async () => {
+                                const saved = await hook.handleSave(data);
+                                if (saved?.id && isNew) {
+                                  hook.primeSaved?.(saved);
+                                  navigate(`/${windowName}/${saved.id}`, { replace: true, state: { openAddLine: true } });
+                                }
+                                return saved;
+                              }}
                             />
                           </div>
                         )}
 
                         {/* Tab content: secondary child entity tabs (or form-only tabs) */}
-                        {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
-                          <div key={st.key} className={`${secondaryTabContentPaddingT} flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`}>
+                        {secondaryTabs.map((st, stIdx) => {
+                          if (tabs[activeTab]?.key !== st.key) return false;
+                          const secondaryLineHandlers = buildSecondaryLineHandlers({
+                            st, stIdx, api, apiBaseUrl, token, secondaryHooks, ui,
+                            extractErrorMessage, confirmDelete, secondaryInlineLinesRefs,
+                            selectedSecondaryLine, secondaryLineEdits, secondarySelectedRows,
+                            setAddingSecondaryLine, setSavingSecondaryLine, setSelectedSecondaryLine,
+                            setSecondaryLineEdits, setSecondaryLineEditColumns, setSecondaryDeleting,
+                            setSecondarySelectedRows,
+                          });
+                          return (
+                          <div key={st.key} className={getSecondaryTabContentClassName(secondaryTabContentPaddingT, embedded)}>
                             {st.isFormTab ? (
-                              <div className="flex-1 min-w-0">
-                                <st.Form
-                                  data={data ?? {}}
-                                  readOnly={!hook.editing}
-                                  onChange={(key, val, column) => {
-                                    setSecondaryLineEdits(prev => ({ ...(prev ?? {}), [key]: val }));
-                                    if (column) setSecondaryLineEditColumns(prev => ({ ...prev, [key]: column }));
-                                  }}
-                                  entity={st.key}
-                                  catalogs={catalogs}
-                                  token={token}
-                                  apiBaseUrl={apiBaseUrl}
-                                  selectorContext={selectorContextByEntity[st.key]}
-                                  labelOverrides={labelOverrides}
-                                />
-                              </div>
+                              <SecondaryFormTab data={data} hook={hook} onChange={(key, val, column) => {
+                                setSecondaryLineEdits(prev => ({...(prev ?? {}), [key]: val}));
+                                if (column) setSecondaryLineEditColumns(prev => ({...prev, [key]: column}));
+                              }} st={st} catalogs={catalogs} token={token} apiBaseUrl={apiBaseUrl}
+                                                selectorContextByEntity={selectorContextByEntity}
+                                                labelOverrides={labelOverrides}/>
                             ) : st.Panel ? (
-                              <div className="flex-1 min-w-0">
-                                <st.Panel
-                                  parentId={data?.id}
-                                  token={token}
-                                  apiBaseUrl={apiBaseUrl}
-                                  onCount={(n) => setPanelCounts(prev => ({ ...prev, [st.key]: n }))}
-                                />
-                              </div>
+                              <SecondaryPanelTab st={st} data={data} token={token} apiBaseUrl={apiBaseUrl}
+                                                 onCount={(n) => setPanelCounts(prev => ({...prev, [st.key]: n}))}/>
                             ) : (
-                              <>
-                                <div className="flex items-start gap-4">
-                                  <div className="flex-1 min-w-0">
-                                    <st.Table
-                                      ref={linesLayout === 'inlineEditable' ? getSecondaryInlineLinesRef(st.key) : undefined}
-                                      data={secondaryHooks[stIdx]?.children ?? []}
-                                      entity={st.key}
-                                      token={token}
-                                      apiBaseUrl={apiBaseUrl}
-                                      selectorContext={selectorContextByEntity[st.key]}
-                                      linesLayout={linesLayout}
-                                      onRowClick={resolveSecondaryRowClickHandler(st, {
-                                        openCustomModal: (row) => setCustomModalState({ key: st.key, rowId: row.id }),
-                                        openSecondaryLine: (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); },
-                                        linesLayout,
-                                      })}
-                                      // Pencil action for customAddModal tabs (Dirección) opens
-                                      // the popup editor — rows are not editable in place.
-                                      onEditRow={st.customAddModal
-                                        ? (row) => setCustomModalState({ key: st.key, rowId: row.id })
-                                        : undefined}
-                                      selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
-                                      onSelectionChange={linesLayout === 'inlineEditable'
-                                        ? (rows) => setSecondarySelectedRows(prev => ({ ...prev, [st.key]: rows }))
-                                        : undefined}
-                                      onDeleteRow={enableSecondaryRowDelete && (api?.crud?.[st.key]?.delete ?? true) ? (row) => {
-                                        setSecondaryDeleteConfirm({
-                                          tabKey: st.key,
-                                          tabIndex: stIdx,
-                                          id: row.id,
-                                        });
-                                      } : undefined}
-                                      // Inline edit save for secondary-tab rows. Fires when a
-                                      // cell loses focus while in edit mode. Optimistic flow:
-                                      // we update the local cache FIRST so the Radix Select
-                                      // (and read-mode label) reflect the new pick instantly,
-                                      // then PATCH the server and roll back if it rejects.
-                                      onUpdateRow={!st.customAddModal && linesLayout === 'inlineEditable' ? async (row, fieldKey, value, opts) => {
-                                        const childUrl = api?.crud?.[st.key]?.detailUrl?.replace('{id}', row.id)
-                                          || `${apiBaseUrl}/${st.key}/${row.id}`;
-                                        const includesIdentifier = opts?.identifier !== undefined;
-                                        const optimistic = includesIdentifier
-                                          ? { [fieldKey]: value, [`${fieldKey}$_identifier`]: opts.identifier }
-                                          : { [fieldKey]: value };
-                                        // Snapshot the previous values so we can revert on failure.
-                                        const previous = includesIdentifier
-                                          ? { [fieldKey]: row[fieldKey], [`${fieldKey}$_identifier`]: row[`${fieldKey}$_identifier`] }
-                                          : { [fieldKey]: row[fieldKey] };
-                                        secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, optimistic);
-                                        let res;
-                                        try {
-                                          res = await fetch(childUrl, {
-                                            method: 'PATCH',
-                                            headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ [fieldKey]: value }),
-                                          });
-                                        } catch (err) {
-                                          secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, previous);
-                                          toast.error(err?.message || ui('networkError'));
-                                          throw err;
-                                        }
-                                        if (res.ok) {
-                                          const updated = await res.json().catch(() => null);
-                                          // Server response wins over the optimistic cache when present
-                                          // — keeps any callout-driven fields the backend computed.
-                                          if (updated) secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, updated);
-                                        } else {
-                                          secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, previous);
-                                          const msg = await extractErrorMessage(res);
-                                          toast.error(msg || ui('networkError'));
-                                          throw new Error(msg || 'PATCH failed');
-                                        }
-                                      } : undefined}
-                                      addRow={st.addLineFields?.entry?.length > 0 ? {
-                                        ref: getSecondaryAddRowRef(st.key),
-                                        active: addingSecondaryLine[st.key] ?? false,
-                                        fields: st.addLineFields.entry,
-                                        onAdd: async (lineData) => {
-                                          const entryKeys = new Set(st.addLineFields.entry.map(f => f.key));
-                                          const filtered = {};
-                                          for (const [k, v] of Object.entries(lineData)) {
-                                            if (entryKeys.has(k)) filtered[k] = v;
-                                          }
-                                          const result = await secondaryHooks[stIdx]?.handleAddChild?.(filtered);
-                                          if (result) setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false }));
-                                          return result;
-                                        },
-                                        onCancel: () => setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false })),
-                                        catalogs,
-                                      } : undefined}
-                                    />
-                                  </div>
-                                  {st.Form && !st.Panel && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
-                                    <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
-                                      <div className="flex items-center justify-between mb-3">
-                                        <span className="text-sm font-medium text-foreground">{ui('entityDetail', { label: tMenu(st.label) })}</span>
-                                        <button
-                                          onClick={closeSecondaryLine}
-                                          className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
-                                        >
-                                          <X className="h-3.5 w-3.5" />
-                                        </button>
-                                      </div>
-                                      <st.Form
-                                        data={secondaryLineEdits ?? selectedSecondaryLine}
-                                        readOnly={!hook.editing}
-                                        onChange={(key, val, column) => {
-                                          setSecondaryLineEdits(prev => ({ ...(prev ?? selectedSecondaryLine), [key]: val }));
-                                          if (column) setSecondaryLineEditColumns(prev => ({ ...prev, [key]: column }));
-                                        }}
-                                        entity={st.key}
-                                        catalogs={catalogs}
-                                        token={token}
-                                        apiBaseUrl={apiBaseUrl}
-                                        selectorContext={selectorContextByEntity[st.key]}
-                                        excludeFields={st.key === 'contact' ? ['active'] : []}
-                                        labelOverrides={labelOverrides}
-                                      />
-                                      {hook.editing && (secondaryLineEdits || selectedSecondaryLine?.id) && (
-                                        <div className="flex gap-2 mt-4">
-                                          {secondaryLineEdits && (
-                                            <>
-                                              <button
-                                                disabled={savingSecondaryLine}
-                                                onClick={async () => {
-                                                  setSavingSecondaryLine(true);
-                                                  try {
-                                                    const secUrl = `${apiBaseUrl}/${st.key}/${selectedSecondaryLine.id}`;
-                                                    const fieldValues = {};
-                                                    for (const [k, v] of Object.entries(secondaryLineEdits)) {
-                                                      if (k.endsWith('$_identifier')) continue;
-                                                      // NEO Headless PATCH expects camelCase API keys, not DB column names.
-                                                      // Always use k (the API key) as the field name.
-                                                      // Convert numeric strings to numbers for BigDecimal compatibility.
-                                                      // Only strip when the value is already in standard format (no commas).
-                                                      // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
-                                                      if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
-                                                        fieldValues[k] = parseFloat(v);
-                                                      } else {
-                                                        fieldValues[k] = v;
-                                                      }
-                                                    }
-                                                    const res = await fetch(secUrl, {
-                                                      method: 'PATCH',
-                                                      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                                                      body: JSON.stringify(fieldValues),
-                                                    });
-                                                    if (res.ok) {
-                                                      setSelectedSecondaryLine(prev => ({ ...prev, ...secondaryLineEdits }));
-                                                      setSecondaryLineEdits(null);
-                                                      setSecondaryLineEditColumns({});
-                                                      toast.success('Record saved');
-                                                    } else {
-                                                      toast.error(await extractErrorMessage(res));
-                                                    }
-                                                  } catch (err) {
-                                                    toast.error(err.message || 'Network error');
-                                                  } finally { setSavingSecondaryLine(false); }
-                                                }}
-                                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                                              >
-                                                {savingSecondaryLine ? ui('loading') : ui('save')}
-                                              </button>
-                                              <button
-                                                onClick={() => setSecondaryLineEdits(null)}
-                                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
-                                              >
-                                                {ui('discard')}
-                                              </button>
-                                            </>
-                                          )}
-                                          {(api?.crud?.[st.key]?.delete ?? true) && selectedSecondaryLine?.id && (
-                                            <button
-                                              disabled={savingSecondaryLine}
-                                              onClick={() => setSecondaryDeleteConfirm({
-                                                tabKey: st.key,
-                                                tabIndex: stIdx,
-                                                id: selectedSecondaryLine.id,
-                                              })}
-                                              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
-                                            >
-                                              <Trash2 className="h-4 w-4" />
-                                              {ui('delete')}
-                                            </button>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                                {(st.addLineFields?.entry?.length > 0 || st.customAddModal) && hook.editing && (
-                                  // Wrapper measured by the secondary selection bar — its
-                                  // `position: fixed` portal overlays exactly this region.
-                                  <div ref={getSecondaryAddLineWrapperRef(st.key)} className="relative">
-                                    <span data-inline-add-portal="true">
-                                      <AddLineButton
-                                        onClick={() => {
-                                          if (st.customAddModal) {
-                                            void handleCustomModalAddClick(st.key);
-                                          } else {
-                                            void handleSecondaryAddLineToggle(st.key);
-                                          }
-                                        }}
-                                        label={ui('addEntity', { label: tMenu(st.label) })}
-                                        hideChevron={hideAddLineChevron}
-                                      />
-                                    </span>
-                                    {linesLayout === 'inlineEditable' && (api?.crud?.[st.key]?.delete ?? true) && (
-                                      <LinesSelectionBar
-                                        visible={secondaryBarVisible[st.key] ?? false}
-                                        closing={secondaryBarClosing[st.key] ?? false}
-                                        barRect={secondaryBarRects[st.key]}
-                                        count={(secondarySelectedRows[st.key] ?? []).length}
-                                        selectedLabel={ui('selected', { count: (secondarySelectedRows[st.key] ?? []).length })}
-                                        totalLabel={null}
-                                        deleting={secondaryDeleting[st.key] ?? false}
-                                        deleteTitle={ui('delete')}
-                                        closeTitle={ui('close')}
-                                        compact
-                                        onDelete={async () => {
-                                          if (!(await confirmDelete())) return;
-                                          setSecondaryDeleting(prev => ({ ...prev, [st.key]: true }));
-                                          const rows = secondarySelectedRows[st.key] ?? [];
-                                          try {
-                                            const results = await Promise.allSettled(
-                                              rows.map(row => {
-                                                const childUrl = api?.crud?.[st.key]?.detailUrl?.replace('{id}', row.id)
-                                                  || `${apiBaseUrl}/${st.key}/${row.id}`;
-                                                return fetch(childUrl, {
-                                                  method: 'DELETE',
-                                                  headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                                                }).then(res => ({ res, row }));
-                                              })
-                                            );
-                                            let deleted = 0;
-                                            for (const result of results) {
-                                              if (result.status === 'fulfilled' && result.value.res.ok) {
-                                                secondaryHooks[stIdx]?.handleDeleteChild?.(result.value.row.id);
-                                                if (selectedSecondaryLine?._tabKey === st.key && selectedSecondaryLine?.id === result.value.row.id) {
-                                                  setSelectedSecondaryLine(null);
-                                                }
-                                                deleted++;
-                                              }
-                                            }
-                                            secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
-                                            setSecondarySelectedRows(prev => ({ ...prev, [st.key]: [] }));
-                                            if (deleted > 0) toast.success(ui('recordsDeleted', { count: deleted }));
-                                            const failed = results.length - deleted;
-                                            if (failed > 0) toast.error(ui('recordsCouldNotBeDeleted', { count: failed }));
-                                          } catch (err) {
-                                            toast.error(err.message || ui('networkError'));
-                                          } finally {
-                                            setSecondaryDeleting(prev => ({ ...prev, [st.key]: false }));
-                                          }
-                                        }}
-                                        onClose={() => {
-                                          secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
-                                          setSecondarySelectedRows(prev => ({ ...prev, [st.key]: [] }));
-                                        }}
-                                      />
-                                    )}
-                                  </div>
-                                )}
-                              </>
+                              <SecondaryTableTab
+                                st={st}
+                                stIdx={stIdx}
+                                linesLayout={linesLayout}
+                                secondaryInlineLinesRef={getSecondaryInlineLinesRef}
+                                secondaryHooks={secondaryHooks}
+                                token={token}
+                                apiBaseUrl={apiBaseUrl}
+                                selectorContextByEntity={selectorContextByEntity}
+                                catalogs={catalogs}
+                                api={api}
+                                crud={api?.crud}
+                                ui={ui}
+                                hook={hook}
+                                labelOverrides={labelOverrides}
+                                extractErrorMessage={extractErrorMessage}
+                                enableSecondaryRowDelete={enableSecondaryRowDelete}
+                                selectedSecondaryLine={selectedSecondaryLine}
+                                secondaryLineEdits={secondaryLineEdits}
+                                closingSecondaryLine={isClosingSecondaryLine}
+                                addingSecondaryLine={addingSecondaryLine}
+                                savingLine={savingSecondaryLine}
+                                secondaryAddRowRef={getSecondaryAddRowRef(st.key)}
+                                secondaryAddRowSeed={secondaryAddRowSeed}
+                                secondaryAddLineWrapperRef={getSecondaryAddLineWrapperRef(st.key)}
+                                hideChevron={hideAddLineChevron}
+                                secondaryBarVisible={secondaryBarVisible}
+                                secondaryBarClosing={secondaryBarClosing}
+                                secondaryBarRects={secondaryBarRects}
+                                secondaryDeleting={secondaryDeleting}
+                                secondarySelectedRows={secondarySelectedRows}
+                                setSecondarySelectedRows={setSecondarySelectedRows}
+                                setCustomModalState={setCustomModalState}
+                                detailPanelTitle={ui('entityDetail', {label: tMenu(st.label)})}
+                                addLineLabel={ui('addEntity', {label: tMenu(st.label)})}
+                                selectedLabel={ui('selected', {count: (secondarySelectedRows[st.key] ?? []).length})}
+                                loadingLabel={ui('loading')}
+                                saveLabel={ui('save')}
+                                discardLabel={ui('discard')}
+                                deleteLabel={ui('delete')}
+                                closeTitle={ui('close')}
+                                openCustomModal={(row) => setCustomModalState({key: st.key, rowId: row.id})}
+                                openSecondaryLine={(row) => {
+                                  setSelectedSecondaryLine({...row, _tabKey: st.key});
+                                  setSecondaryLineEdits(null);
+                                }}
+                                onDeleteRow={(row) => setSecondaryDeleteConfirm({tabKey: st.key, tabIndex: stIdx, id: row.id})}
+                                onCloseDetailPanel={closeSecondaryLine}
+                                onChange={(key, val, column) => {
+                                  setSecondaryLineEdits(prev => ({...(prev ?? selectedSecondaryLine), [key]: val}));
+                                  if (column) setSecondaryLineEditColumns(prev => ({...prev, [key]: column}));
+                                }}
+                                onAdd={secondaryLineHandlers.onAdd}
+                                onCancel={() => setAddingSecondaryLine(prev => ({...prev, [st.key]: false}))}
+                                onAddLineClick={() => runAddLineAction(st, {
+                                  handleCustomModalAddClick,
+                                  handleSecondaryAddLineToggle,
+                                })}
+                                onSaveLine={secondaryLineHandlers.onSaveLine}
+                                onDiscardLine={() => setSecondaryLineEdits(null)}
+                                onDeleteLine={() => setSecondaryDeleteConfirm({tabKey: st.key, tabIndex: stIdx, id: selectedSecondaryLine.id})}
+                                onDelete={secondaryLineHandlers.onDelete}
+                                onClose={() => {
+                                  secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
+                                  setSecondarySelectedRows(prev => ({...prev, [st.key]: []}));
+                                }}
+                              />
                             )}
                           </div>
-                        ))}
+                          );
+                        })}
 
                         {/* Tab content: Others (secondary header fields) */}
                         {tabs[activeTab]?.key === 'others' && (
@@ -3063,7 +3379,7 @@ export function DetailView({
                 </div>
                 {sidePanel && (
                   <div
-                    className="w-[280px] shrink-0 self-stretch border-l border-gray-200 pl-3 pr-3"
+                    className="w-full max-w-full shrink-0 self-stretch border-t lg:border-t-0 lg:w-[280px] lg:border-l border-gray-200 pt-3 lg:pt-0 pl-0 lg:pl-3 pr-0 lg:pr-3"
                     style={sidePanelStyle}
                   >
                     {typeof sidePanel === 'function'
@@ -3074,7 +3390,7 @@ export function DetailView({
               </div>
             </div>
           </div>{/* end content column wrapper */}
-          {sidebarContent && (
+          {sidebarContent && !sidebarAboveTabsOnly && (
             <div className={sidebarClassName}>
               {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
             </div>

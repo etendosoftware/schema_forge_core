@@ -105,10 +105,13 @@ async function main() {
   if (dryRun) console.log('(dry-run mode — no files were written)');
 }
 
-main().catch(err => {
-  console.error('Fatal:', err.message);
-  process.exit(1);
-});
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isMain) {
+  main().catch(err => {
+    console.error('Fatal:', err.message);
+    process.exit(1);
+  });
+}
 function extractWindowArguments(args) {
   const specificWindows = [];
   let i = 0;
@@ -122,4 +125,6 @@ function extractWindowArguments(args) {
   }
   return specificWindows;
 }
+
+export { findDecisionsFiles, extractWindowArguments, main };
 

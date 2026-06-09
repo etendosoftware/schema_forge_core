@@ -23,7 +23,7 @@ export default function FinancialAccountWindow({ recordId }) {
   const ui = useUI();
   const [activeTab, setActiveTab] = useState('movements');
   const { account } = useFinancialAccount(recordId);
-  const { movements, totals, loading: movementsLoading, reload: reloadMovements } = useAccountMovements(recordId);
+  const { movements, totals, enabledDimensions, headerDimensions, trxTypes, accountOrgId, paymentMethods, loading: movementsLoading, reload: reloadMovements } = useAccountMovements(recordId);
   const { statements } = useBankStatements(recordId);
   const movementsTabRef = useRef(null);
 
@@ -56,7 +56,7 @@ export default function FinancialAccountWindow({ recordId }) {
       <div className="flex h-full flex-col overflow-hidden">
 
         {/* Tab strip + Export button */}
-        <div className="flex items-center justify-between border-b border-[#E8EAEF] px-4">
+        <div className="flex items-center justify-between border-b border-[#E8EAEF] pl-0 pr-2">
           <DetailTabs
             value={activeTab}
             onValueChange={setActiveTab}
@@ -83,6 +83,11 @@ export default function FinancialAccountWindow({ recordId }) {
               account={account}
               totals={totals}
               movements={movements}
+              enabledDimensions={enabledDimensions}
+              headerDimensions={headerDimensions}
+              trxTypes={trxTypes}
+              accountOrgId={accountOrgId}
+              paymentMethods={paymentMethods}
               loading={movementsLoading}
               onReload={reloadMovements}
             />

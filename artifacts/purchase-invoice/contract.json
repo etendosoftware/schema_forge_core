@@ -1,8 +1,8 @@
 {
-  "version": "0.29.3",
+  "version": "0.30.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-28T11:06:45.587Z",
-  "checksum": "23f7c62b397cb0bb",
+  "updatedAt": "2026-06-03T17:59:09.816Z",
+  "checksum": "040cf302366d66b6",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -16,17 +16,24 @@
         "headerTable": "InvoiceHeaderTable",
         "bottomSection": "PurchaseInvoiceBottomPanel"
       },
-      "menuActions": [
-        {
-          "key": "reactivate",
-          "label": "Reactivate",
-          "labelKey": "reactivate",
-          "visibleWhenStatus": "CO",
-          "documentAction": "RE",
-          "successKey": "reactivated"
-        }
-      ],
+      "menuActions": [],
       "processOverrides": {},
+      "secondaryTabs": {
+        "exchangeRates": {
+          "label": "Exchange Rates",
+          "tabOrder": 50,
+          "addLineFields": [
+            "toCurrency",
+            "rate",
+            "foreignAmount"
+          ],
+          "requireSavedRecord": true,
+          "readOnlyLogic": "@DocumentStatus@!='DR'",
+          "addLineFieldExclusions": {
+            "toCurrency": "currency"
+          }
+        }
+      },
       "labelOverrides": {
         "es_ES": {
           "POReference": "Nº documento",
@@ -3208,6 +3215,127 @@
         "searchableFields": [],
         "computedFields": []
       },
+      "exchangeRates": {
+        "tableName": "C_Conversion_Rate_Document",
+        "tabId": "FF808181308EA4230130901AB2C60090",
+        "tabName": "Exchange rates",
+        "uiPattern": "STD",
+        "fields": [
+          {
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "label": "Currency",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": false,
+            "sourceRequired": true,
+            "reference": "Currency",
+            "inputMode": "selector",
+            "validationRule": {
+              "code": "C_Currency.C_Currency_id = \nCASE WHEN @C_Invoice_ID@ is not null THEN (SELECT C_Currency_ID FROM C_Invoice WHERE C_Invoice_ID = COALESCE(@C_Invoice_ID@,'---'))\nWHEN @APRM_Finacc_Transaction_V_ID@ is not null THEN (SELECT c_currency_id FROM aprm_finacc_transaction_v WHERE aprm_finacc_transaction_v_id = COALESCE(@APRM_Finacc_Transaction_V_ID@, '---')) \nWHEN @FIN_Finacc_Transaction_ID@ is not null THEN (SELECT c_currency_id FROM fin_finacc_transaction WHERE fin_finacc_transaction_id = COALESCE(@FIN_Finacc_Transaction_ID@, '---'))\nWHEN @GL_Journal_ID@ is not null THEN (SELECT c_currency_id FROM gl_journal WHERE gl_journal_id = COALESCE(@GL_Journal_ID@, '---'))\nELSE (SELECT C_Currency_ID FROM FIN_Payment WHERE FIN_Payment_ID = COALESCE(@FIN_Payment_ID@, '---')) END",
+              "contextParams": [],
+              "cascadeParams": [
+                "C_Invoice_ID",
+                "APRM_Finacc_Transaction_V_ID",
+                "FIN_Finacc_Transaction_ID",
+                "GL_Journal_ID",
+                "FIN_Payment_ID"
+              ]
+            },
+            "readOnlyLogic": {
+              "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
+              "evaluable": true,
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+            }
+          },
+          {
+            "name": "toCurrency",
+            "apiKey": "toCurrency",
+            "column": "C_Currency_Id_To",
+            "label": "To Currency",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "sourceRequired": true,
+            "reference": "Currency",
+            "inputMode": "search",
+            "validationRule": {
+              "code": "C_Currency.C_Currency_id in (SELECT C_Currency_ID FROM C_Acctschema)",
+              "contextParams": [],
+              "cascadeParams": []
+            },
+            "readOnlyLogic": {
+              "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
+              "evaluable": true,
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+            }
+          },
+          {
+            "name": "rate",
+            "apiKey": "rate",
+            "column": "Rate",
+            "label": "Rate",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "callout": {
+              "className": "org.openbravo.erpCommon.ad_callouts.SE_CalculateExchangeRate"
+            },
+            "readOnlyLogic": {
+              "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
+              "evaluable": true,
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+            }
+          },
+          {
+            "name": "foreignAmount",
+            "apiKey": "foreignAmount",
+            "column": "Foreign_Amount",
+            "label": "Foreign  Amount",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
+            "defaultValue": "0",
+            "callout": {
+              "className": "org.openbravo.erpCommon.ad_callouts.SE_CalculateExchangeRate"
+            },
+            "readOnlyLogic": {
+              "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
+              "evaluable": true,
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+            }
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": [
+          {
+            "name": "foreignAmount",
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            }
+          }
+        ],
+        "javaQualifier": "invoiceExchangeRateHandler"
+      },
       "accounting": {
         "tableName": "Fact_Acct",
         "tabId": "6EE02C9681A74406A129F1D96D022BA4",
@@ -3726,17 +3854,24 @@
         "headerTable": "InvoiceHeaderTable",
         "bottomSection": "PurchaseInvoiceBottomPanel"
       },
-      "menuActions": [
-        {
-          "key": "reactivate",
-          "label": "Reactivate",
-          "labelKey": "reactivate",
-          "visibleWhenStatus": "CO",
-          "documentAction": "RE",
-          "successKey": "reactivated"
-        }
-      ],
+      "menuActions": [],
       "processOverrides": {},
+      "secondaryTabs": {
+        "exchangeRates": {
+          "label": "Exchange Rates",
+          "tabOrder": 50,
+          "addLineFields": [
+            "toCurrency",
+            "rate",
+            "foreignAmount"
+          ],
+          "requireSavedRecord": true,
+          "readOnlyLogic": "@DocumentStatus@!='DR'",
+          "addLineFieldExclusions": {
+            "toCurrency": "currency"
+          }
+        }
+      },
       "labelOverrides": {
         "es_ES": {
           "POReference": "Nº documento",
@@ -6859,6 +6994,150 @@
           }
         ]
       },
+      "exchangeRates": {
+        "tableName": "C_Conversion_Rate_Document",
+        "tabId": "FF808181308EA4230130901AB2C60090",
+        "tabName": "Exchange rates",
+        "fields": [
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "toCurrency",
+            "apiKey": "toCurrency",
+            "column": "C_Currency_Id_To",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "invoice",
+            "apiKey": "invoice",
+            "column": "C_Invoice_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "payment",
+            "apiKey": "payment",
+            "column": "FIN_Payment_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "financialAccountTransaction",
+            "apiKey": "financialAccountTransaction",
+            "column": "aprm_finacc_transaction_v_id",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "rate",
+            "apiKey": "rate",
+            "column": "Rate",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "foreignAmount",
+            "apiKey": "foreignAmount",
+            "column": "Foreign_Amount",
+            "type": "amount",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_Conversion_Rate_Document_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "fINFinancialAccountTransaction",
+            "apiKey": "fINFinancialAccountTransaction",
+            "column": "FIN_Finacc_Transaction_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "journalEntry",
+            "apiKey": "journalEntry",
+            "column": "GL_Journal_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ],
+        "javaQualifier": "invoiceExchangeRateHandler"
+      },
       "accounting": {
         "tableName": "Fact_Acct",
         "tabId": "6EE02C9681A74406A129F1D96D022BA4",
@@ -7802,6 +8081,36 @@
       },
       {
         "method": "GET",
+        "path": "/exchangeRates",
+        "entity": "exchangeRates",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/exchangeRates/:id",
+        "entity": "exchangeRates",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/exchangeRates",
+        "entity": "exchangeRates",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/exchangeRates/:id",
+        "entity": "exchangeRates",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/exchangeRates/:id",
+        "entity": "exchangeRates",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
         "path": "/accounting",
         "entity": "accounting",
         "supportedFilters": []
@@ -8001,6 +8310,17 @@
         "delete": true,
         "listUrl": "/sws/neo/purchase-invoice/reversedInvoices",
         "detailUrl": "/sws/neo/purchase-invoice/reversedInvoices/{id}",
+        "supportedFilters": []
+      },
+      "exchangeRates": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-invoice/exchangeRates",
+        "detailUrl": "/sws/neo/purchase-invoice/exchangeRates/{id}",
         "supportedFilters": []
       },
       "accounting": {
@@ -8394,6 +8714,36 @@
         "reference": "Invoice",
         "inputMode": "search",
         "url": "/sws/neo/purchase-invoice/reversedInvoices/selectors/reversedInvoice"
+      },
+      {
+        "entity": "exchangeRates",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-invoice/exchangeRates/selectors/currency",
+        "context": {
+          "required": [
+            {
+              "param": "C_Invoice_ID",
+              "source": "parentField",
+              "field": "invoice"
+            },
+            {
+              "param": "FIN_Payment_ID",
+              "source": "parentField",
+              "field": "payment"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "exchangeRates",
+        "field": "toCurrency",
+        "column": "C_Currency_Id_To",
+        "reference": "Currency",
+        "inputMode": "search",
+        "url": "/sws/neo/purchase-invoice/exchangeRates/selectors/toCurrency"
       },
       {
         "entity": "accounting",
@@ -8942,6 +9292,13 @@
         "description": "CRUD flags for 'cashVat' should all be booleans"
       },
       {
+        "id": "t-crud-flags-exchangeRates",
+        "category": "crud-flags",
+        "entity": "exchangeRates",
+        "runner": "node",
+        "description": "CRUD flags for 'exchangeRates' should all be booleans"
+      },
+      {
         "id": "t-crud-flags-header",
         "category": "crud-flags",
         "entity": "header",
@@ -9028,6 +9385,14 @@
         "field": "accountingDate",
         "runner": "node",
         "description": "Default value for 'accountingDate' in cashVat should be a string"
+      },
+      {
+        "id": "t-default-value-type-exchangeRates-foreignAmount",
+        "category": "default-value-type",
+        "entity": "exchangeRates",
+        "field": "foreignAmount",
+        "runner": "node",
+        "description": "Default value for 'foreignAmount' in exchangeRates should be a string"
       },
       {
         "id": "t-default-value-type-header-accountingDate",
@@ -9780,6 +10145,38 @@
         "field": "taxAmount",
         "runner": "node",
         "description": "Field 'taxAmount' should be present in cashVat"
+      },
+      {
+        "id": "t-field-presence-exchangeRates-currency",
+        "category": "field-presence",
+        "entity": "exchangeRates",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should be present in exchangeRates"
+      },
+      {
+        "id": "t-field-presence-exchangeRates-foreignAmount",
+        "category": "field-presence",
+        "entity": "exchangeRates",
+        "field": "foreignAmount",
+        "runner": "node",
+        "description": "Field 'foreignAmount' should be present in exchangeRates"
+      },
+      {
+        "id": "t-field-presence-exchangeRates-rate",
+        "category": "field-presence",
+        "entity": "exchangeRates",
+        "field": "rate",
+        "runner": "node",
+        "description": "Field 'rate' should be present in exchangeRates"
+      },
+      {
+        "id": "t-field-presence-exchangeRates-toCurrency",
+        "category": "field-presence",
+        "entity": "exchangeRates",
+        "field": "toCurrency",
+        "runner": "node",
+        "description": "Field 'toCurrency' should be present in exchangeRates"
       },
       {
         "id": "t-field-presence-header-accountingDate",
@@ -10926,6 +11323,38 @@
         "description": "Field 'taxAmount' should have type 'number' in cashVat"
       },
       {
+        "id": "t-field-type-exchangeRates-currency",
+        "category": "field-type",
+        "entity": "exchangeRates",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should have type 'string' in exchangeRates"
+      },
+      {
+        "id": "t-field-type-exchangeRates-foreignAmount",
+        "category": "field-type",
+        "entity": "exchangeRates",
+        "field": "foreignAmount",
+        "runner": "node",
+        "description": "Field 'foreignAmount' should have type 'number' in exchangeRates"
+      },
+      {
+        "id": "t-field-type-exchangeRates-rate",
+        "category": "field-type",
+        "entity": "exchangeRates",
+        "field": "rate",
+        "runner": "node",
+        "description": "Field 'rate' should have type 'string' in exchangeRates"
+      },
+      {
+        "id": "t-field-type-exchangeRates-toCurrency",
+        "category": "field-type",
+        "entity": "exchangeRates",
+        "field": "toCurrency",
+        "runner": "node",
+        "description": "Field 'toCurrency' should have type 'string' in exchangeRates"
+      },
+      {
         "id": "t-field-type-header-accountingDate",
         "category": "field-type",
         "entity": "header",
@@ -11830,6 +12259,38 @@
         "description": "Read-only logic for 'lineNo' in basicDiscounts should have evaluable flag"
       },
       {
+        "id": "t-readonlylogic-evaluable-exchangeRates-currency",
+        "category": "readonlylogic-evaluable",
+        "entity": "exchangeRates",
+        "field": "currency",
+        "runner": "node",
+        "description": "Read-only logic for 'currency' in exchangeRates should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-exchangeRates-foreignAmount",
+        "category": "readonlylogic-evaluable",
+        "entity": "exchangeRates",
+        "field": "foreignAmount",
+        "runner": "node",
+        "description": "Read-only logic for 'foreignAmount' in exchangeRates should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-exchangeRates-rate",
+        "category": "readonlylogic-evaluable",
+        "entity": "exchangeRates",
+        "field": "rate",
+        "runner": "node",
+        "description": "Read-only logic for 'rate' in exchangeRates should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-exchangeRates-toCurrency",
+        "category": "readonlylogic-evaluable",
+        "entity": "exchangeRates",
+        "field": "toCurrency",
+        "runner": "node",
+        "description": "Read-only logic for 'toCurrency' in exchangeRates should have evaluable flag"
+      },
+      {
         "id": "t-readonlylogic-evaluable-header-accountingDate",
         "category": "readonlylogic-evaluable",
         "entity": "header",
@@ -12308,6 +12769,38 @@
         "field": "lineNo",
         "runner": "node",
         "description": "Read-only logic for 'lineNo' in basicDiscounts should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-exchangeRates-currency",
+        "category": "readonlylogic-valid",
+        "entity": "exchangeRates",
+        "field": "currency",
+        "runner": "node",
+        "description": "Read-only logic for 'currency' in exchangeRates should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-exchangeRates-foreignAmount",
+        "category": "readonlylogic-valid",
+        "entity": "exchangeRates",
+        "field": "foreignAmount",
+        "runner": "node",
+        "description": "Read-only logic for 'foreignAmount' in exchangeRates should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-exchangeRates-rate",
+        "category": "readonlylogic-valid",
+        "entity": "exchangeRates",
+        "field": "rate",
+        "runner": "node",
+        "description": "Read-only logic for 'rate' in exchangeRates should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-exchangeRates-toCurrency",
+        "category": "readonlylogic-valid",
+        "entity": "exchangeRates",
+        "field": "toCurrency",
+        "runner": "node",
+        "description": "Read-only logic for 'toCurrency' in exchangeRates should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-header-accountingDate",
@@ -13079,6 +13572,22 @@
         "field": "payment",
         "runner": "node",
         "description": "Selector endpoint for 'payment' in cashVat should exist"
+      },
+      {
+        "id": "t-selector-endpoint-exchangeRates-currency",
+        "category": "selector-endpoint",
+        "entity": "exchangeRates",
+        "field": "currency",
+        "runner": "node",
+        "description": "Selector endpoint for 'currency' in exchangeRates should exist"
+      },
+      {
+        "id": "t-selector-endpoint-exchangeRates-toCurrency",
+        "category": "selector-endpoint",
+        "entity": "exchangeRates",
+        "field": "toCurrency",
+        "runner": "node",
+        "description": "Selector endpoint for 'toCurrency' in exchangeRates should exist"
       },
       {
         "id": "t-selector-endpoint-header-aeatsiiCauseExemption",
@@ -13935,6 +14444,110 @@
         "field": "updatedBy",
         "runner": "node",
         "description": "System field 'updatedBy' should exist in backend but not frontend for cashVat"
+      },
+      {
+        "id": "t-system-field-exchangeRates-active",
+        "category": "system-field",
+        "entity": "exchangeRates",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for exchangeRates"
+      },
+      {
+        "id": "t-system-field-exchangeRates-client",
+        "category": "system-field",
+        "entity": "exchangeRates",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for exchangeRates"
+      },
+      {
+        "id": "t-system-field-exchangeRates-createdBy",
+        "category": "system-field",
+        "entity": "exchangeRates",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for exchangeRates"
+      },
+      {
+        "id": "t-system-field-exchangeRates-creationDate",
+        "category": "system-field",
+        "entity": "exchangeRates",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for exchangeRates"
+      },
+      {
+        "id": "t-system-field-exchangeRates-financialAccountTransaction",
+        "category": "system-field",
+        "entity": "exchangeRates",
+        "field": "financialAccountTransaction",
+        "runner": "node",
+        "description": "System field 'financialAccountTransaction' should exist in backend but not frontend for exchangeRates"
+      },
+      {
+        "id": "t-system-field-exchangeRates-fINFinancialAccountTransaction",
+        "category": "system-field",
+        "entity": "exchangeRates",
+        "field": "fINFinancialAccountTransaction",
+        "runner": "node",
+        "description": "System field 'fINFinancialAccountTransaction' should exist in backend but not frontend for exchangeRates"
+      },
+      {
+        "id": "t-system-field-exchangeRates-id",
+        "category": "system-field",
+        "entity": "exchangeRates",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for exchangeRates"
+      },
+      {
+        "id": "t-system-field-exchangeRates-invoice",
+        "category": "system-field",
+        "entity": "exchangeRates",
+        "field": "invoice",
+        "runner": "node",
+        "description": "System field 'invoice' should exist in backend but not frontend for exchangeRates"
+      },
+      {
+        "id": "t-system-field-exchangeRates-journalEntry",
+        "category": "system-field",
+        "entity": "exchangeRates",
+        "field": "journalEntry",
+        "runner": "node",
+        "description": "System field 'journalEntry' should exist in backend but not frontend for exchangeRates"
+      },
+      {
+        "id": "t-system-field-exchangeRates-organization",
+        "category": "system-field",
+        "entity": "exchangeRates",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for exchangeRates"
+      },
+      {
+        "id": "t-system-field-exchangeRates-payment",
+        "category": "system-field",
+        "entity": "exchangeRates",
+        "field": "payment",
+        "runner": "node",
+        "description": "System field 'payment' should exist in backend but not frontend for exchangeRates"
+      },
+      {
+        "id": "t-system-field-exchangeRates-updated",
+        "category": "system-field",
+        "entity": "exchangeRates",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for exchangeRates"
+      },
+      {
+        "id": "t-system-field-exchangeRates-updatedBy",
+        "category": "system-field",
+        "entity": "exchangeRates",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for exchangeRates"
       },
       {
         "id": "t-system-field-header-active",
@@ -15909,6 +16522,13 @@
         "description": "Entity 'cashVat' should only expose visible fields in frontend"
       },
       {
+        "id": "t-visibility-exchangeRates",
+        "category": "visibility",
+        "entity": "exchangeRates",
+        "runner": "node",
+        "description": "Entity 'exchangeRates' should only expose visible fields in frontend"
+      },
+      {
         "id": "t-visibility-header",
         "category": "visibility",
         "entity": "header",
@@ -15966,25 +16586,25 @@
       }
     ],
     "summary": {
-      "total": 911,
+      "total": 945,
       "byCategory": {
         "action-endpoint": 24,
-        "crud-flags": 12,
-        "default-value-type": 36,
+        "crud-flags": 13,
+        "default-value-type": 37,
         "displaylogic-evaluable": 15,
         "displaylogic-valid": 15,
-        "field-presence": 143,
-        "field-type": 143,
-        "readonlylogic-evaluable": 60,
-        "readonlylogic-valid": 60,
+        "field-presence": 147,
+        "field-type": 147,
+        "readonlylogic-evaluable": 64,
+        "readonlylogic-valid": 64,
         "rule-declared": 21,
         "searchable-filters": 6,
-        "selector-endpoint": 49,
-        "system-field": 315,
-        "visibility": 12
+        "selector-endpoint": 51,
+        "system-field": 328,
+        "visibility": 13
       },
       "byRunner": {
-        "node": 911,
+        "node": 945,
         "junit": 0
       }
     }

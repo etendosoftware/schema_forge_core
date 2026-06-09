@@ -12,8 +12,7 @@ Use this window to register supplier invoices, keep the payable document aligned
 - Inspect the invoice from the list without immediately leaving the list route, then move into full edit mode when needed.
 - Understand the payable relationship to the originating purchase order, related goods receipts, and downstream payment-out records.
 - Open payment detail flows when the invoice is completed and still has an amount pending.
-- Reactivate a completed invoice back to draft from the detail view kebab menu when the invoice status is `CO`.
-- Complete multiple draft invoices or reactivate multiple completed invoices at once from the list selection bar using the bulk action, labeled "Confirmar" (i18n key `confirmBulk`) for draft selections.
+- Complete multiple draft invoices at once from the list selection bar using the bulk action, labeled "Confirmar" (i18n key `confirmBulk`) for draft selections.
 
 ## Interaction model
 
@@ -70,15 +69,15 @@ Use this window to register supplier invoices, keep the payable document aligned
 7. Open a completed invoice with pending balance and confirm the topbar payment-status pill appears, opens the payment modal, and reflects the invoice as pending or paid based on outstanding amount.
 8. Under an org configured for `sii`, `sii-navarra`, `tbai`, or `sii+tbai`, open a completed purchase invoice and confirm `Enviar a SIF` appears in both the detail topbar and the preview modal only for the purchase-side target defined by the fiscal matrix: SII for `sii` / `sii-navarra`, TicketBAI for `tbai`, and SII only for `sii+tbai`. Trigger it and verify the confirmation text matches the pending target and successful sends refresh the invoice state.
 9. From the detail footer or related-documents tab, confirm links are available to the source purchase order, related goods receipts, and downstream payment-out records when those relationships exist. The purchase order chip must show the formatted label (`Order #<documentNo>`), the grand total with currency symbol, and the document status pill — not the raw `_identifier` string (`documentNo - date - amount`).
-10. Open a completed purchase invoice detail and confirm the kebab menu exposes only the `Reactivate` action (no `Cancel` — cancellation is handled by the dedicated header button). Trigger `Reactivate` and verify the document returns to draft status and a `sonner` toast notification appears with the message `Document reactivated` / `Documento reactivado` (i18n key `reactivated`).
-11. From the list, select multiple draft invoices and confirm the bulk action bar shows a `Confirmar (N)` button; then select multiple completed invoices and confirm the bulk-reactivate action is available. Verify each produces the expected status transition and a result toast.
+10. Open a completed purchase invoice detail and confirm the kebab menu exposes **no document actions** (reactivation is not supported for this window; the kebab `menuActions` array is empty in `decisions.json`).
+11. From the list, select multiple draft invoices and confirm the bulk action bar shows a `Confirmar (N)` button. Verify the expected status transition and a result toast.
 12. Open an existing draft invoice without touching any field and confirm the "Save Draft" button is **disabled**. Change any header field and confirm it becomes enabled. Save and confirm it disables again. Revert the changed field to its original value without saving and confirm the button disables once more. Add a line: once the add-row is submitted, the button should disable again if no header changes remain pending. Confirm the "Confirm" button stays enabled throughout all these states.
 13. Open a purchase invoice detail and confirm the bottom panel shows a `SIF` section below Documents and Notes whenever the fiscal profile enables a purchase-side fiscal target. Verify the visible tabs follow the fiscal matrix: SII for `sii` / `sii-navarra`, TicketBAI for `tbai`, SII only for `sii+tbai`, and Verifactu only for `verifactu`. Confirm the SII badge reflects `aeatsiiEstado`, the TBAI badge reflects `tbaiIssent`, the Verifactu badge reflects `etvfacInvoiceStatus`, and SII inline edits persist through `PATCH /sws/neo/purchase-invoice/header/{id}`.
 14. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
-- `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-action component mounted in the purchase-invoice list selection bar, supporting both CO and RE based on selected row statuses; mounted with `labelKey="confirmBulk"` so the button renders as "Confirmar" / "Confirm". The `Reactivate` kebab menu action in the detail view is the only kebab action declared in `artifacts/purchase-invoice/decisions.json` (`visibleWhenStatus: "CO"`, `documentAction: "RE"`). The `Cancel` action was removed from the kebab because it is already surfaced as a standalone button in the document header.
+- `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-action component mounted in the purchase-invoice list selection bar, mounted with `labelKey="confirmBulk"` so the button renders as "Confirmar" / "Confirm". The `menuActions` array in `artifacts/purchase-invoice/decisions.json` is empty — no kebab document actions (including `Reactivate`) are declared for this window. Reactivation is not supported in the purchase-invoice detail view.
 - `tools/app-shell/src/lib/__tests__/dateOnly.test.js`, `tools/app-shell/src/lib/__tests__/invoiceDueDate.test.js`, and `tools/app-shell/src/windows/custom/purchase-invoice/__tests__/PurchaseInvoiceHeaderTable.test.js` provide source-level and helper-level regression coverage for due-date calendar normalization, locale formatting, max-installment selection, and the paid/overdue/soon/ok state derivation that drives the dot color and the red-text reinforcement on overdue rows in the purchase-invoice list.
 - Shared shell and entity-loading behavior is documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - Contract and UI evidence reviewed for this rewrite:
@@ -215,3 +214,58 @@ Added `"hideDeleteWhenComplete": true` to `artifacts/purchase-invoice/decisions.
 ### Manual verification
 
 Open a completed purchase invoice (`✓ Completado` badge). Confirm the trash icon is **not** visible in the detail toolbar. Open a draft invoice and confirm the trash icon **is** visible.
+
+## Exchange rates and completion currency guard — ETP-4030
+
+When a purchase invoice is issued in a currency other than the organization's base currency, it needs a conversion rate so the document can be valued in the base currency. ETP-4030 adds an **Exchange Rates** secondary tab to enter/maintain that document-level rate, recomputes the rate ⇄ foreign-amount pair server-side, and blocks completion when no usable rate exists. The same behavior is shared with `sales-invoice.md`.
+
+### Exchange Rates secondary tab
+
+- Declared in `artifacts/purchase-invoice/decisions.json → window.secondaryTabs.exchangeRates` (`label: "Exchange Rates"`, `tabOrder: 50`) and resolved as the `exchangeRates` child entity (`javaQualifier: "invoiceExchangeRateHandler"`). The tab maps to the document conversion-rate records (`C_Conversion_Rate_Doc`) tied to the invoice header.
+- **Visible columns:** Currency (derived from the document, `form: false`), To Currency, Rate, and Foreign Amount. The inline add-row exposes `addLineFields: ["toCurrency", "rate", "foreignAmount"]` — Currency is filled from the parent rather than typed.
+- **`requireSavedRecord: true`** — the tab is only usable once the invoice header has been saved (a document rate needs a persisted invoice to attach to).
+- **`readOnlyLogic: "@DocumentStatus@!='DR'"`** — rows are editable only while the invoice is in Draft (`DR`); once completed, the tab is read-only.
+
+### Server-side rate ⇄ foreign-amount recompute
+
+The `invoiceExchangeRateHandler` (`modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/InvoiceExchangeRateHandler.java`) keeps `rate` and `foreignAmount` consistent against the invoice grand total so the user only ever has to type one side:
+
+- **On create (POST):** defaults `currency` and `toCurrency`, then computes the missing side from the invoice grand total.
+- **On edit (PATCH/PUT):** the inline editor submits **both** `rate` and `foreignAmount` (including the stale side), so the handler uses change-detection — it compares the incoming values against the persisted record and recomputes only the side that actually changed:
+  - rate changed → `foreignAmount = grandTotal × rate`
+  - foreignAmount changed → `rate = foreignAmount ÷ grandTotal` (scale `RATE_SCALE`, `HALF_UP`)
+  - both unchanged, both supplied equal, or a zero grand total → no-op (returns `null`, default CRUD proceeds).
+
+### Frontend live refresh
+
+NEO wraps the saved row as `{ response: { data: [ … ] } }`. `tools/app-shell/src/components/contract-ui/DetailView.jsx` unwraps `updated?.response?.data?.[0]` on secondary-tab save (both the inline and form-save paths) and merges the server values back into the row and the grid, so the recomputed amount appears immediately — the user no longer has to leave the form and reopen the invoice to see it.
+
+### Completion currency guard
+
+`InvoiceExchangeRateValidator.checkRateForCompletion(invoice)` runs as a pre-hook from `PurchaseInvoiceHeaderHandler` and blocks completion when:
+
+1. the document currency differs from the organization's base currency (`OBCurrencyUtils.getOrgCurrency`), **and**
+2. there is no document-level rate (`C_Conversion_Rate_Doc` with a non-zero rate), **and**
+3. there is no general rate for the pair on the invoice date (the `conversion-rates` window / AD `C_Conversion_Rate`, via `FinancialUtils.getConversionRate`).
+
+The block surfaces the message `SMFCR_NoRateOnComplete` followed by the currency pair (e.g. `USD → EUR`). When the currencies match, or any rate is available, completion proceeds. See `conversion-rates.md` for the general-rate catalog this guard consults.
+
+### Manual verification
+
+1. Open a draft purchase invoice in a foreign currency and save it. Confirm the **Exchange Rates** tab appears (and is absent / disabled until the header is saved).
+2. Add a row: set To Currency and type a Rate. Save and confirm Foreign Amount is computed = grand total × rate and shown without reopening the invoice.
+3. Edit the row's Foreign Amount. Save and confirm Rate is recomputed = foreign amount ÷ grand total, live.
+4. Complete the invoice with **no** rate present and no general rate for the pair: confirm completion is blocked with `SMFCR_NoRateOnComplete <FROM> → <TO>`.
+5. Add the document rate (or a matching `conversion-rates` record) and confirm completion now succeeds.
+6. On a completed invoice, confirm the Exchange Rates tab is read-only.
+
+### Automated evidence
+
+- `artifacts/purchase-invoice/decisions.json` declares `window.secondaryTabs.exchangeRates` and the `exchangeRates` entity (`javaQualifier: "invoiceExchangeRateHandler"`, `active` system-hidden, grid fields currency/toCurrency/rate/foreignAmount).
+- `artifacts/purchase-invoice/generated/web/purchase-invoice/ExchangeRatesTable.jsx` and `ExchangeRatesForm.jsx` are the generated secondary-tab surfaces.
+- `modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/InvoiceExchangeRateHandler.java` implements the POST default/compute and PATCH change-detection recompute; `InvoiceExchangeRateValidator.java` implements `checkRateForCompletion` consumed by `PurchaseInvoiceHeaderHandler`. Source-level coverage in `modules/com.etendoerp.go/src-test/.../InvoiceExchangeRateHandlerTest.java` and `InvoiceExchangeRateValidatorTest.java`.
+- `tools/app-shell/src/components/contract-ui/DetailView.jsx` unwraps the NEO `{response:{data:[…]}}` envelope on secondary-tab save for live refresh.
+
+## Generator fix (labelOverrides deduplication) — ETP-4103
+
+`const labelOverrides` in the generated page now references `api.labelOverrides` instead of re-embedding the full object. No functional change — field labels and selectors behave identically.

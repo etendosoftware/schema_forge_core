@@ -164,6 +164,51 @@ function SelectorPopup({ open, onClose, onSelect, selector, title, extraParams =
 
 // Dropdown / search-as-you-type selector.
 // minLength=0 → shows all options on focus (used for small catalogs like org, accounting schema).
+export function getSelectorPlaceholderLabel(multi, selectedItems, label, displayText) {
+  if (multi) {
+    if (selectedItems.length > 0) {
+      return `${selectedItems.length} selected`;
+    } else {
+      return `Search ${label || 'Product'}...`;
+    }
+  } else {
+    return displayText || `Search ${label || 'Product'}...`;
+  }
+}
+
+export function getSelectedItems(multi, selected, value, displayValue) {
+  if (value || displayValue) {
+    if (!multi) {
+      return [{id: value, name: displayValue}];
+    }
+    return selected;
+  }
+  if (multi) {
+    return selected;
+  }
+  return [];
+}
+
+export function getProductSelectorUrl(productSelectorParams) {
+  return productSelectorParams.toString()
+      ? `${ETENDO_BASE}/sws/report-selectors/product?${productSelectorParams.toString()}`
+      : `${ETENDO_BASE}/sws/report-selectors/product`;
+}
+
+export function getSelectorLabelClassName(selectedItems, displayText) {
+  return `block truncate whitespace-nowrap ${selectedItems.length > 0 || displayText ? 'text-foreground' : 'text-muted-foreground'}`;
+}
+
+export function getSelectorButtonTitle(multi, selectedItems, displayText) {
+  return multi && selectedItems.length > 0 ? selectedItems.map(s => s.name).join(', ') : (displayText || '');
+}
+
+export function applyProductSelectorScopeParams(selectedOrgId, productSelectorParams, roleOrgIds, selectedWarehouseId) {
+  if (selectedOrgId) productSelectorParams.set('selectedOrgId', selectedOrgId);
+  if (roleOrgIds && roleOrgIds.length > 0) productSelectorParams.set('roleOrgIds', roleOrgIds.join(','));
+  if (selectedWarehouseId) productSelectorParams.set('warehouseIds', selectedWarehouseId);
+}
+
 // minLength=2 (default) → search-as-you-type (used for accounts, etc.).
 function SearchInput({ selector, value, displayValue, onChange, multi, minLength = 2, fullWidth = false, hasError = false, token, label, selectedOrgId, roleOrgIds, selectedWarehouseId, extraParams = {} }) {
   const ui = useUI();
@@ -266,16 +311,10 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
   if (useDrawerSearch) {
     const displayText = displayValue || '';
     const productSelectorParams = new URLSearchParams();
-    if (selectedOrgId) productSelectorParams.set('selectedOrgId', selectedOrgId);
-    if (roleOrgIds && roleOrgIds.length > 0) productSelectorParams.set('roleOrgIds', roleOrgIds.join(','));
-    if (selectedWarehouseId) productSelectorParams.set('warehouseIds', selectedWarehouseId);
-    const productSelectorUrl = productSelectorParams.toString()
-      ? `${ETENDO_BASE}/sws/report-selectors/product?${productSelectorParams.toString()}`
-      : `${ETENDO_BASE}/sws/report-selectors/product`;
+    applyProductSelectorScopeParams(selectedOrgId, productSelectorParams, roleOrgIds, selectedWarehouseId);
+    const productSelectorUrl = getProductSelectorUrl(productSelectorParams);
 
-    const selectedItems = multi
-      ? selected
-      : ((value || displayValue) ? [{ id: value, name: displayValue }] : []);
+    const selectedItems = getSelectedItems(multi, selected, value, displayValue);
 
     const handleDrawerSelect = (item) => {
       const normalized = {
@@ -298,12 +337,10 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
             type="button"
             onClick={() => setDrawerOpen(true)}
             className="flex-1 h-full px-2 text-sm text-left focus:outline-none min-w-0"
-            title={multi && selectedItems.length > 0 ? selectedItems.map(s => s.name).join(', ') : (displayText || '')}
+            title={getSelectorButtonTitle(multi, selectedItems, displayText)}
           >
-            <span className={`block truncate whitespace-nowrap ${selectedItems.length > 0 || displayText ? 'text-foreground' : 'text-muted-foreground'}`}>
-              {multi
-                ? (selectedItems.length > 0 ? `${selectedItems.length} selected` : `Search ${label || 'Product'}...`)
-                : (displayText || `Search ${label || 'Product'}...`)}
+            <span className={getSelectorLabelClassName(selectedItems, displayText)}>
+              {getSelectorPlaceholderLabel(multi, selectedItems, label, displayText)}
             </span>
           </button>
           {((multi && selectedItems.length > 0) || (!multi && (value || displayValue))) && (

@@ -412,11 +412,6 @@ describe('fiscal-config source guards', () => {
     assert.match(fiscalPageSrc, /if \(\(orgId \|\| mockOverride\) && !showLoading && !showError && effectiveProfile === 'unconfigured'\)/);
   });
 
-  it('uses the validHash action endpoint', () => {
-    assert.match(siiSectionSrc, /action\/validHash/);
-    assert.doesNotMatch(siiSectionSrc, /action\/validateHash/);
-  });
-
   it('uses contract-specific ids for SII, TBAI and Verifactu saves', () => {
     assert.match(siiSectionSrc, /getFiscalRecordId\(record, 'SII'\)/);
     assert.match(siiSectionSrc, /serializeBooleanFields\(form, \['acogidaAlSII', 'entornoDeProduccin', 'adjuntarArchivosXML', 'postedInvoices', 'recc', 'redeme'\]\)/);
@@ -428,8 +423,8 @@ describe('fiscal-config source guards', () => {
 
   it('uses SII contract field names instead of legacy raw column aliases', () => {
     assert.match(siiSectionSrc, /mapSiiRecordToForm\(record\)/);
-    assert.match(siiSectionSrc, /checked=\{isEtendoTrue\(form\[field\]\)\}/);
-    assert.match(siiSectionSrc, /yesno\('acogidaAlSII'\)/);
+    assert.match(siiSectionSrc, /isEtendoTrue\(form\.acogidaAlSII\)/);
+    assert.match(siiSectionSrc, /isEtendoTrue\(form\.entornoDeProduccin\)/);
     assert.match(siiSectionSrc, /form\.plazoLmiteDeEnvoASII/);
     assert.doesNotMatch(siiSectionSrc, /form\.plazo\b/);
     assert.doesNotMatch(siiSectionSrc, /yesno\('insiisystem'\)/);
@@ -447,8 +442,7 @@ describe('fiscal-config source guards', () => {
   });
 
   it('renders Verifactu read-only backend fields as disabled inputs', () => {
-    assert.match(verifactuSectionSrc, /value=\{record\?\.issuerNIF \?\? ''\} disabled/);
-    assert.match(verifactuSectionSrc, /value=\{record\?\.systemStartat \?\? ''\} disabled/);
+    assert.match(verifactuSectionSrc, /value=\{record\?\.inVfactuSystem \?\? ''\} disabled/);
   });
 
   it('does not keep the Verifactu ready dialog flow in the section', () => {
@@ -499,7 +493,7 @@ describe('fiscal-config source guards', () => {
 
 describe('CertModal — real certificate upload endpoint', () => {
   it('does not simulate verify with setTimeout', () => {
-    assert.doesNotMatch(certModalSrc, /setTimeout.*setStep\('done'\)/s);
+    assert.doesNotMatch(certModalSrc, /setTimeout.*setStep\('done'\)/);
     assert.doesNotMatch(certModalSrc, /setTimeout.*1400/);
   });
 

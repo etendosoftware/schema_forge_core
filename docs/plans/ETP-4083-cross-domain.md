@@ -1,62 +1,66 @@
-# ETP-4083 Cross-Domain Plan: i18n + Behavior-Preserving Refactors
+# ETP-4083 Cross-Domain Plan: Cognitive-Complexity Refactor Sweep
 
 ## Domains
 
-- `window:price-list`: internationalize the price list product prices panel
-  (`PriceListProductPrices.jsx`) — replace hardcoded strings with i18n hooks.
-- `app-shell-core`: add the i18n keys consumed by the price list panel and the
-  price list load error to `locales/en_US.json` and `locales/es_ES.json`.
-- `platform-change`: behavior-preserving refactors in shared app-shell code —
-  extract line net and tax factor helpers in `useLineGrossAmount.js`, and rename
-  the onboarding stream helpers in `onboardingApi.js` for clarity.
-- `generator-change`: behavior-preserving refactors in the CLI — extract the
-  i18n check predicates in `quality-gate/checks/i18n.js`, and refactor argument
-  parsing in `pipeline.js`'s `parseArgs`.
-- `unknown`: extract field/entity helpers in the `neo-writer.js` populate
-  functions (no behavior change).
+- `generator-change`: behavior-preserving cognitive-complexity refactors in the
+  CLI generators — extract helpers out of the long routines in
+  `cli/src/generate-contract.js` and `cli/src/generate-frontend.js`. Both land
+  alongside their tests (`cli/test/generate-contract.test.js`,
+  `cli/test/generate-frontend-custom-lines.test.js`). No change to generated
+  output (confirmed by the generator unit tests and the `Offline Regeneration
+  Check`).
+- `platform-change`: extract a pure `getBillingPatch(opts, form)` helper out of
+  the long submit handler in
+  `tools/app-shell/src/components/contract-ui/CreateContactModal.jsx` and export
+  it, with behavioral unit tests
+  (`tools/app-shell/src/components/contract-ui/__tests__/getBillingPatch.vitest.js`,
+  8 cases). No rendering or data-flow change.
+- `unknown` (CLI verification script): same behavior-preserving helper
+  extraction applied to `cli/src/verify-window.js` — classified `unknown` only
+  because it has no scope glob; it is a CLI verification script and belongs to
+  the generator/CLI domain. Covered by `cli/test/verify-window.test.js` (new).
 
-Detected vertical: `finance` (single window: `price-list`).
+Also includes a test-only hardening fix: `cli/test/contract-all.test.js` now
+skips `_`-prefixed transient fixture dirs to remove a discovery race with
+`cli/test/check-version.test.js`.
 
 ## Why This Cannot Be Split Cleanly
 
-This PR is a single follow-up pass on ETP-4083 that finishes the price list
-panel internationalization and lands the small, behavior-preserving readability
-refactors that fell out of it. The i18n change spans the window component
-(`window:price-list`) and the shared locale catalogs (`app-shell-core`) as one
-inseparable unit — the new keys are meaningless without the component that reads
-them, and vice versa. The accompanying refactors (`platform-change`,
-`generator-change`, `unknown`) are pure structural cleanups discovered while
-touching those files; they carry no functional change and have no independent
-review value as standalone PRs. Splitting per scope would produce several
-trivial PRs that only make sense reviewed together.
+This PR is one ETP-4083 readability sweep: a set of pure, behavior-preserving
+extractions made to lower cognitive complexity and clear SonarQube findings,
+each paired with the tests that prove the extracted code is exercised. None of
+the individual extractions carry functional change or have independent review
+value; splitting per scope would yield several trivial PRs that only make sense
+reviewed together as "the complexity-reduction pass."
 
 ## Review Order
 
-1. Review the price list panel i18n (`PriceListProductPrices.jsx`) together with
-   the new keys in `en_US.json` / `es_ES.json` — confirm every user-visible
-   string resolves through a hook and both locales have matching keys.
-2. Review the platform refactors (`useLineGrossAmount.js`, `onboardingApi.js`) —
-   confirm extracted helpers and renamed functions preserve behavior.
-3. Review the generator refactors (`pipeline.js` `parseArgs`,
-   `quality-gate/checks/i18n.js` predicates) — confirm no CLI behavior change.
-4. Review the `neo-writer.js` helper extraction — confirm populate output is
-   unchanged.
+1. Generator refactors — `cli/src/generate-contract.js` and
+   `cli/src/generate-frontend.js`: confirm extracted helpers are called
+   identically and the suites (`generate-contract.test.js`,
+   `generate-frontend-custom-lines.test.js`) exercise each one.
+2. CLI verification refactor — `cli/src/verify-window.js`: confirm extracted
+   helpers preserve behavior, covered by `verify-window.test.js`.
+3. Platform refactor — `CreateContactModal.jsx` `getBillingPatch` extraction:
+   confirm output is unchanged, covered by `getBillingPatch.vitest.js`.
+4. Test hardening — `contract-all.test.js` fixture-dir skip.
 5. Review this plan.
 
 ## Tests
 
-- `make test` (CLI test suite, covers `pipeline.js`, `quality-gate/checks/i18n.js`,
-  and `neo-writer.js`).
-- `npm test --workspace=tools/app-shell` (app-shell vitest suite, covers
-  `useLineGrossAmount` and the price list panel).
-- i18n quality gate clean — no hardcoded strings, both locales in sync.
-- Manual smoke of the price list window in `make dev` (panel labels render in
-  Spanish, load error message is translated).
+- `make test` / CLI suite run from repo root: 11887/11887 green, including the
+  new `generate-frontend-custom-lines` and `verify-window` tests.
+- `getBillingPatch.vitest.js`: 8/8 (app-shell vitest).
+- `Offline Regeneration Check`, `Pipeline Validation`, and SonarQube checks pass.
+- No DB, NEO push, or `export.database` involved — these are source-level
+  refactors and test additions only.
 
 ## Rollback
 
-Every change is behavior-preserving (i18n + structural refactors), so rollback is
-a straight revert of the PR merge commit. If a single refactor regresses, revert
-that file to its pre-PR state; no data migration, NEO re-push, or
-`export.database` is involved. Reverting the i18n change restores the prior
-hardcoded strings without breaking the panel.
+Every change is behavior-preserving (helper extractions plus added tests), so
+rollback is a straight revert of the PR merge commit. Each item is an isolated,
+atomically committed extraction, so a single regression can be reverted with
+`git revert <commit>` without touching the others. No data migration, NEO
+re-push, or `export.database` is required — reverting fully restores prior
+behavior. Detection is via the existing unit suites and the `Offline
+Regeneration Check`.
