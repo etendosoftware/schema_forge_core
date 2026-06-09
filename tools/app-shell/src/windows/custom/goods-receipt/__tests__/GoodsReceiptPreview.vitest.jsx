@@ -85,10 +85,10 @@ vi.mock('../../shared/PreviewActionButtons.jsx', async () => {
       { key: 'messages', label: ui('invoicePreviewMessages'), content: <div data-testid="preview-empty-panel">💬 {ui('invoicePreviewNoMessagesYet')}</div> },
       { key: 'history', label: ui('invoicePreviewHistory'), content: <div data-testid="preview-empty-panel">🕐 {ui('invoicePreviewNoActivityRecorded')}</div> },
     ],
-    PreviewSendModal: ({ show, onClose, pdfBlobUrl }) =>
-      show ? (
+    ReceiptSendModal: ({ sendModal, pdfBlobUrl }) =>
+      sendModal.showSendModal ? (
         <div data-testid="send-modal" data-pdf-url={pdfBlobUrl}>
-          <button data-testid="send-modal-close" onClick={onClose}>Close</button>
+          <button data-testid="send-modal-close" onClick={sendModal.closeEmailModal}>Close</button>
         </div>
       ) : null,
   };

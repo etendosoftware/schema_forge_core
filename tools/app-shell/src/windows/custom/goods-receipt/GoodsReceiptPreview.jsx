@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
-import { usePreviewSendModal, makeStaticPreviewTabs, PreviewSendModal } from '../shared/PreviewActionButtons.jsx';
+import { usePreviewSendModal, makeStaticPreviewTabs, ReceiptSendModal } from '../shared/PreviewActionButtons.jsx';
 import { InfoRow, PercentBar, MovementSummaryCard } from '../shared/preview-cards/SummaryCard.jsx';
 import { STATUS_BADGE, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
 import RelatedDocumentsCard from '../shared/preview-cards/RelatedDocumentsCard.jsx';
@@ -73,7 +73,7 @@ export default function GoodsReceiptPreview({ receipt, token, apiBaseUrl, window
   const modalRef = useRef(null);
 
   const [previewFile, setPreviewFile] = useState(null);
-  const { showSendModal, sendModalClosing, openEmailModal, closeEmailModal } = usePreviewSendModal();
+  const sendModal = usePreviewSendModal();
   const handleFileChange = useCallback((f) => setPreviewFile(f), []);
 
   if (!receipt) return null;
@@ -93,7 +93,7 @@ export default function GoodsReceiptPreview({ receipt, token, apiBaseUrl, window
         <Button
           size="sm"
           className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-[#121217] hover:bg-[#2a2a30] text-white [&_svg]:size-5"
-          onClick={openEmailModal}
+          onClick={sendModal.openEmailModal}
         >
           <Mail />
           {ui('invoicePreviewSend')}
@@ -154,20 +154,16 @@ export default function GoodsReceiptPreview({ receipt, token, apiBaseUrl, window
         tabs={tabs}
         actionButtons={actionButtons}
       />
-      <PreviewSendModal
-        show={showSendModal}
-        closing={sendModalClosing}
+      <ReceiptSendModal
+        sendModal={sendModal}
         documentType={windowLabel}
-        documentNo={receipt.documentNo}
-        bpName={partnerName}
-        bPartnerId={receipt.businessPartner}
+        receipt={receipt}
+        partnerName={partnerName}
         apiBaseUrl={apiBaseUrl}
-        documentId={receipt.id}
-        windowName="goods-receipt"
         token={token}
+        windowName="goods-receipt"
         pdfBlobUrl={previewFile?.objectUrl}
         pdfBlobLoading={false}
-        onClose={closeEmailModal}
       />
     </>
   );

@@ -115,6 +115,30 @@ export function PreviewSendModal({ show, closing, documentType, documentNo, bpNa
   );
 }
 
+/**
+ * Variant of PreviewSendModal that derives documentNo / bPartnerId / documentId
+ * from a receipt/shipment record object, reducing repeated prop spreading.
+ */
+export function ReceiptSendModal({ sendModal, documentType, receipt, partnerName, apiBaseUrl, token, windowName, pdfBlobUrl, pdfBlobLoading }) {
+  return (
+    <PreviewSendModal
+      show={sendModal.showSendModal}
+      closing={sendModal.sendModalClosing}
+      documentType={documentType}
+      documentNo={receipt.documentNo}
+      bpName={partnerName}
+      bPartnerId={receipt.businessPartner}
+      apiBaseUrl={apiBaseUrl}
+      documentId={receipt.id}
+      windowName={windowName}
+      token={token}
+      pdfBlobUrl={pdfBlobUrl}
+      pdfBlobLoading={pdfBlobLoading}
+      onClose={sendModal.closeEmailModal}
+    />
+  );
+}
+
 /** Shared PDF left-panel for document preview modals: spinner → error → iframe. */
 export function PreviewPdfPanel({ pdfLoading, pdfError, pdfUrl, generatingText, errorText }) {
   return (

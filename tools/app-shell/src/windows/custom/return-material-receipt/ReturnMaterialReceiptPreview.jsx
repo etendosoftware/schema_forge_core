@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
-import PreviewActionButtons, { PreviewPdfPanel, usePreviewSendModal, makeStaticPreviewTabs, PreviewSendModal } from '../shared/PreviewActionButtons.jsx';
+import PreviewActionButtons, { PreviewPdfPanel, usePreviewSendModal, makeStaticPreviewTabs, ReceiptSendModal } from '../shared/PreviewActionButtons.jsx';
 import { useReturnReceiptPdf } from './useReturnReceiptPdf.js';
 import RelatedDocumentsCard from '../shared/preview-cards/RelatedDocumentsCard.jsx';
 import { STATUS_BADGE, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
@@ -50,7 +50,7 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
   const { locale } = useLocaleSwitch();
   const modalRef = useRef(null);
 
-  const { showSendModal, sendModalClosing, openEmailModal, closeEmailModal } = usePreviewSendModal();
+  const sendModal = usePreviewSendModal();
 
   const { pdfUrl, pdfBlob, loading: pdfLoading, error: pdfError } = useReturnReceiptPdf(
     receipt?.id ?? null,
@@ -90,7 +90,7 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
 
   const actionButtons = (
     <PreviewActionButtons
-      onEmail={openEmailModal}
+      onEmail={sendModal.openEmailModal}
       onDownloadPdf={handleDownload}
       hasPdf={!!pdfBlob}
       triggerEdit={() => modalRef.current?.triggerEdit?.()}
@@ -130,19 +130,15 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
         tabs={tabs}
         actionButtons={actionButtons}
       />
-      <PreviewSendModal
-        show={showSendModal}
-        closing={sendModalClosing}
+      <ReceiptSendModal
+        sendModal={sendModal}
         documentType={windowLabel}
-        documentNo={receipt.documentNo}
-        bpName={partnerName}
-        bPartnerId={receipt.businessPartner}
+        receipt={receipt}
+        partnerName={partnerName}
         apiBaseUrl={apiBaseUrl}
-        documentId={receipt.id}
-        windowName="return-material-receipt"
         token={token}
+        windowName="return-material-receipt"
         pdfBlobUrl={pdfUrl}
-        onClose={closeEmailModal}
       />
     </>
   );
