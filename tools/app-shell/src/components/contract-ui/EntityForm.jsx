@@ -943,7 +943,11 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     if (isSelectFieldWithOptions(f)) {
       return renderSelectField(f, data, label, isReadOnly, onChange, ui, tMenu);
     }
+    function buildTextareaAttrs(rows) {
+      return { rowCount: rows ?? 4, minHeightClass: rows ? '' : ' min-h-[96px]' };
+    }
     if (f.type === 'textarea') {
+      const { rowCount, minHeightClass } = buildTextareaAttrs(f.rows);
       return (
         <div key={f.key} className="space-y-1.5">
           <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
@@ -953,14 +957,14 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             id={f.key}
             name={f.key}
             data-testid={`field-${f.key}`}
-            rows={f.rows ?? 4}
+            rows={rowCount}
             value={getFieldValue(isReadOnly, displayValue, data, f)}
             onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
             onBlur={() => onFieldBlur?.(f.key)}
             disabled={isReadOnly}
             className={[
               'flex w-full rounded-lg border border-[#D1D4DB] p-2 text-sm shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
-              `placeholder:text-muted-foreground resize-none${f.rows ? '' : ' min-h-[96px]'}`,
+              `placeholder:text-muted-foreground resize-none${minHeightClass}`,
               'focus:outline-none focus:ring-2 focus:ring-primary',
               'disabled:bg-muted/50 disabled:cursor-not-allowed',
               getReadOnlyBgClass(isReadOnly),
