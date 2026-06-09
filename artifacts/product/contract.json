@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.7.0",
   "generatedAt": "2026-04-29T18:11:24.842Z",
-  "updatedAt": "2026-06-08T16:50:20.597Z",
-  "checksum": "376e6951a1e0bcca",
+  "updatedAt": "2026-06-09T12:12:25.259Z",
+  "checksum": "1e66257cee774540",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -111,6 +111,7 @@
             "form": true,
             "section": "principal",
             "seq": 4,
+            "explicitType": true,
             "inline": true
           },
           {
@@ -223,7 +224,8 @@
             "grid": false,
             "form": true,
             "section": "principal",
-            "seq": 3
+            "seq": 3,
+            "explicitType": true
           },
           {
             "name": "productType",
