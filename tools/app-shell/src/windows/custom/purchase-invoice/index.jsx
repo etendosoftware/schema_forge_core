@@ -116,7 +116,6 @@ export default function PurchaseInvoiceWindow(props) {
         <HeaderPage
           {...props}
           draftMode={draftModeOverride}
-          secondaryTabs={[]}
           summary={summary}
           extraBadges={[]}
           topbarRight={PurchaseInvoiceTopbar}
