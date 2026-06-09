@@ -42,11 +42,11 @@ const artifactDirs = readdirSync(ARTIFACTS, { withFileTypes: true })
   .map(d => d.name);
 
 const entityArtifacts = artifactDirs.filter(d =>
-  existsSync(resolve(ARTIFACTS, d, 'contract.json'))
+  !d.startsWith('__test') && existsSync(resolve(ARTIFACTS, d, 'contract.json'))
 );
 
 const aggregateArtifacts = artifactDirs.filter(d =>
-  existsSync(resolve(ARTIFACTS, d, 'aggregate-contract.json'))
+  !d.startsWith('__test') && existsSync(resolve(ARTIFACTS, d, 'aggregate-contract.json'))
 );
 
 // Build child entity set: entities that are detail/children of a master-detail contract
