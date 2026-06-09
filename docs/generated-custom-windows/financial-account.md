@@ -232,7 +232,7 @@ index.jsx                          — receives { recordId }, sets page meta, mo
     ReconciliacionTab.jsx          — placeholder (T6)
     ImportedStatementsTab.jsx      — orchestrates list ↔ lines state machine
       StatementsToolbar.jsx        — back ←, date range, status filter, "Filtro por condicionales" (AdvancedFilterBuilder, same as movements), search, import split-button (▾ → "Create manually")
-      StatementsTable.jsx          — columns: docNo, name (falls back to line date range), file name, notes, import/transaction dates, lines, total, status pill (DRAFT/PENDING/PARTIAL/RECONCILED), per-row kebab (when `actions` is passed); expand chevron is a round bordered button rotating 180° (same as movements)
+      StatementsTable.jsx          — columns: docNo, name (falls back to line date range), file name, notes, import/transaction dates, lines, out (red, −) / in (green, +), status pill (DRAFT/PENDING/PARTIAL/RECONCILED), per-row kebab (when `actions` is passed); expand chevron is a round bordered button rotating 180° (same as movements)
       statementAdvancedFilter.js   — column metadata + applyAdvancedFilter for the statements list (delegates to the shared advancedFilterApply evaluator)
       advancedFilterApply.js       — generic client-side evaluator for the AdvancedFilterBuilder condition tree (OPERATORS + applyConditions), shared by movements and statements
         StatementStatusBadge.jsx   — 3 status chips (COMPLETED / WITH_ISSUES / IN_PROGRESS)

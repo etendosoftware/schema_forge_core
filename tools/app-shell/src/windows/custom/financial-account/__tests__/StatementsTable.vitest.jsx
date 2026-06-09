@@ -54,6 +54,24 @@ describe('StatementsTable', () => {
     expect(screen.getByText('BS-002')).toBeInTheDocument();
   });
 
+  it('renders the Out / In amounts (with sign) and an em dash when zero', () => {
+    render(
+      <StatementsTable
+        statements={[{
+          id: 'x', documentNo: 'BS-9', name: 'Mix',
+          importDate: '2026-06-01T00:00:00Z', transactionDate: '2026-06-01T00:00:00Z',
+          lineCount: 2, matchedCount: 0, totalIn: 300, totalOut: 0, status: 'PENDING',
+        }]}
+        loading={false}
+      />,
+    );
+    const row = screen.getByTestId('statement-row-x');
+    // In is rendered with a + sign; Out is zero → em dash.
+    expect(row.textContent).toMatch(/\+/);
+    expect(row.textContent).toContain('300');
+    expect(row.textContent).toContain('—');
+  });
+
   it('renders the empty state when there are no statements (and not loading)', () => {
     render(<StatementsTable statements={[]} loading={false} />);
     expect(screen.getByText('financeAccountStatementsEmpty')).toBeInTheDocument();

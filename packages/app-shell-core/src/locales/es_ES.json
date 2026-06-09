@@ -17799,6 +17799,8 @@
     "financeAccountStatementsColFileName": "Nombre Archivo",
     "financeAccountStatementsColLines": "Líneas",
     "financeAccountStatementsColTotalAmount": "Importe total",
+    "financeAccountStatementsColOut": "Salida",
+    "financeAccountStatementsColIn": "Entrada",
     "financeAccountStatementsColStatus": "Estado",
     "financeAccountStatementsFilterAllStatuses": "Cualquier estado",
     "financeAccountStatementsStatusDraft": "Borrador",

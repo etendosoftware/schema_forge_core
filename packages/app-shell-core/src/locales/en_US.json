@@ -17548,6 +17548,8 @@
     "financeAccountStatementsColFileName": "File Name",
     "financeAccountStatementsColLines": "Lines",
     "financeAccountStatementsColTotalAmount": "Total amount",
+    "financeAccountStatementsColOut": "Out",
+    "financeAccountStatementsColIn": "In",
     "financeAccountStatementsColStatus": "Status",
     "financeAccountStatementsFilterAllStatuses": "Any status",
     "financeAccountStatementsStatusDraft": "Draft",

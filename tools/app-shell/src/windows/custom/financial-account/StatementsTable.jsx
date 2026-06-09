@@ -22,12 +22,12 @@ import { StatementRowKebab } from './StatementRowKebab';
 //   minmax(40, auto) · trailing cell for the per-row kebab
 // ─────────────────────────────────────────────────────────────────────────────
 const GRID =
-  'grid grid-cols-[28px_110px_minmax(160px,1fr)_minmax(120px,0.8fr)_minmax(120px,1fr)_120px_120px_80px_120px_140px_minmax(40px,auto)] gap-4';
+  'grid grid-cols-[28px_110px_minmax(160px,1fr)_minmax(120px,0.8fr)_minmax(120px,1fr)_120px_120px_80px_110px_110px_140px_minmax(40px,auto)] gap-4';
 
 // Stable keys for the 11 skeleton cells (kept in lockstep with the grid above)
 // so we don't rely on the array index — Sonar/React lint flag that as unstable.
 const SKELETON_CELL_KEYS = [
-  'chev', 'docno', 'name', 'file', 'notes', 'imp', 'trx', 'lines', 'total', 'status', 'spacer',
+  'chev', 'docno', 'name', 'file', 'notes', 'imp', 'trx', 'lines', 'out', 'in', 'status', 'spacer',
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -122,7 +122,8 @@ export function StatementsTable({ statements, loading, currency = 'EUR', actions
         <span>{ui('financeAccountStatementsColImportDate')}</span>
         <span>{ui('financeAccountStatementsColTransactionDate')}</span>
         <span>{ui('financeAccountStatementsColLines')}</span>
-        <span>{ui('financeAccountStatementsColTotalAmount')}</span>
+        <span>{ui('financeAccountStatementsColOut')}</span>
+        <span>{ui('financeAccountStatementsColIn')}</span>
         <span>{ui('financeAccountStatementsColStatus')}</span>
         <span aria-hidden="true" />
       </div>
@@ -224,8 +225,11 @@ function StatementRow({ statement: s, currency, bcpLocale, ui, open, onToggle, a
         <span className="whitespace-nowrap text-[#121217]">{formatDate(s.importDate, bcpLocale)}</span>
         <span className="whitespace-nowrap text-[#121217]">{formatDate(s.transactionDate, bcpLocale)}</span>
         <span className="text-right tabular-nums text-[#121217]">{s.lineCount ?? 0}</span>
-        <span className="text-right tabular-nums font-semibold text-[#121217]">
-          {formatMoney(s.totalAmount, currency, bcpLocale)}
+        <span className={cn('text-right tabular-nums font-semibold', Number(s.totalOut) > 0 ? 'text-[#D50B3E]' : 'text-[#A8AAB8]')}>
+          {Number(s.totalOut) > 0 ? `−${formatMoney(s.totalOut, currency, bcpLocale)}` : '—'}
+        </span>
+        <span className={cn('text-right tabular-nums font-semibold', Number(s.totalIn) > 0 ? 'text-[#17663A]' : 'text-[#A8AAB8]')}>
+          {Number(s.totalIn) > 0 ? `+${formatMoney(s.totalIn, currency, bcpLocale)}` : '—'}
         </span>
         <span>
           <StatusPill

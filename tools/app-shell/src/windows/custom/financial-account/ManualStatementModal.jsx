@@ -278,7 +278,7 @@ function EditRow({ row, onChange, onRemove, ui, rowRef }) {
   const set = (field) => (e) => onChange(row.id, field, e.target.value);
   const setVal = (field) => (value) => onChange(row.id, field, value);
   return (
-    <div ref={rowRef} className={cn(LINES_GRID, 'items-center bg-[#F5F7F9] px-3 py-2.5')} data-testid="manual-line-editrow">
+    <div ref={rowRef} className={cn(LINES_GRID, 'items-center bg-white px-3 py-2.5')} data-testid="manual-line-editrow">
       <DateField value={row.date} onChange={setVal('date')} data-testid="manual-line-date" className="w-full" />
       <input type="text" value={row.reference} onChange={set('reference')} className={cellInput} data-testid="manual-line-ref" />
       <input type="text" value={row.contactName} onChange={set('contactName')}
