@@ -1549,6 +1549,9 @@ export function DetailView({
       && String(hook.selected?.id) === String(justSaved.id)
     ) {
       setDirectFetched(true);
+      // Fetch children even on the justSaved fast-path — the header is already
+      // primed but children (e.g. auto-created accounting lines) must be loaded.
+      hook.fetchChildren?.(recordId);
       // One-shot: clear the marker so a manual reload of /:id still fetches.
       navigate(location.pathname, {
         replace: true,
@@ -1569,7 +1572,7 @@ export function DetailView({
     // intentionally omitted from the dep list to avoid re-running on every
     // navigation tick.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentItem, directFetched, hook.fetchById, hook.handleSelect, hook.loading, hook.selected, isNew, recordId]);
+  }, [currentItem, directFetched, hook.fetchById, hook.fetchChildren, hook.handleSelect, hook.loading, hook.selected, isNew, recordId]);
 
   // Reset selected line when the parent record changes
   useEffect(() => {
