@@ -49,7 +49,7 @@ const addLineFields = {
 
   ],
   hidden: [
-
+    { key: 'accountingSchema', fromSibling: 'accountingSchema' },
   ],
 };
 // @sf-generated-end addLineFields:accounting

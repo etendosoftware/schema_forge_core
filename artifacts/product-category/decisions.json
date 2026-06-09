@@ -61,7 +61,7 @@
     },
     "accounting": {
       "fields": {
-        "accountingSchema": { "visibility": "discarded" },
+        "accountingSchema": { "visibility": "system", "addLineFromSibling": true },
         "fixedAsset": {
           "visibility": "editable",
           "grid": true,

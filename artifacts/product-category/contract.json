@@ -1,8 +1,8 @@
 {
-  "version": "0.13.0",
+  "version": "0.13.1",
   "generatedAt": "2026-04-29T18:11:26.703Z",
-  "updatedAt": "2026-06-09T12:53:13.170Z",
-  "checksum": "e6004842e2b6ac26",
+  "updatedAt": "2026-06-09T14:33:32.298Z",
+  "checksum": "dd0560f3dc7a3ebb",
   "frontendContract": {
     "window": {
       "id": "144",
@@ -204,7 +204,10 @@
           }
         ],
         "searchableFields": [],
-        "computedFields": []
+        "computedFields": [],
+        "addLineHiddenFromSibling": [
+          "accountingSchema"
+        ]
       }
     }
   },
@@ -375,7 +378,7 @@
             "apiKey": "accountingSchema",
             "column": "C_AcctSchema_ID",
             "type": "foreignKey",
-            "visibility": "discarded",
+            "visibility": "system",
             "required": true
           },
           {

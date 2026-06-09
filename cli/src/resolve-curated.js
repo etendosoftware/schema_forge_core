@@ -168,6 +168,7 @@ const FIELD_DECISION_COPY_PROPS = [
   'grow',
   'noTrailing',
   'inline',
+  'addLineFromSibling',
 ];
 
 const FIELD_RAW_COPY_PROPS = [

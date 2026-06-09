@@ -2695,9 +2695,13 @@ export function DetailView({
                                       // Also include hidden entry defaults (e.g., fields with predefined values).
                                       for (const hiddenField of hiddenEntryDefaults) {
                                         if (!(hiddenField.key in lineData)) {
-                                          lineData[hiddenField.key] = hiddenField.fromParent
-                                            ? _headerData?.[hiddenField.fromParent]
-                                            : hiddenField.value;
+                                          if (hiddenField.fromParent) {
+                                            lineData[hiddenField.key] = _headerData?.[hiddenField.fromParent];
+                                          } else if (hiddenField.fromSibling != null) {
+                                            lineData[hiddenField.key] = hook.children?.[0]?.[hiddenField.fromSibling];
+                                          } else {
+                                            lineData[hiddenField.key] = hiddenField.value;
+                                          }
                                         }
                                       }
                                       // Derive unitPrice = listPrice × (1-discount/100) before POST.
