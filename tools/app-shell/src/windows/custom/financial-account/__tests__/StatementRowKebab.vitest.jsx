@@ -13,6 +13,7 @@ function renderKebab(statement, overrides = {}) {
     statement,
     onEdit: vi.fn(),
     onProcess: vi.fn(),
+    onReactivate: vi.fn(),
     onDelete: vi.fn(),
     ...overrides,
   };
@@ -56,6 +57,24 @@ describe('StatementRowKebab', () => {
     expect(props.onProcess).not.toHaveBeenCalled();
     await user.click(screen.getByTestId('statement-row-delete'));
     expect(props.onDelete).not.toHaveBeenCalled();
+  });
+
+  it('enables Reactivate only for a processed statement and fires the callback', async () => {
+    const user = userEvent.setup();
+    const { props } = renderKebab(PROCESSED);
+    await openMenu(user, 'p1');
+    await user.click(screen.getByTestId('statement-row-reactivate'));
+    expect(props.onReactivate).toHaveBeenCalledWith(PROCESSED);
+  });
+
+  it('disables Reactivate for a draft statement', async () => {
+    const user = userEvent.setup();
+    const { props } = renderKebab(DRAFT);
+    await openMenu(user, 'd1');
+    const reactivate = screen.getByTestId('statement-row-reactivate');
+    expect(reactivate).toHaveAttribute('aria-disabled', 'true');
+    await user.click(reactivate);
+    expect(props.onReactivate).not.toHaveBeenCalled();
   });
 
   it('treats a statement with processed="N" as a draft even without DRAFT status', async () => {

@@ -1,4 +1,3 @@
-import { List } from 'lucide-react';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusTag } from '@/components/ui/status-tag';
@@ -7,20 +6,19 @@ import { useBankStatementLines } from '@/hooks/useBankStatementLines';
 
 // Grid for the `mini` variant of the lines table.
 //   100        · date (fixed)
-//   minmax(160, 1fr) · description
-//   minmax(120, 1fr) · contact name (free text)
-//   minmax(120, 1fr) · contact (business partner FK)
-//   minmax(120, 1fr) · G/L item (concepto contable)
+//   minmax(140, 1fr) · contact name (free text)
+//   minmax(140, 1fr) · contact (business partner FK)
+//   minmax(140, 1fr) · G/L item (concepto contable)
 //   110        · withdrawal (out)
 //   110        · deposit (in)
 //   100        · status pill
 //   minmax(0, 1fr)  · trailing flexible spacer — absorbs leftover width on
 //                    wide viewports so the data columns stay close to each other.
 const MINI_GRID =
-  'grid grid-cols-[100px_minmax(160px,1fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(120px,1fr)_110px_110px_100px_minmax(0,1fr)] gap-3';
+  'grid grid-cols-[100px_minmax(140px,1fr)_minmax(140px,1fr)_minmax(140px,1fr)_110px_110px_100px_minmax(0,1fr)] gap-3';
 
 // Stable keys for the skeleton cells of each loading row (matches MINI_GRID).
-const SKELETON_CELL_KEYS = ['date', 'desc', 'bpname', 'contact', 'glitem', 'out', 'in', 'matched'];
+const SKELETON_CELL_KEYS = ['date', 'bpname', 'contact', 'glitem', 'out', 'in', 'matched'];
 
 // kind → (StatusTag tone, i18n key). Reusing the shared StatusTag keeps the
 // look consistent with the statement-level status pills above and the rest of
@@ -80,18 +78,7 @@ export function StatementLinesInline({ statementId, currency = 'EUR' }) {
   const { lines, loading } = useBankStatementLines(statementId);
 
   return (
-    <div className="mt-2 ml-10 mr-3 rounded-lg border border-[#E8EAEF] bg-white px-4 pt-3.5 pb-1">
-      {/* Head */}
-      <div className="mb-1.5 flex items-center border-b border-[#E8EAEF] pb-2.5">
-        <div className="flex items-center gap-2.5 text-[13px] font-semibold text-[#121217]">
-          <List className="h-3.5 w-3.5 text-[#6C6C89]" />
-          {ui('financeAccountStatementsInlineTitle')}
-          <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#F5F7F9] px-1.5 text-[11px] font-medium text-[#6C6C89]">
-            {lines.length}
-          </span>
-        </div>
-      </div>
-
+    <div className="ml-10 mr-3 rounded-lg border border-[#E8EAEF] bg-white px-4 pb-1">
       {/* Column header — same style as the parent Statements table headers. */}
       <div
         className={cn(
@@ -100,7 +87,6 @@ export function StatementLinesInline({ statementId, currency = 'EUR' }) {
         )}
       >
         <span>{ui('financeAccountStatementLinesColDate')}</span>
-        <span>{ui('financeAccountStatementLinesColDescription')}</span>
         <span>{ui('financeAccountStatementLinesColBpartner')}</span>
         <span>{ui('financeAccountStatementLinesColContact')}</span>
         <span>{ui('financeAccountStatementLinesColGlItem')}</span>
@@ -161,7 +147,6 @@ function LineRow({ line, ui, currency, bcpLocale }) {
       )}
     >
       <span className="whitespace-nowrap text-[#121217]">{formatDate(line.date, bcpLocale)}</span>
-      <span className="truncate font-medium text-[#121217]">{line.description || '—'}</span>
       <span className={cn('truncate', line.bpartnerName ? 'text-[#3F3F50]' : 'text-[#C1C3CC]')} title={line.bpartnerName || ''}>
         {line.bpartnerName || '—'}
       </span>

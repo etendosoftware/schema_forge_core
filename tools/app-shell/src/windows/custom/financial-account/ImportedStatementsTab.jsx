@@ -65,11 +65,15 @@ export function ImportedStatementsTab({ account }) {
   const currency = account?.currencyIso ?? 'EUR';
 
   const { statements, loading, reload } = useBankStatements(accountId);
-  const { processStatement, deleteStatement, busy } = useStatementActions();
+  const { processStatement, reactivateStatement, deleteStatement, busy } = useStatementActions();
 
   const [selectedStatementId, setSelectedStatementId] = useState(null);
   const [search, setSearch] = useState('');
-  const [dateRange, setDateRange] = useState(null);
+  // Default to the last 30 days, mirroring the Movements tab, so both tabs of the
+  // account open with the same date window instead of "any date".
+  const [dateRange, setDateRange] = useState({ presetId: 'last30' });
+  // Row selection (checkboxes), same plumbing as the Movements tab.
+  const [selectedIds, setSelectedIds] = useState(new Set());
   const [status, setStatus] = useState(null);
   const [advancedFilter, setAdvancedFilter] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -83,29 +87,52 @@ export function ImportedStatementsTab({ account }) {
   const rowActions = useMemo(() => ({
     onEdit: (s) => setEditingStatement(s),
     onProcess: (s) => setConfirm({ variant: 'process', statement: s }),
+    onReactivate: (s) => setConfirm({ variant: 'reactivate', statement: s }),
     onDelete: (s) => setConfirm({ variant: 'delete', statement: s }),
   }), []);
 
+  const handleSelectionChange = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const closeConfirm = () => setConfirm({ variant: null, statement: null });
+
+  // Per-variant wiring for the confirm dialog: the action to run plus its
+  // success / error toast keys. Keeps runConfirm free of nested branching.
+  const CONFIRM_ACTIONS = {
+    delete: {
+      run: deleteStatement,
+      success: 'financeAccountStatementsDeleteSuccess',
+      error: 'financeAccountStatementsDeleteError',
+    },
+    reactivate: {
+      run: reactivateStatement,
+      success: 'financeAccountStatementsReactivateSuccess',
+      error: 'financeAccountStatementsReactivateError',
+    },
+    process: {
+      run: processStatement,
+      success: 'financeAccountStatementsProcessSuccess',
+      error: 'financeAccountStatementsProcessError',
+    },
+  };
 
   const runConfirm = async () => {
     const { variant, statement } = confirm;
     if (!statement) return;
-    const isDelete = variant === 'delete';
+    const cfg = CONFIRM_ACTIONS[variant] ?? CONFIRM_ACTIONS.process;
     try {
-      if (isDelete) {
-        await deleteStatement(statement.id);
-        toast.success(ui('financeAccountStatementsDeleteSuccess'));
-      } else {
-        await processStatement(statement.id);
-        toast.success(ui('financeAccountStatementsProcessSuccess'));
-      }
+      await cfg.run(statement.id);
+      toast.success(ui(cfg.success));
       closeConfirm();
       reload();
     } catch {
-      toast.error(ui(isDelete
-        ? 'financeAccountStatementsDeleteError'
-        : 'financeAccountStatementsProcessError'));
+      toast.error(ui(cfg.error));
     }
   };
 
@@ -166,6 +193,8 @@ export function ImportedStatementsTab({ account }) {
           loading={loading}
           currency={currency}
           actions={rowActions}
+          selectedIds={selectedIds}
+          onSelectionChange={handleSelectionChange}
         />
       </div>
 
