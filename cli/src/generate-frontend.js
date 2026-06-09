@@ -1211,6 +1211,16 @@ export function buildHeaderLogicMaps(contract, headerEntity) {
   return {headerColumnMap, headerBooleanFields};
 }
 
+function getHiddenArraySeparator(hiddenDefaultsArray, hiddenSiblingArray) {
+  return (hiddenDefaultsArray && hiddenSiblingArray) ? '\n' : '';
+}
+
+function getAddLineGuardProp(maxDetailLines) {
+  return maxDetailLines != null
+      ? `\n        addLineGuard={(_, children) => children.length < ${maxDetailLines}}`
+      : '';
+}
+
 /**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
@@ -1319,7 +1329,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hiddenSiblingArray = hiddenSiblingNames
     .map(name => `    { key: '${name}', fromSibling: '${name}' },`)
     .join('\n');
-  const hiddenArraySeparator = (hiddenDefaultsArray && hiddenSiblingArray) ? '\n' : '';
+  const hiddenArraySeparator = getHiddenArraySeparator(hiddenDefaultsArray, hiddenSiblingArray);
 
   // API prediction config
   const { apiBlock, apiProp } = buildApiParts(contract);
@@ -1656,9 +1666,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // maxDetailLines: limits the detail entity to N lines; hides the Add Line button once reached.
   const maxDetailLines = windowConfig.maxDetailLines ?? null;
-  const addLineGuardProp = maxDetailLines != null
-    ? `\n        addLineGuard={(_, children) => children.length < ${maxDetailLines}}`
-    : '';
+  const addLineGuardProp = getAddLineGuardProp(maxDetailLines);
 
   // entityLabel / detailLabel / detailTabIndex from window decisions config
   let entityLabel = windowConfig.entityLabel || toLabel(headerEntity);
