@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 # .githooks/pre-push
-# Add pre-push validations here as needed.
+# Run all unit tests locally before push.
+set -e
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+
+echo "==> Running pre-push checks..."
+
+cd "$REPO_DIR"
+make test
+
+echo "==> Pre-push checks passed successfully!"
 exit 0
