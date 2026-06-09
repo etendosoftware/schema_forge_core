@@ -143,7 +143,7 @@ export function InlineSearchCombo({ field, value, options, onChange, onKeyDown, 
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative w-full">
       <input
         data-testid={`inline-add-field-${field.key}`}
         ref={inputRef}
