@@ -571,6 +571,7 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'whiteFormBackground',
   'hideFormCard',
   'sidebarAboveTabsOnly',
+  'autoSaveOnBlur',
 ];
 
 // `attachments` is defined-only (not truthy) so an explicit `false` from

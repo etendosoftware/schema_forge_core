@@ -1,8 +1,8 @@
 {
   "version": "0.13.0",
   "generatedAt": "2026-04-29T18:11:26.703Z",
-  "updatedAt": "2026-06-09T02:33:54.368Z",
-  "checksum": "108ca86263cdba33",
+  "updatedAt": "2026-06-09T12:27:36.491Z",
+  "checksum": "d30f09a6cdd28855",
   "frontendContract": {
     "window": {
       "id": "144",
@@ -12,12 +12,14 @@
       "detailEntity": "accounting",
       "noHeaderBorder": true,
       "toolbarBorderBottom": true,
+      "whiteFormBackground": true,
       "formCardPadding": "p-2",
       "formScrollPaddingX": "px-2",
       "tabsBarPaddingX": "px-2",
       "toolbarPaddingX": "px-2",
       "layoutType": "default",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "autoSaveOnBlur": true
     },
     "entities": {
       "productCategory": {
@@ -211,11 +213,13 @@
       "detailEntity": "accounting",
       "noHeaderBorder": true,
       "toolbarBorderBottom": true,
+      "whiteFormBackground": true,
       "formCardPadding": "p-2",
       "formScrollPaddingX": "px-2",
       "tabsBarPaddingX": "px-2",
       "toolbarPaddingX": "px-2",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "autoSaveOnBlur": true
     },
     "entities": {
       "productCategory": {

@@ -10,7 +10,9 @@
     "tabsBarPaddingX": "px-2",
     "formScrollPaddingX": "px-2",
     "noHeaderBorder": true,
-    "toolbarBorderBottom": true
+    "toolbarBorderBottom": true,
+    "whiteFormBackground": true,
+    "autoSaveOnBlur": true
   },
   "entities": {
     "productCategory": {

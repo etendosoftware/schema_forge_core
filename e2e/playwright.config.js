@@ -12,7 +12,7 @@ export default defineConfig({
   fullyParallel: false,           // sequential — UI flows depend on state
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: 4,
+  workers: 1,
   reporter: [
     ['html', { open: 'never', outputFolder: '../artifacts/e2e-report' }],
     ['list'],

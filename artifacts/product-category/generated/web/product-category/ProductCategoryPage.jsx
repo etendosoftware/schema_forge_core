@@ -170,6 +170,8 @@ export default function ProductCategoryPage({ windowName, recordId, ...props }) 
       api={api}
         noHeaderBorder
         toolbarBorderBottom
+        whiteFormBackground
+        autoSaveOnBlur
         tabsBarPaddingX="px-2"
         toolbarPaddingX="px-2"
         formCardPadding="p-2"

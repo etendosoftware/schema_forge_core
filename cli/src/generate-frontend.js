@@ -1327,6 +1327,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const toolbarBorderBottom = windowConfig.toolbarBorderBottom ?? false;
   const compactSidebarPadding = windowConfig.compactSidebarPadding ?? false;
   const whiteFormBackground = windowConfig.whiteFormBackground ?? false;
+  const autoSaveOnBlur = windowConfig.autoSaveOnBlur ?? false;
   const hideFormCard = windowConfig.hideFormCard ?? false;
   const sidebarAboveTabsOnly = windowConfig.sidebarAboveTabsOnly ?? false;
   const sidebarClassName = windowConfig.sidebarClassName ?? null;
@@ -1559,6 +1560,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // compactSidebarPadding prop (DetailView)
   const compactSidebarPaddingProp = fragmentIf(compactSidebarPadding, '\n        compactSidebarPadding');
   const whiteFormBackgroundProp = fragmentIf(whiteFormBackground, '\n        whiteFormBackground');
+  const autoSaveOnBlurProp = fragmentIf(autoSaveOnBlur, '\n        autoSaveOnBlur');
   // hideFormCard prop (DetailView)
   const hideFormCardProp = fragmentIf(hideFormCard, '\n        hideFormCard');
   // sidebarAboveTabsOnly prop (DetailView)
@@ -1810,7 +1812,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${fragm
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
         {...props}${sidebarContentProp}
       />${confirmModalName ? `
       {showConfirmModal && (
