@@ -1308,6 +1308,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hiddenSiblingArray = hiddenSiblingNames
     .map(name => `    { key: '${name}', fromSibling: '${name}' },`)
     .join('\n');
+  const hiddenArraySeparator = (hiddenDefaultsArray && hiddenSiblingArray) ? '\n' : '';
 
   // API prediction config
   const { apiBlock, apiProp } = buildApiParts(contract);
@@ -1794,7 +1795,7 @@ ${entryArray}
 ${derivedArray}
   ],
   hidden: [
-${hiddenDefaultsArray}${hiddenDefaultsArray && hiddenSiblingArray ? '\n' : ''}${hiddenSiblingArray}
+${hiddenDefaultsArray}${hiddenArraySeparator}${hiddenSiblingArray}
   ],
 };
 ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
