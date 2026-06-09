@@ -2882,17 +2882,21 @@ export function DetailView({
                     working; with no overflow on this wrapper they become
                     no-ops on the lines side. */}
                       <div ref={linesScrollRef}>
-                        {tabs[activeTab]?.key === 'lines' && DetailTable && (
+                        {tabs[activeTab]?.key === 'lines' && DetailTable && (() => {
                           // Only show the loading spinner on INITIAL load (no children yet).
                           // Subsequent refetches (e.g., after PATCH on a child) keep the table
                           // mounted to preserve transient state like InlineLinesPanel's
                           // editingRowId — otherwise editing mode is silently dropped on every
                           // autosave round-trip.
-                          isInitialChildrenLoading(hook) ? (
-                            <div className="flex items-center justify-center py-10 text-muted-foreground">
-                              <div className="h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                            </div>
-                          ) : shouldShowLinesEmptyState(hook, addingLine, LinesEmptyState, isDocumentReadOnly) ? (
+                          if (isInitialChildrenLoading(hook)) {
+                            return (
+                              <div className="flex items-center justify-center py-10 text-muted-foreground">
+                                <div className="h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                              </div>
+                            );
+                          }
+                          if (shouldShowLinesEmptyState(hook, addingLine, LinesEmptyState, isDocumentReadOnly)) {
+                            return (
                             <LinesEmptyState
                               data={data}
                               onAddLine={handleAddLineClick}
@@ -2908,7 +2912,9 @@ export function DetailView({
                               forceOpen={forceOpenImport}
                               onForceOpenHandled={() => setForceOpenImport(false)}
                             />
-                          ) : (
+                            );
+                          }
+                          return (
                             <div className={getLinesContainerClassName(linesLayout, embedded)}>
                               {/* Table + add button */}
                               <div className="flex-1 min-w-0">
@@ -3327,8 +3333,8 @@ export function DetailView({
                                 </div>
                               )}
                             </div>
-                          )
-                        )}
+                          );
+                        })()}
 
                         {/* Tab content: CustomLines (replaces standard lines table) */}
                         {tabs[activeTab]?.key === 'customLines' && CustomLines && (
