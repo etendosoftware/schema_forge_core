@@ -507,6 +507,21 @@ describe('getDetailContentContainerClassName', () => {
     );
     expect(cls).not.toContain(' hidden');
   });
+
+  it('uses the default px-6 padding when no formScrollPaddingX override is given', () => {
+    const cls = getDetailContentContainerClassName(
+      'readOnly', false, false, false, false, false, 'general',
+    );
+    expect(cls).toContain('px-6');
+  });
+
+  it('forwards formScrollPaddingX as the horizontal padding override', () => {
+    const cls = getDetailContentContainerClassName(
+      'readOnly', false, false, false, false, false, 'general', 'px-10',
+    );
+    expect(cls).toContain('px-10');
+    expect(cls).not.toContain('px-6');
+  });
 });
 
 describe('getLinesTabsSectionClassName', () => {

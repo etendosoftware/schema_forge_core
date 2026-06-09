@@ -156,11 +156,11 @@ function CollapsibleSection({ title, children }) {
  * Extracted from inline JSX to avoid the nested-ternary anti-pattern Sonar
  * S3358 was flagging inside the className templates.
  */
-function detailContentPadding(linesLayout, hasSidebar, variant, compact = false) {
+function detailContentPadding(linesLayout, hasSidebar, variant, compact = false, paddingXOverride = null) {
   const isInline = linesLayout === 'inlineEditable';
   if (hasSidebar) return (isInline || compact) ? 'p-2' : 'pl-6 pr-2';
-  if (variant === 'panel') return isInline ? 'pr-6' : 'px-6';
-  return isInline ? '' : 'px-6';
+  if (variant === 'panel') return isInline ? 'pr-6' : (paddingXOverride ?? 'px-6');
+  return isInline ? '' : (paddingXOverride ?? 'px-6');
 }
 
 /**
@@ -761,9 +761,9 @@ export function getAddLineWrapperStyle(linesLayout) {
   };
 }
 
-export function resolveCanAddLines(addLineGuard, data, requiredHeaderFields) {
+export function resolveCanAddLines(addLineGuard, data, requiredHeaderFields, children = []) {
   if (addLineGuard) {
-    return addLineGuard(data);
+    return addLineGuard(data, children);
   } else if (Array.isArray(requiredHeaderFields) && requiredHeaderFields.length > 0) {
     return requiredHeaderFields.every((k) => {
       const v = data?.[k];
@@ -1054,8 +1054,8 @@ export function renderExtraActionButtons(extraActions, data, hook, saveBtnCls) {
   ));
 }
 
-export function getDetailContentContainerClassName(linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab) {
-  return `flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`;
+export function getDetailContentContainerClassName(linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab, formScrollPaddingX = null) {
+  return `flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding, formScrollPaddingX)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`;
 }
 
 export function getLinesTabsSectionClassName(linesLayout) {
@@ -2029,6 +2029,9 @@ export function DetailView({
       && String(hook.selected?.id) === String(justSaved.id)
     ) {
       setDirectFetched(true);
+      // Fetch children even on the justSaved fast-path — the header is already
+      // primed but children (e.g. auto-created accounting lines) must be loaded.
+      hook.fetchChildren?.(recordId);
       // One-shot: clear the marker so a manual reload of /:id still fetches.
       navigate(location.pathname, {
         replace: true,
@@ -2049,7 +2052,7 @@ export function DetailView({
     // intentionally omitted from the dep list to avoid re-running on every
     // navigation tick.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentItem, directFetched, hook.fetchById, hook.handleSelect, hook.loading, hook.selected, isNew, recordId]);
+  }, [currentItem, directFetched, hook.fetchById, hook.fetchChildren, hook.handleSelect, hook.loading, hook.selected, isNew, recordId]);
 
   // Reset selected line when the parent record changes
   useEffect(() => {
@@ -2257,7 +2260,7 @@ export function DetailView({
   //    pipeline). This matches the UX where the add-lines button only
   //    appears once the header form is complete.
   // 3. Otherwise (no metadata at all), allow.
-  let canAddLines = resolveCanAddLines(addLineGuard, data, requiredHeaderFields);
+  let canAddLines = resolveCanAddLines(addLineGuard, data, requiredHeaderFields, hook.children ?? []);
   const windowTitle = getWindowTitle(breadcrumb, tMenu, windowName);
   const { toggleFavorite, isFavorite } = useFavorites();
   const favKey = windowName || windowTitle;
@@ -2719,12 +2722,12 @@ export function DetailView({
             {isCustomPrimaryTabActive(primaryTabs, activePrimaryTab) ? (() => {
               const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
               return activeTab?.Panel ? (
-                <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel', compactSidebarPadding)}`}>
+                <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel', compactSidebarPadding, formScrollPaddingX)}`}>
                   <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
                 </div>
               ) : null;
             })() : null}
-            <div className={getDetailContentContainerClassName(linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab)}>
+            <div className={getDetailContentContainerClassName(linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab, formScrollPaddingX)}>
               {resolveHeaderContent(headerContent, data)}
               {(() => {
                 const slotProps = {
@@ -2778,7 +2781,7 @@ export function DetailView({
                       <>
                         {/* Principal + collapsed fields wrapped in a card */}
                         <div className={`${hideFormCard ? 'hidden' : ''}${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${whiteFormBackground ? ' bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50' : ''}${embedded ? ' pointer-events-none' : ''}`}>
-                          <div className={linesLayout === 'inlineEditable' ? 'p-2' : 'p-6'}>
+                          <div className={linesLayout === 'inlineEditable' ? 'p-2' : formCardPadding}>
                             <Form
                               entity={entity}
                               data={data}
@@ -2993,9 +2996,13 @@ export function DetailView({
                                       // Also include hidden entry defaults (e.g., fields with predefined values).
                                       for (const hiddenField of hiddenEntryDefaults) {
                                         if (!(hiddenField.key in lineData)) {
-                                          lineData[hiddenField.key] = hiddenField.fromParent
-                                            ? _headerData?.[hiddenField.fromParent]
-                                            : hiddenField.value;
+                                          if (hiddenField.fromParent) {
+                                            lineData[hiddenField.key] = _headerData?.[hiddenField.fromParent];
+                                          } else if (hiddenField.fromSibling != null) {
+                                            lineData[hiddenField.key] = hook.children?.[0]?.[hiddenField.fromSibling];
+                                          } else {
+                                            lineData[hiddenField.key] = hiddenField.value;
+                                          }
                                         }
                                       }
                                       // Derive unitPrice = listPrice × (1-discount/100) before POST.

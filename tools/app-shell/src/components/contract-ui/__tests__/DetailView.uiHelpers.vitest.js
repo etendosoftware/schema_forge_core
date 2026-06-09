@@ -200,11 +200,18 @@ describe('getAddLineWrapperStyle', () => {
 });
 
 describe('resolveCanAddLines', () => {
-  it('delegates to the guard when one is provided', () => {
+  it('delegates to the guard when one is provided, forwarding children', () => {
     const guard = vi.fn(() => false);
     const data = { a: 1 };
-    expect(resolveCanAddLines(guard, data, ['x'])).toBe(false);
-    expect(guard).toHaveBeenCalledWith(data);
+    const children = [{ id: 'c1' }];
+    expect(resolveCanAddLines(guard, data, ['x'], children)).toBe(false);
+    expect(guard).toHaveBeenCalledWith(data, children);
+  });
+
+  it('passes an empty children array to the guard by default', () => {
+    const guard = vi.fn(() => true);
+    resolveCanAddLines(guard, { a: 1 }, ['x']);
+    expect(guard).toHaveBeenCalledWith({ a: 1 }, []);
   });
 
   it('returns true when all required header fields have non-empty values', () => {

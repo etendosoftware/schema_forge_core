@@ -4,21 +4,22 @@ import { login } from '../helpers/auth.js';
 /**
  * Product Pricing footer — ETP-4010 (N-05) mocked spec.
  *
- * Covers two regressions on the `ProductPriceBar` (form footer of the Product
- * detail window — `tools/app-shell/src/windows/custom/product/ProductPriceBar.jsx`):
+ * Covers the `ProductPriceBar` redesign (form footer of the Product detail
+ * window — `tools/app-shell/src/windows/custom/product/ProductPriceBar.jsx`):
  *
- *   Suite A — Create flow (product with zero M_ProductPrice rows)
- *     The footer button reads "Set pricing" / "Establecer precios". Clicking it
- *     reveals an inline 4-input form (sale unit + list, purchase unit + list).
- *     Pressing "Save pricing" posts ONE row per side that has values, each row
- *     using its own price-list-version (sales-flagged vs purchase-flagged). No
- *     replication across sides. After save, the UI rerenders the new rows.
+ *   Suite A — Tables always rendered (product with zero M_ProductPrice rows)
+ *     Both Sales and Purchase PriceTables are always visible, each with a
+ *     pencil icon button. Clicking the sales pencil opens the "Manage Pricing"
+ *     dialog with focusedSection='sales' (only the sales section is shown).
+ *     Pressing "Save changes" posts exactly one row per staged add. After save,
+ *     the UI rerenders showing the new row label.
  *
  *   Suite B — Edit dialog with lazy-loaded options
- *     When rows exist the button reads "Edit pricing" / "Editar precios" and
- *     opens the "Manage pricing" dialog. The dialog now lazily fetches
+ *     Whether or not rows exist, both tables show pencil buttons. Clicking the
+ *     purchase pencil opens the dialog with focusedSection='purchase' (only the
+ *     purchase section is shown). The dialog lazily fetches
  *     `/price/selectors/M_PriceList_Version_ID` on open and populates the
- *     sales/purchase `+` row dropdowns from that response (filtered by the
+ *     purchase `+` row dropdown from that response (filtered by the
  *     `salesPriceList` flag).
  *
  * Mock mode only: routes are installed AFTER login() so they win over the
@@ -208,35 +209,66 @@ test.describe('Product pricing — create flow (no existing rows)', () => {
     await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
   });
 
-  test('opening "Set pricing" reveals the inline 4-input create form', async ({ page }) => {
-    // The "Pricing" footer card should be visible — anchor on a string that
-    // exists in both locales' values is hard; use the trigger button instead.
-    const setButton = page.getByRole('button', { name: /set pricing|establecer precios/i });
-    await expect(setButton).toBeVisible({ timeout: 10_000 });
+  test('empty pricing tables show pencil icons; clicking sales pencil opens the dialog with sales section', async ({ page }) => {
+    // Both PriceTable components are always rendered — assert the sales table
+    // title is visible using the i18n value "Sales Price Lists".
+    await expect(
+      page.getByText(/sales price lists|listas de precios de venta/i),
+    ).toBeVisible({ timeout: 10_000 });
 
-    await setButton.click();
+    // Click the sales pencil button via its data-testid.
+    await page.locator('[data-testid="price-sales-edit"]').click();
 
-    // Exactly 4 number inputs should appear (sale unit + list, purchase unit + list).
-    const numberInputs = page.getByRole('spinbutton');
-    await expect(numberInputs).toHaveCount(4);
+    // The "Manage Pricing" dialog should open.
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.getByRole('heading', { name: /manage pricing|gestionar precios/i }),
+    ).toBeVisible();
 
-    // After opening the form the trigger should be replaced by Cancel + Save pricing.
-    await expect(page.getByRole('button', { name: /save pricing|guardar precios/i })).toBeVisible();
+    // Sales section is visible inside the dialog.
+    await expect(
+      dialog.getByText(/sales price lists|listas de precios de venta/i),
+    ).toBeVisible();
+
+    // Purchase section must NOT be present (focusedSection='sales').
+    await expect(
+      dialog.getByText(/purchase price lists|listas de precios de compra/i),
+    ).toHaveCount(0);
+
+    // Click "+" inside the dialog to add a pending row — a select dropdown appears.
+    await dialog.getByRole('button', { name: '+' }).click();
+    await expect(dialog.locator('select')).toBeVisible({ timeout: 10_000 });
   });
 
   test('saving sale-only values posts exactly one sales row and rerenders the UI', async ({ page }) => {
-    await page
-      .getByRole('button', { name: /set pricing|establecer precios/i })
-      .click();
+    // Open the sales pricing dialog via the pencil button.
+    await page.locator('[data-testid="price-sales-edit"]').click();
 
-    const numberInputs = page.getByRole('spinbutton');
-    await expect(numberInputs).toHaveCount(4);
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
 
-    // Layout order in the component: sale unit, sale list, purchase unit, purchase list.
+    // Click "+" to add a pending row.
+    await dialog.getByRole('button', { name: '+' }).click();
+
+    // Wait for 'Lista venta 2026' option to appear in the select (lazy fetch
+    // returns SELECTOR_PAYLOAD which includes PLV_SALE).
+    const select = dialog.locator('select');
+    await expect(
+      select.locator('option', { hasText: 'Lista venta 2026' }),
+    ).toHaveCount(1, { timeout: 10_000 });
+
+    await select.selectOption({ label: 'Lista venta 2026' });
+
+    // Fill unit price and list price in the two number inputs.
+    const numberInputs = dialog.locator('input[type="number"]');
     await numberInputs.nth(0).fill('10');
     await numberInputs.nth(1).fill('12');
-    // Leave purchase inputs blank.
 
+    // Confirm the staged add by clicking "✓".
+    await dialog.locator('button', { hasText: '✓' }).click();
+
+    // Set up POST intercept promise before clicking Save.
     const postPromise = page.waitForRequest(
       (req) =>
         req.method() === 'POST' &&
@@ -244,16 +276,17 @@ test.describe('Product pricing — create flow (no existing rows)', () => {
       { timeout: 10_000 },
     );
 
-    await page.getByRole('button', { name: /save pricing|guardar precios/i }).click();
+    // Click "Save changes" button.
+    await dialog
+      .getByRole('button', { name: /save changes|guardar cambios/i })
+      .click();
 
     await postPromise;
 
-    // Wait for the create flow to fold back to the list view and rerender rows.
-    // The bar shows the new sales row inside a PriceTable; the row label is the
-    // PLV identifier returned by the post handler.
+    // After save the dialog closes and the list rerenders with the new row.
     await expect(page.getByText('Lista venta 2026')).toBeVisible({ timeout: 10_000 });
 
-    // Exactly one POST was made — purchase side was empty so no second call.
+    // Exactly one POST was made.
     expect(postBodies).toHaveLength(1);
 
     const sentBody = postBodies[0];
@@ -308,8 +341,9 @@ test.describe('Product pricing — edit dialog populates dropdown from lazy fetc
     await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
   });
 
-  test('Edit pricing opens dialog and the purchase + dropdown is populated by the lazy fetch', async ({ page }) => {
-    // Wait for the selector lazy fetch the dialog will trigger.
+  test('clicking purchase pencil opens dialog with purchase section only; dropdown is populated by the lazy fetch', async ({ page }) => {
+    // Set up the selector fetch promise BEFORE clicking the pencil, because
+    // PricingDialog lazy-fetches as soon as open=true.
     const selectorRequestPromise = page.waitForRequest(
       (req) =>
         req.method() === 'GET' &&
@@ -317,36 +351,34 @@ test.describe('Product pricing — edit dialog populates dropdown from lazy fetc
       { timeout: 10_000 },
     );
 
-    // The footer shows "Edit pricing" because rows exist.
-    const editButton = page.getByRole('button', { name: /edit pricing|editar precios/i });
-    await expect(editButton).toBeVisible({ timeout: 10_000 });
-    await editButton.click();
+    // Click the purchase pencil button via its data-testid.
+    await expect(
+      page.locator('[data-testid="price-purchase-edit"]'),
+    ).toBeVisible({ timeout: 10_000 });
+    await page.locator('[data-testid="price-purchase-edit"]').click();
 
-    // Dialog open — title is "Manage pricing" / "Gestionar precios".
+    // Dialog opens — title is "Manage Pricing" / "Gestionar precios".
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await expect(
       dialog.getByRole('heading', { name: /manage pricing|gestionar precios/i }),
     ).toBeVisible();
 
-    // Lazy fetch must have fired (the dialog requested the selector endpoint).
-    await selectorRequestPromise;
-    expect(selectorCalls.length).toBeGreaterThanOrEqual(1);
+    // Purchase section is visible (focusedSection='purchase').
+    await expect(
+      dialog.getByText(/purchase price lists|listas de precios de compra/i),
+    ).toBeVisible();
 
-    // Scope to the purchase panel — the renderSection wrapper is the unique
-    // `.flex-1.min-w-0.rounded-2xl` div that contains the panel title. Using
-    // `.last()` selects the right-side panel (purchase is rendered after sales
-    // in the dialog body).
-    const purchaseSection = dialog
-      .locator('div.flex-1.min-w-0.rounded-2xl')
-      .filter({ hasText: /purchase price lists|listas de precios de compra/i })
-      .last();
-    await expect(purchaseSection).toBeVisible();
+    // Sales section must NOT be present in the dialog (focusedSection='purchase').
+    await expect(
+      dialog.getByText(/sales price lists|listas de precios de venta/i),
+    ).toHaveCount(0);
 
-    await purchaseSection.getByRole('button', { name: '+' }).click();
+    // Click "+" inside the purchase section to reveal the select dropdown.
+    await dialog.getByRole('button', { name: '+' }).click();
 
-    // The `<select>` becomes visible inside the purchase section.
-    const purchaseSelect = purchaseSection.locator('select');
+    // Only one select is present since only the purchase section is rendered.
+    const purchaseSelect = dialog.locator('select');
     await expect(purchaseSelect).toBeVisible({ timeout: 10_000 });
 
     // After the lazy fetch resolves, the purchase-flagged option must appear.
@@ -354,10 +386,13 @@ test.describe('Product pricing — edit dialog populates dropdown from lazy fetc
       purchaseSelect.locator('option', { hasText: 'Lista compra 2026' }),
     ).toHaveCount(1, { timeout: 10_000 });
 
-    // And the sales-flagged option must NOT be offered as a purchase option
-    // (the dialog filters by salesPriceList flag).
+    // The sales-flagged option must NOT be offered (filtered by salesPriceList=false).
     await expect(
       purchaseSelect.locator('option', { hasText: 'Lista venta 2026' }),
     ).toHaveCount(0);
+
+    // Confirm the lazy fetch actually fired.
+    await selectorRequestPromise;
+    expect(selectorCalls.length).toBeGreaterThanOrEqual(1);
   });
 });
