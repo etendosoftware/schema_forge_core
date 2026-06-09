@@ -13,7 +13,7 @@ describe('FmModel303Page — exports', () => {
 
 describe('FmModel303Page — composition', () => {
   it('renders FmBoxes303', () => assert.match(src, /FmBoxes303/));
-  it('renders StatusPillMenu', () => assert.match(src, /StatusPillMenu/));
+  it('renders KpiWidget for incidents', () => assert.match(src, /KpiWidget/));
   it('renders Tabs', () => assert.match(src, /Tabs/));
   it('has back navigation (onBack)', () => assert.match(src, /onBack/));
   it('renders KpiWidget for summary values', () => assert.match(src, /KpiWidget/));

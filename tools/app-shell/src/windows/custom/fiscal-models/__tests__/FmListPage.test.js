@@ -21,7 +21,7 @@ describe('FmListPage — table', () => {
   it('renders fm-table', () => assert.match(src, /fm-table/));
   it('shows model column', () => assert.match(src, /decl\.model/));
   it('shows year column', () => assert.match(src, /decl\.year/));
-  it('renders StatusPillMenu for status column', () => assert.match(src, /StatusPillMenu/));
+  it('renders status pill via StatusText', () => assert.match(src, /StatusText/));
 });
 
 describe('FmListPage — navigation', () => {
