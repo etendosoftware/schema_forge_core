@@ -168,6 +168,7 @@ export default function ProductCategoryPage({ windowName, recordId, ...props }) 
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        hidePrint
         noHeaderBorder
         toolbarBorderBottom
         whiteFormBackground
@@ -192,6 +193,10 @@ export default function ProductCategoryPage({ windowName, recordId, ...props }) 
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      listbarPaddingX="px-2"
+      tablePaddingX="px-2"
+      hidePrint
+      hideLink
       rowQuickActions={{}}
       {...props}
     />

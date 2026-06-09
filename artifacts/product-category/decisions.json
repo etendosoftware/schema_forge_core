@@ -12,7 +12,11 @@
     "noHeaderBorder": true,
     "toolbarBorderBottom": true,
     "whiteFormBackground": true,
-    "autoSaveOnBlur": true
+    "autoSaveOnBlur": true,
+    "hidePrint": true,
+    "hideLink": true,
+    "listbarPaddingX": "px-2",
+    "tablePaddingX": "px-2"
   },
   "entities": {
     "productCategory": {

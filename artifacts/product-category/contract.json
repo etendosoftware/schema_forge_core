@@ -1,14 +1,16 @@
 {
   "version": "0.13.0",
   "generatedAt": "2026-04-29T18:11:26.703Z",
-  "updatedAt": "2026-06-09T12:27:36.491Z",
-  "checksum": "d30f09a6cdd28855",
+  "updatedAt": "2026-06-09T12:53:13.170Z",
+  "checksum": "e6004842e2b6ac26",
   "frontendContract": {
     "window": {
       "id": "144",
       "name": "Product Category",
       "primaryEntity": "productCategory",
       "category": "inventory",
+      "hidePrint": true,
+      "hideLink": true,
       "detailEntity": "accounting",
       "noHeaderBorder": true,
       "toolbarBorderBottom": true,
@@ -17,6 +19,8 @@
       "formScrollPaddingX": "px-2",
       "tabsBarPaddingX": "px-2",
       "toolbarPaddingX": "px-2",
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
       "layoutType": "default",
       "linesLayout": "inlineEditable",
       "autoSaveOnBlur": true
@@ -210,6 +214,8 @@
       "name": "Product Category",
       "primaryEntity": "productCategory",
       "category": "inventory",
+      "hidePrint": true,
+      "hideLink": true,
       "detailEntity": "accounting",
       "noHeaderBorder": true,
       "toolbarBorderBottom": true,
@@ -218,6 +224,8 @@
       "formScrollPaddingX": "px-2",
       "tabsBarPaddingX": "px-2",
       "toolbarPaddingX": "px-2",
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
       "linesLayout": "inlineEditable",
       "autoSaveOnBlur": true
     },
