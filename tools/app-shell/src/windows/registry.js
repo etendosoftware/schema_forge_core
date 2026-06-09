@@ -8,6 +8,11 @@ import { APP_CATALOG } from '../apps-registry.js';
  * Enterprise windows (removed): commission, commission-payment, requisition,
  * manage-requisitions, landed-cost, inventory-quality-inspection, bom-production,
  * packing, warehouse-picking-list, stock-reservation, cost-adjustment
+ *
+ * Out-of-scope windows (removed, ETP-4191): payment-method, unit-of-measure.
+ * Not part of the 1st iteration. The C_UOM_ID / FIN_PaymentMethod_ID selectors
+ * used by product / payment-in / payment-out resolve against AD_Column metadata,
+ * not these specs, so removal does not affect them.
  */
 const windowLoaders = {
   'sales-order': () => import('@generated/sales-order/generated/web/sales-order/index.jsx'),
@@ -16,11 +21,9 @@ const windowLoaders = {
   'warehouse': () => import('@generated/warehouse/generated/web/warehouse/index.jsx'),
   'price-list': () => import('@generated/price-list/generated/web/price-list/index.jsx'),
   'payment-term': () => import('@generated/payment-term/generated/web/payment-term/index.jsx'),
-  'payment-method': () => import('@generated/payment-method/generated/web/payment-method/index.jsx'),
   'product': () => import('@generated/product/generated/web/product/index.jsx'),
   'product-category': () => import('@generated/product-category/generated/web/product-category/index.jsx'),
   'tax': () => import('@generated/tax/generated/web/tax/index.jsx'),
-  'unit-of-measure': () => import('@generated/unit-of-measure/generated/web/unit-of-measure/index.jsx'),
   'user': () => import('@generated/user/generated/web/user/index.jsx'),
   'purchase-order': () => import('@generated/purchase-order/generated/web/purchase-order/index.jsx'),
   'goods-receipt': () => import('@generated/goods-receipt/generated/web/goods-receipt/index.jsx'),
