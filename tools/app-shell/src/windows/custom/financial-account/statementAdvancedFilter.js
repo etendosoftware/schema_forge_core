@@ -29,7 +29,8 @@ export function buildStatementFilterColumns(ui) {
     { key: 'importDate',      label: ui('financeAccountStatementsColImportDate'),      type: 'date' },
     { key: 'transactionDate', label: ui('financeAccountStatementsColTransactionDate'), type: 'date' },
     { key: 'lineCount',       label: ui('financeAccountStatementsColLines'),           type: 'number' },
-    { key: 'totalAmount',     label: ui('financeAccountStatementsColTotalAmount'),     type: 'number' },
+    { key: 'totalOut',        label: ui('financeAccountStatementsColOut'),             type: 'number' },
+    { key: 'totalIn',         label: ui('financeAccountStatementsColIn'),              type: 'number' },
     { key: 'status',          label: ui('financeAccountStatementsColStatus'),          type: 'enum', enumLabels: statusLabels },
   ];
 }
