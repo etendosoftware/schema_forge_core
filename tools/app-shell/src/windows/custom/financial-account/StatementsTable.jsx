@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, FileText } from 'lucide-react';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
 import { StatusTag } from '@/components/ui/status-tag';
 import { cn } from '@/lib/utils';
 import { StatementLinesInline } from './StatementLinesInline';
@@ -10,6 +11,7 @@ import { StatementRowKebab } from './StatementRowKebab';
 // ─────────────────────────────────────────────────────────────────────────────
 // Layout — grid (NOT <table>) so the expanded accordion row can span all cols.
 //   28        · chevron
+//   36        · selection checkbox
 //   110       · doc nº
 //   1fr       · name
 //   0.8fr     · file name
@@ -22,12 +24,12 @@ import { StatementRowKebab } from './StatementRowKebab';
 //   minmax(40, auto) · trailing cell for the per-row kebab
 // ─────────────────────────────────────────────────────────────────────────────
 const GRID =
-  'grid grid-cols-[28px_110px_minmax(160px,1fr)_minmax(120px,0.8fr)_minmax(120px,1fr)_120px_120px_80px_110px_110px_140px_minmax(40px,auto)] gap-4';
+  'grid grid-cols-[28px_36px_110px_minmax(160px,1fr)_minmax(120px,0.8fr)_minmax(120px,1fr)_120px_120px_80px_110px_110px_140px_minmax(40px,auto)] gap-4';
 
-// Stable keys for the 11 skeleton cells (kept in lockstep with the grid above)
-// so we don't rely on the array index — Sonar/React lint flag that as unstable.
+// Stable keys for the skeleton cells (kept in lockstep with the grid above) so
+// we don't rely on the array index — Sonar/React lint flag that as unstable.
 const SKELETON_CELL_KEYS = [
-  'chev', 'docno', 'name', 'file', 'notes', 'imp', 'trx', 'lines', 'out', 'in', 'status', 'spacer',
+  'chev', 'select', 'docno', 'name', 'file', 'notes', 'imp', 'trx', 'lines', 'out', 'in', 'status', 'spacer',
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -94,15 +96,31 @@ function StatusPill({ status, matched, total, ui }) {
  *   statements: Array<object>;
  *   loading: boolean;
  *   currency?: string;
- *   actions?: { onEdit: Function, onProcess: Function, onDelete: Function };
+ *   actions?: { onEdit: Function, onProcess: Function, onReactivate: Function, onDelete: Function };
+ *   selectedIds?: Set<string>;
+ *   onSelectionChange?: (id: string) => void;
  * }} props
  */
-export function StatementsTable({ statements, loading, currency = 'EUR', actions = null }) {
+export function StatementsTable({
+  statements, loading, currency = 'EUR', actions = null,
+  selectedIds = new Set(), onSelectionChange = () => {},
+}) {
   const ui = useUI();
   const { locale: appLocale } = useLocaleSwitch();
   const bcpLocale = (appLocale || 'es_ES').replace('_', '-');
   const [openId, setOpenId] = useState(null);
   const toggle = (id) => setOpenId((prev) => (prev === id ? null : id));
+
+  // Selection over the currently rendered rows, mirroring the Movements tab.
+  const allSelected = statements.length > 0 && statements.every((s) => selectedIds.has(s.id));
+  const someSelected = statements.some((s) => selectedIds.has(s.id)) && !allSelected;
+  const handleSelectAll = () => {
+    if (allSelected) {
+      statements.forEach((s) => onSelectionChange(s.id));
+    } else {
+      statements.filter((s) => !selectedIds.has(s.id)).forEach((s) => onSelectionChange(s.id));
+    }
+  };
 
   return (
     <div role="table" className="w-full">
@@ -115,6 +133,9 @@ export function StatementsTable({ statements, loading, currency = 'EUR', actions
         )}
       >
         <span aria-hidden="true" />
+        <span>
+          <Checkbox checked={allSelected} indeterminate={someSelected} onChange={handleSelectAll} />
+        </span>
         <span>{ui('financeAccountStatementsColDocumentNo')}</span>
         <span>{ui('financeAccountStatementsColName')}</span>
         <span>{ui('financeAccountStatementsColFileName')}</span>
@@ -129,7 +150,10 @@ export function StatementsTable({ statements, loading, currency = 'EUR', actions
       </div>
 
       {/* Body */}
-      {renderBody({ loading, statements, ui, currency, bcpLocale, openId, toggle, actions })}
+      {renderBody({
+        loading, statements, ui, currency, bcpLocale, openId, toggle, actions,
+        selectedIds, onSelectionChange,
+      })}
     </div>
   );
 }
@@ -138,7 +162,10 @@ export function StatementsTable({ statements, loading, currency = 'EUR', actions
 // Body renderer extracted to avoid the nested ternary Sonar flagged on the
 // previous loading / empty / rows branching.
 // ─────────────────────────────────────────────────────────────────────────────
-function renderBody({ loading, statements, ui, currency, bcpLocale, openId, toggle, actions }) {
+function renderBody({
+  loading, statements, ui, currency, bcpLocale, openId, toggle, actions,
+  selectedIds, onSelectionChange,
+}) {
   if (loading) {
     return [1, 2, 3, 4, 5].map((n) => (
       <div key={n} role="row" className={cn(GRID, 'border-b border-[#F0F2F5] px-4 py-3')}>
@@ -175,6 +202,8 @@ function renderBody({ loading, statements, ui, currency, bcpLocale, openId, togg
         open={open}
         onToggle={() => toggle(s.id)}
         actions={actions}
+        selected={selectedIds.has(s.id)}
+        onSelectionChange={onSelectionChange}
       />
     );
   });
@@ -183,7 +212,9 @@ function renderBody({ loading, statements, ui, currency, bcpLocale, openId, togg
 // ─────────────────────────────────────────────────────────────────────────────
 // Internals
 // ─────────────────────────────────────────────────────────────────────────────
-function StatementRow({ statement: s, currency, bcpLocale, ui, open, onToggle, actions }) {
+function StatementRow({
+  statement: s, currency, bcpLocale, ui, open, onToggle, actions, selected, onSelectionChange,
+}) {
   // The "Nombre" column shows the statement's own name. Manually-created and
   // most imported statements carry a meaningful name; only fall back to the
   // line date range (and finally an em dash) when no name is set.
@@ -214,6 +245,9 @@ function StatementRow({ statement: s, currency, bcpLocale, ui, open, onToggle, a
         >
           <ChevronDown className="h-4 w-4" />
         </button>
+        <span onClick={(e) => e.stopPropagation()}>
+          <Checkbox checked={selected} onChange={() => onSelectionChange(s.id)} />
+        </span>
         <span className="whitespace-nowrap font-semibold text-[#121217]">{s.documentNo || '—'}</span>
         <span className="truncate text-[#121217]">{displayName}</span>
         <span className={cn('truncate', s.fileName ? 'text-[#121217]' : 'text-[#A8AAB8]')} title={s.fileName || ''}>
@@ -245,6 +279,7 @@ function StatementRow({ statement: s, currency, bcpLocale, ui, open, onToggle, a
               statement={s}
               onEdit={actions.onEdit}
               onProcess={actions.onProcess}
+              onReactivate={actions.onReactivate}
               onDelete={actions.onDelete}
             />
           ) : null}

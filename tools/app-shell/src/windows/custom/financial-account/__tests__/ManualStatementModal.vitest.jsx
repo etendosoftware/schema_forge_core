@@ -321,6 +321,9 @@ describe('ManualStatementModal', () => {
       expect(payload.lines[0].glItemId).toBe('gl-1');
       expect(payload.lines[0].in).toBe(250);
       expect(props.onSuccess).toHaveBeenCalled();
+      // Editing reports "updated", not "created".
+      expect(toastSuccess).toHaveBeenCalledWith('financeAccountStatementsManualUpdateSuccess');
+      expect(toastSuccess).not.toHaveBeenCalledWith('financeAccountStatementsManualSuccess');
     });
   });
 });

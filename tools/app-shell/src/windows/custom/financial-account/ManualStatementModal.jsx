@@ -673,7 +673,9 @@ export function ManualStatementModal({
       } else {
         await createStatement({ accountId, ...header });
       }
-      toast.success(ui('financeAccountStatementsManualSuccess'));
+      toast.success(ui(editing
+        ? 'financeAccountStatementsManualUpdateSuccess'
+        : 'financeAccountStatementsManualSuccess'));
       onSuccess();
       onClose();
     } catch {
