@@ -12,7 +12,7 @@ describe('FmListPage — exports', () => {
 });
 
 describe('FmListPage — upcoming deadlines widget', () => {
-  it('renders fm-upcoming container', () => assert.match(src, /fm-upcoming/));
+  it('renders upcoming count as KPI value', () => assert.match(src, /upcomingCount/));
   it('uses computeUpcomingDeadlines', () => assert.match(src, /computeUpcomingDeadlines/));
   it('passes year+model filtered decls to the widget', () => assert.match(src, /decls={modelYearFiltered}/));
 });
