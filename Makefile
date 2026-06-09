@@ -1,4 +1,4 @@
-.PHONY: test test-all-coverage test-ci test-ci-coverage test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate domain-boundary-check sonar sonar-coverage menu-cache uuid test-xml-regeneration-check test-python xml-regeneration-check dump-delta regen-check regen-check-help regen-check-clean regen-help
+.PHONY: test test-all-coverage test-ci test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate domain-boundary-check sonar sonar-coverage menu-cache uuid test-xml-regeneration-check test-python xml-regeneration-check dump-delta regen-check regen-check-help regen-check-clean regen-help
 
 # --- Testing ---
 
@@ -50,37 +50,6 @@ test-ci: ## Run all unit tests and write JUnit XML reports (CI mode)
 	cd tools/app-shell && npx vitest run \
 	  --reporter=junit \
 	  --outputFile=../../test-results/vitest.xml
-
-test-ci-coverage: ## Run all unit tests with JUnit XML reports AND lcov coverage (CI + SonarQube)
-	@mkdir -p test-results coverage
-	node --test \
-	  --experimental-test-coverage \
-	  --test-reporter=spec --test-reporter-destination=stdout \
-	  --test-reporter=junit --test-reporter-destination=test-results/cli.xml \
-	  --test-reporter=lcov --test-reporter-destination=coverage/cli-lcov.info \
-	  'cli/test/*.test.js'
-	node --test \
-	  --test-reporter=spec --test-reporter-destination=stdout \
-	  --test-reporter=junit --test-reporter-destination=test-results/schema-forge-core.xml \
-	  'packages/schema-forge-core/test/*.test.js'
-	npm test --workspace=packages/app-shell-core
-	node --test \
-	  --experimental-test-coverage \
-	  --test-reporter=spec --test-reporter-destination=stdout \
-	  --test-reporter=junit --test-reporter-destination=test-results/appshell-node.xml \
-	  --test-reporter=lcov --test-reporter-destination=coverage/appshell-lcov.info \
-	  'tools/app-shell/src/**/__tests__/*.test.js' \
-	  'tools/app-shell/test/*.test.js'
-	node --test \
-	  --experimental-test-coverage \
-	  --test-reporter=spec --test-reporter-destination=stdout \
-	  --test-reporter=junit --test-reporter-destination=test-results/artifacts.xml \
-	  --test-reporter=lcov --test-reporter-destination=coverage/artifacts-lcov.info \
-	  'artifacts/**/__tests__/*.test.js'
-	cd tools/app-shell && npx vitest run --coverage \
-	  --reporter=junit \
-	  --outputFile=../../test-results/vitest.xml && \
-	  sed 's|^SF:src/|SF:tools/app-shell/src/|' coverage/vitest/lcov.info > ../../coverage/vitest-lcov.info
 
 validate-pipeline: ## Validate pipeline completeness across all artifacts
 	node cli/src/validate-pipeline.js --format=text
