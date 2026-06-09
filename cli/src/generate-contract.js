@@ -183,6 +183,9 @@ function applyBasicFieldUIHints(f, mapped) {
   if (f.isTranslated) mapped.isTranslated = true;
   if (f.section) mapped.section = f.section;
   if (f.seq != null) mapped.seq = f.seq;
+  if (f.span) mapped.span = f.span;
+  if (f.rows != null) mapped.rows = f.rows;
+  if (f.explicitType) mapped.explicitType = true;
   if (f.statusBar) mapped.statusBar = true;
   if (f.badge) mapped.badge = true;
 }
@@ -239,6 +242,7 @@ export function generateFrontendContract(schema, rules = []) {
 
       // UI hints
       applyFieldUIHints(f, mapped);
+      if (f.inline) mapped.inline = true;
 
       // Behavioral metadata: validationRule (e.g. M_PriceList.issopricelist = @isSOTrx@)
       if (f.validationRule) mapped.validationRule = f.validationRule;
@@ -284,6 +288,8 @@ export function generateFrontendContract(schema, rules = []) {
     if (entity.javaQualifier) feEntity.javaQualifier = entity.javaQualifier;
     if (entity.draftMode?.enabled) feEntity.draftMode = entity.draftMode;
     if (entity.formCols != null) feEntity.formCols = entity.formCols;
+    const siblingFields = entity.fields.filter(f => isSystem(f) && f.addLineFromSibling).map(f => f.name);
+    if (siblingFields.length > 0) feEntity.addLineHiddenFromSibling = siblingFields;
     entities[entity.name] = feEntity;
   }
 

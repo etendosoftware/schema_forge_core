@@ -5,7 +5,7 @@ import { login } from '../helpers/auth.js';
  * Goods Shipment — Return Wizard (mocked) — ETP-4031
  *
  * Validates ReturnWizard step 2 quality:
- *   - "Crear Devolución" button gating (isCompleted && !hasReturn)
+ *   - "Crear Devolución" button gating (isCompleted && canCreateReturn)
  *   - Wizard dialog opens with Spanish title
  *   - Step 1: lines load, "Siguiente" enabled when lines have qty > 0
  *   - Step 2: document card shows correct translated strings,
@@ -114,7 +114,7 @@ async function installGoodsShipmentMock(page, records) {
 
 test.describe('Goods Shipment — Return Wizard step 2 quality (no credit note, translated strings)', () => {
   test('opens wizard, advances to step 2, asserts Spanish content and no credit note', async ({ page }) => {
-    // 1. Completed shipment without returnReceipts (shows "Crear Devolución" button)
+    // 1. Completed shipment with canCreateReturn=true (backend-computed field, shows "Crear Devolución" button)
     const shipment = makeShipment({
       id: 'gs-return-001',
       documentNo: 'GS-RETURN-001',
@@ -122,6 +122,7 @@ test.describe('Goods Shipment — Return Wizard step 2 quality (no credit note, 
       'documentStatus$_identifier': 'Completado',
       processed: true,
       returnReceipts: [],
+      canCreateReturn: true,
     });
 
     await login(page);
