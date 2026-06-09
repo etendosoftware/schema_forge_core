@@ -71,10 +71,15 @@ const DEFAULT_ONBOARDING_FORM = {
 const SSO_PROVIDERS = getConfiguredSsoProviders();
 
 function trackOnboarding(eventName, properties = {}) {
-  void track(eventName, {
-    ...ONBOARDING_EVENT_CONTEXT,
-    ...properties,
-  });
+  // Fire-and-forget telemetry: swallow rejections so a failed track() never
+  // surfaces as an unhandled promise rejection in the onboarding flow.
+  // Promise.resolve(...) tolerates a non-thenable return (e.g. a stubbed track()).
+  Promise.resolve(
+    track(eventName, {
+      ...ONBOARDING_EVENT_CONTEXT,
+      ...properties,
+    }),
+  ).catch(() => {});
 }
 
 function AuthBrand({ label }) {
