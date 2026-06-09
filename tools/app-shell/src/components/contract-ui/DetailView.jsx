@@ -100,7 +100,8 @@ function evalDisplayLogicRaw(expr, data) {
     if (!(key in (data || {}))) return true; // field absent → default visible
     const rawVal = data[key];
     // Normalize boolean API values to Etendo string equivalents (true→'Y', false→'N')
-    const actual = typeof rawVal === 'boolean' ? (rawVal ? 'Y' : 'N') : String(rawVal ?? '');
+    const boolAsYN = rawVal ? 'Y' : 'N';
+    const actual = typeof rawVal === 'boolean' ? boolAsYN : String(rawVal ?? '');
     return op === '=' ? actual === expected : actual !== expected;
   });
 }
@@ -761,7 +762,6 @@ export function getAddLineWrapperStyle(linesLayout) {
 }
 
 export function resolveCanAddLines(addLineGuard, data, requiredHeaderFields) {
-  let canAddLines;
   if (addLineGuard) {
     return addLineGuard(data);
   } else if (Array.isArray(requiredHeaderFields) && requiredHeaderFields.length > 0) {
@@ -861,8 +861,9 @@ export function getRecordTitle(isNew, ui, data, titleField) {
 }
 
 export function getFullBreadcrumb(breadcrumb, tMenu, title, windowTitle) {
+  const titleSuffix = title ? ` / ${title}` : '';
   return breadcrumb
-      ? `${breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}${title ? ` / ${title}` : ''}`
+      ? `${breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}${titleSuffix}`
       : windowTitle;
 }
 
@@ -874,7 +875,7 @@ export function getLinesContainerClassName(linesLayout, embedded) {
   return `${linesLayout === 'inlineEditable' ? '' : 'pt-3 '}flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`;
 }
 
-export function buildInlineRowUpdateHandler(linesLayout, isDocumentReadOnly, api, detailEntity, apiBaseUrl, hook, handleLineFieldChange, prepareLineForPost, token, extractErrorMessage, ui) {
+export function buildInlineRowUpdateHandler({ linesLayout, isDocumentReadOnly, api, detailEntity, apiBaseUrl, hook, handleLineFieldChange, prepareLineForPost, token, extractErrorMessage, ui }) {
   return linesLayout === 'inlineEditable' && !isDocumentReadOnly ? async (row, fieldKey, value, opts) => {
     // Inline autosave with callout chain. NEO Headless expects API keys
     // (camelCase), an unwrapped body, and numeric strings coerced for
@@ -968,7 +969,7 @@ export function buildInlineRowUpdateHandler(linesLayout, isDocumentReadOnly, api
   } : undefined;
 }
 
-export function buildDeleteRowHandler(api, detailEntity, isDocumentReadOnly, confirmDelete, apiBaseUrl, token, hook, selectedLine, setSelectedLine, ui, extractErrorMessage) {
+export function buildDeleteRowHandler({ api, detailEntity, isDocumentReadOnly, confirmDelete, apiBaseUrl, token, hook, selectedLine, setSelectedLine, ui, extractErrorMessage }) {
   return (api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly ? async (row) => {
     if (!(await confirmDelete())) return;
     try {
@@ -1055,6 +1056,179 @@ export function renderExtraActionButtons(extraActions, data, hook, saveBtnCls) {
 
 export function getDetailContentContainerClassName(linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab) {
   return `flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`;
+}
+
+export function getLinesTabsSectionClassName(linesLayout) {
+  return linesLayout === 'inlineEditable' ? 'mt-1 flex flex-col relative' : 'mt-6';
+}
+
+export function getSecondaryTabEntityKey(secondaryTabs, index) {
+  return (secondaryTabs[index]?.isFormTab || secondaryTabs[index]?.Panel) ? null : (secondaryTabs[index]?.key ?? null);
+}
+
+export function renderNotesField(notesFocused, data, notesField, handleChangeWithCallout, handleNotesSave, setNotesFocused, ui) {
+  return notesFocused ? (
+      <textarea
+          value={data[notesField] || ''}
+          onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
+          onBlur={() => {
+            handleNotesSave(data[notesField]);
+            setNotesFocused(false);
+          }}
+          placeholder={ui('description')}
+          rows={3}
+          autoFocus
+          className="w-full text-xs bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
+      />
+  ) : (
+      <div
+          tabIndex={0}
+          role="textbox"
+          onClick={() => setNotesFocused(true)}
+          onFocus={() => setNotesFocused(true)}
+          className="w-full text-xs px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
+      >
+        {data[notesField] || <span className="text-muted-foreground/40">{ui('description')}</span>}
+      </div>
+  );
+}
+
+export function computeIsDirty(hook, addingLine, addingSecondaryLine, lineEdits, additionalDirtyState) {
+  return hook.isDirtyHeader
+      || addingLine
+      || Object.values(addingSecondaryLine).some(Boolean)
+      || (lineEdits != null && Object.keys(lineEdits).length > 0)
+      || (additionalDirtyState === true);
+}
+
+export function hasRecordForRoute(isNew, hook, recordId) {
+  return isNew
+      || (hook.selected?.id && String(hook.selected.id) === String(recordId));
+}
+
+export function isLoadingRecordForRoute(hook, isNew, recordId) {
+  return hook.loading && !hasRecordForRoute(isNew, hook, recordId);
+}
+
+export function resolveHideMoreMenu(hideMoreMenu, data) {
+  return typeof hideMoreMenu === 'function' ? hideMoreMenu({ data }) : hideMoreMenu;
+}
+
+export function pushOthers(showOthers, tabs, othersLabel, ui) {
+  if (showOthers === true) {
+    tabs.push({key: 'others', label: othersLabel || ui('others')});
+  }
+}
+
+export function renderEmbeddedStatusPill(statusField, data, statusEnumLabels) {
+  return statusField && data[statusField] ? (
+      <div className="flex items-center gap-3 px-6 py-3 border-b border-border/30">
+        <DocumentStatusPill
+            status={data[statusField]}
+            enumLabels={statusEnumLabels}
+        />
+      </div>
+  ) : null;
+}
+
+export function shouldShowLinesEmptyState(hook, addingLine, LinesEmptyState, isDocumentReadOnly) {
+  return hook.children.length === 0 && !addingLine && LinesEmptyState && hook.editing && !isDocumentReadOnly;
+}
+
+export function getTabsBarStyle(tabsBarRight, tabsBarRightDivider) {
+  return tabsBarRight && tabsBarRightDivider ? {paddingRight: `calc(${tabsBarRightDivider} + 24px)`} : undefined;
+}
+
+export function getTabsBarClassName(tabsBarPaddingX, tabsBarRightDivider) {
+  return `flex items-center gap-1 ${tabsBarPaddingX} py-2 shrink-0${tabsBarRightDivider ? ' relative' : ''}`;
+}
+
+export function isDeleteButtonVisible(isNew, recordId, data, statusField, hideDeleteWhenComplete, isProcessed) {
+  return !isNew && recordId && isDeleteVisibleForRecord({
+    record: data,
+    statusField,
+    hideDeleteWhenComplete
+  }) && !(hideDeleteWhenComplete && isProcessed);
+}
+
+export function renderPrimaryTabButtons(primaryTabsVariant, primaryTabs, setActivePrimaryTab, activePrimaryTab, tMenu) {
+  return primaryTabsVariant === 'pill' ? (
+      <div className="inline-flex items-center gap-1 p-1 h-10 rounded-xl" style={{background: '#F5F7F9'}}>
+        {primaryTabs.map(tab => (
+            <button
+                key={tab.key}
+                onClick={() => setActivePrimaryTab(tab.key)}
+                className="h-8 px-4 text-sm font-medium rounded-lg transition-all"
+                style={
+                  activePrimaryTab === tab.key
+                      ? {
+                        background: '#FFFFFF',
+                        color: '#121217',
+                        boxShadow: '0px 1px 3px rgba(18,18,23,0.10), 0px 1px 2px rgba(18,18,23,0.06)'
+                      }
+                      : {color: '#121217'}
+                }
+            >
+              {tMenu(tab.label)}
+            </button>
+        ))}
+      </div>
+  ) : (
+      primaryTabs.map(tab => (
+          <button
+              key={tab.key}
+              onClick={() => setActivePrimaryTab(tab.key)}
+              className={[
+                'relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
+                activePrimaryTab === tab.key
+                    ? 'bg-white border-gray-200 shadow-sm text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground',
+              ].join(' ')}
+          >
+            {tMenu(tab.label)}
+          </button>
+      ))
+  );
+}
+
+export function resolveHeaderContent(headerContent, data) {
+  return typeof headerContent === 'function' ? headerContent(data) : headerContent;
+}
+
+export function isBulkDeleteBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows) {
+  return linesLayout !== 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly && selectedChildRows.length > 0;
+}
+
+export function isCustomPrimaryTabActive(primaryTabs, activePrimaryTab) {
+  return primaryTabs && activePrimaryTab !== 'general';
+}
+
+export function getDetailContentClassName(sidePanel, linesLayout) {
+  return `${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`;
+}
+
+export function canDeleteSelectedLine(api, detailEntity, selectedLine, isDocumentReadOnly) {
+  return (api?.crud?.[detailEntity]?.delete ?? true) && selectedLine?.id && !isDocumentReadOnly;
+}
+
+export function shouldShowLineActionButtons(hook, lineEdits, selectedLine) {
+  return hook.editing && (lineEdits || selectedLine?.id);
+}
+
+export function shouldShowDetailFormSidebar(linesLayout, DetailForm, selectedLine, isClosingLine) {
+  return linesLayout !== 'inlineEditable' && DetailForm && (selectedLine || isClosingLine);
+}
+
+export function isInitialChildrenLoading(hook) {
+  return hook.childrenLoading && hook.children.length === 0;
+}
+
+export function canShowAddLineArea(hook, isDocumentReadOnly, allEntryFields, DetailExtraActions, canAddLines) {
+  return hook.editing && !isDocumentReadOnly && (allEntryFields.length > 0 || DetailExtraActions) && canAddLines;
+}
+
+export function shouldShowInlineDeleteSelectionBar(linesLayout, api, detailEntity) {
+  return linesLayout === 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true);
 }
 
 /**
@@ -1198,13 +1372,12 @@ export function DetailView({
   // Secondary hooks only consume child-level state (children, handleAddChild, handleDeleteChild,
   // handleSelect) — never the parent list. skipListFetch avoids refetching the parent entity
   // list once per hook (which would otherwise cause N+1 identical GETs on mount).
-  const secondaryHook0 = useEntity(entity, (secondaryTabs[0]?.isFormTab || secondaryTabs[0]?.Panel) ? null : (secondaryTabs[0]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
-  const secondaryHook1 = useEntity(entity, (secondaryTabs[1]?.isFormTab || secondaryTabs[1]?.Panel) ? null : (secondaryTabs[1]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
-  const secondaryHook2 = useEntity(entity, (secondaryTabs[2]?.isFormTab || secondaryTabs[2]?.Panel) ? null : (secondaryTabs[2]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
-  const secondaryHook3 = useEntity(entity, (secondaryTabs[3]?.isFormTab || secondaryTabs[3]?.Panel) ? null : (secondaryTabs[3]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
+  const secondaryHook0 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 0), { token, apiBaseUrl, skipListFetch: true });
+  const secondaryHook1 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 1), { token, apiBaseUrl, skipListFetch: true });
+  const secondaryHook2 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 2), { token, apiBaseUrl, skipListFetch: true });
+  const secondaryHook3 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 3), { token, apiBaseUrl, skipListFetch: true });
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
-
   // "From" currency for secondary-tab inline add-rows. The parent document's
   // currency is a read-only column on those tabs (e.g. exchange rates), so the
   // inline add-row has no input to populate it and it renders "—" until the POST
@@ -1595,11 +1768,7 @@ export function DetailView({
   // 4. A line sidebar edit has unsaved field changes
   // additionalDirtyState lets custom windows inject extra dirty sources via prop.
   const isDirty =
-    hook.isDirtyHeader
-    || addingLine
-    || Object.values(addingSecondaryLine).some(Boolean)
-    || (lineEdits != null && Object.keys(lineEdits).length > 0)
-    || (additionalDirtyState === true);
+    computeIsDirty(hook, addingLine, addingSecondaryLine, lineEdits, additionalDirtyState);
   const [savingLine, setSavingLine] = useState(false);
   const [isClosingLine, setIsClosingLine] = useState(false);
   const [editingChild, setEditingChild] = useState(null);
@@ -2127,7 +2296,8 @@ export function DetailView({
   // Build tabs: child entity lines + secondary tabs + custom 'tab' placement + "Others"
   const tabs = [];
   secondaryTabs.forEach((st, i) => {
-    const childCount = st.Panel ? (panelCounts[st.key] ?? null) : (!st.isFormTab ? (secondaryHooks[i]?.children?.length ?? null) : null);
+    const secondaryChildCount = !st.isFormTab ? (secondaryHooks[i]?.children?.length ?? null) : null;
+    const childCount = st.Panel ? (panelCounts[st.key] ?? null) : secondaryChildCount;
     tabs.push({ key: st.key, label: st.label, count: childCount });
   });
   if (DetailTable) {
@@ -2159,9 +2329,7 @@ export function DetailView({
     }
   });
 
-  if (showOthers === true) {
-    tabs.push({ key: 'others', label: othersLabel || ui('others') });
-  }
+  pushOthers(showOthers, tabs, othersLabel, ui);
 
   const isCustomTabActive = tabCustomTabs.some(ct => tabs[activeTab]?.key === customTabKey(ct));
 
@@ -2219,9 +2387,8 @@ export function DetailView({
   // Only black out the whole window when we actually don't have the record yet.
   // A list refresh (hook.loading for the side list) or any unrelated background
   // fetch must not wipe out a form the user was interacting with.
-  const hasRecordForRoute = isNew
-    || (hook.selected?.id && String(hook.selected.id) === String(recordId));
-  if (hook.loading && !hasRecordForRoute) {
+
+  if (isLoadingRecordForRoute(hook, isNew, recordId)) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground">
         {ui('loading')}
@@ -2234,16 +2401,7 @@ export function DetailView({
       {/* Content card with rounded top-left corner */}
       <div className={`flex-1 flex flex-col ${contentBg} rounded-tl-2xl overflow-hidden min-h-0`}>
         {/* Action bar: Cancel + status | actions + save */}
-        {embedded ? (
-          statusField && data[statusField] ? (
-            <div className="flex items-center gap-3 px-6 py-3 border-b border-border/30">
-              <DocumentStatusPill
-                status={data[statusField]}
-                enumLabels={statusEnumLabels}
-              />
-            </div>
-          ) : null
-        ) : (
+        {embedded ? renderEmbeddedStatusPill(statusField, data, statusEnumLabels) : (
         <div className={getLinesToolbarClassName(linesLayout, toolbarPaddingX, toolbarBorderBottom)}>
           <div className="flex items-center gap-3">
             <Button
@@ -2310,7 +2468,7 @@ export function DetailView({
                 </button>
               )}
               {/* Delete record — hidden when hideDeleteWhenComplete and status matches or record is processed */}
-              {!isNew && recordId && isDeleteVisibleForRecord({ record: data, statusField, hideDeleteWhenComplete }) && !(hideDeleteWhenComplete && isProcessed) && (
+              {isDeleteButtonVisible(isNew, recordId, data, statusField, hideDeleteWhenComplete, isProcessed) && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className={`${sqBtnSize} flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors`}
@@ -2321,7 +2479,7 @@ export function DetailView({
                 </button>
               )}
               {/* More actions */}
-              {!(typeof hideMoreMenu === 'function' ? hideMoreMenu({ data }) : hideMoreMenu) && <div className="relative" ref={moreMenuRef}>
+              {!resolveHideMoreMenu(hideMoreMenu, data) && <div className="relative" ref={moreMenuRef}>
                 <button
                   data-testid="action-more"
                   onClick={() => setShowMoreMenu(v => !v)}
@@ -2540,45 +2698,13 @@ export function DetailView({
             {/* Primary tab bar (General / Additional Info / etc.) */}
             {primaryTabs && (
               <div
-                className={`flex items-center gap-1 ${tabsBarPaddingX} py-2 shrink-0${tabsBarRightDivider ? ' relative' : ''}`}
-                style={tabsBarRight && tabsBarRightDivider ? { paddingRight: `calc(${tabsBarRightDivider} + 24px)` } : undefined}
+                className={getTabsBarClassName(tabsBarPaddingX, tabsBarRightDivider)}
+                style={getTabsBarStyle(tabsBarRight, tabsBarRightDivider)}
               >
                 {tabsBarRightDivider && (
                   <div className="absolute top-0 bottom-0 w-px bg-[#E8EAEF] pointer-events-none" style={{ left: `calc(100% - ${tabsBarRightDivider})` }} />
                 )}
-                {primaryTabsVariant === 'pill' ? (
-                  <div className="inline-flex items-center gap-1 p-1 h-10 rounded-xl" style={{ background: '#F5F7F9' }}>
-                    {primaryTabs.map(tab => (
-                      <button
-                        key={tab.key}
-                        onClick={() => setActivePrimaryTab(tab.key)}
-                        className="h-8 px-4 text-sm font-medium rounded-lg transition-all"
-                        style={
-                          activePrimaryTab === tab.key
-                            ? { background: '#FFFFFF', color: '#121217', boxShadow: '0px 1px 3px rgba(18,18,23,0.10), 0px 1px 2px rgba(18,18,23,0.06)' }
-                            : { color: '#121217' }
-                        }
-                      >
-                        {tMenu(tab.label)}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  primaryTabs.map(tab => (
-                    <button
-                      key={tab.key}
-                      onClick={() => setActivePrimaryTab(tab.key)}
-                      className={[
-                        'relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
-                        activePrimaryTab === tab.key
-                          ? 'bg-white border-gray-200 shadow-sm text-foreground'
-                          : 'border-transparent text-muted-foreground hover:text-foreground',
-                      ].join(' ')}
-                    >
-                      {tMenu(tab.label)}
-                    </button>
-                  ))
-                )}
+                {renderPrimaryTabButtons(primaryTabsVariant, primaryTabs, setActivePrimaryTab, activePrimaryTab, tMenu)}
                 {tabsBarRight && (() => {
                   const TabsBarRightComponent = tabsBarRight;
                   return (
@@ -2590,7 +2716,7 @@ export function DetailView({
               </div>
             )}
             {/* Non-general primary tab: show Panel fullscreen */}
-            {primaryTabs && activePrimaryTab !== 'general' ? (() => {
+            {isCustomPrimaryTabActive(primaryTabs, activePrimaryTab) ? (() => {
               const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
               return activeTab?.Panel ? (
                 <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel', compactSidebarPadding)}`}>
@@ -2599,7 +2725,7 @@ export function DetailView({
               ) : null;
             })() : null}
             <div className={getDetailContentContainerClassName(linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab)}>
-              {typeof headerContent === 'function' ? headerContent(data) : headerContent}
+              {resolveHeaderContent(headerContent, data)}
               {(() => {
                 const slotProps = {
                   data,
@@ -2644,7 +2770,7 @@ export function DetailView({
                 );
               })()}
               <div className={sidePanelWrapperCls(!!sidePanel, linesLayout)}>
-                <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`}>
+                <div className={getDetailContentClassName(sidePanel, linesLayout)}>
 
                   {/* Form section — conditionally wrapped with sidebar when sidebarAboveTabsOnly */}
                   {(() => {
@@ -2720,7 +2846,7 @@ export function DetailView({
 
                   {/* Tabs: child entities + Others */}
                   {tabs.length > 0 && (
-                    <div className={linesLayout === 'inlineEditable' ? 'mt-1 flex flex-col relative' : 'mt-6'}>
+                    <div className={getLinesTabsSectionClassName(linesLayout)}>
                       <div className={`flex items-center justify-between border-b border-border/50 ${(getInlineEditableShrinkClassName(linesLayout))}`}>
                         <div className="flex items-center gap-0">
                           {tabs.map((tab, idx) => {
@@ -2762,11 +2888,11 @@ export function DetailView({
                           // mounted to preserve transient state like InlineLinesPanel's
                           // editingRowId — otherwise editing mode is silently dropped on every
                           // autosave round-trip.
-                          hook.childrenLoading && hook.children.length === 0 ? (
+                          isInitialChildrenLoading(hook) ? (
                             <div className="flex items-center justify-center py-10 text-muted-foreground">
                               <div className="h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                             </div>
-                          ) : hook.children.length === 0 && !addingLine && LinesEmptyState && hook.editing && !isDocumentReadOnly ? (
+                          ) : shouldShowLinesEmptyState(hook, addingLine, LinesEmptyState, isDocumentReadOnly) ? (
                             <LinesEmptyState
                               data={data}
                               onAddLine={handleAddLineClick}
@@ -2787,7 +2913,7 @@ export function DetailView({
                               {/* Table + add button */}
                               <div className="flex-1 min-w-0">
                                 {/* Bulk delete bar (classic only) */}
-                                {linesLayout !== 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly && selectedChildRows.length > 0 && (
+                                {isBulkDeleteBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows) && (
                                   <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-lg bg-muted/60 border border-border/40">
                                     <span className="text-sm font-medium text-foreground">
                                       {ui('selected', { count: selectedChildRows.length })}
@@ -2849,8 +2975,8 @@ export function DetailView({
                                   showFooterTotals={showDetailFooterTotals ?? !summary.some(f => f.type === 'amount')}
                                   selectorContext={selectorContextByEntity[detailEntity]}
                                   hiddenColumns={[]}
-                                  onUpdateRow={buildInlineRowUpdateHandler(linesLayout, isDocumentReadOnly, api, detailEntity, apiBaseUrl, hook, handleLineFieldChange, prepareLineForPost, token, extractErrorMessage, ui)}
-                                  onDeleteRow={buildDeleteRowHandler(api, detailEntity, isDocumentReadOnly, confirmDelete, apiBaseUrl, token, hook, selectedLine, setSelectedLine, ui, extractErrorMessage)}
+                                  onUpdateRow={buildInlineRowUpdateHandler({ linesLayout, isDocumentReadOnly, api, detailEntity, apiBaseUrl, hook, handleLineFieldChange, prepareLineForPost, token, extractErrorMessage, ui })}
+                                  onDeleteRow={buildDeleteRowHandler({ api, detailEntity, isDocumentReadOnly, confirmDelete, apiBaseUrl, token, hook, selectedLine, setSelectedLine, ui, extractErrorMessage })}
                                   addRow={{
                                     ref: primaryAddRowRef,
                                     active: addingLine,
@@ -2952,7 +3078,7 @@ export function DetailView({
                                   </div>
                                 )}
 
-                                {hook.editing && !isDocumentReadOnly && (allEntryFields.length > 0 || DetailExtraActions) && canAddLines && (
+                                {canShowAddLineArea(hook, isDocumentReadOnly, allEntryFields, DetailExtraActions, canAddLines) && (
                                   <div
                                     ref={addLineWrapperRef}
                                     className={getAddLineWrapperClassName(linesLayout)}
@@ -2992,7 +3118,7 @@ export function DetailView({
                               overflow-auto clipping boundary even when scroll is
                               engaged (many rows). Positioned via fixed coords from
                               `barRect`, measured off `addLineWrapperRef`. */}
-                                    {linesLayout === 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true) && (
+                                    {shouldShowInlineDeleteSelectionBar(linesLayout, api, detailEntity) && (
                                       <LinesSelectionBar
                                         visible={selectionBarVisible}
                                         closing={selectionBarClosing}
@@ -3048,7 +3174,7 @@ export function DetailView({
 
                               {/* Right sidebar: line detail form. Suppressed in inlineEditable mode —
                         edit happens inside the row via InlineLinesPanel. */}
-                              {linesLayout !== 'inlineEditable' && DetailForm && (selectedLine || isClosingLine) && (
+                              {shouldShowDetailFormSidebar(linesLayout, DetailForm, selectedLine, isClosingLine) && (
                                 <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${(getSidebarSlideClassName(isClosingLine))}`}>
                                   <div className="flex items-center justify-between mb-3">
                                     <span className="text-sm font-medium text-foreground">{ui('entityDetail', { label: tMenu(detailLabel || 'Line') })}</span>
@@ -3098,7 +3224,7 @@ export function DetailView({
                                     selectorContext={selectorContextByEntity[detailEntity]}
                                     labelOverrides={labelOverrides}
                                   />
-                                  {hook.editing && (lineEdits || selectedLine?.id) && (
+                                  {shouldShowLineActionButtons(hook, lineEdits, selectedLine) && (
                                     <div className="flex gap-2 mt-4">
                                       {lineEdits && !isDocumentReadOnly && (
                                         <>
@@ -3166,7 +3292,7 @@ export function DetailView({
                                           </button>
                                         </>
                                       )}
-                                      {(api?.crud?.[detailEntity]?.delete ?? true) && selectedLine?.id && !isDocumentReadOnly && (
+                                      {canDeleteSelectedLine(api, detailEntity, selectedLine, isDocumentReadOnly) && (
                                         <button
                                           disabled={savingLine}
                                           onClick={async () => {
@@ -3470,27 +3596,7 @@ export function DetailView({
                               <div className={getNotesRowClassName(embedded)}>
                                 <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-24">{ui('notes')}</span>
                                 <div data-testid="notes-textarea" className={`flex-1 flex flex-col border border-border/40 rounded bg-white transition-all py-1.5`} style={{ borderWidth: '0.5px' }}>
-                                  {notesFocused ? (
-                                    <textarea
-                                      value={data[notesField] || ''}
-                                      onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
-                                      onBlur={() => { handleNotesSave(data[notesField]); setNotesFocused(false); }}
-                                      placeholder={ui('description')}
-                                      rows={3}
-                                      autoFocus
-                                      className="w-full text-xs bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
-                                    />
-                                  ) : (
-                                    <div
-                                      tabIndex={0}
-                                      role="textbox"
-                                      onClick={() => setNotesFocused(true)}
-                                      onFocus={() => setNotesFocused(true)}
-                                      className="w-full text-xs px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
-                                    >
-                                      {data[notesField] || <span className="text-muted-foreground/40">{ui('description')}</span>}
-                                    </div>
-                                  )}
+                                  {renderNotesField(notesFocused, data, notesField, handleChangeWithCallout, handleNotesSave, setNotesFocused, ui)}
                                 </div>
                               </div>
                             )}

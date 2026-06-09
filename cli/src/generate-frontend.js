@@ -1196,6 +1196,17 @@ function buildHiddenDefaultsArray(hiddenDefaultFields, allEntityFields) {
     }).join('\n');
 }
 
+export function buildHeaderLogicMaps(contract, headerEntity) {
+  const headerEntityForLogic = contract.frontendContract.entities[headerEntity] ?? {};
+  const headerColumnMap = {};
+  const headerBooleanFields = [];
+  for (const hf of (headerEntityForLogic.fields ?? [])) {
+    if (hf.column && hf.name) headerColumnMap[hf.column] = hf.name;
+    if (hf.tsType === 'boolean' || hf.type === 'boolean') headerBooleanFields.push(hf.name);
+  }
+  return {headerColumnMap, headerBooleanFields};
+}
+
 /**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
@@ -1382,13 +1393,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Column→property and boolean-field maps built from the header entity, used
   // to compile tab-level readOnlyLogic expressions the same way field-level
   // readOnlyLogic is compiled in generate-contract.js.
-  const headerEntityForLogic = contract.frontendContract.entities[headerEntity] ?? {};
-  const headerColumnMap = {};
-  const headerBooleanFields = [];
-  for (const hf of (headerEntityForLogic.fields ?? [])) {
-    if (hf.column && hf.name) headerColumnMap[hf.column] = hf.name;
-    if (hf.tsType === 'boolean' || hf.type === 'boolean') headerBooleanFields.push(hf.name);
-  }
+  const {headerColumnMap, headerBooleanFields} = buildHeaderLogicMaps(contract, headerEntity);
 
   if (secondaryTabsDecl) {
     // Declarative config from decisions.json — sorted by tabOrder

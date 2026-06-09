@@ -117,19 +117,19 @@ function makeArgs(overrides = {}) {
 }
 
 function build(args) {
-  return buildDeleteRowHandler(
-    args.api,
-    args.detailEntity,
-    args.isDocumentReadOnly,
-    args.confirmDelete,
-    args.apiBaseUrl,
-    args.token,
-    args.hook,
-    args.selectedLine,
-    args.setSelectedLine,
-    args.ui,
-    args.extractErrorMessage,
-  );
+  return buildDeleteRowHandler({
+    api: args.api,
+    detailEntity: args.detailEntity,
+    isDocumentReadOnly: args.isDocumentReadOnly,
+    confirmDelete: args.confirmDelete,
+    apiBaseUrl: args.apiBaseUrl,
+    token: args.token,
+    hook: args.hook,
+    selectedLine: args.selectedLine,
+    setSelectedLine: args.setSelectedLine,
+    ui: args.ui,
+    extractErrorMessage: args.extractErrorMessage,
+  });
 }
 
 function okResponse() {

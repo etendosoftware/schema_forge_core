@@ -117,19 +117,19 @@ function makeArgs(overrides = {}) {
 }
 
 function build(args) {
-  return buildInlineRowUpdateHandler(
-    args.linesLayout,
-    args.isDocumentReadOnly,
-    args.api,
-    args.detailEntity,
-    args.apiBaseUrl,
-    args.hook,
-    args.handleLineFieldChange,
-    args.prepareLineForPost,
-    args.token,
-    args.extractErrorMessage,
-    args.ui,
-  );
+  return buildInlineRowUpdateHandler({
+    linesLayout: args.linesLayout,
+    isDocumentReadOnly: args.isDocumentReadOnly,
+    api: args.api,
+    detailEntity: args.detailEntity,
+    apiBaseUrl: args.apiBaseUrl,
+    hook: args.hook,
+    handleLineFieldChange: args.handleLineFieldChange,
+    prepareLineForPost: args.prepareLineForPost,
+    token: args.token,
+    extractErrorMessage: args.extractErrorMessage,
+    ui: args.ui,
+  });
 }
 
 function okResponse() {
