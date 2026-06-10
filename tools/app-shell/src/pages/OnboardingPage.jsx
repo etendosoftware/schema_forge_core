@@ -483,9 +483,15 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       setView('reset-password');
       return;
     }
+    // One-shot preference set before an intentional logout (e.g. after a
+    // password change) so we land on Sign In instead of the Create panel.
+    const initialView = localStorage.getItem('sf_onboarding_initial_view');
+    if (initialView) {
+      localStorage.removeItem('sf_onboarding_initial_view');
+    }
     const token = getPlatformToken();
     if (!token) {
-      setView('register');
+      setView(initialView === 'login' ? 'login' : 'register');
       return;
     }
     fetchAccount(fetch, BASE_URL, token)

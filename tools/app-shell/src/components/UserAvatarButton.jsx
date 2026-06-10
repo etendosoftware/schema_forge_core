@@ -35,6 +35,13 @@ export function UserAvatarButton({ expanded = false }) {
   const canChangePassword =
     typeof window !== 'undefined' && !!window.localStorage?.getItem(PLATFORM_TOKEN_KEY);
 
+  // After a password change we log out; flag onboarding to land on Sign In
+  // (not the Create panel) so the user re-authenticates with the new password.
+  const handlePasswordChanged = () => {
+    localStorage.setItem('sf_onboarding_initial_view', 'login');
+    logout();
+  };
+
   const initial = username?.charAt(0).toUpperCase() || '?';
   const roleInitial = selectedRole?.name?.charAt(0).toUpperCase() || '';
 
@@ -149,7 +156,7 @@ export function UserAvatarButton({ expanded = false }) {
     <ChangePasswordDialog
       open={changePasswordOpen}
       onOpenChange={setChangePasswordOpen}
-      onSuccess={logout}
+      onSuccess={handlePasswordChanged}
     />
     </>
   );

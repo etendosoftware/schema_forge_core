@@ -158,6 +158,15 @@ describe('OnboardingPage', () => {
     expect(screen.getByText('onboardingRegisterSubtitle')).toBeInTheDocument();
   });
 
+  it('lands on the login view (consuming the one-shot flag) instead of register', () => {
+    localStorage.removeItem('sf_platform_token');
+    localStorage.setItem('sf_onboarding_initial_view', 'login');
+    render(<OnboardingPage />);
+    expect(screen.getByText('onboardingLoginTitle')).toBeInTheDocument();
+    // Flag is consumed so a later visit returns to the default register view.
+    expect(localStorage.getItem('sf_onboarding_initial_view')).toBeNull();
+  });
+
   it('renders register form fields', () => {
     localStorage.removeItem('sf_platform_token');
     render(<OnboardingPage />);
