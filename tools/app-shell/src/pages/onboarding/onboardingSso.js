@@ -66,6 +66,12 @@ export async function renderSsoProviderButton(provider, container, handlers, run
   const documentRef = runtime.documentRef || document;
   const windowRef = runtime.windowRef || window;
   const google = await loadGoogleIdentityScript(documentRef, windowRef);
+  // Only opt into FedCM when the browser actually supports it. Browsers that
+  // disable FedCM (e.g. Brave) do not expose `IdentityCredential`; forcing
+  // `use_fedcm_for_button: true` there makes GSI reject with
+  // "FedCM is not supported" instead of falling back to the popup flow.
+  const fedcmSupported = typeof windowRef !== 'undefined'
+    && typeof windowRef.IdentityCredential !== 'undefined';
   google.accounts.id.initialize({
     client_id: provider.clientId,
     callback: (response) => {
@@ -75,7 +81,7 @@ export async function renderSsoProviderButton(provider, container, handlers, run
         handlers?.onError?.(error);
       }
     },
-    use_fedcm_for_button: true,
+    use_fedcm_for_button: fedcmSupported,
   });
   container.replaceChildren();
   google.accounts.id.renderButton(container, {
