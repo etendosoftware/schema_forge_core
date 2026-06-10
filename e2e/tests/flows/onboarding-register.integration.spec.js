@@ -100,6 +100,17 @@ test.describe('Onboarding — Register new user (integration)', () => {
     await page.locator('#fiscalIdValue').fill('12345678Z');
     await slow(page);
 
+    // Start capturing console logs and network before clicking "Empezar"
+    const consoleLogs = [];
+    const networkLog = [];
+    page.on('console', msg => consoleLogs.push(`[${msg.type()}] ${msg.text()}`));
+    page.on('response', resp => {
+      const url = resp.url();
+      if (url.includes('/sws/')) {
+        networkLog.push(`${resp.status()} ${resp.request().method()} ${url}`);
+      }
+    });
+
     const startBtn = page.getByRole('button', { name: /empezar|start/i });
     await startBtn.scrollIntoViewIfNeeded();
     await expect(startBtn).toBeEnabled({ timeout: 10_000 });
@@ -111,9 +122,25 @@ test.describe('Onboarding — Register new user (integration)', () => {
     // ═══════════════════════════════════════════════════════════════════════
 
     // Wait for the success message that confirms provisioning finished at 100%
-    await expect(
+    const provisioningOk = await expect(
       page.getByText(/tu cuenta ya est[aá] en marcha|your account is ready/i)
-    ).toBeVisible({ timeout: 240_000 });
+    ).toBeVisible({ timeout: 240_000 }).then(() => true).catch(() => false);
+
+    if (!provisioningOk) {
+      // Dump diagnostics so we can see why provisioning got stuck in CI
+      console.log('=== PROVISIONING FAILED — DIAGNOSTICS ===');
+      console.log('Current URL:', page.url());
+      console.log('--- Console logs ---');
+      consoleLogs.forEach(l => console.log(l));
+      console.log('--- Network log (/sws/) ---');
+      networkLog.forEach(l => console.log(l));
+      console.log('--- Page text snapshot ---');
+      console.log(await page.locator('body').innerText().catch(() => '<could not read>'));
+      console.log('=== END DIAGNOSTICS ===');
+
+      // Fail with a clear message
+      expect(provisioningOk, 'Provisioning did not complete — see diagnostics above').toBe(true);
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 8: Redirect to dashboard
