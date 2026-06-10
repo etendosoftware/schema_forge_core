@@ -107,32 +107,19 @@ test.describe('Onboarding — Register new user (integration)', () => {
     await slow(page);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // STEP 7: Provisioning — must reach dashboard
+    // STEP 7: Provisioning completes — "Tu cuenta ya está en marcha"
     // ═══════════════════════════════════════════════════════════════════════
 
-    // After "Empezar", the provisioning popup appears. When it finishes, the
-    // frontend auto-logs in and checks readiness. If readiness fails (sequence
-    // not ready yet), it falls back to the company form instead of /dashboard.
-    // In that case we click "Empezar" again to retry until the environment is
-    // fully ready. This guarantees downstream tests have a working environment.
+    // Wait for the success message that confirms provisioning finished at 100%
+    await expect(
+      page.getByText(/tu cuenta ya est[aá] en marcha|your account is ready/i)
+    ).toBeVisible({ timeout: 240_000 });
 
-    for (let attempt = 1; attempt <= 5; attempt++) {
-      // Wait for provisioning to finish — either dashboard or back to form
-      const reachedDashboard = await page.waitForURL('**/dashboard', { timeout: 240_000 })
-        .then(() => true)
-        .catch(() => false);
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 8: Redirect to dashboard
+    // ═══════════════════════════════════════════════════════════════════════
 
-      if (reachedDashboard) break;
-
-      // Still on onboarding — readiness likely failed. Retry "Empezar".
-      const retryBtn = page.getByRole('button', { name: /empezar|start/i });
-      if (await retryBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-        await retryBtn.scrollIntoViewIfNeeded();
-        await expect(retryBtn).toBeEnabled({ timeout: 10_000 });
-        await retryBtn.click();
-      }
-    }
-
+    await page.waitForURL('**/dashboard', { timeout: 60_000 });
     await expect(page).toHaveURL(/dashboard/);
 
     // Save credentials so downstream integration tests (e.g. contacts) can reuse this user
