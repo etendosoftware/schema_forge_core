@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const localStorageMock = (() => {
   let store = {};
@@ -57,6 +57,8 @@ vi.mock('../onboarding/onboardingApi.js', () => ({
   confirmPasswordReset: vi.fn(),
   fetchAccount: vi.fn(),
   fetchEnvironments: vi.fn().mockResolvedValue([]),
+  fetchOnboardingDraft: vi.fn().mockResolvedValue(null),
+  saveOnboardingDraft: vi.fn().mockResolvedValue({}),
   loginAccount: vi.fn(),
   loginEnvironment: vi.fn(),
   loginWithSsoProvider: vi.fn(),
@@ -65,9 +67,11 @@ vi.mock('../onboarding/onboardingApi.js', () => ({
   runOnboardingStream: vi.fn(),
 }));
 
+// One provider is returned so the module-level SSO_PROVIDERS list (evaluated at
+// import time) is non-empty and the SSO credential callback can be exercised.
 vi.mock('../onboarding/onboardingSso.js', () => ({
-  getConfiguredSsoProviders: vi.fn(() => []),
-  renderSsoProviderButton: vi.fn(),
+  getConfiguredSsoProviders: vi.fn(() => [{ id: 'google', clientId: 'test-client-id' }]),
+  renderSsoProviderButton: vi.fn(() => Promise.resolve()),
 }));
 
 // Mock onboarding readiness
@@ -110,12 +114,16 @@ import {
   confirmPasswordReset,
   fetchAccount,
   fetchEnvironments,
+  fetchOnboardingDraft,
   loginAccount,
   loginEnvironment,
+  loginWithSsoProvider,
   registerAccount,
   requestPasswordReset,
   runOnboardingStream,
+  saveOnboardingDraft,
 } from '../onboarding/onboardingApi.js';
+import { renderSsoProviderButton } from '../onboarding/onboardingSso.js';
 import { checkSalesInvoiceReadiness } from '../onboarding/onboardingReadiness.js';
 import { track } from '../../lib/observability.js';
 
@@ -128,10 +136,15 @@ describe('OnboardingPage', () => {
     fetchAccount.mockReset();
     fetchEnvironments.mockReset();
     fetchEnvironments.mockResolvedValue([]);
+    fetchOnboardingDraft.mockReset();
+    fetchOnboardingDraft.mockResolvedValue(null);
+    saveOnboardingDraft.mockReset();
+    saveOnboardingDraft.mockResolvedValue({});
     requestPasswordReset.mockReset();
     confirmPasswordReset.mockReset();
     loginAccount.mockReset();
     loginEnvironment.mockReset();
+    loginWithSsoProvider.mockReset();
     registerAccount.mockReset();
     runOnboardingStream.mockReset();
     checkSalesInvoiceReadiness.mockReset();
@@ -171,6 +184,25 @@ describe('OnboardingPage', () => {
     expect(screen.getByText('onboardingLoginTitle')).toBeInTheDocument();
     // Flag is consumed so a later visit returns to the default register view.
     expect(localStorage.getItem('sf_onboarding_initial_view')).toBeNull();
+  });
+
+  it('shows the password-changed notice on the login view and consumes the one-shot flag', () => {
+    localStorage.removeItem('sf_platform_token');
+    localStorage.setItem('sf_onboarding_initial_view', 'login');
+    localStorage.setItem('sf_onboarding_notice', 'password-changed');
+    render(<OnboardingPage />);
+    expect(screen.getByText('onboardingLoginTitle')).toBeInTheDocument();
+    expect(screen.getByTestId('login-notice')).toHaveTextContent('onboardingPasswordChangedNotice');
+    // Flag is consumed so a later visit does not show the notice again.
+    expect(localStorage.getItem('sf_onboarding_notice')).toBeNull();
+  });
+
+  it('does not render the login notice when the notice flag is absent', () => {
+    localStorage.removeItem('sf_platform_token');
+    localStorage.setItem('sf_onboarding_initial_view', 'login');
+    render(<OnboardingPage />);
+    expect(screen.getByText('onboardingLoginTitle')).toBeInTheDocument();
+    expect(screen.queryByTestId('login-notice')).not.toBeInTheDocument();
   });
 
   it('renders register form fields', () => {
@@ -493,6 +525,68 @@ describe('OnboardingPage', () => {
     expect(serializedCalls).not.toContain('secret-login@example.com');
     expect(serializedCalls).not.toContain('top-secret-password');
     expect(serializedCalls).not.toContain('login-platform-token');
+  });
+
+  it('stores the password auth method after a successful password login', async () => {
+    loginAccount.mockResolvedValue({
+      token: 'login-platform-token',
+      account: { name: 'Ada Lovelace', email: 'ada@example.com' },
+    });
+
+    localStorage.removeItem('sf_platform_token');
+    render(<OnboardingPage />);
+
+    fireEvent.click(screen.getByTestId('action-switch-to-login'));
+    fireEvent.submit(screen.getByTestId('action-login-submit').closest('form'));
+
+    await waitFor(() => {
+      expect(localStorage.setItem).toHaveBeenCalledWith('sf_platform_auth_method', 'password');
+    });
+    expect(localStorage.getItem('sf_platform_auth_method')).toBe('password');
+  });
+
+  it('stores the password auth method after a successful registration', async () => {
+    registerAccount.mockResolvedValue({
+      token: 'platform-token',
+      account: { name: 'Ada Lovelace', email: 'ada@example.com' },
+    });
+
+    localStorage.removeItem('sf_platform_token');
+    render(<OnboardingPage />);
+
+    fireEvent.submit(screen.getByTestId('action-register-submit').closest('form'));
+
+    await waitFor(() => {
+      expect(localStorage.setItem).toHaveBeenCalledWith('sf_platform_auth_method', 'password');
+    });
+    expect(localStorage.getItem('sf_platform_auth_method')).toBe('password');
+  });
+
+  it('stores the sso auth method after a successful SSO credential login', async () => {
+    loginWithSsoProvider.mockResolvedValue({
+      token: 'sso-platform-token',
+      account: { name: 'Ada Lovelace', email: 'ada@example.com' },
+    });
+
+    localStorage.removeItem('sf_platform_token');
+    render(<OnboardingPage />);
+
+    await waitFor(() => {
+      expect(renderSsoProviderButton).toHaveBeenCalled();
+    });
+    const [, , callbacks] = renderSsoProviderButton.mock.calls[0];
+
+    await act(async () => {
+      callbacks.onCredential('google', { credential: 'sso-jwt' });
+    });
+
+    await waitFor(() => {
+      expect(loginWithSsoProvider).toHaveBeenCalledWith(
+        expect.any(Function), '', 'google', { credential: 'sso-jwt' },
+      );
+      expect(localStorage.setItem).toHaveBeenCalledWith('sf_platform_auth_method', 'sso');
+    });
+    expect(localStorage.getItem('sf_platform_auth_method')).toBe('sso');
   });
 
   it('tracks login exceptions', async () => {
@@ -873,5 +967,145 @@ describe('OnboardingPage', () => {
       });
     });
     expect(screen.getByText(/onboardingReadinessFailed/)).toBeInTheDocument();
+  });
+
+  describe('draft recovery', () => {
+    it('restores a saved draft on step 2 and shows the restored notice', async () => {
+      localStorage.setItem('sf_platform_token', 'platform-token');
+      fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+      fetchEnvironments.mockResolvedValue([]);
+      fetchOnboardingDraft.mockResolvedValue({
+        step: 2,
+        form: { clientName: 'Acme SL', fiscalIdValue: 'B123', fullName: 'Ana' },
+      });
+
+      render(<OnboardingPage />);
+
+      // Step 2 (company step) is rendered directly with the draft values merged in.
+      const companyInput = await screen.findByLabelText(/onboardingCompanyNameLabel/);
+      expect(companyInput).toHaveValue('Acme SL');
+      expect(screen.getByLabelText(/onboardingFiscalIdLabel/)).toHaveValue('B123');
+      expect(screen.getByTestId('draft-restored-notice')).toHaveTextContent(
+        'onboardingDraftRestoredNotice',
+      );
+      expect(fetchOnboardingDraft).toHaveBeenCalledWith(
+        expect.any(Function), '', 'platform-token',
+      );
+    });
+
+    it('starts a fresh wizard on step 1 without notice when no draft exists', async () => {
+      localStorage.setItem('sf_platform_token', 'platform-token');
+      fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+      fetchEnvironments.mockResolvedValue([]);
+      fetchOnboardingDraft.mockResolvedValue(null);
+
+      render(<OnboardingPage />);
+
+      // Step 1 (profile step) is the entry point.
+      expect(await screen.findByLabelText(/onboardingFullNameLabel/)).toBeInTheDocument();
+      expect(screen.getByText('onboardingContinueAction')).toBeInTheDocument();
+      expect(screen.queryByTestId('draft-restored-notice')).not.toBeInTheDocument();
+    });
+
+    it('falls back to a fresh wizard when the draft fetch fails', async () => {
+      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      localStorage.setItem('sf_platform_token', 'platform-token');
+      fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+      fetchEnvironments.mockResolvedValue([]);
+      fetchOnboardingDraft.mockRejectedValue(new Error('draft endpoint down'));
+
+      render(<OnboardingPage />);
+
+      expect(await screen.findByLabelText(/onboardingFullNameLabel/)).toBeInTheDocument();
+      expect(screen.queryByTestId('draft-restored-notice')).not.toBeInTheDocument();
+      expect(consoleWarn).toHaveBeenCalledWith(
+        'Failed to load onboarding draft', expect.any(Error),
+      );
+    });
+
+    it('autosaves the draft after the debounce once the wizard has user content', async () => {
+      const realSetTimeout = globalThis.setTimeout;
+      vi.spyOn(globalThis, 'setTimeout').mockImplementation((callback, delay, ...args) => {
+        if (delay === 1500) {
+          queueMicrotask(callback);
+          return 1;
+        }
+        return realSetTimeout(callback, delay, ...args);
+      });
+      localStorage.setItem('sf_platform_token', 'platform-token');
+      fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+      fetchEnvironments.mockResolvedValue([]);
+      fetchOnboardingDraft.mockResolvedValue(null);
+
+      render(<OnboardingPage />);
+
+      // Step 1 alone is pristine — moving to step 2 makes the draft saveable.
+      fireEvent.click(await screen.findByText('onboardingContinueAction'));
+
+      await waitFor(() => {
+        expect(saveOnboardingDraft).toHaveBeenCalledWith(
+          expect.any(Function), '', 'platform-token',
+          expect.objectContaining({ step: 2 }),
+        );
+      });
+
+      fireEvent.change(screen.getByLabelText(/onboardingCompanyNameLabel/), {
+        target: { value: 'Acme SL' },
+      });
+
+      await waitFor(() => {
+        expect(saveOnboardingDraft).toHaveBeenCalledWith(
+          expect.any(Function), '', 'platform-token',
+          expect.objectContaining({
+            step: 2,
+            form: expect.objectContaining({ clientName: 'Acme SL' }),
+          }),
+        );
+      });
+    });
+
+    it('does not autosave a pristine step-1 form', async () => {
+      const realSetTimeout = globalThis.setTimeout;
+      vi.spyOn(globalThis, 'setTimeout').mockImplementation((callback, delay, ...args) => {
+        if (delay === 1500) {
+          queueMicrotask(callback);
+          return 1;
+        }
+        return realSetTimeout(callback, delay, ...args);
+      });
+      localStorage.setItem('sf_platform_token', 'platform-token');
+      fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+      fetchEnvironments.mockResolvedValue([]);
+      fetchOnboardingDraft.mockResolvedValue(null);
+
+      render(<OnboardingPage />);
+
+      // fullName/country/businessType are not draft-relevant content on step 1.
+      fireEvent.change(await screen.findByLabelText(/onboardingFullNameLabel/), {
+        target: { value: 'Ana' },
+      });
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(saveOnboardingDraft).not.toHaveBeenCalled();
+    });
+
+    it('does not fetch the draft nor show the notice after registering a new account', async () => {
+      registerAccount.mockResolvedValue({
+        token: 'platform-token',
+        account: { name: 'Ada Lovelace', email: 'ada@example.com' },
+      });
+
+      localStorage.removeItem('sf_platform_token');
+      render(<OnboardingPage />);
+
+      fireEvent.submit(screen.getByTestId('action-register-submit').closest('form'));
+
+      // Lands on the create wizard (step 1) without any restore round-trip.
+      expect(await screen.findByText('onboardingContinueAction')).toBeInTheDocument();
+      expect(fetchOnboardingDraft).not.toHaveBeenCalled();
+      expect(screen.queryByTestId('draft-restored-notice')).not.toBeInTheDocument();
+    });
   });
 });

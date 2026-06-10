@@ -18352,6 +18352,8 @@
     "onboardingChangePasswordTitle": "Cambiar contraseña",
     "onboardingChangePasswordSubtitle": "Actualizá la contraseña de tu cuenta local.",
     "changePasswordLogoutNotice": "Después de cambiar tu contraseña se cerrará la sesión y deberás iniciar sesión nuevamente.",
+    "onboardingPasswordChangedNotice": "Tu contraseña se cambió correctamente. Iniciá sesión con tu nueva contraseña.",
+    "onboardingDraftRestoredNotice": "Recuperamos tu progreso guardado para que continúes donde lo dejaste.",
     "onboardingCurrentPasswordLabel": "Contraseña actual",
     "onboardingCredentialChangeSuccess": "Contraseña actualizada.",
     "onboardingCredentialChangeFailed": "No se pudo cambiar la contraseña.",

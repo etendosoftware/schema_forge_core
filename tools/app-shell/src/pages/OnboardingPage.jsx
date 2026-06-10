@@ -14,12 +14,14 @@ import {
   confirmPasswordReset,
   fetchAccount,
   fetchEnvironments,
+  fetchOnboardingDraft,
   loginAccount,
   loginEnvironment,
   loginWithSsoProvider,
   registerAccount,
   requestPasswordReset,
   runOnboardingStream,
+  saveOnboardingDraft,
 } from './onboarding/onboardingApi.js';
 import {
   getConfiguredSsoProviders,
@@ -462,6 +464,9 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   // Login form state
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [loginError, setLoginError] = useState(null);
+  // i18n key for a one-shot confirmation banner on the Sign In panel
+  // (e.g. shown right after a password change logged the user out).
+  const [loginNotice, setLoginNotice] = useState(null);
   const [loginLoading, setLoginLoading] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -498,8 +503,32 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   const [result, setResult] = useState(null);
   const [running, setRunning] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  // Server-side draft of the create wizard so the user can resume after re-login.
+  const [draftNotice, setDraftNotice] = useState(false);
+  const draftReadyRef = useRef(false); // restore attempt finished — autosave may run
+  const lastSavedDraftRef = useRef(null); // serialized last persisted draft (dedupe)
   const ui = useUI();
   const { locale, setLocale } = useLocaleSwitch();
+
+  // Restore a previously saved wizard draft (step + form values) before
+  // showing the create view. Failures fall back to a fresh wizard.
+  const restoreOnboardingDraft = useCallback(async (token) => {
+    setCreateStep(1);
+    try {
+      const draft = await fetchOnboardingDraft(fetch, BASE_URL, token);
+      if (draft?.form && typeof draft.form === 'object') {
+        const step = draft.step === 2 ? 2 : 1;
+        setForm(prev => ({ ...prev, ...draft.form }));
+        setCreateStep(step);
+        setDraftNotice(true);
+        lastSavedDraftRef.current = JSON.stringify({ step, form: draft.form });
+      }
+    } catch (err) {
+      console.warn('Failed to load onboarding draft', err);
+    } finally {
+      draftReadyRef.current = true;
+    }
+  }, []);
 
   // Fetch environments and route: 0 → create, 1+ → auto-enter first
   const routeByEnvironments = useCallback(async () => {
@@ -509,7 +538,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       const envs = await fetchEnvironments(fetch, BASE_URL, token);
       setEnvironments(envs);
       if (envs.length === 0) {
-        setCreateStep(1);
+        await restoreOnboardingDraft(token);
         setView('create');
       } else {
         loginToEnvironment(envs[0]);
@@ -521,7 +550,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       setLoadingEnvs(false);
     }
     setView('create');
-  }, []);
+  }, [restoreOnboardingDraft]);
 
   // Validate existing platform token on mount
   useEffect(() => {
@@ -535,6 +564,15 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     if (initialView) {
       localStorage.removeItem('sf_onboarding_initial_view');
     }
+    // One-shot notice set before the logout (e.g. password changed) to show
+    // a confirmation banner on the Sign In panel.
+    const notice = localStorage.getItem('sf_onboarding_notice');
+    if (notice) {
+      localStorage.removeItem('sf_onboarding_notice');
+      if (notice === 'password-changed') {
+        setLoginNotice('onboardingPasswordChangedNotice');
+      }
+    }
     const token = getPlatformToken();
     if (!token) {
       setView(initialView === 'login' ? 'login' : 'register');
@@ -547,6 +585,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       })
       .catch(() => {
         localStorage.removeItem('sf_platform_token');
+        localStorage.removeItem('sf_platform_auth_method');
         setView('register');
       });
   }, []);
@@ -561,9 +600,35 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     setForm(prev => (prev.fullName ? prev : { ...prev, fullName: accountName }));
   }, [accountName]);
 
-  // Save token + account name and route by environments
-  const handleAuthSuccess = useCallback((token, account, { route = true } = {}) => {
+  // Debounced autosave of the create wizard draft. Only runs after the restore
+  // attempt finished, never during/after the setup run, and skips pristine
+  // forms so fresh accounts don't get an empty draft stored.
+  useEffect(() => {
+    if (view !== 'create' || running || result || !draftReadyRef.current) return undefined;
+    const token = getPlatformToken();
+    if (!token) return undefined;
+    const draft = { step: createStep, form };
+    const serialized = JSON.stringify(draft);
+    if (serialized === lastSavedDraftRef.current) return undefined;
+    const hasUserContent = createStep > 1
+      || Boolean(form.clientName?.trim() || form.fiscalIdValue?.trim() || form.address?.trim());
+    if (!hasUserContent && lastSavedDraftRef.current === null) return undefined;
+    const timer = setTimeout(() => {
+      lastSavedDraftRef.current = serialized;
+      saveOnboardingDraft(fetch, BASE_URL, token, draft).catch(err => {
+        console.warn('Failed to save onboarding draft', err);
+        lastSavedDraftRef.current = null;
+      });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [view, createStep, form, running, result]);
+
+  // Save token + account name and route by environments.
+  // authMethod records how the platform session was obtained ('password' | 'sso')
+  // so the UI can hide password-only actions for SSO sessions.
+  const handleAuthSuccess = useCallback((token, account, { route = true, authMethod = 'password' } = {}) => {
     localStorage.setItem('sf_platform_token', token);
+    localStorage.setItem('sf_platform_auth_method', authMethod);
     setAccountName(account?.name || account?.email || null);
     setShowRegisterPassword(false);
     setShowLoginPassword(false);
@@ -576,6 +641,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
 
   const handleRegisterSuccess = (token, account) => {
     localStorage.setItem('sf_platform_token', token);
+    localStorage.setItem('sf_platform_auth_method', 'password');
     setAccountName(account?.name || account?.email || null);
     setShowRegisterPassword(false);
     setShowLoginPassword(false);
@@ -592,6 +658,10 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       ...DEFAULT_ONBOARDING_FORM,
       fullName: account?.name || account?.email || '',
     });
+    // Brand-new account: nothing to restore, but allow autosave from here on.
+    setDraftNotice(false);
+    lastSavedDraftRef.current = null;
+    draftReadyRef.current = true;
     setView('create');
   };
 
@@ -602,6 +672,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       status: 'success',
     });
     localStorage.removeItem('sf_platform_token');
+    localStorage.removeItem('sf_platform_auth_method');
     setAccountName(null);
     setRegisterForm({ name: '', email: '', password: '' });
     setLoginForm({ email: '', password: '' });
@@ -643,7 +714,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
           provider,
           status: 'success',
         });
-        handleAuthSuccess(data.token, data.account);
+        handleAuthSuccess(data.token, data.account, { authMethod: 'sso' });
       } else {
         trackOnboarding('onboarding_auth_failed', {
           action: 'sso',
@@ -750,6 +821,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       status: 'started',
     });
     setLoginError(null);
+    setLoginNotice(null);
     setLoginLoading(true);
     try {
       const data = await loginAccount(fetch, BASE_URL, loginForm);
@@ -803,6 +875,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     try {
       await confirmPasswordReset(fetch, BASE_URL, resetForm);
       localStorage.removeItem('sf_platform_token'); // NOSONAR: clears stale token after server invalidates reset sessions.
+      localStorage.removeItem('sf_platform_auth_method');
       setResetSuccess(true);
       window.history.replaceState({}, document.title, window.location.pathname); // NOSONAR: removes consumed reset token from the visible URL.
     } catch (err) {
@@ -1320,6 +1393,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         onSwitch={() => {
           setRegisterError(null);
           setLoginError(null);
+          setLoginNotice(null);
           setSsoError(null);
           setShowRegisterPassword(false);
           setShowLoginPassword(false);
@@ -1339,6 +1413,15 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             {ui('onboardingLoginSubtitle')}
           </p>
         </div>
+
+        {loginNotice && (
+          <div
+            data-testid="login-notice"
+            className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
+          >
+            {ui(loginNotice)}
+          </div>
+        )}
 
         <AuthSsoOptions
           providers={SSO_PROVIDERS}
@@ -1560,6 +1643,14 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       headerContent={setupHeaderContent}
       brandLabel={ui('onboardingBrandName')}
     >
+      {draftNotice && (
+        <div
+          data-testid="draft-restored-notice"
+          className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
+        >
+          {ui('onboardingDraftRestoredNotice')}
+        </div>
+      )}
       {createStep === 1 ? (
         <div>
           <div className="mb-10">

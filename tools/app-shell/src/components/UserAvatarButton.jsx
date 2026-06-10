@@ -13,6 +13,7 @@ import {
 import { ChangePasswordDialog } from './ChangePasswordDialog.jsx';
 
 const PLATFORM_TOKEN_KEY = 'sf_platform_token';
+const PLATFORM_AUTH_METHOD_KEY = 'sf_platform_auth_method';
 
 const LOCALES = [
   { code: 'en_US', flag: '🇺🇸', label: 'English' },
@@ -32,13 +33,18 @@ export function UserAvatarButton({ expanded = false }) {
 
   // Change Password targets the platform account, so it's only offered when a
   // platform token is present (it provides the credential the endpoint rotates).
+  // SSO sessions have no local password to change — the backend rejects them —
+  // so the option is hidden when the session was obtained via an SSO provider.
   const canChangePassword =
-    typeof window !== 'undefined' && !!window.localStorage?.getItem(PLATFORM_TOKEN_KEY);
+    typeof window !== 'undefined' &&
+    !!window.localStorage?.getItem(PLATFORM_TOKEN_KEY) &&
+    window.localStorage?.getItem(PLATFORM_AUTH_METHOD_KEY) !== 'sso';
 
   // After a password change we log out; flag onboarding to land on Sign In
   // (not the Create panel) so the user re-authenticates with the new password.
   const handlePasswordChanged = () => {
     localStorage.setItem('sf_onboarding_initial_view', 'login');
+    localStorage.setItem('sf_onboarding_notice', 'password-changed');
     logout();
   };
 
