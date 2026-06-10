@@ -16,7 +16,8 @@ import { useUI } from '@/i18n';
  *  - apiBaseUrl: base URL like "/sws/neo" or "/etendo/sws/neo"
  *  - readOnly: boolean
  *  - fieldKey: string (for data-testid)
- *  - stretch: boolean — fill the available height instead of a fixed 176px box
+ *  - stretch: boolean — fill the available height (via an absolutely positioned
+ *    preview, so the image never expands the grid row) instead of a fixed 176px box
  */
 export function ImageField({ imageId, onChange, token, apiBaseUrl, readOnly = false, fieldKey = 'image', stretch = false }) {
   const ui = useUI();
@@ -96,17 +97,36 @@ export function ImageField({ imageId, onChange, token, apiBaseUrl, readOnly = fa
   return (
     <>
       <div data-testid={`field-${fieldKey}`} className={`flex flex-col gap-1${stretch ? ' h-full' : ''}`}>
-        <div className={buildPreviewClass(stretch, readOnly, blobUrl)} onClick={handlePreviewClick}>
-          <ImagePreview
-            blobUrl={blobUrl}
-            imageId={imageId}
-            uploading={uploading}
-            readOnly={readOnly}
-            ui={ui}
-            onRemove={() => onChange?.('')}
-            onUpload={openFilePicker}
-          />
-        </div>
+        {stretch ? (
+          // In stretch mode the preview is absolutely positioned so the image
+          // never contributes to grid track sizing (which would expand the row).
+          // The wrapper fills the available height; min-h keeps the empty state usable.
+          <div className="relative flex-1 min-h-[176px]">
+            <div className={buildPreviewClass(stretch, readOnly, blobUrl)} onClick={handlePreviewClick}>
+              <ImagePreview
+                blobUrl={blobUrl}
+                imageId={imageId}
+                uploading={uploading}
+                readOnly={readOnly}
+                ui={ui}
+                onRemove={() => onChange?.('')}
+                onUpload={openFilePicker}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className={buildPreviewClass(stretch, readOnly, blobUrl)} onClick={handlePreviewClick}>
+            <ImagePreview
+              blobUrl={blobUrl}
+              imageId={imageId}
+              uploading={uploading}
+              readOnly={readOnly}
+              ui={ui}
+              onRemove={() => onChange?.('')}
+              onUpload={openFilePicker}
+            />
+          </div>
+        )}
 
         <input
           ref={inputRef}
@@ -138,7 +158,7 @@ function useEscapeKey(active, onEscape) {
 /** Build the className for the preview box, including stretch and cursor affordances. */
 function buildPreviewClass(stretch, readOnly, blobUrl) {
   return [
-    `relative w-full ${stretch ? 'flex-1 min-h-[176px]' : 'h-44'} rounded-2xl border border-gray-200/70 bg-gray-50/50 flex flex-col items-center justify-center overflow-hidden group`,
+    `${stretch ? 'absolute inset-0' : 'relative w-full h-44'} rounded-2xl border border-gray-200/70 bg-gray-50/50 flex flex-col items-center justify-center overflow-hidden group`,
     !readOnly && !blobUrl ? 'cursor-pointer hover:border-gray-400 transition-colors' : '',
     blobUrl ? 'cursor-zoom-in' : '',
   ].join(' ');
