@@ -227,6 +227,10 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
           headers={headers}
           recordId={recordId}
           data={data}
+          onConfirmed={({ invoice }) => {
+            setShowConfirmModal(false);
+            setInvoiceResult({ invoice: invoice || null });
+          }}
           onClose={() => setShowConfirmModal(false)}
         />
       )}
@@ -243,7 +247,7 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
 
       {invoiceResult && createPortal(
         <ConfirmResultModal
-          title={ui('soInvoiceCreated')}
+          title={ui(invoiceResult.invoice?.id ? 'soInvoiceCreated' : 'goodsShipment.confirmModal.confirmedTitle')}
           docs={invoiceResult.invoice?.id
             ? [{ type: 'facturaVenta', num: invoiceResult.invoice.documentNo, amount: invoiceResult.invoice.amount, route: `/sales-invoice/${invoiceResult.invoice.id}` }]
             : []
@@ -251,7 +255,7 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
           primary={ui('soViewInvoice')}
           currency={data?.['currency$_identifier'] || ''}
           navigate={navigate}
-          onClose={() => setInvoiceResult(null)}
+          onClose={() => { setInvoiceResult(null); window.location.reload(); }}
         />,
         document.body,
       )}
