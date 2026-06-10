@@ -334,6 +334,7 @@
         },
         "orderQuantity": {
           "visibility": "readOnly",
+          "gridReadOnly": true,
           "grid": true,
           "gridOrder": 3,
           "section": "principal",

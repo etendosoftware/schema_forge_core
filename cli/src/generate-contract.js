@@ -202,6 +202,7 @@ function applyFieldUIHints(f, mapped) {
   if (f.cellType) mapped.cellType = f.cellType;
   if (f.gridOrder != null) mapped.gridOrder = f.gridOrder;
   if (f.grow) mapped.grow = true;
+  if (f.gridReadOnly) mapped.gridReadOnly = true;
   if (f.noTrailing) mapped.noTrailing = true;
   if (f.filterOnly) mapped.filterOnly = true;
   if (f.filterable === false) mapped.filterable = false;
