@@ -6,6 +6,7 @@ import {
   confirmPasswordReset,
   registerAccount,
   loginAccount,
+  loginWithSsoProvider,
   requestPasswordReset,
   fetchAccount,
   fetchEnvironments,
@@ -54,6 +55,16 @@ function assertNoProviderPayload(body) {
   assert.equal(serialized.includes('reply-to'), false);
   assert.equal(serialized.includes('replyto'), false);
   assert.equal(serialized.includes('provider'), false);
+}
+
+function assertNoSsoAuthorityFields(body) {
+  const payload = JSON.parse(body);
+  assert.equal(Object.hasOwn(payload, 'email'), false);
+  assert.equal(Object.hasOwn(payload, 'name'), false);
+  assert.equal(Object.hasOwn(payload, 'subject'), false);
+  assert.equal(Object.hasOwn(payload, 'provider'), false);
+  assert.equal(Object.hasOwn(payload, 'client_id'), false);
+  assert.equal(Object.hasOwn(payload, 'g_csrf_token'), false);
 }
 
 describe('onboardingApi', () => {
@@ -108,6 +119,45 @@ describe('onboardingApi', () => {
     assert.equal(result.token, 'platform-token');
     assert.equal(calls[0].url, '/sws/go/login');
     assert.equal(calls[0].options.method, 'POST');
+  });
+
+  it('loginWithSsoProvider posts only the allowlisted provider payload', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, options });
+      return jsonResponse({ token: 'platform-token', authMethod: 'sso' });
+    };
+
+    const result = await loginWithSsoProvider(fetchImpl, '/etendo', 'google', {
+      credential: 'id-token',
+      g_csrf_token: 'csrf-token',
+      email: 'browser@example.com',
+      name: 'Browser User',
+      subject: 'browser-subject',
+      provider: 'google',
+      client_id: 'client-id.apps.googleusercontent.com',
+    });
+
+    assert.equal(result.token, 'platform-token');
+    assert.equal(calls[0].url, '/etendo/sws/go/sso/google');
+    assert.equal(calls[0].options.method, 'POST');
+    assert.equal(calls[0].options.headers['Content-Type'], 'application/json');
+    assert.equal(calls[0].options.body, JSON.stringify({
+      credential: 'id-token',
+    }));
+    assertNoProviderPayload(calls[0].options.body);
+    assertNoSsoAuthorityFields(calls[0].options.body);
+  });
+
+  it('loginWithSsoProvider rejects unknown providers without a raw user message', async () => {
+    await assert.rejects(
+      () => loginWithSsoProvider(async () => jsonResponse({}), '/etendo', 'unknown', {}),
+      (error) => {
+        assert.equal(error.code, 'onboardingSsoFailed');
+        assert.equal(error.userMessage, undefined);
+        return true;
+      },
+    );
   });
 
   it('requestPasswordReset posts only the account email to the neutral reset endpoint', async () => {

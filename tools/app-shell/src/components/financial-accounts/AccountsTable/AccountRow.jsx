@@ -29,6 +29,11 @@ export function AccountRow({ account, onOpen, onReconcile, onEdit, onArchive }) 
   // `psd2Connected === true` is treated as offline for bank/card rows.
   const isDisconnected = !isCashLike && account.psd2Connected !== true;
 
+  const isCard = account.type === ACCOUNT_TYPE.CARD;
+  // Second line under the type: IBAN for bank accounts, the PSD2 masked card
+  // number for cards, an em dash otherwise.
+  const cardNumber = isCard ? account.maskedPan : '';
+
   const copyIban = (e) => {
     e.stopPropagation();
     if (account.iban && navigator?.clipboard?.writeText) {
@@ -67,7 +72,7 @@ export function AccountRow({ account, onOpen, onReconcile, onEdit, onArchive }) 
       <TableCell className="w-[340px] px-2 py-2">
         <div className="flex flex-col justify-center">
           <span className="text-sm font-normal leading-5 text-[#121217]">{typeLabel}</span>
-          {account.iban ? (
+          {account.iban && (
             <span className="inline-flex items-center gap-1 text-xs leading-4 text-[#6C6C89]">
               {chunkIban(account.iban)}
               <button
@@ -80,7 +85,16 @@ export function AccountRow({ account, onOpen, onReconcile, onEdit, onArchive }) 
                 <Copy className="h-3.5 w-3.5" />
               </button>
             </span>
-          ) : (
+          )}
+          {!account.iban && cardNumber && (
+            <span
+              className="text-xs leading-4 text-[#6C6C89]"
+              data-testid={`account-row-card-number-${account.id}`}
+            >
+              {cardNumber}
+            </span>
+          )}
+          {!account.iban && !cardNumber && (
             <span className="text-xs leading-4 text-[#6C6C89]">—</span>
           )}
         </div>

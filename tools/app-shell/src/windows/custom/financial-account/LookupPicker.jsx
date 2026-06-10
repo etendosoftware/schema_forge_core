@@ -85,6 +85,7 @@ export function LookupPicker({ value, onSelect, onClear, placeholder, useLookup,
       />
       {showDropdown ? createPortal(
         <div
+          data-lookup-dropdown=""
           style={{
             position: 'fixed',
             left: pos.left,

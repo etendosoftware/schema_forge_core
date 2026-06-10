@@ -29,7 +29,6 @@ const STEP = {
   BANK: 'bank',
   INSTITUTION: 'institution',
   FORM: 'form',
-  CARD: 'card',
 };
 
 function resolveContentWidth(step) {
@@ -45,10 +44,23 @@ function resolveFormBackStep(accountType, selectedBank) {
   return STEP.BANK;
 }
 
+function resolveFormTitle(accountType, ui) {
+  if (accountType === 'C') return ui('financeAccountsNewFormCashTitle');
+  if (accountType === 'CA') return ui('financeAccountsNewFormCardTitle');
+  return ui('financeAccountsNewFormBankTitle');
+}
+
+function resolveFormMode(accountType) {
+  if (accountType === 'C') return 'cash';
+  if (accountType === 'CA') return 'card';
+  return 'bank';
+}
+
 /**
  * Multi-step modal to create a financial account "offline" (ETP-4096):
- *   type picker → (Bank) connection toggle → bank picker → institution → form
- *   Caja goes straight to a simple form; Tarjeta shows a "coming soon" placeholder.
+ *   type picker → (Bank/Card) connection toggle → bank picker → institution → form
+ *   Bank and Card share the full flow (Card form is Name + Currency only); Caja
+ *   goes straight to a simple form. "Con conexión" (PSD2) is shown but inert (T3).
  *
  * Props:
  *   - open: controls visibility
@@ -96,17 +108,17 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
 
   const goBack = () => {
     setFormError(null);
-    if (step === STEP.CONNECTION || step === STEP.CARD) setStep(STEP.TYPE);
+    if (step === STEP.CONNECTION) setStep(STEP.TYPE);
     else if (step === STEP.BANK) setStep(STEP.CONNECTION);
     else if (step === STEP.INSTITUTION) setStep(STEP.BANK);
     else if (step === STEP.FORM) setStep(resolveFormBackStep(accountType, selectedBank));
   };
 
+  // Bank and Card share the full flow (connection → bank → institution → form);
+  // Cash goes straight to a simple form.
   const pickType = (type) => {
     setAccountType(type);
-    if (type === 'B') setStep(STEP.CONNECTION);
-    else if (type === 'C') setStep(STEP.FORM);
-    else setStep(STEP.CARD);
+    setStep(type === 'C' ? STEP.FORM : STEP.CONNECTION);
   };
 
   const pickBank = (bank) => {
@@ -135,16 +147,15 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
 
   const titles = {
     [STEP.TYPE]: ui('financeAccountsNewTitle'),
-    [STEP.CONNECTION]: ui('financeAccountsNewConnectionTitle'),
+    [STEP.CONNECTION]: ui(accountType === 'CA'
+      ? 'financeAccountsNewConnectionTitleCard'
+      : 'financeAccountsNewConnectionTitle'),
     [STEP.BANK]: ui('financeAccountsNewBankTitle'),
     [STEP.INSTITUTION]: ui('financeAccountsNewBankTitle'),
-    [STEP.FORM]: accountType === 'C'
-      ? ui('financeAccountsNewFormCashTitle')
-      : ui('financeAccountsNewFormBankTitle'),
-    [STEP.CARD]: ui('financeAccountsNewCardSoonTitle'),
+    [STEP.FORM]: resolveFormTitle(accountType, ui),
   };
 
-  const showBadge = step === STEP.FORM && accountType === 'B';
+  const showBadge = step === STEP.FORM && (accountType === 'B' || accountType === 'CA');
   const contentWidth = resolveContentWidth(step);
 
   return (
@@ -193,14 +204,18 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
               icon={Link2}
               iconTone="green"
               title={ui('financeAccountsNewConnectionOnline')}
-              description={ui('financeAccountsNewConnectionOnlineDesc')}
+              description={ui(accountType === 'CA'
+                ? 'financeAccountsNewConnectionOnlineDescCard'
+                : 'financeAccountsNewConnectionOnlineDesc')}
               testid="account-connection-online"
             />
             <ConnectionCard
               icon={PencilLine}
               iconTone="neutral"
               title={ui('financeAccountsNewConnectionOffline')}
-              description={ui('financeAccountsNewConnectionOfflineDesc')}
+              description={ui(accountType === 'CA'
+                ? 'financeAccountsNewConnectionOfflineDescCard'
+                : 'financeAccountsNewConnectionOfflineDesc')}
               onClick={() => setStep(STEP.BANK)}
               testid="account-connection-offline"
             />
@@ -224,7 +239,7 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
         {step === STEP.FORM ? (
           <AccountFormStep
             key={accountType}
-            mode={accountType === 'C' ? 'cash' : 'bank'}
+            mode={resolveFormMode(accountType)}
             bankName={selectedBank?.name}
             currencies={currencies}
             defaultCurrencyId={defaultCurrencyId}
@@ -232,15 +247,6 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
             error={formError}
             onSubmit={handleCreate}
           />
-        ) : null}
-
-        {step === STEP.CARD ? (
-          <div className="flex flex-col items-center gap-2 py-8 text-center" data-testid="new-account-card-soon">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F5F7F9] text-[#828FA3]">
-              <CreditCard className="h-6 w-6" />
-            </span>
-            <p className="text-sm text-[#6C6C89]">{ui('financeAccountsNewCardSoonDesc')}</p>
-          </div>
         ) : null}
       </DialogContent>
     </Dialog>
@@ -250,7 +256,7 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
 const TYPE_CARDS = [
   { type: 'B', icon: Landmark, image: '/illustrations/account-type-bank.png', titleKey: 'financeAccountsNewTypeBank', descKey: 'financeAccountsNewTypeBankDesc' },
   { type: 'C', icon: Wallet, image: '/illustrations/account-type-cash.png', titleKey: 'financeAccountsNewTypeCash', descKey: 'financeAccountsNewTypeCashDesc' },
-  { type: 'T', icon: CreditCard, image: '/illustrations/account-type-card.png', titleKey: 'financeAccountsNewTypeCard', descKey: 'financeAccountsNewTypeCardDesc' },
+  { type: 'CA', icon: CreditCard, image: '/illustrations/account-type-card.png', titleKey: 'financeAccountsNewTypeCard', descKey: 'financeAccountsNewTypeCardDesc' },
 ];
 
 function TypePicker({ ui, onPick }) {

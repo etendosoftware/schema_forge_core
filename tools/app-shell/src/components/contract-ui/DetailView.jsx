@@ -100,7 +100,8 @@ function evalDisplayLogicRaw(expr, data) {
     if (!(key in (data || {}))) return true; // field absent → default visible
     const rawVal = data[key];
     // Normalize boolean API values to Etendo string equivalents (true→'Y', false→'N')
-    const actual = typeof rawVal === 'boolean' ? (rawVal ? 'Y' : 'N') : String(rawVal ?? '');
+    const boolAsYN = rawVal ? 'Y' : 'N';
+    const actual = typeof rawVal === 'boolean' ? boolAsYN : String(rawVal ?? '');
     return op === '=' ? actual === expected : actual !== expected;
   });
 }
@@ -155,11 +156,11 @@ function CollapsibleSection({ title, children }) {
  * Extracted from inline JSX to avoid the nested-ternary anti-pattern Sonar
  * S3358 was flagging inside the className templates.
  */
-function detailContentPadding(linesLayout, hasSidebar, variant, compact = false) {
+function detailContentPadding(linesLayout, hasSidebar, variant, compact = false, paddingXOverride = null) {
   const isInline = linesLayout === 'inlineEditable';
   if (hasSidebar) return (isInline || compact) ? 'p-2' : 'pl-6 pr-2';
-  if (variant === 'panel') return isInline ? 'pr-6' : 'px-6';
-  return isInline ? '' : 'px-6';
+  if (variant === 'panel') return isInline ? 'pr-6' : (paddingXOverride ?? 'px-6');
+  return isInline ? '' : (paddingXOverride ?? 'px-6');
 }
 
 /**
@@ -726,6 +727,519 @@ export function SecondaryTableTab(props) {
   </>;
 }
 
+export function getSaveButtonLabel(savingLine, ui) {
+  return savingLine ? ui('loading') : ui('save');
+}
+
+export function getSelectedLinesTotalLabel(bottomSection, selectedChildRows, lineConfig, data) {
+  return bottomSection?.showLineTotals !== false ? (() => {
+    const total = selectedChildRows.reduce((acc, row) => {
+      const v = parseFloat(String(row?.[lineConfig.grossField] ?? row?.lineGrossAmount ?? 0));
+      return acc + (Number.isFinite(v) ? v : 0);
+    }, 0);
+    const formatted = total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const curr = data?.['currency$_identifier'] || '';
+    return curr ? `${formatted} ${curr}` : formatted;
+  })() : null;
+}
+
+export function getChildSaveButtonLabel(savingChild, ui) {
+  return savingChild ? ui('loading') : ui('save');
+}
+
+export function getAddLineWrapperClassName(linesLayout) {
+  return linesLayout === 'inlineEditable' ? 'sticky bottom-0 bg-white z-10' : 'relative';
+}
+
+export function getAddLineWrapperStyle(linesLayout) {
+  return {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+    borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)',
+    padding: linesLayout === 'inlineEditable' ? 8 : '10px 16px'
+  };
+}
+
+export function resolveCanAddLines(addLineGuard, data, requiredHeaderFields, children = []) {
+  if (addLineGuard) {
+    return addLineGuard(data, children);
+  } else if (Array.isArray(requiredHeaderFields) && requiredHeaderFields.length > 0) {
+    return requiredHeaderFields.every((k) => {
+      const v = data?.[k];
+      return v != null && v !== '' && !(typeof v === 'string' && v.trim() === '');
+    });
+  } else {
+    return true;
+  }
+}
+
+export async function parseBackendErrorMessage(res) {
+  let raw;
+  try {
+    const data = await res.json();
+    // NEO Headless top-level format: { error: { message, status } }
+    if (data?.error?.message) raw = data.error.message;
+    else {
+      // Etendo JsonDataService format: { response: { error: { message } | string } }
+      const err = data?.response?.error;
+      if (err?.message) raw = err.message;
+      else if (typeof err === 'string') raw = err;
+      else if (data?.message) raw = data.message;
+    }
+  } catch {
+    // Ignore non-JSON error bodies.
+  }
+  return raw;
+}
+
+export function getDocumentIds(recordId) {
+  return recordId ? [recordId] : [];
+}
+
+export function resolveSidebarContent(sidebarContent, data) {
+  return typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent;
+}
+
+export function renderSidePanel(sidePanel, data, recordId, token, apiBaseUrl, api, isNew) {
+  return typeof sidePanel === 'function'
+      ? React.createElement(sidePanel, {recordId: data?.id || recordId, data, token, apiBaseUrl, api, isNew})
+      : sidePanel;
+}
+
+export function getNotesRowClassName(embedded) {
+  return `flex items-start gap-3 px-4 py-2.5${embedded ? ' pointer-events-none' : ''}`;
+}
+
+export function getDocsRowClassName(embedded) {
+  return `flex items-start gap-3 px-4 py-2.5 border-b border-border/30${embedded ? ' pointer-events-none' : ''}`;
+}
+
+export function getAddLineMenuActions(getLineMenuActions, data, extraActionsRef, ui) {
+  return getLineMenuActions
+      ? getLineMenuActions({data, importRef: extraActionsRef}).map(a => ({
+        ...a,
+        label: typeof a.label === 'string' ? (ui(a.label) || a.label) : a.label,
+      }))
+      : undefined;
+}
+
+export function getInlineEditableShrinkClassName(linesLayout) {
+  return linesLayout === 'inlineEditable' ? 'shrink-0' : '';
+}
+
+export function getOthersTabClassName(embedded) {
+  return `pt-5${embedded ? ' pointer-events-none' : ''}`;
+}
+
+export function getCustomLinesTabClassName(embedded) {
+  return `pt-3${embedded ? ' pointer-events-none' : ''}`;
+}
+
+function getSidebarSlideClassName(isClosingLine) {
+  return isClosingLine ? 'sidebar-slide-out' : 'sidebar-slide-in';
+}
+
+function getLinesToolbarClassName(linesLayout, toolbarPaddingX, toolbarBorderBottom) {
+  return `flex items-center justify-between ${linesLayout === 'inlineEditable' ? 'p-2' : toolbarPaddingX + ' py-3'}${toolbarBorderBottom || linesLayout === 'inlineEditable' ? ' border-b border-[#E8EAEF]' : ''}`;
+}
+
+function getLineMenuActionsRef(getLineMenuActions, extraActionsRef) {
+  return getLineMenuActions ? extraActionsRef : undefined;
+}
+
+export function getWindowTitle(breadcrumb, tMenu, windowName) {
+  return breadcrumb
+      ? tMenu(breadcrumb.split(' / ').at(-1).trim()) || breadcrumb.split(' / ').at(-1).trim()
+      : tMenu(windowName) || windowName || '';
+}
+
+export function getRecordTitle(isNew, ui, data, titleField) {
+  return isNew
+      ? ui('newRecord')
+      : `${resolveIdentifier(data, titleField) || data._identifier || data.id || ''}`;
+}
+
+export function getFullBreadcrumb(breadcrumb, tMenu, title, windowTitle) {
+  const titleSuffix = title ? ` / ${title}` : '';
+  return breadcrumb
+      ? `${breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}${titleSuffix}`
+      : windowTitle;
+}
+
+export function getOnAddToFavorites(favKey, toggleFavorite, entityLabel, breadcrumb, windowName) {
+  return favKey ? () => toggleFavorite(favKey, entityLabel || breadcrumb?.split(' / ').at(-1).trim() || windowName) : undefined;
+}
+
+export function getLinesContainerClassName(linesLayout, embedded) {
+  return `${linesLayout === 'inlineEditable' ? '' : 'pt-3 '}flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`;
+}
+
+export function buildInlineRowUpdateHandler({ linesLayout, isDocumentReadOnly, api, detailEntity, apiBaseUrl, hook, handleLineFieldChange, prepareLineForPost, token, extractErrorMessage, ui }) {
+  return linesLayout === 'inlineEditable' && !isDocumentReadOnly ? async (row, fieldKey, value, opts) => {
+    // Inline autosave with callout chain. NEO Headless expects API keys
+    // (camelCase), an unwrapped body, and numeric strings coerced for
+    // BigDecimal — mirrors the side-panel save at line ~1750. When a
+    // trigger field changes (e.g., product), `handleLineFieldChange`
+    // populates `derivedUpdates` with all callout-driven fields (price,
+    // tax, description, etc.) so they can be PATCHed in one shot.
+    const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
+        || `${apiBaseUrl}/${detailEntity}/${row.id}`;
+    const coerce = (v) => (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v) ? parseFloat(v) : v);
+    const payloadValue = coerce(value);
+
+    // Build the row snapshot the callout sees: existing row + the change.
+    // Strip null/empty inherited keys that the parent has set (e.g.
+    // businessPartner, priceList on OrderLine). buildCalloutFormState
+    // by contract does NOT overwrite a row value with the header's,
+    // so without this prune the callout would receive
+    // businessPartner=null and NEO returns listPrice=0. The addRow
+    // flow doesn't hit this because it starts from an empty values
+    // object, but existing rows include denormalized parent keys.
+    const headerSnapshot = hook.editing || hook.selected || {};
+    const cleanRow = {...row};
+    for (const k of Object.keys(headerSnapshot)) {
+      const v = cleanRow[k];
+      if (v === null || v === undefined || v === '') {
+        delete cleanRow[k];
+      }
+    }
+    const snapshot = {...cleanRow, [fieldKey]: payloadValue};
+    if (opts?.identifier !== undefined) {
+      snapshot[fieldKey + '$_identifier'] = opts.identifier;
+    }
+    // Mirror DataTable's selector-aux merge (lines 468–512). The
+    // selector item carries `_aux` (product_PSTD, _PLIM, _UOM, _CURR)
+    // and top-level fields (standardPrice, isTaxIncluded, currency)
+    // that the callout needs to compute the price. Without this, the
+    // callout has no access to the price-list metadata and returns 0.
+    const selectedItem = opts?.selectedItem;
+    if (selectedItem && typeof selectedItem === 'object') {
+      mergeSelectorAuxFields(selectedItem, snapshot, fieldKey);
+      mergeSelectorContextFields(selectedItem, snapshot, fieldKey);
+    }
+
+    // Run callout (no-op for fields without one). Captures derived fields
+    // through the applyUpdates callback so we can fold them into the PATCH.
+    let derivedUpdates = {};
+    try {
+      await handleLineFieldChange(fieldKey, payloadValue, snapshot, (updates) => {
+        derivedUpdates = {...updates};
+      });
+    } catch {
+      // Callout is best-effort; PATCH continues with the user-typed value only.
+    }
+
+    // PATCH body: send the full row + derived + change. NEO Headless
+    // doesn't reliably recompute derived fields (lineGrossAmount,
+    // standardPrice) when only a partial body arrives — observed
+    // when changing product to one with a different price. The
+    // side-panel save (line ~1750) sends the whole row for the same
+    // reason, so we mirror that here for parity.
+    const fieldValues = {};
+    // 1. Start from the cleaned row (skips already-null inherited keys).
+    collectRowFieldValues(cleanRow, fieldValues, coerce);
+    // 2. Overlay derived fields from the callout (incl. lineGrossAmount,
+    //    standardPrice, unitPrice, listPrice).
+    for (const [k, v] of Object.entries(derivedUpdates)) {
+      if (k.endsWith('$_identifier')) continue;
+      fieldValues[k] = coerce(v);
+    }
+    // 3. The user-changed field always wins (last-write).
+    fieldValues[fieldKey] = payloadValue;
+
+    // Derive unitPrice (PriceActual) = listPrice × (1 - discount/100).
+    // Without this the backend keeps the pre-discount PriceActual and
+    // confirmed totals don't match the discounted lineNetAmount we just
+    // computed — matches the side-panel save flow.
+    prepareLineForPost(fieldValues);
+
+    const res = await fetch(childUrl, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json', ...(token ? {Authorization: `Bearer ${token}`} : {})},
+      body: JSON.stringify(fieldValues),
+    });
+    if (res.ok) {
+      applyLocalChildRowUpdate(derivedUpdates, fieldKey, payloadValue, fieldValues, opts, hook, row);
+    } else {
+      const msg = await extractErrorMessage(res);
+      toast.error(msg || ui('networkError'));
+      throw new Error(msg || 'PATCH failed');
+    }
+  } : undefined;
+}
+
+export function buildDeleteRowHandler({ api, detailEntity, isDocumentReadOnly, confirmDelete, apiBaseUrl, token, hook, selectedLine, setSelectedLine, ui, extractErrorMessage }) {
+  return (api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly ? async (row) => {
+    if (!(await confirmDelete())) return;
+    try {
+      const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
+          || `${apiBaseUrl}/${detailEntity}/${row.id}`;
+      const res = await fetch(childUrl, {
+        method: 'DELETE',
+        headers: {...(token ? {Authorization: `Bearer ${token}`} : {})},
+      });
+      if (res.ok) {
+        hook.handleDeleteChild(row.id);
+        if (selectedLine?.id === row.id) setSelectedLine(null);
+        toast.success(ui('recordDeleted'));
+      } else {
+        toast.error(await extractErrorMessage(res));
+      }
+    } catch (err) {
+      toast.error(err.message || ui('networkError'));
+    }
+  } : undefined;
+}
+
+export function getDeleteChildButtonLabel(deletingChildren, ui) {
+  return deletingChildren ? ui('loading') : ui('delete');
+}
+
+export function buildLineRowClickHandler(DetailForm, linesLayout, setSelectedLine) {
+  return DetailForm && linesLayout !== 'inlineEditable' ? (row) => {
+    const line = {...row};
+    roundAmounts(line);
+    setSelectedLine(line);
+  } : undefined;
+}
+
+function getSqBtnSize(toolbarButtonSize) {
+  return toolbarButtonSize === 'default' ? 'h-10 w-10' : 'h-9 w-9';
+}
+
+function getSaveBtnCls(toolbarButtonSize) {
+  return toolbarButtonSize === 'default' ? 'h-10 gap-2' : 'gap-1.5';
+}
+
+function getDraftModeCompleted(draftMode, _headerData, isProcessed) {
+  return Boolean(
+      draftMode?.enabled && (
+          Array.isArray(draftMode.completedStatuses)
+              ? draftMode.completedStatuses.includes(_headerData?.documentStatus)
+              : (isProcessed || _headerData?.documentStatus === 'CO')
+      )
+  );
+}
+
+function getDocumentReadOnly(lockWhenProcessed, _headerData) {
+  return lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
+}
+
+export function insertLinesTab(detailLabel, detailEntity, hook, detailTabIndex, tabs) {
+  const linesTab = {key: 'lines', label: detailLabel || detailEntity || 'Lines', count: hook.children?.length || 0};
+  if (typeof detailTabIndex === 'number' && detailTabIndex >= 0 && detailTabIndex <= tabs.length) {
+    tabs.splice(detailTabIndex, 0, linesTab);
+  } else {
+    tabs.unshift(linesTab);
+  }
+}
+
+export function renderExtraActionButtons(extraActions, data, hook, saveBtnCls) {
+  return (typeof extraActions === 'function' ? extraActions({
+    data,
+    children: hook.children
+  }) : extraActions).map((action, i) => (
+      action.visible !== false && (
+          <Button
+              key={action.key || i}
+              variant="outline"
+              size="default"
+              className={`${action.className || ''} ${saveBtnCls}`.trim()}
+              onClick={action.onClick}
+          >
+            {action.label}
+          </Button>
+      )
+  ));
+}
+
+export function getDetailContentContainerClassName({
+  linesLayout,
+  sidePanel,
+  sidebarContent,
+  sidebarAboveTabsOnly,
+  compactSidebarPadding,
+  primaryTabs,
+  activePrimaryTab,
+  formScrollPaddingX = null,
+} = {}) {
+  return `flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding, formScrollPaddingX)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`;
+}
+
+export function getLinesTabsSectionClassName(linesLayout) {
+  return linesLayout === 'inlineEditable' ? 'mt-1 flex flex-col relative' : 'mt-6';
+}
+
+export function getSecondaryTabEntityKey(secondaryTabs, index) {
+  return (secondaryTabs[index]?.isFormTab || secondaryTabs[index]?.Panel) ? null : (secondaryTabs[index]?.key ?? null);
+}
+
+export function renderNotesField(notesFocused, data, notesField, handleChangeWithCallout, handleNotesSave, setNotesFocused, ui) {
+  return notesFocused ? (
+      <textarea
+          value={data[notesField] || ''}
+          onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
+          onBlur={() => {
+            handleNotesSave(data[notesField]);
+            setNotesFocused(false);
+          }}
+          placeholder={ui('description')}
+          rows={3}
+          autoFocus
+          className="w-full text-xs bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
+      />
+  ) : (
+      <div
+          tabIndex={0}
+          role="textbox"
+          onClick={() => setNotesFocused(true)}
+          onFocus={() => setNotesFocused(true)}
+          className="w-full text-xs px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
+      >
+        {data[notesField] || <span className="text-muted-foreground/40">{ui('description')}</span>}
+      </div>
+  );
+}
+
+export function computeIsDirty(hook, addingLine, addingSecondaryLine, lineEdits, additionalDirtyState) {
+  return hook.isDirtyHeader
+      || addingLine
+      || Object.values(addingSecondaryLine).some(Boolean)
+      || (lineEdits != null && Object.keys(lineEdits).length > 0)
+      || (additionalDirtyState === true);
+}
+
+export function hasRecordForRoute(isNew, hook, recordId) {
+  return isNew
+      || (hook.selected?.id && String(hook.selected.id) === String(recordId));
+}
+
+export function isLoadingRecordForRoute(hook, isNew, recordId) {
+  return hook.loading && !hasRecordForRoute(isNew, hook, recordId);
+}
+
+export function resolveHideMoreMenu(hideMoreMenu, data) {
+  return typeof hideMoreMenu === 'function' ? hideMoreMenu({ data }) : hideMoreMenu;
+}
+
+export function pushOthers(showOthers, tabs, othersLabel, ui) {
+  if (showOthers === true) {
+    tabs.push({key: 'others', label: othersLabel || ui('others')});
+  }
+}
+
+export function renderEmbeddedStatusPill(statusField, data, statusEnumLabels) {
+  return statusField && data[statusField] ? (
+      <div className="flex items-center gap-3 px-6 py-3 border-b border-border/30">
+        <DocumentStatusPill
+            status={data[statusField]}
+            enumLabels={statusEnumLabels}
+        />
+      </div>
+  ) : null;
+}
+
+export function shouldShowLinesEmptyState(hook, addingLine, LinesEmptyState, isDocumentReadOnly) {
+  return hook.children.length === 0 && !addingLine && LinesEmptyState && hook.editing && !isDocumentReadOnly;
+}
+
+export function getTabsBarStyle(tabsBarRight, tabsBarRightDivider) {
+  return tabsBarRight && tabsBarRightDivider ? {paddingRight: `calc(${tabsBarRightDivider} + 24px)`} : undefined;
+}
+
+export function getTabsBarClassName(tabsBarPaddingX, tabsBarRightDivider) {
+  return `flex items-center gap-1 ${tabsBarPaddingX} py-2 shrink-0${tabsBarRightDivider ? ' relative' : ''}`;
+}
+
+export function isDeleteButtonVisible(isNew, recordId, data, statusField, hideDeleteWhenComplete, isProcessed) {
+  return !isNew && recordId && isDeleteVisibleForRecord({
+    record: data,
+    statusField,
+    hideDeleteWhenComplete
+  }) && !(hideDeleteWhenComplete && isProcessed);
+}
+
+export function renderPrimaryTabButtons(primaryTabsVariant, primaryTabs, setActivePrimaryTab, activePrimaryTab, tMenu) {
+  return primaryTabsVariant === 'pill' ? (
+      <div className="inline-flex items-center gap-1 p-1 h-10 rounded-xl" style={{background: '#F5F7F9'}}>
+        {primaryTabs.map(tab => (
+            <button
+                key={tab.key}
+                onClick={() => setActivePrimaryTab(tab.key)}
+                className="h-8 px-4 text-sm font-medium rounded-lg transition-all"
+                style={
+                  activePrimaryTab === tab.key
+                      ? {
+                        background: '#FFFFFF',
+                        color: '#121217',
+                        boxShadow: '0px 1px 3px rgba(18,18,23,0.10), 0px 1px 2px rgba(18,18,23,0.06)'
+                      }
+                      : {color: '#121217'}
+                }
+            >
+              {tMenu(tab.label)}
+            </button>
+        ))}
+      </div>
+  ) : (
+      primaryTabs.map(tab => (
+          <button
+              key={tab.key}
+              onClick={() => setActivePrimaryTab(tab.key)}
+              className={[
+                'relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
+                activePrimaryTab === tab.key
+                    ? 'bg-white border-gray-200 shadow-sm text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground',
+              ].join(' ')}
+          >
+            {tMenu(tab.label)}
+          </button>
+      ))
+  );
+}
+
+export function resolveHeaderContent(headerContent, data) {
+  return typeof headerContent === 'function' ? headerContent(data) : headerContent;
+}
+
+export function isBulkDeleteBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows) {
+  return linesLayout !== 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly && selectedChildRows.length > 0;
+}
+
+export function isCustomPrimaryTabActive(primaryTabs, activePrimaryTab) {
+  return primaryTabs && activePrimaryTab !== 'general';
+}
+
+export function getDetailContentClassName(sidePanel, linesLayout) {
+  return `${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`;
+}
+
+export function canDeleteSelectedLine(api, detailEntity, selectedLine, isDocumentReadOnly) {
+  return (api?.crud?.[detailEntity]?.delete ?? true) && selectedLine?.id && !isDocumentReadOnly;
+}
+
+export function shouldShowLineActionButtons(hook, lineEdits, selectedLine) {
+  return hook.editing && (lineEdits || selectedLine?.id);
+}
+
+export function shouldShowDetailFormSidebar(linesLayout, DetailForm, selectedLine, isClosingLine) {
+  return linesLayout !== 'inlineEditable' && DetailForm && (selectedLine || isClosingLine);
+}
+
+export function isInitialChildrenLoading(hook) {
+  return hook.childrenLoading && hook.children.length === 0;
+}
+
+export function canShowAddLineArea(hook, isDocumentReadOnly, allEntryFields, DetailExtraActions, canAddLines) {
+  return hook.editing && !isDocumentReadOnly && (allEntryFields.length > 0 || DetailExtraActions) && canAddLines;
+}
+
+export function shouldShowInlineDeleteSelectionBar(linesLayout, api, detailEntity) {
+  return linesLayout === 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true);
+}
+
 /**
  * Full-page detail view for a single entity record.
  * Two-zone layout: gray top bar + white content card with rounded corner.
@@ -867,13 +1381,12 @@ export function DetailView({
   // Secondary hooks only consume child-level state (children, handleAddChild, handleDeleteChild,
   // handleSelect) — never the parent list. skipListFetch avoids refetching the parent entity
   // list once per hook (which would otherwise cause N+1 identical GETs on mount).
-  const secondaryHook0 = useEntity(entity, (secondaryTabs[0]?.isFormTab || secondaryTabs[0]?.Panel) ? null : (secondaryTabs[0]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
-  const secondaryHook1 = useEntity(entity, (secondaryTabs[1]?.isFormTab || secondaryTabs[1]?.Panel) ? null : (secondaryTabs[1]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
-  const secondaryHook2 = useEntity(entity, (secondaryTabs[2]?.isFormTab || secondaryTabs[2]?.Panel) ? null : (secondaryTabs[2]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
-  const secondaryHook3 = useEntity(entity, (secondaryTabs[3]?.isFormTab || secondaryTabs[3]?.Panel) ? null : (secondaryTabs[3]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
+  const secondaryHook0 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 0), { token, apiBaseUrl, skipListFetch: true });
+  const secondaryHook1 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 1), { token, apiBaseUrl, skipListFetch: true });
+  const secondaryHook2 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 2), { token, apiBaseUrl, skipListFetch: true });
+  const secondaryHook3 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 3), { token, apiBaseUrl, skipListFetch: true });
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
-
   // "From" currency for secondary-tab inline add-rows. The parent document's
   // currency is a read-only column on those tabs (e.g. exchange rates), so the
   // inline add-row has no input to populate it and it renders "—" until the POST
@@ -1026,21 +1539,15 @@ export function DetailView({
     } : null
   ), [_headerData, windowName, _detailTabTitle, hook.editing, _isFormEditing]);
   useRegisterWindowContext(_windowContextInfo);
-  const isDocumentReadOnly = lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
+  const isDocumentReadOnly = getDocumentReadOnly(lockWhenProcessed, _headerData);
   const isProcessed = _headerData?.processed === true || _headerData?.processed === 'Y';
   // When draftMode declares an explicit completedStatuses array, only those documentStatus
   // values hide the Save/Confirm pair. This lets windows like sales-quotation keep the
   // pair visible during intermediate processed states (UE) while still hiding it in
   // terminal states (CA, ETGO_CI, CL, VO).
-  const isDraftModeCompleted = Boolean(
-    draftMode?.enabled && (
-      Array.isArray(draftMode.completedStatuses)
-        ? draftMode.completedStatuses.includes(_headerData?.documentStatus)
-        : (isProcessed || _headerData?.documentStatus === 'CO')
-    )
-  );
-  const sqBtnSize = toolbarButtonSize === 'default' ? 'h-10 w-10' : 'h-9 w-9';
-  const saveBtnCls = toolbarButtonSize === 'default' ? 'h-10 gap-2' : 'gap-1.5';
+  const isDraftModeCompleted = getDraftModeCompleted(draftMode, _headerData, isProcessed);
+  const sqBtnSize = getSqBtnSize(toolbarButtonSize);
+  const saveBtnCls = getSaveBtnCls(toolbarButtonSize);
   const [showPrint, setShowPrint] = useState(false);
   // showNotes state removed — notes panel is always visible in side-by-side layout
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -1270,11 +1777,7 @@ export function DetailView({
   // 4. A line sidebar edit has unsaved field changes
   // additionalDirtyState lets custom windows inject extra dirty sources via prop.
   const isDirty =
-    hook.isDirtyHeader
-    || addingLine
-    || Object.values(addingSecondaryLine).some(Boolean)
-    || (lineEdits != null && Object.keys(lineEdits).length > 0)
-    || (additionalDirtyState === true);
+    computeIsDirty(hook, addingLine, addingSecondaryLine, lineEdits, additionalDirtyState);
   const [savingLine, setSavingLine] = useState(false);
   const [isClosingLine, setIsClosingLine] = useState(false);
   const [editingChild, setEditingChild] = useState(null);
@@ -1298,21 +1801,7 @@ export function DetailView({
   const [secondaryDeleteConfirm, setSecondaryDeleteConfirm] = useState(null);
 
   const extractErrorMessage = useCallback(async (res) => {
-    let raw;
-    try {
-      const data = await res.json();
-      // NEO Headless top-level format: { error: { message, status } }
-      if (data?.error?.message) raw = data.error.message;
-      else {
-        // Etendo JsonDataService format: { response: { error: { message } | string } }
-        const err = data?.response?.error;
-        if (err?.message) raw = err.message;
-        else if (typeof err === 'string') raw = err;
-        else if (data?.message) raw = data.message;
-      }
-    } catch {
-      // Ignore non-JSON error bodies.
-    }
+    let raw = await parseBackendErrorMessage(res);
     return translateBackendError(raw ?? `Error ${res.status}`, ui);
   }, [ui]);
 
@@ -1549,6 +2038,9 @@ export function DetailView({
       && String(hook.selected?.id) === String(justSaved.id)
     ) {
       setDirectFetched(true);
+      // Fetch children even on the justSaved fast-path — the header is already
+      // primed but children (e.g. auto-created accounting lines) must be loaded.
+      hook.fetchChildren?.(recordId);
       // One-shot: clear the marker so a manual reload of /:id still fetches.
       navigate(location.pathname, {
         replace: true,
@@ -1569,7 +2061,7 @@ export function DetailView({
     // intentionally omitted from the dep list to avoid re-running on every
     // navigation tick.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentItem, directFetched, hook.fetchById, hook.handleSelect, hook.loading, hook.selected, isNew, recordId]);
+  }, [currentItem, directFetched, hook.fetchById, hook.fetchChildren, hook.handleSelect, hook.loading, hook.selected, isNew, recordId]);
 
   // Reset selected line when the parent record changes
   useEffect(() => {
@@ -1777,35 +2269,19 @@ export function DetailView({
   //    pipeline). This matches the UX where the add-lines button only
   //    appears once the header form is complete.
   // 3. Otherwise (no metadata at all), allow.
-  let canAddLines;
-  if (addLineGuard) {
-    canAddLines = addLineGuard(data);
-  } else if (Array.isArray(requiredHeaderFields) && requiredHeaderFields.length > 0) {
-    canAddLines = requiredHeaderFields.every((k) => {
-      const v = data?.[k];
-      return v != null && v !== '' && !(typeof v === 'string' && v.trim() === '');
-    });
-  } else {
-    canAddLines = true;
-  }
-  const windowTitle = breadcrumb
-    ? tMenu(breadcrumb.split(' / ').at(-1).trim()) || breadcrumb.split(' / ').at(-1).trim()
-    : tMenu(windowName) || windowName || '';
+  let canAddLines = resolveCanAddLines(addLineGuard, data, requiredHeaderFields, hook.children ?? []);
+  const windowTitle = getWindowTitle(breadcrumb, tMenu, windowName);
   const { toggleFavorite, isFavorite } = useFavorites();
   const favKey = windowName || windowTitle;
   const favActive = isFavorite(favKey);
 
-  const title = isNew
-    ? ui('newRecord')
-    : `${resolveIdentifier(data, titleField) || data._identifier || data.id || ''}`;
-  const fullBreadcrumb = breadcrumb
-    ? `${breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}${title ? ` / ${title}` : ''}`
-    : windowTitle;
+  const title = getRecordTitle(isNew, ui, data, titleField);
+  const fullBreadcrumb = getFullBreadcrumb(breadcrumb, tMenu, title, windowTitle);
 
   useSetPageMeta({
     title: title || windowTitle,
     breadcrumb: fullBreadcrumb,
-    onAddToFavorites: favKey ? () => toggleFavorite(favKey, entityLabel || breadcrumb?.split(' / ').at(-1).trim() || windowName) : undefined,
+    onAddToFavorites: getOnAddToFavorites(favKey, toggleFavorite, entityLabel, breadcrumb, windowName),
     isFavorite: favActive,
   }, [favActive, title]);
 
@@ -1832,16 +2308,12 @@ export function DetailView({
   // Build tabs: child entity lines + secondary tabs + custom 'tab' placement + "Others"
   const tabs = [];
   secondaryTabs.forEach((st, i) => {
-    const childCount = st.Panel ? (panelCounts[st.key] ?? null) : (!st.isFormTab ? (secondaryHooks[i]?.children?.length ?? null) : null);
+    const secondaryChildCount = !st.isFormTab ? (secondaryHooks[i]?.children?.length ?? null) : null;
+    const childCount = st.Panel ? (panelCounts[st.key] ?? null) : secondaryChildCount;
     tabs.push({ key: st.key, label: st.label, count: childCount });
   });
   if (DetailTable) {
-    const linesTab = { key: 'lines', label: detailLabel || detailEntity || 'Lines', count: hook.children?.length || 0 };
-    if (typeof detailTabIndex === 'number' && detailTabIndex >= 0 && detailTabIndex <= tabs.length) {
-      tabs.splice(detailTabIndex, 0, linesTab);
-    } else {
-      tabs.unshift(linesTab);
-    }
+    insertLinesTab(detailLabel, detailEntity, hook, detailTabIndex, tabs);
   } else if (CustomLines) {
     tabs.unshift({ key: 'customLines', label: customLinesLabel, count: customLinesCount ?? null });
   }
@@ -1869,9 +2341,7 @@ export function DetailView({
     }
   });
 
-  if (showOthers === true) {
-    tabs.push({ key: 'others', label: othersLabel || ui('others') });
-  }
+  pushOthers(showOthers, tabs, othersLabel, ui);
 
   const isCustomTabActive = tabCustomTabs.some(ct => tabs[activeTab]?.key === customTabKey(ct));
 
@@ -1929,9 +2399,8 @@ export function DetailView({
   // Only black out the whole window when we actually don't have the record yet.
   // A list refresh (hook.loading for the side list) or any unrelated background
   // fetch must not wipe out a form the user was interacting with.
-  const hasRecordForRoute = isNew
-    || (hook.selected?.id && String(hook.selected.id) === String(recordId));
-  if (hook.loading && !hasRecordForRoute) {
+
+  if (isLoadingRecordForRoute(hook, isNew, recordId)) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground">
         {ui('loading')}
@@ -1944,17 +2413,8 @@ export function DetailView({
       {/* Content card with rounded top-left corner */}
       <div className={`flex-1 flex flex-col ${contentBg} rounded-tl-2xl overflow-hidden min-h-0`}>
         {/* Action bar: Cancel + status | actions + save */}
-        {embedded ? (
-          statusField && data[statusField] ? (
-            <div className="flex items-center gap-3 px-6 py-3 border-b border-border/30">
-              <DocumentStatusPill
-                status={data[statusField]}
-                enumLabels={statusEnumLabels}
-              />
-            </div>
-          ) : null
-        ) : (
-        <div className={`flex items-center justify-between ${linesLayout === 'inlineEditable' ? 'p-2' : toolbarPaddingX + ' py-3'}${toolbarBorderBottom || linesLayout === 'inlineEditable' ? ' border-b border-[#E8EAEF]' : ''}`}>
+        {embedded ? renderEmbeddedStatusPill(statusField, data, statusEnumLabels) : (
+        <div className={getLinesToolbarClassName(linesLayout, toolbarPaddingX, toolbarBorderBottom)}>
           <div className="flex items-center gap-3">
             <Button
               className="h-10 px-3 rounded-lg bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_rgba(18,18,23,0.05)] text-[#121217] text-sm font-medium hover:bg-[#F5F7F9] transition-colors"
@@ -2020,7 +2480,7 @@ export function DetailView({
                 </button>
               )}
               {/* Delete record — hidden when hideDeleteWhenComplete and status matches or record is processed */}
-              {!isNew && recordId && isDeleteVisibleForRecord({ record: data, statusField, hideDeleteWhenComplete }) && !(hideDeleteWhenComplete && isProcessed) && (
+              {isDeleteButtonVisible(isNew, recordId, data, statusField, hideDeleteWhenComplete, isProcessed) && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className={`${sqBtnSize} flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors`}
@@ -2031,7 +2491,7 @@ export function DetailView({
                 </button>
               )}
               {/* More actions */}
-              {!(typeof hideMoreMenu === 'function' ? hideMoreMenu({ data }) : hideMoreMenu) && <div className="relative" ref={moreMenuRef}>
+              {!resolveHideMoreMenu(hideMoreMenu, data) && <div className="relative" ref={moreMenuRef}>
                 <button
                   data-testid="action-more"
                   onClick={() => setShowMoreMenu(v => !v)}
@@ -2115,19 +2575,7 @@ export function DetailView({
                 })()}
               </div>}
               {/* Extra action buttons from page */}
-              {(typeof extraActions === 'function' ? extraActions({ data, children: hook.children }) : extraActions).map((action, i) => (
-                action.visible !== false && (
-                  <Button
-                    key={action.key || i}
-                    variant="outline"
-                    size="default"
-                    className={`${action.className || ''} ${saveBtnCls}`.trim()}
-                    onClick={action.onClick}
-                  >
-                    {action.label}
-                  </Button>
-                )
-              ))}
+              {renderExtraActionButtons(extraActions, data, hook, saveBtnCls)}
               {/* Process buttons — only shown for existing records, evaluated locally or by server visibility */}
               {!isNew && processes
                 .filter(p => p.displayLogicRaw
@@ -2262,45 +2710,13 @@ export function DetailView({
             {/* Primary tab bar (General / Additional Info / etc.) */}
             {primaryTabs && (
               <div
-                className={`flex items-center gap-1 ${tabsBarPaddingX} py-2 shrink-0${tabsBarRightDivider ? ' relative' : ''}`}
-                style={tabsBarRight && tabsBarRightDivider ? { paddingRight: `calc(${tabsBarRightDivider} + 24px)` } : undefined}
+                className={getTabsBarClassName(tabsBarPaddingX, tabsBarRightDivider)}
+                style={getTabsBarStyle(tabsBarRight, tabsBarRightDivider)}
               >
                 {tabsBarRightDivider && (
                   <div className="absolute top-0 bottom-0 w-px bg-[#E8EAEF] pointer-events-none" style={{ left: `calc(100% - ${tabsBarRightDivider})` }} />
                 )}
-                {primaryTabsVariant === 'pill' ? (
-                  <div className="inline-flex items-center gap-1 p-1 h-10 rounded-xl" style={{ background: '#F5F7F9' }}>
-                    {primaryTabs.map(tab => (
-                      <button
-                        key={tab.key}
-                        onClick={() => setActivePrimaryTab(tab.key)}
-                        className="h-8 px-4 text-sm font-medium rounded-lg transition-all"
-                        style={
-                          activePrimaryTab === tab.key
-                            ? { background: '#FFFFFF', color: '#121217', boxShadow: '0px 1px 3px rgba(18,18,23,0.10), 0px 1px 2px rgba(18,18,23,0.06)' }
-                            : { color: '#121217' }
-                        }
-                      >
-                        {tMenu(tab.label)}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  primaryTabs.map(tab => (
-                    <button
-                      key={tab.key}
-                      onClick={() => setActivePrimaryTab(tab.key)}
-                      className={[
-                        'relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
-                        activePrimaryTab === tab.key
-                          ? 'bg-white border-gray-200 shadow-sm text-foreground'
-                          : 'border-transparent text-muted-foreground hover:text-foreground',
-                      ].join(' ')}
-                    >
-                      {tMenu(tab.label)}
-                    </button>
-                  ))
-                )}
+                {renderPrimaryTabButtons(primaryTabsVariant, primaryTabs, setActivePrimaryTab, activePrimaryTab, tMenu)}
                 {tabsBarRight && (() => {
                   const TabsBarRightComponent = tabsBarRight;
                   return (
@@ -2312,16 +2728,16 @@ export function DetailView({
               </div>
             )}
             {/* Non-general primary tab: show Panel fullscreen */}
-            {primaryTabs && activePrimaryTab !== 'general' ? (() => {
+            {isCustomPrimaryTabActive(primaryTabs, activePrimaryTab) ? (() => {
               const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
               return activeTab?.Panel ? (
-                <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel', compactSidebarPadding)}`}>
+                <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel', compactSidebarPadding, formScrollPaddingX)}`}>
                   <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
                 </div>
               ) : null;
             })() : null}
-            <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
-              {typeof headerContent === 'function' ? headerContent(data) : headerContent}
+            <div className={getDetailContentContainerClassName({ linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab, formScrollPaddingX })}>
+              {resolveHeaderContent(headerContent, data)}
               {(() => {
                 const slotProps = {
                   data,
@@ -2366,7 +2782,7 @@ export function DetailView({
                 );
               })()}
               <div className={sidePanelWrapperCls(!!sidePanel, linesLayout)}>
-                <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`}>
+                <div className={getDetailContentClassName(sidePanel, linesLayout)}>
 
                   {/* Form section — conditionally wrapped with sidebar when sidebarAboveTabsOnly */}
                   {(() => {
@@ -2374,7 +2790,7 @@ export function DetailView({
                       <>
                         {/* Principal + collapsed fields wrapped in a card */}
                         <div className={`${hideFormCard ? 'hidden' : ''}${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${whiteFormBackground ? ' bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50' : ''}${embedded ? ' pointer-events-none' : ''}`}>
-                          <div className={linesLayout === 'inlineEditable' ? 'p-2' : 'p-6'}>
+                          <div className={linesLayout === 'inlineEditable' ? 'p-2' : formCardPadding}>
                             <Form
                               entity={entity}
                               data={data}
@@ -2442,8 +2858,8 @@ export function DetailView({
 
                   {/* Tabs: child entities + Others */}
                   {tabs.length > 0 && (
-                    <div className={linesLayout === 'inlineEditable' ? 'mt-1 flex flex-col relative' : 'mt-6'}>
-                      <div className={`flex items-center justify-between border-b border-border/50 ${linesLayout === 'inlineEditable' ? 'shrink-0' : ''}`}>
+                    <div className={getLinesTabsSectionClassName(linesLayout)}>
+                      <div className={`flex items-center justify-between border-b border-border/50 ${(getInlineEditableShrinkClassName(linesLayout))}`}>
                         <div className="flex items-center gap-0">
                           {tabs.map((tab, idx) => {
                             const tabIndicatorCls = linesLayout === 'inlineEditable'
@@ -2478,17 +2894,21 @@ export function DetailView({
                     working; with no overflow on this wrapper they become
                     no-ops on the lines side. */}
                       <div ref={linesScrollRef}>
-                        {tabs[activeTab]?.key === 'lines' && DetailTable && (
+                        {tabs[activeTab]?.key === 'lines' && DetailTable && (() => {
                           // Only show the loading spinner on INITIAL load (no children yet).
                           // Subsequent refetches (e.g., after PATCH on a child) keep the table
                           // mounted to preserve transient state like InlineLinesPanel's
                           // editingRowId — otherwise editing mode is silently dropped on every
                           // autosave round-trip.
-                          hook.childrenLoading && hook.children.length === 0 ? (
-                            <div className="flex items-center justify-center py-10 text-muted-foreground">
-                              <div className="h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                            </div>
-                          ) : hook.children.length === 0 && !addingLine && LinesEmptyState && hook.editing && !isDocumentReadOnly ? (
+                          if (isInitialChildrenLoading(hook)) {
+                            return (
+                              <div className="flex items-center justify-center py-10 text-muted-foreground">
+                                <div className="h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                              </div>
+                            );
+                          }
+                          if (shouldShowLinesEmptyState(hook, addingLine, LinesEmptyState, isDocumentReadOnly)) {
+                            return (
                             <LinesEmptyState
                               data={data}
                               onAddLine={handleAddLineClick}
@@ -2504,12 +2924,14 @@ export function DetailView({
                               forceOpen={forceOpenImport}
                               onForceOpenHandled={() => setForceOpenImport(false)}
                             />
-                          ) : (
-                            <div className={`${linesLayout === 'inlineEditable' ? '' : 'pt-3 '}flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
+                            );
+                          }
+                          return (
+                            <div className={getLinesContainerClassName(linesLayout, embedded)}>
                               {/* Table + add button */}
                               <div className="flex-1 min-w-0">
                                 {/* Bulk delete bar (classic only) */}
-                                {linesLayout !== 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly && selectedChildRows.length > 0 && (
+                                {isBulkDeleteBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows) && (
                                   <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-lg bg-muted/60 border border-border/40">
                                     <span className="text-sm font-medium text-foreground">
                                       {ui('selected', { count: selectedChildRows.length })}
@@ -2552,7 +2974,7 @@ export function DetailView({
                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 transition-colors"
                                       >
                                         <Trash2 className="h-3.5 w-3.5" />
-                                        {deletingChildren ? ui('loading') : ui('delete')}
+                                        {getDeleteChildButtonLabel(deletingChildren, ui)}
                                       </button>
                                     </div>
                                   </div>
@@ -2565,123 +2987,14 @@ export function DetailView({
                                   apiBaseUrl={apiBaseUrl}
                                   linesLayout={linesLayout}
                                   isDocumentReadOnly={isDocumentReadOnly}
-                                  onRowClick={DetailForm && linesLayout !== 'inlineEditable' ? (row) => { const line = { ...row }; roundAmounts(line); setSelectedLine(line); } : undefined}
+                                  onRowClick={buildLineRowClickHandler(DetailForm, linesLayout, setSelectedLine)}
                                   selectedRowId={selectedLine?.id}
                                   onSelectionChange={setSelectedChildRows}
                                   showFooterTotals={showDetailFooterTotals ?? !summary.some(f => f.type === 'amount')}
                                   selectorContext={selectorContextByEntity[detailEntity]}
                                   hiddenColumns={[]}
-                                  onUpdateRow={linesLayout === 'inlineEditable' && !isDocumentReadOnly ? async (row, fieldKey, value, opts) => {
-                                    // Inline autosave with callout chain. NEO Headless expects API keys
-                                    // (camelCase), an unwrapped body, and numeric strings coerced for
-                                    // BigDecimal — mirrors the side-panel save at line ~1750. When a
-                                    // trigger field changes (e.g., product), `handleLineFieldChange`
-                                    // populates `derivedUpdates` with all callout-driven fields (price,
-                                    // tax, description, etc.) so they can be PATCHed in one shot.
-                                    const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
-                                      || `${apiBaseUrl}/${detailEntity}/${row.id}`;
-                                    const coerce = (v) => (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v) ? parseFloat(v) : v);
-                                    const payloadValue = coerce(value);
-
-                                    // Build the row snapshot the callout sees: existing row + the change.
-                                    // Strip null/empty inherited keys that the parent has set (e.g.
-                                    // businessPartner, priceList on OrderLine). buildCalloutFormState
-                                    // by contract does NOT overwrite a row value with the header's,
-                                    // so without this prune the callout would receive
-                                    // businessPartner=null and NEO returns listPrice=0. The addRow
-                                    // flow doesn't hit this because it starts from an empty values
-                                    // object, but existing rows include denormalized parent keys.
-                                    const headerSnapshot = hook.editing || hook.selected || {};
-                                    const cleanRow = { ...row };
-                                    for (const k of Object.keys(headerSnapshot)) {
-                                      const v = cleanRow[k];
-                                      if (v === null || v === undefined || v === '') {
-                                        delete cleanRow[k];
-                                      }
-                                    }
-                                    const snapshot = { ...cleanRow, [fieldKey]: payloadValue };
-                                    if (opts?.identifier !== undefined) {
-                                      snapshot[fieldKey + '$_identifier'] = opts.identifier;
-                                    }
-                                    // Mirror DataTable's selector-aux merge (lines 468–512). The
-                                    // selector item carries `_aux` (product_PSTD, _PLIM, _UOM, _CURR)
-                                    // and top-level fields (standardPrice, isTaxIncluded, currency)
-                                    // that the callout needs to compute the price. Without this, the
-                                    // callout has no access to the price-list metadata and returns 0.
-                                    const selectedItem = opts?.selectedItem;
-                                    if (selectedItem && typeof selectedItem === 'object') {
-                                      mergeSelectorAuxFields(selectedItem, snapshot, fieldKey);
-                                      mergeSelectorContextFields(selectedItem, snapshot, fieldKey);
-                                    }
-
-                                    // Run callout (no-op for fields without one). Captures derived fields
-                                    // through the applyUpdates callback so we can fold them into the PATCH.
-                                    let derivedUpdates = {};
-                                    try {
-                                      await handleLineFieldChange(fieldKey, payloadValue, snapshot, (updates) => {
-                                        derivedUpdates = { ...updates };
-                                      });
-                                    } catch {
-                                      // Callout is best-effort; PATCH continues with the user-typed value only.
-                                    }
-
-                                    // PATCH body: send the full row + derived + change. NEO Headless
-                                    // doesn't reliably recompute derived fields (lineGrossAmount,
-                                    // standardPrice) when only a partial body arrives — observed
-                                    // when changing product to one with a different price. The
-                                    // side-panel save (line ~1750) sends the whole row for the same
-                                    // reason, so we mirror that here for parity.
-                                    const fieldValues = {};
-                                    // 1. Start from the cleaned row (skips already-null inherited keys).
-                                    collectRowFieldValues(cleanRow, fieldValues, coerce);
-                                    // 2. Overlay derived fields from the callout (incl. lineGrossAmount,
-                                    //    standardPrice, unitPrice, listPrice).
-                                    for (const [k, v] of Object.entries(derivedUpdates)) {
-                                      if (k.endsWith('$_identifier')) continue;
-                                      fieldValues[k] = coerce(v);
-                                    }
-                                    // 3. The user-changed field always wins (last-write).
-                                    fieldValues[fieldKey] = payloadValue;
-
-                                    // Derive unitPrice (PriceActual) = listPrice × (1 - discount/100).
-                                    // Without this the backend keeps the pre-discount PriceActual and
-                                    // confirmed totals don't match the discounted lineNetAmount we just
-                                    // computed — matches the side-panel save flow.
-                                    prepareLineForPost(fieldValues);
-
-                                    const res = await fetch(childUrl, {
-                                      method: 'PATCH',
-                                      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                                      body: JSON.stringify(fieldValues),
-                                    });
-                                    if (res.ok) {
-                                      applyLocalChildRowUpdate(derivedUpdates, fieldKey, payloadValue, fieldValues, opts, hook, row);
-                                    } else {
-                                      const msg = await extractErrorMessage(res);
-                                      toast.error(msg || ui('networkError'));
-                                      throw new Error(msg || 'PATCH failed');
-                                    }
-                                  } : undefined}
-                                  onDeleteRow={(api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly ? async (row) => {
-                                    if (!(await confirmDelete())) return;
-                                    try {
-                                      const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
-                                        || `${apiBaseUrl}/${detailEntity}/${row.id}`;
-                                      const res = await fetch(childUrl, {
-                                        method: 'DELETE',
-                                        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                                      });
-                                      if (res.ok) {
-                                        hook.handleDeleteChild(row.id);
-                                        if (selectedLine?.id === row.id) setSelectedLine(null);
-                                        toast.success(ui('recordDeleted'));
-                                      } else {
-                                        toast.error(await extractErrorMessage(res));
-                                      }
-                                    } catch (err) {
-                                      toast.error(err.message || ui('networkError'));
-                                    }
-                                  } : undefined}
+                                  onUpdateRow={buildInlineRowUpdateHandler({ linesLayout, isDocumentReadOnly, api, detailEntity, apiBaseUrl, hook, handleLineFieldChange, prepareLineForPost, token, extractErrorMessage, ui })}
+                                  onDeleteRow={buildDeleteRowHandler({ api, detailEntity, isDocumentReadOnly, confirmDelete, apiBaseUrl, token, hook, selectedLine, setSelectedLine, ui, extractErrorMessage })}
                                   addRow={{
                                     ref: primaryAddRowRef,
                                     active: addingLine,
@@ -2692,9 +3005,13 @@ export function DetailView({
                                       // Also include hidden entry defaults (e.g., fields with predefined values).
                                       for (const hiddenField of hiddenEntryDefaults) {
                                         if (!(hiddenField.key in lineData)) {
-                                          lineData[hiddenField.key] = hiddenField.fromParent
-                                            ? _headerData?.[hiddenField.fromParent]
-                                            : hiddenField.value;
+                                          if (hiddenField.fromParent) {
+                                            lineData[hiddenField.key] = _headerData?.[hiddenField.fromParent];
+                                          } else if (hiddenField.fromSibling != null) {
+                                            lineData[hiddenField.key] = hook.children?.[0]?.[hiddenField.fromSibling];
+                                          } else {
+                                            lineData[hiddenField.key] = hiddenField.value;
+                                          }
                                         }
                                       }
                                       // Derive unitPrice = listPrice × (1-discount/100) before POST.
@@ -2752,7 +3069,7 @@ export function DetailView({
                                         }}
                                         className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                                       >
-                                        {savingChild ? ui('loading') : ui('save')}
+                                        {getChildSaveButtonLabel(savingChild, ui)}
                                       </button>
                                       <button
                                         onClick={() => setEditingChild(null)}
@@ -2783,11 +3100,11 @@ export function DetailView({
                                   </div>
                                 )}
 
-                                {hook.editing && !isDocumentReadOnly && (allEntryFields.length > 0 || DetailExtraActions) && canAddLines && (
+                                {canShowAddLineArea(hook, isDocumentReadOnly, allEntryFields, DetailExtraActions, canAddLines) && (
                                   <div
                                     ref={addLineWrapperRef}
-                                    className={linesLayout === 'inlineEditable' ? 'sticky bottom-0 bg-white z-10' : 'relative'}
-                                    style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)', padding: linesLayout === 'inlineEditable' ? 8 : '10px 16px' }}
+                                    className={getAddLineWrapperClassName(linesLayout)}
+                                    style={getAddLineWrapperStyle(linesLayout)}
                                   >
                                     {allEntryFields.length > 0 && (
                                       // alignSelf:flex-start keeps this span from being stretched by
@@ -2797,18 +3114,13 @@ export function DetailView({
                                         <AddLineButton
                                           onClick={handleAddLineClick}
                                           label={ui('addLine')}
-                                          menuActions={getLineMenuActions
-                                            ? getLineMenuActions({ data, importRef: extraActionsRef }).map(a => ({
-                                              ...a,
-                                              label: typeof a.label === 'string' ? (ui(a.label) || a.label) : a.label,
-                                            }))
-                                            : undefined}
+                                          menuActions={getAddLineMenuActions(getLineMenuActions, data, extraActionsRef, ui)}
                                         />
                                       </span>
                                     )}
                                     {DetailExtraActions && (
                                       <DetailExtraActions
-                                        ref={getLineMenuActions ? extraActionsRef : undefined}
+                                        ref={getLineMenuActionsRef(getLineMenuActions, extraActionsRef)}
                                         hideTrigger={!!getLineMenuActions}
                                         data={data}
                                         recordId={data?.id || recordId}
@@ -2828,22 +3140,14 @@ export function DetailView({
                               overflow-auto clipping boundary even when scroll is
                               engaged (many rows). Positioned via fixed coords from
                               `barRect`, measured off `addLineWrapperRef`. */}
-                                    {linesLayout === 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true) && (
+                                    {shouldShowInlineDeleteSelectionBar(linesLayout, api, detailEntity) && (
                                       <LinesSelectionBar
                                         visible={selectionBarVisible}
                                         closing={selectionBarClosing}
                                         barRect={barRect}
                                         count={selectedChildRows.length}
                                         selectedLabel={ui('selected', { count: selectedChildRows.length })}
-                                        totalLabel={bottomSection?.showLineTotals !== false ? (() => {
-                                          const total = selectedChildRows.reduce((acc, row) => {
-                                            const v = parseFloat(String(row?.[lineConfig.grossField] ?? row?.lineGrossAmount ?? 0));
-                                            return acc + (Number.isFinite(v) ? v : 0);
-                                          }, 0);
-                                          const formatted = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                                          const curr = data?.['currency$_identifier'] || '';
-                                          return curr ? `${formatted} ${curr}` : formatted;
-                                        })() : null}
+                                        totalLabel={getSelectedLinesTotalLabel(bottomSection, selectedChildRows, lineConfig, data)}
                                         deleting={deletingChildren}
                                         deleteTitle={ui('delete')}
                                         closeTitle={ui('close')}
@@ -2892,8 +3196,8 @@ export function DetailView({
 
                               {/* Right sidebar: line detail form. Suppressed in inlineEditable mode —
                         edit happens inside the row via InlineLinesPanel. */}
-                              {linesLayout !== 'inlineEditable' && DetailForm && (selectedLine || isClosingLine) && (
-                                <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
+                              {shouldShowDetailFormSidebar(linesLayout, DetailForm, selectedLine, isClosingLine) && (
+                                <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${(getSidebarSlideClassName(isClosingLine))}`}>
                                   <div className="flex items-center justify-between mb-3">
                                     <span className="text-sm font-medium text-foreground">{ui('entityDetail', { label: tMenu(detailLabel || 'Line') })}</span>
                                     <button
@@ -2942,7 +3246,7 @@ export function DetailView({
                                     selectorContext={selectorContextByEntity[detailEntity]}
                                     labelOverrides={labelOverrides}
                                   />
-                                  {hook.editing && (lineEdits || selectedLine?.id) && (
+                                  {shouldShowLineActionButtons(hook, lineEdits, selectedLine) && (
                                     <div className="flex gap-2 mt-4">
                                       {lineEdits && !isDocumentReadOnly && (
                                         <>
@@ -3000,7 +3304,7 @@ export function DetailView({
                                             }}
                                             className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                                           >
-                                            {savingLine ? ui('loading') : ui('save')}
+                                            {getSaveButtonLabel(savingLine, ui)}
                                           </button>
                                           <button
                                             onClick={() => setLineEdits(null)}
@@ -3010,7 +3314,7 @@ export function DetailView({
                                           </button>
                                         </>
                                       )}
-                                      {(api?.crud?.[detailEntity]?.delete ?? true) && selectedLine?.id && !isDocumentReadOnly && (
+                                      {canDeleteSelectedLine(api, detailEntity, selectedLine, isDocumentReadOnly) && (
                                         <button
                                           disabled={savingLine}
                                           onClick={async () => {
@@ -3045,12 +3349,12 @@ export function DetailView({
                                 </div>
                               )}
                             </div>
-                          )
-                        )}
+                          );
+                        })()}
 
                         {/* Tab content: CustomLines (replaces standard lines table) */}
                         {tabs[activeTab]?.key === 'customLines' && CustomLines && (
-                          <div className={`pt-3${embedded ? ' pointer-events-none' : ''}`}>
+                          <div className={getCustomLinesTabClassName(embedded)}>
                             <CustomLines
                               recordId={data?.id || recordId}
                               data={data}
@@ -3174,7 +3478,7 @@ export function DetailView({
 
                         {/* Tab content: Others (secondary header fields) */}
                         {tabs[activeTab]?.key === 'others' && (
-                          <div className={`pt-5${embedded ? ' pointer-events-none' : ''}`}>
+                          <div className={getOthersTabClassName(embedded)}>
                             <Form
                               entity={entity}
                               data={data}
@@ -3232,7 +3536,7 @@ export function DetailView({
                   {/* Bottom section: hidden when a custom tab (Adjuntos, etc.) is active.
                 In inlineEditable mode the wrapper is shrink-0 so it stays fixed
                 at the bottom while the lines area scrolls in the middle. */}
-                  <div ref={bottomSectionRef} className={linesLayout === 'inlineEditable' ? 'shrink-0' : ''}>
+                  <div ref={bottomSectionRef} className={getInlineEditableShrinkClassName(linesLayout)}>
                     {!isCustomTabActive && (bottomSection ? (() => {
                       const BottomComponent = bottomSection;
                       return (
@@ -3289,7 +3593,7 @@ export function DetailView({
                         {(footerCustomTabs.length > 0 || !!notesField) && (
                           <div className="mt-1 bg-muted/20 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
                             {footerCustomTabs.length > 0 && (
-                              <div className={`flex items-start gap-3 px-4 py-2.5 border-b border-border/30${embedded ? ' pointer-events-none' : ''}`} style={{ borderBottomWidth: '0.5px' }}>
+                              <div className={getDocsRowClassName(embedded)} style={{ borderBottomWidth: '0.5px' }}>
                                 <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-24">{ui('docs')}</span>
                                 <div className="flex-1">
                                   {footerCustomTabs.map(ct => {
@@ -3311,30 +3615,10 @@ export function DetailView({
                               </div>
                             )}
                             {notesField && (
-                              <div className={`flex items-start gap-3 px-4 py-2.5${embedded ? ' pointer-events-none' : ''}`}>
+                              <div className={getNotesRowClassName(embedded)}>
                                 <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-24">{ui('notes')}</span>
                                 <div data-testid="notes-textarea" className={`flex-1 flex flex-col border border-border/40 rounded bg-white transition-all py-1.5`} style={{ borderWidth: '0.5px' }}>
-                                  {notesFocused ? (
-                                    <textarea
-                                      value={data[notesField] || ''}
-                                      onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
-                                      onBlur={() => { handleNotesSave(data[notesField]); setNotesFocused(false); }}
-                                      placeholder={ui('description')}
-                                      rows={3}
-                                      autoFocus
-                                      className="w-full text-xs bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
-                                    />
-                                  ) : (
-                                    <div
-                                      tabIndex={0}
-                                      role="textbox"
-                                      onClick={() => setNotesFocused(true)}
-                                      onFocus={() => setNotesFocused(true)}
-                                      className="w-full text-xs px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
-                                    >
-                                      {data[notesField] || <span className="text-muted-foreground/40">{ui('description')}</span>}
-                                    </div>
-                                  )}
+                                  {renderNotesField(notesFocused, data, notesField, handleChangeWithCallout, handleNotesSave, setNotesFocused, ui)}
                                 </div>
                               </div>
                             )}
@@ -3375,9 +3659,7 @@ export function DetailView({
                     className="w-full max-w-full shrink-0 self-stretch border-t lg:border-t-0 lg:w-[280px] lg:border-l border-gray-200 pt-3 lg:pt-0 pl-0 lg:pl-3 pr-0 lg:pr-3"
                     style={sidePanelStyle}
                   >
-                    {typeof sidePanel === 'function'
-                      ? React.createElement(sidePanel, { recordId: data?.id || recordId, data, token, apiBaseUrl, api, isNew })
-                      : sidePanel}
+                    {renderSidePanel(sidePanel, data, recordId, token, apiBaseUrl, api, isNew)}
                   </div>
                 )}
               </div>
@@ -3385,7 +3667,7 @@ export function DetailView({
           </div>{/* end content column wrapper */}
           {sidebarContent && !sidebarAboveTabsOnly && (
             <div className={sidebarClassName}>
-              {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
+              {resolveSidebarContent(sidebarContent, data)}
             </div>
           )}
         </div>
@@ -3394,7 +3676,7 @@ export function DetailView({
         open={showPrint}
         onClose={() => setShowPrint(false)}
         windowName={windowName}
-        documentIds={recordId ? [recordId] : []}
+        documentIds={getDocumentIds(recordId)}
         token={token}
       />
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

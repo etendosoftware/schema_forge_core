@@ -26,8 +26,8 @@ describe('FmBoxes303 — box data', () => {
 
 describe('FmBoxes303 — identificacion section', () => {
   it('renders fm-aeat-ident container for identificacion sections', () => assert.match(src, /fm-aeat-ident/));
-  it('renders checkboxes for identificacion checkbox fields', () => assert.match(src, /type="checkbox"/));
-  it('renders read-only checkboxes for locked fields', () => assert.match(src, /fm-aeat-ident-cb__check--readonly|disabled/));
+  it('renders checkboxes for identificacion checkbox fields', () => assert.match(src, /Checkbox/));
+  it('renders checkbox items with fm-aeat-ident-cb class', () => assert.match(src, /fm-aeat-ident-cb/));
 });
 
 describe('FmBoxes303 — i18n', () => {

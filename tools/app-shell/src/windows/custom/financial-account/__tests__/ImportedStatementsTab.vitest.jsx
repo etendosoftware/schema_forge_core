@@ -13,10 +13,12 @@ vi.mock('sonner', () => ({
 }));
 
 const processStatement = vi.fn();
+const reactivateStatement = vi.fn();
 const deleteStatement = vi.fn();
 vi.mock('@/hooks/useStatementActions', () => ({
   useStatementActions: () => ({
-    processStatement, deleteStatement, updateStatement: vi.fn(), busy: false, error: null,
+    processStatement, reactivateStatement, deleteStatement, updateStatement: vi.fn(),
+    busy: false, error: null,
   }),
 }));
 
@@ -88,6 +90,7 @@ vi.mock('../StatementsTable', () => ({
           </button>
           <button type="button" data-testid={`row-edit-${s.id}`} onClick={() => actions?.onEdit(s)} />
           <button type="button" data-testid={`row-process-${s.id}`} onClick={() => actions?.onProcess(s)} />
+          <button type="button" data-testid={`row-reactivate-${s.id}`} onClick={() => actions?.onReactivate(s)} />
           <button type="button" data-testid={`row-delete-${s.id}`} onClick={() => actions?.onDelete(s)} />
         </div>
       ))}
@@ -159,7 +162,9 @@ const STATEMENTS = [
   },
   {
     id: 's3', documentNo: 'BS-003', fileName: 'old.c43', name: 'Antiguo',
-    importDate: isoDaysAgo(400), status: 'RECONCILED',
+    // 25 days ago: still inside the default 30-day window (so row actions can
+    // reach it) but outside last7 (so the date-filter test still drops it).
+    importDate: isoDaysAgo(25), status: 'RECONCILED',
   },
 ];
 
@@ -169,6 +174,7 @@ describe('ImportedStatementsTab', () => {
     loadingRef.value = false;
     reloadFn.mockReset();
     processStatement.mockReset();
+    reactivateStatement.mockReset();
     deleteStatement.mockReset();
     toastSuccess.mockReset();
     toastError.mockReset();
@@ -192,11 +198,23 @@ describe('ImportedStatementsTab', () => {
     expect(screen.getByTestId('stub-table')).toHaveAttribute('data-loading', 'true');
   });
 
-  it('passes through all statements when no filters are active', () => {
+  it('passes through all statements inside the default 30-day window', () => {
     render(<ImportedStatementsTab account={ACCOUNT} />);
+    // All fixtures are <= 25 days old, so the default last-30 window keeps them.
     expect(screen.getByTestId('stub-table')).toHaveAttribute(
       'data-len', String(STATEMENTS.length),
     );
+  });
+
+  it('applies the last-30-days window by default, hiding older statements', () => {
+    statementsRef.value = [
+      ...STATEMENTS,
+      { id: 's-old', documentNo: 'BS-OLD', fileName: 'viejo.c43', name: 'Muy antiguo',
+        importDate: isoDaysAgo(400), status: 'RECONCILED' },
+    ];
+    render(<ImportedStatementsTab account={ACCOUNT} />);
+    // The 400-day-old statement is dropped by the default window; the 3 recent ones stay.
+    expect(screen.getByTestId('stub-table')).toHaveAttribute('data-len', String(STATEMENTS.length));
   });
 
   it('filters by status when the toolbar emits onStatusChange', async () => {
@@ -206,7 +224,7 @@ describe('ImportedStatementsTab', () => {
     expect(screen.getByTestId('stub-table')).toHaveAttribute('data-len', '1');
   });
 
-  it('filters by date range when the toolbar emits a preset (last7 drops the 20- and 400-day-old rows)', async () => {
+  it('filters by date range when the toolbar emits a preset (last7 drops the 20- and 25-day-old rows)', async () => {
     const user = userEvent.setup();
     render(<ImportedStatementsTab account={ACCOUNT} />);
     await user.click(screen.getByTestId('toolbar-daterange'));
@@ -323,6 +341,20 @@ describe('ImportedStatementsTab', () => {
     expect(deleteStatement).toHaveBeenCalledWith('s3');
     await waitFor(() => expect(reloadFn).toHaveBeenCalledTimes(1));
     expect(toastSuccess).toHaveBeenCalledWith('financeAccountStatementsDeleteSuccess');
+  });
+
+  it('confirms then reactivates a statement and reloads on success', async () => {
+    reactivateStatement.mockResolvedValueOnce({ id: 's3', processed: false });
+    const user = userEvent.setup();
+    render(<ImportedStatementsTab account={ACCOUNT} />);
+
+    await user.click(screen.getByTestId('row-reactivate-s3'));
+    expect(screen.getByTestId('stub-confirm')).toHaveAttribute('data-variant', 'reactivate');
+
+    await user.click(screen.getByTestId('confirm-run'));
+    expect(reactivateStatement).toHaveBeenCalledWith('s3');
+    await waitFor(() => expect(reloadFn).toHaveBeenCalledTimes(1));
+    expect(toastSuccess).toHaveBeenCalledWith('financeAccountStatementsReactivateSuccess');
   });
 
   it('surfaces an error toast and keeps the dialog open when the action fails', async () => {

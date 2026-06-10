@@ -44,7 +44,7 @@ export const RADII = {
 export const ACCOUNT_TYPE = {
   BANK: 'B',
   CASH: 'C',
-  CARD: 'T',
+  CARD: 'CA',
 };
 
 export const ACCOUNT_TYPE_ORDER = [ACCOUNT_TYPE.BANK, ACCOUNT_TYPE.CASH, ACCOUNT_TYPE.CARD];

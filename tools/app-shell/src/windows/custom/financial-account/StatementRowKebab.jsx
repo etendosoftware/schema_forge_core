@@ -1,4 +1,4 @@
-import { MoreVertical, Pencil, PlayCircle, Trash2 } from 'lucide-react';
+import { MoreVertical, Pencil, PlayCircle, RotateCcw, Trash2 } from 'lucide-react';
 import { useUI } from '@/i18n';
 import {
   DropdownMenu,
@@ -16,29 +16,31 @@ import {
 
 /**
  * Per-row kebab menu for an imported-statement row. Edit / Process / Delete are
- * only enabled for drafts (unprocessed statements); on a processed statement
- * every action is disabled with an explanatory tooltip — processed statements
- * are immutable.
+ * only enabled for drafts (unprocessed statements); a processed statement instead
+ * offers "Reactivate" (back to draft) and disables the draft-only actions with an
+ * explanatory tooltip.
  *
  * @param {{
  *   statement: object,
  *   onEdit: (s: object) => void,
  *   onProcess: (s: object) => void,
+ *   onReactivate: (s: object) => void,
  *   onDelete: (s: object) => void,
  * }} props
  */
-export function StatementRowKebab({ statement: s, onEdit, onProcess, onDelete }) {
+export function StatementRowKebab({ statement: s, onEdit, onProcess, onReactivate, onDelete }) {
   const ui = useUI();
   const isDraft = s.status === 'DRAFT' || s.processed === 'N';
   const lockedTip = ui('financeAccountStatementsRowProcessedTooltip');
+  const reactivateTip = ui('financeAccountStatementsRowReactivateTooltip');
 
-  // A menu item that is active for drafts and disabled (with tooltip) otherwise.
-  const draftItem = ({ icon: Icon, label, onClick, testid, danger }) => {
+  // A menu item active only when `enabled`, otherwise disabled with a tooltip.
+  const gatedItem = ({ icon: Icon, label, onClick, testid, danger, enabled, tip }) => {
     const item = (
       <DropdownMenuItem
-        disabled={!isDraft}
+        disabled={!enabled}
         data-testid={testid}
-        onClick={isDraft ? () => onClick(s) : undefined}
+        onClick={enabled ? () => onClick(s) : undefined}
       >
         <Icon className={`h-5 w-5 ${danger ? 'text-[#D50B3E]' : 'text-[#828FA3]'}`} />
         <span className={`text-sm font-normal leading-6 ${danger ? 'text-[#D50B3E]' : 'text-[#121217]'}`}>
@@ -46,14 +48,17 @@ export function StatementRowKebab({ statement: s, onEdit, onProcess, onDelete })
         </span>
       </DropdownMenuItem>
     );
-    if (isDraft) return item;
+    if (enabled) return item;
     return (
       <Tooltip>
         <TooltipTrigger asChild><span>{item}</span></TooltipTrigger>
-        <TooltipContent>{lockedTip}</TooltipContent>
+        <TooltipContent>{tip}</TooltipContent>
       </Tooltip>
     );
   };
+
+  // Active for drafts, disabled (with the "processed" tooltip) otherwise.
+  const draftItem = (cfg) => gatedItem({ ...cfg, enabled: isDraft, tip: lockedTip });
 
   return (
     <TooltipProvider>
@@ -81,6 +86,14 @@ export function StatementRowKebab({ statement: s, onEdit, onProcess, onDelete })
             label: ui('financeAccountStatementsRowProcess'),
             onClick: onProcess,
             testid: 'statement-row-process',
+          })}
+          {gatedItem({
+            icon: RotateCcw,
+            label: ui('financeAccountStatementsRowReactivate'),
+            onClick: onReactivate,
+            testid: 'statement-row-reactivate',
+            enabled: !isDraft,
+            tip: reactivateTip,
           })}
           <DropdownMenuSeparator />
           {draftItem({

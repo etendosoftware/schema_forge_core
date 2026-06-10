@@ -168,6 +168,7 @@ function mapFieldType(field) {
  * FK fields use inputMode (search/selector/dependent); non-FK fields use type.
  */
 function mapFormFieldType(field) {
+  if (field.explicitType) return field.type;
   if (field.type === 'foreignKey') {
     if (field.inputMode === 'selector') return 'selector';
     if (field.inputMode === 'dependent') return 'dependent';
@@ -471,6 +472,7 @@ export function generateFormComponent(entityName, contract) {
     const lookupPart = fragmentIf(f.lookup, ', lookup: true');
     const popupPart = fragmentIf(f.popup, ', popup: true');
     const readOnlyPart = fragmentIf(f.visibility === 'readOnly', ', readOnly: true');
+    const inlinePart = fragmentIf(f.inline, ', inline: true');
     const referencePart = wrapIf(", reference: '", f.reference, "'");
     const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
     const dependsOnPart = f.dependsOn
@@ -494,7 +496,9 @@ export function generateFormComponent(entityName, contract) {
     const optionsPart = getOptionsPart(type, f);
     const formLabelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
     const valueTypePart = (type === 'select' && f.tsType === 'boolean') ? `, valueType: 'boolean'` : '';
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const spanPart = (f.span && f.span > 1) ? `, span: ${f.span}` : '';
+    const rowsPart = f.rows != null ? `, rows: ${f.rows}` : '';
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -1196,6 +1200,27 @@ function buildHiddenDefaultsArray(hiddenDefaultFields, allEntityFields) {
     }).join('\n');
 }
 
+export function buildHeaderLogicMaps(contract, headerEntity) {
+  const headerEntityForLogic = contract.frontendContract.entities[headerEntity] ?? {};
+  const headerColumnMap = {};
+  const headerBooleanFields = [];
+  for (const hf of (headerEntityForLogic.fields ?? [])) {
+    if (hf.column && hf.name) headerColumnMap[hf.column] = hf.name;
+    if (hf.tsType === 'boolean' || hf.type === 'boolean') headerBooleanFields.push(hf.name);
+  }
+  return {headerColumnMap, headerBooleanFields};
+}
+
+function getHiddenArraySeparator(hiddenDefaultsArray, hiddenSiblingArray) {
+  return (hiddenDefaultsArray && hiddenSiblingArray) ? '\n' : '';
+}
+
+function getAddLineGuardProp(maxDetailLines) {
+  return maxDetailLines != null
+      ? `\n        addLineGuard={(_, children) => children.length < ${maxDetailLines}}`
+      : '';
+}
+
 /**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
@@ -1300,6 +1325,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   }).join('\n');
 
   const hiddenDefaultsArray = buildHiddenDefaultsArray(hiddenDefaultFields, allEntityFields);
+  const hiddenSiblingNames = contract.frontendContract.entities[detailEntity]?.addLineHiddenFromSibling ?? [];
+  const hiddenSiblingArray = hiddenSiblingNames
+    .map(name => `    { key: '${name}', fromSibling: '${name}' },`)
+    .join('\n');
+  const hiddenArraySeparator = getHiddenArraySeparator(hiddenDefaultsArray, hiddenSiblingArray);
 
   // API prediction config
   const { apiBlock, apiProp } = buildApiParts(contract);
@@ -1323,6 +1353,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const toolbarBorderBottom = windowConfig.toolbarBorderBottom ?? false;
   const compactSidebarPadding = windowConfig.compactSidebarPadding ?? false;
   const whiteFormBackground = windowConfig.whiteFormBackground ?? false;
+  const autoSaveOnBlur = windowConfig.autoSaveOnBlur ?? false;
   const hideFormCard = windowConfig.hideFormCard ?? false;
   const sidebarAboveTabsOnly = windowConfig.sidebarAboveTabsOnly ?? false;
   const sidebarClassName = windowConfig.sidebarClassName ?? null;
@@ -1339,6 +1370,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const subsetFilters = windowConfig.subsetFilters ?? null;
   const dateFilterKey = windowConfig.dateFilterKey ?? null;
   const contentBg = windowConfig.contentBg ?? null;
+  const formCardPadding = windowConfig.formCardPadding ?? null;
   const hideListFilters = windowConfig.hideListFilters ?? false;
   const hideLink = windowConfig.hideLink ?? false;
   const hideEyeCount = windowConfig.hideEyeCount ?? false;
@@ -1382,13 +1414,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Column→property and boolean-field maps built from the header entity, used
   // to compile tab-level readOnlyLogic expressions the same way field-level
   // readOnlyLogic is compiled in generate-contract.js.
-  const headerEntityForLogic = contract.frontendContract.entities[headerEntity] ?? {};
-  const headerColumnMap = {};
-  const headerBooleanFields = [];
-  for (const hf of (headerEntityForLogic.fields ?? [])) {
-    if (hf.column && hf.name) headerColumnMap[hf.column] = hf.name;
-    if (hf.tsType === 'boolean' || hf.type === 'boolean') headerBooleanFields.push(hf.name);
-  }
+  const {headerColumnMap, headerBooleanFields} = buildHeaderLogicMaps(contract, headerEntity);
 
   if (secondaryTabsDecl) {
     // Declarative config from decisions.json — sorted by tabOrder
@@ -1472,7 +1498,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     secondaryTabDefs = [
       ...knownSecondaryTabDefs.map(t => ({ ...t, isFormTab: false, addLineEntries: [] })),
       ...inferredSecondaryTabDefs,
-    ].slice(0, 4);
+    ].filter(t => t.key !== detailEntity).slice(0, 4);
   }
 
   const specName = contract.apiPrediction?.specName;
@@ -1554,6 +1580,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // compactSidebarPadding prop (DetailView)
   const compactSidebarPaddingProp = fragmentIf(compactSidebarPadding, '\n        compactSidebarPadding');
   const whiteFormBackgroundProp = fragmentIf(whiteFormBackground, '\n        whiteFormBackground');
+  const autoSaveOnBlurProp = fragmentIf(autoSaveOnBlur, '\n        autoSaveOnBlur');
   // hideFormCard prop (DetailView)
   const hideFormCardProp = fragmentIf(hideFormCard, '\n        hideFormCard');
   // sidebarAboveTabsOnly prop (DetailView)
@@ -1587,6 +1614,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const initialHiddenColumnsProp = jsonWrapIf('\n      hiddenColumns={', filterOnlyFields.map(f => f.name), '}', filterOnlyFields.length > 0);
   // contentBg prop
   const contentBgProp = wrapIf('\n        contentBg="', contentBg, '"');
+  // formCardPadding prop (DetailView)
+  const formCardPaddingProp = wrapIf('\n        formCardPadding="', formCardPadding, '"');
+  // formScrollPaddingX prop (DetailView) — overrides the horizontal padding of the content scroll column
+  const formScrollPaddingX = windowConfig.formScrollPaddingX ?? null;
+  const formScrollPaddingXProp = wrapIf('\n        formScrollPaddingX="', formScrollPaddingX, '"');
   // lineConfig prop — emitted when the window uses a non-default line pricing config
   const LINE_CONFIG_SYMBOLS = { invoice: 'INVOICE_LINE_CONFIG', returnOrder: 'RETURN_ORDER_LINE_CONFIG' };
   const lineConfigSymbol = getLineConfigSymbol(lineEntityConfig, LINE_CONFIG_SYMBOLS);
@@ -1631,6 +1663,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const draftModePropName = pick(confirmModalName, 'draftModeWithConfirm', 'draftMode');
   const draftModeProp = wrapIf('\n        draftMode={', draftModePropName, '}', !!draftModeStaticConfig?.enabled);
   const requiredHeaderFieldsProp = fragmentIf(requiredHeaderFieldNames.length > 0, '\n        requiredHeaderFields={requiredHeaderFields}');
+
+  // maxDetailLines: limits the detail entity to N lines; hides the Add Line button once reached.
+  const maxDetailLines = windowConfig.maxDetailLines ?? null;
+  const addLineGuardProp = getAddLineGuardProp(maxDetailLines);
 
   // entityLabel / detailLabel / detailTabIndex from window decisions config
   let entityLabel = windowConfig.entityLabel || toLabel(headerEntity);
@@ -1772,7 +1808,7 @@ ${entryArray}
 ${derivedArray}
   ],
   hidden: [
-${hiddenDefaultsArray}
+${hiddenDefaultsArray}${hiddenArraySeparator}${hiddenSiblingArray}
   ],
 };
 ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
@@ -1800,7 +1836,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${fragm
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
         {...props}${sidebarContentProp}
       />${confirmModalName ? `
       {showConfirmModal && (
