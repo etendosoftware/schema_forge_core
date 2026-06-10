@@ -1,6 +1,6 @@
 import { useUI } from '@/i18n';
 import {
-  COMMON_HANDLEBARS_HELPERS,
+  RETURN_DOC_HELPERS,
   COMMON_PDF_CSS,
   MOVEMENT_TEMPLATE_OPEN,
   MOVEMENT_TEMPLATE_HEADER,
@@ -17,16 +17,6 @@ import {
   renderPdf,
   usePdfGenerator,
 } from '../shared/pdfUtils.js';
-
-const HELPERS = `
-function fmt(v) {
-  if (v == null || v === '') return '0';
-  var n = Number(v);
-  if (isNaN(n)) return String(v);
-  return new Intl.NumberFormat('es', { minimumFractionDigits: 0, maximumFractionDigits: 3 }).format(n);
-}
-` + COMMON_HANDLEBARS_HELPERS;
-
 
 const TEMPLATE = MOVEMENT_TEMPLATE_OPEN
 + MOVEMENT_TEMPLATE_HEADER
@@ -118,14 +108,14 @@ export function useReturnReceiptPdf(receiptId, apiBaseUrl, token) {
   const ui = useUI();
   return usePdfGenerator(receiptId, apiBaseUrl, token, (id, base, tok) => {
     const labels = getReturnReceiptPdfLabels(ui);
-    return buildReceiptData(id, base, tok).then((data) => renderPdf(TEMPLATE, COMMON_PDF_CSS, HELPERS, { ...data, labels }));
+    return buildReceiptData(id, base, tok).then((data) => renderPdf(TEMPLATE, COMMON_PDF_CSS, RETURN_DOC_HELPERS, { ...data, labels }));
   });
 }
 
 export async function generateReturnReceiptPdf(receiptId, apiBaseUrl, token, labels) {
   const base = apiBaseUrl.replace(/\/[^/]+$/, '');
   const data = await buildReceiptData(receiptId, base, token);
-  return renderPdf(TEMPLATE, COMMON_PDF_CSS, HELPERS, { ...data, labels });
+  return renderPdf(TEMPLATE, COMMON_PDF_CSS, RETURN_DOC_HELPERS, { ...data, labels });
 }
 
 export function getReturnReceiptPdfLabels(ui) {

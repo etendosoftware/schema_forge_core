@@ -84,6 +84,16 @@ function fmtDate(v) {
 function ifEq(a, b, opts) { return a === b ? opts.fn(this) : opts.inverse(this); }
 `;
 
+// Return-doc helpers: adds fmt() (3-decimal number formatter) to the common set
+export const RETURN_DOC_HELPERS = `
+function fmt(v) {
+  if (v == null || v === '') return '0';
+  var n = Number(v);
+  if (isNaN(n)) return String(v);
+  return new Intl.NumberFormat('es', { minimumFractionDigits: 0, maximumFractionDigits: 3 }).format(n);
+}
+` + COMMON_HANDLEBARS_HELPERS;
+
 // ---------------------------------------------------------------------------
 // Shared fetch helpers
 // ---------------------------------------------------------------------------

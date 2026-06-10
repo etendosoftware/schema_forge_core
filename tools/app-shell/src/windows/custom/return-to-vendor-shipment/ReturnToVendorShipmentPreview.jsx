@@ -2,11 +2,11 @@ import { useRef } from 'react';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
-import PreviewActionButtons, { PreviewPdfPanel, usePreviewSendModal, makeStaticPreviewTabs } from '../shared/PreviewActionButtons.jsx';
+import { PreviewPdfPanel, usePreviewSendModal } from '../shared/PreviewActionButtons.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { useReturnToVendorPdf } from './useReturnToVendorPdf.js';
-import ReturnDocStatsPanel from '../shared/preview-cards/ReturnDocStatsPanel.jsx';
 import { downloadBlobAsFile } from '../shared/pdfUtils.js';
+import { buildReturnPreviewContent } from '../shared/preview-cards/buildReturnPreviewContent.jsx';
 
 export default function ReturnToVendorShipmentPreview({ shipment, token, apiBaseUrl, windowName, onClose, onEdit }) {
   const ui = useUI();
@@ -24,20 +24,8 @@ export default function ReturnToVendorShipmentPreview({ shipment, token, apiBase
 
   if (!shipment) return null;
 
-  const leftPanel = (
-    <PreviewPdfPanel
-      pdfLoading={pdfLoading}
-      pdfError={pdfError}
-      pdfUrl={pdfUrl}
-      generatingText={ui('returnToVendorPdfGenerating')}
-      errorText={ui('returnToVendorPdfError')}
-    />
-  );
-
   const partnerName = shipment['businessPartner$_identifier'] || '—';
-  const movementDate = shipment.movementDate
-    ? formatCalendarDate(shipment.movementDate, locale)
-    : '—';
+  const movementDate = shipment.movementDate ? formatCalendarDate(shipment.movementDate, locale) : '—';
   const windowLabel = tMenu('Return to Vendor Shipment');
 
   const handleDownload = () => {
@@ -50,36 +38,20 @@ export default function ReturnToVendorShipmentPreview({ shipment, token, apiBase
     { key: 'returnInvoices', type: 'purchase-invoice', fetch: async () => shipment?.returnInvoices ?? [] },
   ];
 
-  const actionButtons = (
-    <PreviewActionButtons
-      onEmail={openEmailModal}
-      onDownloadPdf={handleDownload}
-      hasPdf={!!pdfBlob}
-      triggerEdit={() => modalRef.current?.triggerEdit?.()}
-      sendLabel={ui('invoicePreviewSend')}
-      downloadLabel={ui('invoicePreviewDownloadPdf')}
-      editLabel={ui('invoicePreviewEdit')}
+  const leftPanel = (
+    <PreviewPdfPanel
+      pdfLoading={pdfLoading}
+      pdfError={pdfError}
+      pdfUrl={pdfUrl}
+      generatingText={ui('returnToVendorPdfGenerating')}
+      errorText={ui('returnToVendorPdfError')}
     />
   );
 
-  const tabs = [
-    {
-      key: 'general',
-      label: ui('invoicePreviewGeneral'),
-      content: (
-        <ReturnDocStatsPanel
-          doc={shipment}
-          partnerName={partnerName}
-          movementDate={movementDate}
-          token={token}
-          apiBaseUrl={apiBaseUrl}
-          ui={ui}
-          specs={specs}
-        />
-      ),
-    },
-    ...makeStaticPreviewTabs(ui),
-  ];
+  const { actionButtons, tabs } = buildReturnPreviewContent({
+    doc: shipment, openEmailModal, pdfBlob, handleDownload, modalRef,
+    specs, partnerName, movementDate, token, apiBaseUrl, ui,
+  });
 
   return (
     <>
