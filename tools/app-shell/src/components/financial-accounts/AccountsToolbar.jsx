@@ -1,10 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Search, Plus, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { AdvancedFilterBuilder } from '@/components/contract-ui/AdvancedFilterBuilder.jsx';
+import { AdvancedFilterButton } from '@/components/contract-ui/AdvancedFilterButton.jsx';
 import { useUI } from '@/i18n';
 import { AccountTypeFilter } from './AccountTypeFilter.jsx';
 import { buildAccountFilterColumns } from './accountAdvancedFilter.js';
@@ -27,9 +26,7 @@ export function AccountsToolbar({
   rows = [],
 }) {
   const ui = useUI();
-  const [advancedOpen, setAdvancedOpen] = useState(false);
   const columns = useMemo(() => buildAccountFilterColumns(ui), [ui]);
-  const activeConditions = advancedFilter?.conditions?.length ?? 0;
 
   const handleRulesClick = () => {
     toast(ui('financeAccountsRulesToast'));
@@ -44,35 +41,13 @@ export function AccountsToolbar({
         <AccountTypeFilter value={typeFilter} onChange={onTypeFilterChange} />
 
         {/* Advanced "by conditions" filter — same as the other windows. */}
-        {onAdvancedFilterChange ? (
-          <Popover open={advancedOpen} onOpenChange={setAdvancedOpen}>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                data-testid="cuentas-advanced-filter"
-                title={ui('advancedFilterTitle')}
-                className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-colors hover:bg-[#F5F7F9] hover:text-foreground"
-              >
-                <Filter className="h-4 w-4" />
-                {activeConditions > 0 ? (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#121217] px-1 text-[10px] font-semibold leading-none text-white">
-                    {activeConditions}
-                  </span>
-                ) : null}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-auto p-4">
-              <AdvancedFilterBuilder
-                columns={columns}
-                rows={rows}
-                value={advancedFilter}
-                onApply={(next) => onAdvancedFilterChange(next)}
-                onClear={() => onAdvancedFilterChange(null)}
-                onClose={() => setAdvancedOpen(false)}
-              />
-            </PopoverContent>
-          </Popover>
-        ) : null}
+        <AdvancedFilterButton
+          columns={columns}
+          rows={rows}
+          value={advancedFilter}
+          onChange={onAdvancedFilterChange}
+          testId="cuentas-advanced-filter"
+        />
       </div>
 
       <div className="flex items-center gap-2">

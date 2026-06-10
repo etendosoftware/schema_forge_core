@@ -192,6 +192,17 @@ describe('domain boundary classification', () => {
     );
   });
 
+  it('classifies finance-feature shared components as platform', () => {
+    assert.deepEqual(
+      classifyPath('tools/app-shell/src/components/financial-accounts/AccountsToolbar.jsx', { knownWindows: WINDOWS }),
+      { kind: 'platform-change', scope: 'platform-change' },
+    );
+    assert.deepEqual(
+      classifyPath('tools/app-shell/src/components/payment/PaymentForm.jsx', { knownWindows: WINDOWS }),
+      { kind: 'platform-change', scope: 'platform-change' },
+    );
+  });
+
   it('classifies CLI tests with the generator boundary', () => {
     assert.deepEqual(
       classifyPath('cli/test/i18n-integration.test.js', { knownWindows: WINDOWS }),
