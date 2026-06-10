@@ -19661,6 +19661,7 @@
     "fm.result.C": "A compensar",
     "fm.result.V": "A devolver",
     "fm.result.N": "Sin resultado",
+    "fm.result.info": "Sin operadores",
     "fm.list.empty": "No se encontraron declaraciones.",
     "fm.present.title": "Marcar como presentada",
     "fm.present.subtitle": "Selecciona cómo fue presentada la declaración",

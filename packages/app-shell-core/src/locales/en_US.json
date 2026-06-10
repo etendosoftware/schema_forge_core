@@ -19410,6 +19410,7 @@
     "fm.result.C": "To offset",
     "fm.result.V": "To refund",
     "fm.result.N": "Zero result",
+    "fm.result.info": "No operators",
     "fm.list.empty": "No declarations found.",
     "fm.present.title": "Mark as submitted",
     "fm.present.subtitle": "Select how the declaration was submitted",
