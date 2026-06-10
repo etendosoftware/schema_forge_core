@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,10 +16,15 @@ import {
   fetchEnvironments,
   loginAccount,
   loginEnvironment,
+  loginWithSsoProvider,
   registerAccount,
   requestPasswordReset,
   runOnboardingStream,
 } from './onboarding/onboardingApi.js';
+import {
+  getConfiguredSsoProviders,
+  renderSsoProviderButton,
+} from './onboarding/onboardingSso.js';
 import { checkSalesInvoiceReadiness } from './onboarding/onboardingReadiness.js';
 import { useLocaleSwitch, useUI } from '../i18n/index.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../lib/oauthReturnTo.js';
@@ -62,12 +67,18 @@ const DEFAULT_ONBOARDING_FORM = {
   address: '',
   sector: 'technology',
 };
+const SSO_PROVIDERS = getConfiguredSsoProviders();
 
 function trackOnboarding(eventName, properties = {}) {
-  void track(eventName, {
-    ...ONBOARDING_EVENT_CONTEXT,
-    ...properties,
-  });
+  // Fire-and-forget telemetry: swallow rejections so a failed track() never
+  // surfaces as an unhandled promise rejection in the onboarding flow.
+  // Promise.resolve(...) tolerates a non-thenable return (e.g. a stubbed track()).
+  Promise.resolve(
+    track(eventName, {
+      ...ONBOARDING_EVENT_CONTEXT,
+      ...properties,
+    }),
+  ).catch(() => {});
 }
 
 function AuthBrand({ label }) {
@@ -103,6 +114,37 @@ function AuthPreviewMockup() {
         alt="Etendo dashboard preview"
         className="relative z-10 block h-auto w-full max-w-[1000px] select-none pointer-events-none object-contain drop-shadow-[0_28px_56px_rgba(15,23,42,0.16)]"
       />
+    </div>
+  );
+}
+
+function AuthSsoOptions({ providers, buttonRef, error, loading, label, loadingLabel }) {
+  if (!providers.length) {
+    return null;
+  }
+  return (
+    <div className="mb-5 space-y-3">
+      <div className={loading ? 'pointer-events-none opacity-60' : ''}>
+        <div ref={buttonRef} className="flex min-h-11 justify-center" />
+      </div>
+      <div className="mx-auto flex w-full max-w-[400px] items-center gap-3">
+        <div className="h-px flex-1 bg-slate-200" />
+        <span className="shrink-0 text-sm font-medium normal-case text-slate-400">
+          {label}
+        </span>
+        <div className="h-px flex-1 bg-slate-200" />
+      </div>
+      {loading && (
+        <div className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {loadingLabel}
+        </div>
+      )}
+      {error && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+          {error}
+        </div>
+      )}
     </div>
   );
 }
@@ -423,6 +465,10 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   const [loginLoading, setLoginLoading] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [ssoError, setSsoError] = useState(null);
+  const [ssoLoadingProvider, setSsoLoadingProvider] = useState(null);
+  const registerSsoButtonRef = useRef(null);
+  const loginSsoButtonRef = useRef(null);
 
   // Password reset and change state
   const resetTokenFromUrl = new URLSearchParams(window.location.search).get('resetToken') || ''; // NOSONAR: reset links carry single-use server-side tokens.
@@ -516,15 +562,17 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   }, [accountName]);
 
   // Save token + account name and route by environments
-  const handleAuthSuccess = (token, account, { route = true } = {}) => {
+  const handleAuthSuccess = useCallback((token, account, { route = true } = {}) => {
     localStorage.setItem('sf_platform_token', token);
     setAccountName(account?.name || account?.email || null);
     setShowRegisterPassword(false);
     setShowLoginPassword(false);
+    setSsoError(null);
+    setSsoLoadingProvider(null);
     if (route) {
       routeByEnvironments();
     }
-  };
+  }, [routeByEnvironments]);
 
   const handleRegisterSuccess = (token, account) => {
     localStorage.setItem('sf_platform_token', token);
@@ -533,6 +581,8 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     setShowLoginPassword(false);
     setRegisterError(null);
     setLoginError(null);
+    setSsoError(null);
+    setSsoLoadingProvider(null);
     setResult(null);
     setFormSubmitted(false);
     setRunning(false);
@@ -566,12 +616,93 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     setCreateStep(1);
     setRegisterError(null);
     setLoginError(null);
+    setSsoError(null);
+    setSsoLoadingProvider(null);
     setShowRegisterPassword(false);
     setShowLoginPassword(false);
     setSteps(initialSetupSteps());
     setView('register');
   };
   /* c8 ignore stop */
+
+  const handleSsoProviderLogin = useCallback(async (provider, payload) => {
+    trackOnboarding('onboarding_auth_submitted', {
+      action: 'sso',
+      provider,
+      status: 'started',
+    });
+    setSsoError(null);
+    setRegisterError(null);
+    setLoginError(null);
+    setSsoLoadingProvider(provider);
+    try {
+      const data = await loginWithSsoProvider(fetch, BASE_URL, provider, payload);
+      if (data.token) {
+        trackOnboarding('onboarding_auth_succeeded', {
+          action: 'sso',
+          provider,
+          status: 'success',
+        });
+        handleAuthSuccess(data.token, data.account);
+      } else {
+        trackOnboarding('onboarding_auth_failed', {
+          action: 'sso',
+          provider,
+          status: 'failed',
+        });
+        setSsoError(ui('onboardingSsoFailed'));
+      }
+    } catch (err) {
+      trackOnboarding('onboarding_auth_failed', {
+        action: 'sso',
+        provider,
+        status: 'failed',
+      });
+      setSsoError(err.userMessage || ui(err.code || 'onboardingSsoFailed'));
+    } finally {
+      setSsoLoadingProvider(null);
+    }
+  }, [handleAuthSuccess, ui]);
+
+  useEffect(() => {
+    let buttonRef = null;
+    if (view === 'register') {
+      buttonRef = registerSsoButtonRef;
+    }
+    if (view === 'login') {
+      buttonRef = loginSsoButtonRef;
+    }
+    if (!buttonRef?.current || !SSO_PROVIDERS.length) {
+      return undefined;
+    }
+    let cancelled = false;
+    const container = buttonRef.current;
+    container.replaceChildren();
+    Promise.all(SSO_PROVIDERS.map((provider) => {
+      const providerContainer = document.createElement('div');
+      container.appendChild(providerContainer);
+      return renderSsoProviderButton(provider, providerContainer, {
+        onCredential: (providerId, payload) => {
+          if (!cancelled) {
+            handleSsoProviderLogin(providerId, payload);
+          }
+        },
+        onError: (error) => {
+          if (!cancelled) {
+            setSsoError(error.userMessage || ui(error.code || 'onboardingSsoFailed'));
+          }
+        },
+      });
+    })).catch((error) => {
+      if (!cancelled) {
+        setSsoError(error.userMessage || ui(error.code || 'onboardingSsoFailed'));
+      }
+    });
+    return () => {
+      cancelled = true;
+      container.replaceChildren();
+    };
+  }, [handleSsoProviderLogin, ui, view]);
 
   // Register
   const handleRegister = async (e) => {
@@ -1014,6 +1145,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         onSwitch={() => {
           setRegisterError(null);
           setLoginError(null);
+          setSsoError(null);
           setShowRegisterPassword(false);
           setShowLoginPassword(false);
           setView('login');
@@ -1032,6 +1164,15 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             {ui('onboardingRegisterSubtitle')}
           </p>
         </div>
+
+        <AuthSsoOptions
+          providers={SSO_PROVIDERS}
+          buttonRef={registerSsoButtonRef}
+          error={ssoError}
+          loading={Boolean(ssoLoadingProvider)}
+          label={ui('onboardingSsoDivider')}
+          loadingLabel={ui('onboardingSsoSigningIn')}
+        />
 
         <form onSubmit={handleRegister} className="space-y-5">
           <AuthField
@@ -1179,6 +1320,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         onSwitch={() => {
           setRegisterError(null);
           setLoginError(null);
+          setSsoError(null);
           setShowRegisterPassword(false);
           setShowLoginPassword(false);
           setView('register');
@@ -1197,6 +1339,15 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             {ui('onboardingLoginSubtitle')}
           </p>
         </div>
+
+        <AuthSsoOptions
+          providers={SSO_PROVIDERS}
+          buttonRef={loginSsoButtonRef}
+          error={ssoError}
+          loading={Boolean(ssoLoadingProvider)}
+          label={ui('onboardingSsoDivider')}
+          loadingLabel={ui('onboardingSsoSigningIn')}
+        />
 
         <form onSubmit={handleLogin} className="space-y-5">
           <AuthField

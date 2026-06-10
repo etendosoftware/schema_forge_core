@@ -1200,6 +1200,27 @@ function buildHiddenDefaultsArray(hiddenDefaultFields, allEntityFields) {
     }).join('\n');
 }
 
+export function buildHeaderLogicMaps(contract, headerEntity) {
+  const headerEntityForLogic = contract.frontendContract.entities[headerEntity] ?? {};
+  const headerColumnMap = {};
+  const headerBooleanFields = [];
+  for (const hf of (headerEntityForLogic.fields ?? [])) {
+    if (hf.column && hf.name) headerColumnMap[hf.column] = hf.name;
+    if (hf.tsType === 'boolean' || hf.type === 'boolean') headerBooleanFields.push(hf.name);
+  }
+  return {headerColumnMap, headerBooleanFields};
+}
+
+function getHiddenArraySeparator(hiddenDefaultsArray, hiddenSiblingArray) {
+  return (hiddenDefaultsArray && hiddenSiblingArray) ? '\n' : '';
+}
+
+function getAddLineGuardProp(maxDetailLines) {
+  return maxDetailLines != null
+      ? `\n        addLineGuard={(_, children) => children.length < ${maxDetailLines}}`
+      : '';
+}
+
 /**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
@@ -1308,7 +1329,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hiddenSiblingArray = hiddenSiblingNames
     .map(name => `    { key: '${name}', fromSibling: '${name}' },`)
     .join('\n');
-  const hiddenArraySeparator = (hiddenDefaultsArray && hiddenSiblingArray) ? '\n' : '';
+  const hiddenArraySeparator = getHiddenArraySeparator(hiddenDefaultsArray, hiddenSiblingArray);
 
   // API prediction config
   const { apiBlock, apiProp } = buildApiParts(contract);
@@ -1393,13 +1414,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Column→property and boolean-field maps built from the header entity, used
   // to compile tab-level readOnlyLogic expressions the same way field-level
   // readOnlyLogic is compiled in generate-contract.js.
-  const headerEntityForLogic = contract.frontendContract.entities[headerEntity] ?? {};
-  const headerColumnMap = {};
-  const headerBooleanFields = [];
-  for (const hf of (headerEntityForLogic.fields ?? [])) {
-    if (hf.column && hf.name) headerColumnMap[hf.column] = hf.name;
-    if (hf.tsType === 'boolean' || hf.type === 'boolean') headerBooleanFields.push(hf.name);
-  }
+  const {headerColumnMap, headerBooleanFields} = buildHeaderLogicMaps(contract, headerEntity);
 
   if (secondaryTabsDecl) {
     // Declarative config from decisions.json — sorted by tabOrder
@@ -1651,9 +1666,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // maxDetailLines: limits the detail entity to N lines; hides the Add Line button once reached.
   const maxDetailLines = windowConfig.maxDetailLines ?? null;
-  const addLineGuardProp = maxDetailLines != null
-    ? `\n        addLineGuard={(_, children) => children.length < ${maxDetailLines}}`
-    : '';
+  const addLineGuardProp = getAddLineGuardProp(maxDetailLines);
 
   // entityLabel / detailLabel / detailTabIndex from window decisions config
   let entityLabel = windowConfig.entityLabel || toLabel(headerEntity);

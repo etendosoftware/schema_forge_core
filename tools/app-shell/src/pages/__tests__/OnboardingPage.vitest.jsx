@@ -59,9 +59,15 @@ vi.mock('../onboarding/onboardingApi.js', () => ({
   fetchEnvironments: vi.fn().mockResolvedValue([]),
   loginAccount: vi.fn(),
   loginEnvironment: vi.fn(),
+  loginWithSsoProvider: vi.fn(),
   registerAccount: vi.fn(),
   requestPasswordReset: vi.fn(),
   runOnboardingStream: vi.fn(),
+}));
+
+vi.mock('../onboarding/onboardingSso.js', () => ({
+  getConfiguredSsoProviders: vi.fn(() => []),
+  renderSsoProviderButton: vi.fn(),
 }));
 
 // Mock onboarding readiness
