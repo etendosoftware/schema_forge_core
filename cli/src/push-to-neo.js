@@ -582,7 +582,7 @@ async function upsertSingleField(client, f, ctx, entityMaps) {
   return { column: f.column, entityName: f.entityName, success: true };
 }
 
-async function stepExcludeNonContractFields(client, popResult, allFields, schemaRawData) {
+export async function stepExcludeNonContractFields(client, popResult, allFields, schemaRawData) {
   console.log(`[4/4] Excluding non-contract fields...`);
   const contractColumns = new Set(allFields.map(f => f.column));
   // Only exclude columns that were extracted from AD in this run.
