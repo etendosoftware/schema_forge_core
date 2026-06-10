@@ -2,7 +2,6 @@
 set -euo pipefail
 
 # ── Config ──────────────────────────────────────────────────────────
-PROJECT_KEY="etendosoftware_etendo_schema_forge_133209fc-d4ea-4f26-8699-8c76cb26648c"
 POLL_INTERVAL=5      # seconds between polls
 MAX_WAIT=300         # max seconds to wait for analysis
 REPORT_DIR="sonar-reports"
@@ -13,6 +12,15 @@ RUN_COVERAGE="false"
 FAIL_ON_GATE="false"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 CLASSIC_ROOT="$SCRIPT_DIR/etendo_core"
+
+# projectKey is declared in sonar-project.properties (single source of truth);
+# read it here instead of duplicating the value across the script.
+SONAR_PROPERTIES="$SCRIPT_DIR/sonar-project.properties"
+PROJECT_KEY="$(awk -F'=' '$1=="sonar.projectKey"{sub(/^[^=]*=/, ""); print; exit}' "$SONAR_PROPERTIES")"
+if [[ -z "$PROJECT_KEY" ]]; then
+  echo "ERROR: sonar.projectKey not found in $SONAR_PROPERTIES"
+  exit 1
+fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -223,7 +231,7 @@ if [[ -z "${SONAR_HOST_URL:-}" || -z "${SONAR_TOKEN:-}" ]]; then
 fi
 
 SONAR_HOST_URL="${SONAR_HOST_URL%/}"
-export SONAR_HOST_URL SONAR_TOKEN REPORT_DIR BASE_REF CHANGED_ONLY
+export SONAR_HOST_URL SONAR_TOKEN REPORT_DIR BASE_REF CHANGED_ONLY PROJECT_KEY
 
 prompt_for_base_ref
 validate_base_ref
@@ -300,7 +308,7 @@ import json, os, urllib.request, sys
 base = os.environ["SONAR_HOST_URL"]
 token = os.environ["SONAR_TOKEN"]
 report_dir = os.environ.get("REPORT_DIR", "sonar-reports")
-project = "etendosoftware_etendo_schema_forge_133209fc-d4ea-4f26-8699-8c76cb26648c"
+project = os.environ["PROJECT_KEY"]
 
 import base64 as b64
 credentials = b64.b64encode(f"{token}:".encode()).decode()
