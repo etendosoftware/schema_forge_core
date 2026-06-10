@@ -1,8 +1,8 @@
 {
-  "version": "0.2.0",
+  "version": "0.8.0",
   "generatedAt": "2026-04-29T18:11:05.114Z",
-  "updatedAt": "2026-05-26T18:48:57.139Z",
-  "contractChecksum": "708f2076da3211e0",
+  "updatedAt": "2026-05-27T16:36:19.448Z",
+  "contractChecksum": "1cdb4ce7c3d3e5a8",
   "apiPrediction": {
     "specName": "return-material-receipt",
     "baseUrl": "/sws/neo/return-material-receipt",
@@ -70,14 +70,6 @@
             }
           ]
         }
-      },
-      {
-        "entity": "returnMaterialReceipt",
-        "field": "salesOrder",
-        "column": "C_Order_ID",
-        "reference": "Order",
-        "inputMode": "search",
-        "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/selectors/salesOrder"
       },
       {
         "entity": "returnMaterialReceiptLine",
@@ -421,6 +413,18 @@
     },
     "window": {
       "category": "sales"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "sourceShipmentDocNo": "Albarán origen",
+        "movementQuantity": "Cant. a devolver",
+        "orderQuantity": "Cant. entregada original"
+      },
+      "en_US": {
+        "sourceShipmentDocNo": "Source Shipment",
+        "movementQuantity": "Return Qty",
+        "orderQuantity": "Original Delivered Qty"
+      }
     }
   },
   "formState": {
@@ -455,10 +459,10 @@
             "required": true,
             "defaultValue": "DR"
           },
-          "salesOrder": {
+          "trackingNo": {},
+          "sourceShipmentDocNo": {
             "readOnly": true
-          },
-          "trackingNo": {}
+          }
         }
       },
       "returnMaterialReceiptLine": {
@@ -575,5 +579,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "d71a9fa24d1595a7"
+  "checksum": "f36f04d8136b3f0d"
 }

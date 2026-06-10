@@ -56,6 +56,34 @@ export function PercentBar({ value }) {
   );
 }
 
+// ── MovementSummaryCard ───────────────────────────────────────────────────────
+
+/**
+ * Shared card for movement-type documents (shipment, receipt, return).
+ * Renders a titled CardShell with a fixed set of rows + a status badge row,
+ * followed by optional extra rows (children).
+ */
+export function MovementSummaryCard({ title, rows, statusRowLabel, statusLabel, statusBadgeClass, children }) {
+  return (
+    <CardShell>
+      <div className="px-4 py-3 border-b border-gray-100">
+        <span className="font-bold text-gray-900 text-sm">{title}</span>
+      </div>
+      <div className="px-4 py-2">
+        {rows.map(({ label, value }) => (
+          <InfoRow key={label} label={label} value={value} />
+        ))}
+        <InfoRow label={statusRowLabel}>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusBadgeClass}`}>
+            {statusLabel}
+          </span>
+        </InfoRow>
+        {children}
+      </div>
+    </CardShell>
+  );
+}
+
 // ── SummaryCard ───────────────────────────────────────────────────────────────
 
 /**
