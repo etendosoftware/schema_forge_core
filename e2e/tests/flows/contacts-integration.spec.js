@@ -204,15 +204,11 @@ test.describe('Contacts Integration — Full journey', () => {
     // Fill names and trigger auto-save
     const firstName = 'E2EFirstName';
     const lastName = 'E2ELastName';
-    await firstNameInput.click();
-    await firstNameInput.clear();
-    await firstNameInput.pressSequentially(firstName, { delay: 50 });
+    await firstNameInput.fill(firstName);
     await page.keyboard.press('Tab');
     await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
-    await lastNameInput.click();
-    await lastNameInput.clear();
-    await lastNameInput.pressSequentially(lastName, { delay: 50 });
+    await lastNameInput.fill(lastName);
     await page.keyboard.press('Tab');
     await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
