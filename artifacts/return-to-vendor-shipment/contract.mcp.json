@@ -1,8 +1,8 @@
 {
-  "version": "0.5.0",
+  "version": "0.10.0",
   "generatedAt": "2026-04-29T18:11:17.025Z",
-  "updatedAt": "2026-06-09T11:51:41.055Z",
-  "contractChecksum": "0f546ba4061d078b",
+  "updatedAt": "2026-06-09T18:24:59.699Z",
+  "contractChecksum": "e54e6ecf70a08fca",
   "apiPrediction": {
     "specName": "return-to-vendor-shipment",
     "baseUrl": "/sws/neo/return-to-vendor-shipment",
@@ -409,13 +409,13 @@
     "labelOverrides": {
       "es_ES": {
         "sourceReceiptDocNo": "Albarán origen",
-        "movementQuantity": "Cant. a devolver",
-        "orderQuantity": "Cant. recibida original"
+        "MovementQty": "Cant. a devolver",
+        "QuantityOrder": "Cant. pedida"
       },
       "en_US": {
         "sourceReceiptDocNo": "Source Receipt",
-        "movementQuantity": "Return Qty",
-        "orderQuantity": "Original Received Qty"
+        "MovementQty": "Return Qty",
+        "QuantityOrder": "Ordered Qty"
       }
     }
   },
@@ -470,7 +470,6 @@
             "readOnlyLogic": "@Processed@='Y'"
           },
           "movementQuantity": {
-            "readOnly": true,
             "required": true,
             "readOnlyLogic": "@Processed@='Y' | @UomManagement@='Y'",
             "defaultValue": "0"
@@ -503,8 +502,12 @@
         "movementDate",
         "warehouse"
       ],
+      "lineFields": [
+        "movementQuantity"
+      ],
       "recommendedOrder": [
-        "createHeader"
+        "createHeader",
+        "createLines"
       ]
     },
     "selectorContexts": [
@@ -532,6 +535,7 @@
     ],
     "workflow": [
       "Create draft header with required fields",
+      "Add at least one valid line",
       "Validate form state",
       "Complete the document"
     ],
@@ -559,6 +563,13 @@
         ]
       },
       {
+        "operation": "createLine",
+        "description": "Add a line after the header exists and parent context is available.",
+        "fields": [
+          "movementQuantity"
+        ]
+      },
+      {
         "operation": "completeDocument",
         "description": "Validate form state and run the document lifecycle action when the draft is complete.",
         "action": "sendMaterials"
@@ -568,5 +579,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "26a0ebe03d45a70a"
+  "checksum": "70b5c723c31031ea"
 }

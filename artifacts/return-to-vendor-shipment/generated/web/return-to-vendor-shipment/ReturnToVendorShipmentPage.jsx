@@ -44,6 +44,7 @@ const requiredHeaderFields = ['documentNo', 'businessPartner', 'partnerAddress',
 // @sf-generated-start addLineFields:returnToVendorShipmentLine
 const addLineFields = {
   entry: [
+    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 0 },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
@@ -253,13 +254,13 @@ export const api = {
   "labelOverrides": {
     "es_ES": {
       "sourceReceiptDocNo": "Albarán origen",
-      "movementQuantity": "Cant. a devolver",
-      "orderQuantity": "Cant. recibida original"
+      "MovementQty": "Cant. a devolver",
+      "QuantityOrder": "Cant. pedida"
     },
     "en_US": {
       "sourceReceiptDocNo": "Source Receipt",
-      "movementQuantity": "Return Qty",
-      "orderQuantity": "Original Received Qty"
+      "MovementQty": "Return Qty",
+      "QuantityOrder": "Ordered Qty"
     }
   }
 };

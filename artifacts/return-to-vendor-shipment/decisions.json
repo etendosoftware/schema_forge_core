@@ -16,13 +16,13 @@
     "labelOverrides": {
       "es_ES": {
         "sourceReceiptDocNo": "Albarán origen",
-        "movementQuantity": "Cant. a devolver",
-        "orderQuantity": "Cant. recibida original"
+        "MovementQty": "Cant. a devolver",
+        "QuantityOrder": "Cant. pedida"
       },
       "en_US": {
         "sourceReceiptDocNo": "Source Receipt",
-        "movementQuantity": "Return Qty",
-        "orderQuantity": "Original Received Qty"
+        "MovementQty": "Return Qty",
+        "QuantityOrder": "Ordered Qty"
       }
     },
     "processOverrides": {
@@ -318,11 +318,13 @@
           "section": "principal"
         },
         "movementQuantity": {
+          "visibility": "editable",
           "grid": true,
           "gridOrder": 2,
           "inputMode": "number",
-          "readOnlyLogic": null,
-          "section": "principal"
+          "section": "principal",
+          "grow": true,
+          "labels": { "es_ES": "Cant. a devolver", "en_US": "Return Qty" }
         },
         "uOM": {
           "visibility": "readOnly",
@@ -334,7 +336,9 @@
           "visibility": "readOnly",
           "grid": true,
           "gridOrder": 3,
-          "section": "principal"
+          "section": "principal",
+          "grow": true,
+          "labels": { "es_ES": "Cant. recibida orig.", "en_US": "Original Received Qty" }
         },
         "description": {
           "grid": false,

@@ -6,6 +6,7 @@ import { useUI } from '@/i18n';
 import { ConfirmResultModal } from '@/components/contract-ui/ConfirmResultModal';
 import ConfirmInOutModal from '@/components/contract-ui/ConfirmInOutModal';
 import CreateInvoiceConfirmModal from '@/components/contract-ui/CreateInvoiceConfirmModal';
+import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import { generateReturnToVendorPdf, getReturnToVendorPdfLabels } from './useReturnToVendorPdf';
 
 function buildInvoiceResult(inv, ui) {
@@ -27,6 +28,7 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
   const [creatingInvoice, setCreatingInvoice] = useState(false);
   const [result, setResult] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [cloneTargets, setCloneTargets] = useState(null);
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
 
   const status = data?.documentStatus;
@@ -97,7 +99,20 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
           {ui('createReturnInvoice')}
         </button>
       )}
+      <CloneButton onClick={() => setCloneTargets([data])} ui={ui} />
       <PrintButton onClick={handlePrint} loading={pdfLoading} ui={ui} />
+
+      {cloneTargets && createPortal(
+        <CloneOrderModal
+          records={cloneTargets}
+          apiBaseUrl={apiBaseUrl}
+          headers={headers}
+          headerEntity="returnToVendorShipment"
+          routePrefix="/return-to-vendor-shipment/"
+          onClose={() => setCloneTargets(null)}
+        />,
+        document.body,
+      )}
 
       {/* DR: confirm shipment (+ optional return invoice) */}
       {showModal && status === 'DR' && (
@@ -155,6 +170,18 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
         document.body,
       )}
     </>
+  );
+}
+
+function CloneButton({ onClick, ui }) {
+  return (
+    <button type="button" onClick={onClick} data-testid="action-clone"
+      style={{ padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #D1D5DB', background: 'transparent', color: '#6B7280', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+      </svg>
+      {ui('quickAction.clone')}
+    </button>
   );
 }
 

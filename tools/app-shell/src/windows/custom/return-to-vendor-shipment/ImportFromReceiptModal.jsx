@@ -34,6 +34,18 @@ const RECEIPT_CONFIG = {
   qtyStep: 1,
 };
 
-export default function ImportFromReceiptModal(props) {
-  return <ImportReturnLinesModal {...props} config={RECEIPT_CONFIG} />;
+export default function ImportFromReceiptModal({ bpId, ...props }) {
+  const config = {
+    ...RECEIPT_CONFIG,
+    fetchSourceLines: async (base, docId, headers) => {
+      const res = await fetch(`${ACTION_BASE(base)}/availableReceiptLines`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ receiptId: docId, businessPartner: bpId }),
+      });
+      if (!res.ok) return [];
+      return (await res.json())?.response?.data || [];
+    },
+  };
+  return <ImportReturnLinesModal bpId={bpId} {...props} config={config} />;
 }

@@ -1,8 +1,8 @@
 {
-  "version": "0.5.0",
+  "version": "0.10.0",
   "generatedAt": "2026-04-29T18:11:17.025Z",
-  "updatedAt": "2026-06-09T11:51:41.055Z",
-  "checksum": "0f546ba4061d078b",
+  "updatedAt": "2026-06-09T18:45:53.349Z",
+  "checksum": "e54e6ecf70a08fca",
   "frontendContract": {
     "window": {
       "id": "273673D2ED914C399A6C51DB758BE0F9",
@@ -24,13 +24,13 @@
       "labelOverrides": {
         "es_ES": {
           "sourceReceiptDocNo": "Albarán origen",
-          "movementQuantity": "Cant. a devolver",
-          "orderQuantity": "Cant. recibida original"
+          "MovementQty": "Cant. a devolver",
+          "QuantityOrder": "Cant. pedida"
         },
         "en_US": {
           "sourceReceiptDocNo": "Source Receipt",
-          "movementQuantity": "Return Qty",
-          "orderQuantity": "Original Received Qty"
+          "MovementQty": "Return Qty",
+          "QuantityOrder": "Ordered Qty"
         }
       },
       "dateFilterKey": "movementDate",
@@ -379,7 +379,7 @@
             "label": "Movement Quantity",
             "type": "quantity",
             "tsType": "number",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true,
             "grid": true,
             "form": true,
@@ -390,7 +390,12 @@
             },
             "defaultValue": "0",
             "section": "principal",
+            "labels": {
+              "es_ES": "Cant. a devolver",
+              "en_US": "Return Qty"
+            },
             "gridOrder": 2,
+            "grow": true,
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @UomManagement@='Y'",
               "evaluable": true,
@@ -443,7 +448,12 @@
             "grid": true,
             "form": true,
             "section": "principal",
+            "labels": {
+              "es_ES": "Cant. recibida orig.",
+              "en_US": "Original Received Qty"
+            },
             "gridOrder": 3,
+            "grow": true,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_Conversion"
             },
@@ -502,13 +512,13 @@
       "labelOverrides": {
         "es_ES": {
           "sourceReceiptDocNo": "Albarán origen",
-          "movementQuantity": "Cant. a devolver",
-          "orderQuantity": "Cant. recibida original"
+          "MovementQty": "Cant. a devolver",
+          "QuantityOrder": "Cant. pedida"
         },
         "en_US": {
           "sourceReceiptDocNo": "Source Receipt",
-          "movementQuantity": "Return Qty",
-          "orderQuantity": "Original Received Qty"
+          "MovementQty": "Return Qty",
+          "QuantityOrder": "Ordered Qty"
         }
       },
       "dateFilterKey": "movementDate",
@@ -1134,7 +1144,7 @@
             "apiKey": "movementQuantity",
             "column": "MovementQty",
             "type": "quantity",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true
           },
           {
@@ -1634,13 +1644,13 @@
     "labelOverrides": {
       "es_ES": {
         "sourceReceiptDocNo": "Albarán origen",
-        "movementQuantity": "Cant. a devolver",
-        "orderQuantity": "Cant. recibida original"
+        "MovementQty": "Cant. a devolver",
+        "QuantityOrder": "Cant. pedida"
       },
       "en_US": {
         "sourceReceiptDocNo": "Source Receipt",
-        "movementQuantity": "Return Qty",
-        "orderQuantity": "Original Received Qty"
+        "MovementQty": "Return Qty",
+        "QuantityOrder": "Ordered Qty"
       }
     }
   },
