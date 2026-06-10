@@ -1,83 +1,28 @@
-import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { useUI } from '@/i18n';
 import { ConfirmResultModal } from '@/components/contract-ui/ConfirmResultModal';
 import ConfirmInOutModal from '@/components/contract-ui/ConfirmInOutModal';
 import CreateInvoiceConfirmModal from '@/components/contract-ui/CreateInvoiceConfirmModal';
 import { generateReturnReceiptPdf, getReturnReceiptPdfLabels } from './useReturnReceiptPdf';
-
-function buildInvoiceResult(inv, ui) {
-  return {
-    title: ui('rmrInvoiceCreatedTitle'),
-    docs: inv.id ? [{
-      type: 'facturaVenta',
-      num: inv.documentNo,
-      amount: inv.amount ?? inv.grandTotal,
-      route: `/sales-invoice/${inv.id}`,
-    }] : [],
-  };
-}
+import { useConfirmWithCredit } from '../shared/useConfirmWithCredit';
+import PrintButton from '../shared/PrintButton';
 
 export default function ConfirmWithCreditButton({ data, recordId, token, apiBaseUrl }) {
-  const ui = useUI();
   const navigate = useNavigate();
-  const [showModal, setShowModal] = useState(false);
-  const [creatingInvoice, setCreatingInvoice] = useState(false);
-  const [result, setResult] = useState(null);
-  const [pdfLoading, setPdfLoading] = useState(false);
-  const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
-
-  const status = data?.documentStatus;
-  const currency = data?.['currency$_identifier'] || '';
-  const confirmDisabled = typeof data?.linesCount === 'number' && data.linesCount === 0;
-  const hasReturnInvoice = Array.isArray(data?.returnInvoices)
-    ? data.returnInvoices.some(inv => inv.documentStatus === 'CO')
-    : data?.hasReturnInvoice === true;
-  const headers = useMemo(() => ({
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  }), [token]);
-  const pdfLabels = getReturnReceiptPdfLabels(ui);
-
-  const handlePrint = useCallback(async () => {
-    setPdfLoading(true);
-    try {
-      const blob = await generateReturnReceiptPdf(data?.id || recordId, apiBaseUrl, token, pdfLabels);
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      setTimeout(() => URL.revokeObjectURL(url), 30000);
-    } catch (err) {
-      toast.error(err.message || ui('failedToGeneratePdf'));
-    } finally {
-      setPdfLoading(false);
-    }
-  }, [data, recordId, apiBaseUrl, token, pdfLabels, ui]);
-
-  const handleCreateReturnInvoice = useCallback(async () => {
-    if (creatingInvoice) return;
-    setCreatingInvoice(true);
-    try {
-      const res = await fetch(
-        `${apiBaseUrl}/returnMaterialReceipt/${data?.id || recordId}/action/createReturnInvoice`,
-        { method: 'POST', headers, body: JSON.stringify({}) },
-      );
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.response?.message || err?.message || `Error (${res.status})`);
-      }
-      const invData = (await res.json())?.response?.data;
-      setResult(buildInvoiceResult(
-        { id: invData?.id ?? null, documentNo: invData?.documentNo || '', amount: invData?.grandTotalAmount ?? null },
-        ui,
-      ));
-    } catch (err) {
-      toast.error(err.message || ui('couldNotCreateReturnInvoice'));
-    } finally {
-      setCreatingInvoice(false);
-    }
-  }, [data, recordId, apiBaseUrl, headers, ui, creatingInvoice]);
+  const {
+    ui, status, currency, confirmDisabled, hasReturnInvoice,
+    headers, base, pdfLoading, showModal, setShowModal,
+    creatingInvoice, result, setResult,
+    handlePrint, handleCreateReturnInvoice, buildInvoiceResultFromConfirm,
+  } = useConfirmWithCredit({
+    data, recordId, token, apiBaseUrl,
+    entitySegment: 'returnMaterialReceipt',
+    invoiceRoute: '/sales-invoice/',
+    invoiceType: 'facturaVenta',
+    invoiceCreatedTitleKey: 'rmrInvoiceCreatedTitle',
+    generatePdfFn: generateReturnReceiptPdf,
+    getPdfLabelsFn: getReturnReceiptPdfLabels,
+  });
 
   if (status !== 'DR' && status !== 'CO') return null;
 
@@ -97,9 +42,8 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
           {ui('createReturnInvoice')}
         </button>
       )}
-      <PrintButton onClick={handlePrint} loading={pdfLoading} ui={ui} />
+      <PrintButton onClick={handlePrint} loading={pdfLoading} />
 
-      {/* DR: confirm receipt (+ optional return invoice) */}
       {showModal && status === 'DR' && (
         <ConfirmInOutModal
           base={base}
@@ -122,17 +66,13 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
           cancelLabel={ui('cancel')}
           onConfirmed={({ invoice }) => {
             setShowModal(false);
-            if (invoice?.id) {
-              setResult(buildInvoiceResult(invoice, ui));
-            } else {
-              window.location.reload();
-            }
+            const r = buildInvoiceResultFromConfirm(invoice);
+            if (r) setResult(r); else window.location.reload();
           }}
           onClose={() => setShowModal(false)}
         />
       )}
 
-      {/* CO: create return invoice for already-confirmed receipt */}
       {showModal && status === 'CO' && createPortal(
         <CreateInvoiceConfirmModal
           data={data}
@@ -154,19 +94,6 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
         />,
         document.body,
       )}
-
     </>
-  );
-}
-
-function PrintButton({ onClick, loading, ui }) {
-  return (
-    <button type="button" onClick={onClick} disabled={loading}
-      style={{ padding: '4px 12px', borderRadius: '6px', opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer', border: '1px solid #D1D5DB', background: 'transparent', color: '#6B7280', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" /><rect x="6" y="14" width="12" height="8" />
-      </svg>
-      {ui('print')}
-    </button>
   );
 }

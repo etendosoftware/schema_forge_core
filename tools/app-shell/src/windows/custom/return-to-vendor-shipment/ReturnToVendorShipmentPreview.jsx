@@ -5,45 +5,8 @@ import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
 import PreviewActionButtons, { PreviewPdfPanel, usePreviewSendModal, makeStaticPreviewTabs } from '../shared/PreviewActionButtons.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { useReturnToVendorPdf } from './useReturnToVendorPdf.js';
-import RelatedDocumentsCard from '../shared/preview-cards/RelatedDocumentsCard.jsx';
-import { STATUS_BADGE, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
-import { MovementSummaryCard } from '../shared/preview-cards/SummaryCard.jsx';
-
-function ReturnToVendorStatsPanel({ shipment, partnerName, movementDate, token, apiBaseUrl, ui }) {
-  const docStatus = shipment.documentStatus;
-  const statusLabel = ui(STATUS_KEYS[docStatus]) || shipment['documentStatus$_identifier'] || docStatus || '—';
-  const statusBadgeClass = STATUS_BADGE[docStatus] || 'bg-gray-50 text-gray-600 border-gray-200';
-
-  const specs = [
-    { key: 'sourceReceipts', type: 'goods-receipt', fetch: async () => shipment?.sourceReceipts ?? [] },
-    { key: 'returnInvoices', type: 'purchase-invoice', fetch: async () => shipment?.returnInvoices ?? [] },
-  ];
-
-  const rows = [
-    { label: ui('shipmentPreviewDocNo'), value: shipment.documentNo || '—' },
-    { label: ui('shipmentPreviewContact'), value: partnerName },
-    { label: ui('shipmentPreviewWarehouse'), value: shipment['warehouse$_identifier'] || '—' },
-    { label: ui('shipmentPreviewDate'), value: movementDate },
-  ];
-
-  return (
-    <div className="pb-4">
-      <MovementSummaryCard
-        title={ui('shipmentPreviewStatus')}
-        rows={rows}
-        statusRowLabel={ui('shipmentPreviewStatus')}
-        statusLabel={statusLabel}
-        statusBadgeClass={statusBadgeClass}
-      />
-      <RelatedDocumentsCard
-        documentId={shipment.id}
-        token={token}
-        apiBaseUrl={apiBaseUrl}
-        specs={specs}
-      />
-    </div>
-  );
-}
+import ReturnDocStatsPanel from '../shared/preview-cards/ReturnDocStatsPanel.jsx';
+import { downloadBlobAsFile } from '../shared/pdfUtils.js';
 
 export default function ReturnToVendorShipmentPreview({ shipment, token, apiBaseUrl, windowName, onClose, onEdit }) {
   const ui = useUI();
@@ -79,15 +42,13 @@ export default function ReturnToVendorShipmentPreview({ shipment, token, apiBase
 
   const handleDownload = () => {
     if (!pdfBlob) return;
-    const a = document.createElement('a');
-    const url = URL.createObjectURL(pdfBlob);
-    a.href = url;
-    a.download = `dev-compra-${shipment.documentNo || 'devolucion'}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadBlobAsFile(pdfBlob, `dev-compra-${shipment.documentNo || 'devolucion'}.pdf`);
   };
+
+  const specs = [
+    { key: 'sourceReceipts', type: 'goods-receipt', fetch: async () => shipment?.sourceReceipts ?? [] },
+    { key: 'returnInvoices', type: 'purchase-invoice', fetch: async () => shipment?.returnInvoices ?? [] },
+  ];
 
   const actionButtons = (
     <PreviewActionButtons
@@ -106,13 +67,14 @@ export default function ReturnToVendorShipmentPreview({ shipment, token, apiBase
       key: 'general',
       label: ui('invoicePreviewGeneral'),
       content: (
-        <ReturnToVendorStatsPanel
-          shipment={shipment}
+        <ReturnDocStatsPanel
+          doc={shipment}
           partnerName={partnerName}
           movementDate={movementDate}
           token={token}
           apiBaseUrl={apiBaseUrl}
           ui={ui}
+          specs={specs}
         />
       ),
     },
