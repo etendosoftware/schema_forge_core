@@ -107,33 +107,33 @@ test.describe('Onboarding — Register new user (integration)', () => {
     await slow(page);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // STEP 7: Provisioning — wait for progress screen or dashboard
+    // STEP 7: Provisioning — must reach dashboard
     // ═══════════════════════════════════════════════════════════════════════
 
-    // After clicking "Empezar", two outcomes are possible:
-    //   a) Provisioning popup → auto-login → readiness OK → redirect to /dashboard
-    //   b) Provisioning popup → auto-login → readiness FAILS → back to company form
-    // In CI the readiness check often fails (fresh env, no invoice defaults yet).
-    // Either outcome means the user was created successfully.
+    // After "Empezar", the provisioning popup appears. When it finishes, the
+    // frontend auto-logs in and checks readiness. If readiness fails (sequence
+    // not ready yet), it falls back to the company form instead of /dashboard.
+    // In that case we click "Empezar" again to retry until the environment is
+    // fully ready. This guarantees downstream tests have a working environment.
 
-    // Wait for provisioning popup OR direct dashboard redirect
-    await Promise.race([
-      page.waitForURL('**/dashboard', { timeout: 240_000 }),
-      expect(
-        page.getByText(/preparando|cargando|activando|ready/i).first()
-      ).toBeVisible({ timeout: 30_000 }),
-    ]);
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      // Wait for provisioning to finish — either dashboard or back to form
+      const reachedDashboard = await page.waitForURL('**/dashboard', { timeout: 240_000 })
+        .then(() => true)
+        .catch(() => false);
 
-    // If we're not on dashboard yet, wait for provisioning to finish
-    if (!page.url().includes('/dashboard')) {
-      // Provisioning is running — wait for it to complete (dashboard or back to form)
-      await Promise.race([
-        page.waitForURL('**/dashboard', { timeout: 240_000 }),
-        expect(
-          page.getByText(/datos para empezar|no está listo|todavía|readiness/i).first()
-        ).toBeVisible({ timeout: 240_000 }),
-      ]);
+      if (reachedDashboard) break;
+
+      // Still on onboarding — readiness likely failed. Retry "Empezar".
+      const retryBtn = page.getByRole('button', { name: /empezar|start/i });
+      if (await retryBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
+        await retryBtn.scrollIntoViewIfNeeded();
+        await expect(retryBtn).toBeEnabled({ timeout: 10_000 });
+        await retryBtn.click();
+      }
     }
+
+    await expect(page).toHaveURL(/dashboard/);
 
     // Save credentials so downstream integration tests (e.g. contacts) can reuse this user
     const credentialsPath = resolve(import.meta.dirname, '../../.auth-credentials.json');
