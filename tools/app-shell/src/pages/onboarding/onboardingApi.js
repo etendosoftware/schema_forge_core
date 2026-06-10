@@ -6,8 +6,15 @@ export const ONBOARDING_ERROR_CODES = {
   environmentLoginFailed: 'onboardingEnvironmentLoginFailed',
   credentialChangeFailed: 'onboardingCredentialChangeFailed',
   credentialResetFailed: 'onboardingCredentialResetFailed',
+  ssoFailed: 'onboardingSsoFailed',
   streamUnavailable: 'onboardingStreamUnavailable',
   missingResult: 'onboardingMissingResult',
+};
+
+const SSO_PAYLOAD_BUILDERS = {
+  google: (payload = {}) => ({
+    credential: payload.credential,
+  }),
 };
 
 export function buildAuthHeaders(token) {
@@ -48,6 +55,22 @@ export async function loginAccount(fetchImpl, baseUrl, form) {
     body: JSON.stringify(form),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidCredentials);
+}
+
+export async function loginWithSsoProvider(fetchImpl, baseUrl, provider, payload) {
+  const normalizedProvider = String(provider || '').trim().toLowerCase();
+  const buildPayload = SSO_PAYLOAD_BUILDERS[normalizedProvider];
+  if (!buildPayload) {
+    const error = new Error(ONBOARDING_ERROR_CODES.ssoFailed);
+    error.code = ONBOARDING_ERROR_CODES.ssoFailed;
+    throw error;
+  }
+  const response = await fetchImpl(`${baseUrl}/sws/go/sso/${encodeURIComponent(normalizedProvider)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(buildPayload(payload)),
+  });
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.ssoFailed);
 }
 
 export async function requestPasswordReset(fetchImpl, baseUrl, email) {

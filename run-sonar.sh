@@ -1,0 +1,612 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ── Config ──────────────────────────────────────────────────────────
+PROJECT_KEY="etendosoftware_etendo_schema_forge_133209fc-d4ea-4f26-8699-8c76cb26648c"
+POLL_INTERVAL=5      # seconds between polls
+MAX_WAIT=300         # max seconds to wait for analysis
+REPORT_DIR="sonar-reports"
+BASE_REF=""
+CHANGED_ONLY="true"
+ALLOW_DIRTY="false"
+RUN_COVERAGE="false"
+FAIL_ON_GATE="false"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+CLASSIC_ROOT="$SCRIPT_DIR/etendo_core"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --base-ref)
+      if [[ -z "${2:-}" ]]; then
+        echo "ERROR: --base-ref requires a value"
+        exit 1
+      fi
+      BASE_REF="$2"
+      shift 2
+      ;;
+    --changed-only)
+      CHANGED_ONLY="true"
+      shift
+      ;;
+    --allow-dirty)
+      ALLOW_DIRTY="true"
+      shift
+      ;;
+    --report-dir)
+      REPORT_DIR="${2:-}"
+      shift 2
+      ;;
+    --all-issues)
+      CHANGED_ONLY="false"
+      shift
+      ;;
+    --coverage)
+      RUN_COVERAGE="true"
+      shift
+      ;;
+    --fail-on-gate)
+      # Exit non-zero when the SonarQube Quality Gate is in ERROR (mirrors the
+      # server-side gate CI enforces on the PR). Used by the pre-push hook to
+      # block pushes that would fail the gate (e.g. new issues > 0).
+      FAIL_ON_GATE="true"
+      shift
+      ;;
+    *)
+      echo "ERROR: Unknown argument: $1"
+      exit 1
+      ;;
+  esac
+done
+
+load_env_file() {
+  local env_file="$1"
+  [[ -f "$env_file" ]] || return 0
+  while IFS='=' read -r key value || [[ -n "$key" ]]; do
+    [[ -n "$key" ]] || continue
+    [[ "$key" =~ ^# ]] && continue
+    case "$key" in
+      SONAR_HOST_URL|SONAR_TOKEN)
+        if [[ -z "${!key:-}" ]]; then
+          export "$key=$value"
+        fi
+        ;;
+    esac
+  done < "$env_file"
+}
+
+load_gradle_property() {
+  local key="$1"
+  local file="$CLASSIC_ROOT/gradle.properties"
+  [[ -f "$file" ]] || return 0
+  awk -F'=' -v k="$key" '$1==k {sub(/^[^=]*=/, ""); print; exit}' "$file"
+}
+
+prompt_for_sonar_env_file() {
+  local preferred_env="$SCRIPT_DIR/.env"
+  if [[ -t 0 ]]; then
+    echo "ERROR: Missing Sonar configuration."
+    echo "Complete one of these files with SONAR_HOST_URL and SONAR_TOKEN before running Sonar:"
+    echo "  - $preferred_env"
+    echo "  - $CLASSIC_ROOT/.env"
+    echo
+    echo "Example:"
+    echo "SONAR_HOST_URL=https://sonar.example.com"
+    echo "SONAR_TOKEN=your_token_here"
+    echo
+    read -r -p "Press Enter after completing the .env file, or Ctrl-C to cancel... " _
+    load_env_file "$preferred_env"
+    load_env_file "$CLASSIC_ROOT/.env"
+    return
+  fi
+
+  echo "ERROR: Missing Sonar configuration."
+  echo "Create and complete one of these files with SONAR_HOST_URL and SONAR_TOKEN:"
+  echo "  - $preferred_env"
+  echo "  - $CLASSIC_ROOT/.env"
+  echo
+  echo "Example:"
+  echo "SONAR_HOST_URL=https://sonar.example.com"
+  echo "SONAR_TOKEN=your_token_here"
+  exit 1
+}
+
+ensure_clean_worktree() {
+  [[ "$ALLOW_DIRTY" == "true" ]] && return 0
+
+  local status_output
+  status_output="$(git status --porcelain --untracked-files=all)"
+
+  if [[ -z "$status_output" ]]; then
+    return 0
+  fi
+
+  local tmp_status tmp_filtered
+  tmp_status="$(mktemp)"
+  tmp_filtered="$(mktemp)"
+  printf '%s\n' "$status_output" > "$tmp_status"
+
+  python3 - "$REPORT_DIR" "$tmp_status" "$tmp_filtered" <<'PYEOF'
+import sys
+from pathlib import Path
+
+report_dir = sys.argv[1].rstrip('/')
+status_file = Path(sys.argv[2])
+filtered_file = Path(sys.argv[3])
+ignore_paths = {
+    '.scannerwork',
+    '.env',
+    'coverage',
+    report_dir,
+    'domain-boundary-report.json',
+    'domain-boundary-report.md',
+    'review-report.json',
+    'review-report.md'
+}
+
+with status_file.open() as src, filtered_file.open('w') as out:
+    for raw in src:
+        line = raw.rstrip('\n')
+        if not line:
+            continue
+        path = line[3:] if len(line) > 3 else line
+        path = path.strip()
+        if path in ignore_paths:
+            continue
+        if any(path == p or path.startswith(p + '/') for p in ignore_paths):
+            continue
+        out.write(line + '\n')
+PYEOF
+
+  if [[ -s "$tmp_filtered" ]]; then
+    echo "ERROR: run-sonar.sh requires a clean working tree for precise PR validation."
+    echo "Uncommitted changes:"
+    cat "$tmp_filtered"
+    rm -f "$tmp_status" "$tmp_filtered"
+    echo "Commit or stash changes first, or rerun with --allow-dirty for exploratory use."
+    exit 1
+  fi
+
+  rm -f "$tmp_status" "$tmp_filtered"
+}
+
+prompt_for_base_ref() {
+  [[ "$CHANGED_ONLY" == "true" ]] || return 0
+
+  if [[ -n "$BASE_REF" ]]; then
+    return 0
+  fi
+
+  if [[ -t 0 ]]; then
+    echo "==> PR validation mode is enabled by default."
+    echo "Enter the PR base commit or target ref used by Sonar Cloud (examples: origin/main, origin/epic/ETP-3504, abc1234)."
+    read -r -p "Base commit/ref: " BASE_REF
+    return 0
+  fi
+
+  echo "ERROR: PR validation mode requires a base commit/ref."
+  echo "Run with --base-ref <commit-or-ref>, or use --all-issues for full-project reports."
+  exit 1
+}
+
+validate_base_ref() {
+  [[ "$CHANGED_ONLY" == "true" ]] || return 0
+
+  if [[ -z "$BASE_REF" ]]; then
+    echo "ERROR: Base commit/ref cannot be empty in PR validation mode."
+    exit 1
+  fi
+
+  if ! git rev-parse --verify --quiet "$BASE_REF^{commit}" >/dev/null; then
+    echo "ERROR: Base commit/ref not found: $BASE_REF"
+    echo "Fetch the target branch or pass a valid commit SHA."
+    exit 1
+  fi
+}
+
+load_env_file "$SCRIPT_DIR/.env"
+load_env_file "$CLASSIC_ROOT/.env"
+
+if [[ -z "${SONAR_HOST_URL:-}" || -z "${SONAR_TOKEN:-}" ]]; then
+  prompt_for_sonar_env_file
+fi
+
+if [[ -z "${SONAR_HOST_URL:-}" ]]; then
+  SONAR_HOST_URL="$(load_gradle_property sonarHostUrl)"
+fi
+if [[ -z "${SONAR_TOKEN:-}" ]]; then
+  SONAR_TOKEN="$(load_gradle_property sonarToken)"
+fi
+
+if [[ -z "${SONAR_HOST_URL:-}" || -z "${SONAR_TOKEN:-}" ]]; then
+  echo "ERROR: Sonar configuration is still incomplete after reading .env and gradle.properties."
+  exit 1
+fi
+
+SONAR_HOST_URL="${SONAR_HOST_URL%/}"
+export SONAR_HOST_URL SONAR_TOKEN REPORT_DIR BASE_REF CHANGED_ONLY
+
+prompt_for_base_ref
+validate_base_ref
+
+# Fail fast: enforce clean tree before running heavy test/coverage suites
+ensure_clean_worktree
+
+# ── Step 0: Clean report directory and enforce clean tree ──────────────────
+echo "==> Cleaning report directory: $REPORT_DIR"
+rm -rf "$REPORT_DIR"
+mkdir -p "$REPORT_DIR"
+rm -rf .scannerwork
+
+# ── Step 0.5: Run coverage if requested ────────────────────────────────────
+if [[ "$RUN_COVERAGE" == "true" ]]; then
+  echo "==> Running unit tests with coverage..."
+  make test-all-coverage
+fi
+
+# ── Step 1: Run scanner ────────────────────────────────────────────
+echo "==> Running sonar-scanner..."
+sonar-scanner \
+  -Dsonar.host.url="$SONAR_HOST_URL" \
+  -Dsonar.token="$SONAR_TOKEN"
+
+# ── Step 2: Get task ID from report-task.txt ───────────────────────
+REPORT_TASK_FILE=".scannerwork/report-task.txt"
+if [[ ! -f "$REPORT_TASK_FILE" ]]; then
+  echo "ERROR: $REPORT_TASK_FILE not found. Scanner may have failed."
+  exit 1
+fi
+
+CE_TASK_ID=$(grep "ceTaskId=" "$REPORT_TASK_FILE" | cut -d'=' -f2)
+echo "==> Analysis task ID: $CE_TASK_ID"
+
+# ── Step 3: Poll until analysis completes ──────────────────────────
+echo "==> Waiting for analysis to complete..."
+elapsed=0
+while (( elapsed < MAX_WAIT )); do
+  TASK_STATUS=$(curl -s -u "$SONAR_TOKEN:" \
+    "$SONAR_HOST_URL/api/ce/task?id=$CE_TASK_ID" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin)['task']['status'])")
+
+  echo "    Status: $TASK_STATUS (${elapsed}s elapsed)"
+
+  case "$TASK_STATUS" in
+    SUCCESS)
+      echo "==> Analysis completed successfully."
+      break
+      ;;
+    FAILED|CANCELED)
+      echo "ERROR: Analysis $TASK_STATUS."
+      exit 1
+      ;;
+    *)
+      sleep "$POLL_INTERVAL"
+      elapsed=$((elapsed + POLL_INTERVAL))
+      ;;
+  esac
+done
+
+if (( elapsed >= MAX_WAIT )); then
+  echo "ERROR: Timed out after ${MAX_WAIT}s waiting for analysis."
+  exit 1
+fi
+
+# ── Step 4: Download reports ───────────────────────────────────────
+echo "==> Downloading reports..."
+
+# Issues (paginated, saved to a single file)
+python3 - <<'PYEOF'
+import json, os, urllib.request, sys
+
+base = os.environ["SONAR_HOST_URL"]
+token = os.environ["SONAR_TOKEN"]
+report_dir = os.environ.get("REPORT_DIR", "sonar-reports")
+project = "etendosoftware_etendo_schema_forge_133209fc-d4ea-4f26-8699-8c76cb26648c"
+
+import base64 as b64
+credentials = b64.b64encode(f"{token}:".encode()).decode()
+
+def api_get(path):
+    req = urllib.request.Request(f"{base}{path}")
+    req.add_header("Authorization", f"Basic {credentials}")
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        print(f"    WARNING: {e.code} on {path}", file=sys.stderr)
+        try:
+            fallback_url = f"{base}{path}{'&' if '?' in path else '?'}token={token}"
+            req2 = urllib.request.Request(fallback_url)
+            with urllib.request.urlopen(req2) as resp:
+                return json.loads(resp.read())
+        except Exception:
+            print(f"    SKIPPED: Could not fetch {path.split('?')[0]} (403 - insufficient permissions)", file=sys.stderr)
+            return None
+
+def fetch_issues(extra_query=""):
+    issues_result = []
+    page = 1
+    while True:
+        query = f"componentKeys={project}&ps=500&p={page}&statuses=OPEN,CONFIRMED,REOPENED"
+        if extra_query:
+            query = f"{query}&{extra_query}"
+        data = api_get(f"/api/issues/search?{query}")
+        if data is None:
+            break
+        issues = data.get("issues", [])
+        issues_result.extend(issues)
+        if len(issues) < 500:
+            break
+        page += 1
+    return issues_result
+
+def issue_summary(issue):
+    return {
+        "rule": issue.get("rule", ""),
+        "severity": issue.get("severity", ""),
+        "type": issue.get("type", ""),
+        "message": issue.get("message", ""),
+        "line": issue.get("line"),
+    }
+
+def group_by_file(issues):
+    by_file = {}
+    for issue in issues:
+        comp = issue.get("component", "")
+        filepath = comp[len(prefix):] if comp.startswith(prefix) else comp
+        by_file.setdefault(filepath, []).append(issue_summary(issue))
+    return by_file
+
+def write_issue_reports(name, issues, write_files=False):
+    with open(f"{report_dir}/sonar-issues{name}.json", "w") as f:
+        json.dump({"total": len(issues), "issues": issues}, f, indent=2)
+    print(f"    Saved: {report_dir}/sonar-issues{name}.json ({len(issues)} {'issue' if len(issues) == 1 else 'issues'})")
+
+    by_file = group_by_file(issues)
+    report = {
+        path: {"count": len(items), "issues": sorted(items, key=lambda x: x.get("line") or 0)}
+        for path, items in sorted(by_file.items())
+    }
+    with open(f"{report_dir}/sonar-issues-by-file{name}.json", "w") as f:
+        json.dump(report, f, indent=2)
+    print(f"    Saved: {report_dir}/sonar-issues-by-file{name}.json ({len(report)} {'file' if len(report) == 1 else 'files'})")
+
+    if write_files:
+        for filepath, items in by_file.items():
+            safe_filename = filepath.replace("/", "_").replace("\\", "_") + ".json"
+            with open(f"{files_with_issues_dir}/{safe_filename}", "w") as f:
+                json.dump({
+                    "file": filepath,
+                    "count": len(items),
+                    "issues": sorted(items, key=lambda x: x.get("line") or 0)
+                }, f, indent=2)
+        print(f"    Saved: {len(by_file)} {'individual file report' if len(by_file) == 1 else 'individual file reports'} in {files_with_issues_dir}/")
+
+# Issues (paginated, saved to files)
+prefix = project + ":"
+files_with_issues_dir = f"{report_dir}/files"
+os.makedirs(files_with_issues_dir, exist_ok=True)
+all_issues = fetch_issues()
+new_code_issues = fetch_issues("inNewCodePeriod=true")
+write_issue_reports("", all_issues, write_files=True)
+write_issue_reports("-new-code", new_code_issues)
+
+# Quality gate
+qg = api_get(f"/api/qualitygates/project_status?projectKey={project}")
+if qg:
+    with open(f"{report_dir}/sonar-quality-gate.json", "w") as f:
+        json.dump(qg, f, indent=2)
+    print(f"    Saved: {report_dir}/sonar-quality-gate.json")
+
+# Measures
+measures = api_get(f"/api/measures/component?component={project}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,security_hotspots,reliability_rating,security_rating,sqale_rating")
+if measures:
+    with open(f"{report_dir}/sonar-measures.json", "w") as f:
+        json.dump(measures, f, indent=2)
+    print(f"    Saved: {report_dir}/sonar-measures.json")
+
+# ── Summary ──
+print()
+print("=== SONAR ANALYSIS SUMMARY ===")
+
+if qg:
+    status = qg.get("projectStatus", {}).get("status", "UNKNOWN")
+    print(f"Quality Gate: {status}")
+    conditions = qg.get("projectStatus", {}).get("conditions", [])
+    failed_conditions = [c for c in conditions if c.get("status") == "ERROR"]
+    if failed_conditions:
+        print("  Failing Conditions:")
+        for c in failed_conditions:
+            metric = c["metricKey"].replace("_", " ").title()
+            val = c.get("actualValue", "N/A")
+            thresh = c.get("errorThreshold", "N/A")
+            print(f"    - {metric}: {val} (threshold: < {thresh})")
+    print()
+
+if measures:
+    rating_map = {"1.0": "A", "2.0": "B", "3.0": "C", "4.0": "D", "5.0": "E"}
+    for m in measures.get("component", {}).get("measures", []):
+        name = m["metric"].replace("_", " ").title()
+        val = rating_map.get(m["value"], m["value"]) if m["metric"].endswith("_rating") else m["value"]
+        print(f"  {name}: {val}")
+else:
+    print("  (measures not available - check token permissions)")
+
+print(f"\nOpen issues: {len(all_issues)}")
+print(f"New-code issues: {len(new_code_issues)}")
+
+by_type = {}
+by_sev = {}
+for i in all_issues:
+    t = i.get("type", "UNKNOWN")
+    s = i.get("severity", "UNKNOWN")
+    by_type[t] = by_type.get(t, 0) + 1
+    by_sev[s] = by_sev.get(s, 0) + 1
+
+for label, counts in [("By type", by_type), ("By severity", by_sev)]:
+    print(f"\n{label}:")
+    for k, v in sorted(counts.items()):
+        print(f"  {k}: {v}")
+PYEOF
+
+echo ""
+echo "Dashboard: $SONAR_HOST_URL/dashboard?id=$PROJECT_KEY"
+echo "Reports saved in: $REPORT_DIR/"
+
+if [[ "$CHANGED_ONLY" == "true" ]]; then
+
+  echo "==> Filtering issues to changed files against: $BASE_REF"
+  if ! git rev-parse --verify "$BASE_REF" >/dev/null 2>&1; then
+    echo "ERROR: Invalid base reference: $BASE_REF"
+    exit 1
+  fi
+  git diff --name-only "$BASE_REF"...HEAD > "$REPORT_DIR/changed-files.txt"
+
+  python3 - <<'PYEOF'
+import json, os
+from pathlib import Path
+
+report_dir = Path(os.environ.get("REPORT_DIR", "sonar-reports"))
+changed = {line.strip() for line in (report_dir / "changed-files.txt").read_text().splitlines() if line.strip()}
+issues_by_file = json.loads((report_dir / "sonar-issues-by-file-new-code.json").read_text())
+issues = json.loads((report_dir / "sonar-issues-new-code.json").read_text())
+
+filtered_by_file = {path: data for path, data in issues_by_file.items() if path in changed}
+filtered_issues = [
+    issue for issue in issues.get("issues", [])
+    if issue.get("component", "").split(":", 1)[-1] in changed
+]
+
+(report_dir / "sonar-issues-pr-only.json").write_text(json.dumps({
+    "baseRef": os.environ.get("BASE_REF", ""),
+    "changedFiles": sorted(changed),
+    "total": len(filtered_issues),
+    "issues": filtered_issues
+}, indent=2))
+
+(report_dir / "sonar-issues-by-file-pr-only.json").write_text(
+    json.dumps(filtered_by_file, indent=2)
+ )
+
+print(f"    Saved: {report_dir}/sonar-issues-pr-only.json ({len(filtered_issues)} {'issue' if len(filtered_issues) == 1 else 'issues'})")
+print(f"    Saved: {report_dir}/sonar-issues-by-file-pr-only.json ({len(filtered_by_file)} {'file' if len(filtered_by_file) == 1 else 'files'})")
+PYEOF
+
+  echo "PR-only reports saved in: $REPORT_DIR/"
+else
+  echo "Full-project reports saved in: $REPORT_DIR/"
+fi
+
+# ── Quality Gate enforcement (opt-in via --fail-on-gate) ────────────
+# Mirrors the server-side Quality Gate that CI enforces on the PR. When the
+# gate is in ERROR, exit non-zero so callers (e.g. the pre-push hook) can block.
+if [[ "$FAIL_ON_GATE" == "true" ]]; then
+  QG_FILE="$REPORT_DIR/sonar-quality-gate.json"
+  PR_ISSUES_FILE="$REPORT_DIR/sonar-issues-pr-only.json"
+  if [[ ! -f "$QG_FILE" ]]; then
+    echo "ERROR: --fail-on-gate set but $QG_FILE not found (analysis may have failed)."
+    exit 1
+  fi
+
+  GATE_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'this branch')"
+  HANDOFF_FILE="$REPORT_DIR/sonar-handoff-prompt.md"
+
+  REPORT_DIR="$REPORT_DIR" QG_FILE="$QG_FILE" PR_ISSUES_FILE="$PR_ISSUES_FILE" \
+  CHANGED_ONLY="$CHANGED_ONLY" HANDOFF_FILE="$HANDOFF_FILE" \
+  GATE_BRANCH="$GATE_BRANCH" REPO_ROOT="$SCRIPT_DIR" \
+  python3 - <<'PYEOF'
+import json, os, sys
+
+qg = json.load(open(os.environ["QG_FILE"]))
+status = qg.get("projectStatus", {}).get("status", "UNKNOWN")
+handoff_file = os.environ["HANDOFF_FILE"]
+pr_mode = os.environ.get("CHANGED_ONLY") == "true"
+
+try:
+    os.remove(handoff_file)
+except FileNotFoundError:
+    pass
+
+# Failing Quality Gate conditions, keeping the raw metric key.
+failing = []  # (metric_key, human_description)
+for c in qg.get("projectStatus", {}).get("conditions", []):
+    if c.get("status") == "ERROR":
+        m = c["metricKey"]
+        failing.append((m, f"{m.replace('_',' ').title()}: {c.get('actualValue')} "
+                           f"(threshold: {c.get('comparator','')} {c.get('errorThreshold')})"))
+
+# New issues restricted to THIS PR's diff (what CI's PR gate actually counts).
+issues = []
+pr_file = os.environ.get("PR_ISSUES_FILE", "")
+if pr_mode and os.path.isfile(pr_file):
+    for i in json.load(open(pr_file)).get("issues", []):
+        issues.append({
+            "comp": i.get("component", "").split(":", 1)[-1],
+            "line": i.get("line", "?"),
+            "rule": i.get("rule", ""),
+            "sev": i.get("severity", ""),
+            "msg": (i.get("message", "") or "").replace("\n", " "),
+        })
+
+# ── Decide whether to block, mirroring CI's PR gate ──
+# new_violations blocks only if PR-diff issues > 0; any OTHER failing condition
+# (coverage/duplication/ratings on new code) blocks regardless.
+other_failing = [d for (m, d) in failing if m != "new_violations"]
+block = bool(issues) or bool(other_failing)
+
+if not block:
+    if status == "ERROR":
+        print("\n⚠️  Quality Gate is ERROR in branch mode, but no new issues fall inside")
+        print("   this PR's diff — CI's PR gate would PASS. Not blocking the push.")
+        for (m, d) in failing:
+            print(f"     (branch-mode, ignored) {d}")
+    else:
+        print(f"\n✅ Quality Gate: {status} — no blocking conditions.")
+    sys.exit(0)
+
+branch = os.environ.get("GATE_BRANCH", "this branch")
+repo_root = os.environ.get("REPO_ROOT", "<repo_root>")
+
+# ── Build a copy-pasteable handoff prompt (delimited by ---) ──
+lines = []
+lines.append("---")
+lines.append("HANDOFF PROMPT — copy everything between the --- lines and give it to a coding agent")
+lines.append("---")
+lines.append("")
+lines.append("You are fixing SonarQube Quality Gate violations that are BLOCKING a `git push`")
+lines.append(f"on the `schema-forge` repo (branch: {branch}). The pre-push hook blocked the push")
+lines.append("because CI's SonarQube Quality Gate would fail.")
+lines.append("")
+lines.append("SCOPE — fix ONLY the issues listed below. Make minimal, behavior-preserving edits")
+lines.append("that satisfy each Sonar rule. Do NOT weaken tests or reduce coverage. Each Sonar")
+lines.append("rule key is given so you can look it up.")
+lines.append("")
+if other_failing:
+    lines.append("Failing Quality Gate condition(s):")
+    for d in other_failing:
+        lines.append(f"  - {d}")
+    lines.append("")
+if issues:
+    lines.append(f"New issues in this PR ({len(issues)}) — file:line — rule [severity] — message:")
+    for n, i in enumerate(issues, 1):
+        lines.append(f"  {n}. {i['comp']}:{i['line']} — {i['rule']} [{i['sev']}]")
+        lines.append(f"     {i['msg']}")
+    lines.append("")
+lines.append("After fixing, verify locally and re-push:")
+lines.append(f"  cd {repo_root}")
+lines.append("  make test")
+lines.append("  git push        # the pre-push hook re-checks the Quality Gate")
+lines.append("")
+lines.append("---")
+lines.append("END HANDOFF")
+lines.append("---")
+handoff = "\n".join(lines)
+
+with open(handoff_file, "w") as fh:
+    fh.write(handoff + "\n")
+
+print("\n❌ QUALITY GATE FAILED — this push would fail CI's SonarQube gate.")
+print(handoff)
+print("\n  Bypass with 'git push --no-verify' (WIP only).")
+sys.exit(1)
+PYEOF
+fi
