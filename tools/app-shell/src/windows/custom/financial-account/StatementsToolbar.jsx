@@ -125,10 +125,13 @@ export function StatementsToolbar({
         aria-label={ui('financeAccountDetailBack')}
         data-testid="statements-toolbar-back"
         onClick={() => navigate(-1)}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white text-[#6c6c89] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9] hover:text-[#121217]"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-colors hover:bg-[#F5F7F9] hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
       </button>
+
+      {/* Status filter — first, mirroring the standard list toolbar (e.g. Sales Order). */}
+      <StatementStatusFilter value={status} onChange={onStatusChange} />
 
       {/* Date range filter */}
       <DateRangePopover
@@ -136,9 +139,6 @@ export function StatementsToolbar({
         onChange={onDateRangeChange}
         placeholder={ui('dateRangeAnyTime')}
       />
-
-      {/* Status filter */}
-      <StatementStatusFilter value={status} onChange={onStatusChange} />
 
       {/* Advanced "by conditions" filter */}
       {onAdvancedFilterChange ? (
@@ -148,7 +148,7 @@ export function StatementsToolbar({
               type="button"
               data-testid="statements-advanced-filter"
               title={ui('advancedFilterTitle')}
-              className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white text-[#6c6c89] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9] hover:text-[#121217]"
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-colors hover:bg-[#F5F7F9] hover:text-foreground"
             >
               <Filter className="h-4 w-4" />
               {activeConditions > 0 ? (

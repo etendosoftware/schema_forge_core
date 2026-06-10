@@ -45,14 +45,15 @@ export function MovementsToolbar({
         aria-label={ui('financeAccountDetailBack')}
         data-testid="movements-toolbar-back"
         onClick={() => navigate(-1)}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white text-[#6c6c89] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9] hover:text-[#121217]"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-colors hover:bg-[#F5F7F9] hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
       </button>
 
-      {/* Remaining quick filters */}
-      <DateRangeFilter value={filters.dateRange} onChange={onFiltersChange('dateRange')} />
+      {/* Quick filters — type/status first, then date, mirroring the standard
+          list toolbar (e.g. Sales Order). */}
       <TypeFilter value={filters.type} onChange={onFiltersChange('type')} />
+      <DateRangeFilter value={filters.dateRange} onChange={onFiltersChange('dateRange')} />
 
       {/* Advanced "by conditions" filter — right after the Type filter */}
       <Popover open={advancedOpen} onOpenChange={setAdvancedOpen}>
@@ -61,7 +62,7 @@ export function MovementsToolbar({
             type="button"
             data-testid="movements-advanced-filter"
             title={ui('advancedFilterTitle')}
-            className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white text-[#6c6c89] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9] hover:text-[#121217]"
+            className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-colors hover:bg-[#F5F7F9] hover:text-foreground"
           >
             <Filter className="h-4 w-4" />
             {activeConditions > 0 ? (

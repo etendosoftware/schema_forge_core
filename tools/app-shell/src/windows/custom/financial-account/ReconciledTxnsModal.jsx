@@ -19,8 +19,10 @@ function formatDate(iso, bcpLocale) {
   if (!iso) return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
+  // Date-only value sent as UTC midnight — format in UTC so a negative-offset
+  // timezone doesn't shift it to the previous day.
   return new Intl.DateTimeFormat(bcpLocale, {
-    day: '2-digit', month: '2-digit', year: 'numeric',
+    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
   }).format(d);
 }
 

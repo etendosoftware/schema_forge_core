@@ -87,7 +87,7 @@ describe('StatementLinesInline', () => {
     expect(screen.getByTestId('statement-line-row-l2')).toBeInTheDocument();
   });
 
-  it('renders a success-tone match pill for matched=true and a neutral one for matched=false', () => {
+  it('renders a success-tone match pill for matched=true and an info one for matched=false', () => {
     linesMock.mockReturnValue({
       lines: [
         { id: 'l1', date: '2026-05-06T00:00:00Z', description: '', amount: 100, matched: true },
@@ -96,9 +96,10 @@ describe('StatementLinesInline', () => {
       loading: false,
     });
     render(<StatementLinesInline statementId="s1" />);
-    expect(
-      screen.getByText('financeAccountStatementLinesStatusAuto'),
-    ).toBeInTheDocument();
+    // Matched → success (green); unmatched "Sin conciliar" → info (blue), same as
+    // the statement-level status, instead of neutral grey.
+    expect(screen.getByTestId('status-success')).toBeInTheDocument();
+    expect(screen.getByTestId('status-info')).toBeInTheDocument();
     expect(
       screen.getByText('financeAccountStatementLinesStatusUnmatched'),
     ).toBeInTheDocument();

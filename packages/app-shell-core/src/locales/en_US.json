@@ -17418,7 +17418,7 @@
     "financeAccountMovementsFilterAmountMax": "Max",
     "financeAccountMovementsFilterAmountInvalidRange": "Min must be less than or equal to max",
     "financeAccountMovementsFilterAmountClear": "Clear",
-    "financeAccountMovementsSearch": "Search...",
+    "financeAccountMovementsSearch": "Search movements...",
     "financeAccountMovementsNew": "+ New movement",
     "financeAccountMovementsNewTitle": "New movement",
     "financeAccountMovementsNewType": "Type",

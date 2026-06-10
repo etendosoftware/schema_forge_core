@@ -67,6 +67,7 @@ function MovementBasics({ form, set, dimensions, optionsByDim, trxTypes }) {
           required={depositEditable}
           readOnly={!depositEditable}
           value={depositEditable ? form.deposit : '0.00'}
+          placeholder="0,00"
           onChange={(e) => set({ deposit: e.target.value })}
         />
         <AmountInput
@@ -74,6 +75,7 @@ function MovementBasics({ form, set, dimensions, optionsByDim, trxTypes }) {
           required={!depositEditable}
           readOnly={depositEditable}
           value={!depositEditable ? form.withdrawal : '0.00'}
+          placeholder="0,00"
           onChange={(e) => set({ withdrawal: e.target.value })}
         />
       </div>
@@ -195,8 +197,10 @@ const initialForm = (currencyIso) => ({
   acctDate: todayISO(),
   description: '',
   currencyIso: currencyIso || 'EUR',
-  deposit: '0.00',
-  withdrawal: '0.00',
+  // Empty so the field shows "0,00" as a placeholder (not a real value the user
+  // must clear). parseAmount('') → 0 on submit / validation.
+  deposit: '',
+  withdrawal: '',
   dims: {},
 });
 

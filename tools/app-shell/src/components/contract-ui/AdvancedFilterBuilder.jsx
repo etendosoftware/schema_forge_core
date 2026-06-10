@@ -818,7 +818,11 @@ function resolveEnumOptions(col, dictionary) {
   return Object.keys(rawMap)
     .map((code) => ({
       code,
-      label: dictionary?.statuses?.[code]?.label || rawMap[code] || code,
+      // The column's own enumLabels (rawMap) take precedence over the global
+      // status dictionary, so a code that collides with an unrelated global
+      // status (e.g. account type "CA" vs an order status "CA") keeps the
+      // column's intended label.
+      label: rawMap[code] || dictionary?.statuses?.[code]?.label || code,
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 }
@@ -852,7 +856,9 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
     );
   }, [col, dictionary]);
 
-  const labelFor = (code) => dictionary?.statuses?.[code]?.label || labelMap[code] || code;
+  // The column's own enumLabels (labelMap) win over the global status dictionary
+  // so a code colliding with an unrelated global status keeps the column's label.
+  const labelFor = (code) => labelMap[code] || dictionary?.statuses?.[code]?.label || code;
 
   const inMemoryCodes = useMemo(() => {
     const seen = new Set();
