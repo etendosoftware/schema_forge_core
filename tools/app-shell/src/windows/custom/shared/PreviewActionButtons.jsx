@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Edit2, Mail, Download, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import PdfViewer from './PdfViewer.jsx';
+import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 
 export default function PreviewActionButtons({
   triggerEdit,
@@ -88,6 +89,54 @@ export function makeStaticPreviewTabs(ui) {
       content: <PreviewEmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />,
     },
   ];
+}
+
+/**
+ * Conditionally renders the SendDocumentModal with the props common to all preview modals.
+ * Eliminates the repeated {showSendModal && <SendDocumentModal .../>} block per window.
+ */
+export function PreviewSendModal({ show, closing, documentType, documentNo, bpName, bPartnerId, apiBaseUrl, documentId, windowName, token, pdfBlobUrl, pdfBlobLoading, onClose }) {
+  if (!show) return null;
+  return (
+    <SendDocumentModal
+      documentType={documentType}
+      documentNo={documentNo}
+      bpName={bpName}
+      bPartnerId={bPartnerId}
+      apiBaseUrl={apiBaseUrl}
+      documentId={documentId}
+      windowName={windowName}
+      token={token}
+      pdfBlobUrl={pdfBlobUrl}
+      pdfBlobLoading={pdfBlobLoading}
+      isClosing={closing}
+      onClose={onClose}
+    />
+  );
+}
+
+/**
+ * Variant of PreviewSendModal that derives documentNo / bPartnerId / documentId
+ * from a receipt/shipment record object, reducing repeated prop spreading.
+ */
+export function ReceiptSendModal({ sendModal, documentType, receipt, partnerName, apiBaseUrl, token, windowName, pdfBlobUrl, pdfBlobLoading }) {
+  return (
+    <PreviewSendModal
+      show={sendModal.showSendModal}
+      closing={sendModal.sendModalClosing}
+      documentType={documentType}
+      documentNo={receipt.documentNo}
+      bpName={partnerName}
+      bPartnerId={receipt.businessPartner}
+      apiBaseUrl={apiBaseUrl}
+      documentId={receipt.id}
+      windowName={windowName}
+      token={token}
+      pdfBlobUrl={pdfBlobUrl}
+      pdfBlobLoading={pdfBlobLoading}
+      onClose={sendModal.closeEmailModal}
+    />
+  );
 }
 
 /** Shared PDF left-panel for document preview modals: spinner → error → iframe. */

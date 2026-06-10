@@ -44,6 +44,7 @@ vi.mock('@/components/ui/dialog', () => ({
 
 vi.mock('lucide-react', () => ({
   Loader2: (props) => <span data-testid="loader" {...props} />,
+  Pencil: (props) => <span data-testid="pencil-icon" {...props} />,
 }));
 
 vi.mock('sonner', () => ({
@@ -83,9 +84,11 @@ describe('ProductPriceBar', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders without crashing', () => {
+  it('renders without crashing', async () => {
     renderBar();
-    expect(screen.getByText('pricing')).toBeInTheDocument();
+    await screen.findByText('priceSalesLists');
+    expect(screen.getByText('priceSalesLists')).toBeInTheDocument();
+    expect(screen.getByText('pricePurchaseLists')).toBeInTheDocument();
   });
 
   it('shows save-first message when no record id', () => {
@@ -93,17 +96,18 @@ describe('ProductPriceBar', () => {
     expect(screen.getByText('saveProductFirstPricing')).toBeInTheDocument();
   });
 
-  it('shows pricing title and configure subtitle', () => {
+  it('renders both sales and purchase table titles', async () => {
     renderBar();
-    expect(screen.getByText('pricing')).toBeInTheDocument();
-    expect(screen.getByText('configureMainSaleAndPurchasePrice')).toBeInTheDocument();
+    await screen.findByText('priceSalesLists');
+    expect(screen.getByText('priceSalesLists')).toBeInTheDocument();
+    expect(screen.getByText('pricePurchaseLists')).toBeInTheDocument();
   });
 
-  it('renders set pricing button when there are no price rows', async () => {
+  it('renders pencil edit buttons when there are no price rows', async () => {
     renderBar();
-    // After fetch resolves with empty data, button should show setPricing
-    await screen.findByText('setPricing');
-    expect(screen.getByText('setPricing')).toBeInTheDocument();
+    await screen.findByTestId('price-sales-edit');
+    expect(screen.getByTestId('price-sales-edit')).toBeInTheDocument();
+    expect(screen.getByTestId('price-purchase-edit')).toBeInTheDocument();
   });
 
   it('renders price tables when rows exist', async () => {
@@ -169,7 +173,7 @@ describe('ProductPriceBar', () => {
     expect(screen.getByText('$30.00')).toBeInTheDocument();
   });
 
-  it('shows editPricing button when rows exist', async () => {
+  it('renders pencil edit buttons when rows exist', async () => {
     global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
@@ -191,8 +195,9 @@ describe('ProductPriceBar', () => {
     );
 
     renderBar();
-    await screen.findByText('editPricing');
-    expect(screen.getByText('editPricing')).toBeInTheDocument();
+    await screen.findByTestId('price-sales-edit');
+    expect(screen.getByTestId('price-sales-edit')).toBeInTheDocument();
+    expect(screen.getByTestId('price-purchase-edit')).toBeInTheDocument();
   });
 
   it('renders sales and purchase table sections with correct titles', async () => {
@@ -303,70 +308,99 @@ describe('ProductPriceBar', () => {
     return { selectors: [{ entity: 'price', field: 'priceListVersion', column }] };
   }
 
-  /** Helper to enter create mode and return the 4 number inputs in DOM order. */
-  async function enterCreateMode(user) {
-    const setBtn = await screen.findByText('setPricing');
-    await user.click(setBtn);
-    const inputs = screen.getAllByRole('spinbutton');
-    // DOM order: [saleUnit, saleList, purchaseUnit, purchaseList]
-    return {
-      saleUnit: inputs[0],
-      saleList: inputs[1],
-      purchaseUnit: inputs[2],
-      purchaseList: inputs[3],
-    };
-  }
-
   // -------------------------------------------------------------------
-  // Create-mode tests
+  // Dialog staged-row create tests
   // -------------------------------------------------------------------
 
-  describe('create mode — independent POST per side', () => {
-    it('posts only the sale row when only sale inputs are filled', async () => {
-      const calls = [];
-      const fetchMock = buildFetch(
-        {
-          'GET /price/defaults': { defaults: {} },
-          'GET /price?parentId=': { response: { data: [] } },
-          'POST /price': { id: 'new-row' },
-        },
-        calls,
-      );
-      global.fetch = fetchMock;
+  describe('dialog — staged row create', () => {
+    it('clicking sales pencil opens dialog with sales section only', async () => {
+      global.fetch = buildFetch({
+        'GET /price?parentId=': { response: { data: [] } },
+      });
 
       const user = userEvent.setup();
       renderBar({ catalogs: catalogsWithPlv(), api: apiWithPriceSelector() });
 
-      const inputs = await enterCreateMode(user);
-      await user.type(inputs.saleUnit, '10');
-      await user.type(inputs.saleList, '12');
+      const pencil = await screen.findByTestId('price-sales-edit');
+      await user.click(pencil);
 
-      await user.click(screen.getByText('savePricing'));
+      const dialog = screen.getByTestId('dialog');
+      expect(dialog).toBeInTheDocument();
+      expect(dialog).toHaveTextContent('priceSalesLists');
+      expect(dialog).not.toHaveTextContent('pricePurchaseLists');
+    });
+
+    it('clicking purchase pencil opens dialog with purchase section only', async () => {
+      global.fetch = buildFetch({
+        'GET /price?parentId=': { response: { data: [] } },
+      });
+
+      const user = userEvent.setup();
+      renderBar({ catalogs: catalogsWithPlv(), api: apiWithPriceSelector() });
+
+      const pencil = await screen.findByTestId('price-purchase-edit');
+      await user.click(pencil);
+
+      const dialog = screen.getByTestId('dialog');
+      expect(dialog).toBeInTheDocument();
+      expect(dialog).toHaveTextContent('pricePurchaseLists');
+      expect(dialog).not.toHaveTextContent('priceSalesLists');
+    });
+
+    it('adding a staged sales row and saving POSTs with sales PLV', async () => {
+      const calls = [];
+      global.fetch = buildFetch(
+        {
+          'GET /price?parentId=': { response: { data: [] } },
+          'POST /price': { id: 'new' },
+        },
+        calls,
+      );
+
+      const user = userEvent.setup();
+      renderBar({ catalogs: catalogsWithPlv(), api: apiWithPriceSelector() });
+
+      // Open dialog via sales pencil
+      const pencil = await screen.findByTestId('price-sales-edit');
+      await user.click(pencil);
+
+      // Click "+" to add a pending row
+      const plusBtn = screen.getByRole('button', { name: '+' });
+      await user.click(plusBtn);
+
+      // Select sales PLV
+      const select = screen.getByRole('combobox');
+      await userEvent.setup().selectOptions(select, [SALES_PLV_ID]);
+
+      // Fill unit price and list price
+      const inputs = screen.getAllByRole('spinbutton');
+      await user.type(inputs[0], '10');
+      await user.type(inputs[1], '12');
+
+      // Confirm staged add
+      const confirmBtn = screen.getByRole('button', { name: '✓' });
+      await user.click(confirmBtn);
+
+      // Save changes
+      const saveBtn = screen.getByRole('button', { name: 'saveChanges' });
+      await user.click(saveBtn);
 
       await waitFor(() => {
-        const posts = calls.filter(
-          (c) => c.method === 'POST' && c.url.endsWith('/price'),
-        );
+        const posts = calls.filter((c) => c.method === 'POST' && c.url.endsWith('/price'));
         expect(posts).toHaveLength(1);
       });
 
-      const post = calls.find(
-        (c) => c.method === 'POST' && c.url.endsWith('/price'),
-      );
+      const post = calls.find((c) => c.method === 'POST' && c.url.endsWith('/price'));
       const body = JSON.parse(post.body);
       expect(body.priceListVersion).toBe(SALES_PLV_ID);
-      expect(body.standardPrice).toBe('10');
-      expect(body.listPrice).toBe('12');
-      expect(body.priceLimit).toBe('12');
     });
 
-    it('posts only the purchase row when only purchase inputs are filled', async () => {
+    it('adding a staged purchase row and saving POSTs with purchase PLV', async () => {
       const calls = [];
       global.fetch = buildFetch(
         {
-          'GET /price/defaults': { defaults: {} },
           'GET /price?parentId=': { response: { data: [] } },
-          'POST /price': { id: 'new-row' },
+          'POST /price': { id: 'new' },
         },
         calls,
       );
@@ -374,180 +408,67 @@ describe('ProductPriceBar', () => {
       const user = userEvent.setup();
       renderBar({ catalogs: catalogsWithPlv(), api: apiWithPriceSelector() });
 
-      const inputs = await enterCreateMode(user);
-      await user.type(inputs.purchaseUnit, '5');
-      await user.type(inputs.purchaseList, '6');
+      // Open dialog via purchase pencil
+      const pencil = await screen.findByTestId('price-purchase-edit');
+      await user.click(pencil);
 
-      await user.click(screen.getByText('savePricing'));
+      // Click "+" to add a pending row
+      const plusBtn = screen.getByRole('button', { name: '+' });
+      await user.click(plusBtn);
+
+      // Select purchase PLV
+      const select = screen.getByRole('combobox');
+      await userEvent.setup().selectOptions(select, [PURCHASE_PLV_ID]);
+
+      // Fill unit price and list price
+      const inputs = screen.getAllByRole('spinbutton');
+      await user.type(inputs[0], '5');
+      await user.type(inputs[1], '6');
+
+      // Confirm staged add
+      const confirmBtn = screen.getByRole('button', { name: '✓' });
+      await user.click(confirmBtn);
+
+      // Save changes
+      const saveBtn = screen.getByRole('button', { name: 'saveChanges' });
+      await user.click(saveBtn);
 
       await waitFor(() => {
-        const posts = calls.filter(
-          (c) => c.method === 'POST' && c.url.endsWith('/price'),
-        );
+        const posts = calls.filter((c) => c.method === 'POST' && c.url.endsWith('/price'));
         expect(posts).toHaveLength(1);
       });
 
-      const post = calls.find(
-        (c) => c.method === 'POST' && c.url.endsWith('/price'),
-      );
+      const post = calls.find((c) => c.method === 'POST' && c.url.endsWith('/price'));
       const body = JSON.parse(post.body);
       expect(body.priceListVersion).toBe(PURCHASE_PLV_ID);
-      expect(body.standardPrice).toBe('5');
-      expect(body.listPrice).toBe('6');
     });
 
-    it('posts both rows when both sides are filled and keeps their values independent', async () => {
-      const calls = [];
-      global.fetch = buildFetch(
-        {
-          'GET /price/defaults': { defaults: {} },
-          'GET /price?parentId=': { response: { data: [] } },
-          'POST /price': { id: 'new-row' },
-        },
-        calls,
-      );
-
-      const user = userEvent.setup();
-      renderBar({ catalogs: catalogsWithPlv(), api: apiWithPriceSelector() });
-
-      const inputs = await enterCreateMode(user);
-      await user.type(inputs.saleUnit, '10');
-      await user.type(inputs.saleList, '12');
-      await user.type(inputs.purchaseUnit, '5');
-      await user.type(inputs.purchaseList, '6');
-
-      await user.click(screen.getByText('savePricing'));
-
-      await waitFor(() => {
-        const posts = calls.filter(
-          (c) => c.method === 'POST' && c.url.endsWith('/price'),
-        );
-        expect(posts).toHaveLength(2);
-      });
-
-      const posts = calls
-        .filter((c) => c.method === 'POST' && c.url.endsWith('/price'))
-        .map((c) => JSON.parse(c.body));
-
-      const salePost = posts.find((p) => p.priceListVersion === SALES_PLV_ID);
-      const purchasePost = posts.find(
-        (p) => p.priceListVersion === PURCHASE_PLV_ID,
-      );
-
-      expect(salePost).toBeDefined();
-      expect(salePost.standardPrice).toBe('10');
-      expect(salePost.listPrice).toBe('12');
-
-      expect(purchasePost).toBeDefined();
-      expect(purchasePost.standardPrice).toBe('5');
-      expect(purchasePost.listPrice).toBe('6');
-
-      // Each side independent — sale POST must NOT carry purchase values.
-      expect(salePost.standardPrice).not.toBe('5');
-      expect(salePost.listPrice).not.toBe('6');
-      expect(purchasePost.standardPrice).not.toBe('10');
-      expect(purchasePost.listPrice).not.toBe('12');
-    });
-
-    it('shows a toast and skips POST when no inputs are filled', async () => {
+    it('shows priceUnfinishedRows toast when pending row is not confirmed', async () => {
       const { toast } = await import('sonner');
       toast.info.mockClear();
 
-      const calls = [];
-      global.fetch = buildFetch(
-        {
-          'GET /price/defaults': { defaults: {} },
-          'GET /price?parentId=': { response: { data: [] } },
-          'POST /price': { id: 'new-row' },
-        },
-        calls,
-      );
+      global.fetch = buildFetch({
+        'GET /price?parentId=': { response: { data: [] } },
+      });
 
       const user = userEvent.setup();
       renderBar({ catalogs: catalogsWithPlv(), api: apiWithPriceSelector() });
 
-      await enterCreateMode(user);
-      await user.click(screen.getByText('savePricing'));
+      // Open dialog via sales pencil
+      const pencil = await screen.findByTestId('price-sales-edit');
+      await user.click(pencil);
 
-      // Wait a tick so any potential async work flushes.
-      await waitFor(() => {
-        expect(toast.info).toHaveBeenCalledWith('enterAtLeastOneValueCreatePricing');
-      });
+      // Click "+" but do NOT confirm (leave pending row)
+      const plusBtn = screen.getByRole('button', { name: '+' });
+      await user.click(plusBtn);
 
-      const posts = calls.filter(
-        (c) => c.method === 'POST' && c.url.endsWith('/price'),
-      );
-      expect(posts).toHaveLength(0);
-    });
-
-    it('falls back to the entered unit price when only unit is provided on a side', async () => {
-      const calls = [];
-      global.fetch = buildFetch(
-        {
-          'GET /price/defaults': { defaults: {} },
-          'GET /price?parentId=': { response: { data: [] } },
-          'POST /price': { id: 'new-row' },
-        },
-        calls,
-      );
-
-      const user = userEvent.setup();
-      renderBar({ catalogs: catalogsWithPlv(), api: apiWithPriceSelector() });
-
-      const inputs = await enterCreateMode(user);
-      await user.type(inputs.saleUnit, '7');
-
-      await user.click(screen.getByText('savePricing'));
+      // Click "Save changes" without confirming the pending row
+      const saveBtn = screen.getByRole('button', { name: 'saveChanges' });
+      await user.click(saveBtn);
 
       await waitFor(() => {
-        const posts = calls.filter(
-          (c) => c.method === 'POST' && c.url.endsWith('/price'),
-        );
-        expect(posts).toHaveLength(1);
+        expect(toast.info).toHaveBeenCalledWith('priceUnfinishedRows');
       });
-
-      const post = calls.find(
-        (c) => c.method === 'POST' && c.url.endsWith('/price'),
-      );
-      const body = JSON.parse(post.body);
-      expect(body.standardPrice).toBe('7');
-      expect(body.listPrice).toBe('7');
-      expect(body.priceLimit).toBe('7');
-    });
-
-    it('falls back to the entered list price when only list is provided on a side', async () => {
-      const calls = [];
-      global.fetch = buildFetch(
-        {
-          'GET /price/defaults': { defaults: {} },
-          'GET /price?parentId=': { response: { data: [] } },
-          'POST /price': { id: 'new-row' },
-        },
-        calls,
-      );
-
-      const user = userEvent.setup();
-      renderBar({ catalogs: catalogsWithPlv(), api: apiWithPriceSelector() });
-
-      const inputs = await enterCreateMode(user);
-      await user.type(inputs.saleList, '9');
-
-      await user.click(screen.getByText('savePricing'));
-
-      await waitFor(() => {
-        const posts = calls.filter(
-          (c) => c.method === 'POST' && c.url.endsWith('/price'),
-        );
-        expect(posts).toHaveLength(1);
-      });
-
-      const post = calls.find(
-        (c) => c.method === 'POST' && c.url.endsWith('/price'),
-      );
-      const body = JSON.parse(post.body);
-      expect(body.standardPrice).toBe('9');
-      expect(body.listPrice).toBe('9');
-      expect(body.priceLimit).toBe('9');
     });
   });
 
@@ -587,8 +508,8 @@ describe('ProductPriceBar', () => {
       // No catalogs prop -> selectorOptions starts empty -> dialog lazy-fetches.
       renderBar({ api: apiWithPriceSelector() });
 
-      await screen.findByText('editPricing');
-      await user.click(screen.getByText('editPricing'));
+      await screen.findByTestId('price-sales-edit');
+      await user.click(screen.getByTestId('price-sales-edit'));
 
       // Lazy selector fetch should fire.
       await waitFor(() => {
@@ -598,11 +519,9 @@ describe('ProductPriceBar', () => {
         expect(selectorCalls.length).toBeGreaterThan(0);
       });
 
-      // Click "+" on the sales card (the section title is rendered as 'priceSalesLists').
-      // There are two "+" buttons (sales + purchase); the first one is the sales card.
-      const plusButtons = screen.getAllByRole('button', { name: '+' });
-      expect(plusButtons.length).toBeGreaterThanOrEqual(2);
-      await user.click(plusButtons[0]);
+      // Click "+" on the sales section (focusedSection='sales' → only one "+" button in dialog).
+      const plusBtn = screen.getByRole('button', { name: '+' });
+      await user.click(plusBtn);
 
       // The select for adding a sales row must contain only sales-flagged options.
       await waitFor(() => {
@@ -633,12 +552,12 @@ describe('ProductPriceBar', () => {
         api: apiWithPriceSelector(),
       });
 
-      await screen.findByText('editPricing');
-      await user.click(screen.getByText('editPricing'));
+      await screen.findByTestId('price-sales-edit');
+      await user.click(screen.getByTestId('price-sales-edit'));
 
-      // Open the add-row form on the sales card.
-      const plusButtons = await screen.findAllByRole('button', { name: '+' });
-      await user.click(plusButtons[0]);
+      // Open the add-row form on the sales section.
+      const plusBtn = await screen.findByRole('button', { name: '+' });
+      await user.click(plusBtn);
 
       // Select must be populated from injected catalogs (no lazy fetch needed).
       await waitFor(() => {
@@ -677,12 +596,12 @@ describe('ProductPriceBar', () => {
       const user = userEvent.setup();
       renderBar({ api: apiWithPriceSelector() });
 
-      await screen.findByText('editPricing');
-      await user.click(screen.getByText('editPricing'));
+      await screen.findByTestId('price-sales-edit');
+      await user.click(screen.getByTestId('price-sales-edit'));
 
-      // Open the add-row form on the sales card while selector fetch is still pending.
-      const plusButtons = await screen.findAllByRole('button', { name: '+' });
-      await user.click(plusButtons[0]);
+      // Open the add-row form on the sales section while selector fetch is still pending.
+      const plusBtn = await screen.findByRole('button', { name: '+' });
+      await user.click(plusBtn);
 
       const select = await screen.findByRole('combobox');
       // While pending: disabled + loadingPricing placeholder.
@@ -721,8 +640,8 @@ describe('ProductPriceBar', () => {
         },
       });
 
-      await screen.findByText('editPricing');
-      await user.click(screen.getByText('editPricing'));
+      await screen.findByTestId('price-sales-edit');
+      await user.click(screen.getByTestId('price-sales-edit'));
 
       await waitFor(() => {
         const selectorCalls = calls.filter((c) =>
