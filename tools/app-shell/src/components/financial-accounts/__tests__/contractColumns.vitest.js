@@ -48,6 +48,11 @@ describe('getContractGridColumns', () => {
     ]);
   });
 
+  it('returns the account (Cuentas list) grid columns in order', () => {
+    const cols = getContractGridColumns('account').map((c) => c.name);
+    expect(cols).toEqual(['name', 'type', 'currentBalance']);
+  });
+
   it('returns an empty list for unknown entities', () => {
     expect(getContractGridColumns('nope')).toEqual([]);
   });

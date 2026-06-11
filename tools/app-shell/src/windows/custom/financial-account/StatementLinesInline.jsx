@@ -6,7 +6,7 @@ import { StatusTag } from '@/components/ui/status-tag';
 import { cn } from '@/lib/utils';
 import { useBankStatementLines } from '@/hooks/useBankStatementLines';
 import { ReconciledTxnsModal } from './ReconciledTxnsModal';
-import { getContractGridColumns } from './contractColumns';
+import { getContractGridColumns } from '@/components/financial-accounts/contractColumns';
 
 // Layout for the `mini` variant of the lines table. The DATA columns come from
 // the window contract (entity `bankStatementLines`); the synthetic tail (match

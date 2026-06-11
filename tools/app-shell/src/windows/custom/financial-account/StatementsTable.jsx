@@ -7,7 +7,7 @@ import { StatusTag } from '@/components/ui/status-tag';
 import { cn } from '@/lib/utils';
 import { StatementLinesInline } from './StatementLinesInline';
 import { StatementRowKebab } from './StatementRowKebab';
-import { getContractGridColumns } from './contractColumns';
+import { getContractGridColumns } from '@/components/financial-accounts/contractColumns';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Layout — grid (NOT <table>) so the expanded accordion row can span all cols.

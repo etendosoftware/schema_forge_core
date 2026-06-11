@@ -18,7 +18,7 @@ import { MoneyAmount } from '@/components/ui/money-amount';
 import { MovementStatusBadge } from './MovementStatusBadge';
 import { PostingStatusDot } from './PostingStatusDot';
 import { MovementRowKebab } from './MovementRowKebab';
-import { getContractGridColumns } from './contractColumns';
+import { getContractGridColumns } from '@/components/financial-accounts/contractColumns';
 
 /**
  * Formats an ISO date string using the user's locale. The movement date is a
