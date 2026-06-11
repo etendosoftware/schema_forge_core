@@ -7,6 +7,7 @@ import ReturnMaterialReceiptLineForm from './ReturnMaterialReceiptLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import { AttachmentsTab } from '@/components/attachments';
 import ReturnMaterialReceiptBottomPanel from '../../../custom/ReturnMaterialReceiptBottomPanel';
+import ConfirmWithCreditButton from '@/windows/custom/return-material-receipt/ConfirmWithCreditButton';
 import catalogs from './mockCatalogs';
 
 
@@ -16,7 +17,7 @@ const breadcrumb = 'Sales / Return Material Receipt';
 // @sf-generated-start summary:returnMaterialReceipt
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'salesOrder', column: 'C_Order_ID', type: 'selector' },
+  { key: 'sourceShipmentDocNo', column: 'sourceShipmentDocNo', type: 'string' },
 ];
 
 const statusField = 'documentStatus';
@@ -28,7 +29,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:returnMaterialReceipt
 const processes = [
-  { name: 'Process Receipt', label: 'Process  Receipt', style: 'positive', columnName: 'documentAction' },
+
 ];
 // @sf-generated-end processes:returnMaterialReceipt
 
@@ -121,14 +122,6 @@ export const api = {
           }
         ]
       }
-    },
-    {
-      "entity": "returnMaterialReceipt",
-      "field": "salesOrder",
-      "column": "C_Order_ID",
-      "reference": "Order",
-      "inputMode": "search",
-      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/selectors/salesOrder"
     },
     {
       "entity": "returnMaterialReceiptLine",
@@ -264,9 +257,23 @@ export const api = {
   },
   "window": {
     "category": "sales"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "sourceShipmentDocNo": "Albarán origen",
+      "movementQuantity": "Cant. a devolver",
+      "orderQuantity": "Cant. entregada original"
+    },
+    "en_US": {
+      "sourceShipmentDocNo": "Source Shipment",
+      "movementQuantity": "Return Qty",
+      "orderQuantity": "Original Delivered Qty"
+    }
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:ReturnMaterialReceiptPage
 export default function ReturnMaterialReceiptPage({ windowName, recordId, ...props }) {
   if (recordId) {
@@ -289,10 +296,14 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        hideDeleteWhenComplete
+        noHeaderBorder
         notesField="description"
         customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
         bottomSection={ReturnMaterialReceiptBottomPanel}
+        topbarRight={ConfirmWithCreditButton}
         requiredHeaderFields={requiredHeaderFields}
+        labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
         sendDocument
         {...props}
@@ -309,6 +320,7 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="movementDate"
+      labelOverrides={labelOverrides}
       rowQuickActions={{}}
       sendDocument
       {...props}

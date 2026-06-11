@@ -18,6 +18,20 @@ vi.mock('@/hooks/useBankStatementLines', () => ({
   useBankStatementLines: (...args) => linesMock(...args),
 }));
 
+// Stub the modal so the chip tests don't pull react-router-dom / the dialog tree.
+// It records the line it was opened with and renders a minimal marker.
+const txnModalSpy = vi.fn();
+vi.mock('../ReconciledTxnsModal', () => ({
+  ReconciledTxnsModal: ({ line, onClose }) => {
+    txnModalSpy(line);
+    return (
+      <div data-testid="txn-modal" data-doc={line?.txns?.[0]?.documentNo || ''}>
+        <button type="button" data-testid="txn-modal-close" onClick={onClose} />
+      </div>
+    );
+  },
+}));
+
 import { StatementLinesInline } from '../StatementLinesInline.jsx';
 
 describe('StatementLinesInline', () => {
@@ -73,7 +87,7 @@ describe('StatementLinesInline', () => {
     expect(screen.getByTestId('statement-line-row-l2')).toBeInTheDocument();
   });
 
-  it('renders a success-tone match pill for matched=true and a neutral one for matched=false', () => {
+  it('renders a success-tone match pill for matched=true and an info one for matched=false', () => {
     linesMock.mockReturnValue({
       lines: [
         { id: 'l1', date: '2026-05-06T00:00:00Z', description: '', amount: 100, matched: true },
@@ -82,9 +96,10 @@ describe('StatementLinesInline', () => {
       loading: false,
     });
     render(<StatementLinesInline statementId="s1" />);
-    expect(
-      screen.getByText('financeAccountStatementLinesStatusAuto'),
-    ).toBeInTheDocument();
+    // Matched → success (green); unmatched "Sin conciliar" → info (blue), same as
+    // the statement-level status, instead of neutral grey.
+    expect(screen.getByTestId('status-success')).toBeInTheDocument();
+    expect(screen.getByTestId('status-info')).toBeInTheDocument();
     expect(
       screen.getByText('financeAccountStatementLinesStatusUnmatched'),
     ).toBeInTheDocument();
@@ -122,5 +137,49 @@ describe('StatementLinesInline', () => {
     render(<StatementLinesInline statementId="s1" />);
     // The empty description should render the placeholder "—" exactly once.
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
+  });
+
+  describe('Transacción column', () => {
+    it('shows no chip (—) when the line has no reconciled transactions', () => {
+      linesMock.mockReturnValue({
+        lines: [{ id: 'l1', date: '2026-05-06T00:00:00Z', amount: 100, matched: false, txns: [] }],
+        loading: false,
+      });
+      render(<StatementLinesInline statementId="s1" />);
+      expect(screen.queryByTestId('statement-line-txn-l1')).not.toBeInTheDocument();
+    });
+
+    it('shows a single-transaction chip with its payment number and opens the modal', async () => {
+      const { default: userEvent } = await import('@testing-library/user-event');
+      const user = userEvent.setup();
+      linesMock.mockReturnValue({
+        lines: [{
+          id: 'l1', date: '2026-05-06T00:00:00Z', amount: -500, matched: true,
+          txns: [{ documentNo: '1000034', amount: -500, paymentId: 'p1' }],
+        }],
+        loading: false,
+      });
+      render(<StatementLinesInline statementId="s1" />);
+      const chip = screen.getByTestId('statement-line-txn-l1');
+      expect(chip).toHaveTextContent('1000034');
+      await user.click(chip);
+      expect(screen.getByTestId('txn-modal')).toHaveAttribute('data-doc', '1000034');
+    });
+
+    it('shows a "N transacciones" chip when the line has several transactions', () => {
+      linesMock.mockReturnValue({
+        lines: [{
+          id: 'l1', date: '2026-05-06T00:00:00Z', amount: 900, matched: true,
+          txns: [
+            { documentNo: '1000040', amount: 500, paymentId: 'p1' },
+            { documentNo: '1000041', amount: 400, paymentId: 'p2' },
+          ],
+        }],
+        loading: false,
+      });
+      render(<StatementLinesInline statementId="s1" />);
+      expect(screen.getByTestId('statement-line-txn-l1'))
+        .toHaveTextContent('financeAccountStatementLinesTxnChipMulti');
+    });
   });
 });

@@ -10,6 +10,7 @@ import {
   AccountsTable,
   AccountTypeFilter,
 } from '@/components/financial-accounts';
+import { applyAccountAdvancedFilter } from '@/components/financial-accounts/accountAdvancedFilter.js';
 import { NewAccountWizard } from '@/windows/custom/financial-account/NewAccountWizard.jsx';
 import { EditAccountModal } from '@/windows/custom/financial-account/EditAccountModal.jsx';
 import { ArchiveAccountDialog } from '@/windows/custom/financial-account/ArchiveAccountDialog.jsx';
@@ -41,6 +42,7 @@ export default function FinancialAccountsPage() {
   const { accounts, summary, loading, error, reload } = useFinancialAccounts();
   const [typeFilter, setTypeFilter] = useState(null);
   const [search, setSearch] = useState('');
+  const [advancedFilter, setAdvancedFilter] = useState(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editAccount, setEditAccount] = useState(null);
   const [archiveTarget, setArchiveTarget] = useState(null);
@@ -59,8 +61,8 @@ export default function FinancialAccountsPage() {
   }, [activeCount]);
 
   const visibleAccounts = useMemo(
-    () => filterAccounts(accounts, typeFilter, search),
-    [accounts, typeFilter, search],
+    () => applyAccountAdvancedFilter(filterAccounts(accounts, typeFilter, search), advancedFilter),
+    [accounts, typeFilter, search, advancedFilter],
   );
 
   const handleOpenAccount = (account) => {
@@ -80,6 +82,9 @@ export default function FinancialAccountsPage() {
           search={search}
           onSearchChange={setSearch}
           onNewAccount={() => setWizardOpen(true)}
+          advancedFilter={advancedFilter}
+          onAdvancedFilterChange={setAdvancedFilter}
+          rows={accounts}
         />
       </div>
 

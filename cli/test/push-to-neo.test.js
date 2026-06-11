@@ -7,6 +7,7 @@ import {
   extractFieldsFromContract,
   pushToNeo,
   loadConfig,
+  stepExcludeNonContractFields,
 } from '../src/push-to-neo.js';
 import {
   generateId,
@@ -386,5 +387,116 @@ describe('auditDefaults', () => {
     assert.equal(audit.ad_org_id, 'DEF');
     assert.equal(audit.createdby, 'GHI');
     assert.equal(audit.updatedby, 'GHI');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 9. stepExcludeNonContractFields — extractedColumns scoping (ETP-4177)
+// ---------------------------------------------------------------------------
+
+function makeClient(rows) {
+  return {
+    query: async (sql) => {
+      if (sql.includes('SELECT')) return { rows };
+      return {};
+    },
+  };
+}
+
+describe('stepExcludeNonContractFields', () => {
+  it('excludes a field that is in schemaRawData but not in contract', async () => {
+    const updated = [];
+    const client = {
+      query: async (sql, params) => {
+        if (sql.includes('SELECT')) {
+          return { rows: [{ etgo_sf_field_id: 'F1', columnname: 'description' }] };
+        }
+        updated.push(params[0]);
+        return {};
+      },
+    };
+    const popResult = { entities: [{ entityId: 'E1' }] };
+    const allFields = [{ column: 'name' }];
+    const schemaRawData = { entities: [{ fields: [{ columnName: 'description' }, { columnName: 'name' }] }] };
+
+    await stepExcludeNonContractFields(client, popResult, allFields, schemaRawData);
+    assert.deepEqual(updated, ['F1'], 'description should be excluded (in AD but not in contract)');
+  });
+
+  it('does NOT exclude a field from an uninstalled module (not in schemaRawData)', async () => {
+    const updated = [];
+    const client = {
+      query: async (sql, params) => {
+        if (sql.includes('SELECT')) {
+          // em_sii_description belongs to an uninstalled module — not in schemaRawData
+          return { rows: [{ etgo_sf_field_id: 'F2', columnname: 'em_sii_description' }] };
+        }
+        updated.push(params[0]);
+        return {};
+      },
+    };
+    const popResult = { entities: [{ entityId: 'E1' }] };
+    const allFields = [{ column: 'name' }];
+    const schemaRawData = { entities: [{ fields: [{ columnName: 'name' }] }] };
+
+    await stepExcludeNonContractFields(client, popResult, allFields, schemaRawData);
+    assert.deepEqual(updated, [], 'em_sii_description must not be toggled — module not extracted');
+  });
+
+  it('does NOT exclude a field that is already in the contract', async () => {
+    const updated = [];
+    const client = {
+      query: async (sql, params) => {
+        if (sql.includes('SELECT')) {
+          return { rows: [{ etgo_sf_field_id: 'F3', columnname: 'name' }] };
+        }
+        updated.push(params[0]);
+        return {};
+      },
+    };
+    const popResult = { entities: [{ entityId: 'E1' }] };
+    const allFields = [{ column: 'name' }];
+    const schemaRawData = { entities: [{ fields: [{ columnName: 'name' }] }] };
+
+    await stepExcludeNonContractFields(client, popResult, allFields, schemaRawData);
+    assert.deepEqual(updated, [], 'name is in contract — must not be excluded');
+  });
+
+  it('excludes nothing when schemaRawData is null', async () => {
+    const updated = [];
+    const client = {
+      query: async (sql, params) => {
+        if (sql.includes('SELECT')) {
+          return { rows: [{ etgo_sf_field_id: 'F4', columnname: 'description' }] };
+        }
+        updated.push(params[0]);
+        return {};
+      },
+    };
+    const popResult = { entities: [{ entityId: 'E1' }] };
+    const allFields = [{ column: 'name' }];
+
+    await stepExcludeNonContractFields(client, popResult, allFields, null);
+    assert.deepEqual(updated, [], 'null schemaRawData → extractedColumns is empty → nothing excluded');
+  });
+
+  it('returns the count of excluded fields', async () => {
+    const client = {
+      query: async (sql) => {
+        if (sql.includes('SELECT')) {
+          return { rows: [
+            { etgo_sf_field_id: 'FA', columnname: 'col_a' },
+            { etgo_sf_field_id: 'FB', columnname: 'col_b' },
+          ]};
+        }
+        return {};
+      },
+    };
+    const popResult = { entities: [{ entityId: 'E1' }] };
+    const allFields = [];
+    const schemaRawData = { entities: [{ fields: [{ columnName: 'col_a' }, { columnName: 'col_b' }] }] };
+
+    const count = await stepExcludeNonContractFields(client, popResult, allFields, schemaRawData);
+    assert.equal(count, 2);
   });
 });

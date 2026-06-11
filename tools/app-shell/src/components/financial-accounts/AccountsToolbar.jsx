@@ -1,9 +1,12 @@
+import { useMemo } from 'react';
 import { Search, Plus, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { AdvancedFilterButton } from '@/components/contract-ui/AdvancedFilterButton.jsx';
 import { useUI } from '@/i18n';
 import { AccountTypeFilter } from './AccountTypeFilter.jsx';
+import { buildAccountFilterColumns } from './accountAdvancedFilter.js';
 
 /**
  * Toolbar above the accounts table. Sizes match Figma `3012:25602`:
@@ -18,8 +21,12 @@ export function AccountsToolbar({
   search,
   onSearchChange,
   onNewAccount,
+  advancedFilter = null,
+  onAdvancedFilterChange,
+  rows = [],
 }) {
   const ui = useUI();
+  const columns = useMemo(() => buildAccountFilterColumns(ui), [ui]);
 
   const handleRulesClick = () => {
     toast(ui('financeAccountsRulesToast'));
@@ -32,6 +39,15 @@ export function AccountsToolbar({
     >
       <div className="flex items-center gap-2">
         <AccountTypeFilter value={typeFilter} onChange={onTypeFilterChange} />
+
+        {/* Advanced "by conditions" filter — same as the other windows. */}
+        <AdvancedFilterButton
+          columns={columns}
+          rows={rows}
+          value={advancedFilter}
+          onChange={onAdvancedFilterChange}
+          testId="cuentas-advanced-filter"
+        />
       </div>
 
       <div className="flex items-center gap-2">

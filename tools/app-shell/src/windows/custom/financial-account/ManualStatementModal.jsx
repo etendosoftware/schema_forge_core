@@ -20,8 +20,6 @@ import { FieldRow, inputClass } from './formFields';
 
 // Amounts (out / in) default to "0,00" so the required amount fields already
 // carry a value — a new line then only needs a Reference No to be complete.
-const DEFAULT_AMOUNT = '0,00';
-
 let lineSeq = 0;
 const newLine = () => {
   lineSeq += 1;
@@ -30,7 +28,9 @@ const newLine = () => {
     // Pre-fill the line date with today; it is excluded from the blank-line check
     // so a row with only the default date still counts as empty.
     date: toLocalIso(new Date()), reference: '', contactName: '', contact: null, glItem: null,
-    out: DEFAULT_AMOUNT, in: DEFAULT_AMOUNT,
+    // Empty so the amount fields show "0,00" as a placeholder (not a real value
+    // the user must clear). parseAmount('') → 0; a line needs at least one amount.
+    out: '', in: '',
   };
 };
 
@@ -67,9 +67,10 @@ function lineToRow(l) {
     contactName: l.bpartnerName || '',
     contact: l.bpartnerId ? { id: l.bpartnerId, name: l.bpartnerFkName || l.bpartnerName || '' } : null,
     glItem: l.glItemId ? { id: l.glItemId, name: l.glItemName || '' } : null,
-    // Keep "0" as a value (not blank) so a hydrated line stays "complete".
-    out: l.out != null ? String(l.out) : '',
-    in: l.in != null ? String(l.in) : '',
+    // Show the zero side as empty (placeholder) — a statement line is an inflow
+    // OR an outflow, so the unused side reads "0,00" as a hint, not a real 0.
+    out: l.out ? String(l.out) : '',
+    in: l.in ? String(l.in) : '',
   };
 }
 
@@ -103,16 +104,15 @@ function isBlankLine(r) {
 }
 
 /**
- * A line is "complete" (committable / saveable) when every required field has a
- * value: transaction date, Reference No, and both amounts (out & in) — 0 counts
- * as a value, but an empty amount field does not. The contact/G/L item are
- * optional. Mirrors the asterisked columns in the lines header.
+ * A line is "complete" (committable / saveable) when it has its transaction date,
+ * a Reference No, and at least one amount entered (a statement line is an inflow
+ * OR an outflow, so the other side is left empty = 0). The contact / G/L item are
+ * optional. Empty amount fields count as 0.
  */
 function isLineComplete(r) {
   return !!r.date
     && r.reference.trim() !== ''
-    && String(r.out).trim() !== ''
-    && String(r.in).trim() !== '';
+    && (parseAmount(r.out) > 0 || parseAmount(r.in) > 0);
 }
 
 function computeTotals(rows) {

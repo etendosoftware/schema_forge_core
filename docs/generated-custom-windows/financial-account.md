@@ -191,7 +191,11 @@ Display the full detail of a financial account: a summary strip with KPIs, and t
 - Topbar shows `{accountName}` as title and `Finanzas / Cuentas / {accountName}` as breadcrumb via `useSetPageMeta` (inlined in `index.jsx` — no per-window header bar).
 - Account Summary Strip (single horizontal bar inside the Movements tab body): avatar + IBAN (chunked in groups of 4, with copy-to-clipboard) | Saldo total | Entradas (30D) | Salidas (30D). The three KPI sections use `flex-1` so they spread evenly.
 - Three tabs with counts: Movements (live data), Reconciliation (placeholder), Imported Statements (placeholder).
-- Export button at the right of the tab strip — fires a toast (real export is out of scope).
+- Export button at the right of the tab strip — context-aware CSV download. **All exports go through the generic backend CSV flow** (`?export=csv`, see `neo-headless.md` §4.3) via the shared `useCsvExport` hook, so the server streams the file and large lists never get assembled in the browser:
+  - **Movements tab** → exports the filtered movements (`GET /sws/neo/financial-account-transactions?...&export=csv`, `ids` = filtered movement ids). Classic-parity columns (Transaction Type / Status labels, Deposit/Withdrawal split, synthetic "Payment", Processed flag) are **pre-derived server-side** on the transaction rows so the exporter stays generic. Column order/labels live in `MOVEMENT_CSV_COLUMNS` (`index.jsx`).
+  - **Imported Statements tab, no statement selected** → exports the filtered statement **headers** (`GET /sws/neo/bank-statements?...&export=csv&ids=<filtered ids>`).
+  - **Imported Statements tab, statement(s) selected** → exports the **lines** of the selected statement(s) (`...&action=lines&statementIds=<ids>`), mirroring Classic's line export.
+  - Column labels/order and `ids`/`statementIds` are passed as query params; the statements tab exposes the current selection + filtered headers to the window via a ref (`getSelectedStatementIds` / `getFilteredStatements`), the movements tab via `getFilteredMovements`.
 - Movements toolbar: back arrow `←`, status filter (8 payment statuses, search-enabled), date range filter (preset list + dual calendar, same picker as grid views), type filter (BPD/BPW, search-enabled), amount filter (presets + manual min/max), search input, `+ Nuevo movimiento` button (yellow hover, fires toast — real action is T8).
 - Movements table: Expand chevron | Checkbox | Date | Payment | Contact | Description | Status (`MovementStatusBadge`) | Type (with `PostingStatusDot` sub-label) | G/L Item | Amount | Balance | kebab.
 - **Payment column** (`Pago`): when the movement has a related payment, the document number renders as an underlined link (with an `ArrowUpRight` icon) that navigates to `/payment-in/:id` (received payments, `paymentIsReceipt === 'Y'`) or `/payment-out/:id` (made payments). Movements with no payment show plain text.
@@ -222,7 +226,7 @@ Display the full detail of a financial account: a summary strip with KPIs, and t
 ```
 index.jsx                          — receives { recordId }, sets page meta, mounts TooltipProvider
   DetailTabs.jsx + Tabs primitives — 3 tabs with icon + label + badge
-    ExportButton (inline)          — right of tab strip, toast
+    ExportButton (inline)          — right of tab strip, context-aware CSV (useCsvExport)
     MovimientosTab.jsx             — toolbar + summary strip + table; runs applyFilters client-side
       MovementsToolbar/index.jsx   — back ←, 4 filters, search, + Nuevo movimiento
         StatusFilter.jsx           — wraps DistinctValuesFilter (8 codes)
@@ -282,6 +286,7 @@ index.jsx                          — receives { recordId }, sets page meta, mo
 
 ```
 GET /sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}
+GET /sws/neo/financial-account-transactions?...&export=csv&columns=...&ids=...   → CSV download (generic, see neo-headless.md §4.3)
 ```
 
 Implemented by `com.etendoerp.go.schemaforge.FinancialAccountTransactionsHandler` (CDI bean registered via `@Named("financial-account-transactions")`). The handler:
@@ -291,6 +296,7 @@ Implemented by `com.etendoerp.go.schemaforge.FinancialAccountTransactionsHandler
 - Computes the account's `enabledDimensions` by reading `C_AcctSchema_Element` (the dimensions enabled in the chart of accounts), returned once at the payload level (not per row).
 - Computes a per-row running balance anchored to `FIN_Financial_Account.currentbalance` (window function: `currentbalance − SUM(subsequent)` over `statementdate ASC, line ASC`).
 - Returns a `totals` object with the current balance, 30-day inflows, 30-day outflows, and the account currency. The 30-day cutoff is **computed in Java** (`Instant.now().minus(30, ChronoUnit.DAYS)`) and bound as a `Timestamp` parameter — no PostgreSQL-specific `NOW() − INTERVAL` syntax, so the query stays portable across PostgreSQL and Oracle.
+- Each row also carries **CSV-export fields** consumed by the generic `?export=csv` path so the exporter stays a dumb serializer: `transactionTypeLabel`, `statusLabel` (Classic English labels), `depositAmount`/`withdrawalAmount` (the split, from raw `depositamt`/`paymentamt`), `paymentLabel` (synthetic `docNo - date - bp - |amount|`) and `processed`. These replace the retired client-side `movementsCsvExport.js`.
 
 Response shape:
 
@@ -327,7 +333,9 @@ Operations routed by HTTP method + `action` query param, all served by `BankStat
 
 ```
 GET  /sws/neo/bank-statements?FIN_Financial_Account_ID={id}          → list
-GET  /sws/neo/bank-statements?action=lines&statementId={id}          → lines
+GET  /sws/neo/bank-statements?action=lines&statementId={id}          → lines (one statement)
+GET  /sws/neo/bank-statements?action=lines&statementIds={a,b,c}      → lines (several statements, for CSV export)
+GET  /sws/neo/bank-statements?...&export=csv&columns=...&ids=...     → CSV download (generic, see neo-headless.md §4.3)
 POST /sws/neo/bank-statements?action=preview                         → in-memory parse (no persist)
 POST /sws/neo/bank-statements?action=import                          → C43 / CSV import
      body: { FIN_Financial_Account_ID, fileName, contentBase64 }

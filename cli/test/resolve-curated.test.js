@@ -253,3 +253,127 @@ describe('resolveCurated — field-level drawer + display passthroughs (F3)', ()
     assert.equal(product.onSelectMappings, undefined);
   });
 });
+
+// ─── virtualFields — appendVirtualFields exercised via resolveCurated ───
+describe('resolveCurated — virtualFields', () => {
+  const baseSchema = {
+    window: { id: '200', name: 'Return Receipt' },
+    entities: [{
+      name: 'returnMaterialReceipt',
+      tableName: 'M_InOut',
+      tabId: '20',
+      tabName: 'Header',
+      fields: [
+        { name: 'documentNo', columnName: 'DocumentNo', label: 'Document No', type: 'string', visibility: 'readOnly' },
+      ],
+    }],
+  };
+
+  it('virtual field appears in curated fields with virtual: true', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Return Receipt' },
+      entities: {
+        returnMaterialReceipt: {
+          name: 'returnReceipt',
+          virtualFields: [{ name: 'totalReturned', label: 'Total Returned', type: 'decimal' }],
+          fields: {},
+        },
+      },
+      rules: {},
+    };
+
+    const { schema } = await resolveCurated(baseSchema, { rules: [] }, decisions);
+    const vf = schema.entities[0].fields.find(f => f.name === 'totalReturned');
+    assert.ok(vf, 'virtual field should be present');
+    assert.equal(vf.virtual, true);
+    assert.equal(vf.type, 'decimal');
+    assert.equal(vf.label, 'Total Returned');
+  });
+
+  it('applies defaults when optional properties are omitted', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Return Receipt' },
+      entities: {
+        returnMaterialReceipt: {
+          name: 'returnReceipt',
+          virtualFields: [{ name: 'minimalField' }],
+          fields: {},
+        },
+      },
+      rules: {},
+    };
+
+    const { schema } = await resolveCurated(baseSchema, { rules: [] }, decisions);
+    const vf = schema.entities[0].fields.find(f => f.name === 'minimalField');
+    assert.ok(vf, 'minimal virtual field should be present');
+    assert.equal(vf.virtual, true);
+    assert.equal(vf.column, 'minimalField');
+    assert.equal(vf.label, 'minimalField');
+    assert.equal(vf.type, 'string');
+    assert.equal(vf.visibility, 'readOnly');
+    assert.equal(vf.required, false);
+    assert.equal(vf.form, true);
+    assert.equal(vf.grid, true);
+    assert.equal(vf.section, 'other');
+    assert.equal(vf.gridOrder, undefined);
+  });
+
+  it('column falls back to name when not specified', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Return Receipt' },
+      entities: {
+        returnMaterialReceipt: {
+          name: 'returnReceipt',
+          virtualFields: [{ name: 'computedStatus' }],
+          fields: {},
+        },
+      },
+      rules: {},
+    };
+
+    const { schema } = await resolveCurated(baseSchema, { rules: [] }, decisions);
+    const vf = schema.entities[0].fields.find(f => f.name === 'computedStatus');
+    assert.equal(vf.column, 'computedStatus');
+  });
+
+  it('explicit column overrides name fallback', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Return Receipt' },
+      entities: {
+        returnMaterialReceipt: {
+          name: 'returnReceipt',
+          virtualFields: [{ name: 'myField', column: 'customColumnKey' }],
+          fields: {},
+        },
+      },
+      rules: {},
+    };
+
+    const { schema } = await resolveCurated(baseSchema, { rules: [] }, decisions);
+    const vf = schema.entities[0].fields.find(f => f.name === 'myField');
+    assert.equal(vf.column, 'customColumnKey');
+  });
+
+  it('empty virtualFields array adds no virtual fields', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Return Receipt' },
+      entities: {
+        returnMaterialReceipt: {
+          name: 'returnReceipt',
+          virtualFields: [],
+          fields: {},
+        },
+      },
+      rules: {},
+    };
+
+    const { schema } = await resolveCurated(baseSchema, { rules: [] }, decisions);
+    const virtualFields = schema.entities[0].fields.filter(f => f.virtual === true);
+    assert.equal(virtualFields.length, 0);
+  });
+});
