@@ -13597,6 +13597,9 @@
     "Event Type": {
       "label": "Event Type"
     },
+    "Match Rule": {
+      "label": "Reglas de matcheo"
+    },
     "Matched Sales Invoices": {
       "label": "Matched Sales Invoices"
     },
@@ -20054,7 +20057,16 @@
     "returnToVendor.confirmModal.infoRowPre": "El albarán quedará",
     "returnToVendor.confirmModal.infoRowBold": "completado",
     "returnToVendor.confirmModal.infoRowPost": ". Si lo deseas, generamos también una factura de devolución de compra.",
-    "returnToVendor.confirmModal.confirmWithInvoice": "Confirmar y crear factura"
+    "returnToVendor.confirmModal.confirmWithInvoice": "Confirmar y crear factura",
+    "saving": "Guardando…",
+    "genericError": "Algo salió mal. Inténtalo de nuevo.",
+    "createRecord": "Crear registro",
+    "matchRuleNew": "Nueva regla",
+    "matchRuleNewTitle": "Nueva regla de matcheo",
+    "matchRuleEditTitle": "Editar regla de matcheo",
+    "matchRuleSearchPlaceholder": "Buscar reglas…",
+    "matchRuleSectionDimensions": "Dimensiones contables",
+    "matchRuleBanner": "Las reglas se evalúan por orden de prioridad ascendente. Solo se aplican a líneas de extracto sin factura asociada que el algoritmo estándar no haya podido conciliar."
   },
   "menus": {
     "Goods Movement": {

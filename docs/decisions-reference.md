@@ -69,8 +69,8 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 |----------|------|---------|--------|---------|
 | `category` | string | Inferred | `"sales"`, `"purchases"`, `"inventory"`, `"finance"`, `"accounting"`, `"master"`, `"project"`, `"general"` | UI routing and navigation grouping. |
 | `name` | string | From AD | — | Display name for breadcrumbs and titles. |
-| `layoutType` | string | `"default"` | `"default"`, `"kanban"`, `"calendar"`, `"custom"` | Frontend rendering mode. See `docs/window-templates.md`. |
-| `templateConfig` | object | `null` | Layout-specific | Extra config for non-default layouts (e.g., `groupBy`, `dateField`). |
+| `layoutType` | string | `"default"` | `"default"`, `"kanban"`, `"calendar"`, `"list-modal"`, `"custom"` | Frontend rendering mode. See `docs/window-templates.md`. |
+| `templateConfig` | object | `null` | Layout-specific | Extra config for non-default layouts. `kanban`/`calendar`: `groupBy`, `dateField`, etc. `list-modal`: `titleKey`, `editTitleKey`, `bannerKey`, `searchPlaceholderKey`, `newLabelKey`, `autoPriorityField`, `autoPriorityStep`, `sections` (ordered `[{ key, label }]`; all strings are i18n keys). See the `list-modal` section in `docs/window-templates.md`. |
 | `detailEntity` | string \| null | Auto-inferred | Entity name or `null` | Explicitly sets which entity is the detail/lines tab. When omitted, the generator picks the first non-primary entity automatically. Set to `null` to create a header-only page (no detail tab). Set to a specific entity name to override the auto-inference. |
 | `relatedDocuments` | boolean | `false` | — | Enables the Related Documents footer in the detail view. Requires a hand-written `RelatedDocuments.jsx` in `artifacts/{window}/custom/`. The generator emits the import and `customTabs` prop automatically. |
 | `attachments` | boolean \| object | `true` | See below | Adds an "Attachments" tab to the detail view. Auto-enabled on every window with `layoutType: "default"`. Set to `false` to opt out; pass an object to tune client-side limits. See the Attachments subsection below. |
@@ -494,6 +494,19 @@ Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"order
 | `readOnly` | false | true | false |
 | `system` | false | false | false |
 | `discarded` | false | false | false |
+
+### Grid cell flags
+
+Applied to fields with `grid: true` to control how the list cell renders.
+
+| Property | Type | Default | Purpose |
+|----------|------|---------|---------|
+| `gridOrder` | integer | `null` | 1-based insertion position of the column in the grid. Only tagged fields move; untagged fields keep their relative order. |
+| `badge` | boolean | `false` | Render an enum/list value as a badge/chip. |
+| `inlineToggle` | boolean | `false` | Render a boolean column as an inline `Switch` that `PATCH`es `{entity}/{id}` with `{ [field]: checked }` on change (used by `list-modal` and inline-line layouts). |
+| `inlineEdit` | boolean | `false` | Mark a column as inline-editable (carried into the contract as `inlineEdit: true`). Consumed by `list-modal`; editing is also available via the modal. |
+| `gridReadOnly` | boolean | `false` | Make an otherwise-editable column read-only in the grid. |
+| `grow` | boolean | `false` | Let the column grow to fill available width. |
 
 ### Reference & Input Mode (FK fields)
 

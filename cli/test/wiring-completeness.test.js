@@ -45,6 +45,20 @@ const entityArtifacts = artifactDirs.filter(d =>
   !d.includes('__test') && !d.startsWith('.') && existsSync(resolve(ARTIFACTS, d, 'contract.json'))
 );
 
+// list-modal windows render via the generic <ListModalWindow>, which fetches real
+// NEO data and is self-contained (the generator emits only the Page + index +
+// mockCatalogs, no mockData / Table / Form). They need no mockData.js, mirroring
+// hand-written custom windows like financial-account.
+function getLayoutType(entity) {
+  try {
+    const contract = JSON.parse(readText(resolve(ARTIFACTS, entity, 'contract.json')));
+    return contract.frontendContract?.window?.layoutType ?? 'default';
+  } catch {
+    return 'default';
+  }
+}
+const listModalArtifacts = new Set(entityArtifacts.filter(e => getLayoutType(e) === 'list-modal'));
+
 const aggregateArtifacts = artifactDirs.filter(d =>
   !d.includes('__test') && !d.startsWith('.') && existsSync(resolve(ARTIFACTS, d, 'aggregate-contract.json'))
 );
@@ -76,6 +90,7 @@ describe('Wiring completeness', () => {
 
   describe('Every entity artifact has mockData.js', () => {
     for (const entity of entityArtifacts) {
+      if (listModalArtifacts.has(entity)) continue; // list-modal windows are self-contained (no mockData)
       it(`${entity} should have mockData.js`, () => {
         const generatedPath = resolve(ARTIFACTS, entity, 'generated', 'web', entity, 'mockData.js');
         const customPath = resolve(ARTIFACTS, entity, 'custom', 'mockData.js');

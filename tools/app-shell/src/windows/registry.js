@@ -16,6 +16,7 @@ import { APP_CATALOG } from '../apps-registry.js';
  */
 const windowLoaders = {
   'sales-order': () => import('@generated/sales-order/generated/web/sales-order/index.jsx'),
+  'match-rule': () => import('@generated/match-rule/generated/web/match-rule/index.jsx'),
   'business-partner': () => import('@generated/business-partner/generated/web/business-partner/index.jsx'),
   'contacts': () => import('@/windows/custom/contacts/index.jsx'),
   'warehouse': () => import('@generated/warehouse/generated/web/warehouse/index.jsx'),

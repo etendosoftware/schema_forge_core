@@ -6,6 +6,7 @@ export { FileUpload } from './FileUpload';
 export { KanbanBoard } from './KanbanBoard';
 export { KPIHeader } from './KPIHeader';
 export { ListView } from './ListView';
+export { ListModalWindow } from './ListModalWindow';
 export { DetailView } from './DetailView';
 export { default as InlineLinesPanel } from './InlineLinesPanel';
 export { default as LinesBottomSection } from './LinesBottomSection';

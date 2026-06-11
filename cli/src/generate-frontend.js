@@ -1223,6 +1223,189 @@ function getAddLineGuardProp(maxDetailLines) {
 }
 
 /**
+ * Order the grid fields the same way generateTableComponent does: fields with an
+ * explicit `gridOrder` are inserted at that 1-based position, the rest keep their
+ * natural relative order. Shared so the list-modal grid matches the standard grid.
+ */
+function orderGridFields(entity) {
+  const gridFieldsRaw = entity.fields.filter(f => f.grid && f.visibility !== 'discarded');
+  const pinned = [...gridFieldsRaw].filter(f => f.gridOrder != null).sort((a, b) => a.gridOrder - b.gridOrder);
+  const unpinned = gridFieldsRaw.filter(f => f.gridOrder == null);
+  const gridFields = [...unpinned];
+  for (const f of pinned) {
+    const pos = Math.max(1, Math.min(f.gridOrder, gridFields.length + 1));
+    gridFields.splice(pos - 1, 0, f);
+  }
+  return gridFields;
+}
+
+/**
+ * Build the column descriptor literals for the list-modal grid. Reuses the same
+ * field flags as the standard DataTable (`type`, `label`, enum labels, `toggle`
+ * for inlineToggle, `inlineEdit`, `badge`). Backend-agnostic: every cell renders
+ * from the row payload alone.
+ */
+function buildListModalColumns(entity) {
+  return orderGridFields(entity).map(f => {
+    const type = mapFieldType(f);
+    const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
+      ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
+      : '';
+    const enumVariantsPart = jsonWrapIf(', enumVariants: ', f.enumVariants);
+    const togglePart = fragmentIf(f.inlineToggle, ', toggle: true');
+    const inlineEditPart = fragmentIf(f.inlineEdit, ', inlineEdit: true');
+    const badgePart = fragmentIf(f.badge, ', badge: true');
+    const displayPart = wrapIf(", display: '", f.display, "'");
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart} },`;
+  }).join('\n');
+}
+
+/**
+ * Resolve the ordered modal sections. Honors templateConfig.sections (array of
+ * `{ key, label }` or string keys); otherwise derives the order from the first
+ * appearance of each field's `section` (defaulting unsectioned fields to 'general').
+ */
+function resolveModalSections(formFields, templateConfig) {
+  const declared = templateConfig?.sections;
+  if (Array.isArray(declared) && declared.length > 0) {
+    return declared.map(s => (typeof s === 'string' ? { key: s, label: null } : { key: s.key, label: s.label ?? null }));
+  }
+  const seen = [];
+  for (const f of formFields) {
+    const key = f.section || 'general';
+    if (!seen.includes(key)) seen.push(key);
+  }
+  return seen.map(key => ({ key, label: null }));
+}
+
+/**
+ * Build the modal field descriptor literals for the list-modal create/edit form.
+ * Mirrors generateFormComponent's field shape (type, required, lookup, reference,
+ * inputMode, options, defaultValue, span, section) so EntityForm renders identically.
+ */
+function buildListModalFields(formFields) {
+  return formFields.map(f => {
+    const type = mapFormFieldType(f);
+    const requiredPart = fragmentIf(f.required, ', required: true');
+    const lookupPart = fragmentIf(f.lookup, ', lookup: true');
+    const popupPart = fragmentIf(f.popup, ', popup: true');
+    const referencePart = wrapIf(", reference: '", f.reference, "'");
+    const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
+    const sectionPart = `, section: '${f.section || 'general'}'`;
+    const optionsPart = getOptionsPart(type, f);
+    const valueTypePart = (type === 'select' && f.tsType === 'boolean') ? `, valueType: 'boolean'` : '';
+    const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    const helpPart = f.help ? `, help: '${f.help.replace(/'/g, "\\'")}'` : '';
+    const spanPart = (f.span && f.span > 1) ? `, span: ${f.span}` : '';
+    const rowsPart = f.rows != null ? `, rows: ${f.rows}` : '';
+    const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
+    const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
+    const defaultValuePart = getDefaultValuePart(skipCheckboxDefault, skipServerMacro, f);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${spanPart}${rowsPart} },`;
+  }).join('\n');
+}
+
+/**
+ * Generate the page component for `layoutType: "list-modal"` windows.
+ *
+ * Emits a thin wrapper around the generic <ListModalWindow> component: a grid
+ * (list) + create/edit modal with NO drill-in detail view. All structure comes
+ * from the contract — grid columns, modal fields grouped by section, the NEO
+ * CRUD endpoint and the i18n title/banner — so the same template serves any
+ * catalog/master-data window that opts in.
+ */
+export function generateListModalPage(headerEntity, contract) {
+  const headerName = toJsIdentifier(headerEntity);
+  const compName = `${headerName}Page`;
+  const entity = contract.frontendContract.entities[headerEntity];
+  const windowConfig = contract?.frontendContract?.window ?? {};
+  const templateConfig = windowConfig.templateConfig ?? null;
+
+  const columnsArray = buildListModalColumns(entity);
+
+  const formFields = entity.fields
+    .filter(f => f.form && f.type !== 'button' && f.visibility !== 'discarded')
+    .sort((a, b) => {
+      if (a.seq != null && b.seq != null) return a.seq - b.seq;
+      if (a.seq != null) return -1;
+      if (b.seq != null) return 1;
+      return 0;
+    });
+  const fieldsArray = buildListModalFields(formFields);
+  const sections = resolveModalSections(formFields, templateConfig);
+  const sectionsArray = sections
+    .map(s => `  { key: '${s.key}'${s.label ? `, label: '${String(s.label).replace(/'/g, "\\'")}'` : ''} },`)
+    .join('\n');
+
+  const searchableFields = entity.searchableFields ?? [];
+  const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
+
+  const { apiBlock, apiProp } = buildApiParts(contract);
+
+  const windowCategory = capitalize(windowConfig.category ?? 'general');
+  const windowLabel = windowConfig.name ?? toLabel(headerEntity);
+  const breadcrumbLiteral = getBreadcrumbLiteral(windowConfig.breadcrumb, windowCategory, windowLabel);
+  const entityLabel = windowConfig.entityLabel || windowConfig.name || toLabel(headerEntity);
+
+  // Optional list-modal config (all i18n keys / field names; never raw user text).
+  const tc = templateConfig ?? {};
+  const configLiteral = JSON.stringify({
+    titleKey: tc.titleKey ?? null,
+    editTitleKey: tc.editTitleKey ?? null,
+    bannerKey: tc.bannerKey ?? null,
+    searchPlaceholderKey: tc.searchPlaceholderKey ?? null,
+    newLabelKey: tc.newLabelKey ?? null,
+    autoPriorityField: tc.autoPriorityField ?? null,
+    autoPriorityStep: tc.autoPriorityStep ?? null,
+    identifierField: tc.identifierField ?? null,
+  }, null, 2);
+
+  return `import { ListModalWindow } from '@/components/contract-ui';
+
+${MARKERS.GENERATED_START(`columns:${headerEntity}`)}
+const columns = [
+${columnsArray}
+];
+${MARKERS.GENERATED_END(`columns:${headerEntity}`)}
+
+${MARKERS.GENERATED_START(`fields:${headerEntity}`)}
+const fields = [
+${fieldsArray}
+];
+
+const sections = [
+${sectionsArray}
+];
+
+const filters = [${filtersArray}];
+${MARKERS.GENERATED_END(`fields:${headerEntity}`)}
+
+const breadcrumb = ${breadcrumbLiteral};
+const listModalConfig = ${configLiteral};
+${apiBlock}
+${MARKERS.GENERATED_START(`component:${compName}`)}
+export default function ${compName}({ windowName, ...props }) {
+  return (
+    <ListModalWindow
+      entity="${headerEntity}"
+      entityLabel="${entityLabel.replace(/"/g, '\\"')}"
+      windowName={windowName}
+      breadcrumb={breadcrumb}
+      columns={columns}
+      fields={fields}
+      sections={sections}
+      filters={filters}
+      config={listModalConfig}${apiProp}
+      {...props}
+    />
+  );
+}
+${MARKERS.GENERATED_END(`component:${compName}`)}
+`;
+}
+
+/**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
  */
@@ -1231,6 +1414,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const detailName = getDetailName(detailEntity);
   const compName = `${headerName}Page`;
   const layoutType = contract?.frontendContract?.window?.layoutType ?? 'default';
+  // list-modal: grid (list) + create/edit modal, no drill-in detail view.
+  // Delegate to the dedicated generator and skip the ListView/DetailView template.
+  if (layoutType === 'list-modal') {
+    return generateListModalPage(headerEntity, contract);
+  }
   const isGallery = layoutType === 'gallery';
   const isSidebar = !!contract?.frontendContract?.window?.sidebarLayout;
   const processes = getProcessesForEntity(contract, headerEntity);
@@ -1934,11 +2122,18 @@ export function generateAll(contract) {
 
   const files = {};
 
+  // list-modal pages are self-contained (columns + fields live in the Page file and
+  // are rendered by the generic ListModalWindow), so the per-entity Table/Form
+  // components are not needed and would only add dead files.
+  const isListModal = win.layoutType === 'list-modal';
+
   // Generate Table + Form for each entity
-  for (const entityName of entityNames) {
-    const capName = toJsIdentifier(entityName);
-    files[`${capName}Table.jsx`] = generateTableComponent(entityName, contract);
-    files[`${capName}Form.jsx`] = generateFormComponent(entityName, contract);
+  if (!isListModal) {
+    for (const entityName of entityNames) {
+      const capName = toJsIdentifier(entityName);
+      files[`${capName}Table.jsx`] = generateTableComponent(entityName, contract);
+      files[`${capName}Form.jsx`] = generateFormComponent(entityName, contract);
+    }
   }
 
   // Generate Page component (handles both header-detail and header-only layouts)

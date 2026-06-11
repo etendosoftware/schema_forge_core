@@ -14353,6 +14353,9 @@
     "Event Type": {
       "label": "Event Type"
     },
+    "Match Rule": {
+      "label": "Matching Rules"
+    },
     "Add Multiple Payments P&E": {
       "label": "Add Multiple Payments P&E"
     },
@@ -19787,7 +19790,16 @@
     "returnToVendor.confirmModal.infoRowPre": "The return will be",
     "returnToVendor.confirmModal.infoRowBold": "completed",
     "returnToVendor.confirmModal.infoRowPost": ". If you wish, we can also generate a purchase return invoice.",
-    "returnToVendor.confirmModal.confirmWithInvoice": "Confirm and create invoice"
+    "returnToVendor.confirmModal.confirmWithInvoice": "Confirm and create invoice",
+    "saving": "Saving…",
+    "genericError": "Something went wrong. Please try again.",
+    "createRecord": "Create record",
+    "matchRuleNew": "New rule",
+    "matchRuleNewTitle": "New matching rule",
+    "matchRuleEditTitle": "Edit matching rule",
+    "matchRuleSearchPlaceholder": "Search rules…",
+    "matchRuleSectionDimensions": "Accounting dimensions",
+    "matchRuleBanner": "Rules are evaluated in ascending priority order. They only apply to statement lines without an associated invoice that the standard algorithm could not match."
   },
   "menus": {
     "Currency": {

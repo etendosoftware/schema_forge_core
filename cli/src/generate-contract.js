@@ -194,6 +194,11 @@ function applyGridHints(f, mapped) {
   if (f.gridOrder != null) mapped.gridOrder = f.gridOrder;
   if (f.grow) mapped.grow = true;
   if (f.gridReadOnly) mapped.gridReadOnly = true;
+  // Inline-edit affordances in the list grid (used by list-modal and inline lines):
+  //  - inlineToggle → render a Switch in the cell that PATCHes the field on change.
+  //  - inlineEdit   → render an editable input in the cell that PATCHes on commit.
+  if (f.inlineToggle) mapped.inlineToggle = true;
+  if (f.inlineEdit) mapped.inlineEdit = true;
 }
 
 function applyFieldUIHints(f, mapped) {
@@ -302,8 +307,9 @@ export function generateFrontendContract(schema, rules = []) {
   const win = { ...schema.window };
   win.layoutType = schema.window.layoutType ?? 'default';
 
-  // Include templateConfig only for layout types that use it
-  if (win.layoutType === 'kanban' || win.layoutType === 'calendar') {
+  // Include templateConfig only for layout types that use it. list-modal uses it
+  // to carry the optional banner text, modal title, search hint and section order.
+  if (win.layoutType === 'kanban' || win.layoutType === 'calendar' || win.layoutType === 'list-modal') {
     win.templateConfig = schema.window.templateConfig ?? null;
   }
 

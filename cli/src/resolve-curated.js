@@ -167,6 +167,8 @@ const FIELD_DECISION_COPY_PROPS = [
   'cellType',
   'grow',
   'gridReadOnly',
+  'inlineToggle',
+  'inlineEdit',
   'noTrailing',
   'inline',
   'addLineFromSibling',
