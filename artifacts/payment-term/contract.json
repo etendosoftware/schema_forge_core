@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:06:55.269Z",
-  "updatedAt": "2026-05-12T19:44:32.752Z",
-  "checksum": "41bc87f1b0f35514",
+  "updatedAt": "2026-05-19T17:03:46.080Z",
+  "checksum": "c656cd8e9116704f",
   "frontendContract": {
     "window": {
       "id": "141",
@@ -512,17 +512,67 @@
         "description": "Field 'searchKey' should have type 'string' in header"
       },
       {
-        "id": "t-rule-declared",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (displayLogic) should be declared"
-      },
-      {
         "id": "t-rule-declared-FIN-PaymentMethodsWithAccount",
         "category": "rule-declared",
         "rule": "FIN_PaymentMethodsWithAccount",
         "runner": "node",
         "description": "Rule 'FIN_PaymentMethodsWithAccount' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-term-Header-FixMonthDay-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-term-Header-FixMonthDay-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-term-Header-FixMonthDay-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-term-Header-FixMonthDay2-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-term-Header-FixMonthDay2-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-term-Header-FixMonthDay2-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-term-Header-Fixmonthday3-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-term-Header-Fixmonthday3-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-term-Header-Fixmonthday3-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-term-Header-NetDay-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-term-Header-NetDay-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-term-Header-NetDay-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-term-Lines-FixMonthDay-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-term-Lines-FixMonthDay-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-term-Lines-FixMonthDay-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-term-Lines-FixMonthDay2-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-term-Lines-FixMonthDay2-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-term-Lines-FixMonthDay2-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-term-Lines-Fixmonthday3-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-term-Lines-Fixmonthday3-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-term-Lines-Fixmonthday3-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-term-Lines-PaymentRule-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-term-Lines-PaymentRule-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-term-Lines-PaymentRule-displayLogic' (displayLogic) should be declared"
       },
       {
         "id": "t-searchable-filters-header-name",
@@ -685,18 +735,18 @@
       }
     ],
     "summary": {
-      "total": 33,
+      "total": 40,
       "byCategory": {
         "crud-flags": 1,
         "field-presence": 5,
         "field-type": 5,
-        "rule-declared": 2,
+        "rule-declared": 9,
         "searchable-filters": 2,
         "system-field": 17,
         "visibility": 1
       },
       "byRunner": {
-        "node": 33,
+        "node": 40,
         "junit": 0
       }
     }

@@ -29,7 +29,9 @@ const SPECIAL_PAGES = new Set([
   'crm', 'hr', 'projects', 'reports', 'onboarding', 'smart-scan', 'preview',
   'report-viewer-purchases', 'report-viewer-finance', 'report-viewer-inventory', 'oauth2-clients',
   'authorize', 'quick-sales-order', 'quick-purchase-order',
-  'first-steps', 'analytics', 'app-store',
+  'first-steps', 'analytics', 'app-store', 'financial-accounts',
+  // Custom hand-written windows backed by real NEO endpoints (no mockData, no contract).
+  'financial-account',
 ]);
 
 const entityWindows = allMenuItems.filter(name => !SPECIAL_PAGES.has(name));
@@ -40,11 +42,11 @@ const artifactDirs = readdirSync(ARTIFACTS, { withFileTypes: true })
   .map(d => d.name);
 
 const entityArtifacts = artifactDirs.filter(d =>
-  existsSync(resolve(ARTIFACTS, d, 'contract.json'))
+  !d.includes('__test') && !d.startsWith('.') && existsSync(resolve(ARTIFACTS, d, 'contract.json'))
 );
 
 const aggregateArtifacts = artifactDirs.filter(d =>
-  existsSync(resolve(ARTIFACTS, d, 'aggregate-contract.json'))
+  !d.includes('__test') && !d.startsWith('.') && existsSync(resolve(ARTIFACTS, d, 'aggregate-contract.json'))
 );
 
 // Build child entity set: entities that are detail/children of a master-detail contract

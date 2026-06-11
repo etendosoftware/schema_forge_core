@@ -1,8 +1,8 @@
 {
-  "version": "0.34.0",
+  "version": "0.35.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-18T13:52:07.174Z",
-  "checksum": "9249785ffc88d80a",
+  "updatedAt": "2026-05-18T14:21:09.193Z",
+  "checksum": "0b5a40793ace7332",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -1202,10 +1202,6 @@
             "inputMode": "selector",
             "section": "principal",
             "seq": 16,
-            "displayLogic": {
-              "js": "record['transactionDocument$_identifier'] === 'AP CreditMemo' || record['transactionDocument$_identifier'] === 'Reversed Purchase Invoice'",
-              "evaluable": true
-            },
             "readOnlyLogic": {
               "js": "record['processed'] === true",
               "evaluable": true
@@ -9106,14 +9102,6 @@
         "description": "Display logic for 'aeatsiiPurDescription' in header should have evaluable flag"
       },
       {
-        "id": "t-displaylogic-evaluable-header-etgoOriginInvoice",
-        "category": "displaylogic-evaluable",
-        "entity": "header",
-        "field": "etgoOriginInvoice",
-        "runner": "node",
-        "description": "Display logic for 'etgoOriginInvoice' in header should have evaluable flag"
-      },
-      {
         "id": "t-displaylogic-evaluable-header-etsgDateOperation",
         "category": "displaylogic-evaluable",
         "entity": "header",
@@ -9232,14 +9220,6 @@
         "field": "aeatsiiPurDescription",
         "runner": "node",
         "description": "Display logic for 'aeatsiiPurDescription' in header should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-header-etgoOriginInvoice",
-        "category": "displaylogic-valid",
-        "entity": "header",
-        "field": "etgoOriginInvoice",
-        "runner": "node",
-        "description": "Display logic for 'etgoOriginInvoice' in header should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-header-etsgDateOperation",
@@ -15611,13 +15591,13 @@
       }
     ],
     "summary": {
-      "total": 896,
+      "total": 894,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 11,
         "default-value-type": 36,
-        "displaylogic-evaluable": 16,
-        "displaylogic-valid": 16,
+        "displaylogic-evaluable": 15,
+        "displaylogic-valid": 15,
         "field-presence": 143,
         "field-type": 143,
         "readonlylogic-evaluable": 60,
@@ -15629,7 +15609,7 @@
         "visibility": 11
       },
       "byRunner": {
-        "node": 896,
+        "node": 894,
         "junit": 0
       }
     }

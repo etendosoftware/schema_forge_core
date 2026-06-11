@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -93,6 +93,53 @@ describe('detectDuplicatedBlocks', () => {
 
     assert.deepEqual(detectDuplicatedBlocks(diff), []);
   });
+
+  it('ignores duplicated blocks in the generated AD metadata cache', () => {
+    const block = [
+      '+      "AD_Client_ID": "0",',
+      '+      "AD_Org_ID": "0",',
+      '+      "IsActive": "Y",',
+      '+      "Created": "2026-01-01",',
+      '+      "CreatedBy": "100",',
+      '+      "Updated": "2026-01-01"',
+    ].join('\n');
+
+    const diff = [
+      makeDiff('cli/cache/ad-snapshot.json', block),
+      makeDiff('cli/cache/ad-snapshot.json', block),
+    ].join('\n');
+
+    assert.deepEqual(detectDuplicatedBlocks(diff), []);
+  });
+
+  it('still flags the same duplicated block when it lands in real source (skip is path-scoped, not a blanket disable)', () => {
+    const block = [
+      '+      "AD_Client_ID": "0",',
+      '+      "AD_Org_ID": "0",',
+      '+      "IsActive": "Y",',
+      '+      "Created": "2026-01-01",',
+      '+      "CreatedBy": "100",',
+      '+      "Updated": "2026-01-01"',
+    ].join('\n');
+
+    // The cli/cache/ copy is silently dropped; the two real source copies must still
+    // collide. This proves the skip only removes cli/cache/ runs from the comparison,
+    // rather than disabling duplication detection for the whole diff.
+    const diff = [
+      makeDiff('cli/cache/ad-snapshot.json', block),
+      makeDiff('tools/app-shell/src/foo.js', block),
+      makeDiff('tools/app-shell/src/bar.js', block),
+    ].join('\n');
+
+    const findings = detectDuplicatedBlocks(diff);
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0].code, 'DUPLICATED_BLOCK');
+    assert.equal(findings[0].severity, 'blocker');
+    assert.deepEqual(
+      findings[0].locations.map((location) => location.path),
+      ['tools/app-shell/src/foo.js', 'tools/app-shell/src/bar.js'],
+    );
+  });
 });
 
 describe('analyzeChangedFiles', () => {
@@ -156,6 +203,92 @@ describe('analyzeChangedFiles', () => {
     });
 
     assert.ok(!findings.some((finding) => finding.code === 'COMMONJS_USAGE'));
+  });
+
+  it('does not flag generated contract snapshots as large files', () => {
+    const repoDir = mkdtempSync(join(tmpdir(), 'pr-review-large-contract-'));
+    const previousCwd = process.cwd();
+
+    try {
+      process.chdir(repoDir);
+      mkdirSync(join(repoDir, 'artifacts', 'contacts'), { recursive: true });
+      writeFileSync(join(repoDir, 'artifacts', 'contacts', 'contract.json'), 'x'.repeat(513000));
+      writeFileSync(join(repoDir, 'artifacts', 'contacts', 'contract.prev.json'), 'x'.repeat(513000));
+      writeFileSync(join(repoDir, 'artifacts', 'contacts', 'contract.mcp.json'), 'x'.repeat(513000));
+
+      const findings = analyzeChangedFiles({
+        changedFiles: [
+          'artifacts/contacts/contract.json',
+          'artifacts/contacts/contract.prev.json',
+          'artifacts/contacts/contract.mcp.json',
+        ],
+        newSourceFiles: [],
+        newTestFiles: [],
+        fileContents: {},
+        packageJsonChanges: [],
+      });
+
+      assert.ok(!findings.some((finding) => finding.code === 'LARGE_FILE'));
+    } finally {
+      process.chdir(previousCwd);
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not flag the generated AD metadata cache as a large file', () => {
+    const repoDir = mkdtempSync(join(tmpdir(), 'pr-review-large-cache-'));
+    const previousCwd = process.cwd();
+
+    try {
+      process.chdir(repoDir);
+      mkdirSync(join(repoDir, 'cli', 'cache'), { recursive: true });
+      writeFileSync(join(repoDir, 'cli', 'cache', 'ad-snapshot.json'), 'x'.repeat(513000));
+
+      const findings = analyzeChangedFiles({
+        changedFiles: ['cli/cache/ad-snapshot.json'],
+        newSourceFiles: [],
+        newTestFiles: [],
+        fileContents: {},
+        packageJsonChanges: [],
+      });
+
+      assert.ok(!findings.some((finding) => finding.code === 'LARGE_FILE'));
+    } finally {
+      process.chdir(previousCwd);
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+
+  it('still flags a large file under a non-skipped path (size gate is path-scoped)', () => {
+    const repoDir = mkdtempSync(join(tmpdir(), 'pr-review-large-control-'));
+    const previousCwd = process.cwd();
+
+    try {
+      process.chdir(repoDir);
+      mkdirSync(join(repoDir, 'cli', 'cache'), { recursive: true });
+      mkdirSync(join(repoDir, 'tools', 'app-shell', 'src'), { recursive: true });
+      // Same oversized payload under both a skipped and a non-skipped path: only the
+      // non-skipped one must be reported, proving the skip is scoped to cli/cache/.
+      writeFileSync(join(repoDir, 'cli', 'cache', 'ad-snapshot.json'), 'x'.repeat(513000));
+      writeFileSync(join(repoDir, 'tools', 'app-shell', 'src', 'huge.js'), 'x'.repeat(513000));
+
+      const findings = analyzeChangedFiles({
+        changedFiles: ['cli/cache/ad-snapshot.json', 'tools/app-shell/src/huge.js'],
+        newSourceFiles: [],
+        newTestFiles: [],
+        fileContents: {},
+        packageJsonChanges: [],
+      });
+
+      const largeFile = findings.find((finding) => finding.code === 'LARGE_FILE');
+      assert.ok(largeFile, 'expected a LARGE_FILE finding for the non-skipped path');
+      assert.equal(largeFile.severity, 'blocker');
+      assert.match(largeFile.details, /tools\/app-shell\/src\/huge\.js/);
+      assert.doesNotMatch(largeFile.details, /cli\/cache\/ad-snapshot\.json/);
+    } finally {
+      process.chdir(previousCwd);
+      rmSync(repoDir, { recursive: true, force: true });
+    }
   });
 });
 

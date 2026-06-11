@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import { createStableUseApiFetchMock } from '@/test/mockUseApiFetch.js';
 
 // --- Mocks ----------------------------------------------------------------
 
@@ -62,12 +63,43 @@ vi.mock('@/components/contract-ui/SendDocumentModal.jsx', () => ({
   default: () => <div data-testid="send-modal">Send Modal</div>,
 }));
 
+const capturedRelatedSpecs = { current: null };
+vi.mock('@/windows/custom/shared/preview-cards/RelatedDocumentsCard.jsx', () => ({
+  default: ({ documentId, specs }) => {
+    capturedRelatedSpecs.current = specs;
+    return <div data-testid="related-docs-card" data-doc-id={documentId} />;
+  },
+}));
+
+vi.mock('@/components/related-documents', () => ({
+  fetchById: vi.fn(),
+  fetchByCriteria: vi.fn(),
+}));
+
+vi.mock('@/components/ui/tooltip', () => ({
+  Tooltip: ({ children }) => children,
+  TooltipContent: ({ children }) => children,
+  TooltipProvider: ({ children }) => children,
+  TooltipTrigger: ({ children }) => children,
+}));
+
+vi.mock('@/components/ui/tooltip.jsx', () => ({
+  Tooltip: ({ children }) => children,
+  TooltipContent: ({ children }) => children,
+  TooltipProvider: ({ children }) => children,
+  TooltipTrigger: ({ children }) => children,
+}));
+
 vi.mock('@/windows/custom/fiscal-config/useFiscalConfig.js', () => ({
   useFiscalConfig: () => ({ profile: 'tbai' }),
 }));
 
 vi.mock('@/auth/AuthContext.jsx', () => ({
   useAuth: () => ({ selectedOrg: { id: 'ORG_1' } }),
+}));
+
+vi.mock('@/auth/useApiFetch.js', () => ({
+  useApiFetch: createStableUseApiFetchMock(),
 }));
 
 vi.mock('@/components/ui/badge.jsx', () => ({
@@ -103,6 +135,7 @@ vi.mock('lucide-react', () => ({
 // --- Import under test ----------------------------------------------------
 
 import InvoicePreviewModal from '../InvoicePreviewModal.jsx';
+import { fetchById, fetchByCriteria } from '@/components/related-documents';
 
 // --- Helpers --------------------------------------------------------------
 
@@ -141,7 +174,11 @@ describe('InvoicePreviewModal', () => {
       }),
     );
     // Mock requestAnimationFrame for animation state
-    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => { cb(0); return 0; });
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+      const id = setTimeout(() => cb(0), 0);
+      return id;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => clearTimeout(id));
   });
 
   afterEach(() => {
@@ -180,12 +217,22 @@ describe('InvoicePreviewModal', () => {
 
   it('shows the total section', () => {
     renderPreview();
-    expect(screen.getByText('invoicePreviewTotal')).toBeInTheDocument();
+    expect(screen.getByText('previewCardTotal')).toBeInTheDocument();
   });
 
-  it('renders action buttons (send, payment, edit)', () => {
-    renderPreview();
+  it('does NOT render send button for purchase-invoice', () => {
+    // Purchase invoices are received from suppliers — sending them makes no sense.
+    renderPreview({ specName: 'purchase-invoice' });
+    expect(screen.queryByText('invoicePreviewSend')).not.toBeInTheDocument();
+  });
+
+  it('renders send button for sales-invoice', () => {
+    renderPreview({ specName: 'sales-invoice' });
     expect(screen.getAllByText('invoicePreviewSend').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders payment and edit action buttons', () => {
+    renderPreview();
     expect(screen.getAllByText('invoicePreviewAddPayment').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('invoicePreviewEdit')).toBeInTheDocument();
   });
@@ -206,6 +253,24 @@ describe('InvoicePreviewModal', () => {
     fireEvent.click(screen.getByText('sendToSif'));
     expect(screen.getByText('sendToSifTitle')).toBeInTheDocument();
     expect(screen.getByText('sendToSifBodyTbai')).toBeInTheDocument();
+  });
+
+  it('shows a progress indicator while the SIF request is in flight', async () => {
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/action/')) {
+        return new Promise(resolve =>
+          setTimeout(() => resolve({ ok: true, json: () => Promise.resolve({}) }), 80));
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ response: { data: [] } }) });
+    });
+
+    renderPreview({ specName: 'sales-invoice' });
+    fireEvent.click(screen.getByText('sendToSif'));
+    fireEvent.click(screen.getByRole('button', { name: 'sendToSifConfirm' }));
+
+    // SifSendingModal renders a '%' percentage during the sending phase
+    // The old inline dialog never rendered one — this assertion distinguishes them
+    expect(await screen.findByText(/^\d+%$/)).toBeInTheDocument();
   });
 
   it('keeps current invoice data when preview refetch returns a non-record payload', async () => {
@@ -261,5 +326,72 @@ describe('InvoicePreviewModal', () => {
   it('renders drop zone for purchase invoice', () => {
     renderPreview({ specName: 'purchase-invoice' });
     expect(screen.getByTestId('preview-drop-zone')).toBeInTheDocument();
+  });
+
+  describe('invoiceRelatedSpecs — salesOrder branch', () => {
+    const invoiceWithOrder = {
+      ...sampleInvoice,
+      salesOrder: 'so-42',
+    };
+
+    beforeEach(() => {
+      capturedRelatedSpecs.current = null;
+      fetchById.mockReset();
+      fetchByCriteria.mockReset();
+    });
+
+    it('renders RelatedDocumentsCard when invoice has a salesOrder', () => {
+      renderPreview({ invoice: invoiceWithOrder });
+      expect(screen.getByTestId('related-docs-card')).toBeInTheDocument();
+    });
+
+    it('passes 2 specs when invoice has a salesOrder', () => {
+      renderPreview({ invoice: invoiceWithOrder });
+      expect(capturedRelatedSpecs.current).toHaveLength(2);
+    });
+
+    it('spec keys are sales-order and shipment', () => {
+      renderPreview({ invoice: invoiceWithOrder });
+      const specs = capturedRelatedSpecs.current;
+      expect(specs[0].key).toBe('sales-order');
+      expect(specs[0].type).toBe('sales-order');
+      expect(specs[1].key).toBe('shipment');
+      expect(specs[1].type).toBe('shipment');
+    });
+
+    it('passes empty specs array when invoice has no salesOrder', () => {
+      renderPreview({ invoice: sampleInvoice });
+      expect(capturedRelatedSpecs.current).toEqual([]);
+    });
+
+    it('sales-order spec calls fetchById and resolves to a 1-item array', async () => {
+      const orderRecord = { id: 'so-42', documentNo: 'SO-042' };
+      fetchById.mockResolvedValue(orderRecord);
+      renderPreview({ invoice: invoiceWithOrder });
+      const specs = capturedRelatedSpecs.current;
+      const result = await specs[0].fetch('inv-1', 'tok', '/api/sales-invoice');
+      expect(fetchById).toHaveBeenCalledWith('sales-order', 'header', 'so-42', 'tok', '/api/sales-invoice');
+      expect(result).toEqual([orderRecord]);
+    });
+
+    it('sales-order spec resolves to empty array when fetchById returns null', async () => {
+      fetchById.mockResolvedValue(null);
+      renderPreview({ invoice: invoiceWithOrder });
+      const specs = capturedRelatedSpecs.current;
+      const result = await specs[0].fetch('inv-1', 'tok', '/api/sales-invoice');
+      expect(result).toEqual([]);
+    });
+
+    it('shipment spec calls fetchByCriteria with the correct arguments', async () => {
+      const shipmentRows = [{ id: 'ship-1' }, { id: 'ship-2' }];
+      fetchByCriteria.mockResolvedValue(shipmentRows);
+      renderPreview({ invoice: invoiceWithOrder });
+      const specs = capturedRelatedSpecs.current;
+      const result = await specs[1].fetch('inv-1', 'tok', '/api/sales-invoice');
+      expect(fetchByCriteria).toHaveBeenCalledWith(
+        'goods-shipment', 'goodsShipment', 'salesOrder', 'so-42', 'tok', '/api/sales-invoice',
+      );
+      expect(result).toEqual(shipmentRows);
+    });
   });
 });

@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.6.0",
   "generatedAt": "2026-04-29T19:46:13.628Z",
-  "updatedAt": "2026-05-11T16:22:45.908Z",
-  "checksum": "15d5f7864e570092",
+  "updatedAt": "2026-05-20T13:04:38.349Z",
+  "checksum": "59b10aa02580d676",
   "frontendContract": {
     "window": {
       "id": "C50A8AEE6F044825B5EF54FAAE76826F",
@@ -111,10 +111,10 @@
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": true,
             "sourceRequired": true,
-            "reference": "BPartner",
+            "reference": "BusinessPartner",
             "inputMode": "search",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartner"
@@ -137,8 +137,12 @@
             "grid": false,
             "form": true,
             "sourceRequired": true,
-            "reference": "BPartner_Location",
-            "inputMode": "selector",
+            "reference": "BusinessPartnerLocation",
+            "inputMode": "dependent",
+            "dependsOn": {
+              "field": "businessPartner",
+              "filterKey": "C_BPartner_ID"
+            },
             "validationRule": {
               "code": "C_BPartner_Location.C_BPartner_ID=@C_BPartner_ID@ AND C_BPartner_Location.IsShipTo='Y' AND C_BPartner_Location.IsActive='Y'",
               "contextParams": [],
@@ -168,6 +172,7 @@
             "form": true,
             "reference": "Return_Reason",
             "inputMode": "selector",
+            "section": "other",
             "validationRule": {
               "code": "(C_RETURN_REASON.ISRFC = @ISSOTRX@ OR C_RETURN_REASON.ISRTV=(case when @ISSOTRX@='N' then 'Y' else 'N' end))",
               "contextParams": [],
@@ -190,6 +195,7 @@
             "sourceRequired": true,
             "reference": "Warehouse",
             "inputMode": "selector",
+            "section": "other",
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -256,6 +262,7 @@
             "sourceRequired": true,
             "reference": "PriceList",
             "inputMode": "selector",
+            "section": "other",
             "validationRule": {
               "code": "M_PriceList.issopricelist = @isSOTrx@",
               "contextParams": [],
@@ -576,7 +583,9 @@
             }
           }
         ],
-        "searchableFields": [],
+        "searchableFields": [
+          "businessPartner"
+        ],
         "computedFields": [
           {
             "name": "documentAction",
@@ -921,11 +930,12 @@
             "tsType": "string",
             "visibility": "readOnly",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": true,
             "sourceRequired": true,
             "reference": "Tax",
-            "inputMode": "search",
+            "inputMode": "selector",
+            "section": "other",
             "validationRule": {
               "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID=@AD_CLIENT_ID@ AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
               "contextParams": [],
@@ -4018,7 +4028,9 @@
         "method": "GET",
         "path": "/header",
         "entity": "header",
-        "supportedFilters": []
+        "supportedFilters": [
+          "businessPartner"
+        ]
       },
       {
         "method": "GET",
@@ -4240,7 +4252,9 @@
         "delete": true,
         "listUrl": "/sws/neo/return-to-vendor/header",
         "detailUrl": "/sws/neo/return-to-vendor/header/{id}",
-        "supportedFilters": []
+        "supportedFilters": [
+          "businessPartner"
+        ]
       },
       "lines": {
         "get": true,
@@ -4314,7 +4328,7 @@
         "entity": "header",
         "field": "businessPartner",
         "column": "C_BPartner_ID",
-        "reference": "BPartner",
+        "reference": "BusinessPartner",
         "inputMode": "search",
         "url": "/sws/neo/return-to-vendor/header/selectors/businessPartner"
       },
@@ -4322,9 +4336,18 @@
         "entity": "header",
         "field": "partnerAddress",
         "column": "C_BPartner_Location_ID",
-        "reference": "BPartner_Location",
-        "inputMode": "selector",
-        "url": "/sws/neo/return-to-vendor/header/selectors/partnerAddress"
+        "reference": "BusinessPartnerLocation",
+        "inputMode": "dependent",
+        "url": "/sws/neo/return-to-vendor/header/selectors/partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -4348,7 +4371,15 @@
         "column": "FIN_Paymentmethod_ID",
         "reference": "Paymentmethod",
         "inputMode": "selector",
-        "url": "/sws/neo/return-to-vendor/header/selectors/paymentMethod"
+        "url": "/sws/neo/return-to-vendor/header/selectors/paymentMethod",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -4364,7 +4395,15 @@
         "column": "M_PriceList_ID",
         "reference": "PriceList",
         "inputMode": "selector",
-        "url": "/sws/neo/return-to-vendor/header/selectors/priceList"
+        "url": "/sws/neo/return-to-vendor/header/selectors/priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -4380,7 +4419,20 @@
         "column": "C_Project_ID",
         "reference": "Project",
         "inputMode": "search",
-        "url": "/sws/neo/return-to-vendor/header/selectors/project"
+        "url": "/sws/neo/return-to-vendor/header/selectors/project",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -4428,7 +4480,20 @@
         "column": "C_Aum",
         "reference": "UOM",
         "inputMode": "search",
-        "url": "/sws/neo/return-to-vendor/lines/selectors/operativeUOM"
+        "url": "/sws/neo/return-to-vendor/lines/selectors/operativeUOM",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "M_Product_ID",
+              "source": "field",
+              "field": "product"
+            }
+          ]
+        }
       },
       {
         "entity": "lines",
@@ -4451,8 +4516,22 @@
         "field": "tax",
         "column": "C_Tax_ID",
         "reference": "Tax",
-        "inputMode": "search",
-        "url": "/sws/neo/return-to-vendor/lines/selectors/tax"
+        "inputMode": "selector",
+        "url": "/sws/neo/return-to-vendor/lines/selectors/tax",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "DateInvoiced",
+              "source": "parentField",
+              "field": "orderDate",
+              "format": "DD-MM-YYYY"
+            }
+          ]
+        }
       },
       {
         "entity": "lines",
@@ -7116,12 +7195,6 @@
         "description": "Read-only logic for 'uOM' in lines should be valid JS"
       },
       {
-        "id": "t-rule-declared",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (readOnlyLogic) should be declared"
-      },
-      {
         "id": "t-rule-declared-AD-Client-Security-validation",
         "category": "rule-declared",
         "rule": "AD_Client Security validation",
@@ -7213,11 +7286,487 @@
         "description": "Rule 'C_BPartner Location - Ship To' (validation) should be declared"
       },
       {
+        "id": "t-rule-declared-C-Debt-Payment-Amount-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Debt_Payment-Amount-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Debt_Payment-Amount-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Debt-Payment-C-Currency-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Debt_Payment-C_Currency_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Debt_Payment-C_Currency_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Debt-Payment-IsManual-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Debt_Payment-IsManual-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Debt_Payment-IsManual-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
         "id": "t-rule-declared-C-DocType-PO-SO",
         "category": "rule-declared",
         "rule": "C_DocType PO/SO",
         "runner": "node",
         "description": "Rule 'C_DocType PO/SO' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-AD-Client-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-AD_Client_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-AD_Client_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-AD-Org-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-AD_Org_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-AD_Org_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-AD-OrgTrx-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-AD_OrgTrx_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-AD_OrgTrx_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-AD-User-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-AD_User_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-AD_User_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-BillTo-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-BillTo_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-BillTo_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-C-Activity-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-C_Activity_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-C_Activity_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-C-BPartner-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-C_BPartner_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-C_BPartner_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-C-BPartner-Location-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-C_BPartner_Location_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-C_BPartner_Location_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-C-Campaign-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-C_Campaign_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-C_Campaign_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-C-Charge-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-C_Charge_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-C_Charge_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-C-Costcenter-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-C_Costcenter_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-C_Costcenter_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-C-DocTypeTarget-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-C_DocTypeTarget_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-C_DocTypeTarget_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-C-PaymentTerm-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-C_PaymentTerm_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-C_PaymentTerm_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-C-Project-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-C_Project_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-C_Project_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-ChargeAmt-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-ChargeAmt-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-ChargeAmt-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-DateAcct-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-DateAcct-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-DateAcct-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-DateOrdered-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-DateOrdered-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-DateOrdered-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-DatePromised-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-DatePromised-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-DatePromised-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-DeliveryRule-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-DeliveryRule-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-DeliveryRule-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-DeliveryViaRule-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-DeliveryViaRule-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-DeliveryViaRule-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-Discount-AD-Client-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order_Discount-AD_Client_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order_Discount-AD_Client_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-Discount-AD-Org-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order_Discount-AD_Org_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order_Discount-AD_Org_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-Discount-C-Discount-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order_Discount-C_Discount_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order_Discount-C_Discount_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-Discount-Cascade-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order_Discount-Cascade-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order_Discount-Cascade-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-Discount-Isactive-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order_Discount-Isactive-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order_Discount-Isactive-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-Discount-Line-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order_Discount-Line-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order_Discount-Line-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-DocumentNo-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-DocumentNo-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-DocumentNo-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-DropShip-BPartner-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-DropShip_BPartner_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-DropShip_BPartner_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-DropShip-Location-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-DropShip_Location_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-DropShip_Location_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-DropShip-User-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-DropShip_User_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-DropShip_User_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-FIN-Paymentmethod-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-FIN_Paymentmethod_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-FIN_Paymentmethod_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-M-PriceList-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-M_PriceList_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-M_PriceList_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-M-Warehouse-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-M_Warehouse_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-M_Warehouse_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-PaymentRule-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-PaymentRule-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-PaymentRule-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-PriorityRule-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-PriorityRule-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-PriorityRule-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-User1-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-User1_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-User1_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-User2-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-User2_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-User2_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-AD-Client-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-AD_Client_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-AD_Client_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-AD-Org-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-AD_Org_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-AD_Org_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-Aumqty-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-Aumqty-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-Aumqty-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-C-Aum-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-C_Aum-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-C_Aum-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-C-BPartner-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-C_BPartner_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-C_BPartner_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-C-Charge-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-C_Charge_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-C_Charge_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-C-Costcenter-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-C_Costcenter_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-C_Costcenter_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-C-Project-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-C_Project_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-C_Project_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-C-Tax-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-C_Tax_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-C_Tax_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-C-UOM-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-C_UOM_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-C_UOM_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-ChargeAmt-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-ChargeAmt-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-ChargeAmt-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-DirectShip-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-DirectShip-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-DirectShip-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-Discount-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-Discount-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-Discount-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-Gross-Unit-Price-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-Gross_Unit_Price-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-Gross_Unit_Price-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-Iseditlinenetamt-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-Iseditlinenetamt-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-Iseditlinenetamt-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-Line-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-Line-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-Line-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-LineNetAmt-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-LineNetAmt-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-LineNetAmt-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-M-AttributeSetInstance-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-M_AttributeSetInstance_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-M_AttributeSetInstance_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-M-Product-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-M_Product_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-M_Product_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-M-Product-Uom-Id-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-M_Product_Uom_Id-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-M_Product_Uom_Id-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-M-Warehouse-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-M_Warehouse_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-M_Warehouse_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-PriceActual-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-PriceActual-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-PriceActual-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-PriceList-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-PriceList-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-PriceList-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-QtyOrdered-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-QtyOrdered-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-QtyOrdered-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-QuantityOrder-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-QuantityOrder-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-QuantityOrder-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-Taxbaseamt-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-Taxbaseamt-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-Taxbaseamt-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-User1-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-User1_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-User1_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-OrderLine-User2-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_OrderLine-User2_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_OrderLine-User2_ID-readOnlyLogic' (readOnlyLogic) should be declared"
       },
       {
         "id": "t-rule-declared-C-Project-based-on-status-and-bpartner",
@@ -7393,6 +7942,265 @@
         "rule": "Return reason RFC/RTV",
         "runner": "node",
         "description": "Rule 'Return reason RFC/RTV' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-AD-OrgTrx-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-AD_OrgTrx_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-AD_OrgTrx_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-C-Activity-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-C_Activity_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-C_Activity_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-C-Campaign-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-C_Campaign_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-C_Campaign_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-C-Costcenter-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-C_Costcenter_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-C_Costcenter_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-C-Project-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-C_Project_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-C_Project_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-CopyFrom-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-CopyFrom-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-CopyFrom-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-CopyFromPO-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-CopyFromPO-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-CopyFromPO-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-DocAction-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-DocAction-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-DocAction-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-IsDelivered-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-IsDelivered-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-IsDelivered-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-PaymentRule-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-PaymentRule-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-PaymentRule-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-Posted-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-Posted-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-Posted-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-RM-AddOrphanLine-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-RM_AddOrphanLine-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-RM_AddOrphanLine-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-RM-Pickfromreceipt-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-RM_Pickfromreceipt-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-RM_Pickfromreceipt-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-User1-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-User1_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-User1_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Header-User2-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Header-User2_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Header-User2_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-Aumqty-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-Aumqty-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-Aumqty-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-C-Aum-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-C_Aum-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-C_Aum-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-C-Costcenter-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-C_Costcenter_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-C_Costcenter_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-C-Project-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-C_Project_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-C_Project_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-ChargeAmt-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-ChargeAmt-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-ChargeAmt-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-FreightAmt-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-FreightAmt-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-FreightAmt-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-Gross-Unit-Price-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-Gross_Unit_Price-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-Gross_Unit_Price-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-Line-Gross-Amount-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-Line_Gross_Amount-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-Line_Gross_Amount-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-M-AttributeSetInstance-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-M_AttributeSetInstance_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-M_AttributeSetInstance_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-M-Product-Uom-Id-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-M_Product_Uom_Id-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-M_Product_Uom_Id-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-M-Shipper-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-M_Shipper_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-M_Shipper_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-M-Warehouse-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-M_Warehouse_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-M_Warehouse_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-QtyDelivered-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-QtyDelivered-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-QtyDelivered-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-QtyInvoiced-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-QtyInvoiced-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-QtyInvoiced-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-QtyReserved-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-QtyReserved-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-QtyReserved-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-QuantityOrder-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-QuantityOrder-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-QuantityOrder-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-Taxbaseamt-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-Taxbaseamt-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-Taxbaseamt-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-User1-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-User1_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-User1_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Lines-User2-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Lines-User2_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Lines-User2_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Payment-Out-Details-ExpectedConverted-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Payment Out Details-ExpectedConverted-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Payment Out Details-ExpectedConverted-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Payment-Out-Details-Finacc-Txn-Convert-Rate-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Payment Out Details-Finacc_Txn_Convert_Rate-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Payment Out Details-Finacc_Txn_Convert_Rate-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-return-to-vendor-Payment-Out-Details-PaidConverted-displayLogic",
+        "category": "rule-declared",
+        "rule": "return-to-vendor-Payment Out Details-PaidConverted-displayLogic",
+        "runner": "node",
+        "description": "Rule 'return-to-vendor-Payment Out Details-PaidConverted-displayLogic' (displayLogic) should be declared"
       },
       {
         "id": "t-rule-declared-RFC-RTV-HQL-Pick-and-Edit-Lines",
@@ -7589,6 +8397,14 @@
         "rule": "Update Payment Plan",
         "runner": "node",
         "description": "Rule 'Update Payment Plan' (process) should be declared"
+      },
+      {
+        "id": "t-searchable-filters-header-businessPartner",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be a supported filter for header"
       },
       {
         "id": "t-selector-endpoint-basicDiscounts-discount",
@@ -9465,7 +10281,7 @@
       }
     ],
     "summary": {
-      "total": 600,
+      "total": 705,
       "byCategory": {
         "action-endpoint": 22,
         "crud-flags": 7,
@@ -9476,13 +10292,14 @@
         "field-type": 76,
         "readonlylogic-evaluable": 30,
         "readonlylogic-valid": 30,
-        "rule-declared": 68,
+        "rule-declared": 172,
+        "searchable-filters": 1,
         "selector-endpoint": 30,
         "system-field": 198,
         "visibility": 7
       },
       "byRunner": {
-        "node": 600,
+        "node": 705,
         "junit": 0
       }
     }

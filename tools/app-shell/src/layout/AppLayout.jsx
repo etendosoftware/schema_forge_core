@@ -7,6 +7,7 @@ import TopBar from '@/components/layout/TopBar';
 import { CommandPalette } from '@/components/CommandPalette.jsx';
 import { CopilotProvider } from '@/components/CopilotContext';
 import { CopilotWidget } from '@/components/CopilotWidget';
+import { CurrentWindowProvider } from '@/components/CurrentWindowContext';
 
 const COLLAPSED_W = 56;
 const EXPANDED_W = 240;
@@ -73,14 +74,16 @@ export default function AppLayout({ menuGroups }) {
   const embedded = searchParams.get('embedded') === '1';
 
   return (
-    <CopilotProvider>
-      <FavoritesProvider>
-        <SidebarProvider>
-          <PageMetaProvider>
-            <AppLayoutInner menuGroups={menuGroups} embedded={embedded} />
-          </PageMetaProvider>
-        </SidebarProvider>
-      </FavoritesProvider>
-    </CopilotProvider>
+    <CurrentWindowProvider>
+      <CopilotProvider>
+        <FavoritesProvider>
+          <SidebarProvider>
+            <PageMetaProvider>
+              <AppLayoutInner menuGroups={menuGroups} embedded={embedded} />
+            </PageMetaProvider>
+          </SidebarProvider>
+        </FavoritesProvider>
+      </CopilotProvider>
+    </CurrentWindowProvider>
   );
 }

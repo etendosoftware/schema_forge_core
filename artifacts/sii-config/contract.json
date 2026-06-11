@@ -1,13 +1,15 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-04-28T16:08:39.756Z",
-  "checksum": "a9332e3fe7281157",
+  "updatedAt": "2026-05-20T11:45:15.674Z",
+  "checksum": "56046e99f3e5f238",
   "frontendContract": {
     "window": {
       "id": "C1D3A2A017AC4B82B9FEE6F4D2A0C55A",
       "name": "SII Config",
       "primaryEntity": "siiConfiguration",
       "category": "configuration",
+      "attachments": false,
       "layoutType": "default"
     },
     "entities": {
@@ -568,7 +570,8 @@
       "id": "C1D3A2A017AC4B82B9FEE6F4D2A0C55A",
       "name": "SII Config",
       "primaryEntity": "siiConfiguration",
-      "category": "configuration"
+      "category": "configuration",
+      "attachments": false
     },
     "entities": {
       "siiConfiguration": {
@@ -1072,7 +1075,7 @@
       },
       "sorting": {
         "param": "_sortBy",
-        "example": "_sortBy=sii-configDate"
+        "example": "_sortBy=creationDate desc"
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
@@ -1084,868 +1087,7 @@
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "acogidaAlSII",
-        "runner": "node",
-        "description": "Field 'acogidaAlSII' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-2",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "fechaAcogidaSII",
-        "runner": "node",
-        "description": "Field 'fechaAcogidaSII' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "plazoLmiteDeEnvoASII",
-        "runner": "node",
-        "description": "Field 'plazoLmiteDeEnvoASII' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "cadenciaEnvoFacturasVentaASII",
-        "runner": "node",
-        "description": "Field 'cadenciaEnvoFacturasVentaASII' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-5",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "cadenciaEnvoFacturasCompraASII",
-        "runner": "node",
-        "description": "Field 'cadenciaEnvoFacturasCompraASII' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-6",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "entornoDeProduccin",
-        "runner": "node",
-        "description": "Field 'entornoDeProduccin' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-7",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "adjuntarArchivosXML",
-        "runner": "node",
-        "description": "Field 'adjuntarArchivosXML' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-8",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "recc",
-        "runner": "node",
-        "description": "Field 'recc' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-9",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "redeme",
-        "runner": "node",
-        "description": "Field 'redeme' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-10",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "monitordate",
-        "runner": "node",
-        "description": "Field 'monitordate' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-11",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "postedInvoices",
-        "runner": "node",
-        "description": "Field 'postedInvoices' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-12",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "authorizationno",
-        "runner": "node",
-        "description": "Field 'authorizationno' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-13",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "validHash",
-        "runner": "node",
-        "description": "Field 'validHash' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-14",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "cIF",
-        "runner": "node",
-        "description": "Field 'cIF' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-15",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "conexiones",
-        "runner": "node",
-        "description": "Field 'conexiones' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-16",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "cashVAT",
-        "runner": "node",
-        "description": "Field 'cashVAT' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-17",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "lastQueryBook",
-        "runner": "node",
-        "description": "Field 'lastQueryBook' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-18",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "lastQueryExercise",
-        "runner": "node",
-        "description": "Field 'lastQueryExercise' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-19",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "lastQueryPeriod",
-        "runner": "node",
-        "description": "Field 'lastQueryPeriod' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-20",
-        "category": "field-presence",
-        "entity": "siiConfiguration",
-        "field": "sinceJanuary2017",
-        "runner": "node",
-        "description": "Field 'sinceJanuary2017' should be present in siiConfiguration"
-      },
-      {
-        "id": "t-21",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "acogidaAlSII",
-        "runner": "node",
-        "description": "Field 'acogidaAlSII' should have type 'boolean' in siiConfiguration"
-      },
-      {
-        "id": "t-22",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "fechaAcogidaSII",
-        "runner": "node",
-        "description": "Field 'fechaAcogidaSII' should have type 'string' in siiConfiguration"
-      },
-      {
-        "id": "t-23",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "plazoLmiteDeEnvoASII",
-        "runner": "node",
-        "description": "Field 'plazoLmiteDeEnvoASII' should have type 'number' in siiConfiguration"
-      },
-      {
-        "id": "t-24",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "cadenciaEnvoFacturasVentaASII",
-        "runner": "node",
-        "description": "Field 'cadenciaEnvoFacturasVentaASII' should have type 'number' in siiConfiguration"
-      },
-      {
-        "id": "t-25",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "cadenciaEnvoFacturasCompraASII",
-        "runner": "node",
-        "description": "Field 'cadenciaEnvoFacturasCompraASII' should have type 'number' in siiConfiguration"
-      },
-      {
-        "id": "t-26",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "entornoDeProduccin",
-        "runner": "node",
-        "description": "Field 'entornoDeProduccin' should have type 'boolean' in siiConfiguration"
-      },
-      {
-        "id": "t-27",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "adjuntarArchivosXML",
-        "runner": "node",
-        "description": "Field 'adjuntarArchivosXML' should have type 'boolean' in siiConfiguration"
-      },
-      {
-        "id": "t-28",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "recc",
-        "runner": "node",
-        "description": "Field 'recc' should have type 'boolean' in siiConfiguration"
-      },
-      {
-        "id": "t-29",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "redeme",
-        "runner": "node",
-        "description": "Field 'redeme' should have type 'boolean' in siiConfiguration"
-      },
-      {
-        "id": "t-30",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "monitordate",
-        "runner": "node",
-        "description": "Field 'monitordate' should have type 'string' in siiConfiguration"
-      },
-      {
-        "id": "t-31",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "postedInvoices",
-        "runner": "node",
-        "description": "Field 'postedInvoices' should have type 'boolean' in siiConfiguration"
-      },
-      {
-        "id": "t-32",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "authorizationno",
-        "runner": "node",
-        "description": "Field 'authorizationno' should have type 'string' in siiConfiguration"
-      },
-      {
-        "id": "t-33",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "validHash",
-        "runner": "node",
-        "description": "Field 'validHash' should have type 'string' in siiConfiguration"
-      },
-      {
-        "id": "t-34",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "cIF",
-        "runner": "node",
-        "description": "Field 'cIF' should have type 'string' in siiConfiguration"
-      },
-      {
-        "id": "t-35",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "conexiones",
-        "runner": "node",
-        "description": "Field 'conexiones' should have type 'number' in siiConfiguration"
-      },
-      {
-        "id": "t-36",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "cashVAT",
-        "runner": "node",
-        "description": "Field 'cashVAT' should have type 'boolean' in siiConfiguration"
-      },
-      {
-        "id": "t-37",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "lastQueryBook",
-        "runner": "node",
-        "description": "Field 'lastQueryBook' should have type 'string' in siiConfiguration"
-      },
-      {
-        "id": "t-38",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "lastQueryExercise",
-        "runner": "node",
-        "description": "Field 'lastQueryExercise' should have type 'string' in siiConfiguration"
-      },
-      {
-        "id": "t-39",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "lastQueryPeriod",
-        "runner": "node",
-        "description": "Field 'lastQueryPeriod' should have type 'string' in siiConfiguration"
-      },
-      {
-        "id": "t-40",
-        "category": "field-type",
-        "entity": "siiConfiguration",
-        "field": "sinceJanuary2017",
-        "runner": "node",
-        "description": "Field 'sinceJanuary2017' should have type 'boolean' in siiConfiguration"
-      },
-      {
-        "id": "t-41",
-        "category": "visibility",
-        "entity": "siiConfiguration",
-        "runner": "node",
-        "description": "Entity 'siiConfiguration' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-42",
-        "category": "displaylogic-valid",
-        "entity": "siiConfiguration",
-        "field": "fechaAcogidaSII",
-        "runner": "node",
-        "description": "Display logic for 'fechaAcogidaSII' in siiConfiguration should be valid JS"
-      },
-      {
-        "id": "t-43",
-        "category": "displaylogic-valid",
-        "entity": "siiConfiguration",
-        "field": "plazoLmiteDeEnvoASII",
-        "runner": "node",
-        "description": "Display logic for 'plazoLmiteDeEnvoASII' in siiConfiguration should be valid JS"
-      },
-      {
-        "id": "t-44",
-        "category": "displaylogic-valid",
-        "entity": "siiConfiguration",
-        "field": "cadenciaEnvoFacturasVentaASII",
-        "runner": "node",
-        "description": "Display logic for 'cadenciaEnvoFacturasVentaASII' in siiConfiguration should be valid JS"
-      },
-      {
-        "id": "t-45",
-        "category": "displaylogic-valid",
-        "entity": "siiConfiguration",
-        "field": "cadenciaEnvoFacturasCompraASII",
-        "runner": "node",
-        "description": "Display logic for 'cadenciaEnvoFacturasCompraASII' in siiConfiguration should be valid JS"
-      },
-      {
-        "id": "t-46",
-        "category": "displaylogic-valid",
-        "entity": "siiConfiguration",
-        "field": "entornoDeProduccin",
-        "runner": "node",
-        "description": "Display logic for 'entornoDeProduccin' in siiConfiguration should be valid JS"
-      },
-      {
-        "id": "t-47",
-        "category": "displaylogic-valid",
-        "entity": "siiConfiguration",
-        "field": "adjuntarArchivosXML",
-        "runner": "node",
-        "description": "Display logic for 'adjuntarArchivosXML' in siiConfiguration should be valid JS"
-      },
-      {
-        "id": "t-48",
-        "category": "displaylogic-valid",
-        "entity": "siiConfiguration",
-        "field": "recc",
-        "runner": "node",
-        "description": "Display logic for 'recc' in siiConfiguration should be valid JS"
-      },
-      {
-        "id": "t-49",
-        "category": "displaylogic-valid",
-        "entity": "siiConfiguration",
-        "field": "monitordate",
-        "runner": "node",
-        "description": "Display logic for 'monitordate' in siiConfiguration should be valid JS"
-      },
-      {
-        "id": "t-50",
-        "category": "displaylogic-valid",
-        "entity": "siiConfiguration",
-        "field": "postedInvoices",
-        "runner": "node",
-        "description": "Display logic for 'postedInvoices' in siiConfiguration should be valid JS"
-      },
-      {
-        "id": "t-51",
-        "category": "displaylogic-evaluable",
-        "entity": "siiConfiguration",
-        "field": "fechaAcogidaSII",
-        "runner": "node",
-        "description": "Display logic for 'fechaAcogidaSII' in siiConfiguration should have evaluable flag"
-      },
-      {
-        "id": "t-52",
-        "category": "displaylogic-evaluable",
-        "entity": "siiConfiguration",
-        "field": "plazoLmiteDeEnvoASII",
-        "runner": "node",
-        "description": "Display logic for 'plazoLmiteDeEnvoASII' in siiConfiguration should have evaluable flag"
-      },
-      {
-        "id": "t-53",
-        "category": "displaylogic-evaluable",
-        "entity": "siiConfiguration",
-        "field": "cadenciaEnvoFacturasVentaASII",
-        "runner": "node",
-        "description": "Display logic for 'cadenciaEnvoFacturasVentaASII' in siiConfiguration should have evaluable flag"
-      },
-      {
-        "id": "t-54",
-        "category": "displaylogic-evaluable",
-        "entity": "siiConfiguration",
-        "field": "cadenciaEnvoFacturasCompraASII",
-        "runner": "node",
-        "description": "Display logic for 'cadenciaEnvoFacturasCompraASII' in siiConfiguration should have evaluable flag"
-      },
-      {
-        "id": "t-55",
-        "category": "displaylogic-evaluable",
-        "entity": "siiConfiguration",
-        "field": "entornoDeProduccin",
-        "runner": "node",
-        "description": "Display logic for 'entornoDeProduccin' in siiConfiguration should have evaluable flag"
-      },
-      {
-        "id": "t-56",
-        "category": "displaylogic-evaluable",
-        "entity": "siiConfiguration",
-        "field": "adjuntarArchivosXML",
-        "runner": "node",
-        "description": "Display logic for 'adjuntarArchivosXML' in siiConfiguration should have evaluable flag"
-      },
-      {
-        "id": "t-57",
-        "category": "displaylogic-evaluable",
-        "entity": "siiConfiguration",
-        "field": "recc",
-        "runner": "node",
-        "description": "Display logic for 'recc' in siiConfiguration should have evaluable flag"
-      },
-      {
-        "id": "t-58",
-        "category": "displaylogic-evaluable",
-        "entity": "siiConfiguration",
-        "field": "monitordate",
-        "runner": "node",
-        "description": "Display logic for 'monitordate' in siiConfiguration should have evaluable flag"
-      },
-      {
-        "id": "t-59",
-        "category": "displaylogic-evaluable",
-        "entity": "siiConfiguration",
-        "field": "postedInvoices",
-        "runner": "node",
-        "description": "Display logic for 'postedInvoices' in siiConfiguration should have evaluable flag"
-      },
-      {
-        "id": "t-60",
-        "category": "default-value-type",
-        "entity": "siiConfiguration",
-        "field": "acogidaAlSII",
-        "runner": "node",
-        "description": "Default value for 'acogidaAlSII' in siiConfiguration should be a string"
-      },
-      {
-        "id": "t-61",
-        "category": "default-value-type",
-        "entity": "siiConfiguration",
-        "field": "plazoLmiteDeEnvoASII",
-        "runner": "node",
-        "description": "Default value for 'plazoLmiteDeEnvoASII' in siiConfiguration should be a string"
-      },
-      {
-        "id": "t-62",
-        "category": "default-value-type",
-        "entity": "siiConfiguration",
-        "field": "cadenciaEnvoFacturasVentaASII",
-        "runner": "node",
-        "description": "Default value for 'cadenciaEnvoFacturasVentaASII' in siiConfiguration should be a string"
-      },
-      {
-        "id": "t-63",
-        "category": "default-value-type",
-        "entity": "siiConfiguration",
-        "field": "cadenciaEnvoFacturasCompraASII",
-        "runner": "node",
-        "description": "Default value for 'cadenciaEnvoFacturasCompraASII' in siiConfiguration should be a string"
-      },
-      {
-        "id": "t-64",
-        "category": "default-value-type",
-        "entity": "siiConfiguration",
-        "field": "entornoDeProduccin",
-        "runner": "node",
-        "description": "Default value for 'entornoDeProduccin' in siiConfiguration should be a string"
-      },
-      {
-        "id": "t-65",
-        "category": "default-value-type",
-        "entity": "siiConfiguration",
-        "field": "adjuntarArchivosXML",
-        "runner": "node",
-        "description": "Default value for 'adjuntarArchivosXML' in siiConfiguration should be a string"
-      },
-      {
-        "id": "t-66",
-        "category": "default-value-type",
-        "entity": "siiConfiguration",
-        "field": "recc",
-        "runner": "node",
-        "description": "Default value for 'recc' in siiConfiguration should be a string"
-      },
-      {
-        "id": "t-67",
-        "category": "default-value-type",
-        "entity": "siiConfiguration",
-        "field": "redeme",
-        "runner": "node",
-        "description": "Default value for 'redeme' in siiConfiguration should be a string"
-      },
-      {
-        "id": "t-68",
-        "category": "default-value-type",
-        "entity": "siiConfiguration",
-        "field": "monitordate",
-        "runner": "node",
-        "description": "Default value for 'monitordate' in siiConfiguration should be a string"
-      },
-      {
-        "id": "t-69",
-        "category": "default-value-type",
-        "entity": "siiConfiguration",
-        "field": "postedInvoices",
-        "runner": "node",
-        "description": "Default value for 'postedInvoices' in siiConfiguration should be a string"
-      },
-      {
-        "id": "t-70",
-        "category": "default-value-type",
-        "entity": "siiConfiguration",
-        "field": "validHash",
-        "runner": "node",
-        "description": "Default value for 'validHash' in siiConfiguration should be a string"
-      },
-      {
-        "id": "t-71",
-        "category": "default-value-type",
-        "entity": "siiConfiguration",
-        "field": "sinceJanuary2017",
-        "runner": "node",
-        "description": "Default value for 'sinceJanuary2017' in siiConfiguration should be a string"
-      },
-      {
-        "id": "t-72",
-        "category": "field-presence",
-        "entity": "logHash",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should be present in logHash"
-      },
-      {
-        "id": "t-73",
-        "category": "field-presence",
-        "entity": "logHash",
-        "field": "logs",
-        "runner": "node",
-        "description": "Field 'logs' should be present in logHash"
-      },
-      {
-        "id": "t-74",
-        "category": "field-type",
-        "entity": "logHash",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should have type 'boolean' in logHash"
-      },
-      {
-        "id": "t-75",
-        "category": "field-type",
-        "entity": "logHash",
-        "field": "logs",
-        "runner": "node",
-        "description": "Field 'logs' should have type 'string' in logHash"
-      },
-      {
-        "id": "t-76",
-        "category": "visibility",
-        "entity": "logHash",
-        "runner": "node",
-        "description": "Entity 'logHash' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-77",
-        "category": "default-value-type",
-        "entity": "logHash",
-        "field": "active",
-        "runner": "node",
-        "description": "Default value for 'active' in logHash should be a string"
-      },
-      {
-        "id": "t-78",
-        "category": "system-field",
-        "entity": "siiConfiguration",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for siiConfiguration"
-      },
-      {
-        "id": "t-79",
-        "category": "system-field",
-        "entity": "siiConfiguration",
-        "field": "navarra",
-        "runner": "node",
-        "description": "System field 'navarra' should exist in backend but not frontend for siiConfiguration"
-      },
-      {
-        "id": "t-80",
-        "category": "system-field",
-        "entity": "siiConfiguration",
-        "field": "guipuzcoa",
-        "runner": "node",
-        "description": "System field 'guipuzcoa' should exist in backend but not frontend for siiConfiguration"
-      },
-      {
-        "id": "t-81",
-        "category": "system-field",
-        "entity": "siiConfiguration",
-        "field": "taxtype",
-        "runner": "node",
-        "description": "System field 'taxtype' should exist in backend but not frontend for siiConfiguration"
-      },
-      {
-        "id": "t-82",
-        "category": "system-field",
-        "entity": "siiConfiguration",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for siiConfiguration"
-      },
-      {
-        "id": "t-83",
-        "category": "system-field",
-        "entity": "siiConfiguration",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for siiConfiguration"
-      },
-      {
-        "id": "t-84",
-        "category": "system-field",
-        "entity": "siiConfiguration",
-        "field": "configuracinSII",
-        "runner": "node",
-        "description": "System field 'configuracinSII' should exist in backend but not frontend for siiConfiguration"
-      },
-      {
-        "id": "t-85",
-        "category": "system-field",
-        "entity": "siiConfiguration",
-        "field": "nuevaConsultaFacturasASII",
-        "runner": "node",
-        "description": "System field 'nuevaConsultaFacturasASII' should exist in backend but not frontend for siiConfiguration"
-      },
-      {
-        "id": "t-86",
-        "category": "system-field",
-        "entity": "siiConfiguration",
-        "field": "informeltimaConexinSII",
-        "runner": "node",
-        "description": "System field 'informeltimaConexinSII' should exist in backend but not frontend for siiConfiguration"
-      },
-      {
-        "id": "t-87",
-        "category": "system-field",
-        "entity": "siiConfiguration",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for siiConfiguration"
-      },
-      {
-        "id": "t-88",
-        "category": "system-field",
-        "entity": "siiConfiguration",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for siiConfiguration"
-      },
-      {
-        "id": "t-89",
-        "category": "system-field",
-        "entity": "siiConfiguration",
-        "field": "updateInvoices",
-        "runner": "node",
-        "description": "System field 'updateInvoices' should exist in backend but not frontend for siiConfiguration"
-      },
-      {
-        "id": "t-90",
-        "category": "system-field",
-        "entity": "siiConfiguration",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for siiConfiguration"
-      },
-      {
-        "id": "t-91",
-        "category": "system-field",
-        "entity": "siiConfiguration",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for siiConfiguration"
-      },
-      {
-        "id": "t-92",
-        "category": "system-field",
-        "entity": "logHash",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for logHash"
-      },
-      {
-        "id": "t-93",
-        "category": "system-field",
-        "entity": "logHash",
-        "field": "sIIConfiguration",
-        "runner": "node",
-        "description": "System field 'sIIConfiguration' should exist in backend but not frontend for logHash"
-      },
-      {
-        "id": "t-94",
-        "category": "system-field",
-        "entity": "logHash",
-        "field": "logHash",
-        "runner": "node",
-        "description": "System field 'logHash' should exist in backend but not frontend for logHash"
-      },
-      {
-        "id": "t-95",
-        "category": "system-field",
-        "entity": "logHash",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for logHash"
-      },
-      {
-        "id": "t-96",
-        "category": "system-field",
-        "entity": "logHash",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for logHash"
-      },
-      {
-        "id": "t-97",
-        "category": "system-field",
-        "entity": "logHash",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for logHash"
-      },
-      {
-        "id": "t-98",
-        "category": "system-field",
-        "entity": "logHash",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for logHash"
-      },
-      {
-        "id": "t-99",
-        "category": "system-field",
-        "entity": "logHash",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for logHash"
-      },
-      {
-        "id": "t-100",
-        "category": "rule-declared",
-        "rule": "SiiIgicTaxTypeCallout_Taxtype",
-        "runner": "node",
-        "description": "Rule 'SiiIgicTaxTypeCallout_Taxtype' (callout) should be declared"
-      },
-      {
-        "id": "t-101",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-102",
-        "category": "rule-declared",
-        "rule": "Print SII Last connection report",
-        "runner": "node",
-        "description": "Rule 'Print SII Last connection report' (process) should be declared"
-      },
-      {
-        "id": "t-103",
-        "category": "rule-declared",
-        "rule": "SII Invoices Query",
-        "runner": "node",
-        "description": "Rule 'SII Invoices Query' (process) should be declared"
-      },
-      {
-        "id": "t-104",
-        "category": "rule-declared",
-        "rule": "SII Update Invoices",
-        "runner": "node",
-        "description": "Rule 'SII Update Invoices' (process) should be declared"
-      },
-      {
-        "id": "t-105",
-        "category": "rule-declared",
-        "rule": "Validate Hash",
-        "runner": "node",
-        "description": "Rule 'Validate Hash' (process) should be declared"
-      },
-      {
-        "id": "t-106",
-        "category": "crud-flags",
-        "entity": "siiConfiguration",
-        "runner": "node",
-        "description": "CRUD flags for 'siiConfiguration' should all be booleans"
-      },
-      {
-        "id": "t-107",
-        "category": "crud-flags",
-        "entity": "logHash",
-        "runner": "node",
-        "description": "CRUD flags for 'logHash' should all be booleans"
-      },
-      {
-        "id": "t-108",
-        "category": "action-endpoint",
-        "entity": "siiConfiguration",
-        "field": "validHash",
-        "runner": "node",
-        "description": "Action endpoint for 'validHash' in siiConfiguration should exist"
-      },
-      {
-        "id": "t-109",
-        "category": "action-endpoint",
-        "entity": "siiConfiguration",
-        "field": "nuevaConsultaFacturasASII",
-        "runner": "node",
-        "description": "Action endpoint for 'nuevaConsultaFacturasASII' in siiConfiguration should exist"
-      },
-      {
-        "id": "t-110",
+        "id": "t-action-endpoint-siiConfiguration-informeltimaConexinSII",
         "category": "action-endpoint",
         "entity": "siiConfiguration",
         "field": "informeltimaConexinSII",
@@ -1953,30 +1095,962 @@
         "description": "Action endpoint for 'informeltimaConexinSII' in siiConfiguration should exist"
       },
       {
-        "id": "t-111",
+        "id": "t-action-endpoint-siiConfiguration-nuevaConsultaFacturasASII",
+        "category": "action-endpoint",
+        "entity": "siiConfiguration",
+        "field": "nuevaConsultaFacturasASII",
+        "runner": "node",
+        "description": "Action endpoint for 'nuevaConsultaFacturasASII' in siiConfiguration should exist"
+      },
+      {
+        "id": "t-action-endpoint-siiConfiguration-updateInvoices",
         "category": "action-endpoint",
         "entity": "siiConfiguration",
         "field": "updateInvoices",
         "runner": "node",
         "description": "Action endpoint for 'updateInvoices' in siiConfiguration should exist"
+      },
+      {
+        "id": "t-action-endpoint-siiConfiguration-validHash",
+        "category": "action-endpoint",
+        "entity": "siiConfiguration",
+        "field": "validHash",
+        "runner": "node",
+        "description": "Action endpoint for 'validHash' in siiConfiguration should exist"
+      },
+      {
+        "id": "t-crud-flags-logHash",
+        "category": "crud-flags",
+        "entity": "logHash",
+        "runner": "node",
+        "description": "CRUD flags for 'logHash' should all be booleans"
+      },
+      {
+        "id": "t-crud-flags-siiConfiguration",
+        "category": "crud-flags",
+        "entity": "siiConfiguration",
+        "runner": "node",
+        "description": "CRUD flags for 'siiConfiguration' should all be booleans"
+      },
+      {
+        "id": "t-default-value-type-logHash-active",
+        "category": "default-value-type",
+        "entity": "logHash",
+        "field": "active",
+        "runner": "node",
+        "description": "Default value for 'active' in logHash should be a string"
+      },
+      {
+        "id": "t-default-value-type-siiConfiguration-acogidaAlSII",
+        "category": "default-value-type",
+        "entity": "siiConfiguration",
+        "field": "acogidaAlSII",
+        "runner": "node",
+        "description": "Default value for 'acogidaAlSII' in siiConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-siiConfiguration-adjuntarArchivosXML",
+        "category": "default-value-type",
+        "entity": "siiConfiguration",
+        "field": "adjuntarArchivosXML",
+        "runner": "node",
+        "description": "Default value for 'adjuntarArchivosXML' in siiConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-siiConfiguration-cadenciaEnvoFacturasCompraASII",
+        "category": "default-value-type",
+        "entity": "siiConfiguration",
+        "field": "cadenciaEnvoFacturasCompraASII",
+        "runner": "node",
+        "description": "Default value for 'cadenciaEnvoFacturasCompraASII' in siiConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-siiConfiguration-cadenciaEnvoFacturasVentaASII",
+        "category": "default-value-type",
+        "entity": "siiConfiguration",
+        "field": "cadenciaEnvoFacturasVentaASII",
+        "runner": "node",
+        "description": "Default value for 'cadenciaEnvoFacturasVentaASII' in siiConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-siiConfiguration-entornoDeProduccin",
+        "category": "default-value-type",
+        "entity": "siiConfiguration",
+        "field": "entornoDeProduccin",
+        "runner": "node",
+        "description": "Default value for 'entornoDeProduccin' in siiConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-siiConfiguration-monitordate",
+        "category": "default-value-type",
+        "entity": "siiConfiguration",
+        "field": "monitordate",
+        "runner": "node",
+        "description": "Default value for 'monitordate' in siiConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-siiConfiguration-plazoLmiteDeEnvoASII",
+        "category": "default-value-type",
+        "entity": "siiConfiguration",
+        "field": "plazoLmiteDeEnvoASII",
+        "runner": "node",
+        "description": "Default value for 'plazoLmiteDeEnvoASII' in siiConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-siiConfiguration-postedInvoices",
+        "category": "default-value-type",
+        "entity": "siiConfiguration",
+        "field": "postedInvoices",
+        "runner": "node",
+        "description": "Default value for 'postedInvoices' in siiConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-siiConfiguration-recc",
+        "category": "default-value-type",
+        "entity": "siiConfiguration",
+        "field": "recc",
+        "runner": "node",
+        "description": "Default value for 'recc' in siiConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-siiConfiguration-redeme",
+        "category": "default-value-type",
+        "entity": "siiConfiguration",
+        "field": "redeme",
+        "runner": "node",
+        "description": "Default value for 'redeme' in siiConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-siiConfiguration-sinceJanuary2017",
+        "category": "default-value-type",
+        "entity": "siiConfiguration",
+        "field": "sinceJanuary2017",
+        "runner": "node",
+        "description": "Default value for 'sinceJanuary2017' in siiConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-siiConfiguration-validHash",
+        "category": "default-value-type",
+        "entity": "siiConfiguration",
+        "field": "validHash",
+        "runner": "node",
+        "description": "Default value for 'validHash' in siiConfiguration should be a string"
+      },
+      {
+        "id": "t-displaylogic-evaluable-siiConfiguration-adjuntarArchivosXML",
+        "category": "displaylogic-evaluable",
+        "entity": "siiConfiguration",
+        "field": "adjuntarArchivosXML",
+        "runner": "node",
+        "description": "Display logic for 'adjuntarArchivosXML' in siiConfiguration should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-siiConfiguration-cadenciaEnvoFacturasCompraASII",
+        "category": "displaylogic-evaluable",
+        "entity": "siiConfiguration",
+        "field": "cadenciaEnvoFacturasCompraASII",
+        "runner": "node",
+        "description": "Display logic for 'cadenciaEnvoFacturasCompraASII' in siiConfiguration should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-siiConfiguration-cadenciaEnvoFacturasVentaASII",
+        "category": "displaylogic-evaluable",
+        "entity": "siiConfiguration",
+        "field": "cadenciaEnvoFacturasVentaASII",
+        "runner": "node",
+        "description": "Display logic for 'cadenciaEnvoFacturasVentaASII' in siiConfiguration should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-siiConfiguration-entornoDeProduccin",
+        "category": "displaylogic-evaluable",
+        "entity": "siiConfiguration",
+        "field": "entornoDeProduccin",
+        "runner": "node",
+        "description": "Display logic for 'entornoDeProduccin' in siiConfiguration should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-siiConfiguration-fechaAcogidaSII",
+        "category": "displaylogic-evaluable",
+        "entity": "siiConfiguration",
+        "field": "fechaAcogidaSII",
+        "runner": "node",
+        "description": "Display logic for 'fechaAcogidaSII' in siiConfiguration should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-siiConfiguration-monitordate",
+        "category": "displaylogic-evaluable",
+        "entity": "siiConfiguration",
+        "field": "monitordate",
+        "runner": "node",
+        "description": "Display logic for 'monitordate' in siiConfiguration should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-siiConfiguration-plazoLmiteDeEnvoASII",
+        "category": "displaylogic-evaluable",
+        "entity": "siiConfiguration",
+        "field": "plazoLmiteDeEnvoASII",
+        "runner": "node",
+        "description": "Display logic for 'plazoLmiteDeEnvoASII' in siiConfiguration should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-siiConfiguration-postedInvoices",
+        "category": "displaylogic-evaluable",
+        "entity": "siiConfiguration",
+        "field": "postedInvoices",
+        "runner": "node",
+        "description": "Display logic for 'postedInvoices' in siiConfiguration should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-siiConfiguration-recc",
+        "category": "displaylogic-evaluable",
+        "entity": "siiConfiguration",
+        "field": "recc",
+        "runner": "node",
+        "description": "Display logic for 'recc' in siiConfiguration should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-siiConfiguration-adjuntarArchivosXML",
+        "category": "displaylogic-valid",
+        "entity": "siiConfiguration",
+        "field": "adjuntarArchivosXML",
+        "runner": "node",
+        "description": "Display logic for 'adjuntarArchivosXML' in siiConfiguration should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-siiConfiguration-cadenciaEnvoFacturasCompraASII",
+        "category": "displaylogic-valid",
+        "entity": "siiConfiguration",
+        "field": "cadenciaEnvoFacturasCompraASII",
+        "runner": "node",
+        "description": "Display logic for 'cadenciaEnvoFacturasCompraASII' in siiConfiguration should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-siiConfiguration-cadenciaEnvoFacturasVentaASII",
+        "category": "displaylogic-valid",
+        "entity": "siiConfiguration",
+        "field": "cadenciaEnvoFacturasVentaASII",
+        "runner": "node",
+        "description": "Display logic for 'cadenciaEnvoFacturasVentaASII' in siiConfiguration should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-siiConfiguration-entornoDeProduccin",
+        "category": "displaylogic-valid",
+        "entity": "siiConfiguration",
+        "field": "entornoDeProduccin",
+        "runner": "node",
+        "description": "Display logic for 'entornoDeProduccin' in siiConfiguration should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-siiConfiguration-fechaAcogidaSII",
+        "category": "displaylogic-valid",
+        "entity": "siiConfiguration",
+        "field": "fechaAcogidaSII",
+        "runner": "node",
+        "description": "Display logic for 'fechaAcogidaSII' in siiConfiguration should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-siiConfiguration-monitordate",
+        "category": "displaylogic-valid",
+        "entity": "siiConfiguration",
+        "field": "monitordate",
+        "runner": "node",
+        "description": "Display logic for 'monitordate' in siiConfiguration should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-siiConfiguration-plazoLmiteDeEnvoASII",
+        "category": "displaylogic-valid",
+        "entity": "siiConfiguration",
+        "field": "plazoLmiteDeEnvoASII",
+        "runner": "node",
+        "description": "Display logic for 'plazoLmiteDeEnvoASII' in siiConfiguration should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-siiConfiguration-postedInvoices",
+        "category": "displaylogic-valid",
+        "entity": "siiConfiguration",
+        "field": "postedInvoices",
+        "runner": "node",
+        "description": "Display logic for 'postedInvoices' in siiConfiguration should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-siiConfiguration-recc",
+        "category": "displaylogic-valid",
+        "entity": "siiConfiguration",
+        "field": "recc",
+        "runner": "node",
+        "description": "Display logic for 'recc' in siiConfiguration should be valid JS"
+      },
+      {
+        "id": "t-field-presence-logHash-active",
+        "category": "field-presence",
+        "entity": "logHash",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in logHash"
+      },
+      {
+        "id": "t-field-presence-logHash-logs",
+        "category": "field-presence",
+        "entity": "logHash",
+        "field": "logs",
+        "runner": "node",
+        "description": "Field 'logs' should be present in logHash"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-acogidaAlSII",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "acogidaAlSII",
+        "runner": "node",
+        "description": "Field 'acogidaAlSII' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-adjuntarArchivosXML",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "adjuntarArchivosXML",
+        "runner": "node",
+        "description": "Field 'adjuntarArchivosXML' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-authorizationno",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "authorizationno",
+        "runner": "node",
+        "description": "Field 'authorizationno' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-cadenciaEnvoFacturasCompraASII",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "cadenciaEnvoFacturasCompraASII",
+        "runner": "node",
+        "description": "Field 'cadenciaEnvoFacturasCompraASII' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-cadenciaEnvoFacturasVentaASII",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "cadenciaEnvoFacturasVentaASII",
+        "runner": "node",
+        "description": "Field 'cadenciaEnvoFacturasVentaASII' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-cashVAT",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "cashVAT",
+        "runner": "node",
+        "description": "Field 'cashVAT' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-cIF",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "cIF",
+        "runner": "node",
+        "description": "Field 'cIF' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-conexiones",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "conexiones",
+        "runner": "node",
+        "description": "Field 'conexiones' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-entornoDeProduccin",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "entornoDeProduccin",
+        "runner": "node",
+        "description": "Field 'entornoDeProduccin' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-fechaAcogidaSII",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "fechaAcogidaSII",
+        "runner": "node",
+        "description": "Field 'fechaAcogidaSII' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-lastQueryBook",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "lastQueryBook",
+        "runner": "node",
+        "description": "Field 'lastQueryBook' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-lastQueryExercise",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "lastQueryExercise",
+        "runner": "node",
+        "description": "Field 'lastQueryExercise' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-lastQueryPeriod",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "lastQueryPeriod",
+        "runner": "node",
+        "description": "Field 'lastQueryPeriod' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-monitordate",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "monitordate",
+        "runner": "node",
+        "description": "Field 'monitordate' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-plazoLmiteDeEnvoASII",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "plazoLmiteDeEnvoASII",
+        "runner": "node",
+        "description": "Field 'plazoLmiteDeEnvoASII' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-postedInvoices",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "postedInvoices",
+        "runner": "node",
+        "description": "Field 'postedInvoices' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-recc",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "recc",
+        "runner": "node",
+        "description": "Field 'recc' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-redeme",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "redeme",
+        "runner": "node",
+        "description": "Field 'redeme' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-sinceJanuary2017",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "sinceJanuary2017",
+        "runner": "node",
+        "description": "Field 'sinceJanuary2017' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-presence-siiConfiguration-validHash",
+        "category": "field-presence",
+        "entity": "siiConfiguration",
+        "field": "validHash",
+        "runner": "node",
+        "description": "Field 'validHash' should be present in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-logHash-active",
+        "category": "field-type",
+        "entity": "logHash",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in logHash"
+      },
+      {
+        "id": "t-field-type-logHash-logs",
+        "category": "field-type",
+        "entity": "logHash",
+        "field": "logs",
+        "runner": "node",
+        "description": "Field 'logs' should have type 'string' in logHash"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-acogidaAlSII",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "acogidaAlSII",
+        "runner": "node",
+        "description": "Field 'acogidaAlSII' should have type 'boolean' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-adjuntarArchivosXML",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "adjuntarArchivosXML",
+        "runner": "node",
+        "description": "Field 'adjuntarArchivosXML' should have type 'boolean' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-authorizationno",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "authorizationno",
+        "runner": "node",
+        "description": "Field 'authorizationno' should have type 'string' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-cadenciaEnvoFacturasCompraASII",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "cadenciaEnvoFacturasCompraASII",
+        "runner": "node",
+        "description": "Field 'cadenciaEnvoFacturasCompraASII' should have type 'number' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-cadenciaEnvoFacturasVentaASII",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "cadenciaEnvoFacturasVentaASII",
+        "runner": "node",
+        "description": "Field 'cadenciaEnvoFacturasVentaASII' should have type 'number' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-cashVAT",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "cashVAT",
+        "runner": "node",
+        "description": "Field 'cashVAT' should have type 'boolean' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-cIF",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "cIF",
+        "runner": "node",
+        "description": "Field 'cIF' should have type 'string' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-conexiones",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "conexiones",
+        "runner": "node",
+        "description": "Field 'conexiones' should have type 'number' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-entornoDeProduccin",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "entornoDeProduccin",
+        "runner": "node",
+        "description": "Field 'entornoDeProduccin' should have type 'boolean' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-fechaAcogidaSII",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "fechaAcogidaSII",
+        "runner": "node",
+        "description": "Field 'fechaAcogidaSII' should have type 'string' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-lastQueryBook",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "lastQueryBook",
+        "runner": "node",
+        "description": "Field 'lastQueryBook' should have type 'string' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-lastQueryExercise",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "lastQueryExercise",
+        "runner": "node",
+        "description": "Field 'lastQueryExercise' should have type 'string' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-lastQueryPeriod",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "lastQueryPeriod",
+        "runner": "node",
+        "description": "Field 'lastQueryPeriod' should have type 'string' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-monitordate",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "monitordate",
+        "runner": "node",
+        "description": "Field 'monitordate' should have type 'string' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-plazoLmiteDeEnvoASII",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "plazoLmiteDeEnvoASII",
+        "runner": "node",
+        "description": "Field 'plazoLmiteDeEnvoASII' should have type 'number' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-postedInvoices",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "postedInvoices",
+        "runner": "node",
+        "description": "Field 'postedInvoices' should have type 'boolean' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-recc",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "recc",
+        "runner": "node",
+        "description": "Field 'recc' should have type 'boolean' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-redeme",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "redeme",
+        "runner": "node",
+        "description": "Field 'redeme' should have type 'boolean' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-sinceJanuary2017",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "sinceJanuary2017",
+        "runner": "node",
+        "description": "Field 'sinceJanuary2017' should have type 'boolean' in siiConfiguration"
+      },
+      {
+        "id": "t-field-type-siiConfiguration-validHash",
+        "category": "field-type",
+        "entity": "siiConfiguration",
+        "field": "validHash",
+        "runner": "node",
+        "description": "Field 'validHash' should have type 'string' in siiConfiguration"
+      },
+      {
+        "id": "t-rule-declared-Print-SII-Last-connection-report",
+        "category": "rule-declared",
+        "rule": "Print SII Last connection report",
+        "runner": "node",
+        "description": "Rule 'Print SII Last connection report' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-sii-config-SII-Configuration-Adjuntos-displayLogic",
+        "category": "rule-declared",
+        "rule": "sii-config-SII Configuration-Adjuntos-displayLogic",
+        "runner": "node",
+        "description": "Rule 'sii-config-SII Configuration-Adjuntos-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-sii-config-SII-Configuration-Cadencia-Compra-displayLogic",
+        "category": "rule-declared",
+        "rule": "sii-config-SII Configuration-Cadencia_Compra-displayLogic",
+        "runner": "node",
+        "description": "Rule 'sii-config-SII Configuration-Cadencia_Compra-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-sii-config-SII-Configuration-Cadencia-displayLogic",
+        "category": "rule-declared",
+        "rule": "sii-config-SII Configuration-Cadencia-displayLogic",
+        "runner": "node",
+        "description": "Rule 'sii-config-SII Configuration-Cadencia-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-sii-config-SII-Configuration-Guipuzcoa-displayLogic",
+        "category": "rule-declared",
+        "rule": "sii-config-SII Configuration-Guipuzcoa-displayLogic",
+        "runner": "node",
+        "description": "Rule 'sii-config-SII Configuration-Guipuzcoa-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-sii-config-SII-Configuration-Insiisystemdate-displayLogic",
+        "category": "rule-declared",
+        "rule": "sii-config-SII Configuration-Insiisystemdate-displayLogic",
+        "runner": "node",
+        "description": "Rule 'sii-config-SII Configuration-Insiisystemdate-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-sii-config-SII-Configuration-Monitordate-displayLogic",
+        "category": "rule-declared",
+        "rule": "sii-config-SII Configuration-Monitordate-displayLogic",
+        "runner": "node",
+        "description": "Rule 'sii-config-SII Configuration-Monitordate-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-sii-config-SII-Configuration-Navarra-displayLogic",
+        "category": "rule-declared",
+        "rule": "sii-config-SII Configuration-Navarra-displayLogic",
+        "runner": "node",
+        "description": "Rule 'sii-config-SII Configuration-Navarra-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-sii-config-SII-Configuration-Plazo-displayLogic",
+        "category": "rule-declared",
+        "rule": "sii-config-SII Configuration-Plazo-displayLogic",
+        "runner": "node",
+        "description": "Rule 'sii-config-SII Configuration-Plazo-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-sii-config-SII-Configuration-Posted-Invoices-displayLogic",
+        "category": "rule-declared",
+        "rule": "sii-config-SII Configuration-Posted_Invoices-displayLogic",
+        "runner": "node",
+        "description": "Rule 'sii-config-SII Configuration-Posted_Invoices-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-sii-config-SII-Configuration-Produccion-displayLogic",
+        "category": "rule-declared",
+        "rule": "sii-config-SII Configuration-Produccion-displayLogic",
+        "runner": "node",
+        "description": "Rule 'sii-config-SII Configuration-Produccion-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-sii-config-SII-Configuration-Recc-displayLogic",
+        "category": "rule-declared",
+        "rule": "sii-config-SII Configuration-Recc-displayLogic",
+        "runner": "node",
+        "description": "Rule 'sii-config-SII Configuration-Recc-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SII-Invoices-Query",
+        "category": "rule-declared",
+        "rule": "SII Invoices Query",
+        "runner": "node",
+        "description": "Rule 'SII Invoices Query' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SII-Update-Invoices",
+        "category": "rule-declared",
+        "rule": "SII Update Invoices",
+        "runner": "node",
+        "description": "Rule 'SII Update Invoices' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SiiIgicTaxTypeCallout-Taxtype",
+        "category": "rule-declared",
+        "rule": "SiiIgicTaxTypeCallout_Taxtype",
+        "runner": "node",
+        "description": "Rule 'SiiIgicTaxTypeCallout_Taxtype' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Validate-Hash",
+        "category": "rule-declared",
+        "rule": "Validate Hash",
+        "runner": "node",
+        "description": "Rule 'Validate Hash' (process) should be declared"
+      },
+      {
+        "id": "t-system-field-logHash-client",
+        "category": "system-field",
+        "entity": "logHash",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for logHash"
+      },
+      {
+        "id": "t-system-field-logHash-createdBy",
+        "category": "system-field",
+        "entity": "logHash",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for logHash"
+      },
+      {
+        "id": "t-system-field-logHash-creationDate",
+        "category": "system-field",
+        "entity": "logHash",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for logHash"
+      },
+      {
+        "id": "t-system-field-logHash-logHash",
+        "category": "system-field",
+        "entity": "logHash",
+        "field": "logHash",
+        "runner": "node",
+        "description": "System field 'logHash' should exist in backend but not frontend for logHash"
+      },
+      {
+        "id": "t-system-field-logHash-organization",
+        "category": "system-field",
+        "entity": "logHash",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for logHash"
+      },
+      {
+        "id": "t-system-field-logHash-sIIConfiguration",
+        "category": "system-field",
+        "entity": "logHash",
+        "field": "sIIConfiguration",
+        "runner": "node",
+        "description": "System field 'sIIConfiguration' should exist in backend but not frontend for logHash"
+      },
+      {
+        "id": "t-system-field-logHash-updated",
+        "category": "system-field",
+        "entity": "logHash",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for logHash"
+      },
+      {
+        "id": "t-system-field-logHash-updatedBy",
+        "category": "system-field",
+        "entity": "logHash",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for logHash"
+      },
+      {
+        "id": "t-system-field-siiConfiguration-active",
+        "category": "system-field",
+        "entity": "siiConfiguration",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for siiConfiguration"
+      },
+      {
+        "id": "t-system-field-siiConfiguration-client",
+        "category": "system-field",
+        "entity": "siiConfiguration",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for siiConfiguration"
+      },
+      {
+        "id": "t-system-field-siiConfiguration-configuracinSII",
+        "category": "system-field",
+        "entity": "siiConfiguration",
+        "field": "configuracinSII",
+        "runner": "node",
+        "description": "System field 'configuracinSII' should exist in backend but not frontend for siiConfiguration"
+      },
+      {
+        "id": "t-system-field-siiConfiguration-createdBy",
+        "category": "system-field",
+        "entity": "siiConfiguration",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for siiConfiguration"
+      },
+      {
+        "id": "t-system-field-siiConfiguration-creationDate",
+        "category": "system-field",
+        "entity": "siiConfiguration",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for siiConfiguration"
+      },
+      {
+        "id": "t-system-field-siiConfiguration-guipuzcoa",
+        "category": "system-field",
+        "entity": "siiConfiguration",
+        "field": "guipuzcoa",
+        "runner": "node",
+        "description": "System field 'guipuzcoa' should exist in backend but not frontend for siiConfiguration"
+      },
+      {
+        "id": "t-system-field-siiConfiguration-informeltimaConexinSII",
+        "category": "system-field",
+        "entity": "siiConfiguration",
+        "field": "informeltimaConexinSII",
+        "runner": "node",
+        "description": "System field 'informeltimaConexinSII' should exist in backend but not frontend for siiConfiguration"
+      },
+      {
+        "id": "t-system-field-siiConfiguration-navarra",
+        "category": "system-field",
+        "entity": "siiConfiguration",
+        "field": "navarra",
+        "runner": "node",
+        "description": "System field 'navarra' should exist in backend but not frontend for siiConfiguration"
+      },
+      {
+        "id": "t-system-field-siiConfiguration-nuevaConsultaFacturasASII",
+        "category": "system-field",
+        "entity": "siiConfiguration",
+        "field": "nuevaConsultaFacturasASII",
+        "runner": "node",
+        "description": "System field 'nuevaConsultaFacturasASII' should exist in backend but not frontend for siiConfiguration"
+      },
+      {
+        "id": "t-system-field-siiConfiguration-organization",
+        "category": "system-field",
+        "entity": "siiConfiguration",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for siiConfiguration"
+      },
+      {
+        "id": "t-system-field-siiConfiguration-taxtype",
+        "category": "system-field",
+        "entity": "siiConfiguration",
+        "field": "taxtype",
+        "runner": "node",
+        "description": "System field 'taxtype' should exist in backend but not frontend for siiConfiguration"
+      },
+      {
+        "id": "t-system-field-siiConfiguration-updated",
+        "category": "system-field",
+        "entity": "siiConfiguration",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for siiConfiguration"
+      },
+      {
+        "id": "t-system-field-siiConfiguration-updatedBy",
+        "category": "system-field",
+        "entity": "siiConfiguration",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for siiConfiguration"
+      },
+      {
+        "id": "t-system-field-siiConfiguration-updateInvoices",
+        "category": "system-field",
+        "entity": "siiConfiguration",
+        "field": "updateInvoices",
+        "runner": "node",
+        "description": "System field 'updateInvoices' should exist in backend but not frontend for siiConfiguration"
+      },
+      {
+        "id": "t-visibility-logHash",
+        "category": "visibility",
+        "entity": "logHash",
+        "runner": "node",
+        "description": "Entity 'logHash' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-siiConfiguration",
+        "category": "visibility",
+        "entity": "siiConfiguration",
+        "runner": "node",
+        "description": "Entity 'siiConfiguration' should only expose visible fields in frontend"
       }
     ],
     "summary": {
-      "total": 111,
+      "total": 121,
       "byCategory": {
+        "action-endpoint": 4,
+        "crud-flags": 2,
+        "default-value-type": 13,
+        "displaylogic-evaluable": 9,
+        "displaylogic-valid": 9,
         "field-presence": 22,
         "field-type": 22,
-        "visibility": 2,
-        "displaylogic-valid": 9,
-        "displaylogic-evaluable": 9,
-        "default-value-type": 13,
+        "rule-declared": 16,
         "system-field": 22,
-        "rule-declared": 6,
-        "crud-flags": 2,
-        "action-endpoint": 4
+        "visibility": 2
       },
       "byRunner": {
-        "node": 111,
+        "node": 121,
         "junit": 0
       }
     }

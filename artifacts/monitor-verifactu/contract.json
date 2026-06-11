@@ -1,14 +1,15 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "generatedAt": "2026-05-04T17:02:25.021Z",
-  "updatedAt": "2026-05-06T15:48:47.589Z",
-  "checksum": "f40e66f2f0b6d120",
+  "updatedAt": "2026-05-20T11:45:15.176Z",
+  "checksum": "261b0dfd2a329c54",
   "frontendContract": {
     "window": {
       "id": "F4675DAB02134762B66881DAE4672AD0",
       "name": "Monitor Verifactu",
       "primaryEntity": "cabeceraDeEmisor",
       "category": "monitor",
+      "attachments": false,
       "layoutType": "default"
     },
     "entities": {
@@ -305,7 +306,7 @@
         "searchableFields": [],
         "computedFields": []
       },
-      "partiallyAcceptedInvoices": {
+      "facturasParcialmenteAceptadas": {
         "tableName": "etvfac_inv_sent_status_mv",
         "tabId": "126EBD2F625344E1A22C11219217F551",
         "tabName": "Facturas Parcialmente Aceptadas",
@@ -772,7 +773,8 @@
       "id": "F4675DAB02134762B66881DAE4672AD0",
       "name": "Monitor Verifactu",
       "primaryEntity": "cabeceraDeEmisor",
-      "category": "monitor"
+      "category": "monitor",
+      "attachments": false
     },
     "entities": {
       "cabeceraDeEmisor": {
@@ -1093,7 +1095,7 @@
           }
         ]
       },
-      "partiallyAcceptedInvoices": {
+      "facturasParcialmenteAceptadas": {
         "tableName": "etvfac_inv_sent_status_mv",
         "tabId": "126EBD2F625344E1A22C11219217F551",
         "tabName": "Facturas Parcialmente Aceptadas",
@@ -1634,32 +1636,32 @@
       },
       {
         "method": "GET",
-        "path": "/partiallyAcceptedInvoices",
-        "entity": "partiallyAcceptedInvoices",
+        "path": "/facturasParcialmenteAceptadas",
+        "entity": "facturasParcialmenteAceptadas",
         "supportedFilters": []
       },
       {
         "method": "GET",
-        "path": "/partiallyAcceptedInvoices/:id",
-        "entity": "partiallyAcceptedInvoices",
+        "path": "/facturasParcialmenteAceptadas/:id",
+        "entity": "facturasParcialmenteAceptadas",
         "supportedFilters": []
       },
       {
         "method": "POST",
-        "path": "/partiallyAcceptedInvoices",
-        "entity": "partiallyAcceptedInvoices",
+        "path": "/facturasParcialmenteAceptadas",
+        "entity": "facturasParcialmenteAceptadas",
         "supportedFilters": []
       },
       {
         "method": "PUT",
-        "path": "/partiallyAcceptedInvoices/:id",
-        "entity": "partiallyAcceptedInvoices",
+        "path": "/facturasParcialmenteAceptadas/:id",
+        "entity": "facturasParcialmenteAceptadas",
         "supportedFilters": []
       },
       {
         "method": "DELETE",
-        "path": "/partiallyAcceptedInvoices/:id",
-        "entity": "partiallyAcceptedInvoices",
+        "path": "/facturasParcialmenteAceptadas/:id",
+        "entity": "facturasParcialmenteAceptadas",
         "supportedFilters": []
       },
       {
@@ -1751,15 +1753,15 @@
         "detailUrl": "/sws/neo/monitor-verifactu/facturasRechazadas/{id}",
         "supportedFilters": []
       },
-      "partiallyAcceptedInvoices": {
+      "facturasParcialmenteAceptadas": {
         "get": true,
         "getById": true,
         "post": true,
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices",
-        "detailUrl": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices/{id}",
+        "listUrl": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas",
+        "detailUrl": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/{id}",
         "supportedFilters": []
       },
       "facturasAceptadas": {
@@ -1795,12 +1797,12 @@
         "url": "/sws/neo/monitor-verifactu/facturasRechazadas/selectors/invoice"
       },
       {
-        "entity": "partiallyAcceptedInvoices",
+        "entity": "facturasParcialmenteAceptadas",
         "field": "invoice",
         "column": "C_Invoice_ID",
         "reference": "Invoice",
         "inputMode": "selector",
-        "url": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices/selectors/invoice"
+        "url": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/selectors/invoice"
       },
       {
         "entity": "facturasAceptadas",
@@ -1845,10 +1847,10 @@
         "processType": "obuiapp"
       },
       {
-        "entity": "partiallyAcceptedInvoices",
+        "entity": "facturasParcialmenteAceptadas",
         "field": "correctInvoice",
         "column": "Correct_Invoice",
-        "url": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices/{id}/action/correctInvoice",
+        "url": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/{id}/action/correctInvoice",
         "processId": "F353F2A7307B464CA2C6515CBEFB0D93",
         "processType": "obuiapp"
       },
@@ -1889,1303 +1891,7 @@
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
-        "category": "field-presence",
-        "entity": "cabeceraDeEmisor",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should be present in cabeceraDeEmisor"
-      },
-      {
-        "id": "t-2",
-        "category": "field-presence",
-        "entity": "cabeceraDeEmisor",
-        "field": "tAXType",
-        "runner": "node",
-        "description": "Field 'tAXType' should be present in cabeceraDeEmisor"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "cabeceraDeEmisor",
-        "field": "refreshData",
-        "runner": "node",
-        "description": "Field 'refreshData' should be present in cabeceraDeEmisor"
-      },
-      {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "cabeceraDeEmisor",
-        "field": "issuerNIF",
-        "runner": "node",
-        "description": "Field 'issuerNIF' should be present in cabeceraDeEmisor"
-      },
-      {
-        "id": "t-5",
-        "category": "field-presence",
-        "entity": "cabeceraDeEmisor",
-        "field": "nextSendWaitTime",
-        "runner": "node",
-        "description": "Field 'nextSendWaitTime' should be present in cabeceraDeEmisor"
-      },
-      {
-        "id": "t-6",
-        "category": "field-type",
-        "entity": "cabeceraDeEmisor",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should have type 'boolean' in cabeceraDeEmisor"
-      },
-      {
-        "id": "t-7",
-        "category": "field-type",
-        "entity": "cabeceraDeEmisor",
-        "field": "tAXType",
-        "runner": "node",
-        "description": "Field 'tAXType' should have type 'string' in cabeceraDeEmisor"
-      },
-      {
-        "id": "t-8",
-        "category": "field-type",
-        "entity": "cabeceraDeEmisor",
-        "field": "refreshData",
-        "runner": "node",
-        "description": "Field 'refreshData' should have type 'string' in cabeceraDeEmisor"
-      },
-      {
-        "id": "t-9",
-        "category": "field-type",
-        "entity": "cabeceraDeEmisor",
-        "field": "issuerNIF",
-        "runner": "node",
-        "description": "Field 'issuerNIF' should have type 'string' in cabeceraDeEmisor"
-      },
-      {
-        "id": "t-10",
-        "category": "field-type",
-        "entity": "cabeceraDeEmisor",
-        "field": "nextSendWaitTime",
-        "runner": "node",
-        "description": "Field 'nextSendWaitTime' should have type 'number' in cabeceraDeEmisor"
-      },
-      {
-        "id": "t-11",
-        "category": "visibility",
-        "entity": "cabeceraDeEmisor",
-        "runner": "node",
-        "description": "Entity 'cabeceraDeEmisor' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-12",
-        "category": "readonlylogic-valid",
-        "entity": "cabeceraDeEmisor",
-        "field": "tAXType",
-        "runner": "node",
-        "description": "Read-only logic for 'tAXType' in cabeceraDeEmisor should be valid JS"
-      },
-      {
-        "id": "t-13",
-        "category": "readonlylogic-evaluable",
-        "entity": "cabeceraDeEmisor",
-        "field": "tAXType",
-        "runner": "node",
-        "description": "Read-only logic for 'tAXType' in cabeceraDeEmisor should have evaluable flag"
-      },
-      {
-        "id": "t-14",
-        "category": "default-value-type",
-        "entity": "cabeceraDeEmisor",
-        "field": "active",
-        "runner": "node",
-        "description": "Default value for 'active' in cabeceraDeEmisor should be a string"
-      },
-      {
-        "id": "t-15",
-        "category": "default-value-type",
-        "entity": "cabeceraDeEmisor",
-        "field": "refreshData",
-        "runner": "node",
-        "description": "Default value for 'refreshData' in cabeceraDeEmisor should be a string"
-      },
-      {
-        "id": "t-16",
-        "category": "default-value-type",
-        "entity": "cabeceraDeEmisor",
-        "field": "nextSendWaitTime",
-        "runner": "node",
-        "description": "Default value for 'nextSendWaitTime' in cabeceraDeEmisor should be a string"
-      },
-      {
-        "id": "t-17",
-        "category": "field-presence",
-        "entity": "facturasRechazadas",
-        "field": "issuerTaxID",
-        "runner": "node",
-        "description": "Field 'issuerTaxID' should be present in facturasRechazadas"
-      },
-      {
-        "id": "t-18",
-        "category": "field-presence",
-        "entity": "facturasRechazadas",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should be present in facturasRechazadas"
-      },
-      {
-        "id": "t-19",
-        "category": "field-presence",
-        "entity": "facturasRechazadas",
-        "field": "sentToVerifactu",
-        "runner": "node",
-        "description": "Field 'sentToVerifactu' should be present in facturasRechazadas"
-      },
-      {
-        "id": "t-20",
-        "category": "field-presence",
-        "entity": "facturasRechazadas",
-        "field": "errorReason",
-        "runner": "node",
-        "description": "Field 'errorReason' should be present in facturasRechazadas"
-      },
-      {
-        "id": "t-21",
-        "category": "field-presence",
-        "entity": "facturasRechazadas",
-        "field": "cSV",
-        "runner": "node",
-        "description": "Field 'cSV' should be present in facturasRechazadas"
-      },
-      {
-        "id": "t-22",
-        "category": "field-presence",
-        "entity": "facturasRechazadas",
-        "field": "typeOperation",
-        "runner": "node",
-        "description": "Field 'typeOperation' should be present in facturasRechazadas"
-      },
-      {
-        "id": "t-23",
-        "category": "field-presence",
-        "entity": "facturasRechazadas",
-        "field": "codeError",
-        "runner": "node",
-        "description": "Field 'codeError' should be present in facturasRechazadas"
-      },
-      {
-        "id": "t-24",
-        "category": "field-presence",
-        "entity": "facturasRechazadas",
-        "field": "isSubsanation",
-        "runner": "node",
-        "description": "Field 'isSubsanation' should be present in facturasRechazadas"
-      },
-      {
-        "id": "t-25",
-        "category": "field-presence",
-        "entity": "facturasRechazadas",
-        "field": "invoice",
-        "runner": "node",
-        "description": "Field 'invoice' should be present in facturasRechazadas"
-      },
-      {
-        "id": "t-26",
-        "category": "field-presence",
-        "entity": "facturasRechazadas",
-        "field": "verifactuSendingStatus",
-        "runner": "node",
-        "description": "Field 'verifactuSendingStatus' should be present in facturasRechazadas"
-      },
-      {
-        "id": "t-27",
-        "category": "field-type",
-        "entity": "facturasRechazadas",
-        "field": "issuerTaxID",
-        "runner": "node",
-        "description": "Field 'issuerTaxID' should have type 'string' in facturasRechazadas"
-      },
-      {
-        "id": "t-28",
-        "category": "field-type",
-        "entity": "facturasRechazadas",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should have type 'boolean' in facturasRechazadas"
-      },
-      {
-        "id": "t-29",
-        "category": "field-type",
-        "entity": "facturasRechazadas",
-        "field": "sentToVerifactu",
-        "runner": "node",
-        "description": "Field 'sentToVerifactu' should have type 'boolean' in facturasRechazadas"
-      },
-      {
-        "id": "t-30",
-        "category": "field-type",
-        "entity": "facturasRechazadas",
-        "field": "errorReason",
-        "runner": "node",
-        "description": "Field 'errorReason' should have type 'string' in facturasRechazadas"
-      },
-      {
-        "id": "t-31",
-        "category": "field-type",
-        "entity": "facturasRechazadas",
-        "field": "cSV",
-        "runner": "node",
-        "description": "Field 'cSV' should have type 'string' in facturasRechazadas"
-      },
-      {
-        "id": "t-32",
-        "category": "field-type",
-        "entity": "facturasRechazadas",
-        "field": "typeOperation",
-        "runner": "node",
-        "description": "Field 'typeOperation' should have type 'string' in facturasRechazadas"
-      },
-      {
-        "id": "t-33",
-        "category": "field-type",
-        "entity": "facturasRechazadas",
-        "field": "codeError",
-        "runner": "node",
-        "description": "Field 'codeError' should have type 'string' in facturasRechazadas"
-      },
-      {
-        "id": "t-34",
-        "category": "field-type",
-        "entity": "facturasRechazadas",
-        "field": "isSubsanation",
-        "runner": "node",
-        "description": "Field 'isSubsanation' should have type 'boolean' in facturasRechazadas"
-      },
-      {
-        "id": "t-35",
-        "category": "field-type",
-        "entity": "facturasRechazadas",
-        "field": "invoice",
-        "runner": "node",
-        "description": "Field 'invoice' should have type 'string' in facturasRechazadas"
-      },
-      {
-        "id": "t-36",
-        "category": "field-type",
-        "entity": "facturasRechazadas",
-        "field": "verifactuSendingStatus",
-        "runner": "node",
-        "description": "Field 'verifactuSendingStatus' should have type 'string' in facturasRechazadas"
-      },
-      {
-        "id": "t-37",
-        "category": "visibility",
-        "entity": "facturasRechazadas",
-        "runner": "node",
-        "description": "Entity 'facturasRechazadas' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-38",
-        "category": "field-presence",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "issuerTaxID",
-        "runner": "node",
-        "description": "Field 'issuerTaxID' should be present in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-39",
-        "category": "field-presence",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should be present in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-40",
-        "category": "field-presence",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "sentToVerifactu",
-        "runner": "node",
-        "description": "Field 'sentToVerifactu' should be present in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-41",
-        "category": "field-presence",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "errorReason",
-        "runner": "node",
-        "description": "Field 'errorReason' should be present in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-42",
-        "category": "field-presence",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "typeOperation",
-        "runner": "node",
-        "description": "Field 'typeOperation' should be present in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-43",
-        "category": "field-presence",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "codeError",
-        "runner": "node",
-        "description": "Field 'codeError' should be present in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-44",
-        "category": "field-presence",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "isSubsanation",
-        "runner": "node",
-        "description": "Field 'isSubsanation' should be present in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-45",
-        "category": "field-presence",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "invoice",
-        "runner": "node",
-        "description": "Field 'invoice' should be present in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-46",
-        "category": "field-presence",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "verifactuSendingStatus",
-        "runner": "node",
-        "description": "Field 'verifactuSendingStatus' should be present in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-47",
-        "category": "field-type",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "issuerTaxID",
-        "runner": "node",
-        "description": "Field 'issuerTaxID' should have type 'string' in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-48",
-        "category": "field-type",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should have type 'boolean' in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-49",
-        "category": "field-type",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "sentToVerifactu",
-        "runner": "node",
-        "description": "Field 'sentToVerifactu' should have type 'boolean' in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-50",
-        "category": "field-type",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "errorReason",
-        "runner": "node",
-        "description": "Field 'errorReason' should have type 'string' in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-51",
-        "category": "field-type",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "typeOperation",
-        "runner": "node",
-        "description": "Field 'typeOperation' should have type 'string' in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-52",
-        "category": "field-type",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "codeError",
-        "runner": "node",
-        "description": "Field 'codeError' should have type 'string' in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-53",
-        "category": "field-type",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "isSubsanation",
-        "runner": "node",
-        "description": "Field 'isSubsanation' should have type 'boolean' in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-54",
-        "category": "field-type",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "invoice",
-        "runner": "node",
-        "description": "Field 'invoice' should have type 'string' in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-55",
-        "category": "field-type",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "verifactuSendingStatus",
-        "runner": "node",
-        "description": "Field 'verifactuSendingStatus' should have type 'string' in partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-56",
-        "category": "visibility",
-        "entity": "partiallyAcceptedInvoices",
-        "runner": "node",
-        "description": "Entity 'partiallyAcceptedInvoices' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-57",
-        "category": "field-presence",
-        "entity": "facturasAceptadas",
-        "field": "issuerTaxID",
-        "runner": "node",
-        "description": "Field 'issuerTaxID' should be present in facturasAceptadas"
-      },
-      {
-        "id": "t-58",
-        "category": "field-presence",
-        "entity": "facturasAceptadas",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should be present in facturasAceptadas"
-      },
-      {
-        "id": "t-59",
-        "category": "field-presence",
-        "entity": "facturasAceptadas",
-        "field": "sentToVerifactu",
-        "runner": "node",
-        "description": "Field 'sentToVerifactu' should be present in facturasAceptadas"
-      },
-      {
-        "id": "t-60",
-        "category": "field-presence",
-        "entity": "facturasAceptadas",
-        "field": "errorReason",
-        "runner": "node",
-        "description": "Field 'errorReason' should be present in facturasAceptadas"
-      },
-      {
-        "id": "t-61",
-        "category": "field-presence",
-        "entity": "facturasAceptadas",
-        "field": "cSV",
-        "runner": "node",
-        "description": "Field 'cSV' should be present in facturasAceptadas"
-      },
-      {
-        "id": "t-62",
-        "category": "field-presence",
-        "entity": "facturasAceptadas",
-        "field": "typeOperation",
-        "runner": "node",
-        "description": "Field 'typeOperation' should be present in facturasAceptadas"
-      },
-      {
-        "id": "t-63",
-        "category": "field-presence",
-        "entity": "facturasAceptadas",
-        "field": "codeError",
-        "runner": "node",
-        "description": "Field 'codeError' should be present in facturasAceptadas"
-      },
-      {
-        "id": "t-64",
-        "category": "field-presence",
-        "entity": "facturasAceptadas",
-        "field": "isSubsanation",
-        "runner": "node",
-        "description": "Field 'isSubsanation' should be present in facturasAceptadas"
-      },
-      {
-        "id": "t-65",
-        "category": "field-presence",
-        "entity": "facturasAceptadas",
-        "field": "invoice",
-        "runner": "node",
-        "description": "Field 'invoice' should be present in facturasAceptadas"
-      },
-      {
-        "id": "t-66",
-        "category": "field-presence",
-        "entity": "facturasAceptadas",
-        "field": "verifactuSendingStatus",
-        "runner": "node",
-        "description": "Field 'verifactuSendingStatus' should be present in facturasAceptadas"
-      },
-      {
-        "id": "t-67",
-        "category": "field-type",
-        "entity": "facturasAceptadas",
-        "field": "issuerTaxID",
-        "runner": "node",
-        "description": "Field 'issuerTaxID' should have type 'string' in facturasAceptadas"
-      },
-      {
-        "id": "t-68",
-        "category": "field-type",
-        "entity": "facturasAceptadas",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should have type 'boolean' in facturasAceptadas"
-      },
-      {
-        "id": "t-69",
-        "category": "field-type",
-        "entity": "facturasAceptadas",
-        "field": "sentToVerifactu",
-        "runner": "node",
-        "description": "Field 'sentToVerifactu' should have type 'boolean' in facturasAceptadas"
-      },
-      {
-        "id": "t-70",
-        "category": "field-type",
-        "entity": "facturasAceptadas",
-        "field": "errorReason",
-        "runner": "node",
-        "description": "Field 'errorReason' should have type 'string' in facturasAceptadas"
-      },
-      {
-        "id": "t-71",
-        "category": "field-type",
-        "entity": "facturasAceptadas",
-        "field": "cSV",
-        "runner": "node",
-        "description": "Field 'cSV' should have type 'string' in facturasAceptadas"
-      },
-      {
-        "id": "t-72",
-        "category": "field-type",
-        "entity": "facturasAceptadas",
-        "field": "typeOperation",
-        "runner": "node",
-        "description": "Field 'typeOperation' should have type 'string' in facturasAceptadas"
-      },
-      {
-        "id": "t-73",
-        "category": "field-type",
-        "entity": "facturasAceptadas",
-        "field": "codeError",
-        "runner": "node",
-        "description": "Field 'codeError' should have type 'string' in facturasAceptadas"
-      },
-      {
-        "id": "t-74",
-        "category": "field-type",
-        "entity": "facturasAceptadas",
-        "field": "isSubsanation",
-        "runner": "node",
-        "description": "Field 'isSubsanation' should have type 'boolean' in facturasAceptadas"
-      },
-      {
-        "id": "t-75",
-        "category": "field-type",
-        "entity": "facturasAceptadas",
-        "field": "invoice",
-        "runner": "node",
-        "description": "Field 'invoice' should have type 'string' in facturasAceptadas"
-      },
-      {
-        "id": "t-76",
-        "category": "field-type",
-        "entity": "facturasAceptadas",
-        "field": "verifactuSendingStatus",
-        "runner": "node",
-        "description": "Field 'verifactuSendingStatus' should have type 'string' in facturasAceptadas"
-      },
-      {
-        "id": "t-77",
-        "category": "visibility",
-        "entity": "facturasAceptadas",
-        "runner": "node",
-        "description": "Entity 'facturasAceptadas' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-78",
-        "category": "field-presence",
-        "entity": "facturasInválidas",
-        "field": "issuerTaxID",
-        "runner": "node",
-        "description": "Field 'issuerTaxID' should be present in facturasInválidas"
-      },
-      {
-        "id": "t-79",
-        "category": "field-presence",
-        "entity": "facturasInválidas",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should be present in facturasInválidas"
-      },
-      {
-        "id": "t-80",
-        "category": "field-presence",
-        "entity": "facturasInválidas",
-        "field": "errorReason",
-        "runner": "node",
-        "description": "Field 'errorReason' should be present in facturasInválidas"
-      },
-      {
-        "id": "t-81",
-        "category": "field-presence",
-        "entity": "facturasInválidas",
-        "field": "typeOperation",
-        "runner": "node",
-        "description": "Field 'typeOperation' should be present in facturasInválidas"
-      },
-      {
-        "id": "t-82",
-        "category": "field-presence",
-        "entity": "facturasInválidas",
-        "field": "isSubsanation",
-        "runner": "node",
-        "description": "Field 'isSubsanation' should be present in facturasInválidas"
-      },
-      {
-        "id": "t-83",
-        "category": "field-presence",
-        "entity": "facturasInválidas",
-        "field": "invoice",
-        "runner": "node",
-        "description": "Field 'invoice' should be present in facturasInválidas"
-      },
-      {
-        "id": "t-84",
-        "category": "field-presence",
-        "entity": "facturasInválidas",
-        "field": "verifactuSendingStatus",
-        "runner": "node",
-        "description": "Field 'verifactuSendingStatus' should be present in facturasInválidas"
-      },
-      {
-        "id": "t-85",
-        "category": "field-presence",
-        "entity": "facturasInválidas",
-        "field": "correctInvoice",
-        "runner": "node",
-        "description": "Field 'correctInvoice' should be present in facturasInválidas"
-      },
-      {
-        "id": "t-86",
-        "category": "field-type",
-        "entity": "facturasInválidas",
-        "field": "issuerTaxID",
-        "runner": "node",
-        "description": "Field 'issuerTaxID' should have type 'string' in facturasInválidas"
-      },
-      {
-        "id": "t-87",
-        "category": "field-type",
-        "entity": "facturasInválidas",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should have type 'boolean' in facturasInválidas"
-      },
-      {
-        "id": "t-88",
-        "category": "field-type",
-        "entity": "facturasInválidas",
-        "field": "errorReason",
-        "runner": "node",
-        "description": "Field 'errorReason' should have type 'string' in facturasInválidas"
-      },
-      {
-        "id": "t-89",
-        "category": "field-type",
-        "entity": "facturasInválidas",
-        "field": "typeOperation",
-        "runner": "node",
-        "description": "Field 'typeOperation' should have type 'string' in facturasInválidas"
-      },
-      {
-        "id": "t-90",
-        "category": "field-type",
-        "entity": "facturasInválidas",
-        "field": "isSubsanation",
-        "runner": "node",
-        "description": "Field 'isSubsanation' should have type 'boolean' in facturasInválidas"
-      },
-      {
-        "id": "t-91",
-        "category": "field-type",
-        "entity": "facturasInválidas",
-        "field": "invoice",
-        "runner": "node",
-        "description": "Field 'invoice' should have type 'string' in facturasInválidas"
-      },
-      {
-        "id": "t-92",
-        "category": "field-type",
-        "entity": "facturasInválidas",
-        "field": "verifactuSendingStatus",
-        "runner": "node",
-        "description": "Field 'verifactuSendingStatus' should have type 'string' in facturasInválidas"
-      },
-      {
-        "id": "t-93",
-        "category": "field-type",
-        "entity": "facturasInválidas",
-        "field": "correctInvoice",
-        "runner": "node",
-        "description": "Field 'correctInvoice' should have type 'string' in facturasInválidas"
-      },
-      {
-        "id": "t-94",
-        "category": "visibility",
-        "entity": "facturasInválidas",
-        "runner": "node",
-        "description": "Entity 'facturasInválidas' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-95",
-        "category": "displaylogic-valid",
-        "entity": "facturasInválidas",
-        "field": "correctInvoice",
-        "runner": "node",
-        "description": "Display logic for 'correctInvoice' in facturasInválidas should be valid JS"
-      },
-      {
-        "id": "t-96",
-        "category": "displaylogic-evaluable",
-        "entity": "facturasInválidas",
-        "field": "correctInvoice",
-        "runner": "node",
-        "description": "Display logic for 'correctInvoice' in facturasInválidas should have evaluable flag"
-      },
-      {
-        "id": "t-97",
-        "category": "system-field",
-        "entity": "cabeceraDeEmisor",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for cabeceraDeEmisor"
-      },
-      {
-        "id": "t-98",
-        "category": "system-field",
-        "entity": "cabeceraDeEmisor",
-        "field": "verifactuConfig",
-        "runner": "node",
-        "description": "System field 'verifactuConfig' should exist in backend but not frontend for cabeceraDeEmisor"
-      },
-      {
-        "id": "t-99",
-        "category": "system-field",
-        "entity": "cabeceraDeEmisor",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for cabeceraDeEmisor"
-      },
-      {
-        "id": "t-100",
-        "category": "system-field",
-        "entity": "cabeceraDeEmisor",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for cabeceraDeEmisor"
-      },
-      {
-        "id": "t-101",
-        "category": "system-field",
-        "entity": "cabeceraDeEmisor",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for cabeceraDeEmisor"
-      },
-      {
-        "id": "t-102",
-        "category": "system-field",
-        "entity": "cabeceraDeEmisor",
-        "field": "defaultQR",
-        "runner": "node",
-        "description": "System field 'defaultQR' should exist in backend but not frontend for cabeceraDeEmisor"
-      },
-      {
-        "id": "t-103",
-        "category": "system-field",
-        "entity": "cabeceraDeEmisor",
-        "field": "inVfactuSystem",
-        "runner": "node",
-        "description": "System field 'inVfactuSystem' should exist in backend but not frontend for cabeceraDeEmisor"
-      },
-      {
-        "id": "t-104",
-        "category": "system-field",
-        "entity": "cabeceraDeEmisor",
-        "field": "incidentReport",
-        "runner": "node",
-        "description": "System field 'incidentReport' should exist in backend but not frontend for cabeceraDeEmisor"
-      },
-      {
-        "id": "t-105",
-        "category": "system-field",
-        "entity": "cabeceraDeEmisor",
-        "field": "isDevEnv",
-        "runner": "node",
-        "description": "System field 'isDevEnv' should exist in backend but not frontend for cabeceraDeEmisor"
-      },
-      {
-        "id": "t-106",
-        "category": "system-field",
-        "entity": "cabeceraDeEmisor",
-        "field": "isReady",
-        "runner": "node",
-        "description": "System field 'isReady' should exist in backend but not frontend for cabeceraDeEmisor"
-      },
-      {
-        "id": "t-107",
-        "category": "system-field",
-        "entity": "cabeceraDeEmisor",
-        "field": "systemStartat",
-        "runner": "node",
-        "description": "System field 'systemStartat' should exist in backend but not frontend for cabeceraDeEmisor"
-      },
-      {
-        "id": "t-108",
-        "category": "system-field",
-        "entity": "cabeceraDeEmisor",
-        "field": "systemStopat",
-        "runner": "node",
-        "description": "System field 'systemStopat' should exist in backend but not frontend for cabeceraDeEmisor"
-      },
-      {
-        "id": "t-109",
-        "category": "system-field",
-        "entity": "cabeceraDeEmisor",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for cabeceraDeEmisor"
-      },
-      {
-        "id": "t-110",
-        "category": "system-field",
-        "entity": "cabeceraDeEmisor",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for cabeceraDeEmisor"
-      },
-      {
-        "id": "t-111",
-        "category": "system-field",
-        "entity": "facturasRechazadas",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for facturasRechazadas"
-      },
-      {
-        "id": "t-112",
-        "category": "system-field",
-        "entity": "facturasRechazadas",
-        "field": "invoiceSentStatusID",
-        "runner": "node",
-        "description": "System field 'invoiceSentStatusID' should exist in backend but not frontend for facturasRechazadas"
-      },
-      {
-        "id": "t-113",
-        "category": "system-field",
-        "entity": "facturasRechazadas",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for facturasRechazadas"
-      },
-      {
-        "id": "t-114",
-        "category": "system-field",
-        "entity": "facturasRechazadas",
-        "field": "correctInvoice",
-        "runner": "node",
-        "description": "System field 'correctInvoice' should exist in backend but not frontend for facturasRechazadas"
-      },
-      {
-        "id": "t-115",
-        "category": "system-field",
-        "entity": "facturasRechazadas",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for facturasRechazadas"
-      },
-      {
-        "id": "t-116",
-        "category": "system-field",
-        "entity": "facturasRechazadas",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for facturasRechazadas"
-      },
-      {
-        "id": "t-117",
-        "category": "system-field",
-        "entity": "facturasRechazadas",
-        "field": "hash",
-        "runner": "node",
-        "description": "System field 'hash' should exist in backend but not frontend for facturasRechazadas"
-      },
-      {
-        "id": "t-118",
-        "category": "system-field",
-        "entity": "facturasRechazadas",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for facturasRechazadas"
-      },
-      {
-        "id": "t-119",
-        "category": "system-field",
-        "entity": "facturasRechazadas",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for facturasRechazadas"
-      },
-      {
-        "id": "t-120",
-        "category": "system-field",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-121",
-        "category": "system-field",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-122",
-        "category": "system-field",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "invoiceSentStatusID",
-        "runner": "node",
-        "description": "System field 'invoiceSentStatusID' should exist in backend but not frontend for partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-123",
-        "category": "system-field",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "correctInvoice",
-        "runner": "node",
-        "description": "System field 'correctInvoice' should exist in backend but not frontend for partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-124",
-        "category": "system-field",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-125",
-        "category": "system-field",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-126",
-        "category": "system-field",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "cSV",
-        "runner": "node",
-        "description": "System field 'cSV' should exist in backend but not frontend for partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-127",
-        "category": "system-field",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "hash",
-        "runner": "node",
-        "description": "System field 'hash' should exist in backend but not frontend for partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-128",
-        "category": "system-field",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-129",
-        "category": "system-field",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for partiallyAcceptedInvoices"
-      },
-      {
-        "id": "t-130",
-        "category": "system-field",
-        "entity": "facturasAceptadas",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for facturasAceptadas"
-      },
-      {
-        "id": "t-131",
-        "category": "system-field",
-        "entity": "facturasAceptadas",
-        "field": "invoiceSentStatusID",
-        "runner": "node",
-        "description": "System field 'invoiceSentStatusID' should exist in backend but not frontend for facturasAceptadas"
-      },
-      {
-        "id": "t-132",
-        "category": "system-field",
-        "entity": "facturasAceptadas",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for facturasAceptadas"
-      },
-      {
-        "id": "t-133",
-        "category": "system-field",
-        "entity": "facturasAceptadas",
-        "field": "correctInvoice",
-        "runner": "node",
-        "description": "System field 'correctInvoice' should exist in backend but not frontend for facturasAceptadas"
-      },
-      {
-        "id": "t-134",
-        "category": "system-field",
-        "entity": "facturasAceptadas",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for facturasAceptadas"
-      },
-      {
-        "id": "t-135",
-        "category": "system-field",
-        "entity": "facturasAceptadas",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for facturasAceptadas"
-      },
-      {
-        "id": "t-136",
-        "category": "system-field",
-        "entity": "facturasAceptadas",
-        "field": "hash",
-        "runner": "node",
-        "description": "System field 'hash' should exist in backend but not frontend for facturasAceptadas"
-      },
-      {
-        "id": "t-137",
-        "category": "system-field",
-        "entity": "facturasAceptadas",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for facturasAceptadas"
-      },
-      {
-        "id": "t-138",
-        "category": "system-field",
-        "entity": "facturasAceptadas",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for facturasAceptadas"
-      },
-      {
-        "id": "t-139",
-        "category": "system-field",
-        "entity": "facturasInválidas",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for facturasInválidas"
-      },
-      {
-        "id": "t-140",
-        "category": "system-field",
-        "entity": "facturasInválidas",
-        "field": "invoiceSentStatusID",
-        "runner": "node",
-        "description": "System field 'invoiceSentStatusID' should exist in backend but not frontend for facturasInválidas"
-      },
-      {
-        "id": "t-141",
-        "category": "system-field",
-        "entity": "facturasInválidas",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for facturasInválidas"
-      },
-      {
-        "id": "t-142",
-        "category": "system-field",
-        "entity": "facturasInválidas",
-        "field": "codeError",
-        "runner": "node",
-        "description": "System field 'codeError' should exist in backend but not frontend for facturasInválidas"
-      },
-      {
-        "id": "t-143",
-        "category": "system-field",
-        "entity": "facturasInválidas",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for facturasInválidas"
-      },
-      {
-        "id": "t-144",
-        "category": "system-field",
-        "entity": "facturasInválidas",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for facturasInválidas"
-      },
-      {
-        "id": "t-145",
-        "category": "system-field",
-        "entity": "facturasInválidas",
-        "field": "cSV",
-        "runner": "node",
-        "description": "System field 'cSV' should exist in backend but not frontend for facturasInválidas"
-      },
-      {
-        "id": "t-146",
-        "category": "system-field",
-        "entity": "facturasInválidas",
-        "field": "hash",
-        "runner": "node",
-        "description": "System field 'hash' should exist in backend but not frontend for facturasInválidas"
-      },
-      {
-        "id": "t-147",
-        "category": "system-field",
-        "entity": "facturasInválidas",
-        "field": "sentToVerifactu",
-        "runner": "node",
-        "description": "System field 'sentToVerifactu' should exist in backend but not frontend for facturasInválidas"
-      },
-      {
-        "id": "t-148",
-        "category": "system-field",
-        "entity": "facturasInválidas",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for facturasInválidas"
-      },
-      {
-        "id": "t-149",
-        "category": "system-field",
-        "entity": "facturasInválidas",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for facturasInválidas"
-      },
-      {
-        "id": "t-150",
-        "category": "rule-declared",
-        "rule": "AddNIFToVFactuConfig_AD_Org_ID",
-        "runner": "node",
-        "description": "Rule 'AddNIFToVFactuConfig_AD_Org_ID' (callout) should be declared"
-      },
-      {
-        "id": "t-151",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-152",
-        "category": "rule-declared",
-        "rule": "Corregir Factura",
-        "runner": "node",
-        "description": "Rule 'Corregir Factura' (process) should be declared"
-      },
-      {
-        "id": "t-153",
-        "category": "rule-declared",
-        "rule": "Marcar Como Listo",
-        "runner": "node",
-        "description": "Rule 'Marcar Como Listo' (process) should be declared"
-      },
-      {
-        "id": "t-154",
-        "category": "rule-declared",
-        "rule": "Refrescar monitor Verifactu",
-        "runner": "node",
-        "description": "Rule 'Refrescar monitor Verifactu' (process) should be declared"
-      },
-      {
-        "id": "t-155",
-        "category": "crud-flags",
-        "entity": "cabeceraDeEmisor",
-        "runner": "node",
-        "description": "CRUD flags for 'cabeceraDeEmisor' should all be booleans"
-      },
-      {
-        "id": "t-156",
-        "category": "crud-flags",
-        "entity": "facturasRechazadas",
-        "runner": "node",
-        "description": "CRUD flags for 'facturasRechazadas' should all be booleans"
-      },
-      {
-        "id": "t-157",
-        "category": "crud-flags",
-        "entity": "partiallyAcceptedInvoices",
-        "runner": "node",
-        "description": "CRUD flags for 'partiallyAcceptedInvoices' should all be booleans"
-      },
-      {
-        "id": "t-158",
-        "category": "crud-flags",
-        "entity": "facturasAceptadas",
-        "runner": "node",
-        "description": "CRUD flags for 'facturasAceptadas' should all be booleans"
-      },
-      {
-        "id": "t-159",
-        "category": "crud-flags",
-        "entity": "facturasInválidas",
-        "runner": "node",
-        "description": "CRUD flags for 'facturasInválidas' should all be booleans"
-      },
-      {
-        "id": "t-160",
-        "category": "selector-endpoint",
-        "entity": "facturasRechazadas",
-        "field": "invoice",
-        "runner": "node",
-        "description": "Selector endpoint for 'invoice' in facturasRechazadas should exist"
-      },
-      {
-        "id": "t-161",
-        "category": "selector-endpoint",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "invoice",
-        "runner": "node",
-        "description": "Selector endpoint for 'invoice' in partiallyAcceptedInvoices should exist"
-      },
-      {
-        "id": "t-162",
-        "category": "selector-endpoint",
-        "entity": "facturasAceptadas",
-        "field": "invoice",
-        "runner": "node",
-        "description": "Selector endpoint for 'invoice' in facturasAceptadas should exist"
-      },
-      {
-        "id": "t-163",
-        "category": "selector-endpoint",
-        "entity": "facturasInválidas",
-        "field": "invoice",
-        "runner": "node",
-        "description": "Selector endpoint for 'invoice' in facturasInválidas should exist"
-      },
-      {
-        "id": "t-164",
-        "category": "action-endpoint",
-        "entity": "cabeceraDeEmisor",
-        "field": "refreshData",
-        "runner": "node",
-        "description": "Action endpoint for 'refreshData' in cabeceraDeEmisor should exist"
-      },
-      {
-        "id": "t-165",
+        "id": "t-action-endpoint-cabeceraDeEmisor-isReady",
         "category": "action-endpoint",
         "entity": "cabeceraDeEmisor",
         "field": "isReady",
@@ -3193,23 +1899,15 @@
         "description": "Action endpoint for 'isReady' in cabeceraDeEmisor should exist"
       },
       {
-        "id": "t-166",
+        "id": "t-action-endpoint-cabeceraDeEmisor-refreshData",
         "category": "action-endpoint",
-        "entity": "facturasRechazadas",
-        "field": "correctInvoice",
+        "entity": "cabeceraDeEmisor",
+        "field": "refreshData",
         "runner": "node",
-        "description": "Action endpoint for 'correctInvoice' in facturasRechazadas should exist"
+        "description": "Action endpoint for 'refreshData' in cabeceraDeEmisor should exist"
       },
       {
-        "id": "t-167",
-        "category": "action-endpoint",
-        "entity": "partiallyAcceptedInvoices",
-        "field": "correctInvoice",
-        "runner": "node",
-        "description": "Action endpoint for 'correctInvoice' in partiallyAcceptedInvoices should exist"
-      },
-      {
-        "id": "t-168",
+        "id": "t-action-endpoint-facturasAceptadas-correctInvoice",
         "category": "action-endpoint",
         "entity": "facturasAceptadas",
         "field": "correctInvoice",
@@ -3217,33 +1915,1345 @@
         "description": "Action endpoint for 'correctInvoice' in facturasAceptadas should exist"
       },
       {
-        "id": "t-169",
+        "id": "t-action-endpoint-facturasInv-lidas-correctInvoice",
         "category": "action-endpoint",
         "entity": "facturasInválidas",
         "field": "correctInvoice",
         "runner": "node",
         "description": "Action endpoint for 'correctInvoice' in facturasInválidas should exist"
+      },
+      {
+        "id": "t-action-endpoint-facturasParcialmenteAceptadas-correctInvoice",
+        "category": "action-endpoint",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "Action endpoint for 'correctInvoice' in facturasParcialmenteAceptadas should exist"
+      },
+      {
+        "id": "t-action-endpoint-facturasRechazadas-correctInvoice",
+        "category": "action-endpoint",
+        "entity": "facturasRechazadas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "Action endpoint for 'correctInvoice' in facturasRechazadas should exist"
+      },
+      {
+        "id": "t-crud-flags-cabeceraDeEmisor",
+        "category": "crud-flags",
+        "entity": "cabeceraDeEmisor",
+        "runner": "node",
+        "description": "CRUD flags for 'cabeceraDeEmisor' should all be booleans"
+      },
+      {
+        "id": "t-crud-flags-facturasAceptadas",
+        "category": "crud-flags",
+        "entity": "facturasAceptadas",
+        "runner": "node",
+        "description": "CRUD flags for 'facturasAceptadas' should all be booleans"
+      },
+      {
+        "id": "t-crud-flags-facturasInv-lidas",
+        "category": "crud-flags",
+        "entity": "facturasInválidas",
+        "runner": "node",
+        "description": "CRUD flags for 'facturasInválidas' should all be booleans"
+      },
+      {
+        "id": "t-crud-flags-facturasParcialmenteAceptadas",
+        "category": "crud-flags",
+        "entity": "facturasParcialmenteAceptadas",
+        "runner": "node",
+        "description": "CRUD flags for 'facturasParcialmenteAceptadas' should all be booleans"
+      },
+      {
+        "id": "t-crud-flags-facturasRechazadas",
+        "category": "crud-flags",
+        "entity": "facturasRechazadas",
+        "runner": "node",
+        "description": "CRUD flags for 'facturasRechazadas' should all be booleans"
+      },
+      {
+        "id": "t-default-value-type-cabeceraDeEmisor-active",
+        "category": "default-value-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "active",
+        "runner": "node",
+        "description": "Default value for 'active' in cabeceraDeEmisor should be a string"
+      },
+      {
+        "id": "t-default-value-type-cabeceraDeEmisor-nextSendWaitTime",
+        "category": "default-value-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "nextSendWaitTime",
+        "runner": "node",
+        "description": "Default value for 'nextSendWaitTime' in cabeceraDeEmisor should be a string"
+      },
+      {
+        "id": "t-default-value-type-cabeceraDeEmisor-refreshData",
+        "category": "default-value-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "refreshData",
+        "runner": "node",
+        "description": "Default value for 'refreshData' in cabeceraDeEmisor should be a string"
+      },
+      {
+        "id": "t-displaylogic-evaluable-facturasInv-lidas-correctInvoice",
+        "category": "displaylogic-evaluable",
+        "entity": "facturasInválidas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "Display logic for 'correctInvoice' in facturasInválidas should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-facturasInv-lidas-correctInvoice",
+        "category": "displaylogic-valid",
+        "entity": "facturasInválidas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "Display logic for 'correctInvoice' in facturasInválidas should be valid JS"
+      },
+      {
+        "id": "t-field-presence-cabeceraDeEmisor-active",
+        "category": "field-presence",
+        "entity": "cabeceraDeEmisor",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-field-presence-cabeceraDeEmisor-issuerNIF",
+        "category": "field-presence",
+        "entity": "cabeceraDeEmisor",
+        "field": "issuerNIF",
+        "runner": "node",
+        "description": "Field 'issuerNIF' should be present in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-field-presence-cabeceraDeEmisor-nextSendWaitTime",
+        "category": "field-presence",
+        "entity": "cabeceraDeEmisor",
+        "field": "nextSendWaitTime",
+        "runner": "node",
+        "description": "Field 'nextSendWaitTime' should be present in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-field-presence-cabeceraDeEmisor-refreshData",
+        "category": "field-presence",
+        "entity": "cabeceraDeEmisor",
+        "field": "refreshData",
+        "runner": "node",
+        "description": "Field 'refreshData' should be present in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-field-presence-cabeceraDeEmisor-tAXType",
+        "category": "field-presence",
+        "entity": "cabeceraDeEmisor",
+        "field": "tAXType",
+        "runner": "node",
+        "description": "Field 'tAXType' should be present in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-field-presence-facturasAceptadas-active",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasAceptadas-codeError",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "codeError",
+        "runner": "node",
+        "description": "Field 'codeError' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasAceptadas-cSV",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "cSV",
+        "runner": "node",
+        "description": "Field 'cSV' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasAceptadas-errorReason",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasAceptadas-invoice",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasAceptadas-isSubsanation",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasAceptadas-issuerTaxID",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasAceptadas-sentToVerifactu",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "sentToVerifactu",
+        "runner": "node",
+        "description": "Field 'sentToVerifactu' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasAceptadas-typeOperation",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasAceptadas-verifactuSendingStatus",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasInv-lidas-active",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-field-presence-facturasInv-lidas-correctInvoice",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "Field 'correctInvoice' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-field-presence-facturasInv-lidas-errorReason",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-field-presence-facturasInv-lidas-invoice",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-field-presence-facturasInv-lidas-isSubsanation",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-field-presence-facturasInv-lidas-issuerTaxID",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-field-presence-facturasInv-lidas-typeOperation",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-field-presence-facturasInv-lidas-verifactuSendingStatus",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-field-presence-facturasParcialmenteAceptadas-active",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasParcialmenteAceptadas-codeError",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "codeError",
+        "runner": "node",
+        "description": "Field 'codeError' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasParcialmenteAceptadas-errorReason",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasParcialmenteAceptadas-invoice",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasParcialmenteAceptadas-isSubsanation",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasParcialmenteAceptadas-issuerTaxID",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasParcialmenteAceptadas-sentToVerifactu",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "sentToVerifactu",
+        "runner": "node",
+        "description": "Field 'sentToVerifactu' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasParcialmenteAceptadas-typeOperation",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasParcialmenteAceptadas-verifactuSendingStatus",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-presence-facturasRechazadas-active",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-field-presence-facturasRechazadas-codeError",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "codeError",
+        "runner": "node",
+        "description": "Field 'codeError' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-field-presence-facturasRechazadas-cSV",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "cSV",
+        "runner": "node",
+        "description": "Field 'cSV' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-field-presence-facturasRechazadas-errorReason",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-field-presence-facturasRechazadas-invoice",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-field-presence-facturasRechazadas-isSubsanation",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-field-presence-facturasRechazadas-issuerTaxID",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-field-presence-facturasRechazadas-sentToVerifactu",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "sentToVerifactu",
+        "runner": "node",
+        "description": "Field 'sentToVerifactu' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-field-presence-facturasRechazadas-typeOperation",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-field-presence-facturasRechazadas-verifactuSendingStatus",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-field-type-cabeceraDeEmisor-active",
+        "category": "field-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-field-type-cabeceraDeEmisor-issuerNIF",
+        "category": "field-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "issuerNIF",
+        "runner": "node",
+        "description": "Field 'issuerNIF' should have type 'string' in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-field-type-cabeceraDeEmisor-nextSendWaitTime",
+        "category": "field-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "nextSendWaitTime",
+        "runner": "node",
+        "description": "Field 'nextSendWaitTime' should have type 'number' in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-field-type-cabeceraDeEmisor-refreshData",
+        "category": "field-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "refreshData",
+        "runner": "node",
+        "description": "Field 'refreshData' should have type 'string' in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-field-type-cabeceraDeEmisor-tAXType",
+        "category": "field-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "tAXType",
+        "runner": "node",
+        "description": "Field 'tAXType' should have type 'string' in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-field-type-facturasAceptadas-active",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in facturasAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasAceptadas-codeError",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "codeError",
+        "runner": "node",
+        "description": "Field 'codeError' should have type 'string' in facturasAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasAceptadas-cSV",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "cSV",
+        "runner": "node",
+        "description": "Field 'cSV' should have type 'string' in facturasAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasAceptadas-errorReason",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should have type 'string' in facturasAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasAceptadas-invoice",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should have type 'string' in facturasAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasAceptadas-isSubsanation",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should have type 'boolean' in facturasAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasAceptadas-issuerTaxID",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should have type 'string' in facturasAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasAceptadas-sentToVerifactu",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "sentToVerifactu",
+        "runner": "node",
+        "description": "Field 'sentToVerifactu' should have type 'boolean' in facturasAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasAceptadas-typeOperation",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should have type 'string' in facturasAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasAceptadas-verifactuSendingStatus",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should have type 'string' in facturasAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasInv-lidas-active",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in facturasInválidas"
+      },
+      {
+        "id": "t-field-type-facturasInv-lidas-correctInvoice",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "Field 'correctInvoice' should have type 'string' in facturasInválidas"
+      },
+      {
+        "id": "t-field-type-facturasInv-lidas-errorReason",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should have type 'string' in facturasInválidas"
+      },
+      {
+        "id": "t-field-type-facturasInv-lidas-invoice",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should have type 'string' in facturasInválidas"
+      },
+      {
+        "id": "t-field-type-facturasInv-lidas-isSubsanation",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should have type 'boolean' in facturasInválidas"
+      },
+      {
+        "id": "t-field-type-facturasInv-lidas-issuerTaxID",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should have type 'string' in facturasInválidas"
+      },
+      {
+        "id": "t-field-type-facturasInv-lidas-typeOperation",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should have type 'string' in facturasInválidas"
+      },
+      {
+        "id": "t-field-type-facturasInv-lidas-verifactuSendingStatus",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should have type 'string' in facturasInválidas"
+      },
+      {
+        "id": "t-field-type-facturasParcialmenteAceptadas-active",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasParcialmenteAceptadas-codeError",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "codeError",
+        "runner": "node",
+        "description": "Field 'codeError' should have type 'string' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasParcialmenteAceptadas-errorReason",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should have type 'string' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasParcialmenteAceptadas-invoice",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should have type 'string' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasParcialmenteAceptadas-isSubsanation",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should have type 'boolean' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasParcialmenteAceptadas-issuerTaxID",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should have type 'string' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasParcialmenteAceptadas-sentToVerifactu",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "sentToVerifactu",
+        "runner": "node",
+        "description": "Field 'sentToVerifactu' should have type 'boolean' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasParcialmenteAceptadas-typeOperation",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should have type 'string' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasParcialmenteAceptadas-verifactuSendingStatus",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should have type 'string' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-field-type-facturasRechazadas-active",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in facturasRechazadas"
+      },
+      {
+        "id": "t-field-type-facturasRechazadas-codeError",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "codeError",
+        "runner": "node",
+        "description": "Field 'codeError' should have type 'string' in facturasRechazadas"
+      },
+      {
+        "id": "t-field-type-facturasRechazadas-cSV",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "cSV",
+        "runner": "node",
+        "description": "Field 'cSV' should have type 'string' in facturasRechazadas"
+      },
+      {
+        "id": "t-field-type-facturasRechazadas-errorReason",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should have type 'string' in facturasRechazadas"
+      },
+      {
+        "id": "t-field-type-facturasRechazadas-invoice",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should have type 'string' in facturasRechazadas"
+      },
+      {
+        "id": "t-field-type-facturasRechazadas-isSubsanation",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should have type 'boolean' in facturasRechazadas"
+      },
+      {
+        "id": "t-field-type-facturasRechazadas-issuerTaxID",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should have type 'string' in facturasRechazadas"
+      },
+      {
+        "id": "t-field-type-facturasRechazadas-sentToVerifactu",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "sentToVerifactu",
+        "runner": "node",
+        "description": "Field 'sentToVerifactu' should have type 'boolean' in facturasRechazadas"
+      },
+      {
+        "id": "t-field-type-facturasRechazadas-typeOperation",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should have type 'string' in facturasRechazadas"
+      },
+      {
+        "id": "t-field-type-facturasRechazadas-verifactuSendingStatus",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should have type 'string' in facturasRechazadas"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-cabeceraDeEmisor-tAXType",
+        "category": "readonlylogic-evaluable",
+        "entity": "cabeceraDeEmisor",
+        "field": "tAXType",
+        "runner": "node",
+        "description": "Read-only logic for 'tAXType' in cabeceraDeEmisor should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-valid-cabeceraDeEmisor-tAXType",
+        "category": "readonlylogic-valid",
+        "entity": "cabeceraDeEmisor",
+        "field": "tAXType",
+        "runner": "node",
+        "description": "Read-only logic for 'tAXType' in cabeceraDeEmisor should be valid JS"
+      },
+      {
+        "id": "t-rule-declared-AddNIFToVFactuConfig-AD-Org-ID",
+        "category": "rule-declared",
+        "rule": "AddNIFToVFactuConfig_AD_Org_ID",
+        "runner": "node",
+        "description": "Rule 'AddNIFToVFactuConfig_AD_Org_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Corregir-Factura",
+        "category": "rule-declared",
+        "rule": "Corregir Factura",
+        "runner": "node",
+        "description": "Rule 'Corregir Factura' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-etvfac-verifactu-config-TAX-Type-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "etvfac_verifactu_config-TAX_Type-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'etvfac_verifactu_config-TAX_Type-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Marcar-Como-Listo",
+        "category": "rule-declared",
+        "rule": "Marcar Como Listo",
+        "runner": "node",
+        "description": "Rule 'Marcar Como Listo' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-monitor-verifactu-Facturas-Inv-lidas-Correct-Invoice-displayLogic",
+        "category": "rule-declared",
+        "rule": "monitor-verifactu-Facturas Inválidas-Correct_Invoice-displayLogic",
+        "runner": "node",
+        "description": "Rule 'monitor-verifactu-Facturas Inválidas-Correct_Invoice-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Refrescar-monitor-Verifactu",
+        "category": "rule-declared",
+        "rule": "Refrescar monitor Verifactu",
+        "runner": "node",
+        "description": "Rule 'Refrescar monitor Verifactu' (process) should be declared"
+      },
+      {
+        "id": "t-selector-endpoint-facturasAceptadas-invoice",
+        "category": "selector-endpoint",
+        "entity": "facturasAceptadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Selector endpoint for 'invoice' in facturasAceptadas should exist"
+      },
+      {
+        "id": "t-selector-endpoint-facturasInv-lidas-invoice",
+        "category": "selector-endpoint",
+        "entity": "facturasInválidas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Selector endpoint for 'invoice' in facturasInválidas should exist"
+      },
+      {
+        "id": "t-selector-endpoint-facturasParcialmenteAceptadas-invoice",
+        "category": "selector-endpoint",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Selector endpoint for 'invoice' in facturasParcialmenteAceptadas should exist"
+      },
+      {
+        "id": "t-selector-endpoint-facturasRechazadas-invoice",
+        "category": "selector-endpoint",
+        "entity": "facturasRechazadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Selector endpoint for 'invoice' in facturasRechazadas should exist"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-client",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-createdBy",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-creationDate",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-defaultQR",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "defaultQR",
+        "runner": "node",
+        "description": "System field 'defaultQR' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-incidentReport",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "incidentReport",
+        "runner": "node",
+        "description": "System field 'incidentReport' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-inVfactuSystem",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "inVfactuSystem",
+        "runner": "node",
+        "description": "System field 'inVfactuSystem' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-isDevEnv",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "isDevEnv",
+        "runner": "node",
+        "description": "System field 'isDevEnv' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-isReady",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "isReady",
+        "runner": "node",
+        "description": "System field 'isReady' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-organization",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-systemStartat",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "systemStartat",
+        "runner": "node",
+        "description": "System field 'systemStartat' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-systemStopat",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "systemStopat",
+        "runner": "node",
+        "description": "System field 'systemStopat' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-updated",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-updatedBy",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-verifactuConfig",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "verifactuConfig",
+        "runner": "node",
+        "description": "System field 'verifactuConfig' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-facturasAceptadas-client",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasAceptadas-correctInvoice",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "System field 'correctInvoice' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasAceptadas-createdBy",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasAceptadas-creationDate",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasAceptadas-hash",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "hash",
+        "runner": "node",
+        "description": "System field 'hash' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasAceptadas-invoiceSentStatusID",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "invoiceSentStatusID",
+        "runner": "node",
+        "description": "System field 'invoiceSentStatusID' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasAceptadas-organization",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasAceptadas-updated",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasAceptadas-updatedBy",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasInv-lidas-client",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-system-field-facturasInv-lidas-codeError",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "codeError",
+        "runner": "node",
+        "description": "System field 'codeError' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-system-field-facturasInv-lidas-createdBy",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-system-field-facturasInv-lidas-creationDate",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-system-field-facturasInv-lidas-cSV",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "cSV",
+        "runner": "node",
+        "description": "System field 'cSV' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-system-field-facturasInv-lidas-hash",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "hash",
+        "runner": "node",
+        "description": "System field 'hash' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-system-field-facturasInv-lidas-invoiceSentStatusID",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "invoiceSentStatusID",
+        "runner": "node",
+        "description": "System field 'invoiceSentStatusID' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-system-field-facturasInv-lidas-organization",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-system-field-facturasInv-lidas-sentToVerifactu",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "sentToVerifactu",
+        "runner": "node",
+        "description": "System field 'sentToVerifactu' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-system-field-facturasInv-lidas-updated",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-system-field-facturasInv-lidas-updatedBy",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-system-field-facturasParcialmenteAceptadas-client",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasParcialmenteAceptadas-correctInvoice",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "System field 'correctInvoice' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasParcialmenteAceptadas-createdBy",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasParcialmenteAceptadas-creationDate",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasParcialmenteAceptadas-cSV",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "cSV",
+        "runner": "node",
+        "description": "System field 'cSV' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasParcialmenteAceptadas-hash",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "hash",
+        "runner": "node",
+        "description": "System field 'hash' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasParcialmenteAceptadas-invoiceSentStatusID",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "invoiceSentStatusID",
+        "runner": "node",
+        "description": "System field 'invoiceSentStatusID' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasParcialmenteAceptadas-organization",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasParcialmenteAceptadas-updated",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasParcialmenteAceptadas-updatedBy",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-system-field-facturasRechazadas-client",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-system-field-facturasRechazadas-correctInvoice",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "System field 'correctInvoice' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-system-field-facturasRechazadas-createdBy",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-system-field-facturasRechazadas-creationDate",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-system-field-facturasRechazadas-hash",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "hash",
+        "runner": "node",
+        "description": "System field 'hash' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-system-field-facturasRechazadas-invoiceSentStatusID",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "invoiceSentStatusID",
+        "runner": "node",
+        "description": "System field 'invoiceSentStatusID' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-system-field-facturasRechazadas-organization",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-system-field-facturasRechazadas-updated",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-system-field-facturasRechazadas-updatedBy",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-visibility-cabeceraDeEmisor",
+        "category": "visibility",
+        "entity": "cabeceraDeEmisor",
+        "runner": "node",
+        "description": "Entity 'cabeceraDeEmisor' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-facturasAceptadas",
+        "category": "visibility",
+        "entity": "facturasAceptadas",
+        "runner": "node",
+        "description": "Entity 'facturasAceptadas' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-facturasInv-lidas",
+        "category": "visibility",
+        "entity": "facturasInválidas",
+        "runner": "node",
+        "description": "Entity 'facturasInválidas' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-facturasParcialmenteAceptadas",
+        "category": "visibility",
+        "entity": "facturasParcialmenteAceptadas",
+        "runner": "node",
+        "description": "Entity 'facturasParcialmenteAceptadas' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-facturasRechazadas",
+        "category": "visibility",
+        "entity": "facturasRechazadas",
+        "runner": "node",
+        "description": "Entity 'facturasRechazadas' should only expose visible fields in frontend"
       }
     ],
     "summary": {
-      "total": 169,
+      "total": 170,
       "byCategory": {
+        "action-endpoint": 6,
+        "crud-flags": 5,
+        "default-value-type": 3,
+        "displaylogic-evaluable": 1,
+        "displaylogic-valid": 1,
         "field-presence": 42,
         "field-type": 42,
-        "visibility": 5,
-        "readonlylogic-valid": 1,
         "readonlylogic-evaluable": 1,
-        "default-value-type": 3,
-        "displaylogic-valid": 1,
-        "displaylogic-evaluable": 1,
-        "system-field": 53,
-        "rule-declared": 5,
-        "crud-flags": 5,
+        "readonlylogic-valid": 1,
+        "rule-declared": 6,
         "selector-endpoint": 4,
-        "action-endpoint": 6
+        "system-field": 53,
+        "visibility": 5
       },
       "byRunner": {
-        "node": 169,
+        "node": 170,
         "junit": 0
       }
     }

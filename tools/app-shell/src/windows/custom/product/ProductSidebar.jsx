@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Boxes, Lock, PackageCheck } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUI } from '@/i18n';
 import { formatDashboardAxisTick } from '@/lib/dashboardNumberFormat';
@@ -13,16 +13,15 @@ const COLORS = {
   red:   { bg: 'bg-red-50',   icon: 'text-red-400'   },
 };
 
-function StatCard({ icon: Icon, label, value, subtitle, color = 'blue' }) {
+function StatCard({ label, value, subtitle, color = 'blue' }) {
   const c = COLORS[color] ?? COLORS.blue;
   return (
-    <div className={`rounded-2xl p-4 ${c.bg}`}>
-      <Icon size={18} className={`${c.icon} mb-2`} />
+    <div className={`rounded-2xl p-3 ${c.bg}`}>
       <div className="text-sm font-medium text-gray-600 mb-0.5">{label}</div>
-      <div className="text-3xl font-bold leading-none tracking-tight text-gray-900">
+      <div className="text-xl font-bold leading-none tracking-tight text-gray-900">
         {value === null ? <span className="text-gray-300">—</span> : value}
       </div>
-      {subtitle && <div className="text-sm mt-1.5 text-gray-500">{subtitle}</div>}
+      {subtitle && <div className="text-xs mt-1 text-gray-500">{subtitle}</div>}
     </div>
   );
 }
@@ -54,7 +53,7 @@ function buildChartData(transactions, currentStock, maxMonths = 12) {
   let months;
   if (maxMonths >= 999) {
     // "All time": use actual transaction date range, extended to current month
-    const allKeys = Object.keys(byMonth).sort();
+    const allKeys = Object.keys(byMonth).sort((a, b) => a.localeCompare(b));
     if (allKeys.length === 0) return null;
     months = allKeys;
     const now = new Date();
@@ -84,19 +83,31 @@ function buildChartData(transactions, currentStock, maxMonths = 12) {
 
 const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-function ChartSVG({ months, values, W, H, PAD_X, PAD_Y, gradId, fontSize = 10 }) {
+function smoothPath(xs, ys) {
+  if (xs.length < 2) return xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x},${ys[i]}`).join(' ');
+  const d = [`M${xs[0]},${ys[0]}`];
+  for (let i = 1; i < xs.length; i++) {
+    const cpX = (xs[i - 1] + xs[i]) / 2;
+    d.push(`C${cpX},${ys[i - 1]} ${cpX},${ys[i]} ${xs[i]},${ys[i]}`);
+  }
+  return d.join(' ');
+}
+
+function ChartSVG({ months, values, W, H, PAD_X, PAD_Y, gradId, fontSize = 10, PAD_R = PAD_X, preserveAspectRatio = 'xMidYMid meet' }) {
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
   const maxVal = Math.max(...values, 1);
   const minVal = Math.min(...values, 0);
   const range = maxVal - minVal || 1;
 
-  const xStep = (W - PAD_X * 2) / Math.max(values.length - 1, 1);
+  const xStep = (W - PAD_X - PAD_R) / Math.max(values.length - 1, 1);
   const toY = v => PAD_Y + (H - PAD_Y * 2) * (1 - (v - minVal) / range);
   const toX = i => PAD_X + i * xStep;
 
-  const pts = values.map((v, i) => `${toX(i)},${toY(v)}`).join(' ');
-  const areaPts = `${toX(0)},${H} ${pts} ${toX(values.length - 1)},${H}`;
+  const xs = values.map((_, i) => toX(i));
+  const ys = values.map(v => toY(v));
+  const linePath = smoothPath(xs, ys);
+  const areaPath = `${linePath} L${xs[xs.length - 1]},${H} L${xs[0]},${H} Z`;
 
   const yLabels = [
     { v: maxVal, label: formatDashboardAxisTick(maxVal) },
@@ -158,7 +169,7 @@ function ChartSVG({ months, values, W, H, PAD_X, PAD_Y, gradId, fontSize = 10 })
   const hVal = hoveredIdx !== null ? values[hoveredIdx].toLocaleString() : null;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H + 20}`} className="w-full h-full cursor-crosshair"
+    <svg viewBox={`0 0 ${W} ${H + 20}`} preserveAspectRatio={preserveAspectRatio} className="w-full h-full cursor-crosshair"
       onMouseMove={handleMouseMove} onMouseLeave={() => setHoveredIdx(null)}>
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
@@ -166,14 +177,14 @@ function ChartSVG({ months, values, W, H, PAD_X, PAD_Y, gradId, fontSize = 10 })
           <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.02" />
         </linearGradient>
       </defs>
-      <line x1={PAD_X} y1={PAD_Y} x2={W - PAD_X} y2={PAD_Y} stroke="#f3f4f6" strokeWidth="1" />
-      <line x1={PAD_X} y1={H - PAD_Y} x2={W - PAD_X} y2={H - PAD_Y} stroke="#f3f4f6" strokeWidth="1" />
-      {yLabels.map((yl, i) => (
-        <text key={i} x={PAD_X - 5} y={toY(yl.v) + 4} textAnchor="end" fontSize={fontSize} fill="#6b7280">{yl.label}</text>
+      {yLabels.map((yl) => (
+        <line key={yl.v} x1={PAD_X} y1={toY(yl.v)} x2={W - PAD_R} y2={toY(yl.v)} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="4,3" />
       ))}
-      <line x1={PAD_X} y1={toY(0)} x2={W - PAD_X} y2={toY(0)} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="4,3" />
-      <polygon points={areaPts} fill={`url(#${gradId})`} />
-      <polyline points={pts} fill="none" stroke="#3b82f6" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+      {yLabels.map((yl) => (
+        <text key={yl.label} x={PAD_X - 5} y={toY(yl.v) + 4} textAnchor="end" fontSize={fontSize} fill="#9ca3af">{yl.label}</text>
+      ))}
+      <path d={areaPath} fill={`url(#${gradId})`} />
+      <path d={linePath} fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       {hoveredIdx !== null && (
         <>
           <line x1={hx} y1={PAD_Y} x2={hx} y2={H} stroke="#94a3b8" strokeWidth="1" strokeDasharray="3,2" />
@@ -182,9 +193,6 @@ function ChartSVG({ months, values, W, H, PAD_X, PAD_Y, gradId, fontSize = 10 })
           <text x={tooltipX + TW / 2} y={tooltipY + fontSize + 2} textAnchor="middle" fontSize={fontSize} fill="#94a3b8">{hMonth}</text>
           <text x={tooltipX + TW / 2} y={tooltipY + TH - 4} textAnchor="middle" fontSize={fontSize + 1} fontWeight="700" fill="white">{hVal}</text>
         </>
-      )}
-      {hoveredIdx === null && (
-        <circle cx={toX(values.length - 1)} cy={toY(values[values.length - 1])} r="4" fill="#3b82f6" />
       )}
       {xLabels.map((l, i) => l.text && (
         <text key={i} x={l.x} y={H + 14} textAnchor="middle"
@@ -253,19 +261,19 @@ function StockChart({
   return (
     <>
       {/* Mini chart shown in Summary tab */}
-      <div className="rounded-2xl border border-gray-100 bg-white p-4">
+      <div className="px-4 pt-1">
         <div className="flex items-center justify-between mb-1">
           <div className="text-sm font-semibold text-gray-800">{ui('stockMovement')}</div>
           <button
             onClick={() => setInternalOpen(true)}
-            className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors border border-gray-200 rounded-lg px-3 py-1"
+            className="inline-flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-700 underline underline-offset-2 transition-colors"
           >
-            {ui('expand')}
+            {ui('expand')} <ExternalLink size={13} />
           </button>
         </div>
         <div className="text-xs text-gray-400 mb-2">{ui('productLast12Months')}</div>
-        <div style={{ height: 120 }}>
-          <ChartSVG {...chart} W={340} H={100} PAD_X={36} PAD_Y={8} gradId="sbGrad" fontSize={10} />
+        <div style={{ height: 170 }}>
+          <ChartSVG {...chart} W={340} H={100} PAD_X={36} PAD_R={8} PAD_Y={12} gradId="sbGrad" fontSize={10} preserveAspectRatio="none" />
         </div>
       </div>
 
@@ -276,10 +284,10 @@ function StockChart({
             <DialogTitle>
               <div className="flex items-center justify-between gap-4 pr-8">
                 <span>{ui('stockMovement')}</span>
-                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
                   {PERIOD_OPTIONS.map(opt => (
                     <button key={opt.label} onClick={() => setPeriod(opt.label)}
-                      className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${period === opt.label ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${period === opt.label ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                       {opt.label}
                     </button>
                   ))}
@@ -325,6 +333,26 @@ function StockChart({
 }
 
 
+function getAvailablePct(onHand, available) {
+  return onHand > 0 && available !== null ? Math.round((available / onHand) * 100) : null;
+}
+
+function getAvailabilityColor(onHand, available) {
+  const onHandColor = onHand === 0 ? 'red' : 'blue';
+  let availableColor;
+  if (available === null) {
+    availableColor = 'blue';
+  } else {
+    if (available <= 0) {
+      availableColor = 'red';
+    } else {
+      availableColor = onHand > 0 && available <= onHand * 0.1 ? 'amber'
+          : 'green';
+    }
+  }
+  return {onHandColor, availableColor};
+}
+
 export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
   const ui = useUI();
   const [stockRows, setStockRows] = useState(null);
@@ -366,19 +394,16 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
   const binCount = locationRows.length;
 
   const available = (onHand !== null && reserved !== null) ? onHand - reserved : null;
+
   const fmt = v => (v === null ? null : v.toLocaleString());
 
-  const onHandColor = onHand === 0 ? 'red' : 'blue';
-  const availableColor = available === null ? 'blue'
-    : available <= 0 ? 'red'
-    : onHand > 0 && available <= onHand * 0.1 ? 'amber'
-    : 'green';
+  const {onHandColor, availableColor} = getAvailabilityColor(onHand, available);
 
   let onHandSubtitle = null;
   if (binCount === 1) onHandSubtitle = locationRows[0]?.binName ?? null;
   else if (binCount > 1) onHandSubtitle = `${binCount} ${ui('locations')}`;
 
-  const availablePct = onHand > 0 && available !== null ? Math.round((available / onHand) * 100) : null;
+  const availablePct = getAvailablePct(onHand, available);
   const hasChart = transactions !== null && transactions.length > 0;
   const sortedRows = [...locationRows].sort((a, b) => b.quantityOnHand - a.quantityOnHand);
 
@@ -395,8 +420,8 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
   return (
     <div className="flex flex-col gap-3">
 
-      {/* ── Inventory overview pill ── */}
-      <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm">
+      {/* ── Inventory overview ── */}
+      <div>
 
         {/* Header inside the pill */}
         <div className="flex items-center justify-between px-4 pt-4 pb-3">
@@ -415,43 +440,54 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
         {/* Summary tab content */}
         {activeTab === 'summary' && (
           <div className="px-4 pb-4 flex flex-col gap-3">
-            <StatCard icon={Boxes} label={ui('onHand')} value={fmt(onHand)} subtitle={onHandSubtitle} color={onHandColor} />
-            <StatCard icon={PackageCheck} label={ui('available')} value={fmt(available)} subtitle={availablePct !== null ? ui('productPctFree', { pct: availablePct }) : null} color={availableColor} />
-            <StatCard icon={Lock} label={ui('reserved')} value={fmt(reserved)} subtitle={reserved !== null && reserved > 0 ? ui('unitsHeld') : null} color="amber" />
+            <StatCard label={ui('onHand')} value={fmt(onHand)} subtitle={onHandSubtitle} color={onHandColor} />
+            {(reserved === null || reserved > 0) && (
+              <StatCard label={ui('available')} value={fmt(available)} subtitle={availablePct !== null ? ui('productPctFree', { pct: availablePct }) : null} color={availableColor} />
+            )}
+            {(reserved === null || reserved > 0) && (
+              <StatCard label={ui('reserved')} value={fmt(reserved)} subtitle={reserved !== null && reserved > 0 ? ui('unitsHeld') : null} color="amber" />
+            )}
           </div>
         )}
 
         {/* Warehouses tab content */}
         {activeTab === 'warehouses' && (
-          <div className="px-4 pb-4 flex flex-col gap-3">
-            {/* Total on hand */}
-            <div className="rounded-xl bg-blue-50/60 border-l-4 border-l-blue-400 px-4 py-3">
-              <div className="text-xs font-semibold uppercase tracking-widest text-blue-500 mb-1">{ui('productTotalOnHand')}</div>
-              <div className="text-3xl font-bold text-gray-900 leading-none tracking-tight">{fmt(onHand)}</div>
-              {binCount > 0 && (
-                <div className="text-sm text-gray-500 mt-1.5">
-                  {binCount === 1 ? ui('productInWarehouse', { name: locationRows[0]?.binName }) : ui('productDistributedIn', { count: binCount })}
-                </div>
-              )}
+          <div className="px-4 pb-4 flex flex-col gap-2">
+            {/* Column headers — shown once, aligned with the 3-col value grid inside each card */}
+            <div className="grid grid-cols-3 gap-1.5 px-2.5 pt-1 pb-0.5">
+              <div className="text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400">{ui('onHand')}</div>
+              <div className="text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400">{ui('available')}</div>
+              <div className="text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400">{ui('reserved')}</div>
             </div>
 
-            {/* Per-warehouse cards */}
+            {/* Per-warehouse rows */}
             {sortedRows.map((b, i) => {
               const wAvailable = b.quantityOnHand - b.reservedQty;
               const wAvailableColor = wAvailable <= 0 ? 'red'
                 : b.quantityOnHand > 0 && wAvailable <= b.quantityOnHand * 0.1 ? 'amber'
                 : 'green';
+              const c = {
+                onHand: COLORS[b.quantityOnHand === 0 ? 'red' : 'blue'].bg,
+                available: COLORS[wAvailableColor].bg,
+                reserved: COLORS.amber.bg,
+              };
               return (
-                <div key={b.binName} className="rounded-xl border border-gray-100 p-3">
-                  <div className="flex items-center gap-2 mb-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                <div key={b.binName} className="rounded-xl border border-gray-100 p-2.5">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0"
                       style={{ backgroundColor: DOT_COLORS[i % DOT_COLORS.length] }} />
-                    <span className="text-sm font-semibold text-gray-700">{b.binName}</span>
+                    <span className="text-xs font-semibold text-gray-700 truncate">{b.binName}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-1.5">
-                    <MiniStat label={ui('onHand')}    value={fmt(b.quantityOnHand)} color={b.quantityOnHand === 0 ? 'red' : 'blue'} />
-                    <MiniStat label={ui('available')} value={fmt(wAvailable)}       color={wAvailableColor} />
-                    <MiniStat label={ui('reserved')}  value={fmt(b.reservedQty)}    color="amber" />
+                    <div className={`rounded-md px-1.5 py-1.5 ${c.onHand} text-center`}>
+                      <div className="text-sm font-bold leading-none text-gray-900">{fmt(b.quantityOnHand)}</div>
+                    </div>
+                    <div className={`rounded-md px-1.5 py-1.5 ${c.available} text-center`}>
+                      <div className="text-sm font-bold leading-none text-gray-900">{fmt(wAvailable)}</div>
+                    </div>
+                    <div className={`rounded-md px-1.5 py-1.5 ${c.reserved} text-center`}>
+                      <div className="text-sm font-bold leading-none text-gray-900">{fmt(b.reservedQty)}</div>
+                    </div>
                   </div>
                 </div>
               );
@@ -460,7 +496,14 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
         )}
       </div>
 
-      {/* ── Stock movement pill (separate) ── */}
+      {/* ── Divider ── */}
+      {hasChart && (
+        <div className="px-4">
+          <div className="border-t border-[#E8EAEF]" />
+        </div>
+      )}
+
+      {/* ── Stock movement ── */}
       {hasChart && <StockChart {...stockChartProps} />}
 
       {/* Hidden StockChart for warehouse tab modal trigger */}

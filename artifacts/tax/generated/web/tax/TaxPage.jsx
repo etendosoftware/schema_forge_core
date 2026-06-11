@@ -8,25 +8,6 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Settings / Tax';
 
-const labelOverrides = {
-  "es_ES": {
-    "Name": "Nombre",
-    "Rate": "Índice",
-    "SOPOType": "Tipo venta/compra",
-    "ValidFrom": "Válido desde",
-    "IsActive": "Activo",
-    "Description": "Descripción"
-  },
-  "en_US": {
-    "Name": "Name",
-    "Rate": "Rate",
-    "SOPOType": "Sales/Purchase Type",
-    "ValidFrom": "Valid From",
-    "IsActive": "Active",
-    "Description": "Description"
-  }
-};
-
 
 // @sf-generated-start summary:tax
 const summary = [
@@ -51,7 +32,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:tax
 
 // @sf-generated-start requiredHeaderFields:tax
-const requiredHeaderFields = ['name', 'validFromDate', 'rate', 'salesPurchaseType', 'docTaxAmount', 'baseAmount'];
+const requiredHeaderFields = ['name', 'rate', 'docTaxAmount', 'baseAmount', 'applicableTo', 'validFrom'];
 // @sf-generated-end requiredHeaderFields:tax
 
 
@@ -112,6 +93,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:TaxPage
 export default function TaxPage({ windowName, recordId, ...props }) {
   if (recordId) {

@@ -2,7 +2,7 @@ import { createReadStream } from 'node:fs';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { createDbPool, closePool } from './db.js';
+import { createDbPool, closePool, setCacheMode, flushCacheWrites } from './db.js';
 import { toCamelCase, toPropertyName, computeChecksum, generateVersion } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -342,7 +342,7 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
       const classification = classifyField(row, systemColumns);
       const schemaType = refMap[String(row.ad_reference_id)] ?? 'string';
       const isPk = row.columnname === tab.tableName + '_ID';
-      const isCoreModule = row.table_module_id === '0' || (row.column_module_id != null && row.column_module_id !== '0');
+      const isCoreModule = isRowCoreModule(row);
       const apiKey = toPropertyName(row.obdal_name, { isPk, isCoreModule });
       const fieldDef = {
         name: apiKey,
@@ -363,15 +363,10 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
       }
 
       // Add constraints if present
-      if (row.fieldlength) fieldDef.maxLength = row.fieldlength;
-      if (row.valuemin != null) fieldDef.valueMin = row.valuemin;
-      if (row.valuemax != null) fieldDef.valueMax = row.valuemax;
+      addFieldConstraints(row, fieldDef);
 
       // Add display/readOnly logic if present (convention #6: omit key if null)
-      if (row.displaylogic) fieldDef.displayLogic = row.displaylogic;
-      if (row.displaylogic_server) fieldDef.displayLogicServer = row.displaylogic_server;
-      if (row.displaylogicgrid) fieldDef.displayLogicGrid = row.displaylogicgrid;
-      if (row.readonlylogic) fieldDef.readOnlyLogic = row.readonlylogic;
+      applyDisplayAndReadOnlyLogic(row, fieldDef);
 
       // Add callout if present
       if (row.callout_class) fieldDef.callout = row.callout_class;
@@ -380,14 +375,7 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
       if (row.onchangefunction) fieldDef.onChangeFunction = row.onchangefunction;
 
       // UI hints from AD metadata
-      if (row.defaultvalue) fieldDef.defaultValue = row.defaultvalue;
-      if (row.isidentifier === 'Y') fieldDef.isIdentifier = true;
-      if (row.isselectioncolumn === 'Y') fieldDef.isSelectionColumn = true;
-      if (row.isfilterable === 'Y') fieldDef.isFilterable = true;
-      if (row.precision != null && row.precision > 0) fieldDef.precision = Number(row.precision);
-      if (row.istranslated === 'Y') fieldDef.isTranslated = true;
-      if (row.help_text) fieldDef.help = row.help_text;
-      if (row.field_group_name) fieldDef.fieldGroup = row.field_group_name;
+      applyFieldMetadata(row, fieldDef);
 
       // Add validation rule with parsed params if present
       if (row.val_rule_code) {
@@ -405,13 +393,7 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
       // Add processId for button-type fields (AD_Reference_ID = 28)
       // Priority: OBUIAPP (modern) > Classic > Hardcoded (no ID)
       if (schemaType === 'button') {
-        if (row.em_obuiapp_process_id) {
-          fieldDef.processId = row.em_obuiapp_process_id;
-          fieldDef.processType = 'obuiapp';
-        } else if (row.ad_process_id) {
-          fieldDef.processId = row.ad_process_id;
-          fieldDef.processType = 'classic';
-        }
+        assignProcessIdAndType(row, fieldDef);
         // No processId + no processType = hardcoded button (resolved by convention)
       }
 
@@ -461,12 +443,7 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
     }
 
     // Add tab clauses if present (convention #6: omit key if null)
-    if (tab.whereClause) entity.whereClause = tab.whereClause;
-    if (tab.orderByClause) entity.orderByClause = tab.orderByClause;
-    if (tab.filterClause) entity.filterClause = tab.filterClause;
-    if (tab.hqlWhereClause) entity.hqlWhereClause = tab.hqlWhereClause;
-    if (tab.hqlOrderByClause) entity.hqlOrderByClause = tab.hqlOrderByClause;
-    if (tab.hqlFilterClause) entity.hqlFilterClause = tab.hqlFilterClause;
+    addTabClauses(tab, entity);
 
     entities.push(entity);
   }
@@ -634,6 +611,53 @@ WHERE w.AD_Window_ID = $1
 ORDER BY t.SeqNo, t.Name, t.AD_Tab_ID, c.ColumnName, c.AD_Column_ID
 `;
 
+function addTabClauses(tab, entity) {
+  if (tab.whereClause) entity.whereClause = tab.whereClause;
+  if (tab.orderByClause) entity.orderByClause = tab.orderByClause;
+  if (tab.filterClause) entity.filterClause = tab.filterClause;
+  if (tab.hqlWhereClause) entity.hqlWhereClause = tab.hqlWhereClause;
+  if (tab.hqlOrderByClause) entity.hqlOrderByClause = tab.hqlOrderByClause;
+  if (tab.hqlFilterClause) entity.hqlFilterClause = tab.hqlFilterClause;
+}
+
+function assignProcessIdAndType(row, fieldDef) {
+  if (row.em_obuiapp_process_id) {
+    fieldDef.processId = row.em_obuiapp_process_id;
+    fieldDef.processType = 'obuiapp';
+  } else if (row.ad_process_id) {
+    fieldDef.processId = row.ad_process_id;
+    fieldDef.processType = 'classic';
+  }
+}
+
+function addFieldConstraints(row, fieldDef) {
+  if (row.fieldlength) fieldDef.maxLength = row.fieldlength;
+  if (row.valuemin != null) fieldDef.valueMin = row.valuemin;
+  if (row.valuemax != null) fieldDef.valueMax = row.valuemax;
+}
+
+function isRowCoreModule(row) {
+  return row.table_module_id === '0' || (row.column_module_id != null && row.column_module_id !== '0');
+}
+
+function applyFieldMetadata(row, fieldDef) {
+  if (row.defaultvalue) fieldDef.defaultValue = row.defaultvalue;
+  if (row.isidentifier === 'Y') fieldDef.isIdentifier = true;
+  if (row.isselectioncolumn === 'Y') fieldDef.isSelectionColumn = true;
+  if (row.isfilterable === 'Y') fieldDef.isFilterable = true;
+  if (row.precision != null && row.precision > 0) fieldDef.precision = Number(row.precision);
+  if (row.istranslated === 'Y') fieldDef.isTranslated = true;
+  if (row.help_text) fieldDef.help = row.help_text;
+  if (row.field_group_name) fieldDef.fieldGroup = row.field_group_name;
+}
+
+function applyDisplayAndReadOnlyLogic(row, fieldDef) {
+  if (row.displaylogic) fieldDef.displayLogic = row.displaylogic;
+  if (row.displaylogic_server) fieldDef.displayLogicServer = row.displaylogic_server;
+  if (row.displaylogicgrid) fieldDef.displayLogicGrid = row.displaylogicgrid;
+  if (row.readonlylogic) fieldDef.readOnlyLogic = row.readonlylogic;
+}
+
 /**
  * Main entry point: connects to DB, queries fields for a window,
  * builds the schema, and writes schema-raw.json.
@@ -706,16 +730,34 @@ export async function main(windowId, windowName) {
 
 // CLI entry point
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const windowId = process.argv[2];
-  const windowName = process.argv[3];
+  const flags = process.argv.slice(2).filter((a) => a.startsWith('--'));
+  const positional = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+  const writeCache = flags.includes('--write-cache');
+  const fromCache = flags.includes('--from-cache');
+  if (writeCache && fromCache) {
+    console.error('Error: --write-cache and --from-cache are mutually exclusive');
+    process.exit(1);
+  }
+  if (writeCache) setCacheMode({ mode: 'write' });
+  else if (fromCache) setCacheMode({ mode: 'read' });
+
+  const windowId = positional[0];
+  const windowName = positional[1];
 
   if (!windowId) {
-    console.error('Usage: node extract-fields.js <windowId> [windowName]');
+    console.error('Usage: node extract-fields.js [--write-cache|--from-cache] <windowId> [windowName]');
     process.exit(1);
   }
 
-  main(windowId, windowName).catch((err) => {
-    console.error('Extraction failed:', err.message);
-    process.exit(1);
-  });
+  main(windowId, windowName)
+    .then(() => {
+      if (writeCache) {
+        const { written, path } = flushCacheWrites();
+        console.log(`Cache: wrote ${written} entries to ${path}`);
+      }
+    })
+    .catch((err) => {
+      console.error('Extraction failed:', err.message);
+      process.exit(1);
+    });
 }

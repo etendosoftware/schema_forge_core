@@ -16,19 +16,6 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Order';
 
-const labelOverrides = {
-  "es_ES": {
-    "C_BPartner_ID": "Contacto",
-    "DeliveryStatus": "Estado de entrega",
-    "InvoiceStatus": "Estado de facturación"
-  },
-  "en_US": {
-    "C_BPartner_ID": "Contact",
-    "DeliveryStatus": "Delivery Status",
-    "InvoiceStatus": "Invoicing Status"
-  }
-};
-
 
 // @sf-generated-start summary:header
 const summary = [
@@ -68,9 +55,9 @@ const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice","discount"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
-    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'Net List Price' },
-    { key: 'discount', column: 'Discount', type: 'number', label: 'Discount', defaultValue: 0 },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1, min: 0 },
+    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'Net List Price', min: 0 },
+    { key: 'discount', column: 'Discount', type: 'number', label: 'Discount', defaultValue: 0, min: 0 },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineGrossAmount","grossUnitPrice","lineNetAmount"] },
   ],
   derived: [
@@ -131,7 +118,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/sales-order/header/selectors/partnerAddress"
+      "url": "/sws/neo/sales-order/header/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -139,7 +135,15 @@ export const api = {
       "column": "M_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-order/header/selectors/priceList"
+      "url": "/sws/neo/sales-order/header/selectors/priceList",
+      "context": {
+        "required": [
+          {
+            "param": "isSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -147,7 +151,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-order/header/selectors/paymentMethod"
+      "url": "/sws/neo/sales-order/header/selectors/paymentMethod",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -187,7 +199,21 @@ export const api = {
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-order/lines/selectors/tax"
+      "url": "/sws/neo/sales-order/lines/selectors/tax",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "DateInvoiced",
+            "source": "parentField",
+            "field": "orderDate",
+            "format": "DD-MM-YYYY"
+          }
+        ]
+      }
     }
   ],
   "actions": [
@@ -388,6 +414,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
   if (recordId) {

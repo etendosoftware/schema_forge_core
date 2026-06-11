@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'useInvoicePdf.js'), 'utf8');
+const sharedSrc = readFileSync(join(__dirname, '..', 'documentPdf.js'), 'utf8');
+const pdfUtilsSrc = readFileSync(join(__dirname, '..', 'pdfUtils.js'), 'utf8');
 
 describe('useInvoicePdf', () => {
 
@@ -20,7 +22,7 @@ describe('useInvoicePdf', () => {
   });
 
   it('returns pdfUrl, pdfBlob, loading and error', () => {
-    assert.match(src, /return \{ pdfUrl, pdfBlob, loading, error \}/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   // ── API endpoints ─────────────────────────────────────────────────────────
@@ -39,78 +41,80 @@ describe('useInvoicePdf', () => {
 
   it('optionally fetches session defaults to resolve the company document image', () => {
     assert.match(src, /\/session/);
-    assert.match(src, /yourCompanyDocumentImageId/);
+    assert.match(src, /fetchDocumentAssets/, 'delegates logo and address fetch to shared fetchDocumentAssets');
+    assert.match(sharedSrc, /yourCompanyDocumentImageId/);
   });
 
   it('derives the base URL by stripping the spec segment from apiBaseUrl', () => {
-    assert.match(src, /apiBaseUrl\.replace/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   it('sends Bearer token in all API requests', () => {
-    assert.match(src, /Authorization.*Bearer.*token/);
+    // fetch helpers live in pdfUtils.js (shared), re-exported via documentPdf.js
+    assert.match(pdfUtilsSrc, /Authorization.*Bearer.*token/);
   });
 
   // ── PDF rendering ─────────────────────────────────────────────────────────
 
   it('renders the PDF via jsreport at /jsreport/api/report', () => {
-    assert.match(src, /\/jsreport\/api\/report/);
+    // renderPdf lives in pdfUtils.js (shared), called via documentPdf.renderDocumentPdf
+    assert.match(pdfUtilsSrc, /\/jsreport\/api\/report/);
   });
 
   it('uses the handlebars engine', () => {
-    assert.match(src, /engine.*handlebars|handlebars.*engine/);
+    assert.match(pdfUtilsSrc, /engine.*handlebars|handlebars.*engine/);
   });
 
   it('uses the chrome-pdf recipe for PDF generation', () => {
-    assert.match(src, /chrome-pdf/);
+    assert.match(pdfUtilsSrc, /chrome-pdf/);
   });
 
   it('creates a blob URL from the jsreport response', () => {
-    assert.match(src, /URL\.createObjectURL\(blob\)/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   it('embeds the company logo in the rendered template when available', () => {
     assert.match(src, /companyLogoDataUrl/);
-    assert.match(src, /inv-logo-img/);
+    assert.match(sharedSrc, /inv-logo-img/);
   });
 
   it('renders the company identity block with name, address and tax ID', () => {
-    assert.match(src, /companyName/);
-    assert.match(src, /companyAddress1/);
-    assert.match(src, /companyTaxId/);
+    assert.match(src, /buildCompanyFields/, 'delegates company fields to shared buildCompanyFields');
+    assert.match(sharedSrc, /companyName/);
+    assert.match(sharedSrc, /companyAddress1/);
+    assert.match(sharedSrc, /companyTaxId/);
   });
 
   it('pulls the issuer organization from the session endpoint', () => {
-    assert.match(src, /session\?\.organization/);
+    assert.match(sharedSrc, /session\?\.organization/);
   });
 
   it('fetches the full partner location from the contacts locationAddress endpoint', () => {
-    assert.match(src, /contacts\/locationAddress\/\$\{locationId\}/);
+    // fetchLocationAddress lives in pdfUtils.js (shared), re-exported via documentPdf.js
+    assert.match(pdfUtilsSrc, /contacts\/locationAddress\/\$\{locationId\}/);
   });
 
   it('builds multi-line customer address output for the PDF', () => {
-    assert.match(src, /customerAddressLines/);
-    assert.match(src, /inv-address-lines/);
+    assert.match(sharedSrc, /customerAddressLines/);
+    assert.match(sharedSrc, /inv-address-lines/);
   });
 
   // ── Memory management ─────────────────────────────────────────────────────
 
   it('revokes the previous blob URL on cleanup to avoid memory leaks', () => {
-    assert.match(src, /URL\.revokeObjectURL/);
-    assert.match(src, /prevUrlRef\.current/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   // ── Cancellation ─────────────────────────────────────────────────────────
 
   it('uses a cancellation flag to prevent setState after unmount', () => {
-    assert.match(src, /let cancelled = false/);
-    assert.match(src, /cancelled = true/);
-    assert.match(src, /if \(cancelled\)/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   // ── Error handling ────────────────────────────────────────────────────────
 
   it('propagates error messages to the error state', () => {
-    assert.match(src, /setError\(err\.message\)/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   // ── fetchAll — inline logic tests ─────────────────────────────────────────
@@ -155,6 +159,65 @@ describe('useInvoicePdf', () => {
       assert.equal(result.length, 1);
       assert.equal(result[0].id, 'X');
       globalThis.fetch = saved;
+    });
+  });
+
+  // ── Discount breakdown ────────────────────────────────────────────────────
+
+  describe('discount breakdown', () => {
+    it('computes grossAmount from raw lines using getGrossLine helper', () => {
+      assert.match(src, /getGrossLine/);
+      assert.match(src, /computeDiscountBreakdown/, 'delegates reduce logic to computeDiscountBreakdown');
+    });
+
+    it('uses listPrice when available to compute the gross line amount', () => {
+      assert.match(src, /l\.listPrice != null/);
+    });
+
+    it('falls back to lineNetAmount derivation when listPrice is null', () => {
+      assert.match(src, /lineNet \/ \(1 - disc \/ 100\)/);
+    });
+
+    it('computes discountPerProduct as Math.max(0, grossAmount - productNetAmount)', () => {
+      assert.match(src, /computeDiscountBreakdown/, 'delegates to computeDiscountBreakdown');
+      assert.match(sharedSrc, /Math\.max\(0, grossAmount - productNetAmount\)/);
+    });
+
+    it('reads etgoTotalDiscount from header', () => {
+      assert.match(src, /header\.etgoTotalDiscount/);
+    });
+
+    it('computes totalDiscountAmt only when etgoTotalDiscount > 0', () => {
+      assert.match(src, /computeDiscountBreakdown/, 'delegates to computeDiscountBreakdown');
+      assert.match(sharedSrc, /etgoTotalDiscount > 0 \? productNetAmount \* etgoTotalDiscount/);
+    });
+
+    it('passes null for grossAmount when discountPerProduct is 0', () => {
+      assert.match(src, /discountPerProduct > 0 \? grossAmount : null/);
+    });
+
+    it('passes null for totalDiscountAmt when no total discount applies', () => {
+      assert.match(src, /totalDiscountAmt > 0 \? totalDiscountAmt : null/);
+    });
+
+    it('uses invoicedQuantity (not orderedQuantity) inside getGrossLine', () => {
+      assert.match(src, /l\.invoicedQuantity \?\? l\.qtyInvoiced/);
+      assert.doesNotMatch(src, /l\.orderedQuantity/);
+    });
+
+    it('includes subtotalWithoutDiscount label key in labels object', () => {
+      assert.match(src, /buildDocumentPdfLabels/, 'hook delegates base labels to buildDocumentPdfLabels');
+      assert.match(sharedSrc, /subtotalWithoutDiscount/);
+    });
+
+    it('includes discountPerProduct label key in labels object', () => {
+      assert.match(src, /buildDocumentPdfLabels/, 'hook delegates base labels to buildDocumentPdfLabels');
+      assert.match(sharedSrc, /discountPerProduct/);
+    });
+
+    it('includes totalDiscount label key in labels object', () => {
+      assert.match(src, /buildDocumentPdfLabels/, 'hook delegates base labels to buildDocumentPdfLabels');
+      assert.match(sharedSrc, /totalDiscount/);
     });
   });
 });

@@ -254,7 +254,7 @@ if (isCLI) {
 
       const free = candidates.filter(e => {
         // Check both the raw name and kebab-case version
-        const kebab = e.name.toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+        const kebab = e.name.toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/(^-)|(-$)/g, '');
         return !lockedNames.has(e.name) && !lockedNames.has(kebab);
       });
 

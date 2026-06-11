@@ -1,9 +1,25 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Loader2, ArrowUpRight } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { StatusTag } from '@/components/ui/status-tag';
 import { useCurrency } from '@/hooks/useCurrency';
 import { formatCurrency } from '@/lib/formatCurrency';
+
+function PeriodLink({ label, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group inline-flex items-center gap-1 text-sm font-medium text-[#121217]"
+    >
+      <span className="border-b border-[#828FA3] group-hover:border-[#121217] transition-colors leading-6">
+        {label}
+      </span>
+      <ArrowUpRight className="h-4 w-4 text-[#121217]" />
+    </button>
+  );
+}
 
 function StatusBadge({ isProcessed, ui }) {
   return (
@@ -14,22 +30,14 @@ function StatusBadge({ isProcessed, ui }) {
   );
 }
 
-function getLineStatuses(lines, depreciatedValue) {
-  const statuses = new Map();
-  let cumulative = 0;
-  for (const line of lines) {
-    cumulative += Number(line.amortizationAmount ?? 0);
-    statuses.set(line.id ?? line.sEQNoAsset, cumulative <= depreciatedValue && depreciatedValue > 0);
-  }
-  return statuses;
-}
-
-export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
+export default function AssetsAmortizationPanel({ data, recordId: recordIdProp, token, apiBaseUrl, onCountChange }) {
   const ui = useUI();
+  const navigate = useNavigate();
   const orgCurrency = useCurrency() ?? 'USD';
   const [lines, setLines] = useState([]);
+  const [processedMap, setProcessedMap] = useState(new Map());
   const [loading, setLoading] = useState(false);
-  const recordId = data?.id;
+  const recordId = recordIdProp ?? data?.id;
 
   const fetchLines = useCallback(() => {
     if (!recordId || !apiBaseUrl) return;
@@ -39,8 +47,24 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
       .then(r => r.ok ? r.json() : { data: [] })
       .then(json => {
         const rows = json?.response?.data ?? json?.data ?? json?.rows ?? [];
-        setLines(Array.isArray(rows) ? rows : []);
+        const normalizedRows = Array.isArray(rows) ? rows : [];
+        setLines(normalizedRows);
+        onCountChange?.(normalizedRows.length);
+        const amortBase = apiBaseUrl.replace(/\/[^/]+$/, '/amortization');
+        const ids = [...new Set(normalizedRows.map(l => l.amortization).filter(Boolean))];
+        return Promise.all(
+          ids.map(id =>
+            fetch(`${amortBase}/header/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+              .then(r => r.ok ? r.json() : null)
+              .then(json => {
+                const record = json?.response?.data?.[0] ?? json?.data?.[0] ?? json;
+                return [id, record?.processed === 'Y'];
+              })
+              .catch(() => [id, false])
+          )
+        );
       })
+      .then(entries => setProcessedMap(new Map(entries ?? [])))
       .catch(() => setLines([]))
       .finally(() => setLoading(false));
   }, [recordId, apiBaseUrl, token]);
@@ -63,29 +87,8 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
     return () => window.removeEventListener('neo:processSuccess', handleProcessSuccess);
   }, [recordId, fetchLines]);
 
-  const depreciatedValue = Number(data?.depreciatedValue ?? 0);
-  const lineStatuses = getLineStatuses(lines, depreciatedValue);
-  const plannedCount = [...lineStatuses.values()].filter(v => !v).length;
-  const totalAmount = lines.reduce((sum, l) => sum + Number(l.amortizationAmount ?? 0), 0);
-
   return (
-    <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm pt-2 pb-5 px-5">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <div className="text-sm font-semibold text-gray-800">{ui('assetsAmortizationPlan')}</div>
-          <div className="text-xs text-gray-400 mt-0.5">
-            {ui('assetsAmortizationPlanDesc')}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {plannedCount > 0 && (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-              {plannedCount} {ui(plannedCount === 1 ? 'assetsPlannedLine' : 'assetsPlannedLines')}
-            </span>
-          )}
-        </div>
-      </div>
-
+    <div className="pt-2 pb-5">
       {loading ? (
         <div className="text-xs text-gray-400 py-4 text-center inline-flex items-center gap-1.5 justify-center w-full">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -99,39 +102,41 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2 pr-4">{ui('assetsPeriod')}</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2 pr-4">{ui('assetsPercentage')}</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2 pr-4">{ui('amount')}</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2">{ui('assetsStatus')}</th>
+              <tr className="border-b border-border/50">
+                <th className="text-left text-sm font-semibold text-foreground py-2.5 pr-4">{ui('assetsPeriod')}</th>
+                <th className="text-left text-sm font-semibold text-foreground py-2.5 pr-4">{ui('assetsPercentage')}</th>
+                <th className="text-left text-sm font-semibold text-foreground py-2.5 pr-4">{ui('amount')}</th>
+                <th className="text-left text-sm font-semibold text-foreground py-2.5">{ui('assetsStatus')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border/50">
               {lines.map((line) => (
-                <tr key={line.id ?? line.sEQNoAsset} className="hover:bg-gray-50">
-                  <td className="py-2.5 pr-4 text-gray-700">{line['amortization$_identifier'] ?? line.amortization ?? '—'}</td>
-                  <td className="py-2.5 pr-4 text-gray-700">
+                <tr
+                  key={line.id ?? line.sEQNoAsset}
+                  className="hover:bg-muted/30"
+                >
+                  <td className="py-3 pr-4">
+                    {line.amortization ? (
+                      <PeriodLink
+                        label={line['amortization$_identifier'] ?? line.amortization}
+                        onClick={() => navigate(`/amortization/${line.amortization}`)}
+                      />
+                    ) : (
+                      <span className="text-foreground">{line['amortization$_identifier'] ?? '—'}</span>
+                    )}
+                  </td>
+                  <td className="py-3 pr-4 text-foreground">
                     {line.amortizationPercentage != null
                       ? `${Number(line.amortizationPercentage).toFixed(2)}%`
                       : '—'}
                   </td>
-                  <td className="py-2.5 pr-4 text-gray-700">{formatCurrency(orgCurrency, line.amortizationAmount)}</td>
-                  <td className="py-2.5">
-                    <StatusBadge isProcessed={lineStatuses.get(line.id ?? line.sEQNoAsset)} ui={ui} />
+                  <td className="py-3 pr-4 text-foreground">{formatCurrency(orgCurrency, line.amortizationAmount)}</td>
+                  <td className="py-3">
+                    <StatusBadge isProcessed={processedMap.get(line.amortization) ?? false} ui={ui} />
                   </td>
                 </tr>
               ))}
             </tbody>
-            {totalAmount > 0 && (
-              <tfoot>
-                <tr className="border-t border-gray-200">
-                  <td colSpan={2} />
-                  <td colSpan={2} className="py-2.5 text-right text-xs font-semibold text-gray-700 pr-4">
-                    {ui('assetsTotalPlanned')} {formatCurrency(orgCurrency, totalAmount)}
-                  </td>
-                </tr>
-              </tfoot>
-            )}
           </table>
         </div>
       )}

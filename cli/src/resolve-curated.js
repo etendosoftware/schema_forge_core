@@ -137,7 +137,7 @@ function visibilityDefaults(visibility) {
 // Category inference
 // ---------------------------------------------------------------------------
 
-function inferCategory(windowName) {
+function inferCategory(windowName = '') {
   const name = windowName || '';
   if (/Sales/i.test(name)) return 'sales';
   if (/Purchase/i.test(name)) return 'purchases';
@@ -158,10 +158,18 @@ const FIELD_DECISION_COPY_PROPS = [
   'badgeColors',
   'badgeVariants',
   'enumVariants',
+  'enumValues',
+  'filterOnly',
+  'filterable',
   'labels',
   'columnType',
   'display',
   'cellType',
+  'grow',
+  'gridReadOnly',
+  'noTrailing',
+  'inline',
+  'addLineFromSibling',
 ];
 
 const FIELD_RAW_COPY_PROPS = [
@@ -178,7 +186,7 @@ function resolveFieldVisibility(rawField, fieldDecision, discardPatterns) {
 }
 
 function decisionOrDefault(fieldDecision, key, defaults) {
-  return fieldDecision[key] !== undefined ? fieldDecision[key] : defaults[key];
+  return fieldDecision[key] === undefined ? defaults[key] : fieldDecision[key];
 }
 
 function buildBaseField(rawField, fieldDecision, visibility) {
@@ -189,12 +197,13 @@ function buildBaseField(rawField, fieldDecision, visibility) {
     label: fieldDecision.label || rawField.label,
     type: fieldDecision.type || (rawField.type === 'id' ? 'id' : rawField.type),
     visibility,
-    required: fieldDecision.required !== undefined ? fieldDecision.required : (rawField.mandatory || false),
+    required: fieldDecision.required === undefined ? (rawField.mandatory || false) : fieldDecision.required,
     grid: decisionOrDefault(fieldDecision, 'grid', defaults),
     form: decisionOrDefault(fieldDecision, 'form', defaults),
     searchable: decisionOrDefault(fieldDecision, 'searchable', defaults),
   };
   if (rawField.mandatory === true) field.sourceRequired = true;
+  if (fieldDecision.type) field.explicitType = true;
   return field;
 }
 
@@ -213,9 +222,14 @@ function copyRawProps(field, rawField, props) {
 function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.section) field.section = fieldDecision.section;
   if (fieldDecision.seq != null) field.seq = fieldDecision.seq;
+  if (fieldDecision.span != null && fieldDecision.span >= 2 && fieldDecision.span <= 4) field.span = fieldDecision.span;
+  if (fieldDecision.rows != null && fieldDecision.rows > 0) field.rows = fieldDecision.rows;
+  if (fieldDecision.filterable === false) field.filterable = false;
+  if (fieldDecision.dot === false) field.dot = false;
   if (fieldDecision.badge) field.badge = true;
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
+  if (fieldDecision.min !== undefined) field.min = fieldDecision.min;
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
 }
 
@@ -247,9 +261,9 @@ function applyForeignKeyProps(field, rawField, fieldDecision) {
 }
 
 function applyVisibleFieldProps(field, rawField, fieldDecision) {
-  const readOnlyLogic = fieldDecision.readOnlyLogic !== undefined
-    ? (fieldDecision.readOnlyLogic || rawField.readOnlyLogic || null)
-    : (rawField.readOnlyLogic || null);
+  const readOnlyLogic = fieldDecision.readOnlyLogic === undefined
+    ? (rawField.readOnlyLogic || null)
+    : (fieldDecision.readOnlyLogic || rawField.readOnlyLogic || null);
   if (readOnlyLogic) field.readOnlyLogic = readOnlyLogic;
 
   if (fieldDecision.displayLogic !== null) {
@@ -348,7 +362,7 @@ function resolveRules(rulesRaw, decisions) {
 
     const classified = classifyRule(rawRule);
     const decision = classified.tier === 'auto'
-      ? (classified.autoDecision === 'keep' ? 'Keep' : 'Omit')
+      ? determineAutoDecision(classified)
       : 'pending';
 
     result.push({
@@ -359,6 +373,10 @@ function resolveRules(rulesRaw, decisions) {
   }
 
   return result;
+}
+
+function determineAutoDecision(classified) {
+  return classified.autoDecision === 'keep' ? 'Keep' : 'Omit';
 }
 
 // ---------------------------------------------------------------------------
@@ -447,6 +465,12 @@ function buildDraftMode(draftModeDecision, enabled) {
   if (Array.isArray(draftModeDecision.completedStatuses)) {
     draftMode.completedStatuses = draftModeDecision.completedStatuses;
   }
+  if (draftModeDecision.confirmModal) {
+    draftMode.confirmModal = draftModeDecision.confirmModal;
+  }
+  if (draftModeDecision.disableWhenEmpty) {
+    draftMode.disableWhenEmpty = true;
+  }
   return draftMode;
 }
 
@@ -465,9 +489,59 @@ function applyEntityDecisions(entity, entityDecision) {
   }
 }
 
+/**
+ * Append virtual fields declared in decisions.json to a curated field list.
+ *
+ * Virtual fields are fields that do NOT exist as columns in the AD schema (e.g. M_InOut)
+ * but are injected at runtime by a NeoHandler's afterHandle hook. They are the equivalent
+ * of Etendo computed columns when the AD version does not support iscomputed, or when the
+ * derivation logic lives in Java rather than SQL.
+ *
+ * Declaration in decisions.json (entities.header or entities.lines):
+ *   "virtualFields": [
+ *     {
+ *       "name": "sourceShipmentDocNo",   // field key used in API response + frontend
+ *       "column": "sourceShipmentDocNo", // must match what afterHandle puts in the JSON
+ *       "label": "Source Shipment",      // raw label; translated via labelOverrides
+ *       "type": "string",                // contract type: string | number | date | boolean
+ *       "visibility": "readOnly",        // always readOnly — handler fills the value
+ *       "form": true,                    // show in the detail form?
+ *       "grid": true,                    // show in the list grid?
+ *       "gridOrder": 6,                  // insertion position in the grid (1-based)
+ *       "section": "principal"           // form section: principal | other | collapsed
+ *     }
+ *   ]
+ *
+ * Rules:
+ * - Virtual fields are appended AFTER schema-derived fields; orderCuratedFields then
+ *   applies gridOrder sorting the same way as for regular fields.
+ * - The NeoHandler MUST inject the value in afterHandle. NEO will NOT derive it from
+ *   the DB automatically (no AD column → no OBDal property → no automatic value).
+ * - Keep "visibility": "readOnly" — there is no DB column to write to.
+ * - "column" value must exactly match the key the handler puts in the JSON object.
+ */
+function appendVirtualFields(curatedFields, entityDecision) {
+  for (const vf of (entityDecision.virtualFields || [])) {
+    curatedFields.push({
+      name: vf.name,
+      column: vf.column ?? vf.name,
+      label: vf.label ?? vf.name,
+      type: vf.type ?? 'string',
+      visibility: vf.visibility ?? 'readOnly',
+      required: vf.required ?? false,
+      form: vf.form !== false,
+      grid: vf.grid !== false,
+      gridOrder: vf.gridOrder,
+      section: vf.section ?? 'other',
+      virtual: true,
+    });
+  }
+}
+
 function buildCuratedEntity(rawEntity, entityDecision, discardPatterns) {
   const fieldsDecisions = entityDecision.fields || {};
   const curatedFields = buildCuratedFields(rawEntity, fieldsDecisions, discardPatterns);
+  appendVirtualFields(curatedFields, entityDecision);
   const entity = {
     name: entityDecision.name || autoSimplifyEntityName(rawEntity.name),
     tableName: rawEntity.tableName,
@@ -530,6 +604,7 @@ const WINDOW_TRUTHY_PROPS = [
   'sendDocument',
   'linesLayout',
   'extraTabs',
+  'customPanelTabs',
 ];
 
 const WINDOW_BOOLEAN_TRUE_PROPS = [
@@ -543,12 +618,18 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'hideEyeCount',
   'disableProcessedLock',
   'noHeaderBorder',
+  'toolbarBorderBottom',
+  'compactSidebarPadding',
+  'whiteFormBackground',
+  'hideFormCard',
+  'sidebarAboveTabsOnly',
+  'autoSaveOnBlur',
 ];
 
 // `attachments` is defined-only (not truthy) so an explicit `false` from
 // decisions.json reaches the contract and disables the AttachmentsTab in the
 // generator. Accepted shapes: boolean | { enabled?: boolean, ...options }.
-const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments'];
+const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'customLinesComponent', 'customLinesLabel', 'formCardPadding', 'formScrollPaddingX', 'maxDetailLines'];
 const WINDOW_NOT_NULL_PROPS = ['detailTabIndex', 'salesTheme'];
 
 // Canonical key order for the contract window object. Stabilizes contract.json
@@ -568,8 +649,8 @@ export const WINDOW_KEY_ORDER = [
   'labelOverrides', 'primaryTabs', 'othersLabel',
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
-  'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'lineEntityConfig',
-  'extraTabs', 'attachments', 'rowQuickActions',
+  'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
+  'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
   'layoutType', 'linesLayout',
 ];
@@ -580,7 +661,7 @@ export function reorderKeys(obj, canonicalOrder) {
   const result = {};
   const seen = new Set();
   for (const key of canonicalOrder) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+    if (Object.hasOwn(obj, key)) {
       result[key] = obj[key];
       seen.add(key);
     }
@@ -658,7 +739,7 @@ function applyWindowDraftModeToPrimaryEntity(curatedEntities, windowDecisions) {
  * @param {Object} schemaRaw  - Parsed schema-raw.json
  * @param {Object} rulesRaw   - Parsed rules-raw.json
  * @param {Object} decisions  - Parsed decisions.json (may be empty {})
- * @returns {{ schema: Object, rules: Array }}
+ * @returns {Promise<{ schema: Object, rules: Array }>}
  */
 export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   // Migrate decisions to current version if needed (in-memory only, no file write)
@@ -785,6 +866,17 @@ async function runCli() {
     return;
   }
 
+  printSchemaAndRules(dump, schema, rules);
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  runCli().catch(err => {
+    console.error('Error:', err.message);
+    process.exit(1);
+  });
+}
+
+function printSchemaAndRules(dump, schema, rules) {
   if (dump) {
     console.log('--- schema ---');
     console.log(JSON.stringify(schema, null, 2));
@@ -798,11 +890,4 @@ async function runCli() {
     }
     console.log(`Rules: ${rules.length}`);
   }
-}
-
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  runCli().catch(err => {
-    console.error('Error:', err.message);
-    process.exit(1);
-  });
 }

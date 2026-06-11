@@ -1,13 +1,15 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-04-28T16:08:39.756Z",
-  "checksum": "62d5ec2b6d348e49",
+  "updatedAt": "2026-05-19T17:03:46.462Z",
+  "checksum": "155149782fc838d1",
   "frontendContract": {
     "window": {
       "id": "C327DE215AC945F69363905840118177",
       "name": "TBAI Config",
       "primaryEntity": "header",
       "category": "configuration",
+      "attachments": false,
       "layoutType": "default"
     },
     "entities": {
@@ -234,7 +236,8 @@
       "id": "C327DE215AC945F69363905840118177",
       "name": "TBAI Config",
       "primaryEntity": "header",
-      "category": "configuration"
+      "category": "configuration",
+      "attachments": false
     },
     "entities": {
       "header": {
@@ -433,7 +436,7 @@
       },
       "sorting": {
         "param": "_sortBy",
-        "example": "_sortBy=tbai-configDate"
+        "example": "_sortBy=creationDate desc"
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
@@ -445,174 +448,14 @@
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
-        "category": "field-presence",
-        "entity": "header",
-        "field": "etsgSifTerritory",
-        "runner": "node",
-        "description": "Field 'etsgSifTerritory' should be present in header"
-      },
-      {
-        "id": "t-2",
-        "category": "field-presence",
-        "entity": "header",
-        "field": "tbaisystemdate",
-        "runner": "node",
-        "description": "Field 'tbaisystemdate' should be present in header"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "header",
-        "field": "productionEnv",
-        "runner": "node",
-        "description": "Field 'productionEnv' should be present in header"
-      },
-      {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "header",
-        "field": "invoiceDescription",
-        "runner": "node",
-        "description": "Field 'invoiceDescription' should be present in header"
-      },
-      {
-        "id": "t-5",
-        "category": "field-presence",
-        "entity": "header",
-        "field": "uSEAsproductDesc",
-        "runner": "node",
-        "description": "Field 'uSEAsproductDesc' should be present in header"
-      },
-      {
-        "id": "t-6",
-        "category": "field-presence",
-        "entity": "header",
-        "field": "autoSendInvoices",
-        "runner": "node",
-        "description": "Field 'autoSendInvoices' should be present in header"
-      },
-      {
-        "id": "t-7",
-        "category": "field-presence",
-        "entity": "header",
-        "field": "jasperreportPath",
-        "runner": "node",
-        "description": "Field 'jasperreportPath' should be present in header"
-      },
-      {
-        "id": "t-8",
-        "category": "field-presence",
-        "entity": "header",
-        "field": "validatePreviousInvoice",
-        "runner": "node",
-        "description": "Field 'validatePreviousInvoice' should be present in header"
-      },
-      {
-        "id": "t-9",
-        "category": "field-type",
-        "entity": "header",
-        "field": "etsgSifTerritory",
-        "runner": "node",
-        "description": "Field 'etsgSifTerritory' should have type 'string' in header"
-      },
-      {
-        "id": "t-10",
-        "category": "field-type",
-        "entity": "header",
-        "field": "tbaisystemdate",
-        "runner": "node",
-        "description": "Field 'tbaisystemdate' should have type 'string' in header"
-      },
-      {
-        "id": "t-11",
-        "category": "field-type",
-        "entity": "header",
-        "field": "productionEnv",
-        "runner": "node",
-        "description": "Field 'productionEnv' should have type 'boolean' in header"
-      },
-      {
-        "id": "t-12",
-        "category": "field-type",
-        "entity": "header",
-        "field": "invoiceDescription",
-        "runner": "node",
-        "description": "Field 'invoiceDescription' should have type 'string' in header"
-      },
-      {
-        "id": "t-13",
-        "category": "field-type",
-        "entity": "header",
-        "field": "uSEAsproductDesc",
-        "runner": "node",
-        "description": "Field 'uSEAsproductDesc' should have type 'boolean' in header"
-      },
-      {
-        "id": "t-14",
-        "category": "field-type",
-        "entity": "header",
-        "field": "autoSendInvoices",
-        "runner": "node",
-        "description": "Field 'autoSendInvoices' should have type 'boolean' in header"
-      },
-      {
-        "id": "t-15",
-        "category": "field-type",
-        "entity": "header",
-        "field": "jasperreportPath",
-        "runner": "node",
-        "description": "Field 'jasperreportPath' should have type 'string' in header"
-      },
-      {
-        "id": "t-16",
-        "category": "field-type",
-        "entity": "header",
-        "field": "validatePreviousInvoice",
-        "runner": "node",
-        "description": "Field 'validatePreviousInvoice' should have type 'boolean' in header"
-      },
-      {
-        "id": "t-17",
-        "category": "visibility",
+        "id": "t-crud-flags-header",
+        "category": "crud-flags",
         "entity": "header",
         "runner": "node",
-        "description": "Entity 'header' should only expose visible fields in frontend"
+        "description": "CRUD flags for 'header' should all be booleans"
       },
       {
-        "id": "t-18",
-        "category": "default-value-type",
-        "entity": "header",
-        "field": "tbaisystemdate",
-        "runner": "node",
-        "description": "Default value for 'tbaisystemdate' in header should be a string"
-      },
-      {
-        "id": "t-19",
-        "category": "default-value-type",
-        "entity": "header",
-        "field": "productionEnv",
-        "runner": "node",
-        "description": "Default value for 'productionEnv' in header should be a string"
-      },
-      {
-        "id": "t-20",
-        "category": "default-value-type",
-        "entity": "header",
-        "field": "invoiceDescription",
-        "runner": "node",
-        "description": "Default value for 'invoiceDescription' in header should be a string"
-      },
-      {
-        "id": "t-21",
-        "category": "default-value-type",
-        "entity": "header",
-        "field": "uSEAsproductDesc",
-        "runner": "node",
-        "description": "Default value for 'uSEAsproductDesc' in header should be a string"
-      },
-      {
-        "id": "t-22",
+        "id": "t-default-value-type-header-autoSendInvoices",
         "category": "default-value-type",
         "entity": "header",
         "field": "autoSendInvoices",
@@ -620,7 +463,39 @@
         "description": "Default value for 'autoSendInvoices' in header should be a string"
       },
       {
-        "id": "t-23",
+        "id": "t-default-value-type-header-invoiceDescription",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "invoiceDescription",
+        "runner": "node",
+        "description": "Default value for 'invoiceDescription' in header should be a string"
+      },
+      {
+        "id": "t-default-value-type-header-productionEnv",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "productionEnv",
+        "runner": "node",
+        "description": "Default value for 'productionEnv' in header should be a string"
+      },
+      {
+        "id": "t-default-value-type-header-tbaisystemdate",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "tbaisystemdate",
+        "runner": "node",
+        "description": "Default value for 'tbaisystemdate' in header should be a string"
+      },
+      {
+        "id": "t-default-value-type-header-uSEAsproductDesc",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "uSEAsproductDesc",
+        "runner": "node",
+        "description": "Default value for 'uSEAsproductDesc' in header should be a string"
+      },
+      {
+        "id": "t-default-value-type-header-validatePreviousInvoice",
         "category": "default-value-type",
         "entity": "header",
         "field": "validatePreviousInvoice",
@@ -628,15 +503,149 @@
         "description": "Default value for 'validatePreviousInvoice' in header should be a string"
       },
       {
-        "id": "t-24",
-        "category": "system-field",
+        "id": "t-field-presence-header-autoSendInvoices",
+        "category": "field-presence",
         "entity": "header",
-        "field": "organization",
+        "field": "autoSendInvoices",
         "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for header"
+        "description": "Field 'autoSendInvoices' should be present in header"
       },
       {
-        "id": "t-25",
+        "id": "t-field-presence-header-etsgSifTerritory",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "etsgSifTerritory",
+        "runner": "node",
+        "description": "Field 'etsgSifTerritory' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-invoiceDescription",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "invoiceDescription",
+        "runner": "node",
+        "description": "Field 'invoiceDescription' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-jasperreportPath",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "jasperreportPath",
+        "runner": "node",
+        "description": "Field 'jasperreportPath' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-productionEnv",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "productionEnv",
+        "runner": "node",
+        "description": "Field 'productionEnv' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-tbaisystemdate",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "tbaisystemdate",
+        "runner": "node",
+        "description": "Field 'tbaisystemdate' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-uSEAsproductDesc",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "uSEAsproductDesc",
+        "runner": "node",
+        "description": "Field 'uSEAsproductDesc' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-validatePreviousInvoice",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "validatePreviousInvoice",
+        "runner": "node",
+        "description": "Field 'validatePreviousInvoice' should be present in header"
+      },
+      {
+        "id": "t-field-type-header-autoSendInvoices",
+        "category": "field-type",
+        "entity": "header",
+        "field": "autoSendInvoices",
+        "runner": "node",
+        "description": "Field 'autoSendInvoices' should have type 'boolean' in header"
+      },
+      {
+        "id": "t-field-type-header-etsgSifTerritory",
+        "category": "field-type",
+        "entity": "header",
+        "field": "etsgSifTerritory",
+        "runner": "node",
+        "description": "Field 'etsgSifTerritory' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-invoiceDescription",
+        "category": "field-type",
+        "entity": "header",
+        "field": "invoiceDescription",
+        "runner": "node",
+        "description": "Field 'invoiceDescription' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-jasperreportPath",
+        "category": "field-type",
+        "entity": "header",
+        "field": "jasperreportPath",
+        "runner": "node",
+        "description": "Field 'jasperreportPath' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-productionEnv",
+        "category": "field-type",
+        "entity": "header",
+        "field": "productionEnv",
+        "runner": "node",
+        "description": "Field 'productionEnv' should have type 'boolean' in header"
+      },
+      {
+        "id": "t-field-type-header-tbaisystemdate",
+        "category": "field-type",
+        "entity": "header",
+        "field": "tbaisystemdate",
+        "runner": "node",
+        "description": "Field 'tbaisystemdate' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-uSEAsproductDesc",
+        "category": "field-type",
+        "entity": "header",
+        "field": "uSEAsproductDesc",
+        "runner": "node",
+        "description": "Field 'uSEAsproductDesc' should have type 'boolean' in header"
+      },
+      {
+        "id": "t-field-type-header-validatePreviousInvoice",
+        "category": "field-type",
+        "entity": "header",
+        "field": "validatePreviousInvoice",
+        "runner": "node",
+        "description": "Field 'validatePreviousInvoice' should have type 'boolean' in header"
+      },
+      {
+        "id": "t-rule-declared-SetNIFOrganization-AD-Org-ID",
+        "category": "rule-declared",
+        "rule": "SetNIFOrganization_AD_Org_ID",
+        "runner": "node",
+        "description": "Rule 'SetNIFOrganization_AD_Org_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Territorios-TicketBAI",
+        "category": "rule-declared",
+        "rule": "Territorios TicketBAI",
+        "runner": "node",
+        "description": "Rule 'Territorios TicketBAI' (validation) should be declared"
+      },
+      {
+        "id": "t-system-field-header-active",
         "category": "system-field",
         "entity": "header",
         "field": "active",
@@ -644,15 +653,7 @@
         "description": "System field 'active' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-26",
-        "category": "system-field",
-        "entity": "header",
-        "field": "tbaiConfigID",
-        "runner": "node",
-        "description": "System field 'tbaiConfigID' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-27",
+        "id": "t-system-field-header-client",
         "category": "system-field",
         "entity": "header",
         "field": "client",
@@ -660,15 +661,7 @@
         "description": "System field 'client' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-28",
-        "category": "system-field",
-        "entity": "header",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-29",
+        "id": "t-system-field-header-createdBy",
         "category": "system-field",
         "entity": "header",
         "field": "createdBy",
@@ -676,7 +669,31 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-30",
+        "id": "t-system-field-header-creationDate",
+        "category": "system-field",
+        "entity": "header",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-organization",
+        "category": "system-field",
+        "entity": "header",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-tbaiConfigID",
+        "category": "system-field",
+        "entity": "header",
+        "field": "tbaiConfigID",
+        "runner": "node",
+        "description": "System field 'tbaiConfigID' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-updated",
         "category": "system-field",
         "entity": "header",
         "field": "updated",
@@ -684,7 +701,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-31",
+        "id": "t-system-field-header-updatedBy",
         "category": "system-field",
         "entity": "header",
         "field": "updatedBy",
@@ -692,37 +709,23 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-32",
-        "category": "rule-declared",
-        "rule": "SetNIFOrganization_AD_Org_ID",
-        "runner": "node",
-        "description": "Rule 'SetNIFOrganization_AD_Org_ID' (callout) should be declared"
-      },
-      {
-        "id": "t-33",
-        "category": "rule-declared",
-        "rule": "Territorios TicketBAI",
-        "runner": "node",
-        "description": "Rule 'Territorios TicketBAI' (validation) should be declared"
-      },
-      {
-        "id": "t-34",
-        "category": "crud-flags",
+        "id": "t-visibility-header",
+        "category": "visibility",
         "entity": "header",
         "runner": "node",
-        "description": "CRUD flags for 'header' should all be booleans"
+        "description": "Entity 'header' should only expose visible fields in frontend"
       }
     ],
     "summary": {
       "total": 34,
       "byCategory": {
+        "crud-flags": 1,
+        "default-value-type": 6,
         "field-presence": 8,
         "field-type": 8,
-        "visibility": 1,
-        "default-value-type": 6,
-        "system-field": 8,
         "rule-declared": 2,
-        "crud-flags": 1
+        "system-field": 8,
+        "visibility": 1
       },
       "byRunner": {
         "node": 34,

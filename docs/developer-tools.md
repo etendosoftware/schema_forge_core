@@ -121,6 +121,47 @@ gh pr merge 123 --merge
 
 ---
 
+## XML Regeneration Check
+
+Node.js CLI that compares original module XML against `export.database` output without requiring a database connection.
+
+**What it does:** Recursively compares XML files under `src-db/database/` subdirectories (`model/tables`, `model/modifiedTables`, `model/functions`, `sourcedata`) between two directory trees. Normalizes child-element order and attributes to avoid false positives from non-significant reordering. Reports changed, missing, and extra files.
+
+**Installation:** Requires Node.js. No pip packages or virtualenv are needed.
+
+**Usage:**
+
+```bash
+# Compare original module XML against export.database output
+node cli/src/xml-regeneration-check.js <original_dir> <exported_dir>
+
+# JSON output for CI integration
+node cli/src/xml-regeneration-check.js <original_dir> <exported_dir> --format json
+
+# Compare only specific subdirectories
+node cli/src/xml-regeneration-check.js <original_dir> <exported_dir> --include-dir model/tables --include-dir sourcedata
+```
+
+**Exit codes:**
+- `0` — All files match (OK)
+- `1` — Inconsistencies found (changed, missing, extra, or unparseable files)
+- `2` — Usage or input error (missing or invalid input paths)
+
+**Typical invocation from Etendo root:**
+
+```bash
+# After export.database, compare the module's src-db against the exported output
+node ../etendo_schema_forge/cli/src/xml-regeneration-check.js \
+  modules/com.etendoerp.go/src-db/database \
+  modules/com.etendoerp.go/src-db/database
+```
+
+**Links:**
+- Source: `cli/src/xml-regeneration-check.js`
+- Tests: `cli/test/xml-regeneration-check.test.js`
+
+---
+
 ## Jira CLI
 
 Feature-rich interactive Jira command line client. Used for creating issues, managing sprints, and integrating with the Etendo workflow manager.

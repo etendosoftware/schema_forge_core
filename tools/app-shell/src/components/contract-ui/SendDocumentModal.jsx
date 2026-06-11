@@ -1,7 +1,214 @@
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Mail } from 'lucide-react';
+import { Mail, Search } from 'lucide-react';
 import { useUI } from '@/i18n';
+import { sendDocumentEmail } from './documentEmailSend.js';
+
+function resolveEmailSendErrorMessage(ui, data, documentType) {
+  if (data?.status === 'THROTTLED') {
+    return ui('sendModalThrottled', { seconds: data.retryAfterSeconds ?? '' });
+  }
+  if (data?.status === 'DUPLICATE') {
+    return ui('sendModalDuplicate', { documentType });
+  }
+  if (data?.status === 'UNAUTHORIZED') {
+    return ui('sendModalUnauthorized');
+  }
+  if (data?.status === 'VALIDATION_FAILED') {
+    return data.message || ui('sendModalValidationFailed');
+  }
+  if (data?.status === 'NO_RECIPIENT') {
+    return ui('sendModalNoRecipient', { documentType });
+  }
+  if (data?.status === 'SUPPRESSED') {
+    return ui('sendModalSuppressed');
+  }
+  if (data?.status === 'KILL_SWITCHED') {
+    return ui('sendModalUnavailable');
+  }
+  if (data?.status === 'PROVIDER_FAILED') {
+    return ui('sendModalProviderFailed');
+  }
+  return data?.message || ui('sendModalSendFailed', { documentType });
+}
+
+function resolveEmailSendSuccessMessage(ui, status, documentType) {
+  return status === 'DUPLICATE'
+    ? ui('sendModalDuplicate', { documentType })
+    : ui('sendModalSentSuccess', { documentType });
+}
+
+function resolveEmailSendExceptionMessage(ui, documentType) {
+  return ui('sendModalSendFailed', { documentType });
+}
+
+async function sendDocumentFromModal({
+  apiBaseUrl,
+  token,
+  documentId,
+  windowName,
+  documentNo,
+  pdfBlob,
+  pdfBlobUrl,
+  cachePreviewBeforeSend,
+  documentType,
+  ui,
+  setSendFeedback,
+  onClose,
+}) {
+  const data = await sendDocumentEmail({
+    apiBaseUrl,
+    token,
+    documentId,
+    windowName,
+    documentNo,
+    pdfBlob: cachePreviewBeforeSend ? pdfBlob : null,
+    pdfBlobUrl: cachePreviewBeforeSend ? pdfBlobUrl : null,
+  });
+
+  if (data.status === 'SENT' || data.status === 'DUPLICATE') {
+    const successMessage = resolveEmailSendSuccessMessage(ui, data.status, documentType);
+    toast.success(successMessage);
+    setSendFeedback({ type: 'success', message: successMessage });
+    onClose();
+    return;
+  }
+
+  const errorMessage = resolveEmailSendErrorMessage(ui, data, documentType);
+  setSendFeedback({ type: 'error', message: errorMessage });
+  toast.error(errorMessage);
+}
+
+async function renderPdfIntoIframe(node, reportId, documentId, token, setPdfLoading, setPdfError) {
+  setPdfLoading(true);
+  setPdfError(null);
+  try {
+    const res = await fetch(`/api/reports/${reportId}/render`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ format: 'html', params: { documentId } }),
+    });
+    if (!res.ok) throw new Error(`Preview failed (${res.status})`);
+    const html = await res.text();
+    node.src = 'about:blank';
+    node.onload = () => {
+      try { const doc = node.contentDocument; doc.open(); doc.write(html); doc.close(); } catch {}
+      node.onload = null;
+    };
+  } catch (err) {
+    setPdfError(err.message);
+  }
+  setPdfLoading(false);
+}
+
+function EmailFormPanel({ to, emailLoading, subject, message, ui }) {
+  return (
+    <div style={{ width: '40%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
+      <div style={{ position: 'relative' }}>
+        <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalTo')}</label>
+        <div style={{ position: 'relative' }}>
+          <input
+            type="text"
+            value={to}
+            readOnly
+            placeholder={emailLoading ? '' : 'email@company.com'}
+            style={{ width: '100%', fontSize: 13, padding: '8px 32px 8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', background: '#f9fafb', boxSizing: 'border-box' }}
+          />
+          <Search size={13} strokeWidth={1.5} color="#9ca3af" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+        </div>
+      </div>
+      <div>
+        <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalSubject')}</label>
+        <input
+          type="text"
+          value={subject}
+          readOnly
+          style={{ width: '100%', fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', background: '#f9fafb', boxSizing: 'border-box' }}
+        />
+      </div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalMessage')}</label>
+        <textarea
+          value={message}
+          readOnly
+          placeholder={ui('sendModalMessagePlaceholder')}
+          style={{ width: '100%', flex: 1, minHeight: 80, fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', background: '#f9fafb', resize: 'none', boxSizing: 'border-box' }}
+        />
+      </div>
+    </div>
+  );
+}
+
+async function fetchAndDownloadPdf(reportId, documentId, windowName, documentNo, token) {
+  const res = await fetch(`/api/reports/${reportId}/render`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ format: 'html', params: { documentId } }),
+  });
+  if (!res.ok) throw new Error('Failed to render');
+  const html = await res.text();
+  const pdfRes = await fetch('/jsreport/api/report', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ template: { content: html, engine: 'none', recipe: 'chrome-pdf', chrome: { format: 'A4', marginTop: '10mm', marginBottom: '10mm', marginLeft: '10mm', marginRight: '10mm' } }, data: {} }),
+  });
+  if (!pdfRes.ok) throw new Error('PDF generation failed');
+  const blob = await pdfRes.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${windowName}-${documentNo}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function resolveInitialEmail(bpEmail) {
+  return bpEmail?.includes('@') ? bpEmail : '';
+}
+
+function resolveContactsBaseUrl(apiBaseUrl) {
+  return apiBaseUrl.replace(/\/[^/]+$/, '/contacts');
+}
+
+async function loadBusinessPartnerEmail({ apiBaseUrl, token, bPartnerId, hasEmail, setTo, isCancelled }) {
+  const contactsBaseUrl = resolveContactsBaseUrl(apiBaseUrl);
+  const response = await fetch(`${contactsBaseUrl}/businessPartner/${bPartnerId}`, {
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  });
+  const data = response.ok ? await response.json() : null;
+  if (isCancelled()) return;
+  const records = data?.response?.data ?? data?.data ?? [];
+  const withEmail = records.filter(record => record?.etgoEmail?.includes('@'));
+  if (!hasEmail && withEmail.length > 0) setTo(withEmail[0].etgoEmail);
+}
+
+function renderPdfPreviewNode({ node, pdfBlobUrl, pdfBlobLoading, documentId, token, reportId, setPdfError, setPdfLoading }) {
+  if (pdfBlobUrl) {
+    node.src = `${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`;
+    setPdfError(null);
+    setPdfLoading(false);
+    return;
+  }
+
+  if (pdfBlobLoading) {
+    setPdfError(null);
+    setPdfLoading(true);
+    return;
+  }
+
+  if (documentId && token) {
+    renderPdfIntoIframe(node, reportId, documentId, token, setPdfLoading, setPdfError);
+  }
+}
+
+function downloadExistingPdfBlobUrl(pdfBlobUrl, windowName, documentNo) {
+  const a = document.createElement('a');
+  a.href = pdfBlobUrl;
+  a.download = `${windowName || 'invoice'}-${documentNo}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
 
 /**
  * Reusable Send/Download modal for any document (invoice, order, quotation, shipment).
@@ -18,41 +225,43 @@ import { useUI } from '@/i18n';
  * - token: auth token
  * - onClose: callback to close modal
  *
- * pdfBlobUrl — optional blob URL from jsreport (e.g. from useInvoicePdf).
- * When provided, the preview uses it directly and download triggers on the blob,
- * bypassing the /api/reports render endpoint entirely.
+ * Optional PDF preview support:
+ * - pdfBlobUrl: object URL created from a pre-rendered PDF blob.
+ * - pdfBlob: pre-rendered PDF blob to cache before sending.
+ * - pdfBlobLoading: disables send while a cacheable preview is still loading.
+ * - cachePreviewBeforeSend: caches pdfBlob/pdfBlobUrl through /preview-file before sending.
+ * When pdfBlobUrl is provided, preview and download use it directly and bypass
+ * the /api/reports render endpoint.
  */
-export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, pdfBlobLoading = false, isClosing = false, allowEmail = true }) {
+export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, pdfBlob, pdfBlobLoading = false, cachePreviewBeforeSend = true, isClosing = false, allowEmail = true }) {
   const ui = useUI();
-  const hasEmail = bpEmail && bpEmail.includes('@');
-  const [to, setTo] = useState(hasEmail ? bpEmail : '');
+  const initialEmail = resolveInitialEmail(bpEmail);
+  const hasEmail = Boolean(initialEmail);
+  const [to, setTo] = useState(initialEmail);
   const [emailLoading, setEmailLoading] = useState(false);
 
-  // Auto-fetch etgoEmail from the contacts endpoint when bpEmail is not pre-filled.
+  // Fetch trusted contact data only to display the server-resolved recipient preview.
   useEffect(() => {
-    if (hasEmail || !bPartnerId || !apiBaseUrl || !token) return;
+    if (!bPartnerId || !apiBaseUrl || !token) return;
     let cancelled = false;
     setEmailLoading(true);
-    // Replace the trailing spec name in apiBaseUrl with "contacts" to hit the contacts spec.
-    const contactsBaseUrl = apiBaseUrl.replace(/\/[^/]+$/, '/contacts');
-    fetch(`${contactsBaseUrl}/businessPartner/${bPartnerId}`, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    loadBusinessPartnerEmail({
+      apiBaseUrl,
+      token,
+      bPartnerId,
+      hasEmail,
+      setTo,
+      isCancelled: () => cancelled,
     })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (cancelled) return;
-        const record = d?.response?.data?.[0] ?? d?.data?.[0];
-        const fetched = record?.etgoEmail;
-        if (fetched && fetched.includes('@')) setTo(fetched);
-      })
-      .catch(() => { /* keep field empty on error */ })
+      .catch(() => {})
       .finally(() => { if (!cancelled) setEmailLoading(false); });
     return () => { cancelled = true; };
   }, [hasEmail, bPartnerId, apiBaseUrl, token]);
 
-  const [subject, setSubject] = useState(`${documentType} #${documentNo} — ${bpName}`);
-  const [message, setMessage] = useState('');
+  const subject = `${documentType} #${documentNo} — ${bpName}`;
+  const message = '';
   const [sending, setSending] = useState(false);
+  const [sendFeedback, setSendFeedback] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(!pdfBlobUrl);
   // True while the parent is still generating the blob via useInvoicePdf — suppress
   // the fallback report-render fetch and show a spinner instead of the error card.
@@ -64,45 +273,16 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
 
   const iframeRef = useCallback(node => {
     if (!node) return;
-
-    // If a pre-rendered blob URL is provided, use it directly
-    if (pdfBlobUrl) {
-      node.src = `${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`;
-      setPdfError(null);
-      setPdfLoading(false);
-      return;
-    }
-
-    // Parent indicated a blob is being generated — wait for it instead of falling
-    // back to /api/reports which would set pdfError and show the sad-page card.
-    if (pdfBlobLoading) {
-      setPdfError(null);
-      setPdfLoading(true);
-      return;
-    }
-
-    if (!documentId || !token) return;
-    (async () => {
-      setPdfLoading(true);
-      setPdfError(null);
-      try {
-        const res = await fetch(`/api/reports/${reportId}/render`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ format: 'html', params: { documentId } }),
-        });
-        if (!res.ok) throw new Error(`Preview failed (${res.status})`);
-        const html = await res.text();
-        node.src = 'about:blank';
-        node.onload = () => {
-          try { const doc = node.contentDocument; doc.open(); doc.write(html); doc.close(); } catch {}
-          node.onload = null;
-        };
-      } catch (err) {
-        setPdfError(err.message);
-      }
-      setPdfLoading(false);
-    })();
+    renderPdfPreviewNode({
+      node,
+      pdfBlobUrl,
+      pdfBlobLoading,
+      documentId,
+      token,
+      reportId,
+      setPdfError,
+      setPdfLoading,
+    });
   }, [documentId, token, reportId, pdfBlobUrl, pdfBlobLoading]);
 
   const handleDownload = async () => {
@@ -110,51 +290,51 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
 
     // If a blob URL is already available, download it directly
     if (pdfBlobUrl) {
-      const a = document.createElement('a');
-      a.href = pdfBlobUrl;
-      a.download = `${windowName || 'invoice'}-${documentNo}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      downloadExistingPdfBlobUrl(pdfBlobUrl, windowName, documentNo);
       return;
     }
 
     setDownloading(true);
     try {
-      const res = await fetch(`/api/reports/${reportId}/render`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ format: 'html', params: { documentId } }),
-      });
-      if (!res.ok) throw new Error('Failed to render');
-      const html = await res.text();
-      const pdfRes = await fetch('/jsreport/api/report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ template: { content: html, engine: 'none', recipe: 'chrome-pdf', chrome: { format: 'A4', marginTop: '10mm', marginBottom: '10mm', marginLeft: '10mm', marginRight: '10mm' } }, data: {} }),
-      });
-      if (!pdfRes.ok) throw new Error('PDF generation failed');
-      const blob = await pdfRes.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${windowName}-${documentNo}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      await fetchAndDownloadPdf(reportId, documentId, windowName, documentNo, token);
     } catch (err) {
       toast.error(err.message);
     }
     setDownloading(false);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
+    if (sending || !documentId) return;
     setSending(true);
-    setTimeout(() => {
-      toast.success(`${documentType} sent ✓`);
+    setSendFeedback(null);
+    try {
+      await sendDocumentFromModal({
+        apiBaseUrl,
+        token,
+        documentId,
+        windowName,
+        documentNo,
+        pdfBlob,
+        pdfBlobUrl,
+        cachePreviewBeforeSend,
+        documentType,
+        ui,
+        setSendFeedback,
+        onClose,
+      });
+    } catch {
+      const errorMessage = resolveEmailSendExceptionMessage(ui, documentType);
+      setSendFeedback({ type: 'error', message: errorMessage });
+      toast.error(errorMessage);
+    } finally {
       setSending(false);
-      onClose();
-    }, 800);
+    }
   };
+
+  const shouldCachePreview = cachePreviewBeforeSend && Boolean(pdfBlob || pdfBlobUrl || pdfBlobLoading);
+  const hasCacheablePreview = Boolean(pdfBlob || pdfBlobUrl);
+  const waitingForCacheablePreview = shouldCachePreview && pdfBlobLoading && !hasCacheablePreview;
+  const sendDisabled = !documentId || sending || waitingForCacheablePreview;
 
   return (
     <>
@@ -205,50 +385,29 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
           </div>
 
           {allowEmail && (
-          <div style={{ width: '40%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalTo')}</label>
-              <input
-                type="email"
-                value={to}
-                onChange={e => setTo(e.target.value)}
-                placeholder="email@company.com"
-                style={{ width: '100%', fontSize: 13, padding: '8px 10px', border: `0.5px solid ${!to && !emailLoading ? '#ef4444' : '#d1d5db'}`, borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
-              />
-              {!to && !emailLoading && (
-                <span style={{ fontSize: 11, color: '#ef4444', marginTop: 3, display: 'block' }}>{ui('sendModalNoEmail')}</span>
-              )}
-            </div>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalSubject')}</label>
-              <input
-                type="text"
-                value={subject}
-                onChange={e => setSubject(e.target.value)}
-                style={{ width: '100%', fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
-              />
-            </div>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalMessage')}</label>
-              <textarea
-                value={message}
-                onChange={e => setMessage(e.target.value)}
-                placeholder={ui('sendModalMessagePlaceholder')}
-                style={{ width: '100%', flex: 1, minHeight: 80, fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', resize: 'none', boxSizing: 'border-box' }}
-              />
-            </div>
-          </div>
+            <EmailFormPanel
+              to={to}
+              emailLoading={emailLoading}
+              subject={subject}
+              message={message}
+              ui={ui}
+            />
           )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: allowEmail ? 'space-between' : 'flex-end', background: '#F5F5F5', borderTop: '1px solid #E5E5E5', padding: '10px 16px', flexShrink: 0 }}>
           <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '6px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>{allowEmail ? ui('cancel') : ui('close')}</button>
+          {sendFeedback && (
+            <span role="status" style={{ flex: 1, marginLeft: 12, marginRight: 12, fontSize: 12, color: sendFeedback.type === 'error' ? '#dc2626' : '#15803d', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {sendFeedback.message}
+            </span>
+          )}
           {allowEmail && (
           <button
             type="button"
             onClick={handleSend}
-            disabled={!to.trim() || sending}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, padding: '6px 16px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (!to.trim() || sending) ? 'not-allowed' : 'pointer', opacity: (!to.trim() || sending) ? 0.4 : 1 }}
+            disabled={sendDisabled}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, padding: '6px 16px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: sendDisabled ? 'not-allowed' : 'pointer', opacity: sendDisabled ? 0.4 : 1 }}
           >
             {sending ? ui('sendModalSending') : (
               <>
@@ -275,6 +434,7 @@ export function SendDocumentButton({ onClick }) {
     <div style={{ position: 'relative' }} className="group">
       <button
         type="button"
+        data-testid="action-send-email"
         onClick={onClick}
         aria-label={label}
         className="flex items-center justify-center p-[7px] rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors"

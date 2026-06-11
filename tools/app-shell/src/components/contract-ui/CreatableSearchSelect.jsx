@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, X } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
+import { SelectorChip } from './SelectorChip.jsx';
 
 /**
  * CreatableSearchSelect — generic search-style selector with an inline "Create X" action.
@@ -86,11 +87,15 @@ export function CreatableSearchSelect({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  // Selected value renders as a Figma-style chip; clicking the chip body flips
+  // editingIntent so the user can type to search again. Mirrors SearchInput.
+  const [editingIntent, setEditingIntent] = useState(false);
 
   // Tracks whether the user is actively typing to prevent external syncs from fighting input
   const isEditingRef = useRef(false);
   // Prevents re-fetching on focus if the current parent value's options are already loaded
   const loadedForRef = useRef(null);
+  const inputRef = useRef(null);
 
   // Stable refs so useEffect closures can read current values without adding them to deps
   const valueRef = useRef(value);
@@ -178,6 +183,7 @@ export function CreatableSearchSelect({
 
   const handleSelect = (opt) => {
     isEditingRef.current = false;
+    setEditingIntent(false);
     setQuery(opt.name);
     setOpen(false);
     onChange(opt.id, opt.name, opt);
@@ -185,9 +191,22 @@ export function CreatableSearchSelect({
 
   const handleClear = () => {
     isEditingRef.current = false;
+    setEditingIntent(false);
     setQuery('');
     setOpen(true);
     onChange('', '');
+  };
+
+  // Chip mode: show the Figma chip when a value is selected and the user is
+  // not actively editing. Clicking the chip body flips editingIntent so the
+  // input becomes typeable again.
+  const showChip = hasSelection && !editingIntent && !isDisabled;
+  const handleChipClick = () => {
+    setEditingIntent(true);
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    });
   };
 
   const handleCreate = () => {
@@ -210,10 +229,26 @@ export function CreatableSearchSelect({
   const showDropdown = open && !isDisabled && (createLabel || loading || filteredOptions.length > 0 || query.trim());
 
   return (
-    <div className="relative">
-      <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+    /*
+      Single wrapper acts as the visual field box AND the popup anchor — same
+      structure as SearchInput so the chip + chevron-right pattern is consistent
+      across all FK pickers (Contacto, Tarifa, Dirección, etc.).
+    */
+    <div
+      className={`relative flex h-10 w-full items-center rounded-lg border border-[#D1D4DB] bg-transparent shadow-[0px_1px_2px_rgba(18,18,23,0.05)] pl-2 pr-2 gap-1 focus-within:ring-2 focus-within:ring-primary${isDisabled ? ' opacity-50 cursor-not-allowed' : ''}`}
+      onClick={showChip && !isDisabled ? handleChipClick : undefined}
+    >
+      {showChip ? (
+        <SelectorChip
+          label={displayValue || query}
+          onClick={handleChipClick}
+          onClear={handleClear}
+          clearAriaLabel={ui('clear')}
+          testId={`field-${field.key}-chip`}
+        />
+      ) : (
         <input
+          ref={inputRef}
           id={field.key}
           name={field.key}
           data-testid={`field-${field.key}`}
@@ -223,7 +258,7 @@ export function CreatableSearchSelect({
           disabled={isDisabled}
           required={field.required && !isDisabled}
           autoComplete="off"
-          className="w-full h-10 pl-8 pr-8 text-sm rounded-lg border border-[#D1D4DB] bg-transparent shadow-[0px_1px_2px_rgba(18,18,23,0.05)] focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="flex-1 min-w-0 h-full bg-transparent border-0 outline-none py-2 text-sm placeholder:text-[#6C6C89] disabled:cursor-not-allowed"
           onChange={(e) => {
             isEditingRef.current = true;
             setQuery(e.target.value);
@@ -239,21 +274,34 @@ export function CreatableSearchSelect({
           }}
           onBlur={() => {
             isEditingRef.current = false;
-            setTimeout(() => setOpen(false), 200);
+            setTimeout(() => {
+              setOpen(false);
+              // Revert to chip if the user blurred without picking another option
+              if (hasSelection) setEditingIntent(false);
+            }, 200);
           }}
         />
-        {hasSelection && !isDisabled && (
-          <button
-            type="button"
-            tabIndex={-1}
-            onMouseDown={(e) => { e.preventDefault(); handleClear(); }}
-            aria-label={ui('clear')}
-            className="absolute right-2 top-2 h-5 w-5 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-          >
-            <X className="h-3 w-3" />
-          </button>
-        )}
-      </div>
+      )}
+      {loading ? (
+        <Loader2 className="h-4 w-4 text-[#828FA3] animate-spin shrink-0 ml-auto" />
+      ) : (
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            if (showChip) { handleChipClick(); return; }
+            if (open) {
+              setOpen(false);
+            } else {
+              setOpen(true);
+              inputRef.current?.focus();
+            }
+          }}
+          className="shrink-0 ml-auto flex items-center"
+        >
+          <ChevronDown className="h-4 w-4 text-[#828FA3]" />
+        </button>
+      )}
 
       {showDropdown && (
         <div data-testid={`options-${field.key}`} className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">

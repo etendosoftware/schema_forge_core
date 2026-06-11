@@ -5,6 +5,9 @@
 | File | Description |
 |------|-------------|
 | [architecture-overview.md](architecture-overview.md) | System architecture: Schema Forge (tooling) + Etendo Go (runtime), data flow, component inventory |
+| [transactional-email-framework.md](transactional-email-framework.md) | Transactional email framework: contract-driven execution, security boundary, lifecycle, edge cases, and agent checklist |
+| [email-contracts.md](email-contracts.md) | Email contracts guide: descriptor schema, request/response contract, recipient policies, versioning, and initial contract sketches |
+| [document-email-contract-implementation.md](document-email-contract-implementation.md) | Agent/developer tutorial for defining document-send email contracts and wiring frontend/backend behavior |
 | [NEO Headless API Reference](../modules/com.etendoerp.go/docs/neo-headless.md) | Full API reference for the runtime module (NeoServlet, selectors, processes, webhooks) |
 | [NEO Headless Extensibility Guide](neo-headless-extensibility.md) | How to extend/customize NEO Headless: NeoHandler hooks, configuration, patterns |
 | [NEO Entity Naming Investigation](neo-entity-naming-investigation.md) | Investigation report on `push-to-neo` naming, duplicate entities/fields, runtime endpoint resolution, and unification rule |
@@ -24,6 +27,7 @@
 | File | Description |
 |------|-------------|
 | [sonarqube-access.md](sonarqube-access.md) | **SonarQube quick access**: bypass RTK with `rtk proxy`, project keys, useful endpoints, local scanner fallback |
+| [xml-regeneration-check.md](xml-regeneration-check.md) | **XML regeneration check**: compare original module XML vs export.database output without DB access |
 
 ## Field & Pipeline Reference
 
@@ -35,6 +39,7 @@
 | [ui-design-guidelines.md](ui-design-guidelines.md) | **UI design guidelines**: z-index scale, scrim opacity, overlay/drawer patterns, monetary amount formatting (`formatCurrency` vs `formatDashboardAmount`), column alignment |
 | [list-filters.md](list-filters.md) | **List view filters reference**: subset filters, quick filters, document-type filters, advanced filter popover — composition rules, URL-param hooks, when to use which |
 | [pipeline-validator-reference.md](pipeline-validator-reference.md) | **Pipeline completeness validator**: rules F1–F10, artifact classification, CLI flags, exit codes, and troubleshooting |
+| [contract-generation-ownership.md](contract-generation-ownership.md) | **Contract/generated output ownership**: producers, consumers, regeneration triggers, and split-ready artifact rules |
 | [line-pricing-model.md](line-pricing-model.md) | **Line pricing model**: client-side lineGrossAmount calculation for orders/quotations, field roles, callout vs client-side split, invoice refactor checklist |
 
 ## Design Specs
@@ -70,6 +75,7 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 | Path | Description |
 |------|-------------|
 | [generated-custom-windows/INDEX.md](generated-custom-windows/INDEX.md) | Functional docs for generated/custom windows, including the app-shell flows guide |
+| [fiscal-models-303-layout.md](fiscal-models-303-layout.md) | **Modelo 303 box layout system**: BASE structure, patch ops reference, how to add a new year, i18n keys, visual verification via debug panel |
 
 | [generated-custom-windows/2026-04-23-epic-etp-3504-merge-changelog.md](generated-custom-windows/2026-04-23-epic-etp-3504-merge-changelog.md) | Change log for the `epic/ETP-3504` -> `develop` window-level merge deltas documented in generated/custom windows |
 ## Guides
@@ -79,16 +85,18 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 | [developer-tools.md](developer-tools.md) | CLI tools used by the team: RTK (token optimization) and GWS (Google Workspace CLI) |
 | [claude-md-best-practices.md](claude-md-best-practices.md) | Best practices for writing effective CLAUDE.md files (research compilation) |
 | [self-documentation-policy.md](self-documentation-policy.md) | Self-documentation policy: triggers, checklists, and phase responsibilities for keeping docs in sync with code |
-| [feedback.md](feedback.md) | Known bug patterns and root-cause lessons: double-discount on line PATCH, callout price suppression for invoices, add-line row field key alignment |
+| [feedback.md](feedback.md) | Known bug patterns and root-cause lessons: double-discount on line PATCH, callout price suppression for invoices, add-line row field key alignment, ETP-4007 discount display fixes (etgoDiscount field name, listPrice vs unitPrice, grossAmount vs lineNetAmount, taxAmount formula, missing PDF discount breakdown rows) |
 
 ## Operations
 
 | File | Description |
 |------|-------------|
 | [ops/cloudfront-alb-routing.md](ops/cloudfront-alb-routing.md) | CloudFront + ALB routing for the SPA, same-origin `/etendo/*` forwarding, and deployment runbook |
+| [ops/transactional-email-security.md](ops/transactional-email-security.md) | Transactional email security runbook: secrets, throttle, suppression, kill switches, incident response, and metrics |
 | [ops/copilot-pr-review.md](ops/copilot-pr-review.md) | Copilot-aligned PR review gate: review instructions, deterministic findings, PR comments, and request-changes behavior |
 | [ops/window-doc-freshness.md](ops/window-doc-freshness.md) | Window-specific doc freshness warning: diff-based CI review for `docs/generated-custom-windows/<window>.md` |
 | [ops/epic-rollup-report.md](ops/epic-rollup-report.md) | Develop-targeted epic rollout report: included feature PRs, prior review findings, and aggregated release-risk summary |
+| [ops/app-shell-observability.md](ops/app-shell-observability.md) | App Shell observability: providers, env vars, v1 events, privacy rules, and extension guide |
 
 ## Proposals
 

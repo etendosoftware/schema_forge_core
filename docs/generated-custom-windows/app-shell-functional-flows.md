@@ -35,16 +35,26 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
   - `AuthGuard` redirects unauthenticated protected traffic to `/onboarding`.
   - `OnboardingPage` validates the platform token in `localStorage`.
   - Register/login calls the `/sws/go/register` or `/sws/go/login` endpoints.
+  - Successful registration stores the platform token and Etendo Go sends the `new-account` transactional email best-effort after the account commit, including the selected onboarding language as the allowlisted `language` template variable.
   - After platform auth, the page fetches `/sws/go/environments`.
   - If at least one environment exists, it auto-enters the first one, stores `sf_auth_token`, user, role, and org context, clears caches, and redirects to `/dashboard`.
-  - During new-environment creation, the onboarding backend runs the sequence generator for the selected organization using the new client's admin user/role context, seeds a default customer programmatically, and only then returns success; the page then logs in, checks Sales Invoice readiness, and redirects.
+  - During new-environment creation, the onboarding backend runs the sequence generator for the selected organization using the new client's admin user/role context, seeds a default customer programmatically, commits the onboarding transaction, and then sends the `environment-ready` transactional email best-effort; the page then logs in, checks Sales Invoice readiness, and redirects.
   - The curated onboarding dataset skips business partner rows and locations while still importing shared setup catalogs such as BP groups, payment terms, and accounting foundations.
   - If no environments exist, the page switches to the environment creation flow.
+  - The login form includes a forgot-password action that calls `/sws/go/password-reset/request`; the UI always shows neutral "reset email sent" messaging when the request succeeds.
+  - Reset links open `/onboarding?resetToken=...`, render the reset-password form, call `/sws/go/password-reset/confirm`, clear any stored platform token on success, and show invalid/expired link errors inline when the backend rejects the token.
+  - Authenticated setup views include a change-password panel that calls `/sws/go/change-password`, requires the current password, stores the rotated platform token returned by the backend, and shows success or current-password errors inline.
+  - Auth email UI calls never include provider payload fields such as `to`, `template`, `data`, sender, Reply-To, or provider metadata.
 - **Failure or edge behavior:**
   - An invalid stored platform token is removed and the page falls back to the register view.
   - Register/login failures stay on the onboarding page and surface inline errors.
+  - Password reset request success remains neutral and provider-detail-free.
+  - Password reset confirmation rejects mismatched local form passwords before calling the backend.
+  - Password-change failures keep the user on the current setup view without clearing the existing platform token.
   - Environment login failures currently surface browser `alert()` messages.
 - **Automated evidence:**
+  - `tools/app-shell/src/pages/onboarding/__tests__/onboardingApi.test.js` verifies register/login, forgot/reset/change password API calls, bearer handling, and that auth flows do not send provider payload fields.
+  - `tools/app-shell/src/pages/__tests__/OnboardingPage.vitest.jsx` verifies forgot-password, reset-password, invalid reset link, change-password success, token refresh, and current-password failure states.
   - `tools/app-shell/test/pwa.test.js` verifies that `OnboardingPage.jsx` clears caches on environment login.
   - Route protection and onboarding branching are code-backed in `tools/app-shell/src/App.jsx` and `tools/app-shell/src/pages/OnboardingPage.jsx`, but are not covered by a full browser test.
   - `etendo_core/modules/com.etendoerp.go/src-test/src/com/etendoerp/go/onboarding/OnboardingDefaultCustomerServiceTest.java` verifies the default customer seed behavior, and `EtendoGoJwtServletOnboardingDatasetTest.java` verifies the seed runs after sequence generation and fails honestly if customer creation fails.
@@ -53,6 +63,9 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
   2. Complete register or login.
   3. If the account already has an environment, confirm the browser lands on `/dashboard`.
   4. Clear `sf_auth_token`, open `/dashboard`, and confirm the browser is redirected back to `/onboarding`.
+  5. From login, request a password reset and confirm the success copy does not reveal whether the email exists.
+  6. Open `/onboarding?resetToken=<token>`, reset the password, then confirm login works with the new password and the old platform token was cleared.
+  7. While authenticated in setup, change the password and confirm the returned platform token replaces the previous `sf_platform_token`.
 
 ### 2. Authenticated shell and navigation chrome
 
@@ -219,6 +232,52 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
 - Sales-order, purchase-order, sales-quotation: directly inside `DetailView` at the bottom-right of the detail layout (uses `lineConfig` built from the summary + line fields).
 - Sales-invoice, purchase-invoice: inside the custom `InvoiceBottomPanel` / `PurchaseInvoiceBottomPanel` which hosts the right column of the docs/notes/totals footer.
 
+## Notes field — auto-save on blur
+
+Windows that declare `notesField` in `decisions.json` render a free-text `Notas` textarea in the bottom section of the detail view (via `LinesBottomSection.jsx`). The field behaves differently from the rest of the header form: it does not require the user to click the main Save button. Instead, it saves automatically when the textarea loses focus.
+
+**Trigger and mechanism**
+
+`DetailView.jsx` exposes a `handleNotesSave(value)` function that fires on the textarea's `onBlur` event. When the user clicks outside the field (or tabs away), `handleNotesSave` fires a `PATCH` request containing only the notes field (`{ [notesFieldKey]: value }`) to the header endpoint. This is a best-effort, non-blocking save: no page reload occurs after the PATCH completes.
+
+`LinesBottomSection.jsx` receives `onNotesSave` as a prop and wires it to the textarea's `onBlur` handler. No button press is required.
+
+**Feedback**
+
+On a successful PATCH, a `sonner` toast notification appears with the i18n key `noteSaved` ("Nota guardada" in Spanish, "Note saved" in English). On failure the toast shows the PATCH error without blocking further interaction.
+
+**Behavior on completed documents**
+
+The auto-save mechanism works regardless of the document's completion status. On completed documents the standard Save and Save Draft buttons are hidden (`hideSaveStatuses` in `HeaderPage`), so the notes field is the only editable surface that persists data without forcing a reactivation cycle. This is by design: operators frequently need to annotate a completed document (e.g. delivery notes, payment reminders) without reopening it.
+
+**Relationship to the total-discount onBlur pattern**
+
+This pattern mirrors the `etgoTotalDiscount` blur save already documented in the `DocumentTotalsPanel` section: both use `handleXSave` functions in `DetailView` that fire a single-field `PATCH` on blur, return a toast, and do not reload the page. The two patterns are intentionally symmetric so that any completed document can be annotated or discounted without needing a full edit cycle.
+
+**Affected windows**
+
+All windows that declare `notesField: "description"` in their `decisions.json` pick up this behavior automatically from the shared `DetailView.jsx` and `LinesBottomSection.jsx` components. At the time of writing, those windows are:
+
+- sales-order
+- sales-invoice
+- purchase-order
+- sales-quotation
+- payment-in
+- payment-out
+- purchase-invoice
+- goods-shipment
+- return-to-vendor
+- return-to-vendor-shipment
+- return-from-customer
+- return-material-receipt
+
+**i18n keys** (both `en_US.json` and `es_ES.json`):
+- `noteSaved` — "Nota guardada" / "Note saved"
+
+**Source files**
+- `tools/app-shell/src/components/contract-ui/DetailView.jsx` — `handleNotesSave` function
+- `tools/app-shell/src/components/contract-ui/LinesBottomSection.jsx` — `onNotesSave` prop wired to the textarea `onBlur`
+
 ## Current coverage gaps worth knowing
 
 - There is no end-to-end browser test that walks from `/onboarding` through `/dashboard` into a generated window.
@@ -226,3 +285,34 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
 - `useEntity` child-row refresh behavior and 401 logout behavior are code-backed but not directly covered by a dedicated UI test.
 - A fresh direct run of `tools/app-shell/src/auth/__tests__/api.test.js` currently fails because `tools/app-shell/src/auth/api.js` reads `window` during module import; treat that file as a pending test harness fix, not as a green automated proof point.
 - OAuth2 and PWA coverage is strong at source/build level, but still not browser-level E2E.
+
+## Shared validation & UX changes — ETP-4005
+
+These behaviors apply to **all document windows** (sales-order, sales-invoice, purchase-order, purchase-invoice, sales-quotation) and are implemented in shared components.
+
+### Required field validation on new inline line
+
+When a new inline line is submitted with a required field left empty (for example, `product`), the empty field is highlighted with a red border and a toast notification is shown. The add-row remains open so the user can correct the missing value without losing the rest of the entered data.
+
+### Single toast on document confirmation
+
+Previously, completing a document produced two successive toasts — "Registro guardado" followed by "Registro procesado". After ETP-4005 only the "Registro procesado" toast fires on a successful confirmation. The intermediate save toast was removed to reduce noise in the confirmation flow.
+
+### Callout message sanitization
+
+Backend callout messages are sanitized before display: HTML tags (such as `<br/>`) are stripped and common redundant prefixes ("Note:", "Warning:") are removed from the message string. Users see plain-text callout feedback without raw markup.
+
+### Inline line min-value validation
+
+Fields with a `min: 0` constraint — `invoicedQuantity`, `listPrice`, and `etgoDiscount` — now show a red border when the user types a negative value during inline edit. The row remains open and the save/confirm path for that row is blocked until the value is corrected or the edit is cancelled. The constraint is enforced client-side by `InlineLinesPanel` using the `min` metadata from the contract field definition.
+
+### Payment modal date validation
+
+The `date` field in `AddPaymentModal` / `InvoicePaymentModal` now carries a red asterisk (*) indicating it is required. The "Confirm payment" button is disabled while the date field is empty, preventing submission without a date. When the user attempts submission with no date or when the backend returns a 400 response, a descriptive translated error message is shown instead of the raw "Failed (400)" string. The error message is resolved via the i18n key `paymentDateRequired` in both `en_US.json` and `es_ES.json`.
+
+**Source files**
+- `tools/app-shell/src/components/contract-ui/DataTable.jsx` — `isMissingRequired`, `isBelowMin` helpers; `invalidFields` state in `InlineAddRow`
+- `tools/app-shell/src/components/contract-ui/InlineLinesPanel.jsx` — `isValueBelowMin` helper; `invalidCell` state; `hasValidationErrorRef` keeps edit mode open on validation failure
+- `tools/app-shell/src/hooks/useEntity.js` — `handleSaveAndProcess` passes `{ silent: true }` to `handleSave` to suppress the intermediate save toast
+- `tools/app-shell/src/hooks/useCallout.js` — `sanitizeCalloutMessage` strips HTML and redundant prefixes before passing text to Sonner
+- `tools/app-shell/src/windows/custom/shared/InvoicePaymentModal.jsx` — `invalidField` state, date/amount/account validation, disabled confirm button

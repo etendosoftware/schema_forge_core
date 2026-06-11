@@ -87,6 +87,21 @@ Schema Forge decides **what** to expose. Etendo Go decides **how** to serve it.
 | Contract tests | Node.js (JSON assertions) | Schema Forge |
 | Integration tests | JUnit (extends OBBaseTest) | Etendo Go |
 
+## Transactional Email Boundary
+
+Transactional email is a NEO Headless runtime capability, not a frontend/provider integration. Schema Forge documents contract methodology and app-shell integration rules; Etendo Go executes sends through server-side email contracts.
+
+Required boundary:
+
+```
+React SPA -> /sws/neo/email-contracts/{contractName}/send
+  -> EmailContractExecutor
+  -> Provider adapter
+  -> External email provider
+```
+
+The SPA sends a contract command. It must not receive provider secrets or send arbitrary `to/template/data` provider payloads. See [transactional-email-framework.md](transactional-email-framework.md), [email-contracts.md](email-contracts.md), and [ops/transactional-email-security.md](ops/transactional-email-security.md).
+
 ## Repository Structure
 
 ```
@@ -127,6 +142,28 @@ AD_Menu ──SQL──▶ resolve-menu.js ──▶ auto-detect type (W/P/R/X)
 ```
 
 The extraction connects to the Etendo PostgreSQL database and queries AD_Window, AD_Tab, AD_Column, AD_Field, AD_Reference, and related tables. It resolves FK types (TableDir, Table, Search, OBUISEL) and captures callout references, display logic, and validation rules.
+
+#### Optional cache layer (opt-in)
+
+All three extractors (`extract-from-db.js`, `extract-fields.js`, `extract-rules.js`) share a single global query cache at `cli/cache/ad-snapshot.json`. By default the cache is untouched and behavior is identical to a direct DB run. Two flags opt in:
+
+- `make regen ONLY=<spec> CACHE_DB=1` — run against the DB and refresh the snapshot (commit the diff).
+- `make regen ONLY=<spec> FROM_CACHE=1` — run extractors offline using the snapshot; cache miss = hard error.
+
+The cache is keyed by a deterministic hash of `(sql, params)` and is the foundation for offline regeneration checks.
+
+#### Offline regeneration check
+
+The cache, plus `push-to-neo --dump-delta` (predicted writes) and `xml-apply-delta` (predicted XML), enable a full no-DB no-`export.database` drift check:
+
+```
+prev XML ──┐
+           ├──► applyDelta ──► predicted XML ──► xml-regeneration-check ──► exit 0 / 1
+delta  ────┘
+   (push-to-neo --dump-delta, reads cache)
+```
+
+One command: `make regen-check ONLY=<spec> FROM_CACHE=1`. See `docs/xml-regeneration-check.md`.
 
 ### 2. Curation (Human decides)
 

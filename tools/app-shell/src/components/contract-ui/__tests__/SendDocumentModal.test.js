@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'SendDocumentModal.jsx'), 'utf8');
+const sendSrc = readFileSync(join(__dirname, '..', 'documentEmailSend.js'), 'utf8');
 
 describe('SendDocumentModal', () => {
   it('exports a default function component', () => {
@@ -43,8 +44,19 @@ describe('SendDocumentModal', () => {
     assert.match(src, /\$\{documentType\}.*#\$\{documentNo\}/);
   });
 
-  it('disables Send button when email is empty or sending', () => {
-    assert.match(src, /!to\.trim\(\)\s*\|\|\s*sending/);
+  it('disables Send button when documentId is missing or sending', () => {
+    assert.match(src, /!documentId\s*\|\|\s*sending/);
+  });
+
+  it('sends document email through the email contracts endpoint', () => {
+    assert.match(src, /sendDocumentEmail/);
+    assert.match(sendSrc, /email-contracts\/\$\{contractName\}\/send/);
+    assert.match(sendSrc, /buildEmailContractCommand/);
+  });
+
+  it('derives email contract names from the window name without document-specific branches', () => {
+    assert.match(sendSrc, /return `\$\{windowName\}-send`/);
+    assert.doesNotMatch(sendSrc, /windowName\s*===\s*'sales-invoice'/);
   });
 
   it('uses toast for send confirmation', () => {
@@ -58,5 +70,42 @@ describe('SendDocumentModal', () => {
 
   it('generates download filename from windowName and documentNo', () => {
     assert.match(src, /\$\{windowName\}-\$\{documentNo\}\.pdf/);
+  });
+
+  // ── ETP-4089: recipient handling is contract-driven ───────────────────────
+
+  it('does not keep local email validation for contract sends', () => {
+    assert.doesNotMatch(src, /function\s+isValidEmail/);
+    assert.doesNotMatch(src, /sendModalNoEmail/);
+  });
+
+  it('renders email preview fields as read-only', () => {
+    const emailPanelStart = src.indexOf('function EmailFormPanel');
+    const emailPanelEnd = src.indexOf('async function fetchAndDownloadPdf');
+    const emailPanelSrc = src.slice(emailPanelStart, emailPanelEnd);
+    assert.match(emailPanelSrc, /readOnly/);
+    assert.doesNotMatch(emailPanelSrc, /onChange=/);
+  });
+
+  it('does not send caller-provided provider payload fields', () => {
+    const commandStart = sendSrc.indexOf('export function buildEmailContractCommand');
+    const commandEnd = sendSrc.indexOf('export async function readEmailContractResponse');
+    assert.ok(commandStart > -1, 'buildEmailContractCommand export not found');
+    assert.ok(commandEnd > commandStart, 'readEmailContractResponse export not found after command builder');
+    const commandSrc = sendSrc.slice(commandStart, commandEnd);
+    assert.doesNotMatch(commandSrc, /\bto\b/);
+    assert.doesNotMatch(commandSrc, /\btemplate\b/);
+    assert.doesNotMatch(commandSrc, /\bdata\b/);
+  });
+
+  // ── ETP-4003: EmailFormPanel is module-level ───────────────────────────────
+
+  it('EmailFormPanel is defined as a function at module level (before the default export)', () => {
+    // The function declaration must appear before "export default function SendDocumentModal"
+    const emailPanelPos = src.indexOf('function EmailFormPanel');
+    const defaultExportPos = src.indexOf('export default function SendDocumentModal');
+    assert.ok(emailPanelPos > -1, 'EmailFormPanel function not found');
+    assert.ok(defaultExportPos > -1, 'SendDocumentModal default export not found');
+    assert.ok(emailPanelPos < defaultExportPos, 'EmailFormPanel must be defined before SendDocumentModal');
   });
 });

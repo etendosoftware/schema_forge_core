@@ -32,6 +32,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:organizations
 
+// @sf-generated-start requiredHeaderFields:organizations
+const requiredHeaderFields = ['acogidaAlSII', 'name', 'recc', 'updateInvoices'];
+// @sf-generated-end requiredHeaderFields:organizations
+
 // @sf-generated-start addLineFields:issuedInvoices
 const addLineFields = {
   entry: [
@@ -209,7 +213,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "Paymentmethod",
       "inputMode": "selector",
-      "url": "/sws/neo/sii-monitor/issuedInvoices/selectors/paymentMethod"
+      "url": "/sws/neo/sii-monitor/issuedInvoices/selectors/paymentMethod",
+      "context": {
+        "optional": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "issuedInvoicesSiiData",
@@ -249,7 +261,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "Paymentmethod",
       "inputMode": "selector",
-      "url": "/sws/neo/sii-monitor/receivedInvoices/selectors/paymentMethod"
+      "url": "/sws/neo/sii-monitor/receivedInvoices/selectors/paymentMethod",
+      "context": {
+        "optional": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "receivedInvoicesSiiData",
@@ -353,7 +373,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "Paymentmethod",
       "inputMode": "selector",
-      "url": "/sws/neo/sii-monitor/issuedInvoices(previousPeriod)/selectors/paymentMethod"
+      "url": "/sws/neo/sii-monitor/issuedInvoices(previousPeriod)/selectors/paymentMethod",
+      "context": {
+        "optional": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "issuedInvoices(previousPeriod)SiiData",
@@ -393,7 +421,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "Paymentmethod",
       "inputMode": "selector",
-      "url": "/sws/neo/sii-monitor/receivedInvoices(previousPeriod)/selectors/paymentMethod"
+      "url": "/sws/neo/sii-monitor/receivedInvoices(previousPeriod)/selectors/paymentMethod",
+      "context": {
+        "optional": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "receivedInvoices(previousPeriod)SiiData",
@@ -1086,6 +1122,7 @@ export default function OrganizationsPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );
@@ -1099,6 +1136,7 @@ export default function OrganizationsPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      rowQuickActions={{}}
       {...props}
     />
   );

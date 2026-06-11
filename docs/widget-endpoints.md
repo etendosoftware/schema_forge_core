@@ -32,7 +32,7 @@ Dashboard pages can also consume entity endpoints under `/sws/neo/dashboard/{ent
 
 | Entity | URL | Handler | Description |
 |--------|-----|---------|-------------|
-| `recent-invoices` | `GET /sws/neo/dashboard/recent-invoices` | `widgetRecentInvoicesHandler` | Completed sales invoices (`CO`, `CL`) from the last 7 days, max 10 records |
+| `recent-invoices` | `GET /sws/neo/dashboard/recent-invoices` | `widgetRecentInvoicesHandler` | Completed sales invoices (`CO`, `CL`) for the requested `?range=`, max **5** records, sorted newest first |
 
 ## Response Format
 
@@ -278,6 +278,8 @@ Single object with parallel `labels` (month abbreviations) and `values` (amounts
 
 ### widget-pending-tasks
 
+Each task uses either `filter` (quick-filter preset) or `params` (column-filter map) in its navigation object — never both.
+
 ```json
 {
   "response": {
@@ -292,14 +294,49 @@ Single object with parallel `labels` (month abbreviations) and `values` (amounts
         },
         "link": "/sales-invoice?filter=overdue",
         "amount": "$12,400"
+      },
+      {
+        "type": "info",
+        "text": "4 goods receipts pending",
+        "navigation": {
+          "type": "list",
+          "window": "goods-receipt",
+          "params": { "DocStatus": "DR" }
+        },
+        "link": "/goods-receipt?DocStatus=DR",
+        "count": 4,
+        "taskKey": "pendingReceptions_plural"
+      },
+      {
+        "type": "info",
+        "text": "9 goods shipments pending",
+        "navigation": {
+          "type": "list",
+          "window": "goods-shipment",
+          "params": { "DocStatus": "DR" }
+        },
+        "link": "/goods-shipment?DocStatus=DR",
+        "count": 9,
+        "taskKey": "pendingSalesDeliveries_plural"
       }
     ],
-    "count": 4
+    "count": 3
   }
 }
 ```
 
-Fields: `type` (`warning`|`info`), `text` (description), `navigation` (preferred semantic target), `link` (legacy route path during migration), `amount` (optional formatted string), `detail` (optional extra text).
+Fields: `type` (`warning`|`info`), `text` (description), `navigation` (preferred semantic target — uses `filter` for quick-filter presets or `params` for column-filter pre-population), `link` (legacy route path during migration), `count` (numeric), `taskKey` (i18n key used by `PendingTasksRail`), `amount` (optional formatted string), `detail` (optional extra text).
+
+**Task inventory** (as of ETP-4004):
+
+| taskKey | Window | Navigation type | Target |
+|---------|--------|----------------|--------|
+| `overdueInvoices` | `sales-invoice` | `filter` | `overdue` |
+| `collectionsDueToday` | `sales-invoice` | `filter` | `collectionsDueToday` |
+| `paymentsDueToday` | `purchase-invoice` | `filter` | `paymentsDueToday` |
+| `pendingReceptions` | `goods-receipt` | `params` | `DocStatus=DR` |
+| `pendingSalesDeliveries` | `goods-shipment` | `params` | `DocStatus=DR` |
+| `lowStockAlerts` | `physical-inventory` | — | direct link |
 
 ### widget-activity
 
@@ -346,7 +383,7 @@ Fields: `id` (unique), `author` (display name), `text` (message), `timestamp` (I
 }
 ```
 
-Data is filtered to sales invoices (`issotrx = 'Y'`) in completed statuses (`CO`, `CL`) with `dateinvoiced` in the last 7 days, sorted by newest first, limited to 10 rows.
+Data is filtered to sales invoices (`issotrx = 'Y'`) in completed statuses (`CO`, `CL`) within the requested `?range=` period, sorted by newest first, limited to 10 rows. When no range is supplied the fallback covers the last 30 days anchored to the most recent invoice date.
 
 Dashboard monetary widgets render values with an ISO currency prefix and fixed en-US numeric separators to avoid symbol and locale ambiguity in multi-currency orgs (for example, `EUR 7,284.20`).
 

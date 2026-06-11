@@ -1,7 +1,7 @@
 import { readFile, mkdir, writeFile, readdir, stat } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, sep } from 'node:path';
-import { createDbPool, closePool } from './db.js';
+import { createDbPool, closePool, setCacheMode, flushCacheWrites } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,12 +28,23 @@ WHERE t.AD_Window_ID = $1
 `;
 
 const DISPLAY_LOGIC_SQL = `
-SELECT f.Name, f.DisplayLogic, c.ReadOnlyLogic, c.ColumnName
+SELECT f.Name,
+       f.DisplayLogic,
+       c.ReadOnlyLogic,
+       c.ColumnName,
+       t.Name        AS tab_name,
+       t.AD_Tab_ID   AS tab_id,
+       tbl.TableName AS table_name,
+       tbl.AD_Table_ID AS table_id,
+       c.AD_Column_ID AS column_id,
+       f.AD_Field_ID  AS field_id
 FROM AD_Field f
 JOIN AD_Column c ON f.AD_Column_ID = c.AD_Column_ID
 JOIN AD_Tab t ON f.AD_Tab_ID = t.AD_Tab_ID
+JOIN AD_Table tbl ON c.AD_Table_ID = tbl.AD_Table_ID
 WHERE t.AD_Window_ID = $1
   AND (f.DisplayLogic IS NOT NULL OR c.ReadOnlyLogic IS NOT NULL)
+ORDER BY t.SeqNo, t.AD_Tab_ID, f.SeqNo, f.AD_Field_ID, c.AD_Column_ID
 `;
 
 const AUXILIARY_INPUTS_SQL = `
@@ -109,14 +120,7 @@ export function analyzeJavaSource(sourceCode) {
   // Detect addResult / setFieldValue patterns
   // addResult("fieldName", ...) or setFieldValue("fieldName", ...)
   const effectPattern = /(?:addResult|setFieldValue)\s*\(\s*"([^"]+)"/g;
-  let match;
-  while ((match = effectPattern.exec(sourceCode)) !== null) {
-    effects.push({
-      field: match[1],
-      action: 'setValue',
-      confidence: 'high',
-    });
-  }
+  extractEffectsFromSource(effectPattern, sourceCode, effects);
 
   // Count branches: if, switch, ternary (?)
   const lines = sourceCode.split('\n');
@@ -140,6 +144,24 @@ export function analyzeJavaSource(sourceCode) {
   }
 
   // Count LOC (non-blank, non-comment lines)
+  const loc = calculateLOC(lines);
+
+  // Detect DML patterns
+  const dmlPattern = /OBDal|PreparedStatement|createCriteria|ConnectionProvider|executeUpdate|createQuery|getConnection/;
+  const hasDml = dmlPattern.test(sourceCode);
+
+  const confidence = effects.length > 0 ? 'high' : 'medium';
+
+  return {
+    effects,
+    confidence,
+    branches,
+    loc,
+    hasDml,
+  };
+}
+
+function calculateLOC(lines) {
   let loc = 0;
   let inBlockComment = false;
   for (const line of lines) {
@@ -160,20 +182,18 @@ export function analyzeJavaSource(sourceCode) {
 
     loc++;
   }
+  return loc;
+}
 
-  // Detect DML patterns
-  const dmlPattern = /OBDal|PreparedStatement|createCriteria|ConnectionProvider|executeUpdate|createQuery|getConnection/;
-  const hasDml = dmlPattern.test(sourceCode);
-
-  const confidence = effects.length > 0 ? 'high' : 'medium';
-
-  return {
-    effects,
-    confidence,
-    branches,
-    loc,
-    hasDml,
-  };
+function extractEffectsFromSource(effectPattern, sourceCode, effects) {
+  let match;
+  while ((match = effectPattern.exec(sourceCode)) !== null) {
+    effects.push({
+      field: match[1],
+      action: 'setValue',
+      confidence: 'high',
+    });
+  }
 }
 
 /**
@@ -342,6 +362,107 @@ async function walkForFile(dir, targetName) {
   return null;
 }
 
+async function processCalloutRow(row, sourceDir) {
+  let sourceAnalysis;
+  if (sourceDir && row.classname) {
+    const source = await findSource(sourceDir, row.classname);
+    sourceAnalysis = analyzeJavaSource(source);
+  } else {
+    sourceAnalysis = analyzeJavaSource(null);
+  }
+  return buildRuleFromCallout(row, sourceAnalysis);
+}
+
+function buildValidationRule(row) {
+  return {
+    type: 'validation',
+    source: 'AD_Val_Rule',
+    id: row.ad_val_rule_id,
+    name: row.name,
+    column: row.columnname,
+    code: row.code,
+    isSimple: isSimpleValidation(row.code),
+  };
+}
+
+function buildDisplayLogicRule(row, windowName) {
+  const translated = translateExpression(row.displaylogic);
+  return {
+    name: `${windowName}-${row.tab_name}-${row.columnname}-displayLogic`,
+    type: 'displayLogic',
+    source: 'AD_Field',
+    window: windowName,
+    tab: row.tab_name,
+    fieldName: row.name,
+    column: row.columnname,
+    rawExpression: row.displaylogic,
+    translated: translated.success ? translated.result : null,
+    translationError: translated.success ? undefined : translated.error,
+  };
+}
+
+function buildReadOnlyLogicRule(row) {
+  const translated = translateExpression(row.readonlylogic);
+  return {
+    name: `${row.table_name}-${row.columnname}-readOnlyLogic`,
+    type: 'readOnlyLogic',
+    source: 'AD_Column',
+    table: row.table_name,
+    fieldName: row.name,
+    column: row.columnname,
+    rawExpression: row.readonlylogic,
+    translated: translated.success ? translated.result : null,
+    translationError: translated.success ? undefined : translated.error,
+  };
+}
+
+// Rule naming is intentionally derived from the *source* of each logic
+// expression so test ids are stable across pipeline runs:
+//   - DisplayLogic lives on AD_Field, which is unique per (tab, column)
+//     → `${windowName}-${tabName}-${columnName}-displayLogic`
+//   - ReadOnlyLogic lives on AD_Column, which is unique per (table, column)
+//     → `${tableName}-${columnName}-readOnlyLogic`
+// The DISPLAY_LOGIC_SQL query joins AD_Field → AD_Column, so a single
+// column that participates in multiple fields/tabs is returned once per
+// field. We dedupe ReadOnlyLogic rules per column to avoid emitting the
+// same rule N times.
+function appendDisplayAndReadOnlyRules(rules, rows, windowName) {
+  const seenReadOnlyRule = new Set();
+  for (const row of rows) {
+    if (row.displaylogic) {
+      rules.push(buildDisplayLogicRule(row, windowName));
+    }
+    if (row.readonlylogic) {
+      const ruleName = `${row.table_name}-${row.columnname}-readOnlyLogic`;
+      if (seenReadOnlyRule.has(ruleName)) continue;
+      seenReadOnlyRule.add(ruleName);
+      rules.push(buildReadOnlyLogicRule(row));
+    }
+  }
+}
+
+async function buildProcessRule(row, sourceDir) {
+  let sourceAnalysis = null;
+  if (sourceDir && row.classname) {
+    const source = await findSource(sourceDir, row.classname);
+    sourceAnalysis = analyzeJavaSource(source);
+  }
+  return {
+    type: 'process',
+    source: row.mechanism === 'obuiapp_process' ? 'OBUIAPP_Process' : 'AD_Process',
+    mechanism: row.mechanism,
+    id: row.process_id ?? row.obuiapp_process_id,
+    name: row.name,
+    className: row.classname,
+    column: row.column_name,
+    ...(sourceAnalysis && {
+      hasDml: sourceAnalysis.hasDml,
+      loc: sourceAnalysis.loc,
+      complexity: determineComplexity(sourceAnalysis),
+    }),
+  };
+}
+
 /**
  * Main orchestrator: queries 4 SQL sources + optional Java analysis.
  * Writes artifacts/{windowName}/rules-raw.json.
@@ -362,82 +483,15 @@ export async function main(windowId, windowName) {
 
     const rules = [];
 
-    // Process callouts with optional source analysis
     for (const row of calloutsRes.rows) {
-      let sourceAnalysis = null;
-      if (sourceDir && row.classname) {
-        const source = await findSource(sourceDir, row.classname);
-        sourceAnalysis = analyzeJavaSource(source);
-      } else {
-        sourceAnalysis = analyzeJavaSource(null);
-      }
-      rules.push(buildRuleFromCallout(row, sourceAnalysis));
+      rules.push(await processCalloutRow(row, sourceDir));
     }
-
-    // Process validation rules
     for (const row of validationsRes.rows) {
-      rules.push({
-        type: 'validation',
-        source: 'AD_Val_Rule',
-        id: row.ad_val_rule_id,
-        name: row.name,
-        column: row.columnname,
-        code: row.code,
-        isSimple: isSimpleValidation(row.code),
-      });
+      rules.push(buildValidationRule(row));
     }
-
-    // Process display/readOnly logic
-    for (const row of displayLogicRes.rows) {
-      if (row.displaylogic) {
-        const translated = translateExpression(row.displaylogic);
-        rules.push({
-          type: 'displayLogic',
-          source: 'AD_Field',
-          fieldName: row.name,
-          column: row.columnname,
-          rawExpression: row.displaylogic,
-          translated: translated.success ? translated.result : null,
-          translationError: translated.success ? undefined : translated.error,
-        });
-      }
-
-      if (row.readonlylogic) {
-        const translated = translateExpression(row.readonlylogic);
-        rules.push({
-          type: 'readOnlyLogic',
-          source: 'AD_Column',
-          fieldName: row.name,
-          column: row.columnname,
-          rawExpression: row.readonlylogic,
-          translated: translated.success ? translated.result : null,
-          translationError: translated.success ? undefined : translated.error,
-        });
-      }
-    }
-
-    // Process document processes (3 mechanisms + hardcoded)
+    appendDisplayAndReadOnlyRules(rules, displayLogicRes.rows, windowName);
     for (const row of processesRes.rows) {
-      let sourceAnalysis = null;
-      if (sourceDir && row.classname) {
-        const source = await findSource(sourceDir, row.classname);
-        sourceAnalysis = analyzeJavaSource(source);
-      }
-
-      rules.push({
-        type: 'process',
-        source: row.mechanism === 'obuiapp_process' ? 'OBUIAPP_Process' : 'AD_Process',
-        mechanism: row.mechanism,
-        id: row.process_id ?? row.obuiapp_process_id,
-        name: row.name,
-        className: row.classname,
-        column: row.column_name,
-        ...(sourceAnalysis && {
-          hasDml: sourceAnalysis.hasDml,
-          loc: sourceAnalysis.loc,
-          complexity: determineComplexity(sourceAnalysis),
-        }),
-      });
+      rules.push(await buildProcessRule(row, sourceDir));
     }
 
     // Process auxiliary inputs (computed variables for DisplayLogic)
@@ -487,16 +541,34 @@ export async function main(windowId, windowName) {
 
 // CLI entry point
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const windowId = process.argv[2];
-  const windowName = process.argv[3];
+  const flags = process.argv.slice(2).filter((a) => a.startsWith('--'));
+  const positional = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+  const writeCache = flags.includes('--write-cache');
+  const fromCache = flags.includes('--from-cache');
+  if (writeCache && fromCache) {
+    console.error('Error: --write-cache and --from-cache are mutually exclusive');
+    process.exit(1);
+  }
+  if (writeCache) setCacheMode({ mode: 'write' });
+  else if (fromCache) setCacheMode({ mode: 'read' });
+
+  const windowId = positional[0];
+  const windowName = positional[1];
 
   if (!windowId || !windowName) {
-    console.error('Usage: node extract-rules.js <windowId> <windowName>');
+    console.error('Usage: node extract-rules.js [--write-cache|--from-cache] <windowId> <windowName>');
     process.exit(1);
   }
 
-  main(windowId, windowName).catch((err) => {
-    console.error('Rule extraction failed:', err.message);
-    process.exit(1);
-  });
+  main(windowId, windowName)
+    .then(() => {
+      if (writeCache) {
+        const { written, path } = flushCacheWrites();
+        console.log(`Cache: wrote ${written} entries to ${path}`);
+      }
+    })
+    .catch((err) => {
+      console.error('Rule extraction failed:', err.message);
+      process.exit(1);
+    });
 }

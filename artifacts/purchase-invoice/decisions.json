@@ -6,19 +6,11 @@
     "sendDocument": {
       "allowEmail": false
     },
+    "hideDeleteWhenComplete": true,
     "relatedDocuments": true,
     "notesField": "description",
     "noHeaderBorder": true,
-    "menuActions": [
-      {
-        "key": "reactivate",
-        "label": "Reactivate",
-        "labelKey": "reactivate",
-        "visibleWhenStatus": "CO",
-        "documentAction": "RE",
-        "successKey": "reactivated"
-      }
-    ],
+    "menuActions": [],
     "customComponents": {
       "headerTable": "InvoiceHeaderTable",
       "bottomSection": "PurchaseInvoiceBottomPanel"
@@ -44,7 +36,7 @@
     ],
     "labelOverrides": {
       "es_ES": {
-        "POReference": "Nº documento",
+        "POReference": "N\u00ba documento",
         "OutstandingAmt": "Pendiente de pago",
         "EM_Etgo_Due_Date": "Vencimiento",
         "em_etgo_delivery_status": "Estado de entrega",
@@ -58,6 +50,22 @@
         "em_etgo_delivery_status": "Delivery Status",
         "C_DocTypeTarget_ID": "Document Type",
         "EM_Etgo_Origin_Invoice_ID": "Origin Invoice"
+      }
+    },
+    "secondaryTabs": {
+      "exchangeRates": {
+        "label": "Exchange Rates",
+        "tabOrder": 50,
+        "addLineFields": [
+          "toCurrency",
+          "rate",
+          "foreignAmount"
+        ],
+        "requireSavedRecord": true,
+        "readOnlyLogic": "@DocumentStatus@!='DR'",
+        "addLineFieldExclusions": {
+          "toCurrency": "currency"
+        }
       }
     }
   },
@@ -98,7 +106,7 @@
           "searchable": true,
           "section": "principal",
           "reference": "BusinessPartner",
-          "readOnlyLogic": null,
+          "readOnlyLogic": "@Processed@='Y'",
           "displayLogic": null,
           "seq": 10
         },
@@ -110,7 +118,7 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "readOnlyLogic": null,
+          "readOnlyLogic": "@Processed@='Y'",
           "seq": 40
         },
         "currency": {
@@ -167,7 +175,7 @@
           "form": false,
           "reference": "User",
           "inputMode": "search",
-          "readOnlyLogic": null
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "salesRepresentative": {
           "visibility": "editable",
@@ -384,7 +392,8 @@
         },
         "aeatsiiEstado": {
           "visibility": "readOnly",
-          "form": false
+          "form": false,
+          "grid": true
         },
         "etsgDateOperation": {
           "visibility": "editable",
@@ -500,7 +509,8 @@
           "order": 3,
           "gridOrder": 3,
           "section": "principal",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "min": 0
         },
         "uOM": {
           "visibility": "system"
@@ -517,7 +527,8 @@
           "order": 4,
           "gridOrder": 4,
           "section": "principal",
-          "columnType": "amount"
+          "columnType": "amount",
+          "min": 0
         },
         "etgoDiscount": {
           "visibility": "editable",
@@ -528,7 +539,8 @@
           "gridOrder": 5,
           "section": "principal",
           "derivation": null,
-          "readOnlyLogic": "@Processed@='Y'"
+          "readOnlyLogic": "@Processed@='Y'",
+          "min": 0
         },
         "lineNetAmount": {
           "visibility": "system",
@@ -806,9 +818,6 @@
         }
       }
     },
-    "exchangeRates": {
-      "exclude": true
-    },
     "intrastat": {
       "fields": {
         "client": {
@@ -878,6 +887,27 @@
           "order": 22
         }
       }
+    },
+    "exchangeRates": {
+      "fields": {
+        "active": {
+          "visibility": "system"
+        },
+        "currency": {
+          "grid": true,
+          "form": false
+        },
+        "toCurrency": {
+          "grid": true
+        },
+        "rate": {
+          "grid": true
+        },
+        "foreignAmount": {
+          "grid": true
+        }
+      },
+      "javaQualifier": "invoiceExchangeRateHandler"
     }
   },
   "rules": {

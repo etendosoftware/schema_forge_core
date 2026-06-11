@@ -48,6 +48,16 @@ describe('QuotationConfirmModal', () => {
     });
   });
 
+  describe('UE totals (ETP-4006)', () => {
+    it('trusts the server grand total as-is in Under Evaluation', () => {
+      assert.match(src, /const grandTotal\s*=\s*Number\(d\.grandTotalAmount \?\? d\.grandTotal \?\? 0\) \|\| 0;/);
+    });
+
+    it('trusts the server subtotal as-is in Under Evaluation', () => {
+      assert.match(src, /const totalLines\s*=\s*Number\(d\.summedLineAmount \?\? d\.totalLines \?\? d\.grandTotalAmount \?\? 0\) \|\| 0;/);
+    });
+  });
+
   describe('i18n', () => {
     it('uses the useUI() hook for translations', () => {
       assert.match(src, /from\s+['"]@\/i18n['"]/);

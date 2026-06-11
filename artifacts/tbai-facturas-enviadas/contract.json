@@ -1,13 +1,15 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-05-04T17:05:55.224Z",
-  "checksum": "71935c07bd781c17",
+  "updatedAt": "2026-05-19T17:03:46.469Z",
+  "checksum": "258ea027602cfe96",
   "frontendContract": {
     "window": {
       "id": "71F24BF89DE748B483BE87594747D6FB",
       "name": "TBAI Facturas Enviadas",
       "primaryEntity": "sincronización",
       "category": "monitor",
+      "attachments": false,
       "layoutType": "default"
     },
     "entities": {
@@ -153,7 +155,8 @@
       "id": "71F24BF89DE748B483BE87594747D6FB",
       "name": "TBAI Facturas Enviadas",
       "primaryEntity": "sincronización",
-      "category": "monitor"
+      "category": "monitor",
+      "attachments": false
     },
     "entities": {
       "sincronización": {
@@ -469,141 +472,21 @@
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
-        "category": "field-presence",
-        "entity": "sincronización",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should be present in sincronización"
-      },
-      {
-        "id": "t-2",
-        "category": "field-presence",
-        "entity": "sincronización",
-        "field": "estado",
-        "runner": "node",
-        "description": "Field 'estado' should be present in sincronización"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "sincronización",
-        "field": "descripcion",
-        "runner": "node",
-        "description": "Field 'descripcion' should be present in sincronización"
-      },
-      {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "sincronización",
-        "field": "invoice",
-        "runner": "node",
-        "description": "Field 'invoice' should be present in sincronización"
-      },
-      {
-        "id": "t-5",
-        "category": "field-type",
-        "entity": "sincronización",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should have type 'boolean' in sincronización"
-      },
-      {
-        "id": "t-6",
-        "category": "field-type",
-        "entity": "sincronización",
-        "field": "estado",
-        "runner": "node",
-        "description": "Field 'estado' should have type 'string' in sincronización"
-      },
-      {
-        "id": "t-7",
-        "category": "field-type",
-        "entity": "sincronización",
-        "field": "descripcion",
-        "runner": "node",
-        "description": "Field 'descripcion' should have type 'string' in sincronización"
-      },
-      {
-        "id": "t-8",
-        "category": "field-type",
-        "entity": "sincronización",
-        "field": "invoice",
-        "runner": "node",
-        "description": "Field 'invoice' should have type 'string' in sincronización"
-      },
-      {
-        "id": "t-9",
-        "category": "visibility",
-        "entity": "sincronización",
-        "runner": "node",
-        "description": "Entity 'sincronización' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-10",
-        "category": "default-value-type",
-        "entity": "sincronización",
-        "field": "active",
-        "runner": "node",
-        "description": "Default value for 'active' in sincronización should be a string"
-      },
-      {
-        "id": "t-11",
-        "category": "field-presence",
-        "entity": "resultadoValidación",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should be present in resultadoValidación"
-      },
-      {
-        "id": "t-12",
-        "category": "field-presence",
-        "entity": "resultadoValidación",
-        "field": "codigo",
-        "runner": "node",
-        "description": "Field 'codigo' should be present in resultadoValidación"
-      },
-      {
-        "id": "t-13",
-        "category": "field-presence",
-        "entity": "resultadoValidación",
-        "field": "descripcion",
-        "runner": "node",
-        "description": "Field 'descripcion' should be present in resultadoValidación"
-      },
-      {
-        "id": "t-14",
-        "category": "field-type",
-        "entity": "resultadoValidación",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should have type 'boolean' in resultadoValidación"
-      },
-      {
-        "id": "t-15",
-        "category": "field-type",
-        "entity": "resultadoValidación",
-        "field": "codigo",
-        "runner": "node",
-        "description": "Field 'codigo' should have type 'string' in resultadoValidación"
-      },
-      {
-        "id": "t-16",
-        "category": "field-type",
-        "entity": "resultadoValidación",
-        "field": "descripcion",
-        "runner": "node",
-        "description": "Field 'descripcion' should have type 'string' in resultadoValidación"
-      },
-      {
-        "id": "t-17",
-        "category": "visibility",
+        "id": "t-crud-flags-resultadoValidaci-n",
+        "category": "crud-flags",
         "entity": "resultadoValidación",
         "runner": "node",
-        "description": "Entity 'resultadoValidación' should only expose visible fields in frontend"
+        "description": "CRUD flags for 'resultadoValidación' should all be booleans"
       },
       {
-        "id": "t-18",
+        "id": "t-crud-flags-sincronizaci-n",
+        "category": "crud-flags",
+        "entity": "sincronización",
+        "runner": "node",
+        "description": "CRUD flags for 'sincronización' should all be booleans"
+      },
+      {
+        "id": "t-default-value-type-resultadoValidaci-n-active",
         "category": "default-value-type",
         "entity": "resultadoValidación",
         "field": "active",
@@ -611,87 +494,135 @@
         "description": "Default value for 'active' in resultadoValidación should be a string"
       },
       {
-        "id": "t-19",
-        "category": "system-field",
+        "id": "t-default-value-type-sincronizaci-n-active",
+        "category": "default-value-type",
         "entity": "sincronización",
-        "field": "organization",
+        "field": "active",
         "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for sincronización"
+        "description": "Default value for 'active' in sincronización should be a string"
       },
       {
-        "id": "t-20",
-        "category": "system-field",
-        "entity": "sincronización",
-        "field": "tbaiSyncinvoiceID",
-        "runner": "node",
-        "description": "System field 'tbaiSyncinvoiceID' should exist in backend but not frontend for sincronización"
-      },
-      {
-        "id": "t-21",
-        "category": "system-field",
-        "entity": "sincronización",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for sincronización"
-      },
-      {
-        "id": "t-22",
-        "category": "system-field",
-        "entity": "sincronización",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for sincronización"
-      },
-      {
-        "id": "t-23",
-        "category": "system-field",
-        "entity": "sincronización",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for sincronización"
-      },
-      {
-        "id": "t-24",
-        "category": "system-field",
-        "entity": "sincronización",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for sincronización"
-      },
-      {
-        "id": "t-25",
-        "category": "system-field",
-        "entity": "sincronización",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for sincronización"
-      },
-      {
-        "id": "t-26",
-        "category": "system-field",
+        "id": "t-field-presence-resultadoValidaci-n-active",
+        "category": "field-presence",
         "entity": "resultadoValidación",
-        "field": "organization",
+        "field": "active",
         "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for resultadoValidación"
+        "description": "Field 'active' should be present in resultadoValidación"
       },
       {
-        "id": "t-27",
-        "category": "system-field",
+        "id": "t-field-presence-resultadoValidaci-n-codigo",
+        "category": "field-presence",
         "entity": "resultadoValidación",
-        "field": "tbaiSyncinvoiceID",
+        "field": "codigo",
         "runner": "node",
-        "description": "System field 'tbaiSyncinvoiceID' should exist in backend but not frontend for resultadoValidación"
+        "description": "Field 'codigo' should be present in resultadoValidación"
       },
       {
-        "id": "t-28",
-        "category": "system-field",
+        "id": "t-field-presence-resultadoValidaci-n-descripcion",
+        "category": "field-presence",
         "entity": "resultadoValidación",
-        "field": "tbaiValcodeID",
+        "field": "descripcion",
         "runner": "node",
-        "description": "System field 'tbaiValcodeID' should exist in backend but not frontend for resultadoValidación"
+        "description": "Field 'descripcion' should be present in resultadoValidación"
       },
       {
-        "id": "t-29",
+        "id": "t-field-presence-sincronizaci-n-active",
+        "category": "field-presence",
+        "entity": "sincronización",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in sincronización"
+      },
+      {
+        "id": "t-field-presence-sincronizaci-n-descripcion",
+        "category": "field-presence",
+        "entity": "sincronización",
+        "field": "descripcion",
+        "runner": "node",
+        "description": "Field 'descripcion' should be present in sincronización"
+      },
+      {
+        "id": "t-field-presence-sincronizaci-n-estado",
+        "category": "field-presence",
+        "entity": "sincronización",
+        "field": "estado",
+        "runner": "node",
+        "description": "Field 'estado' should be present in sincronización"
+      },
+      {
+        "id": "t-field-presence-sincronizaci-n-invoice",
+        "category": "field-presence",
+        "entity": "sincronización",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should be present in sincronización"
+      },
+      {
+        "id": "t-field-type-resultadoValidaci-n-active",
+        "category": "field-type",
+        "entity": "resultadoValidación",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in resultadoValidación"
+      },
+      {
+        "id": "t-field-type-resultadoValidaci-n-codigo",
+        "category": "field-type",
+        "entity": "resultadoValidación",
+        "field": "codigo",
+        "runner": "node",
+        "description": "Field 'codigo' should have type 'string' in resultadoValidación"
+      },
+      {
+        "id": "t-field-type-resultadoValidaci-n-descripcion",
+        "category": "field-type",
+        "entity": "resultadoValidación",
+        "field": "descripcion",
+        "runner": "node",
+        "description": "Field 'descripcion' should have type 'string' in resultadoValidación"
+      },
+      {
+        "id": "t-field-type-sincronizaci-n-active",
+        "category": "field-type",
+        "entity": "sincronización",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in sincronización"
+      },
+      {
+        "id": "t-field-type-sincronizaci-n-descripcion",
+        "category": "field-type",
+        "entity": "sincronización",
+        "field": "descripcion",
+        "runner": "node",
+        "description": "Field 'descripcion' should have type 'string' in sincronización"
+      },
+      {
+        "id": "t-field-type-sincronizaci-n-estado",
+        "category": "field-type",
+        "entity": "sincronización",
+        "field": "estado",
+        "runner": "node",
+        "description": "Field 'estado' should have type 'string' in sincronización"
+      },
+      {
+        "id": "t-field-type-sincronizaci-n-invoice",
+        "category": "field-type",
+        "entity": "sincronización",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should have type 'string' in sincronización"
+      },
+      {
+        "id": "t-selector-endpoint-sincronizaci-n-invoice",
+        "category": "selector-endpoint",
+        "entity": "sincronización",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Selector endpoint for 'invoice' in sincronización should exist"
+      },
+      {
+        "id": "t-system-field-resultadoValidaci-n-client",
         "category": "system-field",
         "entity": "resultadoValidación",
         "field": "client",
@@ -699,15 +630,7 @@
         "description": "System field 'client' should exist in backend but not frontend for resultadoValidación"
       },
       {
-        "id": "t-30",
-        "category": "system-field",
-        "entity": "resultadoValidación",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for resultadoValidación"
-      },
-      {
-        "id": "t-31",
+        "id": "t-system-field-resultadoValidaci-n-createdBy",
         "category": "system-field",
         "entity": "resultadoValidación",
         "field": "createdBy",
@@ -715,7 +638,39 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for resultadoValidación"
       },
       {
-        "id": "t-32",
+        "id": "t-system-field-resultadoValidaci-n-creationDate",
+        "category": "system-field",
+        "entity": "resultadoValidación",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for resultadoValidación"
+      },
+      {
+        "id": "t-system-field-resultadoValidaci-n-organization",
+        "category": "system-field",
+        "entity": "resultadoValidación",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for resultadoValidación"
+      },
+      {
+        "id": "t-system-field-resultadoValidaci-n-tbaiSyncinvoiceID",
+        "category": "system-field",
+        "entity": "resultadoValidación",
+        "field": "tbaiSyncinvoiceID",
+        "runner": "node",
+        "description": "System field 'tbaiSyncinvoiceID' should exist in backend but not frontend for resultadoValidación"
+      },
+      {
+        "id": "t-system-field-resultadoValidaci-n-tbaiValcodeID",
+        "category": "system-field",
+        "entity": "resultadoValidación",
+        "field": "tbaiValcodeID",
+        "runner": "node",
+        "description": "System field 'tbaiValcodeID' should exist in backend but not frontend for resultadoValidación"
+      },
+      {
+        "id": "t-system-field-resultadoValidaci-n-updated",
         "category": "system-field",
         "entity": "resultadoValidación",
         "field": "updated",
@@ -723,7 +678,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for resultadoValidación"
       },
       {
-        "id": "t-33",
+        "id": "t-system-field-resultadoValidaci-n-updatedBy",
         "category": "system-field",
         "entity": "resultadoValidación",
         "field": "updatedBy",
@@ -731,38 +686,86 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for resultadoValidación"
       },
       {
-        "id": "t-34",
-        "category": "crud-flags",
+        "id": "t-system-field-sincronizaci-n-client",
+        "category": "system-field",
         "entity": "sincronización",
+        "field": "client",
         "runner": "node",
-        "description": "CRUD flags for 'sincronización' should all be booleans"
+        "description": "System field 'client' should exist in backend but not frontend for sincronización"
       },
       {
-        "id": "t-35",
-        "category": "crud-flags",
+        "id": "t-system-field-sincronizaci-n-createdBy",
+        "category": "system-field",
+        "entity": "sincronización",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for sincronización"
+      },
+      {
+        "id": "t-system-field-sincronizaci-n-creationDate",
+        "category": "system-field",
+        "entity": "sincronización",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for sincronización"
+      },
+      {
+        "id": "t-system-field-sincronizaci-n-organization",
+        "category": "system-field",
+        "entity": "sincronización",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for sincronización"
+      },
+      {
+        "id": "t-system-field-sincronizaci-n-tbaiSyncinvoiceID",
+        "category": "system-field",
+        "entity": "sincronización",
+        "field": "tbaiSyncinvoiceID",
+        "runner": "node",
+        "description": "System field 'tbaiSyncinvoiceID' should exist in backend but not frontend for sincronización"
+      },
+      {
+        "id": "t-system-field-sincronizaci-n-updated",
+        "category": "system-field",
+        "entity": "sincronización",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for sincronización"
+      },
+      {
+        "id": "t-system-field-sincronizaci-n-updatedBy",
+        "category": "system-field",
+        "entity": "sincronización",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for sincronización"
+      },
+      {
+        "id": "t-visibility-resultadoValidaci-n",
+        "category": "visibility",
         "entity": "resultadoValidación",
         "runner": "node",
-        "description": "CRUD flags for 'resultadoValidación' should all be booleans"
+        "description": "Entity 'resultadoValidación' should only expose visible fields in frontend"
       },
       {
-        "id": "t-36",
-        "category": "selector-endpoint",
+        "id": "t-visibility-sincronizaci-n",
+        "category": "visibility",
         "entity": "sincronización",
-        "field": "invoice",
         "runner": "node",
-        "description": "Selector endpoint for 'invoice' in sincronización should exist"
+        "description": "Entity 'sincronización' should only expose visible fields in frontend"
       }
     ],
     "summary": {
       "total": 36,
       "byCategory": {
+        "crud-flags": 2,
+        "default-value-type": 2,
         "field-presence": 7,
         "field-type": 7,
-        "visibility": 2,
-        "default-value-type": 2,
+        "selector-endpoint": 1,
         "system-field": 15,
-        "crud-flags": 2,
-        "selector-endpoint": 1
+        "visibility": 2
       },
       "byRunner": {
         "node": 36,

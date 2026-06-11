@@ -1,7 +1,8 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "generatedAt": "2026-05-12T16:47:39.614Z",
-  "checksum": "6eee1b41fd22ef78",
+  "updatedAt": "2026-05-20T18:17:18.976Z",
+  "checksum": "d40abae2a9c58614",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -614,6 +615,7 @@
             "defaultValue": "1",
             "section": "principal",
             "gridOrder": 3,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -639,6 +641,7 @@
             "columnType": "amount",
             "section": "principal",
             "gridOrder": 4,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -670,6 +673,7 @@
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 5,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -2414,7 +2418,16 @@
         "column": "C_BPartner_Location_ID",
         "reference": "BusinessPartnerLocation",
         "inputMode": "dependent",
-        "url": "/sws/neo/sales-order/header/selectors/partnerAddress"
+        "url": "/sws/neo/sales-order/header/selectors/partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -2422,7 +2435,15 @@
         "column": "M_PriceList_ID",
         "reference": "PriceList",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-order/header/selectors/priceList"
+        "url": "/sws/neo/sales-order/header/selectors/priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -2430,7 +2451,15 @@
         "column": "FIN_Paymentmethod_ID",
         "reference": "PaymentMethod",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-order/header/selectors/paymentMethod"
+        "url": "/sws/neo/sales-order/header/selectors/paymentMethod",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -2470,7 +2499,21 @@
         "column": "C_Tax_ID",
         "reference": "Tax",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-order/lines/selectors/tax"
+        "url": "/sws/neo/sales-order/lines/selectors/tax",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "DateInvoiced",
+              "source": "parentField",
+              "field": "orderDate",
+              "format": "DD-MM-YYYY"
+            }
+          ]
+        }
       }
     ],
     "actions": [

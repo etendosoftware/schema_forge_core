@@ -124,7 +124,7 @@ export default function FirstStepsPage() {
               return (
                 <div
                   key={step.id}
-                  className={`px-5 py-4 ${step.expanded ? 'bg-card' : 'bg-card'}`}
+                  className="px-5 py-4 bg-card"
                 >
                   <div className="flex items-start gap-4">
                     {/* Left icon */}
@@ -164,7 +164,7 @@ export default function FirstStepsPage() {
 
                     {/* Right status */}
                     <div className="shrink-0 flex items-center gap-2 mt-0.5">
-                      {!step.done && !step.expanded && step.time && (
+                      {!step.done && !step.expanded && Boolean(step.time) && (
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="h-3.5 w-3.5" />
                           {step.time} min

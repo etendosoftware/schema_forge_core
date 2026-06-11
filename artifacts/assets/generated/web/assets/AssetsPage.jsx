@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import AssetsTable from './AssetsTable';
 import AssetsForm from './AssetsForm';
-import AssetsAmortizationPanel from '@/windows/custom/assets/AssetsAmortizationPanel';
-import AssetsConfigPanel from '@/windows/custom/assets/AssetsConfigPanel';
+import AssetsDetailPanel from '@/windows/custom/assets/AssetsDetailPanel';
 import { AttachmentsTab } from '@/components/attachments';
+import AssetsAmortizationPanel from '@/windows/custom/assets/AssetsAmortizationPanel';
 import catalogs from './mockCatalogs';
 
 import AssetsSidebar from '@/windows/custom/assets/AssetsSidebar';
@@ -27,7 +27,7 @@ const extraBadges = [];
 // @sf-generated-start processes:assets
 const processes = [
   { name: 'processAsset', label: 'Create Amortization', style: 'positive',
-    displayLogicRaw: "@Depreciate@='Y'" },
+    displayLogicRaw: "@Depreciate@='Y' AND @etgoAmortizationStatus@!='100'", requiresFieldMax: [{"field":"annualDepreciation","max":100,"conditionalOnField":"calculateType","conditionalValue":"PE","errorKey":"assetsValidationAnnualDepreciationMax"}] },
 ];
 // @sf-generated-end processes:assets
 
@@ -36,7 +36,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:assets
 
 // @sf-generated-start requiredHeaderFields:assets
-const requiredHeaderFields = ['searchKey', 'name', 'assetCategory'];
+const requiredHeaderFields = [];
 // @sf-generated-end requiredHeaderFields:assets
 
 
@@ -58,8 +58,7 @@ export const api = {
         "searchKey",
         "name",
         "assetCategory",
-        "depreciate",
-        "fullyDepreciated"
+        "depreciate"
       ]
     },
     "amortizationLine": {
@@ -101,6 +100,70 @@ export const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/assets/assets/selectors/currency"
+    },
+    {
+      "entity": "assets",
+      "field": "project",
+      "column": "C_Project_ID",
+      "reference": "Project",
+      "inputMode": "search",
+      "url": "/sws/neo/assets/assets/selectors/project"
+    },
+    {
+      "entity": "assets",
+      "field": "businessPartner",
+      "column": "C_BPartner_ID",
+      "reference": "BPartner",
+      "inputMode": "search",
+      "url": "/sws/neo/assets/assets/selectors/businessPartner"
+    },
+    {
+      "entity": "assets",
+      "field": "eTADASActivity",
+      "column": "EM_Etadas_C_Activity_ID",
+      "reference": "Activity",
+      "inputMode": "selector",
+      "url": "/sws/neo/assets/assets/selectors/eTADASActivity"
+    },
+    {
+      "entity": "assets",
+      "field": "eTADASCostCenter",
+      "column": "EM_Etadas_Costcenter_ID",
+      "reference": "Costcenter",
+      "inputMode": "selector",
+      "url": "/sws/neo/assets/assets/selectors/eTADASCostCenter"
+    },
+    {
+      "entity": "assets",
+      "field": "eTADASSalesCampaign",
+      "column": "EM_Etadas_Campaign_ID",
+      "reference": "Campaign",
+      "inputMode": "selector",
+      "url": "/sws/neo/assets/assets/selectors/eTADASSalesCampaign"
+    },
+    {
+      "entity": "assets",
+      "field": "eTADASSalesRegion",
+      "column": "EM_Etadas_Salesregion_ID",
+      "reference": "SalesRegion",
+      "inputMode": "selector",
+      "url": "/sws/neo/assets/assets/selectors/eTADASSalesRegion"
+    },
+    {
+      "entity": "assets",
+      "field": "eTADASUser1",
+      "column": "EM_Etadas_User1_ID",
+      "reference": "User1",
+      "inputMode": "selector",
+      "url": "/sws/neo/assets/assets/selectors/eTADASUser1"
+    },
+    {
+      "entity": "assets",
+      "field": "eTADASUser2",
+      "column": "EM_Etadas_User2_ID",
+      "reference": "User2",
+      "inputMode": "selector",
+      "url": "/sws/neo/assets/assets/selectors/eTADASUser2"
     },
     {
       "entity": "amortizationLine",
@@ -157,8 +220,8 @@ export const api = {
       "field": "processAsset",
       "column": "Process_Asset",
       "url": "/sws/neo/assets/assets/{id}/action/processAsset",
-      "processId": "85601427EAEE401FA0250FF0A6DD62EF",
-      "processType": "classic"
+      "processId": "D1E4EC58B04D4D3FA0060FF28094B39B",
+      "processType": "obuiapp"
     }
   ],
   "queryParams": {
@@ -176,9 +239,35 @@ export const api = {
   },
   "window": {
     "category": "finance"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "C_Project_ID": "Proyecto",
+      "EM_Etadas_Costcenter_ID": "Centro de coste",
+      "C_BPartner_ID": "Contacto",
+      "EM_Etadas_User1_ID": "1ª Dimensión",
+      "EM_Etadas_User2_ID": "2ª Dimensión",
+      "EM_Etadas_Salesregion_ID": "Región de ventas",
+      "EM_Etadas_C_Activity_ID": "Actividad",
+      "EM_Etadas_Campaign_ID": "Campaña",
+      "EM_Etgo_Amortization_Status": "Estado de amortización"
+    },
+    "en_US": {
+      "C_Project_ID": "Project",
+      "EM_Etadas_Costcenter_ID": "Cost Center",
+      "C_BPartner_ID": "Business Partner",
+      "EM_Etadas_User1_ID": "1st Dimension",
+      "EM_Etadas_User2_ID": "2nd Dimension",
+      "EM_Etadas_Salesregion_ID": "Sales Region",
+      "EM_Etadas_C_Activity_ID": "Activity",
+      "EM_Etadas_Campaign_ID": "Sales Campaign",
+      "EM_Etgo_Amortization_Status": "Amortization Status"
+    }
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:AssetsPage
 export default function AssetsPage({ windowName, recordId, ...props }) {
   if (recordId) {
@@ -196,20 +285,24 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        formFooter={AssetsAmortizationPanel}
-        primaryTabs={[
-          { key: 'general', label: 'Overview' },
-          { key: 'configuration', label: 'Depreciation Setup', Panel: AssetsConfigPanel },
-        ]}
+        formFooter={AssetsDetailPanel}
         hidePrint
         hideMoreMenu
         hideMoreDetails
-        contentBg="bg-slate-50"
-        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "A_Asset", config: {} } }]}
-        requiredHeaderFields={requiredHeaderFields}
+        toolbarBorderBottom
+        compactSidebarPadding
+        whiteFormBackground
+        hideFormCard
+        sidebarAboveTabsOnly
+        sidebarClassName="w-[30%] shrink-0 border-l border-[#E8EAEF] p-2"
+        toolbarPaddingX="px-2"
+        toolbarButtonSize="default"
+        contentBg="bg-white"
+        customTabs={[{ key: 'amortizationPlan', labelKey: 'assetsAmortizationPlanTab', Component: AssetsAmortizationPanel, placement: 'tab' }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "A_Asset", config: {} } }]}
         detailSortBy="sEQNoAsset asc"
         titleField="name"
         lockWhenProcessed={false}
+        labelOverrides={labelOverrides}
         {...props}
         sidebarContent={(data) => (
           <AssetsSidebar
@@ -231,12 +324,13 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
-      dateFilterKey="purchaseDate"
+      listbarPaddingX="px-2"
+      tablePaddingX="px-2"
       hidePrint
       hideMoreMenu
-      hideListFilters
       hideLink
       hideEyeCount
+      labelOverrides={labelOverrides}
       rowQuickActions={{}}
       {...props}
     />

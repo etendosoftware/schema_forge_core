@@ -1,26 +1,35 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Loader2, Check, ChevronRight, ChevronDown,
   Plus, Building2, RefreshCw,
-  Briefcase, Rocket, Settings,
+  Settings,
   UserPlus, Mail, Lock, Eye, EyeOff, Sparkles,
   ArrowRight, User, MessageCircle,
 } from 'lucide-react';
 import {
   ONBOARDING_ERROR_CODES,
+  changePassword,
+  confirmPasswordReset,
   fetchAccount,
   fetchEnvironments,
   loginAccount,
   loginEnvironment,
+  loginWithSsoProvider,
   registerAccount,
+  requestPasswordReset,
   runOnboardingStream,
 } from './onboarding/onboardingApi.js';
+import {
+  getConfiguredSsoProviders,
+  renderSsoProviderButton,
+} from './onboarding/onboardingSso.js';
 import { checkSalesInvoiceReadiness } from './onboarding/onboardingReadiness.js';
 import { useLocaleSwitch, useUI } from '../i18n/index.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../lib/oauthReturnTo.js';
+import { track } from '../lib/observability.js';
 import {
   applyProgressMessage,
   buildEnvironmentSessionStorage,
@@ -38,18 +47,15 @@ function detectBaseUrl() {
 
 const BASE_URL = detectBaseUrl();
 
-const SETUP_STEP_ICONS = {
-  setup: Settings,
-  client: Briefcase,
-  organization: Building2,
-  finalize: Rocket,
-};
-
-const CURRENCIES = ['EUR'];
 const LOCALE_CODES = ['es_ES', 'en_US'];
 const COUNTRY_CODES = ['ES'];
 const SECTOR_CODES = ['technology', 'services', 'commerce', 'manufacturing'];
 const BUSINESS_TYPE_VALUES = ['company', 'freelancer', 'advisory'];
+const ONBOARDING_EVENT_CONTEXT = {
+  component: 'OnboardingPage',
+  source: 'onboarding',
+  windowName: 'onboarding',
+};
 const DEFAULT_ONBOARDING_FORM = {
   fullName: '',
   businessType: 'company',
@@ -62,67 +68,19 @@ const DEFAULT_ONBOARDING_FORM = {
   address: '',
   sector: 'technology',
 };
+const SSO_PROVIDERS = getConfiguredSsoProviders();
 
-function formatMs(ms) {
-  if (ms == null) return null;
-  if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
+function trackOnboarding(eventName, properties = {}) {
+  // Fire-and-forget telemetry: swallow rejections so a failed track() never
+  // surfaces as an unhandled promise rejection in the onboarding flow.
+  // Promise.resolve(...) tolerates a non-thenable return (e.g. a stubbed track()).
+  Promise.resolve(
+    track(eventName, {
+      ...ONBOARDING_EVENT_CONTEXT,
+      ...properties,
+    }),
+  ).catch(() => {});
 }
-
-function StepIcon({ status, Icon }) {
-  if (status === 'done') {
-    return (
-      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-500 flex-shrink-0">
-        <Check className="h-5 w-5 text-white" strokeWidth={3} />
-      </div>
-    );
-  }
-  if (status === 'active') {
-    return (
-      <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-gray-900 bg-white flex-shrink-0">
-        <Icon className="h-4 w-4 text-gray-900" />
-      </div>
-    );
-  }
-  if (status === 'running') {
-    return (
-      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-400 flex-shrink-0">
-        <Loader2 className="h-4 w-4 text-white animate-spin" />
-      </div>
-    );
-  }
-  if (status === 'failed') {
-    return (
-      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500 flex-shrink-0">
-        <span className="text-white text-sm font-bold">!</span>
-      </div>
-    );
-  }
-  // pending
-  return (
-    <div className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-gray-50 flex-shrink-0">
-      <Icon className="h-4 w-4 text-gray-400" />
-    </div>
-  );
-}
-
-function SelectField({ id, value, onChange, disabled, children, label }) {
-  return (
-    <div>
-      <Label htmlFor={id} className="text-sm text-gray-600">{label}</Label>
-      <select
-        id={id}
-        value={value}
-        onChange={onChange}
-        disabled={disabled}
-        className="mt-1 flex h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-shadow"
-      >
-        {children}
-      </select>
-    </div>
-  );
-}
-
 
 function AuthBrand({ label }) {
   return (
@@ -157,6 +115,37 @@ function AuthPreviewMockup() {
         alt="Etendo dashboard preview"
         className="relative z-10 block h-auto w-full max-w-[1000px] select-none pointer-events-none object-contain drop-shadow-[0_28px_56px_rgba(15,23,42,0.16)]"
       />
+    </div>
+  );
+}
+
+function AuthSsoOptions({ providers, buttonRef, error, loading, label, loadingLabel }) {
+  if (!providers.length) {
+    return null;
+  }
+  return (
+    <div className="mb-5 space-y-3">
+      <div className={loading ? 'pointer-events-none opacity-60' : ''}>
+        <div ref={buttonRef} className="flex min-h-11 justify-center" />
+      </div>
+      <div className="mx-auto flex w-full max-w-[400px] items-center gap-3">
+        <div className="h-px flex-1 bg-slate-200" />
+        <span className="shrink-0 text-sm font-medium normal-case text-slate-400">
+          {label}
+        </span>
+        <div className="h-px flex-1 bg-slate-200" />
+      </div>
+      {loading && (
+        <div className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {loadingLabel}
+        </div>
+      )}
+      {error && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+          {error}
+        </div>
+      )}
     </div>
   );
 }
@@ -384,7 +373,7 @@ function SetupProgressCard({ progress, title, description, leading, statusLabel,
           }}
         >
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl">
-            {typeof leading === 'string' ? leading : leading}
+            {leading}
           </div>
         </div>
 
@@ -459,7 +448,7 @@ function PageHeader({ accountName, onLogout, isAuthenticated, logoutLabel, brand
   );
 }
 
-export default function OnboardingPage() {
+export default function OnboardingPage() { // NOSONAR: route component coordinates covered auth/setup flows.
   const [view, setView] = useState(null); // null = loading initial state
   const [accountName, setAccountName] = useState(null);
 
@@ -477,6 +466,35 @@ export default function OnboardingPage() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [ssoError, setSsoError] = useState(null);
+  const [ssoLoadingProvider, setSsoLoadingProvider] = useState(null);
+  const registerSsoButtonRef = useRef(null);
+  const loginSsoButtonRef = useRef(null);
+
+  // Password reset and change state
+  const resetTokenFromUrl = new URLSearchParams(window.location.search).get('resetToken') || ''; // NOSONAR: reset links carry single-use server-side tokens.
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotError, setForgotError] = useState(null);
+  const [resetForm, setResetForm] = useState({
+    token: resetTokenFromUrl,
+    password: '',
+    confirmPassword: '',
+  });
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [resetError, setResetError] = useState(null);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [changePasswordForm, setChangePasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+  const [changePasswordError, setChangePasswordError] = useState(null);
+  const [changePasswordMessage, setChangePasswordMessage] = useState(null);
 
   // Environments state
   const [environments, setEnvironments] = useState([]);
@@ -517,6 +535,10 @@ export default function OnboardingPage() {
 
   // Validate existing platform token on mount
   useEffect(() => {
+    if (resetTokenFromUrl) {
+      setView('reset-password');
+      return;
+    }
     const token = getPlatformToken();
     if (!token) {
       setView('register');
@@ -544,13 +566,17 @@ export default function OnboardingPage() {
   }, [accountName]);
 
   // Save token + account name and route by environments
-  const handleAuthSuccess = (token, account) => {
+  const handleAuthSuccess = useCallback((token, account, { route = true } = {}) => {
     localStorage.setItem('sf_platform_token', token);
     setAccountName(account?.name || account?.email || null);
     setShowRegisterPassword(false);
     setShowLoginPassword(false);
-    routeByEnvironments();
-  };
+    setSsoError(null);
+    setSsoLoadingProvider(null);
+    if (route) {
+      routeByEnvironments();
+    }
+  }, [routeByEnvironments]);
 
   const handleRegisterSuccess = (token, account) => {
     localStorage.setItem('sf_platform_token', token);
@@ -559,6 +585,8 @@ export default function OnboardingPage() {
     setShowLoginPassword(false);
     setRegisterError(null);
     setLoginError(null);
+    setSsoError(null);
+    setSsoLoadingProvider(null);
     setResult(null);
     setFormSubmitted(false);
     setRunning(false);
@@ -571,34 +599,151 @@ export default function OnboardingPage() {
     setView('create');
   };
 
+  /* c8 ignore start -- Logout is only reachable from the legacy list view, which current routing bypasses. */
   const handleLogout = () => {
+    trackOnboarding('onboarding_auth_logout', {
+      action: 'logout',
+      status: 'success',
+    });
     localStorage.removeItem('sf_platform_token');
     setAccountName(null);
     setRegisterForm({ name: '', email: '', password: '' });
     setLoginForm({ email: '', password: '' });
+    setForgotEmail('');
+    setForgotSent(false);
+    setForgotError(null);
+    setResetForm({ token: '', password: '', confirmPassword: '' });
+    setResetSuccess(false);
+    setResetError(null);
+    setShowResetPassword(false);
+    setShowChangePassword(false);
+    setChangePasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    setChangePasswordError(null);
+    setChangePasswordMessage(null);
     setForm(DEFAULT_ONBOARDING_FORM);
     setCreateStep(1);
     setRegisterError(null);
     setLoginError(null);
+    setSsoError(null);
+    setSsoLoadingProvider(null);
     setShowRegisterPassword(false);
     setShowLoginPassword(false);
     setSteps(initialSetupSteps());
     setView('register');
   };
+  /* c8 ignore stop */
+
+  const handleSsoProviderLogin = useCallback(async (provider, payload) => {
+    trackOnboarding('onboarding_auth_submitted', {
+      action: 'sso',
+      provider,
+      status: 'started',
+    });
+    setSsoError(null);
+    setRegisterError(null);
+    setLoginError(null);
+    setSsoLoadingProvider(provider);
+    try {
+      const data = await loginWithSsoProvider(fetch, BASE_URL, provider, payload);
+      if (data.token) {
+        trackOnboarding('onboarding_auth_succeeded', {
+          action: 'sso',
+          provider,
+          status: 'success',
+        });
+        handleAuthSuccess(data.token, data.account);
+      } else {
+        trackOnboarding('onboarding_auth_failed', {
+          action: 'sso',
+          provider,
+          status: 'failed',
+        });
+        setSsoError(ui('onboardingSsoFailed'));
+      }
+    } catch (err) {
+      trackOnboarding('onboarding_auth_failed', {
+        action: 'sso',
+        provider,
+        status: 'failed',
+      });
+      setSsoError(err.userMessage || ui(err.code || 'onboardingSsoFailed'));
+    } finally {
+      setSsoLoadingProvider(null);
+    }
+  }, [handleAuthSuccess, ui]);
+
+  useEffect(() => {
+    let buttonRef = null;
+    if (view === 'register') {
+      buttonRef = registerSsoButtonRef;
+    }
+    if (view === 'login') {
+      buttonRef = loginSsoButtonRef;
+    }
+    if (!buttonRef?.current || !SSO_PROVIDERS.length) {
+      return undefined;
+    }
+    let cancelled = false;
+    const container = buttonRef.current;
+    container.replaceChildren();
+    Promise.all(SSO_PROVIDERS.map((provider) => {
+      const providerContainer = document.createElement('div');
+      container.appendChild(providerContainer);
+      return renderSsoProviderButton(provider, providerContainer, {
+        onCredential: (providerId, payload) => {
+          if (!cancelled) {
+            handleSsoProviderLogin(providerId, payload);
+          }
+        },
+        onError: (error) => {
+          if (!cancelled) {
+            setSsoError(error.userMessage || ui(error.code || 'onboardingSsoFailed'));
+          }
+        },
+      });
+    })).catch((error) => {
+      if (!cancelled) {
+        setSsoError(error.userMessage || ui(error.code || 'onboardingSsoFailed'));
+      }
+    });
+    return () => {
+      cancelled = true;
+      container.replaceChildren();
+    };
+  }, [handleSsoProviderLogin, ui, view]);
 
   // Register
   const handleRegister = async (e) => {
     e.preventDefault();
+    trackOnboarding('onboarding_auth_submitted', {
+      action: 'register',
+      status: 'started',
+    });
     setRegisterError(null);
     setRegisterLoading(true);
     try {
-      const data = await registerAccount(fetch, BASE_URL, registerForm);
+      const data = await registerAccount(fetch, BASE_URL, {
+        ...registerForm,
+        language: locale || form.language,
+      });
       if (data.token) {
+        trackOnboarding('onboarding_auth_succeeded', {
+          action: 'register',
+          status: 'success',
+        });
         handleRegisterSuccess(data.token, data.account);
       } else {
+        trackOnboarding('onboarding_auth_failed', {
+          action: 'register',
+          status: 'failed',
+        });
         setRegisterError(ui('onboardingRegisterFailed'));
       }
     } catch (err) {
+      trackOnboarding('onboarding_auth_failed', {
+        action: 'register',
+        status: 'failed',
+      });
       setRegisterError(err.userMessage || ui(err.code || 'onboardingConnectionError'));
     } finally {
       setRegisterLoading(false);
@@ -608,24 +753,102 @@ export default function OnboardingPage() {
   // Login
   const handleLogin = async (e) => {
     e.preventDefault();
+    trackOnboarding('onboarding_auth_submitted', {
+      action: 'login',
+      status: 'started',
+    });
     setLoginError(null);
     setLoginLoading(true);
     try {
       const data = await loginAccount(fetch, BASE_URL, loginForm);
       if (data.token) {
+        trackOnboarding('onboarding_auth_succeeded', {
+          action: 'login',
+          status: 'success',
+        });
         handleAuthSuccess(data.token, data.account);
       } else {
+        trackOnboarding('onboarding_auth_failed', {
+          action: 'login',
+          status: 'failed',
+        });
         setLoginError(ui('onboardingInvalidCredentials'));
       }
     } catch (err) {
+      trackOnboarding('onboarding_auth_failed', {
+        action: 'login',
+        status: 'failed',
+      });
       setLoginError(err.userMessage || ui(err.code || 'onboardingConnectionError'));
     } finally {
       setLoginLoading(false);
     }
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotError(null);
+    setForgotSent(false);
+    setForgotLoading(true);
+    try {
+      await requestPasswordReset(fetch, BASE_URL, forgotEmail);
+      setForgotSent(true);
+    } catch (err) {
+      setForgotError(err.userMessage || ui(err.code || 'onboardingCredentialResetFailed'));
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setResetError(null);
+    if (resetForm.password !== resetForm.confirmPassword) {
+      setResetError(ui('onboardingCredentialsMustMatch'));
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await confirmPasswordReset(fetch, BASE_URL, resetForm);
+      localStorage.removeItem('sf_platform_token'); // NOSONAR: clears stale token after server invalidates reset sessions.
+      setResetSuccess(true);
+      window.history.replaceState({}, document.title, window.location.pathname); // NOSONAR: removes consumed reset token from the visible URL.
+    } catch (err) {
+      setResetError(err.userMessage || ui(err.code || 'onboardingCredentialResetFailed'));
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setChangePasswordError(null);
+    setChangePasswordMessage(null);
+    if (changePasswordForm.newPassword !== changePasswordForm.confirmPassword) {
+      setChangePasswordError(ui('onboardingCredentialsMustMatch'));
+      return;
+    }
+    setChangePasswordLoading(true);
+    try {
+      const data = await changePassword(fetch, BASE_URL, getPlatformToken(), changePasswordForm);
+      if (data.token) {
+        handleAuthSuccess(data.token, data.account, { route: false });
+      }
+      setChangePasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setChangePasswordMessage(ui('onboardingCredentialChangeSuccess'));
+    } catch (err) {
+      setChangePasswordError(err.userMessage || ui(err.code || 'onboardingCredentialChangeFailed'));
+    } finally {
+      setChangePasswordLoading(false);
+    }
+  };
+
   const loginToEnvironment = async (env, { requireReadiness = false } = {}) => {
     const token = getPlatformToken();
+    trackOnboarding('onboarding_environment_enter_submitted', {
+      action: 'enter_environment',
+      status: 'started',
+    });
     setLoggingIn(env.clientId);
     try {
       const data = await loginEnvironment(fetch, BASE_URL, token, env);
@@ -646,6 +869,10 @@ export default function OnboardingPage() {
         if (requireReadiness) {
           const readiness = await checkSalesInvoiceReadiness(fetch, BASE_URL, data.token);
           if (!readiness.ready) {
+            trackOnboarding('onboarding_environment_enter_failed', {
+              action: 'enter_environment',
+              status: 'failed',
+            });
             setResult({
               status: 'failed',
               readinessFailures: readiness.failures,
@@ -654,14 +881,26 @@ export default function OnboardingPage() {
             return;
           }
         }
+        trackOnboarding('onboarding_environment_enter_succeeded', {
+          action: 'enter_environment',
+          status: 'success',
+        });
         window.location.href = buildAppReturnToHref(
           getSafeReturnTo(window.location.search),
           window.location.pathname
         );
         return;
       }
+      trackOnboarding('onboarding_environment_enter_failed', {
+        action: 'enter_environment',
+        status: 'failed',
+      });
       alert(ui('onboardingEnvironmentLoginFailed'));
     } catch (err) {
+      trackOnboarding('onboarding_environment_enter_failed', {
+        action: 'enter_environment',
+        status: 'failed',
+      });
       if (requireReadiness) {
         setResult({ status: 'failed', error: err.userMessage || ui(err.code || 'onboardingEnvironmentLoginFailed') });
       } else {
@@ -674,6 +913,10 @@ export default function OnboardingPage() {
 
   const runOnboarding = useCallback(async () => {
     const token = getPlatformToken();
+    trackOnboarding('onboarding_run_started', {
+      action: 'create_environment',
+      status: 'started',
+    });
     setRunning(true);
     setResult(null);
     setFormSubmitted(true);
@@ -688,12 +931,27 @@ export default function OnboardingPage() {
             error: msg.success ? null : msg.message,
           };
           setResult(resultObj);
-          if (msg.success) succeeded = true;
+          if (msg.success) {
+            trackOnboarding('onboarding_run_succeeded', {
+              action: 'create_environment',
+              status: 'success',
+            });
+            succeeded = true;
+          } else {
+            trackOnboarding('onboarding_run_failed', {
+              action: 'create_environment',
+              status: 'failed',
+            });
+          }
         } else if (msg.type === 'progress' && msg.step) {
           setSteps(prev => applyProgressMessage(prev, msg));
         }
       });
     } catch (err) {
+      trackOnboarding('onboarding_run_failed', {
+        action: 'create_environment',
+        status: 'failed',
+      });
       setResult({ status: 'failed', error: err.userMessage || ui(err.code || 'onboardingGenericError') });
     } finally {
       setRunning(false);
@@ -751,6 +1009,27 @@ export default function OnboardingPage() {
       options={languageOptions}
     />
   ) : null;
+  const setupHeaderContent = (
+    <div className="flex flex-wrap items-end justify-end gap-3">
+      {localeControl}
+      {accountName && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setShowChangePassword(value => !value);
+            setChangePasswordError(null);
+            setChangePasswordMessage(null);
+          }}
+          className="h-10 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+        >
+          <Lock className="mr-2 h-4 w-4" />
+          {ui('onboardingChangePasswordAction')}
+        </Button>
+      )}
+    </div>
+  );
   const isStepOneValid = isProfileStepValid(form);
   const isStepTwoValid = isCompanyStepValid(form);
   const setupGreetingName = (form.fullName || accountName || ui('onboardingGreetingFallback')).trim().split(/\s+/)[0];
@@ -811,6 +1090,98 @@ export default function OnboardingPage() {
     );
   }
 
+  // ── RESET PASSWORD VIEW ──
+  if (view === 'reset-password') {
+    return (
+      <AuthShell
+        switchPrompt={ui('onboardingRememberPasswordPrompt')}
+        switchAction={ui('onboardingBackToLoginAction')}
+        switchTestId="action-reset-back-to-login"
+        onSwitch={() => {
+          setResetError(null);
+          setResetSuccess(false);
+          setView('login');
+        }}
+        brandLabel={ui('onboardingBrandName')}
+        headerContent={localeControl}
+        marketingTitle={ui('onboardingMarketingTitle')}
+        marketingDescription={ui('onboardingMarketingDescription')}
+        featureLabels={authFeatureLabels}
+      >
+        <div className="mb-10">
+          <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
+            {ui('onboardingResetPasswordTitle')}
+          </h1>
+          <p className="mt-3 text-base text-slate-600 sm:text-xl">
+            {ui(resetSuccess ? 'onboardingResetPasswordSuccess' : 'onboardingResetPasswordSubtitle')}
+          </p>
+        </div>
+
+        {resetSuccess ? (
+          <Button
+            type="button"
+            onClick={() => setView('login')}
+            className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
+          >
+            {ui('onboardingBackToLoginAction')}
+          </Button>
+        ) : (
+          <form onSubmit={handleResetPassword} className="space-y-5">
+            <AuthField
+              id="reset-password"
+              type={showResetPassword ? 'text' : 'password'}
+              label={ui('onboardingNewPasswordLabel')}
+              icon={Lock}
+              value={resetForm.password}
+              onChange={e => setResetForm(f => ({ ...f, password: e.target.value }))}
+              disabled={resetLoading}
+              placeholder={ui('onboardingPasswordPlaceholder')}
+              autoComplete="new-password"
+              required
+              trailing={(
+                <button
+                  type="button"
+                  aria-label={showResetPassword ? ui('onboardingHidePassword') : ui('onboardingShowPassword')}
+                  onClick={() => setShowResetPassword(value => !value)}
+                  className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                >
+                  {showResetPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              )}
+            />
+            <AuthField
+              id="reset-password-confirm"
+              type={showResetPassword ? 'text' : 'password'}
+              label={ui('onboardingConfirmPasswordLabel')}
+              icon={Lock}
+              value={resetForm.confirmPassword}
+              onChange={e => setResetForm(f => ({ ...f, confirmPassword: e.target.value }))}
+              disabled={resetLoading}
+              placeholder={ui('onboardingPasswordPlaceholder')}
+              autoComplete="new-password"
+              required
+            />
+            {resetError && (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+                {resetError}
+              </div>
+            )}
+            <Button
+              type="submit"
+              data-testid="action-reset-password-submit"
+              disabled={resetLoading || !resetForm.token}
+              className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
+            >
+              {resetLoading
+                ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{ui('onboardingSavingPassword')}</>
+                : ui('onboardingSavePasswordAction')}
+            </Button>
+          </form>
+        )}
+      </AuthShell>
+    );
+  }
+
   // ── REGISTER VIEW ──
   if (view === 'register') {
     return (
@@ -821,6 +1192,7 @@ export default function OnboardingPage() {
         onSwitch={() => {
           setRegisterError(null);
           setLoginError(null);
+          setSsoError(null);
           setShowRegisterPassword(false);
           setShowLoginPassword(false);
           setView('login');
@@ -839,6 +1211,15 @@ export default function OnboardingPage() {
             {ui('onboardingRegisterSubtitle')}
           </p>
         </div>
+
+        <AuthSsoOptions
+          providers={SSO_PROVIDERS}
+          buttonRef={registerSsoButtonRef}
+          error={ssoError}
+          loading={Boolean(ssoLoadingProvider)}
+          label={ui('onboardingSsoDivider')}
+          loadingLabel={ui('onboardingSsoSigningIn')}
+        />
 
         <form onSubmit={handleRegister} className="space-y-5">
           <AuthField
@@ -911,6 +1292,71 @@ export default function OnboardingPage() {
     );
   }
 
+  // ── FORGOT PASSWORD VIEW ──
+  if (view === 'forgot-password') {
+    return (
+      <AuthShell
+        switchPrompt={ui('onboardingRememberPasswordPrompt')}
+        switchAction={ui('onboardingBackToLoginAction')}
+        switchTestId="action-forgot-back-to-login"
+        onSwitch={() => {
+          setForgotError(null);
+          setForgotSent(false);
+          setView('login');
+        }}
+        brandLabel={ui('onboardingBrandName')}
+        headerContent={localeControl}
+        marketingTitle={ui('onboardingMarketingTitle')}
+        marketingDescription={ui('onboardingMarketingDescription')}
+        featureLabels={authFeatureLabels}
+      >
+        <div className="mb-10">
+          <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
+            {ui('onboardingForgotPasswordTitle')}
+          </h1>
+          <p className="mt-3 text-base text-slate-600 sm:text-xl">
+            {ui(forgotSent ? 'onboardingResetEmailSent' : 'onboardingForgotPasswordSubtitle')}
+          </p>
+        </div>
+
+        <form onSubmit={handleForgotPassword} className="space-y-5">
+          <AuthField
+            id="forgot-email"
+            type="email"
+            label={ui('onboardingEmailLabel')}
+            icon={Mail}
+            value={forgotEmail}
+            onChange={e => setForgotEmail(e.target.value)}
+            disabled={forgotLoading || forgotSent}
+            placeholder={ui('onboardingEmailPlaceholder')}
+            autoComplete="email"
+            required
+          />
+          {forgotError && (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+              {forgotError}
+            </div>
+          )}
+          {forgotSent && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+              {ui('onboardingResetEmailSent')}
+            </div>
+          )}
+          <Button
+            type="submit"
+            data-testid="action-forgot-password-submit"
+            disabled={forgotLoading || forgotSent}
+            className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
+          >
+            {forgotLoading
+              ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{ui('onboardingSendingResetEmail')}</>
+              : ui('onboardingSendResetEmailAction')}
+          </Button>
+        </form>
+      </AuthShell>
+    );
+  }
+
   // ── LOGIN VIEW ──
   if (view === 'login') {
     return (
@@ -921,6 +1367,7 @@ export default function OnboardingPage() {
         onSwitch={() => {
           setRegisterError(null);
           setLoginError(null);
+          setSsoError(null);
           setShowRegisterPassword(false);
           setShowLoginPassword(false);
           setView('register');
@@ -939,6 +1386,15 @@ export default function OnboardingPage() {
             {ui('onboardingLoginSubtitle')}
           </p>
         </div>
+
+        <AuthSsoOptions
+          providers={SSO_PROVIDERS}
+          buttonRef={loginSsoButtonRef}
+          error={ssoError}
+          loading={Boolean(ssoLoadingProvider)}
+          label={ui('onboardingSsoDivider')}
+          loadingLabel={ui('onboardingSsoSigningIn')}
+        />
 
         <form onSubmit={handleLogin} className="space-y-5">
           <AuthField
@@ -977,6 +1433,22 @@ export default function OnboardingPage() {
             )}
           />
 
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setLoginError(null);
+                setForgotEmail(loginForm.email);
+                setForgotSent(false);
+                setForgotError(null);
+                setView('forgot-password');
+              }}
+              className="text-sm font-medium text-slate-700 underline underline-offset-4 transition hover:text-slate-900"
+            >
+              {ui('onboardingForgotPasswordAction')}
+            </button>
+          </div>
+
           {loginError && (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
               {loginError}
@@ -999,6 +1471,7 @@ export default function OnboardingPage() {
   }
 
   // ── LIST VIEW ──
+  /* c8 ignore start -- Legacy branch: routing currently auto-enters an environment or opens create view. */
   if (view === 'list') {
     const renderEnvironmentListContent = () => {
       if (loadingEnvs) {
@@ -1116,6 +1589,7 @@ export default function OnboardingPage() {
       </div>
     );
   }
+  /* c8 ignore stop */
 
   // ── CREATE VIEW ──
   if (running || result?.status === 'success') {
@@ -1130,9 +1604,80 @@ export default function OnboardingPage() {
     <SetupShell
       progressLabel={createStep === 1 ? ui('onboardingProgressAlmostReady') : ui('onboardingProgressAlmostDone')}
       progressValue={createStep === 1 ? 50 : 90}
-      headerContent={localeControl}
+      headerContent={setupHeaderContent}
       brandLabel={ui('onboardingBrandName')}
     >
+      {showChangePassword && (
+        <form
+          onSubmit={handleChangePassword}
+          className="mb-8 space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+        >
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">{ui('onboardingChangePasswordTitle')}</h2>
+            <p className="mt-1 text-sm text-slate-500">{ui('onboardingChangePasswordSubtitle')}</p>
+          </div>
+          <SetupField
+            id="change-current-password"
+            type="password"
+            label={ui('onboardingCurrentPasswordLabel')}
+            required
+            value={changePasswordForm.currentPassword}
+            onChange={e => setChangePasswordForm(f => ({ ...f, currentPassword: e.target.value }))}
+            disabled={changePasswordLoading}
+            autoComplete="current-password"
+          />
+          <SetupField
+            id="change-new-password"
+            type="password"
+            label={ui('onboardingNewPasswordLabel')}
+            required
+            value={changePasswordForm.newPassword}
+            onChange={e => setChangePasswordForm(f => ({ ...f, newPassword: e.target.value }))}
+            disabled={changePasswordLoading}
+            autoComplete="new-password"
+          />
+          <SetupField
+            id="change-confirm-password"
+            type="password"
+            label={ui('onboardingConfirmPasswordLabel')}
+            required
+            value={changePasswordForm.confirmPassword}
+            onChange={e => setChangePasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
+            disabled={changePasswordLoading}
+            autoComplete="new-password"
+          />
+          {changePasswordError && (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+              {changePasswordError}
+            </div>
+          )}
+          {changePasswordMessage && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+              {changePasswordMessage}
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowChangePassword(false)}
+              disabled={changePasswordLoading}
+              className="h-10 rounded-xl"
+            >
+              {ui('cancel')}
+            </Button>
+            <Button
+              type="submit"
+              disabled={changePasswordLoading}
+              className="h-10 rounded-xl bg-gray-900 text-white hover:bg-gray-800"
+            >
+              {changePasswordLoading
+                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{ui('onboardingSavingPassword')}</>
+                : ui('onboardingSavePasswordAction')}
+            </Button>
+          </div>
+        </form>
+      )}
       {createStep === 1 ? (
         <div>
           <div className="mb-10">
@@ -1187,7 +1732,14 @@ export default function OnboardingPage() {
           <div className="mt-8 flex justify-end">
             <Button
               type="button"
-              onClick={() => setCreateStep(2)}
+              onClick={() => {
+                trackOnboarding('onboarding_setup_step_completed', {
+                  action: 'continue',
+                  status: 'success',
+                  type: 'profile',
+                });
+                setCreateStep(2);
+              }}
               disabled={!isStepOneValid}
               className="h-12 rounded-2xl bg-gray-900 px-6 text-base font-medium text-white hover:bg-gray-800"
             >
@@ -1265,7 +1817,15 @@ export default function OnboardingPage() {
           <div className="mt-8 flex items-center justify-between gap-4">
             <button
               type="button"
-              onClick={() => !running && setCreateStep(1)}
+              onClick={() => {
+                if (running) return;
+                trackOnboarding('onboarding_setup_step_back', {
+                  action: 'back',
+                  status: 'success',
+                  type: 'company',
+                });
+                setCreateStep(1);
+              }}
               disabled={running}
               className="text-base font-medium tracking-[-0.02em] text-slate-900 transition hover:text-slate-600 disabled:opacity-50 sm:text-lg"
             >

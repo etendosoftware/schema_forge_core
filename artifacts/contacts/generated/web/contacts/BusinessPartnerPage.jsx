@@ -17,26 +17,6 @@ import BusinessPartnerSidebar from '@/windows/custom/contacts/BusinessPartnerSid
 
 const breadcrumb = 'Contact';
 
-const labelOverrides = {
-  "en_US": {
-    "Name": "Legal Name",
-    "FIN_Financial_Account_ID": "Account",
-    "PO_Financial_Account_ID": "Account",
-    "EM_Etgo_Web": "Website",
-    "EM_Etgo_Firstname": "First Name",
-    "EM_Etgo_Lastname": "Last Name"
-  },
-  "es_ES": {
-    "Name": "Razón Social",
-    "EM_Etgo_Identifier": "Identificador",
-    "FIN_Financial_Account_ID": "Cuenta",
-    "PO_Financial_Account_ID": "Cuenta",
-    "EM_Etgo_Web": "Página web",
-    "EM_Etgo_Firstname": "Nombre",
-    "EM_Etgo_Lastname": "Apellidos"
-  }
-};
-
 
 // @sf-generated-start summary:businessPartner
 const summary = [
@@ -314,7 +294,16 @@ export const api = {
       "column": "PO_Financial_Account_ID",
       "reference": "FIN_Financial_Account",
       "inputMode": "selector",
-      "url": "/sws/neo/contacts/businessPartner/selectors/pOFinancialAccount"
+      "url": "/sws/neo/contacts/businessPartner/selectors/pOFinancialAccount",
+      "context": {
+        "required": [
+          {
+            "param": "PO_Paymentmethod_ID",
+            "source": "field",
+            "field": "pOPaymentMethod"
+          }
+        ]
+      }
     },
     {
       "entity": "businessPartner",
@@ -458,7 +447,16 @@ export const api = {
       "column": "PO_Financial_Account_ID",
       "reference": "Financial_Account",
       "inputMode": "search",
-      "url": "/sws/neo/contacts/vendorCreditor/selectors/pOFinancialAccount"
+      "url": "/sws/neo/contacts/vendorCreditor/selectors/pOFinancialAccount",
+      "context": {
+        "required": [
+          {
+            "param": "PO_Paymentmethod_ID",
+            "source": "parentField",
+            "field": "pOPaymentMethod"
+          }
+        ]
+      }
     },
     {
       "entity": "vendorCreditor",
@@ -641,7 +639,7 @@ export const api = {
     "en_US": {
       "Name": "Legal Name",
       "FIN_Financial_Account_ID": "Account",
-      "PO_Financial_Account_ID": "Account",
+      "PO_Financial_Account_ID": "Expense Account",
       "EM_Etgo_Web": "Website",
       "EM_Etgo_Firstname": "First Name",
       "EM_Etgo_Lastname": "Last Name"
@@ -650,7 +648,7 @@ export const api = {
       "Name": "Razón Social",
       "EM_Etgo_Identifier": "Identificador",
       "FIN_Financial_Account_ID": "Cuenta",
-      "PO_Financial_Account_ID": "Cuenta",
+      "PO_Financial_Account_ID": "Cuenta contable de gastos",
       "EM_Etgo_Web": "Página web",
       "EM_Etgo_Firstname": "Nombre",
       "EM_Etgo_Lastname": "Apellidos"
@@ -658,6 +656,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:BusinessPartnerPage
 export default function BusinessPartnerPage({ windowName, recordId, ...props }) {
   if (recordId) {
@@ -689,6 +689,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
           { key: 'bankFormat', column: 'BankFormat', type: 'select', required: true, label: 'Bank Account Format', defaultValue: 'GENERIC', options: [{ value: 'GENERIC', label: 'Use Generic Account No.' }, { value: 'IBAN', label: 'Use IBAN' }, { value: 'SWIFT', label: 'Use SWIFT + Generic Account No.' }, { value: 'SPANISH', label: 'Use Spanish' }] },
           { key: 'accountNo', column: 'AccountNo', type: 'text', label: 'Generic Account No.' },
           { key: 'iBAN', column: 'Iban', type: 'text', label: 'IBAN' },
+          { key: 'swiftCode', column: 'SwiftCode', type: 'text', label: 'SWIFT Code' },
           ], derived: [], hidden: [] }, requireSavedRecord: true },
           { key: 'locationAddress', label: 'Location', Table: LocationAddressTable, customAddModal: LocationEditorModal, requireSavedRecord: true },
         ]}

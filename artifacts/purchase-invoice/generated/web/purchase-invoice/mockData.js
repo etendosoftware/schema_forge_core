@@ -49,8 +49,7 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 99.44,
     "eTGODueDate": "2026-01-15",
-    "eTGODeliveryStatus": "DR",
-    "etgoOriginInvoice": "Sample etgoOriginInvoice"
+    "eTGODeliveryStatus": "DR"
   },
   {
     "id": "mock-header-002",
@@ -100,8 +99,7 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 96.94,
     "eTGODueDate": "2026-01-16",
-    "eTGODeliveryStatus": "CO",
-    "etgoOriginInvoice": "Sample etgoOriginInvoice"
+    "eTGODeliveryStatus": "CO"
   },
   {
     "id": "mock-header-003",
@@ -151,8 +149,7 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 12.48,
     "eTGODueDate": "2026-01-17",
-    "eTGODeliveryStatus": "VO",
-    "etgoOriginInvoice": "Sample etgoOriginInvoice"
+    "eTGODeliveryStatus": "VO"
   },
   {
     "id": "mock-header-004",
@@ -202,8 +199,7 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 96.31,
     "eTGODueDate": "2026-01-18",
-    "eTGODeliveryStatus": "IP",
-    "etgoOriginInvoice": "Sample etgoOriginInvoice"
+    "eTGODeliveryStatus": "IP"
   },
   {
     "id": "mock-header-005",
@@ -253,8 +249,7 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 31.27,
     "eTGODueDate": "2026-01-19",
-    "eTGODeliveryStatus": "DR",
-    "etgoOriginInvoice": "Sample etgoOriginInvoice"
+    "eTGODeliveryStatus": "DR"
   },
   {
     "id": "mock-header-006",
@@ -304,8 +299,7 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 76.52,
     "eTGODueDate": "2026-01-20",
-    "eTGODeliveryStatus": "CO",
-    "etgoOriginInvoice": "Sample etgoOriginInvoice"
+    "eTGODeliveryStatus": "CO"
   },
   {
     "id": "mock-header-007",
@@ -355,8 +349,7 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 2.66,
     "eTGODueDate": "2026-01-21",
-    "eTGODeliveryStatus": "VO",
-    "etgoOriginInvoice": "Sample etgoOriginInvoice"
+    "eTGODeliveryStatus": "VO"
   },
   {
     "id": "mock-header-008",
@@ -406,8 +399,7 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 10.03,
     "eTGODueDate": "2026-01-22",
-    "eTGODeliveryStatus": "IP",
-    "etgoOriginInvoice": "Sample etgoOriginInvoice"
+    "eTGODeliveryStatus": "IP"
   },
   {
     "id": "mock-header-009",
@@ -457,8 +449,7 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 93.97,
     "eTGODueDate": "2026-01-23",
-    "eTGODeliveryStatus": "DR",
-    "etgoOriginInvoice": "Sample etgoOriginInvoice"
+    "eTGODeliveryStatus": "DR"
   },
   {
     "id": "mock-header-010",
@@ -508,8 +499,7 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 1.1,
     "eTGODueDate": "2026-01-24",
-    "eTGODeliveryStatus": "CO",
-    "etgoOriginInvoice": "Sample etgoOriginInvoice"
+    "eTGODeliveryStatus": "CO"
   },
   {
     "id": "mock-header-011",
@@ -559,8 +549,7 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 79.99,
     "eTGODueDate": "2026-01-25",
-    "eTGODeliveryStatus": "VO",
-    "etgoOriginInvoice": "Sample etgoOriginInvoice"
+    "eTGODeliveryStatus": "VO"
   },
   {
     "id": "mock-header-012",
@@ -610,8 +599,7 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 53.61,
     "eTGODueDate": "2026-01-26",
-    "eTGODeliveryStatus": "IP",
-    "etgoOriginInvoice": "Sample etgoOriginInvoice"
+    "eTGODeliveryStatus": "IP"
   }
 ];
 
@@ -1772,6 +1760,105 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
+    "headerId": "mock-header-012"
+  }
+];
+
+export const exchangeRates = [
+  {
+    "id": "mock-exchangeRates-001",
+    "currency": "USD",
+    "toCurrency": "USD",
+    "rate": "Sample rate",
+    "foreignAmount": 38907,
+    "headerId": "mock-header-001"
+  },
+  {
+    "id": "mock-exchangeRates-002",
+    "currency": "EUR",
+    "toCurrency": "EUR",
+    "rate": "Sample rate",
+    "foreignAmount": 9306,
+    "headerId": "mock-header-002"
+  },
+  {
+    "id": "mock-exchangeRates-003",
+    "currency": "GBP",
+    "toCurrency": "GBP",
+    "rate": "Sample rate",
+    "foreignAmount": 11544,
+    "headerId": "mock-header-003"
+  },
+  {
+    "id": "mock-exchangeRates-004",
+    "currency": "USD",
+    "toCurrency": "USD",
+    "rate": "Sample rate",
+    "foreignAmount": 11872,
+    "headerId": "mock-header-004"
+  },
+  {
+    "id": "mock-exchangeRates-005",
+    "currency": "EUR",
+    "toCurrency": "EUR",
+    "rate": "Sample rate",
+    "foreignAmount": 48460,
+    "headerId": "mock-header-005"
+  },
+  {
+    "id": "mock-exchangeRates-006",
+    "currency": "GBP",
+    "toCurrency": "GBP",
+    "rate": "Sample rate",
+    "foreignAmount": 45418,
+    "headerId": "mock-header-006"
+  },
+  {
+    "id": "mock-exchangeRates-007",
+    "currency": "USD",
+    "toCurrency": "USD",
+    "rate": "Sample rate",
+    "foreignAmount": 33840,
+    "headerId": "mock-header-007"
+  },
+  {
+    "id": "mock-exchangeRates-008",
+    "currency": "EUR",
+    "toCurrency": "EUR",
+    "rate": "Sample rate",
+    "foreignAmount": 25716,
+    "headerId": "mock-header-008"
+  },
+  {
+    "id": "mock-exchangeRates-009",
+    "currency": "GBP",
+    "toCurrency": "GBP",
+    "rate": "Sample rate",
+    "foreignAmount": 44780,
+    "headerId": "mock-header-009"
+  },
+  {
+    "id": "mock-exchangeRates-010",
+    "currency": "USD",
+    "toCurrency": "USD",
+    "rate": "Sample rate",
+    "foreignAmount": 12483,
+    "headerId": "mock-header-010"
+  },
+  {
+    "id": "mock-exchangeRates-011",
+    "currency": "EUR",
+    "toCurrency": "EUR",
+    "rate": "Sample rate",
+    "foreignAmount": 46022,
+    "headerId": "mock-header-011"
+  },
+  {
+    "id": "mock-exchangeRates-012",
+    "currency": "GBP",
+    "toCurrency": "GBP",
+    "rate": "Sample rate",
+    "foreignAmount": 38634,
     "headerId": "mock-header-012"
   }
 ];

@@ -1,4 +1,5 @@
 import { useUI } from '@/i18n';
+import { resolveTotalDiscountPct } from '@/lib/documentTotals';
 import DocumentTotalsPanel from './DocumentTotalsPanel.jsx';
 
 function fmt(val, curr) {
@@ -41,6 +42,7 @@ export default function LinesBottomSection({
   lineConfig,
   totalDiscountPct,
   onTotalDiscountChange,
+  onNotesSave,
   relatedDocuments: RelatedDocumentsComponent,
   totalsField = 'etgoTotalDiscount',
   // Inventory / shipment-style windows (albaranes, recepciones, movimientos)
@@ -90,12 +92,12 @@ export default function LinesBottomSection({
               <span className="text-[11px] font-medium text-foreground uppercase shrink-0 w-24 pt-1.5" style={{ letterSpacing: '0.04em' }}>
                 {ui('notes')}
               </span>
-              <div className="flex-1">
+              <div className="flex-1" data-testid="notes-textarea">
                 {notesFocused ? (
                   <textarea
                     value={data?.[notesField] || ''}
                     onChange={(e) => onFieldChange?.(notesField, e.target.value)}
-                    onBlur={() => setNotesFocused?.(false)}
+                    onBlur={() => { onNotesSave?.(data?.[notesField]); setNotesFocused?.(false); }}
                     placeholder={ui('addNoteHint')}
                     rows={2}
                     autoFocus
@@ -152,7 +154,7 @@ export default function LinesBottomSection({
                 formatAmount={fmt}
                 currency={currency}
                 readOnly={isReadOnly}
-                totalDiscountPct={Number(data?.[totalsField] ?? totalDiscountPct ?? 0)}
+                totalDiscountPct={resolveTotalDiscountPct(data, lines, totalDiscountPct, totalsField)}
                 onTotalDiscountChange={onTotalDiscountChange}
               />
             </div>

@@ -3,6 +3,9 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useUI, useMenuLabel } from '@/i18n';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
+import { ConfirmResultModal } from '@/components/contract-ui';
+
+export { ConfirmResultModal as PoConfirmResultModal };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -97,13 +100,16 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
 
   const confirmedPanel = confirmedDocs
     ? createPortal(
-        <PoConfirmResultModal
-          docs={confirmedDocs}
-          title={confirmedTitle}
-          onClose={() => { setConfirmedDocs(null); setConfirmedTitle(null); }}
-          navigate={navigate}
-          ui={ui}
+        <ConfirmResultModal
+          title={confirmedTitle || ui('poConfirmedTitle')}
+          docs={[
+            confirmedDocs?.receipt?.id && { type: 'entrada', num: confirmedDocs.receipt.documentNo, amount: confirmedDocs.receipt.amount, route: `/goods-receipt/${confirmedDocs.receipt.id}` },
+            confirmedDocs?.invoice?.id && { type: 'facturaCompra', num: confirmedDocs.invoice.documentNo, amount: confirmedDocs.invoice.amount, route: `/purchase-invoice/${confirmedDocs.invoice.id}` },
+          ].filter(Boolean)}
+          primary={ui('soViewInvoice')}
           currency={data?.['currency$_identifier'] || ''}
+          navigate={navigate}
+          onClose={() => { setConfirmedDocs(null); setConfirmedTitle(null); }}
         />,
         document.body,
       )
@@ -265,10 +271,22 @@ export function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onCo
   const d              = freshData || data || {};
   const documentNo     = d.documentNo || '';
   const bpName         = d['businessPartner$_identifier'] || '';
+  // Apply etgoTotalDiscount client-side only while the order is still in DR — at
+  // that point TotalDiscountService has not yet materialized the ETGO_DTO line, so
+  // the server totals are pre-discount and we show the user what the totals WILL be
+  // once the order is completed. After CO the totals already reflect the discount.
   const discountPct    = Number(d.etgoTotalDiscount ?? 0);
-  const discountFactor = discountPct > 0 ? (1 - discountPct / 100) : 1;
-  const grandTotal     = (Number(d.grandTotalAmount ?? d.grandTotal ?? 0) || 0) * discountFactor;
-  const totalLines     = (Number(d.summedLineAmount ?? d.totalLines ?? d.grandTotalAmount ?? 0) || 0) * discountFactor;
+  const isPreCompletion = d.documentStatus === 'DR';
+  const discountFactor = (isPreCompletion && discountPct > 0) ? (1 - discountPct / 100) : 1;
+  // Same accounting rule as DocumentTotalsPanel: the displayed total must equal
+  // round(net × factor) + round(tax × factor), not round(gross × factor).
+  // Avoids the 1-cent double-rounding drift versus the order's right panel and
+  // the printed invoice (AEAT/Modelo 303 rule "base + IVA = total").
+  const round2        = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+  const grossBase     = Number(d.grandTotalAmount ?? d.grandTotal ?? 0) || 0;
+  const netBase       = Number(d.summedLineAmount ?? d.totalLines ?? grossBase) || 0;
+  const totalLines    = round2(netBase * discountFactor);
+  const grandTotal    = totalLines + round2((grossBase - netBase) * discountFactor);
   const currency       = d['currency$_identifier'] || '';
 
   const handleConfirm = async () => {
@@ -286,7 +304,8 @@ export function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onCo
         );
         if (!processRes.ok) {
           const e = await processRes.json().catch(() => null);
-          throw new Error(e?.response?.message || e?.message || `Error (${processRes.status})`);
+          const rawMsg = e?.response?.message || e?.message || `Error (${processRes.status})`;
+          throw new Error(rawMsg.includes('@OrderWithoutLines@') ? ui('soNoLinesError') : rawMsg);
         }
         setOrderConfirmed(true);
         window.dispatchEvent(new CustomEvent('purchase-order:document-created'));
@@ -659,123 +678,6 @@ export function CreateDocsModal({ orderId, data, base, headers, currency, derive
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ── PoConfirmResultModal ───────────────────────────────────────────────────────
-// Shown after confirm or create docs. Displays created docs as clickable cards.
-// Cases: no docs (only confirmed), receipt only, invoice only, or both.
-
-export function PoConfirmResultModal({ docs, onClose, navigate, ui, currency, title }) {
-  const { receipt, invoice } = docs;
-  const hasDocs = Boolean(receipt?.id || invoice?.id);
-
-  return (
-    <div style={overlayStyle}>
-      <div onClick={e => e.stopPropagation()} style={{ ...cardStyle, width: 400 }}>
-
-        {/* Check + title */}
-        <div style={{ padding: '28px 24px 20px', textAlign: 'center' }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: '50%', margin: '0 auto 14px',
-            background: '#ECFDF5',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>
-            {title || ui('poConfirmedTitle')}
-          </div>
-          {hasDocs && (
-            <div style={{ fontSize: 12, color: '#6B7280', marginTop: 5, lineHeight: 1.4 }}>
-              {ui('soConfirmedSubtitle')}
-            </div>
-          )}
-        </div>
-
-        {/* Doc cards */}
-        {hasDocs && (
-          <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {receipt?.id && (
-              <PoResultDocCard
-                icon="📦"
-                label={ui('poReceiptDoc', { number: receipt.documentNo })}
-                amount={receipt.amount}
-                currency={currency}
-                color="blue"
-                ui={ui}
-                onClick={() => { onClose(); navigate(`/goods-receipt/${receipt.id}`); }}
-              />
-            )}
-            {invoice?.id && (
-              <PoResultDocCard
-                icon="🧾"
-                label={ui('poPurchaseInvoiceDoc', { number: invoice.documentNo })}
-                amount={invoice.amount}
-                currency={currency}
-                color="green"
-                ui={ui}
-                onClick={() => { onClose(); navigate(`/purchase-invoice/${invoice.id}`); }}
-              />
-            )}
-          </div>
-        )}
-
-        {/* Footer */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 16px', borderTop: '0.5px solid #E5E7EB' }}>
-          <button type="button" onClick={() => { onClose(); window.location.reload(); }} style={btnSecondary}>
-            {ui('soClose')}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PoResultDocCard({ icon, label, amount, currency, color, ui, onClick }) {
-  const [hovered, setHovered] = useState(false);
-  const isBlue  = color === 'blue';
-  const accent  = isBlue ? '#185FA5' : '#059669';
-  const bg      = isBlue ? '#EFF6FF' : '#ECFDF5';
-  const border  = isBlue ? '#BFDBFE' : '#A7F3D0';
-  const hoverBg = isBlue ? '#DBEAFE' : '#D1FAE5';
-
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
-        borderRadius: 10, cursor: 'pointer',
-        border: `1px solid ${border}`,
-        background: hovered ? hoverBg : bg,
-        transition: 'background 0.15s',
-      }}
-    >
-      <span style={{ fontSize: 18, flexShrink: 0 }}>{icon}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: accent }}>{label}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
-          {amount != null && Number(amount) !== 0 && (
-            <span style={{ fontSize: 12, color: '#6B7280' }}>
-              {fmtNum(amount)}{currency ? ` ${currency}` : ''}
-            </span>
-          )}
-          <span style={{
-            fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 99,
-            background: '#FEF3C7', color: '#92400E',
-          }}>
-            {ui('statusDraft')}
-          </span>
-        </div>
-      </div>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" style={{ flexShrink: 0 }}>
-        <path d="M9 18l6-6-6-6" />
-      </svg>
     </div>
   );
 }

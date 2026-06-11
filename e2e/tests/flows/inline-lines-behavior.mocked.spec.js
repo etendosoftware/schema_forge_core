@@ -361,16 +361,14 @@ test.describe('Tanda 3 — cell renderers', () => {
     await rowA.dispatchEvent('mouseover');
     await rowA.locator('[data-testid="line-actions"] button').first().dispatchEvent('click');
 
-    // Open the tax cell selector. The wrapper div carries data-testid="field-tax",
-    // and the inner SelectorInput renders a button with the same testid — use .first()
-    // to get the wrapper, then locate the actual trigger button inside it.
-    const taxFieldWrapper = rowA.locator('[data-testid="field-tax"]').first();
-    await expect(taxFieldWrapper).toBeVisible({ timeout: 3_000 });
-    const taxTrigger = taxFieldWrapper.locator('button[role="combobox"]');
-    await taxTrigger.click({ force: true });
+    // Open the tax cell. InlineSearchCombo renders a plain <input> — type to trigger
+    // the server search and then click the matching option in the portal dropdown.
+    const taxInput = rowA.locator('[data-testid="inline-add-field-tax"]');
+    await expect(taxInput).toBeVisible({ timeout: 3_000 });
+    await taxInput.fill('IVA 10%');
 
-    // Pick the alternative item from the dropdown (rendered in a Radix portal)
-    await page.getByText('IVA 10%').first().click({ force: true });
+    // Pick the alternative item from the dropdown (rendered in a portal)
+    await page.locator('[data-testid="inline-add-option-tax-tax-2"]').click({ force: true });
 
     await expect.poll(() => patches.length, { timeout: 5_000 }).toBeGreaterThan(0);
     const taxPatch = patches.find(p => p.body.tax === 'tax-2');

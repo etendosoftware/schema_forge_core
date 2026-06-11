@@ -53,7 +53,7 @@ The Contacts window should let users maintain a shared business-partner master r
   - vendor billing fields appear only when the vendor flag is enabled;
   - the Customer and Vendor flags are rendered as inline checkboxes (label + checkbox on one row, no extra vertical padding) using a `[&_.pt-6]:pt-0` wrapper to remove EntityForm's default label-alignment offset;
   - "Bloqueo de cliente" and "Bloqueo de proveedor" are rendered as **No / Sí** radio groups (`YesNoRadio`) positioned next to the respective payment-terms selector in the same flex row, not as checkboxes;
-  - the billing fields per side are split into two rows: top row (Price List, Payment Method, Account) rendered by EntityForm in default 3-column grid; bottom row rendered as a flex row with Condiciones de pago (EntityForm, 1 column) and the blocking radio group side-by-side.
+  - the billing fields per side are split into two rows: top row (Price List, Payment Method, Account on the customer side / Expense Account on the vendor side) rendered by EntityForm in default 3-column grid; bottom row rendered as a flex row with Condiciones de pago (EntityForm, 1 column) and the blocking radio group side-by-side. The third selector in the top row uses `FIN_Financial_Account_ID` for customer ("Cuenta" / "Account") and `PO_Financial_Account_ID` for vendor ("Cuenta contable de gastos" / "Expense Account") — both labels are declared in `decisions.json → window.labelOverrides`.
 - Before the header is saved, the financial panel suppresses effective billing-preference editing and clears prefilled billing values from the unsaved draft so those values are not posted too early.
 - The discount selector (native `<select>`) is only active after the header exists and creates, updates, or deletes a related discount row against the current business partner.
 - Customer-side and vendor-side account selectors depend on the selected payment method through backend SQL validation rules. The `selectorContext` now passes `Fin_Paymentmethod_ID` (for customer) and `PO_Paymentmethod_ID` (for vendor) to the selector request, so the eligible financial account list is filtered in real time as the payment method changes.
@@ -87,7 +87,7 @@ The Contacts window should let users maintain a shared business-partner master r
 7. In the Financial tab, verify the Credit section shows as a horizontal row: descriptive text on the left, stepper on the right. Click + rapidly five times; confirm the UI updates immediately on each click but only **one PATCH request** is sent to the backend after you stop clicking (verify in the Network tab). Confirm − does not go below 0.
 8. Verify a horizontal separator line (`<hr>`) appears between the Credit section and the Billing Preferences section.
 9. In the Financial tab, verify the Customer and Vendor checkboxes are rendered inline (checkbox + label on a single row with no extra vertical spacing above).
-10. When Customer is enabled, verify billing fields appear in two rows: top row (Tarifa, Método de pago, Cuenta); bottom row (Condiciones de pago selector on the left, Bloqueo de cliente No/Sí radio on the right, side by side).
+10. When Customer is enabled, verify billing fields appear in two rows: top row (Tarifa, Método de pago, Cuenta); bottom row (Condiciones de pago selector on the left, Bloqueo de cliente No/Sí radio on the right, side by side). When Vendor is enabled, verify the equivalent block shows: top row (Tarifa de compra, Método de pago, Cuenta contable de gastos); bottom row (Condiciones de pago, Bloqueo de proveedor No/Sí radio).
 11. Verify "Bloqueo de cliente" and "Bloqueo de proveedor" show as **No** / **Sí** radio buttons, not checkboxes. Default selection is No.
 12. In the Financial tab, verify customer and vendor flags control the related billing-preference sections.
 13. Select a payment method in the financial section and confirm the eligible financial account selector is filtered to only accounts compatible with that payment method.
@@ -142,3 +142,26 @@ Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functio
 
 - `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
 - `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.
+
+## Bank Account inline-add fixes — ETP-4009
+
+The following issues in the **Cuenta Bancaria** inline add-row form were resolved:
+
+**Column alignment.** The add-row form inputs now align pixel-perfectly with the existing table rows and column headers. Previously, the flex-based `InlineLinesPanel` and the `table-layout:fixed` `DataTable` drifted apart because the 40 px action column (legacy delete), a checkbox without `flexShrink:0`, and the first string column having a different flex-basis were not accounted for. All three mismatches are corrected.
+
+**IBAN overflow truncation.** Long IBAN values no longer push adjacent columns out of alignment. Flex cells in `InlineLinesPanel` now carry `minWidth:0`, so long non-breaking strings are truncated with an ellipsis instead of overflowing their cell.
+
+**Country default stripped at form init.** When creating a "Cuenta genérica" (Use Generic Account No.) row, the country field previously sent the literal string `@COUNTRYDEF@` to the backend, causing a "Country not present in import set" validation error. The add-row form now strips Etendo AD variable placeholders (`@…@`) from field defaults at initialization, so the country field starts empty and the record can be saved without error.
+
+**Format dropdown uses Radix Select.** The "Formato cuenta bancaria" dropdown in the add-row form now uses the same styled Radix Select component as "País de Origen", with the chevron icon correctly contained inside the field border.
+
+**SWIFT Code column added.** The "SWIFT Code" column is now visible in the Cuenta Bancaria table and in the inline add-row form, enabling entry of the SWIFT code when "Use SWIFT + Generic Account No." format is selected.
+
+**Validation messages translated to Spanish.** Five backend validation messages for the bank account entity are now shown in Spanish:
+- IBAN field empty when IBAN format is selected.
+- Generic account number empty when Generic format is selected.
+- Country field empty when IBAN format is selected.
+- IBAN code invalid for the selected country.
+- SWIFT code or generic account number empty when SWIFT format is selected.
+
+- **ETP-4103 — Generator fix (labelOverrides deduplication)**: `const labelOverrides` in the generated page now references `api.labelOverrides` instead of re-embedding the full object. No functional change — field labels and selectors behave identically.

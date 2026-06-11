@@ -74,6 +74,50 @@ describe('runQualityGate', () => {
     assert.equal(result.windows[0].verdict, 'NO-OP');
     assert.equal(result.summary.scoredWindows, 0);
   });
+
+  it('skips a check that is enabled but not registered in checkers', async () => {
+    const result = await runQualityGate({
+      windowNames: ['alpha'],
+      rootDir: '/repo',
+      config: {
+        checks: {
+          ghost: { enabled: true, severity: 'blocker' },
+        },
+        gate: CONFIG.gate,
+      },
+      checkers: {},
+    });
+
+    assert.equal(result.windows[0].checks[0].status, 'skip');
+    assert.match(result.windows[0].checks[0].detail, /is not registered/);
+    assert.equal(result.windows[0].verdict, 'NO-OP');
+    assert.equal(result.summary.scoredWindows, 0);
+    assert.equal(result.summary.gateVerdict, 'PASS');
+  });
+
+  it('runs a non-blocker check without counting it as a blocker', async () => {
+    const result = await runQualityGate({
+      windowNames: ['alpha'],
+      rootDir: '/repo',
+      config: {
+        checks: {
+          i18n: { enabled: true, severity: 'warning' },
+        },
+        gate: CONFIG.gate,
+      },
+      checkers: {
+        i18n: async () => ({ status: 'fail', detail: 'Hardcoded label' }),
+      },
+    });
+
+    assert.equal(result.windows[0].checks[0].severity, 'warning');
+    assert.equal(result.windows[0].checks[0].status, 'fail');
+    assert.deepEqual(result.windows[0].blockerFailures, []);
+    assert.equal(result.windows[0].verdict, 'PASS');
+    assert.equal(result.windows[0].score.total, 1);
+    assert.equal(result.windows[0].score.passed, 0);
+    assert.equal(result.summary.gateVerdict, 'PASS');
+  });
 });
 
 describe('buildQualityGateReport', () => {

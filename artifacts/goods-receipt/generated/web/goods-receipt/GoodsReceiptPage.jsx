@@ -7,6 +7,8 @@ import GoodsReceiptLineForm from './GoodsReceiptLineForm';
 import RelatedDocuments from '@/windows/custom/goods-receipt/RelatedDocuments';
 import { AttachmentsTab } from '@/components/attachments';
 import GoodsReceiptBottomPanel from '../../../custom/GoodsReceiptBottomPanel';
+import GoodsReceiptActions from '../../../custom/GoodsReceiptActions';
+import GoodsReceiptDraftChips from '../../../custom/GoodsReceiptDraftChips';
 import catalogs from './mockCatalogs';
 
 
@@ -15,7 +17,7 @@ const breadcrumb = 'Purchases / Goods Receipt';
 
 // @sf-generated-start summary:goodsReceipt
 const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+
 ];
 
 const statusField = 'documentStatus';
@@ -41,22 +43,20 @@ const draftMode = {
 // @sf-generated-end draftMode:goodsReceipt
 
 // @sf-generated-start requiredHeaderFields:goodsReceipt
-const requiredHeaderFields = ['documentNo', 'warehouse', 'businessPartner', 'partnerAddress', 'movementDate'];
+const requiredHeaderFields = ['warehouse', 'businessPartner', 'movementDate'];
 // @sf-generated-end requiredHeaderFields:goodsReceipt
 
 // @sf-generated-start addLineFields:goodsReceiptLine
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', label: 'Attribute Set Value' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
     { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 0 },
-    { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin', reference: 'Locator', inputMode: 'selector', defaultValue: '@OnHandLocatorDefault@' },
-    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
 
   ],
   hidden: [
+    { key: 'storageBin', value: '@OnHandLocatorDefault@' },
     { key: 'invoiceQuantity', value: '0' },
   ],
 };
@@ -118,7 +118,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/partnerAddress"
+      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "goodsReceipt",
@@ -134,7 +143,20 @@ export const api = {
       "column": "C_Project_ID",
       "reference": "Project",
       "inputMode": "search",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/project"
+      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/project",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "goodsReceipt",
@@ -182,7 +204,20 @@ export const api = {
       "column": "C_Aum",
       "reference": "UOM",
       "inputMode": "selector",
-      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/operativeUOM"
+      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/operativeUOM",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "M_Product_ID",
+            "source": "field",
+            "field": "product"
+          }
+        ]
+      }
     },
     {
       "entity": "goodsReceiptLine",
@@ -198,7 +233,16 @@ export const api = {
       "column": "M_Locator_ID",
       "reference": "Locator",
       "inputMode": "selector",
-      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/storageBin"
+      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/storageBin",
+      "context": {
+        "required": [
+          {
+            "param": "M_Warehouse_ID",
+            "source": "parentField",
+            "field": "warehouse"
+          }
+        ]
+      }
     },
     {
       "entity": "goodsReceiptLine",
@@ -391,12 +435,17 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        hideDeleteWhenComplete
+        hidePrint
+        noHeaderBorder
         customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
         bottomSection={GoodsReceiptBottomPanel}
+        topbarRight={GoodsReceiptActions}
+        topbarExtra={GoodsReceiptDraftChips}
         draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         linesLayout="inlineEditable"
-        sendDocument={{"enabled":true,"allowEmail":false}}
+        sendDocument
         {...props}
       />
     );
@@ -411,8 +460,9 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="movementDate"
+      hidePrint
       rowQuickActions={{}}
-      sendDocument={{"enabled":true,"allowEmail":false}}
+      sendDocument
       {...props}
     />
   );

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
@@ -10,11 +10,11 @@ import PurchaseInvoiceHeaderTable from './PurchaseInvoiceHeaderTable.jsx';
 import HeaderPage from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderPage';
 import InvoicePreview from '../shared/InvoicePreview.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
+import OcrSidePanel from '../shared/OcrSidePanel.jsx';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
-import SendDocumentModal from '@/components/contract-ui/SendDocumentModal';
-import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
-import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
+import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.jsx';
+import { getInvoiceDraftMode, buildInvoiceRowQuickActions, useClearSavedRecord } from '../shared/useInvoiceWindow.js';
 
 /* eslint-disable react/prop-types */
 
@@ -55,6 +55,10 @@ const LABEL_OVERRIDES = {
   },
 };
 
+function PurchaseInvoiceBulkAction(props) {
+  return <BulkDocumentAction {...props} labelKey="confirmBulk" />;
+}
+
 function PurchaseInvoiceTable(props) {
   return <PurchaseInvoiceHeaderTable {...props} />;
 }
@@ -76,10 +80,9 @@ export default function PurchaseInvoiceWindow(props) {
   const tMenu = useMenuLabel();
   const [savedRecord, setSavedRecord] = useState(null);
   const [cloneTargets, setCloneTargets] = useState(null);
-  const [emailRow, setEmailRow] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
-    useCreateContactModal({ apiBaseUrl, token });
+  const { headers, createContactCtxValue, contactPortal } =
+    useCreateContactModal({ apiBaseUrl, token, documentType: 'purchase' });
   const breadcrumb = 'Purchases / Purchase Invoice';
 
   const { requestDelete, deleteDialog } = useRowDelete({
@@ -89,21 +92,10 @@ export default function PurchaseInvoiceWindow(props) {
     onSuccess: () => setRefreshKey(k => k + 1),
   });
 
-  const rowQuickActions = useMemo(() => ({
-    enabled: true,
-    editMode: 'navigate',
-    documentPreview: true,
-    actions: {
-      edit: { show: true },
-      duplicate: { show: true },
-      email: { show: true },
-      delete: { show: true },
-    },
-    onEdit: (row) => navigate(`/${windowName}/${row.id}`),
-    onClone: (row) => setCloneTargets([row]),
-    onEmail: (row) => setEmailRow(row),
-    onDelete: requestDelete,
-  }), [navigate, windowName, requestDelete]);
+  const rowQuickActions = useMemo(
+    () => buildInvoiceRowQuickActions(navigate, windowName, setCloneTargets, null, requestDelete, { showEmail: false }),
+    [navigate, windowName, requestDelete],
+  );
 
   const summary = [
     { key: 'summedLineAmount', column: 'TotalLines', type: 'amount', label: ui('totalNetAmount') },
@@ -115,42 +107,26 @@ export default function PurchaseInvoiceWindow(props) {
   // Pick up the saved record from navigation state when arriving at the list view
   const effectiveRecord = savedRecord ?? location.state?.savedRecord ?? null;
 
-  const clearSavedRecord = useCallback(() => {
-    setSavedRecord(null);
-    // Clear navigation state so the modal doesn't reappear on browser back/forward
-    if (location.state?.savedRecord) {
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location, navigate]);
+  const clearSavedRecord = useClearSavedRecord(setSavedRecord, location, navigate);
+  const draftModeOverride = getInvoiceDraftMode(ui);
 
   if (recordId) {
     return (
       <CreateContactContext.Provider value={createContactCtxValue}>
         <HeaderPage
           {...props}
-          secondaryTabs={[]}
+          draftMode={draftModeOverride}
           summary={summary}
           extraBadges={[]}
           topbarRight={PurchaseInvoiceTopbar}
+          sidePanel={OcrSidePanel}
+          sidePanelStyle={{ width: 360 }}
           notesField="description"
           breadcrumb={breadcrumb}
           onAfterSave={true}
           refetchAfterSave={true}
         />
-        {createContactState && createPortal(
-          <CreateContactModal
-            bpApiBaseUrl={bpApiBaseUrl}
-            headers={headers}
-            initialQuery={createContactState.query}
-            documentType="purchase"
-            onClose={() => setCreateContactState(null)}
-            onCreated={(newBP) => {
-              createContactState.onSelect({ id: newBP.id, name: newBP.name });
-              setCreateContactState(null);
-            }}
-          />,
-          document.body,
-        )}
+        {contactPortal}
       </CreateContactContext.Provider>
     );
   }
@@ -194,8 +170,8 @@ export default function PurchaseInvoiceWindow(props) {
         dateFilterKey="invoiceDate"
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         rowQuickActions={rowQuickActions}
-        sendDocument={{ enabled: true, allowEmail: false }}
-        bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
+        sendDocument={{ enabled: false, allowEmail: false }}
+        bulkActions={PurchaseInvoiceBulkAction}
         refreshTrigger={refreshKey}
         renderPreview={({ row, onClose, onEdit }) => (
           <InvoicePreview
@@ -212,21 +188,6 @@ export default function PurchaseInvoiceWindow(props) {
         onExternalPreviewClose={clearSavedRecord}
       />
       {deleteDialog}
-      {emailRow && createPortal(
-        <SendDocumentModal
-          documentType={tMenu('Purchase Invoice')}
-          documentNo={emailRow.documentNo}
-          bpName={emailRow['businessPartner$_identifier']}
-          bPartnerId={emailRow.businessPartner}
-          apiBaseUrl={apiBaseUrl}
-          documentId={emailRow.id}
-          windowName={windowName}
-          token={token}
-          allowEmail={false}
-          onClose={() => setEmailRow(null)}
-        />,
-        document.body,
-      )}
       {cloneTargets && createPortal(
         <CloneOrderModal
           records={cloneTargets}

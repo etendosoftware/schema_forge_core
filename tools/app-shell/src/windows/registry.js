@@ -8,6 +8,11 @@ import { APP_CATALOG } from '../apps-registry.js';
  * Enterprise windows (removed): commission, commission-payment, requisition,
  * manage-requisitions, landed-cost, inventory-quality-inspection, bom-production,
  * packing, warehouse-picking-list, stock-reservation, cost-adjustment
+ *
+ * Out-of-scope windows (removed, ETP-4191): payment-method, unit-of-measure.
+ * Not part of the 1st iteration. The C_UOM_ID / FIN_PaymentMethod_ID selectors
+ * used by product / payment-in / payment-out resolve against AD_Column metadata,
+ * not these specs, so removal does not affect them.
  */
 const windowLoaders = {
   'sales-order': () => import('@generated/sales-order/generated/web/sales-order/index.jsx'),
@@ -16,11 +21,9 @@ const windowLoaders = {
   'warehouse': () => import('@generated/warehouse/generated/web/warehouse/index.jsx'),
   'price-list': () => import('@generated/price-list/generated/web/price-list/index.jsx'),
   'payment-term': () => import('@generated/payment-term/generated/web/payment-term/index.jsx'),
-  'payment-method': () => import('@generated/payment-method/generated/web/payment-method/index.jsx'),
   'product': () => import('@generated/product/generated/web/product/index.jsx'),
   'product-category': () => import('@generated/product-category/generated/web/product-category/index.jsx'),
   'tax': () => import('@generated/tax/generated/web/tax/index.jsx'),
-  'unit-of-measure': () => import('@generated/unit-of-measure/generated/web/unit-of-measure/index.jsx'),
   'user': () => import('@generated/user/generated/web/user/index.jsx'),
   'purchase-order': () => import('@generated/purchase-order/generated/web/purchase-order/index.jsx'),
   'goods-receipt': () => import('@generated/goods-receipt/generated/web/goods-receipt/index.jsx'),
@@ -33,7 +36,7 @@ const windowLoaders = {
   'sales-quotation': () => import('@generated/sales-quotation/generated/web/sales-quotation/index.jsx'),
   'goods-shipment': () => import('@/windows/custom/goods-shipment/index.jsx'),
   'return-from-customer': () => import('@generated/return-from-customer/generated/web/return-from-customer/index.jsx'),
-  'return-material-receipt': () => import('@generated/return-material-receipt/generated/web/return-material-receipt/index.jsx'),
+  'return-material-receipt': () => import('@/windows/custom/return-material-receipt/index.jsx'),
   'sales-invoice': () => import('@generated/sales-invoice/generated/web/sales-invoice/index.jsx'),
   'deal': () => import('@generated/deal/generated/web/deal/index.jsx'),
   'activity': () => import('@generated/activity/generated/web/activity/index.jsx'),
@@ -49,6 +52,9 @@ const windowLoaders = {
   'bank-reconciliation': () => import('@generated/bank-reconciliation/generated/web/bank-reconciliation/index.jsx'),
   'chart-of-accounts': () => import('@generated/chart-of-accounts/generated/web/chart-of-accounts/index.jsx'),
   'assets': () => import('@generated/assets/generated/web/assets/index.jsx'),
+  'conversion-rates': () => import('@generated/conversion-rates/generated/web/conversion-rates/index.jsx'),
+  'conversion-rate-downloader-log': () => import('@generated/conversion-rate-downloader-log/generated/web/conversion-rate-downloader-log/index.jsx'),
+  'amortization': () => import('@generated/amortization/generated/web/amortization/index.jsx'),
 };
 
 /**
@@ -134,6 +140,7 @@ const customLoaders = {
   // Auto-registered by pipeline when layoutType: "custom"
   'fiscal-config': () => import('./custom/fiscal-config/index.jsx'),
   'fiscal-monitor': () => import('./custom/fiscal-monitor/index.jsx'),
+  'fiscal-models': () => import('./custom/fiscal-models/index.jsx'),
   'sales-order': () => import('./custom/sales-order/index.jsx'),
   'price-list': () => import('./custom/price-list/index.jsx'),
   'purchase-invoice': () => import('./custom/purchase-invoice/index.jsx'),
@@ -142,13 +149,14 @@ const customLoaders = {
   'physical-inventory': () => import('./custom/physical-inventory/index.jsx'),
   'goods-movements': () => import('./custom/goods-movements/index.jsx'),
   'payment-out': () => import('./custom/payment-out/index.jsx'),
-  'sales-order': () => import('./custom/sales-order/index.jsx'),
   'sales-invoice': () => import('./custom/sales-invoice/index.jsx'),
   'sales-quotation': () => import('./custom/sales-quotation/index.jsx'),
   'warehouse': () => import('./custom/warehouse/index.jsx'),
   'spike-hello-app': () => import('./spike-apps-host/index.jsx'),
   'quick-order-sales': () => import('./quick-order/index.jsx'),
   'quick-order-purchase': () => import('./quick-order/index.jsx'),
+  'financial-account': () => import('./custom/financial-account/index.jsx'),
+  'return-to-vendor-shipment': () => import('./custom/return-to-vendor-shipment/index.jsx'),
 };
 
 /**

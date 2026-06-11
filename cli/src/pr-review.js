@@ -28,7 +28,7 @@ function isSourceFile(path) {
 }
 
 function isTestFile(path) {
-  return /\.(test|spec)\.(js|jsx|ts|tsx)$/.test(path);
+  return /\.(test|spec|vitest)\.(js|jsx|ts|tsx)$/.test(path);
 }
 
 function isTestDirectory(path) {
@@ -75,56 +75,64 @@ function parseAddedRuns(diffText) {
   const sections = diffText.split(/^diff --git /m).filter(Boolean);
 
   for (const section of sections) {
-    const lines = section.split('\n');
-    let path = null;
-    let newLine = 0;
-    let currentRun = [];
-
-    const flushRun = () => {
-      if (path && currentRun.length) {
-        runs.push({ path, lines: currentRun });
-      }
-      currentRun = [];
-    };
-
-    for (const line of lines) {
-      if (line.startsWith('+++ b/')) {
-        path = line.slice(6);
-        continue;
-      }
-
-      if (line.startsWith('@@ ')) {
-        flushRun();
-        const match = line.match(/\+(\d+)(?:,\d+)?/);
-        newLine = match ? Number(match[1]) : 0;
-        continue;
-      }
-
-      if (!path) {
-        continue;
-      }
-
-      if (line.startsWith('+') && !line.startsWith('+++')) {
-        currentRun.push({ line: newLine, text: line.slice(1) });
-        newLine += 1;
-        continue;
-      }
-
-      flushRun();
-
-      if (line.startsWith('-') && !line.startsWith('---')) {
-        continue;
-      }
-
-      if (!line.startsWith('\\')) {
-        newLine += 1;
-      }
-    }
-
-    flushRun();
+    collectRunsFromSection(section, runs);
   }
 
   return runs;
+}
+
+function collectRunsFromSection(section, runs) {
+  const lines = section.split('\n');
+  let path = null;
+  let newLine = 0;
+  let currentRun = [];
+
+  const flushRun = () => {
+    if (path && currentRun.length) {
+      runs.push({ path, lines: currentRun });
+    }
+    currentRun = [];
+  };
+
+  for (const line of lines) {
+    if (line.startsWith('+++ b/')) {
+      path = line.slice(6);
+      continue;
+    }
+
+    if (line.startsWith('@@ ')) {
+      flushRun();
+      const match = line.match(/\+(\d+)(?:,\d+)?/);
+      newLine = extractLineNumber(match);
+      continue;
+    }
+
+    if (!path) {
+      continue;
+    }
+
+    if (line.startsWith('+') && !line.startsWith('+++')) {
+      currentRun.push({ line: newLine, text: line.slice(1) });
+      newLine += 1;
+      continue;
+    }
+
+    flushRun();
+
+    if (line.startsWith('-') && !line.startsWith('---')) {
+      continue;
+    }
+
+    if (!line.startsWith('\\')) {
+      newLine += 1;
+    }
+  }
+
+  flushRun();
+}
+
+function extractLineNumber(match) {
+  return match ? Number(match[1]) : 0;
 }
 
 function collectAddedLineContents(diffText) {
@@ -153,6 +161,10 @@ export function detectDuplicatedBlocks(diffText, { minLines = DUPLICATE_MIN_LINE
 
   for (const run of runs) {
     if (run.path.startsWith('artifacts/')) continue;
+    // Generated AD metadata cache (offline-regen snapshot): a data dump where
+    // standard columns/records legitimately repeat across entities — DRY/extract
+    // rules do not apply, same as the artifacts/ skip above.
+    if (run.path.startsWith('cli/cache/')) continue;
     if (isGeneratedDependencyManifest(run.path)) continue;
     const normalizedLines = run.lines
       .map((entry) => ({ ...entry, normalized: normalizeDuplicateLine(entry.text) }))
@@ -295,6 +307,16 @@ function analyzeLargeFiles(changedFiles) {
     if (/\/locales\/[^/]+\.json$/.test(path)) {
       continue;
     }
+    // Generated contract snapshots are intentionally verbose and are checked
+    // by schema/quality gates instead of the handwritten-source size gate.
+    if (/^artifacts\/[^/]+\/(?:contract|contract\.prev|contract\.mcp|report-contract|aggregate-contract)\.json$/.test(path)) {
+      continue;
+    }
+    // Generated AD metadata cache (offline-regen snapshot): intentionally large
+    // and machine-generated — same rationale as the contract snapshots above.
+    if (path.startsWith('cli/cache/')) {
+      continue;
+    }
     if (!existsSync(path)) {
       continue;
     }
@@ -316,6 +338,10 @@ function analyzeLargeFiles(changedFiles) {
   }];
 }
 
+function formatNewDependency(dependency) {
+  return `- ${dependency}`;
+}
+
 export function analyzeChangedFiles({
   changedFiles,
   newSourceFiles,
@@ -335,7 +361,7 @@ export function analyzeChangedFiles({
         code: 'NEW_DEPENDENCY',
         severity: 'warning',
         title: 'New npm dependency added',
-        details: `\`${change.path}\` adds:\n${change.dependencies.map((dependency) => `- ${dependency}`).join('\n')}\nJustify new dependencies in the PR description and prefer Node.js built-ins where possible.`,
+        details: `\`${change.path}\` adds:\n${change.dependencies.map(formatNewDependency).join('\n')}\nJustify new dependencies in the PR description and prefer Node.js built-ins where possible.`,
       }]
       : []),
   ];

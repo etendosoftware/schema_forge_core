@@ -11,13 +11,16 @@
  * Used by InlineLinesPanel's flex column layout.
  */
 export function columnFlex(col, idx) {
-  if (col.type === 'amount') return '0 0 172px';
-  if (col.type === 'price') return '0 0 152px';
-  if (col.type === 'quantity' || col.type === 'integer') return '0 0 152px';
-  if (col.type === 'decimal' || col.type === 'percent') return '0 0 152px';
-  if (idx === 0) return '1 1 244px';
+  const g = col.grow ? '1' : '0';
+  if (col.type === 'amount') return `${g} 0 172px`;
+  if (col.type === 'price') return `${g} 0 152px`;
+  if (col.type === 'quantity' || col.type === 'integer') return `${g} 0 152px`;
+  if (col.type === 'decimal' || col.type === 'percent') return `${g} 0 152px`;
   if (col.type === 'string' || col.type === 'text') return '1 1 224px';
-  if (col.type === 'selector' || col.type === 'search' || col.type === 'foreignKey') return '0 0 192px';
+  if (col.type === 'selector' || col.type === 'search' || col.type === 'foreignKey') {
+    const grow = col.grow !== undefined ? col.grow : (idx === 0);
+    return grow ? '1 1 192px' : '0 0 192px';
+  }
   // Enum/select columns share the string baseline (224px). Their values
   // include the Select's chevron, so long options like "Use Generic Account
   // No." need at least as much room as a plain text input of the same length
@@ -25,7 +28,7 @@ export function columnFlex(col, idx) {
   // word inside the trigger. `1 1` keeps the column elastic on top.
   if (col.type === 'enum' || col.type === 'select') return '1 1 224px';
   if (col.type === 'date') return '1 1 130px';
-  return '0 0 120px';
+  return `${g} 0 120px`;
 }
 
 /**
@@ -39,7 +42,6 @@ export function columnMinWidthPx(col, idx) {
   if (col.type === 'price') return 152;
   if (col.type === 'quantity' || col.type === 'integer') return 152;
   if (col.type === 'decimal' || col.type === 'percent') return 152;
-  if (idx === 0) return 244;
   if (col.type === 'string' || col.type === 'text') return 224;
   if (col.type === 'selector' || col.type === 'search' || col.type === 'foreignKey') return 192;
   if (col.type === 'enum' || col.type === 'select') return 224;

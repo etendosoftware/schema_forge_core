@@ -12,7 +12,7 @@
  *   node cli/src/push-to-neo.js sales-order --dry-run
  */
 
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createDbPool, closePool } from './db.js';
@@ -21,6 +21,8 @@ import {
   populateSpec as writerPopulateSpec,
   upsertField as writerUpsertField,
 } from './neo-writer.js';
+import { computeWindowDelta, serializeDelta } from './lib/neo-delta.js';
+import { loadEtgoXmlSnapshot } from './lib/etgo-xml-parser.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -39,7 +41,7 @@ export function toSpecName(windowName) {
     .trim()
     .replace(/([a-z])([A-Z])/g, '$1 $2')   // split camelCase
     .replace(/[^a-zA-Z0-9]+/g, '-')          // non-alphanum -> dash
-    .replace(/^-|-$/g, '')                    // trim leading/trailing dashes
+    .replace(/(^-)|(-$)/g, '')                // trim leading/trailing dashes
     .toLowerCase();
 }
 
@@ -383,7 +385,7 @@ async function executePushTransaction(ctx) {
     const { successCount, errorCount, fieldResults } =
       await stepUpdateFieldVisibility(client, ctx, entityMaps);
 
-    const excludedCount = await stepExcludeNonContractFields(client, popResult, ctx.allFields);
+    const excludedCount = await stepExcludeNonContractFields(client, popResult, ctx.allFields, ctx.schemaRawData);
 
     await client.query('COMMIT');
 
@@ -580,9 +582,19 @@ async function upsertSingleField(client, f, ctx, entityMaps) {
   return { column: f.column, entityName: f.entityName, success: true };
 }
 
-async function stepExcludeNonContractFields(client, popResult, allFields) {
+export async function stepExcludeNonContractFields(client, popResult, allFields, schemaRawData) {
   console.log(`[4/4] Excluding non-contract fields...`);
   const contractColumns = new Set(allFields.map(f => f.column));
+  // Only exclude columns that were extracted from AD in this run.
+  // Columns belonging to uninstalled extension modules won't appear in
+  // schemaRawData — leaving their isIncluded state untouched prevents the
+  // pipeline from toggling fields from modules not present in the current env.
+  const extractedColumns = new Set();
+  for (const ent of (schemaRawData?.entities ?? [])) {
+    for (const field of (ent.fields ?? [])) {
+      if (field.columnName) extractedColumns.add(field.columnName);
+    }
+  }
   let excludedCount = 0;
   for (const ent of popResult.entities) {
     const allEntityFields = await client.query(
@@ -593,7 +605,7 @@ async function stepExcludeNonContractFields(client, popResult, allFields) {
       [ent.entityId],
     );
     for (const row of allEntityFields.rows) {
-      if (!contractColumns.has(row.columnname)) {
+      if (!contractColumns.has(row.columnname) && extractedColumns.has(row.columnname)) {
         await client.query(
           `UPDATE etgo_sf_field SET isincluded = 'N', updated = now() WHERE etgo_sf_field_id = $1`,
           [row.etgo_sf_field_id],
@@ -884,8 +896,146 @@ export async function pushReportToNeo(reportName, options = {}) {
 }
 
 // ---------------------------------------------------------------------------
+// --dump-delta — emit the writes push-to-neo WOULD make, without writing
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve the default prev-XML directory:
+ *   ${ETENDO_ROOT}/modules/com.etendoerp.go/src-db/database/sourcedata
+ * Falls back to the conventional sibling location `../modules/...` relative
+ * to this repo root.
+ */
+function resolveDefaultPrevXmlDir(projectRoot) {
+  const etendoRoot = process.env.ETENDO_ROOT
+    || join(projectRoot, '..');
+  return join(
+    etendoRoot,
+    'modules', 'com.etendoerp.go', 'src-db', 'database', 'sourcedata',
+  );
+}
+
+/**
+ * Compute and serialize the would-be push as JSON.
+ *
+ * @param {string} windowName - artifact directory name (kebab-case spec)
+ * @param {object} options
+ * @param {string} options.outPath - destination file (e.g. artifacts/<spec>/neo-delta.json)
+ * @param {string} [options.prevXmlDir]
+ * @param {string} [options.projectRoot]
+ * @param {string} [options.moduleId]
+ * @returns {Promise<{ outPath, summary }>}
+ */
+export async function dumpDelta(windowName, options) {
+  if (!options || !options.outPath) {
+    throw new Error('dumpDelta: options.outPath is required');
+  }
+  const projectRoot = options.projectRoot || ROOT;
+  const moduleId = options.moduleId || '94E1B433CF55451EABB764750AC5902A';
+  const artifactsDir = join(projectRoot, 'artifacts', windowName);
+
+  // 1) Load the contract / schema-raw / decisions ----------------------------
+  const { contract, schemaRawData, decisionsData } =
+    await loadPushArtifacts(artifactsDir, windowName);
+
+  // 2) Guard: only window specs are supported in this slice.
+  const specType = contract.backendContract?.specType
+    || contract.specType
+    || 'W';
+  if (specType !== 'W') {
+    throw new Error(
+      `--dump-delta currently supports windows only (specType=W). ` +
+      `Found specType=${specType} for '${windowName}'. Tracked for Slice 3+.`
+    );
+  }
+
+  const windowId = resolveWindowId(schemaRawData, contract, options);
+  const specName = windowName;
+
+  // 3) Query AD metadata for tabs+columns. These hit the DB unless the caller
+  //    set FROM_CACHE=1 (via setCacheMode in regen-all.js or extract CLIs),
+  //    in which case the cache stub answers — no real connection opens.
+  const pool = createDbPool(options.dbConfig);
+  let adTabs;
+  let adColumns;
+  try {
+    const tabsRes = await pool.query(
+      `SELECT ad_tab_id, name, ad_table_id, seqno
+       FROM ad_tab
+       WHERE ad_window_id = $1 AND isactive = 'Y'
+       ORDER BY seqno, name, ad_tab_id`,
+      [String(windowId)],
+    );
+    adTabs = tabsRes.rows;
+    const colsRes = await pool.query(
+      `SELECT DISTINCT c.ad_table_id, c.ad_column_id, c.columnname, c.position
+       FROM ad_column c
+       JOIN ad_tab t ON t.ad_table_id = c.ad_table_id
+       WHERE t.ad_window_id = $1
+         AND t.isactive = 'Y'
+         AND c.isactive = 'Y'
+       ORDER BY c.ad_table_id, c.position, c.columnname, c.ad_column_id`,
+      [String(windowId)],
+    );
+    adColumns = colsRes.rows;
+  } finally {
+    await closePool(pool);
+  }
+
+  // 4) Load prev-XML snapshot (hard error if missing).
+  const prevXmlDir = options.prevXmlDir || resolveDefaultPrevXmlDir(projectRoot);
+  const prevSnapshot = await loadEtgoXmlSnapshot(prevXmlDir);
+
+  // 5) Compute and serialize.
+  const delta = computeWindowDelta({
+    specName,
+    windowId: String(windowId),
+    moduleId,
+    contract,
+    decisions: decisionsData,
+    adTabs,
+    adColumns,
+    prevSnapshot,
+    schemaRawData,
+  });
+  const serialized = serializeDelta(delta);
+
+  // 6) Write to disk (pretty JSON, deterministic).
+  await mkdir(dirname(options.outPath), { recursive: true });
+  await writeFile(options.outPath, JSON.stringify(serialized, null, 2) + '\n', 'utf-8');
+
+  const summary = {
+    spec: specName,
+    upserts: {
+      ETGO_SF_SPEC:   serialized.tables.ETGO_SF_SPEC.upserts.length,
+      ETGO_SF_ENTITY: serialized.tables.ETGO_SF_ENTITY.upserts.length,
+      ETGO_SF_FIELD:  serialized.tables.ETGO_SF_FIELD.upserts.length,
+    },
+    deletes: {
+      ETGO_SF_SPEC:   serialized.tables.ETGO_SF_SPEC.deletes.length,
+      ETGO_SF_ENTITY: serialized.tables.ETGO_SF_ENTITY.deletes.length,
+      ETGO_SF_FIELD:  serialized.tables.ETGO_SF_FIELD.deletes.length,
+    },
+  };
+  return { outPath: options.outPath, summary };
+}
+
+// ---------------------------------------------------------------------------
 // CLI entry point
 // ---------------------------------------------------------------------------
+
+/**
+ * Extract a `--flag=value` or `--flag value` pair from argv.
+ * Returns null if the flag is absent.
+ */
+function readFlagValue(args, flagName) {
+  const eqForm = args.find(a => a.startsWith(`${flagName}=`));
+  if (eqForm) return eqForm.split('=').slice(1).join('=');
+  const idx = args.indexOf(flagName);
+  if (idx >= 0 && idx + 1 < args.length && !args[idx + 1].startsWith('--')) {
+    return args[idx + 1];
+  }
+  return null;
+}
 
 async function main() {
   const args = process.argv.slice(2);
@@ -893,21 +1043,49 @@ async function main() {
   const isReport = args.includes('--type') && args[args.indexOf('--type') + 1] === 'report';
   const overrideWindowArg = args.find(a => a.startsWith('--override-window='));
   const overrideWindow = overrideWindowArg ? overrideWindowArg.split('=')[1] : null;
-  const name = args.find(a => !a.startsWith('--') && a !== 'report');
+  const dumpDeltaPath = readFlagValue(args, '--dump-delta');
+  const prevXmlDir = readFlagValue(args, '--prev-xml-dir');
+
+  // The positional spec name is the first non-flag arg, but we must skip the
+  // value tokens consumed by --dump-delta / --prev-xml-dir / --type when given
+  // as separate words.
+  const consumed = new Set();
+  for (const flag of ['--dump-delta', '--prev-xml-dir', '--type']) {
+    const idx = args.indexOf(flag);
+    if (idx >= 0 && idx + 1 < args.length && !args[idx + 1].startsWith('--')) {
+      consumed.add(idx + 1);
+    }
+  }
+  const name = args.find((a, i) => !a.startsWith('--') && a !== 'report' && !consumed.has(i));
 
   if (!name) {
     console.error('Usage:');
     console.error('  node cli/src/push-to-neo.js <windowName> [--dry-run] [--override-window=123]');
     console.error('  node cli/src/push-to-neo.js <reportName> --type report [--dry-run]');
+    console.error('  node cli/src/push-to-neo.js <windowName> --dump-delta <path> [--prev-xml-dir <dir>]');
     console.error('');
     console.error('Examples:');
     console.error('  node cli/src/push-to-neo.js sales-order');
     console.error('  node cli/src/push-to-neo.js aging-receivable --type report');
-    console.error('  node cli/src/push-to-neo.js aging-receivable --type report --dry-run');
+    console.error('  node cli/src/push-to-neo.js sales-order --dump-delta artifacts/sales-order/neo-delta.json');
     process.exit(1);
   }
 
   try {
+    if (dumpDeltaPath) {
+      if (isReport) {
+        throw new Error('--dump-delta is incompatible with --type report (Slice 2: windows only)');
+      }
+      const { outPath, summary } = await dumpDelta(name, {
+        outPath: dumpDeltaPath,
+        prevXmlDir: prevXmlDir || undefined,
+      });
+      console.log(`Delta written to ${outPath}`);
+      console.log(`  upserts: ${JSON.stringify(summary.upserts)}`);
+      console.log(`  deletes: ${JSON.stringify(summary.deletes)}`);
+      return;
+    }
+
     let result;
     if (isReport) {
       result = await pushReportToNeo(name, { dryRun });

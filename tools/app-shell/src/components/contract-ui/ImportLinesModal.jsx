@@ -145,7 +145,11 @@ export default function ImportLinesModal({
     } catch (err) { toast.error(err.message || 'Failed to import'); } finally { setImporting(false); }
   };
 
-  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+  const fmtDate = (d) => {
+    if (!d) return '-';
+    const [year, month, day] = String(d).slice(0, 10).split('-').map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
   const fmtNum = (v) => v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
 
   return (
@@ -263,7 +267,7 @@ export default function ImportLinesModal({
                                   className="mr-2 shrink-0"
                                 />
                                 <span style={{ fontSize: 13, color: imported ? '#9ca3af' : '#111827', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: lineSelected ? 500 : 400 }}>
-                                  {line._productName}{imported && <span style={{ fontSize: 11, marginLeft: 6, color: '#9ca3af' }}>{ui('alreadyImported')}</span>}
+                                  {line._productName}{imported && <span style={{ fontSize: 11, marginLeft: 6, color: '#9ca3af' }}>{line._inDraftShipments?.length ? `${ui('inDraftShipment')}: ${line._inDraftShipments.join(', ')}` : ui('alreadyImported')}</span>}
                                 </span>
                                 <span style={{ width: 70, flexShrink: 0, textAlign: 'right' }}>
                                   <input

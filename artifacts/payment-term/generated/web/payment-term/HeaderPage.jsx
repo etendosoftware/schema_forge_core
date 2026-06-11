@@ -8,18 +8,6 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Settings / Payment Term';
 
-const labelOverrides = {
-  "es_ES": {
-    "Value": "Clave",
-    "Name": "Nombre",
-    "Description": "Descripción",
-    "FixMonthOffset": "Meses de desplazamiento",
-    "NetDays": "Días",
-    "IsDefault": "Por defecto",
-    "IsActive": "Activo"
-  }
-};
-
 
 // @sf-generated-start summary:header
 const summary = [
@@ -99,6 +87,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
   if (recordId) {

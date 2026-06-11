@@ -92,13 +92,6 @@ test.describe('Fiscal Config — unconfigured (wizard)', () => {
     ).toBeVisible({ timeout: 8_000 });
   });
 
-  test('WIP badge is visible on the wizard screen', async ({ page }) => {
-    await loginWithOrg(page);
-    await installFiscalConfigMocks(page);
-    await navigateTo(page, 'fiscal-config');
-
-    await expect(page.getByText(t('fiscal.wip.badge'))).toBeVisible({ timeout: 8_000 });
-  });
 });
 
 test.describe('Fiscal Config — SII profile', () => {
@@ -108,7 +101,6 @@ test.describe('Fiscal Config — SII profile', () => {
     await navigateTo(page, 'fiscal-config');
 
     await expect(page.getByText(t('fiscal.sii.field.enrolled'))).toBeVisible({ timeout: 8_000 });
-    await expect(page.getByText(t('fiscal.wip.badge'))).toBeVisible();
   });
 
   test('shows the Navarra SII section when the SII record has navarra=Y', async ({ page }) => {
@@ -117,7 +109,6 @@ test.describe('Fiscal Config — SII profile', () => {
     await navigateTo(page, 'fiscal-config');
 
     await expect(page.getByText(t('fiscal.sii.field.enrolled'))).toBeVisible({ timeout: 8_000 });
-    await expect(page.getByText(t('fiscal.sii.badge.navarra'))).toBeVisible();
   });
 });
 
@@ -137,9 +128,7 @@ test.describe('Fiscal Config — Verifactu profile', () => {
     await installFiscalConfigMocks(page, { verifactu: VERIFACTU_RECORD });
     await navigateTo(page, 'fiscal-config');
 
-    await expect(
-      page.getByText(t('fiscal.verifactu.unlocked.badge')).or(page.getByText(t('fiscal.verifactu.locked.badge'))),
-    ).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByText(t('fiscal.verifactu.field.tax'))).toBeVisible({ timeout: 8_000 });
   });
 });
 
@@ -150,7 +139,10 @@ test.describe('Fiscal Config — SII+TBAI combined profile', () => {
     await navigateTo(page, 'fiscal-config');
 
     await expect(page.getByText(t('fiscal.sii.field.enrolled'))).toBeVisible({ timeout: 8_000 });
-    await expect(page.getByText(t('fiscal.tbai.field.enrollDate'))).toBeVisible();
+
+    // SII+TBAI uses tabs — switch to TBAI tab to verify it renders
+    await page.getByRole('button', { name: t('fiscal.tab.tbai') }).click();
+    await expect(page.getByText(t('fiscal.tbai.field.enrollDate'))).toBeVisible({ timeout: 5_000 });
   });
 });
 
@@ -190,7 +182,7 @@ test.describe('Fiscal Config — wizard interaction', () => {
     await page.getByRole('button', { name: t('fiscal.onboarding.continue') }).click();
     await expect(page.getByText(t('fiscal.onboarding.confirm.title'))).toBeVisible({ timeout: 5_000 });
 
-    await page.getByRole('button', { name: t('fiscal.onboarding.back') }).click();
+    await page.getByRole('button', { name: new RegExp(t('fiscal.onboarding.back').replace('←', '').trim(), 'i') }).click();
     await expect(page.getByText(t('fiscal.onboarding.territory.title'))).toBeVisible({ timeout: 5_000 });
   });
 });
@@ -208,7 +200,7 @@ const FAKE_CERT_DETAILS = {
 
 async function openCertModal(page) {
   await expect(page.getByText(t('fiscal.cert.section.legend'))).toBeVisible({ timeout: 8_000 });
-  await page.getByRole('button', { name: t('fiscal.cert.upload') }).click();
+  await page.getByText(t('fiscal.cert.dropzone.drag')).click();
   await expect(page.getByText(t('fiscal.cert.modal.title'))).toBeVisible({ timeout: 4_000 });
 }
 
@@ -239,12 +231,11 @@ test.describe('Fiscal Config — certificate upload modal', () => {
     await navigateTo(page, 'fiscal-config');
 
     await expect(page.getByText(t('fiscal.cert.section.legend'))).toBeVisible({ timeout: 8_000 });
-    await expect(page.getByRole('button', { name: t('fiscal.cert.upload') })).toBeVisible();
+    await expect(page.getByText(t('fiscal.cert.dropzone.drag'))).toBeVisible();
 
-    await page.getByRole('button', { name: t('fiscal.cert.upload') }).click();
+    await page.getByText(t('fiscal.cert.dropzone.drag')).click();
 
     await expect(page.getByText(t('fiscal.cert.modal.title'))).toBeVisible({ timeout: 4_000 });
-    await expect(page.getByText(t('fiscal.cert.dropzone.drag'))).toBeVisible();
   });
 
   test('uploading a non-p12 file shows a format error', async ({ page }) => {
