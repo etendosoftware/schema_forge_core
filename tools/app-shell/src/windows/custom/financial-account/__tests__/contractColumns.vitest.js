@@ -24,6 +24,18 @@ describe('getContractGridColumns', () => {
     expect(byName.documentNo.label).toBe('Payment No.');
   });
 
+  it('returns the importedBankStatements (Extractos) grid columns in order', () => {
+    const cols = getContractGridColumns('importedBankStatements').map((c) => c.name);
+    expect(cols).toEqual([
+      'documentNo',
+      'name',
+      'fileName',
+      'notes',
+      'importdate',
+      'transactionDate',
+    ]);
+  });
+
   it('returns an empty list for unknown entities', () => {
     expect(getContractGridColumns('nope')).toEqual([]);
   });
