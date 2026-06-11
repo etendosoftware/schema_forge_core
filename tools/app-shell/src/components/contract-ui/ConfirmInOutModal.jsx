@@ -94,6 +94,7 @@ export default function ConfirmInOutModal({
     <div
       role="dialog"
       aria-modal="true"
+      data-testid="confirm-inout-modal"
       onClick={onClose}
       onKeyDown={e => e.key === 'Escape' && onClose()}
       style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(20,26,38,.45)' }}
@@ -113,7 +114,7 @@ export default function ConfirmInOutModal({
               {title}
             </div>
             {subtitleParts.length > 0 && (
-              <div style={{ marginTop: 6, fontSize: 13, color: '#697079', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <div data-testid="confirm-modal-doc-info" style={{ marginTop: 6, fontSize: 13, color: '#697079', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                 {subtitleParts.map((part, i) => (
                   <span key={part} style={{ display: 'contents' }}>
                     {i > 0 && <span style={{ color: '#d0d4da', userSelect: 'none' }}>·</span>}
@@ -157,6 +158,7 @@ export default function ConfirmInOutModal({
           {!skipDocumentAction && <div
             role="switch"
             aria-checked={createInvoice}
+            data-testid="confirm-modal-invoice-toggle"
             tabIndex={0}
             onClick={toggle}
             onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } }}
@@ -201,6 +203,7 @@ export default function ConfirmInOutModal({
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '12px 20px', background: '#fbfcfd', borderTop: '1px solid #eef0f2' }}>
           <button
             type="button"
+            data-testid="confirm-modal-cancel-btn"
             onClick={onClose}
             disabled={loading}
             style={{ fontSize: 13, padding: '9px 16px', borderRadius: 9, border: '1px solid #e6e8ec', background: 'transparent', color: '#697079', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1 }}
@@ -211,6 +214,7 @@ export default function ConfirmInOutModal({
           </button>
           <button
             type="button"
+            data-testid="confirm-modal-confirm-btn"
             onClick={handleConfirm}
             disabled={loading}
             style={{ height: 38, display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13, fontWeight: 600, padding: '0 18px', borderRadius: 9, border: 'none', background: loading ? '#aac4e8' : '#2f73d6', color: '#fff', cursor: loading ? 'not-allowed' : 'pointer', transition: 'background .15s' }}
