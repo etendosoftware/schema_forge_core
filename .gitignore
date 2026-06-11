@@ -43,3 +43,10 @@ dev.pid
 test-results/
 .idea/
 tools/app-shell/coverage/vitest/coverage-summary.json
+domain-boundary-report.json
+domain-boundary-report.md
+review-report.json
+review-report.md
+coverage/
+tools/app-shell/coverage/
+sonar-reports/

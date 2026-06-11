@@ -31,27 +31,25 @@ function ShipmentStatsPanel({ shipment, partnerName, movementDate, ui }) {
   const statusBadgeClass = STATUS_BADGE[docStatus] || 'bg-gray-50 text-gray-600 border-gray-200';
 
   return (
-    <div className="pb-4">
-      <CardShell>
-        <div className="px-4 py-3 border-b border-gray-100">
-          <span className="font-bold text-gray-900 text-sm">{ui('shipmentPreviewStatus')}</span>
-        </div>
-        <div className="px-4 py-2">
-          <InfoRow label={ui('shipmentPreviewDocNo')} value={shipment.documentNo || '—'} />
-          <InfoRow label={ui('shipmentPreviewContact')} value={partnerName} />
-          <InfoRow label={ui('shipmentPreviewWarehouse')} value={warehouseLabel} />
-          <InfoRow label={ui('shipmentPreviewDate')} value={movementDate} />
-          <InfoRow label={ui('shipmentPreviewStatus')}>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusBadgeClass}`}>
-              {statusLabel}
-            </span>
-          </InfoRow>
-          <InfoRow label={ui('shipmentPreviewInvoiceStatus')}>
-            <PercentBar value={invoiceStatusPct} />
-          </InfoRow>
-        </div>
-      </CardShell>
-    </div>
+    <CardShell>
+      <div className="px-4 py-3 border-b border-gray-100">
+        <span className="font-bold text-gray-900 text-sm">{ui('shipmentPreviewStatus')}</span>
+      </div>
+      <div className="px-4 py-2">
+        <InfoRow label={ui('shipmentPreviewDocNo')} value={shipment.documentNo || '—'} />
+        <InfoRow label={ui('shipmentPreviewContact')} value={partnerName} />
+        <InfoRow label={ui('shipmentPreviewWarehouse')} value={warehouseLabel} />
+        <InfoRow label={ui('shipmentPreviewDate')} value={movementDate} />
+        <InfoRow label={ui('shipmentPreviewStatus')}>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusBadgeClass}`}>
+            {statusLabel}
+          </span>
+        </InfoRow>
+        <InfoRow label={ui('shipmentPreviewInvoiceStatus')}>
+          <PercentBar value={invoiceStatusPct} />
+        </InfoRow>
+      </div>
+    </CardShell>
   );
 }
 

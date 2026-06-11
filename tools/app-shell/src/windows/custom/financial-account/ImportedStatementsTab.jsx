@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, forwardRef, useImperativeHandle } from 'react';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 import { useBankStatements } from '@/hooks/useBankStatements';
@@ -57,9 +57,13 @@ function getDateBounds(dateRange) {
  *   selectedStatementId == null  → list view
  *   selectedStatementId != null  → lines sub-view (← button clears it)
  *
+ * Exposes `getSelectedStatementIds()` and `getFilteredStatements()` via ref so
+ * the parent's Export button can decide what to export: the filtered statement
+ * headers (no selection) or the lines of the selected statement(s).
+ *
  * @param {{ account: object }} props
  */
-export function ImportedStatementsTab({ account }) {
+export const ImportedStatementsTab = forwardRef(function ImportedStatementsTab({ account }, ref) {
   const ui = useUI();
   const accountId = account?.id ?? null;
   const currency = account?.currencyIso ?? 'EUR';
@@ -160,6 +164,17 @@ export function ImportedStatementsTab({ account }) {
     return applyAdvancedFilter(base, advancedFilter);
   }, [statements, search, dateRange, status, advancedFilter]);
 
+  // Latest filtered headers + current selection reachable via ref, so the
+  // parent's Export button can read them on click without subscribing here.
+  const filteredRef = useRef(filteredStatements);
+  filteredRef.current = filteredStatements;
+  const selectedRef = useRef(selectedIds);
+  selectedRef.current = selectedIds;
+  useImperativeHandle(ref, () => ({
+    getFilteredStatements: () => filteredRef.current,
+    getSelectedStatementIds: () => Array.from(selectedRef.current),
+  }), []);
+
   if (selectedStatementId) {
     return (
       <StatementLinesView
@@ -224,4 +239,4 @@ export function ImportedStatementsTab({ account }) {
       />
     </div>
   );
-}
+});

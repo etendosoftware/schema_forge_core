@@ -19,13 +19,18 @@ import { MovementStatusBadge } from './MovementStatusBadge';
 import { PostingStatusDot } from './PostingStatusDot';
 import { MovementRowKebab } from './MovementRowKebab';
 
-/** Formats an ISO date string using the user's locale. */
+/**
+ * Formats an ISO date string using the user's locale. The movement date is a
+ * date-only value the backend sends as UTC midnight (e.g. "2026-06-10T00:00:00Z"),
+ * so it MUST be formatted in UTC — otherwise a negative-offset timezone (e.g.
+ * UTC-3) shifts it to the previous calendar day (showing 09/06 for a 10/06 date).
+ */
 function formatDate(isoString, bcpLocale) {
   if (!isoString) return '—';
   const d = new Date(isoString);
   if (Number.isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat(bcpLocale, {
-    day: '2-digit', month: '2-digit', year: 'numeric',
+    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
   }).format(d);
 }
 
