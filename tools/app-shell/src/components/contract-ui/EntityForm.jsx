@@ -1025,7 +1025,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     if (f.type === 'image') {
       const label = t(f.column) ?? f.label ?? f.key;
       const isReadOnly = formReadOnly || f.readOnly || displayLogic?.readOnly?.[f.key] === true || evalReadOnlyLogic(f, data);
-      const imageClass = ['space-y-1.5 row-span-2 flex flex-col h-full', spanClass].filter(Boolean).join(' ');
+      const imageClass = ['space-y-1.5 row-span-2 flex flex-col', spanClass].filter(Boolean).join(' ');
       return (
         <div key={f.key} className={imageClass}>
           <Label className="text-sm text-foreground font-medium">{label}</Label>
