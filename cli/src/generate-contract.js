@@ -106,12 +106,31 @@ export function convertLogicToJs(rawExpr, columnMap, booleanFields) {
     }
     return `record['${prop}'] !== '${val}'`;
   }
+  const propOf = (col) => columnMap[col] ?? (col.charAt(0).toLowerCase() + col.slice(1));
+  // "is not empty" (@Col@!'' / @Col@!='') → has a value; "is empty" (@Col@='') → blank.
+  const notEmptyExpr = (col) => `(record['${propOf(col)}'] != null && record['${propOf(col)}'] !== '')`;
+  const emptyExpr = (col) => `(record['${propOf(col)}'] == null || record['${propOf(col)}'] === '')`;
+  // null comparisons (@Col@!null / @Col@=null).
+  const notNullExpr = (col) => `record['${propOf(col)}'] != null`;
+  const nullExpr = (col) => `record['${propOf(col)}'] == null`;
+  // numeric comparison (@Col@>0, @Col@>'0') — typical for SQL-computed counters.
+  const gtExpr = (col, num) => `Number(record['${propOf(col)}']) > ${num}`;
   return rawExpr
+    // Convert the AD logical operators FIRST. The token rules below emit JS '&&'
+    // (e.g. the "not empty" form), so running the &→&& / |→|| pass afterwards would
+    // mangle them into ' &&  && '. AD never uses '&&'/'||', so this is safe.
+    .replace(/\s*\|\s*/g, ' || ')
+    .replace(/\s*&\s*/g, ' && ')
+    // Empty / null / numeric forms next — they would otherwise leave raw @tokens
+    // behind (the @Col@!='val' rules require a non-empty literal).
+    .replace(/@(\w+)@!=?''/g, (_, col) => notEmptyExpr(col))
+    .replace(/@(\w+)@=''/g, (_, col) => emptyExpr(col))
+    .replace(/@(\w+)@!=?null\b/gi, (_, col) => notNullExpr(col))
+    .replace(/@(\w+)@=null\b/gi, (_, col) => nullExpr(col))
+    .replace(/@(\w+)@>\s*'?(\d+)'?/g, (_, col, num) => gtExpr(col, num))
     .replace(/@(\w+)@='([^']+)'/g, (_, col, val) => eqExpr(col, val))
     .replace(/@(\w+)@!='([^']+)'/g, (_, col, val) => neqExpr(col, val))
-    .replace(/@(\w+)@!'([^']+)'/g, (_, col, val) => neqExpr(col, val))
-    .replace(/\s*\|\s*/g, ' || ')
-    .replace(/\s*&\s*/g, ' && ');
+    .replace(/@(\w+)@!'([^']+)'/g, (_, col, val) => neqExpr(col, val));
 }
 
 /**
@@ -168,7 +187,17 @@ function applyReadOnlyLogic(mapped, f, rules, columnMap, booleanFields) {
     mapped.readOnlyLogic.reason = evalInfo.reason;
     mapped.readOnlyLogic.js = null;
   } else if (!mapped.readOnlyLogic.js) {
-    mapped.readOnlyLogic.js = convertLogicToJs(f.readOnlyLogic, columnMap, booleanFields);
+    const js = convertLogicToJs(f.readOnlyLogic, columnMap, booleanFields);
+    // Safety net: if any raw @token@ survived translation, the expression is not
+    // valid JS — fall back to non-evaluable instead of emitting code that throws
+    // at parse time (the runtime then leaves the field editable; server enforces).
+    if (/@/.test(js)) {
+      mapped.readOnlyLogic.evaluable = false;
+      mapped.readOnlyLogic.reason = 'untranslatable-token';
+      mapped.readOnlyLogic.js = null;
+    } else {
+      mapped.readOnlyLogic.js = js;
+    }
   }
 }
 

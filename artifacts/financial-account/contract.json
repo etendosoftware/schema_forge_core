@@ -1,7 +1,8 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-06-11T01:47:08.755Z",
-  "checksum": "152458ecf623c675",
+  "updatedAt": "2026-06-11T14:58:13.876Z",
+  "checksum": "3765e501ae85a012",
   "frontendContract": {
     "window": {
       "id": "94EAA455D2644E04AB25D93BE5157B6D",
@@ -48,7 +49,7 @@
             "readOnlyLogic": {
               "raw": "@HasTransaction@>0",
               "evaluable": true,
-              "js": "@HasTransaction@>0"
+              "js": "Number(record['hasTransaction']) > 0"
             }
           },
           {
@@ -771,7 +772,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | @Fin_Payment_ID@!''",
               "evaluable": true,
-              "js": "record['posted'] === 'Y' || @Fin_Payment_ID@!''"
+              "js": "record['posted'] === 'Y' || (record['finPaymentID'] != null && record['finPaymentID'] !== '')"
             }
           },
           {
@@ -818,7 +819,7 @@
             "readOnlyLogic": {
               "raw": "(@Fin_Payment_ID@!''&@Fin_Payment_ID@!null)|@Processed@='Y'|@Trxtype@='BPW'",
               "evaluable": true,
-              "js": "(@Fin_Payment_ID@!'' && @Fin_Payment_ID@!null) || record['processed'] === true || record['transactionType'] === 'BPW'"
+              "js": "((record['finPaymentID'] != null && record['finPaymentID'] !== '') && record['finPaymentID'] != null) || record['processed'] === true || record['transactionType'] === 'BPW'"
             }
           },
           {
@@ -848,7 +849,7 @@
             "readOnlyLogic": {
               "raw": "(@Fin_Payment_ID@!''&@Fin_Payment_ID@!null)|@Processed@='Y'|@Trxtype@='BPD'",
               "evaluable": true,
-              "js": "(@Fin_Payment_ID@!'' && @Fin_Payment_ID@!null) || record['processed'] === true || record['transactionType'] === 'BPD'"
+              "js": "((record['finPaymentID'] != null && record['finPaymentID'] !== '') && record['finPaymentID'] != null) || record['processed'] === true || record['transactionType'] === 'BPD'"
             }
           },
           {
@@ -887,7 +888,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | @Fin_Payment_ID@!''",
               "evaluable": true,
-              "js": "record['posted'] === 'Y' || @Fin_Payment_ID@!''"
+              "js": "record['posted'] === 'Y' || (record['finPaymentID'] != null && record['finPaymentID'] !== '')"
             }
           },
           {
@@ -913,7 +914,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | @Fin_Payment_ID@!''",
               "evaluable": true,
-              "js": "record['posted'] === 'Y' || @Fin_Payment_ID@!''"
+              "js": "record['posted'] === 'Y' || (record['finPaymentID'] != null && record['finPaymentID'] !== '')"
             }
           },
           {
@@ -938,7 +939,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | @Fin_Payment_ID@!''",
               "evaluable": true,
-              "js": "record['posted'] === 'Y' || @Fin_Payment_ID@!''"
+              "js": "record['posted'] === 'Y' || (record['finPaymentID'] != null && record['finPaymentID'] !== '')"
             }
           },
           {
@@ -963,7 +964,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | @Fin_Payment_ID@!''",
               "evaluable": true,
-              "js": "record['posted'] === 'Y' || @Fin_Payment_ID@!''"
+              "js": "record['posted'] === 'Y' || (record['finPaymentID'] != null && record['finPaymentID'] !== '')"
             }
           },
           {
@@ -988,7 +989,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | @Fin_Payment_ID@!''",
               "evaluable": true,
-              "js": "record['posted'] === 'Y' || @Fin_Payment_ID@!''"
+              "js": "record['posted'] === 'Y' || (record['finPaymentID'] != null && record['finPaymentID'] !== '')"
             }
           },
           {
@@ -1013,7 +1014,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | @Fin_Payment_ID@!''",
               "evaluable": true,
-              "js": "record['posted'] === 'Y' || @Fin_Payment_ID@!''"
+              "js": "record['posted'] === 'Y' || (record['finPaymentID'] != null && record['finPaymentID'] !== '')"
             }
           },
           {
@@ -1038,7 +1039,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | @Fin_Payment_ID@!''",
               "evaluable": true,
-              "js": "record['posted'] === 'Y' || @Fin_Payment_ID@!''"
+              "js": "record['posted'] === 'Y' || (record['finPaymentID'] != null && record['finPaymentID'] !== '')"
             }
           },
           {
@@ -1063,7 +1064,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | @Fin_Payment_ID@!''",
               "evaluable": true,
-              "js": "record['posted'] === 'Y' || @Fin_Payment_ID@!''"
+              "js": "record['posted'] === 'Y' || (record['finPaymentID'] != null && record['finPaymentID'] !== '')"
             }
           },
           {
@@ -1088,7 +1089,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | @Fin_Payment_ID@!''",
               "evaluable": true,
-              "js": "record['posted'] === 'Y' || @Fin_Payment_ID@!''"
+              "js": "record['posted'] === 'Y' || (record['finPaymentID'] != null && record['finPaymentID'] !== '')"
             }
           }
         ],
