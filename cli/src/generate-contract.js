@@ -190,6 +190,12 @@ function applyBasicFieldUIHints(f, mapped) {
   if (f.badge) mapped.badge = true;
 }
 
+function applyGridHints(f, mapped) {
+  if (f.gridOrder != null) mapped.gridOrder = f.gridOrder;
+  if (f.grow) mapped.grow = true;
+  if (f.gridReadOnly) mapped.gridReadOnly = true;
+}
+
 function applyFieldUIHints(f, mapped) {
   applyBasicFieldUIHints(f, mapped);
   if (f.badgeLabels) mapped.badgeLabels = f.badgeLabels;
@@ -200,9 +206,7 @@ function applyFieldUIHints(f, mapped) {
   if (f.summable) mapped.summable = true;
   if (f.display) mapped.display = f.display;
   if (f.cellType) mapped.cellType = f.cellType;
-  if (f.gridOrder != null) mapped.gridOrder = f.gridOrder;
-  if (f.grow) mapped.grow = true;
-  if (f.gridReadOnly) mapped.gridReadOnly = true;
+  applyGridHints(f, mapped);
   if (f.noTrailing) mapped.noTrailing = true;
   if (f.filterOnly) mapped.filterOnly = true;
   if (f.filterable === false) mapped.filterable = false;

@@ -313,3 +313,23 @@ export function usePdfGenerator(recordId, apiBaseUrl, token, buildBlobFn) {
 
   return { pdfUrl, pdfBlob, loading, error };
 }
+
+export function buildReturnDocCommonFields(header, companyLogoDataUrl) {
+  const org = header.issuerOrg ?? {};
+  return {
+    companyName: org.name || header['organization$_identifier'] || 'Empresa',
+    companyAddress1: org.address1 || null,
+    companyAddress2: org.address2 || null,
+    companyCityLine: org.cityLine || null,
+    companyTaxId: org.taxId || null,
+    companyLogoDataUrl,
+    documentNo: header.documentNo || '',
+    movementDate: header.movementDate || '',
+  };
+}
+
+export function sortLinesByLineNo(lines) {
+  return [...lines].sort(
+    (a, b) => (Number(a.lineNo) || 0) - (Number(b.lineNo) || 0),
+  );
+}

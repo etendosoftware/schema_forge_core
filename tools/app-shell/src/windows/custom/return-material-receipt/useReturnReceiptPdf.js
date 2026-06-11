@@ -16,6 +16,8 @@ import {
   buildLocationAddressLines,
   renderPdf,
   usePdfGenerator,
+  buildReturnDocCommonFields,
+  sortLinesByLineNo,
 } from '../shared/pdfUtils.js';
 
 const TEMPLATE = MOVEMENT_TEMPLATE_OPEN
@@ -70,31 +72,20 @@ async function buildReceiptData(receiptId, base, token) {
     fetchLocationAddress(header.partnerAddress, base, token),
   ]);
 
-  const linesSorted = [...linesRaw].sort(
-    (a, b) => (Number(a.lineNo) || 0) - (Number(b.lineNo) || 0),
-  );
-  const lines = linesSorted.map((l, idx) => ({
+  const lines = sortLinesByLineNo(linesRaw).map((l, idx) => ({
     lineNo: idx + 1,
     productCode: l.productCode || l['product$_value'] || String(idx + 1),
     productName: l['product$_identifier'] || l.description || '—',
     returnedQty: l.movementQuantity ?? 0,
   }));
 
-  const org = header.issuerOrg ?? {};
   const customerAddressLines = buildLocationAddressLines(
     partnerLocation,
     header['partnerAddress$_identifier'] || null,
   );
 
   return {
-    companyName: org.name || header['organization$_identifier'] || 'Empresa',
-    companyAddress1: org.address1 || null,
-    companyAddress2: org.address2 || null,
-    companyCityLine: org.cityLine || null,
-    companyTaxId: org.taxId || null,
-    companyLogoDataUrl,
-    documentNo: header.documentNo || '',
-    movementDate: header.movementDate || '',
+    ...buildReturnDocCommonFields(header, companyLogoDataUrl),
     customerName: header['businessPartner$_identifier'] || '—',
     customerAddressLines,
     warehouse: header['warehouse$_identifier'] || null,
