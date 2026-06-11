@@ -1,5 +1,5 @@
 import { EntityForm } from '@/components/contract-ui';
-import { useUI, useLabel } from '@/i18n';
+import { useUI } from '@/i18n';
 
 /* eslint-disable react/prop-types */
 
@@ -60,7 +60,6 @@ const DESCRIPTION_FIELD = [
 export default function ProductCategoryCustomForm({ entity, data, token, apiBaseUrl, catalogs, api, editing, onChange, displayLogic, section }) {
   if (section && section !== 'principal') return null;
   const ui = useUI();
-  const t = useLabel();
   const readOnly = !editing;
 
   return (
