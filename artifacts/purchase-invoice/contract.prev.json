@@ -1,8 +1,8 @@
 {
-  "version": "0.30.0",
+  "version": "0.31.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-06-03T17:59:09.816Z",
-  "checksum": "040cf302366d66b6",
+  "updatedAt": "2026-06-11T12:55:36.092Z",
+  "checksum": "0599f9614eefbd99",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -5180,6 +5180,14 @@
             "type": "integer",
             "visibility": "readOnly",
             "required": false
+          },
+          {
+            "name": "psd2GenerateBankPayment",
+            "apiKey": "psd2GenerateBankPayment",
+            "column": "EM_Psd2_Generate_Bank_Payment",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
           }
         ],
         "javaQualifier": "purchaseInvoiceHeaderHandler"
@@ -8998,6 +9006,14 @@
         "processType": "obuiapp"
       },
       {
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "column": "EM_Psd2_Generate_Bank_Payment",
+        "url": "/sws/neo/purchase-invoice/header/{id}/action/psd2GenerateBankPayment",
+        "processId": "0661406A983B4D8EA611F8596F114D52",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "lines",
         "field": "explode",
         "column": "Explode",
@@ -9198,6 +9214,14 @@
         "field": "processNow",
         "runner": "node",
         "description": "Action endpoint for 'processNow' in header should exist"
+      },
+      {
+        "id": "t-action-endpoint-header-psd2GenerateBankPayment",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "runner": "node",
+        "description": "Action endpoint for 'psd2GenerateBankPayment' in header should exist"
       },
       {
         "id": "t-action-endpoint-header-tBAIQRcode",
@@ -15254,6 +15278,14 @@
         "description": "System field 'processNow' should exist in backend but not frontend for header"
       },
       {
+        "id": "t-system-field-header-psd2GenerateBankPayment",
+        "category": "system-field",
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "runner": "node",
+        "description": "System field 'psd2GenerateBankPayment' should exist in backend but not frontend for header"
+      },
+      {
         "id": "t-system-field-header-salesCampaign",
         "category": "system-field",
         "entity": "header",
@@ -16586,9 +16618,9 @@
       }
     ],
     "summary": {
-      "total": 945,
+      "total": 947,
       "byCategory": {
-        "action-endpoint": 24,
+        "action-endpoint": 25,
         "crud-flags": 13,
         "default-value-type": 37,
         "displaylogic-evaluable": 15,
@@ -16600,11 +16632,11 @@
         "rule-declared": 21,
         "searchable-filters": 6,
         "selector-endpoint": 51,
-        "system-field": 328,
+        "system-field": 329,
         "visibility": 13
       },
       "byRunner": {
-        "node": 945,
+        "node": 947,
         "junit": 0
       }
     }
