@@ -398,6 +398,47 @@ new_code_issues = fetch_issues("inNewCodePeriod=true")
 write_issue_reports("", all_issues, write_files=True)
 write_issue_reports("-new-code", new_code_issues)
 
+# Security Hotspots (separate endpoint from issues). Saved so the Quality Gate
+# block below can NAME the specific hotspot(s) when a hotspot condition fails,
+# instead of only reporting "New Security Hotspots Reviewed: 0.0".
+def fetch_hotspots(extra_query=""):
+    result = []
+    page = 1
+    while True:
+        query = f"projectKey={project}&ps=500&p={page}&status=TO_REVIEW"
+        if extra_query:
+            query = f"{query}&{extra_query}"
+        data = api_get(f"/api/hotspots/search?{query}")
+        if data is None:  # 403/permission or no hotspots endpoint access
+            break
+        hs = data.get("hotspots", [])
+        result.extend(hs)
+        if len(hs) < 500:
+            break
+        page += 1
+    return result
+
+def hotspot_summary(h):
+    return {
+        "rule": h.get("ruleKey", ""),
+        "category": h.get("securityCategory", ""),
+        "probability": h.get("vulnerabilityProbability", ""),
+        "message": (h.get("message", "") or "").replace("\n", " "),
+        "line": h.get("line"),
+        "component": h.get("component", ""),
+        "key": h.get("key", ""),
+    }
+
+def write_hotspot_reports(name, hotspots):
+    with open(f"{report_dir}/sonar-hotspots{name}.json", "w") as f:
+        json.dump({"total": len(hotspots), "hotspots": hotspots}, f, indent=2)
+    print(f"    Saved: {report_dir}/sonar-hotspots{name}.json ({len(hotspots)} {'hotspot' if len(hotspots) == 1 else 'hotspots'})")
+
+all_hotspots = [hotspot_summary(h) for h in fetch_hotspots()]
+new_code_hotspots = [hotspot_summary(h) for h in fetch_hotspots("inNewCodePeriod=true")]
+write_hotspot_reports("", all_hotspots)
+write_hotspot_reports("-new-code", new_code_hotspots)
+
 # Quality gate
 qg = api_get(f"/api/qualitygates/project_status?projectKey={project}")
 if qg:
@@ -497,6 +538,19 @@ filtered_issues = [
 
 print(f"    Saved: {report_dir}/sonar-issues-pr-only.json ({len(filtered_issues)} {'issue' if len(filtered_issues) == 1 else 'issues'})")
 print(f"    Saved: {report_dir}/sonar-issues-by-file-pr-only.json ({len(filtered_by_file)} {'file' if len(filtered_by_file) == 1 else 'files'})")
+
+# Restrict new-code Security Hotspots to this PR's changed files too.
+hs_path = report_dir / "sonar-hotspots-new-code.json"
+new_code_hotspots = json.loads(hs_path.read_text()).get("hotspots", []) if hs_path.exists() else []
+filtered_hotspots = [
+    h for h in new_code_hotspots
+    if h.get("component", "").split(":", 1)[-1] in changed
+]
+(report_dir / "sonar-hotspots-pr-only.json").write_text(json.dumps({
+    "total": len(filtered_hotspots),
+    "hotspots": filtered_hotspots
+}, indent=2))
+print(f"    Saved: {report_dir}/sonar-hotspots-pr-only.json ({len(filtered_hotspots)} {'hotspot' if len(filtered_hotspots) == 1 else 'hotspots'})")
 PYEOF
 
   echo "PR-only reports saved in: $REPORT_DIR/"
@@ -521,6 +575,7 @@ if [[ "$FAIL_ON_GATE" == "true" ]]; then
   REPORT_DIR="$REPORT_DIR" QG_FILE="$QG_FILE" PR_ISSUES_FILE="$PR_ISSUES_FILE" \
   CHANGED_ONLY="$CHANGED_ONLY" HANDOFF_FILE="$HANDOFF_FILE" \
   GATE_BRANCH="$GATE_BRANCH" REPO_ROOT="$SCRIPT_DIR" \
+  SONAR_HOST_URL="$SONAR_HOST_URL" PROJECT_KEY="$PROJECT_KEY" \
   python3 - <<'PYEOF'
 import json, os, sys
 
@@ -554,6 +609,16 @@ if pr_mode and os.path.isfile(pr_file):
             "sev": i.get("severity", ""),
             "msg": (i.get("message", "") or "").replace("\n", " "),
         })
+
+# Security Hotspots that drive a "...reviewed" gate condition. In PR mode use the
+# diff-restricted file; otherwise the new-code file. These NAME the exact hotspot.
+report_dir = os.environ["REPORT_DIR"]
+hs_name = "sonar-hotspots-pr-only.json" if pr_mode else "sonar-hotspots-new-code.json"
+hs_path = os.path.join(report_dir, hs_name)
+hotspots = json.load(open(hs_path)).get("hotspots", []) if os.path.isfile(hs_path) else []
+# A hotspot-review condition: e.g. new_security_hotspots_reviewed, security_review_rating.
+hotspot_metrics = [d for (m, d) in failing
+                   if "security_hotspot" in m or "security_review" in m]
 
 # ── Decide whether to block, mirroring CI's PR gate ──
 # new_violations blocks only if PR-diff issues > 0; any OTHER failing condition
@@ -592,6 +657,30 @@ if other_failing:
     lines.append("Failing Quality Gate condition(s):")
     for d in other_failing:
         lines.append(f"  - {d}")
+    lines.append("")
+if hotspot_metrics:
+    host = os.environ.get("SONAR_HOST_URL", "").rstrip("/")
+    pkey = os.environ.get("PROJECT_KEY", "")
+    hs_url = f"{host}/security_hotspots?id={pkey}&inNewCodePeriod=true"
+    if branch and branch != "this branch":
+        hs_url += f"&branch={branch}"
+    lines.append("Security Hotspot review is blocking the gate. A Security Hotspot is")
+    lines.append("security-sensitive code that must be MANUALLY reviewed and marked")
+    lines.append("'Safe'/'Acknowledged' (or fixed). The gate requires 100% of NEW hotspots")
+    lines.append("reviewed — an unreviewed one reads as 'Reviewed: 0.0%'.")
+    if hotspots:
+        lines.append(f"New Security Hotspot(s) to review ({len(hotspots)}) — file:line — rule (probability) — category — message:")
+        for n, h in enumerate(hotspots, 1):
+            comp = h.get("component", "").split(":", 1)[-1]
+            lines.append(f"  {n}. {comp}:{h.get('line', '?')} — {h.get('rule', '')} "
+                         f"({h.get('probability', '')}) — {h.get('category', '')}")
+            lines.append(f"     {h.get('message', '')}")
+    else:
+        lines.append("  (Could not enumerate the hotspot(s) via the API — the local token likely")
+        lines.append("   lacks 'Browse Security Hotspots' permission. In CI the token can list them;")
+        lines.append("   meanwhile open the URL below to see exactly which line is flagged.)")
+    lines.append(f"  Review them here: {hs_url}")
+    lines.append("  Fix in code, or (if safe) mark each hotspot Reviewed in SonarQube, then re-push.")
     lines.append("")
 if issues:
     lines.append(f"New issues in this PR ({len(issues)}) — file:line — rule [severity] — message:")
