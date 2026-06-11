@@ -303,13 +303,13 @@ function ChartSVG({ months, values, series, W, H, PAD_X, PAD_Y, gradId, fontSize
       {hoveredIdx !== null && multi && (
         <>
           <line x1={hx} y1={PAD_Y} x2={hx} y2={H} stroke="#94a3b8" strokeWidth="1" strokeDasharray="3,2" />
-          {seriesList.map((s, idx) => (
-            <circle key={idx} cx={hx} cy={toY(s.values[hoveredIdx])} r="4" fill="white" stroke={s.color} strokeWidth="2" />
+          {seriesList.map((s) => (
+            <circle key={s.name} cx={hx} cy={toY(s.values[hoveredIdx])} r="4" fill="white" stroke={s.color} strokeWidth="2" />
           ))}
           <rect x={mTipX} y={mTipY} width={MTW} height={MTH} rx={4} fill="#1e293b" />
           <text x={mTipX + 6} y={mTipY + fontSize + 2} fontSize={fontSize} fill="#94a3b8">{hMonth}</text>
           {seriesList.map((s, idx) => (
-            <g key={idx}>
+            <g key={s.name}>
               <rect x={mTipX + 6} y={mTipY + rowH * (idx + 1) + 1} width={8} height={3} rx={1} fill={s.color} />
               <text x={mTipX + 18} y={mTipY + rowH * (idx + 1) + fontSize} fontSize={fontSize} fontWeight="600" fill="white">
                 {s.values[hoveredIdx].toLocaleString()}

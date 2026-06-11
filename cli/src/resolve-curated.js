@@ -232,6 +232,16 @@ function applyFieldDecisionProps(field, fieldDecision) {
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
 }
 
+function applyForeignKeyLookupProps(field, fieldDecision) {
+  if (fieldDecision.lookup) field.lookup = true;
+  if (fieldDecision.popup) field.popup = true;
+  if (fieldDecision.lookupDrawer) field.lookupDrawer = fieldDecision.lookupDrawer;
+  if (fieldDecision.lookupTitle) field.lookupTitle = fieldDecision.lookupTitle;
+  const hasMappings = Array.isArray(fieldDecision.onSelectMappings) && fieldDecision.onSelectMappings.length > 0;
+  if (hasMappings) field.onSelectMappings = fieldDecision.onSelectMappings;
+  if (fieldDecision.displayFromCatalog) field.displayFromCatalog = fieldDecision.displayFromCatalog;
+}
+
 function applyForeignKeyProps(field, rawField, fieldDecision) {
   if (rawField.type !== 'foreignKey') return;
 
@@ -250,14 +260,8 @@ function applyForeignKeyProps(field, rawField, fieldDecision) {
 
   const dependsOn = fieldDecision.dependsOn || null;
   if (dependsOn) field.dependsOn = dependsOn;
-  if (fieldDecision.lookup) field.lookup = true;
-  if (fieldDecision.popup) field.popup = true;
-  if (fieldDecision.lookupDrawer) field.lookupDrawer = fieldDecision.lookupDrawer;
-  if (fieldDecision.lookupTitle) field.lookupTitle = fieldDecision.lookupTitle;
-  if (Array.isArray(fieldDecision.onSelectMappings) && fieldDecision.onSelectMappings.length > 0) {
-    field.onSelectMappings = fieldDecision.onSelectMappings;
-  }
-  if (fieldDecision.displayFromCatalog) field.displayFromCatalog = fieldDecision.displayFromCatalog;
+
+  applyForeignKeyLookupProps(field, fieldDecision);
 }
 
 function applyVisibleFieldProps(field, rawField, fieldDecision) {
