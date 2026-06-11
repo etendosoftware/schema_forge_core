@@ -23,6 +23,7 @@ export default function ReturnToVendorShipmentWindow({ windowName, recordId, api
       entity="returnToVendorShipment"
       headerEntity="returnToVendorShipment"
       routePrefix="/return-to-vendor-shipment/"
+      duplicateAction={{ show: false }}
       {...rest}
     />
   );
