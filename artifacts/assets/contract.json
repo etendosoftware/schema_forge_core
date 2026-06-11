@@ -1,8 +1,8 @@
 {
-  "version": "0.33.0",
+  "version": "0.34.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-06-11T15:23:14.775Z",
-  "checksum": "b48d37fc723c9b6e",
+  "updatedAt": "2026-06-11T15:42:59.760Z",
+  "checksum": "f236b671bb1bbffc",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -170,7 +170,6 @@
             "readOnlyLogic": {
               "raw": "@existAmortizationLines@ = 'Y'",
               "evaluable": true,
-              "reason": "untranslatable-token",
               "js": "Number(record.depreciatedPlan || 0) > 0 || Number(record.depreciatedValue || 0) > 0"
             }
           },

@@ -298,11 +298,15 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.readOnlyLogic) {
         applyReadOnlyLogic(mapped, f, rules, columnMap, booleanFields);
       }
-      // Prefer explicit readOnlyLogicJs from decisions over AD-expression translation
+      // Prefer explicit readOnlyLogicJs from decisions over AD-expression translation.
+      // This overrides whatever applyReadOnlyLogic derived, so clear any non-evaluable
+      // marker it left (e.g. 'untranslatable-token' when the raw AD expr didn't parse) —
+      // the explicit JS is authoritative and evaluable.
       if (f.readOnlyLogicJs != null) {
         if (!mapped.readOnlyLogic) mapped.readOnlyLogic = {};
         mapped.readOnlyLogic.js = f.readOnlyLogicJs;
         mapped.readOnlyLogic.evaluable = true;
+        delete mapped.readOnlyLogic.reason;
       }
 
       return mapped;
