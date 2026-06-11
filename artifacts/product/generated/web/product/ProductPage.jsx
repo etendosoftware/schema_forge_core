@@ -178,7 +178,7 @@ export const api = {
       "field": "uOM",
       "column": "C_UOM_ID",
       "reference": "UOM",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/product/product/selectors/uOM"
     },
     {

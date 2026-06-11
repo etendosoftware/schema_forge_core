@@ -5,10 +5,12 @@ import { Badge } from '@/components/ui/badge.jsx';
 import { AddLineButton } from '@/components/ui/add-line-button.jsx';
 import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2, Shield } from 'lucide-react';
 import { AttachmentIcon } from '@/components/attachments/AttachmentIcon';
+import { PricingIcon } from '@/components/ui/custom-icons';
 
 const TAB_ICONS = {
   'custom:attachments': AttachmentIcon,
   'custom:sif': Shield,
+  'custom:pricing': PricingIcon,
 };
 
 function TabStripButton({

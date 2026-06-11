@@ -246,6 +246,7 @@ function applyForeignKeyProps(field, rawField, fieldDecision) {
     const dependsOn = fieldDecision.dependsOn || null;
     field.inputMode = dependsOn ? 'dependent' : fieldDecision.inputMode || defaultInputMode(rawField);
   }
+  if (fieldDecision.clearable === false) field.clearable = false;
 
   const dependsOn = fieldDecision.dependsOn || null;
   if (dependsOn) field.dependsOn = dependsOn;

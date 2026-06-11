@@ -1,8 +1,8 @@
 {
-  "version": "0.7.0",
+  "version": "0.12.0",
   "generatedAt": "2026-04-29T18:11:24.842Z",
-  "updatedAt": "2026-06-10T11:37:26.983Z",
-  "checksum": "94912c7751fcd47a",
+  "updatedAt": "2026-06-11T12:00:33.881Z",
+  "checksum": "0e5028fc06dee9de",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -111,9 +111,8 @@
             "grid": false,
             "form": true,
             "section": "principal",
-            "seq": 4,
-            "explicitType": true,
-            "inline": true
+            "seq": 7,
+            "explicitType": true
           },
           {
             "name": "uOM",
@@ -128,9 +127,10 @@
             "form": true,
             "sourceRequired": true,
             "reference": "UOM",
-            "inputMode": "selector",
+            "inputMode": "search",
+            "clearable": false,
             "section": "principal",
-            "seq": 7
+            "seq": 5
           },
           {
             "name": "productCategory",
@@ -152,7 +152,7 @@
             "inputMode": "selector",
             "defaultValue": "@SQL=SELECT MAX(M_PRODUCT_CATEGORY_ID) FROM M_PRODUCT_CATEGORY WHERE AD_ISORGINCLUDED(@AD_ORG_ID@, AD_ORG_ID, @#AD_CLIENT_ID@) <> -1 AND ISDEFAULT = 'Y' AND AD_CLIENT_ID = @#AD_CLIENT_ID@ AND ISSUMMARY='N'",
             "section": "principal",
-            "seq": 6,
+            "seq": 4,
             "validationRule": {
               "code": "Issummary='N'",
               "contextParams": [],
@@ -225,7 +225,8 @@
             "grid": false,
             "form": true,
             "section": "principal",
-            "seq": 3,
+            "seq": 6,
+            "span": 3,
             "explicitType": true
           },
           {
@@ -264,7 +265,7 @@
             ],
             "defaultValue": "I",
             "section": "principal",
-            "seq": 5,
+            "seq": 3,
             "enumVariants": {
               "I": "blue",
               "S": "purple",
@@ -463,7 +464,8 @@
               "source": "Y"
             }
           }
-        ]
+        ],
+        "formCols": 3
       },
       "price": {
         "tableName": "M_ProductPrice",
@@ -4792,7 +4794,7 @@
         "field": "uOM",
         "column": "C_UOM_ID",
         "reference": "UOM",
-        "inputMode": "selector",
+        "inputMode": "search",
         "url": "/sws/neo/product/product/selectors/uOM"
       },
       {
