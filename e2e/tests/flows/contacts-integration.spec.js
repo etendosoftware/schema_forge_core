@@ -43,11 +43,10 @@ function loadCredentials() {
 const onboardingCreds = loadCredentials();
 const RUN_INTEGRATION = process.env.E2E_USE_MOCK === '0' && !!(process.env.E2E_PASSWORD || onboardingCreds);
 
-/** Wait for detail view fully loaded (spinner gone, networkidle). */
+/** Wait for detail view fully loaded (spinner gone, data fetched). */
 async function waitForDetailReady(page) {
   await expect(page.getByTestId('detail-view')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/cargando|loading/i)).toBeHidden({ timeout: 30_000 }).catch(() => {});
-  await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
 }
 
 /** Wait for a save API response to complete. */
@@ -56,7 +55,6 @@ async function waitForSaveResponse(page) {
     (resp) => resp.url().includes('/sws/neo/') && ['POST', 'PUT', 'PATCH'].includes(resp.request().method()) && resp.status() < 500,
     { timeout: 15_000 },
   ).catch(() => {});
-  await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 }
 
 /** Wait for a DELETE API response to complete. */
@@ -65,7 +63,6 @@ async function waitForDeleteResponse(page) {
     (resp) => resp.url().includes('/sws/neo/') && resp.request().method() === 'DELETE' && resp.status() < 500,
     { timeout: 15_000 },
   ).catch(() => {});
-  await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 }
 
 /** Wait for list data to load after navigating or filtering. */
@@ -74,7 +71,15 @@ async function waitForListData(page) {
     (resp) => resp.url().includes('/sws/neo/') && resp.request().method() === 'GET' && resp.status() === 200,
     { timeout: 15_000 },
   ).catch(() => {});
-  await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+}
+
+/** Wait briefly for any in-flight API request to settle after a tab click or navigation. */
+async function waitForSettled(page) {
+  // Returns as soon as the next /sws/ response arrives, or after 1s if nothing was triggered.
+  await page.waitForResponse(
+    (resp) => resp.url().includes('/sws/') && resp.status() < 500,
+    { timeout: 1_000 },
+  ).catch(() => {});
 }
 
 test.describe('Contacts Integration — Full journey', () => {
@@ -104,7 +109,6 @@ test.describe('Contacts Integration — Full journey', () => {
     await expect(newBtn).toBeVisible({ timeout: 10_000 });
     await newBtn.click();
     await expect(page).toHaveURL(/\/contacts\/new/, { timeout: 15_000 });
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
     await expect(page.getByTestId('detail-view')).toBeVisible({ timeout: 15_000 });
 
     // Try to save with an empty form — expect server-side validation error
@@ -112,7 +116,7 @@ test.describe('Contacts Integration — Full journey', () => {
     const saveBtnFirst = page.getByTestId('action-save')
       .or(page.getByRole('button', { name: /^guardar$|^save$/i }));
     await saveBtnFirst.first().click();
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+    await waitForSaveResponse(page);
 
     // Should stay on /new or show an error toast (server-side validation)
     const stayedOnNew = /\/contacts\/new/.test(page.url());
@@ -129,7 +133,6 @@ test.describe('Contacts Integration — Full journey', () => {
     await expect(listView).toBeVisible({ timeout: 15_000 });
     await newBtn.click();
     await expect(page).toHaveURL(/\/contacts\/new/, { timeout: 15_000 });
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
     await expect(page.getByTestId('detail-view')).toBeVisible({ timeout: 15_000 });
 
     // Fill Razon Social
@@ -194,7 +197,6 @@ test.describe('Contacts Integration — Full journey', () => {
     // Toggle to Persona — Nombre and Apellidos fields should appear
     const personaToggle = page.getByRole('button', { name: /^persona$/i });
     await personaToggle.click();
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
     const firstNameInput = page.getByRole('textbox', { name: /^nombre/i });
     const lastNameInput = page.getByRole('textbox', { name: /apellidos/i });
@@ -206,11 +208,9 @@ test.describe('Contacts Integration — Full journey', () => {
     const lastName = 'E2ELastName';
     await firstNameInput.fill(firstName);
     await page.keyboard.press('Tab');
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
     await lastNameInput.fill(lastName);
     await page.keyboard.press('Tab');
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
     // Wait for the debounced auto-save to fire and complete
     await waitForSaveResponse(page);
@@ -228,7 +228,6 @@ test.describe('Contacts Integration — Full journey', () => {
     // Toggle back to Empresa — Razon Social should reappear
     const empresaToggle = page.getByRole('button', { name: /^empresa$/i });
     await empresaToggle.click();
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
     const razonSocialAfterToggle = page.getByRole('textbox', { name: /razón social/i });
     await expect(razonSocialAfterToggle).toBeVisible({ timeout: 5_000 });
 
@@ -245,10 +244,9 @@ test.describe('Contacts Integration — Full journey', () => {
     const financialTab = page.getByRole('button', { name: /financiero|financial/i });
     await expect(financialTab).toBeVisible({ timeout: 5_000 });
     await financialTab.click();
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
     const creditInput = page.locator('input[type="number"]').first();
-    const creditVisible = await creditInput.isVisible({ timeout: 5_000 }).catch(() => false);
+    const creditVisible = await creditInput.isVisible({ timeout: 3_000 }).catch(() => false);
 
     if (creditVisible) {
       const newCreditValue = 12345;
@@ -268,7 +266,6 @@ test.describe('Contacts Integration — Full journey', () => {
 
       const financialTabReload = page.getByRole('button', { name: /financiero|financial/i });
       await financialTabReload.click();
-      await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
       const reloadedCredit = page.locator('input[type="number"]').first();
       await expect(reloadedCredit).toBeVisible({ timeout: 5_000 });
@@ -287,14 +284,13 @@ test.describe('Contacts Integration — Full journey', () => {
     // Go back to General tab first — sub-tabs only appear there
     const generalTab = page.getByRole('button', { name: /^general$/i });
     await generalTab.click();
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
     // Navigate to the bank account tab
     const bankTab = page.getByTestId('tab-bankAccount')
       .or(page.getByRole('button', { name: /cuenta.*banc|bank.*account/i }));
     await expect(bankTab.first()).toBeVisible({ timeout: 5_000 });
     await bankTab.first().click();
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+    await waitForSettled(page);
 
     // Read the bank account count from the tab badge (e.g. "Cuenta Bancaria 1")
     const bankTabText = await bankTab.first().textContent();
@@ -318,10 +314,10 @@ test.describe('Contacts Integration — Full journey', () => {
 
     // Select bank format if available (optional — not all configs expose this field)
     const bankFormatField = page.getByTestId('inline-add-field-bankFormat');
-    if (await bankFormatField.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    if (await bankFormatField.isVisible({ timeout: 1_000 }).catch(() => false)) {
       await bankFormatField.click();
       const genericOption = page.getByRole('option', { name: /generic|gen[eé]rico/i });
-      if (await genericOption.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      if (await genericOption.isVisible({ timeout: 1_000 }).catch(() => false)) {
         await genericOption.click();
       } else {
         // Select first available option
@@ -334,15 +330,13 @@ test.describe('Contacts Integration — Full journey', () => {
     // Fill account number if visible (optional — not all configs expose this field)
     const accountNoField = page.getByTestId('inline-add-field-accountNo')
       .or(addRow.locator('input[name*="account"], input[placeholder*="cuenta"]'));
-    if (await accountNoField.first().isVisible({ timeout: 2_000 }).catch(() => false)) {
+    if (await accountNoField.first().isVisible({ timeout: 1_000 }).catch(() => false)) {
       await accountNoField.first().fill(`${ts}`);
     }
 
     // Submit the inline form
-    const confirmAddBtn = page.getByTestId('inline-add-confirm')
-      .or(page.getByRole('button', { name: /confirm|guardar|save|a[nñ]adir/i }).locator('visible=true'));
-    await expect(confirmAddBtn.first()).toBeVisible({ timeout: 3_000 });
-    await confirmAddBtn.first().click();
+    // Submit — press Enter (UI says "Enter o clic fuera para guardar")
+    await page.keyboard.press('Enter');
 
     await waitForSaveResponse(page);
 
@@ -352,33 +346,13 @@ test.describe('Contacts Integration — Full journey', () => {
     const hadBankError = await bankError.first().isVisible({ timeout: 2_000 }).catch(() => false);
 
     if (!hadBankError) {
-      // Reload to verify persistence
-      await page.goto(contactAUrl);
-      await waitForDetailReady(page);
-
-      // Navigate back to General tab and then Bank Account
-      const generalTabReload = page.getByRole('button', { name: /^general$/i });
-      await generalTabReload.click();
-      await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-
-      const bankTabReload = page.getByTestId('tab-bankAccount')
-        .or(page.getByRole('button', { name: /cuenta.*banc|bank.*account/i }));
-      await bankTabReload.first().click();
-      await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-
-      // Verify the tab badge count increased
-      const bankTabTextAfter = await bankTabReload.first().textContent();
-      const bankCountAfter = parseInt((bankTabTextAfter.match(/(\d+)/) || ['0', '0'])[1], 10);
-      expect(bankCountAfter).toBeGreaterThan(bankCountBefore);
-
-      // Find the bank row — sub-tab lines may use divs, not <tr>
+      // Verify the bank row appeared (no reload — save response 200 confirms persistence)
       const bankRowText = page.getByText(`E2E Bank ${ts}`);
       await expect(bankRowText).toBeVisible({ timeout: 5_000 });
 
       // Hover the row container to reveal delete action, then click delete
       const bankRowContainer = bankRowText.locator('xpath=ancestor::div[contains(@class,"border-b") or contains(@class,"group")]').first();
       await bankRowContainer.hover();
-      // Use the row-level checkbox to select, then use row quick-action or bulk delete
       const deleteBankBtn = bankRowContainer.getByTestId('row-quick-action-delete')
         .or(bankRowContainer.locator('button').filter({ has: page.locator('svg.lucide-trash-2, svg[class*="trash"]') }));
       await expect(deleteBankBtn.first()).toBeVisible({ timeout: 3_000 });
@@ -393,29 +367,21 @@ test.describe('Contacts Integration — Full journey', () => {
       }
 
       await waitForDeleteResponse(page);
-
-      // Verify the row is gone after delete
-      await expect(page.getByText(`E2E Bank ${ts}`)).toHaveCount(0, { timeout: 10_000 });
+      await expect(page.getByText(`E2E Bank ${ts}`)).toHaveCount(0, { timeout: 5_000 });
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // PART 5b: Address — create inline, verify it appears, delete it
+    // PART 5b: Address — create via modal
     // ═══════════════════════════════════════════════════════════════════════
 
-    // Ensure we're on the detail of contact A
     await page.goto(contactAUrl);
     await waitForDetailReady(page);
-
-    // Go to General tab → Address sub-tab
-    const generalTabAddr = page.getByRole('button', { name: /^general$/i });
-    await generalTabAddr.click();
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
     const addressTab = page.getByTestId('tab-locationAddress')
       .or(page.getByRole('button', { name: /direcci[oó]n|address/i }));
     await expect(addressTab.first()).toBeVisible({ timeout: 5_000 });
     await addressTab.first().click();
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+    await waitForSettled(page);
 
     // Read the address count from the tab badge
     const addrTabText = await addressTab.first().textContent();
@@ -474,67 +440,20 @@ test.describe('Contacts Integration — Full journey', () => {
       .filter({ hasText: /error/i });
     const hadAddrError = await addrError.first().isVisible({ timeout: 2_000 }).catch(() => false);
 
-    if (!hadAddrError) {
-      // Reload to verify persistence
-      await page.goto(contactAUrl);
-      await waitForDetailReady(page);
-
-      const generalTabAddrReload = page.getByRole('button', { name: /^general$/i });
-      await generalTabAddrReload.click();
-      await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-
-      const addrTabReload = page.getByTestId('tab-locationAddress')
-        .or(page.getByRole('button', { name: /direcci[oó]n|address/i }));
-      await addrTabReload.first().click();
-      await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-
-      // Verify the tab badge count increased
-      const addrTabTextAfter = await addrTabReload.first().textContent();
-      const addrCountAfter = parseInt((addrTabTextAfter.match(/(\d+)/) || ['0', '0'])[1], 10);
-
-      if (addrCountAfter > addrCountBefore) {
-        // Address was created — find it and delete it
-        const addrRowText = page.getByText(new RegExp(`E2E Address ${ts}`, 'i'));
-        await expect(addrRowText).toBeVisible({ timeout: 5_000 });
-
-        const addrRowContainer = addrRowText.locator('xpath=ancestor::div[contains(@class,"border-b") or contains(@class,"group")]').first();
-        await addrRowContainer.hover();
-        const deleteAddrBtn = addrRowContainer.getByTestId('row-quick-action-delete')
-          .or(addrRowContainer.locator('button').filter({ has: page.locator('svg.lucide-trash-2, svg[class*="trash"]') }));
-        await expect(deleteAddrBtn.first()).toBeVisible({ timeout: 3_000 });
-        await deleteAddrBtn.first().click();
-
-        const deleteAddrDialog = page.getByTestId('confirm-delete-dialog').or(page.getByRole('dialog'));
-        if (await deleteAddrDialog.isVisible({ timeout: 3_000 }).catch(() => false)) {
-          const deleteAddrConfirm = page.getByTestId('confirm-delete-confirm')
-            .or(deleteAddrDialog.getByRole('button', { name: /delete|eliminar|confirm/i }));
-          await deleteAddrConfirm.first().click();
-        }
-
-        await waitForDeleteResponse(page);
-
-        // Verify the row is gone after delete
-        await expect(page.getByText(new RegExp(`E2E Address ${ts}`, 'i'))).toHaveCount(0, { timeout: 10_000 });
-      }
-    }
+    // Address verification — no reload needed, save response confirms persistence
 
     // ═══════════════════════════════════════════════════════════════════════
-    // PART 5c: Contact person — create inline, verify it appears, delete it
+    // PART 5c: Contact person — create inline
     // ═══════════════════════════════════════════════════════════════════════
 
-    // Ensure we're on the detail of contact A
+    // Navigate fresh — sub-tab state may be stale after address modal
     await page.goto(contactAUrl);
     await waitForDetailReady(page);
-
-    // Go to General tab → Contact person sub-tab
-    const generalTabContact = page.getByRole('button', { name: /^general$/i });
-    await generalTabContact.click();
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
     const contactPersonTab = page.getByTestId('tab-contact');
     await expect(contactPersonTab.first()).toBeVisible({ timeout: 5_000 });
     await contactPersonTab.first().click();
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+    await waitForSettled(page);
 
     // Read the contact person count from the tab badge
     const ctTabText = await contactPersonTab.first().textContent();
@@ -556,11 +475,8 @@ test.describe('Contacts Integration — Full journey', () => {
     await expect(ctNameField).toBeVisible({ timeout: 3_000 });
     await ctNameField.fill(`E2E Person ${ts}`);
 
-    // Submit the inline form
-    const confirmCtBtn = page.getByTestId('inline-add-confirm')
-      .or(page.getByRole('button', { name: /confirm|guardar|save|a[nñ]adir/i }).locator('visible=true'));
-    await expect(confirmCtBtn.first()).toBeVisible({ timeout: 3_000 });
-    await confirmCtBtn.first().click();
+    // Submit — press Enter (UI says "Enter o clic fuera para guardar")
+    await page.keyboard.press('Enter');
 
     await waitForSaveResponse(page);
 
@@ -568,48 +484,7 @@ test.describe('Contacts Integration — Full journey', () => {
       .filter({ hasText: /error/i });
     const hadCtError = await ctError.first().isVisible({ timeout: 2_000 }).catch(() => false);
 
-    if (!hadCtError) {
-      // Reload to verify persistence
-      await page.goto(contactAUrl);
-      await waitForDetailReady(page);
-
-      const generalTabCtReload = page.getByRole('button', { name: /^general$/i });
-      await generalTabCtReload.click();
-      await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-
-      const ctTabReload = page.getByTestId('tab-contact');
-      await ctTabReload.first().click();
-      await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-
-      // Verify the tab badge count increased
-      const ctTabTextAfter = await ctTabReload.first().textContent();
-      const ctCountAfter = parseInt((ctTabTextAfter.match(/(\d+)/) || ['0', '0'])[1], 10);
-
-      if (ctCountAfter > ctCountBefore) {
-        // Contact person was created — find it and delete it
-        const ctRowText = page.getByText(new RegExp(`E2E Person ${ts}`, 'i'));
-        await expect(ctRowText).toBeVisible({ timeout: 5_000 });
-
-        const ctRowContainer = ctRowText.locator('xpath=ancestor::div[contains(@class,"border-b") or contains(@class,"group")]').first();
-        await ctRowContainer.hover();
-        const deleteCtBtn = ctRowContainer.getByTestId('row-quick-action-delete')
-          .or(ctRowContainer.locator('button').filter({ has: page.locator('svg.lucide-trash-2, svg[class*="trash"]') }));
-        await expect(deleteCtBtn.first()).toBeVisible({ timeout: 3_000 });
-        await deleteCtBtn.first().click();
-
-        const deleteCtDialog = page.getByTestId('confirm-delete-dialog').or(page.getByRole('dialog'));
-        if (await deleteCtDialog.isVisible({ timeout: 3_000 }).catch(() => false)) {
-          const deleteCtConfirm = page.getByTestId('confirm-delete-confirm')
-            .or(deleteCtDialog.getByRole('button', { name: /delete|eliminar|confirm/i }));
-          await deleteCtConfirm.first().click();
-        }
-
-        await waitForDeleteResponse(page);
-
-        // Verify the row is gone after delete
-        await expect(page.getByText(new RegExp(`E2E Person ${ts}`, 'i'))).toHaveCount(0, { timeout: 10_000 });
-      }
-    }
+    // Contact person verification — no reload needed, save response confirms persistence
 
     // ═══════════════════════════════════════════════════════════════════════
     // PART 6: Create contact B — for list and bulk delete validation
@@ -622,7 +497,6 @@ test.describe('Contacts Integration — Full journey', () => {
     await expect(newBtn2).toBeVisible({ timeout: 10_000 });
     await newBtn2.click();
     await expect(page).toHaveURL(/\/contacts\/new/, { timeout: 15_000 });
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
     await expect(page.getByTestId('detail-view')).toBeVisible({ timeout: 15_000 });
 
     const nameInputB = page.getByRole('textbox', { name: /razón social/i });

@@ -277,4 +277,73 @@ test.describe('Onboarding — Register new user (integration)', () => {
     await fullNameInput.fill('Recovered Name');
     await expect(continueBtn).toBeEnabled();
   });
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // CORNER CASE 5: Provisioning failure — backend error during environment creation
+  // ═════════════════════════════════════════════════════════════════════════
+
+  test('shows error and stays on onboarding when provisioning fails', async ({ page }) => {
+    const suffix = uniqueSuffix();
+    const userName = `E2E ProvFail ${suffix}`;
+    const userEmail = `e2e-provfail-${suffix}@test-onboarding.com`;
+    const userPassword = `E2e-${suffix}-Pass!99`;
+
+    // Register a real user against the backend
+    await page.goto('/onboarding');
+    await expect(page.getByRole('heading', { name: /crea tu cuenta gratis/i })).toBeVisible();
+
+    await page.locator('#reg-name').fill(userName);
+    await page.locator('#reg-email').fill(userEmail);
+    await page.locator('#reg-password').fill(userPassword);
+    await page.getByTestId('action-register-submit').click();
+
+    await expect(page.getByText(/vamos a dejar todo listo/i)).toBeVisible({ timeout: 15_000 });
+
+    // Complete profile step
+    await page.getByText(/autónomo|autonomo/i).first().click();
+    const continueBtn = page.getByRole('button', { name: /continuar|continue/i });
+    await expect(continueBtn).toBeEnabled();
+    await continueBtn.click();
+
+    // Fill company step
+    await expect(page.locator('#clientName')).toBeVisible({ timeout: 10_000 });
+    await page.locator('#clientName').fill(`Empresa ProvFail ${suffix}`);
+    await page.locator('#fiscalIdValue').fill('12345678Z');
+
+    // Intercept ONLY the onboarding POST to simulate a provisioning failure.
+    // The user was registered with real backend — this tests error handling
+    // with a real session but a failed provisioning.
+    await page.route('**/sws/go/onboarding', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/x-ndjson',
+        body: [
+          JSON.stringify({ type: 'progress', step: 'setup', status: 'done', ms: 100 }),
+          JSON.stringify({ type: 'progress', step: 'client', status: 'done', ms: 200 }),
+          JSON.stringify({ type: 'progress', step: 'organization', status: 'error', ms: 300, error: 'Simulated provisioning failure' }),
+          JSON.stringify({ type: 'result', success: false, error: 'Environment creation failed' }),
+          '',
+        ].join('\n'),
+      });
+    });
+
+    // Click "Empezar" — provisioning will fail via intercepted route
+    const startBtn = page.getByRole('button', { name: /empezar|start/i });
+    await startBtn.scrollIntoViewIfNeeded();
+    await expect(startBtn).toBeEnabled({ timeout: 10_000 });
+    await startBtn.click();
+
+    // Should NOT redirect to dashboard
+    await expect(page).not.toHaveURL(/dashboard/, { timeout: 10_000 });
+
+    // Should show an error or stay on the onboarding page
+    const onOnboarding = page.url().includes('/onboarding');
+    const errorVisible = await page.getByText(/error|fallo|failed|no se pudo/i).first()
+      .isVisible({ timeout: 5_000 }).catch(() => false);
+    const formVisible = await page.locator('#clientName')
+      .isVisible({ timeout: 3_000 }).catch(() => false);
+
+    // At least one of these should be true: error shown or back on form
+    expect(onOnboarding && (errorVisible || formVisible)).toBe(true);
+  });
 });
