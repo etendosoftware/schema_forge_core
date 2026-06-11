@@ -5,7 +5,6 @@ import {
   MOVEMENT_TEMPLATE_OPEN,
   MOVEMENT_TEMPLATE_HEADER,
   MOVEMENT_TEMPLATE_PARTIES,
-  MOVEMENT_TEMPLATE_SIGNATURE,
   MOVEMENT_TEMPLATE_NOTES,
   MOVEMENT_TEMPLATE_FOOTER,
   fetchJson,
@@ -59,7 +58,6 @@ const TEMPLATE = MOVEMENT_TEMPLATE_OPEN
       {{/each}}
     </tbody>
   </table>`
-+ MOVEMENT_TEMPLATE_SIGNATURE
 + MOVEMENT_TEMPLATE_NOTES
 + MOVEMENT_TEMPLATE_FOOTER;
 
@@ -127,7 +125,5 @@ export function getReturnToVendorPdfLabels(ui) {
     colReturned:      ui('returnToVendorPdfColReturned'),
     colOriginalQty:   ui('returnToVendorPdfColOriginalQty'),
     notes:            ui('invoicePdfNotes'),
-    signatureIssuer:  ui('returnToVendorPdfSignatureIssuer'),
-    signatureDate:    ui('shipmentPdfSignatureDate'),
   };
 }

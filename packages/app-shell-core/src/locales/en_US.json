@@ -19762,7 +19762,6 @@
     "returnToVendorPdfSourceReceipt": "Source Goods Receipt",
     "returnToVendorPdfColReturned": "Return Qty",
     "returnToVendorPdfColOriginalQty": "Received Qty",
-    "returnToVendorPdfSignatureIssuer": "Issuer Signature",
     "returnToVendorPreviewVendor": "Vendor:",
     "importFromReceipt": "Add from Receipt",
     "searchReceipt": "Search goods receipt...",
