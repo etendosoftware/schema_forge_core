@@ -258,8 +258,8 @@ test.describe('Product pricing — create flow (no existing rows)', () => {
 
     await postPromise;
 
-    // After POST + refresh the row label appears inline.
-    await expect(page.getByText('Lista venta 2026')).toBeVisible({ timeout: 10_000 });
+    // After POST + refresh the row label appears inline as a readonly input value.
+    await expect(page.locator('input[value="Lista venta 2026"]')).toBeVisible({ timeout: 10_000 });
 
     // Exactly one POST was made.
     expect(postBodies).toHaveLength(1);
@@ -270,7 +270,7 @@ test.describe('Product pricing — create flow (no existing rows)', () => {
 
     // Switch to Compra — no rows there.
     await page.locator('[data-testid="price-tab-purchase"]').click();
-    await expect(page.getByText('Lista compra 2026')).toHaveCount(0);
+    await expect(page.locator('input[value="Lista compra 2026"]')).toHaveCount(0);
   });
 });
 
@@ -316,8 +316,8 @@ test.describe('Product pricing — edit dialog populates dropdown from lazy fetc
   });
 
   test('switching to Compra toggle and clicking add triggers lazy fetch filtered to purchase options', async ({ page }) => {
-    // Existing sales row should already be visible in the Venta section.
-    await expect(page.getByText('Lista venta 2026')).toBeVisible({ timeout: 10_000 });
+    // Existing sales row should already be visible in the Venta section (readonly input).
+    await expect(page.locator('input[value="Lista venta 2026"]')).toBeVisible({ timeout: 10_000 });
 
     // Switch to the Compra section via its toggle button.
     await page.locator('[data-testid="price-tab-purchase"]').click();
