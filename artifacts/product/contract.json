@@ -1,8 +1,8 @@
 {
   "version": "0.7.0",
   "generatedAt": "2026-04-29T18:11:24.842Z",
-  "updatedAt": "2026-06-09T12:12:25.259Z",
-  "checksum": "1e66257cee774540",
+  "updatedAt": "2026-06-10T11:37:26.983Z",
+  "checksum": "94912c7751fcd47a",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -59,7 +59,8 @@
           "component": "ProductPriceBar"
         }
       ],
-      "layoutType": "gallery"
+      "layoutType": "gallery",
+      "autoSaveOnBlur": true
     },
     "entities": {
       "product": {
@@ -1773,7 +1774,8 @@
           "component": "ProductPriceBar"
         }
       ],
-      "layoutType": "gallery"
+      "layoutType": "gallery",
+      "autoSaveOnBlur": true
     },
     "entities": {
       "product": {

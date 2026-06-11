@@ -30,6 +30,8 @@ The detail screen also changes the standard generated behavior in four visible w
 
 The product image field is `inline: true` in `decisions.json`, which keeps it inside the four-column form grid spanning two rows (`row-span-2`) rather than rendering it separately above the form. The field renders with an upload button inside the container, a hover overlay with zoom and remove/replace actions, and a lightbox via a portal to `document.body` (ESC to close). When an image is present the cursor is `cursor-zoom-in`.
 
+The image preview uses `position: absolute; inset: 0` inside a `relative flex-1 min-h-[176px]` wrapper when `stretch` mode is active. This takes the preview out of the CSS flow so it never contributes to grid track sizing — a large image file cannot expand the surrounding grid rows. The wrapper grows with the form height (driven by the other columns), and the preview fills that space exactly. When no image is loaded the wrapper is at least 176 px tall (the "Sin imagen" placeholder height). The manual Save button is required to persist image changes — the image field is explicitly excluded from the `autoSaveOnBlur` trigger.
+
 ## Reactive behavior and dependencies
 - **Master/child dependency:** the selected product drives price, stock, and transaction loading through `parentId=<productId>`.
 - **Gallery/detail dependency:** selecting a product card in the gallery navigates into that product's detail route.
@@ -93,6 +95,7 @@ The product image field is `inline: true` in `decisions.json`, which keeps it in
   - `customPanelTabs` — registers `ProductPriceBar` as the `Price` tab alongside `Attachments`
   - `attachments: true` and `customTabsAfterBottom: true` — positions both tabs after the primary tab strip
   - `inline: true` on the image field — keeps the image inside the four-column form grid
+  - `autoSaveOnBlur: true` — all header fields (name, description, type, category, UOM, etc.) save automatically on blur, matching the behavior of Contacts, Assets, and Sales Order. The image field is explicitly excluded: image changes require the manual Save button.
   - `labelOverrides` — overrides `M_Product_Category_ID` to "Category"/"Categoría" and `ProductType` to "Type"/"Tipo" using the locale-nested format `{ "en_US": {...}, "es_ES": {...} }`
   - `sidebarClassName`, `formCardPadding`, `toolbarPaddingX`, `tabsBarPaddingX`, `listbarPaddingX`, `tablePaddingX` — layout props for 30%-width sidebar with left border, 8px horizontal padding throughout
   - `primaryTabsVariant: "pill"` — pill-style primary tab bar
@@ -105,6 +108,21 @@ Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functio
 - `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
 - `requiredHeaderFields` is now emitted in the page component. For this window the declared required fields are `searchKey`, `name`, `uOM`, `productCategory`, `taxCategory`, `purchase`, `sale`, `productType`, `stocked`, and `returnable` — making the existing required-field contract explicit in the generated page rather than relying on implicit form validation.
 - LinesTable template updated in ETP-3908 to include the inline-editable add-row alignment fix. This window uses `linesLayout: "classic"` so the new template branch is dead code here — no behavioral change.
+
+## ETP-4190 changes (continued — feature/ETP-4190)
+
+Changes added on top of the original ETP-4190 work on the same branch.
+
+### Image field — layout fix
+
+- `ImageField.jsx` (`stretch` mode): the preview is now `absolute inset-0` inside a `relative flex-1 min-h-[176px]` wrapper. Previously `flex-1 min-h-[176px]` was on the preview directly, which allowed large image files to push CSS Grid row heights unboundedly. The absolute approach removes the image from the layout flow: row heights are sized by the other form columns, and the preview fills the resulting cell height without contributing to it. Non-stretch usage (other windows, fixed `h-44`) is unchanged.
+- `EntityForm.jsx` image branch: removed `h-full` from the container class (`row-span-2 flex flex-col`). The container now relies on CSS Grid's default `align-self: stretch` without a circular percentage-height dependency.
+
+### Auto-save on blur
+
+- `decisions.json` → `"autoSaveOnBlur": true` added to the `window` object.
+- Regenerated `ProductPage.jsx` passes `autoSaveOnBlur` to `DetailView`.
+- Image field excluded from the auto-save trigger (no `setTimeout(onFieldBlur)` in the image `onChange` handler) — image changes require the manual Save button.
 
 ## Pipeline regeneration — ETP-4190
 

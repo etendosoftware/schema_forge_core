@@ -166,6 +166,7 @@ const FIELD_DECISION_COPY_PROPS = [
   'display',
   'cellType',
   'grow',
+  'gridReadOnly',
   'noTrailing',
   'inline',
   'addLineFromSibling',
