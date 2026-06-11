@@ -1962,3 +1962,61 @@ describe('buildHeaderLogicMaps', () => {
     assert.deepEqual(result, { headerColumnMap: {}, headerBooleanFields: [] });
   });
 });
+
+// ---------------------------------------------------------------------------
+// generateTableComponent — gridReadOnly
+// ---------------------------------------------------------------------------
+
+describe('generateTableComponent — gridReadOnly', () => {
+  const gridReadOnlyContract = {
+    frontendContract: {
+      window: { id: '900', name: 'Return To Vendor', primaryEntity: 'shipment', category: 'purchasing' },
+      entities: {
+        shipment: {
+          fields: [
+            { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string',
+              visibility: 'readOnly', required: true, grid: true, form: true },
+            { name: 'quantity', column: 'Qty', type: 'number', tsType: 'number',
+              visibility: 'editable', required: true, grid: true, form: true,
+              gridReadOnly: true },
+            { name: 'product', column: 'M_Product_ID', type: 'foreignKey', tsType: 'string',
+              visibility: 'editable', required: true, grid: true, form: true },
+          ],
+          searchableFields: ['documentNo'],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+
+  it('emits readOnly: true in column definition when field has gridReadOnly: true', () => {
+    const code = generateTableComponent('shipment', gridReadOnlyContract);
+    assert.ok(
+      code.includes(", readOnly: true"),
+      'column with gridReadOnly should have readOnly: true'
+    );
+  });
+
+  it('does NOT emit readOnly: true for fields without gridReadOnly', () => {
+    const code = generateTableComponent('shipment', gridReadOnlyContract);
+    // Only the quantity field has gridReadOnly — verify that the count of
+    // readOnly: true occurrences matches exactly one field
+    const matches = code.match(/, readOnly: true/g) ?? [];
+    assert.equal(matches.length, 1, 'exactly one column should have readOnly: true');
+  });
+
+  it('gridReadOnly field still appears as a column in the table', () => {
+    const code = generateTableComponent('shipment', gridReadOnlyContract);
+    assert.ok(code.includes("key: 'quantity'"), 'gridReadOnly field should still be present as a column');
+  });
+
+  it('field without gridReadOnly does NOT get readOnly: true in its column entry', () => {
+    // product column should not contain readOnly
+    const code = generateTableComponent('shipment', gridReadOnlyContract);
+    const lines = code.split('\n');
+    const productLine = lines.find(l => l.includes("key: 'product'"));
+    assert.ok(productLine, 'product column should exist');
+    assert.ok(!productLine.includes('readOnly: true'), 'product column should not have readOnly: true');
+  });
+});

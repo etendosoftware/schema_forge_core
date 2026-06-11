@@ -156,6 +156,7 @@ const customLoaders = {
   'quick-order-sales': () => import('./quick-order/index.jsx'),
   'quick-order-purchase': () => import('./quick-order/index.jsx'),
   'financial-account': () => import('./custom/financial-account/index.jsx'),
+  'return-to-vendor-shipment': () => import('./custom/return-to-vendor-shipment/index.jsx'),
 };
 
 /**

@@ -58,7 +58,7 @@ export default function CreateInvoiceConfirmModal({
     : ui('soCreateInvoiceCheckDesc');
 
   return createPortal(
-    <div onClick={onClose} style={overlayStyle}>
+    <div data-testid="create-invoice-confirm-modal" onClick={onClose} style={overlayStyle}>
       <div onClick={e => e.stopPropagation()} style={{ ...cardStyle, width: 460 }}>
 
         <div style={{ padding: '16px 20px 14px', borderBottom: '0.5px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
