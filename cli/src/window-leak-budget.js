@@ -34,6 +34,43 @@ const ROOT = join(__dirname, '..', '..');
 const CONFIG_PATH = join(__dirname, '..', 'window-leak-budget.json');
 
 /**
+ * Per-char step inside a quoted literal (`string` / `char` / `template`). The quote
+ * char is always kept; a backslash escape consumes the next char too; the closing
+ * quote returns to `code`. `state: undefined` means "stay in the current state".
+ */
+function stepQuoted(c, next, quote) {
+  if (c === '\\') return { i: 2, out: c + (next ?? '') };
+  return { i: 1, out: c, state: c === quote ? 'code' : undefined };
+}
+
+/**
+ * Per-state handlers for {@link stripCommentsKeepStrings}. Each returns how many chars
+ * to advance (`i`), what to append (`out`), and the next `state` (undefined = unchanged).
+ * Comment bytes become spaces so line/column numbers stay aligned for reporting.
+ */
+const STRIP_STEPS = {
+  code(c, next) {
+    if (c === '/' && next === '/') return { i: 2, out: '  ', state: 'line' };
+    if (c === '/' && next === '*') return { i: 2, out: '  ', state: 'block' };
+    if (c === '"') return { i: 1, out: c, state: 'string' };
+    if (c === '\'') return { i: 1, out: c, state: 'char' };
+    if (c === '`') return { i: 1, out: c, state: 'template' };
+    return { i: 1, out: c };
+  },
+  line(c) {
+    if (c === '\n') return { i: 1, out: c, state: 'code' };
+    return { i: 1, out: ' ' };
+  },
+  block(c, next) {
+    if (c === '*' && next === '/') return { i: 2, out: '  ', state: 'code' };
+    return { i: 1, out: c === '\n' ? '\n' : ' ' };
+  },
+  string: (c, next) => stepQuoted(c, next, '"'),
+  char: (c, next) => stepQuoted(c, next, '\''),
+  template: (c, next) => stepQuoted(c, next, '`'),
+};
+
+/**
  * Strip line and block comments while KEEPING string/char literals intact (the leaks
  * are string literals). Comment bytes are replaced with spaces so line/column numbers
  * are preserved for accurate reporting.
@@ -44,43 +81,10 @@ export function stripCommentsKeepStrings(source) {
   const n = source.length;
   let state = 'code'; // code | line | block | string | char | template
   while (i < n) {
-    const c = source[i];
-    const next = source[i + 1];
-    if (state === 'code') {
-      if (c === '/' && next === '/') { out += '  '; state = 'line'; i += 2; continue; }
-      if (c === '/' && next === '*') { out += '  '; state = 'block'; i += 2; continue; }
-      if (c === '"') { out += c; state = 'string'; i += 1; continue; }
-      if (c === '\'') { out += c; state = 'char'; i += 1; continue; }
-      if (c === '`') { out += c; state = 'template'; i += 1; continue; }
-      out += c; i += 1; continue;
-    }
-    if (state === 'line') {
-      if (c === '\n') { state = 'code'; out += c; } else { out += ' '; }
-      i += 1; continue;
-    }
-    if (state === 'block') {
-      if (c === '*' && next === '/') { state = 'code'; out += '  '; i += 2; continue; }
-      out += c === '\n' ? '\n' : ' ';
-      i += 1; continue;
-    }
-    if (state === 'string') {
-      out += c;
-      if (c === '\\') { out += next ?? ''; i += 2; continue; }
-      if (c === '"') state = 'code';
-      i += 1; continue;
-    }
-    if (state === 'char') {
-      out += c;
-      if (c === '\\') { out += next ?? ''; i += 2; continue; }
-      if (c === '\'') state = 'code';
-      i += 1; continue;
-    }
-    if (state === 'template') {
-      out += c;
-      if (c === '\\') { out += next ?? ''; i += 2; continue; }
-      if (c === '`') state = 'code';
-      i += 1; continue;
-    }
+    const step = STRIP_STEPS[state](source[i], source[i + 1]);
+    out += step.out;
+    i += step.i;
+    if (step.state) state = step.state;
   }
   return out;
 }
@@ -105,7 +109,12 @@ export function findLeaksInSource(source, patterns) {
   const lines = clean.split('\n');
   const findings = [];
   for (const p of patterns) {
-    const re = new RegExp(p, 'g');
+    // Patterns come exclusively from the committed cli/window-leak-budget.json (a
+    // version-controlled, developer-authored config — never user, request, or network
+    // input). They are short, anchored, linear expressions with no nested quantifiers,
+    // so dynamic construction here carries no ReDoS risk. // NOSONAR
+    const re = new RegExp(p, 'g'); // NOSONAR: trusted committed config, no untrusted input
+
     lines.forEach((text, idx) => {
       re.lastIndex = 0;
       let m;
@@ -139,6 +148,27 @@ function loadConfig() {
   return JSON.parse(readFileSync(CONFIG_PATH, 'utf8'));
 }
 
+/** Status glyph: ✗ grew, ↓ improved, ✓ at baseline. */
+function statusVerb(current, baseline) {
+  if (current > baseline) return '✗';
+  if (current < baseline) return '↓';
+  return '✓';
+}
+
+function printReport(findings, current, baseline, { asJson, list }) {
+  if (asJson) {
+    process.stdout.write(`${JSON.stringify({ baseline, current, findings }, null, 2)}\n`);
+    return;
+  }
+  if (list || current > baseline) {
+    for (const f of findings) {
+      process.stdout.write(`  • ${f.file}:${f.line}  ${f.match}\n`);
+    }
+    if (findings.length) process.stdout.write('\n');
+  }
+  process.stdout.write(`  ${statusVerb(current, baseline)}  window-literal leaks in contract-ui: ${current} (baseline ${baseline})\n`);
+}
+
 function main() {
   const args = process.argv.slice(2);
   const update = args.includes('--update');
@@ -149,18 +179,7 @@ function main() {
   const current = findings.length;
   const baseline = config.baseline;
 
-  if (asJson) {
-    process.stdout.write(`${JSON.stringify({ baseline, current, findings }, null, 2)}\n`);
-  } else {
-    if (list || current > baseline) {
-      for (const f of findings) {
-        process.stdout.write(`  • ${f.file}:${f.line}  ${f.match}\n`);
-      }
-      if (findings.length) process.stdout.write('\n');
-    }
-    const verb = current > baseline ? '✗' : current < baseline ? '↓' : '✓';
-    process.stdout.write(`  ${verb}  window-literal leaks in contract-ui: ${current} (baseline ${baseline})\n`);
-  }
+  printReport(findings, current, baseline, { asJson, list });
 
   if (current < baseline && update) {
     config.baseline = current;

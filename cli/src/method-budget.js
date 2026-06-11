@@ -34,6 +34,39 @@ const ROOT = join(__dirname, '..', '..');
 const BASELINE_PATH = join(__dirname, '..', 'method-budget.json');
 
 /**
+ * Per-state handlers for {@link stripCommentsAndLiterals}. Each handler receives the
+ * source, the current index `i`, and the lookahead char `next`, and returns the next
+ * index plus any characters to append (`out`) and the next `state`. Splitting the
+ * original `while` state machine into these pure steps keeps each branch trivial.
+ */
+const STRIP_STEPS = {
+  code(source, i, c, next) {
+    if (c === '/' && next === '/') return { i: i + 2, state: 'line' };
+    if (c === '/' && next === '*') return { i: i + 2, state: 'block' };
+    if (c === '"') return { i: i + 1, state: 'string', out: ' ' };
+    if (c === '\'') return { i: i + 1, state: 'char', out: ' ' };
+    return { i: i + 1, state: 'code', out: c };
+  },
+  line(source, i, c) {
+    if (c === '\n') return { i: i + 1, state: 'code', out: c };
+    return { i: i + 1, state: 'line' };
+  },
+  block(source, i, c, next) {
+    if (c === '*' && next === '/') return { i: i + 2, state: 'code' };
+    // Keep line breaks for line counting parity.
+    return { i: i + 1, state: 'block', out: c === '\n' ? c : '' };
+  },
+  string(source, i, c) {
+    if (c === '\\') return { i: i + 2, state: 'string' };
+    return { i: i + 1, state: c === '"' ? 'code' : 'string' };
+  },
+  char(source, i, c) {
+    if (c === '\\') return { i: i + 2, state: 'char' };
+    return { i: i + 1, state: c === '\'' ? 'code' : 'char' };
+  },
+};
+
+/**
  * Remove comments and string/char literals so they cannot produce false method
  * matches (e.g. a "(" inside a string, or `// foo() {` in a comment).
  */
@@ -43,34 +76,10 @@ export function stripCommentsAndLiterals(source) {
   const n = source.length;
   let state = 'code'; // code | line | block | string | char
   while (i < n) {
-    const c = source[i];
-    const next = source[i + 1];
-    if (state === 'code') {
-      if (c === '/' && next === '/') { state = 'line'; i += 2; continue; }
-      if (c === '/' && next === '*') { state = 'block'; i += 2; continue; }
-      if (c === '"') { out += ' '; state = 'string'; i += 1; continue; }
-      if (c === '\'') { out += ' '; state = 'char'; i += 1; continue; }
-      out += c; i += 1; continue;
-    }
-    if (state === 'line') {
-      if (c === '\n') { state = 'code'; out += c; }
-      i += 1; continue;
-    }
-    if (state === 'block') {
-      if (c === '*' && next === '/') { state = 'code'; i += 2; continue; }
-      if (c === '\n') out += c; // keep line breaks for line counting parity
-      i += 1; continue;
-    }
-    if (state === 'string') {
-      if (c === '\\') { i += 2; continue; }
-      if (c === '"') { state = 'code'; }
-      i += 1; continue;
-    }
-    if (state === 'char') {
-      if (c === '\\') { i += 2; continue; }
-      if (c === '\'') { state = 'code'; }
-      i += 1; continue;
-    }
+    const step = STRIP_STEPS[state](source, i, source[i], source[i + 1]);
+    if (step.out) out += step.out;
+    i = step.i;
+    state = step.state;
   }
   return out;
 }
@@ -105,42 +114,48 @@ function matchParen(s, open) {
  *     (abstract / interface methods); otherwise it is a call statement, not a method.
  * Control-flow keywords (`if`, `for`, ...) and `new X(...)` are excluded.
  */
+/**
+ * Decide whether a regex match of `identifier(` (capture group 1 = name) is a
+ * method/constructor declaration rather than a call, control-flow keyword, or
+ * `new X(...)`. Each disqualifying condition is an early `return false`, keeping
+ * the hot loop in {@link countMethods} trivial.
+ */
+function isMethodDeclaration(clean, m) {
+  const name = m[1];
+  if (CONTROL_KEYWORDS.has(name)) return false;
+
+  // What precedes the name (skipping whitespace)? `.` => method call; `new` => ctor call.
+  let p = m.index - 1;
+  while (p >= 0 && /\s/.test(clean[p])) p -= 1;
+  if (clean[p] === '.') return false;
+  const prevWordMatch = clean.slice(0, p + 1).match(/([a-zA-Z_$][\w$]*)$/);
+  const prevWord = prevWordMatch ? prevWordMatch[1] : '';
+  if (prevWord === 'new') return false;
+
+  const open = m.index + m[0].length - 1;
+  const close = matchParen(clean, open);
+  if (close === -1) return false;
+
+  // Skip whitespace + optional `throws ...` clause after the param list.
+  const after = clean.slice(close + 1);
+  const tail = after.match(/^\s*(?:throws[\s\w$<>\[\],.&]+?)?\s*([{;])/);
+  if (!tail) return false;
+  const terminator = tail[1];
+
+  // `{` => declaration with a body (a call can never be followed by `{`).
+  // `;` => abstract/interface method ONLY when preceded by a type token (prevWord);
+  // a plain call statement (`helper();`, `x = foo();`) has no such token.
+  return terminator === '{'
+    || (terminator === ';' && Boolean(prevWord) && !CONTROL_KEYWORDS.has(prevWord));
+}
+
 export function countMethods(source) {
   const clean = stripCommentsAndLiterals(source);
   const idParenRe = /([a-zA-Z_$][\w$]*)\s*\(/g;
   let count = 0;
   let m;
   while ((m = idParenRe.exec(clean)) !== null) {
-    const name = m[1];
-    if (CONTROL_KEYWORDS.has(name)) continue;
-
-    // What precedes the name (skipping whitespace)? `.` => method call; `new` => ctor call.
-    let p = m.index - 1;
-    while (p >= 0 && /\s/.test(clean[p])) p -= 1;
-    if (clean[p] === '.') continue;
-    const prevWordMatch = clean.slice(0, p + 1).match(/([a-zA-Z_$][\w$]*)$/);
-    const prevWord = prevWordMatch ? prevWordMatch[1] : '';
-    if (prevWord === 'new') continue;
-
-    const open = m.index + m[0].length - 1;
-    const close = matchParen(clean, open);
-    if (close === -1) continue;
-
-    // Skip whitespace + optional `throws ...` clause after the param list.
-    let j = close + 1;
-    const after = clean.slice(j);
-    const tail = after.match(/^\s*(?:throws[\s\w$<>\[\],.&]+?)?\s*([{;])/);
-    if (!tail) continue;
-    const terminator = tail[1];
-
-    if (terminator === '{') {
-      count += 1;
-    } else if (terminator === ';' && prevWord && !CONTROL_KEYWORDS.has(prevWord)) {
-      // abstract / interface method: `type name(...);` has a type token immediately
-      // before the name. A plain call (`helper();`, `x = foo();`) has none — its
-      // prevWord is empty (boundary or `=`) or a control keyword.
-      count += 1;
-    }
+    if (isMethodDeclaration(clean, m)) count += 1;
   }
   return count;
 }
@@ -195,6 +210,53 @@ export function evaluate(baseline, opts = {}) {
   });
 }
 
+function printHumanResults(results) {
+  for (const r of results) {
+    if (r.status === 'missing') {
+      process.stdout.write(`  ?  ${r.label || r.moduleFile || r.file} — FILE NOT FOUND\n`);
+    } else if (r.status === 'grew') {
+      process.stdout.write(`  ✗  ${r.label || r.file}: ${r.current} methods > baseline ${r.baseline}\n`);
+    } else if (r.status === 'improved') {
+      process.stdout.write(`  ↓  ${r.label || r.file}: ${r.current} methods < baseline ${r.baseline} (debt paid — lower the baseline)\n`);
+    } else {
+      process.stdout.write(`  ✓  ${r.label || r.file}: ${r.current} methods (baseline ${r.baseline})\n`);
+    }
+  }
+}
+
+function lockInImprovements(baseline, improved) {
+  for (const r of improved) {
+    const entry = baseline.classes.find(
+      (c) => (c.label || c.file) === (r.label || r.file),
+    );
+    entry.baseline = r.current;
+  }
+  writeFileSync(BASELINE_PATH, `${JSON.stringify(baseline, null, 2)}\n`);
+  process.stdout.write(`\n  Updated baseline for ${improved.length} class(es). Commit cli/method-budget.json.\n`);
+}
+
+/** Report missing tracked files; exit(2) unless --skip-missing was passed. */
+function reportMissingOrExit(missing, skipMissing) {
+  if (missing.length === 0) return;
+  if (skipMissing) {
+    process.stdout.write(`\n  Skipped ${missing.length} file(s) not present in this checkout (--skip-missing).\n`);
+    return;
+  }
+  process.stderr.write(`\nERROR: ${missing.length} configured file(s) not found.\n`);
+  process.stderr.write('Run from a checkout where the Etendo Go module is a sibling, set ETENDO_GO_ROOT,\n');
+  process.stderr.write('pass --module-root=<path>, or use --skip-missing in CI without the module.\n');
+  process.exit(2);
+}
+
+/** A class that already exceeds Sonar's limit must not grow — exit(1) if any did. */
+function failIfGrew(grew) {
+  if (grew.length === 0) return;
+  process.stderr.write(`\nFAIL: ${grew.length} class(es) grew past their method budget.\n`);
+  process.stderr.write('A class already over Sonar\'s limit must not get bigger. Extract methods into a helper/handler,\n');
+  process.stderr.write('or if you genuinely reduced and re-added, run: node cli/src/method-budget.js --update\n');
+  process.exit(1);
+}
+
 function main() {
   const args = process.argv.slice(2);
   const update = args.includes('--update');
@@ -215,48 +277,10 @@ function main() {
   const improved = results.filter((r) => r.status === 'improved');
   const missing = results.filter((r) => r.status === 'missing');
 
-  if (!asJson) {
-    for (const r of results) {
-      if (r.status === 'missing') {
-        process.stdout.write(`  ?  ${r.label || r.moduleFile || r.file} — FILE NOT FOUND\n`);
-      } else if (r.status === 'grew') {
-        process.stdout.write(`  ✗  ${r.label || r.file}: ${r.current} methods > baseline ${r.baseline}\n`);
-      } else if (r.status === 'improved') {
-        process.stdout.write(`  ↓  ${r.label || r.file}: ${r.current} methods < baseline ${r.baseline} (debt paid — lower the baseline)\n`);
-      } else {
-        process.stdout.write(`  ✓  ${r.label || r.file}: ${r.current} methods (baseline ${r.baseline})\n`);
-      }
-    }
-  }
-
-  if (update && improved.length > 0) {
-    for (const r of improved) {
-      const entry = baseline.classes.find(
-        (c) => (c.label || c.file) === (r.label || r.file),
-      );
-      entry.baseline = r.current;
-    }
-    writeFileSync(BASELINE_PATH, `${JSON.stringify(baseline, null, 2)}\n`);
-    process.stdout.write(`\n  Updated baseline for ${improved.length} class(es). Commit cli/method-budget.json.\n`);
-  }
-
-  if (missing.length > 0) {
-    if (skipMissing) {
-      process.stdout.write(`\n  Skipped ${missing.length} file(s) not present in this checkout (--skip-missing).\n`);
-    } else {
-      process.stderr.write(`\nERROR: ${missing.length} configured file(s) not found.\n`);
-      process.stderr.write('Run from a checkout where the Etendo Go module is a sibling, set ETENDO_GO_ROOT,\n');
-      process.stderr.write('pass --module-root=<path>, or use --skip-missing in CI without the module.\n');
-      process.exit(2);
-    }
-  }
-
-  if (grew.length > 0) {
-    process.stderr.write(`\nFAIL: ${grew.length} class(es) grew past their method budget.\n`);
-    process.stderr.write('A class already over Sonar\'s limit must not get bigger. Extract methods into a helper/handler,\n');
-    process.stderr.write('or if you genuinely reduced and re-added, run: node cli/src/method-budget.js --update\n');
-    process.exit(1);
-  }
+  if (!asJson) printHumanResults(results);
+  if (update && improved.length > 0) lockInImprovements(baseline, improved);
+  reportMissingOrExit(missing, skipMissing);
+  failIfGrew(grew);
 
   if (!update && improved.length > 0) {
     process.stdout.write('\n  Some classes improved — run `node cli/src/method-budget.js --update` to lock in the lower baseline.\n');
