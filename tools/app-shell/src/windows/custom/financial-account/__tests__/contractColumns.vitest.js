@@ -36,6 +36,18 @@ describe('getContractGridColumns', () => {
     ]);
   });
 
+  it('returns the bankStatementLines grid columns in order', () => {
+    const cols = getContractGridColumns('bankStatementLines').map((c) => c.name);
+    expect(cols).toEqual([
+      'transactionDate',
+      'bpartnername',
+      'businessPartner',
+      'gLItem',
+      'dramount',
+      'cramount',
+    ]);
+  });
+
   it('returns an empty list for unknown entities', () => {
     expect(getContractGridColumns('nope')).toEqual([]);
   });
