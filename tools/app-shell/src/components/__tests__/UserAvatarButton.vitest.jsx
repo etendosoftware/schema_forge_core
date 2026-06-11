@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 const logoutMock = vi.fn();
+const setLocaleMock = vi.fn();
 
 vi.mock('@/auth/AuthContext.jsx', () => ({
   useAuth: () => ({
@@ -14,12 +15,12 @@ vi.mock('@/auth/AuthContext.jsx', () => ({
 
 vi.mock('@/i18n', () => ({
   useUI: () => (key) => key,
-  useLocaleSwitch: () => ({ locale: 'en_US', setLocale: vi.fn() }),
+  useLocaleSwitch: () => ({ locale: 'en_US', setLocale: setLocaleMock }),
 }));
 
 vi.mock('@/i18n/index.js', () => ({
   useUI: () => (key) => key,
-  useLocaleSwitch: () => ({ locale: 'en_US', setLocale: vi.fn() }),
+  useLocaleSwitch: () => ({ locale: 'en_US', setLocale: setLocaleMock }),
 }));
 
 // Render dropdown content unconditionally so menu items can be asserted
@@ -114,5 +115,15 @@ describe('UserAvatarButton', () => {
     expect(localStorage.getItem('sf_onboarding_initial_view')).toBe('login');
     expect(localStorage.getItem('sf_onboarding_notice')).toBe('password-changed');
     expect(logoutMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('switches the locale when a language option is clicked', async () => {
+    const user = userEvent.setup();
+
+    render(<UserAvatarButton />);
+
+    await user.click(screen.getByRole('button', { name: /Español/ }));
+
+    expect(setLocaleMock).toHaveBeenCalledWith('es_ES');
   });
 });

@@ -1064,6 +1064,52 @@ describe('OnboardingPage', () => {
       });
     });
 
+    it('warns and resets the saved-draft ref when an autosave fails, then retries', async () => {
+      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const realSetTimeout = globalThis.setTimeout;
+      vi.spyOn(globalThis, 'setTimeout').mockImplementation((callback, delay, ...args) => {
+        if (delay === 1500) {
+          queueMicrotask(callback);
+          return 1;
+        }
+        return realSetTimeout(callback, delay, ...args);
+      });
+      localStorage.setItem('sf_platform_token', 'platform-token');
+      fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+      fetchEnvironments.mockResolvedValue([]);
+      fetchOnboardingDraft.mockResolvedValue(null);
+      saveOnboardingDraft.mockRejectedValueOnce(new Error('draft save down'));
+
+      render(<OnboardingPage />);
+
+      // Moving to step 2 triggers the first (failing) autosave.
+      fireEvent.click(await screen.findByText('onboardingContinueAction'));
+
+      await waitFor(() => {
+        expect(consoleWarn).toHaveBeenCalledWith(
+          'Failed to save onboarding draft', expect.any(Error),
+        );
+      });
+      expect(saveOnboardingDraft).toHaveBeenCalledTimes(1);
+
+      // The failure reset lastSavedDraftRef, so the next form change retries
+      // instead of being suppressed as already saved.
+      fireEvent.change(screen.getByLabelText(/onboardingCompanyNameLabel/), {
+        target: { value: 'Acme SL' },
+      });
+
+      await waitFor(() => {
+        expect(saveOnboardingDraft).toHaveBeenCalledTimes(2);
+      });
+      expect(saveOnboardingDraft).toHaveBeenLastCalledWith(
+        expect.any(Function), '', 'platform-token',
+        expect.objectContaining({
+          step: 2,
+          form: expect.objectContaining({ clientName: 'Acme SL' }),
+        }),
+      );
+    });
+
     it('does not autosave a pristine step-1 form', async () => {
       const realSetTimeout = globalThis.setTimeout;
       vi.spyOn(globalThis, 'setTimeout').mockImplementation((callback, delay, ...args) => {
