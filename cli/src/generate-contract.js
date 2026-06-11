@@ -119,8 +119,11 @@ export function convertLogicToJs(rawExpr, columnMap, booleanFields) {
     // Convert the AD logical operators FIRST. The token rules below emit JS '&&'
     // (e.g. the "not empty" form), so running the &→&& / |→|| pass afterwards would
     // mangle them into ' &&  && '. AD never uses '&&'/'||', so this is safe.
-    .replace(/\s*\|\s*/g, ' || ')
-    .replace(/\s*&\s*/g, ' && ')
+    // The surrounding whitespace is bounded ({0,32}) rather than '\s*' so the match
+    // is strictly linear — an unbounded '\s*X\s*' is super-linear on all-whitespace
+    // input (ReDoS hotspot). 32 comfortably covers any real AD spacing.
+    .replace(/\s{0,32}\|\s{0,32}/g, ' || ')
+    .replace(/\s{0,32}&\s{0,32}/g, ' && ')
     // Empty / null / numeric forms next — they would otherwise leave raw @tokens
     // behind (the @Col@!='val' rules require a non-empty literal).
     .replace(/@(\w+)@!=?''/g, (_, col) => notEmptyExpr(col))
