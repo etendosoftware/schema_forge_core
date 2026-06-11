@@ -75,19 +75,25 @@ vi.mock('../StatementsToolbar', () => ({
 }));
 
 vi.mock('../StatementsTable', () => ({
-  StatementsTable: ({ statements, loading, currency, actions }) => (
+  StatementsTable: ({ statements, loading, currency, actions, selectedIds, onSelectionChange }) => (
     <div
       data-testid="stub-table"
       data-len={statements.length}
       data-loading={loading ? 'true' : 'false'}
       data-currency={currency}
       data-has-actions={actions ? 'true' : 'false'}
+      data-selected={selectedIds ? Array.from(selectedIds).join(',') : ''}
     >
       {statements.map((s) => (
         <div key={s.id}>
           <button type="button" data-testid={`row-${s.id}`} onClick={() => s.__select?.()}>
             {s.documentNo}
           </button>
+          <button
+            type="button"
+            data-testid={`row-select-${s.id}`}
+            onClick={() => onSelectionChange?.(s.id)}
+          />
           <button type="button" data-testid={`row-edit-${s.id}`} onClick={() => actions?.onEdit(s)} />
           <button type="button" data-testid={`row-process-${s.id}`} onClick={() => actions?.onProcess(s)} />
           <button type="button" data-testid={`row-reactivate-${s.id}`} onClick={() => actions?.onReactivate(s)} />
@@ -178,6 +184,18 @@ describe('ImportedStatementsTab', () => {
     deleteStatement.mockReset();
     toastSuccess.mockReset();
     toastError.mockReset();
+  });
+
+  it('exposes the filtered headers and current selection via ref (for the export button)', async () => {
+    const ref = { current: null };
+    render(<ImportedStatementsTab ref={ref} account={ACCOUNT} />);
+
+    // Default 30-day window keeps all three statements; none selected yet.
+    expect(ref.current.getFilteredStatements().map((s) => s.id)).toEqual(['s1', 's2', 's3']);
+    expect(ref.current.getSelectedStatementIds()).toEqual([]);
+
+    await userEvent.click(screen.getByTestId('row-select-s2'));
+    expect(ref.current.getSelectedStatementIds()).toEqual(['s2']);
   });
 
   it('renders the toolbar + table by default and forwards currency from the account', () => {
