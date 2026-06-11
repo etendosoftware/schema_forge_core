@@ -1,8 +1,11 @@
+import { useState } from 'react';
+import { Link2, Layers } from 'lucide-react';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusTag } from '@/components/ui/status-tag';
 import { cn } from '@/lib/utils';
 import { useBankStatementLines } from '@/hooks/useBankStatementLines';
+import { ReconciledTxnsModal } from './ReconciledTxnsModal';
 
 // Grid for the `mini` variant of the lines table.
 //   100        · date (fixed)
@@ -12,13 +15,14 @@ import { useBankStatementLines } from '@/hooks/useBankStatementLines';
 //   110        · withdrawal (out)
 //   110        · deposit (in)
 //   100        · status pill
+//   120        · transaction chip (reconciled movement)
 //   minmax(0, 1fr)  · trailing flexible spacer — absorbs leftover width on
 //                    wide viewports so the data columns stay close to each other.
 const MINI_GRID =
-  'grid grid-cols-[100px_minmax(140px,1fr)_minmax(140px,1fr)_minmax(140px,1fr)_110px_110px_100px_minmax(0,1fr)] gap-3';
+  'grid grid-cols-[100px_minmax(140px,1fr)_minmax(140px,1fr)_minmax(140px,1fr)_110px_110px_100px_120px_minmax(0,1fr)] gap-3';
 
 // Stable keys for the skeleton cells of each loading row (matches MINI_GRID).
-const SKELETON_CELL_KEYS = ['date', 'bpname', 'contact', 'glitem', 'out', 'in', 'matched'];
+const SKELETON_CELL_KEYS = ['date', 'bpname', 'contact', 'glitem', 'out', 'in', 'matched', 'txns'];
 
 // kind → (StatusTag tone, i18n key). Reusing the shared StatusTag keeps the
 // look consistent with the statement-level status pills above and the rest of
@@ -28,7 +32,7 @@ const SKELETON_CELL_KEYS = ['date', 'bpname', 'contact', 'glitem', 'out', 'in', 
 const MATCH_TONE = {
   auto:   { tone: 'success', labelKey: 'financeAccountStatementLinesStatusAuto' },
   manual: { tone: 'success', labelKey: 'financeAccountStatementLinesStatusManual' },
-  none:   { tone: 'neutral', labelKey: 'financeAccountStatementLinesStatusUnmatched' },
+  none:   { tone: 'info', labelKey: 'financeAccountStatementLinesStatusUnmatched' },
 };
 
 function MatchPill({ kind, ui }) {
@@ -36,12 +40,44 @@ function MatchPill({ kind, ui }) {
   return <StatusTag tone={entry.tone} label={ui(entry.labelKey)} />;
 }
 
+// "Transacción" cell: shows the reconciled movement(s) of the line. None → "—";
+// exactly one → a chip with its payment number; several → a "N transacciones"
+// chip. Any chip opens the ReconciledTxnsModal. Built array-first so a future
+// 1:N reconciliation needs no UI change.
+function TxnChip({ line, ui, onOpen }) {
+  const txns = line.txns || [];
+  if (txns.length === 0) {
+    return <span className="text-[#C1C3CC]">—</span>;
+  }
+  const multi = txns.length > 1;
+  return (
+    <button
+      type="button"
+      data-testid={`statement-line-txn-${line.id}`}
+      onClick={() => onOpen(line)}
+      className={cn(
+        'inline-flex h-6 max-w-full items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium',
+        multi
+          ? 'border-[#E8EAEF] bg-[#F5F7F9] font-semibold text-[#121217] hover:bg-[#EBEEF2]'
+          : 'border-[#E8EAEF] bg-white text-[#3F3F50] hover:bg-[#F5F7F9] hover:text-[#121217]',
+      )}
+    >
+      {multi ? <Layers className="h-3 w-3 flex-none text-[#6C6C89]" /> : <Link2 className="h-3 w-3 flex-none text-[#6C6C89]" />}
+      <span className="truncate">
+        {multi ? ui('financeAccountStatementLinesTxnChipMulti', { count: txns.length }) : txns[0].documentNo}
+      </span>
+    </button>
+  );
+}
+
 function formatDate(iso, bcpLocale) {
   if (!iso) return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
+  // Date-only value sent as UTC midnight — format in UTC so a negative-offset
+  // timezone doesn't shift it to the previous day.
   return new Intl.DateTimeFormat(bcpLocale, {
-    day: '2-digit', month: '2-digit', year: 'numeric',
+    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
   }).format(d);
 }
 
@@ -76,6 +112,7 @@ export function StatementLinesInline({ statementId, currency = 'EUR' }) {
   const { locale: appLocale } = useLocaleSwitch();
   const bcpLocale = (appLocale || 'es_ES').replace('_', '-');
   const { lines, loading } = useBankStatementLines(statementId);
+  const [txnLine, setTxnLine] = useState(null);
 
   return (
     <div className="ml-10 mr-3 rounded-lg border border-[#E8EAEF] bg-white px-4 pb-1">
@@ -93,12 +130,16 @@ export function StatementLinesInline({ statementId, currency = 'EUR' }) {
         <span>{ui('financeAccountStatementLinesColDramount')}</span>
         <span>{ui('financeAccountStatementLinesColCramount')}</span>
         <span>{ui('financeAccountStatementLinesColMatched')}</span>
+        <span>{ui('financeAccountStatementLinesColTransaction')}</span>
         <span aria-hidden="true" />
       </div>
 
       {/* Body */}
-      {renderBody({ loading, lines, ui, currency, bcpLocale })}
+      {renderBody({ loading, lines, ui, currency, bcpLocale, onOpenTxns: setTxnLine })}
 
+      {txnLine ? (
+        <ReconciledTxnsModal line={txnLine} currency={currency} onClose={() => setTxnLine(null)} />
+      ) : null}
     </div>
   );
 }
@@ -107,7 +148,7 @@ export function StatementLinesInline({ statementId, currency = 'EUR' }) {
 // Body renderer extracted to avoid the nested ternary Sonar flagged on the
 // previous loading / empty / rows branching.
 // ─────────────────────────────────────────────────────────────────────────────
-function renderBody({ loading, lines, ui, currency, bcpLocale }) {
+function renderBody({ loading, lines, ui, currency, bcpLocale, onOpenTxns }) {
   if (loading) {
     return [1, 2, 3].map((n) => (
       <div key={n} className={cn(MINI_GRID, 'border-b border-[#F0F2F5] px-3 py-2.5')}>
@@ -126,13 +167,13 @@ function renderBody({ loading, lines, ui, currency, bcpLocale }) {
     );
   }
   return lines.map((line) => (
-    <LineRow key={line.id} line={line} ui={ui} currency={currency} bcpLocale={bcpLocale} />
+    <LineRow key={line.id} line={line} ui={ui} currency={currency} bcpLocale={bcpLocale} onOpenTxns={onOpenTxns} />
   ));
 }
 
 // Single row of the lines table — split out so we can render the amount
 // columns with simple if/else branching instead of nested ternaries.
-function LineRow({ line, ui, currency, bcpLocale }) {
+function LineRow({ line, ui, currency, bcpLocale, onOpenTxns }) {
   const amount = Number(line.amount) || 0;
   const isDebit = amount < 0;
   const out = isDebit ? -amount : 0;
@@ -163,6 +204,7 @@ function LineRow({ line, ui, currency, bcpLocale }) {
         <AmountCell value={inn} sign="+" toneClass="font-semibold text-green-700" currency={currency} bcpLocale={bcpLocale} />
       </span>
       <span><MatchPill kind={matchKind} ui={ui} /></span>
+      <span className="min-w-0"><TxnChip line={line} ui={ui} onOpen={onOpenTxns} /></span>
       <span aria-hidden="true" />
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, FileText } from 'lucide-react';
+import { ChevronDown, FileText, Pencil, Trash2 } from 'lucide-react';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -10,21 +10,25 @@ import { StatementRowKebab } from './StatementRowKebab';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Layout — grid (NOT <table>) so the expanded accordion row can span all cols.
+// Text columns use minmax(0,…) so they SHRINK + truncate instead of forcing a
+// horizontal scroll on narrower viewports (e.g. 1440px). Only the columns whose
+// content has a hard minimum (dates, amounts, status pill) keep a fixed width.
 //   28        · chevron
 //   36        · selection checkbox
-//   110       · doc nº
-//   1fr       · name
-//   0.8fr     · file name
-//   1fr       · notes
-//   120       · import date
-//   120       · transaction date
-//   80        · lines (numeric right-aligned in the cells)
-//   120       · total amount
-//   140       · status pill
-//   minmax(40, auto) · trailing cell for the per-row kebab
+//   100       · doc nº
+//   1.6fr     · name (shrinkable)
+//   1fr       · file name (shrinkable)
+//   1fr       · notes (shrinkable)
+//   110       · import date
+//   110       · transaction date
+//   64        · lines (numeric right-aligned)
+//   100       · withdrawal (out)
+//   100       · deposit (in)
+//   112       · status pill
+//   minmax(36, auto) · trailing spacer (actions float as an overlay)
 // ─────────────────────────────────────────────────────────────────────────────
 const GRID =
-  'grid grid-cols-[28px_36px_110px_minmax(160px,1fr)_minmax(120px,0.8fr)_minmax(120px,1fr)_120px_120px_80px_110px_110px_140px_minmax(40px,auto)] gap-4';
+  'grid grid-cols-[28px_36px_100px_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_116px_116px_64px_100px_100px_120px_minmax(36px,auto)] gap-3';
 
 // Stable keys for the skeleton cells (kept in lockstep with the grid above) so
 // we don't rely on the array index — Sonar/React lint flag that as unstable.
@@ -66,7 +70,7 @@ function formatMoney(amount, currency, bcpLocale) {
 // ─────────────────────────────────────────────────────────────────────────────
 const STATUS_TO_TONE = {
   DRAFT: 'neutral',
-  PENDING: 'neutral',
+  PENDING: 'info',
   PARTIAL: 'warning',
   RECONCILED: 'success',
 };
@@ -212,6 +216,46 @@ function renderBody({
 // ─────────────────────────────────────────────────────────────────────────────
 // Internals
 // ─────────────────────────────────────────────────────────────────────────────
+// Trailing per-row actions: Edit + Delete reveal on hover (drafts only, mirroring
+// the sales-order grid), with the kebab in the middle holding Procesar / Reactivar.
+function RowActions({ statement: s, actions, ui }) {
+  const isDraft = s.status === 'DRAFT' || s.processed === 'N';
+  const iconBtn = 'inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors';
+  return (
+    <>
+      {isDraft ? (
+        <button
+          type="button"
+          data-testid={`statement-row-edit-${s.id}`}
+          aria-label={ui('financeAccountStatementsRowEdit')}
+          title={ui('financeAccountStatementsRowEdit')}
+          onClick={(e) => { e.stopPropagation(); actions.onEdit(s); }}
+          className={cn(iconBtn, 'text-[#828FA3] hover:bg-[#E8EAEF] hover:text-[#121217]')}
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
+      ) : null}
+      <StatementRowKebab
+        statement={s}
+        onProcess={actions.onProcess}
+        onReactivate={actions.onReactivate}
+      />
+      {isDraft ? (
+        <button
+          type="button"
+          data-testid={`statement-row-delete-${s.id}`}
+          aria-label={ui('financeAccountStatementsRowDelete')}
+          title={ui('financeAccountStatementsRowDelete')}
+          onClick={(e) => { e.stopPropagation(); actions.onDelete(s); }}
+          className={cn(iconBtn, 'text-[#D50B3E] hover:bg-[#FBE9EE] hover:text-[#A3082F]')}
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      ) : null}
+    </>
+  );
+}
+
 function StatementRow({
   statement: s, currency, bcpLocale, ui, open, onToggle, actions, selected, onSelectionChange,
 }) {
@@ -273,17 +317,15 @@ function StatementRow({
             ui={ui}
           />
         </span>
-        <span className="flex items-center justify-end">
-          {actions ? (
-            <StatementRowKebab
-              statement={s}
-              onEdit={actions.onEdit}
-              onProcess={actions.onProcess}
-              onReactivate={actions.onReactivate}
-              onDelete={actions.onDelete}
-            />
-          ) : null}
-        </span>
+        <span aria-hidden="true" />
+        {actions ? (
+          <div
+            className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 items-center gap-0.5 rounded-lg bg-white px-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <RowActions statement={s} actions={actions} ui={ui} />
+          </div>
+        ) : null}
       </div>
 
       {open ? (
