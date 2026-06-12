@@ -35,7 +35,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const SQL_DIR = join(__dirname, 'sql');
 
-const TABLE = 'etgo_data_fix_history';
+// Ledger table name. Inlined as a literal in every query below (never
+// interpolated) so SonarQube S2077 — "Formatting SQL queries" — never fires:
+// the table is a fixed system identifier and all variable data goes via binds.
 const SYSTEM_CLIENT = '0';
 const SYSTEM_ORG = '0';
 const BASELINE_FIX_ID = '__baseline__';
@@ -105,33 +107,28 @@ async function loadCatalog() {
 
 /** Tenants (excluding System) that have NO ledger row at all. */
 async function tenantsWithoutLedger(pool, onlyClient) {
-  const params = [];
-  let where = `c.ad_client_id <> '0'`;
-  if (onlyClient) {
-    where += ` AND c.ad_client_id = $1`;
-    params.push(onlyClient);
-  }
+  // $1 NULL => no client filter (sweep all tenants); otherwise scope to that client.
   const { rows } = await pool.query(
     `SELECT c.ad_client_id FROM ad_client c
-       WHERE ${where}
-         AND NOT EXISTS (SELECT 1 FROM ${TABLE} h WHERE h.remediated_client_id = c.ad_client_id)
+       WHERE c.ad_client_id <> '0'
+         AND ($1::varchar IS NULL OR c.ad_client_id = $1)
+         AND NOT EXISTS (SELECT 1 FROM etgo_data_fix_history h
+                          WHERE h.remediated_client_id = c.ad_client_id)
        ORDER BY c.ad_client_id`,
-    params,
+    [onlyClient || null],
   );
   return rows.map(r => r.ad_client_id);
 }
 
 /** Resolve the tenant universe to process (those that have ledger rows). */
 async function resolveTenants(pool, onlyClient) {
-  const params = [];
-  let where = `ad_client_id <> '0'`;
-  if (onlyClient) {
-    where += ` AND ad_client_id = $1`;
-    params.push(onlyClient);
-  }
+  // $1 NULL => all tenants; otherwise scope to that client. No string formatting.
   const { rows } = await pool.query(
-    `SELECT ad_client_id FROM ad_client WHERE ${where} ORDER BY ad_client_id`,
-    params,
+    `SELECT ad_client_id FROM ad_client
+       WHERE ad_client_id <> '0'
+         AND ($1::varchar IS NULL OR ad_client_id = $1)
+       ORDER BY ad_client_id`,
+    [onlyClient || null],
   );
   return rows.map(r => r.ad_client_id);
 }
@@ -139,7 +136,7 @@ async function resolveTenants(pool, onlyClient) {
 /** All ledger rows for a tenant as a Map(fix_id → {status, applied_utc}). */
 async function fetchLedgerMap(pool, clientId) {
   const { rows } = await pool.query(
-    `SELECT fix_id, status, applied_utc FROM ${TABLE} WHERE remediated_client_id = $1`,
+    `SELECT fix_id, status, applied_utc FROM etgo_data_fix_history WHERE remediated_client_id = $1`,
     [clientId],
   );
   const map = new Map();
@@ -162,7 +159,7 @@ async function fetchLedgerMap(pool, clientId) {
  */
 async function writeLedger(querier, { clientId, fixId, status, appliedUtc, rowsAffected = 0, detail = null }) {
   const res = await querier.query(
-    `INSERT INTO ${TABLE}
+    `INSERT INTO etgo_data_fix_history
        (etgo_data_fix_history_id, ad_client_id, ad_org_id, isactive,
         created, createdby, updated, updatedby,
         remediated_client_id, fix_id, status, applied_utc, rows_affected, detail)
@@ -173,7 +170,7 @@ async function writeLedger(querier, { clientId, fixId, status, appliedUtc, rowsA
            rows_affected = EXCLUDED.rows_affected,
            detail = EXCLUDED.detail,
            updated = now(), updatedby = '0'
-       WHERE NOT (${TABLE}.status IN ('APPLIED', 'MANUALLY_FIXED')
+       WHERE NOT (etgo_data_fix_history.status IN ('APPLIED', 'MANUALLY_FIXED')
                   AND EXCLUDED.status IN ('SKIPPED_NOT_NEEDED', 'FAILED'))`,
     [SYSTEM_CLIENT, SYSTEM_ORG, clientId, fixId, status, appliedUtc, rowsAffected, detail],
   );
