@@ -7,6 +7,8 @@ export { KanbanBoard } from './KanbanBoard';
 export { KPIHeader } from './KPIHeader';
 export { ListView } from './ListView';
 export { ListModalWindow } from './ListModalWindow';
+export { ListModalCell, cellAlignClass } from './listModalCells.jsx';
+export { ListModalToolbarFilter } from './ListModalToolbarFilter.jsx';
 export { DetailView } from './DetailView';
 export { default as InlineLinesPanel } from './InlineLinesPanel';
 export { default as LinesBottomSection } from './LinesBottomSection';

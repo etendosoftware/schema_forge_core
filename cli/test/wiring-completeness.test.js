@@ -128,6 +128,7 @@ describe('Wiring completeness', () => {
 
   describe('Every entity window in menu.json has mockData in App.jsx loadAllMockData', () => {
     for (const win of entityWindows) {
+      if (listModalArtifacts.has(win)) continue; // list-modal windows fetch real NEO data — no generated mockData
       it(`${win} mockData should be imported in App.jsx`, () => {
         const pattern = `/${win}/`;
         assert.ok(

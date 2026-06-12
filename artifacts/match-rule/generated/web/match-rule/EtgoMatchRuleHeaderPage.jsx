@@ -2,29 +2,29 @@ import { ListModalWindow } from '@/components/contract-ui';
 
 // @sf-generated-start columns:etgoMatchRuleHeader
 const columns = [
-  { key: 'priority', column: 'Priority', type: 'number', label: 'Priority', inlineEdit: true },
-  { key: 'name', column: 'Name', type: 'string', label: 'Name' },
-  { key: 'textCondition', column: 'TextCondition', type: 'enum', label: 'Text Condition', enumLabels: { 'C': 'Contains', 'R': 'Regex', 'S': 'Starts with' }, badge: true },
-  { key: 'transactionType', column: 'TransactionType', type: 'enum', label: 'Transaction Type', enumLabels: { 'B': 'Bank fee', 'O': 'Other', 'R': 'Recurring', 'H': 'Tax retention', 'T': 'Transfer' }, badge: true },
-  { key: 'accountingAccount', column: 'C_GLItem_ID', type: 'selector', label: 'Accounting Account' },
-  { key: 'amountTolerancePct', column: 'AmountTolerancePct', type: 'number', label: 'Amount Tolerance Pct' },
-  { key: 'matchCount', column: 'MatchCount', type: 'number', label: 'Match Count' },
-  { key: 'active', column: 'Isactive', type: 'boolean', label: 'Active', toggle: true },
+  { key: 'priority', column: 'Priority', type: 'number', label: 'Priority', labelKey: 'matchRuleColPriority', inlineEdit: true, cellType: 'priorityPill' },
+  { key: 'name', column: 'Name', type: 'string', label: 'Name', labelKey: 'matchRuleColName', cellType: 'nameWithSubline', subField: 'businessPartner' },
+  { key: 'textCondition', column: 'TextCondition', type: 'enum', label: 'Text Condition', labelKey: 'matchRuleColCondition', enumLabels: { 'C': 'Contains', 'R': 'Regex', 'S': 'Starts with' }, cellType: 'conditionChip', kindField: 'textCondition', patternField: 'textPattern', kindLabels: {"C":"matchRuleConditionContains","S":"matchRuleConditionStartsWith","R":"matchRuleConditionRegex"} },
+  { key: 'transactionType', column: 'TransactionType', type: 'enum', label: 'Transaction Type', labelKey: 'matchRuleColType', enumLabels: { 'B': 'Bank fee', 'O': 'Other', 'R': 'Recurring', 'H': 'Tax retention', 'T': 'Transfer' }, cellType: 'typePill', tones: {"H":"blue","T":"neutral","B":"amber","R":"green","O":"neutral"} },
+  { key: 'accountingAccount', column: 'C_ElementValue_ID', type: 'selector', label: 'Accounting Account', labelKey: 'matchRuleColAccount' },
+  { key: 'amountTolerancePct', column: 'AmountTolerancePct', type: 'number', label: 'Amount Tolerance Pct', labelKey: 'matchRuleColTolerance', cellType: 'percent' },
+  { key: 'matchCount', column: 'MatchCount', type: 'number', label: 'Match Count', labelKey: 'matchRuleColReconciliations', cellType: 'boldText' },
+  { key: 'active', column: 'Isactive', type: 'boolean', label: 'Active', labelKey: 'matchRuleColActive', toggle: true, cellType: 'toggle' },
 ];
 // @sf-generated-end columns:etgoMatchRuleHeader
 
 // @sf-generated-start fields:etgoMatchRuleHeader
 const fields = [
-  { key: 'name', column: 'Name', type: 'text', label: 'Name', required: true, section: 'general' },
-  { key: 'textPattern', column: 'TextPattern', type: 'text', label: 'Text Pattern', required: true, section: 'general', span: 2 },
-  { key: 'financialAccount', column: 'FIN_Financial_Account_ID', type: 'selector', label: 'Financial Account', reference: 'Financial_Account', inputMode: 'selector', section: 'general' },
+  { key: 'name', column: 'Name', type: 'text', label: 'Name', required: true, section: 'general', placeholderKey: 'matchRuleNamePlaceholder' },
+  { key: 'textPattern', column: 'TextPattern', type: 'text', label: 'Text Pattern', required: true, section: 'general', placeholderKey: 'matchRulePatternPlaceholder' },
+  { key: 'financialAccount', column: 'FIN_Financial_Account_ID', type: 'selector', label: 'Financial Account', reference: 'Financial_Account', inputMode: 'selector', section: 'general', emptyOptionLabelKey: 'matchRuleAllAccounts' },
   { key: 'transactionType', column: 'TransactionType', type: 'select', label: 'Transaction Type', section: 'general', options: [{ value: 'B', label: 'Bank fee' }, { value: 'O', label: 'Other' }, { value: 'R', label: 'Recurring' }, { value: 'H', label: 'Tax retention' }, { value: 'T', label: 'Transfer' }] },
-  { key: 'accountingAccount', column: 'C_GLItem_ID', type: 'selector', label: 'Accounting Account', reference: 'GLItem', inputMode: 'selector', section: 'general' },
+  { key: 'accountingAccount', column: 'C_ElementValue_ID', type: 'selector', label: 'Accounting Account', reference: 'ElementValue', inputMode: 'selector', section: 'general' },
   { key: 'textCondition', column: 'TextCondition', type: 'select', label: 'Text Condition', required: true, section: 'general', options: [{ value: 'C', label: 'Contains' }, { value: 'R', label: 'Regex' }, { value: 'S', label: 'Starts with' }] },
   { key: 'amountTolerancePct', column: 'AmountTolerancePct', type: 'number', label: 'Amount Tolerance Pct', section: 'general', defaultValue: '0' },
   { key: 'priority', column: 'Priority', type: 'number', label: 'Priority', required: true, section: 'general' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner', reference: 'BPartner', inputMode: 'selector', section: 'general' },
-  { key: 'createTransaction', column: 'CreateTransaction', type: 'checkbox', label: 'Create Transaction', section: 'general', span: 2 },
+  { key: 'createTransaction', column: 'CreateTransaction', type: 'checkbox', label: 'Create Transaction', section: 'general', help: 'matchRuleCreateTransactionHelper' },
   { key: 'project', column: 'C_Project_ID', type: 'selector', label: 'Project', reference: 'Project', inputMode: 'selector', section: 'dimensions' },
   { key: 'costCenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'Costcenter', inputMode: 'selector', section: 'dimensions' },
   { key: 'user1Dimension', column: 'User1_ID', type: 'selector', label: 'User1 Dimension', reference: 'User1', inputMode: 'selector', section: 'dimensions' },
@@ -42,16 +42,71 @@ const sections = [
 const filters = ['name', 'textPattern'];
 // @sf-generated-end fields:etgoMatchRuleHeader
 
-const breadcrumb = 'Finance / Match Rule';
+const breadcrumb = 'Finance / Accounts / Match Rule';
 const listModalConfig = {
   "titleKey": "matchRuleNewTitle",
   "editTitleKey": "matchRuleEditTitle",
+  "subtitleKey": "matchRuleNewSubtitle",
+  "editSubtitleKey": null,
+  "submitLabelKey": "matchRuleSubmitCreate",
+  "editSubmitLabelKey": "matchRuleSubmitSave",
   "bannerKey": "matchRuleBanner",
   "searchPlaceholderKey": "matchRuleSearchPlaceholder",
   "newLabelKey": "matchRuleNew",
   "autoPriorityField": "priority",
   "autoPriorityStep": 10,
-  "identifierField": null
+  "identifierField": null,
+  "footerToggleField": "createTransaction",
+  "sectionGrid": {
+    "general": 3,
+    "dimensions": 4
+  },
+  "backLabelKey": "cancel",
+  "backTo": null,
+  "toolbarFilters": [
+    {
+      "key": "transactionType",
+      "field": "transactionType",
+      "allLabelKey": "matchRuleFilterAllRules",
+      "options": [
+        {
+          "value": "H",
+          "labelKey": "matchRuleTxnTypeRetention"
+        },
+        {
+          "value": "T",
+          "labelKey": "matchRuleTxnTypeTransfer"
+        },
+        {
+          "value": "B",
+          "labelKey": "matchRuleTxnTypeBankFee"
+        },
+        {
+          "value": "R",
+          "labelKey": "matchRuleTxnTypeRecurring"
+        },
+        {
+          "value": "O",
+          "labelKey": "matchRuleTxnTypeOther"
+        }
+      ]
+    },
+    {
+      "key": "active",
+      "field": "active",
+      "allLabelKey": "matchRuleFilterAllStates",
+      "options": [
+        {
+          "value": "Y",
+          "labelKey": "matchRuleFilterActive"
+        },
+        {
+          "value": "N",
+          "labelKey": "matchRuleFilterInactive"
+        }
+      ]
+    }
+  ]
 };
 
 export const api = {
@@ -77,8 +132,8 @@ export const api = {
     {
       "entity": "etgoMatchRuleHeader",
       "field": "accountingAccount",
-      "column": "C_GLItem_ID",
-      "reference": "GLItem",
+      "column": "C_ElementValue_ID",
+      "reference": "ElementValue",
       "inputMode": "selector",
       "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/accountingAccount"
     },
@@ -179,7 +234,7 @@ export const api = {
       "TextCondition": "Condición sobre el concepto",
       "TextPattern": "Patrón a buscar",
       "TransactionType": "Tipo de transacción",
-      "C_GLItem_ID": "Cuenta contable",
+      "C_ElementValue_ID": "Cuenta contable",
       "AmountTolerancePct": "Tolerancia de importe (%)",
       "CreateTransaction": "Crear transacción automáticamente",
       "MatchCount": "Conciliaciones",
@@ -200,7 +255,7 @@ export const api = {
       "TextCondition": "Concept condition",
       "TextPattern": "Pattern to match",
       "TransactionType": "Transaction type",
-      "C_GLItem_ID": "Accounting account",
+      "C_ElementValue_ID": "Accounting account",
       "AmountTolerancePct": "Amount tolerance (%)",
       "CreateTransaction": "Create transaction automatically",
       "MatchCount": "Reconciliations",

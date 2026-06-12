@@ -69,7 +69,7 @@ function PopupSearchInput({ field, value, displayValue, onChange, label, selecto
         type="button"
         onClick={() => setOpen(true)}
         data-testid={`field-${field.key}`}
-        className="w-full h-10 text-sm rounded-lg border border-[#D1D4DB] bg-background p-2 text-left flex items-center gap-2 shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+        className="w-full h-10 text-sm rounded-lg border border-[#D1D4DB] bg-white p-2 text-left flex items-center gap-2 shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
       >
         <Search className="h-4 w-4 text-muted-foreground shrink-0" />
         {displayText ? (
@@ -464,7 +464,7 @@ function LookupFormField({ field, value, displayValue, selectorUrl, selectorCont
         type="button"
         data-testid={`field-${field.key}`}
         onClick={() => setOpen(true)}
-        className="w-full flex items-center gap-2 h-10 rounded-lg border border-[#D1D4DB] bg-background p-2 text-sm text-left shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+        className="w-full flex items-center gap-2 h-10 rounded-lg border border-[#D1D4DB] bg-white p-2 text-sm text-left shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
       >
         <Search className="h-4 w-4 text-muted-foreground shrink-0" />
         {display ? (
@@ -513,7 +513,7 @@ function applyLookupAuxData(auxData, isGross, onChange, f) {
   }
 }
 
-function renderSelectField(f, data, label, isReadOnly, onChange, ui, tMenu) {
+function renderSelectField(f, data, label, isReadOnly, onChange, ui, tMenu, optionalSuffix = false) {
   let selectValue;
   if (f.valueType === 'boolean') {
     if (data?.[f.key] === true || data?.[f.key] === 'Y' || data?.[f.key] === 'true') {
@@ -531,7 +531,7 @@ function renderSelectField(f, data, label, isReadOnly, onChange, ui, tMenu) {
   return (
       <div key={f.key} className="space-y-1.5">
         <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-          {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
+          {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
         </Label>
         <Select
             value={selectValue || '__empty__'}
@@ -545,7 +545,7 @@ function renderSelectField(f, data, label, isReadOnly, onChange, ui, tMenu) {
             disabled={isReadOnly}
             required={f.required}
         >
-          <SelectTrigger id={f.key} data-testid={`field-${f.key}`} className="focus:ring-2 focus:ring-primary">
+          <SelectTrigger id={f.key} data-testid={`field-${f.key}`} className="bg-white focus:ring-2 focus:ring-primary">
             <SelectValue placeholder={buildSelectPlaceholder(ui, label)}/>
           </SelectTrigger>
           <SelectContent>
@@ -587,6 +587,32 @@ function requiredAsterisk(f) {
   return f.required ? <span className="text-red-500 ml-0.5">*</span> : '';
 }
 
+/**
+ * Trailing marker rendered after a field label.
+ * Required fields get a red asterisk; otherwise, when `optionalSuffix` is enabled
+ * for the form (Figma list-modal style), a muted "(opcional)" suffix is shown.
+ * Generic + opt-in: forms that don't pass `optionalSuffix` keep the old behaviour
+ * (asterisk only). The suffix text comes from the i18n `optional` key.
+ */
+function labelMarker(f, isReadOnly, optionalSuffix, ui) {
+  if (f.required && !isReadOnly) return <span className="text-[#F53D6B] ml-0.5">*</span>;
+  if (optionalSuffix && !isReadOnly) {
+    return <span className="ml-1 font-normal text-[#6C6C89]">({ui('optional')})</span>;
+  }
+  return '';
+}
+
+/**
+ * Helper text rendered below a field input (e.g. "Menor número = mayor prioridad").
+ * `f.help` is an i18n key resolved via useUI; raw strings are passed through so the
+ * component stays usable with literal copy too.
+ */
+function FieldHelp({ field, ui }) {
+  if (!field?.help) return null;
+  const text = ui(field.help) ?? field.help;
+  return <p className="text-sm leading-6 text-[#6C6C89]" data-testid={`help-${field.key}`}>{text}</p>;
+}
+
 function formatReadOnlyDisplayValue(f, isReadOnly, rawDisplayValue) {
   if (!(f.type === 'number' && isReadOnly && Number.isFinite(Number(rawDisplayValue)))) {
     return rawDisplayValue;
@@ -609,7 +635,7 @@ function requiredAsteriskIfEditable(f, isReadOnly) {
 }
 
 function getInputStateClass(isReadOnly) {
-  return isReadOnly ? 'bg-muted/50' : 'focus:ring-2 focus:ring-primary focus:outline-none';
+  return isReadOnly ? 'bg-muted/50' : 'bg-white focus:ring-2 focus:ring-primary focus:outline-none';
 }
 
 function DependentFkField(props) {
@@ -665,7 +691,7 @@ function getFieldValue(isReadOnly, displayValue, data, f) {
 }
 
 function getReadOnlyBgClass(isReadOnly) {
-  return isReadOnly ? 'bg-muted/50 cursor-default' : 'bg-background';
+  return isReadOnly ? 'bg-muted/50 cursor-default' : 'bg-white';
 }
 
 /**
@@ -679,7 +705,7 @@ function getReadOnlyBgClass(isReadOnly) {
  *  - catalogs: Record<string, Array<{ id, name, ... }>> for FK reference data
  *  - displayLogic: { readOnly: { fieldName: bool }, visibility: { fieldName: bool } }
  */
-export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {}, readOnly: formReadOnly = false, onFieldBlur, savingField = null, labelOverrides, registerFields, fieldErrors }) {
+export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {}, readOnly: formReadOnly = false, onFieldBlur, savingField = null, labelOverrides, registerFields, fieldErrors, optionalSuffix = false }) {
   const t = useLabel(labelOverrides ?? api?.labelOverrides);
   const tMenu = useMenuLabel();
   const ui = useUI();
@@ -830,7 +856,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       return (
           <div key={f.key} className="space-y-1.5">
             <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-              {label}{requiredAsterisk(f)}
+              {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
             </Label>
             <SelectorInput
                 entityName={entity}
@@ -942,7 +968,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       );
     }
     if (isSelectFieldWithOptions(f)) {
-      return renderSelectField(f, data, label, isReadOnly, onChange, ui, tMenu);
+      return renderSelectField(f, data, label, isReadOnly, onChange, ui, tMenu, optionalSuffix);
     }
     function buildTextareaAttrs(rows) {
       return { rowCount: rows ?? 4, minHeightClass: rows ? '' : ' min-h-[96px]' };
@@ -962,6 +988,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             value={getFieldValue(isReadOnly, displayValue, data, f)}
             onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
             onBlur={() => onFieldBlur?.(f.key)}
+            placeholder={!isReadOnly && f.placeholderKey ? (ui(f.placeholderKey) ?? f.placeholderKey) : undefined}
             disabled={isReadOnly}
             className={[
               'flex w-full rounded-lg border border-[#D1D4DB] p-2 text-sm shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
@@ -997,7 +1024,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     return (
       <div key={f.key} className="space-y-1.5">
         <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-          {label}{requiredAsteriskIfEditable(f, isReadOnly)}
+          {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
         </Label>
         <Input
           id={f.key}
@@ -1007,6 +1034,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
           value={getFieldValue(isReadOnly, displayValue, data, f)}
           onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
           onBlur={() => onFieldBlur?.(f.key)}
+          placeholder={!isReadOnly && f.placeholderKey ? (ui(f.placeholderKey) ?? f.placeholderKey) : undefined}
           className={getInputStateClass(isReadOnly)}
           required={f.required && !isReadOnly}
           disabled={isReadOnly || savingField === f.key}
@@ -1044,6 +1072,18 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
 
     let node = renderField(f);
     const err = fieldErrors?.[f.key];
+
+    // Append the field help text (if any) inside the field wrapper, below the input.
+    // Done centrally here so every field branch gets help support without per-branch edits.
+    if (f.help && React.isValidElement(node)) {
+      const existing = node.props.children;
+      node = React.cloneElement(
+        node,
+        { className: `${node.props.className ?? ''}`.trim() },
+        existing,
+        <FieldHelp key="__help" field={f} ui={ui} />,
+      );
+    }
 
     if (err && React.isValidElement(node)) {
       const existing = node.props.children;

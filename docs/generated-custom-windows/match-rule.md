@@ -14,7 +14,18 @@ Use this window to maintain the catalog of **matching rules** ("Reglas de matche
 
 ## What this window should allow
 
-- **List** all rules in a grid: Priority, Name, Concept condition (badge), Transaction type (badge), Accounting account, Amount tolerance %, Reconciliations (match count, read-only), and an inline **Active** toggle.
+- **List** all rules in a grid styled to the Figma design (Inter, white rows, `#E8EAEF` separators). Columns and their cell renderers (`cellType`, driven by the contract):
+  - Prioridad — `priorityPill` (bordered neutral pill).
+  - Nombre — `nameWithSubline` (bold name + a muted `→ <counterparty>` sub-line sourced from `businessPartner`).
+  - Condición — `conditionChip` (derived text `<kind>: "<pattern>"`, e.g. `empieza con: "IMPUESTO"`; kind label is i18n from `textCondition` C/S/R, pattern from `textPattern`).
+  - Tipo — `typePill` (rounded-full pill of the transaction type, toned per value).
+  - Cuenta contable — plain text (the GL item).
+  - Tolerancia — `percent` (`N%`).
+  - Conciliaciones — `boldText` (read-only match count).
+  - Activa — `toggle` (inline `Switch`, `PATCH`).
+  - Each row also shows a left **drag handle** (visual only; drag-to-reorder is deferred) and a hover **edit** icon button that opens the edit modal.
+- **Toolbar**: a **back button** ("Cancelar", navigates to the referrer), two **dropdown filters** ("Todas las reglas" = filter by transaction type; "Todos los estados" = filter by Active Y/N), a **search** box ("Buscar…"), and the primary **"+ Nueva regla"** button. Filters and search are applied client-side over the loaded rows.
+- **Banner**: a dismissible info banner (`bannerKey`) explaining that rules are evaluated by ascending priority and only apply to statement lines the standard algorithm could not match.
 - **Search** rules by name or pattern (local filter over the list).
 - **Create** a rule via the "Nueva regla" button → modal. The modal groups fields:
   - *General*: Name*, Pattern to match*, Applies to (financial account / all), Transaction type, Accounting account, Concept condition*, Amount tolerance, Priority*, Default business partner, "Create transaction automatically" toggle.
@@ -62,7 +73,8 @@ delete DELETE /sws/neo/match-rule/etgoMatchRuleHeader/{id}
 
 ## Automated evidence
 
-- `artifacts/match-rule/decisions.json` declares `layoutType: "list-modal"`, the `templateConfig`, the grid/modal field classification, and the `inlineToggle`/`inlineEdit` flags.
+- `artifacts/match-rule/decisions.json` declares `layoutType: "list-modal"`, the `templateConfig` (incl. `toolbarFilters` and `backLabelKey`), the grid/modal field classification, the per-field `cellType` config (`priorityPill`/`nameWithSubline`/`conditionChip`/`typePill`/`percent`/`boldText`/`toggle`), and the `inlineToggle`/`inlineEdit` flags.
+- `tools/app-shell/src/components/contract-ui/listModalCells.jsx` + `ListModalToolbarFilter.jsx` — the generic cell-renderer registry and toolbar dropdown used by `list-modal` (with `__tests__/listModalCells.vitest.jsx` and `__tests__/ListModalToolbarFilter.vitest.jsx`).
 - `artifacts/match-rule/contract.json` carries `frontendContract.window.layoutType = "list-modal"` + `templateConfig`, the `etgoMatchRuleHeader` fields, and the `apiPrediction` selectors.
 - `artifacts/match-rule/generated/web/match-rule/EtgoMatchRuleHeaderPage.jsx` renders `<ListModalWindow>` with the generated `columns`/`fields`/`sections`/`config`.
 - `tools/app-shell/src/components/contract-ui/ListModalWindow.jsx` + `__tests__/ListModalWindow.vitest.jsx` — the generic component and its tests.

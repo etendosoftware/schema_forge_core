@@ -70,7 +70,7 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 | `category` | string | Inferred | `"sales"`, `"purchases"`, `"inventory"`, `"finance"`, `"accounting"`, `"master"`, `"project"`, `"general"` | UI routing and navigation grouping. |
 | `name` | string | From AD | — | Display name for breadcrumbs and titles. |
 | `layoutType` | string | `"default"` | `"default"`, `"kanban"`, `"calendar"`, `"list-modal"`, `"custom"` | Frontend rendering mode. See `docs/window-templates.md`. |
-| `templateConfig` | object | `null` | Layout-specific | Extra config for non-default layouts. `kanban`/`calendar`: `groupBy`, `dateField`, etc. `list-modal`: `titleKey`, `editTitleKey`, `bannerKey`, `searchPlaceholderKey`, `newLabelKey`, `autoPriorityField`, `autoPriorityStep`, `sections` (ordered `[{ key, label }]`; all strings are i18n keys). See the `list-modal` section in `docs/window-templates.md`. |
+| `templateConfig` | object | `null` | Layout-specific | Extra config for non-default layouts. `kanban`/`calendar`: `groupBy`, `dateField`, etc. `list-modal`: `titleKey`, `editTitleKey`, `bannerKey`, `searchPlaceholderKey`, `newLabelKey`, `autoPriorityField`, `autoPriorityStep`, `sections` (ordered `[{ key, label }]`), `backLabelKey` (toolbar back-button i18n key; default `cancel`), `backTo` (route to navigate to on back; defaults to history `-1`), `toolbarFilters` (declarative dropdown filters `[{ key, field, allLabelKey, options: [{ value, labelKey }] }]`, applied client-side over the loaded rows). All strings are i18n keys. See the `list-modal` section in `docs/window-templates.md`. |
 | `detailEntity` | string \| null | Auto-inferred | Entity name or `null` | Explicitly sets which entity is the detail/lines tab. When omitted, the generator picks the first non-primary entity automatically. Set to `null` to create a header-only page (no detail tab). Set to a specific entity name to override the auto-inference. |
 | `relatedDocuments` | boolean | `false` | — | Enables the Related Documents footer in the detail view. Requires a hand-written `RelatedDocuments.jsx` in `artifacts/{window}/custom/`. The generator emits the import and `customTabs` prop automatically. |
 | `attachments` | boolean \| object | `true` | See below | Adds an "Attachments" tab to the detail view. Auto-enabled on every window with `layoutType: "default"`. Set to `false` to opt out; pass an object to tune client-side limits. See the Attachments subsection below. |
@@ -507,6 +507,27 @@ Applied to fields with `grid: true` to control how the list cell renders.
 | `inlineEdit` | boolean | `false` | Mark a column as inline-editable (carried into the contract as `inlineEdit: true`). Consumed by `list-modal`; editing is also available via the modal. |
 | `gridReadOnly` | boolean | `false` | Make an otherwise-editable column read-only in the grid. |
 | `grow` | boolean | `false` | Let the column grow to fill available width. |
+| `cellType` | string | `null` | Selects a cell renderer from the registry (see below). Generic to any grid; the `list-modal` layout ships a styled set. |
+
+#### `list-modal` cell renderers (`cellType`)
+
+The `list-modal` grid renders each cell through a registry keyed by `cellType`
+(`tools/app-shell/src/components/contract-ui/listModalCells.jsx`). The renderers
+are generic and backend-agnostic — every cell reads only from the row payload and
+the column descriptor. Set them per grid field in `decisions.json`; the generator
+emits them into the contract column descriptors and the page consumes them. When
+no `cellType` is set, the cell falls back to a plain value (with enum-label / FK
+identifier resolution).
+
+| `cellType` | Extra keys | Renders |
+|------------|-----------|---------|
+| `priorityPill` | — | A bordered neutral pill with the numeric value. |
+| `nameWithSubline` | `subField` (field name whose `$_identifier` feeds the sub-line), `subPrefix` (default `"→ "`) | Bold name plus a muted sub-line sourced from another field. |
+| `conditionChip` | `kindField` (discriminator field, e.g. `C`/`S`/`R`), `patternField` (literal-text field), `kindLabels` (map of kind value → i18n key) | A chip with derived text `<kindLabel>: "<pattern>"`. |
+| `typePill` | `tones` (map of enum value → tone: `neutral`/`blue`/`green`/`amber`/`red`) | A rounded-full pill showing the enum label, optionally toned. |
+| `percent` | — | The numeric value rendered as `N%`. |
+| `boldText` | — | The value in semibold (e.g. a count column). |
+| `toggle` | — | An inline `Switch` that `PATCH`es `{entity}/{id}` with `{ [field]: checked }`. Equivalent to `inlineToggle`. |
 
 ### Reference & Input Mode (FK fields)
 

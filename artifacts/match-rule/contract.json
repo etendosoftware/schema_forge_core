@@ -1,7 +1,8 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-06-11T18:36:13.442Z",
-  "checksum": "005d0063fef9c942",
+  "updatedAt": "2026-06-12T02:44:08.776Z",
+  "checksum": "9b20248a3de2dcb7",
   "frontendContract": {
     "window": {
       "id": "24963D64E83B4543A7F6BD248CF944EE",
@@ -11,11 +12,19 @@
       "templateConfig": {
         "titleKey": "matchRuleNewTitle",
         "editTitleKey": "matchRuleEditTitle",
+        "subtitleKey": "matchRuleNewSubtitle",
+        "submitLabelKey": "matchRuleSubmitCreate",
+        "editSubmitLabelKey": "matchRuleSubmitSave",
         "bannerKey": "matchRuleBanner",
         "searchPlaceholderKey": "matchRuleSearchPlaceholder",
         "newLabelKey": "matchRuleNew",
         "autoPriorityField": "priority",
         "autoPriorityStep": 10,
+        "footerToggleField": "createTransaction",
+        "sectionGrid": {
+          "general": 3,
+          "dimensions": 4
+        },
         "sections": [
           {
             "key": "general"
@@ -24,9 +33,54 @@
             "key": "dimensions",
             "label": "matchRuleSectionDimensions"
           }
+        ],
+        "backLabelKey": "cancel",
+        "toolbarFilters": [
+          {
+            "key": "transactionType",
+            "field": "transactionType",
+            "allLabelKey": "matchRuleFilterAllRules",
+            "options": [
+              {
+                "value": "H",
+                "labelKey": "matchRuleTxnTypeRetention"
+              },
+              {
+                "value": "T",
+                "labelKey": "matchRuleTxnTypeTransfer"
+              },
+              {
+                "value": "B",
+                "labelKey": "matchRuleTxnTypeBankFee"
+              },
+              {
+                "value": "R",
+                "labelKey": "matchRuleTxnTypeRecurring"
+              },
+              {
+                "value": "O",
+                "labelKey": "matchRuleTxnTypeOther"
+              }
+            ]
+          },
+          {
+            "key": "active",
+            "field": "active",
+            "allLabelKey": "matchRuleFilterAllStates",
+            "options": [
+              {
+                "value": "Y",
+                "labelKey": "matchRuleFilterActive"
+              },
+              {
+                "value": "N",
+                "labelKey": "matchRuleFilterInactive"
+              }
+            ]
+          }
         ]
       },
-      "breadcrumb": "Finance / Match Rule",
+      "breadcrumb": "Finance / Accounts / Match Rule",
       "detailEntity": null,
       "labelOverrides": {
         "es_ES": {
@@ -35,7 +89,7 @@
           "TextCondition": "Condición sobre el concepto",
           "TextPattern": "Patrón a buscar",
           "TransactionType": "Tipo de transacción",
-          "C_GLItem_ID": "Cuenta contable",
+          "C_ElementValue_ID": "Cuenta contable",
           "AmountTolerancePct": "Tolerancia de importe (%)",
           "CreateTransaction": "Crear transacción automáticamente",
           "MatchCount": "Conciliaciones",
@@ -56,7 +110,7 @@
           "TextCondition": "Concept condition",
           "TextPattern": "Pattern to match",
           "TransactionType": "Transaction type",
-          "C_GLItem_ID": "Accounting account",
+          "C_ElementValue_ID": "Accounting account",
           "AmountTolerancePct": "Amount tolerance (%)",
           "CreateTransaction": "Create transaction automatically",
           "MatchCount": "Reconciliations",
@@ -98,13 +152,15 @@
               "source": "Y"
             },
             "defaultValue": "Y",
+            "cellType": "toggle",
+            "gridLabelKey": "matchRuleColActive",
             "gridOrder": 8,
             "inlineToggle": true
           },
           {
             "name": "accountingAccount",
             "apiKey": "accountingAccount",
-            "column": "C_GLItem_ID",
+            "column": "C_ElementValue_ID",
             "label": "Accounting Account",
             "type": "foreignKey",
             "tsType": "string",
@@ -112,10 +168,11 @@
             "required": false,
             "grid": true,
             "form": true,
-            "reference": "GLItem",
+            "reference": "ElementValue",
             "inputMode": "selector",
             "section": "general",
             "seq": 5,
+            "gridLabelKey": "matchRuleColAccount",
             "gridOrder": 5
           },
           {
@@ -130,8 +187,12 @@
             "grid": true,
             "form": true,
             "sourceRequired": true,
+            "placeholderKey": "matchRuleNamePlaceholder",
             "section": "general",
             "seq": 1,
+            "cellType": "nameWithSubline",
+            "subField": "businessPartner",
+            "gridLabelKey": "matchRuleColName",
             "gridOrder": 2
           },
           {
@@ -148,6 +209,8 @@
             "sourceRequired": true,
             "section": "general",
             "seq": 8,
+            "cellType": "priorityPill",
+            "gridLabelKey": "matchRuleColPriority",
             "gridOrder": 1,
             "inlineEdit": true
           },
@@ -163,9 +226,9 @@
             "grid": false,
             "form": true,
             "sourceRequired": true,
+            "placeholderKey": "matchRulePatternPlaceholder",
             "section": "general",
-            "seq": 2,
-            "span": 2
+            "seq": 2
           },
           {
             "name": "transactionType",
@@ -202,7 +265,15 @@
             ],
             "section": "general",
             "seq": 4,
-            "badge": true,
+            "cellType": "typePill",
+            "tones": {
+              "H": "blue",
+              "T": "neutral",
+              "B": "amber",
+              "R": "green",
+              "O": "neutral"
+            },
+            "gridLabelKey": "matchRuleColType",
             "gridOrder": 4
           },
           {
@@ -223,6 +294,8 @@
             "defaultValue": "0",
             "section": "general",
             "seq": 7,
+            "cellType": "percent",
+            "gridLabelKey": "matchRuleColTolerance",
             "gridOrder": 6
           },
           {
@@ -241,9 +314,9 @@
               "source": "N"
             },
             "defaultValue": "N",
+            "help": "matchRuleCreateTransactionHelper",
             "section": "general",
-            "seq": 10,
-            "span": 2
+            "seq": 10
           },
           {
             "name": "matchCount",
@@ -261,6 +334,8 @@
               "source": "0"
             },
             "defaultValue": "0",
+            "cellType": "boldText",
+            "gridLabelKey": "matchRuleColReconciliations",
             "gridOrder": 7
           },
           {
@@ -292,6 +367,7 @@
             "form": true,
             "reference": "Financial_Account",
             "inputMode": "selector",
+            "emptyOptionLabelKey": "matchRuleAllAccounts",
             "section": "general",
             "seq": 3
           },
@@ -435,7 +511,15 @@
             ],
             "section": "general",
             "seq": 6,
-            "badge": true,
+            "cellType": "conditionChip",
+            "kindField": "textCondition",
+            "patternField": "textPattern",
+            "kindLabels": {
+              "C": "matchRuleConditionContains",
+              "S": "matchRuleConditionStartsWith",
+              "R": "matchRuleConditionRegex"
+            },
+            "gridLabelKey": "matchRuleColCondition",
             "gridOrder": 3
           }
         ],
@@ -485,11 +569,19 @@
       "templateConfig": {
         "titleKey": "matchRuleNewTitle",
         "editTitleKey": "matchRuleEditTitle",
+        "subtitleKey": "matchRuleNewSubtitle",
+        "submitLabelKey": "matchRuleSubmitCreate",
+        "editSubmitLabelKey": "matchRuleSubmitSave",
         "bannerKey": "matchRuleBanner",
         "searchPlaceholderKey": "matchRuleSearchPlaceholder",
         "newLabelKey": "matchRuleNew",
         "autoPriorityField": "priority",
         "autoPriorityStep": 10,
+        "footerToggleField": "createTransaction",
+        "sectionGrid": {
+          "general": 3,
+          "dimensions": 4
+        },
         "sections": [
           {
             "key": "general"
@@ -498,9 +590,54 @@
             "key": "dimensions",
             "label": "matchRuleSectionDimensions"
           }
+        ],
+        "backLabelKey": "cancel",
+        "toolbarFilters": [
+          {
+            "key": "transactionType",
+            "field": "transactionType",
+            "allLabelKey": "matchRuleFilterAllRules",
+            "options": [
+              {
+                "value": "H",
+                "labelKey": "matchRuleTxnTypeRetention"
+              },
+              {
+                "value": "T",
+                "labelKey": "matchRuleTxnTypeTransfer"
+              },
+              {
+                "value": "B",
+                "labelKey": "matchRuleTxnTypeBankFee"
+              },
+              {
+                "value": "R",
+                "labelKey": "matchRuleTxnTypeRecurring"
+              },
+              {
+                "value": "O",
+                "labelKey": "matchRuleTxnTypeOther"
+              }
+            ]
+          },
+          {
+            "key": "active",
+            "field": "active",
+            "allLabelKey": "matchRuleFilterAllStates",
+            "options": [
+              {
+                "value": "Y",
+                "labelKey": "matchRuleFilterActive"
+              },
+              {
+                "value": "N",
+                "labelKey": "matchRuleFilterInactive"
+              }
+            ]
+          }
         ]
       },
-      "breadcrumb": "Finance / Match Rule",
+      "breadcrumb": "Finance / Accounts / Match Rule",
       "detailEntity": null,
       "labelOverrides": {
         "es_ES": {
@@ -509,7 +646,7 @@
           "TextCondition": "Condición sobre el concepto",
           "TextPattern": "Patrón a buscar",
           "TransactionType": "Tipo de transacción",
-          "C_GLItem_ID": "Cuenta contable",
+          "C_ElementValue_ID": "Cuenta contable",
           "AmountTolerancePct": "Tolerancia de importe (%)",
           "CreateTransaction": "Crear transacción automáticamente",
           "MatchCount": "Conciliaciones",
@@ -530,7 +667,7 @@
           "TextCondition": "Concept condition",
           "TextPattern": "Pattern to match",
           "TransactionType": "Transaction type",
-          "C_GLItem_ID": "Accounting account",
+          "C_ElementValue_ID": "Accounting account",
           "AmountTolerancePct": "Amount tolerance (%)",
           "CreateTransaction": "Create transaction automatically",
           "MatchCount": "Reconciliations",
@@ -573,7 +710,7 @@
           {
             "name": "accountingAccount",
             "apiKey": "accountingAccount",
-            "column": "C_GLItem_ID",
+            "column": "C_ElementValue_ID",
             "type": "foreignKey",
             "visibility": "editable",
             "required": false
@@ -825,8 +962,8 @@
       {
         "entity": "etgoMatchRuleHeader",
         "field": "accountingAccount",
-        "column": "C_GLItem_ID",
-        "reference": "GLItem",
+        "column": "C_ElementValue_ID",
+        "reference": "ElementValue",
         "inputMode": "selector",
         "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/accountingAccount"
       },
@@ -927,7 +1064,7 @@
         "TextCondition": "Condición sobre el concepto",
         "TextPattern": "Patrón a buscar",
         "TransactionType": "Tipo de transacción",
-        "C_GLItem_ID": "Cuenta contable",
+        "C_ElementValue_ID": "Cuenta contable",
         "AmountTolerancePct": "Tolerancia de importe (%)",
         "CreateTransaction": "Crear transacción automáticamente",
         "MatchCount": "Conciliaciones",
@@ -948,7 +1085,7 @@
         "TextCondition": "Concept condition",
         "TextPattern": "Pattern to match",
         "TransactionType": "Transaction type",
-        "C_GLItem_ID": "Accounting account",
+        "C_ElementValue_ID": "Accounting account",
         "AmountTolerancePct": "Amount tolerance (%)",
         "CreateTransaction": "Create transaction automatically",
         "MatchCount": "Reconciliations",

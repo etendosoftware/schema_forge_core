@@ -1,23 +1,27 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Plus, Search, X } from 'lucide-react';
-import { Button } from '@/components/ui/button.jsx';
-import { Input } from '@/components/ui/input.jsx';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Search, X, GripVertical, Pencil } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog.jsx';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useNeoResource, getApiBase } from '@/hooks/useNeoResource.js';
-import { useUI, useMenuLabel } from '@/i18n';
+import { useUI, useMenuLabel, useLabel } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { translateBackendError } from '@/lib/backendErrors.js';
+import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { DataTable } from './DataTable.jsx';
 import { EntityForm } from './EntityForm.jsx';
+import { InfoBanner } from '../InfoBanner.jsx';
+import { ListModalCell, cellAlignClass } from './listModalCells.jsx';
+import { ListModalToolbarFilter } from './ListModalToolbarFilter.jsx';
 
 /**
  * Generic, contract-driven layout for catalog / master-data windows that present a
@@ -25,14 +29,21 @@ import { EntityForm } from './EntityForm.jsx';
  *
  * It is intentionally backend-agnostic: every behaviour is driven by the props the
  * pipeline emits from `contract.json` (the NEO endpoint via `api`, the grid
- * `columns`, the modal `fields` grouped by `sections`, the searchable `filters`).
+ * `columns`, the modal `fields` grouped by `sections`, the searchable `filters`,
+ * and the optional toolbar dropdown `filters` declared in `config.toolbarFilters`).
  * Any window can opt in with `decisions.json → window.layoutType: "list-modal"`.
  *
- * CRUD follows the generic NEO Headless W convention used by `useEntity`/`DataTable`:
+ * The grid is rendered in-house (not via DataTable) so list-modal windows get the
+ * Figma row chrome — drag handle, cell-type renderers (priority pill, name+subline,
+ * condition chip, type pill, percent, inline toggle), and a hover edit action.
+ * Cell rendering is registry-driven (`column.cellType`), so the component stays
+ * generic: window specifics live in the contract, never here.
+ *
+ * CRUD follows the generic NEO Headless W convention:
  *   - list   GET    {apiBaseUrl}/{entity}
  *   - create POST   {apiBaseUrl}/{entity}
- *   - update POST   {apiBaseUrl}/{entity}/{id}
- *   - patch  PATCH  {apiBaseUrl}/{entity}/{id}   (inline toggle, handled by DataTable)
+ *   - update PUT    {apiBaseUrl}/{entity}/{id}
+ *   - patch  PATCH  {apiBaseUrl}/{entity}/{id}   (inline toggle)
  *   - delete DELETE {apiBaseUrl}/{entity}/{id}
  *
  * @param {object}   props
@@ -40,13 +51,22 @@ import { EntityForm } from './EntityForm.jsx';
  * @param {string}   props.entityLabel    window/menu label (translated via useMenuLabel)
  * @param {string}   props.windowName
  * @param {string}   [props.breadcrumb]
- * @param {Array}    props.columns        DataTable column descriptors
+ * @param {Array}    props.columns        grid column descriptors (carry cellType)
  * @param {Array}    props.fields         EntityForm field descriptors (grouped by section)
  * @param {Array}    props.sections       ordered [{ key, label? }] for modal grouping
  * @param {string[]} props.filters        column keys used by the local search box
- * @param {object}   props.config         { titleKey, editTitleKey, bannerKey,
+ * @param {object}   props.config         { titleKey, editTitleKey, subtitleKey,
+ *                                          editSubtitleKey, submitLabelKey,
+ *                                          editSubmitLabelKey, bannerKey,
  *                                          searchPlaceholderKey, newLabelKey,
- *                                          autoPriorityField, autoPriorityStep }
+ *                                          autoPriorityField, autoPriorityStep,
+ *                                          toolbarFilters, backLabelKey, backTo,
+ *                                          footerToggleField, sectionGrid }
+ *   - footerToggleField {string}  field name (a boolean field from `fields`) rendered
+ *                                  as the footer switch + helper instead of in the body grid.
+ *   - sectionGrid       {object}  per-section column count for the body grid, keyed by
+ *                                  section key (e.g. `{ general: 3, dimensions: 4 }`).
+ *                                  Defaults to 3 columns for every section.
  * @param {object}   props.api            apiPrediction block (carries baseUrl + selectors)
  */
 export function ListModalWindow({
@@ -65,6 +85,7 @@ export function ListModalWindow({
   const ui = useUI();
   const tMenu = useMenuLabel();
   const auth = useAuth();
+  const navigate = useNavigate();
   const token = tokenProp ?? auth?.token;
 
   const apiBaseUrl = useMemo(
@@ -86,18 +107,36 @@ export function ListModalWindow({
   });
   const allRows = useMemo(() => rows ?? [], [rows]);
 
+  // --- Toolbar dropdown filters (declarative; applied client-side) ----------
+  const toolbarFilters = config?.toolbarFilters ?? [];
+  const [filterValues, setFilterValues] = useState({}); // { [filterKey]: value|null }
+  const setToolbarFilter = useCallback((key, value) => {
+    setFilterValues(prev => ({ ...prev, [key]: value }));
+  }, []);
+
   // --- Local search over the configured filter columns ----------------------
   const [searchQuery, setSearchQuery] = useState('');
   const data = useMemo(() => {
+    let result = allRows;
+    // Apply each active toolbar dropdown filter (exact match on its `field`).
+    for (const f of toolbarFilters) {
+      const selected = filterValues[f.key];
+      if (selected == null) continue;
+      const field = f.field ?? f.key;
+      result = result.filter(row => String(row?.[field]) === String(selected));
+    }
+    // Apply free-text search over the searchable filter columns.
     const q = searchQuery.trim().toLowerCase();
-    if (!q || filters.length === 0) return allRows;
-    return allRows.filter(row =>
-      filters.some(key => {
-        const v = row?.[`${key}$_identifier`] ?? row?.[key];
-        return v != null && String(v).toLowerCase().includes(q);
-      }),
-    );
-  }, [allRows, searchQuery, filters]);
+    if (q && filters.length > 0) {
+      result = result.filter(row =>
+        filters.some(key => {
+          const v = resolveIdentifier(row, key) ?? row?.[key];
+          return v != null && String(v).toLowerCase().includes(q);
+        }),
+      );
+    }
+    return result;
+  }, [allRows, searchQuery, filters, toolbarFilters, filterValues]);
 
   // --- Create / edit modal --------------------------------------------------
   const [modalOpen, setModalOpen] = useState(false);
@@ -105,6 +144,8 @@ export function ListModalWindow({
   const [formData, setFormData] = useState({});
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [savingToggles, setSavingToggles] = useState({});
 
   const requiredKeys = useMemo(() => fields.filter(f => f.required).map(f => f.key), [fields]);
 
@@ -205,11 +246,15 @@ export function ListModalWindow({
     }
   }, [missingRequired, editingRow, apiBaseUrl, entity, formData, authHeaders, ui, closeModal, reload, errorMessage]);
 
-  const handleDelete = useCallback(async (row) => {
+  // Inline toggle: PATCH {entity}/{id} with optimistic UI handled by reload.
+  const handleToggle = useCallback(async (row, col, nextChecked) => {
+    const key = `${row.id}:${col.key}`;
+    setSavingToggles(prev => ({ ...prev, [key]: true }));
     try {
       const res = await fetch(`${apiBaseUrl}/${entity}/${encodeURIComponent(row.id)}`, {
-        method: 'DELETE',
+        method: 'PATCH',
         headers: authHeaders(),
+        body: JSON.stringify({ [col.key]: nextChecked }),
       });
       if (!res.ok) {
         toast.error(await errorMessage(res));
@@ -218,77 +263,170 @@ export function ListModalWindow({
       reload();
     } catch (e) {
       toast.error(e?.message || ui('genericError'));
+    } finally {
+      setSavingToggles(prev => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
     }
-  }, [apiBaseUrl, entity, authHeaders, ui, reload, errorMessage]);
+  }, [apiBaseUrl, entity, authHeaders, errorMessage, reload, ui]);
+
+  const handleBack = useCallback(() => {
+    if (config?.backTo) navigate(config.backTo);
+    else navigate(-1);
+  }, [config, navigate]);
 
   const title = editingRow
     ? (config?.editTitleKey ? ui(config.editTitleKey) : ui('edit'))
     : (config?.titleKey ? ui(config.titleKey) : ui('createRecord'));
 
+  // Modal subtitle (Figma): a muted line under the title explaining the record.
+  const subtitleKey = editingRow
+    ? (config?.editSubtitleKey ?? config?.subtitleKey)
+    : config?.subtitleKey;
+  const subtitle = subtitleKey ? ui(subtitleKey) : null;
+
+  // Submit button label (Figma "Crear regla" / save).
+  const submitLabel = editingRow
+    ? (config?.editSubmitLabelKey ? ui(config.editSubmitLabelKey) : ui('save'))
+    : (config?.submitLabelKey ? ui(config.submitLabelKey) : ui('createRecord'));
+
+  // The optional footer toggle (a boolean field promoted out of the body grid into
+  // the footer, beside the submit button — e.g. "Crear transacción automáticamente").
+  const footerToggleKey = config?.footerToggleField ?? null;
+  const footerToggleField = footerToggleKey
+    ? fields.find(f => f.key === footerToggleKey)
+    : null;
+  // Field-label resolver honoring per-window labelOverrides (es/en), so the footer
+  // toggle label matches the localized form labels rather than the raw English label.
+  const tLabel = useLabel(api?.labelOverrides);
+  const footerToggleLabel = footerToggleField
+    ? (tLabel(footerToggleField.column) ?? footerToggleField.label ?? footerToggleField.key)
+    : null;
+  const isToggleOn = (v) => v === true || v === 'Y' || v === 'true';
+
+  // Per-section column count for the body grid (defaults to 3).
+  const sectionGrid = config?.sectionGrid ?? {};
+  const colsFor = (key) => sectionGrid[key] ?? 3;
+
+  const showBanner = config?.bannerKey && !bannerDismissed;
+  const hasSearch = filters.length > 0;
+
   return (
-    <div className="flex flex-col gap-3 px-1">
-      {/* Toolbar: search + New */}
-      <div className="flex h-10 items-center justify-between gap-2.5">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={config?.searchPlaceholderKey ? ui(config.searchPlaceholderKey) : ui('search')}
-            className="pl-9"
-          />
+    <div className="flex flex-col gap-2">
+      {/* Toolbar — left: back + dropdown filters; right: search + New */}
+      <div className="flex items-center justify-between gap-2 px-2 pt-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleBack}
+            data-testid="list-modal-back"
+            className="inline-flex h-10 items-center rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium leading-6 text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:bg-[#F5F7F9]"
+          >
+            {config?.backLabelKey ? ui(config.backLabelKey) : ui('cancel')}
+          </button>
+          {toolbarFilters.map(f => (
+            <ListModalToolbarFilter
+              key={f.key}
+              filter={f}
+              value={filterValues[f.key] ?? null}
+              onChange={(v) => setToolbarFilter(f.key, v)}
+              ui={ui}
+            />
+          ))}
         </div>
-        <Button onClick={openCreate}>
-          <Plus size={16} className="mr-1" />
-          {config?.newLabelKey ? ui(config.newLabelKey) : ui('newRecord')}
-        </Button>
+        <div className="flex items-center gap-2">
+          {hasSearch && (
+            <div className="relative w-[280px]">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#828FA3]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={config?.searchPlaceholderKey ? ui(config.searchPlaceholderKey) : ui('search')}
+                data-testid="list-modal-search"
+                className="h-10 w-full rounded-lg border border-[#D1D4DB] bg-white pl-9 pr-3 text-sm leading-6 text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] placeholder:text-[#6C6C89] focus:outline-none focus:ring-2 focus:ring-[#121217]/10"
+              />
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={openCreate}
+            data-testid="list-modal-new"
+            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[#121217] px-3 text-sm font-medium leading-6 text-white transition-colors hover:bg-[#121217]/90"
+          >
+            <Plus className="h-4 w-4 text-white/90" />
+            {config?.newLabelKey ? ui(config.newLabelKey) : ui('newRecord')}
+          </button>
+        </div>
       </div>
 
-      {/* Optional banner explaining how the rows are evaluated */}
-      {config?.bannerKey && (
-        <div className="rounded-md border border-blue-100 bg-blue-50 px-4 py-2.5 text-sm text-blue-800">
+      {/* Dismissible banner explaining how the rows are evaluated */}
+      {showBanner && (
+        <InfoBanner
+          tone="info"
+          dismissible
+          onDismiss={() => setBannerDismissed(true)}
+          dismissTestId="list-modal-banner-dismiss"
+          className="mx-2"
+        >
           {ui(config.bannerKey)}
-        </div>
+        </InfoBanner>
       )}
 
-      {/* Grid — inline `toggle` columns PATCH {entity}/{id} natively via onDataMutated */}
+      {/* Grid */}
       {loading ? (
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-9 w-full" />
-          <Skeleton className="h-9 w-full" />
-          <Skeleton className="h-9 w-full" />
+        <div className="flex flex-col gap-2 px-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
         </div>
       ) : (
-        <DataTable
-          entity={entity}
-          columns={columns}
-          filters={filters}
-          data={data}
-          selectable={false}
-          onNavigate={openEdit}
-          onDeleteRow={handleDelete}
-          onDataMutated={reload}
-          token={token}
-          apiBaseUrl={apiBaseUrl}
-        />
+        <div className="px-2">
+          <ListModalGrid
+            columns={columns}
+            data={data}
+            tMenu={tMenu}
+            ui={ui}
+            onEdit={openEdit}
+            onToggle={handleToggle}
+            savingToggles={savingToggles}
+          />
+        </div>
       )}
 
-      {/* Create / edit modal */}
+      {/* Create / edit modal — Figma "Nueva Regla de matcheo" layout:
+          wide container, header (title + subtitle), multi-column body grouped by
+          section, and a footer with an optional toggle (left) + pill submit (right). */}
       <Dialog open={modalOpen} onOpenChange={(o) => (o ? setModalOpen(true) : closeModal())}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
+        <DialogContent className="flex max-h-[90vh] w-full max-w-6xl flex-col gap-0 overflow-hidden rounded-lg bg-white p-0">
+          {/* Header */}
+          <DialogHeader className="space-y-1 px-5 py-2 text-left">
+            <DialogTitle className="text-xl font-semibold leading-7 tracking-normal text-[#121217]">
+              {title}
+            </DialogTitle>
+            {subtitle && (
+              <p className="text-xs font-normal leading-4 text-[#6C6C89]" data-testid="list-modal-subtitle">
+                {subtitle}
+              </p>
+            )}
           </DialogHeader>
 
-          <div className="flex flex-col gap-5 py-1">
+          {/* Body — section grids */}
+          <div className="flex flex-col gap-5 overflow-y-auto px-5 pb-2 pt-1">
             {sections.map((sec) => {
-              const sectionFields = fields.filter(f => (f.section || 'general') === sec.key);
+              const sectionFields = fields.filter(
+                f => (f.section || 'general') === sec.key && f.key !== footerToggleKey,
+              );
               if (sectionFields.length === 0) return null;
               const sectionLabel = sec.label ? ui(sec.label) : null;
               return (
-                <div key={sec.key} className="flex flex-col gap-2">
+                <div key={sec.key} className="flex flex-col gap-3">
                   {sectionLabel && (
-                    <h4 className="text-sm font-semibold text-gray-700">{sectionLabel}</h4>
+                    <h4 className="text-sm font-semibold leading-6 text-[#121217]" data-testid={`list-modal-section-${sec.key}`}>
+                      {sectionLabel}
+                    </h4>
                   )}
                   <EntityForm
                     entity={entity}
@@ -298,7 +436,8 @@ export function ListModalWindow({
                     api={api}
                     token={token}
                     apiBaseUrl={apiBaseUrl}
-                    layout="horizontal"
+                    labelOverrides={api?.labelOverrides}
+                    cols={colsFor(sec.key)}
                   />
                 </div>
               );
@@ -312,16 +451,131 @@ export function ListModalWindow({
             )}
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={closeModal} disabled={saving}>
-              {ui('cancel')}
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? ui('saving') : ui('save')}
-            </Button>
-          </DialogFooter>
+          {/* Footer — optional toggle + helper (left), pill submit (right) */}
+          <div className="flex items-center justify-between gap-4 border-t border-[#E8EAEF] px-5 py-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              {footerToggleField ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={isToggleOn(formData[footerToggleKey])}
+                      onCheckedChange={(next) => handleFieldChange(footerToggleKey, next)}
+                      aria-label={footerToggleLabel}
+                      data-testid={`list-modal-footer-toggle-${footerToggleKey}`}
+                      className="h-4 w-[30px] data-[state=checked]:bg-[#121217] data-[state=unchecked]:bg-[#D1D4DB]"
+                    />
+                    <span className="text-sm font-medium leading-6 text-[#121217]">{footerToggleLabel}</span>
+                  </div>
+                  {footerToggleField.help && (
+                    <p className="text-sm leading-6 text-[#6C6C89]">{ui(footerToggleField.help) ?? footerToggleField.help}</p>
+                  )}
+                </>
+              ) : (
+                <span />
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || missingRequired.length > 0}
+              data-testid="list-modal-submit"
+              className="inline-flex h-10 shrink-0 items-center justify-center rounded-full px-3 py-2 text-sm font-medium leading-6 text-white transition-colors disabled:bg-[#D1D4DB] disabled:text-white enabled:bg-[#121217] enabled:hover:bg-[#121217]/90"
+            >
+              {saving ? ui('saving') : submitLabel}
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/**
+ * In-house grid for the list-modal layout. Renders the Figma row chrome (drag
+ * handle placeholder for future reorder, registry-driven cells, hover edit
+ * action). Fully generic: structure comes from `columns` + each `column.cellType`.
+ */
+function ListModalGrid({ columns, data, tMenu, ui, onEdit, onToggle, savingToggles }) {
+  const isEmpty = !data || data.length === 0;
+
+  return (
+    // [&>div]:overflow-visible cancels the base Table's inner overflow-auto so the
+    // hovered row's shadow-lg isn't clipped on the last row (matches Cuentas).
+    <div className="[&>div]:overflow-visible">
+    <Table>
+      <TableHeader>
+        <TableRow className="border-b border-[#E8EAEF] hover:bg-transparent">
+          {/* Drag-handle column header (44px) */}
+          <TableHead className="w-11 p-0" aria-hidden="true" />
+          {columns.map((col, idx) => (
+            <TableHead
+              key={col.key}
+              className={cn(
+                'h-10 px-3 text-xs font-semibold leading-4 text-[#121217]',
+                cellAlignClass(col),
+                idx === 0 ? 'pl-0' : '',
+              )}
+            >
+              {col.labelKey ? ui(col.labelKey) : (tMenu(col.label) ?? col.label ?? col.key)}
+            </TableHead>
+          ))}
+          {/* Actions column header (56px) */}
+          <TableHead className="w-14 p-0" aria-hidden="true" />
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {isEmpty ? (
+          <TableRow className="hover:bg-transparent">
+            <TableCell
+              colSpan={columns.length + 2}
+              className="py-12 text-center text-[#6C6C89]"
+              data-testid="list-modal-empty"
+            >
+              <p className="text-sm font-medium">{ui('noRecordsYet')}</p>
+              <p className="mt-1 text-xs">{ui('createNewRecord')}</p>
+            </TableCell>
+          </TableRow>
+        ) : data.map((row) => (
+          <TableRow
+            key={row.id}
+            data-testid={`list-modal-row-${row.id}`}
+            className="group/row relative border-b border-[#E8EAEF] bg-white transition-shadow hover:z-10 hover:bg-white hover:shadow-lg"
+          >
+            {/* Drag handle — visual only; drag-to-reorder deferred */}
+            <TableCell className="w-11 p-0">
+              <div className="flex w-11 items-center justify-center opacity-0 transition-opacity group-hover/row:opacity-100">
+                <GripVertical className="h-5 w-5 text-[#828FA3]" aria-hidden="true" />
+              </div>
+            </TableCell>
+            {columns.map((col, idx) => (
+              <TableCell key={col.key} className={cn('px-3 py-3', cellAlignClass(col))}>
+                <ListModalCell
+                  row={row}
+                  col={col}
+                  tMenu={tMenu}
+                  onToggle={onToggle}
+                  savingToggle={savingToggles[`${row.id}:${col.key}`]}
+                />
+              </TableCell>
+            ))}
+            {/* Hover edit action */}
+            <TableCell className="w-14 p-0">
+              <div className="flex w-14 items-center justify-center opacity-0 transition-opacity group-hover/row:opacity-100">
+                <button
+                  type="button"
+                  onClick={() => onEdit?.(row)}
+                  aria-label={ui('edit')}
+                  data-testid={`list-modal-edit-${row.id}`}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#828FA3] transition-colors hover:bg-[#E8EAEF]"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
     </div>
   );
 }

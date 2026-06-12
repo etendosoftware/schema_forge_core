@@ -40,6 +40,19 @@ function listModalContract() {
           newLabelKey: 'matchRuleNew',
           autoPriorityField: 'priority',
           autoPriorityStep: 10,
+          backLabelKey: 'matchRuleBack',
+          backTo: '/cuentas',
+          toolbarFilters: [
+            {
+              key: 'status',
+              field: 'matchType',
+              allLabelKey: 'matchRuleAllTypes',
+              options: [
+                { value: 'A', labelKey: 'matchRuleTypeAuto' },
+                { value: 'M', labelKey: 'matchRuleTypeManual' },
+              ],
+            },
+          ],
           sections: [
             { key: 'general' },
             { key: 'dimensions', label: 'matchRuleSectionDimensions' },
@@ -51,8 +64,10 @@ function listModalContract() {
           tableName: 'ETGO_SF_Match_Rule',
           fields: [
             { name: 'active', column: 'IsActive', type: 'boolean', tsType: 'boolean', visibility: 'editable', required: false, grid: true, form: false, inlineToggle: true },
-            { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, section: 'general' },
-            { name: 'priority', column: 'Priority', type: 'integer', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true, section: 'general', inlineEdit: true },
+            { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, section: 'general', cellType: 'nameWithSubline', subField: 'businessPartner' },
+            { name: 'priority', column: 'Priority', type: 'integer', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true, section: 'general', inlineEdit: true, cellType: 'priorityPill' },
+            { name: 'condition', column: 'Condition', type: 'string', tsType: 'string', visibility: 'readOnly', required: false, grid: true, form: false, cellType: 'conditionChip', kindField: 'matchKind', patternField: 'textPattern', kindLabels: { C: 'matchKindContains', S: 'matchKindStarts' } },
+            { name: 'matchType', column: 'MatchType', type: 'string', tsType: 'string', visibility: 'readOnly', required: false, grid: true, form: false, cellType: 'typePill', enumValues: [{ value: 'A', name: 'Auto' }, { value: 'M', name: 'Manual' }], tones: { A: 'green', M: 'amber' } },
             { name: 'textPattern', column: 'TextPattern', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true, section: 'general' },
             { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true, section: 'general', reference: 'BusinessPartner', inputMode: 'search' },
             { name: 'project', column: 'C_Project_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true, section: 'dimensions', reference: 'Project', inputMode: 'selector' },
@@ -210,6 +225,80 @@ describe('generatePageComponent — layoutType list-modal', () => {
     // Derived from the order in which sections first appear on form fields.
     assert.ok(secMatch[1].includes("key: 'general'"));
     assert.ok(secMatch[1].includes("key: 'dimensions'"));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generatePageComponent — cell-renderer registry + toolbar filters
+//
+// Restyled list-modal layout: grid columns carry a `cellType` plus its inputs
+// (subField, kindField/patternField, kindLabels, tones), and the templateConfig
+// carries a back label + a declarative `toolbarFilters` array. The generator
+// must emit these verbatim into the column literals and listModalConfig.
+// ---------------------------------------------------------------------------
+
+describe('generatePageComponent — cell-renderer registry columns', () => {
+  function columnsBlock() {
+    const code = generatePageComponent('etgoMatchRuleHeader', null, listModalContract());
+    const m = code.match(/const columns = \[([\s\S]*?)\];/);
+    assert.ok(m, 'columns block should exist');
+    return m[1];
+  }
+
+  it("emits cellType + subField for a nameWithSubline column", () => {
+    const line = columnsBlock().split('\n').find(l => l.includes("key: 'name'"));
+    assert.ok(line, 'name column should exist');
+    assert.ok(line.includes("cellType: 'nameWithSubline'"), 'name column should carry cellType');
+    assert.ok(line.includes("subField: 'businessPartner'"), 'name column should carry subField');
+  });
+
+  it("emits cellType: 'priorityPill' for the priority column", () => {
+    const line = columnsBlock().split('\n').find(l => l.includes("key: 'priority'"));
+    assert.ok(line, 'priority column should exist');
+    assert.ok(line.includes("cellType: 'priorityPill'"), 'priority column should carry cellType');
+  });
+
+  it('emits cellType + kindField/patternField + kindLabels for a conditionChip column', () => {
+    const line = columnsBlock().split('\n').find(l => l.includes("key: 'condition'"));
+    assert.ok(line, 'condition column should exist');
+    assert.ok(line.includes("cellType: 'conditionChip'"), 'should carry cellType conditionChip');
+    assert.ok(line.includes("kindField: 'matchKind'"), 'should carry kindField');
+    assert.ok(line.includes("patternField: 'textPattern'"), 'should carry patternField');
+    assert.ok(line.includes('kindLabels:'), 'should carry kindLabels');
+    assert.ok(line.includes('"C":"matchKindContains"') || line.includes('"C": "matchKindContains"'),
+      'kindLabels should map C → matchKindContains');
+  });
+
+  it('emits cellType: typePill + tones for a typePill column', () => {
+    const line = columnsBlock().split('\n').find(l => l.includes("key: 'matchType'"));
+    assert.ok(line, 'matchType column should exist');
+    assert.ok(line.includes("cellType: 'typePill'"), 'should carry cellType typePill');
+    assert.ok(line.includes('tones:'), 'should carry tones');
+    assert.ok(line.includes('"A":"green"') || line.includes('"A": "green"'),
+      'tones should map A → green');
+  });
+});
+
+describe('generatePageComponent — listModalConfig toolbar back + filters', () => {
+  function cfgBlock() {
+    const code = generatePageComponent('etgoMatchRuleHeader', null, listModalContract());
+    const m = code.match(/const listModalConfig = \{([\s\S]*?)\};/);
+    assert.ok(m, 'listModalConfig literal should exist');
+    return m[1];
+  }
+
+  it('carries backLabelKey', () => {
+    assert.ok(cfgBlock().includes('"backLabelKey": "matchRuleBack"'), 'should carry backLabelKey');
+  });
+
+  it('carries a toolbarFilters array with the declared filter', () => {
+    const cfg = cfgBlock();
+    assert.ok(cfg.includes('"toolbarFilters"'), 'should carry toolbarFilters');
+    assert.ok(cfg.includes('"key": "status"'), 'filter should carry its key');
+    assert.ok(cfg.includes('"field": "matchType"'), 'filter should carry its field');
+    assert.ok(cfg.includes('"allLabelKey": "matchRuleAllTypes"'), 'filter should carry allLabelKey');
+    assert.ok(cfg.includes('"value": "A"'), 'filter options should carry value A');
+    assert.ok(cfg.includes('"labelKey": "matchRuleTypeAuto"'), 'filter options should carry labelKey');
   });
 });
 

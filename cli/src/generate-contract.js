@@ -176,6 +176,8 @@ function applyBasicFieldUIHints(f, mapped) {
   if (f.defaultValue !== undefined) mapped.defaultValue = f.defaultValue;
   if (f.isIdentifier) mapped.isIdentifier = true;
   if (f.help) mapped.help = f.help;
+  if (f.placeholderKey) mapped.placeholderKey = f.placeholderKey;
+  if (f.emptyOptionLabelKey) mapped.emptyOptionLabelKey = f.emptyOptionLabelKey;
   if (f.fieldGroup) mapped.fieldGroup = f.fieldGroup;
   if (f.isSelectionColumn) mapped.isSelectionColumn = true;
   if (f.isFilterable) mapped.isFilterable = true;
@@ -211,6 +213,20 @@ function applyFieldUIHints(f, mapped) {
   if (f.summable) mapped.summable = true;
   if (f.display) mapped.display = f.display;
   if (f.cellType) mapped.cellType = f.cellType;
+  // list-modal cell-renderer extras (registry-driven; see listModalCells.jsx):
+  //  - subField    : another field name whose identifier feeds a `nameWithSubline` sub-line
+  //  - kindField   : discriminator field for a `conditionChip` (e.g. C/S/R)
+  //  - patternField: literal-text field for a `conditionChip`
+  //  - kindLabels  : map of kind value → i18n key (chip prefix label)
+  //  - tones       : map of enum value → tone name for a `typePill`
+  if (f.subField) mapped.subField = f.subField;
+  if (f.kindField) mapped.kindField = f.kindField;
+  if (f.patternField) mapped.patternField = f.patternField;
+  if (f.kindLabels) mapped.kindLabels = f.kindLabels;
+  if (f.tones) mapped.tones = f.tones;
+  // gridLabelKey: i18n key for the column header (short Figma label, distinct from
+  // the field's modal label). The list-modal grid renders ui(gridLabelKey) when set.
+  if (f.gridLabelKey) mapped.gridLabelKey = f.gridLabelKey;
   applyGridHints(f, mapped);
   if (f.noTrailing) mapped.noTrailing = true;
   if (f.filterOnly) mapped.filterOnly = true;

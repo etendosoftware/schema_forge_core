@@ -165,6 +165,23 @@ const FIELD_DECISION_COPY_PROPS = [
   'columnType',
   'display',
   'cellType',
+  // Field-level helper text shown below the input (i18n key or literal). Honored
+  // by EntityForm (FieldHelp) and the list-modal footer toggle helper.
+  'help',
+  // Input placeholder (i18n key or literal) rendered by EntityForm on empty
+  // text inputs / textareas — e.g. "Ej. Comisiones bancarias".
+  'placeholderKey',
+  // Label (i18n key) for the empty/null choice of an optional FK selector —
+  // e.g. "All accounts" for a nullable financial-account field.
+  'emptyOptionLabelKey',
+  // list-modal cell-renderer extras (see listModalCells.jsx / generate-frontend.js):
+  'subField',
+  'subPrefix',
+  'kindField',
+  'patternField',
+  'kindLabels',
+  'tones',
+  'gridLabelKey',
   'grow',
   'gridReadOnly',
   'inlineToggle',

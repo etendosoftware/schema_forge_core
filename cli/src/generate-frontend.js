@@ -488,6 +488,8 @@ export function generateFormComponent(entityName, contract) {
     const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
     const defaultValuePart = getDefaultValuePart(skipCheckboxDefault, skipServerMacro, f);
     const helpPart = f.help ? `, help: '${f.help.replace(/'/g, "\\'")}'` : '';
+    const placeholderPart = f.placeholderKey ? `, placeholderKey: '${f.placeholderKey.replace(/'/g, "\\'")}'` : '';
+    const emptyOptionPart = f.emptyOptionLabelKey ? `, emptyOptionLabelKey: '${f.emptyOptionLabelKey.replace(/'/g, "\\'")}'` : '';
     const fieldGroupPart = f.fieldGroup ? `, fieldGroup: '${f.fieldGroup.replace(/'/g, "\\'")}'` : '';
     const precisionPart = wrapIf(', precision: ', f.precision);
     // Behavioral metadata: displayLogic and readOnlyLogic
@@ -499,7 +501,7 @@ export function generateFormComponent(entityName, contract) {
     const valueTypePart = (type === 'select' && f.tsType === 'boolean') ? `, valueType: 'boolean'` : '';
     const spanPart = (f.span && f.span > 1) ? `, span: ${f.span}` : '';
     const rowsPart = f.rows != null ? `, rows: ${f.rows}` : '';
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart} },`;
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -1257,7 +1259,17 @@ function buildListModalColumns(entity) {
     const inlineEditPart = fragmentIf(f.inlineEdit, ', inlineEdit: true');
     const badgePart = fragmentIf(f.badge, ', badge: true');
     const displayPart = wrapIf(", display: '", f.display, "'");
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart} },`;
+    // Cell-renderer registry config (listModalCells.jsx). cellType selects the
+    // renderer; the rest carry its inputs. All values are field names or i18n
+    // keys (never raw user text), so they are safe to emit verbatim.
+    const cellTypePart = wrapIf(", cellType: '", f.cellType, "'");
+    const labelKeyPart = wrapIf(", labelKey: '", f.gridLabelKey, "'");
+    const subFieldPart = wrapIf(", subField: '", f.subField, "'");
+    const kindFieldPart = wrapIf(", kindField: '", f.kindField, "'");
+    const patternFieldPart = wrapIf(", patternField: '", f.patternField, "'");
+    const kindLabelsPart = jsonWrapIf(', kindLabels: ', f.kindLabels);
+    const tonesPart = jsonWrapIf(', tones: ', f.tones);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart} },`;
   }).join('\n');
 }
 
@@ -1297,12 +1309,14 @@ function buildListModalFields(formFields) {
     const valueTypePart = (type === 'select' && f.tsType === 'boolean') ? `, valueType: 'boolean'` : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
     const helpPart = f.help ? `, help: '${f.help.replace(/'/g, "\\'")}'` : '';
+    const placeholderPart = f.placeholderKey ? `, placeholderKey: '${f.placeholderKey.replace(/'/g, "\\'")}'` : '';
+    const emptyOptionPart = f.emptyOptionLabelKey ? `, emptyOptionLabelKey: '${f.emptyOptionLabelKey.replace(/'/g, "\\'")}'` : '';
     const spanPart = (f.span && f.span > 1) ? `, span: ${f.span}` : '';
     const rowsPart = f.rows != null ? `, rows: ${f.rows}` : '';
     const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
     const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
     const defaultValuePart = getDefaultValuePart(skipCheckboxDefault, skipServerMacro, f);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${spanPart}${rowsPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart} },`;
   }).join('\n');
 }
 
@@ -1353,12 +1367,31 @@ export function generateListModalPage(headerEntity, contract) {
   const configLiteral = JSON.stringify({
     titleKey: tc.titleKey ?? null,
     editTitleKey: tc.editTitleKey ?? null,
+    // Modal header subtitle (Figma muted line under the title) and submit button
+    // labels. All i18n keys; edit variants fall back to the create variant in the UI.
+    subtitleKey: tc.subtitleKey ?? null,
+    editSubtitleKey: tc.editSubtitleKey ?? null,
+    submitLabelKey: tc.submitLabelKey ?? null,
+    editSubmitLabelKey: tc.editSubmitLabelKey ?? null,
     bannerKey: tc.bannerKey ?? null,
     searchPlaceholderKey: tc.searchPlaceholderKey ?? null,
     newLabelKey: tc.newLabelKey ?? null,
     autoPriorityField: tc.autoPriorityField ?? null,
     autoPriorityStep: tc.autoPriorityStep ?? null,
     identifierField: tc.identifierField ?? null,
+    // Footer toggle: a boolean field promoted out of the body grid into the modal
+    // footer (switch + helper, beside the submit button — Figma "Crear transacción
+    // automáticamente"). Value is a field name from `fields`.
+    footerToggleField: tc.footerToggleField ?? null,
+    // Per-section column count for the modal body grid, keyed by section key
+    // (e.g. { general: 3, dimensions: 4 }). Defaults to 3 columns per section.
+    sectionGrid: tc.sectionGrid ?? {},
+    // Toolbar back button + declarative dropdown filters (Figma "Cancelar",
+    // "Todas las reglas", "Todos los estados"). Filters are applied client-side
+    // by ListModalWindow over the loaded rows. Keys are i18n keys / field names.
+    backLabelKey: tc.backLabelKey ?? null,
+    backTo: tc.backTo ?? null,
+    toolbarFilters: tc.toolbarFilters ?? [],
   }, null, 2);
 
   return `import { ListModalWindow } from '@/components/contract-ui';
