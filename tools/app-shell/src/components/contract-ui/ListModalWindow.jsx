@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, X, GripVertical, Pencil } from 'lucide-react';
+import { Plus, Search, X, GripVertical, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog.jsx';
-import { Switch } from '@/components/ui/switch';
+import { PillToggle } from '@/components/PillToggle';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useNeoResource, getApiBase } from '@/hooks/useNeoResource.js';
 import { useUI, useMenuLabel, useLabel } from '@/i18n';
@@ -22,11 +22,37 @@ import { EntityForm } from './EntityForm.jsx';
 import { InfoBanner } from '../InfoBanner.jsx';
 import { ListModalCell, cellAlignClass } from './listModalCells.jsx';
 import { ListModalToolbarFilter } from './ListModalToolbarFilter.jsx';
+import { AdvancedFilterButton } from './AdvancedFilterButton.jsx';
+import { applyConditions } from '@/windows/custom/financial-account/advancedFilterApply';
 
 // Resolve an i18n label, falling back to a default key when the configured key is
 // absent. Keeps title/submit-label expressions free of nested ternaries (Sonar S3358).
 function labelOrFallback(ui, key, fallbackKey) {
   return key ? ui(key) : ui(fallbackKey);
+}
+
+// Resolve the modal's title / subtitle / submit label for create vs edit. Kept as a
+// helper so its ternaries don't inflate ListModalWindow's cognitive complexity.
+function resolveModalLabels(editingRow, config, ui) {
+  const title = editingRow
+    ? labelOrFallback(ui, config?.editTitleKey, 'edit')
+    : labelOrFallback(ui, config?.titleKey, 'createRecord');
+  const subtitleKey = editingRow
+    ? (config?.editSubtitleKey ?? config?.subtitleKey)
+    : config?.subtitleKey;
+  const submitLabel = editingRow
+    ? labelOrFallback(ui, config?.editSubmitLabelKey, 'save')
+    : labelOrFallback(ui, config?.submitLabelKey, 'createRecord');
+  return { title, subtitle: subtitleKey ? ui(subtitleKey) : null, submitLabel };
+}
+
+// Canonicalizes a filter value so boolean Yes/No fields match regardless of the
+// representation NEO returns (boolean true/false) vs the option codes ('Y'/'N').
+// Non-boolean values (e.g. enum codes) pass through as their string form.
+function canonFilterValue(v) {
+  if (v === true || v === 'Y' || v === 'true') return 'Y';
+  if (v === false || v === 'N' || v === 'false') return 'N';
+  return String(v);
 }
 
 // Client-side filtering for the list: exact-match toolbar dropdown filters first,
@@ -38,7 +64,8 @@ function filterRows(allRows, { toolbarFilters, filterValues, searchQuery, filter
     const selected = filterValues[f.key];
     if (selected == null) continue;
     const field = f.field ?? f.key;
-    result = result.filter(row => String(row?.[field]) === String(selected));
+    const target = canonFilterValue(selected);
+    result = result.filter(row => canonFilterValue(row?.[field]) === target);
   }
   const q = searchQuery.trim().toLowerCase();
   if (q && filters.length > 0) {
@@ -50,6 +77,30 @@ function filterRows(allRows, { toolbarFilters, filterValues, searchQuery, filter
     );
   }
   return result;
+}
+
+// Maps the grid columns to the AdvancedFilterBuilder's column metadata. FK/toggle
+// columns are skipped (filtering an FK by its raw id, or a toggle, is not useful
+// client-side); enums expose their labels, numeric cells become number filters.
+function buildFilterColumns(columns, ui, tMenu) {
+  const NUMERIC = ['number', 'amount', 'integer', 'decimal', 'price', 'quantity'];
+  const filterType = (col) => {
+    if (col.cellType === 'toggle' || col.type === 'boolean') return null;
+    if (col.type === 'selector' || col.type === 'foreignKey') return null;
+    if (col.enumLabels && (col.type === 'enum' || col.type === 'status')) return 'enum';
+    if (col.cellType === 'percent' || NUMERIC.includes(col.type)) return 'number';
+    return 'string';
+  };
+  return columns
+    .map((col) => {
+      const type = filterType(col);
+      if (!type) return null;
+      const label = col.labelKey ? ui(col.labelKey) : (tMenu(col.label) ?? col.label ?? col.key);
+      const out = { key: col.key, label, type };
+      if (type === 'enum' && col.enumLabels) out.enumLabels = col.enumLabels;
+      return out;
+    })
+    .filter(Boolean);
 }
 
 /**
@@ -143,11 +194,18 @@ export function ListModalWindow({
     setFilterValues(prev => ({ ...prev, [key]: value }));
   }, []);
 
+  // --- Advanced "by conditions" filter (shared AdvancedFilterBuilder) --------
+  const [advancedFilter, setAdvancedFilter] = useState(null);
+  const filterColumns = useMemo(() => buildFilterColumns(columns, ui, tMenu), [columns, ui, tMenu]);
+
   // --- Local search over the configured filter columns ----------------------
   const [searchQuery, setSearchQuery] = useState('');
   const data = useMemo(
-    () => filterRows(allRows, { toolbarFilters, filterValues, searchQuery, filters }),
-    [allRows, searchQuery, filters, toolbarFilters, filterValues],
+    () => applyConditions(
+      filterRows(allRows, { toolbarFilters, filterValues, searchQuery, filters }),
+      advancedFilter,
+    ),
+    [allRows, searchQuery, filters, toolbarFilters, filterValues, advancedFilter],
   );
 
   // --- Create / edit modal --------------------------------------------------
@@ -158,6 +216,8 @@ export function ListModalWindow({
   const [formError, setFormError] = useState(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [savingToggles, setSavingToggles] = useState({});
+  const [deletingRow, setDeletingRow] = useState(null); // row pending delete confirmation
+  const [deleting, setDeleting] = useState(false);
 
   const requiredKeys = useMemo(() => fields.filter(f => f.required).map(f => f.key), [fields]);
 
@@ -284,25 +344,36 @@ export function ListModalWindow({
     }
   }, [apiBaseUrl, entity, authHeaders, errorMessage, reload, ui]);
 
+  // Delete confirmed from the dialog: DELETE {entity}/{id}, then reload.
+  const handleDeleteConfirmed = useCallback(async () => {
+    if (!deletingRow) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`${apiBaseUrl}/${entity}/${encodeURIComponent(deletingRow.id)}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+      if (!res.ok) {
+        toast.error(await errorMessage(res));
+        return;
+      }
+      setDeletingRow(null);
+      reload();
+    } catch (e) {
+      toast.error(e?.message || ui('genericError'));
+    } finally {
+      setDeleting(false);
+    }
+  }, [deletingRow, apiBaseUrl, entity, authHeaders, errorMessage, reload, ui]);
+
   const handleBack = useCallback(() => {
     if (config?.backTo) navigate(config.backTo);
     else navigate(-1);
   }, [config, navigate]);
 
-  const title = editingRow
-    ? labelOrFallback(ui, config?.editTitleKey, 'edit')
-    : labelOrFallback(ui, config?.titleKey, 'createRecord');
-
-  // Modal subtitle (Figma): a muted line under the title explaining the record.
-  const subtitleKey = editingRow
-    ? (config?.editSubtitleKey ?? config?.subtitleKey)
-    : config?.subtitleKey;
-  const subtitle = subtitleKey ? ui(subtitleKey) : null;
-
-  // Submit button label (Figma "Crear regla" / save).
-  const submitLabel = editingRow
-    ? labelOrFallback(ui, config?.editSubmitLabelKey, 'save')
-    : labelOrFallback(ui, config?.submitLabelKey, 'createRecord');
+  // Modal title / subtitle / submit label (Figma). Resolved in a helper so the
+  // create-vs-edit ternaries stay out of the component's cognitive complexity.
+  const { title, subtitle, submitLabel } = resolveModalLabels(editingRow, config, ui);
 
   // The optional footer toggle (a boolean field promoted out of the body grid into
   // the footer, beside the submit button — e.g. "Crear transacción automáticamente").
@@ -347,6 +418,13 @@ export function ListModalWindow({
               ui={ui}
             />
           ))}
+          <AdvancedFilterButton
+            columns={filterColumns}
+            rows={allRows}
+            value={advancedFilter}
+            onChange={setAdvancedFilter}
+            testId="list-modal-advanced-filter"
+          />
         </div>
         <div className="flex items-center gap-2">
           {hasSearch && (
@@ -366,9 +444,9 @@ export function ListModalWindow({
             type="button"
             onClick={openCreate}
             data-testid="list-modal-new"
-            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[#121217] px-3 text-sm font-medium leading-6 text-white transition-colors hover:bg-[#121217]/90"
+            className="group inline-flex h-10 items-center gap-1.5 rounded-lg bg-[#121217] px-3 text-sm font-medium leading-6 text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217]"
           >
-            <Plus className="h-4 w-4 text-white/90" />
+            <Plus className="h-4 w-4 text-white/90 group-hover:text-[#121217]" />
             {config?.newLabelKey ? ui(config.newLabelKey) : ui('newRecord')}
           </button>
         </div>
@@ -388,7 +466,7 @@ export function ListModalWindow({
       )}
 
       {/* Grid */}
-      {loading ? (
+      {loading && allRows.length === 0 ? (
         <div className="flex flex-col gap-2 px-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
@@ -402,6 +480,8 @@ export function ListModalWindow({
             tMenu={tMenu}
             ui={ui}
             onEdit={openEdit}
+            onDelete={(row) => setDeletingRow(row)}
+            deletingId={deleting ? deletingRow?.id : null}
             onToggle={handleToggle}
             savingToggles={savingToggles}
           />
@@ -464,41 +544,105 @@ export function ListModalWindow({
           </div>
 
           {/* Footer — optional toggle + helper (left), pill submit (right) */}
-          <div className="flex items-center justify-between gap-4 border-t border-[#E8EAEF] px-5 py-3">
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              {footerToggleField ? (
-                <>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={isToggleOn(formData[footerToggleKey])}
-                      onCheckedChange={(next) => handleFieldChange(footerToggleKey, next)}
-                      aria-label={footerToggleLabel}
-                      data-testid={`list-modal-footer-toggle-${footerToggleKey}`}
-                      className="h-4 w-[30px] data-[state=checked]:bg-[#121217] data-[state=unchecked]:bg-[#D1D4DB]"
-                    />
-                    <span className="text-sm font-medium leading-6 text-[#121217]">{footerToggleLabel}</span>
-                  </div>
-                  {footerToggleField.help && (
-                    <p className="text-sm leading-6 text-[#6C6C89]">{ui(footerToggleField.help) ?? footerToggleField.help}</p>
-                  )}
-                </>
-              ) : (
-                <span />
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving || missingRequired.length > 0}
-              data-testid="list-modal-submit"
-              className="inline-flex h-10 shrink-0 items-center justify-center rounded-full px-3 py-2 text-sm font-medium leading-6 text-white transition-colors disabled:bg-[#D1D4DB] disabled:text-white enabled:bg-[#121217] enabled:hover:bg-[#121217]/90"
-            >
-              {saving ? ui('saving') : submitLabel}
-            </button>
-          </div>
+          <ModalFooter
+            toggleField={footerToggleField}
+            toggleKey={footerToggleKey}
+            toggleLabel={footerToggleLabel}
+            toggleChecked={isToggleOn(formData[footerToggleKey])}
+            onToggleChange={(next) => handleFieldChange(footerToggleKey, next)}
+            onSubmit={handleSave}
+            submitDisabled={saving || missingRequired.length > 0}
+            submitting={saving}
+            submitLabel={submitLabel}
+            ui={ui}
+          />
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!deletingRow}
+        busy={deleting}
+        onCancel={() => setDeletingRow(null)}
+        onConfirm={handleDeleteConfirmed}
+        ui={ui}
+      />
     </div>
+  );
+}
+
+/**
+ * Modal footer: optional toggle + helper (left) and the pill submit button (right).
+ * Extracted so its conditionals live here instead of inflating ListModalWindow.
+ */
+function ModalFooter({ toggleField, toggleKey, toggleLabel, toggleChecked, onToggleChange, onSubmit, submitDisabled, submitting, submitLabel, ui }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-t border-[#E8EAEF] px-5 py-3">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        {toggleField ? (
+          <>
+            <div className="flex items-center gap-2">
+              <PillToggle
+                checked={toggleChecked}
+                onCheckedChange={onToggleChange}
+                aria-label={toggleLabel}
+                data-testid={`list-modal-footer-toggle-${toggleKey}`}
+              />
+              <span className="text-sm font-medium leading-6 text-[#121217]">{toggleLabel}</span>
+            </div>
+            {toggleField.help && (
+              <p className="text-sm leading-6 text-[#6C6C89]">{ui(toggleField.help) ?? toggleField.help}</p>
+            )}
+          </>
+        ) : (
+          <span />
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onSubmit}
+        disabled={submitDisabled}
+        data-testid="list-modal-submit"
+        className="inline-flex h-10 shrink-0 items-center justify-center rounded-full px-3 py-2 text-sm font-medium leading-6 text-white transition-colors disabled:bg-[#D1D4DB] disabled:text-white enabled:bg-[#121217] enabled:hover:bg-[#FFD500] enabled:hover:text-[#121217]"
+      >
+        {submitting ? ui('saving') : submitLabel}
+      </button>
+    </div>
+  );
+}
+
+/** Delete confirmation dialog. Extracted to keep its conditional out of the main component. */
+function DeleteConfirmDialog({ open, busy, onCancel, onConfirm, ui }) {
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o && !busy) onCancel(); }}>
+      <DialogContent className="max-w-md gap-0 rounded-lg bg-white p-6">
+        <DialogHeader className="space-y-1.5 text-left">
+          <DialogTitle className="text-lg font-semibold leading-6 text-[#121217]">
+            {ui('deleteConfirmTitle')}
+          </DialogTitle>
+          <p className="text-sm leading-5 text-[#6C6C89]">{ui('deleteConfirmMessage')}</p>
+        </DialogHeader>
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={busy}
+            className="inline-flex h-10 items-center rounded-lg border border-[#D1D4DB] bg-white px-4 text-sm font-medium leading-6 text-[#121217] transition-colors hover:bg-[#F5F7F9] disabled:opacity-50"
+          >
+            {ui('cancel')}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={busy}
+            data-testid="list-modal-delete-confirm"
+            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[#D92D20] px-4 text-sm font-medium leading-6 text-white transition-colors hover:bg-[#B42318] disabled:opacity-50"
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {ui('delete')}
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -507,7 +651,7 @@ export function ListModalWindow({
  * handle placeholder for future reorder, registry-driven cells, hover edit
  * action). Fully generic: structure comes from `columns` + each `column.cellType`.
  */
-function ListModalGrid({ columns, data, tMenu, ui, onEdit, onToggle, savingToggles }) {
+function ListModalGrid({ columns, data, tMenu, ui, onEdit, onDelete, deletingId, onToggle, savingToggles }) {
   const isEmpty = !data || data.length === 0;
 
   return (
@@ -532,7 +676,7 @@ function ListModalGrid({ columns, data, tMenu, ui, onEdit, onToggle, savingToggl
             </TableHead>
           ))}
           {/* Actions column header (56px) */}
-          <TableHead className="w-14 p-0" aria-hidden="true" />
+          <TableHead className="w-20 p-0" aria-hidden="true" />
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -571,8 +715,8 @@ function ListModalGrid({ columns, data, tMenu, ui, onEdit, onToggle, savingToggl
               </TableCell>
             ))}
             {/* Hover edit action */}
-            <TableCell className="w-14 p-0">
-              <div className="flex w-14 items-center justify-center opacity-0 transition-opacity group-hover/row:opacity-100">
+            <TableCell className="w-20 p-0">
+              <div className="flex w-20 items-center justify-center gap-1 opacity-0 transition-opacity group-hover/row:opacity-100">
                 <button
                   type="button"
                   onClick={() => onEdit?.(row)}
@@ -582,6 +726,20 @@ function ListModalGrid({ columns, data, tMenu, ui, onEdit, onToggle, savingToggl
                 >
                   <Pencil className="h-4 w-4" />
                 </button>
+                {onDelete && (
+                  <button
+                    type="button"
+                    onClick={() => onDelete(row)}
+                    disabled={deletingId === row.id}
+                    aria-label={ui('delete')}
+                    data-testid={`list-modal-delete-${row.id}`}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#D92D20] transition-colors hover:bg-[#FEE4E2] disabled:opacity-50"
+                  >
+                    {deletingId === row.id
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : <Trash2 className="h-4 w-4" />}
+                  </button>
+                )}
               </div>
             </TableCell>
           </TableRow>

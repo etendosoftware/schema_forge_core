@@ -5,7 +5,7 @@ const columns = [
   { key: 'priority', column: 'Priority', type: 'number', label: 'Priority', labelKey: 'matchRuleColPriority', inlineEdit: true, cellType: 'priorityPill' },
   { key: 'name', column: 'Name', type: 'string', label: 'Name', labelKey: 'matchRuleColName', cellType: 'nameWithSubline', subField: 'businessPartner' },
   { key: 'textCondition', column: 'TextCondition', type: 'enum', label: 'Text Condition', labelKey: 'matchRuleColCondition', enumLabels: { 'C': 'Contains', 'R': 'Regex', 'S': 'Starts with' }, cellType: 'conditionChip', kindField: 'textCondition', patternField: 'textPattern', kindLabels: {"C":"matchRuleConditionContains","S":"matchRuleConditionStartsWith","R":"matchRuleConditionRegex"} },
-  { key: 'transactionType', column: 'TransactionType', type: 'enum', label: 'Transaction Type', labelKey: 'matchRuleColType', enumLabels: { 'B': 'Bank fee', 'O': 'Other', 'R': 'Recurring', 'H': 'Tax retention', 'T': 'Transfer' }, cellType: 'typePill', tones: {"H":"blue","T":"neutral","B":"amber","R":"green","O":"neutral"} },
+  { key: 'transactionType', column: 'TransactionType', type: 'enum', label: 'Transaction Type', labelKey: 'matchRuleColType', enumLabels: { 'B': 'Bank fee', 'T': 'Transfer', 'H': 'Tax retention' }, cellType: 'typePill', tones: {"H":"blue","T":"neutral","B":"amber","R":"green","O":"neutral"} },
   { key: 'accountingAccount', column: 'C_ElementValue_ID', type: 'selector', label: 'Accounting Account', labelKey: 'matchRuleColAccount' },
   { key: 'amountTolerancePct', column: 'AmountTolerancePct', type: 'number', label: 'Amount Tolerance Pct', labelKey: 'matchRuleColTolerance', cellType: 'percent' },
   { key: 'matchCount', column: 'MatchCount', type: 'number', label: 'Match Count', labelKey: 'matchRuleColReconciliations', cellType: 'boldText' },
@@ -18,7 +18,7 @@ const fields = [
   { key: 'name', column: 'Name', type: 'text', label: 'Name', required: true, section: 'general', placeholderKey: 'matchRuleNamePlaceholder' },
   { key: 'textPattern', column: 'TextPattern', type: 'text', label: 'Text Pattern', required: true, section: 'general', placeholderKey: 'matchRulePatternPlaceholder' },
   { key: 'financialAccount', column: 'FIN_Financial_Account_ID', type: 'selector', label: 'Financial Account', reference: 'Financial_Account', inputMode: 'selector', section: 'general', emptyOptionLabelKey: 'matchRuleAllAccounts' },
-  { key: 'transactionType', column: 'TransactionType', type: 'select', label: 'Transaction Type', section: 'general', options: [{ value: 'B', label: 'Bank fee' }, { value: 'O', label: 'Other' }, { value: 'R', label: 'Recurring' }, { value: 'H', label: 'Tax retention' }, { value: 'T', label: 'Transfer' }] },
+  { key: 'transactionType', column: 'TransactionType', type: 'select', label: 'Transaction Type', section: 'general', options: [{ value: 'B', label: 'Bank fee' }, { value: 'T', label: 'Transfer' }, { value: 'H', label: 'Tax retention' }] },
   { key: 'accountingAccount', column: 'C_ElementValue_ID', type: 'selector', label: 'Accounting Account', reference: 'ElementValue', inputMode: 'selector', section: 'general' },
   { key: 'textCondition', column: 'TextCondition', type: 'select', label: 'Text Condition', required: true, section: 'general', options: [{ value: 'C', label: 'Contains' }, { value: 'R', label: 'Regex' }, { value: 'S', label: 'Starts with' }] },
   { key: 'amountTolerancePct', column: 'AmountTolerancePct', type: 'number', label: 'Amount Tolerance Pct', section: 'general', defaultValue: '0' },
@@ -65,36 +65,9 @@ const listModalConfig = {
   "backTo": null,
   "toolbarFilters": [
     {
-      "key": "transactionType",
-      "field": "transactionType",
-      "allLabelKey": "matchRuleFilterAllRules",
-      "options": [
-        {
-          "value": "H",
-          "labelKey": "matchRuleTxnTypeRetention"
-        },
-        {
-          "value": "T",
-          "labelKey": "matchRuleTxnTypeTransfer"
-        },
-        {
-          "value": "B",
-          "labelKey": "matchRuleTxnTypeBankFee"
-        },
-        {
-          "value": "R",
-          "labelKey": "matchRuleTxnTypeRecurring"
-        },
-        {
-          "value": "O",
-          "labelKey": "matchRuleTxnTypeOther"
-        }
-      ]
-    },
-    {
       "key": "active",
       "field": "active",
-      "allLabelKey": "matchRuleFilterAllStates",
+      "allLabelKey": "matchRuleFilterAllRules",
       "options": [
         {
           "value": "Y",
@@ -239,7 +212,7 @@ export const api = {
       "CreateTransaction": "Crear transacción automáticamente",
       "MatchCount": "Conciliaciones",
       "Isactive": "Activa",
-      "C_BPartner_ID": "Tercero por defecto",
+      "C_BPartner_ID": "Contacto",
       "FIN_Financial_Account_ID": "Afecta a",
       "C_Project_ID": "Proyecto",
       "C_Costcenter_ID": "Centro de coste",
@@ -260,7 +233,7 @@ export const api = {
       "CreateTransaction": "Create transaction automatically",
       "MatchCount": "Reconciliations",
       "Isactive": "Active",
-      "C_BPartner_ID": "Default business partner",
+      "C_BPartner_ID": "Contact",
       "FIN_Financial_Account_ID": "Applies to",
       "C_Project_ID": "Project",
       "C_Costcenter_ID": "Cost center",

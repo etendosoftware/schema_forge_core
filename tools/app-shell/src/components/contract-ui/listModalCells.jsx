@@ -87,8 +87,9 @@ function ConditionChip({ row, col, tMenu }) {
   }
   if (!pattern && !kindLabel) return <span className="text-[#828FA3]">&mdash;</span>;
   const text = kindLabel ? `${kindLabel}: "${pattern ?? ''}"` : String(pattern ?? '');
+  // Figma "Información" badge: gray fill, rounded-lg, NO border, 12px/16px #3F3F50.
   return (
-    <span className={`${PILL_BASE} rounded-lg text-xs leading-4 max-w-full`}>
+    <span className="inline-flex items-center max-w-full rounded-lg bg-[#F5F7F9] px-2 py-1 text-xs leading-4 text-[#3F3F50]">
       <span className="truncate">{text}</span>
     </span>
   );

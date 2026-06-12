@@ -27,21 +27,9 @@
       "backLabelKey": "cancel",
       "toolbarFilters": [
         {
-          "key": "transactionType",
-          "field": "transactionType",
-          "allLabelKey": "matchRuleFilterAllRules",
-          "options": [
-            { "value": "H", "labelKey": "matchRuleTxnTypeRetention" },
-            { "value": "T", "labelKey": "matchRuleTxnTypeTransfer" },
-            { "value": "B", "labelKey": "matchRuleTxnTypeBankFee" },
-            { "value": "R", "labelKey": "matchRuleTxnTypeRecurring" },
-            { "value": "O", "labelKey": "matchRuleTxnTypeOther" }
-          ]
-        },
-        {
           "key": "active",
           "field": "active",
-          "allLabelKey": "matchRuleFilterAllStates",
+          "allLabelKey": "matchRuleFilterAllRules",
           "options": [
             { "value": "Y", "labelKey": "matchRuleFilterActive" },
             { "value": "N", "labelKey": "matchRuleFilterInactive" }
@@ -61,7 +49,7 @@
         "CreateTransaction": "Crear transacción automáticamente",
         "MatchCount": "Conciliaciones",
         "Isactive": "Activa",
-        "C_BPartner_ID": "Tercero por defecto",
+        "C_BPartner_ID": "Contacto",
         "FIN_Financial_Account_ID": "Afecta a",
         "C_Project_ID": "Proyecto",
         "C_Costcenter_ID": "Centro de coste",
@@ -82,7 +70,7 @@
         "CreateTransaction": "Create transaction automatically",
         "MatchCount": "Reconciliations",
         "Isactive": "Active",
-        "C_BPartner_ID": "Default business partner",
+        "C_BPartner_ID": "Contact",
         "FIN_Financial_Account_ID": "Applies to",
         "C_Project_ID": "Project",
         "C_Costcenter_ID": "Cost center",
