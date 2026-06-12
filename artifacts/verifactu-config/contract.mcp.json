@@ -1,8 +1,8 @@
 {
-  "version": "0.1.0",
+  "version": "0.3.0",
   "generatedAt": "2026-04-28T16:08:39.756Z",
-  "updatedAt": "2026-05-26T18:48:57.367Z",
-  "contractChecksum": "a066722139e468a9",
+  "updatedAt": "2026-06-12T15:47:38.884Z",
+  "contractChecksum": "98b4f6f68b033d87",
   "apiPrediction": {
     "specName": "verifactu-config",
     "baseUrl": "/sws/neo/verifactu-config",
@@ -154,11 +154,9 @@
         ]
       }
     ],
-    "warnings": [
-      "System lifecycle actions are present but are not exposed as editable agent actions"
-    ],
+    "warnings": [],
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "fce2d95505cbb2ce"
+  "checksum": "0370b1e986df4401"
 }

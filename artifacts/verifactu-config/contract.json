@@ -1,8 +1,8 @@
 {
-  "version": "0.1.0",
+  "version": "0.3.0",
   "generatedAt": "2026-04-28T16:08:39.756Z",
-  "updatedAt": "2026-05-20T11:45:15.812Z",
-  "checksum": "a066722139e468a9",
+  "updatedAt": "2026-06-12T15:47:38.884Z",
+  "checksum": "98b4f6f68b033d87",
   "frontendContract": {
     "window": {
       "id": "27A453FA86974745977672F1A8DCCEFF",
@@ -315,14 +315,6 @@
             "required": true
           },
           {
-            "name": "refreshData",
-            "apiKey": "refreshData",
-            "column": "Refresh_Data",
-            "type": "button",
-            "visibility": "system",
-            "required": false
-          },
-          {
             "name": "updated",
             "apiKey": "updated",
             "column": "Updated",
@@ -337,6 +329,14 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "refreshData",
+            "apiKey": "refreshData",
+            "column": "Refresh_Data",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
           }
         ]
       }
