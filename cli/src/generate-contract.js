@@ -206,32 +206,48 @@ function applyReadOnlyLogic(mapped, f, rules, columnMap, booleanFields) {
 
 // Data-driven UI-hint copy lists. Keeping these declarative (instead of a long
 // chain of `if`s) keeps the mapper functions under Sonar's cognitive-complexity
-// limit while preserving exact per-prop semantics.
+// limit. The list ORDER is significant: it fixes the key emission order on the
+// contract JSON, which the offline-regen checksum depends on — do not reorder.
 const isDefined = (v) => v !== undefined;
 const isNotNull = (v) => v != null;
 const setTrue = () => true;
 
-// Copied verbatim onto `mapped` when truthy.
-const BASIC_TRUTHY_PROPS = ['help', 'placeholderKey', 'emptyOptionLabelKey', 'fieldGroup', 'precision', 'section', 'span'];
-// Set to literal `true` when the source value is truthy.
-const BASIC_FLAG_PROPS = ['isIdentifier', 'isSelectionColumn', 'isFilterable', 'isTranslated', 'explicitType', 'statusBar', 'badge'];
+// [key, keep predicate, value transform?]. No transform → copy raw value;
+// transform `setTrue` → emit literal `true` for flags.
+const BASIC_FIELD_HINTS = [
+  ['defaultValue', isDefined],
+  ['isIdentifier', Boolean, setTrue],
+  ['help', Boolean],
+  ['placeholderKey', Boolean],
+  ['emptyOptionLabelKey', Boolean],
+  ['fieldGroup', Boolean],
+  ['isSelectionColumn', Boolean, setTrue],
+  ['isFilterable', Boolean, setTrue],
+  ['precision', Boolean],
+  ['isTranslated', Boolean, setTrue],
+  ['section', Boolean],
+  ['seq', isNotNull],
+  ['span', Boolean],
+  ['rows', isNotNull],
+  ['explicitType', Boolean, setTrue],
+  ['statusBar', Boolean, setTrue],
+  ['badge', Boolean, setTrue],
+];
 
 /**
- * Copy each `key` from `f` onto `mapped` when `keep(f[key])` is truthy. With
- * `value`, assigns `value(f[key])` (e.g. always `true` for flags); otherwise
- * copies the raw value. Single source of the copy loop so the callers stay flat.
+ * Apply an ordered list of `[key, keep, value?]` hints onto `mapped`: when
+ * `keep(f[key])` is truthy, assign `value(f[key])` (e.g. `true` for flags) or
+ * the raw value. Single source of the copy loop so callers stay flat and the
+ * emission order stays deterministic.
  */
-function copyWhen(f, mapped, keys, keep, value) {
-  for (const key of keys) {
+function applyHints(f, mapped, hints) {
+  for (const [key, keep, value] of hints) {
     if (keep(f[key])) mapped[key] = value ? value(f[key]) : f[key];
   }
 }
 
 function applyBasicFieldUIHints(f, mapped) {
-  copyWhen(f, mapped, ['defaultValue'], isDefined);
-  copyWhen(f, mapped, ['seq', 'rows'], isNotNull);
-  copyWhen(f, mapped, BASIC_TRUTHY_PROPS, Boolean);
-  copyWhen(f, mapped, BASIC_FLAG_PROPS, Boolean, setTrue);
+  applyHints(f, mapped, BASIC_FIELD_HINTS);
 }
 
 function applyGridHints(f, mapped) {
@@ -245,22 +261,41 @@ function applyGridHints(f, mapped) {
   if (f.inlineEdit) mapped.inlineEdit = true;
 }
 
-// Copied verbatim when truthy. Includes badge config, display/cellType, and the
-// list-modal cell-renderer extras (registry-driven; see listModalCells.jsx):
-//  - subField/kindField/patternField/kindLabels/tones drive nameWithSubline,
-//    conditionChip and typePill cells.
-//  - gridLabelKey: i18n key for the column header (short Figma label).
-const HINT_TRUTHY_PROPS = ['badgeLabels', 'badgeColors', 'badgeVariants', 'enumVariants', 'labels', 'display', 'cellType', 'subField', 'kindField', 'patternField', 'kindLabels', 'tones', 'gridLabelKey'];
-const HINT_FLAG_PROPS = ['summable', 'noTrailing', 'filterOnly'];
+// Ordered hints emitted BEFORE applyGridHints. Order is significant (offline-regen
+// checksum) — do not reorder. Includes badge config, summable, display/cellType, and
+// the list-modal cell-renderer extras (registry-driven; see listModalCells.jsx):
+// subField/kindField/patternField/kindLabels/tones drive nameWithSubline,
+// conditionChip and typePill cells; gridLabelKey is the column-header i18n key.
+const FIELD_HINTS_PRE_GRID = [
+  ['badgeLabels', Boolean],
+  ['badgeColors', Boolean],
+  ['badgeVariants', Boolean],
+  ['enumVariants', Boolean],
+  ['labels', Boolean],
+  ['summable', Boolean, setTrue],
+  ['display', Boolean],
+  ['cellType', Boolean],
+  ['subField', Boolean],
+  ['kindField', Boolean],
+  ['patternField', Boolean],
+  ['kindLabels', Boolean],
+  ['tones', Boolean],
+  ['gridLabelKey', Boolean],
+];
+// Emitted AFTER applyGridHints.
+const FIELD_HINTS_POST_GRID = [
+  ['noTrailing', Boolean, setTrue],
+  ['filterOnly', Boolean, setTrue],
+];
 
 function applyFieldUIHints(f, mapped) {
   applyBasicFieldUIHints(f, mapped);
-  copyWhen(f, mapped, HINT_TRUTHY_PROPS, Boolean);
-  copyWhen(f, mapped, HINT_FLAG_PROPS, Boolean, setTrue);
+  applyHints(f, mapped, FIELD_HINTS_PRE_GRID);
   applyGridHints(f, mapped);
-  copyWhen(f, mapped, ['min'], isDefined);
+  applyHints(f, mapped, FIELD_HINTS_POST_GRID);
   if (f.filterable === false) mapped.filterable = false;
   if (f.dot === false) mapped.dot = false;
+  if (f.min !== undefined) mapped.min = f.min;
 }
 
 /**
