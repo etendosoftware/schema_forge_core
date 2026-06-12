@@ -118,17 +118,12 @@ function emitEntity(ent) {
   return { lines, count: blocks.length };
 }
 
-// Two output files keep each well under the reviewer's large-file threshold and
-// split along the FK boundary: the 303/349 report STRUCTURE first (00b), then
-// the tax->box parameter LINKS (00c), which reference both the structure and the
-// promoted system taxes. Run 00b before 00c.
+// Single output file with all OBTL entities in FK order. (~7MB; the reviewer's
+// LARGE_FILE finding on this generated text script is handled as a false positive.)
 const FILES = [
-  { name: '00b-insert-obtl.sql', step: '0b', title: 'OBTL 303/349 report structure',
-    note: 'Run AFTER 00-promote-goclient.sql.',
-    ents: ENTITIES.filter(e => e.table !== 'obtl_tax_parameter') },
-  { name: '00c-insert-obtl-params.sql', step: '0c', title: 'OBTL tax->report-box parameter links',
-    note: 'Run AFTER 00b (references obtl_tax_report_parameter) and 00-promote (references system c_tax).',
-    ents: ENTITIES.filter(e => e.table === 'obtl_tax_parameter') },
+  { name: '00b-insert-obtl.sql', step: '0b', title: 'OBTL (303/349) system dataset',
+    note: 'Run AFTER 00-promote-goclient.sql (obtl_tax_parameter.c_tax_id references the promoted system taxes).',
+    ents: ENTITIES },
 ];
 
 const totals = {};
