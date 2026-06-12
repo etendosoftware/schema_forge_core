@@ -23,6 +23,35 @@ import { InfoBanner } from '../InfoBanner.jsx';
 import { ListModalCell, cellAlignClass } from './listModalCells.jsx';
 import { ListModalToolbarFilter } from './ListModalToolbarFilter.jsx';
 
+// Resolve an i18n label, falling back to a default key when the configured key is
+// absent. Keeps title/submit-label expressions free of nested ternaries (Sonar S3358).
+function labelOrFallback(ui, key, fallbackKey) {
+  return key ? ui(key) : ui(fallbackKey);
+}
+
+// Client-side filtering for the list: exact-match toolbar dropdown filters first,
+// then a free-text search over the searchable columns. Pure helper so the
+// component's useMemo stays trivial (keeps cognitive complexity low).
+function filterRows(allRows, { toolbarFilters, filterValues, searchQuery, filters }) {
+  let result = allRows;
+  for (const f of toolbarFilters) {
+    const selected = filterValues[f.key];
+    if (selected == null) continue;
+    const field = f.field ?? f.key;
+    result = result.filter(row => String(row?.[field]) === String(selected));
+  }
+  const q = searchQuery.trim().toLowerCase();
+  if (q && filters.length > 0) {
+    result = result.filter(row =>
+      filters.some(key => {
+        const v = resolveIdentifier(row, key) ?? row?.[key];
+        return v != null && String(v).toLowerCase().includes(q);
+      }),
+    );
+  }
+  return result;
+}
+
 /**
  * Generic, contract-driven layout for catalog / master-data windows that present a
  * grid (list) plus a create/edit MODAL, with NO drill-in detail view.
@@ -116,27 +145,10 @@ export function ListModalWindow({
 
   // --- Local search over the configured filter columns ----------------------
   const [searchQuery, setSearchQuery] = useState('');
-  const data = useMemo(() => {
-    let result = allRows;
-    // Apply each active toolbar dropdown filter (exact match on its `field`).
-    for (const f of toolbarFilters) {
-      const selected = filterValues[f.key];
-      if (selected == null) continue;
-      const field = f.field ?? f.key;
-      result = result.filter(row => String(row?.[field]) === String(selected));
-    }
-    // Apply free-text search over the searchable filter columns.
-    const q = searchQuery.trim().toLowerCase();
-    if (q && filters.length > 0) {
-      result = result.filter(row =>
-        filters.some(key => {
-          const v = resolveIdentifier(row, key) ?? row?.[key];
-          return v != null && String(v).toLowerCase().includes(q);
-        }),
-      );
-    }
-    return result;
-  }, [allRows, searchQuery, filters, toolbarFilters, filterValues]);
+  const data = useMemo(
+    () => filterRows(allRows, { toolbarFilters, filterValues, searchQuery, filters }),
+    [allRows, searchQuery, filters, toolbarFilters, filterValues],
+  );
 
   // --- Create / edit modal --------------------------------------------------
   const [modalOpen, setModalOpen] = useState(false);
@@ -278,8 +290,8 @@ export function ListModalWindow({
   }, [config, navigate]);
 
   const title = editingRow
-    ? (config?.editTitleKey ? ui(config.editTitleKey) : ui('edit'))
-    : (config?.titleKey ? ui(config.titleKey) : ui('createRecord'));
+    ? labelOrFallback(ui, config?.editTitleKey, 'edit')
+    : labelOrFallback(ui, config?.titleKey, 'createRecord');
 
   // Modal subtitle (Figma): a muted line under the title explaining the record.
   const subtitleKey = editingRow
@@ -289,8 +301,8 @@ export function ListModalWindow({
 
   // Submit button label (Figma "Crear regla" / save).
   const submitLabel = editingRow
-    ? (config?.editSubmitLabelKey ? ui(config.editSubmitLabelKey) : ui('save'))
-    : (config?.submitLabelKey ? ui(config.submitLabelKey) : ui('createRecord'));
+    ? labelOrFallback(ui, config?.editSubmitLabelKey, 'save')
+    : labelOrFallback(ui, config?.submitLabelKey, 'createRecord');
 
   // The optional footer toggle (a boolean field promoted out of the body grid into
   // the footer, beside the submit button — e.g. "Crear transacción automáticamente").

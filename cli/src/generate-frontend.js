@@ -1251,9 +1251,11 @@ function buildListModalColumns(entity) {
   return orderGridFields(entity).map(f => {
     const type = mapFieldType(f);
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
-    const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
-      ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
-      : '';
+    let enumLabelsPart = '';
+    if ((type === 'enum' || type === 'status') && f.enumValues?.length) {
+      const enumEntries = f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ');
+      enumLabelsPart = `, enumLabels: { ${enumEntries} }`;
+    }
     const enumVariantsPart = jsonWrapIf(', enumVariants: ', f.enumVariants);
     const togglePart = fragmentIf(f.inlineToggle, ', toggle: true');
     const inlineEditPart = fragmentIf(f.inlineEdit, ', inlineEdit: true');
@@ -1349,7 +1351,10 @@ export function generateListModalPage(headerEntity, contract) {
   const fieldsArray = buildListModalFields(formFields);
   const sections = resolveModalSections(formFields, templateConfig);
   const sectionsArray = sections
-    .map(s => `  { key: '${s.key}'${s.label ? `, label: '${String(s.label).replace(/'/g, "\\'")}'` : ''} },`)
+    .map(s => {
+      const sectionLabelPart = s.label ? `, label: '${String(s.label).replace(/'/g, "\\'")}'` : '';
+      return `  { key: '${s.key}'${sectionLabelPart} },`;
+    })
     .join('\n');
 
   const searchableFields = entity.searchableFields ?? [];
@@ -1439,6 +1444,78 @@ ${MARKERS.GENERATED_END(`component:${compName}`)}
 }
 
 /**
+ * Split a detail entity's editable fields into user-entry fields vs auto-derived
+ * fields (price/tax/amount/…), plus the hidden form=false defaults that still need
+ * to reach the server for callouts. Extracted to keep generatePageComponent flat.
+ * Note: discount is intentionally excluded — user-editable, triggers recalculation.
+ */
+function splitDetailLineFields(detailEditableFields, detailFields) {
+  const autoPatterns = /price|tax|amount|total|cost|net/i;
+  const derivedFields = detailEditableFields.filter(f =>
+    autoPatterns.test(f.name) && !f.required && !f.reference
+  );
+  const entryFields = detailEditableFields.filter(f => !derivedFields.includes(f));
+  const hiddenDefaultFields = detailFields.filter(f =>
+    !f.form && f.defaultValue !== undefined
+  );
+  return { entryFields, derivedFields, hiddenDefaultFields };
+}
+
+// Quote a field's name for emission, or the literal 'null' when absent.
+function quoteNameOrNull(field) {
+  return field ? `'${field.name}'` : 'null';
+}
+
+// One header summary-strip descriptor line. Hoisted out of generatePageComponent
+// to keep its map callbacks out of the function's cognitive complexity.
+function buildSummaryFieldLine(f) {
+  return `  { key: '${f.name}', column: '${f.column}', type: '${mapFieldType(f)}' },`;
+}
+
+// One auto-derived detail field descriptor line (price/tax/amount fields).
+function buildDerivedFieldLine(f) {
+  const type = mapFormFieldType(f);
+  const labelPart = wrapIf(", label: '", f.label, "'");
+  const referencePart = wrapIf(", reference: '", f.reference, "'");
+  const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
+  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${referencePart}${inputModePart} },`;
+}
+
+/**
+ * Build one descriptor line for a detail add-line entry field. Hoisted out of
+ * generatePageComponent's map callback to keep that function's cognitive
+ * complexity low. `firstSearchIdx` flags which entry field opens the lookup.
+ */
+function buildEntryFieldLine(f, i, firstSearchIdx) {
+  const type = mapFormFieldType(f);
+  const requiredPart = fragmentIf(f.required, ', required: true');
+  const lookupPart = fragmentIf(i === firstSearchIdx && firstSearchIdx !== -1, ', lookup: true');
+  const labelPart = wrapIf(", label: '", f.label, "'");
+  const referencePart = wrapIf(", reference: '", f.reference, "'");
+  const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
+  const dependsOnPart = f.dependsOn
+    ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
+    : '';
+  // Include defaultValue for quantity/numeric fields so the add-line form starts with a
+  // sensible value. Skip redundant unchecked YESNO/checkbox defaults (backend coerces).
+  const rawDv = f.defaultValue;
+  let defaultValuePart = '';
+  const skipCheckboxDefault = type === 'checkbox' && (rawDv === 'N' || rawDv === false);
+  const skipServerMacro = isEtendoSessionMacro(rawDv);
+  if (!skipCheckboxDefault && !skipServerMacro && rawDv !== undefined && rawDv !== null && rawDv !== '') {
+    const numDv = Number(rawDv);
+    const dvLiteral = (!isNaN(numDv) && String(rawDv).trim() !== '') ? numDv : `'${String(rawDv).replace(/'/g, "\\'")}'`;
+    defaultValuePart = `, defaultValue: ${dvLiteral}`;
+  }
+  const forceCalloutFieldsPart = Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0
+    ? `, forceCalloutFields: ${JSON.stringify(f.forceCalloutFields)}`
+    : '';
+  const { lookupDrawerPart, lookupTitlePart, onSelectMappingsPart, displayFromCatalogPart } = buildLookupEntryParts(f);
+  const minEntryPart = optProp('min', f.min);
+  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart} },`;
+}
+
+/**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
  */
@@ -1481,13 +1558,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   } = resolveStatusAndSummaryFields(requiredHeaderFieldNames, allEntityFields, contract, readOnlyFields);
 
   // Summary config
-  const summaryArray = summaryFields.map(f => {
-    const type = mapFieldType(f);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}' },`;
-  }).join('\n');
+  const summaryArray = summaryFields.map(buildSummaryFieldLine).join('\n');
 
   // Status field config
-  const statusFieldLine = statusField ? `'${statusField.name}'` : 'null';
+  const statusFieldLine = quoteNameOrNull(statusField);
 
   // Process config: backendContract process endpoints + button-type fields from frontendContract
   // processOverrides from decisions.json allow label, style, displayLogicRaw, and exclude overrides
@@ -1495,56 +1569,15 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const buttonFields = allEntityFields.filter(f => f.type === 'button' && f.form);
   const processesArray = buildProcessesArray({ processes, buttonFields, processOverrides });
 
-  // Separate entry fields (user types) from auto-derived fields (price, tax, amount)
-  // Note: discount is intentionally excluded — it is user-editable and triggers SL_Order_Amt recalculation.
-  const autoPatterns = /price|tax|amount|total|cost|net/i;
-  const derivedFields = detailEditableFields.filter(f =>
-    autoPatterns.test(f.name) && !f.required && !f.reference
-  );
-  const entryFields = detailEditableFields.filter(f => !derivedFields.includes(f));
-  // Include all form=false fields with a defaultValue as hidden defaults, regardless of readOnly —
-  // readOnly fields like grossUnitPrice still need to be sent to the server for callout price calculation.
-  const hiddenDefaultFields = detailFields.filter(f =>
-    !f.form && f.defaultValue !== undefined
-  );
+  const { entryFields, derivedFields, hiddenDefaultFields } = splitDetailLineFields(detailEditableFields, detailFields);
 
   // The first search-type entry field (usually product) triggers a lookup modal
   const firstSearchIdx = entryFields.findIndex(f => mapFormFieldType(f) === 'search');
-  const entryArray = entryFields.map((f, i) => {
-    const type = mapFormFieldType(f);
-    const requiredPart = fragmentIf(f.required, ', required: true');
-    const lookupPart = fragmentIf(i === firstSearchIdx && firstSearchIdx !== -1, ', lookup: true');
-    const labelPart = wrapIf(", label: '", f.label, "'");
-    const referencePart = wrapIf(", reference: '", f.reference, "'");
-    const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
-    const dependsOnPart = f.dependsOn
-      ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
-      : '';
-    // Include defaultValue for quantity/numeric fields so the add-line form starts with a sensible value.
-    // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
-    const rawDv = f.defaultValue;
-    let defaultValuePart = '';
-    const skipCheckboxDefault = type === 'checkbox' && (rawDv === 'N' || rawDv === false);
-    const skipServerMacro = isEtendoSessionMacro(rawDv);
-    if (!skipCheckboxDefault && !skipServerMacro && rawDv !== undefined && rawDv !== null && rawDv !== '') {
-      const numDv = Number(rawDv);
-      defaultValuePart = `, defaultValue: ${(!isNaN(numDv) && String(rawDv).trim() !== '') ? numDv : `'${String(rawDv).replace(/'/g, "\\'")}'`}`;
-    }
-    const forceCalloutFieldsPart = Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0
-      ? `, forceCalloutFields: ${JSON.stringify(f.forceCalloutFields)}`
-      : '';
-    const { lookupDrawerPart, lookupTitlePart, onSelectMappingsPart, displayFromCatalogPart } = buildLookupEntryParts(f);
-    const minEntryPart = optProp('min', f.min);
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart} },`;
-  }).join('\n');
+  const entryArray = entryFields
+    .map((f, i) => buildEntryFieldLine(f, i, firstSearchIdx))
+    .join('\n');
 
-  const derivedArray = derivedFields.map(f => {
-    const type = mapFormFieldType(f);
-    const labelPart = wrapIf(", label: '", f.label, "'");
-    const referencePart = wrapIf(", reference: '", f.reference, "'");
-    const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${referencePart}${inputModePart} },`;
-  }).join('\n');
+  const derivedArray = derivedFields.map(buildDerivedFieldLine).join('\n');
 
   const hiddenDefaultsArray = buildHiddenDefaultsArray(hiddenDefaultFields, allEntityFields);
   const hiddenSiblingNames = contract.frontendContract.entities[detailEntity]?.addLineHiddenFromSibling ?? [];

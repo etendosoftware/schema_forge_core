@@ -80,9 +80,11 @@ function ConditionChip({ row, col, tMenu }) {
   // kindField holds the discriminator (C/S/R…), patternField the literal text.
   const kindValue = col.kindField ? rawValue(row, col.kindField) : null;
   const pattern = col.patternField ? rawValue(row, col.patternField) : rawValue(row, col.key);
-  const kindLabel = kindValue != null && col.kindLabels?.[kindValue]
-    ? (tMenu ? tMenu(col.kindLabels[kindValue]) : col.kindLabels[kindValue])
-    : null;
+  let kindLabel = null;
+  if (kindValue != null && col.kindLabels?.[kindValue]) {
+    const rawKindLabel = col.kindLabels[kindValue];
+    kindLabel = tMenu ? tMenu(rawKindLabel) : rawKindLabel;
+  }
   if (!pattern && !kindLabel) return <span className="text-[#828FA3]">&mdash;</span>;
   const text = kindLabel ? `${kindLabel}: "${pattern ?? ''}"` : String(pattern ?? '');
   return (

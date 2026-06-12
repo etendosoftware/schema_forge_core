@@ -172,24 +172,34 @@ function applyReadOnlyLogic(mapped, f, rules, columnMap, booleanFields) {
   }
 }
 
+// Data-driven UI-hint copy lists. Keeping these declarative (instead of a long
+// chain of `if`s) keeps the mapper functions under Sonar's cognitive-complexity
+// limit while preserving exact per-prop semantics.
+const isDefined = (v) => v !== undefined;
+const isNotNull = (v) => v != null;
+const setTrue = () => true;
+
+// Copied verbatim onto `mapped` when truthy.
+const BASIC_TRUTHY_PROPS = ['help', 'placeholderKey', 'emptyOptionLabelKey', 'fieldGroup', 'precision', 'section', 'span'];
+// Set to literal `true` when the source value is truthy.
+const BASIC_FLAG_PROPS = ['isIdentifier', 'isSelectionColumn', 'isFilterable', 'isTranslated', 'explicitType', 'statusBar', 'badge'];
+
+/**
+ * Copy each `key` from `f` onto `mapped` when `keep(f[key])` is truthy. With
+ * `value`, assigns `value(f[key])` (e.g. always `true` for flags); otherwise
+ * copies the raw value. Single source of the copy loop so the callers stay flat.
+ */
+function copyWhen(f, mapped, keys, keep, value) {
+  for (const key of keys) {
+    if (keep(f[key])) mapped[key] = value ? value(f[key]) : f[key];
+  }
+}
+
 function applyBasicFieldUIHints(f, mapped) {
-  if (f.defaultValue !== undefined) mapped.defaultValue = f.defaultValue;
-  if (f.isIdentifier) mapped.isIdentifier = true;
-  if (f.help) mapped.help = f.help;
-  if (f.placeholderKey) mapped.placeholderKey = f.placeholderKey;
-  if (f.emptyOptionLabelKey) mapped.emptyOptionLabelKey = f.emptyOptionLabelKey;
-  if (f.fieldGroup) mapped.fieldGroup = f.fieldGroup;
-  if (f.isSelectionColumn) mapped.isSelectionColumn = true;
-  if (f.isFilterable) mapped.isFilterable = true;
-  if (f.precision) mapped.precision = f.precision;
-  if (f.isTranslated) mapped.isTranslated = true;
-  if (f.section) mapped.section = f.section;
-  if (f.seq != null) mapped.seq = f.seq;
-  if (f.span) mapped.span = f.span;
-  if (f.rows != null) mapped.rows = f.rows;
-  if (f.explicitType) mapped.explicitType = true;
-  if (f.statusBar) mapped.statusBar = true;
-  if (f.badge) mapped.badge = true;
+  copyWhen(f, mapped, ['defaultValue'], isDefined);
+  copyWhen(f, mapped, ['seq', 'rows'], isNotNull);
+  copyWhen(f, mapped, BASIC_TRUTHY_PROPS, Boolean);
+  copyWhen(f, mapped, BASIC_FLAG_PROPS, Boolean, setTrue);
 }
 
 function applyGridHints(f, mapped) {
@@ -203,36 +213,22 @@ function applyGridHints(f, mapped) {
   if (f.inlineEdit) mapped.inlineEdit = true;
 }
 
+// Copied verbatim when truthy. Includes badge config, display/cellType, and the
+// list-modal cell-renderer extras (registry-driven; see listModalCells.jsx):
+//  - subField/kindField/patternField/kindLabels/tones drive nameWithSubline,
+//    conditionChip and typePill cells.
+//  - gridLabelKey: i18n key for the column header (short Figma label).
+const HINT_TRUTHY_PROPS = ['badgeLabels', 'badgeColors', 'badgeVariants', 'enumVariants', 'labels', 'display', 'cellType', 'subField', 'kindField', 'patternField', 'kindLabels', 'tones', 'gridLabelKey'];
+const HINT_FLAG_PROPS = ['summable', 'noTrailing', 'filterOnly'];
+
 function applyFieldUIHints(f, mapped) {
   applyBasicFieldUIHints(f, mapped);
-  if (f.badgeLabels) mapped.badgeLabels = f.badgeLabels;
-  if (f.badgeColors) mapped.badgeColors = f.badgeColors;
-  if (f.badgeVariants) mapped.badgeVariants = f.badgeVariants;
-  if (f.enumVariants) mapped.enumVariants = f.enumVariants;
-  if (f.labels) mapped.labels = f.labels;
-  if (f.summable) mapped.summable = true;
-  if (f.display) mapped.display = f.display;
-  if (f.cellType) mapped.cellType = f.cellType;
-  // list-modal cell-renderer extras (registry-driven; see listModalCells.jsx):
-  //  - subField    : another field name whose identifier feeds a `nameWithSubline` sub-line
-  //  - kindField   : discriminator field for a `conditionChip` (e.g. C/S/R)
-  //  - patternField: literal-text field for a `conditionChip`
-  //  - kindLabels  : map of kind value → i18n key (chip prefix label)
-  //  - tones       : map of enum value → tone name for a `typePill`
-  if (f.subField) mapped.subField = f.subField;
-  if (f.kindField) mapped.kindField = f.kindField;
-  if (f.patternField) mapped.patternField = f.patternField;
-  if (f.kindLabels) mapped.kindLabels = f.kindLabels;
-  if (f.tones) mapped.tones = f.tones;
-  // gridLabelKey: i18n key for the column header (short Figma label, distinct from
-  // the field's modal label). The list-modal grid renders ui(gridLabelKey) when set.
-  if (f.gridLabelKey) mapped.gridLabelKey = f.gridLabelKey;
+  copyWhen(f, mapped, HINT_TRUTHY_PROPS, Boolean);
+  copyWhen(f, mapped, HINT_FLAG_PROPS, Boolean, setTrue);
   applyGridHints(f, mapped);
-  if (f.noTrailing) mapped.noTrailing = true;
-  if (f.filterOnly) mapped.filterOnly = true;
+  copyWhen(f, mapped, ['min'], isDefined);
   if (f.filterable === false) mapped.filterable = false;
   if (f.dot === false) mapped.dot = false;
-  if (f.min !== undefined) mapped.min = f.min;
 }
 
 /**
