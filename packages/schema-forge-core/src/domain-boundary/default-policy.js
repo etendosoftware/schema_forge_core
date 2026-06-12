@@ -162,6 +162,8 @@ export const DEFAULT_BOUNDARY_POLICY = {
         '^tools/app-shell/src/components/related-documents/',
         '^tools/app-shell/src/components/contract-ui/',
         '^tools/app-shell/src/components/ui/',
+        '^tools/app-shell/src/components/financial-accounts/',
+        '^tools/app-shell/src/components/payment/',
         '^tools/app-shell/src/explorer/',
         '^tools/app-shell/src/hooks/',
         '^tools/app-shell/src/auth/',

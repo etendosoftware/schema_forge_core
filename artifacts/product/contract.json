@@ -1,8 +1,8 @@
 {
-  "version": "0.7.0",
+  "version": "0.12.0",
   "generatedAt": "2026-04-29T18:11:24.842Z",
-  "updatedAt": "2026-06-09T12:12:25.259Z",
-  "checksum": "1e66257cee774540",
+  "updatedAt": "2026-06-12T12:26:05.174Z",
+  "checksum": "695d69a8fa0a06d2",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -45,7 +45,7 @@
       "compactSidebarPadding": true,
       "whiteFormBackground": true,
       "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto pt-2 pl-0 pr-4 pb-5 border-l border-[#E8EAEF]",
-      "formCardPadding": "px-2 pb-2",
+      "formCardPadding": "px-2",
       "tabsBarPaddingX": "px-2",
       "primaryTabsVariant": "pill",
       "toolbarPaddingX": "px-2",
@@ -59,7 +59,8 @@
           "component": "ProductPriceBar"
         }
       ],
-      "layoutType": "gallery"
+      "layoutType": "gallery",
+      "autoSaveOnBlur": true
     },
     "entities": {
       "product": {
@@ -110,9 +111,8 @@
             "grid": false,
             "form": true,
             "section": "principal",
-            "seq": 4,
-            "explicitType": true,
-            "inline": true
+            "seq": 7,
+            "explicitType": true
           },
           {
             "name": "uOM",
@@ -127,9 +127,10 @@
             "form": true,
             "sourceRequired": true,
             "reference": "UOM",
-            "inputMode": "selector",
+            "inputMode": "search",
+            "clearable": false,
             "section": "principal",
-            "seq": 7
+            "seq": 5
           },
           {
             "name": "productCategory",
@@ -151,7 +152,7 @@
             "inputMode": "selector",
             "defaultValue": "@SQL=SELECT MAX(M_PRODUCT_CATEGORY_ID) FROM M_PRODUCT_CATEGORY WHERE AD_ISORGINCLUDED(@AD_ORG_ID@, AD_ORG_ID, @#AD_CLIENT_ID@) <> -1 AND ISDEFAULT = 'Y' AND AD_CLIENT_ID = @#AD_CLIENT_ID@ AND ISSUMMARY='N'",
             "section": "principal",
-            "seq": 6,
+            "seq": 4,
             "validationRule": {
               "code": "Issummary='N'",
               "contextParams": [],
@@ -224,7 +225,8 @@
             "grid": false,
             "form": true,
             "section": "principal",
-            "seq": 3,
+            "seq": 6,
+            "span": 3,
             "explicitType": true
           },
           {
@@ -263,7 +265,7 @@
             ],
             "defaultValue": "I",
             "section": "principal",
-            "seq": 5,
+            "seq": 3,
             "enumVariants": {
               "I": "blue",
               "S": "purple",
@@ -462,7 +464,8 @@
               "source": "Y"
             }
           }
-        ]
+        ],
+        "formCols": 3
       },
       "price": {
         "tableName": "M_ProductPrice",
@@ -1759,7 +1762,7 @@
       "compactSidebarPadding": true,
       "whiteFormBackground": true,
       "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto pt-2 pl-0 pr-4 pb-5 border-l border-[#E8EAEF]",
-      "formCardPadding": "px-2 pb-2",
+      "formCardPadding": "px-2",
       "tabsBarPaddingX": "px-2",
       "primaryTabsVariant": "pill",
       "toolbarPaddingX": "px-2",
@@ -1773,7 +1776,8 @@
           "component": "ProductPriceBar"
         }
       ],
-      "layoutType": "gallery"
+      "layoutType": "gallery",
+      "autoSaveOnBlur": true
     },
     "entities": {
       "product": {
@@ -4790,7 +4794,7 @@
         "field": "uOM",
         "column": "C_UOM_ID",
         "reference": "UOM",
-        "inputMode": "selector",
+        "inputMode": "search",
         "url": "/sws/neo/product/product/selectors/uOM"
       },
       {

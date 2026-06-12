@@ -385,7 +385,7 @@ async function executePushTransaction(ctx) {
     const { successCount, errorCount, fieldResults } =
       await stepUpdateFieldVisibility(client, ctx, entityMaps);
 
-    const excludedCount = await stepExcludeNonContractFields(client, popResult, ctx.allFields);
+    const excludedCount = await stepExcludeNonContractFields(client, popResult, ctx.allFields, ctx.schemaRawData);
 
     await client.query('COMMIT');
 
@@ -582,9 +582,19 @@ async function upsertSingleField(client, f, ctx, entityMaps) {
   return { column: f.column, entityName: f.entityName, success: true };
 }
 
-async function stepExcludeNonContractFields(client, popResult, allFields) {
+export async function stepExcludeNonContractFields(client, popResult, allFields, schemaRawData) {
   console.log(`[4/4] Excluding non-contract fields...`);
   const contractColumns = new Set(allFields.map(f => f.column));
+  // Only exclude columns that were extracted from AD in this run.
+  // Columns belonging to uninstalled extension modules won't appear in
+  // schemaRawData — leaving their isIncluded state untouched prevents the
+  // pipeline from toggling fields from modules not present in the current env.
+  const extractedColumns = new Set();
+  for (const ent of (schemaRawData?.entities ?? [])) {
+    for (const field of (ent.fields ?? [])) {
+      if (field.columnName) extractedColumns.add(field.columnName);
+    }
+  }
   let excludedCount = 0;
   for (const ent of popResult.entities) {
     const allEntityFields = await client.query(
@@ -595,7 +605,7 @@ async function stepExcludeNonContractFields(client, popResult, allFields) {
       [ent.entityId],
     );
     for (const row of allEntityFields.rows) {
-      if (!contractColumns.has(row.columnname)) {
+      if (!contractColumns.has(row.columnname) && extractedColumns.has(row.columnname)) {
         await client.query(
           `UPDATE etgo_sf_field SET isincluded = 'N', updated = now() WHERE etgo_sf_field_id = $1`,
           [row.etgo_sf_field_id],

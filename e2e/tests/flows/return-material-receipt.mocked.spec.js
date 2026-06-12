@@ -45,7 +45,7 @@ const ROWS = [
     warehouse: 'wh-001',
     'warehouse$_identifier': 'España Norte',
     sourceShipmentDocNo: 'ALB/00043',
-    returnInvoices: [{ id: 'inv-001', documentNo: 'FC/00099' }],
+    returnInvoices: [{ id: 'inv-001', documentNo: 'FC/00099', documentStatus: 'CO' }],
     hasReturnInvoice: true,
     sourceShipments: [{ id: 'ship-002', documentNo: 'ALB/00043' }],
   },
@@ -247,35 +247,31 @@ test.describe('return-material-receipt — DR form actions', () => {
     // --- Click "Confirmar" → modal opens ---
     await confirmBtn.click();
 
-    // The DR confirm modal has a named checkbox "Crear Factura de Devolución"
-    // Scope to the modal overlay (portal appended to body at zIndex 60)
-    const modalCheckbox = page.getByRole('checkbox', { name: /crear factura|createReturnInvoice/i });
-    await expect(modalCheckbox).toBeVisible({ timeout: 3_000 });
+    // Toggle card visible in modal (ConfirmInOutModal uses role="switch", not role="checkbox")
+    const modalInvoiceToggle = page.getByTestId('confirm-modal-invoice-toggle');
+    await expect(modalInvoiceToggle).toBeVisible({ timeout: 3_000 });
 
-    // The detail view has a generic Cancelar button (action-cancel); the modal adds a second one.
-    // Use nth(1) to target the modal's own Cancel button.
-    const cancelBtn = page.getByRole('button', { name: /^cancelar$|^cancel$/i }).nth(1);
+    // Cancel button via data-testid
+    const cancelBtn = page.getByTestId('confirm-modal-cancel-btn');
     await expect(cancelBtn).toBeVisible();
 
-    // Confirm button inside the modal — the topbar trigger is also labelled "Confirmar",
-    // so use nth(1) to target the modal's footer button (second occurrence in DOM order).
-    const modalConfirmBtn = page.getByRole('button', { name: /^confirmar$|^confirm$/i }).nth(1);
+    // Confirm button via data-testid
+    const modalConfirmBtn = page.getByTestId('confirm-modal-confirm-btn');
     await expect(modalConfirmBtn).toBeVisible();
 
     // --- Cancel dismisses the modal ---
     await cancelBtn.click();
-    await expect(modalCheckbox).toBeHidden({ timeout: 2_000 });
+    await expect(page.getByTestId('confirm-inout-modal')).toBeHidden({ timeout: 2_000 });
 
     // --- Re-open and actually confirm ---
     await confirmBtn.click();
-    await expect(modalCheckbox).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByTestId('confirm-modal-invoice-toggle')).toBeVisible({ timeout: 3_000 });
 
-    // Checkbox is checked by default (createInvoice = true); verify, then confirm
-    await expect(modalCheckbox).toBeChecked();
+    // Toggle is "on" by default (defaultCreateInvoice=true → aria-checked="true"); verify, then confirm
+    await expect(page.getByTestId('confirm-modal-invoice-toggle')).toHaveAttribute('aria-checked', 'true');
 
     // Click Confirm → triggers documentAction POST → mock returns CO
-    // The topbar trigger is nth(0), the modal footer Confirm is nth(1)
-    await page.getByRole('button', { name: /^confirmar$|^confirm$/i }).nth(1).click();
+    await page.getByTestId('confirm-modal-confirm-btn').click();
 
     // After documentAction + createReturnInvoice, a ConfirmResultModal should appear
     // with the invoice document number FC/00100 (from our mock)
@@ -295,7 +291,7 @@ test.describe('return-material-receipt — CO form actions (no existing invoice)
     await installReturnReceiptMocks(page);
   });
 
-  test('CO detail: create invoice button, clone button, print button, invoice modal confirm — full flow', async ({ page }) => {
+  test('CO detail: create invoice button, print button, invoice modal confirm — full flow', async ({ page }) => {
     // ret-003 is CO with hasReturnInvoice=false — "Crear factura de devolución" must be visible
     await page.goto('/return-material-receipt/ret-003');
     await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
@@ -308,11 +304,8 @@ test.describe('return-material-receipt — CO form actions (no existing invoice)
     const printBtn = page.getByRole('button', { name: /imprimir|print/i });
     await expect(printBtn).toBeVisible();
 
-    // --- Clone button is visible ---
-    // CloneButton renders the shared component; it exposes data-testid from CloneButton.jsx
-    // Fall back to role-based if testid not present
-    const cloneBtn = page.getByTestId('action-clone-order').or(page.getByRole('button', { name: /clonar|clone|duplicar/i }));
-    await expect(cloneBtn).toBeVisible();
+    // Clone is a list-view row action (row-quick-action-clone), not a detail-view
+    // button — ConfirmWithCreditButtonBase renders no clone control here.
 
     // --- ret-002 has hasReturnInvoice=true, so its button must be absent ---
     await page.goto('/return-material-receipt/ret-002');
@@ -327,21 +320,19 @@ test.describe('return-material-receipt — CO form actions (no existing invoice)
     await expect(createInvoiceBtn2).toBeVisible({ timeout: 8_000 });
     await createInvoiceBtn2.click();
 
-    // Modal opens — the CO modal blue summary card renders "#RD/00003" (with hash prefix)
-    // This is unique to the modal overlay and avoids strict-mode violations
-    const modalDocNo = page.getByText('#RD/00003');
-    await expect(modalDocNo).toBeVisible({ timeout: 3_000 });
+    // Modal opens — verify via data-testid (CreateInvoiceConfirmModal)
+    const invoiceModal = page.getByTestId('create-invoice-confirm-modal');
+    await expect(invoiceModal).toBeVisible({ timeout: 3_000 });
 
     // Cancel button inside the modal — the detail view has a separate action-cancel button,
     // so use nth(1) to target the modal's own Cancelar button.
     const cancelBtn = page.getByRole('button', { name: /^cancelar$|^cancel$/i }).nth(1);
     await expect(cancelBtn).toBeVisible();
 
-    // Confirm by clicking the "Crear factura de devolución" / createReturnInvoice button
-    // inside the modal footer (separate from the topbar trigger button)
-    // The footer confirm button is not the topbar trigger — scope to dialog if available
-    const dialog = page.getByRole('dialog').or(page.locator('[style*="position: fixed"]').last());
-    const footerConfirmBtn = dialog.getByRole('button', { name: /crear factura|create.*invoice|createReturnInvoice/i }).last();
+    // Confirm via the modal footer's primary button (soCreateDocsBtn renders
+    // "Crear →"). Scope to the modal and take its last button — the footer order
+    // is Cancelar then the confirm button — so this is independent of the label.
+    const footerConfirmBtn = invoiceModal.getByRole('button').last();
     await expect(footerConfirmBtn).toBeVisible();
     await footerConfirmBtn.click();
 

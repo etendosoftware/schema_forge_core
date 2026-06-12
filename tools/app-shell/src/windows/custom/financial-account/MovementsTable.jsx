@@ -18,25 +18,120 @@ import { MoneyAmount } from '@/components/ui/money-amount';
 import { MovementStatusBadge } from './MovementStatusBadge';
 import { PostingStatusDot } from './PostingStatusDot';
 import { MovementRowKebab } from './MovementRowKebab';
+import { getContractGridColumns } from '@/components/financial-accounts/contractColumns';
 
-/** Formats an ISO date string using the user's locale. */
+/**
+ * Formats an ISO date string using the user's locale. The movement date is a
+ * date-only value the backend sends as UTC midnight (e.g. "2026-06-10T00:00:00Z"),
+ * so it MUST be formatted in UTC — otherwise a negative-offset timezone (e.g.
+ * UTC-3) shifts it to the previous calendar day (showing 09/06 for a 10/06 date).
+ */
 function formatDate(isoString, bcpLocale) {
   if (!isoString) return '—';
   const d = new Date(isoString);
   if (Number.isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat(bcpLocale, {
-    day: '2-digit', month: '2-digit', year: 'numeric',
+    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
   }).format(d);
 }
 
 const SKELETON_ROWS = [1, 2, 3, 4, 5];
 
+// Contract-driven columns: which data columns appear, their order and
+// visibility come from decisions.json → contract.json (entity `transaction`,
+// fields with grid:true + gridOrder). HOW each cell renders stays here, in the
+// MOVEMENT_CELL_RENDERERS registry below. Synthetic columns (Amount, Balance)
+// and structural ones (expand, checkbox, kebab) are fixed.
+const CONTRACT_COLUMNS = getContractGridColumns('transaction');
+
 // Stable cell keys for skeleton rows (same order/length as the header columns).
 const SKELETON_COL_KEYS = [
-  'expand', 'select', 'date', 'payment', 'contact', 'description',
-  'status', 'type', 'glItem', 'amount', 'balance', 'kebab',
+  'expand', 'select', ...CONTRACT_COLUMNS.map((c) => c.name), 'amount', 'balance', 'kebab',
 ];
-const COL_COUNT = SKELETON_COL_KEYS.length; // 12
+const COL_COUNT = SKELETON_COL_KEYS.length;
+
+/**
+ * Renderer registry — contract field name → { labelKey, headClass?, renderCell }.
+ * `renderCell(movement, ctx)` receives the helpers built inside the component.
+ * A contract field with no registry entry falls back to plain text via the
+ * field name as row key (and the contract label as header).
+ */
+const MOVEMENT_CELL_RENDERERS = {
+  transactionDate: {
+    labelKey: 'financeAccountMovementsColDate',
+    renderCell: (m, ctx) => (
+      <TableCell className="whitespace-nowrap text-sm leading-5 text-[#121217]">
+        {formatDate(m.date, ctx.bcpLocale)}
+      </TableCell>
+    ),
+  },
+  documentNo: {
+    labelKey: 'financeAccountMovementsColDocument',
+    renderCell: (m, ctx) => (
+      <TableCell className="whitespace-nowrap text-sm font-semibold leading-5">
+        {m.paymentId ? (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); ctx.openPayment(m); }}
+            className="inline-flex items-center gap-1 text-[#121217] underline decoration-[#d1d4db] underline-offset-4 hover:decoration-[#121217]"
+          >
+            {m.documentNo}
+            <ArrowUpRight className="h-3 w-3" />
+          </button>
+        ) : (
+          <span className="text-[#121217]">{m.documentNo}</span>
+        )}
+      </TableCell>
+    ),
+  },
+  businessPartner: {
+    labelKey: 'financeAccountMovementsColContact',
+    renderCell: (m) => (
+      <TableCell className="text-sm leading-5 text-[#121217]">{m.contact}</TableCell>
+    ),
+  },
+  description: {
+    labelKey: 'financeAccountMovementsColDescription',
+    renderCell: (m) => (
+      <TableCell className="max-w-[200px] truncate text-sm text-[#121217]">{m.description}</TableCell>
+    ),
+  },
+  status: {
+    labelKey: 'financeAccountMovementsColStatus',
+    renderCell: (m) => (
+      <TableCell>
+        <MovementStatusBadge status={m.paymentStatus} />
+      </TableCell>
+    ),
+  },
+  transactionType: {
+    labelKey: 'financeAccountMovementsColType',
+    renderCell: (m, ctx) => (
+      <TableCell>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm leading-5 text-[#121217]">{ctx.getTrxTypeLabel(m)}</span>
+          <PostingStatusDot paymentStatus={m.paymentStatus} />
+        </div>
+      </TableCell>
+    ),
+  },
+  gLItem: {
+    labelKey: 'financeAccountMovementsColGlItem',
+    renderCell: (m) => (
+      <TableCell className="max-w-[180px] truncate text-sm text-[#121217]">{m.glItem || '—'}</TableCell>
+    ),
+  },
+};
+
+function renderContractCell(col, movement, ctx) {
+  const renderer = MOVEMENT_CELL_RENDERERS[col.name];
+  if (renderer) return <Fragment key={col.name}>{renderer.renderCell(movement, ctx)}</Fragment>;
+  return (
+    <TableCell key={col.name} className="text-sm leading-5 text-[#121217]">
+      {movement[col.name] ?? '—'}
+    </TableCell>
+  );
+}
 
 // Accounting dimension key → i18n label key, for the "more info" panel.
 const DIMENSION_LABEL_KEYS = {
@@ -170,6 +265,9 @@ export function MovementsTable({ movements, loading, enabledDimensions = [], sel
     navigate(`/${win}/${movement.paymentId}`);
   };
 
+  // Helpers handed to the contract-column cell renderers.
+  const cellCtx = { ui, bcpLocale, getTrxTypeLabel, openPayment };
+
   const renderRow = (movement) => {
     const expanded = expandedId === movement.id;
     return (
@@ -208,54 +306,8 @@ export function MovementsTable({ movements, loading, enabledDimensions = [], sel
             />
           </TableCell>
 
-          {/* Date */}
-          <TableCell className="whitespace-nowrap text-sm leading-5 text-[#121217]">
-            {formatDate(movement.date, bcpLocale)}
-          </TableCell>
-
-          {/* Payment — links to the payment-in / payment-out window */}
-          <TableCell className="whitespace-nowrap text-sm font-semibold leading-5">
-            {movement.paymentId ? (
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); openPayment(movement); }}
-                className="inline-flex items-center gap-1 text-[#121217] underline decoration-[#d1d4db] underline-offset-4 hover:decoration-[#121217]"
-              >
-                {movement.documentNo}
-                <ArrowUpRight className="h-3 w-3" />
-              </button>
-            ) : (
-              <span className="text-[#121217]">{movement.documentNo}</span>
-            )}
-          </TableCell>
-
-          {/* Contact */}
-          <TableCell className="text-sm leading-5 text-[#121217]">
-            {movement.contact}
-          </TableCell>
-
-          {/* Description */}
-          <TableCell className="max-w-[200px] truncate text-sm text-[#121217]">
-            {movement.description}
-          </TableCell>
-
-          {/* Status badge */}
-          <TableCell>
-            <MovementStatusBadge status={movement.paymentStatus} />
-          </TableCell>
-
-          {/* Type + posting dot */}
-          <TableCell>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm leading-5 text-[#121217]">{getTrxTypeLabel(movement)}</span>
-              <PostingStatusDot paymentStatus={movement.paymentStatus} />
-            </div>
-          </TableCell>
-
-          {/* G/L Item */}
-          <TableCell className="max-w-[180px] truncate text-sm text-[#121217]">
-            {movement.glItem || '—'}
-          </TableCell>
+          {/* Contract-driven data columns (decisions.json → contract.json) */}
+          {CONTRACT_COLUMNS.map((col) => renderContractCell(col, movement, cellCtx))}
 
           {/* Amount */}
           <TableCell className="text-right">
@@ -308,13 +360,11 @@ export function MovementsTable({ movements, loading, enabledDimensions = [], sel
             <TableHead className="w-10">
               <Checkbox checked={allSelected} indeterminate={someSelected} onChange={handleSelectAll} />
             </TableHead>
-            <TableHead>{ui('financeAccountMovementsColDate')}</TableHead>
-            <TableHead>{ui('financeAccountMovementsColDocument')}</TableHead>
-            <TableHead>{ui('financeAccountMovementsColContact')}</TableHead>
-            <TableHead>{ui('financeAccountMovementsColDescription')}</TableHead>
-            <TableHead>{ui('financeAccountMovementsColStatus')}</TableHead>
-            <TableHead>{ui('financeAccountMovementsColType')}</TableHead>
-            <TableHead>{ui('financeAccountMovementsColGlItem')}</TableHead>
+            {CONTRACT_COLUMNS.map((col) => (
+              <TableHead key={col.name}>
+                {MOVEMENT_CELL_RENDERERS[col.name] ? ui(MOVEMENT_CELL_RENDERERS[col.name].labelKey) : col.label}
+              </TableHead>
+            ))}
             <TableHead>{ui('financeAccountMovementsColAmount')}</TableHead>
             <TableHead>{ui('financeAccountMovementsColBalance')}</TableHead>
             <TableHead className="w-10" />

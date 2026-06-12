@@ -13,7 +13,7 @@ function GroupHead({ title, description }) {
 
 function GroupDivider({ title, description }) {
   return (
-    <div className="border-t border-[#E8E8ED] pt-5">
+    <div className="mt-5 border-t border-[#E8E8ED] pt-5">
       <GroupHead title={title} description={description} />
     </div>
   );

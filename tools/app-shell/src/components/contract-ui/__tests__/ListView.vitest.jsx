@@ -210,14 +210,14 @@ describe('ListView', () => {
 
   it('renders both view-toggle buttons when galleryRenderer is provided — exercises ViewToggle true branch', () => {
     const galleryRenderer = () => <div data-testid="gallery" />;
-    const { container } = render(<ListView {...defaultProps} galleryRenderer={galleryRenderer} />);
+    render(<ListView {...defaultProps} galleryRenderer={galleryRenderer} />);
 
-    // ViewToggle wraps the two toggle buttons in a single bordered inline-flex
-    // container. It only renders this when galleryRenderer is truthy.
-    const toggleWrapper = container.querySelector('.inline-flex.border.border-border.rounded-lg.overflow-hidden');
+    // ViewToggle wraps the two toggle buttons and is identified by data-testid.
+    // It only renders when galleryRenderer is truthy.
+    const toggleWrapper = screen.getByTestId('view-toggle');
     expect(toggleWrapper).toBeInTheDocument();
 
-    // Two toggle buttons: list (LayoutList) and gallery (LayoutGrid).
+    // Two toggle buttons: list and gallery.
     const buttons = toggleWrapper.querySelectorAll('button');
     expect(buttons).toHaveLength(2);
   });

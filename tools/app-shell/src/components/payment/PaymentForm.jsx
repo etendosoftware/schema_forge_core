@@ -153,7 +153,7 @@ function PaymentFields({
         </Field>
         <Select label="Método de pago" value={metodo} onChange={setMetodo} options={methodOptions} />
         {renderAccountField()}
-        <AmountInput label="Importe del pago" value={fmtAmount(pago)} onChange={onPagoChange} />
+        <AmountInput label="Importe del pago" value={Number(pago) ? fmtAmount(pago) : ''} placeholder="0.00" onChange={onPagoChange} />
         <DateInput label="Fecha de pago" value={fechaPago} onChange={setFechaPago} />
         <Field label="Nº de referencia">
           <TextInput value={referencia} onChange={(e) => setReferencia(e.target.value)} placeholder="Opcional · nº de operación…" />
