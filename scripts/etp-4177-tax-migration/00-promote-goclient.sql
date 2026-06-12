@@ -67,6 +67,14 @@ UPDATE obtl_tax_report_group     x SET ad_client_id='0', ad_org_id='0' FROM ad_c
 UPDATE obtl_tax_report_parameter x SET ad_client_id='0', ad_org_id='0' FROM ad_client c WHERE c.name='GOClient' AND x.ad_client_id=c.ad_client_id;
 UPDATE obtl_tax_parameter        x SET ad_client_id='0', ad_org_id='0' FROM ad_client c WHERE c.name='GOClient' AND x.ad_client_id=c.ad_client_id;
 
+-- Strip the business-partner tax category to match the published dataset -------
+-- The dataset's FinancialMgmtTaxRate has NO businessPartnerTaxCategory element,
+-- so dataset taxes carry c_bp_taxcategory_id = NULL. GOClient's rows still point
+-- at client-level c_bp_taxcategory records; once promoted to client 0 that would
+-- be an invalid system->client reference. Null it to stay faithful to the dataset.
+UPDATE c_tax SET c_bp_taxcategory_id = NULL
+WHERE ad_client_id='0' AND c_bp_taxcategory_id IS NOT NULL;
+
 SELECT ad_enable_triggers();
 
 -- Report ---------------------------------------------------------------------
@@ -81,6 +89,10 @@ ORDER BY tbl;
 \echo ''
 \echo 'GOClient client-level taxes remaining (should be 0):'
 SELECT count(*) FROM c_tax t JOIN ad_client c ON c.ad_client_id=t.ad_client_id WHERE c.name='GOClient';
+
+\echo ''
+\echo 'System taxes still carrying c_bp_taxcategory_id (should be 0 — faithful to dataset):'
+SELECT count(*) FROM c_tax WHERE ad_client_id='0' AND c_bp_taxcategory_id IS NOT NULL;
 
 \if :do_commit
   \echo '>>> do_commit=1 : COMMITTING promotion.'
