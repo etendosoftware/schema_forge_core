@@ -3,6 +3,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useUI } from '@/i18n';
 import { AccountsTableHeader } from './AccountsTableHeader.jsx';
 import { AccountRow } from './AccountRow.jsx';
+import { ACCOUNT_COLUMNS, ACCOUNT_CELL_RENDERERS } from './accountColumns.jsx';
+
+// Total column count = contract data columns + Pending + menu, used for the
+// empty/error colSpan so it always matches the (possibly reconfigured) header.
+const TOTAL_COL_COUNT = ACCOUNT_COLUMNS.length + 2;
 
 const SKELETON_ROW_KEYS = [
   'skeleton-row-1',
@@ -15,27 +20,15 @@ const SKELETON_ROW_KEYS = [
 function LoadingRows() {
   return (
     <>
-      {SKELETON_ROW_KEYS.map((key) => (
-        <TableRow key={key} className="h-16">
-          <TableCell className="w-[336px] p-0">
-            <div className="flex items-center">
-              <div className="w-[44px]" />
-              <Skeleton className="h-8 w-8 rounded-full" />
-              <div className="flex flex-1 flex-col gap-1 px-3">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-3 w-24" />
-              </div>
-            </div>
-          </TableCell>
-          <TableCell className="w-[340px]">
-            <div className="flex flex-col gap-1">
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-3 w-40" />
-            </div>
-          </TableCell>
-          <TableCell className="w-[200px] text-right">
-            <Skeleton className="ml-auto h-4 w-24" />
-          </TableCell>
+      {SKELETON_ROW_KEYS.map((rowKey) => (
+        <TableRow key={rowKey} className="h-16">
+          {ACCOUNT_COLUMNS.map((col) => {
+            const renderer = ACCOUNT_CELL_RENDERERS[col.name];
+            const cellKey = `${rowKey}-${col.name}`;
+            return renderer
+              ? renderer.renderSkeleton(cellKey)
+              : <TableCell key={cellKey}><Skeleton className="h-4 w-full" /></TableCell>;
+          })}
           <TableCell className="w-[280px]">
             <Skeleton className="h-5 w-24 rounded-full" />
           </TableCell>
@@ -49,7 +42,7 @@ function LoadingRows() {
 function EmptyState({ message }) {
   return (
     <TableRow>
-      <TableCell colSpan={5} className="py-12 text-center text-sm text-[#6c6c89]">
+      <TableCell colSpan={TOTAL_COL_COUNT} className="py-12 text-center text-sm text-[#6c6c89]">
         {message}
       </TableCell>
     </TableRow>
@@ -59,7 +52,7 @@ function EmptyState({ message }) {
 function ErrorState({ message, onRetry, retryLabel }) {
   return (
     <TableRow>
-      <TableCell colSpan={5} className="py-12 text-center">
+      <TableCell colSpan={TOTAL_COL_COUNT} className="py-12 text-center">
         <p className="text-sm text-[#d50b3e]">{message}</p>
         {onRetry ? (
           <button

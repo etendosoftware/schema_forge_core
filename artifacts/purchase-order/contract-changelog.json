@@ -1321,5 +1321,15 @@
     ],
     "author": "pipeline",
     "date": "2026-05-19"
+  },
+  {
+    "from": "0.20.0",
+    "to": "0.21.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"psd2GenerateBankPayment\" added to entity \"header\" in backend"
+    ],
+    "author": "pipeline",
+    "date": "2026-06-11"
   }
 ]

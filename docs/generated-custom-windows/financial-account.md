@@ -439,6 +439,19 @@ All keys prefixed `financeAccountDetail*` and `financeAccountMovements*`, added 
 - `financeAccountMovementsEmpty` — empty-state message.
 - `financeAccountStatements*` — all statements tab keys (search, import, column headers, status labels, dialog, toasts).
 - `financeAccountStatementLines*` — all lines sub-view keys (column headers, empty state, matched labels).
+- `financeAccountMovementsWizard*` — every label, placeholder, section title, choice card, stepper label, footer and toast/error string of the **New Movement wizard** (`NewMovementWizard/`). The wizard was fully internationalized (it previously hardcoded its Spanish copy); `movementWizardData.DIM_META` now carries a `labelKey` resolved via `ui()` instead of a literal `label`.
+- `financeAccountAmountPlaceholder` — shared decimal placeholder (`0,00` / `0.00`) used by the wizard amount inputs and the manual-statement line amounts.
+
+> **i18n allowlists.** `ImportedStatementsTab`, `StatementConfirmDialog` and `ImportStatementModal` keep per-variant config objects whose `error`/`title` values are themselves **i18n keys** (resolved later via `ui(cfg.error)`). The Schema Forge quality-gate i18n check flags those string literals as hardcoded, so each file carries an `// i18n-allowlist: [...]` comment listing the keys — they are not user-facing literals.
+
+## Contract-driven grid columns
+
+The window stays **custom** (`layoutType: "custom"`, bespoke React structure), but its four grids now read their **column set, order, labels and cell types from `contract.json`** instead of hardcoded JSX:
+
+- `components/financial-accounts/contractColumns.js` → `getContractGridColumns(entity)` reads `@generated/financial-account/contract.json` and returns the ordered, grid-flagged fields for an entity (`account`, `transaction`, `importedBankStatements`, `bankStatementLines`).
+- Field-level config lives in `artifacts/financial-account/decisions.json` (`grid` / `gridOrder` per field). Edit decisions → `node cli/src/resolve-curated.js --window financial-account --write` regenerates `contract.json`; the grids pick up the change with no JSX edits.
+- Adding/removing a grid column or reordering = a `decisions.json` change, **not** a code change. Visibility (`editable`/`readOnly`/`system`/`discarded`) and `readOnlyLogic` also come from the contract.
+- `readOnlyLogic.js` for these fields is produced by `generate-contract.js → convertLogicToJs` (AD expression → JS). The translator handles `@Col@='v'`, `!=`, empty (`!''`/`=''`), `null` and numeric (`>0`) forms; any expression that still contains a raw `@token@` after translation is marked `evaluable:false` (never emits invalid JS). All `readonlylogic-valid` contract tests must stay green after a regen.
 
 ## Known deviations from the Figma frame
 
