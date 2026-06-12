@@ -448,6 +448,7 @@ function mapFieldAttributes(f, mapped) {
   if (f.reference) mapped.reference = f.reference;
   if (f.enumValues) mapped.enumValues = f.enumValues;
   if (f.inputMode) mapped.inputMode = f.inputMode;
+  if (f.clearable === false) mapped.clearable = false;
   if (f.dependsOn) mapped.dependsOn = f.dependsOn;
   if (f.lookup) mapped.lookup = true;
   if (f.popup) mapped.popup = true;
