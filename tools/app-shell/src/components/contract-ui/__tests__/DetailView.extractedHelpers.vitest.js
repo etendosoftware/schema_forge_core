@@ -483,7 +483,7 @@ describe('getDetailContentContainerClassName', () => {
     const cls = getDetailContentContainerClassName({
       linesLayout: 'readOnly', activePrimaryTab: 'general',
     });
-    expect(cls).toContain('overflow-auto pb-6');
+    expect(cls).toContain('overflow-auto pb-2');
     expect(cls).not.toContain('flex flex-col overflow-y-auto');
   });
 
@@ -530,9 +530,9 @@ describe('getLinesTabsSectionClassName', () => {
   });
 
   it('returns the default class for any other layout value', () => {
-    expect(getLinesTabsSectionClassName('readOnly')).toBe('mt-6');
-    expect(getLinesTabsSectionClassName(undefined)).toBe('mt-6');
-    expect(getLinesTabsSectionClassName('')).toBe('mt-6');
+    expect(getLinesTabsSectionClassName('readOnly')).toBe('mt-2');
+    expect(getLinesTabsSectionClassName(undefined)).toBe('mt-2');
+    expect(getLinesTabsSectionClassName('')).toBe('mt-2');
   });
 });
 
