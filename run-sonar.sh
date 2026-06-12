@@ -252,10 +252,32 @@ if [[ "$RUN_COVERAGE" == "true" ]]; then
 fi
 
 # ── Step 1: Run scanner ────────────────────────────────────────────
-echo "==> Running sonar-scanner..."
-sonar-scanner \
-  -Dsonar.host.url="$SONAR_HOST_URL" \
+# In PR-validation mode (--base-ref) analyze in PULL REQUEST mode so the server
+# computes "new code = diff vs base" exactly like CI's PR gate. This is ephemeral
+# (SonarQube auto-purges PR analyses) and never writes to the main branch — a
+# plain `sonar-scanner` with no PR/branch params would otherwise pollute main.
+# PR mode needs only "Execute Analysis" (which a scan already requires); it does
+# NOT need the admin-only new-code-period config that a suffixed branch would.
+SCANNER_ARGS=(
+  -Dsonar.host.url="$SONAR_HOST_URL"
   -Dsonar.token="$SONAR_TOKEN"
+)
+SONAR_PR_KEY=""
+if [[ "$CHANGED_ONLY" == "true" && -n "$BASE_REF" ]]; then
+  PR_SRC_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'HEAD')"
+  PR_BASE_BRANCH="${BASE_REF#origin/}"   # Sonar wants a branch NAME, not origin/<name>
+  SONAR_PR_KEY="local-${PR_SRC_BRANCH}"  # stable per branch → repeated pushes update, not pile up
+  SCANNER_ARGS+=(
+    -Dsonar.pullrequest.key="$SONAR_PR_KEY"
+    -Dsonar.pullrequest.branch="$PR_SRC_BRANCH"
+    -Dsonar.pullrequest.base="$PR_BASE_BRANCH"
+  )
+  echo "==> Running sonar-scanner (PR mode: key=$SONAR_PR_KEY branch=$PR_SRC_BRANCH base=$PR_BASE_BRANCH)..."
+else
+  echo "==> Running sonar-scanner..."
+fi
+export SONAR_PR_KEY
+sonar-scanner "${SCANNER_ARGS[@]}"
 
 # ── Step 2: Get task ID from report-task.txt ───────────────────────
 REPORT_TASK_FILE=".scannerwork/report-task.txt"
@@ -310,8 +332,19 @@ token = os.environ["SONAR_TOKEN"]
 report_dir = os.environ.get("REPORT_DIR", "sonar-reports")
 project = os.environ["PROJECT_KEY"]
 
+# In PR mode every read must be scoped to the PR, or it reads the main branch
+# instead (the bug this replaces). Empty in --all-issues mode → reads default branch.
+pr_key = os.environ.get("SONAR_PR_KEY", "")
+PR_Q = f"&pullRequest={pr_key}" if pr_key else ""
+
 import base64 as b64
 credentials = b64.b64encode(f"{token}:".encode()).decode()
+
+# Set when /api/hotspots/* returns 403 — the token can read Issues but lacks the
+# "Browse Security Hotspots" project permission. Distinguishes a permission wall
+# (so the gate block can fall back to a local heuristic) from a genuine 0-hotspot
+# result. Persisted into the hotspot report files for the separate gate process.
+HOTSPOTS_FORBIDDEN = {"flag": False}
 
 def api_get(path):
     req = urllib.request.Request(f"{base}{path}")
@@ -320,6 +353,8 @@ def api_get(path):
         with urllib.request.urlopen(req) as resp:
             return json.loads(resp.read())
     except urllib.error.HTTPError as e:
+        if e.code == 403 and "/api/hotspots/" in path:
+            HOTSPOTS_FORBIDDEN["flag"] = True
         print(f"    WARNING: {e.code} on {path}", file=sys.stderr)
         try:
             fallback_url = f"{base}{path}{'&' if '?' in path else '?'}token={token}"
@@ -334,7 +369,7 @@ def fetch_issues(extra_query=""):
     issues_result = []
     page = 1
     while True:
-        query = f"componentKeys={project}&ps=500&p={page}&statuses=OPEN,CONFIRMED,REOPENED"
+        query = f"componentKeys={project}&ps=500&p={page}&statuses=OPEN,CONFIRMED,REOPENED{PR_Q}"
         if extra_query:
             query = f"{query}&{extra_query}"
         data = api_get(f"/api/issues/search?{query}")
@@ -405,7 +440,7 @@ def fetch_hotspots(extra_query=""):
     result = []
     page = 1
     while True:
-        query = f"projectKey={project}&ps=500&p={page}&status=TO_REVIEW"
+        query = f"projectKey={project}&ps=500&p={page}&status=TO_REVIEW{PR_Q}"
         if extra_query:
             query = f"{query}&{extra_query}"
         data = api_get(f"/api/hotspots/search?{query}")
@@ -431,7 +466,8 @@ def hotspot_summary(h):
 
 def write_hotspot_reports(name, hotspots):
     with open(f"{report_dir}/sonar-hotspots{name}.json", "w") as f:
-        json.dump({"total": len(hotspots), "hotspots": hotspots}, f, indent=2)
+        json.dump({"total": len(hotspots), "apiForbidden": HOTSPOTS_FORBIDDEN["flag"],
+                   "hotspots": hotspots}, f, indent=2)
     print(f"    Saved: {report_dir}/sonar-hotspots{name}.json ({len(hotspots)} {'hotspot' if len(hotspots) == 1 else 'hotspots'})")
 
 all_hotspots = [hotspot_summary(h) for h in fetch_hotspots()]
@@ -440,14 +476,14 @@ write_hotspot_reports("", all_hotspots)
 write_hotspot_reports("-new-code", new_code_hotspots)
 
 # Quality gate
-qg = api_get(f"/api/qualitygates/project_status?projectKey={project}")
+qg = api_get(f"/api/qualitygates/project_status?projectKey={project}{PR_Q}")
 if qg:
     with open(f"{report_dir}/sonar-quality-gate.json", "w") as f:
         json.dump(qg, f, indent=2)
     print(f"    Saved: {report_dir}/sonar-quality-gate.json")
 
 # Measures
-measures = api_get(f"/api/measures/component?component={project}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,security_hotspots,reliability_rating,security_rating,sqale_rating")
+measures = api_get(f"/api/measures/component?component={project}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,security_hotspots,reliability_rating,security_rating,sqale_rating{PR_Q}")
 if measures:
     with open(f"{report_dir}/sonar-measures.json", "w") as f:
         json.dump(measures, f, indent=2)
@@ -541,13 +577,15 @@ print(f"    Saved: {report_dir}/sonar-issues-by-file-pr-only.json ({len(filtered
 
 # Restrict new-code Security Hotspots to this PR's changed files too.
 hs_path = report_dir / "sonar-hotspots-new-code.json"
-new_code_hotspots = json.loads(hs_path.read_text()).get("hotspots", []) if hs_path.exists() else []
+hs_doc = json.loads(hs_path.read_text()) if hs_path.exists() else {}
+new_code_hotspots = hs_doc.get("hotspots", [])
 filtered_hotspots = [
     h for h in new_code_hotspots
     if h.get("component", "").split(":", 1)[-1] in changed
 ]
 (report_dir / "sonar-hotspots-pr-only.json").write_text(json.dumps({
     "total": len(filtered_hotspots),
+    "apiForbidden": hs_doc.get("apiForbidden", False),
     "hotspots": filtered_hotspots
 }, indent=2))
 print(f"    Saved: {report_dir}/sonar-hotspots-pr-only.json ({len(filtered_hotspots)} {'hotspot' if len(filtered_hotspots) == 1 else 'hotspots'})")
@@ -615,10 +653,63 @@ if pr_mode and os.path.isfile(pr_file):
 report_dir = os.environ["REPORT_DIR"]
 hs_name = "sonar-hotspots-pr-only.json" if pr_mode else "sonar-hotspots-new-code.json"
 hs_path = os.path.join(report_dir, hs_name)
-hotspots = json.load(open(hs_path)).get("hotspots", []) if os.path.isfile(hs_path) else []
+hs_doc = json.load(open(hs_path)) if os.path.isfile(hs_path) else {}
+hotspots = hs_doc.get("hotspots", [])
+# True when /api/hotspots/search returned 403 — the token lacks "Browse Security
+# Hotspots", so the server could not name the hotspot and we fall back to a local
+# heuristic scan of the diff (below) instead of an unhelpful "unknown" message.
+hotspots_forbidden = bool(hs_doc.get("apiForbidden", False))
 # A hotspot-review condition: e.g. new_security_hotspots_reviewed, security_review_rating.
 hotspot_metrics = [d for (m, d) in failing
                    if "security_hotspot" in m or "security_review" in m]
+
+# ── Local heuristic: candidate hotspot locations from the diff ──
+# Only used when the gate flags a hotspot condition but the API would not name it
+# (403). Greps THIS push's changed files for the security-sensitive patterns Sonar
+# most commonly raises as hotspots in this codebase, so the handoff still points
+# at concrete file:line locations. Heuristic — may over- or under-report.
+def scan_hotspot_candidates():
+    import re
+    changed_path = os.path.join(report_dir, "changed-files.txt")
+    if not os.path.isfile(changed_path):
+        return []
+    repo_root = os.environ.get("REPO_ROOT", ".")
+    changed = [l.strip() for l in open(changed_path) if l.strip()
+               and l.strip().endswith((".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"))]
+    # (rule, label, whole-file regex). Kept small and high-signal. Matched against
+    # the FULL file text (not line-by-line) so multi-line cases are caught — e.g. a
+    # `pool.query(` whose template literal opens on the next line. The S2077 pattern
+    # requires `${...}` interpolation inside the literal (a parameterised `$1` query
+    # is safe and must NOT match).
+    DOTALL = re.DOTALL
+    PATTERNS = [
+        ("javascript:S2077", "Formatting SQL queries is security-sensitive",
+         re.compile(r"\.(?:query|execute)\s*\(\s*`[^`]*?\$\{", DOTALL)),
+        ("javascript:S5852", "Slow regex (ReDoS) is security-sensitive",
+         re.compile(r"\bnew RegExp\s*\(")),
+        ("javascript:S2245", "Using pseudorandom number generators is security-sensitive",
+         re.compile(r"\bMath\.random\s*\(")),
+        ("javascript:S4507", "Delivering code in production with debug features is security-sensitive",
+         re.compile(r"\bdebugger\b")),
+    ]
+    out = []
+    for rel in changed:
+        full = os.path.join(repo_root, rel)
+        if not os.path.isfile(full):
+            continue
+        try:
+            text = open(full, encoding="utf-8", errors="replace").read()
+        except OSError:
+            continue
+        file_lines = text.splitlines()
+        for rule, label, rx in PATTERNS:
+            for m in rx.finditer(text):
+                line_no = text.count("\n", 0, m.start()) + 1
+                code = file_lines[line_no - 1].strip() if line_no <= len(file_lines) else ""
+                out.append({"comp": rel, "line": line_no, "rule": rule,
+                            "label": label, "code": code[:100]})
+    out.sort(key=lambda c: (c["comp"], c["line"]))
+    return out
 
 # ── Decide whether to block, mirroring CI's PR gate ──
 # new_violations blocks only if PR-diff issues > 0; any OTHER failing condition
@@ -661,9 +752,15 @@ if other_failing:
 if hotspot_metrics:
     host = os.environ.get("SONAR_HOST_URL", "").rstrip("/")
     pkey = os.environ.get("PROJECT_KEY", "")
-    hs_url = f"{host}/security_hotspots?id={pkey}&inNewCodePeriod=true"
-    if branch and branch != "this branch":
-        hs_url += f"&branch={branch}"
+    pr_key = os.environ.get("SONAR_PR_KEY", "")
+    hs_url = f"{host}/security_hotspots?id={pkey}"
+    # Scope the UI link the same way the analysis was scoped: PR > branch > newcode.
+    if pr_key:
+        hs_url += f"&pullRequest={pr_key}"
+    elif branch and branch != "this branch":
+        hs_url += f"&branch={branch}&inNewCodePeriod=true"
+    else:
+        hs_url += "&inNewCodePeriod=true"
     lines.append("Security Hotspot review is blocking the gate. A Security Hotspot is")
     lines.append("security-sensitive code that must be MANUALLY reviewed and marked")
     lines.append("'Safe'/'Acknowledged' (or fixed). The gate requires 100% of NEW hotspots")
@@ -676,9 +773,26 @@ if hotspot_metrics:
                          f"({h.get('probability', '')}) — {h.get('category', '')}")
             lines.append(f"     {h.get('message', '')}")
     else:
-        lines.append("  (Could not enumerate the hotspot(s) via the API — the local token likely")
-        lines.append("   lacks 'Browse Security Hotspots' permission. In CI the token can list them;")
-        lines.append("   meanwhile open the URL below to see exactly which line is flagged.)")
+        # API could not name the hotspot. If that was a 403 permission wall, scan
+        # the diff locally so the agent still gets concrete file:line candidates.
+        candidates = scan_hotspot_candidates() if hotspots_forbidden else []
+        if hotspots_forbidden:
+            lines.append("  The exact hotspot could not be read from SonarQube: the local token got")
+            lines.append("  HTTP 403 on /api/hotspots/search (it lacks the 'Browse Security Hotspots'")
+            lines.append("  project permission). CI's token can list them; the URL below shows them too.")
+        else:
+            lines.append("  (Could not enumerate the hotspot(s) via the API — the analysis may not")
+            lines.append("   expose them to this token. Open the URL below to see the flagged line.)")
+        if candidates:
+            lines.append("")
+            lines.append(f"  LOCAL HEURISTIC — security-sensitive lines in THIS push's diff ({len(candidates)} candidate(s)).")
+            lines.append("  These are likely (not confirmed) the flagged hotspot(s); verify against the URL:")
+            for n, c in enumerate(candidates, 1):
+                lines.append(f"    {n}. {c['comp']}:{c['line']} — {c['rule']} — {c['label']}")
+                lines.append(f"       {c['code']}")
+        elif hotspots_forbidden:
+            lines.append("  (Local heuristic scan of the diff found no obvious security-sensitive")
+            lines.append("   pattern — the hotspot may be in code outside this push's changed files.)")
     lines.append(f"  Review them here: {hs_url}")
     lines.append("  Fix in code, or (if safe) mark each hotspot Reviewed in SonarQube, then re-push.")
     lines.append("")
