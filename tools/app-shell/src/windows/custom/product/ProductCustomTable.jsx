@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { DataTable } from '@/components/contract-ui';
-import { ProductNameCell, ProductPriceCell, ProductStockCell } from './ProductListCells';
+import { ProductNameCell, ProductSalePriceCell, ProductPurchasePriceCell, ProductStockCell } from './ProductListCells';
 
 /* eslint-disable react/prop-types */
 
@@ -26,12 +26,21 @@ const columns = [
     required: true,
   },
   {
-    key: 'price',
-    labels: { en_US: 'Price', es_ES: 'Precio' },
+    key: 'sale',
+    labels: { en_US: 'Sales', es_ES: 'Venta' },
     type: 'custom',
     sortable: false,
     render: (row, { token, apiBaseUrl }) => (
-      <ProductPriceCell row={row} token={token} apiBaseUrl={apiBaseUrl} />
+      <ProductSalePriceCell row={row} token={token} apiBaseUrl={apiBaseUrl} />
+    ),
+  },
+  {
+    key: 'purchase',
+    labels: { en_US: 'Purchase', es_ES: 'Compra' },
+    type: 'custom',
+    sortable: false,
+    render: (row, { token, apiBaseUrl }) => (
+      <ProductPurchasePriceCell row={row} token={token} apiBaseUrl={apiBaseUrl} />
     ),
   },
   {

@@ -1,8 +1,8 @@
 {
   "version": "0.12.0",
   "generatedAt": "2026-04-29T18:11:24.842Z",
-  "updatedAt": "2026-06-11T12:00:33.881Z",
-  "checksum": "0e5028fc06dee9de",
+  "updatedAt": "2026-06-12T12:26:05.174Z",
+  "checksum": "695d69a8fa0a06d2",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -45,7 +45,7 @@
       "compactSidebarPadding": true,
       "whiteFormBackground": true,
       "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto pt-2 pl-0 pr-4 pb-5 border-l border-[#E8EAEF]",
-      "formCardPadding": "px-2 pb-2",
+      "formCardPadding": "px-2",
       "tabsBarPaddingX": "px-2",
       "primaryTabsVariant": "pill",
       "toolbarPaddingX": "px-2",
@@ -1762,7 +1762,7 @@
       "compactSidebarPadding": true,
       "whiteFormBackground": true,
       "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto pt-2 pl-0 pr-4 pb-5 border-l border-[#E8EAEF]",
-      "formCardPadding": "px-2 pb-2",
+      "formCardPadding": "px-2",
       "tabsBarPaddingX": "px-2",
       "primaryTabsVariant": "pill",
       "toolbarPaddingX": "px-2",

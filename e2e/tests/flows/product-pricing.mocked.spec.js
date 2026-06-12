@@ -64,6 +64,10 @@ const EXISTING_SALES_ROW = {
   priceListVersion: 'plv-sale',
   'priceListVersion$_identifier': 'Lista venta 2026',
   'priceListVersion$salesPriceList': true,
+  // Fields required by ProductSalePriceCell / ProductPurchasePriceCell (list view)
+  // to resolve the correct price row via selectPriceRow.
+  'priceListVersion$default': true,
+  'priceListVersion$validFromDate': '2026-01-01',
   standardPrice: '8',
   listPrice: '10',
   priceLimit: '10',
@@ -169,6 +173,9 @@ test.describe('Product pricing — create flow (no existing rows)', () => {
           priceListVersion: body.priceListVersion,
           'priceListVersion$_identifier': isSales ? PLV_SALE.label : PLV_PURCHASE.label,
           'priceListVersion$salesPriceList': isSales,
+          // Fields required by ProductSalePriceCell / ProductPurchasePriceCell (list view)
+          'priceListVersion$default': true,
+          'priceListVersion$validFromDate': '2026-01-01',
           standardPrice: body.standardPrice,
           listPrice: body.listPrice,
           priceLimit: body.priceLimit,

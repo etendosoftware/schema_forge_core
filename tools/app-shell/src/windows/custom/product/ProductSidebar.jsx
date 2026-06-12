@@ -328,7 +328,7 @@ function ChartSVG({ months, values, series, W, H, PAD_X, PAD_Y, gradId, fontSize
 }
 
 
-function StockEmptyState({ onAdjustStock }) {
+function StockEmptyState({ onAdjustStock, onReplenish }) {
   const ui = useUI();
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-4 py-6">
@@ -346,9 +346,10 @@ function StockEmptyState({ onAdjustStock }) {
         </button>
         <button
           type="button"
+          onClick={onReplenish}
           className="flex items-center justify-center px-2 py-1 h-8 bg-[#121217] rounded-lg text-sm font-medium text-white"
         >
-          {ui('registerMovement')}
+          {ui('replenishStock')}
         </button>
       </div>
     </div>
@@ -643,7 +644,7 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
       {/* ── Stock movement or empty state ── */}
       {hasChart
         ? <StockChart {...stockChartProps} />
-        : transactions !== null && <StockEmptyState onAdjustStock={() => navigate('/physical-inventory')} />
+        : transactions !== null && <StockEmptyState onAdjustStock={() => navigate('/physical-inventory/new')} onReplenish={() => navigate('/purchase-order/new')} />
       }
 
       {/* Hidden StockChart for warehouse tab modal trigger */}

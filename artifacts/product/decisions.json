@@ -12,7 +12,7 @@
     "contentBg": "bg-white",
     "listbarPaddingX": "px-2",
     "tablePaddingX": "px-2",
-    "formCardPadding": "px-2 pb-2",
+    "formCardPadding": "px-2",
     "compactSidebarPadding": true,
     "tabsBarPaddingX": "px-2",
     "primaryTabsVariant": "pill",

@@ -16877,7 +16877,7 @@
     "noStockMovements": "Sin movimientos de stock",
     "noStockMovementsDesc": "Cuando registres entradas o salidas, verás la evolución aquí.",
     "adjustStock": "Ajustar stock",
-    "registerMovement": "Registrar movimiento",
+    "replenishStock": "Reponer stock",
     "commercial": "Comercial",
     "logistics": "Logística",
     "pricing": "Precios",

@@ -16635,7 +16635,7 @@
     "noStockMovements": "No stock movements",
     "noStockMovementsDesc": "When you record entries or exits, you'll see the evolution here.",
     "adjustStock": "Adjust stock",
-    "registerMovement": "Register movement",
+    "replenishStock": "Replenish stock",
     "commercial": "Commercial",
     "logistics": "Logistics",
     "pricing": "Pricing",
