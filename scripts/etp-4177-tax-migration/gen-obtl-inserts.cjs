@@ -95,27 +95,14 @@ function bool(block, tag) {
 }
 
 const AUDIT = "'0','0',now(),'0',now(),'0'";  // ad_client_id, ad_org_id, created, createdby, updated, updatedby
-const out = [];
-out.push("-- ============================================================================");
-out.push("-- ETP-4177 — STEP 0b : INSERT OBTL (303/349) system dataset");
-out.push("-- Generated from the dataset XML by gen-obtl-inserts.js — DO NOT edit by hand.");
-out.push("-- Run AFTER 00-promote-goclient.sql (obtl_tax_parameter.c_tax_id references the");
-out.push("-- promoted system taxes). Transactional; dry-run by default, -v do_commit=1 to apply.");
-out.push("-- ============================================================================");
-out.push("\\set ON_ERROR_STOP on");
-out.push("\\if :{?do_commit} \\else \\set do_commit 0 \\endif");
-out.push("BEGIN;");
-out.push("SELECT ad_disable_triggers();");
-out.push("");
 
-let totals = {};
-for (const ent of ENTITIES) {
+// Build the INSERT lines for one entity (returns {lines, count}).
+function emitEntity(ent) {
   const re = new RegExp(`<${ent.tag}\\b[^>]*>[\\s\\S]*?</${ent.tag}>`, 'g');
   const blocks = xml.match(re) || [];
-  totals[ent.table] = blocks.length;
   const cols = ['' + ent.pk, 'ad_client_id', 'ad_org_id', 'created', 'createdby', 'updated', 'updatedby', 'isactive',
                 ...ent.fields.map(f => f.col)];
-  out.push(`-- ${ent.table} : ${blocks.length} rows`);
+  const lines = [`-- ${ent.table} : ${blocks.length} rows`];
   for (const b of blocks) {
     const idm = b.match(/\bid="([0-9A-Fa-f]+)"/);
     if (!idm) continue;
@@ -126,26 +113,59 @@ for (const ent of ENTITIES) {
       if (f.kind === 'bool') { const x = bool(b, f.tag); return x === null ? 'NULL' : sqlStr(x); }
       return sqlStr(scalar(b, f.tag));
     });
-    out.push(`INSERT INTO ${ent.table} (${cols.join(',')}) VALUES (${sqlStr(id)},${AUDIT},${sqlStr(active)},${vals.join(',')});`);
+    lines.push(`INSERT INTO ${ent.table} (${cols.join(',')}) VALUES (${sqlStr(id)},${AUDIT},${sqlStr(active)},${vals.join(',')});`);
   }
-  out.push("");
+  return { lines, count: blocks.length };
 }
 
-out.push("SELECT ad_enable_triggers();");
-out.push("\\echo ''");
-out.push("\\echo 'OBTL rows now at client 0:'");
-out.push("SELECT 'obtl_tributarykey' t, count(*) FROM obtl_tributarykey WHERE ad_client_id='0'");
-out.push("UNION ALL SELECT 'obtl_tax_report', count(*) FROM obtl_tax_report WHERE ad_client_id='0'");
-out.push("UNION ALL SELECT 'obtl_tax_report_group', count(*) FROM obtl_tax_report_group WHERE ad_client_id='0'");
-out.push("UNION ALL SELECT 'obtl_tax_report_parameter', count(*) FROM obtl_tax_report_parameter WHERE ad_client_id='0'");
-out.push("UNION ALL SELECT 'obtl_tax_parameter', count(*) FROM obtl_tax_parameter WHERE ad_client_id='0' ORDER BY t;");
-out.push("\\if :do_commit");
-out.push("  \\echo '>>> do_commit=1 : COMMITTING OBTL inserts.'");
-out.push("  COMMIT;");
-out.push("\\else");
-out.push("  \\echo '>>> dry run : ROLLING BACK. Re-run with -v do_commit=1 to apply.'");
-out.push("  ROLLBACK;");
-out.push("\\endif");
+// Two output files keep each well under the reviewer's large-file threshold and
+// split along the FK boundary: the 303/349 report STRUCTURE first (00b), then
+// the tax->box parameter LINKS (00c), which reference both the structure and the
+// promoted system taxes. Run 00b before 00c.
+const FILES = [
+  { name: '00b-insert-obtl.sql', step: '0b', title: 'OBTL 303/349 report structure',
+    note: 'Run AFTER 00-promote-goclient.sql.',
+    ents: ENTITIES.filter(e => e.table !== 'obtl_tax_parameter') },
+  { name: '00c-insert-obtl-params.sql', step: '0c', title: 'OBTL tax->report-box parameter links',
+    note: 'Run AFTER 00b (references obtl_tax_report_parameter) and 00-promote (references system c_tax).',
+    ents: ENTITIES.filter(e => e.table === 'obtl_tax_parameter') },
+];
 
-process.stdout.write(out.join('\n') + '\n');
+const totals = {};
+for (const file of FILES) {
+  const out = [];
+  out.push("-- ============================================================================");
+  out.push(`-- ETP-4177 — STEP ${file.step} : INSERT ${file.title}`);
+  out.push("-- Generated from the dataset XML by gen-obtl-inserts.cjs — DO NOT edit by hand.");
+  out.push(`-- ${file.note}`);
+  out.push("-- Transactional; dry-run by default, -v do_commit=1 to apply.");
+  out.push("-- ============================================================================");
+  out.push("\\set ON_ERROR_STOP on");
+  out.push("\\if :{?do_commit} \\else \\set do_commit 0 \\endif");
+  out.push("BEGIN;");
+  out.push("SELECT ad_disable_triggers();");
+  out.push("");
+  for (const ent of file.ents) {
+    const { lines, count } = emitEntity(ent);
+    totals[ent.table] = count;
+    out.push(...lines, "");
+  }
+  out.push("SELECT ad_enable_triggers();");
+  out.push("\\echo ''");
+  out.push("\\echo 'Rows now at client 0 (this step):'");
+  out.push(file.ents.map((e, i) =>
+    `${i === 0 ? 'SELECT' : 'UNION ALL SELECT'} '${e.table}' t, count(*) FROM ${e.table} WHERE ad_client_id='0'`
+  ).join('\n') + ' ORDER BY t;');
+  out.push("\\if :do_commit");
+  out.push(`  \\echo '>>> do_commit=1 : COMMITTING ${file.title}.'`);
+  out.push("  COMMIT;");
+  out.push("\\else");
+  out.push("  \\echo '>>> dry run : ROLLING BACK. Re-run with -v do_commit=1 to apply.'");
+  out.push("  ROLLBACK;");
+  out.push("\\endif");
+
+  const path = require('path').join(__dirname, file.name);
+  fs.writeFileSync(path, out.join('\n') + '\n');
+  console.error(`Wrote ${file.name} (${Math.round(fs.statSync(path).size/1024)}KB)`);
+}
 console.error('Generated rows: ' + JSON.stringify(totals));
