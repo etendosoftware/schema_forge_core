@@ -28,6 +28,9 @@ type, it necessarily touches several domains at once.
   `PillToggle` (single source for the toggle; no behavior change).
 - **repo-infra / docs** — `decisions-reference.md`, `window-templates.md`,
   generated window docs.
+- **window:fiscal-models** — test-only and incidental: stabilizes a pre-existing
+  flaky `useFiscalAutoCompute` test (load race; asserts on `computedMap` inside
+  `waitFor` instead of the call count) that blocked this branch's pre-push.
 
 ## Tests
 
