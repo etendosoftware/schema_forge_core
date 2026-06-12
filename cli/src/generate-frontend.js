@@ -1308,7 +1308,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const skipServerMacro = isEtendoSessionMacro(rawDv);
     if (!skipCheckboxDefault && !skipServerMacro && rawDv !== undefined && rawDv !== null && rawDv !== '') {
       const numDv = Number(rawDv);
-      defaultValuePart = `, defaultValue: ${(!isNaN(numDv) && String(rawDv).trim() !== '') ? numDv : `'${String(rawDv).replace(/'/g, "\\'")}'`}`;
+      const isNumeric = !isNaN(numDv) && String(rawDv).trim() !== '';
+      const dvLiteral = isNumeric ? String(numDv) : `'${String(rawDv).replace(/'/g, "\\'")}'`;
+      defaultValuePart = `, defaultValue: ${dvLiteral}`;
     }
     const forceCalloutFieldsPart = Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0
       ? `, forceCalloutFields: ${JSON.stringify(f.forceCalloutFields)}`
