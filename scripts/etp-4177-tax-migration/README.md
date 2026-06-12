@@ -63,8 +63,21 @@ bulk-operation mechanism.
 
 | File | Effect |
 |------|--------|
-| `01-assess.sql` | **Read-only.** Builds `etp4177_tax_map` / `etp4177_taxcat_map`, reports AUTO vs REVIEW and the blocker list. |
-| `02-migrate.sql` | **Destructive.** Transactional remap + safe-delete of AUTO rows. Dry-run (ROLLBACK) by default; `-v do_commit=1` to apply. |
+| `00-promote-goclient.sql` | **Destructive.** Promotes GOClient's dataset (10 tables) to system (`client='0'`, `org='0'`) in place, keeping IDs. Run first on environments where GOClient holds the data (Experimental, Staging). Dry-run by default; `-v do_commit=1` to apply. |
+| `01-assess.sql` | **Read-only.** Builds `etp4177_tax_map` / `etp4177_taxcat_map`, reports AUTO vs REVIEW and the blocker list. Requires system taxes to exist (run `00` first). |
+| `02-migrate.sql` | **Destructive.** Consolidates other clients' redundant copies: transactional remap + safe-delete of AUTO rows. Dry-run (ROLLBACK) by default; `-v do_commit=1` to apply. |
+
+## Three-step flow (Experimental / Staging)
+
+```
+00-promote-goclient.sql   GOClient taxes  ->  system (client 0)
+01-assess.sql             build mapping, review BLOCKERS
+02-migrate.sql            remap + delete other clients' redundant copies
+```
+
+On a fresh SaaS install the dataset module already ships the system taxes, so
+only `01`+`02` apply. On existing environments GOClient holds the data, so all
+three run in order.
 
 ## Procedure
 
