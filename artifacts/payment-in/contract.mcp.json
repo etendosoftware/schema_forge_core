@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "generatedAt": "2026-04-29T19:05:52.312Z",
-  "updatedAt": "2026-05-26T18:48:56.899Z",
-  "contractChecksum": "e951b67efe74c5cb",
+  "updatedAt": "2026-06-11T12:55:35.419Z",
+  "contractChecksum": "5fe25c6bcca2f094",
   "apiPrediction": {
     "specName": "payment-in",
     "baseUrl": "/sws/neo/payment-in",
@@ -285,6 +285,29 @@
         ],
         "processId": "EA02D79CA1DE4B46909EA6EF64A66B53",
         "processType": "obuiapp"
+      },
+      {
+        "name": "psd2GenerateBankPayment",
+        "actionType": "paymentAction",
+        "entity": "finPayment",
+        "column": "EM_Psd2_Generate_Bank_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/payment-in/finPayment/{id}/action/psd2GenerateBankPayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "0661406A983B4D8EA611F8596F114D52",
+        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -453,5 +476,5 @@
       "aPRMReversePayment"
     ]
   },
-  "checksum": "ce5df5948c8e0ec8"
+  "checksum": "74434a30aaaa9a2c"
 }

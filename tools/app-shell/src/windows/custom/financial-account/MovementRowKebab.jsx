@@ -30,7 +30,7 @@ export function MovementRowKebab({ movement }) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label="Movement actions"
+            aria-label={ui('financeAccountMovementsRowActions')}
             data-testid={`movement-row-menu-${movement.id}`}
             className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#828FA3] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[#E8EAEF]"
           >
