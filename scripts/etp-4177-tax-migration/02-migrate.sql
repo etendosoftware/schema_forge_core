@@ -98,8 +98,17 @@ UPDATE obirb_invbookline        x SET c_tax_id_ec = m.system_tax_id FROM etp4177
 UPDATE obirb_invbooktax_setup   x SET c_tax_id    = m.system_tax_id FROM etp4177_tax_map m WHERE x.c_tax_id   =m.old_tax_id AND m.status='AUTO';
 UPDATE obcvat_manualsettlementline x SET c_tax_id = m.system_tax_id FROM etp4177_tax_map m WHERE x.c_tax_id   =m.old_tax_id AND m.status='AUTO';
 
--- B4. OBTL (no client rows expected — kept for completeness) -------------------
-UPDATE obtl_tax_parameter x SET c_tax_id = m.system_tax_id FROM etp4177_tax_map m WHERE x.c_tax_id=m.old_tax_id AND m.status='AUTO';
+-- B4. OBTL 303/349 -------------------------------------------------------------
+--     A client-level obtl_tax_parameter row maps a CLIENT tax to a 303/349 box.
+--     The system dataset already maps the SYSTEM tax to that box (at client 0),
+--     and that config is shared by all clients. Re-pointing the client row to
+--     the system tax would create a DUPLICATE link (client-0 + client) and risk
+--     double-counting in the report. So DELETE client-level rows for AUTO taxes
+--     instead — the system config covers them once their docs use system taxes.
+--     (In testendo there are 0 such rows; only matters on real staging.)
+DELETE FROM obtl_tax_parameter x
+ USING etp4177_tax_map m
+ WHERE x.c_tax_id = m.old_tax_id AND m.status='AUTO' AND x.ad_client_id <> '0';
 
 -- B5. Configuration / master ---------------------------------------------------
 UPDATE ad_orginfo       x SET c_tax_id = m.system_tax_id FROM etp4177_tax_map m WHERE x.c_tax_id=m.old_tax_id AND m.status='AUTO';

@@ -171,5 +171,22 @@ WHERE m.status='REVIEW'
 ORDER BY products DESC, m.client_name;
 
 \echo ''
+\echo '======================================================================'
+\echo ' 7) CLIENT-LEVEL obtl_tax_parameter (303/349) — should be 0'
+\echo '    Rows on AUTO taxes are DELETED by the migration (system config'
+\echo '    already maps the system tax to the report box). Rows on REVIEW'
+\echo '    taxes stay. Any rows here = real 2.b work on this environment.'
+\echo '======================================================================'
+SELECT cl.name AS client_name,
+       count(*) FILTER (WHERE map.status='AUTO')   AS on_auto_taxes_to_delete,
+       count(*) FILTER (WHERE map.status='REVIEW') AS on_review_taxes_kept,
+       count(*) FILTER (WHERE map.status IS NULL)  AS on_other_taxes
+FROM obtl_tax_parameter p
+JOIN ad_client cl ON cl.ad_client_id = p.ad_client_id
+LEFT JOIN etp4177_tax_map map ON map.old_tax_id = p.c_tax_id
+WHERE p.ad_client_id <> '0'
+GROUP BY cl.name ORDER BY cl.name;
+
+\echo ''
 \echo 'Assessment complete. Work tables: etp4177_tax_map, etp4177_taxcat_map'
 \echo 'Review report #3 (BLOCKERS) before running the destructive phase.'

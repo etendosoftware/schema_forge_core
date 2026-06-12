@@ -38,9 +38,13 @@ Re-pointed for AUTO taxes: `c_invoiceline`, `c_invoicetax`, `c_invoicelinetax`,
 (`parent_tax_id`, `c_taxbase_id`). Categories drive `m_product`, `c_charge`,
 `c_glitem`, `s_expensetype`, `s_resourcetype`, `m_product_servicelinked`.
 
-**OBTL 303/349:** no-op. All `obtl_tax_parameter` rows live at `ad_client_id='0'`
-pointing at system taxes; clients have none. Once a client's documents point at
-system taxes, the system-level 303/349 config covers them. (Confirm functionally
+**OBTL 303/349:** in `testendo` all `obtl_tax_parameter` rows live at
+`ad_client_id='0'` pointing at system taxes; clients have none → no-op there.
+On real staging a client *may* have its own rows mapping a client tax to a
+303/349 box. Those on AUTO taxes are **deleted** (not re-pointed): the
+system-level config already maps the system tax to the box for every client, so
+re-pointing would duplicate the link and risk double-counting. Rows on REVIEW
+taxes stay. Assessment report #7 surfaces any such rows. (Confirm functionally
 that the report reads client-0 config for a non-system client.)
 
 ## Policy (decided in ETP-4177)
