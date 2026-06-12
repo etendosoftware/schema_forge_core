@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.5.0",
   "generatedAt": "2026-05-04T17:02:25.021Z",
-  "updatedAt": "2026-06-12T13:17:30.151Z",
-  "checksum": "97118f413f09540d",
+  "updatedAt": "2026-06-12T14:47:16.035Z",
+  "checksum": "12b4916c70d55e2b",
   "frontendContract": {
     "window": {
       "id": "F4675DAB02134762B66881DAE4672AD0",
@@ -119,7 +119,7 @@
         ]
       },
       "facturasRechazadas": {
-        "tableName": "etvfac_inv_sent_status_v",
+        "tableName": "etvfac_inv_sent_status_mv",
         "tabId": "F26C18F5EF6C4DB5B94A97F36B45CF7B",
         "tabName": "Facturas rechazadas",
         "uiPattern": "STD",
@@ -283,7 +283,7 @@
         "computedFields": []
       },
       "facturasParcialmenteAceptadas": {
-        "tableName": "etvfac_inv_sent_status_v",
+        "tableName": "etvfac_inv_sent_status_mv",
         "tabId": "126EBD2F625344E1A22C11219217F551",
         "tabName": "Facturas Parcialmente Aceptadas",
         "uiPattern": "STD",
@@ -435,7 +435,7 @@
         "computedFields": []
       },
       "facturasAceptadas": {
-        "tableName": "etvfac_inv_sent_status_v",
+        "tableName": "etvfac_inv_sent_status_mv",
         "tabId": "9DE45A800ACB4FDB944B05B80D565543",
         "tabName": "Facturas Aceptadas",
         "uiPattern": "STD",
@@ -599,7 +599,7 @@
         "computedFields": []
       },
       "facturasInválidas": {
-        "tableName": "etvfac_inv_sent_status_v",
+        "tableName": "etvfac_inv_sent_status_mv",
         "tabId": "6055C2356AEE43D4B1CEC16994DC3E5F",
         "tabName": "Facturas Inválidas",
         "uiPattern": "STD",
@@ -901,11 +901,19 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "refreshData",
+            "apiKey": "refreshData",
+            "column": "Refresh_Data",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
           }
         ]
       },
       "facturasRechazadas": {
-        "tableName": "etvfac_inv_sent_status_v",
+        "tableName": "etvfac_inv_sent_status_mv",
         "tabId": "F26C18F5EF6C4DB5B94A97F36B45CF7B",
         "tabName": "Facturas rechazadas",
         "fields": [
@@ -1000,7 +1008,7 @@
           {
             "name": "invoiceSentStatusID",
             "apiKey": "invoiceSentStatusID",
-            "column": "Etvfac_Inv_Sent_Status_V_ID",
+            "column": "Etvfac_Inv_Sent_Status_Mv_ID",
             "type": "id",
             "visibility": "system",
             "required": false
@@ -1064,7 +1072,7 @@
         ]
       },
       "facturasParcialmenteAceptadas": {
-        "tableName": "etvfac_inv_sent_status_v",
+        "tableName": "etvfac_inv_sent_status_mv",
         "tabId": "126EBD2F625344E1A22C11219217F551",
         "tabName": "Facturas Parcialmente Aceptadas",
         "fields": [
@@ -1159,7 +1167,7 @@
           {
             "name": "invoiceSentStatusID",
             "apiKey": "invoiceSentStatusID",
-            "column": "Etvfac_Inv_Sent_Status_V_ID",
+            "column": "Etvfac_Inv_Sent_Status_Mv_ID",
             "type": "id",
             "visibility": "system",
             "required": false
@@ -1223,7 +1231,7 @@
         ]
       },
       "facturasAceptadas": {
-        "tableName": "etvfac_inv_sent_status_v",
+        "tableName": "etvfac_inv_sent_status_mv",
         "tabId": "9DE45A800ACB4FDB944B05B80D565543",
         "tabName": "Facturas Aceptadas",
         "fields": [
@@ -1318,7 +1326,7 @@
           {
             "name": "invoiceSentStatusID",
             "apiKey": "invoiceSentStatusID",
-            "column": "Etvfac_Inv_Sent_Status_V_ID",
+            "column": "Etvfac_Inv_Sent_Status_Mv_ID",
             "type": "id",
             "visibility": "system",
             "required": false
@@ -1382,7 +1390,7 @@
         ]
       },
       "facturasInválidas": {
-        "tableName": "etvfac_inv_sent_status_v",
+        "tableName": "etvfac_inv_sent_status_mv",
         "tabId": "6055C2356AEE43D4B1CEC16994DC3E5F",
         "tabName": "Facturas Inválidas",
         "fields": [
@@ -1461,7 +1469,7 @@
           {
             "name": "invoiceSentStatusID",
             "apiKey": "invoiceSentStatusID",
-            "column": "Etvfac_Inv_Sent_Status_V_ID",
+            "column": "Etvfac_Inv_Sent_Status_Mv_ID",
             "type": "id",
             "visibility": "system",
             "required": false
@@ -1799,6 +1807,14 @@
         "processType": "obuiapp"
       },
       {
+        "entity": "cabeceraDeEmisor",
+        "field": "refreshData",
+        "column": "Refresh_Data",
+        "url": "/sws/neo/monitor-verifactu/cabeceraDeEmisor/{id}/action/refreshData",
+        "processId": "E0D681117A1843C5B9D525701087D7DC",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "facturasRechazadas",
         "field": "correctInvoice",
         "column": "Correct_Invoice",
@@ -1857,6 +1873,14 @@
         "field": "isReady",
         "runner": "node",
         "description": "Action endpoint for 'isReady' in cabeceraDeEmisor should exist"
+      },
+      {
+        "id": "t-action-endpoint-cabeceraDeEmisor-refreshData",
+        "category": "action-endpoint",
+        "entity": "cabeceraDeEmisor",
+        "field": "refreshData",
+        "runner": "node",
+        "description": "Action endpoint for 'refreshData' in cabeceraDeEmisor should exist"
       },
       {
         "id": "t-action-endpoint-facturasAceptadas-correctInvoice",
@@ -2665,6 +2689,13 @@
         "description": "Rule 'monitor-verifactu-Facturas Inválidas-Correct_Invoice-displayLogic' (displayLogic) should be declared"
       },
       {
+        "id": "t-rule-declared-Refrescar-monitor-Verifactu",
+        "category": "rule-declared",
+        "rule": "Refrescar monitor Verifactu",
+        "runner": "node",
+        "description": "Rule 'Refrescar monitor Verifactu' (process) should be declared"
+      },
+      {
         "id": "t-selector-endpoint-facturasAceptadas-invoice",
         "category": "selector-endpoint",
         "entity": "facturasAceptadas",
@@ -2767,6 +2798,14 @@
         "field": "organization",
         "runner": "node",
         "description": "System field 'organization' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-system-field-cabeceraDeEmisor-refreshData",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "refreshData",
+        "runner": "node",
+        "description": "System field 'refreshData' should exist in backend but not frontend for cabeceraDeEmisor"
       },
       {
         "id": "t-system-field-cabeceraDeEmisor-systemStartat",
@@ -3157,9 +3196,9 @@
       }
     ],
     "summary": {
-      "total": 165,
+      "total": 168,
       "byCategory": {
-        "action-endpoint": 5,
+        "action-endpoint": 6,
         "crud-flags": 5,
         "default-value-type": 2,
         "displaylogic-evaluable": 1,
@@ -3168,13 +3207,13 @@
         "field-type": 41,
         "readonlylogic-evaluable": 1,
         "readonlylogic-valid": 1,
-        "rule-declared": 5,
+        "rule-declared": 6,
         "selector-endpoint": 4,
-        "system-field": 53,
+        "system-field": 54,
         "visibility": 5
       },
       "byRunner": {
-        "node": 165,
+        "node": 168,
         "junit": 0
       }
     }

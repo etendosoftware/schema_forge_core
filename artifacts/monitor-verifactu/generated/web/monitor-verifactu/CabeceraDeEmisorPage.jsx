@@ -162,6 +162,14 @@ export const api = {
       "processType": "obuiapp"
     },
     {
+      "entity": "cabeceraDeEmisor",
+      "field": "refreshData",
+      "column": "Refresh_Data",
+      "url": "/sws/neo/monitor-verifactu/cabeceraDeEmisor/{id}/action/refreshData",
+      "processId": "E0D681117A1843C5B9D525701087D7DC",
+      "processType": "obuiapp"
+    },
+    {
       "entity": "facturasRechazadas",
       "field": "correctInvoice",
       "column": "Correct_Invoice",

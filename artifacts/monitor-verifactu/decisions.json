@@ -15,6 +15,9 @@
         "client": {
           "visibility": "system",
           "derivation": "fromParent"
+        },
+        "refreshData": {
+          "visibility": "discarded"
         }
       }
     }
