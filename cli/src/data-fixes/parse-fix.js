@@ -24,7 +24,11 @@
  */
 
 const SECTION_MARKER = /^--\s*@(check|apply)\s*$/i;
-const HEADER_LINE = /^--\s*@([A-Za-z_]+)\s*:\s*(.*)$/;
+// No `\s*` after the colon on purpose: it would overlap `(.*)` (both match
+// spaces), which is the ambiguous adjacency that triggers super-linear
+// backtracking (S5852). The captured value is `.trim()`-ed below, so leading
+// whitespace is dropped anyway — the regex stays linear and behavior is identical.
+const HEADER_LINE = /^--\s*@([A-Za-z_]+)\s*:(.*)$/;
 
 function validations(type, check, fixId, apply, meta) {
   if (type === 'sql') {
