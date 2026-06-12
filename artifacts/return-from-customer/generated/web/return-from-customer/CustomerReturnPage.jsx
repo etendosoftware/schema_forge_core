@@ -343,6 +343,14 @@ export const api = {
       "processType": "obuiapp"
     },
     {
+      "entity": "customerReturn",
+      "field": "psd2GenerateBankPayment",
+      "column": "EM_Psd2_Generate_Bank_Payment",
+      "url": "/sws/neo/returns/customerReturn/{id}/action/psd2GenerateBankPayment",
+      "processId": "0661406A983B4D8EA611F8596F114D52",
+      "processType": "obuiapp"
+    },
+    {
       "entity": "customerReturnLine",
       "field": "selectOrderLine",
       "column": "Relate_Orderline",

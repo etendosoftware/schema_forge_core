@@ -290,9 +290,9 @@ function EditRow({ row, onChange, onRemove, ui, rowRef }) {
       <LookupPicker value={row.glItem} onSelect={(it) => setVal('glItem')(it)} onClear={() => setVal('glItem')(null)}
         placeholder={ui('financeAccountStatementsManualGlItemPlaceholder')} useLookup={useGLItemLookup}
         dataTestId="manual-line-glitem" className={cellInput} search />
-      <input type="text" inputMode="decimal" value={row.out} onChange={set('out')} placeholder="0,00"
+      <input type="text" inputMode="decimal" value={row.out} onChange={set('out')} placeholder={ui('financeAccountAmountPlaceholder')}
         className={cellAmount} data-testid="manual-line-out" />
-      <input type="text" inputMode="decimal" value={row.in} onChange={set('in')} placeholder="0,00"
+      <input type="text" inputMode="decimal" value={row.in} onChange={set('in')} placeholder={ui('financeAccountAmountPlaceholder')}
         className={cellAmount} data-testid="manual-line-in" />
       <span className="flex items-center justify-end">
         <button type="button" onClick={() => onRemove(row.id)}

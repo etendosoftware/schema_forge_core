@@ -127,7 +127,9 @@ const VIEW_TO_STEP = {
   success:   2,
 };
 
-// view → subtitle i18n key
+// view → subtitle i18n key. Values are i18n KEYS resolved via ui(...) at render;
+// the `error` view name collides with a scanned property name, so allowlist it.
+// i18n-allowlist: ["financeAccountStatementsImportSubtitleUpload"]
 const VIEW_TO_SUBTITLE_KEY = {
   empty:     'financeAccountStatementsImportSubtitleUpload',
   analyzing: 'financeAccountStatementsImportSubtitleUpload',

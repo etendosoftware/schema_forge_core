@@ -340,7 +340,7 @@ test.describe('return-to-vendor-shipment — DR detail actions', () => {
 
     // ── Case 6: DR button visibility ──────────────────────────────────────
     await expect(confirmBtn).toBeVisible();
-    await expect(page.getByTestId('action-clone')).toBeVisible();
+    // Clone is a list-view row action, not a detail-view button.
 
     // action-create-return-invoice must NOT be present for DR
     await expect(page.getByTestId('action-create-return-invoice')).toHaveCount(0);
@@ -424,7 +424,7 @@ test.describe('return-to-vendor-shipment — CO detail actions', () => {
 
     // ── Case 6: CO button visibility ──────────────────────────────────────
     await expect(createInvoiceBtn).toBeVisible();
-    await expect(page.getByTestId('action-clone')).toBeVisible();
+    // Clone is a list-view row action, not a detail-view button.
 
     // action-confirm-with-credit must NOT be present for CO
     await expect(page.getByTestId('action-confirm-with-credit')).toHaveCount(0);
