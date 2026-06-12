@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
+import { useProductImage } from './useProductImage';
 
 /* eslint-disable react/prop-types */
 
@@ -12,28 +13,7 @@ export function BoxIcon({ size = 24, color = '#828FA3' }) {
 }
 
 export function ProductNameCell({ row, token, apiBaseUrl }) {
-  const [imgSrc, setImgSrc] = useState(null);
-  const imageId = row.image;
-  const neoBaseUrl = apiBaseUrl.replace(/\/[^/]+$/, '');
-
-  useEffect(() => {
-    if (!imageId) return;
-    let objectUrl;
-    fetch(`${neoBaseUrl}/image/${imageId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => (r.ok ? r.blob() : null))
-      .then((blob) => {
-        if (blob) {
-          objectUrl = URL.createObjectURL(blob);
-          setImgSrc(objectUrl);
-        }
-      })
-      .catch(() => {});
-    return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [imageId, token, neoBaseUrl]);
+  const imgSrc = useProductImage(row.image, token, apiBaseUrl);
 
   return (
     <div className="flex items-center gap-3">
