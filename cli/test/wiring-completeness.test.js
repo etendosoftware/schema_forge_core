@@ -30,7 +30,9 @@ const SPECIAL_PAGES = new Set([
   'report-viewer-purchases', 'report-viewer-finance', 'report-viewer-inventory', 'oauth2-clients',
   'authorize', 'quick-sales-order', 'quick-purchase-order',
   'first-steps', 'analytics', 'app-store', 'financial-accounts',
-  // Custom hand-written windows backed by real NEO endpoints (no mockData, no contract).
+  // Custom hand-written windows backed by real NEO endpoints. financial-account
+  // carries a contract.json for grid column config but has no generated page/mockData
+  // (see GENERATED_OUTPUT_EXEMPT below).
   'financial-account',
 ]);
 
@@ -58,6 +60,14 @@ function getLayoutType(entity) {
   }
 }
 const listModalArtifacts = new Set(entityArtifacts.filter(e => getLayoutType(e) === 'list-modal'));
+
+// Custom hand-written windows that carry a contract.json ONLY to drive config
+// (financial-account: the contract feeds grid column metadata for the bespoke UI),
+// but whose React lives under tools/app-shell/src/windows/custom/. They have no
+// generated page / mockData / Form.jsx, so they are exempt from the generated-output
+// checks below (the contract is still validated by the contract test suite).
+const GENERATED_OUTPUT_EXEMPT = new Set(['financial-account']);
+const generatedEntityArtifacts = entityArtifacts.filter(e => !GENERATED_OUTPUT_EXEMPT.has(e));
 
 const aggregateArtifacts = artifactDirs.filter(d =>
   !d.includes('__test') && !d.startsWith('.') && existsSync(resolve(ARTIFACTS, d, 'aggregate-contract.json'))
@@ -89,7 +99,7 @@ function camelToKebab(str) {
 describe('Wiring completeness', () => {
 
   describe('Every entity artifact has mockData.js', () => {
-    for (const entity of entityArtifacts) {
+    for (const entity of generatedEntityArtifacts) {
       if (listModalArtifacts.has(entity)) continue; // list-modal windows are self-contained (no mockData)
       it(`${entity} should have mockData.js`, () => {
         const generatedPath = resolve(ARTIFACTS, entity, 'generated', 'web', entity, 'mockData.js');
@@ -140,7 +150,7 @@ describe('Wiring completeness', () => {
   });
 
   describe('Every entity artifact has generated frontend components', () => {
-    for (const entity of entityArtifacts) {
+    for (const entity of generatedEntityArtifacts) {
       it(`${entity} should have generated index.jsx`, () => {
         const indexPath = resolve(ARTIFACTS, entity, 'generated', 'web', entity, 'index.jsx');
         assert.ok(

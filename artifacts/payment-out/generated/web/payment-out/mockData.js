@@ -26,7 +26,8 @@ export const header = [
     "project": "Sample project",
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "ndDimension": "Sample ndDimension",
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
   },
   {
     "id": "mock-header-002",
@@ -53,7 +54,8 @@ export const header = [
     "project": "Sample project",
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "ndDimension": "Sample ndDimension",
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
   },
   {
     "id": "mock-header-003",
@@ -80,7 +82,8 @@ export const header = [
     "project": "Sample project",
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "ndDimension": "Sample ndDimension",
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
   },
   {
     "id": "mock-header-004",
@@ -107,7 +110,8 @@ export const header = [
     "project": "Sample project",
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "ndDimension": "Sample ndDimension",
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
   },
   {
     "id": "mock-header-005",
@@ -134,7 +138,8 @@ export const header = [
     "project": "Sample project",
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "ndDimension": "Sample ndDimension",
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
   },
   {
     "id": "mock-header-006",
@@ -161,7 +166,8 @@ export const header = [
     "project": "Sample project",
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "ndDimension": "Sample ndDimension",
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
   },
   {
     "id": "mock-header-007",
@@ -188,7 +194,8 @@ export const header = [
     "project": "Sample project",
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "ndDimension": "Sample ndDimension",
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
   },
   {
     "id": "mock-header-008",
@@ -215,7 +222,8 @@ export const header = [
     "project": "Sample project",
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "ndDimension": "Sample ndDimension",
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
   },
   {
     "id": "mock-header-009",
@@ -242,7 +250,8 @@ export const header = [
     "project": "Sample project",
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "ndDimension": "Sample ndDimension",
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
   },
   {
     "id": "mock-header-010",
@@ -269,7 +278,8 @@ export const header = [
     "project": "Sample project",
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "ndDimension": "Sample ndDimension",
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
   },
   {
     "id": "mock-header-011",
@@ -296,7 +306,8 @@ export const header = [
     "project": "Sample project",
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "ndDimension": "Sample ndDimension",
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
   },
   {
     "id": "mock-header-012",
@@ -323,7 +334,8 @@ export const header = [
     "project": "Sample project",
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "ndDimension": "Sample ndDimension",
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
   }
 ];
 
@@ -1166,6 +1178,189 @@ export const accounting = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
+    "headerId": "mock-header-012"
+  }
+];
+
+export const bankPayments = [
+  {
+    "id": "mock-bankPayments-001",
+    "status": "DR",
+    "saltedgeProviderCode": "Sample saltedgeProviderCode",
+    "amount": 38907,
+    "currency": "USD",
+    "creditorName": "Sample creditorName",
+    "creditorIban": "Sample creditorIban",
+    "debtorName": "Sample debtorName",
+    "debtorIban": "Sample debtorIban",
+    "description": "Standard order for Q1 delivery",
+    "financialAccount": "Sample financialAccount",
+    "refreshPayment": "Sample refreshPayment",
+    "headerId": "mock-header-001"
+  },
+  {
+    "id": "mock-bankPayments-002",
+    "status": "CO",
+    "saltedgeProviderCode": "Sample saltedgeProviderCode",
+    "amount": 9306,
+    "currency": "EUR",
+    "creditorName": "Sample creditorName",
+    "creditorIban": "Sample creditorIban",
+    "debtorName": "Sample debtorName",
+    "debtorIban": "Sample debtorIban",
+    "description": "Rush order - priority shipping required",
+    "financialAccount": "Sample financialAccount",
+    "refreshPayment": "Sample refreshPayment",
+    "headerId": "mock-header-002"
+  },
+  {
+    "id": "mock-bankPayments-003",
+    "status": "VO",
+    "saltedgeProviderCode": "Sample saltedgeProviderCode",
+    "amount": 11544,
+    "currency": "GBP",
+    "creditorName": "Sample creditorName",
+    "creditorIban": "Sample creditorIban",
+    "debtorName": "Sample debtorName",
+    "debtorIban": "Sample debtorIban",
+    "description": "Bulk purchase for warehouse restocking",
+    "financialAccount": "Sample financialAccount",
+    "refreshPayment": "Sample refreshPayment",
+    "headerId": "mock-header-003"
+  },
+  {
+    "id": "mock-bankPayments-004",
+    "status": "IP",
+    "saltedgeProviderCode": "Sample saltedgeProviderCode",
+    "amount": 11872,
+    "currency": "USD",
+    "creditorName": "Sample creditorName",
+    "creditorIban": "Sample creditorIban",
+    "debtorName": "Sample debtorName",
+    "debtorIban": "Sample debtorIban",
+    "description": "Sample order for client evaluation",
+    "financialAccount": "Sample financialAccount",
+    "refreshPayment": "Sample refreshPayment",
+    "headerId": "mock-header-004"
+  },
+  {
+    "id": "mock-bankPayments-005",
+    "status": "DR",
+    "saltedgeProviderCode": "Sample saltedgeProviderCode",
+    "amount": 48460,
+    "currency": "EUR",
+    "creditorName": "Sample creditorName",
+    "creditorIban": "Sample creditorIban",
+    "debtorName": "Sample debtorName",
+    "debtorIban": "Sample debtorIban",
+    "description": "Recurring monthly supply order",
+    "financialAccount": "Sample financialAccount",
+    "refreshPayment": "Sample refreshPayment",
+    "headerId": "mock-header-005"
+  },
+  {
+    "id": "mock-bankPayments-006",
+    "status": "CO",
+    "saltedgeProviderCode": "Sample saltedgeProviderCode",
+    "amount": 45418,
+    "currency": "GBP",
+    "creditorName": "Sample creditorName",
+    "creditorIban": "Sample creditorIban",
+    "debtorName": "Sample debtorName",
+    "debtorIban": "Sample debtorIban",
+    "description": "Special pricing agreement applies",
+    "financialAccount": "Sample financialAccount",
+    "refreshPayment": "Sample refreshPayment",
+    "headerId": "mock-header-006"
+  },
+  {
+    "id": "mock-bankPayments-007",
+    "status": "VO",
+    "saltedgeProviderCode": "Sample saltedgeProviderCode",
+    "amount": 33840,
+    "currency": "USD",
+    "creditorName": "Sample creditorName",
+    "creditorIban": "Sample creditorIban",
+    "debtorName": "Sample debtorName",
+    "debtorIban": "Sample debtorIban",
+    "description": "Consolidated order from multiple requests",
+    "financialAccount": "Sample financialAccount",
+    "refreshPayment": "Sample refreshPayment",
+    "headerId": "mock-header-007"
+  },
+  {
+    "id": "mock-bankPayments-008",
+    "status": "IP",
+    "saltedgeProviderCode": "Sample saltedgeProviderCode",
+    "amount": 25716,
+    "currency": "EUR",
+    "creditorName": "Sample creditorName",
+    "creditorIban": "Sample creditorIban",
+    "debtorName": "Sample debtorName",
+    "debtorIban": "Sample debtorIban",
+    "description": "Trial order for new product line",
+    "financialAccount": "Sample financialAccount",
+    "refreshPayment": "Sample refreshPayment",
+    "headerId": "mock-header-008"
+  },
+  {
+    "id": "mock-bankPayments-009",
+    "status": "DR",
+    "saltedgeProviderCode": "Sample saltedgeProviderCode",
+    "amount": 44780,
+    "currency": "GBP",
+    "creditorName": "Sample creditorName",
+    "creditorIban": "Sample creditorIban",
+    "debtorName": "Sample debtorName",
+    "debtorIban": "Sample debtorIban",
+    "description": "Replacement for damaged goods",
+    "financialAccount": "Sample financialAccount",
+    "refreshPayment": "Sample refreshPayment",
+    "headerId": "mock-header-009"
+  },
+  {
+    "id": "mock-bankPayments-010",
+    "status": "CO",
+    "saltedgeProviderCode": "Sample saltedgeProviderCode",
+    "amount": 12483,
+    "currency": "USD",
+    "creditorName": "Sample creditorName",
+    "creditorIban": "Sample creditorIban",
+    "debtorName": "Sample debtorName",
+    "debtorIban": "Sample debtorIban",
+    "description": "Pre-season inventory build-up",
+    "financialAccount": "Sample financialAccount",
+    "refreshPayment": "Sample refreshPayment",
+    "headerId": "mock-header-010"
+  },
+  {
+    "id": "mock-bankPayments-011",
+    "status": "VO",
+    "saltedgeProviderCode": "Sample saltedgeProviderCode",
+    "amount": 46022,
+    "currency": "EUR",
+    "creditorName": "Sample creditorName",
+    "creditorIban": "Sample creditorIban",
+    "debtorName": "Sample debtorName",
+    "debtorIban": "Sample debtorIban",
+    "description": "Customer-specific configuration",
+    "financialAccount": "Sample financialAccount",
+    "refreshPayment": "Sample refreshPayment",
+    "headerId": "mock-header-011"
+  },
+  {
+    "id": "mock-bankPayments-012",
+    "status": "IP",
+    "saltedgeProviderCode": "Sample saltedgeProviderCode",
+    "amount": 38634,
+    "currency": "GBP",
+    "creditorName": "Sample creditorName",
+    "creditorIban": "Sample creditorIban",
+    "debtorName": "Sample debtorName",
+    "debtorIban": "Sample debtorIban",
+    "description": "Government contract fulfillment",
+    "financialAccount": "Sample financialAccount",
+    "refreshPayment": "Sample refreshPayment",
     "headerId": "mock-header-012"
   }
 ];
