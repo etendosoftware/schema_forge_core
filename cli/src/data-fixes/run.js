@@ -61,14 +61,15 @@ const PROCESSED = new Set([STATUS.APPLIED, STATUS.MANUALLY_FIXED, STATUS.SKIPPED
 // ---------------------------------------------------------------------------
 
 function parseArgs(argv) {
+  // Maps a value-taking flag to the args key it populates with the next token.
+  const VALUE_FLAGS = { '--client': 'client', '--fix': 'fix', '--reason': 'reason' };
   const args = { dryRun: false, markFixed: false, client: null, fix: null, reason: null };
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
+  const tokens = [...argv];
+  while (tokens.length) {
+    const a = tokens.shift();
     if (a === '--dry-run') args.dryRun = true;
     else if (a === '--mark-fixed') args.markFixed = true;
-    else if (a === '--client') args.client = argv[++i];
-    else if (a === '--fix') args.fix = argv[++i];
-    else if (a === '--reason') args.reason = argv[++i];
+    else if (a in VALUE_FLAGS) args[VALUE_FLAGS[a]] = tokens.shift();
     else throw new Error(`Unknown argument: ${a}`);
   }
   return args;
@@ -86,7 +87,7 @@ async function loadCatalog() {
   } catch {
     return [];
   }
-  const sqlFiles = files.filter(f => f.endsWith('.sql')).sort();
+  const sqlFiles = files.filter(f => f.endsWith('.sql')).sort((a, b) => a.localeCompare(b));
   const catalog = [];
   for (const file of sqlFiles) {
     const fixId = file.slice(0, -'.sql'.length);
