@@ -408,6 +408,10 @@ export function generateFrontendContract(schema, rules = []) {
   // implicit default.
   if (schema.window.linesLayout) win.linesLayout = schema.window.linesLayout;
 
+  // Double-entry balance footer config { debitField, creditField }. Carried
+  // through so generate-frontend.js can emit the BalanceFooterPanel prop.
+  if (schema.window.balanceFooter) win.balanceFooter = schema.window.balanceFooter;
+
   return { window: reorderKeys(win, WINDOW_KEY_ORDER), entities };
 }
 

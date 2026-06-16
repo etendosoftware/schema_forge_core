@@ -661,6 +661,28 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('detailLabel="Order Line"'));
   });
 
+  it('emits balanceFooter prop when window.balanceFooter is declared', () => {
+    const contract = {
+      ...masterDetailContract,
+      frontendContract: {
+        ...masterDetailContract.frontendContract,
+        window: {
+          ...masterDetailContract.frontendContract.window,
+          balanceFooter: { debitField: 'amtSourceDr', creditField: 'amtSourceCr' },
+        },
+      },
+    };
+    const code = generatePageComponent('order', 'orderLine', contract);
+    assert.ok(code.includes('balanceFooter={'), `expected balanceFooter prop, got:\n${code}`);
+    assert.ok(code.includes('"debitField":"amtSourceDr"'));
+    assert.ok(code.includes('"creditField":"amtSourceCr"'));
+  });
+
+  it('omits balanceFooter prop when not declared', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('balanceFooter={'));
+  });
+
   it('does NOT contain inline CSS or state hooks', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.ok(!code.includes('useState'));

@@ -50,13 +50,14 @@ describe('DetailView — Save button disabled conditions (ETP-3662)', () => {
   });
 
   it('gates the existing-record Save button with !isDirty', () => {
-    // The non-draftMode existing-record Save button checks isDocumentReadOnly, isSaving, AND !isDirty.
-    assert.match(src, /disabled=\{isDocumentReadOnly \|\| hook\.isSaving \|\| !isDirty\}/);
+    // The non-draftMode existing-record Save button checks isDocumentReadOnly, isSaving, !isDirty,
+    // AND blockSaveForBalance (ETP-4244 balance footer gate).
+    assert.match(src, /disabled=\{isDocumentReadOnly \|\| hook\.isSaving \|\| !isDirty \|\| blockSaveForBalance\}/);
   });
 
   it('does NOT gate the new-record Save button with isDirty', () => {
-    // New-record Save must only check isDocumentReadOnly and isSaving — never !isDirty.
-    assert.match(src, /disabled=\{isDocumentReadOnly \|\| hook\.isSaving\}/);
+    // New-record Save must only check isDocumentReadOnly, isSaving, and blockSaveForBalance — never !isDirty.
+    assert.match(src, /disabled=\{isDocumentReadOnly \|\| hook\.isSaving \|\| blockSaveForBalance\}/);
   });
 
   it('does NOT gate the draftMode Confirm button with !isDirty', () => {
