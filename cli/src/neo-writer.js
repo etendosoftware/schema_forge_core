@@ -231,6 +231,7 @@ export async function upsertEntity(client, params) {
  * @param {string} [params.isIncluded='Y']
  * @param {string} [params.isReadOnly='N']
  * @param {string} [params.defaultValue]
+ * @param {string} [params.agentPrompt] - Per-field agent guidance for neo_schema
  * @param {string} [params.javaQualifier]
  * @param {number} [params.seqNo]
  * @param {object} [params.audit] - Override audit defaults
@@ -269,6 +270,10 @@ export async function upsertField(client, params) {
       setClauses.push(`defaultvalue = $${paramIndex++}`);
       values.push(params.defaultValue ?? null);
     }
+    if ('agentPrompt' in params) {
+      setClauses.push(`agent_prompt = $${paramIndex++}`);
+      values.push(params.agentPrompt ?? null);
+    }
     if ('javaQualifier' in params) {
       setClauses.push(`java_qualifier = $${paramIndex++}`);
       values.push(params.javaQualifier ?? null);
@@ -295,18 +300,21 @@ export async function upsertField(client, params) {
   const defaultValue = params.defaultValue ?? null;
   const javaQualifier = params.javaQualifier ?? null;
   const seqNo = params.seqNo ?? null;
+  const agentPrompt = params.agentPrompt ?? null;
 
   const fieldId = generateId();
   await client.query(
     `INSERT INTO etgo_sf_field
      (etgo_sf_field_id, etgo_sf_entity_id, ad_column_id, ad_module_id,
       isincluded, isreadonly, defaultvalue, java_qualifier, seqno,
-      ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+      ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby,
+      agent_prompt)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
     [fieldId, entityId, columnId, moduleId,
      isIncluded, isReadOnly, defaultValue, javaQualifier, seqNo,
      auditVals.ad_client_id, auditVals.ad_org_id, auditVals.isactive,
-     auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby],
+     auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby,
+     agentPrompt],
   );
   return { fieldId, created: true };
 }
