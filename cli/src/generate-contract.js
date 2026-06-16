@@ -441,29 +441,51 @@ function processDisplayLogic(mapped, f, rules) {
   }
 }
 
-// Field attributes copied onto the mapped contract field verbatim when truthy
-// (incl. the searchable-selector + inline-create opt-ins, see resolve-curated.js).
-const FIELD_ATTRS_COPY_VERBATIM = [
-  'derivation', 'columnType', 'reference', 'enumValues', 'inputMode',
-  'createLabelKey', 'createTitleKey', 'createNamePlaceholderKey', 'createSpec', 'createEntity',
-  'dependsOn', 'lookupDrawer', 'lookupTitle', 'displayFromCatalog',
+// Per-mode writers for an optional field attribute. Kept as separate functions so
+// the dispatch loop stays flat (low cognitive complexity):
+//   verbatim — copy the value when truthy
+//   flag     — emit boolean `true` when present
+//   array    — copy only when a non-empty array
+//   trueFlag/falseFlag — copy the explicit boolean only on a strict ===/=== match
+const FIELD_ATTR_WRITERS = {
+  verbatim: (f, mapped, key) => { if (f[key]) mapped[key] = f[key]; },
+  flag: (f, mapped, key) => { if (f[key]) mapped[key] = true; },
+  array: (f, mapped, key) => { if (isNonEmptyArray(f[key])) mapped[key] = f[key]; },
+  trueFlag: (f, mapped, key) => { if (f[key] === true) mapped[key] = true; },
+  falseFlag: (f, mapped, key) => { if (f[key] === false) mapped[key] = false; },
+};
+
+// Optional field attributes in their canonical emission order (the contract's key order
+// is asserted by the offline regen-check, so this sequence must not change). Includes the
+// searchable-selector + inline-create opt-ins (see resolve-curated.js).
+const FIELD_ATTR_SPECS = [
+  ['sourceRequired', 'trueFlag'],
+  ['derivation', 'verbatim'],
+  ['columnType', 'verbatim'],
+  ['reference', 'verbatim'],
+  ['enumValues', 'verbatim'],
+  ['inputMode', 'verbatim'],
+  ['searchSelect', 'flag'],
+  ['allowCreate', 'flag'],
+  ['createLabelKey', 'verbatim'],
+  ['createTitleKey', 'verbatim'],
+  ['createNamePlaceholderKey', 'verbatim'],
+  ['createSpec', 'verbatim'],
+  ['createEntity', 'verbatim'],
+  ['clearable', 'falseFlag'],
+  ['dependsOn', 'verbatim'],
+  ['lookup', 'flag'],
+  ['popup', 'flag'],
+  ['lookupDrawer', 'verbatim'],
+  ['lookupTitle', 'verbatim'],
+  ['onSelectMappings', 'array'],
+  ['displayFromCatalog', 'verbatim'],
+  ['forceCalloutFields', 'array'],
 ];
-// Boolean opt-ins emitted as `true` when present on the raw field.
-const FIELD_ATTRS_FLAGS = ['searchSelect', 'allowCreate', 'lookup', 'popup'];
-// Array attributes copied only when non-empty.
-const FIELD_ATTRS_ARRAYS = ['onSelectMappings', 'forceCalloutFields'];
 
 function mapFieldAttributes(f, mapped) {
-  if (f.sourceRequired === true) mapped.sourceRequired = true;
-  if (f.clearable === false) mapped.clearable = false;
-  for (const key of FIELD_ATTRS_COPY_VERBATIM) {
-    if (f[key]) mapped[key] = f[key];
-  }
-  for (const key of FIELD_ATTRS_FLAGS) {
-    if (f[key]) mapped[key] = true;
-  }
-  for (const key of FIELD_ATTRS_ARRAYS) {
-    if (isNonEmptyArray(f[key])) mapped[key] = f[key];
+  for (const [key, mode] of FIELD_ATTR_SPECS) {
+    FIELD_ATTR_WRITERS[mode](f, mapped, key);
   }
 }
 
