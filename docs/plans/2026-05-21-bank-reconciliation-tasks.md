@@ -3,7 +3,7 @@
 **Parent epic:** [ETP-3504](https://etendo.atlassian.net/browse/ETP-3504) (Etendo Go)
 **Parent plan:** [`2026-05-21-bank-reconciliation-module.md`](./2026-05-21-bank-reconciliation-module.md)
 **Source spec:** `~/Downloads/Definicion_Funcional_Conciliacion_Bancaria.docx.pdf` (v1.0 Borrador, May 2026)
-**Total tasks:** 8
+**Total tasks:** 10
 **Conventions:** Etendo Git Police — `feature/ETP-XXXX` branches, `Feature ETP-XXXX: …` commits (≤80 chars first line), no `Co-Authored-By`.
 
 > 🇪🇸 Cuando se creen las stories en Jira, cada una recibe su `ETP-XXXX` real bajo el epic **ETP-3504**. Los IDs `T1…T8` debajo son placeholders. PSD2 / Salt Edge ya está implementado en su propio módulo — la integración (T3) es solo cableado de UI. **T2 entrega el flujo sin conexión primero; T3 añade PSD2 después** para que el equipo de PSD2 pueda avanzar en paralelo.
@@ -29,6 +29,7 @@ These 8 tasks **retire that placeholder** and add a new menu entry **"Cuentas"**
 | T7 | Implement suggested automatic reconciliation popup with rules engine | T5, T6 | ✅ | ✅ | ~2 w |
 | T8 | Add deferred accounting and reactivate reconciliation flow | T6 | ◐ | ✅ | ~1.5 w |
 | T9 | Build Imported Bank Statements view with file import flow | T4 | ✅ | ✅ | ~1.5 w |
+| T10 | Make financial accounts agentic via a NEO Headless write spec | T2 | ✅ | ✅ | ~1 w |
 
 ---
 
@@ -792,9 +793,88 @@ These 8 tasks **retire that placeholder** and add a new menu entry **"Cuentas"**
 
 ---
 
+## Task 10 — Make financial accounts agentic via a NEO Headless write spec
+
+**Title (Jira):** Make financial accounts agentic via a NEO Headless write spec
+**Type:** Story
+**Parent epic:** ETP-3504
+**Jira:** ETP-4239
+**Depends on:** T2
+**Branch:** `feature/ETP-4239`
+**Commit prefix:** `Feature ETP-4239:`
+**Labels:** `cross-domain-approved` (touches schema_forge + com.etendoerp.go)
+
+### Issue Description
+
+* An MCP agent **cannot create or list financial accounts** (`FIN_Financial_Account`) today: an agenticity evaluator scored it 0/5. The create capability **already exists** (`FinancialAccountHandler`, ETP-4096, used by the SPA wizard), but the `financial-account` spec is **type R (report/handler-backed)**, and NEO Headless only exposes the generic CRUD tools (`neo_list / neo_create / neo_schema / neo_defaults / neo_selectors`) for **type W** specs. Type R specs only get a `generate_<spec>` tool, which itself fails ("Report spec has no linked AD_Process").
+* Convert the `financial-account` spec **in place from R to W** (one spec per table), following the pattern already validated with `match-rule`: **generic CRUD + a `NeoHandler` hook** that validates and derives business fields.
+* Outcome: an agent can **discover, list and create** financial accounts of the three types (Bank `B` / Cash `C` / Card `CA`) through the standard MCP tools, without losing the existing business logic (default matching algorithm, IBAN-derived country, name uniqueness, open-reconciliation guard on archive).
+* The accounts SPA is **rewritten to standard CRUD** (no `?action=`), like `match-rule`, keeping the create wizard, edit and archive flows intact.
+
+### Solution Design
+
+**AD layer (com.etendoerp.go):**
+
+* Create an **ETGO-owned AD window + tab** (`WINDOWTYPE=M`, no menu entry — "managed via the SPA") that **reference the existing core AD_TABLE** for `FIN_Financial_Account` (do NOT create a new table). Via `/etendo:window` + `export.database`.
+
+**decisions / push pipeline (Schema Forge):**
+
+* `artifacts/financial-account/decisions.json`: point extraction at the new ETGO window (single entity with `javaQualifier: "financial-account"`); classify `name/type/currency/iBAN/swiftCode` as editable and **`country` + `matchingAlgorithm` as readOnly (included)** so they survive `NeoFieldFilter`; add a `defaultExpr` for currency.
+* Regenerate `schema-raw.json` + `contract.json` and run `push-to-neo` → the spec becomes `SPEC_TYPE=W` with an `ETGO_SF_ENTITY` (ISGET/ISPOST/ISDELETE) + one `ETGO_SF_FIELD` per column. Keep the artifact in `CUSTOM_ONLY_ARTIFACTS` (the hand-written workspace is not regenerated).
+
+**Java hook (com.etendoerp.go):**
+
+* Refactor `FinancialAccountHandler` (`@Named("financial-account")`) from an `?action=` router into a **pre/post hook** modeled on `MatchRuleHandler`:
+  * **POST**: validate name (required / ≤60 / unique → 409) and currency; **mutate the request body** to inject `matchingAlgorithm` and `country` (IBAN-derived) **before** the insert (required by trigger `FIN_FINANCIAL_ACCOUNT_TRG2`); return `null` to continue to generic CRUD.
+  * **PUT/PATCH**: name uniqueness + IBAN→country sync.
+  * **DELETE**: open-reconciliation guard → 409; otherwise **soft-archive** (`IsActive='N'`).
+
+**SPA (Schema Forge `tools/app-shell`):**
+
+* Rewrite `hooks/useAccountMutations.js` to standard W CRUD: create `POST /sws/neo/financial-account/<entity>`, update `PUT …/{id}`, archive `DELETE …/{id}`; replace `fetchDefaults()` with `neo_selectors` (currencies) + `neo_defaults`.
+* Update `NewAccountWizard / EditAccountModal / ArchiveAccountDialog / AccountFormStep` to the new field names (`currency`, `iBAN`) and response shape.
+
+**Out of scope:** deferred accounting configuration of the account (`FIN_Financial_Account_Acct`), PSD2 connection, and the reconciliation rules engine (T7). The SPA aggregate list keeps using `financial-accounts-page` (unchanged).
+
+### Test Cases
+
+**Given** the `financial-account` spec was migrated to W
+**When** an agent calls `neo_discover`
+**Then** it appears as `specType=W` with one entity and GET/POST methods.
+
+**Given** the entity is exposed
+**When** the agent calls `neo_schema`
+**Then** it returns the fields name/currency/type (with values B/C/CA)/iBAN/swiftCode, and `neo_selectors` lists currencies.
+
+**Given** the agent wants to create a bank account with an IBAN
+**When** it calls `neo_create` with name + currency + type=B + iBAN
+**Then** the account is created (201), with the country auto-derived from the IBAN and the default matching algorithm (the trigger does not reject it).
+
+**Given** the agent creates accounts of type C and CA
+**When** it calls `neo_create` for each type
+**Then** both are created correctly.
+
+**Given** accounts already exist
+**When** the agent calls `neo_list`
+**Then** it returns them (included fields only).
+
+**Given** an account with a given name already exists
+**When** the agent tries to create another with the same name in the same org
+**Then** it receives a 409 error.
+
+**Given** an account with an open reconciliation
+**When** a `DELETE` is issued against it
+**Then** it is rejected with 409; an account with no open reconciliations is archived (`IsActive='N'`) and disappears from the active list.
+
+**Given** the SPA was migrated to standard CRUD
+**When** the user creates (incl. a bank account with IBAN), edits and archives an account from the UI
+**Then** everything works via the new URLs and the workspace (Movements/Reconciliation/Statements) + the accounts list keep loading with no regression.
+
+---
+
 ## PR conventions for every task (recap)
 
-Each PR produced for any of T1–T9 must comply with the Etendo Git Police and the project policy:
+Each PR produced for any of T1–T10 must comply with the Etendo Git Police and the project policy:
 
 * **Branch:** `feature/ETP-XXXX` (one branch per task, off `develop`).
 * **Commit prefix:** `Feature ETP-XXXX: <description>` — first line ≤80 chars, English, imperative.
