@@ -89,26 +89,41 @@ function filterRows(allRows, { toolbarFilters, filterValues, searchQuery, filter
   return result;
 }
 
-// Maps the grid columns to the AdvancedFilterBuilder's column metadata. FK/toggle
-// columns are skipped (filtering an FK by its raw id, or a toggle, is not useful
-// client-side); enums expose their labels, numeric cells become number filters.
-function buildFilterColumns(columns, ui, tMenu) {
+// Builds the AdvancedFilterBuilder column metadata. The advanced filter offers EVERY
+// entity column — the union of grid columns AND modal fields — so columns hidden from
+// the grid (e.g. pattern, contact, dimensions) are still filterable. FK/selector columns
+// filter on their resolved `$_identifier` (the raw cell holds an opaque id); enums expose
+// their labels; numeric cells become number filters; toggles/booleans are skipped (covered
+// by the dedicated toolbar Active dropdown).
+function buildFilterColumns(columns, fields, ui, tMenu, tLabel) {
   const NUMERIC = ['number', 'amount', 'integer', 'decimal', 'price', 'quantity'];
-  const filterType = (col) => {
-    if (col.cellType === 'toggle' || col.type === 'boolean') return null;
-    if (col.type === 'selector' || col.type === 'foreignKey') return null;
-    if (col.enumLabels && (col.type === 'enum' || col.type === 'status')) return 'enum';
-    if (col.cellType === 'percent' || NUMERIC.includes(col.type)) return 'number';
-    return 'string';
-  };
-  return columns
+  // Union by key; grid columns win on duplicates (richer cell metadata / gridLabelKey).
+  const byKey = new Map();
+  for (const f of (fields ?? [])) if (f && f.key) byKey.set(f.key, f);
+  for (const c of (columns ?? [])) if (c && c.key) byKey.set(c.key, c);
+
+  const isFk = (col) => col.type === 'selector' || col.type === 'foreignKey'
+    || col.inputMode === 'selector' || col.inputMode === 'search';
+  const resolveLabel = (col) => (col.labelKey ? ui(col.labelKey) : null)
+    ?? (tLabel ? tLabel(col.column) : null) ?? tMenu(col.label) ?? col.label ?? col.key;
+
+  return [...byKey.values()]
     .map((col) => {
-      const type = filterType(col);
-      if (!type) return null;
-      const label = col.labelKey ? ui(col.labelKey) : (tMenu(col.label) ?? col.label ?? col.key);
-      const out = { key: col.key, label, type };
-      if (type === 'enum' && col.enumLabels) out.enumLabels = col.enumLabels;
-      return out;
+      if (col.cellType === 'toggle' || col.type === 'boolean') return null; // handled by the toolbar Active dropdown
+      const label = resolveLabel(col);
+      // FK/selector → 'selector' so the builder renders the value-list picker
+      // (resolveFilterMode → 'identifier'): it offers the distinct id/identifier
+      // pairs from the rows and matches on the FK id, not a typed string.
+      if (isFk(col)) {
+        return { key: col.key, column: col.column, label, type: 'selector' };
+      }
+      if (col.enumLabels && (col.type === 'enum' || col.type === 'status')) {
+        return { key: col.key, label, type: 'enum', enumLabels: col.enumLabels };
+      }
+      if (col.cellType === 'percent' || NUMERIC.includes(col.type)) {
+        return { key: col.key, label, type: 'number' };
+      }
+      return { key: col.key, label, type: 'string' };
     })
     .filter(Boolean);
 }
@@ -174,6 +189,7 @@ export function ListModalWindow({
 }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
+  const tLabel = useLabel(api?.labelOverrides);
   const auth = useAuth();
   const navigate = useNavigate();
   const token = tokenProp ?? auth?.token;
@@ -206,7 +222,10 @@ export function ListModalWindow({
 
   // --- Advanced "by conditions" filter (shared AdvancedFilterBuilder) --------
   const [advancedFilter, setAdvancedFilter] = useState(null);
-  const filterColumns = useMemo(() => buildFilterColumns(columns, ui, tMenu), [columns, ui, tMenu]);
+  const filterColumns = useMemo(
+    () => buildFilterColumns(columns, fields, ui, tMenu, tLabel),
+    [columns, fields, ui, tMenu, tLabel],
+  );
 
   // --- Local search over the configured filter columns ----------------------
   const [searchQuery, setSearchQuery] = useState('');
@@ -409,9 +428,8 @@ export function ListModalWindow({
   const footerToggleField = footerToggleKey
     ? fields.find(f => f.key === footerToggleKey)
     : null;
-  // Field-label resolver honoring per-window labelOverrides (es/en), so the footer
-  // toggle label matches the localized form labels rather than the raw English label.
-  const tLabel = useLabel(api?.labelOverrides);
+  // tLabel (declared above) is the field-label resolver honoring per-window
+  // labelOverrides (es/en), so the footer toggle label matches the localized form labels.
   const footerToggleLabel = footerToggleField
     ? (tLabel(footerToggleField.column) ?? footerToggleField.label ?? footerToggleField.key)
     : null;
@@ -449,6 +467,9 @@ export function ListModalWindow({
           <AdvancedFilterButton
             columns={filterColumns}
             rows={allRows}
+            entity={entity}
+            apiBaseUrl={apiBaseUrl}
+            labelOverrides={api?.labelOverrides}
             value={advancedFilter}
             onChange={setAdvancedFilter}
             testId="list-modal-advanced-filter"

@@ -51,9 +51,7 @@
         "FIN_Financial_Account_ID": "Afecta a",
         "C_Project_ID": "Proyecto",
         "C_Costcenter_ID": "Centro de coste",
-        "M_Product_ID": "Producto",
-        "User1_ID": "1ª Dimensión",
-        "User2_ID": "2ª Dimensión"
+        "M_Product_ID": "Producto"
       },
       "en_US": {
         "Name": "Name",
@@ -68,9 +66,7 @@
         "FIN_Financial_Account_ID": "Applies to",
         "C_Project_ID": "Project",
         "C_Costcenter_ID": "Cost center",
-        "M_Product_ID": "Product",
-        "User1_ID": "1st Dimension",
-        "User2_ID": "2nd Dimension"
+        "M_Product_ID": "Product"
       }
     }
   },
@@ -209,22 +205,6 @@
           "form": true,
           "section": "dimensions",
           "seq": 21,
-          "inputMode": "selector",
-          "searchSelect": true
-        },
-        "user1Dimension": {
-          "grid": false,
-          "form": true,
-          "section": "dimensions",
-          "seq": 22,
-          "inputMode": "selector",
-          "searchSelect": true
-        },
-        "user2Dimension": {
-          "grid": false,
-          "form": true,
-          "section": "dimensions",
-          "seq": 23,
           "inputMode": "selector",
           "searchSelect": true
         },

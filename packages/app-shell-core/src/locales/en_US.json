@@ -19886,7 +19886,7 @@
     "matchRuleColPriority": "Prio.",
     "matchRuleColName": "Name",
     "matchRuleColCondition": "Condition",
-    "matchRuleColType": "Type",
+    "matchRuleColType": "Transaction type",
     "matchRuleColConcept": "Accounting concept",
     "matchRuleColReconciliations": "Reconciliations",
     "matchRuleColActive": "Active",

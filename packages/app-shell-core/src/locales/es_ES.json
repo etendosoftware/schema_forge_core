@@ -20153,7 +20153,7 @@
     "matchRuleColPriority": "Prio.",
     "matchRuleColName": "Nombre",
     "matchRuleColCondition": "Condición",
-    "matchRuleColType": "Tipo",
+    "matchRuleColType": "Tipo de transacción",
     "matchRuleColConcept": "Concepto contable",
     "matchRuleColReconciliations": "Conciliaciones",
     "matchRuleColActive": "Activa",

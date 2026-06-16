@@ -1,8 +1,8 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-06-11T18:36:13.442Z",
-  "updatedAt": "2026-06-16T19:53:18.479Z",
-  "checksum": "1f9197dd6e9e6ad4",
+  "updatedAt": "2026-06-16T23:12:22.120Z",
+  "checksum": "4d753b16c8489175",
   "frontendContract": {
     "window": {
       "id": "24963D64E83B4543A7F6BD248CF944EE",
@@ -69,9 +69,7 @@
           "FIN_Financial_Account_ID": "Afecta a",
           "C_Project_ID": "Proyecto",
           "C_Costcenter_ID": "Centro de coste",
-          "M_Product_ID": "Producto",
-          "User1_ID": "1ª Dimensión",
-          "User2_ID": "2ª Dimensión"
+          "M_Product_ID": "Producto"
         },
         "en_US": {
           "Name": "Name",
@@ -86,9 +84,7 @@
           "FIN_Financial_Account_ID": "Applies to",
           "C_Project_ID": "Project",
           "C_Costcenter_ID": "Cost center",
-          "M_Product_ID": "Product",
-          "User1_ID": "1st Dimension",
-          "User2_ID": "2nd Dimension"
+          "M_Product_ID": "Product"
         }
       },
       "layoutType": "list-modal"
@@ -184,7 +180,7 @@
             "name": "transactionType",
             "apiKey": "transactionType",
             "column": "ETGO_Transaction_Type_ID",
-            "label": "ETGO_Transaction_Type_ID",
+            "label": "Transaction Type",
             "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
@@ -294,40 +290,6 @@
             "searchSelect": true,
             "section": "dimensions",
             "seq": 21
-          },
-          {
-            "name": "user1Dimension",
-            "apiKey": "user1Dimension",
-            "column": "User1_ID",
-            "label": "User1 Dimension",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "User1",
-            "inputMode": "selector",
-            "searchSelect": true,
-            "section": "dimensions",
-            "seq": 22
-          },
-          {
-            "name": "user2Dimension",
-            "apiKey": "user2Dimension",
-            "column": "User2_ID",
-            "label": "User2 Dimension",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "User2",
-            "inputMode": "selector",
-            "searchSelect": true,
-            "section": "dimensions",
-            "seq": 23
           },
           {
             "name": "textCondition",
@@ -497,9 +459,7 @@
           "FIN_Financial_Account_ID": "Afecta a",
           "C_Project_ID": "Proyecto",
           "C_Costcenter_ID": "Centro de coste",
-          "M_Product_ID": "Producto",
-          "User1_ID": "1ª Dimensión",
-          "User2_ID": "2ª Dimensión"
+          "M_Product_ID": "Producto"
         },
         "en_US": {
           "Name": "Name",
@@ -514,9 +474,7 @@
           "FIN_Financial_Account_ID": "Applies to",
           "C_Project_ID": "Project",
           "C_Costcenter_ID": "Cost center",
-          "M_Product_ID": "Product",
-          "User1_ID": "1st Dimension",
-          "User2_ID": "2nd Dimension"
+          "M_Product_ID": "Product"
         }
       },
       "layoutType": "list-modal"
@@ -611,22 +569,6 @@
             "name": "costCenter",
             "apiKey": "costCenter",
             "column": "C_Costcenter_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "user1Dimension",
-            "apiKey": "user1Dimension",
-            "column": "User1_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "user2Dimension",
-            "apiKey": "user2Dimension",
-            "column": "User2_ID",
             "type": "foreignKey",
             "visibility": "editable",
             "required": false
@@ -806,22 +748,6 @@
       },
       {
         "entity": "etgoMatchRuleHeader",
-        "field": "user1Dimension",
-        "column": "User1_ID",
-        "reference": "User1",
-        "inputMode": "selector",
-        "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/user1Dimension"
-      },
-      {
-        "entity": "etgoMatchRuleHeader",
-        "field": "user2Dimension",
-        "column": "User2_ID",
-        "reference": "User2",
-        "inputMode": "selector",
-        "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/user2Dimension"
-      },
-      {
-        "entity": "etgoMatchRuleHeader",
         "field": "accountingConcept",
         "column": "C_GLItem_ID",
         "reference": "GLItem",
@@ -868,9 +794,7 @@
         "FIN_Financial_Account_ID": "Afecta a",
         "C_Project_ID": "Proyecto",
         "C_Costcenter_ID": "Centro de coste",
-        "M_Product_ID": "Producto",
-        "User1_ID": "1ª Dimensión",
-        "User2_ID": "2ª Dimensión"
+        "M_Product_ID": "Producto"
       },
       "en_US": {
         "Name": "Name",
@@ -885,9 +809,7 @@
         "FIN_Financial_Account_ID": "Applies to",
         "C_Project_ID": "Project",
         "C_Costcenter_ID": "Cost center",
-        "M_Product_ID": "Product",
-        "User1_ID": "1st Dimension",
-        "User2_ID": "2nd Dimension"
+        "M_Product_ID": "Product"
       }
     }
   },
@@ -917,8 +839,6 @@
           "financialAccount": {},
           "project": {},
           "costCenter": {},
-          "user1Dimension": {},
-          "user2Dimension": {},
           "textCondition": {
             "required": true
           },
@@ -1104,22 +1024,6 @@
         "description": "Field 'transactionType' should be present in etgoMatchRuleHeader"
       },
       {
-        "id": "t-field-presence-etgoMatchRuleHeader-user1Dimension",
-        "category": "field-presence",
-        "entity": "etgoMatchRuleHeader",
-        "field": "user1Dimension",
-        "runner": "node",
-        "description": "Field 'user1Dimension' should be present in etgoMatchRuleHeader"
-      },
-      {
-        "id": "t-field-presence-etgoMatchRuleHeader-user2Dimension",
-        "category": "field-presence",
-        "entity": "etgoMatchRuleHeader",
-        "field": "user2Dimension",
-        "runner": "node",
-        "description": "Field 'user2Dimension' should be present in etgoMatchRuleHeader"
-      },
-      {
         "id": "t-field-type-etgoMatchRuleHeader-accountingConcept",
         "category": "field-type",
         "entity": "etgoMatchRuleHeader",
@@ -1224,22 +1128,6 @@
         "description": "Field 'transactionType' should have type 'string' in etgoMatchRuleHeader"
       },
       {
-        "id": "t-field-type-etgoMatchRuleHeader-user1Dimension",
-        "category": "field-type",
-        "entity": "etgoMatchRuleHeader",
-        "field": "user1Dimension",
-        "runner": "node",
-        "description": "Field 'user1Dimension' should have type 'string' in etgoMatchRuleHeader"
-      },
-      {
-        "id": "t-field-type-etgoMatchRuleHeader-user2Dimension",
-        "category": "field-type",
-        "entity": "etgoMatchRuleHeader",
-        "field": "user2Dimension",
-        "runner": "node",
-        "description": "Field 'user2Dimension' should have type 'string' in etgoMatchRuleHeader"
-      },
-      {
         "id": "t-searchable-filters-etgoMatchRuleHeader-name",
         "category": "searchable-filters",
         "entity": "etgoMatchRuleHeader",
@@ -1312,22 +1200,6 @@
         "description": "Selector endpoint for 'transactionType' in etgoMatchRuleHeader should exist"
       },
       {
-        "id": "t-selector-endpoint-etgoMatchRuleHeader-user1Dimension",
-        "category": "selector-endpoint",
-        "entity": "etgoMatchRuleHeader",
-        "field": "user1Dimension",
-        "runner": "node",
-        "description": "Selector endpoint for 'user1Dimension' in etgoMatchRuleHeader should exist"
-      },
-      {
-        "id": "t-selector-endpoint-etgoMatchRuleHeader-user2Dimension",
-        "category": "selector-endpoint",
-        "entity": "etgoMatchRuleHeader",
-        "field": "user2Dimension",
-        "runner": "node",
-        "description": "Selector endpoint for 'user2Dimension' in etgoMatchRuleHeader should exist"
-      },
-      {
         "id": "t-system-field-etgoMatchRuleHeader-client",
         "category": "system-field",
         "entity": "etgoMatchRuleHeader",
@@ -1392,19 +1264,19 @@
       }
     ],
     "summary": {
-      "total": 52,
+      "total": 46,
       "byCategory": {
         "crud-flags": 1,
         "default-value-type": 2,
-        "field-presence": 15,
-        "field-type": 15,
+        "field-presence": 13,
+        "field-type": 13,
         "searchable-filters": 2,
-        "selector-endpoint": 9,
+        "selector-endpoint": 7,
         "system-field": 7,
         "visibility": 1
       },
       "byRunner": {
-        "node": 52,
+        "node": 46,
         "junit": 0
       }
     }
