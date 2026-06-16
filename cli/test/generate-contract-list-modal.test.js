@@ -36,6 +36,18 @@ const listModalSchema = {
         required: false, searchable: false, grid: true, form: true, inlineEdit: true },
       { name: 'name', column: 'Name', type: 'string', visibility: 'editable',
         required: true, searchable: true, grid: true, form: true },
+      // FK selector field opting into the searchable combobox via searchSelect.
+      { name: 'financialAccount', column: 'Fin_Financial_Account_ID', type: 'foreignKey',
+        visibility: 'editable', required: false, searchable: false, grid: false, form: true,
+        reference: 'FinancialAccount', inputMode: 'selector', searchSelect: true },
+      // FK selector field opting into the (future) inline-create affordance.
+      { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey',
+        visibility: 'editable', required: false, searchable: false, grid: false, form: true,
+        reference: 'BusinessPartner', inputMode: 'selector', searchSelect: true, allowCreate: true },
+      // Plain FK selector WITHOUT either flag — must not gain a searchSelect key.
+      { name: 'project', column: 'C_Project_ID', type: 'foreignKey',
+        visibility: 'editable', required: false, searchable: false, grid: false, form: true,
+        reference: 'Project', inputMode: 'selector' },
     ],
   }],
 };
@@ -60,6 +72,37 @@ describe('generateFrontendContract — applyGridHints (inline affordances)', () 
     const name = fc.entities.etgoMatchRuleHeader.fields.find(f => f.name === 'name');
     assert.equal(name.inlineToggle, undefined, 'plain field should not have inlineToggle');
     assert.equal(name.inlineEdit, undefined, 'plain field should not have inlineEdit');
+  });
+});
+
+describe('generateFrontendContract — searchSelect / allowCreate opt-in flags', () => {
+  it('carries searchSelect: true from a curated FK selector field into the mapped field', () => {
+    const fc = generateFrontendContract(listModalSchema);
+    const financialAccount = fc.entities.etgoMatchRuleHeader.fields.find(f => f.name === 'financialAccount');
+    assert.ok(financialAccount, 'financialAccount field should be present');
+    assert.equal(financialAccount.searchSelect, true, 'searchSelect should be carried into the contract');
+  });
+
+  it('carries allowCreate: true from a curated FK selector field into the mapped field', () => {
+    const fc = generateFrontendContract(listModalSchema);
+    const businessPartner = fc.entities.etgoMatchRuleHeader.fields.find(f => f.name === 'businessPartner');
+    assert.ok(businessPartner, 'businessPartner field should be present');
+    assert.equal(businessPartner.allowCreate, true, 'allowCreate should be carried into the contract');
+  });
+
+  it('does NOT add a searchSelect key to a plain selector field that lacks the flag', () => {
+    const fc = generateFrontendContract(listModalSchema);
+    const project = fc.entities.etgoMatchRuleHeader.fields.find(f => f.name === 'project');
+    assert.ok(project, 'project field should be present');
+    assert.equal(project.searchSelect, undefined, 'plain selector field should not have searchSelect');
+    assert.equal(project.allowCreate, undefined, 'plain selector field should not have allowCreate');
+  });
+
+  it('does NOT confuse searchSelect with the pre-existing searchable filter flag', () => {
+    const fc = generateFrontendContract(listModalSchema);
+    // `name` is searchable:true (a list-API filter) but NOT a searchSelect combobox.
+    const name = fc.entities.etgoMatchRuleHeader.fields.find(f => f.name === 'name');
+    assert.equal(name.searchSelect, undefined, 'searchable filter field must not gain searchSelect');
   });
 });
 

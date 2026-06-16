@@ -19874,6 +19874,8 @@
     "matchRulePriorityHelp": "Lower number = higher priority",
     "matchRuleNamePlaceholder": "e.g. Bank fees",
     "matchRulePatternPlaceholder": "e.g. fee",
+    "matchRuleTypePlaceholder": "Select type",
+    "matchRuleConditionPlaceholder": "Select condition",
     "matchRuleAllAccounts": "All accounts",
     "matchRuleSearchPlaceholder": "Search rules…",
     "matchRuleColPriority": "Prio.",

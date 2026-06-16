@@ -16,17 +16,17 @@ const columns = [
 const fields = [
   { key: 'name', column: 'Name', type: 'text', label: 'Name', required: true, section: 'general', placeholderKey: 'matchRuleNamePlaceholder' },
   { key: 'textPattern', column: 'TextPattern', type: 'text', label: 'Text Pattern', required: true, section: 'general', placeholderKey: 'matchRulePatternPlaceholder' },
-  { key: 'financialAccount', column: 'FIN_Financial_Account_ID', type: 'selector', label: 'Financial Account', reference: 'Financial_Account', inputMode: 'selector', section: 'general', emptyOptionLabelKey: 'matchRuleAllAccounts' },
-  { key: 'transactionType', column: 'TransactionType', type: 'select', label: 'Transaction Type', section: 'general', options: [{ value: 'B', label: 'Bank fee' }, { value: 'H', label: 'Tax retention' }, { value: 'T', label: 'Transfer' }] },
-  { key: 'accountingConcept', column: 'C_GLItem_ID', type: 'selector', label: 'C_GLItem_ID', reference: 'GLItem', inputMode: 'selector', section: 'general' },
-  { key: 'textCondition', column: 'TextCondition', type: 'select', label: 'Text Condition', required: true, section: 'general', options: [{ value: 'C', label: 'Contains' }, { value: 'R', label: 'Regex' }, { value: 'S', label: 'Starts with' }] },
+  { key: 'financialAccount', column: 'FIN_Financial_Account_ID', type: 'selector', label: 'Financial Account', reference: 'Financial_Account', inputMode: 'selector', searchSelect: true, section: 'general', emptyOptionLabelKey: 'matchRuleAllAccounts' },
+  { key: 'transactionType', column: 'TransactionType', type: 'select', label: 'Transaction Type', searchSelect: true, section: 'general', options: [{ value: 'B', label: 'Bank fee' }, { value: 'H', label: 'Tax retention' }, { value: 'T', label: 'Transfer' }], placeholderKey: 'matchRuleTypePlaceholder' },
+  { key: 'accountingConcept', column: 'C_GLItem_ID', type: 'selector', label: 'C_GLItem_ID', reference: 'GLItem', inputMode: 'selector', searchSelect: true, section: 'general' },
+  { key: 'textCondition', column: 'TextCondition', type: 'select', label: 'Text Condition', required: true, searchSelect: true, section: 'general', options: [{ value: 'C', label: 'Contains' }, { value: 'R', label: 'Regex' }, { value: 'S', label: 'Starts with' }], placeholderKey: 'matchRuleConditionPlaceholder' },
   { key: 'priority', column: 'Priority', type: 'number', label: 'Priority', required: true, section: 'general' },
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner', reference: 'BPartner', inputMode: 'selector', section: 'general' },
-  { key: 'project', column: 'C_Project_ID', type: 'selector', label: 'Project', reference: 'Project', inputMode: 'selector', section: 'dimensions' },
-  { key: 'costCenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'Costcenter', inputMode: 'selector', section: 'dimensions' },
-  { key: 'user1Dimension', column: 'User1_ID', type: 'selector', label: 'User1 Dimension', reference: 'User1', inputMode: 'selector', section: 'dimensions' },
-  { key: 'user2Dimension', column: 'User2_ID', type: 'selector', label: 'User2 Dimension', reference: 'User2', inputMode: 'selector', section: 'dimensions' },
-  { key: 'product', column: 'M_Product_ID', type: 'selector', label: 'M_Product_ID', reference: 'Product', inputMode: 'selector', section: 'dimensions' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner', reference: 'BPartner', inputMode: 'selector', searchSelect: true, section: 'general' },
+  { key: 'project', column: 'C_Project_ID', type: 'selector', label: 'Project', reference: 'Project', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
+  { key: 'costCenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'Costcenter', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
+  { key: 'user1Dimension', column: 'User1_ID', type: 'selector', label: 'User1 Dimension', reference: 'User1', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
+  { key: 'user2Dimension', column: 'User2_ID', type: 'selector', label: 'User2 Dimension', reference: 'User2', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
+  { key: 'product', column: 'M_Product_ID', type: 'selector', label: 'M_Product_ID', reference: 'Product', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
 ];
 
 const sections = [

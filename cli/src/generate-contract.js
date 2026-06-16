@@ -448,6 +448,9 @@ function mapFieldAttributes(f, mapped) {
   if (f.reference) mapped.reference = f.reference;
   if (f.enumValues) mapped.enumValues = f.enumValues;
   if (f.inputMode) mapped.inputMode = f.inputMode;
+  // Opt-in searchable combobox for selector FK fields (see resolve-curated.js).
+  if (f.searchSelect) mapped.searchSelect = true;
+  if (f.allowCreate) mapped.allowCreate = true;
   if (f.clearable === false) mapped.clearable = false;
   if (f.dependsOn) mapped.dependsOn = f.dependsOn;
   if (f.lookup) mapped.lookup = true;

@@ -20141,6 +20141,8 @@
     "matchRulePriorityHelp": "Menor número = mayor prioridad",
     "matchRuleNamePlaceholder": "Ej. Comisiones bancarias",
     "matchRulePatternPlaceholder": "Ej. comisión",
+    "matchRuleTypePlaceholder": "Seleccionar tipo",
+    "matchRuleConditionPlaceholder": "Seleccionar condición",
     "matchRuleAllAccounts": "Todas las cuentas",
     "matchRuleSearchPlaceholder": "Buscar reglas…",
     "matchRuleColPriority": "Prio.",

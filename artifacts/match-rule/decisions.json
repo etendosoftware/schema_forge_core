@@ -109,6 +109,9 @@
           "section": "general",
           "seq": 6,
           "required": true,
+          "inputMode": "selector",
+          "searchSelect": true,
+          "placeholderKey": "matchRuleConditionPlaceholder",
           "cellType": "conditionChip",
           "kindField": "textCondition",
           "patternField": "textPattern",
@@ -134,6 +137,9 @@
           "form": true,
           "section": "general",
           "seq": 4,
+          "inputMode": "selector",
+          "searchSelect": true,
+          "placeholderKey": "matchRuleTypePlaceholder",
           "cellType": "typePill",
           "tones": {
             "H": "blue",
@@ -151,7 +157,8 @@
           "form": true,
           "section": "general",
           "seq": 5,
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "searchSelect": true
         },
         "matchCount": {
           "grid": true,
@@ -175,42 +182,48 @@
           "section": "general",
           "seq": 3,
           "inputMode": "selector",
-          "emptyOptionLabelKey": "matchRuleAllAccounts"
+          "emptyOptionLabelKey": "matchRuleAllAccounts",
+          "searchSelect": true
         },
         "businessPartner": {
           "grid": false,
           "form": true,
           "section": "general",
           "seq": 9,
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "searchSelect": true
         },
         "project": {
           "grid": false,
           "form": true,
           "section": "dimensions",
           "seq": 20,
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "searchSelect": true
         },
         "costCenter": {
           "grid": false,
           "form": true,
           "section": "dimensions",
           "seq": 21,
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "searchSelect": true
         },
         "user1Dimension": {
           "grid": false,
           "form": true,
           "section": "dimensions",
           "seq": 22,
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "searchSelect": true
         },
         "user2Dimension": {
           "grid": false,
           "form": true,
           "section": "dimensions",
           "seq": 23,
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "searchSelect": true
         },
         "product": {
           "visibility": "editable",
@@ -218,7 +231,8 @@
           "form": true,
           "section": "dimensions",
           "seq": 24,
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "searchSelect": true
         },
         "organization": { "visibility": "system" },
         "client": { "visibility": "system" },

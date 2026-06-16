@@ -476,6 +476,8 @@ export function generateFormComponent(entityName, contract) {
     const inlinePart = fragmentIf(f.inline, ', inline: true');
     const referencePart = wrapIf(", reference: '", f.reference, "'");
     const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
+    const searchSelectPart = fragmentIf(f.searchSelect, ', searchSelect: true');
+    const allowCreatePart = fragmentIf(f.allowCreate, ', allowCreate: true');
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
@@ -502,7 +504,7 @@ export function generateFormComponent(entityName, contract) {
     const spanPart = (f.span && f.span > 1) ? `, span: ${f.span}` : '';
     const rowsPart = f.rows != null ? `, rows: ${f.rows}` : '';
     const clearablePart = f.clearable === false ? ', clearable: false' : '';
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart} },`;
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -1307,6 +1309,8 @@ function buildListModalFields(formFields) {
     const popupPart = fragmentIf(f.popup, ', popup: true');
     const referencePart = wrapIf(", reference: '", f.reference, "'");
     const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
+    const searchSelectPart = fragmentIf(f.searchSelect, ', searchSelect: true');
+    const allowCreatePart = fragmentIf(f.allowCreate, ', allowCreate: true');
     const sectionPart = `, section: '${f.section || 'general'}'`;
     const optionsPart = getOptionsPart(type, f);
     const valueTypePart = (type === 'select' && f.tsType === 'boolean') ? `, valueType: 'boolean'` : '';
@@ -1319,7 +1323,7 @@ function buildListModalFields(formFields) {
     const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
     const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
     const defaultValuePart = getDefaultValuePart(skipCheckboxDefault, skipServerMacro, f);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart} },`;
   }).join('\n');
 }
 

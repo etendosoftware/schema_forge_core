@@ -189,6 +189,13 @@ const FIELD_DECISION_COPY_PROPS = [
   'noTrailing',
   'inline',
   'addLineFromSibling',
+  // Opt-in: render an FK `inputMode: "selector"` field as the searchable combobox
+  // (CreatableSearchSelect) instead of the plain pick-only dropdown (SelectorInput).
+  // Default false — absent/false keeps the existing dropdown rendering unchanged.
+  'searchSelect',
+  // Opt-in (future): when true on a searchSelect field, the combobox shows the
+  // inline "+ create" action. Left OFF by default; no window enables it yet.
+  'allowCreate',
 ];
 
 const FIELD_RAW_COPY_PROPS = [

@@ -71,6 +71,7 @@ function listModalContract() {
             { name: 'textPattern', column: 'TextPattern', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true, section: 'general' },
             { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true, section: 'general', reference: 'BusinessPartner', inputMode: 'search' },
             { name: 'project', column: 'C_Project_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true, section: 'dimensions', reference: 'Project', inputMode: 'selector' },
+            { name: 'financialAccount', column: 'Fin_Financial_Account_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true, section: 'dimensions', reference: 'FinancialAccount', inputMode: 'selector', searchSelect: true },
             { name: 'costCenter', column: 'C_Costcenter_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true, section: 'dimensions', reference: 'CostCenter', inputMode: 'selector' },
           ],
           searchableFields: ['name', 'textPattern'],
@@ -214,6 +215,25 @@ describe('generatePageComponent — layoutType list-modal', () => {
     assert.ok(fieldsMatch, 'fields block should exist');
     // `active` is grid:true but form:false → it is a grid column but not a modal field.
     assert.ok(!fieldsMatch[1].includes("key: 'active'"), 'form:false field should not appear in modal fields');
+  });
+
+  it('emits searchSelect: true onto a selector field that opts into the combobox', () => {
+    const code = generatePageComponent('etgoMatchRuleHeader', null, listModalContract());
+    const fieldsMatch = code.match(/const fields = \[([\s\S]*?)\];/);
+    assert.ok(fieldsMatch, 'fields block should exist');
+    const faLine = fieldsMatch[1].split('\n').find(l => l.includes("key: 'financialAccount'"));
+    assert.ok(faLine, 'financialAccount field should exist');
+    assert.ok(faLine.includes('searchSelect: true'), 'searchSelect field should emit searchSelect: true');
+  });
+
+  it('does NOT emit searchSelect for a selector field without the flag', () => {
+    const code = generatePageComponent('etgoMatchRuleHeader', null, listModalContract());
+    const fieldsMatch = code.match(/const fields = \[([\s\S]*?)\];/);
+    assert.ok(fieldsMatch, 'fields block should exist');
+    const projectLine = fieldsMatch[1].split('\n').find(l => l.includes("key: 'project'"));
+    assert.ok(projectLine, 'project field should exist');
+    assert.ok(!projectLine.includes('searchSelect'), 'plain selector field must not emit searchSelect');
+    assert.ok(!projectLine.includes('allowCreate'), 'plain selector field must not emit allowCreate');
   });
 
   it('falls back to derived sections when templateConfig has none', () => {

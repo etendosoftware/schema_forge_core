@@ -535,6 +535,8 @@ identifier resolution).
 |----------|------|---------|---------|
 | `reference` | string \| null | Auto from targetTable | Catalog name for FK lookup (e.g., `"BusinessPartner"`). Set `null` to omit. |
 | `inputMode` | string \| null | Auto from reference type | `"selector"` (dropdown), `"search"` (searchable), `"dependent"` (cascading). Set `null` to omit. |
+| `searchSelect` | boolean | `false` | Opt-in: render an `inputMode: "selector"` FK field as the **searchable combobox** (`CreatableSearchSelect`) — text search + select — instead of the plain pick-only dropdown (`SelectorInput`). When absent/false the dropdown rendering is unchanged. Preserves `required`, the empty/null choice (`emptyOptionLabelKey`), and the same selector URL/context. **Not** the same as `searchable` (which enables a field as a list-API filter parameter). |
+| `allowCreate` | boolean | `false` | Opt-in (future): on a `searchSelect` field, surface the inline "+ create" action in the combobox. Currently OFF for all windows — the flag flows through the pipeline so a field can wire `createLabel`/`onCreateRequest` later without a generator change. |
 | `dependsOn` | object \| null | `null` | Parent field dependency for cascading selectors. |
 
 **dependsOn format:**

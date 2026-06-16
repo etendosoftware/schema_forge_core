@@ -15,6 +15,7 @@ import { CreateContactContext } from './CreateContactContext.js';
 import { PartnerAddressPicker } from './PartnerAddressPicker.jsx';
 import { SelectorChip } from './SelectorChip.jsx';
 import { SelectorInput } from './SelectorInput.jsx';
+import { CreatableSearchSelect } from './CreatableSearchSelect.jsx';
 
 function buildSelectPlaceholder(ui, label) {
   return `${ui('selectLabelPrefix')} ${label}...`;
@@ -811,6 +812,41 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
 
   const renderSelectorField = (f, label, isReadOnly) => {
     if (isReadOnly) return renderReadOnlyFk(f, label);
+    const selectorOnChange = (val, lbl, auxData) => {
+      onChange?.(f.key, val, f.column);
+      if (lbl) onChange?.(f.key + '$_identifier', lbl);
+      else if (!val) onChange?.(f.key + '$_identifier', '');
+      if (auxData) applySelectorAuxData(auxData, onChange, f);
+    };
+    const selectorUrl = buildEntitySelectorUrl(apiBaseUrl, entity, f, api);
+    // Opt-in (decisions: `searchSelect: true`): render the searchable combobox
+    // instead of the plain pick-only dropdown. Empty-option + required + the same
+    // selector URL/context/onChange are preserved; create stays OFF unless a field
+    // declares `allowCreate` (no window enables it yet).
+    if (f.searchSelect) {
+      const emptyOptionLabel = f.emptyOptionLabelKey
+        ? (ui(f.emptyOptionLabelKey) ?? f.emptyOptionLabelKey)
+        : undefined;
+      return (
+        <div key={f.key} className="space-y-1.5">
+          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+            {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
+          </Label>
+          <CreatableSearchSelect
+            field={f}
+            value={data?.[f.key] ?? ''}
+            displayValue={resolveIdentifier(data, f.key)}
+            onChange={selectorOnChange}
+            formData={data}
+            resolvedLabel={label}
+            selectorUrl={selectorUrl}
+            selectorContext={effectiveSelectorContext}
+            token={token}
+            emptyOptionLabel={emptyOptionLabel}
+          />
+        </div>
+      );
+    }
     return (
       <div key={f.key} className="space-y-1.5">
         <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
@@ -821,15 +857,10 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
           field={f}
           value={data?.[f.key] ?? ''}
           displayValue={resolveIdentifier(data, f.key)}
-          onChange={(val, lbl, auxData) => {
-            onChange?.(f.key, val, f.column);
-            if (lbl) onChange?.(f.key + '$_identifier', lbl);
-            else if (!val) onChange?.(f.key + '$_identifier', '');
-            if (auxData) applySelectorAuxData(auxData, onChange, f);
-          }}
+          onChange={selectorOnChange}
           catalogs={catalogs}
           resolvedLabel={label}
-          selectorUrl={buildEntitySelectorUrl(apiBaseUrl, entity, f, api)}
+          selectorUrl={selectorUrl}
           selectorContext={effectiveSelectorContext}
           token={token}
         />
@@ -973,6 +1004,34 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     }
     if (f.type === 'search') {
       return renderSearchField(f, label, isReadOnly);
+    }
+    if (f.type === 'select' && f.options?.length && f.searchSelect) {
+      if (isReadOnly) {
+        const selOpt = f.options.find(o => o.value === (data?.[f.key] ?? ''));
+        return (
+          <div key={f.key} data-testid={`field-${f.key}`} className="space-y-1.5">
+            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">{label}</Label>
+            <Input id={f.key} name={f.key} value={selOpt ? tMenu(selOpt.label) : ''} disabled />
+          </div>
+        );
+      }
+      const staticOpts = f.options.map(o => ({ id: o.value, name: tMenu(o.label) }));
+      const selOpt = f.options.find(o => o.value === (data?.[f.key] ?? ''));
+      return (
+        <div key={f.key} className="space-y-1.5">
+          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+            {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
+          </Label>
+          <CreatableSearchSelect
+            field={f}
+            value={data?.[f.key] ?? ''}
+            displayValue={selOpt ? tMenu(selOpt.label) : ''}
+            onChange={(id) => onChange?.(f.key, id, f.column)}
+            resolvedLabel={label}
+            staticOptions={staticOpts}
+          />
+        </div>
+      );
     }
     if (isSelectFieldWithOptions(f)) {
       return renderSelectField(f, data, label, isReadOnly, onChange, { ui, tMenu, optionalSuffix });
