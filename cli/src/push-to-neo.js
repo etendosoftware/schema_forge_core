@@ -256,6 +256,8 @@ export async function pushToNeo(windowName, options = {}) {
   const windowDisplayName = schemaRawData.window.name;
   const specName = windowName;
   const fieldDefaultExprs = buildFieldDefaultExprMap(decisionsData);
+  const fieldAgentPrompts = buildFieldAgentPromptMap(decisionsData);
+  const specAgentPrompt = decisionsData.window?.agentPrompt ?? null;
   const allFields = extractFieldsFromContract(contract.backendContract);
 
   if (options.dryRun === true) {
@@ -267,6 +269,8 @@ export async function pushToNeo(windowName, options = {}) {
     schemaRawData,
     allFields,
     fieldDefaultExprs,
+    fieldAgentPrompts,
+    specAgentPrompt,
     specName,
     windowId,
     moduleId: options.moduleId || '94E1B433CF55451EABB764750AC5902A',
@@ -316,6 +320,24 @@ function buildFieldDefaultExprMap(decisionsData) {
     for (const [fieldName, fieldConf] of Object.entries(entityConf.fields || {})) {
       if (fieldConf.defaultExpr != null) {
         map[`${entityName}.${fieldName}`] = fieldConf.defaultExpr;
+      }
+    }
+  }
+  return map;
+}
+
+/**
+ * Build a `entityName.fieldName` -> agentPrompt map from decisions.json.
+ * Mirrors buildFieldDefaultExprMap so the per-field agent guidance flows to
+ * neo_schema the same way default expressions flow to the contract.
+ */
+export function buildFieldAgentPromptMap(decisionsData) {
+  const map = {};
+  for (const [entityKey, entityConf] of Object.entries(decisionsData.entities || {})) {
+    const entityName = entityConf.name || entityKey;
+    for (const [fieldName, fieldConf] of Object.entries(entityConf.fields || {})) {
+      if (fieldConf.agentPrompt != null) {
+        map[`${entityName}.${fieldName}`] = fieldConf.agentPrompt;
       }
     }
   }
@@ -423,6 +445,7 @@ async function stepUpsertSpec(client, ctx) {
     windowId: ctx.windowId,
     specType: 'W',
     specId: existingSpecId,
+    agentPrompt: ctx.specAgentPrompt ?? null,
     audit: ctx.auditOpts,
   });
   console.log(`       Spec ID: ${specResult.specId} (${specResult.created ? 'created' : 'updated'})`);
@@ -577,6 +600,9 @@ async function upsertSingleField(client, f, ctx, entityMaps) {
   const defaultExprKey = `${f.entityName}.${f.fieldName}`;
   if (defaultExprKey in ctx.fieldDefaultExprs) {
     fieldParams.defaultValue = ctx.fieldDefaultExprs[defaultExprKey] || null;
+  }
+  if (ctx.fieldAgentPrompts && defaultExprKey in ctx.fieldAgentPrompts) {
+    fieldParams.agentPrompt = ctx.fieldAgentPrompts[defaultExprKey] || null;
   }
   await writerUpsertField(client, fieldParams);
   return { column: f.column, entityName: f.entityName, success: true };

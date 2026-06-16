@@ -8,6 +8,7 @@ import {
   pushToNeo,
   loadConfig,
   stepExcludeNonContractFields,
+  buildFieldAgentPromptMap,
 } from '../src/push-to-neo.js';
 import {
   generateId,
@@ -20,6 +21,33 @@ import { tmpdir } from 'node:os';
 // ---------------------------------------------------------------------------
 // 1. Visibility mapping
 // ---------------------------------------------------------------------------
+
+describe('buildFieldAgentPromptMap', () => {
+  it('maps entity.field -> agentPrompt, resolving entity name like defaultExpr', () => {
+    const decisions = {
+      entities: {
+        header: { name: 'Order', fields: { docStatus: { agentPrompt: 'confirm before complete' }, note: {} } },
+        lines: { fields: { qty: { agentPrompt: 'quantity hint' } } },
+      },
+    };
+
+    const map = buildFieldAgentPromptMap(decisions);
+
+    assert.deepEqual(map, {
+      'Order.docStatus': 'confirm before complete',
+      'lines.qty': 'quantity hint',
+    });
+  });
+
+  it('returns an empty object when there are no prompts or no entities', () => {
+    assert.deepEqual(buildFieldAgentPromptMap({}), {});
+    assert.deepEqual(buildFieldAgentPromptMap({ entities: {} }), {});
+    assert.deepEqual(
+      buildFieldAgentPromptMap({ entities: { h: { fields: { a: {} } } } }),
+      {},
+    );
+  });
+});
 
 describe('mapVisibility', () => {
   it('maps editable to included, not read-only', () => {
