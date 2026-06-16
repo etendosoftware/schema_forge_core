@@ -6,9 +6,18 @@ Also includes a fix to the pre-push hook for compatibility with git < 2.38.
 
 This PR is approved as cross-domain because it spans two windows
 (`monitor-verifactu` and `verifactu-config`) that belong to the same Verifactu
-localization module, plus a `repo-infra` fix to the shared pre-push hook.
+localization module, plus a `repo-infra` fix to the shared pre-push hook, plus a
+`root-global-sensitive` update to the shared AD schema cache.
 
 ## Domains touched
+
+### `root-global-sensitive`
+
+- `cli/cache/ad-snapshot.json` — removed the `Refresh_Data` button column
+  (`3CD22A94F1084E35A1035C5530F186C3`) from the AD schema cache. This column was
+  eliminated from the verifactu module (replaced materialized view with a regular
+  view), so the snapshot must no longer reference it to prevent the offline regen
+  check from generating phantom ETGO_SF_FIELD rows.
 
 ### `repo-infra`
 
