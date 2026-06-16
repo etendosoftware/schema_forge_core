@@ -21205,6 +21205,9 @@
     "Manual Settlement": {
       "label": "Liquidación manual"
     },
+    "Manual Journals": {
+      "label": "Asientos Manuales"
+    },
     "G/L Item": {
       "label": "Concepto contable"
     },
