@@ -705,6 +705,22 @@ describe('generateTestManifest — edge cases', () => {
   });
 });
 
+describe('generateContract — agentProfile.agentPrompt (ETP-4252)', () => {
+  it('surfaces window.agentPrompt in agentProfile', () => {
+    const schema = {
+      ...minimalSchema,
+      window: { ...minimalSchema.window, agentPrompt: 'Confirm before completing.' },
+    };
+    const contract = generateContract(schema);
+    assert.equal(contract.agentProfile.agentPrompt, 'Confirm before completing.');
+  });
+
+  it('omits agentProfile.agentPrompt when the window declares none', () => {
+    const contract = generateContract(minimalSchema);
+    assert.equal(contract.agentProfile.agentPrompt, undefined);
+  });
+});
+
 describe('generateContract — orchestrator', () => {
   it('returns version from schema', () => {
     const contract = generateContract(minimalSchema, sampleRules, sampleProcesses);
