@@ -727,6 +727,45 @@ async function ruleF16(artifactDir, artifactName) {
   return null;
 }
 
+/**
+ * F17: window.balanceFooter must reference real amount fields on the lines entity.
+ * Guards the double-entry balance footer wiring (ETP-4244).
+ */
+async function ruleF17(artifactDir, artifactName) {
+  const decisionsPath = join(artifactDir, 'decisions.json');
+  if (!(await fileExists(decisionsPath))) return null;
+  let decisions;
+  try {
+    decisions = JSON.parse(await readFile(decisionsPath, 'utf8'));
+  } catch {
+    return skipped('F17', artifactName, 'decisions.json could not be parsed — F17 check skipped');
+  }
+  const bf = decisions?.window?.balanceFooter;
+  if (!bf) return null;
+  if (!bf.debitField || !bf.creditField) {
+    return violation('F17', artifactName, 'BLOCK',
+      'window.balanceFooter requires both debitField and creditField',
+      'Set decisions.json window.balanceFooter to { debitField, creditField }.');
+  }
+  const contractPath = join(artifactDir, 'contract.json');
+  if (!(await fileExists(contractPath))) return skipped('F17', artifactName, 'contract.json not found — F17 check skipped');
+  let contract;
+  try {
+    contract = JSON.parse(await readFile(contractPath, 'utf8'));
+  } catch {
+    return skipped('F17', artifactName, 'contract.json could not be parsed — F17 check skipped');
+  }
+  const { line } = collectFormStateFieldsByScope(contract);
+  for (const field of [bf.debitField, bf.creditField]) {
+    if (!line.has(field)) {
+      return violation('F17', artifactName, 'BLOCK',
+        `window.balanceFooter references line field '${field}' which does not exist on the lines entity`,
+        `Use line-entity field names that exist in the contract for window.balanceFooter (check contract.json formState).`);
+    }
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Artifact discovery
 // ---------------------------------------------------------------------------
@@ -799,6 +838,7 @@ async function runWindowChecks(artifactDir, artifactName, registryContent, root,
     { rule: 'F14', run: () => ruleF14(artifactDir, artifactName) },
     { rule: 'F15', run: () => ruleF15(artifactDir, artifactName) },
     { rule: 'F16', run: () => ruleF16(artifactDir, artifactName) },
+    { rule: 'F17', run: () => ruleF17(artifactDir, artifactName) },
   ], skipSet);
 }
 
