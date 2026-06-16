@@ -755,15 +755,33 @@ async function ruleF17(artifactDir, artifactName) {
   } catch {
     return skipped('F17', artifactName, 'contract.json could not be parsed — F17 check skipped');
   }
-  const { line } = collectFormStateFieldsByScope(contract);
+  const lineFields = collectFrontendLineFields(contract);
   for (const field of [bf.debitField, bf.creditField]) {
-    if (!line.has(field)) {
+    if (!lineFields.has(field)) {
       return violation('F17', artifactName, 'BLOCK',
         `window.balanceFooter references line field '${field}' which does not exist on the lines entity`,
-        `Use line-entity field names that exist in the contract for window.balanceFooter (check contract.json formState).`);
+        `Use line-entity field names that exist in the contract for window.balanceFooter (check frontendContract.entities.<lineEntity>.fields[].name).`);
     }
   }
   return null;
+}
+
+/**
+ * Collect the field names declared on the line (non-header / detail) entity of
+ * the frontend contract. Real generated contracts populate
+ * frontendContract.entities.<entity>.fields[].name — contract.formState is
+ * never emitted, so balanceFooter validation must read from here.
+ */
+function collectFrontendLineFields(contract) {
+  const fields = new Set();
+  const entities = contract.frontendContract?.entities ?? {};
+  for (const [entityName, entity] of Object.entries(entities)) {
+    if (isHeaderEntity(contract, entityName)) continue;
+    for (const field of entity.fields ?? []) {
+      if (field?.name) fields.add(field.name);
+    }
+  }
+  return fields;
 }
 
 // ---------------------------------------------------------------------------
