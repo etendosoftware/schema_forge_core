@@ -54,7 +54,7 @@ const listModalConfig = {
   "footerToggleField": null,
   "sectionGrid": {
     "general": 3,
-    "dimensions": 4
+    "dimensions": 3
   },
   "backLabelKey": "cancel",
   "backTo": null,

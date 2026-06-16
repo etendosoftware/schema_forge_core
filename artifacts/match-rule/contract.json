@@ -1,8 +1,8 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-06-11T18:36:13.442Z",
-  "updatedAt": "2026-06-16T13:10:28.690Z",
-  "checksum": "fc28ff3976a462dd",
+  "updatedAt": "2026-06-16T15:02:21.370Z",
+  "checksum": "983bc251a9786ad6",
   "frontendContract": {
     "window": {
       "id": "24963D64E83B4543A7F6BD248CF944EE",
@@ -22,7 +22,7 @@
         "autoPriorityStep": 10,
         "sectionGrid": {
           "general": 3,
-          "dimensions": 4
+          "dimensions": 3
         },
         "sections": [
           {
@@ -460,7 +460,7 @@
         "autoPriorityStep": 10,
         "sectionGrid": {
           "general": 3,
-          "dimensions": 4
+          "dimensions": 3
         },
         "sections": [
           {

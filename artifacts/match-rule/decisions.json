@@ -18,7 +18,7 @@
       "newLabelKey": "matchRuleNew",
       "autoPriorityField": "priority",
       "autoPriorityStep": 10,
-      "sectionGrid": { "general": 3, "dimensions": 4 },
+      "sectionGrid": { "general": 3, "dimensions": 3 },
       "sections": [
         { "key": "general" },
         { "key": "dimensions", "label": "matchRuleSectionDimensions" }
