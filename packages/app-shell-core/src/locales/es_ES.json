@@ -16602,6 +16602,12 @@
     }
   },
   "genericLabels": {
+    "balanced": "Cuadrado",
+    "difference": "Diferencia",
+    "journalUnbalancedSaveBlocked": "El debe y el haber deben ser iguales antes de guardar",
+    "totalCredit": "Total haber",
+    "totalDebit": "Total debe",
+    "unbalanced": "Descuadrado",
     "taxScopeSales": "Ventas",
     "taxScopePurchase": "Compras",
     "save": "Guardar",

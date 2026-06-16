@@ -16360,6 +16360,12 @@
     }
   },
   "genericLabels": {
+    "balanced": "Balanced",
+    "difference": "Difference",
+    "journalUnbalancedSaveBlocked": "Debit and credit must be equal before saving",
+    "totalCredit": "Total credit",
+    "totalDebit": "Total debit",
+    "unbalanced": "Unbalanced",
     "taxScopeSales": "Sales",
     "taxScopePurchase": "Purchase",
     "save": "Save",
