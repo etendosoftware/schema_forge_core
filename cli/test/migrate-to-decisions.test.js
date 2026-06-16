@@ -233,5 +233,85 @@ describe('migrate-to-decisions', () => {
     it('returns empty for no discarded fields', () => {
       assert.deepEqual(detectDiscardPatterns([{ fields: [] }]), []);
     });
+
+    it('detects patterns across multiple entities', () => {
+      const entities = [
+        { fields: [{ visibility: 'discarded', column: 'EM_Ext1' }] },
+        { fields: [{ visibility: 'discarded', column: 'CopyFromInvoice' }] },
+        { fields: [{ visibility: 'discarded', column: 'EM_Ext2' }] },
+      ];
+      const patterns = detectDiscardPatterns(entities);
+      assert.deepEqual(patterns, ['CopyFrom*', 'EM_*']);
+    });
+
+    it('handles mixed patterns and non-pattern discarded fields', () => {
+      const entities = [{
+        fields: [
+          { visibility: 'discarded', column: 'EM_Custom' },
+          { visibility: 'discarded', column: 'SomeOtherField' },
+          { visibility: 'discarded', column: 'CopyFromPO' },
+        ],
+      }];
+      const patterns = detectDiscardPatterns(entities);
+      // SomeOtherField does not match any known pattern
+      assert.deepEqual(patterns, ['CopyFrom*', 'EM_*']);
+    });
+
+    it('handles entity with undefined fields', () => {
+      const entities = [{ fields: undefined }];
+      assert.deepEqual(detectDiscardPatterns(entities), []);
+    });
+
+    it('handles empty entities array', () => {
+      assert.deepEqual(detectDiscardPatterns([]), []);
+    });
+
+    it('does not duplicate patterns when multiple EM_ fields exist', () => {
+      const entities = [{
+        fields: [
+          { visibility: 'discarded', column: 'EM_A' },
+          { visibility: 'discarded', column: 'EM_B' },
+          { visibility: 'discarded', column: 'EM_C' },
+        ],
+      }];
+      const patterns = detectDiscardPatterns(entities);
+      assert.deepEqual(patterns, ['EM_*']);
+    });
+
+    it('case-insensitive EM_ detection (lowercase em_)', () => {
+      const entities = [{
+        fields: [{ visibility: 'discarded', column: 'em_lowercase' }],
+      }];
+      const patterns = detectDiscardPatterns(entities);
+      assert.ok(patterns.includes('EM_*'));
+    });
+
+    it('handles fields with empty column string', () => {
+      const entities = [{
+        fields: [{ visibility: 'discarded', column: '' }],
+      }];
+      const patterns = detectDiscardPatterns(entities);
+      assert.deepEqual(patterns, []);
+    });
+  });
+
+  describe('findRawFieldByColumn edge cases', () => {
+    it('returns first candidate when curated is system and no exact match', () => {
+      const map = {
+        Col: [
+          { columnName: 'Col', visibility: 'editable' },
+          { columnName: 'Col', visibility: 'readOnly' },
+        ],
+      };
+      // system curated: exact match not found, and system curated does not
+      // trigger the non-system fallback, so first candidate wins
+      const f = findRawFieldByColumn(map, 'Col', 'discarded');
+      assert.equal(f.visibility, 'editable');
+    });
+
+    it('returns null for empty candidates array', () => {
+      const map = { Col: [] };
+      assert.equal(findRawFieldByColumn(map, 'Col', 'editable'), null);
+    });
   });
 });

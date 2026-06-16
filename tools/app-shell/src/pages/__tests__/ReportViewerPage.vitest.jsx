@@ -56,7 +56,138 @@ vi.mock('@/components/ui/dialog', () => ({
   DialogTitle: ({ children }) => <h2>{children}</h2>,
 }));
 
-import ReportViewerPage from '../ReportViewerPage.jsx';
+import ReportViewerPage, {
+  getSelectorPlaceholderLabel,
+  getSelectedItems,
+  getProductSelectorUrl,
+  getSelectorLabelClassName,
+  getSelectorButtonTitle,
+  applyProductSelectorScopeParams,
+} from '../ReportViewerPage.jsx';
+
+describe('getSelectorPlaceholderLabel', () => {
+  it('shows count when multi and items selected', () => {
+    expect(getSelectorPlaceholderLabel(true, [{ id: '1' }, { id: '2' }], 'Prod', '')).toBe('2 selected');
+  });
+
+  it('shows search prompt when multi and no items selected', () => {
+    expect(getSelectorPlaceholderLabel(true, [], 'Widget', '')).toBe('Search Widget...');
+  });
+
+  it('uses default label when label is empty in multi mode', () => {
+    expect(getSelectorPlaceholderLabel(true, [], '', '')).toBe('Search Product...');
+  });
+
+  it('shows displayText in single mode', () => {
+    expect(getSelectorPlaceholderLabel(false, [], 'Prod', 'Acme Widget')).toBe('Acme Widget');
+  });
+
+  it('shows search prompt when no displayText in single mode', () => {
+    expect(getSelectorPlaceholderLabel(false, [], 'Item', '')).toBe('Search Item...');
+  });
+
+  it('uses default label in single mode when label is empty', () => {
+    expect(getSelectorPlaceholderLabel(false, [], '', '')).toBe('Search Product...');
+  });
+});
+
+describe('getSelectedItems', () => {
+  it('returns single-item array in non-multi mode when value is set', () => {
+    const result = getSelectedItems(false, [], 'v1', 'Display');
+    expect(result).toEqual([{ id: 'v1', name: 'Display' }]);
+  });
+
+  it('returns selected array in multi mode when value is set', () => {
+    const sel = [{ id: 'a', name: 'A' }];
+    expect(getSelectedItems(true, sel, 'a', 'A')).toBe(sel);
+  });
+
+  it('returns selected in multi mode even without value', () => {
+    const sel = [{ id: 'x', name: 'X' }];
+    expect(getSelectedItems(true, sel, '', '')).toBe(sel);
+  });
+
+  it('returns empty array in non-multi mode without value', () => {
+    expect(getSelectedItems(false, [], '', '')).toEqual([]);
+  });
+
+  it('returns single-item when only displayValue is set', () => {
+    const result = getSelectedItems(false, [], '', 'SomeName');
+    expect(result).toEqual([{ id: '', name: 'SomeName' }]);
+  });
+});
+
+describe('getProductSelectorUrl', () => {
+  it('returns URL without query string when params are empty', () => {
+    const params = new URLSearchParams();
+    const url = getProductSelectorUrl(params);
+    expect(url).toMatch(/\/sws\/report-selectors\/product$/);
+  });
+
+  it('appends query string when params have values', () => {
+    const params = new URLSearchParams({ selectedOrgId: 'org1' });
+    const url = getProductSelectorUrl(params);
+    expect(url).toContain('selectedOrgId=org1');
+    expect(url).toContain('/sws/report-selectors/product?');
+  });
+});
+
+describe('getSelectorLabelClassName', () => {
+  it('includes text-foreground when items are selected', () => {
+    expect(getSelectorLabelClassName([{ id: '1' }], '')).toContain('text-foreground');
+  });
+
+  it('includes text-foreground when displayText is set', () => {
+    expect(getSelectorLabelClassName([], 'display')).toContain('text-foreground');
+  });
+
+  it('includes text-muted-foreground when empty', () => {
+    const cls = getSelectorLabelClassName([], '');
+    expect(cls).toContain('text-muted-foreground');
+    expect(cls).not.toContain(' text-foreground');
+  });
+});
+
+describe('getSelectorButtonTitle', () => {
+  it('joins selected names in multi mode', () => {
+    const items = [{ name: 'A' }, { name: 'B' }];
+    expect(getSelectorButtonTitle(true, items, '')).toBe('A, B');
+  });
+
+  it('returns displayText in single mode', () => {
+    expect(getSelectorButtonTitle(false, [], 'Foo')).toBe('Foo');
+  });
+
+  it('returns empty when no selection and no displayText', () => {
+    expect(getSelectorButtonTitle(true, [], '')).toBe('');
+  });
+});
+
+describe('applyProductSelectorScopeParams', () => {
+  it('sets selectedOrgId when provided', () => {
+    const params = new URLSearchParams();
+    applyProductSelectorScopeParams('org1', params, [], '');
+    expect(params.get('selectedOrgId')).toBe('org1');
+  });
+
+  it('sets roleOrgIds when array is non-empty', () => {
+    const params = new URLSearchParams();
+    applyProductSelectorScopeParams('', params, ['o1', 'o2'], '');
+    expect(params.get('roleOrgIds')).toBe('o1,o2');
+  });
+
+  it('sets warehouseIds when provided', () => {
+    const params = new URLSearchParams();
+    applyProductSelectorScopeParams('', params, [], 'wh1');
+    expect(params.get('warehouseIds')).toBe('wh1');
+  });
+
+  it('does not set params when values are falsy', () => {
+    const params = new URLSearchParams();
+    applyProductSelectorScopeParams('', params, [], '');
+    expect(params.toString()).toBe('');
+  });
+});
 
 describe('ReportViewerPage', () => {
   beforeEach(() => {
@@ -236,6 +367,65 @@ describe('ReportViewerPage', () => {
     render(<ReportViewerPage />);
     await waitFor(() => {
       expect(screen.getByText('No Category')).toBeInTheDocument();
+    });
+  });
+
+  it('renders multiple categories grouped with headers', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 'r1', title: { en_US: 'Finance A' }, type: 'listing', category: 'finance', outputs: ['pdf'] },
+        { id: 'r2', title: { en_US: 'Sales B' }, type: 'listing', category: 'sales', outputs: ['pdf'] },
+        { id: 'r3', title: { en_US: 'Finance C' }, type: 'grouped-listing', category: 'finance', outputs: ['xlsx'] },
+      ]),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Finance A')).toBeInTheDocument();
+      expect(screen.getByText('Sales B')).toBeInTheDocument();
+      expect(screen.getByText('Finance C')).toBeInTheDocument();
+    });
+  });
+
+  it('renders report cards as clickable buttons', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 'r-click', title: { en_US: 'Clickable' }, type: 'listing', outputs: ['pdf'] },
+      ]),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Clickable')).toBeInTheDocument();
+    });
+    // The card is a button element
+    const cardButton = screen.getByText('Clickable').closest('button');
+    expect(cardButton).toBeTruthy();
+  });
+
+  it('renders report with no outputs gracefully', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 'r-no-out', title: { en_US: 'No Outputs' }, type: 'listing' },
+      ]),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('No Outputs')).toBeInTheDocument();
+    });
+  });
+
+  it('renders reports with empty outputs array', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 'r-empty-out', title: { en_US: 'Empty Outs' }, type: 'listing', outputs: [] },
+      ]),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Empty Outs')).toBeInTheDocument();
     });
   });
 });
