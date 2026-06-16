@@ -63,6 +63,7 @@ export function auditDefaults(opts = {}) {
  * @param {string} [params.processId] - AD_Process_ID (required for type P)
  * @param {string} [params.specType='W'] - 'W' (window) or 'P' (process)
  * @param {string} [params.description]
+ * @param {string} [params.agentPrompt] - Agent guidance returned by neo_discover
  * @param {string} [params.specId] - If provided, UPDATE instead of INSERT
  * @param {object} [params.audit] - Override audit defaults
  * @returns {{ specId: string, created: boolean }}
@@ -75,6 +76,7 @@ export async function upsertSpec(client, params) {
     processId = null,
     specType = 'W',
     description = null,
+    agentPrompt = null,
     specId: existingId = null,
     audit = {},
   } = params;
@@ -98,9 +100,10 @@ export async function upsertSpec(client, params) {
     await client.query(
       `UPDATE etgo_sf_spec
        SET name = $1, spec_type = $2, ad_window_id = $3, ad_process_id = $4,
-           ad_module_id = $5, description = $6, updated = $7, updatedby = $8
-       WHERE etgo_sf_spec_id = $9`,
-      [name, specType, windowId, processId, moduleId, description,
+           ad_module_id = $5, description = $6, agent_prompt = $7,
+           updated = $8, updatedby = $9
+       WHERE etgo_sf_spec_id = $10`,
+      [name, specType, windowId, processId, moduleId, description, agentPrompt,
        auditVals.updated, auditVals.updatedby, existingId],
     );
     return { specId: existingId, created: false };
@@ -111,11 +114,13 @@ export async function upsertSpec(client, params) {
   await client.query(
     `INSERT INTO etgo_sf_spec
      (etgo_sf_spec_id, name, spec_type, ad_window_id, ad_process_id, ad_module_id,
-      description, ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+      description, ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby,
+      agent_prompt)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
     [specId, name, specType, windowId, processId, moduleId, description,
      auditVals.ad_client_id, auditVals.ad_org_id, auditVals.isactive,
-     auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby],
+     auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby,
+     agentPrompt],
   );
   return { specId, created: true };
 }
