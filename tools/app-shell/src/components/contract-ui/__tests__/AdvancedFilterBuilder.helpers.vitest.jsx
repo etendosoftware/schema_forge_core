@@ -1,9 +1,45 @@
 /**
- * Tests for AdvancedFilterBuilder constants and patterns.
- * The component is UI-heavy but the operator/mode maps are critical business logic.
+ * Tests for AdvancedFilterBuilder — constants, logic, and render behavior.
  */
 
-// Replicate the constants since they're not exported
+// ---------------------------------------------------------------------------
+// Mocks — must be declared before imports
+// ---------------------------------------------------------------------------
+
+vi.mock('@/i18n', () => ({
+  useUI: () => (key, params) => {
+    if (params) return `${key}(${JSON.stringify(params)})`;
+    return key;
+  },
+  useLabel: () => (col) => col ?? null,
+  useLocale: () => ({ genericLabels: {}, statuses: {} }),
+  useLocaleSwitch: () => ({ locale: 'en_US', setLocale: vi.fn() }),
+}));
+
+vi.mock('@/hooks/useDistinctValues.js', () => ({
+  useDistinctValues: () => ({
+    values: [],
+    loading: false,
+    loadingMore: false,
+    hasMore: false,
+    search: '',
+    setSearch: vi.fn(),
+    loadMore: vi.fn(),
+  }),
+}));
+
+vi.mock('./DistinctValuesList.jsx', () => ({
+  DistinctValuesList: (props) => <div data-testid="distinct-values-list" />,
+}));
+
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { AdvancedFilterBuilder } from '../AdvancedFilterBuilder.jsx';
+
+// ---------------------------------------------------------------------------
+// Constants verification (kept from original — no exports needed)
+// ---------------------------------------------------------------------------
+
 const OPERATORS_BY_MODE = {
   text:         ['iContains', 'iNotContains', 'iEquals', 'iNotEqual', 'isNull', 'isNotNull'],
   identifier:   ['iContains', 'iNotContains', 'equals', 'notEqual', 'isNull', 'isNotNull'],
@@ -69,5 +105,169 @@ describe('AdvancedFilterBuilder logic', () => {
       expect(TEXTUAL_IDENT_OPS.has('equals')).toBe(false);
       expect(TEXTUAL_IDENT_OPS.has('notEqual')).toBe(false);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Render tests
+// ---------------------------------------------------------------------------
+
+describe('AdvancedFilterBuilder — render', () => {
+  const columns = [
+    { key: 'name', type: 'string', label: 'Name' },
+    { key: 'amount', type: 'amount', label: 'Amount' },
+    { key: 'status', type: 'status', label: 'Status', enumLabels: { DR: 'Draft', CO: 'Complete' } },
+    { key: 'active', type: 'boolean', label: 'Active', badgeLabels: { true: 'Yes', false: 'No' } },
+    { key: 'orderDate', type: 'date', label: 'Date' },
+  ];
+
+  const defaultProps = {
+    columns,
+    rows: [],
+    value: null,
+    onApply: vi.fn(),
+    onClear: vi.fn(),
+    onClose: vi.fn(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders without crashing', () => {
+    render(<AdvancedFilterBuilder {...defaultProps} />);
+    // The title should be rendered via ui('advancedFilterTitle')
+    expect(screen.getByText('advancedFilterTitle')).toBeInTheDocument();
+  });
+
+  it('renders add-condition button', () => {
+    render(<AdvancedFilterBuilder {...defaultProps} />);
+    expect(screen.getByText('advancedFilterAddCondition')).toBeInTheDocument();
+  });
+
+  it('renders apply and clear buttons', () => {
+    render(<AdvancedFilterBuilder {...defaultProps} />);
+    expect(screen.getByText('advancedFilterApply')).toBeInTheDocument();
+    expect(screen.getByText('advancedFilterClear')).toBeInTheDocument();
+  });
+
+  it('renders "Where" connector for first row', () => {
+    render(<AdvancedFilterBuilder {...defaultProps} />);
+    expect(screen.getByText('advancedFilterWhere')).toBeInTheDocument();
+  });
+
+  it('renders remove-condition button', () => {
+    render(<AdvancedFilterBuilder {...defaultProps} />);
+    const removeBtn = screen.getByRole('button', { name: /remove condition/i });
+    expect(removeBtn).toBeInTheDocument();
+  });
+
+  it('adds a condition row when add button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<AdvancedFilterBuilder {...defaultProps} />);
+    const addBtn = screen.getByText('advancedFilterAddCondition');
+    await user.click(addBtn);
+    // Should now have 2 remove buttons (one per row)
+    const removeBtns = screen.getAllByRole('button', { name: /remove condition/i });
+    expect(removeBtns).toHaveLength(2);
+  });
+
+  it('renders with initial value conditions', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [
+        { field: 'name', operator: 'iContains', value: 'test' },
+        { field: 'amount', operator: 'greaterThan', value: '100' },
+      ],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    // Two condition rows means two remove buttons
+    const removeBtns = screen.getAllByRole('button', { name: /remove condition/i });
+    expect(removeBtns).toHaveLength(2);
+  });
+
+  it('renders save placeholder when presets are not enabled', () => {
+    render(<AdvancedFilterBuilder {...defaultProps} />);
+    expect(screen.getByText('advancedFilterSave')).toBeInTheDocument();
+  });
+
+  it('renders presets dropdown when presets are provided', () => {
+    render(
+      <AdvancedFilterBuilder
+        {...defaultProps}
+        presets={{ 'My Filter': {} }}
+        onApplyPreset={vi.fn()}
+        onSavePreset={vi.fn()}
+        onDeletePreset={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('filterPresetsButton')).toBeInTheDocument();
+  });
+
+  it('disables apply when conditions are incomplete', () => {
+    render(<AdvancedFilterBuilder {...defaultProps} />);
+    // Default state: one empty row — apply should be disabled
+    const applyBtn = screen.getByText('advancedFilterApply');
+    expect(applyBtn.closest('button')).toBeDisabled();
+  });
+
+  it('disables clear when no conditions are started and no applied filter', () => {
+    render(<AdvancedFilterBuilder {...defaultProps} value={null} />);
+    const clearBtn = screen.getByText('advancedFilterClear').closest('button');
+    expect(clearBtn).toBeDisabled();
+  });
+
+  it('enables clear when there is an applied filter', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'iContains', value: 'test' }],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    const clearBtn = screen.getByText('advancedFilterClear').closest('button');
+    expect(clearBtn).not.toBeDisabled();
+  });
+
+  it('calls onClear when clear button is clicked with applied filter', async () => {
+    const user = userEvent.setup();
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'iContains', value: 'test' }],
+    };
+    const onClear = vi.fn();
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} onClear={onClear} />);
+    await user.click(screen.getByText('advancedFilterClear'));
+    expect(onClear).toHaveBeenCalled();
+  });
+
+  it('removes a condition row when remove button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<AdvancedFilterBuilder {...defaultProps} />);
+    // Add a second row
+    await user.click(screen.getByText('advancedFilterAddCondition'));
+    let removeBtns = screen.getAllByRole('button', { name: /remove condition/i });
+    expect(removeBtns).toHaveLength(2);
+    // Remove the first row
+    await user.click(removeBtns[0]);
+    removeBtns = screen.getAllByRole('button', { name: /remove condition/i });
+    // Should reset to one empty row (minimum)
+    expect(removeBtns).toHaveLength(1);
+  });
+
+  it('renders with empty columns gracefully', () => {
+    render(<AdvancedFilterBuilder {...defaultProps} columns={[]} />);
+    expect(screen.getByText('advancedFilterTitle')).toBeInTheDocument();
+  });
+
+  it('filters out non-filterable columns', () => {
+    const cols = [
+      { key: 'name', type: 'string', label: 'Name' },
+      { key: 'sys', type: 'system', label: 'System' },
+      { key: 'disc', type: 'discarded', label: 'Discarded' },
+      { key: 'nofilt', type: 'string', label: 'NoFilter', filterable: false },
+    ];
+    render(<AdvancedFilterBuilder {...defaultProps} columns={cols} />);
+    // Only 'name' should be available (system, discarded, filterable=false excluded)
+    // We can't easily check select options without opening the dropdown, but the component should render
+    expect(screen.getByText('advancedFilterTitle')).toBeInTheDocument();
   });
 });

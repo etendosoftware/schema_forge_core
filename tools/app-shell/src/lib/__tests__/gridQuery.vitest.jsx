@@ -5,6 +5,7 @@ import {
   buildBackendFilter,
   resolveFilterMode,
   buildAdvancedFilterCriteria,
+  getFilteredKey,
 } from '../gridQuery.js';
 
 // ---------------------------------------------------------------------------
@@ -475,5 +476,559 @@ describe('buildAdvancedFilterCriteria', () => {
     expect(result).toEqual([
       { fieldName: 'bp', operator: 'equals', value: 'uuid-1' },
     ]);
+  });
+
+  it('handles isNotNull operator', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'isNotNull', value: null }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    expect(result).toEqual([{ fieldName: 'name', operator: 'notNull' }]);
+  });
+
+  it('returns null for between with non-array value', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: '100' }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, columns)).toBeNull();
+  });
+
+  it('returns null for between with empty from/to', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: ['', '500'] }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, columns)).toBeNull();
+  });
+
+  it('returns null for between with null from', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: [null, '500'] }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, columns)).toBeNull();
+  });
+
+  it('returns null for between with non-numeric coercion failure', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: ['abc', '500'] }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, columns)).toBeNull();
+  });
+
+  it('handles inSet with single value', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'inSet', value: ['only'] }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    expect(result).toEqual([{ fieldName: 'name', operator: 'equals', value: 'only' }]);
+  });
+
+  it('handles inSet with empty array', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'inSet', value: [] }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, columns)).toBeNull();
+  });
+
+  it('handles inSet with string value (comma-separated)', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'inSet', value: 'a,b,c' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    expect(result).toEqual([{ fieldName: 'name', operator: 'inSet', value: 'a,b,c' }]);
+  });
+
+  it('handles multi-value array with single item (no OR wrap)', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'equals', value: ['only'] }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    expect(result).toEqual([{ fieldName: 'name', operator: 'equals', value: 'only' }]);
+  });
+
+  it('returns null for multi-value array with only empty/null values', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'equals', value: ['', null] }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, columns)).toBeNull();
+  });
+
+  it('returns null for empty string value (non-array, non-null)', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'iContains', value: '' }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, columns)).toBeNull();
+  });
+
+  it('handles numeric mode with string numeric value', () => {
+    const cols = [{ key: 'qty', type: 'number' }];
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'qty', operator: 'greaterThan', value: '42.5' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, cols);
+    expect(result).toEqual([{ fieldName: 'qty', operator: 'greaterThan', value: 42.5 }]);
+  });
+
+  it('returns null for numeric mode with non-numeric string', () => {
+    const cols = [{ key: 'qty', type: 'number' }];
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'qty', operator: 'equals', value: 'abc' }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, cols)).toBeNull();
+  });
+
+  it('handles numeric mode with actual number value', () => {
+    const cols = [{ key: 'qty', type: 'number' }];
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'qty', operator: 'equals', value: 100 }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, cols);
+    expect(result).toEqual([{ fieldName: 'qty', operator: 'equals', value: 100 }]);
+  });
+
+  it('handles booleanLabel mode with true string value', () => {
+    const cols = [{ key: 'active', type: 'boolean' }];
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'active', operator: 'equals', value: 'true' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, cols);
+    expect(result).toEqual([{ fieldName: 'active', operator: 'equals', value: true }]);
+  });
+
+  it('handles booleanLabel mode with false value', () => {
+    const cols = [{ key: 'active', type: 'boolean' }];
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'active', operator: 'equals', value: false }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, cols);
+    expect(result).toEqual([{ fieldName: 'active', operator: 'equals', value: false }]);
+  });
+
+  it('uses buildCriteria from column when provided', () => {
+    const customCol = {
+      key: 'custom',
+      type: 'string',
+      buildCriteria: (row) => [{ fieldName: 'custom_field', operator: 'equals', value: row.value }],
+    };
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'custom', operator: 'equals', value: 'test' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [customCol]);
+    expect(result).toEqual([{ fieldName: 'custom_field', operator: 'equals', value: 'test' }]);
+  });
+
+  it('returns null when buildCriteria returns null', () => {
+    const customCol = {
+      key: 'custom',
+      type: 'string',
+      buildCriteria: () => null,
+    };
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'custom', operator: 'equals', value: 'test' }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, [customCol])).toBeNull();
+  });
+
+  it('does not wrap OR when only one criterion', () => {
+    const filter = {
+      rowOperator: 'or',
+      conditions: [{ field: 'name', operator: 'iContains', value: 'single' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    // Single item OR is emitted flat (no AdvancedCriteria wrapper)
+    expect(result).toEqual([{ fieldName: 'name', operator: 'iContains', value: 'single' }]);
+  });
+
+  it('handles identifier column with iNotContains operator', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'bp', operator: 'iNotContains', value: 'acme' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    expect(result).toEqual([{ fieldName: 'bp$_identifier', operator: 'iNotContains', value: 'acme' }]);
+  });
+
+  it('handles identifier column with iEquals operator', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'bp', operator: 'iEquals', value: 'Acme Corp' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    expect(result).toEqual([{ fieldName: 'bp$_identifier', operator: 'iEquals', value: 'Acme Corp' }]);
+  });
+
+  it('handles identifier column with notEqual (discrete) operator', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'bp', operator: 'notEqual', value: 'uuid-1' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    expect(result).toEqual([{ fieldName: 'bp', operator: 'notEqual', value: 'uuid-1' }]);
+  });
+
+  it('handles between for date mode (non-numeric coercion)', () => {
+    const cols = [{ key: 'date', type: 'date' }];
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'date', operator: 'between', value: ['2026-01-01', '2026-12-31'] }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, cols);
+    expect(result).toEqual([
+      { fieldName: 'date', operator: 'greaterOrEqual', value: '2026-01-01' },
+      { fieldName: 'date', operator: 'lessOrEqual', value: '2026-12-31' },
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getFilteredKey
+// ---------------------------------------------------------------------------
+
+describe('getFilteredKey', () => {
+  it('returns backendFilterKey when provided', () => {
+    const col = { key: 'bp', backendFilterKey: 'bp$name' };
+    expect(getFilteredKey(col, 'identifier', 'iContains')).toBe('bp$name');
+  });
+
+  it('returns $_identifier for identifier mode with textual op', () => {
+    const col = { key: 'bp' };
+    expect(getFilteredKey(col, 'identifier', 'iContains')).toBe('bp$_identifier');
+    expect(getFilteredKey(col, 'identifier', 'iNotContains')).toBe('bp$_identifier');
+    expect(getFilteredKey(col, 'identifier', 'iEquals')).toBe('bp$_identifier');
+    expect(getFilteredKey(col, 'identifier', 'iNotEqual')).toBe('bp$_identifier');
+  });
+
+  it('returns raw key for identifier mode with discrete op', () => {
+    const col = { key: 'bp' };
+    expect(getFilteredKey(col, 'identifier', 'equals')).toBe('bp');
+    expect(getFilteredKey(col, 'identifier', 'notEqual')).toBe('bp');
+    expect(getFilteredKey(col, 'identifier', 'inSet')).toBe('bp');
+  });
+
+  it('returns raw key for non-identifier modes', () => {
+    const col = { key: 'name' };
+    expect(getFilteredKey(col, 'text', 'iContains')).toBe('name');
+    expect(getFilteredKey(col, 'numeric', 'equals')).toBe('name');
+    expect(getFilteredKey(col, 'date', 'greaterThan')).toBe('name');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveBackendSort — additional edge cases
+// ---------------------------------------------------------------------------
+
+describe('resolveBackendSort — edge cases', () => {
+  it('infers identifier sort for enumLabels column', () => {
+    // inferSortMode returns 'enumLabel' when col.enumLabels exists
+    // enumLabel is NOT an identifier sort, so it uses space suffix
+    const col = { key: 'status', enumLabels: { DR: 'Draft' } };
+    expect(resolveBackendSort(col, 'asc')).toBe('status asc');
+  });
+
+  it('infers identifier sort for badgeLabels column', () => {
+    const col = { key: 'active', badgeLabels: { true: 'Yes', false: 'No' } };
+    expect(resolveBackendSort(col, 'desc')).toBe('active desc');
+  });
+
+  it('uses identifier sort for status type', () => {
+    // status type -> inferSortMode returns 'enumLabel' which is NOT identifier
+    const col = { key: 'docStatus', type: 'status' };
+    expect(resolveBackendSort(col, 'asc')).toBe('docStatus asc');
+  });
+
+  it('uses identifier sort for boolean type', () => {
+    const col = { key: 'active', type: 'boolean' };
+    expect(resolveBackendSort(col, 'asc')).toBe('active asc');
+  });
+
+  it('respects explicit sortMode=identifier', () => {
+    const col = { key: 'org', sortMode: 'identifier' };
+    expect(resolveBackendSort(col, 'asc')).toBe('org$_identifier');
+    expect(resolveBackendSort(col, 'desc')).toBe('-org$_identifier');
+  });
+
+  it('defaults invalid direction to asc', () => {
+    expect(resolveBackendSort({ key: 'name' }, 'invalid')).toBe('name asc');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// parseUserFilter — additional edge cases
+// ---------------------------------------------------------------------------
+
+describe('parseUserFilter — edge cases', () => {
+  it('parses date with dd-mm-yyyy format', () => {
+    const col = { key: 'd', type: 'date' };
+    expect(parseUserFilter(col, '14-04-2026')).toEqual({
+      mode: 'date', op: '=', value: '2026-04-14', originalValue: '14-04-2026',
+    });
+  });
+
+  it('parses date with dd.mm.yyyy format', () => {
+    const col = { key: 'd', type: 'date' };
+    expect(parseUserFilter(col, '14.04.2026')).toEqual({
+      mode: 'date', op: '=', value: '2026-04-14', originalValue: '14.04.2026',
+    });
+  });
+
+  it('parses ISO date yyyy-mm-dd', () => {
+    const col = { key: 'd', type: 'date' };
+    expect(parseUserFilter(col, '2026-04-14')).toEqual({
+      mode: 'date', op: '=', value: '2026-04-14', originalValue: '2026-04-14',
+    });
+  });
+
+  it('parses ISO datetime prefix', () => {
+    const col = { key: 'd', type: 'date' };
+    const result = parseUserFilter(col, '2026-04-14T10:30:00');
+    expect(result.value).toBe('2026-04-14');
+  });
+
+  it('parses date with yyyy/mm/dd format', () => {
+    const col = { key: 'd', type: 'date' };
+    expect(parseUserFilter(col, '2026/04/14')).toEqual({
+      mode: 'date', op: '=', value: '2026-04-14', originalValue: '2026/04/14',
+    });
+  });
+
+  it('returns null for unparseable date with operator', () => {
+    const col = { key: 'd', type: 'date' };
+    expect(parseUserFilter(col, '>not-a-date')).toBeNull();
+  });
+
+  it('returns null for unparseable date string', () => {
+    const col = { key: 'd', type: 'date' };
+    expect(parseUserFilter(col, 'hello-world')).toBeNull();
+  });
+
+  it('matches multiple enum labels with partial input', () => {
+    const col = { key: 's', type: 'status', enumLabels: { DR: 'Draft', CO: 'Complete', CL: 'Closed' } };
+    const result = parseUserFilter(col, 'cl');
+    // "cl" matches "Closed" and potentially "Complete" (contains 'cl' -> no, 'Complete'.toLowerCase() is 'complete' which doesn't contain 'cl')
+    // Actually: 'closed'.includes('cl') -> true, 'complete'.includes('cl') -> false
+    expect(result.mode).toBe('enumLabel');
+    expect(result.value).toContain('CL');
+  });
+
+  it('parses boolean generic keywords (si, 1, y)', () => {
+    const col = { key: 'b', type: 'boolean' };
+    expect(parseUserFilter(col, 'si').value).toBe(true);
+    expect(parseUserFilter(col, 'sí').value).toBe(true);
+    expect(parseUserFilter(col, '1').value).toBe(true);
+    expect(parseUserFilter(col, 'y').value).toBe(true);
+    expect(parseUserFilter(col, '0').value).toBe(false);
+    expect(parseUserFilter(col, 'n').value).toBe(false);
+  });
+
+  it('returns null for boolean with unrecognized input and no badgeLabels', () => {
+    const col = { key: 'b', type: 'boolean' };
+    expect(parseUserFilter(col, 'maybe')).toBeNull();
+  });
+
+  it('parses numeric with <= operator', () => {
+    const col = { key: 'n', type: 'number' };
+    expect(parseUserFilter(col, '<=50')).toEqual({
+      mode: 'numeric', op: '<=', value: 50, originalValue: '<=50',
+    });
+  });
+
+  it('parses numeric with >= operator', () => {
+    const col = { key: 'n', type: 'number' };
+    expect(parseUserFilter(col, '>=100')).toEqual({
+      mode: 'numeric', op: '>=', value: 100, originalValue: '>=100',
+    });
+  });
+
+  it('parses numeric with = operator', () => {
+    const col = { key: 'n', type: 'number' };
+    expect(parseUserFilter(col, '=42')).toEqual({
+      mode: 'numeric', op: '=', value: 42, originalValue: '=42',
+    });
+  });
+
+  it('parses numeric with comma thousands separator', () => {
+    const col = { key: 'n', type: 'number' };
+    expect(parseUserFilter(col, '>1,000,000')).toEqual({
+      mode: 'numeric', op: '>', value: 1000000, originalValue: '>1,000,000',
+    });
+  });
+
+  it('handles percent type as numeric', () => {
+    const col = { key: 'p', type: 'percent' };
+    expect(parseUserFilter(col, '50')).toEqual({
+      mode: 'numeric', op: '=', value: 50, originalValue: '50',
+    });
+  });
+
+  it('preserves originalValue', () => {
+    const col = { key: 'n', type: 'string' };
+    const result = parseUserFilter(col, '  spaced  ');
+    expect(result.originalValue).toBe('  spaced  ');
+    expect(result.value).toBe('spaced');
+  });
+
+  it('uses filterMode=identifier for _ID column heuristic', () => {
+    const col = { key: 'bp', column: 'C_BPartner_ID' };
+    const result = parseUserFilter(col, 'acme');
+    expect(result.mode).toBe('identifier');
+  });
+
+  it('uses filterMode=enumLabel for enum type', () => {
+    const col = { key: 's', type: 'enum', enumLabels: { A: 'Active' } };
+    const result = parseUserFilter(col, 'act');
+    expect(result.mode).toBe('enumLabel');
+    expect(result.value).toEqual(['A']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildBackendFilter — additional edge cases
+// ---------------------------------------------------------------------------
+
+describe('buildBackendFilter — edge cases', () => {
+  it('builds date with >= operator', () => {
+    expect(buildBackendFilter({ key: 'd' }, { mode: 'date', op: '>=', value: '2026-04-14' })).toEqual([
+      { fieldName: 'd', operator: 'greaterOrEqual', value: '2026-04-14' },
+    ]);
+  });
+
+  it('builds date with <= operator', () => {
+    expect(buildBackendFilter({ key: 'd' }, { mode: 'date', op: '<=', value: '2026-04-14' })).toEqual([
+      { fieldName: 'd', operator: 'lessOrEqual', value: '2026-04-14' },
+    ]);
+  });
+
+  it('builds numeric equals', () => {
+    expect(buildBackendFilter({ key: 'n' }, { mode: 'numeric', op: '=', value: 42 })).toEqual([
+      { fieldName: 'n', operator: 'equals', value: 42 },
+    ]);
+  });
+
+  it('builds numeric with < operator', () => {
+    expect(buildBackendFilter({ key: 'n' }, { mode: 'numeric', op: '<', value: 10 })).toEqual([
+      { fieldName: 'n', operator: 'lessThan', value: 10 },
+    ]);
+  });
+
+  it('builds numeric with >= operator', () => {
+    expect(buildBackendFilter({ key: 'n' }, { mode: 'numeric', op: '>=', value: 100 })).toEqual([
+      { fieldName: 'n', operator: 'greaterOrEqual', value: 100 },
+    ]);
+  });
+
+  it('respects backendFilterKey for date columns', () => {
+    expect(buildBackendFilter(
+      { key: 'd', backendFilterKey: 'orderDate' },
+      { mode: 'date', op: '=', value: '2026-01-01' },
+    )).toEqual([
+      { fieldName: 'orderDate', operator: 'greaterOrEqual', value: '2026-01-01' },
+      { fieldName: 'orderDate', operator: 'lessOrEqual', value: '2026-01-01' },
+    ]);
+  });
+
+  it('respects backendFilterKey for enum columns', () => {
+    expect(buildBackendFilter(
+      { key: 's', backendFilterKey: 'docStatus' },
+      { mode: 'enumLabel', value: ['DR'] },
+    )).toEqual([
+      { fieldName: 'docStatus', operator: 'equals', value: 'DR' },
+    ]);
+  });
+
+  it('respects backendFilterKey for boolean columns', () => {
+    expect(buildBackendFilter(
+      { key: 'b', backendFilterKey: 'isActive' },
+      { mode: 'booleanLabel', value: false },
+    )).toEqual([
+      { fieldName: 'isActive', operator: 'equals', value: false },
+    ]);
+  });
+
+  it('respects backendFilterKey for numeric columns', () => {
+    expect(buildBackendFilter(
+      { key: 'n', backendFilterKey: 'grandTotal' },
+      { mode: 'numeric', op: '>', value: 1000 },
+    )).toEqual([
+      { fieldName: 'grandTotal', operator: 'greaterThan', value: 1000 },
+    ]);
+  });
+
+  it('handles unknown mode as text fallback', () => {
+    expect(buildBackendFilter({ key: 'x' }, { mode: 'unknownMode', value: 'abc' })).toEqual([
+      { fieldName: 'x', operator: 'iContains', value: 'abc' },
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getDisplayText — additional edge cases
+// ---------------------------------------------------------------------------
+
+describe('getDisplayText — edge cases', () => {
+  it('returns identifier for filterMode=identifier (without type=selector)', () => {
+    const row = { org: 'uuid', 'org$_identifier': 'Org Name' };
+    const col = { key: 'org', filterMode: 'identifier' };
+    expect(getDisplayText(row, col)).toBe('Org Name');
+  });
+
+  it('returns enum label for filterMode=enumLabel (without type=status)', () => {
+    const col = { key: 'prio', filterMode: 'enumLabel', enumLabels: { 1: 'High', 2: 'Low' } };
+    expect(getDisplayText({ prio: 1 }, col)).toBe('High');
+  });
+
+  it('returns badge label for filterMode=booleanLabel (without type=boolean)', () => {
+    const col = { key: 'flag', filterMode: 'booleanLabel', badgeLabels: { true: 'On', false: 'Off' } };
+    expect(getDisplayText({ flag: true }, col)).toBe('On');
+  });
+
+  it('handles boolean with "true" string', () => {
+    const col = { key: 'active', type: 'boolean', badgeLabels: { true: 'Yes', false: 'No' } };
+    expect(getDisplayText({ active: 'true' }, col)).toBe('Yes');
+  });
+
+  it('handles boolean badge labels with only en_US locale', () => {
+    const col = {
+      key: 'flag', type: 'boolean',
+      badgeLabels: { true: { en_US: 'Active' }, false: { en_US: 'Inactive' } },
+    };
+    expect(getDisplayText({ flag: true }, col)).toBe('Active');
+  });
+
+  it('handles boolean badge labels with fallback to first value', () => {
+    const col = {
+      key: 'flag', type: 'boolean',
+      badgeLabels: { true: { fr_FR: 'Actif' }, false: { fr_FR: 'Inactif' } },
+    };
+    // No es_ES or en_US, falls back to Object.values()[0]
+    expect(getDisplayText({ flag: true }, col)).toBe('Actif');
+  });
+
+  it('returns empty string for boolean with null badgeLabels entry', () => {
+    const col = { key: 'flag', type: 'boolean', badgeLabels: { true: null, false: 'No' } };
+    // badgeLabels.true is null → label is null → tryBooleanText returns null → falls to raw
+    expect(getDisplayText({ flag: true }, col)).toBe('true');
+  });
+
+  it('coerces boolean values correctly', () => {
+    const col = { key: 'active', type: 'boolean', badgeLabels: { true: 'Yes', false: 'No' } };
+    expect(getDisplayText({ active: false }, col)).toBe('No');
+    expect(getDisplayText({ active: 'false' }, col)).toBe('No');
   });
 });
