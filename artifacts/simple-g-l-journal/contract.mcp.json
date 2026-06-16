@@ -1,7 +1,8 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "contractChecksum": "02e9ddfc53dc0472",
+  "updatedAt": "2026-06-16T17:39:46.684Z",
+  "contractChecksum": "8d9b2f33ac7ec80e",
   "apiPrediction": {
     "specName": "simple-g-l-journal",
     "baseUrl": "/sws/neo/simple-g-l-journal",
@@ -28,20 +29,10 @@
         "delete": true,
         "listUrl": "/sws/neo/simple-g-l-journal/gLJournalLine",
         "detailUrl": "/sws/neo/simple-g-l-journal/gLJournalLine/{id}",
-        "supportedFilters": [
-          "gLItems"
-        ]
+        "supportedFilters": []
       }
     },
     "selectors": [
-      {
-        "entity": "gLJournal",
-        "field": "documentType",
-        "column": "C_DocType_ID",
-        "reference": "DocType",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/documentType"
-      },
       {
         "entity": "gLJournal",
         "field": "period",
@@ -57,87 +48,6 @@
         "reference": "Currency",
         "inputMode": "selector",
         "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/currency"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "businessPartner",
-        "column": "C_Bpartner_ID",
-        "reference": "BPartner",
-        "inputMode": "search",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/businessPartner"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "product",
-        "column": "M_Product_ID",
-        "reference": "Product",
-        "inputMode": "search",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/product"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "project",
-        "column": "C_Project_ID",
-        "reference": "Project",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/project"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "costCenter",
-        "column": "C_Costcenter_ID",
-        "reference": "Costcenter",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/costCenter"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "asset",
-        "column": "A_Asset_ID",
-        "reference": "Asset",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/asset"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "salesCampaign",
-        "column": "C_Campaign_ID",
-        "reference": "Campaign",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/salesCampaign"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "stDimension",
-        "column": "User1_ID",
-        "reference": "User1",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/stDimension"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "ndDimension",
-        "column": "User2_ID",
-        "reference": "User2",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/ndDimension"
-      },
-      {
-        "entity": "gLJournalLine",
-        "field": "gLItems",
-        "column": "Account_ID",
-        "reference": "Glitem",
-        "inputMode": "search",
-        "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/gLItems",
-        "context": {
-          "required": [
-            {
-              "param": "Multi_Gl",
-              "source": "parentField",
-              "field": "multigeneralLedger"
-            }
-          ]
-        }
       },
       {
         "entity": "gLJournalLine",
@@ -170,46 +80,6 @@
         "reference": "Project",
         "inputMode": "search",
         "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/project"
-      },
-      {
-        "entity": "gLJournalLine",
-        "field": "activity",
-        "column": "C_Activity_ID",
-        "reference": "Activity",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/activity"
-      },
-      {
-        "entity": "gLJournalLine",
-        "field": "salesCampaign",
-        "column": "C_Campaign_ID",
-        "reference": "Campaign",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/salesCampaign"
-      },
-      {
-        "entity": "gLJournalLine",
-        "field": "salesRegion",
-        "column": "C_Salesregion_ID",
-        "reference": "Salesregion",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/salesRegion"
-      },
-      {
-        "entity": "gLJournalLine",
-        "field": "stDimension",
-        "column": "User1_ID",
-        "reference": "User1",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/stDimension"
-      },
-      {
-        "entity": "gLJournalLine",
-        "field": "ndDimension",
-        "column": "User2_ID",
-        "reference": "User2",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/ndDimension"
       },
       {
         "entity": "gLJournalLine",
@@ -394,10 +264,6 @@
             "required": true,
             "defaultValue": "@DESCRIPTION0@"
           },
-          "documentType": {
-            "required": true,
-            "defaultValue": "@SQL=SELECT C_DocType_ID from C_DocType WHERE C_DocType.DocBaseType='GLJ' AND AD_ISORGINCLUDED( @AD_Org_ID@, C_DocType.AD_Org_ID, @#AD_Client_ID@) <> '-1' ORDER BY C_DocType.isdefault DESC"
-          },
           "documentDate": {
             "required": true,
             "readOnlyLogic": "@Processed@='Y'",
@@ -425,42 +291,16 @@
             "required": true,
             "readOnlyLogic": "@Processed@='Y'",
             "defaultValue": "N"
-          },
-          "posted": {
-            "readOnly": true,
-            "required": true,
-            "defaultValue": "N"
-          },
-          "businessPartner": {
-            "readOnlyLogic": "@Posted@='Y'"
-          },
-          "product": {
-            "readOnlyLogic": "@Posted@='Y'"
-          },
-          "project": {
-            "readOnlyLogic": "@Posted@='Y'"
-          },
-          "costCenter": {
-            "readOnlyLogic": "@Posted@='Y'"
-          },
-          "asset": {
-            "readOnlyLogic": "@Posted@='Y'"
-          },
-          "salesCampaign": {
-            "readOnlyLogic": "@Posted@='Y'"
-          },
-          "stDimension": {
-            "readOnlyLogic": "@Posted@='Y'"
-          },
-          "ndDimension": {
-            "readOnlyLogic": "@Posted@='Y'"
           }
         }
       },
       "gLJournalLine": {
         "fields": {
-          "gLItems": {
-            "readOnlyLogic": "@Processed@='Y' | @Multi_Gl@='N'"
+          "lineNo": {
+            "readOnly": true,
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y'",
+            "defaultValue": "@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM GL_JournalLine WHERE GL_Journal_ID=@GL_Journal_ID@"
           },
           "accountingCombination": {
             "readOnlyLogic": "@Processed@='Y' | @Multi_Gl@='Y'"
@@ -477,6 +317,10 @@
             "required": true,
             "readOnlyLogic": "@Processed@='Y'"
           },
+          "openItems": {
+            "required": true,
+            "defaultValue": "N"
+          },
           "businessPartner": {
             "readOnlyLogic": "@Posted@='Y' | @FIN_Payment_ID@ ! ''"
           },
@@ -484,21 +328,6 @@
             "readOnlyLogic": "@Posted@='Y'"
           },
           "project": {
-            "readOnlyLogic": "@Posted@='Y'"
-          },
-          "activity": {
-            "readOnlyLogic": "@Posted@='Y'"
-          },
-          "salesCampaign": {
-            "readOnlyLogic": "@Posted@='Y'"
-          },
-          "salesRegion": {
-            "readOnlyLogic": "@Processed@='Y'"
-          },
-          "stDimension": {
-            "readOnlyLogic": "@Posted@='Y'"
-          },
-          "ndDimension": {
             "readOnlyLogic": "@Posted@='Y'"
           },
           "asset": {
@@ -510,9 +339,7 @@
         }
       }
     },
-    "requiredSessionVariables": [
-      "#ShowAcct"
-    ],
+    "requiredSessionVariables": [],
     "evaluationMode": "runtime"
   },
   "agentProfile": {
@@ -523,7 +350,6 @@
     "minimumCreate": {
       "headerFields": [
         "description",
-        "documentType",
         "documentDate",
         "accountingDate",
         "period",
@@ -533,28 +359,15 @@
       ],
       "lineFields": [
         "foreignCurrencyDebit",
-        "foreignCurrencyCredit"
+        "foreignCurrencyCredit",
+        "openItems"
       ],
       "recommendedOrder": [
         "createHeader",
         "createLines"
       ]
     },
-    "selectorContexts": [
-      {
-        "entity": "gLJournalLine",
-        "field": "gLItems",
-        "context": {
-          "required": [
-            {
-              "param": "Multi_Gl",
-              "source": "parentField",
-              "field": "multigeneralLedger"
-            }
-          ]
-        }
-      }
-    ],
+    "selectorContexts": [],
     "actions": [
       "documentAction",
       "posted",
@@ -583,7 +396,6 @@
         "description": "Create a draft header with the minimum required editable fields.",
         "fields": [
           "description",
-          "documentType",
           "documentDate",
           "accountingDate",
           "period",
@@ -597,7 +409,8 @@
         "description": "Add a line after the header exists and parent context is available.",
         "fields": [
           "foreignCurrencyDebit",
-          "foreignCurrencyCredit"
+          "foreignCurrencyCredit",
+          "openItems"
         ]
       },
       {
@@ -610,5 +423,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "c7ed4ffd515d3e62"
+  "checksum": "553859500df6d790"
 }

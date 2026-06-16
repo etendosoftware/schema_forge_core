@@ -4,7 +4,6 @@
     "category": "finance",
     "name": "Simple G/L Journal",
     "breadcrumb": "Finance / Manual Journals",
-    "linesLayout": "inlineEditable",
     "balanceFooter": {
       "debitField": "foreignCurrencyDebit",
       "creditField": "foreignCurrencyCredit"
@@ -25,8 +24,8 @@
           "searchable": true
         },
         "documentType": {
-          "visibility": "editable",
-          "reason": "Document type selector — user picks the journal document type."
+          "visibility": "system",
+          "reason": "Hidden from the form but still defaulted under the hood (DocBaseType='GLJ') — needed for posting/sequencing later."
         },
         "documentDate": {
           "visibility": "editable",
@@ -52,36 +51,44 @@
           "reason": "Kept (cheap boolean) per spec — multi-ledger flag."
         },
         "businessPartner": {
-          "visibility": "editable"
+          "visibility": "discarded",
+          "reason": "Header accounting dimension — not part of the simplified 7-field header form."
         },
         "product": {
-          "visibility": "editable"
+          "visibility": "discarded",
+          "reason": "Header accounting dimension — not part of the simplified 7-field header form."
         },
         "project": {
-          "visibility": "editable"
+          "visibility": "discarded",
+          "reason": "Header accounting dimension — not part of the simplified 7-field header form."
         },
         "costCenter": {
-          "visibility": "editable"
+          "visibility": "discarded",
+          "reason": "Header accounting dimension — not part of the simplified 7-field header form."
         },
         "asset": {
-          "visibility": "editable"
+          "visibility": "discarded",
+          "reason": "Header accounting dimension — not part of the simplified 7-field header form."
         },
         "salesCampaign": {
-          "visibility": "editable"
+          "visibility": "discarded",
+          "reason": "Header accounting dimension — not part of the simplified 7-field header form."
         },
         "stDimension": {
-          "visibility": "editable"
+          "visibility": "discarded",
+          "reason": "Header accounting dimension — not part of the simplified 7-field header form."
         },
         "ndDimension": {
-          "visibility": "editable"
+          "visibility": "discarded",
+          "reason": "Header accounting dimension — not part of the simplified 7-field header form."
         },
         "rate": {
           "visibility": "system",
           "reason": "CurrencyRate — derived from currency/period, not user-edited."
         },
         "posted": {
-          "visibility": "readOnly",
-          "reason": "Posting status — display only. Posting itself is deferred to workstream D."
+          "visibility": "system",
+          "reason": "Posting status — hidden under the hood. Posting itself is deferred to workstream D."
         },
         "documentAction": {
           "visibility": "discarded",
@@ -125,26 +132,25 @@
       "name": "gLJournalLine",
       "fields": {
         "lineNo": {
-          "visibility": "system",
+          "visibility": "readOnly",
           "grid": true,
-          "reason": "Line number — auto-sequenced, not user-edited."
+          "label": "LineNo",
+          "reason": "Line number — auto-sequenced, shown read-only as a grid column."
         },
         "gLItems": {
-          "visibility": "editable",
-          "grid": true,
-          "searchable": true,
-          "lookup": true,
-          "reason": "Account selector (Account_ID) — primary line dimension."
+          "visibility": "discarded",
+          "reason": "Multi-G/L account selector (Account_ID) — only relevant when Multi-General Ledger is on; out of scope for the simplified single-ledger journal."
         },
         "accountingCombination": {
           "visibility": "editable",
+          "grid": true,
           "lookup": true,
-          "reason": "Accounting combination (C_ValidCombination_ID) selector."
+          "label": "Account",
+          "reason": "Accounting combination (C_ValidCombination_ID) selector — the line's Account column."
         },
         "description": {
           "visibility": "editable",
-          "grid": true,
-          "section": "other"
+          "grid": true
         },
         "foreignCurrencyDebit": {
           "visibility": "editable",
@@ -157,34 +163,59 @@
           "reason": "Credit amount (AmtSourceCr) — drives the balanceFooter Σ credit."
         },
         "businessPartner": {
-          "visibility": "editable"
+          "visibility": "editable",
+          "grid": false,
+          "displayLogic": "@Open_Items@='Y'",
+          "displayLogicJs": "record['openItems'] === true",
+          "reason": "Open-Items dimension — form-only, shown only when the line's Open Items checkbox is ticked."
         },
         "product": {
-          "visibility": "editable"
+          "visibility": "editable",
+          "grid": false,
+          "displayLogic": "@Open_Items@='Y'",
+          "displayLogicJs": "record['openItems'] === true",
+          "reason": "Open-Items dimension — form-only, shown only when the line's Open Items checkbox is ticked."
         },
         "project": {
-          "visibility": "editable"
+          "visibility": "editable",
+          "grid": false,
+          "displayLogic": "@Open_Items@='Y'",
+          "displayLogicJs": "record['openItems'] === true",
+          "reason": "Open-Items dimension — form-only, shown only when the line's Open Items checkbox is ticked."
         },
         "activity": {
-          "visibility": "editable"
+          "visibility": "discarded",
+          "reason": "Extra accounting dimension not requested for the simplified line editor."
         },
         "salesCampaign": {
-          "visibility": "editable"
+          "visibility": "discarded",
+          "reason": "Extra accounting dimension not requested for the simplified line editor."
         },
         "salesRegion": {
-          "visibility": "editable"
+          "visibility": "discarded",
+          "reason": "Extra accounting dimension not requested for the simplified line editor."
         },
         "stDimension": {
-          "visibility": "editable"
+          "visibility": "discarded",
+          "reason": "Extra accounting dimension not requested for the simplified line editor."
         },
         "ndDimension": {
-          "visibility": "editable"
+          "visibility": "discarded",
+          "reason": "Extra accounting dimension not requested for the simplified line editor."
         },
         "asset": {
-          "visibility": "editable"
+          "visibility": "editable",
+          "grid": false,
+          "displayLogic": "@Open_Items@='Y'",
+          "displayLogicJs": "record['openItems'] === true",
+          "reason": "Open-Items dimension — form-only, shown only when the line's Open Items checkbox is ticked."
         },
         "costCenter": {
-          "visibility": "editable"
+          "visibility": "editable",
+          "grid": false,
+          "displayLogic": "@Open_Items@='Y'",
+          "displayLogicJs": "record['openItems'] === true",
+          "reason": "Open-Items dimension — form-only, shown only when the line's Open Items checkbox is ticked."
         },
         "debit": {
           "visibility": "system",
@@ -199,8 +230,9 @@
           "reason": "Line currency rate — derived, not user-edited."
         },
         "openItems": {
-          "visibility": "discarded",
-          "reason": "Payment integration — dropped for V1 (spec §2)."
+          "visibility": "editable",
+          "grid": false,
+          "reason": "Open Items checkbox — lives in the side-panel line editor; toggling it reveals the per-line dimensions (businessPartner/product/project/costCenter/asset)."
         },
         "financialAccount": {
           "visibility": "discarded",

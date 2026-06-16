@@ -8,9 +8,9 @@ This is **slice 1 of workstream C (Manual Journals Simplified)** under ETP-4244.
 
 ## What this window should allow
 
-- Create and review journal headers with Description, Document Type, Document Date, Accounting Date, Period, and Currency.
-- Capture optional header accounting dimensions (Business Partner, Product, Project, Cost Center, Asset, Sales Campaign, 1st/2nd Dimension) and the Opening / Multi-Ledger flags.
-- Add one or more journal lines under a header, each with an account, an optional description, a debit amount, a credit amount, and optional line dimensions.
+- Create and review journal headers with a focused 7-field form: Description, Document Date, Accounting Date, Period, Currency, Opening, and Multi-Ledger.
+- Add one or more journal lines under a header, each with an account, an optional description, a debit amount, and a credit amount.
+- Optionally flag a line as **Open Items**, which reveals per-line accounting dimensions (Business Partner, Product, Project, Cost Center, Asset) in the line editor.
 - See a live **balance footer** below the lines: total debit, total credit, the difference, and a balanced ✓ / unbalanced ✗ badge.
 - Be prevented from saving the document while the entry is unbalanced (the Save button is disabled with an explanatory tooltip).
 
@@ -20,41 +20,49 @@ This is **slice 1 of workstream C (Manual Journals Simplified)** under ETP-4244.
 - **Visibility:** visible from the **Finance** menu as **Manual Journals** (es: **Asientos Manuales**), wired via `menus["Manual Journals"]` in both locales.
 - **Implementation type:** fully generated window (no custom components, no `NeoHandler` for this slice). CRUD runs through NEO Headless generic CRUD.
 - **Window shape:** master-detail. The header entity is `gLJournal` (table `GL_Journal`) and the line entity is `gLJournalLine` (table `GL_JournalLine`). The two Classic auxiliary tabs — `Fact_Acct` (posting result) and `C_Conversion_Rate_Document` (document rates) — are **dropped** (`exclude: true`) for V1.
-- **Lines tab layout:** `window.linesLayout = "inlineEditable"`. Rows render inline with pencil/trash hover actions; clicking pencil flips the row into inline edit, trash removes the row after confirmation. See `docs/ui-customization.md` section 13 for the full inline-editable reference.
+- **Lines tab layout:** classic grid + side-panel editor (no `linesLayout` declared). The lines table shows the five core columns; clicking a row opens a side panel for editing, where the Open Items toggle and its dependent dimensions live.
 - An **Attachments** tab is available in the detail tab strip.
 
 ## Header fields
 
+The header form shows **exactly 7 editable fields**. Everything else is hidden (system) or discarded.
+
 | Field (curated) | Column | Visibility | Notes |
 |---|---|---|---|
-| `documentNo` | DocumentNo | system (read-only) | Auto-sequenced by NEO on POST; shown in the grid, not user-editable. |
-| `description` | Description | editable | Required; grid + searchable. |
-| `documentType` | C_DocType_ID | editable | Document type selector. |
-| `documentDate` | DateDoc | editable | Defaults to today (`@#Date@`). |
+| `description` | Description | editable | Required; the only header field also shown in the journal list grid + searchable. |
+| `documentDate` | DateDoc | editable | Defaults to today. |
 | `accountingDate` | DateAcct | editable | Defaults to today. |
 | `period` | C_Period_ID | editable | Accounting period. |
 | `currency` | C_Currency_ID | editable | Journal currency. |
 | `opening` | IsOpening | editable | Marks an opening-balance journal. |
 | `multigeneralLedger` | Multi_Gl | editable | Multi-ledger flag. |
-| dimensions | C_Bpartner_ID, M_Product_ID, C_Project_ID, C_Costcenter_ID, A_Asset_ID, C_Campaign_ID, User1_ID, User2_ID | editable | Optional accounting dimensions. |
+| `documentNo` | DocumentNo | system | Auto-sequenced by NEO on POST; not shown on the form. |
+| `documentType` | C_DocType_ID | system | Hidden but still defaulted under the hood (`DocBaseType='GLJ'`) — needed for posting/sequencing later. **Not discarded.** |
+| `posted` | Posted | system | Posting status, hidden (posting deferred to workstream D). |
 | `rate` | CurrencyRate | system | Derived currency rate, hidden. |
-| `posted` | Posted | read-only | Posting status display only (posting deferred). |
+| header dimensions | C_Bpartner_ID, M_Product_ID, C_Project_ID, C_Costcenter_ID, A_Asset_ID, C_Campaign_ID, User1_ID, User2_ID | discarded | Accounting dimensions removed from the header form / "Others" section. |
 | `documentAction`, `accountingSchema`, `totalDebitAmount`, `totalCreditAmount`, `controlAmount`, `currencyRateType`, `gLCategory`, `postingType`, `documentStatus` | — | discarded | Posting/completion-flow and header-total fields not needed in the simplified UI (totals are replaced by the live balance footer). |
 
 ## Line entry
 
-| Field (curated) | Column | Visibility | Notes |
-|---|---|---|---|
-| `lineNo` | Line | system | Auto-sequenced line number. |
-| `gLItems` | Account_ID | editable | Account selector (lookup). |
-| `accountingCombination` | C_ValidCombination_ID | editable | Accounting-combination selector. |
-| `description` | Description | editable | Optional line note. |
-| `foreignCurrencyDebit` | AmtSourceDr | editable, amount, required | **Debit** — feeds the balance footer Σ debit. |
-| `foreignCurrencyCredit` | AmtSourceCr | editable, amount, required | **Credit** — feeds the balance footer Σ credit. |
-| dimensions | C_Bpartner_ID, M_Product_ID, C_Project_ID, C_Activity_ID, C_Campaign_ID, C_Salesregion_ID, User1_ID, User2_ID, A_Asset_ID, C_Costcenter_ID | editable | Optional line accounting dimensions. |
-| `debit` / `credit` | AmtAcctDr / AmtAcctCr | system | Posting-derived accounted amounts, hidden from the user. |
-| `rate` | CurrencyRate | system | Line currency rate, derived. |
-| `openItems`, `financialAccount`, `paymentMethod`, `paymentDate`, `relatedPayment`, `aPRMAddPayment`, `gLItem` | Open_Items, FIN_Financial_Account_ID, FIN_Paymentmethod_ID, Paymentdate, FIN_Payment_ID, EM_Aprm_Addpayment, C_Glitem_ID | discarded | Payment-integration fields dropped for V1 (spec §2). `EM_*` also caught by `discardPatterns`. |
+**Lines grid columns (exactly five):** `lineNo` (LineNo, read-only), `accountingCombination` (Account), `description`, `foreignCurrencyDebit` (Debit), `foreignCurrencyCredit` (Credit). No dimension columns appear in the grid.
+
+The side-panel line editor additionally exposes the **Open Items** checkbox and, when it is ticked, the five per-line dimensions.
+
+| Field (curated) | Column | Grid? | Visibility | Notes |
+|---|---|---|---|---|
+| `lineNo` | Line | grid | readOnly | Auto-sequenced line number, displayed read-only (label **LineNo**). |
+| `accountingCombination` | C_ValidCombination_ID | grid | editable | Accounting-combination selector (label **Account**, lookup). |
+| `description` | Description | grid | editable | Optional line note. |
+| `foreignCurrencyDebit` | AmtSourceDr | grid | editable, amount, required | **Debit** — feeds the balance footer Σ debit. |
+| `foreignCurrencyCredit` | AmtSourceCr | grid | editable, amount, required | **Credit** — feeds the balance footer Σ credit. |
+| `openItems` | Open_Items | form-only | editable | **Open Items** checkbox in the side panel; toggling it reveals the dimensions below. |
+| `businessPartner`, `product`, `project`, `costCenter`, `asset` | C_Bpartner_ID, M_Product_ID, C_Project_ID, C_Costcenter_ID, A_Asset_ID | form-only | editable | Per-line dimensions, **only visible when Open Items is ticked** — each carries `displayLogic: (record) => record['openItems'] === true` so `EntityForm` shows/hides them against the editing record. |
+| `gLItems` | Account_ID | — | discarded | Multi-G/L account selector — only relevant under Multi-General Ledger, out of scope for the simplified single-ledger journal. |
+| `activity`, `salesCampaign`, `salesRegion`, `stDimension`, `ndDimension` | C_Activity_ID, C_Campaign_ID, C_Salesregion_ID, User1_ID, User2_ID | — | discarded | Extra accounting dimensions not requested for the simplified line editor. |
+| `debit` / `credit` | AmtAcctDr / AmtAcctCr | — | system | Posting-derived accounted amounts, hidden from the user. |
+| `rate` | CurrencyRate | — | system | Line currency rate, derived. |
+| `financialAccount`, `paymentMethod`, `paymentDate`, `relatedPayment`, `aPRMAddPayment`, `gLItem` | FIN_Financial_Account_ID, FIN_Paymentmethod_ID, Paymentdate, FIN_Payment_ID, EM_Aprm_Addpayment, C_Glitem_ID | — | discarded | Payment-integration fields dropped for V1 (spec §2). `EM_*` also caught by `discardPatterns`. |
 
 ## Balance rule (core behavior)
 
@@ -68,16 +76,17 @@ This window declares `window.balanceFooter = { "debitField": "foreignCurrencyDeb
 
 ## Gap assessment
 
-- **Posting is out of scope for this slice.** There is no Post action, no posting integration, and no scheduled auto-posting. `Posted` is shown read-only for information only; `DocAction` and posting-only fields are discarded. Posting arrives in workstream D (which itself depends on the predefined accounting schema, ETP-4245).
+- **Posting is out of scope for this slice.** There is no Post action, no posting integration, and no scheduled auto-posting. `Posted` and `documentType` are kept as hidden **system** fields (defaulted under the hood so a later posting slice can use them); `DocAction` and posting-only fields are discarded. Posting arrives in workstream D (which itself depends on the predefined accounting schema, ETP-4245).
 - **Multi-currency document rates** (`C_Conversion_Rate_Document`) and the **posting result view** (`Fact_Acct`) are dropped for V1.
-- **Payment integration** on lines (`FIN_*`, add-payment, open items, payment date/id) is dropped for V1.
+- **Payment integration** on lines (`FIN_*`, add-payment, payment date/id) is dropped for V1. The **Open Items** checkbox is kept — but in this slice it only gates the visibility of the per-line accounting dimensions; it does not wire up payment creation.
 - The balance footer enforces debit = credit at the UI level; it does not assert that NEO's generic CRUD performs any additional server-side accounting validation beyond persisting the rows.
 
 ## Manual verification
 
-1. Open `/simple-g-l-journal` and create a new header. Confirm Description, Document Type, Document/Accounting Date, Period, and Currency can be entered; confirm Document No is shown but not editable.
+1. Open `/simple-g-l-journal` and create a new header. Confirm the form shows exactly seven fields — Description, Document Date, Accounting Date, Period, Currency, Opening, and Multi-Ledger — and that no Document No, Document Type, or accounting-dimension fields appear on the header form.
 2. Open the saved record and add a line with a debit of 100 and credit of 0. Confirm the balance footer shows the entry as **unbalanced** and the Save button is disabled.
 3. Add a second line with a credit of 100 (debit 0). Confirm the footer flips to **balanced ✓**, the difference reads 0, and Save becomes enabled.
 4. Save successfully, then edit a line to make the totals differ (e.g. credit 60). Confirm the footer returns to **unbalanced ✗** and Save is blocked again.
-5. Confirm `Posted` is visible but read-only and that no Post/Complete action is offered (posting deferred).
-6. Confirm the window appears in the Finance menu as **Manual Journals** (es: **Asientos Manuales**).
+5. Confirm no Post/Complete action is offered and no posting status field is shown (posting deferred; `Posted` is hidden).
+6. Open a line in the side panel, tick **Open Items**, and confirm the five dimension fields (Business Partner, Product, Project, Cost Center, Asset) appear; untick it and confirm they hide again.
+7. Confirm the window appears in the Finance menu as **Manual Journals** (es: **Asientos Manuales**).

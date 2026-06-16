@@ -3,14 +3,15 @@ import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 
 // @sf-generated-start columns:gLJournalLine
 const columns = [
-  { key: 'gLItems', column: 'Account_ID', type: 'selector', label: 'GL Item', lookup: true },
+  { key: 'lineNo', column: 'Line', type: 'number', label: 'LineNo', required: true },
+  { key: 'accountingCombination', column: 'C_ValidCombination_ID', type: 'selector', label: 'Account', lookup: true },
   { key: 'description', column: 'Description', type: 'string', label: 'Description' },
   { key: 'foreignCurrencyDebit', column: 'AmtSourceDr', type: 'amount', label: 'Debit', required: true },
   { key: 'foreignCurrencyCredit', column: 'AmtSourceCr', type: 'amount', label: 'Credit', required: true },
 ];
 // @sf-generated-end columns:gLJournalLine
 
-const filters = ['gLItems'];
+const filters = [];
 
 // @sf-generated-start component:GLJournalLineTable
 const GLJournalLineTable = forwardRef(function GLJournalLineTable(props, ref) {

@@ -1,7 +1,8 @@
 {
-  "version": "0.1.0",
+  "version": "0.3.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "checksum": "02e9ddfc53dc0472",
+  "updatedAt": "2026-06-16T17:42:44.269Z",
+  "checksum": "8d9b2f33ac7ec80e",
   "frontendContract": {
     "window": {
       "id": "B917E8A7B0864ACEA9D941E3B7494E53",
@@ -10,7 +11,6 @@
       "category": "finance",
       "breadcrumb": "Finance / Manual Journals",
       "layoutType": "default",
-      "linesLayout": "inlineEditable",
       "balanceFooter": {
         "debitField": "foreignCurrencyDebit",
         "creditField": "foreignCurrencyCredit"
@@ -40,35 +40,6 @@
               "source": "context.description0"
             },
             "defaultValue": "@DESCRIPTION0@"
-          },
-          {
-            "name": "documentType",
-            "apiKey": "documentType",
-            "column": "C_DocType_ID",
-            "label": "Document Type",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": true,
-            "grid": false,
-            "form": true,
-            "sourceRequired": true,
-            "derivation": {
-              "type": "fromConfig",
-              "source": "doctype.salesOrder"
-            },
-            "reference": "DocType",
-            "inputMode": "selector",
-            "defaultValue": "@SQL=SELECT C_DocType_ID from C_DocType WHERE C_DocType.DocBaseType='GLJ' AND AD_ISORGINCLUDED( @AD_Org_ID@, C_DocType.AD_Org_ID, @#AD_Client_ID@) <> '-1' ORDER BY C_DocType.isdefault DESC",
-            "validationRule": {
-              "code": "C_DocType.DocBaseType='GLJ' AND AD_ISORGINCLUDED( @AD_Org_ID@, C_DocType.AD_Org_ID, @#AD_Client_ID@) <> '-1'",
-              "contextParams": [
-                "AD_Client_ID"
-              ],
-              "cascadeParams": [
-                "AD_Org_ID"
-              ]
-            }
           },
           {
             "name": "documentDate",
@@ -216,230 +187,6 @@
               "evaluable": true,
               "js": "record['processed'] === true"
             }
-          },
-          {
-            "name": "posted",
-            "apiKey": "posted",
-            "column": "Posted",
-            "label": "Posted",
-            "type": "button",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": true,
-            "grid": false,
-            "form": true,
-            "sourceRequired": true,
-            "derivation": {
-              "type": "computed",
-              "source": "'N'"
-            },
-            "defaultValue": "N",
-            "displayLogic": {
-              "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
-              "evaluable": false,
-              "reason": "session-preference",
-              "js": null
-            }
-          },
-          {
-            "name": "businessPartner",
-            "apiKey": "businessPartner",
-            "column": "C_Bpartner_ID",
-            "label": "Business Partner",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "BPartner",
-            "inputMode": "search",
-            "displayLogic": {
-              "raw": "@ACCT_DIMENSION_DISPLAY@",
-              "evaluable": false,
-              "reason": "server-macro",
-              "js": null
-            },
-            "readOnlyLogic": {
-              "raw": "@Posted@='Y'",
-              "evaluable": true,
-              "js": "record['posted'] === 'Y'"
-            }
-          },
-          {
-            "name": "product",
-            "apiKey": "product",
-            "column": "M_Product_ID",
-            "label": "Product",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "Product",
-            "inputMode": "search",
-            "displayLogic": {
-              "raw": "@ACCT_DIMENSION_DISPLAY@",
-              "evaluable": false,
-              "reason": "server-macro",
-              "js": null
-            },
-            "readOnlyLogic": {
-              "raw": "@Posted@='Y'",
-              "evaluable": true,
-              "js": "record['posted'] === 'Y'"
-            }
-          },
-          {
-            "name": "project",
-            "apiKey": "project",
-            "column": "C_Project_ID",
-            "label": "Project",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "Project",
-            "inputMode": "selector",
-            "displayLogic": {
-              "raw": "@ACCT_DIMENSION_DISPLAY@",
-              "evaluable": false,
-              "reason": "server-macro",
-              "js": null
-            },
-            "readOnlyLogic": {
-              "raw": "@Posted@='Y'",
-              "evaluable": true,
-              "js": "record['posted'] === 'Y'"
-            }
-          },
-          {
-            "name": "costCenter",
-            "apiKey": "costCenter",
-            "column": "C_Costcenter_ID",
-            "label": "Cost Center",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "Costcenter",
-            "inputMode": "selector",
-            "displayLogic": {
-              "raw": "@ACCT_DIMENSION_DISPLAY@",
-              "evaluable": false,
-              "reason": "server-macro",
-              "js": null
-            },
-            "readOnlyLogic": {
-              "raw": "@Posted@='Y'",
-              "evaluable": true,
-              "js": "record['posted'] === 'Y'"
-            }
-          },
-          {
-            "name": "asset",
-            "apiKey": "asset",
-            "column": "A_Asset_ID",
-            "label": "Asset",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "Asset",
-            "inputMode": "selector",
-            "displayLogic": {
-              "raw": "@$Element_AS@='Y'",
-              "evaluable": false,
-              "reason": "accounting-dimension",
-              "js": null
-            },
-            "readOnlyLogic": {
-              "raw": "@Posted@='Y'",
-              "evaluable": true,
-              "js": "record['posted'] === 'Y'"
-            }
-          },
-          {
-            "name": "salesCampaign",
-            "apiKey": "salesCampaign",
-            "column": "C_Campaign_ID",
-            "label": "Sales Campaign",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "Campaign",
-            "inputMode": "selector",
-            "displayLogic": {
-              "raw": "@$Element_MC@='Y'",
-              "evaluable": false,
-              "reason": "accounting-dimension",
-              "js": null
-            },
-            "readOnlyLogic": {
-              "raw": "@Posted@='Y'",
-              "evaluable": true,
-              "js": "record['posted'] === 'Y'"
-            }
-          },
-          {
-            "name": "stDimension",
-            "apiKey": "stDimension",
-            "column": "User1_ID",
-            "label": "1st Dimension",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "User1",
-            "inputMode": "selector",
-            "displayLogic": {
-              "raw": "@ACCT_DIMENSION_DISPLAY@",
-              "evaluable": false,
-              "reason": "server-macro",
-              "js": null
-            },
-            "readOnlyLogic": {
-              "raw": "@Posted@='Y'",
-              "evaluable": true,
-              "js": "record['posted'] === 'Y'"
-            }
-          },
-          {
-            "name": "ndDimension",
-            "apiKey": "ndDimension",
-            "column": "User2_ID",
-            "label": "2nd Dimension",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "User2",
-            "inputMode": "selector",
-            "displayLogic": {
-              "raw": "@ACCT_DIMENSION_DISPLAY@",
-              "evaluable": false,
-              "reason": "server-macro",
-              "js": null
-            },
-            "readOnlyLogic": {
-              "raw": "@Posted@='Y'",
-              "evaluable": true,
-              "js": "record['posted'] === 'Y'"
-            }
           }
         ],
         "searchableFields": [
@@ -451,13 +198,6 @@
             "derivation": {
               "type": "fromConfig",
               "source": "context.description0"
-            }
-          },
-          {
-            "name": "documentType",
-            "derivation": {
-              "type": "fromConfig",
-              "source": "doctype.salesOrder"
             }
           },
           {
@@ -501,13 +241,6 @@
               "type": "computed",
               "source": "N"
             }
-          },
-          {
-            "name": "posted",
-            "derivation": {
-              "type": "computed",
-              "source": "'N'"
-            }
           }
         ]
       },
@@ -518,37 +251,26 @@
         "uiPattern": "STD",
         "fields": [
           {
-            "name": "gLItems",
-            "apiKey": "gLItems",
-            "column": "Account_ID",
-            "label": "GL Item",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
+            "name": "lineNo",
+            "apiKey": "lineNo",
+            "column": "Line",
+            "label": "LineNo",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": true,
             "grid": true,
             "form": true,
-            "reference": "Glitem",
-            "inputMode": "search",
-            "lookup": true,
-            "validationRule": {
-              "code": "@Multi_Gl@='Y'",
-              "contextParams": [],
-              "cascadeParams": [
-                "Multi_Gl"
-              ]
+            "sourceRequired": true,
+            "derivation": {
+              "type": "lookup",
+              "source": "SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM GL_JournalLine WHERE GL_Journal_ID=@GL_Journal_ID@"
             },
-            "callout": {
-              "className": "org.openbravo.erpCommon.ad_callouts.SL_Journal_MultiAcctSchema"
-            },
-            "displayLogic": {
-              "raw": "@Multi_Gl@='Y'",
-              "evaluable": true
-            },
+            "defaultValue": "@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM GL_JournalLine WHERE GL_Journal_ID=@GL_Journal_ID@",
             "readOnlyLogic": {
-              "raw": "@Processed@='Y' | @Multi_Gl@='N'",
+              "raw": "@Processed@='Y'",
               "evaluable": true,
-              "js": "record['processed'] === true || record['multigeneralLedger'] !== true"
+              "js": "record['processed'] === true"
             }
           },
           {
@@ -560,7 +282,7 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
+            "grid": true,
             "form": true,
             "reference": "ValidCombination",
             "inputMode": "selector",
@@ -591,7 +313,6 @@
               "source": "context.description1"
             },
             "defaultValue": "@DESCRIPTION1@",
-            "section": "other",
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -641,6 +362,24 @@
             }
           },
           {
+            "name": "openItems",
+            "apiKey": "openItems",
+            "column": "Open_Items",
+            "label": "Open Items",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "defaultValue": "N"
+          },
+          {
             "name": "businessPartner",
             "apiKey": "businessPartner",
             "column": "C_Bpartner_ID",
@@ -654,10 +393,9 @@
             "reference": "BPartner",
             "inputMode": "search",
             "displayLogic": {
-              "raw": "@Open_Items@='Y' | @ACCT_DIMENSION_DISPLAY@",
-              "evaluable": false,
-              "reason": "server-macro",
-              "js": null
+              "raw": "@Open_Items@='Y'",
+              "evaluable": true,
+              "js": "record['openItems'] === true"
             },
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | @FIN_Payment_ID@ ! ''",
@@ -680,10 +418,9 @@
             "reference": "Product",
             "inputMode": "selector",
             "displayLogic": {
-              "raw": "@ACCT_DIMENSION_DISPLAY@",
-              "evaluable": false,
-              "reason": "server-macro",
-              "js": null
+              "raw": "@Open_Items@='Y'",
+              "evaluable": true,
+              "js": "record['openItems'] === true"
             },
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
@@ -705,135 +442,9 @@
             "reference": "Project",
             "inputMode": "search",
             "displayLogic": {
-              "raw": "@ACCT_DIMENSION_DISPLAY@",
-              "evaluable": false,
-              "reason": "server-macro",
-              "js": null
-            },
-            "readOnlyLogic": {
-              "raw": "@Posted@='Y'",
+              "raw": "@Open_Items@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
-            }
-          },
-          {
-            "name": "activity",
-            "apiKey": "activity",
-            "column": "C_Activity_ID",
-            "label": "Activity",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "Activity",
-            "inputMode": "selector",
-            "displayLogic": {
-              "raw": "@$Element_AY@='Y'",
-              "evaluable": false,
-              "reason": "accounting-dimension",
-              "js": null
-            },
-            "readOnlyLogic": {
-              "raw": "@Posted@='Y'",
-              "evaluable": true,
-              "js": "record['posted'] === 'Y'"
-            }
-          },
-          {
-            "name": "salesCampaign",
-            "apiKey": "salesCampaign",
-            "column": "C_Campaign_ID",
-            "label": "Sales Campaign",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "Campaign",
-            "inputMode": "selector",
-            "displayLogic": {
-              "raw": "@$Element_MC@='Y'",
-              "evaluable": false,
-              "reason": "accounting-dimension",
-              "js": null
-            },
-            "readOnlyLogic": {
-              "raw": "@Posted@='Y'",
-              "evaluable": true,
-              "js": "record['posted'] === 'Y'"
-            }
-          },
-          {
-            "name": "salesRegion",
-            "apiKey": "salesRegion",
-            "column": "C_Salesregion_ID",
-            "label": "Sales Region",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "Salesregion",
-            "inputMode": "selector",
-            "displayLogic": {
-              "raw": "@$Element_SR@='Y'",
-              "evaluable": false,
-              "reason": "accounting-dimension",
-              "js": null
-            },
-            "readOnlyLogic": {
-              "raw": "@Processed@='Y'",
-              "evaluable": true,
-              "js": "record['processed'] === true"
-            }
-          },
-          {
-            "name": "stDimension",
-            "apiKey": "stDimension",
-            "column": "User1_ID",
-            "label": "1st Dimension",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "User1",
-            "inputMode": "selector",
-            "displayLogic": {
-              "raw": "@ACCT_DIMENSION_DISPLAY@",
-              "evaluable": false,
-              "reason": "server-macro",
-              "js": null
-            },
-            "readOnlyLogic": {
-              "raw": "@Posted@='Y'",
-              "evaluable": true,
-              "js": "record['posted'] === 'Y'"
-            }
-          },
-          {
-            "name": "ndDimension",
-            "apiKey": "ndDimension",
-            "column": "User2_ID",
-            "label": "2nd Dimension",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "User2",
-            "inputMode": "selector",
-            "displayLogic": {
-              "raw": "@ACCT_DIMENSION_DISPLAY@",
-              "evaluable": false,
-              "reason": "server-macro",
-              "js": null
+              "js": "record['openItems'] === true"
             },
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
@@ -855,10 +466,9 @@
             "reference": "Asset",
             "inputMode": "selector",
             "displayLogic": {
-              "raw": "@$Element_AS@='Y'",
-              "evaluable": false,
-              "reason": "accounting-dimension",
-              "js": null
+              "raw": "@Open_Items@='Y'",
+              "evaluable": true,
+              "js": "record['openItems'] === true"
             },
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
@@ -880,10 +490,9 @@
             "reference": "Costcenter",
             "inputMode": "selector",
             "displayLogic": {
-              "raw": "@ACCT_DIMENSION_DISPLAY@",
-              "evaluable": false,
-              "reason": "server-macro",
-              "js": null
+              "raw": "@Open_Items@='Y'",
+              "evaluable": true,
+              "js": "record['openItems'] === true"
             },
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
@@ -892,15 +501,27 @@
             }
           }
         ],
-        "searchableFields": [
-          "gLItems"
-        ],
+        "searchableFields": [],
         "computedFields": [
+          {
+            "name": "lineNo",
+            "derivation": {
+              "type": "lookup",
+              "source": "SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM GL_JournalLine WHERE GL_Journal_ID=@GL_Journal_ID@"
+            }
+          },
           {
             "name": "description",
             "derivation": {
               "type": "fromConfig",
               "source": "context.description1"
+            }
+          },
+          {
+            "name": "openItems",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
             }
           }
         ]
@@ -914,7 +535,6 @@
       "primaryEntity": "gLJournal",
       "category": "finance",
       "breadcrumb": "Finance / Manual Journals",
-      "linesLayout": "inlineEditable",
       "balanceFooter": {
         "debitField": "foreignCurrencyDebit",
         "creditField": "foreignCurrencyCredit"
@@ -963,7 +583,7 @@
             "apiKey": "documentType",
             "column": "C_DocType_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "system",
             "required": true
           },
           {
@@ -1067,7 +687,7 @@
             "apiKey": "posted",
             "column": "Posted",
             "type": "button",
-            "visibility": "readOnly",
+            "visibility": "system",
             "required": true
           },
           {
@@ -1115,7 +735,7 @@
             "apiKey": "businessPartner",
             "column": "C_Bpartner_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1123,7 +743,7 @@
             "apiKey": "product",
             "column": "M_Product_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1131,7 +751,7 @@
             "apiKey": "project",
             "column": "C_Project_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1139,7 +759,7 @@
             "apiKey": "costCenter",
             "column": "C_Costcenter_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1147,7 +767,7 @@
             "apiKey": "asset",
             "column": "A_Asset_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1155,7 +775,7 @@
             "apiKey": "salesCampaign",
             "column": "C_Campaign_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1163,7 +783,7 @@
             "apiKey": "stDimension",
             "column": "User1_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1171,7 +791,7 @@
             "apiKey": "ndDimension",
             "column": "User2_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1274,7 +894,7 @@
             "apiKey": "lineNo",
             "column": "Line",
             "type": "integer",
-            "visibility": "system",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -1282,7 +902,7 @@
             "apiKey": "gLItems",
             "column": "Account_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1370,7 +990,7 @@
             "apiKey": "openItems",
             "column": "Open_Items",
             "type": "boolean",
-            "visibility": "discarded",
+            "visibility": "editable",
             "required": true
           },
           {
@@ -1498,7 +1118,7 @@
             "apiKey": "activity",
             "column": "C_Activity_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1506,7 +1126,7 @@
             "apiKey": "salesCampaign",
             "column": "C_Campaign_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1514,7 +1134,7 @@
             "apiKey": "salesRegion",
             "column": "C_Salesregion_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1522,7 +1142,7 @@
             "apiKey": "stDimension",
             "column": "User1_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1530,7 +1150,7 @@
             "apiKey": "ndDimension",
             "column": "User2_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1645,9 +1265,7 @@
         "method": "GET",
         "path": "/gLJournalLine",
         "entity": "gLJournalLine",
-        "supportedFilters": [
-          "gLItems"
-        ]
+        "supportedFilters": []
       },
       {
         "method": "GET",
@@ -1702,20 +1320,10 @@
         "delete": true,
         "listUrl": "/sws/neo/simple-g-l-journal/gLJournalLine",
         "detailUrl": "/sws/neo/simple-g-l-journal/gLJournalLine/{id}",
-        "supportedFilters": [
-          "gLItems"
-        ]
+        "supportedFilters": []
       }
     },
     "selectors": [
-      {
-        "entity": "gLJournal",
-        "field": "documentType",
-        "column": "C_DocType_ID",
-        "reference": "DocType",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/documentType"
-      },
       {
         "entity": "gLJournal",
         "field": "period",
@@ -1731,87 +1339,6 @@
         "reference": "Currency",
         "inputMode": "selector",
         "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/currency"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "businessPartner",
-        "column": "C_Bpartner_ID",
-        "reference": "BPartner",
-        "inputMode": "search",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/businessPartner"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "product",
-        "column": "M_Product_ID",
-        "reference": "Product",
-        "inputMode": "search",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/product"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "project",
-        "column": "C_Project_ID",
-        "reference": "Project",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/project"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "costCenter",
-        "column": "C_Costcenter_ID",
-        "reference": "Costcenter",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/costCenter"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "asset",
-        "column": "A_Asset_ID",
-        "reference": "Asset",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/asset"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "salesCampaign",
-        "column": "C_Campaign_ID",
-        "reference": "Campaign",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/salesCampaign"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "stDimension",
-        "column": "User1_ID",
-        "reference": "User1",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/stDimension"
-      },
-      {
-        "entity": "gLJournal",
-        "field": "ndDimension",
-        "column": "User2_ID",
-        "reference": "User2",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/ndDimension"
-      },
-      {
-        "entity": "gLJournalLine",
-        "field": "gLItems",
-        "column": "Account_ID",
-        "reference": "Glitem",
-        "inputMode": "search",
-        "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/gLItems",
-        "context": {
-          "required": [
-            {
-              "param": "Multi_Gl",
-              "source": "parentField",
-              "field": "multigeneralLedger"
-            }
-          ]
-        }
       },
       {
         "entity": "gLJournalLine",
@@ -1844,46 +1371,6 @@
         "reference": "Project",
         "inputMode": "search",
         "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/project"
-      },
-      {
-        "entity": "gLJournalLine",
-        "field": "activity",
-        "column": "C_Activity_ID",
-        "reference": "Activity",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/activity"
-      },
-      {
-        "entity": "gLJournalLine",
-        "field": "salesCampaign",
-        "column": "C_Campaign_ID",
-        "reference": "Campaign",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/salesCampaign"
-      },
-      {
-        "entity": "gLJournalLine",
-        "field": "salesRegion",
-        "column": "C_Salesregion_ID",
-        "reference": "Salesregion",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/salesRegion"
-      },
-      {
-        "entity": "gLJournalLine",
-        "field": "stDimension",
-        "column": "User1_ID",
-        "reference": "User1",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/stDimension"
-      },
-      {
-        "entity": "gLJournalLine",
-        "field": "ndDimension",
-        "column": "User2_ID",
-        "reference": "User2",
-        "inputMode": "selector",
-        "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/ndDimension"
       },
       {
         "entity": "gLJournalLine",
@@ -2030,14 +1517,6 @@
         "description": "Default value for 'documentDate' in gLJournal should be a string"
       },
       {
-        "id": "t-default-value-type-gLJournal-documentType",
-        "category": "default-value-type",
-        "entity": "gLJournal",
-        "field": "documentType",
-        "runner": "node",
-        "description": "Default value for 'documentType' in gLJournal should be a string"
-      },
-      {
         "id": "t-default-value-type-gLJournal-multigeneralLedger",
         "category": "default-value-type",
         "entity": "gLJournal",
@@ -2062,14 +1541,6 @@
         "description": "Default value for 'period' in gLJournal should be a string"
       },
       {
-        "id": "t-default-value-type-gLJournal-posted",
-        "category": "default-value-type",
-        "entity": "gLJournal",
-        "field": "posted",
-        "runner": "node",
-        "description": "Default value for 'posted' in gLJournal should be a string"
-      },
-      {
         "id": "t-default-value-type-gLJournalLine-description",
         "category": "default-value-type",
         "entity": "gLJournalLine",
@@ -2078,76 +1549,20 @@
         "description": "Default value for 'description' in gLJournalLine should be a string"
       },
       {
-        "id": "t-displaylogic-evaluable-gLJournal-asset",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "asset",
+        "id": "t-default-value-type-gLJournalLine-lineNo",
+        "category": "default-value-type",
+        "entity": "gLJournalLine",
+        "field": "lineNo",
         "runner": "node",
-        "description": "Display logic for 'asset' in gLJournal should have evaluable flag"
+        "description": "Default value for 'lineNo' in gLJournalLine should be a string"
       },
       {
-        "id": "t-displaylogic-evaluable-gLJournal-businessPartner",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "businessPartner",
+        "id": "t-default-value-type-gLJournalLine-openItems",
+        "category": "default-value-type",
+        "entity": "gLJournalLine",
+        "field": "openItems",
         "runner": "node",
-        "description": "Display logic for 'businessPartner' in gLJournal should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-evaluable-gLJournal-costCenter",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "costCenter",
-        "runner": "node",
-        "description": "Display logic for 'costCenter' in gLJournal should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-evaluable-gLJournal-ndDimension",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Display logic for 'ndDimension' in gLJournal should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-evaluable-gLJournal-posted",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "posted",
-        "runner": "node",
-        "description": "Display logic for 'posted' in gLJournal should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-evaluable-gLJournal-product",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "product",
-        "runner": "node",
-        "description": "Display logic for 'product' in gLJournal should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-evaluable-gLJournal-project",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "project",
-        "runner": "node",
-        "description": "Display logic for 'project' in gLJournal should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-evaluable-gLJournal-salesCampaign",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "Display logic for 'salesCampaign' in gLJournal should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-evaluable-gLJournal-stDimension",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Display logic for 'stDimension' in gLJournal should have evaluable flag"
+        "description": "Default value for 'openItems' in gLJournalLine should be a string"
       },
       {
         "id": "t-displaylogic-evaluable-gLJournalLine-accountingCombination",
@@ -2156,14 +1571,6 @@
         "field": "accountingCombination",
         "runner": "node",
         "description": "Display logic for 'accountingCombination' in gLJournalLine should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-evaluable-gLJournalLine-activity",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournalLine",
-        "field": "activity",
-        "runner": "node",
-        "description": "Display logic for 'activity' in gLJournalLine should have evaluable flag"
       },
       {
         "id": "t-displaylogic-evaluable-gLJournalLine-asset",
@@ -2190,22 +1597,6 @@
         "description": "Display logic for 'costCenter' in gLJournalLine should have evaluable flag"
       },
       {
-        "id": "t-displaylogic-evaluable-gLJournalLine-gLItems",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournalLine",
-        "field": "gLItems",
-        "runner": "node",
-        "description": "Display logic for 'gLItems' in gLJournalLine should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-evaluable-gLJournalLine-ndDimension",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournalLine",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Display logic for 'ndDimension' in gLJournalLine should have evaluable flag"
-      },
-      {
         "id": "t-displaylogic-evaluable-gLJournalLine-product",
         "category": "displaylogic-evaluable",
         "entity": "gLJournalLine",
@@ -2222,116 +1613,12 @@
         "description": "Display logic for 'project' in gLJournalLine should have evaluable flag"
       },
       {
-        "id": "t-displaylogic-evaluable-gLJournalLine-salesCampaign",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournalLine",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "Display logic for 'salesCampaign' in gLJournalLine should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-evaluable-gLJournalLine-salesRegion",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournalLine",
-        "field": "salesRegion",
-        "runner": "node",
-        "description": "Display logic for 'salesRegion' in gLJournalLine should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-evaluable-gLJournalLine-stDimension",
-        "category": "displaylogic-evaluable",
-        "entity": "gLJournalLine",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Display logic for 'stDimension' in gLJournalLine should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-valid-gLJournal-asset",
-        "category": "displaylogic-valid",
-        "entity": "gLJournal",
-        "field": "asset",
-        "runner": "node",
-        "description": "Display logic for 'asset' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-gLJournal-businessPartner",
-        "category": "displaylogic-valid",
-        "entity": "gLJournal",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Display logic for 'businessPartner' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-gLJournal-costCenter",
-        "category": "displaylogic-valid",
-        "entity": "gLJournal",
-        "field": "costCenter",
-        "runner": "node",
-        "description": "Display logic for 'costCenter' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-gLJournal-ndDimension",
-        "category": "displaylogic-valid",
-        "entity": "gLJournal",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Display logic for 'ndDimension' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-gLJournal-posted",
-        "category": "displaylogic-valid",
-        "entity": "gLJournal",
-        "field": "posted",
-        "runner": "node",
-        "description": "Display logic for 'posted' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-gLJournal-product",
-        "category": "displaylogic-valid",
-        "entity": "gLJournal",
-        "field": "product",
-        "runner": "node",
-        "description": "Display logic for 'product' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-gLJournal-project",
-        "category": "displaylogic-valid",
-        "entity": "gLJournal",
-        "field": "project",
-        "runner": "node",
-        "description": "Display logic for 'project' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-gLJournal-salesCampaign",
-        "category": "displaylogic-valid",
-        "entity": "gLJournal",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "Display logic for 'salesCampaign' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-gLJournal-stDimension",
-        "category": "displaylogic-valid",
-        "entity": "gLJournal",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Display logic for 'stDimension' in gLJournal should be valid JS"
-      },
-      {
         "id": "t-displaylogic-valid-gLJournalLine-accountingCombination",
         "category": "displaylogic-valid",
         "entity": "gLJournalLine",
         "field": "accountingCombination",
         "runner": "node",
         "description": "Display logic for 'accountingCombination' in gLJournalLine should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-gLJournalLine-activity",
-        "category": "displaylogic-valid",
-        "entity": "gLJournalLine",
-        "field": "activity",
-        "runner": "node",
-        "description": "Display logic for 'activity' in gLJournalLine should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-gLJournalLine-asset",
@@ -2358,22 +1645,6 @@
         "description": "Display logic for 'costCenter' in gLJournalLine should be valid JS"
       },
       {
-        "id": "t-displaylogic-valid-gLJournalLine-gLItems",
-        "category": "displaylogic-valid",
-        "entity": "gLJournalLine",
-        "field": "gLItems",
-        "runner": "node",
-        "description": "Display logic for 'gLItems' in gLJournalLine should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-gLJournalLine-ndDimension",
-        "category": "displaylogic-valid",
-        "entity": "gLJournalLine",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Display logic for 'ndDimension' in gLJournalLine should be valid JS"
-      },
-      {
         "id": "t-displaylogic-valid-gLJournalLine-product",
         "category": "displaylogic-valid",
         "entity": "gLJournalLine",
@@ -2390,60 +1661,12 @@
         "description": "Display logic for 'project' in gLJournalLine should be valid JS"
       },
       {
-        "id": "t-displaylogic-valid-gLJournalLine-salesCampaign",
-        "category": "displaylogic-valid",
-        "entity": "gLJournalLine",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "Display logic for 'salesCampaign' in gLJournalLine should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-gLJournalLine-salesRegion",
-        "category": "displaylogic-valid",
-        "entity": "gLJournalLine",
-        "field": "salesRegion",
-        "runner": "node",
-        "description": "Display logic for 'salesRegion' in gLJournalLine should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-gLJournalLine-stDimension",
-        "category": "displaylogic-valid",
-        "entity": "gLJournalLine",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Display logic for 'stDimension' in gLJournalLine should be valid JS"
-      },
-      {
         "id": "t-field-presence-gLJournal-accountingDate",
         "category": "field-presence",
         "entity": "gLJournal",
         "field": "accountingDate",
         "runner": "node",
         "description": "Field 'accountingDate' should be present in gLJournal"
-      },
-      {
-        "id": "t-field-presence-gLJournal-asset",
-        "category": "field-presence",
-        "entity": "gLJournal",
-        "field": "asset",
-        "runner": "node",
-        "description": "Field 'asset' should be present in gLJournal"
-      },
-      {
-        "id": "t-field-presence-gLJournal-businessPartner",
-        "category": "field-presence",
-        "entity": "gLJournal",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Field 'businessPartner' should be present in gLJournal"
-      },
-      {
-        "id": "t-field-presence-gLJournal-costCenter",
-        "category": "field-presence",
-        "entity": "gLJournal",
-        "field": "costCenter",
-        "runner": "node",
-        "description": "Field 'costCenter' should be present in gLJournal"
       },
       {
         "id": "t-field-presence-gLJournal-currency",
@@ -2470,28 +1693,12 @@
         "description": "Field 'documentDate' should be present in gLJournal"
       },
       {
-        "id": "t-field-presence-gLJournal-documentType",
-        "category": "field-presence",
-        "entity": "gLJournal",
-        "field": "documentType",
-        "runner": "node",
-        "description": "Field 'documentType' should be present in gLJournal"
-      },
-      {
         "id": "t-field-presence-gLJournal-multigeneralLedger",
         "category": "field-presence",
         "entity": "gLJournal",
         "field": "multigeneralLedger",
         "runner": "node",
         "description": "Field 'multigeneralLedger' should be present in gLJournal"
-      },
-      {
-        "id": "t-field-presence-gLJournal-ndDimension",
-        "category": "field-presence",
-        "entity": "gLJournal",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Field 'ndDimension' should be present in gLJournal"
       },
       {
         "id": "t-field-presence-gLJournal-opening",
@@ -2510,60 +1717,12 @@
         "description": "Field 'period' should be present in gLJournal"
       },
       {
-        "id": "t-field-presence-gLJournal-posted",
-        "category": "field-presence",
-        "entity": "gLJournal",
-        "field": "posted",
-        "runner": "node",
-        "description": "Field 'posted' should be present in gLJournal"
-      },
-      {
-        "id": "t-field-presence-gLJournal-product",
-        "category": "field-presence",
-        "entity": "gLJournal",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should be present in gLJournal"
-      },
-      {
-        "id": "t-field-presence-gLJournal-project",
-        "category": "field-presence",
-        "entity": "gLJournal",
-        "field": "project",
-        "runner": "node",
-        "description": "Field 'project' should be present in gLJournal"
-      },
-      {
-        "id": "t-field-presence-gLJournal-salesCampaign",
-        "category": "field-presence",
-        "entity": "gLJournal",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "Field 'salesCampaign' should be present in gLJournal"
-      },
-      {
-        "id": "t-field-presence-gLJournal-stDimension",
-        "category": "field-presence",
-        "entity": "gLJournal",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Field 'stDimension' should be present in gLJournal"
-      },
-      {
         "id": "t-field-presence-gLJournalLine-accountingCombination",
         "category": "field-presence",
         "entity": "gLJournalLine",
         "field": "accountingCombination",
         "runner": "node",
         "description": "Field 'accountingCombination' should be present in gLJournalLine"
-      },
-      {
-        "id": "t-field-presence-gLJournalLine-activity",
-        "category": "field-presence",
-        "entity": "gLJournalLine",
-        "field": "activity",
-        "runner": "node",
-        "description": "Field 'activity' should be present in gLJournalLine"
       },
       {
         "id": "t-field-presence-gLJournalLine-asset",
@@ -2614,20 +1773,20 @@
         "description": "Field 'foreignCurrencyDebit' should be present in gLJournalLine"
       },
       {
-        "id": "t-field-presence-gLJournalLine-gLItems",
+        "id": "t-field-presence-gLJournalLine-lineNo",
         "category": "field-presence",
         "entity": "gLJournalLine",
-        "field": "gLItems",
+        "field": "lineNo",
         "runner": "node",
-        "description": "Field 'gLItems' should be present in gLJournalLine"
+        "description": "Field 'lineNo' should be present in gLJournalLine"
       },
       {
-        "id": "t-field-presence-gLJournalLine-ndDimension",
+        "id": "t-field-presence-gLJournalLine-openItems",
         "category": "field-presence",
         "entity": "gLJournalLine",
-        "field": "ndDimension",
+        "field": "openItems",
         "runner": "node",
-        "description": "Field 'ndDimension' should be present in gLJournalLine"
+        "description": "Field 'openItems' should be present in gLJournalLine"
       },
       {
         "id": "t-field-presence-gLJournalLine-product",
@@ -2646,60 +1805,12 @@
         "description": "Field 'project' should be present in gLJournalLine"
       },
       {
-        "id": "t-field-presence-gLJournalLine-salesCampaign",
-        "category": "field-presence",
-        "entity": "gLJournalLine",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "Field 'salesCampaign' should be present in gLJournalLine"
-      },
-      {
-        "id": "t-field-presence-gLJournalLine-salesRegion",
-        "category": "field-presence",
-        "entity": "gLJournalLine",
-        "field": "salesRegion",
-        "runner": "node",
-        "description": "Field 'salesRegion' should be present in gLJournalLine"
-      },
-      {
-        "id": "t-field-presence-gLJournalLine-stDimension",
-        "category": "field-presence",
-        "entity": "gLJournalLine",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Field 'stDimension' should be present in gLJournalLine"
-      },
-      {
         "id": "t-field-type-gLJournal-accountingDate",
         "category": "field-type",
         "entity": "gLJournal",
         "field": "accountingDate",
         "runner": "node",
         "description": "Field 'accountingDate' should have type 'string' in gLJournal"
-      },
-      {
-        "id": "t-field-type-gLJournal-asset",
-        "category": "field-type",
-        "entity": "gLJournal",
-        "field": "asset",
-        "runner": "node",
-        "description": "Field 'asset' should have type 'string' in gLJournal"
-      },
-      {
-        "id": "t-field-type-gLJournal-businessPartner",
-        "category": "field-type",
-        "entity": "gLJournal",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Field 'businessPartner' should have type 'string' in gLJournal"
-      },
-      {
-        "id": "t-field-type-gLJournal-costCenter",
-        "category": "field-type",
-        "entity": "gLJournal",
-        "field": "costCenter",
-        "runner": "node",
-        "description": "Field 'costCenter' should have type 'string' in gLJournal"
       },
       {
         "id": "t-field-type-gLJournal-currency",
@@ -2726,28 +1837,12 @@
         "description": "Field 'documentDate' should have type 'string' in gLJournal"
       },
       {
-        "id": "t-field-type-gLJournal-documentType",
-        "category": "field-type",
-        "entity": "gLJournal",
-        "field": "documentType",
-        "runner": "node",
-        "description": "Field 'documentType' should have type 'string' in gLJournal"
-      },
-      {
         "id": "t-field-type-gLJournal-multigeneralLedger",
         "category": "field-type",
         "entity": "gLJournal",
         "field": "multigeneralLedger",
         "runner": "node",
         "description": "Field 'multigeneralLedger' should have type 'boolean' in gLJournal"
-      },
-      {
-        "id": "t-field-type-gLJournal-ndDimension",
-        "category": "field-type",
-        "entity": "gLJournal",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Field 'ndDimension' should have type 'string' in gLJournal"
       },
       {
         "id": "t-field-type-gLJournal-opening",
@@ -2766,60 +1861,12 @@
         "description": "Field 'period' should have type 'string' in gLJournal"
       },
       {
-        "id": "t-field-type-gLJournal-posted",
-        "category": "field-type",
-        "entity": "gLJournal",
-        "field": "posted",
-        "runner": "node",
-        "description": "Field 'posted' should have type 'string' in gLJournal"
-      },
-      {
-        "id": "t-field-type-gLJournal-product",
-        "category": "field-type",
-        "entity": "gLJournal",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should have type 'string' in gLJournal"
-      },
-      {
-        "id": "t-field-type-gLJournal-project",
-        "category": "field-type",
-        "entity": "gLJournal",
-        "field": "project",
-        "runner": "node",
-        "description": "Field 'project' should have type 'string' in gLJournal"
-      },
-      {
-        "id": "t-field-type-gLJournal-salesCampaign",
-        "category": "field-type",
-        "entity": "gLJournal",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "Field 'salesCampaign' should have type 'string' in gLJournal"
-      },
-      {
-        "id": "t-field-type-gLJournal-stDimension",
-        "category": "field-type",
-        "entity": "gLJournal",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Field 'stDimension' should have type 'string' in gLJournal"
-      },
-      {
         "id": "t-field-type-gLJournalLine-accountingCombination",
         "category": "field-type",
         "entity": "gLJournalLine",
         "field": "accountingCombination",
         "runner": "node",
         "description": "Field 'accountingCombination' should have type 'string' in gLJournalLine"
-      },
-      {
-        "id": "t-field-type-gLJournalLine-activity",
-        "category": "field-type",
-        "entity": "gLJournalLine",
-        "field": "activity",
-        "runner": "node",
-        "description": "Field 'activity' should have type 'string' in gLJournalLine"
       },
       {
         "id": "t-field-type-gLJournalLine-asset",
@@ -2870,20 +1917,20 @@
         "description": "Field 'foreignCurrencyDebit' should have type 'number' in gLJournalLine"
       },
       {
-        "id": "t-field-type-gLJournalLine-gLItems",
+        "id": "t-field-type-gLJournalLine-lineNo",
         "category": "field-type",
         "entity": "gLJournalLine",
-        "field": "gLItems",
+        "field": "lineNo",
         "runner": "node",
-        "description": "Field 'gLItems' should have type 'string' in gLJournalLine"
+        "description": "Field 'lineNo' should have type 'number' in gLJournalLine"
       },
       {
-        "id": "t-field-type-gLJournalLine-ndDimension",
+        "id": "t-field-type-gLJournalLine-openItems",
         "category": "field-type",
         "entity": "gLJournalLine",
-        "field": "ndDimension",
+        "field": "openItems",
         "runner": "node",
-        "description": "Field 'ndDimension' should have type 'string' in gLJournalLine"
+        "description": "Field 'openItems' should have type 'boolean' in gLJournalLine"
       },
       {
         "id": "t-field-type-gLJournalLine-product",
@@ -2902,60 +1949,12 @@
         "description": "Field 'project' should have type 'string' in gLJournalLine"
       },
       {
-        "id": "t-field-type-gLJournalLine-salesCampaign",
-        "category": "field-type",
-        "entity": "gLJournalLine",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "Field 'salesCampaign' should have type 'string' in gLJournalLine"
-      },
-      {
-        "id": "t-field-type-gLJournalLine-salesRegion",
-        "category": "field-type",
-        "entity": "gLJournalLine",
-        "field": "salesRegion",
-        "runner": "node",
-        "description": "Field 'salesRegion' should have type 'string' in gLJournalLine"
-      },
-      {
-        "id": "t-field-type-gLJournalLine-stDimension",
-        "category": "field-type",
-        "entity": "gLJournalLine",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Field 'stDimension' should have type 'string' in gLJournalLine"
-      },
-      {
         "id": "t-readonlylogic-evaluable-gLJournal-accountingDate",
         "category": "readonlylogic-evaluable",
         "entity": "gLJournal",
         "field": "accountingDate",
         "runner": "node",
         "description": "Read-only logic for 'accountingDate' in gLJournal should have evaluable flag"
-      },
-      {
-        "id": "t-readonlylogic-evaluable-gLJournal-asset",
-        "category": "readonlylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "asset",
-        "runner": "node",
-        "description": "Read-only logic for 'asset' in gLJournal should have evaluable flag"
-      },
-      {
-        "id": "t-readonlylogic-evaluable-gLJournal-businessPartner",
-        "category": "readonlylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Read-only logic for 'businessPartner' in gLJournal should have evaluable flag"
-      },
-      {
-        "id": "t-readonlylogic-evaluable-gLJournal-costCenter",
-        "category": "readonlylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "costCenter",
-        "runner": "node",
-        "description": "Read-only logic for 'costCenter' in gLJournal should have evaluable flag"
       },
       {
         "id": "t-readonlylogic-evaluable-gLJournal-documentDate",
@@ -2974,14 +1973,6 @@
         "description": "Read-only logic for 'multigeneralLedger' in gLJournal should have evaluable flag"
       },
       {
-        "id": "t-readonlylogic-evaluable-gLJournal-ndDimension",
-        "category": "readonlylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'ndDimension' in gLJournal should have evaluable flag"
-      },
-      {
         "id": "t-readonlylogic-evaluable-gLJournal-period",
         "category": "readonlylogic-evaluable",
         "entity": "gLJournal",
@@ -2990,52 +1981,12 @@
         "description": "Read-only logic for 'period' in gLJournal should have evaluable flag"
       },
       {
-        "id": "t-readonlylogic-evaluable-gLJournal-product",
-        "category": "readonlylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "product",
-        "runner": "node",
-        "description": "Read-only logic for 'product' in gLJournal should have evaluable flag"
-      },
-      {
-        "id": "t-readonlylogic-evaluable-gLJournal-project",
-        "category": "readonlylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "project",
-        "runner": "node",
-        "description": "Read-only logic for 'project' in gLJournal should have evaluable flag"
-      },
-      {
-        "id": "t-readonlylogic-evaluable-gLJournal-salesCampaign",
-        "category": "readonlylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "Read-only logic for 'salesCampaign' in gLJournal should have evaluable flag"
-      },
-      {
-        "id": "t-readonlylogic-evaluable-gLJournal-stDimension",
-        "category": "readonlylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'stDimension' in gLJournal should have evaluable flag"
-      },
-      {
         "id": "t-readonlylogic-evaluable-gLJournalLine-accountingCombination",
         "category": "readonlylogic-evaluable",
         "entity": "gLJournalLine",
         "field": "accountingCombination",
         "runner": "node",
         "description": "Read-only logic for 'accountingCombination' in gLJournalLine should have evaluable flag"
-      },
-      {
-        "id": "t-readonlylogic-evaluable-gLJournalLine-activity",
-        "category": "readonlylogic-evaluable",
-        "entity": "gLJournalLine",
-        "field": "activity",
-        "runner": "node",
-        "description": "Read-only logic for 'activity' in gLJournalLine should have evaluable flag"
       },
       {
         "id": "t-readonlylogic-evaluable-gLJournalLine-asset",
@@ -3086,20 +2037,12 @@
         "description": "Read-only logic for 'foreignCurrencyDebit' in gLJournalLine should have evaluable flag"
       },
       {
-        "id": "t-readonlylogic-evaluable-gLJournalLine-gLItems",
+        "id": "t-readonlylogic-evaluable-gLJournalLine-lineNo",
         "category": "readonlylogic-evaluable",
         "entity": "gLJournalLine",
-        "field": "gLItems",
+        "field": "lineNo",
         "runner": "node",
-        "description": "Read-only logic for 'gLItems' in gLJournalLine should have evaluable flag"
-      },
-      {
-        "id": "t-readonlylogic-evaluable-gLJournalLine-ndDimension",
-        "category": "readonlylogic-evaluable",
-        "entity": "gLJournalLine",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'ndDimension' in gLJournalLine should have evaluable flag"
+        "description": "Read-only logic for 'lineNo' in gLJournalLine should have evaluable flag"
       },
       {
         "id": "t-readonlylogic-evaluable-gLJournalLine-product",
@@ -3118,60 +2061,12 @@
         "description": "Read-only logic for 'project' in gLJournalLine should have evaluable flag"
       },
       {
-        "id": "t-readonlylogic-evaluable-gLJournalLine-salesCampaign",
-        "category": "readonlylogic-evaluable",
-        "entity": "gLJournalLine",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "Read-only logic for 'salesCampaign' in gLJournalLine should have evaluable flag"
-      },
-      {
-        "id": "t-readonlylogic-evaluable-gLJournalLine-salesRegion",
-        "category": "readonlylogic-evaluable",
-        "entity": "gLJournalLine",
-        "field": "salesRegion",
-        "runner": "node",
-        "description": "Read-only logic for 'salesRegion' in gLJournalLine should have evaluable flag"
-      },
-      {
-        "id": "t-readonlylogic-evaluable-gLJournalLine-stDimension",
-        "category": "readonlylogic-evaluable",
-        "entity": "gLJournalLine",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'stDimension' in gLJournalLine should have evaluable flag"
-      },
-      {
         "id": "t-readonlylogic-valid-gLJournal-accountingDate",
         "category": "readonlylogic-valid",
         "entity": "gLJournal",
         "field": "accountingDate",
         "runner": "node",
         "description": "Read-only logic for 'accountingDate' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-readonlylogic-valid-gLJournal-asset",
-        "category": "readonlylogic-valid",
-        "entity": "gLJournal",
-        "field": "asset",
-        "runner": "node",
-        "description": "Read-only logic for 'asset' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-readonlylogic-valid-gLJournal-businessPartner",
-        "category": "readonlylogic-valid",
-        "entity": "gLJournal",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Read-only logic for 'businessPartner' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-readonlylogic-valid-gLJournal-costCenter",
-        "category": "readonlylogic-valid",
-        "entity": "gLJournal",
-        "field": "costCenter",
-        "runner": "node",
-        "description": "Read-only logic for 'costCenter' in gLJournal should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-gLJournal-documentDate",
@@ -3190,14 +2085,6 @@
         "description": "Read-only logic for 'multigeneralLedger' in gLJournal should be valid JS"
       },
       {
-        "id": "t-readonlylogic-valid-gLJournal-ndDimension",
-        "category": "readonlylogic-valid",
-        "entity": "gLJournal",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'ndDimension' in gLJournal should be valid JS"
-      },
-      {
         "id": "t-readonlylogic-valid-gLJournal-period",
         "category": "readonlylogic-valid",
         "entity": "gLJournal",
@@ -3206,52 +2093,12 @@
         "description": "Read-only logic for 'period' in gLJournal should be valid JS"
       },
       {
-        "id": "t-readonlylogic-valid-gLJournal-product",
-        "category": "readonlylogic-valid",
-        "entity": "gLJournal",
-        "field": "product",
-        "runner": "node",
-        "description": "Read-only logic for 'product' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-readonlylogic-valid-gLJournal-project",
-        "category": "readonlylogic-valid",
-        "entity": "gLJournal",
-        "field": "project",
-        "runner": "node",
-        "description": "Read-only logic for 'project' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-readonlylogic-valid-gLJournal-salesCampaign",
-        "category": "readonlylogic-valid",
-        "entity": "gLJournal",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "Read-only logic for 'salesCampaign' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-readonlylogic-valid-gLJournal-stDimension",
-        "category": "readonlylogic-valid",
-        "entity": "gLJournal",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'stDimension' in gLJournal should be valid JS"
-      },
-      {
         "id": "t-readonlylogic-valid-gLJournalLine-accountingCombination",
         "category": "readonlylogic-valid",
         "entity": "gLJournalLine",
         "field": "accountingCombination",
         "runner": "node",
         "description": "Read-only logic for 'accountingCombination' in gLJournalLine should be valid JS"
-      },
-      {
-        "id": "t-readonlylogic-valid-gLJournalLine-activity",
-        "category": "readonlylogic-valid",
-        "entity": "gLJournalLine",
-        "field": "activity",
-        "runner": "node",
-        "description": "Read-only logic for 'activity' in gLJournalLine should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-gLJournalLine-asset",
@@ -3302,20 +2149,12 @@
         "description": "Read-only logic for 'foreignCurrencyDebit' in gLJournalLine should be valid JS"
       },
       {
-        "id": "t-readonlylogic-valid-gLJournalLine-gLItems",
+        "id": "t-readonlylogic-valid-gLJournalLine-lineNo",
         "category": "readonlylogic-valid",
         "entity": "gLJournalLine",
-        "field": "gLItems",
+        "field": "lineNo",
         "runner": "node",
-        "description": "Read-only logic for 'gLItems' in gLJournalLine should be valid JS"
-      },
-      {
-        "id": "t-readonlylogic-valid-gLJournalLine-ndDimension",
-        "category": "readonlylogic-valid",
-        "entity": "gLJournalLine",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'ndDimension' in gLJournalLine should be valid JS"
+        "description": "Read-only logic for 'lineNo' in gLJournalLine should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-gLJournalLine-product",
@@ -3332,30 +2171,6 @@
         "field": "project",
         "runner": "node",
         "description": "Read-only logic for 'project' in gLJournalLine should be valid JS"
-      },
-      {
-        "id": "t-readonlylogic-valid-gLJournalLine-salesCampaign",
-        "category": "readonlylogic-valid",
-        "entity": "gLJournalLine",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "Read-only logic for 'salesCampaign' in gLJournalLine should be valid JS"
-      },
-      {
-        "id": "t-readonlylogic-valid-gLJournalLine-salesRegion",
-        "category": "readonlylogic-valid",
-        "entity": "gLJournalLine",
-        "field": "salesRegion",
-        "runner": "node",
-        "description": "Read-only logic for 'salesRegion' in gLJournalLine should be valid JS"
-      },
-      {
-        "id": "t-readonlylogic-valid-gLJournalLine-stDimension",
-        "category": "readonlylogic-valid",
-        "entity": "gLJournalLine",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'stDimension' in gLJournalLine should be valid JS"
       },
       {
         "id": "t-rule-declared-Accounting-Schema-currency",
@@ -4213,60 +3028,12 @@
         "description": "Field 'description' should be a supported filter for gLJournal"
       },
       {
-        "id": "t-searchable-filters-gLJournalLine-gLItems",
-        "category": "searchable-filters",
-        "entity": "gLJournalLine",
-        "field": "gLItems",
-        "runner": "node",
-        "description": "Field 'gLItems' should be a supported filter for gLJournalLine"
-      },
-      {
-        "id": "t-selector-endpoint-gLJournal-asset",
-        "category": "selector-endpoint",
-        "entity": "gLJournal",
-        "field": "asset",
-        "runner": "node",
-        "description": "Selector endpoint for 'asset' in gLJournal should exist"
-      },
-      {
-        "id": "t-selector-endpoint-gLJournal-businessPartner",
-        "category": "selector-endpoint",
-        "entity": "gLJournal",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Selector endpoint for 'businessPartner' in gLJournal should exist"
-      },
-      {
-        "id": "t-selector-endpoint-gLJournal-costCenter",
-        "category": "selector-endpoint",
-        "entity": "gLJournal",
-        "field": "costCenter",
-        "runner": "node",
-        "description": "Selector endpoint for 'costCenter' in gLJournal should exist"
-      },
-      {
         "id": "t-selector-endpoint-gLJournal-currency",
         "category": "selector-endpoint",
         "entity": "gLJournal",
         "field": "currency",
         "runner": "node",
         "description": "Selector endpoint for 'currency' in gLJournal should exist"
-      },
-      {
-        "id": "t-selector-endpoint-gLJournal-documentType",
-        "category": "selector-endpoint",
-        "entity": "gLJournal",
-        "field": "documentType",
-        "runner": "node",
-        "description": "Selector endpoint for 'documentType' in gLJournal should exist"
-      },
-      {
-        "id": "t-selector-endpoint-gLJournal-ndDimension",
-        "category": "selector-endpoint",
-        "entity": "gLJournal",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Selector endpoint for 'ndDimension' in gLJournal should exist"
       },
       {
         "id": "t-selector-endpoint-gLJournal-period",
@@ -4277,52 +3044,12 @@
         "description": "Selector endpoint for 'period' in gLJournal should exist"
       },
       {
-        "id": "t-selector-endpoint-gLJournal-product",
-        "category": "selector-endpoint",
-        "entity": "gLJournal",
-        "field": "product",
-        "runner": "node",
-        "description": "Selector endpoint for 'product' in gLJournal should exist"
-      },
-      {
-        "id": "t-selector-endpoint-gLJournal-project",
-        "category": "selector-endpoint",
-        "entity": "gLJournal",
-        "field": "project",
-        "runner": "node",
-        "description": "Selector endpoint for 'project' in gLJournal should exist"
-      },
-      {
-        "id": "t-selector-endpoint-gLJournal-salesCampaign",
-        "category": "selector-endpoint",
-        "entity": "gLJournal",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "Selector endpoint for 'salesCampaign' in gLJournal should exist"
-      },
-      {
-        "id": "t-selector-endpoint-gLJournal-stDimension",
-        "category": "selector-endpoint",
-        "entity": "gLJournal",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Selector endpoint for 'stDimension' in gLJournal should exist"
-      },
-      {
         "id": "t-selector-endpoint-gLJournalLine-accountingCombination",
         "category": "selector-endpoint",
         "entity": "gLJournalLine",
         "field": "accountingCombination",
         "runner": "node",
         "description": "Selector endpoint for 'accountingCombination' in gLJournalLine should exist"
-      },
-      {
-        "id": "t-selector-endpoint-gLJournalLine-activity",
-        "category": "selector-endpoint",
-        "entity": "gLJournalLine",
-        "field": "activity",
-        "runner": "node",
-        "description": "Selector endpoint for 'activity' in gLJournalLine should exist"
       },
       {
         "id": "t-selector-endpoint-gLJournalLine-asset",
@@ -4349,22 +3076,6 @@
         "description": "Selector endpoint for 'costCenter' in gLJournalLine should exist"
       },
       {
-        "id": "t-selector-endpoint-gLJournalLine-gLItems",
-        "category": "selector-endpoint",
-        "entity": "gLJournalLine",
-        "field": "gLItems",
-        "runner": "node",
-        "description": "Selector endpoint for 'gLItems' in gLJournalLine should exist"
-      },
-      {
-        "id": "t-selector-endpoint-gLJournalLine-ndDimension",
-        "category": "selector-endpoint",
-        "entity": "gLJournalLine",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Selector endpoint for 'ndDimension' in gLJournalLine should exist"
-      },
-      {
         "id": "t-selector-endpoint-gLJournalLine-product",
         "category": "selector-endpoint",
         "entity": "gLJournalLine",
@@ -4379,30 +3090,6 @@
         "field": "project",
         "runner": "node",
         "description": "Selector endpoint for 'project' in gLJournalLine should exist"
-      },
-      {
-        "id": "t-selector-endpoint-gLJournalLine-salesCampaign",
-        "category": "selector-endpoint",
-        "entity": "gLJournalLine",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "Selector endpoint for 'salesCampaign' in gLJournalLine should exist"
-      },
-      {
-        "id": "t-selector-endpoint-gLJournalLine-salesRegion",
-        "category": "selector-endpoint",
-        "entity": "gLJournalLine",
-        "field": "salesRegion",
-        "runner": "node",
-        "description": "Selector endpoint for 'salesRegion' in gLJournalLine should exist"
-      },
-      {
-        "id": "t-selector-endpoint-gLJournalLine-stDimension",
-        "category": "selector-endpoint",
-        "entity": "gLJournalLine",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Selector endpoint for 'stDimension' in gLJournalLine should exist"
       },
       {
         "id": "t-system-field-gLJournal-accountingSchema",
@@ -4429,6 +3116,22 @@
         "description": "System field 'approved' should exist in backend but not frontend for gLJournal"
       },
       {
+        "id": "t-system-field-gLJournal-asset",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "asset",
+        "runner": "node",
+        "description": "System field 'asset' should exist in backend but not frontend for gLJournal"
+      },
+      {
+        "id": "t-system-field-gLJournal-businessPartner",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "System field 'businessPartner' should exist in backend but not frontend for gLJournal"
+      },
+      {
         "id": "t-system-field-gLJournal-client",
         "category": "system-field",
         "entity": "gLJournal",
@@ -4443,6 +3146,14 @@
         "field": "controlAmount",
         "runner": "node",
         "description": "System field 'controlAmount' should exist in backend but not frontend for gLJournal"
+      },
+      {
+        "id": "t-system-field-gLJournal-costCenter",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "costCenter",
+        "runner": "node",
+        "description": "System field 'costCenter' should exist in backend but not frontend for gLJournal"
       },
       {
         "id": "t-system-field-gLJournal-createdBy",
@@ -4493,6 +3204,14 @@
         "description": "System field 'documentStatus' should exist in backend but not frontend for gLJournal"
       },
       {
+        "id": "t-system-field-gLJournal-documentType",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "documentType",
+        "runner": "node",
+        "description": "System field 'documentType' should exist in backend but not frontend for gLJournal"
+      },
+      {
         "id": "t-system-field-gLJournal-gLCategory",
         "category": "system-field",
         "entity": "gLJournal",
@@ -4517,12 +3236,28 @@
         "description": "System field 'journalBatch' should exist in backend but not frontend for gLJournal"
       },
       {
+        "id": "t-system-field-gLJournal-ndDimension",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "System field 'ndDimension' should exist in backend but not frontend for gLJournal"
+      },
+      {
         "id": "t-system-field-gLJournal-organization",
         "category": "system-field",
         "entity": "gLJournal",
         "field": "organization",
         "runner": "node",
         "description": "System field 'organization' should exist in backend but not frontend for gLJournal"
+      },
+      {
+        "id": "t-system-field-gLJournal-posted",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "posted",
+        "runner": "node",
+        "description": "System field 'posted' should exist in backend but not frontend for gLJournal"
       },
       {
         "id": "t-system-field-gLJournal-postingType",
@@ -4557,12 +3292,44 @@
         "description": "System field 'processNow' should exist in backend but not frontend for gLJournal"
       },
       {
+        "id": "t-system-field-gLJournal-product",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "product",
+        "runner": "node",
+        "description": "System field 'product' should exist in backend but not frontend for gLJournal"
+      },
+      {
+        "id": "t-system-field-gLJournal-project",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "project",
+        "runner": "node",
+        "description": "System field 'project' should exist in backend but not frontend for gLJournal"
+      },
+      {
         "id": "t-system-field-gLJournal-rate",
         "category": "system-field",
         "entity": "gLJournal",
         "field": "rate",
         "runner": "node",
         "description": "System field 'rate' should exist in backend but not frontend for gLJournal"
+      },
+      {
+        "id": "t-system-field-gLJournal-salesCampaign",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "salesCampaign",
+        "runner": "node",
+        "description": "System field 'salesCampaign' should exist in backend but not frontend for gLJournal"
+      },
+      {
+        "id": "t-system-field-gLJournal-stDimension",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "System field 'stDimension' should exist in backend but not frontend for gLJournal"
       },
       {
         "id": "t-system-field-gLJournal-totalCreditAmount",
@@ -4603,6 +3370,14 @@
         "field": "active",
         "runner": "node",
         "description": "System field 'active' should exist in backend but not frontend for gLJournalLine"
+      },
+      {
+        "id": "t-system-field-gLJournalLine-activity",
+        "category": "system-field",
+        "entity": "gLJournalLine",
+        "field": "activity",
+        "runner": "node",
+        "description": "System field 'activity' should exist in backend but not frontend for gLJournalLine"
       },
       {
         "id": "t-system-field-gLJournalLine-aPRMAddPayment",
@@ -4693,6 +3468,14 @@
         "description": "System field 'gLItem' should exist in backend but not frontend for gLJournalLine"
       },
       {
+        "id": "t-system-field-gLJournalLine-gLItems",
+        "category": "system-field",
+        "entity": "gLJournalLine",
+        "field": "gLItems",
+        "runner": "node",
+        "description": "System field 'gLItems' should exist in backend but not frontend for gLJournalLine"
+      },
+      {
         "id": "t-system-field-gLJournalLine-id",
         "category": "system-field",
         "entity": "gLJournalLine",
@@ -4709,20 +3492,12 @@
         "description": "System field 'journalEntry' should exist in backend but not frontend for gLJournalLine"
       },
       {
-        "id": "t-system-field-gLJournalLine-lineNo",
+        "id": "t-system-field-gLJournalLine-ndDimension",
         "category": "system-field",
         "entity": "gLJournalLine",
-        "field": "lineNo",
+        "field": "ndDimension",
         "runner": "node",
-        "description": "System field 'lineNo' should exist in backend but not frontend for gLJournalLine"
-      },
-      {
-        "id": "t-system-field-gLJournalLine-openItems",
-        "category": "system-field",
-        "entity": "gLJournalLine",
-        "field": "openItems",
-        "runner": "node",
-        "description": "System field 'openItems' should exist in backend but not frontend for gLJournalLine"
+        "description": "System field 'ndDimension' should exist in backend but not frontend for gLJournalLine"
       },
       {
         "id": "t-system-field-gLJournalLine-organization",
@@ -4781,6 +3556,30 @@
         "description": "System field 'relatedPayment' should exist in backend but not frontend for gLJournalLine"
       },
       {
+        "id": "t-system-field-gLJournalLine-salesCampaign",
+        "category": "system-field",
+        "entity": "gLJournalLine",
+        "field": "salesCampaign",
+        "runner": "node",
+        "description": "System field 'salesCampaign' should exist in backend but not frontend for gLJournalLine"
+      },
+      {
+        "id": "t-system-field-gLJournalLine-salesRegion",
+        "category": "system-field",
+        "entity": "gLJournalLine",
+        "field": "salesRegion",
+        "runner": "node",
+        "description": "System field 'salesRegion' should exist in backend but not frontend for gLJournalLine"
+      },
+      {
+        "id": "t-system-field-gLJournalLine-stDimension",
+        "category": "system-field",
+        "entity": "gLJournalLine",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "System field 'stDimension' should exist in backend but not frontend for gLJournalLine"
+      },
+      {
         "id": "t-system-field-gLJournalLine-tax",
         "category": "system-field",
         "entity": "gLJournalLine",
@@ -4836,25 +3635,25 @@
       }
     ],
     "summary": {
-      "total": 376,
+      "total": 290,
       "byCategory": {
         "action-endpoint": 4,
         "crud-flags": 2,
         "default-value-type": 10,
-        "displaylogic-evaluable": 21,
-        "displaylogic-valid": 21,
-        "field-presence": 32,
-        "field-type": 32,
-        "readonlylogic-evaluable": 27,
-        "readonlylogic-valid": 27,
+        "displaylogic-evaluable": 6,
+        "displaylogic-valid": 6,
+        "field-presence": 18,
+        "field-type": 18,
+        "readonlylogic-evaluable": 14,
+        "readonlylogic-valid": 14,
         "rule-declared": 121,
-        "searchable-filters": 2,
-        "selector-endpoint": 23,
-        "system-field": 52,
+        "searchable-filters": 1,
+        "selector-endpoint": 8,
+        "system-field": 66,
         "visibility": 2
       },
       "byRunner": {
-        "node": 376,
+        "node": 290,
         "junit": 0
       }
     }

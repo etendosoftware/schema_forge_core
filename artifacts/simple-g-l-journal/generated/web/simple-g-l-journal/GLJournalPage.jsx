@@ -13,7 +13,7 @@ const breadcrumb = 'Finance / Manual Journals';
 
 // @sf-generated-start summary:gLJournal
 const summary = [
-  { key: 'posted', column: 'Posted', type: 'string' },
+
 ];
 
 const statusField = null;
@@ -25,8 +25,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:gLJournal
 const processes = [
-  { name: 'posted', label: 'Posted', style: 'positive',
-    displayLogicRaw: "@Processed@='Y' & @#ShowAcct@='Y'" },
+
 ];
 // @sf-generated-end processes:gLJournal
 
@@ -35,25 +34,20 @@ const draftMode = null;
 // @sf-generated-end draftMode:gLJournal
 
 // @sf-generated-start requiredHeaderFields:gLJournal
-const requiredHeaderFields = ['description', 'documentType', 'documentDate', 'accountingDate', 'period', 'currency', 'opening', 'multigeneralLedger', 'posted'];
+const requiredHeaderFields = ['description', 'documentDate', 'accountingDate', 'period', 'currency', 'opening', 'multigeneralLedger'];
 // @sf-generated-end requiredHeaderFields:gLJournal
 
 // @sf-generated-start addLineFields:gLJournalLine
 const addLineFields = {
   entry: [
-    { key: 'gLItems', column: 'Account_ID', type: 'search', lookup: true, label: 'GL Item', reference: 'Glitem', inputMode: 'search' },
     { key: 'accountingCombination', column: 'C_ValidCombination_ID', type: 'selector', label: 'Account', reference: 'ValidCombination', inputMode: 'selector' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description', defaultValue: '@DESCRIPTION1@' },
     { key: 'foreignCurrencyDebit', column: 'AmtSourceDr', type: 'number', required: true, label: 'Debit' },
     { key: 'foreignCurrencyCredit', column: 'AmtSourceCr', type: 'number', required: true, label: 'Credit' },
-    { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'search', label: 'Business Partner', reference: 'BPartner', inputMode: 'search' },
+    { key: 'openItems', column: 'Open_Items', type: 'checkbox', required: true, label: 'Open Items' },
+    { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'search', lookup: true, label: 'Business Partner', reference: 'BPartner', inputMode: 'search' },
     { key: 'product', column: 'M_Product_ID', type: 'selector', label: 'Product', reference: 'Product', inputMode: 'selector' },
     { key: 'project', column: 'C_Project_ID', type: 'search', label: 'Project', reference: 'Project', inputMode: 'search' },
-    { key: 'activity', column: 'C_Activity_ID', type: 'selector', label: 'Activity', reference: 'Activity', inputMode: 'selector' },
-    { key: 'salesCampaign', column: 'C_Campaign_ID', type: 'selector', label: 'Sales Campaign', reference: 'Campaign', inputMode: 'selector' },
-    { key: 'salesRegion', column: 'C_Salesregion_ID', type: 'selector', label: 'Sales Region', reference: 'Salesregion', inputMode: 'selector' },
-    { key: 'stDimension', column: 'User1_ID', type: 'selector', label: '1st Dimension', reference: 'User1', inputMode: 'selector' },
-    { key: 'ndDimension', column: 'User2_ID', type: 'selector', label: '2nd Dimension', reference: 'User2', inputMode: 'selector' },
     { key: 'asset', column: 'A_Asset_ID', type: 'selector', label: 'Asset', reference: 'Asset', inputMode: 'selector' },
     { key: 'costCenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'Costcenter', inputMode: 'selector' },
   ],
@@ -92,20 +86,10 @@ export const api = {
       "delete": true,
       "listUrl": "/sws/neo/simple-g-l-journal/gLJournalLine",
       "detailUrl": "/sws/neo/simple-g-l-journal/gLJournalLine/{id}",
-      "supportedFilters": [
-        "gLItems"
-      ]
+      "supportedFilters": []
     }
   },
   "selectors": [
-    {
-      "entity": "gLJournal",
-      "field": "documentType",
-      "column": "C_DocType_ID",
-      "reference": "DocType",
-      "inputMode": "selector",
-      "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/documentType"
-    },
     {
       "entity": "gLJournal",
       "field": "period",
@@ -121,87 +105,6 @@ export const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/currency"
-    },
-    {
-      "entity": "gLJournal",
-      "field": "businessPartner",
-      "column": "C_Bpartner_ID",
-      "reference": "BPartner",
-      "inputMode": "search",
-      "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/businessPartner"
-    },
-    {
-      "entity": "gLJournal",
-      "field": "product",
-      "column": "M_Product_ID",
-      "reference": "Product",
-      "inputMode": "search",
-      "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/product"
-    },
-    {
-      "entity": "gLJournal",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
-      "inputMode": "selector",
-      "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/project"
-    },
-    {
-      "entity": "gLJournal",
-      "field": "costCenter",
-      "column": "C_Costcenter_ID",
-      "reference": "Costcenter",
-      "inputMode": "selector",
-      "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/costCenter"
-    },
-    {
-      "entity": "gLJournal",
-      "field": "asset",
-      "column": "A_Asset_ID",
-      "reference": "Asset",
-      "inputMode": "selector",
-      "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/asset"
-    },
-    {
-      "entity": "gLJournal",
-      "field": "salesCampaign",
-      "column": "C_Campaign_ID",
-      "reference": "Campaign",
-      "inputMode": "selector",
-      "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/salesCampaign"
-    },
-    {
-      "entity": "gLJournal",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User1",
-      "inputMode": "selector",
-      "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/stDimension"
-    },
-    {
-      "entity": "gLJournal",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User2",
-      "inputMode": "selector",
-      "url": "/sws/neo/simple-g-l-journal/gLJournal/selectors/ndDimension"
-    },
-    {
-      "entity": "gLJournalLine",
-      "field": "gLItems",
-      "column": "Account_ID",
-      "reference": "Glitem",
-      "inputMode": "search",
-      "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/gLItems",
-      "context": {
-        "required": [
-          {
-            "param": "Multi_Gl",
-            "source": "parentField",
-            "field": "multigeneralLedger"
-          }
-        ]
-      }
     },
     {
       "entity": "gLJournalLine",
@@ -234,46 +137,6 @@ export const api = {
       "reference": "Project",
       "inputMode": "search",
       "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/project"
-    },
-    {
-      "entity": "gLJournalLine",
-      "field": "activity",
-      "column": "C_Activity_ID",
-      "reference": "Activity",
-      "inputMode": "selector",
-      "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/activity"
-    },
-    {
-      "entity": "gLJournalLine",
-      "field": "salesCampaign",
-      "column": "C_Campaign_ID",
-      "reference": "Campaign",
-      "inputMode": "selector",
-      "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/salesCampaign"
-    },
-    {
-      "entity": "gLJournalLine",
-      "field": "salesRegion",
-      "column": "C_Salesregion_ID",
-      "reference": "Salesregion",
-      "inputMode": "selector",
-      "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/salesRegion"
-    },
-    {
-      "entity": "gLJournalLine",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User1",
-      "inputMode": "selector",
-      "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/stDimension"
-    },
-    {
-      "entity": "gLJournalLine",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User2",
-      "inputMode": "selector",
-      "url": "/sws/neo/simple-g-l-journal/gLJournalLine/selectors/ndDimension"
     },
     {
       "entity": "gLJournalLine",
@@ -364,7 +227,6 @@ export default function GLJournalPage({ windowName, recordId, ...props }) {
       api={api}
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "GL_Journal", config: {} } }]}
         requiredHeaderFields={requiredHeaderFields}
-        linesLayout="inlineEditable"
         balanceFooter={{"debitField":"foreignCurrencyDebit","creditField":"foreignCurrencyCredit"}}
         {...props}
       />
