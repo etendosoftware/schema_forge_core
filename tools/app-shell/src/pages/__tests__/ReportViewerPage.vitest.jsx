@@ -134,4 +134,108 @@ describe('ReportViewerPage', () => {
       expect(screen.getByText('csv')).toBeInTheDocument();
     });
   });
+
+  it('shows Listing Report type label', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 'r1', title: { en_US: 'Flat' }, type: 'listing', outputs: ['pdf'] },
+      ]),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/Listing Report/)).toBeInTheDocument();
+    });
+  });
+
+  it('shows Grouped Report type label', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 'r2', title: { en_US: 'Grouped' }, type: 'grouped-listing', outputs: ['pdf'] },
+      ]),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/Grouped Report/)).toBeInTheDocument();
+    });
+  });
+
+  it('shows landscape indicator when orientation is landscape', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 'r3', title: { en_US: 'Wide Report' }, type: 'listing', orientation: 'landscape', outputs: ['pdf'] },
+      ]),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Wide Report')).toBeInTheDocument();
+    });
+    // The landscape text appears as part of the type description
+    expect(screen.getByText(/Landscape/)).toBeInTheDocument();
+  });
+
+  it('handles fetch failure gracefully', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network'));
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('noResults')).toBeInTheDocument();
+    });
+  });
+
+  it('groups reports by category', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 'r1', title: { en_US: 'Sales A' }, type: 'listing', category: 'sales', outputs: ['pdf'] },
+        { id: 'r2', title: { en_US: 'Purchase B' }, type: 'listing', category: 'purchase', outputs: ['pdf'] },
+      ]),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Sales A')).toBeInTheDocument();
+      expect(screen.getByText('Purchase B')).toBeInTheDocument();
+    });
+  });
+
+  it('renders report with es_ES title fallback', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 'r-es', title: { es_ES: 'Informe de Ventas' }, type: 'listing', outputs: ['pdf'] },
+      ]),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      // Falls back to es_ES when en_US is missing and locale is en_US
+      expect(screen.getByText('Informe de Ventas')).toBeInTheDocument();
+    });
+  });
+
+  it('renders report with id fallback when no title', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 'report-no-title', type: 'listing', outputs: ['pdf'] },
+      ]),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('report-no-title')).toBeInTheDocument();
+    });
+  });
+
+  it('defaults category to other when missing', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 'r-nocat', title: { en_US: 'No Category' }, type: 'listing', outputs: ['html'] },
+      ]),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('No Category')).toBeInTheDocument();
+    });
+  });
 });

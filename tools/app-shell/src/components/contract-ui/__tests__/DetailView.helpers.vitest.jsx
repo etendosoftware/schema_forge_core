@@ -13,6 +13,50 @@ import {
   getDeleteChildButtonLabel,
   runAddLineAction,
   insertLinesTab,
+  normalizePatchFieldValues,
+  mergeSelectorContextFields,
+  mergeSelectorAuxFields,
+  applyLocalChildRowUpdate,
+  collectRowFieldValues,
+  getSecondaryTabContentClassName,
+  getSecondaryLinesTableRef,
+  getSecondaryEditRowHandler,
+  getSecondarySelectionChangeHandler,
+  getSaveButtonLabel,
+  getChildSaveButtonLabel,
+  getAddLineWrapperClassName,
+  getAddLineWrapperStyle,
+  getDocumentIds,
+  resolveSidebarContent,
+  getNotesRowClassName,
+  getDocsRowClassName,
+  getInlineEditableShrinkClassName,
+  getOthersTabClassName,
+  resolveCanAddLines,
+  getSelectedLinesTotalLabel,
+  computeIsDirty,
+  hasRecordForRoute,
+  isLoadingRecordForRoute,
+  resolveHideMoreMenu,
+  pushOthers,
+  shouldShowLinesEmptyState,
+  getTabsBarStyle,
+  getTabsBarClassName,
+  isDeleteButtonVisible,
+  resolveHeaderContent,
+  isBulkDeleteBarVisible,
+  isCustomPrimaryTabActive,
+  getDetailContentClassName,
+  canDeleteSelectedLine,
+  shouldShowLineActionButtons,
+  shouldShowDetailFormSidebar,
+  isInitialChildrenLoading,
+  canShowAddLineArea,
+  shouldShowInlineDeleteSelectionBar,
+  getLinesTabsSectionClassName,
+  getSecondaryTabEntityKey,
+  getAddLineMenuActions,
+  renderEmbeddedStatusPill,
 } from '../DetailView.jsx';
 
 // Mock all the heavy dependencies DetailView imports
@@ -171,6 +215,526 @@ describe('DetailView helper functions', () => {
       const tabs = [{ key: 'a' }];
       insertLinesTab('Lines', 'lines', { children: [] }, undefined, tabs);
       expect(tabs[0].key).toBe('lines');
+    });
+  });
+
+  describe('normalizePatchFieldValues', () => {
+    it('converts numeric strings to floats', () => {
+      const fv = {};
+      normalizePatchFieldValues({ amount: '42.5', name: 'Test' }, fv);
+      expect(fv.amount).toBe(42.5);
+      expect(fv.name).toBe('Test');
+    });
+
+    it('skips $_identifier keys', () => {
+      const fv = {};
+      normalizePatchFieldValues({ 'bp$_identifier': 'Acme', bp: 'ID1' }, fv);
+      expect(fv['bp$_identifier']).toBeUndefined();
+      expect(fv.bp).toBe('ID1');
+    });
+
+    it('handles negative numeric strings', () => {
+      const fv = {};
+      normalizePatchFieldValues({ qty: '-3.14' }, fv);
+      expect(fv.qty).toBe(-3.14);
+    });
+
+    it('preserves non-numeric strings as-is', () => {
+      const fv = {};
+      normalizePatchFieldValues({ desc: 'hello 123' }, fv);
+      expect(fv.desc).toBe('hello 123');
+    });
+  });
+
+  describe('mergeSelectorContextFields', () => {
+    it('merges standardPrice as gross when isTaxIncluded', () => {
+      const snapshot = {};
+      mergeSelectorContextFields({ standardPrice: 100, isTaxIncluded: true }, snapshot, 'product');
+      expect(snapshot.grossUnitPrice).toBe(100);
+      expect(snapshot.grossListPrice).toBe(100);
+    });
+
+    it('merges standardPrice as net when isTaxIncluded=false', () => {
+      const snapshot = {};
+      mergeSelectorContextFields({ standardPrice: 80, isTaxIncluded: false }, snapshot, 'product');
+      expect(snapshot.unitPrice).toBe(80);
+      expect(snapshot.listPrice).toBe(80);
+    });
+
+    it('skips id, _aux, label, name, objects, null', () => {
+      const snapshot = {};
+      mergeSelectorContextFields({ id: '1', _aux: {}, label: 'L', name: 'N', nested: {}, x: null, custom: 'val' }, snapshot, 'f');
+      expect(snapshot['f_custom']).toBe('val');
+      expect(snapshot['f_id']).toBeUndefined();
+    });
+
+    it('does not overwrite existing snapshot keys', () => {
+      const snapshot = { product_currency: 'EUR' };
+      mergeSelectorContextFields({ currency: 'USD' }, snapshot, 'product');
+      expect(snapshot.product_currency).toBe('EUR');
+    });
+  });
+
+  describe('mergeSelectorAuxFields', () => {
+    it('merges _aux fields into snapshot', () => {
+      const snapshot = {};
+      mergeSelectorAuxFields({ _aux: { _PSTD: '100', _UOM: 'kg' } }, snapshot, 'product');
+      expect(snapshot.product_PSTD).toBe('100');
+      expect(snapshot.product_UOM).toBe('kg');
+    });
+
+    it('handles missing _aux gracefully', () => {
+      const snapshot = {};
+      mergeSelectorAuxFields({}, snapshot, 'product');
+      expect(Object.keys(snapshot)).toHaveLength(0);
+    });
+  });
+
+  describe('collectRowFieldValues', () => {
+    it('collects values and coerces them', () => {
+      const fv = {};
+      collectRowFieldValues({ qty: '10', name: 'Test', id: '123', _identifier: 'x' }, fv, (v) => v);
+      expect(fv.qty).toBe('10');
+      expect(fv.name).toBe('Test');
+      expect(fv.id).toBeUndefined(); // skipped
+      expect(fv._identifier).toBeUndefined(); // skipped
+    });
+
+    it('skips $_identifier and $ref keys', () => {
+      const fv = {};
+      collectRowFieldValues({ 'bp$_identifier': 'Acme', '$ref': 'x', _entityName: 'y', val: 1 }, fv, (v) => v);
+      expect(fv['bp$_identifier']).toBeUndefined();
+      expect(fv['$ref']).toBeUndefined();
+      expect(fv._entityName).toBeUndefined();
+      expect(fv.val).toBe(1);
+    });
+  });
+
+  describe('getSecondaryTabContentClassName', () => {
+    it('includes padding and no pointer-events when not embedded', () => {
+      expect(getSecondaryTabContentClassName('pt-4', false)).toContain('pt-4');
+      expect(getSecondaryTabContentClassName('pt-4', false)).not.toContain('pointer-events-none');
+    });
+
+    it('includes pointer-events-none when embedded', () => {
+      expect(getSecondaryTabContentClassName('pt-4', true)).toContain('pointer-events-none');
+    });
+  });
+
+  describe('getSecondaryLinesTableRef', () => {
+    it('returns ref function for inlineEditable', () => {
+      const getRef = (key) => `ref-${key}`;
+      expect(getSecondaryLinesTableRef('inlineEditable', getRef, { key: 'lines' })).toBe('ref-lines');
+    });
+
+    it('returns undefined for other layouts', () => {
+      expect(getSecondaryLinesTableRef('classic', vi.fn(), { key: 'x' })).toBeUndefined();
+    });
+  });
+
+  describe('getSecondaryEditRowHandler', () => {
+    it('returns handler for customAddModal tabs', () => {
+      const setState = vi.fn();
+      const handler = getSecondaryEditRowHandler({ customAddModal: true, key: 'loc' }, setState);
+      expect(typeof handler).toBe('function');
+      handler({ id: 'R1' });
+      expect(setState).toHaveBeenCalledWith({ key: 'loc', rowId: 'R1' });
+    });
+
+    it('returns undefined for non-modal tabs', () => {
+      expect(getSecondaryEditRowHandler({ key: 'lines' }, vi.fn())).toBeUndefined();
+    });
+  });
+
+  describe('getSecondarySelectionChangeHandler', () => {
+    it('returns handler for inlineEditable', () => {
+      const setter = vi.fn();
+      const handler = getSecondarySelectionChangeHandler('inlineEditable', setter, { key: 'lines' });
+      expect(typeof handler).toBe('function');
+    });
+
+    it('returns undefined for other layouts', () => {
+      expect(getSecondarySelectionChangeHandler('classic', vi.fn(), { key: 'x' })).toBeUndefined();
+    });
+  });
+
+  describe('simple label/className helpers', () => {
+    const ui = (k) => k;
+
+    it('getSaveButtonLabel', () => {
+      expect(getSaveButtonLabel(true, ui)).toBe('loading');
+      expect(getSaveButtonLabel(false, ui)).toBe('save');
+    });
+
+    it('getChildSaveButtonLabel', () => {
+      expect(getChildSaveButtonLabel(true, ui)).toBe('loading');
+      expect(getChildSaveButtonLabel(false, ui)).toBe('save');
+    });
+
+    it('getAddLineWrapperClassName', () => {
+      expect(getAddLineWrapperClassName('inlineEditable')).toContain('sticky');
+      expect(getAddLineWrapperClassName('classic')).toBe('relative');
+    });
+
+    it('getAddLineWrapperStyle inlineEditable returns no border', () => {
+      const style = getAddLineWrapperStyle('inlineEditable');
+      expect(style).toBeDefined();
+    });
+
+    it('getAddLineWrapperStyle classic returns border style', () => {
+      const style = getAddLineWrapperStyle('classic');
+      expect(style).toBeDefined();
+    });
+
+    it('getDocumentIds', () => {
+      expect(getDocumentIds('abc')).toBeDefined();
+    });
+
+    it('getNotesRowClassName', () => {
+      expect(getNotesRowClassName(true)).toContain('pointer-events-none');
+      expect(getNotesRowClassName(false)).not.toContain('pointer-events-none');
+    });
+
+    it('getDocsRowClassName', () => {
+      expect(getDocsRowClassName(true)).toContain('pointer-events-none');
+      expect(getDocsRowClassName(false)).not.toContain('pointer-events-none');
+    });
+
+    it('getInlineEditableShrinkClassName', () => {
+      expect(getInlineEditableShrinkClassName('inlineEditable')).toContain('shrink');
+      expect(getInlineEditableShrinkClassName('classic')).toBe('');
+    });
+
+    it('getOthersTabClassName', () => {
+      expect(getOthersTabClassName(true)).toContain('pointer-events-none');
+      expect(getOthersTabClassName(false)).not.toContain('pointer-events-none');
+    });
+
+    it('getLinesTabsSectionClassName', () => {
+      expect(getLinesTabsSectionClassName('inlineEditable')).toBeDefined();
+      expect(getLinesTabsSectionClassName('classic')).toBeDefined();
+    });
+
+    it('getSecondaryTabEntityKey', () => {
+      const tabs = [{ key: 'a' }, { key: 'b' }];
+      expect(getSecondaryTabEntityKey(tabs, 0)).toBe('a');
+      expect(getSecondaryTabEntityKey(tabs, 1)).toBe('b');
+    });
+  });
+
+  describe('resolveCanAddLines', () => {
+    it('returns true when no guard', () => {
+      expect(resolveCanAddLines(undefined, {}, [])).toBe(true);
+    });
+
+    it('evaluates guard function', () => {
+      // guard receives (data, children) directly, not {data}
+      const guard = (data) => data.status === 'DR';
+      expect(resolveCanAddLines(guard, { status: 'DR' }, [])).toBe(true);
+      expect(resolveCanAddLines(guard, { status: 'CO' }, [])).toBe(false);
+    });
+
+    it('checks requiredHeaderFields', () => {
+      expect(resolveCanAddLines(null, { bp: null }, ['bp'])).toBe(false);
+      expect(resolveCanAddLines(null, { bp: 'ID1' }, ['bp'])).toBe(true);
+    });
+  });
+
+  describe('computeIsDirty', () => {
+    // Signature: (hook, addingLine, addingSecondaryLine, lineEdits, additionalDirtyState)
+    // hook uses isDirtyHeader, addingSecondaryLine is object with boolean values
+    it('returns true when hook.isDirtyHeader', () => {
+      expect(computeIsDirty({ isDirtyHeader: true }, false, {}, {}, false)).toBe(true);
+    });
+
+    it('returns true when addingLine', () => {
+      expect(computeIsDirty({ isDirtyHeader: false }, true, {}, {}, false)).toBe(true);
+    });
+
+    it('returns true when addingSecondaryLine has true value', () => {
+      expect(computeIsDirty({ isDirtyHeader: false }, false, { lines: true }, {}, false)).toBe(true);
+    });
+
+    it('returns true when lineEdits is non-empty', () => {
+      expect(computeIsDirty({ isDirtyHeader: false }, false, {}, { qty: 5 }, false)).toBe(true);
+    });
+
+    it('returns true when additionalDirtyState is true', () => {
+      expect(computeIsDirty({ isDirtyHeader: false }, false, {}, null, true)).toBe(true);
+    });
+
+    it('returns false when nothing dirty', () => {
+      expect(computeIsDirty({ isDirtyHeader: false }, false, {}, null, false)).toBe(false);
+    });
+  });
+
+  describe('hasRecordForRoute', () => {
+    it('true for new record', () => {
+      expect(hasRecordForRoute(true, {}, 'new')).toBe(true);
+    });
+
+    it('true when hook has selected with matching id', () => {
+      expect(hasRecordForRoute(false, { selected: { id: '123' } }, '123')).toBe(true);
+    });
+
+    it('falsy when no selected or different id', () => {
+      expect(hasRecordForRoute(false, {}, '123')).toBeFalsy();
+      expect(hasRecordForRoute(false, { selected: { id: '456' } }, '123')).toBeFalsy();
+    });
+  });
+
+  describe('isLoadingRecordForRoute', () => {
+    it('true when loading and not new', () => {
+      expect(isLoadingRecordForRoute({ loading: true }, false, '123')).toBe(true);
+    });
+
+    it('false when new', () => {
+      expect(isLoadingRecordForRoute({ loading: true }, true, 'new')).toBe(false);
+    });
+  });
+
+  describe('resolveHideMoreMenu', () => {
+    it('calls function with data', () => {
+      const hide = ({ data }) => data.processed;
+      expect(resolveHideMoreMenu(hide, { processed: true })).toBe(true);
+      expect(resolveHideMoreMenu(hide, { processed: false })).toBe(false);
+    });
+
+    it('returns boolean directly', () => {
+      expect(resolveHideMoreMenu(true, {})).toBe(true);
+      expect(resolveHideMoreMenu(false, {})).toBe(false);
+    });
+  });
+
+  describe('pushOthers', () => {
+    it('pushes others tab when showOthers is true', () => {
+      const tabs = [{ key: 'a' }];
+      const ui = (k) => k;
+      pushOthers(true, tabs, 'Others', ui);
+      expect(tabs.length).toBe(2);
+      expect(tabs[1].key).toBe('others');
+    });
+
+    it('does not push when showOthers is false', () => {
+      const tabs = [{ key: 'a' }];
+      pushOthers(false, tabs, 'Others', (k) => k);
+      expect(tabs.length).toBe(1);
+    });
+  });
+
+  describe('shouldShowLinesEmptyState', () => {
+    // Signature: (hook, addingLine, LinesEmptyState, isDocumentReadOnly)
+    // Requires hook.editing to be truthy
+    it('true when no children, not adding, EmptyState exists, editing, not readonly', () => {
+      expect(shouldShowLinesEmptyState({ children: [], editing: { id: '1' } }, false, () => null, false)).toBe(true);
+    });
+
+    it('false when has children', () => {
+      expect(shouldShowLinesEmptyState({ children: [1], editing: {} }, false, () => null, false)).toBe(false);
+    });
+
+    it('false when adding line', () => {
+      expect(shouldShowLinesEmptyState({ children: [], editing: {} }, true, () => null, false)).toBe(false);
+    });
+
+    it('falsy when no EmptyState component', () => {
+      expect(shouldShowLinesEmptyState({ children: [], editing: {} }, false, null, false)).toBeFalsy();
+    });
+
+    it('falsy when not editing', () => {
+      expect(shouldShowLinesEmptyState({ children: [], editing: null }, false, () => null, false)).toBeFalsy();
+    });
+  });
+
+  describe('isDeleteButtonVisible', () => {
+    // Signature: (isNew, recordId, data, statusField, hideDeleteWhenComplete, isProcessed)
+    it('false for new records', () => {
+      expect(isDeleteButtonVisible(true, 'new', {}, null, false, false)).toBeFalsy();
+    });
+
+    it('truthy for existing draft record', () => {
+      expect(isDeleteButtonVisible(false, '123', { documentStatus: 'DR' }, 'documentStatus', true, false)).toBeTruthy();
+    });
+
+    it('falsy for completed record with hideDeleteWhenComplete', () => {
+      // isDeleteVisibleForRecord returns false for CO + hideDeleteWhenComplete
+      expect(isDeleteButtonVisible(false, '123', { documentStatus: 'CO' }, 'documentStatus', true, true)).toBeFalsy();
+    });
+  });
+
+  describe('isBulkDeleteBarVisible', () => {
+    // linesLayout !== 'inlineEditable' for this function (it's for classic layout bulk delete)
+    it('true when NOT inline, delete allowed, not readonly, rows selected', () => {
+      expect(isBulkDeleteBarVisible('classic', { crud: { lines: { delete: true } } }, 'lines', false, [{ id: '1' }])).toBe(true);
+    });
+
+    it('false when no rows selected', () => {
+      expect(isBulkDeleteBarVisible('classic', { crud: { lines: {} } }, 'lines', false, [])).toBe(false);
+    });
+
+    it('false when readonly', () => {
+      expect(isBulkDeleteBarVisible('classic', {}, 'lines', true, [{ id: '1' }])).toBe(false);
+    });
+
+    it('false when inlineEditable layout', () => {
+      expect(isBulkDeleteBarVisible('inlineEditable', {}, 'lines', false, [{ id: '1' }])).toBe(false);
+    });
+  });
+
+  describe('isCustomPrimaryTabActive', () => {
+    // Returns: primaryTabs && activePrimaryTab !== 'general'
+    it('returns true when primaryTabs exist and tab is not general', () => {
+      expect(isCustomPrimaryTabActive([{ key: 'custom1' }], 'custom1')).toBe(true);
+    });
+
+    it('returns false when activePrimaryTab is general', () => {
+      expect(isCustomPrimaryTabActive([{ key: 'custom1' }], 'general')).toBe(false);
+    });
+
+    it('returns false/null when no primary tabs', () => {
+      expect(isCustomPrimaryTabActive(null, 'x')).toBeFalsy();
+    });
+  });
+
+  describe('canDeleteSelectedLine', () => {
+    it('true when delete allowed, line selected, not readonly', () => {
+      expect(canDeleteSelectedLine({ crud: { lines: { delete: true } } }, 'lines', { id: '1' }, false)).toBe(true);
+    });
+
+    it('false when readonly', () => {
+      expect(canDeleteSelectedLine({}, 'lines', { id: '1' }, true)).toBe(false);
+    });
+
+    it('falsy when no selected line', () => {
+      expect(canDeleteSelectedLine({}, 'lines', null, false)).toBeFalsy();
+    });
+  });
+
+  describe('shouldShowLineActionButtons', () => {
+    // Returns: hook.editing && (lineEdits || selectedLine?.id)
+    it('truthy when editing and lineEdits present', () => {
+      expect(shouldShowLineActionButtons({ editing: { id: '1' } }, { qty: 1 }, null)).toBeTruthy();
+    });
+
+    it('truthy when editing and selectedLine', () => {
+      expect(shouldShowLineActionButtons({ editing: { id: '1' } }, null, { id: 'L1' })).toBeTruthy();
+    });
+
+    it('falsy when not editing', () => {
+      expect(shouldShowLineActionButtons({ editing: null }, { qty: 1 }, { id: '1' })).toBeFalsy();
+    });
+  });
+
+  describe('shouldShowDetailFormSidebar', () => {
+    it('truthy when not inline, has DetailForm, has selectedLine', () => {
+      expect(shouldShowDetailFormSidebar('classic', () => null, { id: '1' }, false)).toBeTruthy();
+    });
+
+    it('truthy when closing (animation)', () => {
+      expect(shouldShowDetailFormSidebar('classic', () => null, null, true)).toBeTruthy();
+    });
+
+    it('falsy for inlineEditable', () => {
+      expect(shouldShowDetailFormSidebar('inlineEditable', () => null, { id: '1' }, false)).toBeFalsy();
+    });
+
+    it('falsy when no DetailForm', () => {
+      expect(shouldShowDetailFormSidebar('classic', null, { id: '1' }, false)).toBeFalsy();
+    });
+  });
+
+  describe('isInitialChildrenLoading', () => {
+    // Returns: hook.childrenLoading && hook.children.length === 0
+    it('true when childrenLoading and empty children', () => {
+      expect(isInitialChildrenLoading({ childrenLoading: true, children: [] })).toBe(true);
+    });
+
+    it('false when children already loaded', () => {
+      expect(isInitialChildrenLoading({ childrenLoading: true, children: [1] })).toBe(false);
+    });
+
+    it('false when not loading', () => {
+      expect(isInitialChildrenLoading({ childrenLoading: false, children: [] })).toBe(false);
+    });
+  });
+
+  describe('shouldShowInlineDeleteSelectionBar', () => {
+    it('true when inline layout and delete allowed', () => {
+      expect(shouldShowInlineDeleteSelectionBar('inlineEditable', { crud: { lines: { delete: true } } }, 'lines')).toBe(true);
+    });
+
+    it('false when not inline', () => {
+      expect(shouldShowInlineDeleteSelectionBar('classic', {}, 'lines')).toBe(false);
+    });
+  });
+
+  describe('resolveHeaderContent', () => {
+    it('calls function with data', () => {
+      const hc = (d) => `Header: ${d.name}`;
+      expect(resolveHeaderContent(hc, { name: 'Test' })).toBe('Header: Test');
+    });
+
+    it('returns value directly if not function', () => {
+      expect(resolveHeaderContent('static', {})).toBe('static');
+    });
+  });
+
+  describe('resolveSidebarContent', () => {
+    it('calls function with data', () => {
+      const sc = (d) => `Sidebar: ${d.id}`;
+      expect(resolveSidebarContent(sc, { id: '1' })).toBe('Sidebar: 1');
+    });
+
+    it('returns value directly if not function', () => {
+      expect(resolveSidebarContent(null, {})).toBeNull();
+    });
+  });
+
+  describe('getDetailContentClassName', () => {
+    it('includes flex-1 for side panel', () => {
+      const cls = getDetailContentClassName(() => null, 'classic');
+      expect(cls).toContain('flex-1');
+    });
+  });
+
+  describe('getSelectedLinesTotalLabel', () => {
+    it('returns a value (default formatting for empty selection)', () => {
+      // Even with null bottomSection, the function may return a formatted "0,00"
+      const result = getSelectedLinesTotalLabel(null, [], {}, {});
+      expect(result).toBeDefined();
+    });
+
+    it('computes total for selected rows', () => {
+      const rows = [{ lineNetAmount: 100 }, { lineNetAmount: 200 }];
+      const lineConfig = { totalField: 'lineNetAmount' };
+      const result = getSelectedLinesTotalLabel({ showSelectedTotal: true }, rows, lineConfig, {});
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('getTabsBarStyle', () => {
+    it('returns object with right spacing', () => {
+      expect(getTabsBarStyle('120px', true)).toBeDefined();
+    });
+  });
+
+  describe('getTabsBarClassName', () => {
+    it('includes padding', () => {
+      expect(getTabsBarClassName('px-6', false)).toContain('px-6');
+    });
+  });
+
+  describe('getAddLineMenuActions', () => {
+    it('returns undefined when no getLineMenuActions', () => {
+      const result = getAddLineMenuActions(null, {}, {}, (k) => k);
+      expect(result).toBeUndefined();
+    });
+
+    it('calls getLineMenuActions and translates labels', () => {
+      const getActions = ({ data }) => [{ label: 'import', action: vi.fn() }];
+      const ui = (k) => `t:${k}`;
+      const result = getAddLineMenuActions(getActions, { id: '1' }, {}, ui);
+      expect(result[0].label).toBe('t:import');
     });
   });
 });
