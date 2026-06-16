@@ -118,8 +118,7 @@
         },
         "depreciate": {
           "form": false,
-          "searchable": true,
-          "defaultExpr": "Y"
+          "searchable": true
         },
         "depreciationType": {
           "form": false,
@@ -127,8 +126,7 @@
         },
         "calculateType": {
           "form": false,
-          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'",
-          "defaultExpr": "TI"
+          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "annualDepreciation": {
           "form": false,
