@@ -18,7 +18,6 @@
       "newLabelKey": "matchRuleNew",
       "autoPriorityField": "priority",
       "autoPriorityStep": 10,
-      "footerToggleField": "createTransaction",
       "sectionGrid": { "general": 3, "dimensions": 4 },
       "sections": [
         { "key": "general" },
@@ -44,18 +43,14 @@
         "TextCondition": "Condición sobre el concepto",
         "TextPattern": "Patrón a buscar",
         "TransactionType": "Tipo de transacción",
-        "C_ElementValue_ID": "Cuenta contable",
-        "AmountTolerancePct": "Tolerancia de importe (%)",
-        "CreateTransaction": "Crear transacción automáticamente",
+        "C_GLItem_ID": "Concepto contable",
         "MatchCount": "Conciliaciones",
         "Isactive": "Activa",
         "C_BPartner_ID": "Contacto",
         "FIN_Financial_Account_ID": "Afecta a",
         "C_Project_ID": "Proyecto",
         "C_Costcenter_ID": "Centro de coste",
-        "C_Activity_ID": "Actividad",
-        "C_Campaign_ID": "Campaña",
-        "C_Salesregion_ID": "Región de ventas",
+        "M_Product_ID": "Producto",
         "User1_ID": "1ª Dimensión",
         "User2_ID": "2ª Dimensión"
       },
@@ -65,18 +60,14 @@
         "TextCondition": "Concept condition",
         "TextPattern": "Pattern to match",
         "TransactionType": "Transaction type",
-        "C_ElementValue_ID": "Accounting account",
-        "AmountTolerancePct": "Amount tolerance (%)",
-        "CreateTransaction": "Create transaction automatically",
+        "C_GLItem_ID": "Accounting concept",
         "MatchCount": "Reconciliations",
         "Isactive": "Active",
         "C_BPartner_ID": "Contact",
         "FIN_Financial_Account_ID": "Applies to",
         "C_Project_ID": "Project",
         "C_Costcenter_ID": "Cost center",
-        "C_Activity_ID": "Activity",
-        "C_Campaign_ID": "Campaign",
-        "C_Salesregion_ID": "Sales region",
+        "M_Product_ID": "Product",
         "User1_ID": "1st Dimension",
         "User2_ID": "2nd Dimension"
       }
@@ -84,6 +75,7 @@
   },
   "entities": {
     "etgoMatchRuleHeader": {
+      "javaQualifier": "match-rule",
       "fields": {
         "priority": {
           "grid": true,
@@ -151,27 +143,19 @@
             "O": "neutral"
           }
         },
-        "accountingAccount": {
+        "accountingConcept": {
+          "visibility": "editable",
           "grid": true,
           "gridOrder": 5,
-          "gridLabelKey": "matchRuleColAccount",
+          "gridLabelKey": "matchRuleColConcept",
           "form": true,
           "section": "general",
           "seq": 5,
           "inputMode": "selector"
         },
-        "amountTolerancePct": {
-          "grid": true,
-          "gridOrder": 6,
-          "gridLabelKey": "matchRuleColTolerance",
-          "form": true,
-          "section": "general",
-          "seq": 7,
-          "cellType": "percent"
-        },
         "matchCount": {
           "grid": true,
-          "gridOrder": 7,
+          "gridOrder": 6,
           "gridLabelKey": "matchRuleColReconciliations",
           "form": false,
           "visibility": "readOnly",
@@ -179,7 +163,7 @@
         },
         "active": {
           "grid": true,
-          "gridOrder": 8,
+          "gridOrder": 7,
           "gridLabelKey": "matchRuleColActive",
           "form": false,
           "inlineToggle": true,
@@ -199,13 +183,6 @@
           "section": "general",
           "seq": 9,
           "inputMode": "selector"
-        },
-        "createTransaction": {
-          "grid": false,
-          "form": true,
-          "section": "general",
-          "seq": 10,
-          "help": "matchRuleCreateTransactionHelper"
         },
         "project": {
           "grid": false,
@@ -235,25 +212,12 @@
           "seq": 23,
           "inputMode": "selector"
         },
-        "salesRegion": {
+        "product": {
+          "visibility": "editable",
           "grid": false,
           "form": true,
           "section": "dimensions",
           "seq": 24,
-          "inputMode": "selector"
-        },
-        "activity": {
-          "grid": false,
-          "form": true,
-          "section": "dimensions",
-          "seq": 25,
-          "inputMode": "selector"
-        },
-        "campaign": {
-          "grid": false,
-          "form": true,
-          "section": "dimensions",
-          "seq": 26,
           "inputMode": "selector"
         },
         "organization": { "visibility": "system" },

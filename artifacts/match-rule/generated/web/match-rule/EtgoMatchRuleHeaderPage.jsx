@@ -5,9 +5,8 @@ const columns = [
   { key: 'priority', column: 'Priority', type: 'number', label: 'Priority', labelKey: 'matchRuleColPriority', inlineEdit: true, cellType: 'priorityPill' },
   { key: 'name', column: 'Name', type: 'string', label: 'Name', labelKey: 'matchRuleColName', cellType: 'nameWithSubline', subField: 'businessPartner' },
   { key: 'textCondition', column: 'TextCondition', type: 'enum', label: 'Text Condition', labelKey: 'matchRuleColCondition', enumLabels: { 'C': 'Contains', 'R': 'Regex', 'S': 'Starts with' }, cellType: 'conditionChip', kindField: 'textCondition', patternField: 'textPattern', kindLabels: {"C":"matchRuleConditionContains","S":"matchRuleConditionStartsWith","R":"matchRuleConditionRegex"} },
-  { key: 'transactionType', column: 'TransactionType', type: 'enum', label: 'Transaction Type', labelKey: 'matchRuleColType', enumLabels: { 'B': 'Bank fee', 'T': 'Transfer', 'H': 'Tax retention' }, cellType: 'typePill', tones: {"H":"blue","T":"neutral","B":"amber","R":"green","O":"neutral"} },
-  { key: 'accountingAccount', column: 'C_ElementValue_ID', type: 'selector', label: 'Accounting Account', labelKey: 'matchRuleColAccount' },
-  { key: 'amountTolerancePct', column: 'AmountTolerancePct', type: 'number', label: 'Amount Tolerance Pct', labelKey: 'matchRuleColTolerance', cellType: 'percent' },
+  { key: 'transactionType', column: 'TransactionType', type: 'enum', label: 'Transaction Type', labelKey: 'matchRuleColType', enumLabels: { 'B': 'Bank fee', 'H': 'Tax retention', 'T': 'Transfer' }, cellType: 'typePill', tones: {"H":"blue","T":"neutral","B":"amber","R":"green","O":"neutral"} },
+  { key: 'accountingConcept', column: 'C_GLItem_ID', type: 'selector', label: 'C_GLItem_ID', labelKey: 'matchRuleColConcept' },
   { key: 'matchCount', column: 'MatchCount', type: 'number', label: 'Match Count', labelKey: 'matchRuleColReconciliations', cellType: 'boldText' },
   { key: 'active', column: 'Isactive', type: 'boolean', label: 'Active', labelKey: 'matchRuleColActive', toggle: true, cellType: 'toggle' },
 ];
@@ -18,20 +17,16 @@ const fields = [
   { key: 'name', column: 'Name', type: 'text', label: 'Name', required: true, section: 'general', placeholderKey: 'matchRuleNamePlaceholder' },
   { key: 'textPattern', column: 'TextPattern', type: 'text', label: 'Text Pattern', required: true, section: 'general', placeholderKey: 'matchRulePatternPlaceholder' },
   { key: 'financialAccount', column: 'FIN_Financial_Account_ID', type: 'selector', label: 'Financial Account', reference: 'Financial_Account', inputMode: 'selector', section: 'general', emptyOptionLabelKey: 'matchRuleAllAccounts' },
-  { key: 'transactionType', column: 'TransactionType', type: 'select', label: 'Transaction Type', section: 'general', options: [{ value: 'B', label: 'Bank fee' }, { value: 'T', label: 'Transfer' }, { value: 'H', label: 'Tax retention' }] },
-  { key: 'accountingAccount', column: 'C_ElementValue_ID', type: 'selector', label: 'Accounting Account', reference: 'ElementValue', inputMode: 'selector', section: 'general' },
+  { key: 'transactionType', column: 'TransactionType', type: 'select', label: 'Transaction Type', section: 'general', options: [{ value: 'B', label: 'Bank fee' }, { value: 'H', label: 'Tax retention' }, { value: 'T', label: 'Transfer' }] },
+  { key: 'accountingConcept', column: 'C_GLItem_ID', type: 'selector', label: 'C_GLItem_ID', reference: 'GLItem', inputMode: 'selector', section: 'general' },
   { key: 'textCondition', column: 'TextCondition', type: 'select', label: 'Text Condition', required: true, section: 'general', options: [{ value: 'C', label: 'Contains' }, { value: 'R', label: 'Regex' }, { value: 'S', label: 'Starts with' }] },
-  { key: 'amountTolerancePct', column: 'AmountTolerancePct', type: 'number', label: 'Amount Tolerance Pct', section: 'general', defaultValue: '0' },
   { key: 'priority', column: 'Priority', type: 'number', label: 'Priority', required: true, section: 'general' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner', reference: 'BPartner', inputMode: 'selector', section: 'general' },
-  { key: 'createTransaction', column: 'CreateTransaction', type: 'checkbox', label: 'Create Transaction', section: 'general', help: 'matchRuleCreateTransactionHelper' },
   { key: 'project', column: 'C_Project_ID', type: 'selector', label: 'Project', reference: 'Project', inputMode: 'selector', section: 'dimensions' },
   { key: 'costCenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'Costcenter', inputMode: 'selector', section: 'dimensions' },
   { key: 'user1Dimension', column: 'User1_ID', type: 'selector', label: 'User1 Dimension', reference: 'User1', inputMode: 'selector', section: 'dimensions' },
   { key: 'user2Dimension', column: 'User2_ID', type: 'selector', label: 'User2 Dimension', reference: 'User2', inputMode: 'selector', section: 'dimensions' },
-  { key: 'salesRegion', column: 'C_Salesregion_ID', type: 'selector', label: 'Sales Region', reference: 'Salesregion', inputMode: 'selector', section: 'dimensions' },
-  { key: 'activity', column: 'C_Activity_ID', type: 'selector', label: 'Activity', reference: 'Activity', inputMode: 'selector', section: 'dimensions' },
-  { key: 'campaign', column: 'C_Campaign_ID', type: 'selector', label: 'Campaign', reference: 'Campaign', inputMode: 'selector', section: 'dimensions' },
+  { key: 'product', column: 'M_Product_ID', type: 'selector', label: 'M_Product_ID', reference: 'Product', inputMode: 'selector', section: 'dimensions' },
 ];
 
 const sections = [
@@ -56,7 +51,7 @@ const listModalConfig = {
   "autoPriorityField": "priority",
   "autoPriorityStep": 10,
   "identifierField": null,
-  "footerToggleField": "createTransaction",
+  "footerToggleField": null,
   "sectionGrid": {
     "general": 3,
     "dimensions": 4
@@ -104,14 +99,6 @@ export const api = {
   "selectors": [
     {
       "entity": "etgoMatchRuleHeader",
-      "field": "accountingAccount",
-      "column": "C_ElementValue_ID",
-      "reference": "ElementValue",
-      "inputMode": "selector",
-      "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/accountingAccount"
-    },
-    {
-      "entity": "etgoMatchRuleHeader",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BPartner",
@@ -144,30 +131,6 @@ export const api = {
     },
     {
       "entity": "etgoMatchRuleHeader",
-      "field": "activity",
-      "column": "C_Activity_ID",
-      "reference": "Activity",
-      "inputMode": "selector",
-      "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/activity"
-    },
-    {
-      "entity": "etgoMatchRuleHeader",
-      "field": "campaign",
-      "column": "C_Campaign_ID",
-      "reference": "Campaign",
-      "inputMode": "selector",
-      "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/campaign"
-    },
-    {
-      "entity": "etgoMatchRuleHeader",
-      "field": "salesRegion",
-      "column": "C_Salesregion_ID",
-      "reference": "Salesregion",
-      "inputMode": "selector",
-      "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/salesRegion"
-    },
-    {
-      "entity": "etgoMatchRuleHeader",
       "field": "user1Dimension",
       "column": "User1_ID",
       "reference": "User1",
@@ -181,6 +144,22 @@ export const api = {
       "reference": "User2",
       "inputMode": "selector",
       "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/user2Dimension"
+    },
+    {
+      "entity": "etgoMatchRuleHeader",
+      "field": "accountingConcept",
+      "column": "C_GLItem_ID",
+      "reference": "GLItem",
+      "inputMode": "selector",
+      "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/accountingConcept"
+    },
+    {
+      "entity": "etgoMatchRuleHeader",
+      "field": "product",
+      "column": "M_Product_ID",
+      "reference": "Product",
+      "inputMode": "selector",
+      "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/product"
     }
   ],
   "actions": [],
@@ -207,18 +186,14 @@ export const api = {
       "TextCondition": "Condición sobre el concepto",
       "TextPattern": "Patrón a buscar",
       "TransactionType": "Tipo de transacción",
-      "C_ElementValue_ID": "Cuenta contable",
-      "AmountTolerancePct": "Tolerancia de importe (%)",
-      "CreateTransaction": "Crear transacción automáticamente",
+      "C_GLItem_ID": "Concepto contable",
       "MatchCount": "Conciliaciones",
       "Isactive": "Activa",
       "C_BPartner_ID": "Contacto",
       "FIN_Financial_Account_ID": "Afecta a",
       "C_Project_ID": "Proyecto",
       "C_Costcenter_ID": "Centro de coste",
-      "C_Activity_ID": "Actividad",
-      "C_Campaign_ID": "Campaña",
-      "C_Salesregion_ID": "Región de ventas",
+      "M_Product_ID": "Producto",
       "User1_ID": "1ª Dimensión",
       "User2_ID": "2ª Dimensión"
     },
@@ -228,18 +203,14 @@ export const api = {
       "TextCondition": "Concept condition",
       "TextPattern": "Pattern to match",
       "TransactionType": "Transaction type",
-      "C_ElementValue_ID": "Accounting account",
-      "AmountTolerancePct": "Amount tolerance (%)",
-      "CreateTransaction": "Create transaction automatically",
+      "C_GLItem_ID": "Accounting concept",
       "MatchCount": "Reconciliations",
       "Isactive": "Active",
       "C_BPartner_ID": "Contact",
       "FIN_Financial_Account_ID": "Applies to",
       "C_Project_ID": "Project",
       "C_Costcenter_ID": "Cost center",
-      "C_Activity_ID": "Activity",
-      "C_Campaign_ID": "Campaign",
-      "C_Salesregion_ID": "Sales region",
+      "M_Product_ID": "Product",
       "User1_ID": "1st Dimension",
       "User2_ID": "2nd Dimension"
     }

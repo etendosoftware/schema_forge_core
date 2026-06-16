@@ -1,8 +1,8 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-06-11T18:36:13.442Z",
-  "updatedAt": "2026-06-12T15:15:58.245Z",
-  "checksum": "712c10b9152068e7",
+  "updatedAt": "2026-06-16T12:19:39.976Z",
+  "checksum": "260082580a7fbf3f",
   "frontendContract": {
     "window": {
       "id": "24963D64E83B4543A7F6BD248CF944EE",
@@ -20,7 +20,6 @@
         "newLabelKey": "matchRuleNew",
         "autoPriorityField": "priority",
         "autoPriorityStep": 10,
-        "footerToggleField": "createTransaction",
         "sectionGrid": {
           "general": 3,
           "dimensions": 4
@@ -62,18 +61,14 @@
           "TextCondition": "Condición sobre el concepto",
           "TextPattern": "Patrón a buscar",
           "TransactionType": "Tipo de transacción",
-          "C_ElementValue_ID": "Cuenta contable",
-          "AmountTolerancePct": "Tolerancia de importe (%)",
-          "CreateTransaction": "Crear transacción automáticamente",
+          "C_GLItem_ID": "Concepto contable",
           "MatchCount": "Conciliaciones",
           "Isactive": "Activa",
           "C_BPartner_ID": "Contacto",
           "FIN_Financial_Account_ID": "Afecta a",
           "C_Project_ID": "Proyecto",
           "C_Costcenter_ID": "Centro de coste",
-          "C_Activity_ID": "Actividad",
-          "C_Campaign_ID": "Campaña",
-          "C_Salesregion_ID": "Región de ventas",
+          "M_Product_ID": "Producto",
           "User1_ID": "1ª Dimensión",
           "User2_ID": "2ª Dimensión"
         },
@@ -83,18 +78,14 @@
           "TextCondition": "Concept condition",
           "TextPattern": "Pattern to match",
           "TransactionType": "Transaction type",
-          "C_ElementValue_ID": "Accounting account",
-          "AmountTolerancePct": "Amount tolerance (%)",
-          "CreateTransaction": "Create transaction automatically",
+          "C_GLItem_ID": "Accounting concept",
           "MatchCount": "Reconciliations",
           "Isactive": "Active",
           "C_BPartner_ID": "Contact",
           "FIN_Financial_Account_ID": "Applies to",
           "C_Project_ID": "Project",
           "C_Costcenter_ID": "Cost center",
-          "C_Activity_ID": "Activity",
-          "C_Campaign_ID": "Campaign",
-          "C_Salesregion_ID": "Sales region",
+          "M_Product_ID": "Product",
           "User1_ID": "1st Dimension",
           "User2_ID": "2nd Dimension"
         }
@@ -127,26 +118,8 @@
             "defaultValue": "Y",
             "cellType": "toggle",
             "gridLabelKey": "matchRuleColActive",
-            "gridOrder": 8,
+            "gridOrder": 7,
             "inlineToggle": true
-          },
-          {
-            "name": "accountingAccount",
-            "apiKey": "accountingAccount",
-            "column": "C_ElementValue_ID",
-            "label": "Accounting Account",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": true,
-            "form": true,
-            "reference": "ElementValue",
-            "inputMode": "selector",
-            "section": "general",
-            "seq": 5,
-            "gridLabelKey": "matchRuleColAccount",
-            "gridOrder": 5
           },
           {
             "name": "name",
@@ -220,12 +193,12 @@
                 "name": "Bank fee"
               },
               {
-                "value": "T",
-                "name": "Transfer"
-              },
-              {
                 "value": "H",
                 "name": "Tax retention"
+              },
+              {
+                "value": "T",
+                "name": "Transfer"
               }
             ],
             "section": "general",
@@ -240,48 +213,6 @@
             },
             "gridLabelKey": "matchRuleColType",
             "gridOrder": 4
-          },
-          {
-            "name": "amountTolerancePct",
-            "apiKey": "amountTolerancePct",
-            "column": "AmountTolerancePct",
-            "label": "Amount Tolerance Pct",
-            "type": "integer",
-            "tsType": "number",
-            "visibility": "editable",
-            "required": false,
-            "grid": true,
-            "form": true,
-            "derivation": {
-              "type": "computed",
-              "source": "0"
-            },
-            "defaultValue": "0",
-            "section": "general",
-            "seq": 7,
-            "cellType": "percent",
-            "gridLabelKey": "matchRuleColTolerance",
-            "gridOrder": 6
-          },
-          {
-            "name": "createTransaction",
-            "apiKey": "createTransaction",
-            "column": "CreateTransaction",
-            "label": "Create Transaction",
-            "type": "boolean",
-            "tsType": "boolean",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "derivation": {
-              "type": "computed",
-              "source": "N"
-            },
-            "defaultValue": "N",
-            "help": "matchRuleCreateTransactionHelper",
-            "section": "general",
-            "seq": 10
           },
           {
             "name": "matchCount",
@@ -301,7 +232,7 @@
             "defaultValue": "0",
             "cellType": "boldText",
             "gridLabelKey": "matchRuleColReconciliations",
-            "gridOrder": 7
+            "gridOrder": 6
           },
           {
             "name": "businessPartner",
@@ -367,54 +298,6 @@
             "inputMode": "selector",
             "section": "dimensions",
             "seq": 21
-          },
-          {
-            "name": "activity",
-            "apiKey": "activity",
-            "column": "C_Activity_ID",
-            "label": "Activity",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "Activity",
-            "inputMode": "selector",
-            "section": "dimensions",
-            "seq": 25
-          },
-          {
-            "name": "campaign",
-            "apiKey": "campaign",
-            "column": "C_Campaign_ID",
-            "label": "Campaign",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "Campaign",
-            "inputMode": "selector",
-            "section": "dimensions",
-            "seq": 26
-          },
-          {
-            "name": "salesRegion",
-            "apiKey": "salesRegion",
-            "column": "C_Salesregion_ID",
-            "label": "Sales Region",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "Salesregion",
-            "inputMode": "selector",
-            "section": "dimensions",
-            "seq": 24
           },
           {
             "name": "user1Dimension",
@@ -486,6 +369,40 @@
             },
             "gridLabelKey": "matchRuleColCondition",
             "gridOrder": 3
+          },
+          {
+            "name": "accountingConcept",
+            "apiKey": "accountingConcept",
+            "column": "C_GLItem_ID",
+            "label": "C_GLItem_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "GLItem",
+            "inputMode": "selector",
+            "section": "general",
+            "seq": 5,
+            "gridLabelKey": "matchRuleColConcept",
+            "gridOrder": 5
+          },
+          {
+            "name": "product",
+            "apiKey": "product",
+            "column": "M_Product_ID",
+            "label": "M_Product_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "Product",
+            "inputMode": "selector",
+            "section": "dimensions",
+            "seq": 24
           }
         ],
         "searchableFields": [
@@ -501,27 +418,14 @@
             }
           },
           {
-            "name": "amountTolerancePct",
-            "derivation": {
-              "type": "computed",
-              "source": "0"
-            }
-          },
-          {
-            "name": "createTransaction",
-            "derivation": {
-              "type": "computed",
-              "source": "N"
-            }
-          },
-          {
             "name": "matchCount",
             "derivation": {
               "type": "computed",
               "source": "0"
             }
           }
-        ]
+        ],
+        "javaQualifier": "match-rule"
       }
     }
   },
@@ -542,7 +446,6 @@
         "newLabelKey": "matchRuleNew",
         "autoPriorityField": "priority",
         "autoPriorityStep": 10,
-        "footerToggleField": "createTransaction",
         "sectionGrid": {
           "general": 3,
           "dimensions": 4
@@ -584,18 +487,14 @@
           "TextCondition": "Condición sobre el concepto",
           "TextPattern": "Patrón a buscar",
           "TransactionType": "Tipo de transacción",
-          "C_ElementValue_ID": "Cuenta contable",
-          "AmountTolerancePct": "Tolerancia de importe (%)",
-          "CreateTransaction": "Crear transacción automáticamente",
+          "C_GLItem_ID": "Concepto contable",
           "MatchCount": "Conciliaciones",
           "Isactive": "Activa",
           "C_BPartner_ID": "Contacto",
           "FIN_Financial_Account_ID": "Afecta a",
           "C_Project_ID": "Proyecto",
           "C_Costcenter_ID": "Centro de coste",
-          "C_Activity_ID": "Actividad",
-          "C_Campaign_ID": "Campaña",
-          "C_Salesregion_ID": "Región de ventas",
+          "M_Product_ID": "Producto",
           "User1_ID": "1ª Dimensión",
           "User2_ID": "2ª Dimensión"
         },
@@ -605,18 +504,14 @@
           "TextCondition": "Concept condition",
           "TextPattern": "Pattern to match",
           "TransactionType": "Transaction type",
-          "C_ElementValue_ID": "Accounting account",
-          "AmountTolerancePct": "Amount tolerance (%)",
-          "CreateTransaction": "Create transaction automatically",
+          "C_GLItem_ID": "Accounting concept",
           "MatchCount": "Reconciliations",
           "Isactive": "Active",
           "C_BPartner_ID": "Contact",
           "FIN_Financial_Account_ID": "Applies to",
           "C_Project_ID": "Project",
           "C_Costcenter_ID": "Cost center",
-          "C_Activity_ID": "Activity",
-          "C_Campaign_ID": "Campaign",
-          "C_Salesregion_ID": "Sales region",
+          "M_Product_ID": "Product",
           "User1_ID": "1st Dimension",
           "User2_ID": "2nd Dimension"
         }
@@ -644,14 +539,6 @@
             "type": "boolean",
             "visibility": "editable",
             "required": true
-          },
-          {
-            "name": "accountingAccount",
-            "apiKey": "accountingAccount",
-            "column": "C_ElementValue_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": false
           },
           {
             "name": "name",
@@ -682,22 +569,6 @@
             "apiKey": "transactionType",
             "column": "TransactionType",
             "type": "enum",
-            "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "amountTolerancePct",
-            "apiKey": "amountTolerancePct",
-            "column": "AmountTolerancePct",
-            "type": "integer",
-            "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "createTransaction",
-            "apiKey": "createTransaction",
-            "column": "CreateTransaction",
-            "type": "boolean",
             "visibility": "editable",
             "required": false
           },
@@ -737,30 +608,6 @@
             "name": "costCenter",
             "apiKey": "costCenter",
             "column": "C_Costcenter_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "activity",
-            "apiKey": "activity",
-            "column": "C_Activity_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "campaign",
-            "apiKey": "campaign",
-            "column": "C_Campaign_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "salesRegion",
-            "apiKey": "salesRegion",
-            "column": "C_Salesregion_ID",
             "type": "foreignKey",
             "visibility": "editable",
             "required": false
@@ -836,8 +683,25 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "accountingConcept",
+            "apiKey": "accountingConcept",
+            "column": "C_GLItem_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "product",
+            "apiKey": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
           }
-        ]
+        ],
+        "javaQualifier": "match-rule"
       }
     },
     "endpoints": [
@@ -899,14 +763,6 @@
     "selectors": [
       {
         "entity": "etgoMatchRuleHeader",
-        "field": "accountingAccount",
-        "column": "C_ElementValue_ID",
-        "reference": "ElementValue",
-        "inputMode": "selector",
-        "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/accountingAccount"
-      },
-      {
-        "entity": "etgoMatchRuleHeader",
         "field": "businessPartner",
         "column": "C_BPartner_ID",
         "reference": "BPartner",
@@ -939,30 +795,6 @@
       },
       {
         "entity": "etgoMatchRuleHeader",
-        "field": "activity",
-        "column": "C_Activity_ID",
-        "reference": "Activity",
-        "inputMode": "selector",
-        "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/activity"
-      },
-      {
-        "entity": "etgoMatchRuleHeader",
-        "field": "campaign",
-        "column": "C_Campaign_ID",
-        "reference": "Campaign",
-        "inputMode": "selector",
-        "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/campaign"
-      },
-      {
-        "entity": "etgoMatchRuleHeader",
-        "field": "salesRegion",
-        "column": "C_Salesregion_ID",
-        "reference": "Salesregion",
-        "inputMode": "selector",
-        "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/salesRegion"
-      },
-      {
-        "entity": "etgoMatchRuleHeader",
         "field": "user1Dimension",
         "column": "User1_ID",
         "reference": "User1",
@@ -976,6 +808,22 @@
         "reference": "User2",
         "inputMode": "selector",
         "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/user2Dimension"
+      },
+      {
+        "entity": "etgoMatchRuleHeader",
+        "field": "accountingConcept",
+        "column": "C_GLItem_ID",
+        "reference": "GLItem",
+        "inputMode": "selector",
+        "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/accountingConcept"
+      },
+      {
+        "entity": "etgoMatchRuleHeader",
+        "field": "product",
+        "column": "M_Product_ID",
+        "reference": "Product",
+        "inputMode": "selector",
+        "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/product"
       }
     ],
     "actions": [],
@@ -1002,18 +850,14 @@
         "TextCondition": "Condición sobre el concepto",
         "TextPattern": "Patrón a buscar",
         "TransactionType": "Tipo de transacción",
-        "C_ElementValue_ID": "Cuenta contable",
-        "AmountTolerancePct": "Tolerancia de importe (%)",
-        "CreateTransaction": "Crear transacción automáticamente",
+        "C_GLItem_ID": "Concepto contable",
         "MatchCount": "Conciliaciones",
         "Isactive": "Activa",
         "C_BPartner_ID": "Contacto",
         "FIN_Financial_Account_ID": "Afecta a",
         "C_Project_ID": "Proyecto",
         "C_Costcenter_ID": "Centro de coste",
-        "C_Activity_ID": "Actividad",
-        "C_Campaign_ID": "Campaña",
-        "C_Salesregion_ID": "Región de ventas",
+        "M_Product_ID": "Producto",
         "User1_ID": "1ª Dimensión",
         "User2_ID": "2ª Dimensión"
       },
@@ -1023,18 +867,14 @@
         "TextCondition": "Concept condition",
         "TextPattern": "Pattern to match",
         "TransactionType": "Transaction type",
-        "C_ElementValue_ID": "Accounting account",
-        "AmountTolerancePct": "Amount tolerance (%)",
-        "CreateTransaction": "Create transaction automatically",
+        "C_GLItem_ID": "Accounting concept",
         "MatchCount": "Reconciliations",
         "Isactive": "Active",
         "C_BPartner_ID": "Contact",
         "FIN_Financial_Account_ID": "Applies to",
         "C_Project_ID": "Project",
         "C_Costcenter_ID": "Cost center",
-        "C_Activity_ID": "Activity",
-        "C_Campaign_ID": "Campaign",
-        "C_Salesregion_ID": "Sales region",
+        "M_Product_ID": "Product",
         "User1_ID": "1st Dimension",
         "User2_ID": "2nd Dimension"
       }
@@ -1048,7 +888,6 @@
             "required": true,
             "defaultValue": "Y"
           },
-          "accountingAccount": {},
           "name": {
             "required": true
           },
@@ -1059,12 +898,6 @@
             "required": true
           },
           "transactionType": {},
-          "amountTolerancePct": {
-            "defaultValue": "0"
-          },
-          "createTransaction": {
-            "defaultValue": "N"
-          },
           "matchCount": {
             "readOnly": true,
             "defaultValue": "0"
@@ -1073,14 +906,13 @@
           "financialAccount": {},
           "project": {},
           "costCenter": {},
-          "activity": {},
-          "campaign": {},
-          "salesRegion": {},
           "user1Dimension": {},
           "user2Dimension": {},
           "textCondition": {
             "required": true
-          }
+          },
+          "accountingConcept": {},
+          "product": {}
         }
       }
     },
@@ -1149,22 +981,6 @@
         "description": "Default value for 'active' in etgoMatchRuleHeader should be a string"
       },
       {
-        "id": "t-default-value-type-etgoMatchRuleHeader-amountTolerancePct",
-        "category": "default-value-type",
-        "entity": "etgoMatchRuleHeader",
-        "field": "amountTolerancePct",
-        "runner": "node",
-        "description": "Default value for 'amountTolerancePct' in etgoMatchRuleHeader should be a string"
-      },
-      {
-        "id": "t-default-value-type-etgoMatchRuleHeader-createTransaction",
-        "category": "default-value-type",
-        "entity": "etgoMatchRuleHeader",
-        "field": "createTransaction",
-        "runner": "node",
-        "description": "Default value for 'createTransaction' in etgoMatchRuleHeader should be a string"
-      },
-      {
         "id": "t-default-value-type-etgoMatchRuleHeader-matchCount",
         "category": "default-value-type",
         "entity": "etgoMatchRuleHeader",
@@ -1173,12 +989,12 @@
         "description": "Default value for 'matchCount' in etgoMatchRuleHeader should be a string"
       },
       {
-        "id": "t-field-presence-etgoMatchRuleHeader-accountingAccount",
+        "id": "t-field-presence-etgoMatchRuleHeader-accountingConcept",
         "category": "field-presence",
         "entity": "etgoMatchRuleHeader",
-        "field": "accountingAccount",
+        "field": "accountingConcept",
         "runner": "node",
-        "description": "Field 'accountingAccount' should be present in etgoMatchRuleHeader"
+        "description": "Field 'accountingConcept' should be present in etgoMatchRuleHeader"
       },
       {
         "id": "t-field-presence-etgoMatchRuleHeader-active",
@@ -1189,22 +1005,6 @@
         "description": "Field 'active' should be present in etgoMatchRuleHeader"
       },
       {
-        "id": "t-field-presence-etgoMatchRuleHeader-activity",
-        "category": "field-presence",
-        "entity": "etgoMatchRuleHeader",
-        "field": "activity",
-        "runner": "node",
-        "description": "Field 'activity' should be present in etgoMatchRuleHeader"
-      },
-      {
-        "id": "t-field-presence-etgoMatchRuleHeader-amountTolerancePct",
-        "category": "field-presence",
-        "entity": "etgoMatchRuleHeader",
-        "field": "amountTolerancePct",
-        "runner": "node",
-        "description": "Field 'amountTolerancePct' should be present in etgoMatchRuleHeader"
-      },
-      {
         "id": "t-field-presence-etgoMatchRuleHeader-businessPartner",
         "category": "field-presence",
         "entity": "etgoMatchRuleHeader",
@@ -1213,28 +1013,12 @@
         "description": "Field 'businessPartner' should be present in etgoMatchRuleHeader"
       },
       {
-        "id": "t-field-presence-etgoMatchRuleHeader-campaign",
-        "category": "field-presence",
-        "entity": "etgoMatchRuleHeader",
-        "field": "campaign",
-        "runner": "node",
-        "description": "Field 'campaign' should be present in etgoMatchRuleHeader"
-      },
-      {
         "id": "t-field-presence-etgoMatchRuleHeader-costCenter",
         "category": "field-presence",
         "entity": "etgoMatchRuleHeader",
         "field": "costCenter",
         "runner": "node",
         "description": "Field 'costCenter' should be present in etgoMatchRuleHeader"
-      },
-      {
-        "id": "t-field-presence-etgoMatchRuleHeader-createTransaction",
-        "category": "field-presence",
-        "entity": "etgoMatchRuleHeader",
-        "field": "createTransaction",
-        "runner": "node",
-        "description": "Field 'createTransaction' should be present in etgoMatchRuleHeader"
       },
       {
         "id": "t-field-presence-etgoMatchRuleHeader-financialAccount",
@@ -1269,20 +1053,20 @@
         "description": "Field 'priority' should be present in etgoMatchRuleHeader"
       },
       {
+        "id": "t-field-presence-etgoMatchRuleHeader-product",
+        "category": "field-presence",
+        "entity": "etgoMatchRuleHeader",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in etgoMatchRuleHeader"
+      },
+      {
         "id": "t-field-presence-etgoMatchRuleHeader-project",
         "category": "field-presence",
         "entity": "etgoMatchRuleHeader",
         "field": "project",
         "runner": "node",
         "description": "Field 'project' should be present in etgoMatchRuleHeader"
-      },
-      {
-        "id": "t-field-presence-etgoMatchRuleHeader-salesRegion",
-        "category": "field-presence",
-        "entity": "etgoMatchRuleHeader",
-        "field": "salesRegion",
-        "runner": "node",
-        "description": "Field 'salesRegion' should be present in etgoMatchRuleHeader"
       },
       {
         "id": "t-field-presence-etgoMatchRuleHeader-textCondition",
@@ -1325,12 +1109,12 @@
         "description": "Field 'user2Dimension' should be present in etgoMatchRuleHeader"
       },
       {
-        "id": "t-field-type-etgoMatchRuleHeader-accountingAccount",
+        "id": "t-field-type-etgoMatchRuleHeader-accountingConcept",
         "category": "field-type",
         "entity": "etgoMatchRuleHeader",
-        "field": "accountingAccount",
+        "field": "accountingConcept",
         "runner": "node",
-        "description": "Field 'accountingAccount' should have type 'string' in etgoMatchRuleHeader"
+        "description": "Field 'accountingConcept' should have type 'string' in etgoMatchRuleHeader"
       },
       {
         "id": "t-field-type-etgoMatchRuleHeader-active",
@@ -1341,22 +1125,6 @@
         "description": "Field 'active' should have type 'boolean' in etgoMatchRuleHeader"
       },
       {
-        "id": "t-field-type-etgoMatchRuleHeader-activity",
-        "category": "field-type",
-        "entity": "etgoMatchRuleHeader",
-        "field": "activity",
-        "runner": "node",
-        "description": "Field 'activity' should have type 'string' in etgoMatchRuleHeader"
-      },
-      {
-        "id": "t-field-type-etgoMatchRuleHeader-amountTolerancePct",
-        "category": "field-type",
-        "entity": "etgoMatchRuleHeader",
-        "field": "amountTolerancePct",
-        "runner": "node",
-        "description": "Field 'amountTolerancePct' should have type 'number' in etgoMatchRuleHeader"
-      },
-      {
         "id": "t-field-type-etgoMatchRuleHeader-businessPartner",
         "category": "field-type",
         "entity": "etgoMatchRuleHeader",
@@ -1365,28 +1133,12 @@
         "description": "Field 'businessPartner' should have type 'string' in etgoMatchRuleHeader"
       },
       {
-        "id": "t-field-type-etgoMatchRuleHeader-campaign",
-        "category": "field-type",
-        "entity": "etgoMatchRuleHeader",
-        "field": "campaign",
-        "runner": "node",
-        "description": "Field 'campaign' should have type 'string' in etgoMatchRuleHeader"
-      },
-      {
         "id": "t-field-type-etgoMatchRuleHeader-costCenter",
         "category": "field-type",
         "entity": "etgoMatchRuleHeader",
         "field": "costCenter",
         "runner": "node",
         "description": "Field 'costCenter' should have type 'string' in etgoMatchRuleHeader"
-      },
-      {
-        "id": "t-field-type-etgoMatchRuleHeader-createTransaction",
-        "category": "field-type",
-        "entity": "etgoMatchRuleHeader",
-        "field": "createTransaction",
-        "runner": "node",
-        "description": "Field 'createTransaction' should have type 'boolean' in etgoMatchRuleHeader"
       },
       {
         "id": "t-field-type-etgoMatchRuleHeader-financialAccount",
@@ -1421,20 +1173,20 @@
         "description": "Field 'priority' should have type 'number' in etgoMatchRuleHeader"
       },
       {
+        "id": "t-field-type-etgoMatchRuleHeader-product",
+        "category": "field-type",
+        "entity": "etgoMatchRuleHeader",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in etgoMatchRuleHeader"
+      },
+      {
         "id": "t-field-type-etgoMatchRuleHeader-project",
         "category": "field-type",
         "entity": "etgoMatchRuleHeader",
         "field": "project",
         "runner": "node",
         "description": "Field 'project' should have type 'string' in etgoMatchRuleHeader"
-      },
-      {
-        "id": "t-field-type-etgoMatchRuleHeader-salesRegion",
-        "category": "field-type",
-        "entity": "etgoMatchRuleHeader",
-        "field": "salesRegion",
-        "runner": "node",
-        "description": "Field 'salesRegion' should have type 'string' in etgoMatchRuleHeader"
       },
       {
         "id": "t-field-type-etgoMatchRuleHeader-textCondition",
@@ -1493,20 +1245,12 @@
         "description": "Field 'textPattern' should be a supported filter for etgoMatchRuleHeader"
       },
       {
-        "id": "t-selector-endpoint-etgoMatchRuleHeader-accountingAccount",
+        "id": "t-selector-endpoint-etgoMatchRuleHeader-accountingConcept",
         "category": "selector-endpoint",
         "entity": "etgoMatchRuleHeader",
-        "field": "accountingAccount",
+        "field": "accountingConcept",
         "runner": "node",
-        "description": "Selector endpoint for 'accountingAccount' in etgoMatchRuleHeader should exist"
-      },
-      {
-        "id": "t-selector-endpoint-etgoMatchRuleHeader-activity",
-        "category": "selector-endpoint",
-        "entity": "etgoMatchRuleHeader",
-        "field": "activity",
-        "runner": "node",
-        "description": "Selector endpoint for 'activity' in etgoMatchRuleHeader should exist"
+        "description": "Selector endpoint for 'accountingConcept' in etgoMatchRuleHeader should exist"
       },
       {
         "id": "t-selector-endpoint-etgoMatchRuleHeader-businessPartner",
@@ -1515,14 +1259,6 @@
         "field": "businessPartner",
         "runner": "node",
         "description": "Selector endpoint for 'businessPartner' in etgoMatchRuleHeader should exist"
-      },
-      {
-        "id": "t-selector-endpoint-etgoMatchRuleHeader-campaign",
-        "category": "selector-endpoint",
-        "entity": "etgoMatchRuleHeader",
-        "field": "campaign",
-        "runner": "node",
-        "description": "Selector endpoint for 'campaign' in etgoMatchRuleHeader should exist"
       },
       {
         "id": "t-selector-endpoint-etgoMatchRuleHeader-costCenter",
@@ -1541,20 +1277,20 @@
         "description": "Selector endpoint for 'financialAccount' in etgoMatchRuleHeader should exist"
       },
       {
+        "id": "t-selector-endpoint-etgoMatchRuleHeader-product",
+        "category": "selector-endpoint",
+        "entity": "etgoMatchRuleHeader",
+        "field": "product",
+        "runner": "node",
+        "description": "Selector endpoint for 'product' in etgoMatchRuleHeader should exist"
+      },
+      {
         "id": "t-selector-endpoint-etgoMatchRuleHeader-project",
         "category": "selector-endpoint",
         "entity": "etgoMatchRuleHeader",
         "field": "project",
         "runner": "node",
         "description": "Selector endpoint for 'project' in etgoMatchRuleHeader should exist"
-      },
-      {
-        "id": "t-selector-endpoint-etgoMatchRuleHeader-salesRegion",
-        "category": "selector-endpoint",
-        "entity": "etgoMatchRuleHeader",
-        "field": "salesRegion",
-        "runner": "node",
-        "description": "Selector endpoint for 'salesRegion' in etgoMatchRuleHeader should exist"
       },
       {
         "id": "t-selector-endpoint-etgoMatchRuleHeader-user1Dimension",
@@ -1637,19 +1373,19 @@
       }
     ],
     "summary": {
-      "total": 63,
+      "total": 51,
       "byCategory": {
         "crud-flags": 1,
-        "default-value-type": 4,
-        "field-presence": 19,
-        "field-type": 19,
+        "default-value-type": 2,
+        "field-presence": 15,
+        "field-type": 15,
         "searchable-filters": 2,
-        "selector-endpoint": 10,
+        "selector-endpoint": 8,
         "system-field": 7,
         "visibility": 1
       },
       "byRunner": {
-        "node": 63,
+        "node": 51,
         "junit": 0
       }
     }
