@@ -61,7 +61,9 @@ import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
 import { SummaryBar } from './SummaryBar.jsx';
 import DocumentTotalsPanel from './DocumentTotalsPanel.jsx';
+import BalanceFooterPanel from './BalanceFooterPanel.jsx';
 import { resolveTotalDiscountPct } from '@/lib/documentTotals';
+import { computeBalance } from '@/lib/balanceTotals';
 import LinesSelectionBar from './LinesSelectionBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import {
@@ -1312,6 +1314,7 @@ export function DetailView({
   sidebarAboveTabsOnly = false,
   afterTotals = null,
   bottomSection = null,
+  balanceFooter = null,
   linesEmptyState = null,
   topbarExtra = null,
   topbarRight = null,
@@ -1834,6 +1837,17 @@ export function DetailView({
   // Cache for tax rates fetched from the selector (keyed by tax ID).
   // Avoids repeated API calls when the same tax appears on multiple lines.
   const taxRateCacheRef = useRef({});
+  // Balance state for double-entry windows (decisions.json window.balanceFooter).
+  // blockSaveForBalance disables the save action until Σ debit === Σ credit (> 0).
+  const balanceState = balanceFooter
+    ? computeBalance(
+        hook.children,
+        pendingLineValues,
+        lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine,
+        balanceFooter,
+      )
+    : null;
+  const blockSaveForBalance = !!balanceFooter && balanceState != null && !balanceState.isBalanced;
   const { computeLineGrossAmount, resolveTaxFactor, prepareLineForPost } = useLineGrossAmount(taxRateCacheRef, hook.children, lineConfig);
   // Batching refs for the sidebar onChange: product selector fires multiple synchronous
   // onChange calls (product, product$_identifier, unitPrice/grossUnitPrice). Without
@@ -2652,7 +2666,7 @@ export function DetailView({
                 if (isNew) {
                   return (
                     <>
-                      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving} onClick={async () => {
+                      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || blockSaveForBalance} title={blockSaveForBalance ? ui('journalUnbalancedSaveBlocked') : undefined} onClick={async () => {
                         if (!(await flushPendingLines())) return;
                         const saved = await hook.handleSave(data);
                         if (saved?.id && isNew) {
@@ -2685,7 +2699,7 @@ export function DetailView({
                   );
                 }
                 return (
-                  <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || !isDirty} onClick={async () => {
+                  <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || !isDirty || blockSaveForBalance} title={blockSaveForBalance ? ui('journalUnbalancedSaveBlocked') : undefined} onClick={async () => {
                     if (!(await flushPendingLines())) return;
                     const saved = await hook.handleSave(data);
                     if (saved) {
@@ -3567,8 +3581,17 @@ export function DetailView({
                       );
                     })() : (
                       <>
-                        {/* Totals block: DocumentTotalsPanel with optional discount expansion */}
-                        {(() => {
+                        {/* Totals block: BalanceFooterPanel for double-entry windows, else DocumentTotalsPanel */}
+                        {balanceFooter ? (
+                          <BalanceFooterPanel
+                            lines={hook.children}
+                            pendingLine={pendingLineValues}
+                            editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
+                            config={balanceFooter}
+                            formatAmount={formatAmount}
+                            currency={data['currency$_identifier']}
+                          />
+                        ) : (() => {
                           const subtotalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
                           const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
                           if (!subtotalField && !totalField) return null;
