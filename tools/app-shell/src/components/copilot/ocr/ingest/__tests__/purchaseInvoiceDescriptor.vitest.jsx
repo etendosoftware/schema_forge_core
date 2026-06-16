@@ -217,6 +217,38 @@ describe('purchaseInvoiceDescriptor', () => {
       const result = await resolveTaxesForLines({ token: 'tk', lines: [{ tax_label: '', tax_rate: null }] });
       expect(result).toEqual([null]);
     });
+
+    it('returns empty when lines is not an array', async () => {
+      expect(await resolveTaxesForLines({ token: 'tk', lines: 'not-array' })).toEqual([]);
+    });
+
+    it('returns empty when lines is null', async () => {
+      expect(await resolveTaxesForLines({ token: 'tk', lines: null })).toEqual([]);
+    });
+
+    it('calls simSearch and maps results to ids when terms exist', async () => {
+      const { simSearch } = await import('../../../../../lib/simSearch.js');
+      simSearch.mockResolvedValueOnce([{ id: 'TAX-21' }, null, { id: 'TAX-0' }]);
+      const lines = [
+        { tax_label: 'IVA 21%' },
+        { tax_label: '', tax_rate: null },
+        { tax_rate: 0 },
+      ];
+      const result = await resolveTaxesForLines({ token: 'tk', lines });
+      expect(result).toEqual(['TAX-21', null, 'TAX-0']);
+      expect(simSearch).toHaveBeenCalledWith(expect.objectContaining({
+        entityName: 'FinancialMgmtTaxRate',
+        items: ['IVA 21%', '', '0%'],
+        minSimPercent: 50,
+      }));
+    });
+
+    it('returns null for entries where simSearch match has no id', async () => {
+      const { simSearch } = await import('../../../../../lib/simSearch.js');
+      simSearch.mockResolvedValueOnce([{ name: 'no-id-field' }]);
+      const result = await resolveTaxesForLines({ token: 'tk', lines: [{ tax_label: 'Exento' }] });
+      expect(result).toEqual([null]);
+    });
   });
 
   describe('findTax', () => {
@@ -226,6 +258,121 @@ describe('purchaseInvoiceDescriptor', () => {
 
     it('returns null when no term', async () => {
       expect(await findTax({ token: 'tk', value: '', extracted: {} })).toBeNull();
+    });
+
+    it('returns matched tax with id and label when simSearch finds a match', async () => {
+      const { simSearch } = await import('../../../../../lib/simSearch.js');
+      simSearch.mockResolvedValueOnce([{ id: 'TAX-21', name: 'IVA Compras 21%' }]);
+      const result = await findTax({ token: 'tk', value: 'IVA 21%' });
+      expect(result).toEqual({ id: 'TAX-21', label: 'IVA Compras 21%' });
+    });
+
+    it('uses value term for label when match has no name', async () => {
+      const { simSearch } = await import('../../../../../lib/simSearch.js');
+      simSearch.mockResolvedValueOnce([{ id: 'TAX-21' }]);
+      const result = await findTax({ token: 'tk', value: 'IVA 21%' });
+      expect(result).toEqual({ id: 'TAX-21', label: 'IVA 21%' });
+    });
+
+    it('returns null when simSearch returns empty match', async () => {
+      const { simSearch } = await import('../../../../../lib/simSearch.js');
+      simSearch.mockResolvedValueOnce([null]);
+      const result = await findTax({ token: 'tk', value: 'IVA' });
+      expect(result).toBeNull();
+    });
+
+    it('returns null when simSearch returns match without id', async () => {
+      const { simSearch } = await import('../../../../../lib/simSearch.js');
+      simSearch.mockResolvedValueOnce([{ name: 'something' }]);
+      const result = await findTax({ token: 'tk', value: 'IVA' });
+      expect(result).toBeNull();
+    });
+
+    it('falls back to extracted.tax_label when value is null', async () => {
+      const { simSearch } = await import('../../../../../lib/simSearch.js');
+      simSearch.mockResolvedValueOnce([{ id: 'TAX-EX', name: 'Exento' }]);
+      const result = await findTax({ token: 'tk', value: null, extracted: { tax_label: 'Exento' } });
+      expect(result).toEqual({ id: 'TAX-EX', label: 'Exento' });
+    });
+  });
+
+  describe('buildLineOps — null/undefined field edge cases', () => {
+    it('handles line with null description', () => {
+      const lines = [{ description: null, quantity: 3, unit_price: 10 }];
+      const { lineOps } = buildLineOps(lines, { 0: 'P1' });
+      expect(lineOps[0].body.description).toBeUndefined();
+      expect(lineOps[0].body.invoicedQuantity).toBe(3);
+    });
+
+    it('handles line with null quantity', () => {
+      const lines = [{ description: 'Item', quantity: null, unit_price: 5 }];
+      const { lineOps } = buildLineOps(lines, { 0: 'P1' });
+      expect(lineOps[0].body.invoicedQuantity).toBeUndefined();
+      expect(lineOps[0].body.unitPrice).toBe(5);
+    });
+
+    it('handles line with null unit_price', () => {
+      const lines = [{ description: 'Item', quantity: 2, unit_price: null }];
+      const { lineOps } = buildLineOps(lines, { 0: 'P1' });
+      expect(lineOps[0].body.invoicedQuantity).toBe(2);
+      expect(lineOps[0].body.unitPrice).toBeUndefined();
+      expect(lineOps[0].body.listPrice).toBeUndefined();
+    });
+
+    it('handles line with all fields null', () => {
+      const lines = [{ description: null, quantity: null, unit_price: null }];
+      const { lineOps } = buildLineOps(lines, { 0: 'P1' });
+      expect(lineOps[0].body.product).toBe('P1');
+      expect(lineOps[0].body.description).toBeUndefined();
+      expect(lineOps[0].body.invoicedQuantity).toBeUndefined();
+      expect(lineOps[0].body.unitPrice).toBeUndefined();
+    });
+
+    it('handles line with undefined fields (missing keys)', () => {
+      const lines = [{}];
+      const { lineOps } = buildLineOps(lines, { 0: 'P1' });
+      expect(lineOps[0].body.product).toBe('P1');
+      expect(lineOps[0].body.description).toBeUndefined();
+    });
+  });
+
+  describe('toIsoDate — dash separator', () => {
+    it('converts dd-mm-yyyy with dashes', () => {
+      expect(toIsoDate('15-03-2024')).toBe('2024-03-15');
+    });
+
+    it('converts d-m-yy with dashes and two-digit year', () => {
+      expect(toIsoDate('5-3-24')).toBe('2024-03-05');
+    });
+
+    it('converts mixed separator dd/mm/yyyy', () => {
+      expect(toIsoDate('31/12/2025')).toBe('2025-12-31');
+    });
+  });
+
+  describe('buildTaxSearchTerm — edge cases', () => {
+    it('returns rate% for negative rate', () => {
+      expect(buildTaxSearchTerm({ tax_rate: -5 })).toBe('-5%');
+    });
+
+    it('returns null for Infinity rate', () => {
+      expect(buildTaxSearchTerm({ tax_rate: Infinity })).toBeNull();
+    });
+
+    it('returns null for -Infinity rate', () => {
+      expect(buildTaxSearchTerm({ tax_rate: -Infinity })).toBeNull();
+    });
+
+    it('returns null for undefined line', () => {
+      expect(buildTaxSearchTerm(undefined)).toBeNull();
+    });
+
+    it('returns null for null line', () => {
+      expect(buildTaxSearchTerm(null)).toBeNull();
+    });
+
+    it('returns rate% for string numeric rate', () => {
+      expect(buildTaxSearchTerm({ tax_rate: '10.5' })).toBe('10.5%');
     });
   });
 });

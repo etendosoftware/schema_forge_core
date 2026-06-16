@@ -184,4 +184,203 @@ describe('InlineLinesPanel', () => {
     });
     expect(onRowClick).toHaveBeenCalledWith(ROWS[0]);
   });
+
+  // --- Extended coverage (pencil, trash, checkboxes, cell rendering) ---
+
+  it('click pencil icon enters edit mode for the row', async () => {
+    renderPanel();
+    const row = screen.getByTestId('line-row-L1');
+    await act(async () => {
+      await userEvent.hover(row);
+    });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0]; // pencil is first
+    await act(async () => {
+      await userEvent.click(editBtn);
+    });
+    // After clicking pencil, the row should have edit cells — look for an input
+    // inside the row (EditCell renders an <Input> for editable types).
+    const inputs = within(row).queryAllByRole('textbox');
+    // The 'product' column is type: 'string' and editable — should render an input
+    expect(inputs.length).toBeGreaterThan(0);
+  });
+
+  it('click trash icon fires onDeleteRow', async () => {
+    const onDeleteRow = vi.fn().mockResolvedValue();
+    renderPanel({ onDeleteRow });
+    const row = screen.getByTestId('line-row-L1');
+    await act(async () => {
+      await userEvent.hover(row);
+    });
+    const actions = within(row).getByTestId('line-actions');
+    const buttons = within(actions).getAllByRole('button');
+    const trashBtn = buttons[buttons.length - 1]; // trash is second/last
+    await act(async () => {
+      await userEvent.click(trashBtn);
+    });
+    expect(onDeleteRow).toHaveBeenCalledWith(ROWS[0]);
+  });
+
+  it('numeric column headers are right-aligned', () => {
+    renderPanel();
+    const qtyHeader = screen.getByTestId('column-header-quantity');
+    expect(qtyHeader.style.justifyContent).toBe('flex-end');
+  });
+
+  it('renders boolean column as Yes/No text', () => {
+    const columns = [
+      { key: 'active', label: 'Active', type: 'boolean' },
+    ];
+    const rows = [
+      { id: 'B1', active: true },
+      { id: 'B2', active: false },
+    ];
+    const ref = createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    // renderBooleanCell: true → ui('yes') which returns 'yes'
+    expect(screen.getByText('yes')).toBeInTheDocument();
+    expect(screen.getByText('no')).toBeInTheDocument();
+  });
+
+  it('renders date column with formatted date', () => {
+    const columns = [
+      { key: 'orderDate', label: 'Date', type: 'date' },
+    ];
+    const rows = [
+      { id: 'D1', orderDate: '2026-03-15' },
+    ];
+    const ref = createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    // renderDateCell parses "2026-03-15" and calls toLocaleDateString
+    const row = screen.getByTestId('line-row-D1');
+    // The date should be rendered (exact format depends on locale, but it should not be the raw ISO string)
+    expect(within(row).queryByText('—')).toBeNull();
+  });
+
+  it('renders dash for empty date column', () => {
+    const columns = [
+      { key: 'orderDate', label: 'Date', type: 'date' },
+    ];
+    const rows = [
+      { id: 'D2', orderDate: null },
+    ];
+    const ref = createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it('commitField skips when value is unchanged (onUpdateRow NOT called)', async () => {
+    const onUpdateRow = vi.fn().mockResolvedValue();
+    renderPanel({ onUpdateRow });
+    const row = screen.getByTestId('line-row-L1');
+    // Enter edit mode
+    await act(async () => {
+      await userEvent.hover(row);
+    });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0];
+    await act(async () => {
+      await userEvent.click(editBtn);
+    });
+    // The product field should now be an editable input with value 'P1'.
+    // Find the input for product (type: 'string') and blur it without changing the value.
+    const inputs = within(row).getAllByRole('textbox');
+    const productInput = inputs[0];
+    // Blur without changing — commitField should skip because original === value
+    await act(async () => {
+      productInput.focus();
+      productInput.blur();
+    });
+    // onUpdateRow should NOT have been called because value is unchanged
+    expect(onUpdateRow).not.toHaveBeenCalled();
+  });
+
+  it('onEditRow is called instead of toggling inline edit when provided', async () => {
+    const onEditRow = vi.fn();
+    renderPanel({ onEditRow });
+    const row = screen.getByTestId('line-row-L1');
+    await act(async () => {
+      await userEvent.hover(row);
+    });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0];
+    await act(async () => {
+      await userEvent.click(editBtn);
+    });
+    expect(onEditRow).toHaveBeenCalledWith(ROWS[0]);
+  });
+
+  it('clearSelection resets selected rows', async () => {
+    const onSelectionChange = vi.fn();
+    const { ref } = renderPanel({ onSelectionChange });
+    // Clear should work without error
+    await act(async () => {
+      ref.current.clearSelection();
+    });
+    expect(onSelectionChange).toHaveBeenCalledWith([]);
+  });
+
+  it('closeEditing exits edit mode', async () => {
+    const { ref } = renderPanel();
+    const row = screen.getByTestId('line-row-L1');
+    // Enter edit mode
+    await act(async () => {
+      await userEvent.hover(row);
+    });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0];
+    await act(async () => {
+      await userEvent.click(editBtn);
+    });
+    // Should have editable inputs
+    expect(within(row).queryAllByRole('textbox').length).toBeGreaterThan(0);
+    // Now close
+    await act(async () => {
+      ref.current.closeEditing();
+    });
+    // After close, no editable inputs in the row
+    // Re-query the row (it re-renders)
+    const rowAfter = screen.getByTestId('line-row-L1');
+    // In read mode, product renders as a span, not an input
+    expect(within(rowAfter).queryAllByRole('textbox').length).toBe(0);
+  });
 });
