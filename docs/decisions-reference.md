@@ -431,6 +431,9 @@ Each override entry supports the following properties:
 | `displayLogicRaw` | string | JavaScript expression controlling button visibility (e.g., `"data.status === 'DR'"`). |
 | `exclude` | boolean | If `true`, hides this process button entirely. |
 | `add` | boolean | If `true`, defines a new process button not present in the backend contract. |
+| `columnName` | string | Column name to include in the action POST payload (used with `add: true` when the process maps to a specific column). |
+| `requiresLines` | boolean | If `true`, the button is disabled until at least one line exists. |
+| `requiresFieldMax` | array | Validation rules checked before firing the action. Each entry: `{ field, max, conditionalOnField?, conditionalValue?, errorKey }`. |
 
 When `style` is not specified, the generator defaults to `"destructive"` for processes whose names contain destructive keywords (e.g., `void`, `cancel`, `reverse`) and `"positive"` for all others.
 

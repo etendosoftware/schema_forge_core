@@ -82,6 +82,7 @@
   },
   "entities": {
     "assets": {
+      "javaQualifier": "assetsHandler",
       "fields": {
         "searchKey": {
           "searchable": true,
@@ -117,7 +118,8 @@
         },
         "depreciate": {
           "form": false,
-          "searchable": true
+          "searchable": true,
+          "defaultExpr": "Y"
         },
         "depreciationType": {
           "form": false,
@@ -125,7 +127,8 @@
         },
         "calculateType": {
           "form": false,
-          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
+          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'",
+          "defaultExpr": "TI"
         },
         "annualDepreciation": {
           "form": false,
