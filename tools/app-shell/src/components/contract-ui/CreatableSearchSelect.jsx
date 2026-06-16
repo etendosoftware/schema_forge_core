@@ -273,6 +273,10 @@ export function CreatableSearchSelect({
     const shouldOpenUp = spaceBelow < 220 && spaceAbove > spaceBelow;
     setOpenUp(shouldOpenUp);
     const maxHeight = Math.max(120, (shouldOpenUp ? spaceAbove : spaceBelow) - 12);
+    // pointerEvents:'auto' is required because the panel is portaled to
+    // document.body, which Radix Dialog (modal) marks pointer-events:none while
+    // open. Without it the options render but every click passes through to the
+    // form behind them — the panel looks active but nothing is selectable.
     setDropdownStyle(shouldOpenUp
       ? {
           position: 'fixed',
@@ -281,6 +285,7 @@ export function CreatableSearchSelect({
           bottom: window.innerHeight - rect.top + 4,
           maxHeight,
           zIndex: 1000,
+          pointerEvents: 'auto',
         }
       : {
           position: 'fixed',
@@ -289,6 +294,7 @@ export function CreatableSearchSelect({
           top: rect.bottom + 4,
           maxHeight,
           zIndex: 1000,
+          pointerEvents: 'auto',
         });
   }, []);
 
@@ -424,7 +430,7 @@ export function CreatableSearchSelect({
               type="button"
               data-testid={`option-${field.key}-${opt.id}`}
               className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50 cursor-pointer"
-              onMouseDown={() => handleSelect(opt)}
+              onMouseDown={(e) => { e.preventDefault(); handleSelect(opt); }}
             >
               {opt.name}
             </button>
