@@ -5,10 +5,12 @@ import { Badge } from '@/components/ui/badge.jsx';
 import { AddLineButton } from '@/components/ui/add-line-button.jsx';
 import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2, Shield } from 'lucide-react';
 import { AttachmentIcon } from '@/components/attachments/AttachmentIcon';
+import { PricingIcon } from '@/components/ui/custom-icons';
 
 const TAB_ICONS = {
   'custom:attachments': AttachmentIcon,
   'custom:sif': Shield,
+  'custom:pricing': PricingIcon,
 };
 
 function TabStripButton({
@@ -841,7 +843,7 @@ function getSidebarSlideClassName(isClosingLine) {
 }
 
 function getLinesToolbarClassName(linesLayout, toolbarPaddingX, toolbarBorderBottom) {
-  return `flex items-center justify-between ${linesLayout === 'inlineEditable' ? 'p-2' : toolbarPaddingX + ' py-3'}${toolbarBorderBottom || linesLayout === 'inlineEditable' ? ' border-b border-[#E8EAEF]' : ''}`;
+  return `flex items-center justify-between ${linesLayout === 'inlineEditable' ? 'p-2' : toolbarPaddingX + ' py-2'}${toolbarBorderBottom || linesLayout === 'inlineEditable' ? ' border-b border-[#E8EAEF]' : ''}`;
 }
 
 function getLineMenuActionsRef(getLineMenuActions, extraActionsRef) {
@@ -1064,11 +1066,11 @@ export function getDetailContentContainerClassName({
   activePrimaryTab,
   formScrollPaddingX = null,
 } = {}) {
-  return `flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding, formScrollPaddingX)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`;
+  return `flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-2'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding, formScrollPaddingX)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`;
 }
 
 export function getLinesTabsSectionClassName(linesLayout) {
-  return linesLayout === 'inlineEditable' ? 'mt-1 flex flex-col relative' : 'mt-6';
+  return linesLayout === 'inlineEditable' ? 'mt-1 flex flex-col relative' : 'mt-2';
 }
 
 export function getSecondaryTabEntityKey(secondaryTabs, index) {
@@ -3629,7 +3631,7 @@ export function DetailView({
 
                     {/* customTabsAfterBottom: custom tabs rendered below the bottomSection */}
                     {customTabsAfterBottom && tabCustomTabs.length > 0 && (
-                      <div className="mt-6">
+                      <div className="mt-2">
                         <div className="flex items-center border-b border-border/50">
                           {tabCustomTabs.map((ct, idx) => {
                             const isActive = activeCustomBelowTab === idx;

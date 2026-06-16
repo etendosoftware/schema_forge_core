@@ -1,8 +1,8 @@
 {
-  "version": "0.8.1",
+  "version": "0.9.0",
   "generatedAt": "2026-04-30T15:42:46.907Z",
-  "updatedAt": "2026-06-09T10:46:52.303Z",
-  "checksum": "864945e82c71cdc9",
+  "updatedAt": "2026-06-11T12:55:37.110Z",
+  "checksum": "74aa9c0b783dc07a",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -1724,6 +1724,14 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "psd2GenerateBankPayment",
+            "apiKey": "psd2GenerateBankPayment",
+            "column": "EM_Psd2_Generate_Bank_Payment",
+            "type": "button",
+            "visibility": "system",
+            "required": false
           }
         ],
         "javaQualifier": "salesQuotationHeaderHandler"
@@ -2685,6 +2693,14 @@
         "processType": "obuiapp"
       },
       {
+        "entity": "quotation",
+        "field": "psd2GenerateBankPayment",
+        "column": "EM_Psd2_Generate_Bank_Payment",
+        "url": "/sws/neo/sales-quotation/quotation/{id}/action/psd2GenerateBankPayment",
+        "processId": "0661406A983B4D8EA611F8596F114D52",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "quotationLine",
         "field": "explode",
         "column": "Explode",
@@ -2843,6 +2859,14 @@
         "field": "processNow",
         "runner": "node",
         "description": "Action endpoint for 'processNow' in quotation should exist"
+      },
+      {
+        "id": "t-action-endpoint-quotation-psd2GenerateBankPayment",
+        "category": "action-endpoint",
+        "entity": "quotation",
+        "field": "psd2GenerateBankPayment",
+        "runner": "node",
+        "description": "Action endpoint for 'psd2GenerateBankPayment' in quotation should exist"
       },
       {
         "id": "t-action-endpoint-quotation-rMAddOrphanLine",
@@ -4371,6 +4395,14 @@
         "description": "System field 'project' should exist in backend but not frontend for quotation"
       },
       {
+        "id": "t-system-field-quotation-psd2GenerateBankPayment",
+        "category": "system-field",
+        "entity": "quotation",
+        "field": "psd2GenerateBankPayment",
+        "runner": "node",
+        "description": "System field 'psd2GenerateBankPayment' should exist in backend but not frontend for quotation"
+      },
+      {
         "id": "t-system-field-quotation-quotation",
         "category": "system-field",
         "entity": "quotation",
@@ -5098,9 +5130,9 @@
       }
     ],
     "summary": {
-      "total": 295,
+      "total": 297,
       "byCategory": {
-        "action-endpoint": 21,
+        "action-endpoint": 22,
         "crud-flags": 2,
         "default-value-type": 7,
         "displaylogic-evaluable": 3,
@@ -5112,11 +5144,11 @@
         "rule-declared": 8,
         "searchable-filters": 6,
         "selector-endpoint": 9,
-        "system-field": 150,
+        "system-field": 151,
         "visibility": 2
       },
       "byRunner": {
-        "node": 295,
+        "node": 297,
         "junit": 0
       }
     }

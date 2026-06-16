@@ -213,7 +213,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   const hasSelection = value != null && value !== '';
   // Chip mode: a selected value renders as the Figma tag/chip; clicking the chip
   // body flips editingIntent so the user can type to search again.
-  const showChip = hasSelection && !editingIntent;
+  const showChip = hasSelection && !editingIntent && field.clearable !== false;
   const handleChipClick = () => {
     setEditingIntent(true);
     requestAnimationFrame(() => {
@@ -253,6 +253,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
           onClear={handleClear}
           clearAriaLabel={ui('clear')}
           testId={`field-${field.key}-chip`}
+          clearable={field.clearable !== false}
         />
       ) : (
         <input
@@ -1025,7 +1026,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     if (f.type === 'image') {
       const label = t(f.column) ?? f.label ?? f.key;
       const isReadOnly = formReadOnly || f.readOnly || displayLogic?.readOnly?.[f.key] === true || evalReadOnlyLogic(f, data);
-      const imageClass = ['space-y-1.5 row-span-2 flex flex-col h-full', spanClass].filter(Boolean).join(' ');
+      const imageClass = ['space-y-1.5 row-span-2 flex flex-col', spanClass].filter(Boolean).join(' ');
       return (
         <div key={f.key} className={imageClass}>
           <Label className="text-sm text-foreground font-medium">{label}</Label>
@@ -1073,12 +1074,11 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       || displayLogic?.readOnly?.[imageField.key] === true
       || evalReadOnlyLogic(imageField, data);
     return (
-      <div className="flex gap-6 items-start">
+      <div className="flex gap-6 items-stretch">
         <div className={`flex-1 min-w-0 ${gridClass}`} style={gridStyle}>
           {fieldsToRender.map(renderFieldWithError)}
         </div>
-        <div className="shrink-0 w-56">
-          <Label className="text-sm text-foreground font-medium block mb-1.5">{imgLabel}</Label>
+        <div className="shrink-0 w-64 flex flex-col">
           <ImageField
             imageId={data?.[imageField.key] ?? ''}
             onChange={(newId) => onChange?.(imageField.key, newId, imageField.column)}
@@ -1086,6 +1086,8 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             apiBaseUrl={apiBaseUrl}
             readOnly={imgReadOnly}
             fieldKey={imageField.key}
+            label={imgLabel}
+            stretch
           />
         </div>
       </div>

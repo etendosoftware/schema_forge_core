@@ -23,9 +23,11 @@ describe('useFiscalAutoCompute — initial compute', () => {
         pollIntervalMs: 100_000,
       })
     );
-    await waitFor(() => expect(computeFn).toHaveBeenCalledTimes(2));
-    expect(result.current.computedMap[DECL_A.id]).toMatchObject({ summary: SUMMARY });
-    expect(result.current.computedMap[DECL_B.id]).toMatchObject({ summary: SUMMARY });
+    await waitFor(() => {
+      expect(computeFn).toHaveBeenCalledTimes(2);
+      expect(result.current.computedMap[DECL_A.id]).toMatchObject({ summary: SUMMARY });
+      expect(result.current.computedMap[DECL_B.id]).toMatchObject({ summary: SUMMARY });
+    });
   });
 
   it('sets error entry when computeFn rejects', async () => {

@@ -41,6 +41,7 @@ The Assets window should let a finance user register fixed assets, define how ea
 - After a successful asset process event (`neo:processSuccess` for the current asset), the amortization footer re-fetches its lines. This is the clearest visible evidence that generating an amortization plan should refresh the schedule immediately in the detail view.
 - `AssetsSidebar.jsx` reads `data.etgoAmortizationStatus` (DB-backed integer 0–100, maintained by `ETGO_A_ASSET_AMORT_STATUS_TRG`) for the "Depreciado %" card — no frontend math. `renderDepreciationProgress` in the list table does the same. `AssetsAmortizationPanel.jsx` batch-fetches the `processed` field of each parent amortization document (`/amortization/header/{id}`) to show accurate "Confirmado/Pendiente" badges — the previous heuristic based on `depreciatedValue` was removed because it inverted statuses when individual amortizations were reactivated out of order.
 - In the Asset Amortization child surface, editable fields become read-only when the line is processed, which indicates that posted or finalized schedule lines should no longer be freely editable.
+- The `GroupDivider` component in `AssetsDetailPanel.jsx` carries `mt-5` so each section heading (Depreciación, Financiero, Fechas, Dimensiones contables) has visible breathing room above the separator line. Without this margin the border-t line was flush against the fields from the previous section.
 - In the Accounting child surface, selectors are exposed for general ledger, accumulated depreciation, and depreciation accounts. The current evidence shows selectable mappings, but no additional reactive cross-field behavior is visible.
 - No totals, discounts, or tax-style recalculations are visible here beyond depreciation progress, planned amount totals, and sequence-based schedule refresh.
 
@@ -70,6 +71,12 @@ The Assets window should let a finance user register fixed assets, define how ea
 9. Open the **Accounting** child surface and confirm the record exposes selectors for general ledger, accumulated depreciation, and depreciation accounts.
 10. If amortization lines already exist, confirm the asset currency can no longer be edited.
 11. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
+
+## ETP-4190 changes (feature/ETP-4190)
+
+### Section divider spacing fix
+
+- `AssetsDetailPanel.jsx` — `GroupDivider` wrapper now includes `mt-5`. This adds 20 px of top margin before the `border-t` line that separates each configuration group (Depreciation, Financial, Dates, Accounting dimensions). Previously the line sat flush against the fields above it with no visual gap.
 
 ## Automated evidence
 
