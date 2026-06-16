@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, X, GripVertical, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Search, X, GripVertical, Pencil, Copy, Trash2, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
@@ -29,6 +29,16 @@ import { applyConditions } from '@/windows/custom/financial-account/advancedFilt
 // absent. Keeps title/submit-label expressions free of nested ternaries (Sonar S3358).
 function labelOrFallback(ui, key, fallbackKey) {
   return key ? ui(key) : ui(fallbackKey);
+}
+
+// A field whose value persists as a JSON boolean (YESNO checkbox / inline toggle).
+function isBooleanField(f) {
+  return f.type === 'checkbox' || f.toggle === true || f.tsType === 'boolean';
+}
+
+// Coerce an AD YESNO value (boolean / 'Y' / 'true') to a real boolean.
+function toBoolean(v) {
+  return v === true || v === 'Y' || v === 'true';
 }
 
 // Resolve the modal's title / subtitle / submit label for create vs edit. Kept as a
@@ -252,7 +262,11 @@ export function ListModalWindow({
   const seedDefaults = useCallback(() => {
     const seed = {};
     for (const f of fields) {
-      if (f.defaultValue !== undefined) seed[f.key] = f.defaultValue;
+      if (f.defaultValue === undefined) continue;
+      // Boolean fields persist as JSON booleans; the AD default arrives as 'Y'/'N',
+      // so coerce it — a literal "Y" string is read as false by the W CRUD boolean
+      // mapping, which would silently create an inactive record.
+      seed[f.key] = isBooleanField(f) ? toBoolean(f.defaultValue) : f.defaultValue;
     }
     return { ...seed, ...computeAutoValue() };
   }, [fields, computeAutoValue]);
@@ -267,6 +281,20 @@ export function ListModalWindow({
   const openEdit = useCallback((row) => {
     setEditingRow(row);
     setFormData({ ...row });
+    setFormError(null);
+    setModalOpen(true);
+  }, []);
+
+  // Clone: open the create modal (no editingRow → POST) pre-filled with the source
+  // row's values verbatim, minus its id, so every field — including priority — loads
+  // exactly as the cloned rule. FK `$_identifier` values are kept so the selectors
+  // render the cloned labels. The user adjusts whatever they need (e.g. priority,
+  // which must stay unique within scope) before saving.
+  const openClone = useCallback((row) => {
+    setEditingRow(null);
+    const clone = { ...row };
+    delete clone.id;
+    setFormData(clone);
     setFormError(null);
     setModalOpen(true);
   }, []);
@@ -480,6 +508,7 @@ export function ListModalWindow({
             tMenu={tMenu}
             ui={ui}
             onEdit={openEdit}
+            onClone={config.allowClone ? openClone : undefined}
             onDelete={(row) => setDeletingRow(row)}
             deletingId={deleting ? deletingRow?.id : null}
             onToggle={handleToggle}
@@ -651,7 +680,8 @@ function DeleteConfirmDialog({ open, busy, onCancel, onConfirm, ui }) {
  * handle placeholder for future reorder, registry-driven cells, hover edit
  * action). Fully generic: structure comes from `columns` + each `column.cellType`.
  */
-function ListModalGrid({ columns, data, tMenu, ui, onEdit, onDelete, deletingId, onToggle, savingToggles }) {
+function ListModalGrid({ columns, data, tMenu, ui, onEdit, onClone, onDelete, deletingId, onToggle, savingToggles }) {
+  const actionsColClass = onClone ? 'w-28' : 'w-20';
   const isEmpty = !data || data.length === 0;
 
   return (
@@ -675,8 +705,8 @@ function ListModalGrid({ columns, data, tMenu, ui, onEdit, onDelete, deletingId,
               {col.labelKey ? ui(col.labelKey) : (tMenu(col.label) ?? col.label ?? col.key)}
             </TableHead>
           ))}
-          {/* Actions column header (56px) */}
-          <TableHead className="w-20 p-0" aria-hidden="true" />
+          {/* Actions column header */}
+          <TableHead className={cn(actionsColClass, 'p-0')} aria-hidden="true" />
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -709,14 +739,15 @@ function ListModalGrid({ columns, data, tMenu, ui, onEdit, onDelete, deletingId,
                   row={row}
                   col={col}
                   tMenu={tMenu}
+                  ui={ui}
                   onToggle={onToggle}
                   savingToggle={savingToggles[`${row.id}:${col.key}`]}
                 />
               </TableCell>
             ))}
-            {/* Hover edit action */}
-            <TableCell className="w-20 p-0">
-              <div className="flex w-20 items-center justify-center gap-1 opacity-0 transition-opacity group-hover/row:opacity-100">
+            {/* Hover row actions */}
+            <TableCell className={cn(actionsColClass, 'p-0')}>
+              <div className={cn('flex items-center justify-center gap-1 opacity-0 transition-opacity group-hover/row:opacity-100', actionsColClass)}>
                 <button
                   type="button"
                   onClick={() => onEdit?.(row)}
@@ -726,6 +757,17 @@ function ListModalGrid({ columns, data, tMenu, ui, onEdit, onDelete, deletingId,
                 >
                   <Pencil className="h-4 w-4" />
                 </button>
+                {onClone && (
+                  <button
+                    type="button"
+                    onClick={() => onClone(row)}
+                    aria-label={ui('clone')}
+                    data-testid={`list-modal-clone-${row.id}`}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#828FA3] transition-colors hover:bg-[#E8EAEF]"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                )}
                 {onDelete && (
                   <button
                     type="button"

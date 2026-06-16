@@ -177,6 +177,9 @@ const FIELD_DECISION_COPY_PROPS = [
   // list-modal cell-renderer extras (see listModalCells.jsx / generate-frontend.js):
   'subField',
   'subPrefix',
+  // i18n key shown in a nameWithSubline cell when subField resolves to empty
+  // (e.g. an unset financial-account scope → "Todas las cuentas").
+  'subEmptyKey',
   'kindField',
   'patternField',
   'kindLabels',

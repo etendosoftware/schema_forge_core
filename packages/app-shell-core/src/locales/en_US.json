@@ -16368,6 +16368,7 @@
     "process": "Process",
     "cancel": "Cancel",
     "create": "Create",
+    "clone": "Clone",
     "confirm": "Confirm",
     "retry": "Retry",
     "discard": "Discard",

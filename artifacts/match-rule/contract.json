@@ -1,8 +1,8 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-06-11T18:36:13.442Z",
-  "updatedAt": "2026-06-16T18:49:21.985Z",
-  "checksum": "3533bb6536e57a9c",
+  "updatedAt": "2026-06-16T19:53:18.479Z",
+  "checksum": "1f9197dd6e9e6ad4",
   "frontendContract": {
     "window": {
       "id": "24963D64E83B4543A7F6BD248CF944EE",
@@ -20,6 +20,7 @@
         "newLabelKey": "matchRuleNew",
         "autoPriorityField": "priority",
         "autoPriorityStep": 10,
+        "allowClone": true,
         "sectionGrid": {
           "general": 3,
           "dimensions": 3
@@ -109,13 +110,15 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": false,
+            "form": true,
             "sourceRequired": true,
             "derivation": {
               "type": "computed",
               "source": "Y"
             },
             "defaultValue": "Y",
+            "section": "general",
+            "seq": 10,
             "cellType": "toggle",
             "gridLabelKey": "matchRuleColActive",
             "gridOrder": 7,
@@ -137,7 +140,8 @@
             "section": "general",
             "seq": 1,
             "cellType": "nameWithSubline",
-            "subField": "businessPartner",
+            "subField": "financialAccount",
+            "subEmptyKey": "matchRuleAllAccounts",
             "gridLabelKey": "matchRuleColName",
             "gridOrder": 2
           },
@@ -444,6 +448,7 @@
         "newLabelKey": "matchRuleNew",
         "autoPriorityField": "priority",
         "autoPriorityStep": 10,
+        "allowClone": true,
         "sectionGrid": {
           "general": 3,
           "dimensions": 3

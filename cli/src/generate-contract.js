@@ -276,6 +276,7 @@ const FIELD_HINTS_PRE_GRID = [
   ['display', Boolean],
   ['cellType', Boolean],
   ['subField', Boolean],
+  ['subEmptyKey', Boolean],
   ['kindField', Boolean],
   ['patternField', Boolean],
   ['kindLabels', Boolean],

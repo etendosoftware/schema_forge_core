@@ -18,6 +18,7 @@
       "newLabelKey": "matchRuleNew",
       "autoPriorityField": "priority",
       "autoPriorityStep": 10,
+      "allowClone": true,
       "sectionGrid": { "general": 3, "dimensions": 3 },
       "sections": [
         { "key": "general" },
@@ -99,7 +100,8 @@
           "required": true,
           "placeholderKey": "matchRuleNamePlaceholder",
           "cellType": "nameWithSubline",
-          "subField": "businessPartner"
+          "subField": "financialAccount",
+          "subEmptyKey": "matchRuleAllAccounts"
         },
         "textCondition": {
           "grid": true,
@@ -171,7 +173,9 @@
           "grid": true,
           "gridOrder": 7,
           "gridLabelKey": "matchRuleColActive",
-          "form": false,
+          "form": true,
+          "section": "general",
+          "seq": 10,
           "inlineToggle": true,
           "cellType": "toggle"
         },

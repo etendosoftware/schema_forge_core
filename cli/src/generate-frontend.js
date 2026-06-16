@@ -1289,11 +1289,12 @@ function buildListModalColumns(entity) {
     const cellTypePart = wrapIf(", cellType: '", f.cellType, "'");
     const labelKeyPart = wrapIf(", labelKey: '", f.gridLabelKey, "'");
     const subFieldPart = wrapIf(", subField: '", f.subField, "'");
+    const subEmptyKeyPart = wrapIf(", subEmptyKey: '", f.subEmptyKey, "'");
     const kindFieldPart = wrapIf(", kindField: '", f.kindField, "'");
     const patternFieldPart = wrapIf(", patternField: '", f.patternField, "'");
     const kindLabelsPart = jsonWrapIf(', kindLabels: ', f.kindLabels);
     const tonesPart = jsonWrapIf(', tones: ', f.tones);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${subEmptyKeyPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart} },`;
   }).join('\n');
 }
 
@@ -1416,6 +1417,9 @@ export function generateListModalPage(headerEntity, contract) {
     // Per-section column count for the modal body grid, keyed by section key
     // (e.g. { general: 3, dimensions: 4 }). Defaults to 3 columns per section.
     sectionGrid: tc.sectionGrid ?? {},
+    // Opt-in row "clone" action: a hover Copy button that opens the create modal
+    // pre-filled with the row's values (new record, re-seeded auto-priority).
+    allowClone: tc.allowClone ?? false,
     // Toolbar back button + declarative dropdown filters (Figma "Cancelar",
     // "Todas las reglas", "Todos los estados"). Filters are applied client-side
     // by ListModalWindow over the loaded rows. Keys are i18n keys / field names.

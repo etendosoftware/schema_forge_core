@@ -3,7 +3,7 @@ import { ListModalWindow } from '@/components/contract-ui';
 // @sf-generated-start columns:etgoMatchRuleHeader
 const columns = [
   { key: 'priority', column: 'Priority', type: 'number', label: 'Priority', labelKey: 'matchRuleColPriority', inlineEdit: true, cellType: 'priorityPill' },
-  { key: 'name', column: 'Name', type: 'string', label: 'Name', labelKey: 'matchRuleColName', cellType: 'nameWithSubline', subField: 'businessPartner' },
+  { key: 'name', column: 'Name', type: 'string', label: 'Name', labelKey: 'matchRuleColName', cellType: 'nameWithSubline', subField: 'financialAccount', subEmptyKey: 'matchRuleAllAccounts' },
   { key: 'textCondition', column: 'TextCondition', type: 'enum', label: 'Text Condition', labelKey: 'matchRuleColCondition', enumLabels: { 'C': 'Contains', 'R': 'Regex', 'S': 'Starts with' }, cellType: 'conditionChip', kindField: 'textCondition', patternField: 'textPattern', kindLabels: {"C":"matchRuleConditionContains","S":"matchRuleConditionStartsWith","R":"matchRuleConditionRegex"} },
   { key: 'transactionType', column: 'ETGO_Transaction_Type_ID', type: 'selector', label: 'ETGO_Transaction_Type_ID', labelKey: 'matchRuleColType' },
   { key: 'accountingConcept', column: 'C_GLItem_ID', type: 'selector', label: 'Accounting concept', labelKey: 'matchRuleColConcept' },
@@ -22,6 +22,7 @@ const fields = [
   { key: 'textCondition', column: 'TextCondition', type: 'select', label: 'Text Condition', required: true, searchSelect: true, section: 'general', options: [{ value: 'C', label: 'Contains' }, { value: 'R', label: 'Regex' }, { value: 'S', label: 'Starts with' }], placeholderKey: 'matchRuleConditionPlaceholder' },
   { key: 'priority', column: 'Priority', type: 'number', label: 'Priority', required: true, section: 'general' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner', reference: 'BPartner', inputMode: 'selector', searchSelect: true, section: 'general' },
+  { key: 'active', column: 'Isactive', type: 'checkbox', label: 'Active', required: true, section: 'general', defaultValue: 'Y' },
   { key: 'project', column: 'C_Project_ID', type: 'selector', label: 'Project', reference: 'Project', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
   { key: 'costCenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'Costcenter', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
   { key: 'user1Dimension', column: 'User1_ID', type: 'selector', label: 'User1 Dimension', reference: 'User1', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
@@ -56,6 +57,7 @@ const listModalConfig = {
     "general": 3,
     "dimensions": 3
   },
+  "allowClone": true,
   "backLabelKey": "cancel",
   "backTo": null,
   "toolbarFilters": [

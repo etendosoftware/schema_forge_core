@@ -16,18 +16,18 @@ Use this window to maintain the catalog of **matching rules** ("Reglas de matche
 
 - **List** all rules in a grid styled to the Figma design (Inter, white rows, `#E8EAEF` separators). Columns and their cell renderers (`cellType`, driven by the contract):
   - Prioridad — `priorityPill` (bordered neutral pill).
-  - Nombre — `nameWithSubline` (bold name + a muted `→ <counterparty>` sub-line sourced from `businessPartner`).
+  - Nombre — `nameWithSubline` (bold name + a muted `→ <account>` sub-line sourced from `financialAccount`; falls back to "Todas las cuentas" when the rule has no account scope).
   - Condición — `conditionChip` (derived text `<kind>: "<pattern>"`, e.g. `empieza con: "IMPUESTO"`; kind label is i18n from `textCondition` C/S/R, pattern from `textPattern`).
   - Tipo — plain text showing the transaction type's name (FK `ETGO_Transaction_Type_ID` → `ETGO_Transaction_Type`, identifier `Name`).
   - Concepto contable — plain text (the G/L item, FK `C_GLItem_ID`).
   - Conciliaciones — `boldText` (read-only match count).
   - Activa — `toggle` (inline `PillToggle`, `PATCH`; the shared pill toggle, same component as the modal footer and the Assets window).
-  - Each row also shows a left **drag handle** (visual only; drag-to-reorder is deferred) and, on hover, an **edit** (pencil) and a **delete** (red trash) icon button. Delete opens a confirmation dialog, then `DELETE`s the rule.
+  - Each row also shows a left **drag handle** (visual only; drag-to-reorder is deferred) and, on hover, an **edit** (pencil), a **clone** (Copy, opt-in via `templateConfig.allowClone`) and a **delete** (red trash) icon button. Clone opens the create modal pre-filled with the row's values; delete opens a confirmation dialog, then `DELETE`s the rule.
 - **Toolbar**: a **back button** ("Cancelar", navigates to the referrer), a **dropdown filter** "Todas las reglas" (filter by Active: Activas / Inactivas), an **advanced "by conditions" filter** (funnel button → `AdvancedFilterButton`, applied client-side via `applyConditions`), a **search** box ("Buscar…"), and the primary **"+ Nueva regla"** button (yellow `#FFD500` hover, like the Accounts window). Filters and search are applied client-side over the loaded rows.
 - **Banner**: a dismissible info banner (`bannerKey`) explaining that rules are evaluated by ascending priority and only apply to statement lines the standard algorithm could not match.
 - **Search** rules by name or pattern (local filter over the list).
 - **Create** a rule via the "Nueva regla" button → modal. The modal groups fields:
-  - *General*: Name* (placeholder "Ej. Comisiones bancarias"), Pattern to match* (placeholder "Ej. comisión"), Applies to ("Afecta a"; financial account, defaulting to "Todas las cuentas" when empty), Transaction type (a **user-definable** lookup — searchable selector backed by `ETGO_Transaction_Type`, with an inline **"+ New transaction type"** action that creates a record on the fly via `POST /sws/neo/transaction-type/transactionType` and auto-selects it), Accounting concept ("Concepto contable", `C_GLItem` selector), Concept condition* (Contiene / Empieza con / Regex), Priority*, **Contacto** (`C_BPartner` selector).
+  - *General*: Name* (placeholder "Ej. Comisiones bancarias"), Pattern to match* (placeholder "Ej. comisión"), Applies to ("Afecta a"; financial account, defaulting to "Todas las cuentas" when empty), Transaction type (a **user-definable** lookup — searchable selector backed by `ETGO_Transaction_Type`, with an inline **"+ New transaction type"** action that creates a record on the fly via `POST /sws/neo/transaction-type/transactionType` and auto-selects it), Accounting concept ("Concepto contable", `C_GLItem` selector), Concept condition* (Contiene / Empieza con / Regex), Priority*, **Contacto** (`C_BPartner` selector), and **Activa** (checkbox, on by default — new rules are created active).
   - *Dimensiones* (`matchRuleSectionDimensions`): Project, Cost center, 1st/2nd dimension, Product (`M_Product`).
 - **Edit** a rule by clicking its row → the same modal pre-filled.
 - **Toggle Active** inline from the grid (no modal) — a `PATCH` that flips the rule on/off.
@@ -44,8 +44,8 @@ Use this window to maintain the catalog of **matching rules** ("Reglas de matche
   - `textPattern` is required — HTTP 400.
   - when the condition is Regex, the pattern is compiled and test-matched under a 200 ms cap; a pattern that fails to compile or shows catastrophic backtracking is rejected — HTTP 400.
   - `transactionType` is no longer validated against a fixed list — any `ETGO_Transaction_Type` record is accepted (referential integrity enforced by the FK).
-  - `priority` must be unique within the financial-account scope — HTTP 409.
-  - On a partial `PATCH` (inline Active toggle), content fields absent from the body are not re-validated; a `priority` patch still triggers the uniqueness check.
+  - `priority` is **not** required to be unique — per the functional spec it is an ordering/ranking key (the highest-priority match is the main suggestion, ties rank as alternatives), so duplicate priorities within a scope are allowed (e.g. a cloned rule may keep the source priority).
+  - On a partial `PATCH` (inline Active toggle), content fields absent from the body are not re-validated.
 
 ## CRUD endpoints (generic W convention)
 
@@ -68,9 +68,10 @@ delete DELETE /sws/neo/match-rule/etgoMatchRuleHeader/{id}
 1. After the user runs `push-to-neo` + `export.database` + smartbuild and wires the menu, open `/match-rule` from the Finance menu and confirm the prioritized grid renders with the columns above and the read-only Reconciliations count.
 2. Click "Nueva regla", confirm the modal opens with Priority pre-filled to `max + 10`, fill Name + Pattern + Concept condition, save, and confirm the row appears.
 3. Create a Regex-condition rule with a deliberately catastrophic pattern (e.g. `((a+)+)+$` — Java 17 optimizes the single-nested form) and confirm the save is rejected with a 400 error message (shown in Spanish via `translateBackendError`).
-4. Create two rules with the same Priority and the same "Afecta a" account and confirm the second is rejected with a 409.
-5. Toggle a rule's Active switch in the grid and confirm it persists after refresh (PATCH, no modal).
+4. Create two rules with the same Priority and the same "Afecta a" account and confirm **both are accepted** (priority is a ranking, not a unique key).
+5. Toggle a rule's Active switch in the grid and confirm it persists after refresh (PATCH, no modal). Creating a rule with the modal "Activa" check on must persist as active.
 6. Edit a rule by clicking its row, change a dimension under "Dimensiones" (e.g. Product), save, and confirm the change persists.
+7. Hover a row and click the **clone** (Copy) action: the create modal opens pre-filled with the source rule's values (same priority included); save creates an independent copy.
 
 ## Automated evidence
 

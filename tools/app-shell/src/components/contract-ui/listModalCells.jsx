@@ -57,11 +57,13 @@ function PriorityPill({ row, col }) {
   );
 }
 
-function NameWithSubline({ row, col }) {
+function NameWithSubline({ row, col, ui }) {
   const name = rawValue(row, col.key);
-  const subline = col.subField
-    ? resolveIdentifier(row, col.subField)
-    : null;
+  const resolved = col.subField ? resolveIdentifier(row, col.subField) : null;
+  // Fall back to a fixed label when the sub-field is empty (e.g. an unset
+  // financial-account scope reads as "Todas las cuentas").
+  const fallback = col.subEmptyKey && ui ? (ui(col.subEmptyKey) ?? col.subEmptyKey) : null;
+  const subline = resolved || fallback;
   return (
     <div className="flex flex-col">
       <span className="text-sm font-semibold leading-5 text-[#121217]">
@@ -158,12 +160,12 @@ function DefaultCell({ row, col, tMenu }) {
  * Render a single grid cell for the list-modal table.
  * Selects a renderer by `col.cellType`, falling back to a plain value cell.
  */
-export function ListModalCell({ row, col, tMenu, onToggle, savingToggle }) {
+export function ListModalCell({ row, col, tMenu, ui, onToggle, savingToggle }) {
   switch (col.cellType) {
     case 'priorityPill':
       return <PriorityPill row={row} col={col} />;
     case 'nameWithSubline':
-      return <NameWithSubline row={row} col={col} />;
+      return <NameWithSubline row={row} col={col} ui={ui} />;
     case 'conditionChip':
       return <ConditionChip row={row} col={col} tMenu={tMenu} />;
     case 'typePill':
