@@ -47,7 +47,7 @@ describe('DetailView — lines layout responsive flow (inline-editable)', () => 
     // Is:  'mt-1 flex flex-col relative'
     assert.match(
       src,
-      /linesLayout === 'inlineEditable' \? 'mt-1 flex flex-col relative' : 'mt-6'/,
+      /linesLayout === 'inlineEditable' \? 'mt-1 flex flex-col relative' : 'mt-2'/,
       'tabs section wrapper must use the natural-flow class string for inline-editable',
     );
   });

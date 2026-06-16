@@ -1,8 +1,8 @@
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "generatedAt": "2026-05-12T16:47:39.614Z",
-  "updatedAt": "2026-05-19T17:48:06.208Z",
-  "contractChecksum": "d40abae2a9c58614",
+  "updatedAt": "2026-06-11T12:55:37.001Z",
+  "contractChecksum": "3fda0494d3c6a437",
   "apiPrediction": {
     "specName": "sales-order",
     "baseUrl": "/sws/neo/sales-order",
@@ -588,6 +588,29 @@
         "processType": "obuiapp"
       },
       {
+        "name": "psd2GenerateBankPayment",
+        "actionType": "paymentAction",
+        "entity": "header",
+        "column": "EM_Psd2_Generate_Bank_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/sales-order/header/{id}/action/psd2GenerateBankPayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "0661406A983B4D8EA611F8596F114D52",
+        "processType": "obuiapp"
+      },
+      {
         "name": "manageReservation",
         "actionType": "utilityAction",
         "entity": "lines",
@@ -970,5 +993,5 @@
       "confirmCancelAndReplace"
     ]
   },
-  "checksum": "91eecb3a5927a9c6"
+  "checksum": "515c9487bd8d2f7d"
 }

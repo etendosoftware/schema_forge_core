@@ -106,12 +106,34 @@ export function convertLogicToJs(rawExpr, columnMap, booleanFields) {
     }
     return `record['${prop}'] !== '${val}'`;
   }
+  const propOf = (col) => columnMap[col] ?? (col.charAt(0).toLowerCase() + col.slice(1));
+  // "is not empty" (@Col@!'' / @Col@!='') → has a value; "is empty" (@Col@='') → blank.
+  const notEmptyExpr = (col) => `(record['${propOf(col)}'] != null && record['${propOf(col)}'] !== '')`;
+  const emptyExpr = (col) => `(record['${propOf(col)}'] == null || record['${propOf(col)}'] === '')`;
+  // null comparisons (@Col@!null / @Col@=null).
+  const notNullExpr = (col) => `record['${propOf(col)}'] != null`;
+  const nullExpr = (col) => `record['${propOf(col)}'] == null`;
+  // numeric comparison (@Col@>0, @Col@>'0') — typical for SQL-computed counters.
+  const gtExpr = (col, num) => `Number(record['${propOf(col)}']) > ${num}`;
   return rawExpr
+    // Convert the AD logical operators FIRST. The token rules below emit JS '&&'
+    // (e.g. the "not empty" form), so running the &→&& / |→|| pass afterwards would
+    // mangle them into ' &&  && '. AD never uses '&&'/'||', so this is safe.
+    // The surrounding whitespace is bounded ({0,32}) rather than '\s*' so the match
+    // is strictly linear — an unbounded '\s*X\s*' is super-linear on all-whitespace
+    // input (ReDoS hotspot). 32 comfortably covers any real AD spacing.
+    .replace(/\s{0,32}\|\s{0,32}/g, ' || ')
+    .replace(/\s{0,32}&\s{0,32}/g, ' && ')
+    // Empty / null / numeric forms next — they would otherwise leave raw @tokens
+    // behind (the @Col@!='val' rules require a non-empty literal).
+    .replace(/@(\w+)@!=?''/g, (_, col) => notEmptyExpr(col))
+    .replace(/@(\w+)@=''/g, (_, col) => emptyExpr(col))
+    .replace(/@(\w+)@!=?null\b/gi, (_, col) => notNullExpr(col))
+    .replace(/@(\w+)@=null\b/gi, (_, col) => nullExpr(col))
+    .replace(/@(\w+)@>\s*'?(\d+)'?/g, (_, col, num) => gtExpr(col, num))
     .replace(/@(\w+)@='([^']+)'/g, (_, col, val) => eqExpr(col, val))
     .replace(/@(\w+)@!='([^']+)'/g, (_, col, val) => neqExpr(col, val))
-    .replace(/@(\w+)@!'([^']+)'/g, (_, col, val) => neqExpr(col, val))
-    .replace(/\s*\|\s*/g, ' || ')
-    .replace(/\s*&\s*/g, ' && ');
+    .replace(/@(\w+)@!'([^']+)'/g, (_, col, val) => neqExpr(col, val));
 }
 
 /**
@@ -168,7 +190,17 @@ function applyReadOnlyLogic(mapped, f, rules, columnMap, booleanFields) {
     mapped.readOnlyLogic.reason = evalInfo.reason;
     mapped.readOnlyLogic.js = null;
   } else if (!mapped.readOnlyLogic.js) {
-    mapped.readOnlyLogic.js = convertLogicToJs(f.readOnlyLogic, columnMap, booleanFields);
+    const js = convertLogicToJs(f.readOnlyLogic, columnMap, booleanFields);
+    // Safety net: if any raw @token@ survived translation, the expression is not
+    // valid JS — fall back to non-evaluable instead of emitting code that throws
+    // at parse time (the runtime then leaves the field editable; server enforces).
+    if (/@/.test(js)) {
+      mapped.readOnlyLogic.evaluable = false;
+      mapped.readOnlyLogic.reason = 'untranslatable-token';
+      mapped.readOnlyLogic.js = null;
+    } else {
+      mapped.readOnlyLogic.js = js;
+    }
   }
 }
 
@@ -271,11 +303,15 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.readOnlyLogic) {
         applyReadOnlyLogic(mapped, f, rules, columnMap, booleanFields);
       }
-      // Prefer explicit readOnlyLogicJs from decisions over AD-expression translation
+      // Prefer explicit readOnlyLogicJs from decisions over AD-expression translation.
+      // This overrides whatever applyReadOnlyLogic derived, so clear any non-evaluable
+      // marker it left (e.g. 'untranslatable-token' when the raw AD expr didn't parse) —
+      // the explicit JS is authoritative and evaluable.
       if (f.readOnlyLogicJs != null) {
         if (!mapped.readOnlyLogic) mapped.readOnlyLogic = {};
         mapped.readOnlyLogic.js = f.readOnlyLogicJs;
         mapped.readOnlyLogic.evaluable = true;
+        delete mapped.readOnlyLogic.reason;
       }
 
       return mapped;
@@ -359,6 +395,7 @@ function mapFieldAttributes(f, mapped) {
   if (f.reference) mapped.reference = f.reference;
   if (f.enumValues) mapped.enumValues = f.enumValues;
   if (f.inputMode) mapped.inputMode = f.inputMode;
+  if (f.clearable === false) mapped.clearable = false;
   if (f.dependsOn) mapped.dependsOn = f.dependsOn;
   if (f.lookup) mapped.lookup = true;
   if (f.popup) mapped.popup = true;

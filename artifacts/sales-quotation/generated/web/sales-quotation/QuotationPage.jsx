@@ -359,6 +359,14 @@ export const api = {
       "processType": "obuiapp"
     },
     {
+      "entity": "quotation",
+      "field": "psd2GenerateBankPayment",
+      "column": "EM_Psd2_Generate_Bank_Payment",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/psd2GenerateBankPayment",
+      "processId": "0661406A983B4D8EA611F8596F114D52",
+      "processType": "obuiapp"
+    },
+    {
       "entity": "quotationLine",
       "field": "explode",
       "column": "Explode",

@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import { useRowDelete } from '@/hooks/useRowDelete';
 import { useMenuLabel, useLabel, useUI } from '@/i18n';
-import { ArrowUpDown, ChevronDown, Plus, Link2, Printer, LayoutGrid, LayoutList, RefreshCw, Eye, Copy } from 'lucide-react';
+import { ArrowUpDown, ChevronDown, Plus, Link2, Printer, LayoutGrid, RefreshCw, Eye, Copy } from 'lucide-react';
 import { useRegisterWindowContext } from '@/components/CurrentWindowContext';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
@@ -109,25 +109,34 @@ function RefreshButton({ RefreshIconComponent, iconButtonHover, onRefresh, label
   );
 }
 
+function TableRowsIcon({ size = 24, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="3" width="18" height="18" rx="2" stroke={color} strokeWidth="1.5" />
+      <line x1="3" y1="9" x2="21" y2="9" stroke={color} strokeWidth="1.5" />
+      <line x1="3" y1="15" x2="21" y2="15" stroke={color} strokeWidth="1.5" />
+    </svg>
+  );
+}
+
 function ViewToggle({ galleryRenderer, onSelectList, onSelectGallery, viewMode }) {
-  return <>
-    {galleryRenderer && (
-      <div className="inline-flex items-center border border-border rounded-lg overflow-hidden">
-        <button
-          onClick={onSelectList}
-          className={`h-9 w-9 flex items-center justify-center transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          <LayoutList className="h-4 w-4" />
-        </button>
-        <button
-          onClick={onSelectGallery}
-          className={`h-9 w-9 flex items-center justify-center transition-colors ${viewMode === "gallery" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          <LayoutGrid className="h-4 w-4" />
-        </button>
-      </div>
-    )}
-  </>;
+  if (!galleryRenderer) return null;
+  return (
+    <div data-testid="view-toggle" className="flex flex-row items-center p-1 gap-1 h-10 w-[108px] bg-[#F5F7F9] rounded-xl">
+      <button
+        onClick={onSelectList}
+        className={`flex items-center justify-center w-12 h-8 rounded-lg transition-all ${viewMode === "list" ? "bg-white shadow-sm" : ""}`}
+      >
+        <TableRowsIcon size={24} color="#828FA3" />
+      </button>
+      <button
+        onClick={onSelectGallery}
+        className={`flex items-center justify-center w-12 h-8 rounded-lg transition-all ${viewMode === "gallery" ? "bg-white shadow-sm" : ""}`}
+      >
+        <LayoutGrid className="h-6 w-6" style={{ color: '#828FA3' }} />
+      </button>
+    </div>
+  );
 }
 
 function iconSizeClass(selectionBarSize) {
@@ -655,6 +664,8 @@ export function ListView({
                   filterPresets={filterPresets} applyPreset={applyPreset}
                   saveCurrentAsPreset={saveCurrentAsPreset} deletePreset={deletePreset}
                   labelOverrides={labelOverrides} />
+                <ViewToggle galleryRenderer={galleryRenderer} onSelectList={() => handleViewMode('list')} viewMode={viewMode}
+                  onSelectGallery={() => handleViewMode('gallery')} />
               </div>
               <div className="flex items-center gap-2">
                 {!(listViewOptions?.hideLink ?? hideLink) && (
@@ -727,9 +738,6 @@ export function ListView({
                     {ui('print')}
                   </Button>
                 )}
-                {/* View toggle */}
-                <ViewToggle galleryRenderer={galleryRenderer} onSelectList={() => handleViewMode('list')} viewMode={viewMode}
-                  onSelectGallery={() => handleViewMode('gallery')} />
                 {/* Split "New" button */}
                 {!hideCreate && (
                   <div className="inline-flex items-stretch rounded-lg overflow-hidden shadow-sm ml-3">

@@ -186,6 +186,14 @@ export const api = {
       "url": "/sws/neo/payment-in/finPayment/{id}/action/aeatsiiSend",
       "processId": "EA02D79CA1DE4B46909EA6EF64A66B53",
       "processType": "obuiapp"
+    },
+    {
+      "entity": "finPayment",
+      "field": "psd2GenerateBankPayment",
+      "column": "EM_Psd2_Generate_Bank_Payment",
+      "url": "/sws/neo/payment-in/finPayment/{id}/action/psd2GenerateBankPayment",
+      "processId": "0661406A983B4D8EA611F8596F114D52",
+      "processType": "obuiapp"
     }
   ],
   "queryParams": {

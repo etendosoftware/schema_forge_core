@@ -38,6 +38,7 @@ const BTN_GHOST =
 
 // ── Stage 1 ──────────────────────────────────────────────────────────────────
 function MovementBasics({ form, set, dimensions, optionsByDim, trxTypes }) {
+  const ui = useUI();
   const visibleDims = DIM_ORDER.filter((k) => dimensions.includes(k) && DIM_META[k]);
   const setDim = (key, v) => set({ dims: { ...form.dims, [key]: v } });
   // Cobro (BPD) → deposit editable; Pago (BPW) → withdrawal editable.
@@ -45,51 +46,51 @@ function MovementBasics({ form, set, dimensions, optionsByDim, trxTypes }) {
   return (
     <div>
       <div className="grid grid-cols-2 gap-x-[18px] gap-y-3.5">
-        <Select label="Tipo de transacción" required value={form.trxType} onChange={(v) => set({ trxType: v })} options={trxTypes} />
+        <Select label={ui('financeAccountMovementsWizardTrxType')} required value={form.trxType} onChange={(v) => set({ trxType: v })} options={trxTypes} />
         <div />
-        <DateInput label="Fecha de transacción" required value={form.trxDate} onChange={(v) => set({ trxDate: v })} />
-        <DateInput label="Fecha contable" required value={form.acctDate} onChange={(v) => set({ acctDate: v })} />
-        <Field label="Descripción" className="col-span-2">
+        <DateInput label={ui('financeAccountMovementsWizardTrxDate')} required value={form.trxDate} onChange={(v) => set({ trxDate: v })} />
+        <DateInput label={ui('financeAccountMovementsNewAcctDate')} required value={form.acctDate} onChange={(v) => set({ acctDate: v })} />
+        <Field label={ui('financeAccountMovementsNewDescription')} className="col-span-2">
           <textarea
             className="min-h-16 w-full box-border resize-y rounded-lg border border-[#D1D4DB] bg-white px-3 py-2.5 text-sm leading-5 text-[#121217] placeholder:text-[#8A8AA3] focus:outline-none focus:border-[#121217] focus:ring-2 focus:ring-[#121217]/10"
-            placeholder="Descripción del movimiento…"
+            placeholder={ui('financeAccountMovementsWizardDescriptionPlaceholder')}
             value={form.description}
             onChange={(e) => set({ description: e.target.value })}
           />
         </Field>
       </div>
 
-      <SectionLabel>Importes</SectionLabel>
+      <SectionLabel>{ui('financeAccountMovementsWizardAmounts')}</SectionLabel>
       <div className="grid grid-cols-3 gap-x-[18px] gap-y-3.5">
-        <Field label="Moneda" required><ReadOnly>{form.currencyIso || 'EUR'}</ReadOnly></Field>
+        <Field label={ui('financeAccountMovementsNewCurrency')} required><ReadOnly>{form.currencyIso || 'EUR'}</ReadOnly></Field>
         <AmountInput
-          label="Importe depósito"
+          label={ui('financeAccountMovementsNewDepositAmount')}
           required={depositEditable}
           readOnly={!depositEditable}
           value={depositEditable ? form.deposit : '0.00'}
-          placeholder="0,00"
+          placeholder={ui('financeAccountAmountPlaceholder')}
           onChange={(e) => set({ deposit: e.target.value })}
         />
         <AmountInput
-          label="Importe retiro"
+          label={ui('financeAccountMovementsNewPaymentAmount')}
           required={!depositEditable}
           readOnly={depositEditable}
           value={!depositEditable ? form.withdrawal : '0.00'}
-          placeholder="0,00"
+          placeholder={ui('financeAccountAmountPlaceholder')}
           onChange={(e) => set({ withdrawal: e.target.value })}
         />
       </div>
 
       {visibleDims.length > 0 ? (
         <>
-          <SectionLabel>Dimensiones</SectionLabel>
+          <SectionLabel>{ui('financeAccountMovementsWizardDimensions')}</SectionLabel>
           <div className="grid grid-cols-3 gap-x-[18px] gap-y-3.5">
             {visibleDims.map((key) => {
               const meta = DIM_META[key];
               return (
                 <Select
                   key={key}
-                  label={meta.label}
+                  label={ui(meta.labelKey)}
                   required={meta.required}
                   value={form.dims[key] || ''}
                   onChange={(v) => setDim(key, v)}
@@ -105,11 +106,12 @@ function MovementBasics({ form, set, dimensions, optionsByDim, trxTypes }) {
 }
 
 const CHOICES = [
-  { id: 'pay', Icon: Wallet, t: 'Registrar pago', h: 'Vincula facturas y registra un cobro o pago. Se crea un pago junto al movimiento.' },
-  { id: 'gl', Icon: Percent, t: 'Concepto contable (G/L)', h: 'Asigna el movimiento a una cuenta contable. Sin pago ni facturas — ideal para comisiones e intereses.' },
+  { id: 'pay', Icon: Wallet, titleKey: 'financeAccountMovementsWizardChoicePayTitle', hintKey: 'financeAccountMovementsWizardChoicePayHint' },
+  { id: 'gl', Icon: Percent, titleKey: 'financeAccountMovementsWizardChoiceGlTitle', hintKey: 'financeAccountMovementsWizardChoiceGlHint' },
 ];
 
 function ChoiceCard({ choice, active, onClick }) {
+  const ui = useUI();
   const { Icon } = choice;
   return (
     <button
@@ -123,12 +125,12 @@ function ChoiceCard({ choice, active, onClick }) {
         <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-md ${active ? 'bg-[#121217] text-white' : 'bg-[#E8E8ED] text-[#121217]'}`}>
           <Icon className="h-[22px] w-[22px]" />
         </span>
-        <span className="text-[15px] font-bold leading-5 text-[#121217]">{choice.t}</span>
+        <span className="text-[15px] font-bold leading-5 text-[#121217]">{ui(choice.titleKey)}</span>
         <span className={`ml-auto grid h-5 w-5 place-items-center rounded-full border-2 ${active ? 'border-[#121217]' : 'border-[#A9A9BC]'}`}>
           {active ? <span className="h-2.5 w-2.5 rounded-full bg-[#121217]" /> : null}
         </span>
       </div>
-      <span className="text-[13px] leading-[18px] text-[#6C6C89]">{choice.h}</span>
+      <span className="text-[13px] leading-[18px] text-[#6C6C89]">{ui(choice.hintKey)}</span>
     </button>
   );
 }
@@ -138,10 +140,11 @@ function ChoiceCard({ choice, active, onClick }) {
 // C_GLItem (no payment, no extra fields), via the shared LookupPicker fed by
 // the existing `glitem-lookup` NEO action. All other movement data is shared.
 function GLItemBlock({ value, onChange }) {
+  const ui = useUI();
   return (
     <div className="grid grid-cols-2 gap-x-[18px] gap-y-3.5">
-      <Field label="Concepto contable (G/L Item)" required>
-        <LookupPicker value={value} onChange={onChange} useLookup={useGLItemLookup} placeholder="Buscar concepto…" />
+      <Field label={ui('financeAccountMovementsWizardGlItemLabel')} required>
+        <LookupPicker value={value} onChange={onChange} useLookup={useGLItemLookup} placeholder={ui('financeAccountMovementsNewGlItemPlaceholder')} />
       </Field>
     </div>
   );
@@ -161,7 +164,11 @@ function stepState(stage, n) {
 }
 
 function Stepper({ stage }) {
-  const steps = [{ n: 1, l: 'Movimiento' }, { n: 2, l: 'Pago o concepto' }];
+  const ui = useUI();
+  const steps = [
+    { n: 1, l: ui('financeAccountMovementsWizardStep1') },
+    { n: 2, l: ui('financeAccountMovementsWizardStep2') },
+  ];
   return (
     <div className="flex items-center gap-2 py-[18px] pb-4">
       {steps.map((s, i) => {
@@ -271,7 +278,7 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
     const dep = depositEditable ? parseAmount(form.deposit) : 0;
     const pay = depositEditable ? 0 : parseAmount(form.withdrawal);
     if (dep <= 0 && pay <= 0) {
-      throw new Error('Indica un importe de depósito o retiro.');
+      throw new Error(ui('financeAccountMovementsWizardErrAmount'));
     }
     await createMovement({
       FIN_Financial_Account_ID: accountId,
@@ -284,20 +291,23 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
       description: form.description,
       glItemId: choice === 'gl' ? (glItem?.id ?? null) : null,
     });
-    toast.success('Movimiento creado');
+    toast.success(ui('financeAccountMovementsNewSuccess'));
   };
 
   const submitPayment = async () => {
     const snap = paymentSnapshotRef.current || {};
     if (!snap.tercero?.id) {
-      throw new Error(`Selecciona un contacto en "${doc === 'in' ? 'Recibido de' : 'Pagado a'}".`);
+      const field = ui(doc === 'in'
+        ? 'financeAccountMovementsWizardReceivedFrom'
+        : 'financeAccountMovementsWizardPaidTo');
+      throw new Error(ui('financeAccountMovementsWizardErrContact', { field }));
     }
     const amount = snap.totals?.pago ?? movementAmount;
     if (!amount || amount <= 0) {
-      throw new Error('Indica el importe del pago.');
+      throw new Error(ui('financeAccountMovementsWizardErrPaymentAmount'));
     }
     if ((snap.totals?.diff ?? 0) > 0.005 && !snap.overpaymentAction) {
-      throw new Error('Elige una acción por el excedente.');
+      throw new Error(ui('financeAccountMovementsWizardErrOverpayment'));
     }
     const glItems = (snap.commissions || [])
       .filter((g) => g.item?.id && ((Number(g.receivedIn) || 0) !== 0 || (Number(g.paidOut) || 0) !== 0))
@@ -317,7 +327,7 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
       glItems,
       overpaymentAction: snap.overpaymentAction || null,
     });
-    toast.success('Pago registrado');
+    toast.success(ui('financeAccountMovementsWizardPaymentSuccess'));
   };
 
   const handleCreate = async () => {
@@ -330,14 +340,18 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
       onSuccess?.();
       onClose();
     } catch (e) {
-      toast.error(e?.message || (choice === 'pay' ? 'No se pudo registrar el pago' : 'No se pudo crear el movimiento'));
+      toast.error(e?.message || ui(choice === 'pay'
+        ? 'financeAccountMovementsWizardPaymentError'
+        : 'financeAccountMovementsNewError'));
     }
   };
 
   const trxBadgeClass = doc === 'in'
     ? 'border-[#B2EECC] bg-[#EEFBF4] text-[#17663A]'
     : 'border-[#FBB1C4] bg-[#FEF0F4] text-[#D50B3E]';
-  const assocLabel = choice === 'gl' ? 'concepto contable' : 'pago';
+  const assocLabel = ui(choice === 'gl'
+    ? 'financeAccountMovementsWizardAssocGl'
+    : 'financeAccountMovementsWizardAssocPay');
 
   // Stage body — split into if/return branches to avoid a nested ternary and to
   // keep the component's cognitive complexity low.
@@ -349,8 +363,8 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
       return (
         <>
           <div className="mb-4 mt-1">
-            <h3 className="m-0 mb-1 text-base font-bold leading-[22px] text-[#121217]">¿Cómo se concilia este movimiento?</h3>
-            <p className="m-0 max-w-[620px] text-[13px] leading-[18px] text-[#6C6C89]">Solo se puede registrar un pago <b className="font-semibold text-[#121217]">o</b> asignar un concepto contable, no ambos.</p>
+            <h3 className="m-0 mb-1 text-base font-bold leading-[22px] text-[#121217]">{ui('financeAccountMovementsWizardReconcileQuestion')}</h3>
+            <p className="m-0 max-w-[620px] text-[13px] leading-[18px] text-[#6C6C89]">{ui('financeAccountMovementsWizardReconcileHintA')} <b className="font-semibold text-[#121217]">{ui('financeAccountMovementsWizardReconcileOr')}</b> {ui('financeAccountMovementsWizardReconcileHintB')}</p>
           </div>
           <div className="grid grid-cols-2 gap-3.5">
             {CHOICES.map((c) => (
@@ -368,15 +382,15 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
             <choiceMeta.Icon className="h-4 w-4" />
           </span>
           <span className="flex flex-col gap-px">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[#8A8AA3]">Tipo de asociación</span>
-            <span className="text-sm font-bold leading-5 text-[#121217]">{choiceMeta.t}</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[#8A8AA3]">{ui('financeAccountMovementsWizardAssocType')}</span>
+            <span className="text-sm font-bold leading-5 text-[#121217]">{ui(choiceMeta.titleKey)}</span>
           </span>
           <button
             type="button"
             onClick={() => setChoice(null)}
             className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-[#D1D4DB] bg-white px-3 py-[7px] text-[13px] font-semibold text-[#3F3F50] hover:border-[#A9A9BC] hover:bg-[#F5F7F9]"
           >
-            <ChevronDown className="h-3.5 w-3.5" /> Cambiar
+            <ChevronDown className="h-3.5 w-3.5" /> {ui('financeAccountMovementsWizardChange')}
           </button>
         </div>
         <div className="mt-4">
@@ -406,7 +420,7 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
             <div>
               <DialogTitle asChild>
                 <h2 className="m-0 flex items-center gap-2.5 text-lg font-bold leading-6 tracking-[-0.01em] text-[#121217]">
-                  Nuevo movimiento
+                  {ui('financeAccountMovementsNewTitle')}
                   {stage === 2 && trxLabel ? (
                     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${trxBadgeClass}`}>
                       {trxLabel}
@@ -416,7 +430,7 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
               </DialogTitle>
               <DialogDescription asChild>
                 <p className="mt-0.5 text-[13px] leading-[18px] text-[#6C6C89]">
-                  Cuenta de Banco · {accountCurrency?.iso || 'EUR'}
+                  {ui('financeAccountMovementsWizardSubtitle', { iso: accountCurrency?.iso || 'EUR' })}
                 </p>
               </DialogDescription>
             </div>
@@ -436,18 +450,18 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
         <div className="flex shrink-0 items-center gap-2.5 border-t border-[#E8EAEF] px-6 py-4">
           {stage === 1 ? (
             <>
-              <span className="mr-auto text-xs leading-4 text-[#6C6C89]">Paso 1 de 2 · datos del movimiento</span>
-              <button type="button" className={BTN_GHOST} onClick={onClose}>Cancelar</button>
-              <button type="button" className={BTN_PRIMARY} onClick={() => setStage(2)}>Siguiente <ChevronDown className="h-[15px] w-[15px] -rotate-90" /></button>
+              <span className="mr-auto text-xs leading-4 text-[#6C6C89]">{ui('financeAccountMovementsWizardStep1Footer')}</span>
+              <button type="button" className={BTN_GHOST} onClick={onClose}>{ui('financeAccountMovementsNewCancel')}</button>
+              <button type="button" className={BTN_PRIMARY} onClick={() => setStage(2)}>{ui('financeAccountMovementsWizardNext')} <ChevronDown className="h-[15px] w-[15px] -rotate-90" /></button>
             </>
           ) : (
             <>
               <span className="mr-auto inline-flex items-center gap-1.5 text-xs leading-4 text-[#6C6C89]">
-                <Info className="h-[13px] w-[13px]" /> Se creará el movimiento {choice ? <>con <span className="font-semibold text-[#121217]">{assocLabel}</span></> : 'y su asociación'}
+                <Info className="h-[13px] w-[13px]" /> {ui('financeAccountMovementsWizardWillCreate')} {choice ? <>{ui('financeAccountMovementsWizardWith')} <span className="font-semibold text-[#121217]">{assocLabel}</span></> : ui('financeAccountMovementsWizardWithoutAssoc')}
               </span>
-              <button type="button" className={BTN_GHOST} onClick={() => setStage(1)}>Atrás</button>
+              <button type="button" className={BTN_GHOST} onClick={() => setStage(1)}>{ui('financeAccountMovementsWizardBack')}</button>
               <button type="button" className={BTN_PRIMARY} disabled={!choice || creating || creatingPayment} onClick={handleCreate}>
-                {(creating || creatingPayment) ? 'Creando…' : 'Crear movimiento'}
+                {(creating || creatingPayment) ? ui('financeAccountMovementsNewSaving') : ui('financeAccountMovementsNewConfirm')}
               </button>
             </>
           )}

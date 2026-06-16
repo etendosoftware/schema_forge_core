@@ -108,6 +108,9 @@ export const ImportedStatementsTab = forwardRef(function ImportedStatementsTab({
 
   // Per-variant wiring for the confirm dialog: the action to run plus its
   // success / error toast keys. Keeps runConfirm free of nested branching.
+  // The `error`/`success` values are i18n KEYS resolved later via ui(cfg.error);
+  // they are not user-facing literals.
+  // i18n-allowlist: ["financeAccountStatementsDeleteError", "financeAccountStatementsReactivateError", "financeAccountStatementsProcessError"]
   const CONFIRM_ACTIONS = {
     delete: {
       run: deleteStatement,
