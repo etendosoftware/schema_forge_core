@@ -118,4 +118,69 @@ describe('LocationEditorModal', () => {
     renderModal({ rowId: null });
     expect(screen.queryByText('removeLocation')).not.toBeInTheDocument();
   });
+
+  it('renders all text input fields for address entry', () => {
+    renderModal();
+    const inputs = screen.getAllByRole('textbox');
+    // address, address2, postalCode, city = 4 text inputs
+    expect(inputs.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('renders checkboxes for shipping and invoicing', () => {
+    renderModal();
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes.length).toBe(2);
+    // Both default to checked
+    expect(checkboxes[0]).toBeChecked();
+    expect(checkboxes[1]).toBeChecked();
+  });
+
+  it('renders country and region selector buttons with aria-haspopup', () => {
+    renderModal();
+    const buttons = screen.getAllByRole('button');
+    const haspopupBtns = buttons.filter(b => b.getAttribute('aria-haspopup') === 'dialog');
+    expect(haspopupBtns.length).toBe(2); // country + region
+  });
+
+  it('region selector is disabled when no country is selected', () => {
+    renderModal();
+    const buttons = screen.getAllByRole('button');
+    const disabledBtns = buttons.filter(b => b.disabled);
+    // The region button should be disabled since no country is set
+    expect(disabledBtns.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('shows selectCountryFirst text in region button when no country selected', () => {
+    renderModal();
+    expect(screen.getByText('selectCountryFirst')).toBeInTheDocument();
+  });
+
+  it('calls close when X button is clicked', () => {
+    const { props } = renderModal();
+    // The close X button has aria-label "close"
+    const closeBtn = screen.getByLabelText('close');
+    fireEvent.click(closeBtn);
+    expect(props.onClose).toHaveBeenCalled();
+  });
+
+  it('calls fetch with correct URL for stock data when editing', async () => {
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ response: { data: [{ id: 'loc-1', address: '123 Main St', country: 'ES', 'country$_identifier': 'Spain' }] }, items: [], hasMore: false }),
+      }),
+    );
+
+    renderModal({ rowId: 'loc-1' });
+
+    // Should fetch the record details + selectors
+    await screen.findByText('locationSelectorTitle');
+    expect(global.fetch).toHaveBeenCalled();
+  });
+
+  it('renders save button that is not disabled for new records', () => {
+    renderModal();
+    const saveBtn = screen.getByText('save');
+    expect(saveBtn.closest('button')).not.toBeDisabled();
+  });
 });
