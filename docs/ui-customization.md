@@ -517,7 +517,7 @@ Default: `"classic"`. Validator F12 enforces the enum (`"classic"` | `"inlineEdi
 
 ### 15. `window.balanceFooter` — debit/credit balance footer
 
-**What it does:** replaces the product/discount/tax totals panel with a `BalanceFooterPanel` for double-entry windows. It shows **Σ debit**, **Σ credit**, the **difference**, and a **balanced ✓ / unbalanced ✗** badge, and **disables the Save button** (with a tooltip) until `Σ debit === Σ credit` and the total is `> 0`.
+**What it does:** replaces the product/discount/tax totals panel with a `BalanceFooterPanel` for double-entry windows. It shows **Σ debit**, **Σ credit**, the **difference**, and a **balanced ✓ / unbalanced ✗** badge, and **disables the Save button** (with a tooltip) only when the entry is **unbalanced** (`Σ debit ≠ Σ credit`). An empty/zero entry is balanced and savable as a draft; the badge stays hidden until the lines carry amounts.
 
 **When to use:** manual journals and any double-entry document where lines carry separate debit and credit amount columns that must balance before saving.
 

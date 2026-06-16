@@ -12,7 +12,7 @@
  * @returns { totalDebit, totalCredit, difference, isBalanced }
  */
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
-const NOT_BALANCED = { totalDebit: 0, totalCredit: 0, difference: 0, isBalanced: false };
+const NOT_BALANCED = { totalDebit: 0, totalCredit: 0, difference: 0, isBalanced: false, hasAmounts: false };
 
 function applyEditingLine(lines, editingLine) {
   if (!editingLine?.id) return lines;
@@ -35,6 +35,10 @@ export function computeBalance(lines, pendingLine, editingLine, config) {
   const totalDebit = round2(sumField(all, config.debitField));
   const totalCredit = round2(sumField(all, config.creditField));
   const difference = round2(totalDebit - totalCredit);
-  const isBalanced = difference === 0 && totalDebit > 0;
-  return { totalDebit, totalCredit, difference, isBalanced };
+  // hasAmounts distinguishes an empty/zero entry from one carrying values.
+  const hasAmounts = totalDebit !== 0 || totalCredit !== 0;
+  // An empty entry (no amounts) counts as balanced so it can be saved as a
+  // draft; Save is only blocked on a genuine imbalance (difference !== 0).
+  const isBalanced = difference === 0;
+  return { totalDebit, totalCredit, difference, isBalanced, hasAmounts };
 }

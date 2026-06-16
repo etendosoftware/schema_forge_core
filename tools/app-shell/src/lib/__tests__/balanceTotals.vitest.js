@@ -4,9 +4,9 @@ import { computeBalance } from '../balanceTotals.js';
 const cfg = { debitField: 'amtSourceDr', creditField: 'amtSourceCr' };
 
 describe('computeBalance', () => {
-  it('returns zeros and not balanced for empty lines', () => {
+  it('treats empty lines as balanced (savable draft) with no amounts', () => {
     expect(computeBalance([], null, null, cfg)).toEqual({
-      totalDebit: 0, totalCredit: 0, difference: 0, isBalanced: false,
+      totalDebit: 0, totalCredit: 0, difference: 0, isBalanced: true, hasAmounts: false,
     });
   });
 
@@ -16,7 +16,7 @@ describe('computeBalance', () => {
       { amtSourceDr: '0', amtSourceCr: '100' },
     ];
     expect(computeBalance(lines, null, null, cfg)).toEqual({
-      totalDebit: 100, totalCredit: 100, difference: 0, isBalanced: true,
+      totalDebit: 100, totalCredit: 100, difference: 0, isBalanced: true, hasAmounts: true,
     });
   });
 
@@ -30,9 +30,18 @@ describe('computeBalance', () => {
     expect(r.isBalanced).toBe(false);
   });
 
-  it('is NOT balanced when both totals are zero', () => {
+  it('treats an all-zero line as balanced (savable) with no amounts', () => {
     const lines = [{ amtSourceDr: '0', amtSourceCr: '0' }];
-    expect(computeBalance(lines, null, null, cfg).isBalanced).toBe(false);
+    const r = computeBalance(lines, null, null, cfg);
+    expect(r.isBalanced).toBe(true);
+    expect(r.hasAmounts).toBe(false);
+  });
+
+  it('flags an imbalance as not balanced and reports hasAmounts', () => {
+    const lines = [{ amtSourceDr: '100', amtSourceCr: '0' }];
+    const r = computeBalance(lines, null, null, cfg);
+    expect(r.isBalanced).toBe(false);
+    expect(r.hasAmounts).toBe(true);
   });
 
   it('includes the pending (in-progress add) line', () => {

@@ -27,4 +27,11 @@ describe('BalanceFooterPanel', () => {
     expect(screen.getByTestId('balance-status')).toHaveAttribute('data-balanced', 'false');
     expect(screen.getByTestId('balance-difference')).toHaveTextContent('€40.00');
   });
+
+  it('hides the badge entirely when there are no amounts (empty draft)', () => {
+    render(<BalanceFooterPanel lines={[]} config={cfg} formatAmount={fmt} />);
+    // No red/green chip on a brand-new empty journal.
+    expect(screen.queryByTestId('balance-status')).toBeNull();
+    expect(screen.getByTestId('balance-difference')).toHaveTextContent('€0.00');
+  });
 });

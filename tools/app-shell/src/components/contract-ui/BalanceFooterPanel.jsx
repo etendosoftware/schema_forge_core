@@ -22,7 +22,7 @@ export default function BalanceFooterPanel({
   currency,
 }) {
   const ui = useUI();
-  const { totalDebit, totalCredit, difference, isBalanced } =
+  const { totalDebit, totalCredit, difference, isBalanced, hasAmounts } =
     computeBalance(lines, pendingLine, editingLine, config);
 
   const fmt = (v) => (typeof formatAmount === 'function' ? formatAmount(v, currency) : String(v));
@@ -47,13 +47,15 @@ export default function BalanceFooterPanel({
           <span>{ui('difference')}</span>
           <div className="flex items-center gap-2">
             <span className="tabular-nums" data-testid="balance-difference">{fmt(difference)}</span>
-            <span
-              data-testid="balance-status"
-              data-balanced={String(isBalanced)}
-              className={`text-xs rounded px-2 py-0.5 ${isBalanced ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
-            >
-              {isBalanced ? `✓ ${ui('balanced')}` : `✗ ${ui('unbalanced')}`}
-            </span>
+            {hasAmounts && (
+              <span
+                data-testid="balance-status"
+                data-balanced={String(isBalanced)}
+                className={`text-xs rounded px-2 py-0.5 ${isBalanced ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+              >
+                {isBalanced ? `✓ ${ui('balanced')}` : `✗ ${ui('unbalanced')}`}
+              </span>
+            )}
           </div>
         </div>
       </div>
