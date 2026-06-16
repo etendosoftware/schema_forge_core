@@ -42,7 +42,7 @@
         "Priority": "Prioridad",
         "TextCondition": "Condición sobre el concepto",
         "TextPattern": "Patrón a buscar",
-        "TransactionType": "Tipo de transacción",
+        "ETGO_Transaction_Type_ID": "Tipo de transacción",
         "C_GLItem_ID": "Concepto contable",
         "MatchCount": "Conciliaciones",
         "Isactive": "Activa",
@@ -59,7 +59,7 @@
         "Priority": "Priority",
         "TextCondition": "Concept condition",
         "TextPattern": "Pattern to match",
-        "TransactionType": "Transaction type",
+        "ETGO_Transaction_Type_ID": "Transaction type",
         "C_GLItem_ID": "Accounting concept",
         "MatchCount": "Reconciliations",
         "Isactive": "Active",
@@ -131,6 +131,7 @@
           "placeholderKey": "matchRulePatternPlaceholder"
         },
         "transactionType": {
+          "visibility": "editable",
           "grid": true,
           "gridOrder": 4,
           "gridLabelKey": "matchRuleColType",
@@ -140,14 +141,12 @@
           "inputMode": "selector",
           "searchSelect": true,
           "placeholderKey": "matchRuleTypePlaceholder",
-          "cellType": "typePill",
-          "tones": {
-            "H": "blue",
-            "T": "neutral",
-            "B": "amber",
-            "R": "green",
-            "O": "neutral"
-          }
+          "allowCreate": true,
+          "createLabelKey": "matchRuleTypeCreate",
+          "createTitleKey": "matchRuleTypeCreateTitle",
+          "createNamePlaceholderKey": "matchRuleTypeNamePlaceholder",
+          "createSpec": "transaction-type",
+          "createEntity": "transactionType"
         },
         "accountingConcept": {
           "visibility": "editable",

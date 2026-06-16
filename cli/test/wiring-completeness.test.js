@@ -61,12 +61,14 @@ function getLayoutType(entity) {
 }
 const listModalArtifacts = new Set(entityArtifacts.filter(e => getLayoutType(e) === 'list-modal'));
 
-// Custom hand-written windows that carry a contract.json ONLY to drive config
-// (financial-account: the contract feeds grid column metadata for the bespoke UI),
-// but whose React lives under tools/app-shell/src/windows/custom/. They have no
-// generated page / mockData / Form.jsx, so they are exempt from the generated-output
-// checks below (the contract is still validated by the contract test suite).
-const GENERATED_OUTPUT_EXEMPT = new Set(['financial-account']);
+// Artifacts that carry a contract.json but emit no generated frontend, so they are
+// exempt from the generated-output checks below (their contract is still validated by
+// the contract test suite):
+//   - financial-account: a custom hand-written window whose React lives under
+//     tools/app-shell/src/windows/custom/; the contract only feeds grid column metadata.
+//   - transaction-type: a backend-only lookup (W spec for selector + inline create,
+//     no AD menu, no route, no React) — see BACKEND_ONLY_ARTIFACTS in validate-pipeline.
+const GENERATED_OUTPUT_EXEMPT = new Set(['financial-account', 'transaction-type']);
 const generatedEntityArtifacts = entityArtifacts.filter(e => !GENERATED_OUTPUT_EXEMPT.has(e));
 
 const aggregateArtifacts = artifactDirs.filter(d =>

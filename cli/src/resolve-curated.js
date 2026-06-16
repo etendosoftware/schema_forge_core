@@ -193,9 +193,18 @@ const FIELD_DECISION_COPY_PROPS = [
   // (CreatableSearchSelect) instead of the plain pick-only dropdown (SelectorInput).
   // Default false — absent/false keeps the existing dropdown rendering unchanged.
   'searchSelect',
-  // Opt-in (future): when true on a searchSelect field, the combobox shows the
-  // inline "+ create" action. Left OFF by default; no window enables it yet.
+  // Opt-in: when true on a searchSelect field, the combobox shows the inline
+  // "+ create" action. Requires createSpec/createEntity to know where to POST.
   'allowCreate',
+  // i18n key for the inline "+ create" action label (e.g. "+ New transaction type").
+  'createLabelKey',
+  // i18n keys for the inline-create modal: dialog title + name-input placeholder.
+  'createTitleKey',
+  'createNamePlaceholderKey',
+  // NEO spec + entity that back the inline create POST. The new record is created
+  // via POST /sws/neo/<createSpec>/<createEntity> with { name }, then auto-selected.
+  'createSpec',
+  'createEntity',
 ];
 
 const FIELD_RAW_COPY_PROPS = [

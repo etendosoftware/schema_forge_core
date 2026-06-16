@@ -5,8 +5,8 @@ const columns = [
   { key: 'priority', column: 'Priority', type: 'number', label: 'Priority', labelKey: 'matchRuleColPriority', inlineEdit: true, cellType: 'priorityPill' },
   { key: 'name', column: 'Name', type: 'string', label: 'Name', labelKey: 'matchRuleColName', cellType: 'nameWithSubline', subField: 'businessPartner' },
   { key: 'textCondition', column: 'TextCondition', type: 'enum', label: 'Text Condition', labelKey: 'matchRuleColCondition', enumLabels: { 'C': 'Contains', 'R': 'Regex', 'S': 'Starts with' }, cellType: 'conditionChip', kindField: 'textCondition', patternField: 'textPattern', kindLabels: {"C":"matchRuleConditionContains","S":"matchRuleConditionStartsWith","R":"matchRuleConditionRegex"} },
-  { key: 'transactionType', column: 'TransactionType', type: 'enum', label: 'Transaction Type', labelKey: 'matchRuleColType', enumLabels: { 'B': 'Bank fee', 'H': 'Tax retention', 'T': 'Transfer' }, cellType: 'typePill', tones: {"H":"blue","T":"neutral","B":"amber","R":"green","O":"neutral"} },
-  { key: 'accountingConcept', column: 'C_GLItem_ID', type: 'selector', label: 'C_GLItem_ID', labelKey: 'matchRuleColConcept' },
+  { key: 'transactionType', column: 'ETGO_Transaction_Type_ID', type: 'selector', label: 'ETGO_Transaction_Type_ID', labelKey: 'matchRuleColType' },
+  { key: 'accountingConcept', column: 'C_GLItem_ID', type: 'selector', label: 'Accounting concept', labelKey: 'matchRuleColConcept' },
   { key: 'matchCount', column: 'MatchCount', type: 'number', label: 'Match Count', labelKey: 'matchRuleColReconciliations', cellType: 'boldText' },
   { key: 'active', column: 'Isactive', type: 'boolean', label: 'Active', labelKey: 'matchRuleColActive', toggle: true, cellType: 'toggle' },
 ];
@@ -17,8 +17,8 @@ const fields = [
   { key: 'name', column: 'Name', type: 'text', label: 'Name', required: true, section: 'general', placeholderKey: 'matchRuleNamePlaceholder' },
   { key: 'textPattern', column: 'TextPattern', type: 'text', label: 'Text Pattern', required: true, section: 'general', placeholderKey: 'matchRulePatternPlaceholder' },
   { key: 'financialAccount', column: 'FIN_Financial_Account_ID', type: 'selector', label: 'Financial Account', reference: 'Financial_Account', inputMode: 'selector', searchSelect: true, section: 'general', emptyOptionLabelKey: 'matchRuleAllAccounts' },
-  { key: 'transactionType', column: 'TransactionType', type: 'select', label: 'Transaction Type', searchSelect: true, section: 'general', options: [{ value: 'B', label: 'Bank fee' }, { value: 'H', label: 'Tax retention' }, { value: 'T', label: 'Transfer' }], placeholderKey: 'matchRuleTypePlaceholder' },
-  { key: 'accountingConcept', column: 'C_GLItem_ID', type: 'selector', label: 'C_GLItem_ID', reference: 'GLItem', inputMode: 'selector', searchSelect: true, section: 'general' },
+  { key: 'transactionType', column: 'ETGO_Transaction_Type_ID', type: 'selector', label: 'ETGO_Transaction_Type_ID', reference: 'ETGO_Transaction_Type', inputMode: 'selector', searchSelect: true, allowCreate: true, createLabelKey: 'matchRuleTypeCreate', createTitleKey: 'matchRuleTypeCreateTitle', createNamePlaceholderKey: 'matchRuleTypeNamePlaceholder', createSpec: 'transaction-type', createEntity: 'transactionType', section: 'general', placeholderKey: 'matchRuleTypePlaceholder' },
+  { key: 'accountingConcept', column: 'C_GLItem_ID', type: 'selector', label: 'Accounting concept', reference: 'GLItem', inputMode: 'selector', searchSelect: true, section: 'general' },
   { key: 'textCondition', column: 'TextCondition', type: 'select', label: 'Text Condition', required: true, searchSelect: true, section: 'general', options: [{ value: 'C', label: 'Contains' }, { value: 'R', label: 'Regex' }, { value: 'S', label: 'Starts with' }], placeholderKey: 'matchRuleConditionPlaceholder' },
   { key: 'priority', column: 'Priority', type: 'number', label: 'Priority', required: true, section: 'general' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner', reference: 'BPartner', inputMode: 'selector', searchSelect: true, section: 'general' },
@@ -26,7 +26,7 @@ const fields = [
   { key: 'costCenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'Costcenter', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
   { key: 'user1Dimension', column: 'User1_ID', type: 'selector', label: 'User1 Dimension', reference: 'User1', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
   { key: 'user2Dimension', column: 'User2_ID', type: 'selector', label: 'User2 Dimension', reference: 'User2', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
-  { key: 'product', column: 'M_Product_ID', type: 'selector', label: 'M_Product_ID', reference: 'Product', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
+  { key: 'product', column: 'M_Product_ID', type: 'selector', label: 'Product', reference: 'Product', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
 ];
 
 const sections = [
@@ -97,6 +97,14 @@ export const api = {
     }
   },
   "selectors": [
+    {
+      "entity": "etgoMatchRuleHeader",
+      "field": "transactionType",
+      "column": "ETGO_Transaction_Type_ID",
+      "reference": "ETGO_Transaction_Type",
+      "inputMode": "selector",
+      "url": "/sws/neo/match-rule/etgoMatchRuleHeader/selectors/transactionType"
+    },
     {
       "entity": "etgoMatchRuleHeader",
       "field": "businessPartner",
@@ -185,7 +193,7 @@ export const api = {
       "Priority": "Prioridad",
       "TextCondition": "Condición sobre el concepto",
       "TextPattern": "Patrón a buscar",
-      "TransactionType": "Tipo de transacción",
+      "ETGO_Transaction_Type_ID": "Tipo de transacción",
       "C_GLItem_ID": "Concepto contable",
       "MatchCount": "Conciliaciones",
       "Isactive": "Activa",
@@ -202,7 +210,7 @@ export const api = {
       "Priority": "Priority",
       "TextCondition": "Concept condition",
       "TextPattern": "Pattern to match",
-      "TransactionType": "Transaction type",
+      "ETGO_Transaction_Type_ID": "Transaction type",
       "C_GLItem_ID": "Accounting concept",
       "MatchCount": "Reconciliations",
       "Isactive": "Active",

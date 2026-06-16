@@ -239,6 +239,11 @@ export function CreatableSearchSelect({
   const handleCreate = () => {
     isEditingRef.current = false;
     setOpen(false);
+    // The create button uses onMouseDown + preventDefault (so it fires before blur),
+    // which keeps focus on this input — leaving the dropdown able to reopen behind the
+    // create modal. Explicitly drop focus so the selector fully closes.
+    setEditingIntent(false);
+    inputRef.current?.blur();
     if (!onCreateRequest) return;
     onCreateRequest(query, (newId, newName) => {
       if (!newId) return;

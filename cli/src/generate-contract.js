@@ -441,25 +441,30 @@ function processDisplayLogic(mapped, f, rules) {
   }
 }
 
+// Field attributes copied onto the mapped contract field verbatim when truthy
+// (incl. the searchable-selector + inline-create opt-ins, see resolve-curated.js).
+const FIELD_ATTRS_COPY_VERBATIM = [
+  'derivation', 'columnType', 'reference', 'enumValues', 'inputMode',
+  'createLabelKey', 'createTitleKey', 'createNamePlaceholderKey', 'createSpec', 'createEntity',
+  'dependsOn', 'lookupDrawer', 'lookupTitle', 'displayFromCatalog',
+];
+// Boolean opt-ins emitted as `true` when present on the raw field.
+const FIELD_ATTRS_FLAGS = ['searchSelect', 'allowCreate', 'lookup', 'popup'];
+// Array attributes copied only when non-empty.
+const FIELD_ATTRS_ARRAYS = ['onSelectMappings', 'forceCalloutFields'];
+
 function mapFieldAttributes(f, mapped) {
   if (f.sourceRequired === true) mapped.sourceRequired = true;
-  if (f.derivation) mapped.derivation = f.derivation;
-  if (f.columnType) mapped.columnType = f.columnType;
-  if (f.reference) mapped.reference = f.reference;
-  if (f.enumValues) mapped.enumValues = f.enumValues;
-  if (f.inputMode) mapped.inputMode = f.inputMode;
-  // Opt-in searchable combobox for selector FK fields (see resolve-curated.js).
-  if (f.searchSelect) mapped.searchSelect = true;
-  if (f.allowCreate) mapped.allowCreate = true;
   if (f.clearable === false) mapped.clearable = false;
-  if (f.dependsOn) mapped.dependsOn = f.dependsOn;
-  if (f.lookup) mapped.lookup = true;
-  if (f.popup) mapped.popup = true;
-  if (f.lookupDrawer) mapped.lookupDrawer = f.lookupDrawer;
-  if (f.lookupTitle) mapped.lookupTitle = f.lookupTitle;
-  if (isNonEmptyArray(f.onSelectMappings)) mapped.onSelectMappings = f.onSelectMappings;
-  if (f.displayFromCatalog) mapped.displayFromCatalog = f.displayFromCatalog;
-  if (isNonEmptyArray(f.forceCalloutFields)) mapped.forceCalloutFields = f.forceCalloutFields;
+  for (const key of FIELD_ATTRS_COPY_VERBATIM) {
+    if (f[key]) mapped[key] = f[key];
+  }
+  for (const key of FIELD_ATTRS_FLAGS) {
+    if (f[key]) mapped[key] = true;
+  }
+  for (const key of FIELD_ATTRS_ARRAYS) {
+    if (isNonEmptyArray(f[key])) mapped[key] = f[key];
+  }
 }
 
 function isNonEmptyArray(s) {

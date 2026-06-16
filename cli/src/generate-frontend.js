@@ -196,6 +196,24 @@ export function fragmentIf(cond, fragment) {
 }
 
 /**
+ * Serialize the inline-create props (`createLabelKey`, `createSpec`, `createEntity`)
+ * for an `allowCreate` FK selector. These tell EntityForm where to POST a new record
+ * created on the fly (e.g. match-rule transaction type → ETGO_Transaction_Type) and
+ * which i18n key labels the "+ create" action. Emitted only when the field opts in.
+ */
+export function buildInlineCreatePart(f) {
+  if (!f.allowCreate) return '';
+  const esc = (v) => String(v).replace(/'/g, "\\'");
+  let out = '';
+  if (f.createLabelKey) out += `, createLabelKey: '${esc(f.createLabelKey)}'`;
+  if (f.createTitleKey) out += `, createTitleKey: '${esc(f.createTitleKey)}'`;
+  if (f.createNamePlaceholderKey) out += `, createNamePlaceholderKey: '${esc(f.createNamePlaceholderKey)}'`;
+  if (f.createSpec) out += `, createSpec: '${esc(f.createSpec)}'`;
+  if (f.createEntity) out += `, createEntity: '${esc(f.createEntity)}'`;
+  return out;
+}
+
+/**
  * Return `${prefix}${value}${suffix}` when the gate is truthy, otherwise an
  * empty string. Used to build optional JSX props whose injected content is the
  * value itself (e.g. `name="value"` or `name={value}`). The parameter order
@@ -478,6 +496,7 @@ export function generateFormComponent(entityName, contract) {
     const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
     const searchSelectPart = fragmentIf(f.searchSelect, ', searchSelect: true');
     const allowCreatePart = fragmentIf(f.allowCreate, ', allowCreate: true');
+    const createPart = buildInlineCreatePart(f);
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
@@ -504,7 +523,7 @@ export function generateFormComponent(entityName, contract) {
     const spanPart = (f.span && f.span > 1) ? `, span: ${f.span}` : '';
     const rowsPart = f.rows != null ? `, rows: ${f.rows}` : '';
     const clearablePart = f.clearable === false ? ', clearable: false' : '';
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart} },`;
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -1311,6 +1330,7 @@ function buildListModalFields(formFields) {
     const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
     const searchSelectPart = fragmentIf(f.searchSelect, ', searchSelect: true');
     const allowCreatePart = fragmentIf(f.allowCreate, ', allowCreate: true');
+    const createPart = buildInlineCreatePart(f);
     const sectionPart = `, section: '${f.section || 'general'}'`;
     const optionsPart = getOptionsPart(type, f);
     const valueTypePart = (type === 'select' && f.tsType === 'boolean') ? `, valueType: 'boolean'` : '';
@@ -1323,7 +1343,7 @@ function buildListModalFields(formFields) {
     const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
     const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
     const defaultValuePart = getDefaultValuePart(skipCheckboxDefault, skipServerMacro, f);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart} },`;
   }).join('\n');
 }
 

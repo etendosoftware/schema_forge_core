@@ -16,6 +16,7 @@ import { PartnerAddressPicker } from './PartnerAddressPicker.jsx';
 import { SelectorChip } from './SelectorChip.jsx';
 import { SelectorInput } from './SelectorInput.jsx';
 import { CreatableSearchSelect } from './CreatableSearchSelect.jsx';
+import { InlineCreateSelector } from './InlineCreateSelector.jsx';
 
 function buildSelectPlaceholder(ui, label) {
   return `${ui('selectLabelPrefix')} ${label}...`;
@@ -43,6 +44,11 @@ function evalDisplayLogic(field, data) {
 
 function buildSearchPlaceholder(ui, label) {
   return `${ui('searchLabelPrefix')} ${label}...`;
+}
+
+/** Resolve an i18n key to its label (falling back to the key), or undefined when absent. */
+function resolveUiKey(ui, key) {
+  return key ? (ui(key) ?? key) : undefined;
 }
 
 /**
@@ -810,6 +816,50 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     </div>
   );
 
+  // Opt-in (decisions: `searchSelect: true`): the searchable combobox instead of the
+  // plain pick-only dropdown. When the field also declares `allowCreate` + create target,
+  // render the create-capable variant whose "+ create" action opens a name-only modal
+  // (e.g. match-rule transaction type → ETGO_Transaction_Type). Only reached for editable
+  // fields (renderSelectorField returns early when read-only).
+  const renderSearchSelectField = (f, label, selectorOnChange, selectorUrl) => {
+    const commonProps = {
+      field: f,
+      value: data?.[f.key] ?? '',
+      displayValue: resolveIdentifier(data, f.key),
+      onChange: selectorOnChange,
+      formData: data,
+      resolvedLabel: label,
+      selectorUrl,
+      selectorContext: effectiveSelectorContext,
+      token,
+      emptyOptionLabel: resolveUiKey(ui, f.emptyOptionLabelKey),
+    };
+    const canCreate = !!(f.allowCreate && f.createSpec && f.createEntity && apiBaseUrl);
+    const createTitle = f.createTitleKey
+      ? resolveUiKey(ui, f.createTitleKey)
+      : (resolveUiKey(ui, f.createLabelKey) ?? '');
+    return (
+      <div key={f.key} className="space-y-1.5">
+        <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+          {label}{labelMarker(f, false, optionalSuffix, ui)}
+        </Label>
+        {canCreate ? (
+          <InlineCreateSelector
+            {...commonProps}
+            apiBaseUrl={apiBaseUrl}
+            createSpec={f.createSpec}
+            createEntity={f.createEntity}
+            createLabel={resolveUiKey(ui, f.createLabelKey)}
+            createTitle={createTitle}
+            namePlaceholder={resolveUiKey(ui, f.createNamePlaceholderKey)}
+          />
+        ) : (
+          <CreatableSearchSelect {...commonProps} />
+        )}
+      </div>
+    );
+  };
+
   const renderSelectorField = (f, label, isReadOnly) => {
     if (isReadOnly) return renderReadOnlyFk(f, label);
     const selectorOnChange = (val, lbl, auxData) => {
@@ -819,33 +869,8 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       if (auxData) applySelectorAuxData(auxData, onChange, f);
     };
     const selectorUrl = buildEntitySelectorUrl(apiBaseUrl, entity, f, api);
-    // Opt-in (decisions: `searchSelect: true`): render the searchable combobox
-    // instead of the plain pick-only dropdown. Empty-option + required + the same
-    // selector URL/context/onChange are preserved; create stays OFF unless a field
-    // declares `allowCreate` (no window enables it yet).
     if (f.searchSelect) {
-      const emptyOptionLabel = f.emptyOptionLabelKey
-        ? (ui(f.emptyOptionLabelKey) ?? f.emptyOptionLabelKey)
-        : undefined;
-      return (
-        <div key={f.key} className="space-y-1.5">
-          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-            {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
-          </Label>
-          <CreatableSearchSelect
-            field={f}
-            value={data?.[f.key] ?? ''}
-            displayValue={resolveIdentifier(data, f.key)}
-            onChange={selectorOnChange}
-            formData={data}
-            resolvedLabel={label}
-            selectorUrl={selectorUrl}
-            selectorContext={effectiveSelectorContext}
-            token={token}
-            emptyOptionLabel={emptyOptionLabel}
-          />
-        </div>
-      );
+      return renderSearchSelectField(f, label, selectorOnChange, selectorUrl);
     }
     return (
       <div key={f.key} className="space-y-1.5">
@@ -929,6 +954,169 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     );
   };
 
+  // Enum/list field (`type: 'select'` with options) opted into the searchable combobox:
+  // local-filtered static options, no API call. Read-only renders a plain disabled input.
+  const renderStaticCreatableSelect = (f, label, isReadOnly) => {
+    const selOpt = f.options.find(o => o.value === (data?.[f.key] ?? ''));
+    if (isReadOnly) {
+      return (
+        <div key={f.key} data-testid={`field-${f.key}`} className="space-y-1.5">
+          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">{label}</Label>
+          <Input id={f.key} name={f.key} value={selOpt ? tMenu(selOpt.label) : ''} disabled />
+        </div>
+      );
+    }
+    const staticOpts = f.options.map(o => ({ id: o.value, name: tMenu(o.label) }));
+    return (
+      <div key={f.key} className="space-y-1.5">
+        <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+          {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
+        </Label>
+        <CreatableSearchSelect
+          field={f}
+          value={data?.[f.key] ?? ''}
+          displayValue={selOpt ? tMenu(selOpt.label) : ''}
+          onChange={(id) => onChange?.(f.key, id, f.column)}
+          resolvedLabel={label}
+          staticOptions={staticOpts}
+        />
+      </div>
+    );
+  };
+
+  // Date field (DateField wrapper).
+  const renderDateField = (f, label, isReadOnly) => (
+    <div key={f.key} className="space-y-1.5">
+      <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+        {label}{requiredAsteriskIfEditable(f, isReadOnly)}
+      </Label>
+      <DateField
+        id={f.key}
+        name={f.key}
+        data-testid={`field-${f.key}`}
+        value={data?.[f.key] ?? ''}
+        onChange={(iso) => onChange?.(f.key, iso, f.column)}
+        onBlur={() => onFieldBlur?.(f.key)}
+        disabled={isReadOnly || savingField === f.key}
+        required={f.required && !isReadOnly}
+      />
+    </div>
+  );
+
+  // Default single-line text/number input (the fall-through renderer).
+  const renderInputField = (f, label, isReadOnly, displayValue) => (
+    <div key={f.key} className="space-y-1.5">
+      <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+        {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
+      </Label>
+      <Input
+        id={f.key}
+        name={f.key}
+        data-testid={`field-${f.key}`}
+        type={getInputType(f)}
+        value={getFieldValue(isReadOnly, displayValue, data, f)}
+        onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
+        onBlur={() => onFieldBlur?.(f.key)}
+        placeholder={!isReadOnly ? resolveUiKey(ui, f.placeholderKey) : undefined}
+        className={getInputStateClass(isReadOnly)}
+        required={f.required && !isReadOnly}
+        disabled={isReadOnly || savingField === f.key}
+      />
+    </div>
+  );
+
+  // Multi-line text field. `rows` controls height; absent rows gets a min-height.
+  const renderTextareaField = (f, label, isReadOnly, displayValue) => {
+    const rowCount = f.rows ?? 4;
+    const minHeightClass = f.rows ? '' : ' min-h-[96px]';
+    const placeholder = !isReadOnly ? resolveUiKey(ui, f.placeholderKey) : undefined;
+    return (
+      <div key={f.key} className="space-y-1.5">
+        <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+          {label}{requiredAsteriskIfEditable(f, isReadOnly)}
+        </Label>
+        <textarea
+          id={f.key}
+          name={f.key}
+          data-testid={`field-${f.key}`}
+          rows={rowCount}
+          value={getFieldValue(isReadOnly, displayValue, data, f)}
+          onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
+          onBlur={() => onFieldBlur?.(f.key)}
+          placeholder={placeholder}
+          disabled={isReadOnly}
+          className={[
+            'flex w-full rounded-lg border border-[#D1D4DB] p-2 text-sm shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
+            `placeholder:text-muted-foreground resize-none${minHeightClass}`,
+            'focus:outline-none focus:ring-2 focus:ring-primary',
+            'disabled:bg-muted/50 disabled:cursor-not-allowed',
+            getReadOnlyBgClass(isReadOnly),
+          ].join(' ')}
+        />
+      </div>
+    );
+  };
+
+  // Dependent FK selector: options filtered by a parent field's value.
+  const renderDependentField = (f, label, isReadOnly) => {
+    if (isReadOnly) return renderReadOnlyFk(f, label);
+    const fieldSelectorUrl = buildDependentSelectorUrl(apiBaseUrl, entity, f);
+    const fieldOnChange = (val, lbl) => {
+      onChange?.(f.key, val, f.column);
+      if (lbl) onChange?.(f.key + '$_identifier', lbl);
+      else if (!val) onChange?.(f.key + '$_identifier', '');
+    };
+    return (
+      <DependentFkField key={f.key} f={f} label={label} data={data} onChange={fieldOnChange}
+                      selectorUrl={fieldSelectorUrl} selectorContext={effectiveSelectorContext} token={token}
+                      apiBaseUrl={apiBaseUrl} catalogs={catalogs}/>
+    );
+  };
+
+  // YESNO checkbox. Values arrive as boolean true, 'Y' or 'true' (checked), or
+  // false/'N'/'false'/null/undefined (unchecked) — plain `!!value` is wrong (`!!'N'` is true).
+  const renderCheckboxField = (f, label, isReadOnly) => {
+    const checked = data?.[f.key] === true || data?.[f.key] === 'Y' || data?.[f.key] === 'true';
+    return (
+      <div key={f.key} className="flex items-center gap-2 pt-6">
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={checked}
+          disabled={isReadOnly}
+          id={f.key}
+          data-testid={`field-${f.key}`}
+          onClick={() => !isReadOnly && onChange?.(f.key, !checked, f.column)}
+          className={[
+            'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow',
+            'flex items-center justify-center',
+            'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+            'disabled:cursor-not-allowed disabled:opacity-50',
+            getCheckboxStateClass(checked),
+          ].join(' ')}
+        >
+          {checked && (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          )}
+        </button>
+        <Label htmlFor={f.key} className="text-sm text-foreground font-medium cursor-pointer">
+          {label}
+        </Label>
+      </div>
+    );
+  };
+
   const renderField = (f) => {
     // Resolution order: per-window AD_Field label (most specific) → global locale by column → camelCase key
     const label = t(f.column) ?? f.label ?? f.key;
@@ -942,62 +1130,10 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     // toFixed(10) preserves up to 10 significant decimal places while eliminating IEEE 754 drift.
     const displayValue = formatReadOnlyDisplayValue(f, isReadOnly, rawDisplayValue);
     if (f.type === 'checkbox') {
-      // YESNO fields can arrive as boolean true, 'Y', 'true' (checked) or false/'N'/'false'/null/undefined (unchecked).
-      // Plain `!!value` is wrong because `!!'N'` === true.
-      const isCheckedYN = (v) => v === true || v === 'Y' || v === 'true';
-      const checked = isCheckedYN(data?.[f.key]);
-      return (
-        <div key={f.key} className="flex items-center gap-2 pt-6">
-          <button
-            type="button"
-            role="checkbox"
-            aria-checked={checked}
-            disabled={isReadOnly}
-            id={f.key}
-            data-testid={`field-${f.key}`}
-            onClick={() => !isReadOnly && onChange?.(f.key, !checked, f.column)}
-            className={[
-              'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow',
-              'flex items-center justify-center',
-              'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-              'disabled:cursor-not-allowed disabled:opacity-50',
-              getCheckboxStateClass(checked),
-            ].join(' ')}
-          >
-            {checked && (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-4 w-4"
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            )}
-          </button>
-          <Label htmlFor={f.key} className="text-sm text-foreground font-medium cursor-pointer">
-            {label}
-          </Label>
-        </div>
-      );
+      return renderCheckboxField(f, label, isReadOnly);
     }
     if (f.type === 'dependent') {
-      if (isReadOnly) return renderReadOnlyFk(f, label);
-      const fieldSelectorUrl = buildDependentSelectorUrl(apiBaseUrl, entity, f);
-      const fieldOnChange = (val, lbl) => {
-        onChange?.(f.key, val, f.column);
-        if (lbl) onChange?.(f.key + '$_identifier', lbl);
-        else if (!val) onChange?.(f.key + '$_identifier', '');
-      };
-      return (
-        <DependentFkField key={f.key} f={f} label={label} data={data} onChange={fieldOnChange}
-                        selectorUrl={fieldSelectorUrl} selectorContext={effectiveSelectorContext} token={token}
-                        apiBaseUrl={apiBaseUrl} catalogs={catalogs}/>
-      );
+      return renderDependentField(f, label, isReadOnly);
     }
     if (f.type === 'selector') {
       return renderSelectorField(f, label, isReadOnly);
@@ -1006,107 +1142,18 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       return renderSearchField(f, label, isReadOnly);
     }
     if (f.type === 'select' && f.options?.length && f.searchSelect) {
-      if (isReadOnly) {
-        const selOpt = f.options.find(o => o.value === (data?.[f.key] ?? ''));
-        return (
-          <div key={f.key} data-testid={`field-${f.key}`} className="space-y-1.5">
-            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">{label}</Label>
-            <Input id={f.key} name={f.key} value={selOpt ? tMenu(selOpt.label) : ''} disabled />
-          </div>
-        );
-      }
-      const staticOpts = f.options.map(o => ({ id: o.value, name: tMenu(o.label) }));
-      const selOpt = f.options.find(o => o.value === (data?.[f.key] ?? ''));
-      return (
-        <div key={f.key} className="space-y-1.5">
-          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-            {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
-          </Label>
-          <CreatableSearchSelect
-            field={f}
-            value={data?.[f.key] ?? ''}
-            displayValue={selOpt ? tMenu(selOpt.label) : ''}
-            onChange={(id) => onChange?.(f.key, id, f.column)}
-            resolvedLabel={label}
-            staticOptions={staticOpts}
-          />
-        </div>
-      );
+      return renderStaticCreatableSelect(f, label, isReadOnly);
     }
     if (isSelectFieldWithOptions(f)) {
       return renderSelectField(f, data, label, isReadOnly, onChange, { ui, tMenu, optionalSuffix });
     }
-    function buildTextareaAttrs(rows) {
-      return { rowCount: rows ?? 4, minHeightClass: rows ? '' : ' min-h-[96px]' };
-    }
     if (f.type === 'textarea') {
-      const { rowCount, minHeightClass } = buildTextareaAttrs(f.rows);
-      return (
-        <div key={f.key} className="space-y-1.5">
-          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-            {label}{requiredAsteriskIfEditable(f, isReadOnly)}
-          </Label>
-          <textarea
-            id={f.key}
-            name={f.key}
-            data-testid={`field-${f.key}`}
-            rows={rowCount}
-            value={getFieldValue(isReadOnly, displayValue, data, f)}
-            onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
-            onBlur={() => onFieldBlur?.(f.key)}
-            placeholder={!isReadOnly && f.placeholderKey ? (ui(f.placeholderKey) ?? f.placeholderKey) : undefined}
-            disabled={isReadOnly}
-            className={[
-              'flex w-full rounded-lg border border-[#D1D4DB] p-2 text-sm shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
-              `placeholder:text-muted-foreground resize-none${minHeightClass}`,
-              'focus:outline-none focus:ring-2 focus:ring-primary',
-              'disabled:bg-muted/50 disabled:cursor-not-allowed',
-              getReadOnlyBgClass(isReadOnly),
-            ].join(' ')}
-          />
-        </div>
-      );
+      return renderTextareaField(f, label, isReadOnly, displayValue);
     }
     if (f.type === 'date') {
-      return (
-        <div key={f.key} className="space-y-1.5">
-          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-            {label}{requiredAsteriskIfEditable(f, isReadOnly)}
-          </Label>
-          <DateField
-            id={f.key}
-            name={f.key}
-            data-testid={`field-${f.key}`}
-            value={data?.[f.key] ?? ''}
-            onChange={(iso) => onChange?.(f.key, iso, f.column)}
-            onBlur={() => onFieldBlur?.(f.key)}
-            disabled={isReadOnly || savingField === f.key}
-            required={f.required && !isReadOnly}
-          />
-        </div>
-      );
+      return renderDateField(f, label, isReadOnly);
     }
-    const inputType = getInputType(f);
-    return (
-      <div key={f.key} className="space-y-1.5">
-        <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-          {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
-        </Label>
-        <Input
-          id={f.key}
-          name={f.key}
-          data-testid={`field-${f.key}`}
-          type={inputType}
-          value={getFieldValue(isReadOnly, displayValue, data, f)}
-          onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
-          onBlur={() => onFieldBlur?.(f.key)}
-          placeholder={!isReadOnly && f.placeholderKey ? (ui(f.placeholderKey) ?? f.placeholderKey) : undefined}
-          className={getInputStateClass(isReadOnly)}
-          required={f.required && !isReadOnly}
-          disabled={isReadOnly || savingField === f.key}
-        />
-      </div>
-    );
+    return renderInputField(f, label, isReadOnly, displayValue);
   };
 
   // ETP-3894: append an inline error message under any field whose key appears in
