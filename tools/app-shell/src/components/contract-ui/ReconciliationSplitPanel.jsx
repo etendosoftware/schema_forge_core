@@ -25,6 +25,8 @@ import {
 // Amounts that differ by <= this absolute value are treated as balanced.
 const RECONCILE_TOLERANCE = 0.01;
 const SKELETON_ROWS = [1, 2, 3, 4];
+// Stable per-column keys for skeleton cells (avoids array-index keys, Sonar S6479).
+const SKELETON_CELL_KEYS = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5'];
 const STATUS_CODES = ['pending'];
 const DOC_TYPE_CODES = ['receipts', 'payments'];
 
@@ -171,8 +173,8 @@ function renderRows({ loading, items, colSpan, emptyTitle, emptyHint, renderRow 
   if (loading) {
     return SKELETON_ROWS.map((n) => (
       <TableRow key={n}>
-        {Array.from({ length: colSpan }).map((_, i) => (
-          <TableCell key={i}>
+        {SKELETON_CELL_KEYS.slice(0, colSpan).map((cellKey) => (
+          <TableCell key={cellKey}>
             <Skeleton className="h-4 w-full" />
           </TableCell>
         ))}
