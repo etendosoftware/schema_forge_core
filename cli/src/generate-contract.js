@@ -204,43 +204,96 @@ function applyReadOnlyLogic(mapped, f, rules, columnMap, booleanFields) {
   }
 }
 
+// Data-driven UI-hint copy lists. Keeping these declarative (instead of a long
+// chain of `if`s) keeps the mapper functions under Sonar's cognitive-complexity
+// limit. The list ORDER is significant: it fixes the key emission order on the
+// contract JSON, which the offline-regen checksum depends on — do not reorder.
+const isDefined = (v) => v !== undefined;
+const isNotNull = (v) => v != null;
+const setTrue = () => true;
+
+// [key, keep predicate, value transform?]. No transform → copy raw value;
+// transform `setTrue` → emit literal `true` for flags.
+const BASIC_FIELD_HINTS = [
+  ['defaultValue', isDefined],
+  ['isIdentifier', Boolean, setTrue],
+  ['help', Boolean],
+  ['placeholderKey', Boolean],
+  ['emptyOptionLabelKey', Boolean],
+  ['fieldGroup', Boolean],
+  ['isSelectionColumn', Boolean, setTrue],
+  ['isFilterable', Boolean, setTrue],
+  ['precision', Boolean],
+  ['isTranslated', Boolean, setTrue],
+  ['section', Boolean],
+  ['seq', isNotNull],
+  ['span', Boolean],
+  ['rows', isNotNull],
+  ['explicitType', Boolean, setTrue],
+  ['statusBar', Boolean, setTrue],
+  ['badge', Boolean, setTrue],
+];
+
+/**
+ * Apply an ordered list of `[key, keep, value?]` hints onto `mapped`: when
+ * `keep(f[key])` is truthy, assign `value(f[key])` (e.g. `true` for flags) or
+ * the raw value. Single source of the copy loop so callers stay flat and the
+ * emission order stays deterministic.
+ */
+function applyHints(f, mapped, hints) {
+  for (const [key, keep, value] of hints) {
+    if (keep(f[key])) mapped[key] = value ? value(f[key]) : f[key];
+  }
+}
+
 function applyBasicFieldUIHints(f, mapped) {
-  if (f.defaultValue !== undefined) mapped.defaultValue = f.defaultValue;
-  if (f.isIdentifier) mapped.isIdentifier = true;
-  if (f.help) mapped.help = f.help;
-  if (f.fieldGroup) mapped.fieldGroup = f.fieldGroup;
-  if (f.isSelectionColumn) mapped.isSelectionColumn = true;
-  if (f.isFilterable) mapped.isFilterable = true;
-  if (f.precision) mapped.precision = f.precision;
-  if (f.isTranslated) mapped.isTranslated = true;
-  if (f.section) mapped.section = f.section;
-  if (f.seq != null) mapped.seq = f.seq;
-  if (f.span) mapped.span = f.span;
-  if (f.rows != null) mapped.rows = f.rows;
-  if (f.explicitType) mapped.explicitType = true;
-  if (f.statusBar) mapped.statusBar = true;
-  if (f.badge) mapped.badge = true;
+  applyHints(f, mapped, BASIC_FIELD_HINTS);
 }
 
 function applyGridHints(f, mapped) {
   if (f.gridOrder != null) mapped.gridOrder = f.gridOrder;
   if (f.grow) mapped.grow = true;
   if (f.gridReadOnly) mapped.gridReadOnly = true;
+  // Inline-edit affordances in the list grid (used by list-modal and inline lines):
+  //  - inlineToggle → render a Switch in the cell that PATCHes the field on change.
+  //  - inlineEdit   → render an editable input in the cell that PATCHes on commit.
+  if (f.inlineToggle) mapped.inlineToggle = true;
+  if (f.inlineEdit) mapped.inlineEdit = true;
 }
+
+// Ordered hints emitted BEFORE applyGridHints. Order is significant (offline-regen
+// checksum) — do not reorder. Includes badge config, summable, display/cellType, and
+// the list-modal cell-renderer extras (registry-driven; see listModalCells.jsx):
+// subField/kindField/patternField/kindLabels/tones drive nameWithSubline,
+// conditionChip and typePill cells; gridLabelKey is the column-header i18n key.
+const FIELD_HINTS_PRE_GRID = [
+  ['badgeLabels', Boolean],
+  ['badgeColors', Boolean],
+  ['badgeVariants', Boolean],
+  ['enumVariants', Boolean],
+  ['labels', Boolean],
+  ['summable', Boolean, setTrue],
+  ['display', Boolean],
+  ['cellType', Boolean],
+  ['subField', Boolean],
+  ['subEmptyKey', Boolean],
+  ['kindField', Boolean],
+  ['patternField', Boolean],
+  ['kindLabels', Boolean],
+  ['tones', Boolean],
+  ['gridLabelKey', Boolean],
+];
+// Emitted AFTER applyGridHints.
+const FIELD_HINTS_POST_GRID = [
+  ['noTrailing', Boolean, setTrue],
+  ['filterOnly', Boolean, setTrue],
+];
 
 function applyFieldUIHints(f, mapped) {
   applyBasicFieldUIHints(f, mapped);
-  if (f.badgeLabels) mapped.badgeLabels = f.badgeLabels;
-  if (f.badgeColors) mapped.badgeColors = f.badgeColors;
-  if (f.badgeVariants) mapped.badgeVariants = f.badgeVariants;
-  if (f.enumVariants) mapped.enumVariants = f.enumVariants;
-  if (f.labels) mapped.labels = f.labels;
-  if (f.summable) mapped.summable = true;
-  if (f.display) mapped.display = f.display;
-  if (f.cellType) mapped.cellType = f.cellType;
+  applyHints(f, mapped, FIELD_HINTS_PRE_GRID);
   applyGridHints(f, mapped);
-  if (f.noTrailing) mapped.noTrailing = true;
-  if (f.filterOnly) mapped.filterOnly = true;
+  applyHints(f, mapped, FIELD_HINTS_POST_GRID);
   if (f.filterable === false) mapped.filterable = false;
   if (f.dot === false) mapped.dot = false;
   if (f.min !== undefined) mapped.min = f.min;
@@ -338,8 +391,9 @@ export function generateFrontendContract(schema, rules = []) {
   const win = { ...schema.window };
   win.layoutType = schema.window.layoutType ?? 'default';
 
-  // Include templateConfig only for layout types that use it
-  if (win.layoutType === 'kanban' || win.layoutType === 'calendar') {
+  // Include templateConfig only for layout types that use it. list-modal uses it
+  // to carry the optional banner text, modal title, search hint and section order.
+  if (win.layoutType === 'kanban' || win.layoutType === 'calendar' || win.layoutType === 'list-modal') {
     win.templateConfig = schema.window.templateConfig ?? null;
   }
 
@@ -388,22 +442,52 @@ function processDisplayLogic(mapped, f, rules) {
   }
 }
 
+// Per-mode writers for an optional field attribute. Kept as separate functions so
+// the dispatch loop stays flat (low cognitive complexity):
+//   verbatim — copy the value when truthy
+//   flag     — emit boolean `true` when present
+//   array    — copy only when a non-empty array
+//   trueFlag/falseFlag — copy the explicit boolean only on a strict ===/=== match
+const FIELD_ATTR_WRITERS = {
+  verbatim: (f, mapped, key) => { if (f[key]) mapped[key] = f[key]; },
+  flag: (f, mapped, key) => { if (f[key]) mapped[key] = true; },
+  array: (f, mapped, key) => { if (isNonEmptyArray(f[key])) mapped[key] = f[key]; },
+  trueFlag: (f, mapped, key) => { if (f[key] === true) mapped[key] = true; },
+  falseFlag: (f, mapped, key) => { if (f[key] === false) mapped[key] = false; },
+};
+
+// Optional field attributes in their canonical emission order (the contract's key order
+// is asserted by the offline regen-check, so this sequence must not change). Includes the
+// searchable-selector + inline-create opt-ins (see resolve-curated.js).
+const FIELD_ATTR_SPECS = [
+  ['sourceRequired', 'trueFlag'],
+  ['derivation', 'verbatim'],
+  ['columnType', 'verbatim'],
+  ['reference', 'verbatim'],
+  ['enumValues', 'verbatim'],
+  ['inputMode', 'verbatim'],
+  ['searchSelect', 'flag'],
+  ['allowCreate', 'flag'],
+  ['createLabelKey', 'verbatim'],
+  ['createTitleKey', 'verbatim'],
+  ['createNamePlaceholderKey', 'verbatim'],
+  ['createSpec', 'verbatim'],
+  ['createEntity', 'verbatim'],
+  ['clearable', 'falseFlag'],
+  ['dependsOn', 'verbatim'],
+  ['lookup', 'flag'],
+  ['popup', 'flag'],
+  ['lookupDrawer', 'verbatim'],
+  ['lookupTitle', 'verbatim'],
+  ['onSelectMappings', 'array'],
+  ['displayFromCatalog', 'verbatim'],
+  ['forceCalloutFields', 'array'],
+];
+
 function mapFieldAttributes(f, mapped) {
-  if (f.sourceRequired === true) mapped.sourceRequired = true;
-  if (f.derivation) mapped.derivation = f.derivation;
-  if (f.columnType) mapped.columnType = f.columnType;
-  if (f.reference) mapped.reference = f.reference;
-  if (f.enumValues) mapped.enumValues = f.enumValues;
-  if (f.inputMode) mapped.inputMode = f.inputMode;
-  if (f.clearable === false) mapped.clearable = false;
-  if (f.dependsOn) mapped.dependsOn = f.dependsOn;
-  if (f.lookup) mapped.lookup = true;
-  if (f.popup) mapped.popup = true;
-  if (f.lookupDrawer) mapped.lookupDrawer = f.lookupDrawer;
-  if (f.lookupTitle) mapped.lookupTitle = f.lookupTitle;
-  if (isNonEmptyArray(f.onSelectMappings)) mapped.onSelectMappings = f.onSelectMappings;
-  if (f.displayFromCatalog) mapped.displayFromCatalog = f.displayFromCatalog;
-  if (isNonEmptyArray(f.forceCalloutFields)) mapped.forceCalloutFields = f.forceCalloutFields;
+  for (const [key, mode] of FIELD_ATTR_SPECS) {
+    FIELD_ATTR_WRITERS[mode](f, mapped, key);
+  }
 }
 
 function isNonEmptyArray(s) {

@@ -275,6 +275,12 @@
           "hidden": true
         },
         {
+          "name": "match-rule",
+          "label": "Match Rule",
+          "favname": "Match Rule",
+          "hidden": true
+        },
+        {
           "name": "chart-of-accounts",
           "label": "Chart of Accounts",
           "favname": "Chart of Accounts",
