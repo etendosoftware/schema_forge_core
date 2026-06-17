@@ -31,9 +31,11 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
   const totalPaid = grandTotal - outstanding;
   const isFullyPaid = data.paymentComplete === true || data.paymentComplete === 'Y' || outstanding <= 0;
   const isCompleted = docStatus === 'CO';
+  const docType = data['transactionDocument$_identifier'];
+  const isCreditType = docType === 'Nota de Crédito' || docType === 'AP CreditMemo';
 
   const handleBadgeClick = () => {
-    if (isCompleted) setShowPaymentModal(true);
+    if (isCompleted && !isCreditType) setShowPaymentModal(true);
   };
 
   const handleModalClose = () => {
@@ -74,9 +76,18 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
           )}
         </>
       )}
-      {/* Payment Status pill — only show for completed invoices */}
       {isCompleted && (
-        isFullyPaid ? (
+        isCreditType ? (
+          <span
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium"
+            style={{ padding: '4px 12px', borderRadius: '6px', backgroundColor: '#ede9fe', color: '#4c1d95' }}
+          >
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#7c3aed' }} />
+            {ui('creditApplied')}
+            <span style={{ opacity: 0.4 }}>&middot;</span>
+            <span className="font-semibold tabular-nums">{formatCurrency(currency || 'USD', Math.abs(grandTotal))}</span>
+          </span>
+        ) : isFullyPaid ? (
           <span
             className="inline-flex items-center gap-1.5 text-[13px] font-medium"
             style={{ padding: '4px 12px', borderRadius: '6px', backgroundColor: '#d1fae5', color: '#065f46', cursor: 'pointer' }}

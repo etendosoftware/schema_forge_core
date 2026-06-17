@@ -36,20 +36,18 @@
     ],
     "labelOverrides": {
       "es_ES": {
-        "POReference": "N\u00ba documento",
+        "POReference": "Nº documento",
         "OutstandingAmt": "Pendiente de pago",
         "EM_Etgo_Due_Date": "Vencimiento",
         "em_etgo_delivery_status": "Estado de entrega",
-        "C_DocTypeTarget_ID": "Tipo de documento",
-        "EM_Etgo_Origin_Invoice_ID": "Factura origen"
+        "C_DocTypeTarget_ID": "Tipo de documento"
       },
       "en_US": {
         "POReference": "Document No.",
         "OutstandingAmt": "Pending Payment",
         "EM_Etgo_Due_Date": "Due Date",
         "em_etgo_delivery_status": "Delivery Status",
-        "C_DocTypeTarget_ID": "Document Type",
-        "EM_Etgo_Origin_Invoice_ID": "Origin Invoice"
+        "C_DocTypeTarget_ID": "Document Type"
       }
     },
     "secondaryTabs": {
@@ -269,10 +267,8 @@
         },
         "outstandingAmount": {
           "visibility": "readOnly",
-          "form": false,
           "grid": true,
-          "gridOrder": 6,
-          "displayLogic": null
+          "form": false
         },
         "eTGODueDate": {
           "visibility": "readOnly",
@@ -442,15 +438,6 @@
         "cdigoCSV": {
           "visibility": "readOnly",
           "form": false
-        },
-        "etgoOriginInvoice": {
-          "visibility": "editable",
-          "section": "principal",
-          "form": true,
-          "seq": 16,
-          "reference": "Invoice",
-          "inputMode": "selector",
-          "readOnlyLogicJs": "record['processed'] === true"
         }
       }
     },

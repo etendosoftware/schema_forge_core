@@ -1,8 +1,8 @@
 {
-  "version": "0.36.0",
+  "version": "0.45.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-06-11T15:52:57.560Z",
-  "checksum": "60e2fc954ec4c3de",
+  "updatedAt": "2026-06-16T19:18:45.167Z",
+  "checksum": "dd667e9d03037d2b",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -40,16 +40,14 @@
           "OutstandingAmt": "Pendiente de pago",
           "EM_Etgo_Due_Date": "Vencimiento",
           "em_etgo_delivery_status": "Estado de entrega",
-          "C_DocTypeTarget_ID": "Tipo de documento",
-          "EM_Etgo_Origin_Invoice_ID": "Factura origen"
+          "C_DocTypeTarget_ID": "Tipo de documento"
         },
         "en_US": {
           "POReference": "Document No.",
           "OutstandingAmt": "Pending Payment",
           "EM_Etgo_Due_Date": "Due Date",
           "em_etgo_delivery_status": "Delivery Status",
-          "C_DocTypeTarget_ID": "Document Type",
-          "EM_Etgo_Origin_Invoice_ID": "Origin Invoice"
+          "C_DocTypeTarget_ID": "Document Type"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -575,7 +573,10 @@
               "source": "0"
             },
             "defaultValue": "0",
-            "gridOrder": 6
+            "displayLogic": {
+              "raw": "@Processed@='Y' & @Ispaid@='N'",
+              "evaluable": true
+            }
           },
           {
             "name": "dueAmount",
@@ -3850,16 +3851,14 @@
           "OutstandingAmt": "Pendiente de pago",
           "EM_Etgo_Due_Date": "Vencimiento",
           "em_etgo_delivery_status": "Estado de entrega",
-          "C_DocTypeTarget_ID": "Tipo de documento",
-          "EM_Etgo_Origin_Invoice_ID": "Factura origen"
+          "C_DocTypeTarget_ID": "Tipo de documento"
         },
         "en_US": {
           "POReference": "Document No.",
           "OutstandingAmt": "Pending Payment",
           "EM_Etgo_Due_Date": "Due Date",
           "em_etgo_delivery_status": "Delivery Status",
-          "C_DocTypeTarget_ID": "Document Type",
-          "EM_Etgo_Origin_Invoice_ID": "Origin Invoice"
+          "C_DocTypeTarget_ID": "Document Type"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -5155,6 +5154,22 @@
             "column": "em_etgo_delivery_status",
             "type": "integer",
             "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "etgoOriginInvoice",
+            "apiKey": "etgoOriginInvoice",
+            "column": "EM_Etgo_Origin_Invoice_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "psd2GenerateBankPayment",
+            "apiKey": "psd2GenerateBankPayment",
+            "column": "EM_Psd2_Generate_Bank_Payment",
+            "type": "button",
+            "visibility": "discarded",
             "required": false
           }
         ],
@@ -8790,6 +8805,14 @@
         "processType": "obuiapp"
       },
       {
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "column": "EM_Psd2_Generate_Bank_Payment",
+        "url": "/sws/neo/purchase-invoice/header/{id}/action/psd2GenerateBankPayment",
+        "processId": "0661406A983B4D8EA611F8596F114D52",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "lines",
         "field": "explode",
         "column": "Explode",
@@ -8852,16 +8875,14 @@
         "OutstandingAmt": "Pendiente de pago",
         "EM_Etgo_Due_Date": "Vencimiento",
         "em_etgo_delivery_status": "Estado de entrega",
-        "C_DocTypeTarget_ID": "Tipo de documento",
-        "EM_Etgo_Origin_Invoice_ID": "Factura origen"
+        "C_DocTypeTarget_ID": "Tipo de documento"
       },
       "en_US": {
         "POReference": "Document No.",
         "OutstandingAmt": "Pending Payment",
         "EM_Etgo_Due_Date": "Due Date",
         "em_etgo_delivery_status": "Delivery Status",
-        "C_DocTypeTarget_ID": "Document Type",
-        "EM_Etgo_Origin_Invoice_ID": "Origin Invoice"
+        "C_DocTypeTarget_ID": "Document Type"
       }
     }
   },
@@ -8994,6 +9015,14 @@
         "field": "processNow",
         "runner": "node",
         "description": "Action endpoint for 'processNow' in header should exist"
+      },
+      {
+        "id": "t-action-endpoint-header-psd2GenerateBankPayment",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "runner": "node",
+        "description": "Action endpoint for 'psd2GenerateBankPayment' in header should exist"
       },
       {
         "id": "t-action-endpoint-header-tBAIQRcode",
@@ -9512,6 +9541,14 @@
         "description": "Display logic for 'etsgDateOperation' in header should have evaluable flag"
       },
       {
+        "id": "t-displaylogic-evaluable-header-outstandingAmount",
+        "category": "displaylogic-evaluable",
+        "entity": "header",
+        "field": "outstandingAmount",
+        "runner": "node",
+        "description": "Display logic for 'outstandingAmount' in header should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-intrastat-conversionRate",
         "category": "displaylogic-evaluable",
         "entity": "intrastat",
@@ -9630,6 +9667,14 @@
         "field": "etsgDateOperation",
         "runner": "node",
         "description": "Display logic for 'etsgDateOperation' in header should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-header-outstandingAmount",
+        "category": "displaylogic-valid",
+        "entity": "header",
+        "field": "outstandingAmount",
+        "runner": "node",
+        "description": "Display logic for 'outstandingAmount' in header should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-intrastat-conversionRate",
@@ -14643,6 +14688,14 @@
         "description": "System field 'etcopagCopilotFeedback' should exist in backend but not frontend for header"
       },
       {
+        "id": "t-system-field-header-etgoOriginInvoice",
+        "category": "system-field",
+        "entity": "header",
+        "field": "etgoOriginInvoice",
+        "runner": "node",
+        "description": "System field 'etgoOriginInvoice' should exist in backend but not frontend for header"
+      },
+      {
         "id": "t-system-field-header-etsgIsF3",
         "category": "system-field",
         "entity": "header",
@@ -15001,6 +15054,14 @@
         "field": "processNow",
         "runner": "node",
         "description": "System field 'processNow' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-psd2GenerateBankPayment",
+        "category": "system-field",
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "runner": "node",
+        "description": "System field 'psd2GenerateBankPayment' should exist in backend but not frontend for header"
       },
       {
         "id": "t-system-field-header-salesCampaign",
@@ -16208,13 +16269,13 @@
       }
     ],
     "summary": {
-      "total": 923,
+      "total": 928,
       "byCategory": {
-        "action-endpoint": 24,
+        "action-endpoint": 25,
         "crud-flags": 12,
         "default-value-type": 37,
-        "displaylogic-evaluable": 15,
-        "displaylogic-valid": 15,
+        "displaylogic-evaluable": 16,
+        "displaylogic-valid": 16,
         "field-presence": 146,
         "field-type": 146,
         "readonlylogic-evaluable": 63,
@@ -16222,11 +16283,11 @@
         "rule-declared": 21,
         "searchable-filters": 6,
         "selector-endpoint": 50,
-        "system-field": 313,
+        "system-field": 315,
         "visibility": 12
       },
       "byRunner": {
-        "node": 923,
+        "node": 928,
         "junit": 0
       }
     }

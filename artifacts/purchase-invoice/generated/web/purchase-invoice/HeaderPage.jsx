@@ -914,16 +914,14 @@ export const api = {
       "OutstandingAmt": "Pendiente de pago",
       "EM_Etgo_Due_Date": "Vencimiento",
       "em_etgo_delivery_status": "Estado de entrega",
-      "C_DocTypeTarget_ID": "Tipo de documento",
-      "EM_Etgo_Origin_Invoice_ID": "Factura origen"
+      "C_DocTypeTarget_ID": "Tipo de documento"
     },
     "en_US": {
       "POReference": "Document No.",
       "OutstandingAmt": "Pending Payment",
       "EM_Etgo_Due_Date": "Due Date",
       "em_etgo_delivery_status": "Delivery Status",
-      "C_DocTypeTarget_ID": "Document Type",
-      "EM_Etgo_Origin_Invoice_ID": "Origin Invoice"
+      "C_DocTypeTarget_ID": "Document Type"
     }
   }
 };

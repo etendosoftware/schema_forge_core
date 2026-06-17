@@ -477,7 +477,7 @@ export function generateFormComponent(entityName, contract) {
     const referencePart = wrapIf(", reference: '", f.reference, "'");
     const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
     const dependsOnPart = f.dependsOn
-      ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
+      ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}'${f.dependsOn.noAutoSelect ? ', noAutoSelect: true' : ''} }`
       : '';
     // Section classification
     const sectionPart = `, section: '${fieldSections[idx]}'`;
@@ -1298,7 +1298,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const referencePart = wrapIf(", reference: '", f.reference, "'");
     const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
     const dependsOnPart = f.dependsOn
-      ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
+      ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}'${f.dependsOn.noAutoSelect ? ', noAutoSelect: true' : ''} }`
       : '';
     // Include defaultValue for quantity/numeric fields so the add-line form starts with a sensible value.
     // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).

@@ -1,8 +1,8 @@
 {
-  "version": "0.35.0",
+  "version": "0.44.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-06-11T15:52:57.560Z",
-  "contractChecksum": "60e2fc954ec4c3de",
+  "updatedAt": "2026-06-16T19:18:45.167Z",
+  "contractChecksum": "dd667e9d03037d2b",
   "apiPrediction": {
     "specName": "purchase-invoice",
     "baseUrl": "/sws/neo/purchase-invoice",
@@ -1127,6 +1127,29 @@
         "processType": "obuiapp"
       },
       {
+        "name": "psd2GenerateBankPayment",
+        "actionType": "paymentAction",
+        "entity": "header",
+        "column": "EM_Psd2_Generate_Bank_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/purchase-invoice/header/{id}/action/psd2GenerateBankPayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "0661406A983B4D8EA611F8596F114D52",
+        "processType": "obuiapp"
+      },
+      {
         "name": "explode",
         "actionType": "utilityAction",
         "entity": "lines",
@@ -1262,16 +1285,14 @@
         "OutstandingAmt": "Pendiente de pago",
         "EM_Etgo_Due_Date": "Vencimiento",
         "em_etgo_delivery_status": "Estado de entrega",
-        "C_DocTypeTarget_ID": "Tipo de documento",
-        "EM_Etgo_Origin_Invoice_ID": "Factura origen"
+        "C_DocTypeTarget_ID": "Tipo de documento"
       },
       "en_US": {
         "POReference": "Document No.",
         "OutstandingAmt": "Pending Payment",
         "EM_Etgo_Due_Date": "Due Date",
         "em_etgo_delivery_status": "Delivery Status",
-        "C_DocTypeTarget_ID": "Document Type",
-        "EM_Etgo_Origin_Invoice_ID": "Origin Invoice"
+        "C_DocTypeTarget_ID": "Document Type"
       }
     }
   },
@@ -2066,5 +2087,5 @@
       "tbaiVoidxmlgenerator"
     ]
   },
-  "checksum": "e134511175e60767"
+  "checksum": "c05057c4d1da1a75"
 }
