@@ -27,6 +27,9 @@ const RECONCILE_TOLERANCE = 0.01;
 const SKELETON_ROWS = [1, 2, 3, 4];
 // Stable per-column keys for skeleton cells (avoids array-index keys, Sonar S6479).
 const SKELETON_CELL_KEYS = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5'];
+// Elevation shadow shared by the selected row in both panels.
+const ELEVATED_SHADOW =
+  'shadow-[0px_10px_15px_-3px_rgba(18,18,23,0.08),0px_4px_6px_-2px_rgba(18,18,23,0.05)]';
 const STATUS_CODES = ['pending'];
 const DOC_TYPE_CODES = ['receipts', 'payments'];
 
@@ -197,6 +200,36 @@ function renderRows({ loading, items, colSpan, emptyTitle, emptyHint, renderRow 
 }
 
 /**
+ * Scrollable table scaffold shared by both panels: a sticky-styled header row
+ * (the per-panel columns are passed as `headCells`) and the skeleton/empty/data
+ * body produced by {@link renderRows}.
+ */
+function PanelTable({ headCells, loading, items, renderRow }) {
+  const ui = useUI();
+  return (
+    <div className="flex-1 overflow-y-auto [&>div]:overflow-visible">
+      <Table>
+        <TableHeader>
+          <TableRow className="h-11 border-b border-[#E8EAEF] [&_th]:text-xs [&_th]:font-semibold [&_th]:text-[#121217]">
+            {headCells}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {renderRows({
+            loading,
+            items,
+            colSpan: 5,
+            emptyTitle: ui('financeAccountMovementsEmpty'),
+            emptyHint: null,
+            renderRow,
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+/**
  * Left panel — pending statement lines with single-select radio rows, status
  * badge and a total footer.
  */
@@ -217,7 +250,7 @@ function StatementLinesPanel({
         className={cn(
           'group relative h-[62px] cursor-pointer border-b border-[#E8EAEF] bg-white transition-shadow',
           selected
-            ? 'z-20 shadow-[0px_10px_15px_-3px_rgba(18,18,23,0.08),0px_4px_6px_-2px_rgba(18,18,23,0.05)]'
+            ? `z-20 ${ELEVATED_SHADOW}`
             : 'hover:z-10 hover:bg-white hover:shadow-lg',
         )}
       >
@@ -304,29 +337,20 @@ function StatementLinesPanel({
           placeholder={ui('financeReconcileFilterDate')}
         />
       </ToolbarShell>
-      <div className="flex-1 overflow-y-auto [&>div]:overflow-visible">
-        <Table>
-          <TableHeader>
-            <TableRow className="h-11 border-b border-[#E8EAEF] [&_th]:text-xs [&_th]:font-semibold [&_th]:text-[#121217]">
-              <TableHead className="w-8 px-0 pl-2" />
-              <TableHead className="w-[108px] px-3">{ui('financeReconcileColDate')}</TableHead>
-              <TableHead className="px-3">{ui('financeReconcileColDescription')}</TableHead>
-              <TableHead className="w-[139px] px-3 text-left">{ui('financeReconcileColAmount')}</TableHead>
-              <TableHead className="w-9 px-0 pr-1" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {renderRows({
-              loading,
-              items: lines,
-              colSpan: 5,
-              emptyTitle: ui('financeAccountMovementsEmpty'),
-              emptyHint: null,
-              renderRow,
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <PanelTable
+        loading={loading}
+        items={lines}
+        renderRow={renderRow}
+        headCells={(
+          <>
+            <TableHead className="w-8 px-0 pl-2" />
+            <TableHead className="w-[108px] px-3">{ui('financeReconcileColDate')}</TableHead>
+            <TableHead className="px-3">{ui('financeReconcileColDescription')}</TableHead>
+            <TableHead className="w-[139px] px-3 text-left">{ui('financeReconcileColAmount')}</TableHead>
+            <TableHead className="w-9 px-0 pr-1" />
+          </>
+        )}
+      />
       <div className="flex items-center justify-end gap-2 border-t border-[#E8EAEF] px-4 py-3 text-sm font-semibold text-[#121217]">
         {ui('financeReconcileFooterTotal', { amount: formatSigned(total === 0 ? 0 : (Number(lines.reduce((a, l) => a + (Number(l.amount) || 0), 0).toFixed(2))), currency) })}
       </div>
@@ -362,7 +386,7 @@ function CandidateOperationsPanel({
       className={cn(
         'group relative h-[62px] border-b border-[#E8EAEF] bg-white transition-shadow',
         selectedIds.has(cand.id)
-          ? 'z-10 bg-[#F5F7F9] shadow-[0px_10px_15px_-3px_rgba(18,18,23,0.08),0px_4px_6px_-2px_rgba(18,18,23,0.05)]'
+          ? `z-10 bg-[#F5F7F9] ${ELEVATED_SHADOW}`
           : 'hover:z-10 hover:bg-white hover:shadow-lg',
       )}
     >
@@ -412,29 +436,20 @@ function CandidateOperationsPanel({
           placeholder={ui('financeReconcileFilterDate')}
         />
       </ToolbarShell>
-      <div className="flex-1 overflow-y-auto [&>div]:overflow-visible">
-        <Table>
-          <TableHeader>
-            <TableRow className="h-11 border-b border-[#E8EAEF] [&_th]:text-xs [&_th]:font-semibold [&_th]:text-[#121217]">
-              <TableHead className="w-8 px-0 pl-2" />
-              <TableHead className="w-[104px] px-3">{ui('financeReconcileColDate')}</TableHead>
-              <TableHead className="px-3">{ui('financeReconcileColInfo')}</TableHead>
-              <TableHead className="w-[121px] px-3 text-left">{ui('financeReconcileColPendingBalance')}</TableHead>
-              <TableHead className="w-[121px] px-3 text-left">{ui('financeReconcileColAmount')}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {renderRows({
-              loading,
-              items: candidates,
-              colSpan: 5,
-              emptyTitle: ui('financeAccountMovementsEmpty'),
-              emptyHint: null,
-              renderRow,
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <PanelTable
+        loading={loading}
+        items={candidates}
+        renderRow={renderRow}
+        headCells={(
+          <>
+            <TableHead className="w-8 px-0 pl-2" />
+            <TableHead className="w-[104px] px-3">{ui('financeReconcileColDate')}</TableHead>
+            <TableHead className="px-3">{ui('financeReconcileColInfo')}</TableHead>
+            <TableHead className="w-[121px] px-3 text-left">{ui('financeReconcileColPendingBalance')}</TableHead>
+            <TableHead className="w-[121px] px-3 text-left">{ui('financeReconcileColAmount')}</TableHead>
+          </>
+        )}
+      />
       {footer}
     </div>
   );
