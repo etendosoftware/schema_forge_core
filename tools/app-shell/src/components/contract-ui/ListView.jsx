@@ -581,7 +581,7 @@ export function ListView({
           {selectedRows.length > 0 ? (
             <div className={`flex items-center justify-between ${listbarPaddingX} py-3 border-b border-border/30`}>
               <div className="flex items-center gap-3 h-10">
-                <span className="text-sm font-semibold">{ui('selected').replace('{count}', selectedRows.length)}</span>
+                <span className="text-sm font-semibold" data-testid="selection-count">{ui('selected').replace('{count}', selectedRows.length)}</span>
               </div>
               <div className="flex items-center gap-2 h-10">
                 <Button
@@ -632,6 +632,7 @@ export function ListView({
                         key={i}
                         data-testid={`subset-filter-${sf.label}`}
                         onClick={() => selectSubset(i)}
+                        data-testid={`filter-${sf.key || sf.label?.toLowerCase()}`}
                         className={[
                           'h-8 px-3 text-sm font-medium text-[#121217] rounded-lg transition-all whitespace-nowrap',
                           activeSubsetIndex === i
@@ -650,6 +651,7 @@ export function ListView({
                       <button
                         key={i}
                         onClick={() => toggleQuickFilter(i)}
+                        data-testid={`quick-filter-${qf.key || qf.label?.toLowerCase()}`}
                         className={[
                           'h-9 px-3 text-xs rounded-lg border bg-white transition-colors',
                           activeFilterIndices.has(i)
@@ -813,7 +815,7 @@ export function ListView({
           {/* Indeterminate top progress bar — visible while refreshing existing data */}
           {hook.loading && hook.items.length > 0 && (
             <>
-              <div className="h-0.5 w-full overflow-hidden bg-primary/10">
+              <div className="h-0.5 w-full overflow-hidden bg-primary/10" data-testid="list-progress-bar">
                 <div
                   className="h-full w-1/3 bg-primary"
                   style={{ animation: 'sf-list-progress 1.1s ease-in-out infinite' }}
