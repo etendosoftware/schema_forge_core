@@ -102,8 +102,8 @@
           "reason": "Posting status — hidden under the hood. Posting itself is deferred to workstream D."
         },
         "documentAction": {
-          "visibility": "discarded",
-          "reason": "DocAction button — posting/complete flow deferred to workstream D."
+          "visibility": "system",
+          "reason": "DocAction button — registered in ETGO_SF_FIELD so NEO can dispatch the classic process via /action/documentAction. Hidden from the UI form; completion is triggered by the Complete button when balanced."
         },
         "accountingSchema": {
           "visibility": "system",

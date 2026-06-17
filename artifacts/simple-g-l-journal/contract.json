@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.6.1",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-17T11:52:34.306Z",
-  "checksum": "d3bb54a0bc0ed894",
+  "updatedAt": "2026-06-17T11:56:40.041Z",
+  "checksum": "5abbc9bf7f7f0ea2",
   "frontendContract": {
     "window": {
       "id": "B917E8A7B0864ACEA9D941E3B7494E53",
@@ -710,7 +710,7 @@
             "apiKey": "documentAction",
             "column": "DocAction",
             "type": "button",
-            "visibility": "discarded",
+            "visibility": "system",
             "required": true
           },
           {
