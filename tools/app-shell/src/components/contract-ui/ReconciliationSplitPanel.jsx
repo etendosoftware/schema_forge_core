@@ -115,7 +115,7 @@ function StatusBadge({ kind }) {
 function ToolbarShell({ children, search, onSearchChange, testIdPrefix }) {
   const ui = useUI();
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-[#E8EAEF] px-3 py-2">
+    <div className="flex flex-wrap items-center gap-2 px-3 py-2">
       {children}
       <div className="flex-1" />
       <input
@@ -216,7 +216,7 @@ function StatementLinesPanel({
           'group relative h-[62px] cursor-pointer border-b border-[#E8EAEF] bg-white transition-shadow',
           selected
             ? 'z-20 shadow-[0px_10px_15px_-3px_rgba(18,18,23,0.08),0px_4px_6px_-2px_rgba(18,18,23,0.05)]'
-            : 'hover:z-10 hover:shadow-lg',
+            : 'hover:z-10 hover:bg-white hover:shadow-lg',
         )}
       >
         <TableCell
@@ -309,7 +309,7 @@ function StatementLinesPanel({
               <TableHead className="w-8 px-0 pl-2" />
               <TableHead className="w-[108px] px-3">{ui('financeReconcileColDate')}</TableHead>
               <TableHead className="px-3">{ui('financeReconcileColDescription')}</TableHead>
-              <TableHead className="w-[139px] px-3 text-right">{ui('financeReconcileColAmount')}</TableHead>
+              <TableHead className="w-[139px] px-3 text-left">{ui('financeReconcileColAmount')}</TableHead>
               <TableHead className="w-9 px-0 pr-1" />
             </TableRow>
           </TableHeader>
@@ -361,7 +361,7 @@ function CandidateOperationsPanel({
         'group relative h-[62px] border-b border-[#E8EAEF] bg-white transition-shadow',
         selectedIds.has(cand.id)
           ? 'z-10 bg-[#F5F7F9] shadow-[0px_10px_15px_-3px_rgba(18,18,23,0.08),0px_4px_6px_-2px_rgba(18,18,23,0.05)]'
-          : 'hover:z-10 hover:shadow-lg',
+          : 'hover:z-10 hover:bg-white hover:shadow-lg',
       )}
     >
       <TableCell className="h-[62px] w-8 px-0 pl-2">
@@ -417,8 +417,8 @@ function CandidateOperationsPanel({
               <TableHead className="w-8 px-0 pl-2" />
               <TableHead className="w-[104px] px-3">{ui('financeReconcileColDate')}</TableHead>
               <TableHead className="px-3">{ui('financeReconcileColInfo')}</TableHead>
-              <TableHead className="w-[121px] px-3 text-right">{ui('financeReconcileColPendingBalance')}</TableHead>
-              <TableHead className="w-[121px] px-3 text-right">{ui('financeReconcileColAmount')}</TableHead>
+              <TableHead className="w-[121px] px-3 text-left">{ui('financeReconcileColPendingBalance')}</TableHead>
+              <TableHead className="w-[121px] px-3 text-left">{ui('financeReconcileColAmount')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -519,7 +519,6 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
       status: leftStatus || undefined,
       dateFrom: toDateParam(leftBounds.from),
       dateTo: toDateParam(leftBounds.to),
-      q: leftSearch || undefined,
     });
   const { candidates, loading: candLoading } =
     useCandidateOperations(accountId, selectedLine?.id ?? null, rightDocType);
@@ -543,6 +542,14 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
     setSelectedLine(null);
     setSelectedOpIds(new Set());
   };
+
+  const visibleLines = useMemo(() => {
+    const q = leftSearch.trim().toLowerCase();
+    if (!q) return lines;
+    return lines.filter((l) =>
+      [l.description, l.partnerName, l.referenceNo].some((v) => (v || '').toLowerCase().includes(q)),
+    );
+  }, [lines, leftSearch]);
 
   const visibleCandidates = useMemo(() => {
     const q = rightSearch.trim().toLowerCase();
@@ -595,7 +602,7 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
     <div className="flex h-full flex-col overflow-hidden">
       <div className="flex flex-1 overflow-hidden">
         <StatementLinesPanel
-          lines={lines}
+          lines={visibleLines}
           total={total}
           loading={linesLoading}
           currency={currency}
