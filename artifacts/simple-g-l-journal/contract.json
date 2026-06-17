@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.5.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-17T11:11:50.331Z",
-  "checksum": "3223aac222f6185e",
+  "updatedAt": "2026-06-17T11:28:16.726Z",
+  "checksum": "2c39398fd968d901",
   "frontendContract": {
     "window": {
       "id": "B917E8A7B0864ACEA9D941E3B7494E53",
@@ -336,6 +336,7 @@
               "en_US": "Debit",
               "es_ES": "Débito"
             },
+            "clearsField": "foreignCurrencyCredit",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_JournalLineAmt"
             },
@@ -361,6 +362,7 @@
               "en_US": "Credit",
               "es_ES": "Crédito"
             },
+            "clearsField": "foreignCurrencyDebit",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_JournalLineAmt"
             },

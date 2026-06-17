@@ -1520,6 +1520,8 @@ function buildEntryFieldLine(f, i, firstSearchIdx) {
   const requiredPart = fragmentIf(f.required, ', required: true');
   const lookupPart = fragmentIf(i === firstSearchIdx && firstSearchIdx !== -1, ', lookup: true');
   const labelPart = wrapIf(", label: '", f.label, "'");
+  const labelsDictPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
+  const clearsFieldPart = f.clearsField ? `, clearsField: '${String(f.clearsField).replace(/'/g, "\\'")}'` : '';
   const referencePart = wrapIf(", reference: '", f.reference, "'");
   const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
   const dependsOnPart = f.dependsOn
@@ -1541,7 +1543,7 @@ function buildEntryFieldLine(f, i, firstSearchIdx) {
     : '';
   const { lookupDrawerPart, lookupTitlePart, onSelectMappingsPart, displayFromCatalogPart } = buildLookupEntryParts(f);
   const minEntryPart = optProp('min', f.min);
-  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart} },`;
+  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart} },`;
 }
 
 /**
@@ -1721,6 +1723,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           const type = mapFormFieldType(f);
           const requiredPart = fragmentIf(f.required, ', required: true');
           const labelPart = wrapIf(", label: '", f.label, "'");
+          const labelsDictPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
+          const clearsFieldPart = f.clearsField ? `, clearsField: '${String(f.clearsField).replace(/'/g, "\\'")}'` : '';
           const referencePart = wrapIf(", reference: '", f.reference, "'");
           const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
           // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
@@ -1740,7 +1744,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           // document currency). Declared in secondaryTabs.<tab>.addLineFieldExclusions.
           const excludeValueOf = cfg.addLineFieldExclusions?.[fk];
           const excludeValueOfPart = excludeValueOf ? `, excludeValueOf: '${String(excludeValueOf).replace(/'/g, "\\'")}'` : '';
-          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${excludeValueOfPart} }`;
+          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${labelsDictPart}${clearsFieldPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${excludeValueOfPart} }`;
         }).filter(Boolean);
         // Tab-level readOnlyLogic — when truthy at runtime the tab still
         // renders existing rows but blocks add / edit / delete actions.

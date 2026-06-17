@@ -414,6 +414,7 @@ const EMPTY_SEED = {};
 const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, seedValues = EMPTY_SEED, ilpHasNoAmountCol = false, ilpTrailing = false }, ref) {
   const t = useLabel();
   const ui = useUI();
+  const { locale } = useLocaleSwitch();
   const fieldMap = useMemo(() => {
     const map = {};
     for (const f of fields) map[f.key] = f;
@@ -630,6 +631,11 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     // Build a snapshot of current + new values for the callout formState
     const snapshot = { ...values, [key]: val };
     handleChange(key, val);
+    // Mutual-exclusion: clear the paired field when a non-zero value is entered (e.g. debit ↔ credit).
+    const clearsKey = fieldMap[key]?.clearsField;
+    if (clearsKey && val !== '' && val !== null && val !== undefined && Number(val) !== 0) {
+      handleChange(clearsKey, '');
+    }
     // Store _aux data from selector items as auxiliaryValues (e.g., product_UOM, product_PSTD)
     if (selectedItem?._aux) {
       for (const [suffix, auxVal] of Object.entries(selectedItem._aux)) {
@@ -660,7 +666,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         pendingCalloutsRef.current = pendingCalloutsRef.current.filter(p => p !== calloutPromise);
       });
     }
-  }, [handleChange, onFieldChange, values]);
+  }, [handleChange, onFieldChange, values, fieldMap]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -686,7 +692,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
       )}
       {columns.map(col => {
         const field = fieldMap[col.key];
-        const fieldLabel = getFieldLabel(field, t, col);
+        const fieldLabel = getFieldLabel(field, t, col, locale);
         if (!field) {
           // Show callout-derived values if available, otherwise dash.
           // Prefer $_identifier (human-readable) over raw ID for FK fields.
@@ -833,7 +839,10 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
   );
 });
 
-function getFieldLabel(field, t, col) {
+function getFieldLabel(field, t, col, locale) {
+  const f = field ?? col;
+  const pinned = f?.labels?.[locale] ?? f?.labels?.en_US;
+  if (pinned) return pinned;
   return field ? (t(field.column) ?? field.label ?? field.key) : (t(col.column) ?? col.label ?? col.key);
 }
 

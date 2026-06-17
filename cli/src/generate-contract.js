@@ -272,6 +272,7 @@ const FIELD_HINTS_PRE_GRID = [
   ['badgeVariants', Boolean],
   ['enumVariants', Boolean],
   ['labels', Boolean],
+  ['clearsField', Boolean],
   ['summable', Boolean, setTrue],
   ['display', Boolean],
   ['cellType', Boolean],

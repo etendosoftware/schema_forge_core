@@ -162,6 +162,7 @@ const FIELD_DECISION_COPY_PROPS = [
   'filterOnly',
   'filterable',
   'labels',
+  'clearsField',
   'columnType',
   'display',
   'cellType',

@@ -1,8 +1,8 @@
 {
-  "version": "0.3.1",
+  "version": "0.5.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
   "updatedAt": "2026-06-16T17:39:46.684Z",
-  "contractChecksum": "3223aac222f6185e",
+  "contractChecksum": "2c39398fd968d901",
   "apiPrediction": {
     "specName": "simple-g-l-journal",
     "baseUrl": "/sws/neo/simple-g-l-journal",

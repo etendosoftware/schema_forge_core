@@ -157,13 +157,15 @@
           "visibility": "editable",
           "grid": true,
           "labels": { "en_US": "Debit", "es_ES": "Débito" },
-          "reason": "Debit amount (AmtSourceDr) — drives the balanceFooter Σ debit."
+          "clearsField": "foreignCurrencyCredit",
+          "reason": "Debit amount (AmtSourceDr) — drives the balanceFooter Σ debit. Entering a value clears credit (mutually exclusive)."
         },
         "foreignCurrencyCredit": {
           "visibility": "editable",
           "grid": true,
           "labels": { "en_US": "Credit", "es_ES": "Crédito" },
-          "reason": "Credit amount (AmtSourceCr) — drives the balanceFooter Σ credit."
+          "clearsField": "foreignCurrencyDebit",
+          "reason": "Credit amount (AmtSourceCr) — drives the balanceFooter Σ credit. Entering a value clears debit (mutually exclusive)."
         },
         "businessPartner": {
           "visibility": "editable",
