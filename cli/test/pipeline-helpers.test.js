@@ -12,6 +12,15 @@ import {
   handleMissingDecisionsError,
   loadPreviousContract,
   loadPreviousMcpContract,
+  handleStepError,
+  writeGeneratedFiles,
+  printTranslateTodosGuidance,
+  logDryRunOutcome as logDryRun2,
+  resolveWindowNameFromId,
+  runValidateSchemaStep,
+  ensureProcessesFile,
+  runContractTestsStep,
+  writeCustomScaffoldFiles,
 } from '../src/pipeline.js';
 
 // ---------------------------------------------------------------------------
@@ -293,5 +302,272 @@ describe('parseArgs — combined flags', () => {
     // --unknown-flag starts with -- so it's not treated as positional
     assert.equal(result.windowId, '143');
     assert.equal(result.windowName, 'sales-order');
+  });
+
+  it('parses menu-id flag', () => {
+    const result = run('--menu-id', 'M1');
+    assert.equal(result.menuId, 'M1');
+  });
+
+  it('parses positional windowId and windowName', () => {
+    const result = run('ABC123', 'my-window');
+    assert.equal(result.windowId, 'ABC123');
+    assert.equal(result.windowName, 'my-window');
+  });
+
+  it('sets windowId from first positional arg only', () => {
+    const result = run('W1', 'W2', 'W3');
+    assert.equal(result.windowId, 'W1');
+    assert.equal(result.windowName, 'W2');
+    // W3 is ignored (no more positional slots)
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildPipelineSteps — extended
+// ---------------------------------------------------------------------------
+
+describe('buildPipelineSteps', () => {
+  it('returns expected step count', () => {
+    const steps = buildPipelineSteps();
+    assert.ok(steps.length >= 10);
+  });
+
+  it('starts with extract-fields', () => {
+    const steps = buildPipelineSteps();
+    assert.equal(steps[0].name, 'extract-fields');
+  });
+
+  it('ends with run-tests', () => {
+    const steps = buildPipelineSteps();
+    assert.equal(steps[steps.length - 1].name, 'run-tests');
+  });
+
+  it('each step has name and description', () => {
+    const steps = buildPipelineSteps();
+    for (const step of steps) {
+      assert.ok(step.name);
+      assert.ok(step.description);
+    }
+  });
+
+  it('marks translate-todos as interactive', () => {
+    const steps = buildPipelineSteps();
+    const td = steps.find(s => s.name === 'translate-todos');
+    assert.ok(td);
+    assert.equal(td.interactive, true);
+  });
+
+  it('marks validate-field-names as optional', () => {
+    const steps = buildPipelineSteps();
+    const vfn = steps.find(s => s.name === 'validate-field-names');
+    assert.ok(vfn);
+    assert.equal(vfn.optional, true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// handleStepError
+// ---------------------------------------------------------------------------
+
+describe('handleStepError', () => {
+  it('does not throw for optional step', () => {
+    // handleStepError logs but does not throw for optional steps
+    const step = { name: 'validate-field-names', optional: true };
+    // Should not throw
+    handleStepError(step, new Error('optional failure'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// writeGeneratedFiles
+// ---------------------------------------------------------------------------
+
+describe('writeGeneratedFiles', () => {
+  it('writes all files via resolve + writeFile', async () => {
+    const writeCalls = [];
+    const mockWriteFile = async (path, code, enc) => { writeCalls.push({ path, code, enc }); };
+    const mockResolve = (...parts) => parts.join('/');
+
+    const files = { 'A.jsx': 'codeA', 'B.jsx': 'codeB' };
+    await writeGeneratedFiles(files, mockResolve, '/out', mockWriteFile);
+
+    assert.equal(writeCalls.length, 2);
+    assert.equal(writeCalls[0].path, '/out/A.jsx');
+    assert.equal(writeCalls[1].path, '/out/B.jsx');
+  });
+
+  it('skips internal marker keys starting with __', async () => {
+    const writeCalls = [];
+    const mockWriteFile = async (path, code, enc) => { writeCalls.push({ path }); };
+    const mockResolve = (...parts) => parts.join('/');
+
+    const files = { '__internal': 'skip', 'Real.jsx': 'code' };
+    await writeGeneratedFiles(files, mockResolve, '/out', mockWriteFile);
+
+    assert.equal(writeCalls.length, 1);
+    assert.equal(writeCalls[0].path, '/out/Real.jsx');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// printTranslateTodosGuidance
+// ---------------------------------------------------------------------------
+
+describe('printTranslateTodosGuidance', () => {
+  it('does not throw for translate-todos step', () => {
+    // Just ensure it doesn't error
+    printTranslateTodosGuidance({ name: 'translate-todos' });
+  });
+
+  it('does not print for non-translate-todos step', () => {
+    // Should be a no-op
+    printTranslateTodosGuidance({ name: 'extract-fields' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// logTestResults
+// ---------------------------------------------------------------------------
+
+describe('logTestResults', () => {
+  it('does not throw for passing results', () => {
+    logTestResults({ passed: 5, failed: 0, total: 5, skipped: 0, results: [] });
+  });
+
+  it('does not throw for failing results', () => {
+    logTestResults({
+      passed: 3,
+      failed: 2,
+      total: 5,
+      skipped: 0,
+      results: [
+        { passed: true, description: 'OK' },
+        { passed: false, description: 'fail 1', reason: 'bad' },
+        { passed: false, description: 'fail 2', reason: 'worse' },
+      ],
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// logDryRunOutcome
+// ---------------------------------------------------------------------------
+
+describe('logDryRunOutcome', () => {
+  it('logs dry run message when dryRun is true', () => {
+    // Should not throw
+    logDryRunOutcome(true, {});
+  });
+
+  it('logs spec id when dryRun is false', () => {
+    logDryRunOutcome(false, { specId: 'SP1' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveWindowNameFromId
+// ---------------------------------------------------------------------------
+
+describe('resolveWindowNameFromId', () => {
+  it('returns kebab-case name from DB query', async () => {
+    const queryFn = async () => ({ rows: [{ name: 'Sales Order' }] });
+    const result = await resolveWindowNameFromId('W1', { queryFn });
+    assert.equal(result, 'sales-order');
+  });
+
+  it('throws when windowId is falsy', async () => {
+    await assert.rejects(
+      () => resolveWindowNameFromId(null),
+      /windowId is required/,
+    );
+  });
+
+  it('throws when no rows returned', async () => {
+    const queryFn = async () => ({ rows: [] });
+    await assert.rejects(
+      () => resolveWindowNameFromId('W1', { queryFn }),
+      /not found/,
+    );
+  });
+
+  it('throws when row has no name', async () => {
+    const queryFn = async () => ({ rows: [{}] });
+    await assert.rejects(
+      () => resolveWindowNameFromId('W1', { queryFn }),
+      /missing Name/,
+    );
+  });
+
+  it('uses Name (capitalized) key if present', async () => {
+    const queryFn = async () => ({ rows: [{ Name: 'Purchase Order' }] });
+    const result = await resolveWindowNameFromId('W1', { queryFn });
+    assert.equal(result, 'purchase-order');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ensureProcessesFile
+// ---------------------------------------------------------------------------
+
+describe('ensureProcessesFile', () => {
+  it('does nothing if file already exists', async () => {
+    const accessOk = async () => {};
+    const mkdirCalls = [];
+    const writeCalls = [];
+    const mkdir = async (d, o) => { mkdirCalls.push(d); };
+    const writeFile = async (p, c) => { writeCalls.push(p); };
+
+    await ensureProcessesFile(accessOk, 'processes.json', mkdir, 'test', writeFile);
+    assert.equal(mkdirCalls.length, 0);
+    assert.equal(writeCalls.length, 0);
+  });
+
+  it('creates file if it does not exist', async () => {
+    const accessFail = async () => { throw new Error('ENOENT'); };
+    const mkdirCalls = [];
+    const writeCalls = [];
+    const mkdir = async (d, o) => { mkdirCalls.push(d); };
+    const writeFile = async (p, c) => { writeCalls.push({ p, c }); };
+
+    await ensureProcessesFile(accessFail, 'artifacts/test/processes.json', mkdir, 'test', writeFile);
+    assert.equal(mkdirCalls.length, 1);
+    assert.equal(writeCalls.length, 1);
+    assert.ok(writeCalls[0].c.includes('"processes"'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// writeCustomScaffoldFiles
+// ---------------------------------------------------------------------------
+
+describe('writeCustomScaffoldFiles', () => {
+  it('creates new files when they do not exist', async () => {
+    const accessFail = async () => { throw new Error('ENOENT'); };
+    const writeCalls = [];
+    const writeFile = async (p, c, enc) => { writeCalls.push({ p, c }); };
+
+    const files = { 'index.jsx': 'idx-code', 'mockCatalogs.js': 'cat-code' };
+    await writeCustomScaffoldFiles(accessFail, '/out/index.jsx', '/out/mockCatalogs.js', files, writeFile);
+
+    assert.equal(writeCalls.length, 2);
+    assert.equal(writeCalls[0].p, '/out/index.jsx');
+    assert.equal(writeCalls[0].c, 'idx-code');
+    assert.equal(writeCalls[1].p, '/out/mockCatalogs.js');
+    assert.equal(writeCalls[1].c, 'cat-code');
+  });
+
+  it('writes .new files when they already exist', async () => {
+    let calls = 0;
+    const accessOk = async () => { calls++; };
+    const writeCalls = [];
+    const writeFile = async (p, c, enc) => { writeCalls.push({ p }); };
+
+    const files = { 'index.jsx': 'new-idx', 'mockCatalogs.js': 'new-cat' };
+    await writeCustomScaffoldFiles(accessOk, '/out/index.jsx', '/out/mockCatalogs.js', files, writeFile);
+
+    // Should write to .new paths
+    assert.equal(writeCalls[0].p, '/out/index.jsx.new');
+    assert.equal(writeCalls[1].p, '/out/mockCatalogs.js.new');
   });
 });

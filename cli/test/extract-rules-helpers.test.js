@@ -5,6 +5,7 @@ import {
   translateExpression,
   isSimpleValidation,
   buildRuleFromCallout,
+  findSource,
 } from '../src/extract-rules.js';
 
 // ---------------------------------------------------------------------------
@@ -279,5 +280,294 @@ describe('buildRuleFromCallout — additional cases', () => {
     assert.equal(rule.complexity, 'unknown');
     assert.deepEqual(rule.effects, []);
     assert.equal(rule.confidence, 'low');
+  });
+
+  it('sets medium complexity when branches between 3 and 5', () => {
+    const row = {
+      ad_callout_id: '900',
+      name: 'SL_Medium',
+      classname: 'com.example.MediumCallout',
+      columnname: 'Type',
+    };
+    const analysis = {
+      effects: [{ field: 'net', action: 'setValue', confidence: 'high' }],
+      confidence: 'high',
+      branches: 4,
+      loc: 50,
+      hasDml: false,
+    };
+    const rule = buildRuleFromCallout(row, analysis);
+    assert.equal(rule.complexity, 'medium');
+  });
+
+  it('sets high complexity when hasDml is true regardless of branches', () => {
+    const row = {
+      ad_callout_id: '910',
+      name: 'SL_DmlHigh',
+      classname: 'com.example.DmlHigh',
+      columnname: 'Status',
+    };
+    const analysis = {
+      effects: [],
+      confidence: 'medium',
+      branches: 1,
+      loc: 20,
+      hasDml: true,
+    };
+    const rule = buildRuleFromCallout(row, analysis);
+    assert.equal(rule.complexity, 'high');
+    assert.equal(rule.hasDml, true);
+  });
+
+  it('includes warning from sourceAnalysis', () => {
+    const row = {
+      ad_callout_id: '920',
+      name: 'SL_Warn',
+      classname: 'com.example.WarnCallout',
+      columnname: 'Col',
+    };
+    const analysis = {
+      effects: [],
+      confidence: 'low',
+      warning: 'Source not found',
+    };
+    const rule = buildRuleFromCallout(row, analysis);
+    assert.equal(rule.warning, 'Source not found');
+    assert.equal(rule.complexity, 'unknown');
+  });
+
+  it('includes loc from sourceAnalysis', () => {
+    const row = {
+      ad_callout_id: '930',
+      name: 'SL_Loc',
+      classname: 'com.example.LocCallout',
+      columnname: 'X',
+    };
+    const analysis = {
+      effects: [],
+      confidence: 'medium',
+      branches: 0,
+      loc: 42,
+      hasDml: false,
+    };
+    const rule = buildRuleFromCallout(row, analysis);
+    assert.equal(rule.loc, 42);
+  });
+
+  it('omits branches when not in analysis', () => {
+    const row = {
+      ad_callout_id: '940',
+      name: 'SL_NoBranch',
+      classname: 'com.example.NoBranch',
+      columnname: 'Y',
+    };
+    const analysis = {
+      effects: [],
+      confidence: 'medium',
+      hasDml: false,
+    };
+    const rule = buildRuleFromCallout(row, analysis);
+    assert.equal(rule.branches, undefined);
+  });
+
+  it('omits loc when not in analysis', () => {
+    const row = {
+      ad_callout_id: '950',
+      name: 'SL_NoLoc',
+      classname: 'com.example.NoLoc',
+      columnname: 'Z',
+    };
+    const analysis = {
+      effects: [],
+      confidence: 'medium',
+      hasDml: false,
+    };
+    const rule = buildRuleFromCallout(row, analysis);
+    assert.equal(rule.loc, undefined);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// analyzeJavaSource — more branch coverage
+// ---------------------------------------------------------------------------
+
+describe('analyzeJavaSource — branch counting', () => {
+  it('counts switch statements as branches', () => {
+    const source = `
+      public void run() {
+        switch (type) {
+          case "A": break;
+          case "B": break;
+        }
+      }
+    `;
+    const result = analyzeJavaSource(source);
+    assert.ok(result.branches >= 1);
+  });
+
+  it('counts ternary operators as branches', () => {
+    const source = `
+      public void run() {
+        int x = condition ? 1 : 0;
+      }
+    `;
+    const result = analyzeJavaSource(source);
+    assert.ok(result.branches >= 1);
+  });
+
+  it('counts multiple ifs on same line', () => {
+    const source = `
+      public void run() {
+        if (a) { if (b) { doStuff(); } }
+      }
+    `;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.branches, 2);
+  });
+
+  it('skips lines starting with * (javadoc body)', () => {
+    const source = `
+      /**
+       * if (this should be ignored)
+       * switch (this too)
+       */
+      public void run() {}
+    `;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.branches, 0);
+  });
+
+  it('detects addResult effects', () => {
+    const source = `addResult("total", sum);`;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.effects.length, 1);
+    assert.equal(result.effects[0].field, 'total');
+  });
+
+  it('detects multiple effects in same source', () => {
+    const source = `
+      setFieldValue("price", 10);
+      addResult("qty", 5);
+      setFieldValue("net", 50);
+    `;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.effects.length, 3);
+    assert.equal(result.confidence, 'high');
+  });
+
+  it('detects OBDal as DML', () => {
+    const source = `OBDal.getInstance().save(order);`;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.hasDml, true);
+  });
+
+  it('detects createCriteria as DML', () => {
+    const source = `createCriteria(Order.class);`;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.hasDml, true);
+  });
+
+  it('detects createQuery as DML', () => {
+    const source = `session.createQuery("from Order");`;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.hasDml, true);
+  });
+
+  it('handles block comment that opens and closes on same line', () => {
+    const source = `/* comment */ int x = 1;
+public void run() {}`;
+    const result = analyzeJavaSource(source);
+    // The /* comment */ line is skipped, "public void run" counts
+    assert.equal(result.loc, 1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// translateExpression — more patterns
+// ---------------------------------------------------------------------------
+
+describe('translateExpression — more patterns', () => {
+  it('replaces Y/N with true/false', () => {
+    const result = translateExpression("@IsActive@='Y'");
+    assert.equal(result.success, true);
+    assert.ok(result.result.includes('true'));
+  });
+
+  it('replaces single = with == (preserving != <= >=)', () => {
+    const result = translateExpression("@A@='Y' & @B@!='N' & @C@>='10'");
+    assert.equal(result.success, true);
+    // Single = should become ==
+    assert.ok(result.result.includes('=='));
+    // != should stay as !=
+    assert.ok(result.result.includes('!='));
+    // >= should stay as >=
+    assert.ok(result.result.includes('>='));
+  });
+
+  it('rejects Utilities. calls', () => {
+    const result = translateExpression("Utilities.getValue('x')");
+    assert.equal(result.success, false);
+  });
+
+  it('rejects OB. calls', () => {
+    const result = translateExpression("OB.getContext()");
+    assert.equal(result.success, false);
+  });
+
+  it('translates complex expression with multiple variables', () => {
+    const result = translateExpression("@DocStatus@='CO' | @DocStatus@='CL' & @IsSOTrx@='Y'");
+    assert.equal(result.success, true);
+    assert.ok(result.result.includes('docStatus'));
+    assert.ok(result.result.includes('||'));
+    assert.ok(result.result.includes('&&'));
+    assert.ok(result.result.includes('true'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isSimpleValidation — more edge cases
+// ---------------------------------------------------------------------------
+
+describe('isSimpleValidation — more edge cases', () => {
+  it('returns true for null input', () => {
+    assert.equal(isSimpleValidation(null), true);
+  });
+
+  it('returns false for multiple JOINs', () => {
+    const sql = `SELECT x FROM A
+      JOIN B ON A.id = B.a_id
+      JOIN C ON B.id = C.b_id`;
+    assert.equal(isSimpleValidation(sql), false);
+  });
+
+  it('returns false for EXISTS with SELECT subquery', () => {
+    const sql = "WHERE EXISTS (SELECT 1 FROM t WHERE t.active='Y')";
+    assert.equal(isSimpleValidation(sql), false);
+  });
+
+  it('returns true for simple WHERE clause', () => {
+    const sql = "SELECT Name FROM C_BPartner WHERE IsActive='Y'";
+    assert.equal(isSimpleValidation(sql), true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// findSource — exported, can be tested
+// ---------------------------------------------------------------------------
+
+describe('findSource', () => {
+  it('returns null for null sourceDir', async () => {
+    const result = await findSource(null, 'com.example.MyClass');
+    assert.equal(result, null);
+  });
+
+  it('returns null for null className', async () => {
+    const result = await findSource('/tmp', null);
+    assert.equal(result, null);
+  });
+
+  it('returns null for non-existent file', async () => {
+    const result = await findSource('/tmp/nonexistent-dir-xyz', 'com.nonexistent.FakeClass');
+    assert.equal(result, null);
   });
 });

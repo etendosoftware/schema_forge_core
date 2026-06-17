@@ -1,11 +1,15 @@
-import { describe, it } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import {
   toSpecName,
   mapVisibility,
   buildWebhookUrl,
   extractFieldsFromContract,
   formatDuplicateFieldsError,
+  loadConfig,
 } from '../src/push-to-neo.js';
 
 describe('toSpecName', () => {
@@ -218,5 +222,238 @@ describe('formatDuplicateFieldsError', () => {
       { entityName: 'e', columnName: 'c', fieldIds: ['x', 'y'] },
     ]);
     assert.ok(msg.includes('make regen ONLY=my-window PUSH_TO_NEO=1'));
+  });
+
+  it('handles single field (no duplicates to delete)', () => {
+    const msg = formatDuplicateFieldsError('test', [
+      { entityName: 'header', columnName: 'Col', fieldIds: ['ONLY'] },
+    ]);
+    assert.ok(msg.includes('keep:    ONLY'));
+    assert.ok(!msg.includes('delete:'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// toSpecName — additional edge cases
+// ---------------------------------------------------------------------------
+describe('toSpecName — additional', () => {
+  it('handles names with dots', () => {
+    assert.equal(toSpecName('Sales.Order'), 'sales-order');
+  });
+
+  it('handles names with underscores', () => {
+    assert.equal(toSpecName('sales_order'), 'sales-order');
+  });
+
+  it('handles consecutive uppercase (acronyms)', () => {
+    const result = toSpecName('HTMLParser');
+    assert.ok(result.includes('html'));
+  });
+
+  it('returns empty for empty string', () => {
+    assert.equal(toSpecName(''), '');
+  });
+
+  it('handles names with parentheses and ampersands', () => {
+    assert.equal(toSpecName('A & B (Test)'), 'a-b-test');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// mapVisibility — additional
+// ---------------------------------------------------------------------------
+describe('mapVisibility — additional', () => {
+  it('maps empty string to not included', () => {
+    assert.deepEqual(mapVisibility(''), { isIncluded: 'N', isReadOnly: 'N' });
+  });
+
+  it('maps number to not included', () => {
+    assert.deepEqual(mapVisibility(0), { isIncluded: 'N', isReadOnly: 'N' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildWebhookUrl — additional
+// ---------------------------------------------------------------------------
+describe('buildWebhookUrl — additional', () => {
+  it('handles URL with path', () => {
+    assert.equal(
+      buildWebhookUrl('https://etendo.example.com/etendo', 'ConfigureNEO'),
+      'https://etendo.example.com/etendo/sws/webhooks/ConfigureNEO',
+    );
+  });
+
+  it('handles localhost URL', () => {
+    assert.equal(
+      buildWebhookUrl('http://localhost:8080', 'Hook'),
+      'http://localhost:8080/sws/webhooks/Hook',
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// extractFieldsFromContract — additional
+// ---------------------------------------------------------------------------
+describe('extractFieldsFromContract — additional', () => {
+  it('preserves field visibility values', () => {
+    const contract = {
+      entities: {
+        header: {
+          tabId: 'tab1',
+          tableName: 'C_Order',
+          fields: [
+            { name: 'f1', column: 'C1', visibility: 'editable' },
+            { name: 'f2', column: 'C2', visibility: 'readOnly' },
+            { name: 'f3', column: 'C3', visibility: 'system' },
+            { name: 'f4', column: 'C4', visibility: 'discarded' },
+          ],
+        },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    assert.equal(fields[0].visibility, 'editable');
+    assert.equal(fields[1].visibility, 'readOnly');
+    assert.equal(fields[2].visibility, 'system');
+    assert.equal(fields[3].visibility, 'discarded');
+  });
+
+  it('handles three entities', () => {
+    const contract = {
+      entities: {
+        header: { fields: [{ name: 'a', column: 'A', visibility: 'editable' }] },
+        lines: { fields: [{ name: 'b', column: 'B', visibility: 'editable' }] },
+        tax: { fields: [{ name: 'c', column: 'C', visibility: 'readOnly' }] },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    assert.equal(fields.length, 3);
+    assert.equal(fields[2].entityName, 'tax');
+  });
+
+  it('handles entity with many fields', () => {
+    const manyFields = Array.from({ length: 50 }, (_, i) => ({
+      name: `f${i}`, column: `Col${i}`, visibility: 'editable',
+    }));
+    const contract = { entities: { header: { fields: manyFields } } };
+    const fields = extractFieldsFromContract(contract);
+    assert.equal(fields.length, 50);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// loadConfig
+// ---------------------------------------------------------------------------
+describe('loadConfig', () => {
+  const tmpBase = join(tmpdir(), `push-neo-test-${Date.now()}`);
+  const savedEnv = {};
+
+  before(() => {
+    mkdirSync(tmpBase, { recursive: true });
+    // Save env vars to restore later
+    savedEnv.ETENDO_URL = process.env.ETENDO_URL;
+    savedEnv.ETENDO_USER = process.env.ETENDO_USER;
+    savedEnv.ETENDO_PASSWORD = process.env.ETENDO_PASSWORD;
+  });
+
+  after(() => {
+    // Restore env vars
+    for (const [k, v] of Object.entries(savedEnv)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+    rmSync(tmpBase, { recursive: true, force: true });
+  });
+
+  it('loads config from env vars', async () => {
+    process.env.ETENDO_URL = 'http://test.local';
+    process.env.ETENDO_USER = 'admin';
+    process.env.ETENDO_PASSWORD = 'secret';
+    const config = await loadConfig(tmpBase);
+    assert.equal(config.url, 'http://test.local');
+    assert.equal(config.user, 'admin');
+    assert.equal(config.password, 'secret');
+  });
+
+  it('loads config from properties file', async () => {
+    delete process.env.ETENDO_URL;
+    delete process.env.ETENDO_USER;
+    delete process.env.ETENDO_PASSWORD;
+    writeFileSync(join(tmpBase, 'schema_forge.properties'), [
+      'etendo.url=http://props.local',
+      'etendo.user=propuser',
+      'etendo.password=propsecret',
+    ].join('\n'));
+    const config = await loadConfig(tmpBase);
+    assert.equal(config.url, 'http://props.local');
+    assert.equal(config.user, 'propuser');
+    assert.equal(config.password, 'propsecret');
+  });
+
+  it('env vars override properties file', async () => {
+    process.env.ETENDO_URL = 'http://env.local';
+    process.env.ETENDO_USER = 'envuser';
+    process.env.ETENDO_PASSWORD = 'envsecret';
+    // Properties file still exists from previous test
+    const config = await loadConfig(tmpBase);
+    assert.equal(config.url, 'http://env.local');
+    assert.equal(config.user, 'envuser');
+    assert.equal(config.password, 'envsecret');
+  });
+
+  it('throws when URL is missing', async () => {
+    delete process.env.ETENDO_URL;
+    delete process.env.ETENDO_USER;
+    delete process.env.ETENDO_PASSWORD;
+    const noPropsDir = join(tmpBase, 'empty');
+    mkdirSync(noPropsDir, { recursive: true });
+    await assert.rejects(
+      loadConfig(noPropsDir),
+      { message: /Missing Etendo URL/ },
+    );
+  });
+
+  it('throws when user is missing', async () => {
+    process.env.ETENDO_URL = 'http://test.local';
+    delete process.env.ETENDO_USER;
+    delete process.env.ETENDO_PASSWORD;
+    const noPropsDir = join(tmpBase, 'nouser');
+    mkdirSync(noPropsDir, { recursive: true });
+    await assert.rejects(
+      loadConfig(noPropsDir),
+      { message: /Missing Etendo user/ },
+    );
+  });
+
+  it('throws when password is missing', async () => {
+    process.env.ETENDO_URL = 'http://test.local';
+    process.env.ETENDO_USER = 'admin';
+    delete process.env.ETENDO_PASSWORD;
+    const noPropsDir = join(tmpBase, 'nopw');
+    mkdirSync(noPropsDir, { recursive: true });
+    await assert.rejects(
+      loadConfig(noPropsDir),
+      { message: /Missing Etendo password/ },
+    );
+  });
+
+  it('handles properties file with comments and blank lines', async () => {
+    delete process.env.ETENDO_URL;
+    delete process.env.ETENDO_USER;
+    delete process.env.ETENDO_PASSWORD;
+    const commentDir = join(tmpBase, 'comments');
+    mkdirSync(commentDir, { recursive: true });
+    writeFileSync(join(commentDir, 'schema_forge.properties'), [
+      '# This is a comment',
+      '',
+      'etendo.url=http://comment.local',
+      '# Another comment',
+      'etendo.user=cuser',
+      'etendo.password=cpass',
+      '',
+    ].join('\n'));
+    const config = await loadConfig(commentDir);
+    assert.equal(config.url, 'http://comment.local');
+    assert.equal(config.user, 'cuser');
+    assert.equal(config.password, 'cpass');
   });
 });

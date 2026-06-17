@@ -428,4 +428,152 @@ describe('ReportViewerPage', () => {
       expect(screen.getByText('Empty Outs')).toBeInTheDocument();
     });
   });
+
+  it('renders multiple reports with different output formats', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 'r1', title: { en_US: 'Multi Out' }, type: 'listing', outputs: ['pdf', 'xlsx', 'csv', 'html'] },
+      ]),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('pdf')).toBeInTheDocument();
+      expect(screen.getByText('xlsx')).toBeInTheDocument();
+      expect(screen.getByText('csv')).toBeInTheDocument();
+      expect(screen.getByText('html')).toBeInTheDocument();
+    });
+  });
+
+  it('renders reports with only title.en_US locale key', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 'r-locale', title: { en_US: 'English Only' }, type: 'listing', outputs: ['pdf'] },
+      ]),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('English Only')).toBeInTheDocument();
+    });
+  });
+
+  it('renders many reports in the same category', async () => {
+    const reports = Array.from({ length: 5 }, (_, i) => ({
+      id: `r-${i}`,
+      title: { en_US: `Report ${i}` },
+      type: 'listing',
+      category: 'finance',
+      outputs: ['pdf'],
+    }));
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(reports),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Report 0')).toBeInTheDocument();
+      expect(screen.getByText('Report 4')).toBeInTheDocument();
+    });
+  });
+
+  it('renders grouped-listing type with landscape orientation', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 'r-gl', title: { en_US: 'Grouped Land' }, type: 'grouped-listing', orientation: 'landscape', outputs: ['xlsx'] },
+      ]),
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Grouped Land')).toBeInTheDocument();
+      expect(screen.getByText(/Grouped Report/)).toBeInTheDocument();
+      expect(screen.getByText(/Landscape/)).toBeInTheDocument();
+    });
+  });
+});
+
+// -------------------------------------------------------------------
+// Additional helper export coverage
+// -------------------------------------------------------------------
+
+describe('getSelectorLabelClassName — edge cases', () => {
+  it('applies correct class with both items and displayText', () => {
+    const cls = getSelectorLabelClassName([{ id: '1' }], 'text');
+    expect(cls).toContain('text-foreground');
+  });
+
+  it('applies truncate class always', () => {
+    expect(getSelectorLabelClassName([], '')).toContain('truncate');
+    expect(getSelectorLabelClassName([{ id: '1' }], '')).toContain('truncate');
+  });
+});
+
+describe('getSelectorButtonTitle — edge cases', () => {
+  it('returns joined names for multi with many items', () => {
+    const items = [{ name: 'A' }, { name: 'B' }, { name: 'C' }];
+    expect(getSelectorButtonTitle(true, items, '')).toBe('A, B, C');
+  });
+
+  it('returns displayText when not multi regardless of selectedItems', () => {
+    expect(getSelectorButtonTitle(false, [{ name: 'X' }], 'Display')).toBe('Display');
+  });
+
+  it('falls back to displayText for multi with no items', () => {
+    expect(getSelectorButtonTitle(true, [], 'SomeText')).toBe('SomeText');
+  });
+});
+
+describe('applyProductSelectorScopeParams — edge cases', () => {
+  it('sets all params when all values provided', () => {
+    const params = new URLSearchParams();
+    applyProductSelectorScopeParams('org1', params, ['o1', 'o2'], 'wh1');
+    expect(params.get('selectedOrgId')).toBe('org1');
+    expect(params.get('roleOrgIds')).toBe('o1,o2');
+    expect(params.get('warehouseIds')).toBe('wh1');
+  });
+
+  it('does not set roleOrgIds for empty array', () => {
+    const params = new URLSearchParams();
+    applyProductSelectorScopeParams('org1', params, [], '');
+    expect(params.has('roleOrgIds')).toBe(false);
+  });
+
+  it('does not set roleOrgIds for null', () => {
+    const params = new URLSearchParams();
+    applyProductSelectorScopeParams('org1', params, null, '');
+    expect(params.has('roleOrgIds')).toBe(false);
+  });
+});
+
+describe('getSelectorPlaceholderLabel — edge cases', () => {
+  it('returns count for multi with exactly 1 item', () => {
+    expect(getSelectorPlaceholderLabel(true, [{ id: '1' }], '', '')).toBe('1 selected');
+  });
+
+  it('returns count for multi with many items', () => {
+    const items = Array.from({ length: 10 }, (_, i) => ({ id: String(i) }));
+    expect(getSelectorPlaceholderLabel(true, items, '', '')).toBe('10 selected');
+  });
+
+  it('returns displayText in single mode even with label', () => {
+    expect(getSelectorPlaceholderLabel(false, [], 'MyLabel', 'Displayed')).toBe('Displayed');
+  });
+});
+
+describe('getSelectedItems — edge cases', () => {
+  it('returns single item with empty name when displayValue is empty but value is set', () => {
+    const result = getSelectedItems(false, [], 'v1', '');
+    expect(result).toEqual([{ id: 'v1', name: '' }]);
+  });
+
+  it('returns empty selected array in multi mode with no value or selected', () => {
+    expect(getSelectedItems(true, [], '', '')).toEqual([]);
+  });
+
+  it('preserves selected array reference in multi mode with value', () => {
+    const sel = [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }];
+    const result = getSelectedItems(true, sel, 'a,b', 'A | B');
+    expect(result).toBe(sel);
+  });
 });

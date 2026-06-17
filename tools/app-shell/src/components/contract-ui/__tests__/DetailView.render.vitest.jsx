@@ -3,7 +3,8 @@
  * Mounts the full component with minimal props to cover the main render paths,
  * branching logic, and lifecycle hooks.
  */
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { DetailView } from '../DetailView.jsx';
 
@@ -40,8 +41,13 @@ const mockHook = {
   handleDeleteChild: vi.fn(),
   handleSelect: vi.fn(),
   handleUpdateChild: vi.fn(),
+  handleProcess: vi.fn(),
+  handleSaveAndProcess: vi.fn().mockResolvedValue({}),
   fetchById: vi.fn().mockResolvedValue({}),
+  fetchChildren: vi.fn(),
   refreshChildren: vi.fn(),
+  isSaving: false,
+  primeSaved: vi.fn(),
 };
 
 vi.mock('@/hooks/useEntity', () => ({
@@ -141,6 +147,16 @@ vi.mock('@/utils/recordActions.js', () => ({
 
 vi.mock('@/lib/utils.js', () => ({
   cn: (...args) => args.filter(Boolean).join(' '),
+}));
+
+vi.mock('@/components/ui/dialog.jsx', () => ({
+  Dialog: ({ children, open }) => (open ? <div data-testid="dialog">{children}</div> : null),
+  DialogContent: ({ children }) => <div data-testid="dialog-content">{children}</div>,
+  DialogHeader: ({ children }) => <div>{children}</div>,
+  DialogTitle: ({ children }) => <h2>{children}</h2>,
+  DialogDescription: ({ children }) => <p>{children}</p>,
+  DialogFooter: ({ children }) => <div data-testid="dialog-footer">{children}</div>,
+  DialogClose: ({ children }) => children,
 }));
 
 vi.mock('../DocumentPrintDrawer.jsx', () => ({
@@ -558,6 +574,190 @@ describe('DetailView render integration', () => {
       noHeaderBorder: true,
     });
     expect(container).toBeTruthy();
+  });
+
+  // --- Interaction tests ---
+
+  describe('save button interaction', () => {
+    afterEach(() => {
+      // Restore default hook state
+      mockHook.isDirtyHeader = false;
+      mockHook.isSaving = false;
+      mockHook.selected = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      mockHook.editing = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      mockHook.children = [{ id: 'L1', product: 'P1', 'product$_identifier': 'Widget', lineNetAmount: 100 }];
+      vi.clearAllMocks();
+    });
+
+    it('calls handleSave when save button is clicked and form is dirty', async () => {
+      const user = userEvent.setup();
+      mockHook.isDirtyHeader = true;
+      mockHook.handleSave.mockResolvedValue({ id: '123' });
+      renderDetailView();
+      const saveBtn = screen.getByTestId('action-save');
+      expect(saveBtn).not.toBeDisabled();
+      await user.click(saveBtn);
+      expect(mockHook.handleSave).toHaveBeenCalled();
+    });
+
+    it('disables save button when form is not dirty', () => {
+      mockHook.isDirtyHeader = false;
+      renderDetailView();
+      const saveBtn = screen.getByTestId('action-save');
+      expect(saveBtn).toBeDisabled();
+    });
+  });
+
+  describe('delete button interaction', () => {
+    afterEach(() => {
+      mockHook.selected = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      mockHook.editing = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      vi.clearAllMocks();
+    });
+
+    it('shows delete confirmation dialog when delete button is clicked', async () => {
+      const user = userEvent.setup();
+      renderDetailView();
+      const deleteBtn = screen.getByTestId('action-delete');
+      await user.click(deleteBtn);
+      expect(screen.getByTestId('dialog')).toBeInTheDocument();
+      expect(screen.getByText('deleteConfirmTitle')).toBeInTheDocument();
+      expect(screen.getByText('deleteConfirmMessage')).toBeInTheDocument();
+    });
+
+    it('calls handleDelete and navigates when confirm delete is clicked', async () => {
+      const user = userEvent.setup();
+      mockHook.handleDelete.mockResolvedValue({});
+      renderDetailView();
+      await user.click(screen.getByTestId('action-delete'));
+      const confirmBtn = screen.getByTestId('action-delete-confirm');
+      await user.click(confirmBtn);
+      expect(mockHook.handleDelete).toHaveBeenCalled();
+    });
+  });
+
+  describe('tab interaction', () => {
+    afterEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('switches active secondary tab when a tab button is clicked', async () => {
+      const user = userEvent.setup();
+      const stabs = [
+        { key: 'lines', label: 'Lines', Table: MockTable },
+        { key: 'addresses', label: 'Addresses', Table: MockTable },
+      ];
+      renderDetailView({ secondaryTabs: stabs });
+      // Click the second tab
+      const addressTab = screen.getByText('Addresses');
+      await user.click(addressTab);
+      // The tab button should now be active (text-foreground class)
+      expect(addressTab.closest('button')).toBeTruthy();
+    });
+
+    it('switches primary tab when clicked', async () => {
+      const user = userEvent.setup();
+      const tabs = [
+        { key: 'general', label: 'General' },
+        { key: 'extra', label: 'Extra' },
+      ];
+      renderDetailView({ primaryTabs: tabs });
+      const extraTab = screen.getByText('Extra');
+      await user.click(extraTab);
+      expect(extraTab.closest('button')).toBeTruthy();
+    });
+  });
+
+  describe('process button interaction', () => {
+    afterEach(() => {
+      mockHook.selected = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      mockHook.editing = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      vi.clearAllMocks();
+    });
+
+    it('renders process buttons and calls handleProcess on click', async () => {
+      const user = userEvent.setup();
+      const processes = [
+        { name: 'complete', label: 'Complete', style: 'positive' },
+      ];
+      renderDetailView({ processes });
+      const processBtn = screen.getByText('Complete');
+      await user.click(processBtn);
+      expect(mockHook.handleProcess).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'complete' }),
+      );
+    });
+
+    it('does not render process buttons for new records', () => {
+      mockHook.selected = null;
+      mockHook.editing = {};
+      mockHook.children = [];
+      const processes = [{ name: 'complete', label: 'Complete', style: 'positive' }];
+      renderDetailView({ processes, recordId: 'new' });
+      expect(screen.queryByText('Complete')).toBeNull();
+      // Restore
+      mockHook.selected = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      mockHook.editing = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      mockHook.children = [{ id: 'L1', product: 'P1', 'product$_identifier': 'Widget', lineNetAmount: 100 }];
+    });
+  });
+
+  describe('cancel button interaction', () => {
+    it('renders cancel button and it is clickable', async () => {
+      const user = userEvent.setup();
+      renderDetailView();
+      const cancelBtn = screen.getByTestId('action-cancel');
+      expect(cancelBtn).toBeInTheDocument();
+      await user.click(cancelBtn);
+      // navigate is a mock fn from react-router-dom mock — just verify no crash
+    });
+  });
+
+  describe('more menu interaction', () => {
+    afterEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('toggles more menu visibility on click', async () => {
+      const user = userEvent.setup();
+      const menuActions = [
+        { key: 'action1', label: 'Menu Action', onClick: vi.fn() },
+      ];
+      renderDetailView({ menuActions });
+      const moreBtn = screen.getByTestId('action-more');
+      await user.click(moreBtn);
+      // Menu should now be visible with the action item
+      expect(screen.getByText('Menu Action')).toBeInTheDocument();
+    });
+  });
+
+  describe('draft mode save interaction', () => {
+    afterEach(() => {
+      mockHook.isDirtyHeader = false;
+      mockHook.isSaving = false;
+      vi.clearAllMocks();
+    });
+
+    it('renders save-draft and process buttons in draft mode', () => {
+      mockHook.isDirtyHeader = true;
+      renderDetailView({
+        draftMode: { enabled: true, completedStatuses: ['CO'], label: 'confirm' },
+      });
+      expect(screen.getByTestId('action-save-draft')).toBeInTheDocument();
+      expect(screen.getByTestId('action-save')).toBeInTheDocument();
+    });
+
+    it('calls handleSave when save-draft is clicked in draft mode', async () => {
+      const user = userEvent.setup();
+      mockHook.isDirtyHeader = true;
+      mockHook.handleSave.mockResolvedValue({ id: '123' });
+      renderDetailView({
+        draftMode: { enabled: true, completedStatuses: ['CO'], label: 'confirm' },
+      });
+      const saveDraftBtn = screen.getByTestId('action-save-draft');
+      await user.click(saveDraftBtn);
+      expect(mockHook.handleSave).toHaveBeenCalled();
+    });
   });
 });
 

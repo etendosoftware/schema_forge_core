@@ -708,5 +708,417 @@ describe('useEntity helpers', () => {
       showSaveSuccessToast(true, true, (k) => k);
       expect(toast.success).not.toHaveBeenCalled();
     });
+
+    it('shows recordSaved for existing record', () => {
+      toast.success.mockClear();
+      showSaveSuccessToast(false, false, (k) => k);
+      expect(toast.success).toHaveBeenCalledWith('recordSaved');
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // applyContactNameDefaults — additional branches
+  // -------------------------------------------------------------------
+  describe('applyContactNameDefaults — edge cases', () => {
+    it('derives name from source firstName only', () => {
+      const payload = {};
+      applyContactNameDefaults(payload, { firstName: 'Jane' });
+      expect(payload.name).toBe('Jane');
+      expect(payload.username).toBe('Jane');
+    });
+
+    it('derives name from source lastName only', () => {
+      const payload = {};
+      applyContactNameDefaults(payload, { lastName: 'Doe' });
+      expect(payload.name).toBe('Doe');
+      expect(payload.username).toBe('Doe');
+    });
+
+    it('does not set username when existing name is present', () => {
+      const payload = { name: 'Existing', username: 'ExistingUser' };
+      applyContactNameDefaults(payload, { firstName: 'A', lastName: 'B' });
+      expect(payload.name).toBe('Existing');
+      expect(payload.username).toBe('ExistingUser');
+    });
+
+    it('does nothing when neither payload nor source have names', () => {
+      const payload = {};
+      applyContactNameDefaults(payload, {});
+      expect(payload.name).toBeUndefined();
+      expect(payload.username).toBeUndefined();
+    });
+
+    it('uses payload firstName with source lastName when payload has no lastName', () => {
+      const payload = { firstName: 'PayloadFirst' };
+      applyContactNameDefaults(payload, { firstName: 'SourceFirst', lastName: 'SourceLast' });
+      expect(payload.name).toBe('PayloadFirst SourceLast');
+    });
+
+    it('mixes payload firstName with source lastName', () => {
+      const payload = { firstName: 'John' };
+      applyContactNameDefaults(payload, { lastName: 'Smith' });
+      expect(payload.name).toBe('John Smith');
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // parseCriteriaInto — additional branches
+  // -------------------------------------------------------------------
+  describe('parseCriteriaInto — edge cases', () => {
+    it('handles empty JSON object', () => {
+      const out = [];
+      parseCriteriaInto('{}', out);
+      expect(out).toHaveLength(1);
+      expect(out[0]).toEqual({});
+    });
+
+    it('handles empty JSON array', () => {
+      const out = [];
+      parseCriteriaInto('[]', out);
+      expect(out).toHaveLength(0);
+    });
+
+    it('handles nested criteria object', () => {
+      const out = [];
+      parseCriteriaInto('{"_constructor":"AdvancedCriteria","operator":"and","criteria":[]}', out);
+      expect(out).toHaveLength(1);
+      expect(out[0]._constructor).toBe('AdvancedCriteria');
+    });
+
+    it('handles empty string', () => {
+      const out = [];
+      parseCriteriaInto('', out);
+      expect(out).toHaveLength(0);
+    });
+
+    it('parses null JSON literal (pushes null)', () => {
+      const out = [];
+      parseCriteriaInto(null, out);
+      // JSON.parse(null) returns null, which gets pushed as a single element
+      expect(out).toHaveLength(1);
+      expect(out[0]).toBeNull();
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // normalizeDefaultValue — additional branches
+  // -------------------------------------------------------------------
+  describe('normalizeDefaultValue — edge cases', () => {
+    it('converts dd-MM-yyyy format at boundaries', () => {
+      const n = {};
+      normalizeDefaultValue('01-01-2000', n, 'd');
+      expect(n.d).toBe('2000-01-01');
+    });
+
+    it('does not convert yyyy-MM-dd format (not dd-MM-yyyy)', () => {
+      const n = {};
+      normalizeDefaultValue('2024-12-25', n, 'd');
+      expect(n.d).toBeUndefined();
+    });
+
+    it('strips quotes from single-char value', () => {
+      const n = {};
+      normalizeDefaultValue("'Y'", n, 'flag');
+      expect(n.flag).toBe('Y');
+    });
+
+    it('handles single-quoted empty string', () => {
+      const n = {};
+      normalizeDefaultValue("''", n, 'val');
+      expect(n.val).toBe('');
+    });
+
+    it('converts integer zero to string', () => {
+      const n = {};
+      normalizeDefaultValue(0, n, 'priority');
+      expect(n.priority).toBe('0');
+    });
+
+    it('converts negative integer to string', () => {
+      const n = {};
+      normalizeDefaultValue(-3, n, 'offset');
+      expect(n.offset).toBe('-3');
+    });
+
+    it('does not convert boolean values', () => {
+      const n = {};
+      normalizeDefaultValue(true, n, 'active');
+      expect(n.active).toBeUndefined();
+    });
+
+    it('does not convert null', () => {
+      const n = {};
+      normalizeDefaultValue(null, n, 'val');
+      expect(n.val).toBeUndefined();
+    });
+
+    it('does not convert undefined', () => {
+      const n = {};
+      normalizeDefaultValue(undefined, n, 'val');
+      expect(n.val).toBeUndefined();
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // shouldSkipPayloadField — additional branches
+  // -------------------------------------------------------------------
+  describe('shouldSkipPayloadField — additional branches', () => {
+    const emptyRefs = { current: new Set() };
+    const emptyReq = new Set();
+
+    it('skips legacy FK pattern fields (e.g. adOrg_ID)', () => {
+      // The regex ^[a-zA-Z]+_[A-Z]{2,4}$ matches single-word prefix + uppercase suffix
+      expect(shouldSkipPayloadField('adOrg_ID', 'some-value', emptyRefs, emptyRefs, emptyReq, false, {})).toBe(true);
+    });
+
+    it('skips fields matching legacy FK pattern (e.g. language_ID)', () => {
+      expect(shouldSkipPayloadField('language_ID', 'val', emptyRefs, emptyRefs, emptyReq, false, {})).toBe(true);
+    });
+
+    it('does not skip regular field names that look similar', () => {
+      expect(shouldSkipPayloadField('description', 'text', emptyRefs, emptyRefs, emptyReq, false, {})).toBe(false);
+    });
+
+    it('skips undefined values', () => {
+      expect(shouldSkipPayloadField('name', undefined, emptyRefs, emptyRefs, emptyReq, false, {})).toBe(true);
+    });
+
+    it('does not skip contacts billing fields when not contacts create', () => {
+      expect(shouldSkipPayloadField('account', 'val', emptyRefs, emptyRefs, emptyReq, false, {})).toBe(false);
+    });
+
+    it('skips contacts account field on create', () => {
+      expect(shouldSkipPayloadField('account', 'val', emptyRefs, emptyRefs, emptyReq, true, {})).toBe(true);
+    });
+
+    it('skips contacts customerBlocking field on create', () => {
+      expect(shouldSkipPayloadField('customerBlocking', 'val', emptyRefs, emptyRefs, emptyReq, true, {})).toBe(true);
+    });
+
+    it('skips contacts purchasePricelist field on create', () => {
+      expect(shouldSkipPayloadField('purchasePricelist', 'val', emptyRefs, emptyRefs, emptyReq, true, {})).toBe(true);
+    });
+
+    it('does not skip SmartClient ref when no identifier companion', () => {
+      expect(shouldSkipPayloadField('bp', '100_BusinessPartner', emptyRefs, emptyRefs, emptyReq, false, {})).toBe(false);
+    });
+
+    it('does not skip valid UUID even with identifier companion', () => {
+      const editing = { 'bp$_identifier': 'Acme' };
+      expect(shouldSkipPayloadField('bp', 'A1B2C3D4E5F6', emptyRefs, emptyRefs, emptyReq, false, editing)).toBe(false);
+    });
+
+    it('skips 4-digit numeric FK from backend defaults', () => {
+      const bRef = { current: new Set(['warehouse']) };
+      expect(shouldSkipPayloadField('warehouse', '1234', bRef, { current: new Set() }, new Set(), false, {})).toBe(true);
+    });
+
+    it('does not skip 2-digit numeric value (too short for FK pattern)', () => {
+      const bRef = { current: new Set(['x']) };
+      expect(shouldSkipPayloadField('x', '12', bRef, { current: new Set() }, new Set(), false, {})).toBe(false);
+    });
+
+    it('does not skip 10-digit numeric value (too long for FK pattern)', () => {
+      const bRef = { current: new Set(['x']) };
+      expect(shouldSkipPayloadField('x', '1234567890', bRef, { current: new Set() }, new Set(), false, {})).toBe(false);
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // getReadOnly — additional branches
+  // -------------------------------------------------------------------
+  describe('getReadOnly — additional branches', () => {
+    it('returns false for undefined readOnly and no logic', () => {
+      const isRO = getReadOnly({});
+      expect(isRO({})).toBe(false);
+    });
+
+    it('evaluates readOnlyLogic with different editing state', () => {
+      const editing = { documentStatus: 'DR', processed: false };
+      const isRO = getReadOnly(editing);
+      expect(isRO({ readOnlyLogic: (row) => row.processed })).toBe(false);
+    });
+
+    it('returns true for readOnly true even with readOnlyLogic', () => {
+      const isRO = getReadOnly({});
+      expect(isRO({ readOnly: true, readOnlyLogic: () => false })).toBe(true);
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // getVisible — additional branches
+  // -------------------------------------------------------------------
+  describe('getVisible — additional branches', () => {
+    it('handles displayLogic as non-function (returns true)', () => {
+      const isVis = getVisible({});
+      expect(isVis({ displayLogic: 'not-a-function' })).toBe(true);
+    });
+
+    it('handles undefined editing', () => {
+      const isVis = getVisible(undefined);
+      expect(isVis({ displayLogic: (row) => !!row })).toBe(true);
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // buildPatchPayload — additional branches
+  // -------------------------------------------------------------------
+  describe('buildPatchPayload — additional branches', () => {
+    it('detects changes in boolean values', () => {
+      const editing = { id: '1', active: false };
+      const selected = { id: '1', active: true };
+      const payload = buildPatchPayload(editing, selected, 'order');
+      expect(payload).toEqual({ active: false });
+    });
+
+    it('detects changes from null to value', () => {
+      const editing = { id: '1', name: 'New' };
+      const selected = { id: '1', name: null };
+      const payload = buildPatchPayload(editing, selected, 'order');
+      expect(payload).toEqual({ name: 'New' });
+    });
+
+    it('detects changes from value to null', () => {
+      const editing = { id: '1', name: null };
+      const selected = { id: '1', name: 'Old' };
+      const payload = buildPatchPayload(editing, selected, 'order');
+      expect(payload).toEqual({ name: null });
+    });
+
+    it('includes multiple changed fields', () => {
+      const editing = { id: '1', name: 'New', status: 'CO', amount: 100 };
+      const selected = { id: '1', name: 'Old', status: 'DR', amount: 100 };
+      const payload = buildPatchPayload(editing, selected, 'order');
+      expect(payload).toEqual({ name: 'New', status: 'CO' });
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // buildCreatePayload — additional branches
+  // -------------------------------------------------------------------
+  describe('buildCreatePayload — additional branches', () => {
+    it('skips null and empty fields', () => {
+      const editing = { id: '1', name: 'Test', empty: '', nullish: null };
+      const payload = {};
+      buildCreatePayload(editing, { current: new Set() }, { current: new Set() }, new Set(), false, payload);
+      expect(payload.name).toBe('Test');
+      expect(payload.empty).toBeUndefined();
+      expect(payload.nullish).toBeUndefined();
+    });
+
+    it('skips NEO sequence placeholders', () => {
+      const editing = { id: '1', docNo: '<10000000>', name: 'Test' };
+      const payload = {};
+      buildCreatePayload(editing, { current: new Set() }, { current: new Set() }, new Set(), false, payload);
+      expect(payload.docNo).toBeUndefined();
+      expect(payload.name).toBe('Test');
+    });
+
+    it('includes required fields even if they look like numeric FK', () => {
+      const editing = { id: '1', warehouse: '181' };
+      const payload = {};
+      buildCreatePayload(
+        editing,
+        { current: new Set(['warehouse']) },
+        { current: new Set() },
+        new Set(['warehouse']),
+        false,
+        payload
+      );
+      expect(payload.warehouse).toBe('181');
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // handleSaveErrorResponse — additional branches
+  // -------------------------------------------------------------------
+  describe('handleSaveErrorResponse — additional branches', () => {
+    it('calls toast.error on generic errors', async () => {
+      toast.error.mockClear();
+      const res = {
+        clone: () => ({
+          json: async () => ({ error: { message: 'Server failed' } }),
+        }),
+        json: async () => ({ error: { message: 'Server failed' } }),
+        status: 500,
+      };
+      const uiFn = (key) => key;
+      const setFieldErrors = vi.fn();
+      const setSaveError = vi.fn();
+      await handleSaveErrorResponse(res, uiFn, setFieldErrors, setSaveError);
+      expect(toast.error).toHaveBeenCalled();
+    });
+
+    it('handles clone().json() throwing (falls back to legacy extractor)', async () => {
+      const res = {
+        clone: () => ({
+          json: async () => { throw new Error('clone parse fail'); },
+        }),
+        json: async () => ({ error: { message: 'Fallback error' } }),
+        status: 400,
+      };
+      const uiFn = (key) => key;
+      const setFieldErrors = vi.fn();
+      const setSaveError = vi.fn();
+      await handleSaveErrorResponse(res, uiFn, setFieldErrors, setSaveError);
+      expect(setFieldErrors).not.toHaveBeenCalled();
+      expect(setSaveError).toHaveBeenCalled();
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // reportMissingRequiredFields — additional branches
+  // -------------------------------------------------------------------
+  describe('reportMissingRequiredFields — additional branches', () => {
+    it('shows toast.error with the missing fields message', () => {
+      toast.error.mockClear();
+      const uiFn = (key) => key;
+      reportMissingRequiredFields(['field1'], uiFn, vi.fn(), vi.fn(), vi.fn());
+      expect(toast.error).toHaveBeenCalledWith('requiredFieldsMissing');
+    });
+
+    it('handles single missing field', () => {
+      const setFieldErrors = vi.fn();
+      reportMissingRequiredFields(['onlyOne'], (k) => k, setFieldErrors, vi.fn(), vi.fn());
+      expect(setFieldErrors).toHaveBeenCalledWith({ onlyOne: 'fieldRequired' });
+    });
+
+    it('handles many missing fields', () => {
+      const setFieldErrors = vi.fn();
+      reportMissingRequiredFields(['a', 'b', 'c', 'd'], (k) => k, setFieldErrors, vi.fn(), vi.fn());
+      expect(setFieldErrors).toHaveBeenCalledWith({
+        a: 'fieldRequired', b: 'fieldRequired', c: 'fieldRequired', d: 'fieldRequired',
+      });
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // getUrl — additional branches
+  // -------------------------------------------------------------------
+  describe('getUrl — additional branches', () => {
+    it('handles complex base URL', () => {
+      expect(getUrl(true, '/etendo/sws/neo', 'header', {})).toBe('/etendo/sws/neo/header');
+    });
+
+    it('handles entity with dashes', () => {
+      expect(getUrl(false, '/api', 'sales-order', { id: 'abc-123' })).toBe('/api/sales-order/abc-123');
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // shouldRefetchAfterSave — additional branches
+  // -------------------------------------------------------------------
+  describe('shouldRefetchAfterSave — additional branches', () => {
+    it('returns falsy when saved is undefined', () => {
+      expect(shouldRefetchAfterSave(undefined, true)).toBeFalsy();
+    });
+
+    it('returns falsy when saved.id is empty string', () => {
+      expect(shouldRefetchAfterSave({ id: '' }, true)).toBeFalsy();
+    });
+
+    it('returns true with non-empty id and refetchAfterSave', () => {
+      expect(shouldRefetchAfterSave({ id: 'uuid-123' }, true)).toBe(true);
+    });
   });
 });

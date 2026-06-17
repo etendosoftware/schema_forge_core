@@ -4,6 +4,7 @@ import {
   autoSimplifyEntityName,
   WINDOW_KEY_ORDER,
   reorderKeys,
+  resolveCurated,
 } from '../src/resolve-curated.js';
 
 // ---------------------------------------------------------------------------
@@ -163,5 +164,277 @@ describe('reorderKeys', () => {
     const obj = { zebra: 1, apple: 2 };
     const result = reorderKeys(obj, ['id', 'name']);
     assert.deepEqual(Object.keys(result), ['apple', 'zebra']);
+  });
+
+  it('handles duplicate keys in canonical order gracefully', () => {
+    const obj = { a: 1, b: 2 };
+    const result = reorderKeys(obj, ['a', 'a', 'b']);
+    assert.deepEqual(Object.keys(result), ['a', 'b']);
+    assert.deepEqual(result, { a: 1, b: 2 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveCurated — integration tests
+// ---------------------------------------------------------------------------
+
+describe('resolveCurated', () => {
+  const minimalSchema = {
+    window: { id: 'W1', name: 'Test Window' },
+    entities: [{
+      name: 'header',
+      tableName: 'C_Order',
+      tabId: 'T1',
+      tabName: 'Header',
+      fields: [
+        { name: 'name', columnName: 'Name', label: 'Name', type: 'string', visibility: 'editable', mandatory: true },
+        { name: 'status', columnName: 'Status', label: 'Status', type: 'string', visibility: 'readOnly' },
+        { name: 'created', columnName: 'Created', label: 'Created', type: 'date', visibility: 'system' },
+      ],
+    }],
+  };
+  const minimalRules = { rules: [] };
+  const minimalDecisions = { _version: 3, entities: {}, rules: {}, window: {} };
+
+  it('resolves minimal schema with empty decisions', async () => {
+    const result = await resolveCurated(minimalSchema, minimalRules, minimalDecisions);
+    assert.ok(result.schema);
+    assert.ok(result.rules);
+    assert.equal(result.schema.entities.length, 1);
+    assert.equal(result.schema.entities[0].name, 'header');
+    assert.ok(result.schema.window.id);
+  });
+
+  it('infers category from window name', async () => {
+    const schema = {
+      window: { id: 'W2', name: 'Sales Invoice' },
+      entities: [],
+    };
+    const result = await resolveCurated(schema, minimalRules, minimalDecisions);
+    assert.equal(result.schema.window.category, 'sales');
+  });
+
+  it('infers purchase category', async () => {
+    const schema = {
+      window: { id: 'W3', name: 'Purchase Order' },
+      entities: [],
+    };
+    const result = await resolveCurated(schema, minimalRules, minimalDecisions);
+    assert.equal(result.schema.window.category, 'purchases');
+  });
+
+  it('infers inventory category', async () => {
+    const schema = {
+      window: { id: 'W4', name: 'Warehouse' },
+      entities: [],
+    };
+    const result = await resolveCurated(schema, minimalRules, minimalDecisions);
+    assert.equal(result.schema.window.category, 'inventory');
+  });
+
+  it('infers accounting category', async () => {
+    const schema = {
+      window: { id: 'W5', name: 'Journal Entry' },
+      entities: [],
+    };
+    const result = await resolveCurated(schema, minimalRules, minimalDecisions);
+    assert.equal(result.schema.window.category, 'accounting');
+  });
+
+  it('infers master category for Product', async () => {
+    const schema = {
+      window: { id: 'W6', name: 'Product' },
+      entities: [],
+    };
+    const result = await resolveCurated(schema, minimalRules, minimalDecisions);
+    assert.equal(result.schema.window.category, 'master');
+  });
+
+  it('infers project category', async () => {
+    const schema = {
+      window: { id: 'W7', name: 'Project' },
+      entities: [],
+    };
+    const result = await resolveCurated(schema, minimalRules, minimalDecisions);
+    assert.equal(result.schema.window.category, 'project');
+  });
+
+  it('defaults to general category for unknown names', async () => {
+    const schema = {
+      window: { id: 'W8', name: 'Configuration' },
+      entities: [],
+    };
+    const result = await resolveCurated(schema, minimalRules, minimalDecisions);
+    assert.equal(result.schema.window.category, 'general');
+  });
+
+  it('uses category from window decisions if provided', async () => {
+    const decisions = { _version: 3, entities: {}, rules: {}, window: { category: 'finance' } };
+    const result = await resolveCurated(minimalSchema, minimalRules, decisions);
+    assert.equal(result.schema.window.category, 'finance');
+  });
+
+  it('applies discardPatterns to fields', async () => {
+    const decisions = {
+      _version: 3,
+      discardPatterns: ['Created*'],
+      entities: {},
+      rules: {},
+      window: {},
+    };
+    const result = await resolveCurated(minimalSchema, minimalRules, decisions);
+    const createdField = result.schema.entities[0].fields.find(f => f.name === 'created');
+    assert.equal(createdField.visibility, 'discarded');
+  });
+
+  it('excludes entities with exclude: true', async () => {
+    const schema = {
+      window: { id: 'W9', name: 'Test' },
+      entities: [
+        { name: 'header', tableName: 'T1', fields: [] },
+        { name: 'lines', tableName: 'T2', fields: [] },
+      ],
+    };
+    const decisions = {
+      _version: 3,
+      entities: { lines: { exclude: true } },
+      rules: {},
+      window: {},
+    };
+    const result = await resolveCurated(schema, minimalRules, decisions);
+    assert.equal(result.schema.entities.length, 1);
+    assert.equal(result.schema.entities[0].name, 'header');
+  });
+
+  it('resolves rules from decisions when present', async () => {
+    const decisions = {
+      _version: 3,
+      entities: {},
+      rules: {
+        'SL_Amt': { type: 'callout', decision: 'Keep', description: 'Amounts' },
+      },
+      window: {},
+    };
+    const result = await resolveCurated(minimalSchema, minimalRules, decisions);
+    assert.equal(result.rules.length, 1);
+    assert.equal(result.rules[0].name, 'SL_Amt');
+    assert.equal(result.rules[0].decision, 'Keep');
+  });
+
+  it('applies window name override from decisions', async () => {
+    const decisions = {
+      _version: 3,
+      entities: {},
+      rules: {},
+      window: { name: 'Custom Name' },
+    };
+    const result = await resolveCurated(minimalSchema, minimalRules, decisions);
+    assert.equal(result.schema.window.name, 'Custom Name');
+  });
+
+  it('sets form=true for editable fields by default', async () => {
+    const result = await resolveCurated(minimalSchema, minimalRules, minimalDecisions);
+    const nameField = result.schema.entities[0].fields.find(f => f.name === 'name');
+    assert.equal(nameField.form, true);
+  });
+
+  it('sets form=false for system fields by default', async () => {
+    const result = await resolveCurated(minimalSchema, minimalRules, minimalDecisions);
+    const createdField = result.schema.entities[0].fields.find(f => f.name === 'created');
+    assert.equal(createdField.form, false);
+  });
+
+  it('preserves mandatory as required', async () => {
+    const result = await resolveCurated(minimalSchema, minimalRules, minimalDecisions);
+    const nameField = result.schema.entities[0].fields.find(f => f.name === 'name');
+    assert.equal(nameField.required, true);
+    assert.equal(nameField.sourceRequired, true);
+  });
+
+  it('applies draftMode from window decisions', async () => {
+    const decisions = {
+      _version: 3,
+      entities: {},
+      rules: {},
+      window: {
+        draftMode: {
+          enabled: true,
+          processField: 'documentAction',
+          processValue: 'CO',
+          label: 'Complete',
+          completedStatuses: ['CO', 'CL'],
+        },
+      },
+    };
+    const result = await resolveCurated(minimalSchema, minimalRules, decisions);
+    const entity = result.schema.entities[0];
+    assert.ok(entity.draftMode);
+    assert.equal(entity.draftMode.enabled, true);
+    assert.deepEqual(entity.draftMode.completedStatuses, ['CO', 'CL']);
+  });
+
+  it('applies foreignKey reference derivation', async () => {
+    const schema = {
+      window: { id: 'W10', name: 'Test' },
+      entities: [{
+        name: 'header',
+        tableName: 'C_Order',
+        tabId: 'T1',
+        tabName: 'Header',
+        fields: [{
+          name: 'businessPartner',
+          columnName: 'C_BPartner_ID',
+          label: 'Business Partner',
+          type: 'foreignKey',
+          visibility: 'editable',
+          reference: { type: 'TableDir', targetTable: 'C_BPartner' },
+        }],
+      }],
+    };
+    const result = await resolveCurated(schema, minimalRules, minimalDecisions);
+    const bpField = result.schema.entities[0].fields[0];
+    assert.equal(bpField.reference, 'BPartner');
+    assert.equal(bpField.inputMode, 'selector');
+  });
+
+  it('applies entity name simplification', async () => {
+    const schema = {
+      window: { id: 'W11', name: 'Test' },
+      entities: [{
+        name: 'cOrderLine',
+        tableName: 'C_OrderLine',
+        tabId: 'T2',
+        tabName: 'Lines',
+        fields: [],
+      }],
+    };
+    const result = await resolveCurated(schema, minimalRules, minimalDecisions);
+    assert.equal(result.schema.entities[0].name, 'orderLine');
+  });
+
+  it('appends virtual fields from decisions', async () => {
+    const decisions = {
+      _version: 3,
+      entities: {
+        header: {
+          virtualFields: [{
+            name: 'computed',
+            label: 'Computed',
+            type: 'number',
+            visibility: 'readOnly',
+            grid: true,
+            form: true,
+          }],
+          fields: {},
+        },
+      },
+      rules: {},
+      window: {},
+    };
+    const result = await resolveCurated(minimalSchema, minimalRules, decisions);
+    const virtualField = result.schema.entities[0].fields.find(f => f.name === 'computed');
+    assert.ok(virtualField);
+    assert.equal(virtualField.virtual, true);
+    assert.equal(virtualField.type, 'number');
   });
 });

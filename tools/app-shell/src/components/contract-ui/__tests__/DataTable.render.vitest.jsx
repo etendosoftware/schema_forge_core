@@ -680,6 +680,158 @@ describe('DataTable — render coverage', () => {
     });
   });
 
+  // --- Click interactions on hover row action buttons ---
+
+  describe('hover row action button clicks', () => {
+    it('calls onSaveRow when save icon is clicked in editing mode', async () => {
+      const onSaveRow = vi.fn();
+      const onCancelEdit = vi.fn();
+      render(
+        <DataTable
+          columns={COLUMNS}
+          data={DATA}
+          hoverRowActions
+          onDeleteRow={vi.fn()}
+          editingRowId="r1"
+          onSaveRow={onSaveRow}
+          onCancelEdit={onCancelEdit}
+          selectable={false}
+        />,
+      );
+      const saveBtn = screen.getByLabelText('save');
+      await act(async () => {
+        await userEvent.click(saveBtn);
+      });
+      expect(onSaveRow).toHaveBeenCalled();
+    });
+
+    it('calls onCancelEdit when cancel icon is clicked in editing mode', async () => {
+      const onCancelEdit = vi.fn();
+      render(
+        <DataTable
+          columns={COLUMNS}
+          data={DATA}
+          hoverRowActions
+          onDeleteRow={vi.fn()}
+          editingRowId="r1"
+          onSaveRow={vi.fn()}
+          onCancelEdit={onCancelEdit}
+          selectable={false}
+        />,
+      );
+      const cancelBtn = screen.getByLabelText('cancel');
+      await act(async () => {
+        await userEvent.click(cancelBtn);
+      });
+      expect(onCancelEdit).toHaveBeenCalled();
+    });
+
+    it('calls onDeleteRow when delete icon is clicked on a non-editing row', async () => {
+      const onDeleteRow = vi.fn().mockResolvedValue({});
+      render(
+        <DataTable
+          columns={COLUMNS}
+          data={DATA}
+          hoverRowActions
+          onDeleteRow={onDeleteRow}
+          selectable={false}
+        />,
+      );
+      const deleteButtons = screen.getAllByTestId(/^row-delete-/);
+      await act(async () => {
+        await userEvent.click(deleteButtons[0]);
+      });
+      expect(onDeleteRow).toHaveBeenCalledWith(expect.objectContaining({ id: 'r1' }));
+    });
+  });
+
+  // --- Clone button click ---
+
+  describe('clone button click', () => {
+    it('calls onCloneRow with row data when clone button is clicked', async () => {
+      const onCloneRow = vi.fn();
+      render(
+        <DataTable columns={COLUMNS} data={DATA} onCloneRow={onCloneRow} selectable={false} />,
+      );
+      const cloneButtons = screen.getAllByLabelText('cloneOrderBtn');
+      await act(async () => {
+        await userEvent.click(cloneButtons[0]);
+      });
+      expect(onCloneRow).toHaveBeenCalledWith(expect.objectContaining({ id: 'r1' }));
+    });
+  });
+
+  // --- Deselect all via select-all toggle ---
+
+  describe('select-all deselect', () => {
+    it('deselects all rows when select-all is clicked twice', async () => {
+      const onSelectionChange = vi.fn();
+      render(
+        <DataTable columns={COLUMNS} data={DATA} onSelectionChange={onSelectionChange} />,
+      );
+      const checkboxes = screen.getAllByRole('checkbox');
+      const selectAll = checkboxes[0];
+      // Select all
+      await act(async () => {
+        await userEvent.click(selectAll);
+      });
+      // Deselect all
+      await act(async () => {
+        await userEvent.click(selectAll);
+      });
+      const lastCall = onSelectionChange.mock.calls[onSelectionChange.mock.calls.length - 1];
+      expect(lastCall[0]).toEqual([]);
+    });
+  });
+
+  // --- Boolean toggle switch click ---
+
+  describe('boolean toggle switch click', () => {
+    it('calls fetch to toggle boolean when switch is clicked', async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ response: { data: [{ id: 'bt1', active: false }] } }),
+      });
+      const cols = [{ key: 'active', label: 'Active', type: 'boolean', toggle: true }];
+      const rows = [{ id: 'bt1', active: true }];
+      render(
+        <DataTable
+          columns={cols}
+          data={rows}
+          selectable={false}
+          apiBaseUrl="/api"
+          entity="header"
+          token="tok"
+        />,
+      );
+      const toggle = screen.getByRole('switch');
+      await act(async () => {
+        await userEvent.click(toggle);
+      });
+      expect(globalThis.fetch).toHaveBeenCalled();
+      delete globalThis.fetch;
+    });
+  });
+
+  // --- Sort direction toggle ---
+
+  describe('sort direction toggle', () => {
+    it('shows descending indicator when sortDirection is desc', () => {
+      const cols = [{ key: 'name', label: 'Name', type: 'string' }];
+      render(
+        <DataTable
+          columns={cols}
+          data={[]}
+          onSort={vi.fn()}
+          sortColumn="name"
+          sortDirection="desc"
+          selectable={false}
+        />,
+      );
+      expect(screen.getByText('\u25BC')).toBeInTheDocument();
+    });
+  });
+
   // --- hideHeader mode (colgroup + hidden thead) ---
 
   describe('hideHeader mode', () => {

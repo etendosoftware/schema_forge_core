@@ -270,4 +270,167 @@ describe('AdvancedFilterBuilder — render', () => {
     // We can't easily check select options without opening the dropdown, but the component should render
     expect(screen.getByText('advancedFilterTitle')).toBeInTheDocument();
   });
+
+  it('calls onApply when Apply is clicked with complete conditions', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const onClose = vi.fn();
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'iContains', value: 'test' }],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} onApply={onApply} onClose={onClose} />);
+    const applyBtn = screen.getByText('advancedFilterApply').closest('button');
+    expect(applyBtn).not.toBeDisabled();
+    await user.click(applyBtn);
+    expect(onApply).toHaveBeenCalledTimes(1);
+    const calledWith = onApply.mock.calls[0][0];
+    expect(calledWith.rowOperator).toBe('and');
+    expect(calledWith.conditions).toHaveLength(1);
+    expect(calledWith.conditions[0].field).toBe('name');
+  });
+
+  it('calls onClose after apply', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const onClose = vi.fn();
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'iContains', value: 'test' }],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} onApply={onApply} onClose={onClose} />);
+    await user.click(screen.getByText('advancedFilterApply'));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call onApply when conditions are incomplete', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    render(<AdvancedFilterBuilder {...defaultProps} onApply={onApply} />);
+    const applyBtn = screen.getByText('advancedFilterApply').closest('button');
+    expect(applyBtn).toBeDisabled();
+    // Try clicking anyway (disabled button)
+    await user.click(applyBtn);
+    expect(onApply).not.toHaveBeenCalled();
+  });
+
+  it('clears conditions and calls onClear when clear is clicked', async () => {
+    const user = userEvent.setup();
+    const onClear = vi.fn();
+    const value = {
+      rowOperator: 'and',
+      conditions: [
+        { field: 'name', operator: 'iContains', value: 'test' },
+        { field: 'amount', operator: 'greaterThan', value: '50' },
+      ],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} onClear={onClear} />);
+    // Two conditions
+    expect(screen.getAllByRole('button', { name: /remove condition/i })).toHaveLength(2);
+    await user.click(screen.getByText('advancedFilterClear'));
+    expect(onClear).toHaveBeenCalledTimes(1);
+    // After clear, should reset to one empty row
+    expect(screen.getAllByRole('button', { name: /remove condition/i })).toHaveLength(1);
+  });
+
+  it('adds multiple rows in sequence', async () => {
+    const user = userEvent.setup();
+    render(<AdvancedFilterBuilder {...defaultProps} />);
+    const addBtn = screen.getByText('advancedFilterAddCondition');
+    await user.click(addBtn);
+    await user.click(addBtn);
+    await user.click(addBtn);
+    const removeBtns = screen.getAllByRole('button', { name: /remove condition/i });
+    expect(removeBtns).toHaveLength(4);
+  });
+
+  it('removes middle row and keeps others', async () => {
+    const user = userEvent.setup();
+    const value = {
+      rowOperator: 'and',
+      conditions: [
+        { field: 'name', operator: 'iContains', value: 'first' },
+        { field: 'amount', operator: 'greaterThan', value: '100' },
+        { field: 'status', operator: 'equals', value: 'DR' },
+      ],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    let removeBtns = screen.getAllByRole('button', { name: /remove condition/i });
+    expect(removeBtns).toHaveLength(3);
+    // Remove the middle row
+    await user.click(removeBtns[1]);
+    removeBtns = screen.getAllByRole('button', { name: /remove condition/i });
+    expect(removeBtns).toHaveLength(2);
+  });
+
+  it('renders with hasActiveFilter prop', () => {
+    render(<AdvancedFilterBuilder {...defaultProps} hasActiveFilter={true} />);
+    expect(screen.getByText('advancedFilterTitle')).toBeInTheDocument();
+  });
+
+  it('handles value with or rowOperator', () => {
+    const value = {
+      rowOperator: 'or',
+      conditions: [
+        { field: 'name', operator: 'iContains', value: 'a' },
+        { field: 'name', operator: 'iContains', value: 'b' },
+      ],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    expect(screen.getAllByRole('button', { name: /remove condition/i })).toHaveLength(2);
+  });
+
+  it('handles value with nullish operator (isNull)', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'isNull', value: null }],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    // isNull requires no value — apply should be enabled
+    const applyBtn = screen.getByText('advancedFilterApply').closest('button');
+    expect(applyBtn).not.toBeDisabled();
+  });
+
+  it('handles value with between operator', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: ['10', '20'] }],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    const applyBtn = screen.getByText('advancedFilterApply').closest('button');
+    expect(applyBtn).not.toBeDisabled();
+  });
+
+  it('disables apply when between has incomplete value', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: ['10', ''] }],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    const applyBtn = screen.getByText('advancedFilterApply').closest('button');
+    expect(applyBtn).toBeDisabled();
+  });
+
+  it('renders presets with delete buttons when onDeletePreset provided', () => {
+    render(
+      <AdvancedFilterBuilder
+        {...defaultProps}
+        presets={{ 'Filter A': {}, 'Filter B': {} }}
+        onApplyPreset={vi.fn()}
+        onSavePreset={vi.fn()}
+        onDeletePreset={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('filterPresetsButton')).toBeInTheDocument();
+  });
+
+  it('renders labelOverrides without crashing', () => {
+    render(
+      <AdvancedFilterBuilder
+        {...defaultProps}
+        labelOverrides={{ name: 'Custom Name Label' }}
+      />,
+    );
+    expect(screen.getByText('advancedFilterTitle')).toBeInTheDocument();
+  });
 });
