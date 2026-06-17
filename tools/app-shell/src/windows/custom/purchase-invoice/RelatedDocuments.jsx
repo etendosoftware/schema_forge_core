@@ -74,11 +74,12 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
         ? fetchById('purchase-order', 'header', orderId, token, apiBaseUrl).catch(() => null)
         : Promise.resolve(null);
       const backendReceipts = Array.isArray(data?.linkedReceipts) ? data.linkedReceipts : null;
+      const fallbackReceiptPromise = orderId
+        ? fetchByCriteria('goods-receipt', 'goodsReceipt', 'salesOrder', orderId, token, apiBaseUrl)
+        : Promise.resolve([]);
       const receiptPromise = backendReceipts !== null
         ? Promise.resolve(backendReceipts)
-        : orderId
-          ? fetchByCriteria('goods-receipt', 'goodsReceipt', 'salesOrder', orderId, token, apiBaseUrl)
-          : Promise.resolve([]);
+        : fallbackReceiptPromise;
       promise = Promise.all([orderPromise, receiptPromise, fetchPayments(recordId, token, apiBaseUrl)])
         .then(([orderResult, receiptRows, paymentResults]) => {
           setPurchaseOrder(orderResult);

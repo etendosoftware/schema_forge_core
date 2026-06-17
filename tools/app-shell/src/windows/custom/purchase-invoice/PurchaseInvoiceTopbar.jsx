@@ -76,29 +76,35 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
           )}
         </>
       )}
-      {isCompleted && (
-        isCreditType ? (
-          <span
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium"
-            style={{ padding: '4px 12px', borderRadius: '6px', backgroundColor: '#ede9fe', color: '#4c1d95' }}
-          >
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#7c3aed' }} />
-            {ui('creditApplied')}
-            <span style={{ opacity: 0.4 }}>&middot;</span>
-            <span className="font-semibold tabular-nums">{formatCurrency(currency || 'USD', Math.abs(grandTotal))}</span>
-          </span>
-        ) : isFullyPaid ? (
-          <span
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium"
-            style={{ padding: '4px 12px', borderRadius: '6px', backgroundColor: '#d1fae5', color: '#065f46', cursor: 'pointer' }}
-            onClick={handleBadgeClick}
-          >
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#10b981' }} />
-            {ui('statusPaid')}
-            <span style={{ opacity: 0.4 }}>&middot;</span>
-            <span className="font-semibold tabular-nums">{formatCurrency(currency || 'USD', totalPaid)}</span>
-          </span>
-        ) : (
+      {isCompleted && (() => {
+        if (isCreditType) {
+          return (
+            <span
+              className="inline-flex items-center gap-1.5 text-[13px] font-medium"
+              style={{ padding: '4px 12px', borderRadius: '6px', backgroundColor: '#ede9fe', color: '#4c1d95' }}
+            >
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#7c3aed' }} />
+              {ui('creditApplied')}
+              <span style={{ opacity: 0.4 }}>&middot;</span>
+              <span className="font-semibold tabular-nums">{formatCurrency(currency || 'USD', Math.abs(grandTotal))}</span>
+            </span>
+          );
+        }
+        if (isFullyPaid) {
+          return (
+            <span
+              className="inline-flex items-center gap-1.5 text-[13px] font-medium"
+              style={{ padding: '4px 12px', borderRadius: '6px', backgroundColor: '#d1fae5', color: '#065f46', cursor: 'pointer' }}
+              onClick={handleBadgeClick}
+            >
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#10b981' }} />
+              {ui('statusPaid')}
+              <span style={{ opacity: 0.4 }}>&middot;</span>
+              <span className="font-semibold tabular-nums">{formatCurrency(currency || 'USD', totalPaid)}</span>
+            </span>
+          );
+        }
+        return (
           <span
             className="inline-flex items-center gap-1.5 text-[13px] font-medium"
             style={{ padding: '4px 12px', borderRadius: '6px', backgroundColor: '#fef3c7', color: '#78350f', cursor: 'pointer' }}
@@ -109,8 +115,8 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
             <span style={{ opacity: 0.4 }}>&middot;</span>
             <span className="font-semibold tabular-nums">{formatCurrency(currency || 'USD', outstanding)}</span>
           </span>
-        )
-      )}
+        );
+      })()}
 
       {showPaymentModal && (
         <InvoicePaymentModal
