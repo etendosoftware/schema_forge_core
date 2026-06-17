@@ -160,10 +160,9 @@ test.describe('Financial Accounts page — Cuentas (T1)', () => {
     await expect(page).toHaveURL(/\/financial-account\/acc-1$/);
   });
 
-  test('"Reglas de matcheo" button shows a T5 / ETP-4099 toast', async ({ page }) => {
+  test('"Reglas de matcheo" button navigates to the match-rule list', async ({ page }) => {
     await page.getByTestId('cuentas-matching-rules-button').click();
-    // Toast text: "Próximamente en T5 (ETP-4099)"
-    await expect(page.getByText(/T5|ETP-4099/)).toBeVisible();
+    await expect(page).toHaveURL(/\/match-rule$/);
   });
 
   test('"Nueva cuenta" button is enabled and does not navigate (T1 placeholder)', async ({ page }) => {

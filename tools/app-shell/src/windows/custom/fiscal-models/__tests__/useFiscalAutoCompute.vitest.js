@@ -23,8 +23,11 @@ describe('useFiscalAutoCompute — initial compute', () => {
         pollIntervalMs: 100_000,
       })
     );
+    await waitFor(() => expect(computeFn).toHaveBeenCalledTimes(2));
+    // Wait for the async state commit, not just the call count: computeFn resolves
+    // before computedMap is set, so assert on the map itself to avoid a load-dependent
+    // race that reads the map before React flushes the update.
     await waitFor(() => {
-      expect(computeFn).toHaveBeenCalledTimes(2);
       expect(result.current.computedMap[DECL_A.id]).toMatchObject({ summary: SUMMARY });
       expect(result.current.computedMap[DECL_B.id]).toMatchObject({ summary: SUMMARY });
     });
