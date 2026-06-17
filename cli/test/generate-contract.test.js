@@ -719,6 +719,24 @@ describe('generateContract — agentProfile.agentPrompt (ETP-4252)', () => {
     const contract = generateContract(minimalSchema);
     assert.equal(contract.agentProfile.agentPrompt, undefined);
   });
+
+  it('omits agentProfile.agentPrompt when the value is whitespace-only', () => {
+    const schema = {
+      ...minimalSchema,
+      window: { ...minimalSchema.window, agentPrompt: '   ' },
+    };
+    const contract = generateContract(schema);
+    assert.equal(contract.agentProfile.agentPrompt, undefined);
+  });
+
+  it('trims surrounding whitespace from agentProfile.agentPrompt', () => {
+    const schema = {
+      ...minimalSchema,
+      window: { ...minimalSchema.window, agentPrompt: '  Confirm first.  ' },
+    };
+    const contract = generateContract(schema);
+    assert.equal(contract.agentProfile.agentPrompt, 'Confirm first.');
+  });
 });
 
 describe('generateContract — orchestrator', () => {

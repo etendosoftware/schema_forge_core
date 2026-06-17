@@ -47,6 +47,23 @@ describe('buildFieldAgentPromptMap', () => {
       {},
     );
   });
+
+  it('omits whitespace-only field prompts and trims the rest', () => {
+    const decisions = {
+      entities: {
+        header: {
+          name: 'Order',
+          fields: {
+            blank: { agentPrompt: '   ' },
+            real: { agentPrompt: '  pick nearest warehouse  ' },
+          },
+        },
+      },
+    };
+    assert.deepEqual(buildFieldAgentPromptMap(decisions), {
+      'Order.real': 'pick nearest warehouse',
+    });
+  });
 });
 
 describe('mapVisibility', () => {

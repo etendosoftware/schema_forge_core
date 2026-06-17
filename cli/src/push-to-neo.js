@@ -257,7 +257,10 @@ export async function pushToNeo(windowName, options = {}) {
   const specName = windowName;
   const fieldDefaultExprs = buildFieldDefaultExprMap(decisionsData);
   const fieldAgentPrompts = buildFieldAgentPromptMap(decisionsData);
-  const specAgentPrompt = decisionsData.window?.agentPrompt ?? null;
+  const rawSpecAgentPrompt = decisionsData.window?.agentPrompt;
+  const specAgentPrompt = (rawSpecAgentPrompt && rawSpecAgentPrompt.trim() !== '')
+    ? rawSpecAgentPrompt.trim()
+    : null;
   const allFields = extractFieldsFromContract(contract.backendContract);
 
   if (options.dryRun === true) {
@@ -336,8 +339,8 @@ export function buildFieldAgentPromptMap(decisionsData) {
   for (const [entityKey, entityConf] of Object.entries(decisionsData.entities || {})) {
     const entityName = entityConf.name || entityKey;
     for (const [fieldName, fieldConf] of Object.entries(entityConf.fields || {})) {
-      if (fieldConf.agentPrompt != null) {
-        map[`${entityName}.${fieldName}`] = fieldConf.agentPrompt;
+      if (fieldConf.agentPrompt != null && fieldConf.agentPrompt.trim() !== '') {
+        map[`${entityName}.${fieldName}`] = fieldConf.agentPrompt.trim();
       }
     }
   }
