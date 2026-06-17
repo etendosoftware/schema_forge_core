@@ -1390,6 +1390,17 @@ function renderExistingRecordSaveAction({
 }
 
 /**
+ * Dispatches the footer Save/Confirm action block by record state. Extracted to
+ * module level so the branch logic does not count toward DetailView's cognitive
+ * complexity. All values arrive via the `params` object built in DetailView.
+ */
+function renderSaveActions(params) {
+  if (params.draftMode?.enabled) return renderDraftModeSaveActions(params);
+  if (params.isNew) return renderNewRecordSaveActions(params);
+  return renderExistingRecordSaveAction(params);
+}
+
+/**
  * Full-page detail view for a single entity record.
  * Two-zone layout: gray top bar + white content card with rounded corner.
  *
@@ -2570,6 +2581,12 @@ export function DetailView({
     );
   }
 
+  const saveActionParams = {
+    hook, isDirty, flushPendingLines, data, isNew, navigate, windowName,
+    ui, tMenu, onAfterCreate, onAfterSave, token, apiBaseUrl, saveBtnCls,
+    isDocumentReadOnly, isProcessed, draftMode, blockSaveForBalance, blockCompleteForBalance,
+  };
+
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="detail-view">
       {/* Content card with rounded top-left corner */}
@@ -2769,16 +2786,8 @@ export function DetailView({
                   );
                 })}
 
-              {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted && (() => {
-                const saveActionParams = {
-                  hook, isDirty, flushPendingLines, data, isNew, navigate, windowName,
-                  ui, tMenu, onAfterCreate, onAfterSave, token, apiBaseUrl, saveBtnCls,
-                  isDocumentReadOnly, isProcessed, draftMode, blockSaveForBalance, blockCompleteForBalance,
-                };
-                if (draftMode?.enabled) return renderDraftModeSaveActions(saveActionParams);
-                if (isNew) return renderNewRecordSaveActions(saveActionParams);
-                return renderExistingRecordSaveAction(saveActionParams);
-              })()}
+              {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted
+                && renderSaveActions(saveActionParams)}
             </div>
           </div>
         )}
