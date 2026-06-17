@@ -62,6 +62,19 @@ WHERE c.ad_client_id = :client_id
 --    Source has ONE EV tree (D937..., ad_org_id='0', ad_table_id='188' = C_ElementValue).
 --    Both C_ELEMENT rows link to it via @uuid_D937...@. ad_table_id '188' is a standard
 --    AD id (not cross-tenant), kept as-is.
+
+-- Disable AD triggers for the duration of this @apply. C_ELEMENTVALUE has an
+-- AFTER INSERT trigger (c_elementvalue_trg) that auto-creates the C_ELEMENTVALUE_TRL
+-- translation rows AND the AD_TREENODE entries for every inserted account. This
+-- dump already carries those rows explicitly (a faithful export of the source
+-- chart), so without disabling the trigger the explicit inserts collide on
+-- c_elementvalue_trl_elementv_un (c_elementvalue_id, ad_language). This is exactly
+-- how Openbravo's own dataset import loads accounting data. set_config(...,true)
+-- in ad_disable_triggers is transaction-local, so the flag resets on COMMIT/ROLLBACK
+-- and never leaks to another pooled connection; ad_enable_triggers() at the end of
+-- the body restores normal behavior for any later fix in the same transaction.
+SELECT ad_disable_triggers();
+
 INSERT INTO ad_tree (ad_tree_id, ad_client_id, ad_org_id, created, createdby, updated, updatedby,
                      isactive, name, description, treetype, isallnodes, ad_table_id)
 SELECT '@uuid_D937A98591DC4F6386C8130D350B17C7@', :client_id, '0', now(), '0', now(), '0',
@@ -8215,4 +8228,7 @@ INSERT INTO ad_treenode (ad_treenode_id, ad_tree_id, node_id, ad_client_id, ad_o
 INSERT INTO ad_treenode (ad_treenode_id, ad_tree_id, node_id, ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby, parent_id, seqno) VALUES (get_uuid(), '@uuid_D937A98591DC4F6386C8130D350B17C7@', '@uuid_FF577DD6955B4C84804590E0CFC7115B@', :client_id, '0', 'Y', now(), '0', now(), '0', '@uuid_7E56A51B4A1C4204B0E54C2A37EF8DB0@', 100);
 INSERT INTO ad_treenode (ad_treenode_id, ad_tree_id, node_id, ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby, parent_id, seqno) VALUES (get_uuid(), '@uuid_D937A98591DC4F6386C8130D350B17C7@', '@uuid_FF58DABC053B43A0AD299D1F91A9EA82@', :client_id, '0', 'Y', now(), '0', now(), '0', '@uuid_740FB46385CF4243B7BEA81F8C4F7302@', 20);
 INSERT INTO ad_treenode (ad_treenode_id, ad_tree_id, node_id, ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby, parent_id, seqno) VALUES (get_uuid(), '@uuid_D937A98591DC4F6386C8130D350B17C7@', '@uuid_FFDB8A56378C417BAE55C4F13EFCE530@', :client_id, '0', 'Y', now(), '0', now(), '0', '@uuid_4D7F9C6A25D64099ACFC5E714F863ECC@', 10);
+
+-- Re-enable AD triggers (pairs with ad_disable_triggers() at the top of this @apply).
+SELECT ad_enable_triggers();
 

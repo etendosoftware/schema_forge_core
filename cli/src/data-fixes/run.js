@@ -17,6 +17,11 @@
  *       Mark a fix as MANUALLY_FIXED (operator resolved it out-of-band). Counts
  *       as success; runs neither @check nor @apply. --reason is mandatory.
  *
+ *   node cli/src/data-fixes/run.js --list-clients
+ *       Read-only overview: every tenant (Name + id), the newest fix recorded as
+ *       applied, and how many catalog fixes are still pending / FAILED. No writes,
+ *       no @check — reflects the ledger as-is.
+ *
  * Ledger row shape (System-owned): every row has ad_client_id='0', ad_org_id='0',
  * and the remediated tenant in remediated_client_id. One row per
  * (remediated_client_id, fix_id). Status set:
@@ -65,12 +70,13 @@ const PROCESSED = new Set([STATUS.APPLIED, STATUS.MANUALLY_FIXED, STATUS.SKIPPED
 function parseArgs(argv) {
   // Maps a value-taking flag to the args key it populates with the next token.
   const VALUE_FLAGS = { '--client': 'client', '--fix': 'fix', '--reason': 'reason' };
-  const args = { dryRun: false, markFixed: false, client: null, fix: null, reason: null };
+  const args = { dryRun: false, markFixed: false, listClients: false, client: null, fix: null, reason: null };
   const tokens = [...argv];
   while (tokens.length) {
     const a = tokens.shift();
     if (a === '--dry-run') args.dryRun = true;
     else if (a === '--mark-fixed') args.markFixed = true;
+    else if (a === '--list-clients') args.listClients = true;
     else if (a in VALUE_FLAGS) args[VALUE_FLAGS[a]] = tokens.shift();
     else throw new Error(`Unknown argument: ${a}`);
   }
@@ -118,6 +124,21 @@ async function tenantsWithoutLedger(pool, onlyClient) {
     [onlyClient || null],
   );
   return rows.map(r => r.ad_client_id);
+}
+
+/** Map every tenant (excluding System) to its ad_client.name for labelling output. */
+async function fetchClientNames(pool) {
+  const { rows } = await pool.query(
+    `SELECT ad_client_id, name FROM ad_client WHERE ad_client_id <> '0'`);
+  const map = new Map();
+  for (const r of rows) map.set(r.ad_client_id, r.name);
+  return map;
+}
+
+/** Human label for a tenant: "Name (clientId)", falling back to the bare id. */
+function tenantLabel(names, clientId) {
+  const name = names && names.get(clientId);
+  return name ? `${name} (${clientId})` : clientId;
 }
 
 /** Resolve the tenant universe to process (those that have ledger rows). */
@@ -275,10 +296,10 @@ async function applyFix(pool, fix, clientId, { dryRun }) {
 // ---------------------------------------------------------------------------
 
 /** Phase 0 — sweep: DETECTED baseline for tenants with no ledger row. */
-async function sweepBaseline(pool, onlyClient, { dryRun }) {
+async function sweepBaseline(pool, onlyClient, names, { dryRun }) {
   const tenants = await tenantsWithoutLedger(pool, onlyClient);
   for (const clientId of tenants) {
-    console.log(`  [sweep] ${clientId} → DETECTED (applied_utc=${DETECTED_UTC})`);
+    console.log(`  [sweep] ${tenantLabel(names, clientId)} → DETECTED (applied_utc=${DETECTED_UTC})`);
     if (!dryRun) {
       await writeLedger(pool, {
         clientId, fixId: BASELINE_FIX_ID, status: STATUS.DETECTED, appliedUtc: DETECTED_UTC,
@@ -306,11 +327,11 @@ function computeWatermark(catalog, ledger) {
 }
 
 /** Phase 1 — apply the chain for one tenant, fail-fast. Returns true if halted. */
-async function applyChain(pool, catalog, clientId, { dryRun }) {
+async function applyChain(pool, catalog, clientId, names, { dryRun }) {
   const ledger = await fetchLedgerMap(pool, clientId);
   const watermark = computeWatermark(catalog, ledger);
   const wmLabel = watermark === -Infinity ? 'none' : new Date(watermark).toISOString();
-  console.log(`\nTenant ${clientId} (watermark: ${wmLabel})`);
+  console.log(`\nTenant ${tenantLabel(names, clientId)} (watermark: ${wmLabel})`);
 
   for (const fix of catalog) {
     // Strict watermark: skip everything at or before it (no look-back).
@@ -347,6 +368,7 @@ async function cmdMarkFixed(pool, { client, fix, reason }) {
 async function cmdTargetedFix(pool, catalog, { client, fix, dryRun }) {
   const target = catalog.find(f => f.fixId === fix || f.id === fix);
   if (!target) throw new Error(`--fix: no such fix "${fix}" in catalog`);
+  const names = await fetchClientNames(pool);
   const tenants = client ? [client] : await resolveTenants(pool, null);
   console.log(`Targeted run of ${target.fixId} (ignores order + cutoff) for ${tenants.length} tenant(s)`);
   let failed = 0;
@@ -354,25 +376,76 @@ async function cmdTargetedFix(pool, catalog, { client, fix, dryRun }) {
     const res = await applyFix(pool, target, clientId, { dryRun });
     const rowCountMessage = res.rows ? ` (${res.rows} rows)` : '';
     const detailedMessage = res.detail ? ` — ${res.detail}` : '';
-    console.log(`  ${clientId}: ${res.status}${rowCountMessage}${detailedMessage}`);
+    console.log(`  ${tenantLabel(names, clientId)}: ${res.status}${rowCountMessage}${detailedMessage}`);
     if (res.status === STATUS.FAILED) failed++;
   }
   return failed;
 }
 
 async function cmdFullRun(pool, catalog, { client, dryRun }) {
+  const names = await fetchClientNames(pool);
+
   console.log('=== Phase 0 — baseline sweep ===');
-  const swept = await sweepBaseline(pool, client, { dryRun });
+  const swept = await sweepBaseline(pool, client, names, { dryRun });
   console.log(`  ${swept} tenant(s) baselined as DETECTED.`);
 
   console.log('\n=== Phase 1 — apply ===');
   const tenants = await resolveTenants(pool, client);
   let halted = 0;
   for (const clientId of tenants) {
-    if (await applyChain(pool, catalog, clientId, { dryRun })) halted++;
+    if (await applyChain(pool, catalog, clientId, names, { dryRun })) halted++;
   }
   console.log(`\nDone. ${tenants.length} tenant(s) processed, ${halted} halted.`);
   return halted;
+}
+
+/**
+ * `--list-clients` — overview of every tenant's remediation state. For each
+ * tenant: the newest fix recorded as APPLIED/MANUALLY_FIXED ("last applied"),
+ * and how many catalog fixes are still pending (never recorded as a success and
+ * not skipped — i.e. missing or FAILED). FAILED is also surfaced on its own so a
+ * halted chain stands out. No @check is run, so this is a fast, read-only report
+ * (it reflects the ledger, not a fresh re-evaluation of each fix's condition).
+ */
+async function cmdListClients(pool, catalog) {
+  const { rows: tenants } = await pool.query(
+    `SELECT ad_client_id, name FROM ad_client WHERE ad_client_id <> '0' ORDER BY name`);
+  console.log(`Catalog: ${catalog.length} fix(es). Tenants: ${tenants.length}.\n`);
+
+  const rows = [];
+  for (const t of tenants) {
+    const ledger = await fetchLedgerMap(pool, t.ad_client_id);
+    let lastApplied = null;
+    for (const fix of catalog) {
+      const row = ledger.get(fix.fixId);
+      const isSuccess = row && (row.status === STATUS.APPLIED || row.status === STATUS.MANUALLY_FIXED);
+      if (isSuccess && fix.timestamp && (!lastApplied || fix.timestamp > lastApplied.timestamp)) {
+        lastApplied = fix;
+      }
+    }
+    const pending = catalog.filter(f => {
+      const row = ledger.get(f.fixId);
+      return !row || !PROCESSED.has(row.status);
+    });
+    const failed = catalog.filter(f => ledger.get(f.fixId)?.status === STATUS.FAILED);
+    rows.push({
+      name: t.name || '(unnamed)',
+      id: t.ad_client_id,
+      lastApplied: lastApplied ? lastApplied.id : '—',
+      pending: pending.length,
+      failed: failed.length,
+    });
+  }
+
+  const headers = { name: 'TENANT', id: 'CLIENT_ID', lastApplied: 'LAST APPLIED', pending: 'PENDING', failed: 'FAILED' };
+  const width = key => Math.max(headers[key].length, ...rows.map(r => String(r[key]).length));
+  const w = { name: width('name'), id: width('id'), lastApplied: width('lastApplied'), pending: width('pending'), failed: width('failed') };
+  const line = r =>
+    `${String(r.name).padEnd(w.name)}  ${String(r.id).padEnd(w.id)}  ${String(r.lastApplied).padEnd(w.lastApplied)}  ` +
+    `${String(r.pending).padStart(w.pending)}  ${String(r.failed).padStart(w.failed)}`;
+  console.log(line(headers));
+  console.log('-'.repeat(w.name + w.id + w.lastApplied + w.pending + w.failed + 8));
+  for (const r of rows) console.log(line(r));
 }
 
 // ---------------------------------------------------------------------------
@@ -392,6 +465,9 @@ async function main() {
   try {
     if (args.markFixed) {
       await cmdMarkFixed(pool, args);
+    } else if (args.listClients) {
+      const catalog = await loadCatalog();
+      await cmdListClients(pool, catalog);
     } else {
       const catalog = await loadCatalog();
       if (args.dryRun) console.log('(dry-run: no writes will be committed)\n');

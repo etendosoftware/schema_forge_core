@@ -252,6 +252,7 @@ REASON     ?=
 data-fixes: ## Run the tenant data-fixes runner (HELP=1 or `make data-fixes-help` for options)
 	@if [ "$(HELP)" = "1" ]; then $(MAKE) -s data-fixes-help; exit 0; fi; \
 	DF_ARGS=""; \
+	if [ "$(LIST_CLIENTS)" = "1" ]; then DF_ARGS="$$DF_ARGS --list-clients"; fi; \
 	if [ "$(MARK_FIXED)" = "1" ]; then DF_ARGS="$$DF_ARGS --mark-fixed"; fi; \
 	if [ "$(DRY_RUN)" = "1" ]; then DF_ARGS="$$DF_ARGS --dry-run"; fi; \
 	if [ -n "$(CLIENT)" ]; then DF_ARGS="$$DF_ARGS --client $(CLIENT)"; fi; \
@@ -267,6 +268,7 @@ data-fixes-help: ## Show usage and examples for `make data-fixes`
 	@echo "{etendo_root}/gradle.properties (see cli/src/db.js)."
 	@echo ""
 	@echo "Variables:"
+	@echo "  LIST_CLIENTS=1     Read-only overview: each tenant (name+id), last applied fix, # pending/FAILED"
 	@echo "  DRY_RUN=1          Report what WOULD run (executes @check, commits nothing)"
 	@echo "  CLIENT=<clientId>  Restrict to a single tenant (ad_client_id)"
 	@echo "  FIX=<fix_id>       Force exactly ONE fix (ignores chain order + baseline cutoff; does not advance)"
@@ -274,6 +276,7 @@ data-fixes-help: ## Show usage and examples for `make data-fixes`
 	@echo "  REASON=\"...\"       Mandatory note for MARK_FIXED — what was done by hand"
 	@echo ""
 	@echo "Examples:"
+	@echo "  make data-fixes LIST_CLIENTS=1                         # overview of every tenant's state"
 	@echo "  make data-fixes DRY_RUN=1                              # preview across all tenants"
 	@echo "  make data-fixes                                       # apply across all tenants"
 	@echo "  make data-fixes CLIENT=<id>                           # apply for one tenant"
