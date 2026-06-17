@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/table';
 import { MoneyAmount } from '@/components/ui/money-amount';
 import { cn } from '@/lib/utils';
+import { getDateBounds, toDateParam } from '@/lib/dateRangeBounds';
+import { formatDate, formatSigned } from '@/lib/formatSigned';
 import {
   usePendingStatementLines,
   useCandidateOperations,
@@ -32,74 +34,6 @@ const ELEVATED_SHADOW =
   'shadow-[0px_10px_15px_-3px_rgba(18,18,23,0.08),0px_4px_6px_-2px_rgba(18,18,23,0.05)]';
 const STATUS_CODES = ['pending'];
 const DOC_TYPE_CODES = ['receipts', 'payments'];
-
-function presetBounds(presetId) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const to = new Date(today);
-  const from = new Date(today);
-  if (presetId === 'today') {
-    // from = to = start of today
-  } else if (presetId === 'yesterday') {
-    from.setDate(from.getDate() - 1);
-    to.setDate(to.getDate() - 1);
-  } else if (presetId === 'last7') {
-    from.setDate(from.getDate() - 6);
-  } else if (presetId === 'last30') {
-    from.setDate(from.getDate() - 29);
-  } else if (presetId === 'last12m') {
-    from.setMonth(from.getMonth() - 12);
-  } else {
-    return null;
-  }
-  to.setHours(23, 59, 59, 999);
-  return { from, to };
-}
-
-function getDateBounds(dateRange) {
-  if (!dateRange) return { from: null, to: null };
-  if ('presetId' in dateRange) {
-    const bounds = presetBounds(dateRange.presetId);
-    return bounds ?? { from: null, to: null };
-  }
-  if ('from' in dateRange && 'to' in dateRange) {
-    const from = dateRange.from instanceof Date ? new Date(dateRange.from) : null;
-    const to = dateRange.to instanceof Date ? new Date(dateRange.to) : null;
-    if (from) from.setHours(0, 0, 0, 0);
-    if (to) to.setHours(23, 59, 59, 999);
-    return { from, to };
-  }
-  return { from: null, to: null };
-}
-
-function toDateParam(date) {
-  return date instanceof Date && !Number.isNaN(date.getTime())
-    ? date.toISOString().slice(0, 10)
-    : undefined;
-}
-
-/**
- * Formats an ISO date string in UTC. The backend sends date-only values as UTC
- * midnight, so formatting in UTC avoids a negative-offset timezone shifting the
- * calendar day (same rule used across the financial-account window).
- */
-function formatDate(iso, bcpLocale) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return new Intl.DateTimeFormat(bcpLocale, {
-    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
-  }).format(d);
-}
-
-/** Formats a signed money value as a `±X,XX €` string for the action bar / footer. */
-function formatSigned(amount, currency) {
-  const abs = Math.abs(Number(amount) || 0);
-  const formatted = new Intl.NumberFormat('es-ES', {
-    style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2,
-  }).format(abs);
-  return (Number(amount) < 0 ? '-' : '+') + formatted;
-}
 
 /** Pill badge for line/candidate status. Suggested → blue, reconciled → green, else grey. */
 function StatusBadge({ kind }) {
