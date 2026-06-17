@@ -237,7 +237,8 @@
         "openItems": {
           "visibility": "editable",
           "grid": false,
-          "reason": "Open Items checkbox — lives in the side-panel line editor; toggling it reveals the per-line dimensions (businessPartner/product/project/costCenter/asset)."
+          "required": false,
+          "reason": "Open Items checkbox — lives in the side-panel line editor; toggling it reveals the per-line dimensions (businessPartner/product/project/costCenter/asset). Not required — false/unchecked is a valid state."
         },
         "financialAccount": {
           "visibility": "discarded",

@@ -631,10 +631,11 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     // Build a snapshot of current + new values for the callout formState
     const snapshot = { ...values, [key]: val };
     handleChange(key, val);
-    // Mutual-exclusion: clear the paired field when a non-zero value is entered (e.g. debit ↔ credit).
+    // Mutual-exclusion: zero the paired field when a non-zero value is entered (e.g. debit ↔ credit).
+    // Use '0' not '' so the sibling still passes required-field validation.
     const clearsKey = fieldMap[key]?.clearsField;
     if (clearsKey && val !== '' && val !== null && val !== undefined && Number(val) !== 0) {
-      handleChange(clearsKey, '');
+      handleChange(clearsKey, '0');
     }
     // Store _aux data from selector items as auxiliaryValues (e.g., product_UOM, product_PSTD)
     if (selectedItem?._aux) {
