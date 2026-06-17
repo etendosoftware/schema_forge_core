@@ -61,12 +61,14 @@ describe('DetailView — Save button disabled conditions (ETP-3662)', () => {
   });
 
   it('does NOT gate the draftMode Confirm button with !isDirty', () => {
-    // The Confirm button in draftMode has disabled={hook.isSaving} — no !isDirty.
-    assert.match(src, /data-testid="action-save" disabled=\{hook\.isSaving\}/);
-    // Double-check: "hook.isSaving || !isDirty" must NOT appear next to that testid.
-    const confirmIdx = src.indexOf('data-testid="action-save" disabled={hook.isSaving}');
+    // The Confirm button in draftMode is gated by hook.isSaving and blockCompleteForBalance
+    // (ETP-4244 balance/empty footer gate) — but NEVER by !isDirty.
+    assert.match(src, /data-testid="action-save" disabled=\{hook\.isSaving \|\| blockCompleteForBalance/);
+    // Double-check: the full disabled expression for the Confirm button must NOT contain !isDirty.
+    // (It may contain !hook.childrenLoading — that token is unrelated and must not trip a false match.)
+    const confirmIdx = src.indexOf('data-testid="action-save" disabled={hook.isSaving || blockCompleteForBalance');
     assert.notEqual(confirmIdx, -1);
-    const around = src.slice(confirmIdx, confirmIdx + 80);
+    const around = src.slice(confirmIdx, confirmIdx + 200);
     assert.doesNotMatch(around, /!isDirty/);
   });
 });
