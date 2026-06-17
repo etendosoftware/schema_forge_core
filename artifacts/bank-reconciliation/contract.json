@@ -1,725 +1,388 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-03-09T10:00:00.000Z",
-  "checksum": "a1b2c3d4e5f6g7h8",
+  "updatedAt": "2026-06-17T13:50:21.898Z",
+  "checksum": "75d07ad9ef6bcf90",
   "frontendContract": {
     "window": {
-      "id": "BANK-REC",
+      "id": "2EEF1B9DA6E341BEAB630B45291C9193",
       "name": "Bank Reconciliation",
-      "primaryEntity": "bankReconciliation",
-      "category": "accounting"
+      "primaryEntity": "header",
+      "category": "finance",
+      "menuActions": [
+        {
+          "key": "reconcileGroup",
+          "label": "Reconcile"
+        }
+      ],
+      "layoutType": "custom"
     },
     "entities": {
-      "bankReconciliation": {
+      "header": {
+        "tableName": "FIN_Reconciliation",
+        "tabId": "4C68D2C1544B44FCAF5D20CA8ED74DA5",
+        "tabName": "Reconciliation",
+        "uiPattern": "STD",
         "fields": [
           {
             "name": "documentNo",
+            "apiKey": "documentNo",
             "column": "DocumentNo",
+            "label": "Document No.",
             "type": "string",
             "tsType": "string",
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true,
+            "gridOrder": 1
           },
           {
-            "name": "bankAccount",
-            "column": "C_BankAccount_ID",
-            "type": "foreignKey",
+            "name": "transactionDate",
+            "apiKey": "transactionDate",
+            "column": "TransactionDate",
+            "label": "Transaction Date",
+            "type": "date",
             "tsType": "string",
-            "visibility": "editable",
+            "visibility": "readOnly",
             "required": true,
             "grid": true,
             "form": true,
-            "reference": "BankAccount",
-            "inputMode": "selector"
-          },
-          {
-            "name": "statementDate",
-            "column": "StatementDate",
-            "type": "date",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": true,
-            "grid": true,
-            "form": true
-          },
-          {
-            "name": "startingBalance",
-            "column": "StartingBalance",
-            "type": "amount",
-            "tsType": "number",
-            "visibility": "readOnly",
-            "required": true,
-            "grid": false,
-            "form": true
+            "sourceRequired": true,
+            "gridOrder": 2
           },
           {
             "name": "endingBalance",
+            "apiKey": "endingBalance",
             "column": "EndingBalance",
-            "type": "amount",
-            "tsType": "number",
-            "visibility": "editable",
-            "required": true,
-            "grid": true,
-            "form": true
-          },
-          {
-            "name": "difference",
-            "column": "Difference",
+            "label": "Ending Balance",
             "type": "amount",
             "tsType": "number",
             "visibility": "readOnly",
-            "required": true,
-            "grid": true,
-            "form": true
-          },
-          {
-            "name": "status",
-            "column": "Status",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": true,
-            "grid": true,
-            "form": true
-          }
-        ],
-        "searchableFields": [
-          "documentNo",
-          "bankAccount",
-          "statementDate"
-        ],
-        "computedFields": []
-      },
-      "bankReconciliationLine": {
-        "fields": [
-          {
-            "name": "transactionDate",
-            "column": "TransactionDate",
-            "type": "date",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": true,
-            "grid": true,
-            "form": true
-          },
-          {
-            "name": "description",
-            "column": "Description",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": true,
-            "grid": true,
-            "form": true
-          },
-          {
-            "name": "amount",
-            "column": "Amount",
-            "type": "amount",
-            "tsType": "number",
-            "visibility": "editable",
-            "required": true,
-            "grid": true,
-            "form": true
-          },
-          {
-            "name": "matchedInvoice",
-            "column": "C_Invoice_ID",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
             "required": false,
             "grid": true,
             "form": true,
-            "reference": "Invoice",
-            "inputMode": "search"
+            "gridOrder": 3
           },
           {
-            "name": "matchStatus",
-            "column": "MatchStatus",
-            "type": "string",
+            "name": "documentStatus",
+            "apiKey": "documentStatus",
+            "column": "DocStatus",
+            "label": "Document Status",
+            "type": "list",
             "tsType": "string",
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true,
+            "gridOrder": 4
           }
         ],
-        "searchableFields": [
-          "description",
-          "transactionDate"
-        ],
-        "computedFields": []
+        "searchableFields": [],
+        "computedFields": [],
+        "javaQualifier": "bankReconciliation"
       }
     }
   },
   "backendContract": {
     "window": {
-      "id": "BANK-REC",
+      "id": "2EEF1B9DA6E341BEAB630B45291C9193",
       "name": "Bank Reconciliation",
-      "primaryEntity": "bankReconciliation",
-      "category": "accounting"
+      "primaryEntity": "header",
+      "category": "finance",
+      "menuActions": [
+        {
+          "key": "reconcileGroup",
+          "label": "Reconcile"
+        }
+      ],
+      "layoutType": "custom"
     },
     "entities": {
-      "bankReconciliation": {
+      "header": {
+        "tableName": "FIN_Reconciliation",
+        "tabId": "4C68D2C1544B44FCAF5D20CA8ED74DA5",
+        "tabName": "Reconciliation",
         "fields": [
           {
             "name": "documentNo",
+            "apiKey": "documentNo",
             "column": "DocumentNo",
             "type": "string",
             "visibility": "readOnly",
             "required": true
           },
           {
-            "name": "bankAccount",
-            "column": "C_BankAccount_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "statementDate",
-            "column": "StatementDate",
+            "name": "transactionDate",
+            "apiKey": "transactionDate",
+            "column": "TransactionDate",
             "type": "date",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "startingBalance",
-            "column": "StartingBalance",
-            "type": "amount",
             "visibility": "readOnly",
             "required": true
           },
           {
             "name": "endingBalance",
+            "apiKey": "endingBalance",
             "column": "EndingBalance",
             "type": "amount",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "difference",
-            "column": "Difference",
-            "type": "amount",
             "visibility": "readOnly",
-            "required": true
-          },
-          {
-            "name": "status",
-            "column": "Status",
-            "type": "string",
-            "visibility": "readOnly",
-            "required": true
-          },
-          {
-            "name": "adClientId",
-            "column": "AD_Client_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "adOrgId",
-            "column": "AD_Org_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "created",
-            "column": "Created",
-            "type": "datetime",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "updated",
-            "column": "Updated",
-            "type": "datetime",
-            "visibility": "system",
-            "required": true
-          }
-        ]
-      },
-      "bankReconciliationLine": {
-        "fields": [
-          {
-            "name": "transactionDate",
-            "column": "TransactionDate",
-            "type": "date",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "description",
-            "column": "Description",
-            "type": "string",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "amount",
-            "column": "Amount",
-            "type": "amount",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "matchedInvoice",
-            "column": "C_Invoice_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
             "required": false
           },
           {
-            "name": "matchStatus",
-            "column": "MatchStatus",
-            "type": "string",
+            "name": "documentStatus",
+            "apiKey": "documentStatus",
+            "column": "DocStatus",
+            "type": "list",
             "visibility": "readOnly",
             "required": true
           },
           {
-            "name": "adClientId",
-            "column": "AD_Client_ID",
-            "type": "id",
+            "name": "posted",
+            "apiKey": "posted",
+            "column": "Posted",
+            "type": "list",
             "visibility": "system",
-            "required": true
+            "required": false
           },
           {
-            "name": "adOrgId",
-            "column": "AD_Org_ID",
-            "type": "id",
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "type": "boolean",
             "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "created",
-            "column": "Created",
-            "type": "datetime",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "updated",
-            "column": "Updated",
-            "type": "datetime",
-            "visibility": "system",
-            "required": true
+            "required": false
           }
-        ]
+        ],
+        "javaQualifier": "bankReconciliation"
       }
     },
     "endpoints": [
       {
         "method": "GET",
-        "path": "/bankReconciliation",
-        "entity": "bankReconciliation",
-        "supportedFilters": [
-          "documentNo",
-          "bankAccount",
-          "statementDate"
-        ]
+        "path": "/header",
+        "entity": "header",
+        "supportedFilters": []
       },
       {
         "method": "GET",
-        "path": "/bankReconciliation/:id",
-        "entity": "bankReconciliation",
+        "path": "/header/:id",
+        "entity": "header",
         "supportedFilters": []
       },
       {
         "method": "POST",
-        "path": "/bankReconciliation",
-        "entity": "bankReconciliation",
+        "path": "/header",
+        "entity": "header",
         "supportedFilters": []
       },
       {
         "method": "PUT",
-        "path": "/bankReconciliation/:id",
-        "entity": "bankReconciliation",
+        "path": "/header/:id",
+        "entity": "header",
         "supportedFilters": []
       },
       {
         "method": "DELETE",
-        "path": "/bankReconciliation/:id",
-        "entity": "bankReconciliation",
-        "supportedFilters": []
-      },
-      {
-        "method": "GET",
-        "path": "/bankReconciliationLine",
-        "entity": "bankReconciliationLine",
-        "supportedFilters": [
-          "description",
-          "transactionDate"
-        ]
-      },
-      {
-        "method": "GET",
-        "path": "/bankReconciliationLine/:id",
-        "entity": "bankReconciliationLine",
-        "supportedFilters": []
-      },
-      {
-        "method": "POST",
-        "path": "/bankReconciliationLine",
-        "entity": "bankReconciliationLine",
-        "supportedFilters": []
-      },
-      {
-        "method": "PUT",
-        "path": "/bankReconciliationLine/:id",
-        "entity": "bankReconciliationLine",
-        "supportedFilters": []
-      },
-      {
-        "method": "DELETE",
-        "path": "/bankReconciliationLine/:id",
-        "entity": "bankReconciliationLine",
+        "path": "/header/:id",
+        "entity": "header",
         "supportedFilters": []
       }
     ],
-    "processEndpoints": [
-      {
-        "name": "autoMatch",
-        "method": "POST",
-        "path": "/process/autoMatch",
-        "entity": "BankReconciliation",
-        "preconditions": [
-          "Reconciliation must have at least one unmatched line",
-          "Reconciliation status must be Open or Partial",
-          "Bank account must be active"
-        ],
-        "steps": 3
+    "processEndpoints": []
+  },
+  "apiPrediction": {
+    "specName": "bank-reconciliation",
+    "baseUrl": "/sws/neo/bank-reconciliation",
+    "crud": {
+      "header": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/bank-reconciliation/header",
+        "detailUrl": "/sws/neo/bank-reconciliation/header/{id}",
+        "supportedFilters": []
       }
-    ]
+    },
+    "selectors": [],
+    "actions": [],
+    "queryParams": {
+      "pagination": {
+        "startRow": "_startRow",
+        "endRow": "_endRow",
+        "default": "0-100"
+      },
+      "sorting": {
+        "param": "_sortBy",
+        "example": "_sortBy=creationDate desc"
+      },
+      "filtering": "Use field name as query param: ?fieldName=value",
+      "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "finance"
+    }
+  },
+  "formState": {
+    "entities": {
+      "header": {
+        "fields": {
+          "documentNo": {
+            "readOnly": true,
+            "required": true
+          },
+          "transactionDate": {
+            "readOnly": true,
+            "required": true
+          },
+          "endingBalance": {
+            "readOnly": true
+          },
+          "documentStatus": {
+            "readOnly": true,
+            "required": true
+          }
+        }
+      }
+    },
+    "requiredSessionVariables": [],
+    "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Manage bank reconciliation financial records.",
+    "whenToUse": [
+      "Use for bank reconciliation management."
+    ],
+    "minimumCreate": {},
+    "selectorContexts": [],
+    "actions": [],
+    "workflow": [
+      "Create a new record",
+      "Update as needed"
+    ],
+    "edgeCases": [
+      "Required field without default value must be provided"
+    ],
+    "examples": [],
+    "warnings": [
+      "This spec appears read-only from generated form metadata",
+      "Transactional spec has no generated lifecycle action metadata"
+    ],
+    "knownLimitations": [],
+    "dangerousOperations": []
   },
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
+        "id": "t-crud-flags-header",
+        "category": "crud-flags",
+        "entity": "header",
+        "runner": "node",
+        "description": "CRUD flags for 'header' should all be booleans"
+      },
+      {
+        "id": "t-field-presence-header-documentNo",
         "category": "field-presence",
-        "entity": "bankReconciliation",
+        "entity": "header",
         "field": "documentNo",
         "runner": "node",
-        "description": "Field 'documentNo' should be present in bankReconciliation"
+        "description": "Field 'documentNo' should be present in header"
       },
       {
-        "id": "t-2",
+        "id": "t-field-presence-header-documentStatus",
         "category": "field-presence",
-        "entity": "bankReconciliation",
-        "field": "bankAccount",
+        "entity": "header",
+        "field": "documentStatus",
         "runner": "node",
-        "description": "Field 'bankAccount' should be present in bankReconciliation"
+        "description": "Field 'documentStatus' should be present in header"
       },
       {
-        "id": "t-3",
+        "id": "t-field-presence-header-endingBalance",
         "category": "field-presence",
-        "entity": "bankReconciliation",
-        "field": "statementDate",
-        "runner": "node",
-        "description": "Field 'statementDate' should be present in bankReconciliation"
-      },
-      {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "bankReconciliation",
-        "field": "startingBalance",
-        "runner": "node",
-        "description": "Field 'startingBalance' should be present in bankReconciliation"
-      },
-      {
-        "id": "t-5",
-        "category": "field-presence",
-        "entity": "bankReconciliation",
+        "entity": "header",
         "field": "endingBalance",
         "runner": "node",
-        "description": "Field 'endingBalance' should be present in bankReconciliation"
+        "description": "Field 'endingBalance' should be present in header"
       },
       {
-        "id": "t-6",
+        "id": "t-field-presence-header-transactionDate",
         "category": "field-presence",
-        "entity": "bankReconciliation",
-        "field": "difference",
+        "entity": "header",
+        "field": "transactionDate",
         "runner": "node",
-        "description": "Field 'difference' should be present in bankReconciliation"
+        "description": "Field 'transactionDate' should be present in header"
       },
       {
-        "id": "t-7",
-        "category": "field-presence",
-        "entity": "bankReconciliation",
-        "field": "status",
-        "runner": "node",
-        "description": "Field 'status' should be present in bankReconciliation"
-      },
-      {
-        "id": "t-8",
+        "id": "t-field-type-header-documentNo",
         "category": "field-type",
-        "entity": "bankReconciliation",
+        "entity": "header",
         "field": "documentNo",
         "runner": "node",
-        "description": "Field 'documentNo' should have type 'string' in bankReconciliation"
+        "description": "Field 'documentNo' should have type 'string' in header"
       },
       {
-        "id": "t-9",
+        "id": "t-field-type-header-documentStatus",
         "category": "field-type",
-        "entity": "bankReconciliation",
-        "field": "bankAccount",
+        "entity": "header",
+        "field": "documentStatus",
         "runner": "node",
-        "description": "Field 'bankAccount' should have type 'foreignKey' in bankReconciliation"
+        "description": "Field 'documentStatus' should have type 'string' in header"
       },
       {
-        "id": "t-10",
+        "id": "t-field-type-header-endingBalance",
         "category": "field-type",
-        "entity": "bankReconciliation",
-        "field": "statementDate",
-        "runner": "node",
-        "description": "Field 'statementDate' should have type 'date' in bankReconciliation"
-      },
-      {
-        "id": "t-11",
-        "category": "field-type",
-        "entity": "bankReconciliation",
-        "field": "startingBalance",
-        "runner": "node",
-        "description": "Field 'startingBalance' should have type 'amount' in bankReconciliation"
-      },
-      {
-        "id": "t-12",
-        "category": "field-type",
-        "entity": "bankReconciliation",
+        "entity": "header",
         "field": "endingBalance",
         "runner": "node",
-        "description": "Field 'endingBalance' should have type 'amount' in bankReconciliation"
+        "description": "Field 'endingBalance' should have type 'number' in header"
       },
       {
-        "id": "t-13",
+        "id": "t-field-type-header-transactionDate",
         "category": "field-type",
-        "entity": "bankReconciliation",
-        "field": "difference",
+        "entity": "header",
+        "field": "transactionDate",
         "runner": "node",
-        "description": "Field 'difference' should have type 'amount' in bankReconciliation"
+        "description": "Field 'transactionDate' should have type 'string' in header"
       },
       {
-        "id": "t-14",
-        "category": "field-type",
-        "entity": "bankReconciliation",
-        "field": "status",
+        "id": "t-system-field-header-posted",
+        "category": "system-field",
+        "entity": "header",
+        "field": "posted",
         "runner": "node",
-        "description": "Field 'status' should have type 'string' in bankReconciliation"
+        "description": "System field 'posted' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-15",
-        "category": "searchable-filters",
-        "entity": "bankReconciliation",
-        "field": "documentNo",
+        "id": "t-system-field-header-processed",
+        "category": "system-field",
+        "entity": "header",
+        "field": "processed",
         "runner": "node",
-        "description": "Field 'documentNo' should be a supported filter for bankReconciliation"
+        "description": "System field 'processed' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-16",
-        "category": "searchable-filters",
-        "entity": "bankReconciliation",
-        "field": "bankAccount",
-        "runner": "node",
-        "description": "Field 'bankAccount' should be a supported filter for bankReconciliation"
-      },
-      {
-        "id": "t-17",
-        "category": "searchable-filters",
-        "entity": "bankReconciliation",
-        "field": "statementDate",
-        "runner": "node",
-        "description": "Field 'statementDate' should be a supported filter for bankReconciliation"
-      },
-      {
-        "id": "t-18",
+        "id": "t-visibility-header",
         "category": "visibility",
-        "entity": "bankReconciliation",
+        "entity": "header",
         "runner": "node",
-        "description": "Entity 'bankReconciliation' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-19",
-        "category": "system-field",
-        "entity": "bankReconciliation",
-        "field": "adClientId",
-        "runner": "node",
-        "description": "System field 'adClientId' should exist in backend but not frontend for bankReconciliation"
-      },
-      {
-        "id": "t-20",
-        "category": "system-field",
-        "entity": "bankReconciliation",
-        "field": "adOrgId",
-        "runner": "node",
-        "description": "System field 'adOrgId' should exist in backend but not frontend for bankReconciliation"
-      },
-      {
-        "id": "t-21",
-        "category": "system-field",
-        "entity": "bankReconciliation",
-        "field": "created",
-        "runner": "node",
-        "description": "System field 'created' should exist in backend but not frontend for bankReconciliation"
-      },
-      {
-        "id": "t-22",
-        "category": "system-field",
-        "entity": "bankReconciliation",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for bankReconciliation"
-      },
-      {
-        "id": "t-23",
-        "category": "field-presence",
-        "entity": "bankReconciliationLine",
-        "field": "transactionDate",
-        "runner": "node",
-        "description": "Field 'transactionDate' should be present in bankReconciliationLine"
-      },
-      {
-        "id": "t-24",
-        "category": "field-presence",
-        "entity": "bankReconciliationLine",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in bankReconciliationLine"
-      },
-      {
-        "id": "t-25",
-        "category": "field-presence",
-        "entity": "bankReconciliationLine",
-        "field": "amount",
-        "runner": "node",
-        "description": "Field 'amount' should be present in bankReconciliationLine"
-      },
-      {
-        "id": "t-26",
-        "category": "field-presence",
-        "entity": "bankReconciliationLine",
-        "field": "matchedInvoice",
-        "runner": "node",
-        "description": "Field 'matchedInvoice' should be present in bankReconciliationLine"
-      },
-      {
-        "id": "t-27",
-        "category": "field-presence",
-        "entity": "bankReconciliationLine",
-        "field": "matchStatus",
-        "runner": "node",
-        "description": "Field 'matchStatus' should be present in bankReconciliationLine"
-      },
-      {
-        "id": "t-28",
-        "category": "field-type",
-        "entity": "bankReconciliationLine",
-        "field": "transactionDate",
-        "runner": "node",
-        "description": "Field 'transactionDate' should have type 'date' in bankReconciliationLine"
-      },
-      {
-        "id": "t-29",
-        "category": "field-type",
-        "entity": "bankReconciliationLine",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in bankReconciliationLine"
-      },
-      {
-        "id": "t-30",
-        "category": "field-type",
-        "entity": "bankReconciliationLine",
-        "field": "amount",
-        "runner": "node",
-        "description": "Field 'amount' should have type 'amount' in bankReconciliationLine"
-      },
-      {
-        "id": "t-31",
-        "category": "field-type",
-        "entity": "bankReconciliationLine",
-        "field": "matchedInvoice",
-        "runner": "node",
-        "description": "Field 'matchedInvoice' should have type 'foreignKey' in bankReconciliationLine"
-      },
-      {
-        "id": "t-32",
-        "category": "field-type",
-        "entity": "bankReconciliationLine",
-        "field": "matchStatus",
-        "runner": "node",
-        "description": "Field 'matchStatus' should have type 'string' in bankReconciliationLine"
-      },
-      {
-        "id": "t-33",
-        "category": "searchable-filters",
-        "entity": "bankReconciliationLine",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be a supported filter for bankReconciliationLine"
-      },
-      {
-        "id": "t-34",
-        "category": "searchable-filters",
-        "entity": "bankReconciliationLine",
-        "field": "transactionDate",
-        "runner": "node",
-        "description": "Field 'transactionDate' should be a supported filter for bankReconciliationLine"
-      },
-      {
-        "id": "t-35",
-        "category": "visibility",
-        "entity": "bankReconciliationLine",
-        "runner": "node",
-        "description": "Entity 'bankReconciliationLine' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-36",
-        "category": "system-field",
-        "entity": "bankReconciliationLine",
-        "field": "adClientId",
-        "runner": "node",
-        "description": "System field 'adClientId' should exist in backend but not frontend for bankReconciliationLine"
-      },
-      {
-        "id": "t-37",
-        "category": "system-field",
-        "entity": "bankReconciliationLine",
-        "field": "adOrgId",
-        "runner": "node",
-        "description": "System field 'adOrgId' should exist in backend but not frontend for bankReconciliationLine"
-      },
-      {
-        "id": "t-38",
-        "category": "system-field",
-        "entity": "bankReconciliationLine",
-        "field": "created",
-        "runner": "node",
-        "description": "System field 'created' should exist in backend but not frontend for bankReconciliationLine"
-      },
-      {
-        "id": "t-39",
-        "category": "system-field",
-        "entity": "bankReconciliationLine",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for bankReconciliationLine"
+        "description": "Entity 'header' should only expose visible fields in frontend"
       }
     ],
     "summary": {
-      "total": 39,
+      "total": 12,
       "byCategory": {
-        "field-presence": 12,
-        "field-type": 12,
-        "searchable-filters": 5,
-        "visibility": 2,
-        "system-field": 8
+        "crud-flags": 1,
+        "field-presence": 4,
+        "field-type": 4,
+        "system-field": 2,
+        "visibility": 1
       },
       "byRunner": {
-        "node": 39,
+        "node": 12,
         "junit": 0
       }
     }

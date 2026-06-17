@@ -36,6 +36,7 @@ const CUSTOM_ONLY_ARTIFACTS = new Set([
   'fiscal-config',
   'fiscal-monitor',
   'financial-account',
+  'bank-reconciliation',
 ]);
 
 // Backend-only artifacts: they run the contract + push-to-neo pipeline (so they have a

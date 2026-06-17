@@ -77,7 +77,7 @@ const LINE_CSV_COLUMNS = [
 export default function FinancialAccountWindow({ recordId }) {
   const ui = useUI();
   const [activeTab, setActiveTab] = useState('movements');
-  const { account } = useFinancialAccount(recordId);
+  const { account, reload: reloadAccount } = useFinancialAccount(recordId);
   const { movements, totals, enabledDimensions, headerDimensions, trxTypes, accountOrgId, paymentMethods, loading: movementsLoading, reload: reloadMovements } = useAccountMovements(recordId);
   const { statements } = useBankStatements(recordId);
   const movementsTabRef = useRef(null);
@@ -214,7 +214,12 @@ export default function FinancialAccountWindow({ recordId }) {
               onReload={reloadMovements}
             />
           )}
-          {activeTab === 'reconciliation' && <ReconciliationTab />}
+          {activeTab === 'reconciliation' && (
+            <ReconciliationTab
+              account={account}
+              onReconcileSuccess={() => { reloadAccount(); reloadMovements(); }}
+            />
+          )}
           {activeTab === 'statements' && (
             <ImportedStatementsTab ref={statementsTabRef} account={account} />
           )}

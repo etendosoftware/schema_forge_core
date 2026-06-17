@@ -1,7 +1,9 @@
-import BankReconciliationPage from './BankReconciliationPage';
+import HeaderPage, { api } from './HeaderPage';
 
-const windowMeta = { category: 'accounting', name: 'Bank Reconciliation' };
+const windowMeta = { category: 'finance', name: 'Bank Reconciliation' };
 
+// @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  return <BankReconciliationPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} {...rest} />;
+  return <HeaderPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
+// @sf-generated-end component:App
