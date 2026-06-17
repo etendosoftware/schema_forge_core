@@ -7,6 +7,16 @@
     "balanceFooter": {
       "debitField": "foreignCurrencyDebit",
       "creditField": "foreignCurrencyCredit"
+    },
+    "processOverrides": {
+      "complete": {
+        "add": true,
+        "label": "Complete",
+        "style": "positive",
+        "columnName": "documentAction",
+        "requiresLines": true,
+        "requiresBalance": true
+      }
     }
   },
   "entities": {

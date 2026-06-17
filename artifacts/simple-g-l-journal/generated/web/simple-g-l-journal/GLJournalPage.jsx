@@ -25,7 +25,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:gLJournal
 const processes = [
-
+  { name: 'complete', label: 'Complete', style: 'positive', columnName: 'documentAction', requiresLines: true, requiresBalance: true },
 ];
 // @sf-generated-end processes:gLJournal
 

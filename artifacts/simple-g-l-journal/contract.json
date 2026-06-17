@@ -1,8 +1,8 @@
 {
   "version": "0.6.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-17T11:41:16.853Z",
-  "checksum": "a7a3d2c8669089c8",
+  "updatedAt": "2026-06-17T11:52:34.306Z",
+  "checksum": "d3bb54a0bc0ed894",
   "frontendContract": {
     "window": {
       "id": "B917E8A7B0864ACEA9D941E3B7494E53",
@@ -10,6 +10,16 @@
       "primaryEntity": "gLJournal",
       "category": "finance",
       "breadcrumb": "Finance / Manual Journals",
+      "processOverrides": {
+        "complete": {
+          "add": true,
+          "label": "Complete",
+          "style": "positive",
+          "columnName": "documentAction",
+          "requiresLines": true,
+          "requiresBalance": true
+        }
+      },
       "layoutType": "default",
       "balanceFooter": {
         "debitField": "foreignCurrencyDebit",
@@ -546,6 +556,16 @@
       "primaryEntity": "gLJournal",
       "category": "finance",
       "breadcrumb": "Finance / Manual Journals",
+      "processOverrides": {
+        "complete": {
+          "add": true,
+          "label": "Complete",
+          "style": "positive",
+          "columnName": "documentAction",
+          "requiresLines": true,
+          "requiresBalance": true
+        }
+      },
       "balanceFooter": {
         "debitField": "foreignCurrencyDebit",
         "creditField": "foreignCurrencyCredit"

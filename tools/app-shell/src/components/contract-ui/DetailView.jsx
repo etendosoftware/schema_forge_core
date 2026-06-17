@@ -2601,6 +2601,7 @@ export function DetailView({
                   ? evalDisplayLogicRaw(p.displayLogicRaw, data)
                   : displayLogic?.visibility?.[p.name] !== false)
                 .filter(p => !p.requiresLines || hook.children.length > 0)
+                .filter(p => !p.requiresBalance || (balanceState?.isBalanced && (balanceState?.totalDebit ?? 0) > 0))
                 .map(p => {
                   const isPrimary = p.style === 'positive';
                   const btnClass = getButtonClass(salesTheme, p, isPrimary);
