@@ -491,3 +491,195 @@ describe('Endpoint helpers', () => {
     expect(url).toContain('permanentDeleteConversation');
   });
 });
+
+// ---------------------------------------------------------------------------
+// copilotRequest — additional FormData and header edge cases
+// ---------------------------------------------------------------------------
+
+describe('copilotRequest — FormData body handling', () => {
+  beforeEach(() => {
+    globalThis.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('does not set Content-Type when body is FormData (browser sets boundary)', async () => {
+    const formData = new FormData();
+    formData.append('key', 'value');
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ ok: true }),
+    });
+
+    await copilotRequest('upload', 'tk', { method: 'POST', body: formData });
+
+    const [, opts] = globalThis.fetch.mock.calls[0];
+    expect(opts.headers.has('Content-Type')).toBe(false);
+    expect(opts.headers.get('Authorization')).toBe('Bearer tk');
+  });
+
+  it('sets Content-Type to application/json for string body', async () => {
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => '{}',
+    });
+
+    await copilotRequest('endpoint', 'tk', { method: 'POST', body: '{"x":1}' });
+
+    const [, opts] = globalThis.fetch.mock.calls[0];
+    expect(opts.headers.get('Content-Type')).toBe('application/json');
+  });
+
+  it('throws error with message from response body', async () => {
+    globalThis.fetch.mockResolvedValue({
+      ok: false,
+      status: 422,
+      text: async () => JSON.stringify({ message: 'Validation failed' }),
+    });
+
+    await expect(copilotRequest('test', 'tk')).rejects.toThrow('Validation failed');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// copilotGet — null and empty query params filtering
+// ---------------------------------------------------------------------------
+
+describe('copilotGet — param filtering', () => {
+  beforeEach(() => {
+    globalThis.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('filters out null query params', async () => {
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      text: async () => '{}',
+    });
+
+    await copilotGet('endpoint', 'tk', { valid: 'yes', nullParam: null });
+    const [url] = globalThis.fetch.mock.calls[0];
+    expect(url).toContain('valid=yes');
+    expect(url).not.toContain('nullParam');
+  });
+
+  it('filters out undefined query params', async () => {
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      text: async () => '{}',
+    });
+
+    await copilotGet('endpoint', 'tk', { keep: 'val', drop: undefined });
+    const [url] = globalThis.fetch.mock.calls[0];
+    expect(url).toContain('keep=val');
+    expect(url).not.toContain('drop');
+  });
+
+  it('filters out empty string query params', async () => {
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      text: async () => '{}',
+    });
+
+    await copilotGet('endpoint', 'tk', { filled: 'data', empty: '' });
+    const [url] = globalThis.fetch.mock.calls[0];
+    expect(url).toContain('filled=data');
+    expect(url).not.toContain('empty=');
+  });
+
+  it('builds no query string when all params are null/empty', async () => {
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      text: async () => '{}',
+    });
+
+    await copilotGet('endpoint', 'tk', { a: null, b: '', c: undefined });
+    const [url] = globalThis.fetch.mock.calls[0];
+    expect(url).not.toContain('?');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// parseJsonResponse — non-JSON response
+// ---------------------------------------------------------------------------
+
+describe('parseJsonResponse — edge cases', () => {
+  it('wraps non-JSON text in { raw } object', async () => {
+    const response = { text: async () => 'plain text response' };
+    const result = await parseJsonResponse(response);
+    expect(result).toEqual({ raw: 'plain text response' });
+  });
+
+  it('wraps HTML response in { raw } object', async () => {
+    const response = { text: async () => '<html><body>Error</body></html>' };
+    const result = await parseJsonResponse(response);
+    expect(result).toEqual({ raw: '<html><body>Error</body></html>' });
+  });
+
+  it('returns null for whitespace-only body', async () => {
+    const response = { text: async () => '' };
+    const result = await parseJsonResponse(response);
+    expect(result).toBeNull();
+  });
+
+  it('parses nested JSON correctly', async () => {
+    const nested = { answer: { response: 'deep', metadata: { key: 'val' } } };
+    const response = { text: async () => JSON.stringify(nested) };
+    const result = await parseJsonResponse(response);
+    expect(result).toEqual(nested);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// detectBaseUrl — /web/ in path vs without
+// ---------------------------------------------------------------------------
+
+describe('detectBaseUrl — path variations', () => {
+  afterEach(() => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/' },
+      writable: true,
+    });
+  });
+
+  it('extracts context from /etendo/web/... path', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/etendo/web/com.etendoerp.go/app' },
+      writable: true,
+    });
+    expect(detectBaseUrl()).toBe('/etendo');
+  });
+
+  it('extracts context from /myapp/web/ path', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/myapp/web/something' },
+      writable: true,
+    });
+    expect(detectBaseUrl()).toBe('/myapp');
+  });
+
+  it('extracts empty string when /web/ is at root', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/web/app' },
+      writable: true,
+    });
+    expect(detectBaseUrl()).toBe('');
+  });
+
+  it('returns empty or env fallback when no /web/ in path', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/dashboard/home' },
+      writable: true,
+    });
+    const result = detectBaseUrl();
+    // Falls back to import.meta.env.VITE_API_BASE || ''
+    expect(typeof result).toBe('string');
+  });
+});

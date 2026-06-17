@@ -15,6 +15,8 @@ import {
   runAddLineAction,
   insertLinesTab,
   normalizePatchFieldValues,
+  applyCalloutFieldUpdates,
+  applyCalloutComboUpdates,
   mergeSelectorContextFields,
   mergeSelectorAuxFields,
   applyLocalChildRowUpdate,
@@ -998,6 +1000,567 @@ describe('DetailView helper functions', () => {
 
     it('returns true when all requiredHeaderFields are filled', () => {
       expect(resolveCanAddLines(null, { bp: 'ID1', warehouse: 'W1' }, ['bp', 'warehouse'])).toBe(true);
+    });
+
+    it('returns false when requiredHeaderField is whitespace-only string', () => {
+      expect(resolveCanAddLines(null, { bp: '   ' }, ['bp'])).toBe(false);
+    });
+
+    it('returns false when requiredHeaderField is empty string', () => {
+      expect(resolveCanAddLines(null, { bp: '' }, ['bp'])).toBe(false);
+    });
+
+    it('returns true when requiredHeaderFields is empty array (no guard)', () => {
+      expect(resolveCanAddLines(null, {}, [])).toBe(true);
+    });
+
+    it('returns true when requiredHeaderFields is null (no guard)', () => {
+      expect(resolveCanAddLines(null, {}, null)).toBe(true);
+    });
+
+    it('guard returning false blocks add', () => {
+      const guard = () => false;
+      expect(resolveCanAddLines(guard, { status: 'DR' }, ['status'])).toBe(false);
+    });
+  });
+
+  describe('normalizePatchFieldValues (extended branches)', () => {
+    it('converts comma-free numeric string with decimals to float', () => {
+      const fv = {};
+      normalizePatchFieldValues({ price: '123.45' }, fv);
+      expect(fv.price).toBe(123.45);
+    });
+
+    it('does NOT convert string with comma (locale number like "10,50")', () => {
+      const fv = {};
+      normalizePatchFieldValues({ price: '10,50' }, fv);
+      expect(fv.price).toBe('10,50');
+    });
+
+    it('preserves boolean values', () => {
+      const fv = {};
+      normalizePatchFieldValues({ active: true, disabled: false }, fv);
+      expect(fv.active).toBe(true);
+      expect(fv.disabled).toBe(false);
+    });
+
+    it('preserves null values', () => {
+      const fv = {};
+      normalizePatchFieldValues({ field: null }, fv);
+      expect(fv.field).toBeNull();
+    });
+
+    it('handles integer string without decimals', () => {
+      const fv = {};
+      normalizePatchFieldValues({ qty: '7' }, fv);
+      expect(fv.qty).toBe(7);
+    });
+
+    it('handles zero string', () => {
+      const fv = {};
+      normalizePatchFieldValues({ qty: '0' }, fv);
+      expect(fv.qty).toBe(0);
+    });
+
+    it('handles string that looks almost numeric but has trailing text', () => {
+      const fv = {};
+      normalizePatchFieldValues({ code: '123abc' }, fv);
+      expect(fv.code).toBe('123abc');
+    });
+  });
+
+  describe('applyCalloutFieldUpdates', () => {
+    it('applies field update and calls handleChange', () => {
+      const hook = { handleChange: vi.fn() };
+      const ctx = {
+        data: { warehouse: '' },
+        triggerField: 'bp',
+        userTouchedRef: { current: new Set() },
+        appliedFields: new Map(),
+        hook,
+        api: {},
+        catalogs: {},
+      };
+      applyCalloutFieldUpdates({ warehouse: { value: 'W1' } }, ctx);
+      expect(hook.handleChange).toHaveBeenCalledWith('warehouse', 'W1');
+      expect(ctx.appliedFields.get('warehouse')).toBe('W1');
+    });
+
+    it('skips empty callout value when current value already exists', () => {
+      const hook = { handleChange: vi.fn() };
+      const ctx = {
+        data: { warehouse: 'W-EXISTING' },
+        triggerField: 'bp',
+        userTouchedRef: { current: new Set() },
+        appliedFields: new Map(),
+        hook,
+        api: {},
+        catalogs: {},
+      };
+      applyCalloutFieldUpdates({ warehouse: { value: '' } }, ctx);
+      expect(hook.handleChange).not.toHaveBeenCalled();
+    });
+
+    it('skips null callout value when current value already exists', () => {
+      const hook = { handleChange: vi.fn() };
+      const ctx = {
+        data: { warehouse: 'W-EXISTING' },
+        triggerField: 'bp',
+        userTouchedRef: { current: new Set() },
+        appliedFields: new Map(),
+        hook,
+        api: {},
+        catalogs: {},
+      };
+      applyCalloutFieldUpdates({ warehouse: { value: null } }, ctx);
+      expect(hook.handleChange).not.toHaveBeenCalled();
+    });
+
+    it('applies empty callout value when current value is also empty', () => {
+      const hook = { handleChange: vi.fn() };
+      const ctx = {
+        data: { warehouse: '' },
+        triggerField: 'bp',
+        userTouchedRef: { current: new Set() },
+        appliedFields: new Map(),
+        hook,
+        api: {},
+        catalogs: {},
+      };
+      applyCalloutFieldUpdates({ warehouse: { value: '' } }, ctx);
+      expect(hook.handleChange).toHaveBeenCalledWith('warehouse', '');
+    });
+
+    it('skips user-touched field that is NOT the trigger field', () => {
+      const hook = { handleChange: vi.fn() };
+      const ctx = {
+        data: { paymentTerms: 'PT1' },
+        triggerField: 'bp',
+        userTouchedRef: { current: new Set(['paymentTerms']) },
+        appliedFields: new Map(),
+        hook,
+        api: {},
+        catalogs: {},
+      };
+      applyCalloutFieldUpdates({ paymentTerms: { value: 'PT2' } }, ctx);
+      expect(hook.handleChange).not.toHaveBeenCalled();
+    });
+
+    it('always applies update for the trigger field even if user-touched', () => {
+      const hook = { handleChange: vi.fn() };
+      const ctx = {
+        data: { bp: 'BP-OLD' },
+        triggerField: 'bp',
+        userTouchedRef: { current: new Set(['bp']) },
+        appliedFields: new Map(),
+        hook,
+        api: {},
+        catalogs: {},
+      };
+      applyCalloutFieldUpdates({ bp: { value: 'BP-NEW' } }, ctx);
+      expect(hook.handleChange).toHaveBeenCalledWith('bp', 'BP-NEW');
+    });
+
+    it('applies _identifier when entry has one', () => {
+      const hook = { handleChange: vi.fn() };
+      const ctx = {
+        data: { warehouse: '' },
+        triggerField: 'bp',
+        userTouchedRef: { current: new Set() },
+        appliedFields: new Map(),
+        hook,
+        api: {},
+        catalogs: {},
+      };
+      applyCalloutFieldUpdates({ warehouse: { value: 'W1', _identifier: 'Main Warehouse' } }, ctx);
+      expect(hook.handleChange).toHaveBeenCalledWith('warehouse', 'W1');
+      expect(hook.handleChange).toHaveBeenCalledWith('warehouse$_identifier', 'Main Warehouse');
+    });
+  });
+
+  describe('applyCalloutComboUpdates', () => {
+    it('applies selected combo value and calls handleChange', () => {
+      const hook = { handleChange: vi.fn() };
+      const ctx = {
+        data: { paymentMethod: '' },
+        triggerField: 'bp',
+        userTouchedRef: { current: new Set() },
+        appliedFields: new Map(),
+        hook,
+      };
+      applyCalloutComboUpdates({ paymentMethod: { selected: 'PM1', _identifier: 'Cash' } }, ctx);
+      expect(hook.handleChange).toHaveBeenCalledWith('paymentMethod', 'PM1');
+      expect(hook.handleChange).toHaveBeenCalledWith('paymentMethod$_identifier', 'Cash');
+      expect(ctx.appliedFields.get('paymentMethod')).toBe('PM1');
+    });
+
+    it('auto-selects first entry when selected is null', () => {
+      const hook = { handleChange: vi.fn() };
+      const ctx = {
+        data: { address: '' },
+        triggerField: 'bp',
+        userTouchedRef: { current: new Set() },
+        appliedFields: new Map(),
+        hook,
+      };
+      applyCalloutComboUpdates({
+        address: {
+          selected: null,
+          entries: [{ id: 'ADDR1', identifier: 'Main Address' }],
+          _identifier: null,
+        },
+      }, ctx);
+      expect(hook.handleChange).toHaveBeenCalledWith('address', 'ADDR1');
+      expect(hook.handleChange).toHaveBeenCalledWith('address$_identifier', 'Main Address');
+    });
+
+    it('auto-selects first entry using _identifier fallback', () => {
+      const hook = { handleChange: vi.fn() };
+      const ctx = {
+        data: { address: '' },
+        triggerField: 'bp',
+        userTouchedRef: { current: new Set() },
+        appliedFields: new Map(),
+        hook,
+      };
+      applyCalloutComboUpdates({
+        address: {
+          selected: null,
+          entries: [{ id: 'ADDR1', _identifier: 'Alt Addr' }],
+          _identifier: null,
+        },
+      }, ctx);
+      expect(hook.handleChange).toHaveBeenCalledWith('address$_identifier', 'Alt Addr');
+    });
+
+    it('skips combo when no selected and no entries', () => {
+      const hook = { handleChange: vi.fn() };
+      const ctx = {
+        data: {},
+        triggerField: 'bp',
+        userTouchedRef: { current: new Set() },
+        appliedFields: new Map(),
+        hook,
+      };
+      applyCalloutComboUpdates({ address: { selected: null, entries: [] } }, ctx);
+      expect(hook.handleChange).not.toHaveBeenCalled();
+    });
+
+    it('skips user-touched combo field that is NOT the trigger', () => {
+      const hook = { handleChange: vi.fn() };
+      const ctx = {
+        data: { paymentMethod: 'PM-OLD' },
+        triggerField: 'bp',
+        userTouchedRef: { current: new Set(['paymentMethod']) },
+        appliedFields: new Map(),
+        hook,
+      };
+      applyCalloutComboUpdates({ paymentMethod: { selected: 'PM-NEW', _identifier: 'Wire' } }, ctx);
+      expect(hook.handleChange).not.toHaveBeenCalled();
+    });
+
+    it('applies combo when it IS the trigger field even if user-touched', () => {
+      const hook = { handleChange: vi.fn() };
+      const ctx = {
+        data: { bp: 'BP-OLD' },
+        triggerField: 'bp',
+        userTouchedRef: { current: new Set(['bp']) },
+        appliedFields: new Map(),
+        hook,
+      };
+      applyCalloutComboUpdates({ bp: { selected: 'BP-NEW', _identifier: 'Acme' } }, ctx);
+      expect(hook.handleChange).toHaveBeenCalledWith('bp', 'BP-NEW');
+    });
+
+    it('does not set $_identifier when selectedLabel is falsy', () => {
+      const hook = { handleChange: vi.fn() };
+      const ctx = {
+        data: { paymentMethod: '' },
+        triggerField: 'bp',
+        userTouchedRef: { current: new Set() },
+        appliedFields: new Map(),
+        hook,
+      };
+      applyCalloutComboUpdates({ paymentMethod: { selected: 'PM1', _identifier: null } }, ctx);
+      expect(hook.handleChange).toHaveBeenCalledWith('paymentMethod', 'PM1');
+      expect(hook.handleChange).not.toHaveBeenCalledWith('paymentMethod$_identifier', expect.anything());
+    });
+  });
+
+  describe('mergeSelectorContextFields (extended branches)', () => {
+    it('defaults isTaxIncluded to true (gross) when undefined', () => {
+      const snapshot = {};
+      mergeSelectorContextFields({ standardPrice: 50 }, snapshot, 'product');
+      expect(snapshot.grossUnitPrice).toBe(50);
+      expect(snapshot.grossListPrice).toBe(50);
+      expect(snapshot.unitPrice).toBeUndefined();
+    });
+
+    it('uses net prices when isTaxIncluded is explicitly false', () => {
+      const snapshot = {};
+      mergeSelectorContextFields({ standardPrice: 50, isTaxIncluded: false }, snapshot, 'product');
+      expect(snapshot.unitPrice).toBe(50);
+      expect(snapshot.listPrice).toBe(50);
+      expect(snapshot.grossUnitPrice).toBeUndefined();
+    });
+
+    it('skips searchKey field', () => {
+      const snapshot = {};
+      mergeSelectorContextFields({ searchKey: 'PROD-001', description: 'Widget' }, snapshot, 'product');
+      expect(snapshot['product_searchKey']).toBeUndefined();
+      expect(snapshot['product_description']).toBe('Widget');
+    });
+
+    it('skips fields with object values', () => {
+      const snapshot = {};
+      mergeSelectorContextFields({ category: { id: '1', name: 'Cat' }, code: 'C1' }, snapshot, 'product');
+      expect(snapshot['product_category']).toBeUndefined();
+      expect(snapshot['product_code']).toBe('C1');
+    });
+
+    it('skips standardPrice when value is null', () => {
+      const snapshot = {};
+      mergeSelectorContextFields({ standardPrice: null, description: 'Test' }, snapshot, 'product');
+      // null is skipped by the typeof === object check
+      expect(snapshot.grossUnitPrice).toBeUndefined();
+    });
+  });
+
+  describe('collectRowFieldValues (extended branches)', () => {
+    it('skips _entityName key', () => {
+      const fv = {};
+      collectRowFieldValues({ _entityName: 'OrderLine', qty: 5 }, fv, (v) => v);
+      expect(fv._entityName).toBeUndefined();
+      expect(fv.qty).toBe(5);
+    });
+
+    it('skips $ref key', () => {
+      const fv = {};
+      collectRowFieldValues({ '$ref': 'some/ref', product: 'P1' }, fv, (v) => v);
+      expect(fv['$ref']).toBeUndefined();
+      expect(fv.product).toBe('P1');
+    });
+
+    it('applies coerce function to values', () => {
+      const fv = {};
+      collectRowFieldValues({ qty: '10' }, fv, (v) => typeof v === 'string' ? parseFloat(v) : v);
+      expect(fv.qty).toBe(10);
+    });
+  });
+
+  describe('computeIsDirty (each condition individually false)', () => {
+    it('returns false when addingSecondaryLine has only false values', () => {
+      expect(computeIsDirty({ isDirtyHeader: false }, false, { tab1: false, tab2: false }, null, false)).toBe(false);
+    });
+
+    it('returns false when lineEdits is empty object', () => {
+      expect(computeIsDirty({ isDirtyHeader: false }, false, {}, {}, false)).toBe(false);
+    });
+
+    it('returns true when lineEdits has at least one key', () => {
+      expect(computeIsDirty({ isDirtyHeader: false }, false, {}, { L1: { qty: 5 } }, false)).toBe(true);
+    });
+
+    it('returns false when additionalDirtyState is not strictly true', () => {
+      expect(computeIsDirty({ isDirtyHeader: false }, false, {}, null, 'yes')).toBe(false);
+    });
+  });
+
+  describe('isDeleteButtonVisible (extended branches)', () => {
+    it('returns falsy when recordId is falsy (empty string)', () => {
+      expect(isDeleteButtonVisible(false, '', {}, null, false, false)).toBeFalsy();
+    });
+
+    it('returns truthy when hideDeleteWhenComplete is true but status is DR (not completed)', () => {
+      expect(isDeleteButtonVisible(false, '123', { documentStatus: 'DR' }, 'documentStatus', true, false)).toBeTruthy();
+    });
+
+    it('returns falsy when isProcessed is true and hideDeleteWhenComplete is true', () => {
+      expect(isDeleteButtonVisible(false, '123', {}, null, true, true)).toBeFalsy();
+    });
+
+    it('returns truthy when hideDeleteWhenComplete is false regardless of isProcessed', () => {
+      expect(isDeleteButtonVisible(false, '123', {}, null, false, true)).toBeTruthy();
+    });
+  });
+
+  describe('shouldShowLinesEmptyState (each false condition individually)', () => {
+    it('returns false when hook.children has items', () => {
+      expect(shouldShowLinesEmptyState({ children: [{ id: 1 }], editing: {} }, false, () => null, false)).toBe(false);
+    });
+
+    it('returns false when addingLine is true', () => {
+      expect(shouldShowLinesEmptyState({ children: [], editing: {} }, true, () => null, false)).toBe(false);
+    });
+
+    it('returns false when LinesEmptyState is null', () => {
+      expect(shouldShowLinesEmptyState({ children: [], editing: {} }, false, null, false)).toBeFalsy();
+    });
+
+    it('returns false when hook.editing is null', () => {
+      expect(shouldShowLinesEmptyState({ children: [], editing: null }, false, () => null, false)).toBeFalsy();
+    });
+
+    it('returns false when isDocumentReadOnly is true', () => {
+      expect(shouldShowLinesEmptyState({ children: [], editing: {} }, false, () => null, true)).toBe(false);
+    });
+  });
+
+  describe('getAddLineMenuActions (extended branches)', () => {
+    it('returns undefined when getLineMenuActions is null', () => {
+      expect(getAddLineMenuActions(null, {}, {}, (k) => k)).toBeUndefined();
+    });
+
+    it('translates string labels via ui function', () => {
+      const getActions = () => [{ label: 'importLines', action: vi.fn() }];
+      const ui = (k) => `translated:${k}`;
+      const result = getAddLineMenuActions(getActions, {}, {}, ui);
+      expect(result[0].label).toBe('translated:importLines');
+    });
+
+    it('preserves non-string labels as-is', () => {
+      const JsxLabel = () => '<span>Custom</span>';
+      const getActions = () => [{ label: JsxLabel, action: vi.fn() }];
+      const result = getAddLineMenuActions(getActions, {}, {}, (k) => k);
+      expect(result[0].label).toBe(JsxLabel);
+    });
+
+    it('falls back to raw label when ui returns empty string', () => {
+      const getActions = () => [{ label: 'myKey', action: vi.fn() }];
+      const ui = () => '';
+      const result = getAddLineMenuActions(getActions, {}, {}, ui);
+      expect(result[0].label).toBe('myKey');
+    });
+
+    it('passes data and importRef to getLineMenuActions', () => {
+      const getActions = vi.fn(() => []);
+      const data = { id: '1' };
+      const ref = { current: null };
+      getAddLineMenuActions(getActions, data, ref, (k) => k);
+      expect(getActions).toHaveBeenCalledWith({ data, importRef: ref });
+    });
+  });
+
+  describe('renderExtraActionButtons (extended branches)', () => {
+    it('returns empty array-like result for empty actions array', () => {
+      const result = renderExtraActionButtons([], {}, { children: [] }, '');
+      expect(result).toHaveLength(0);
+    });
+
+    it('includes action without explicit visible property (defaults to visible)', () => {
+      const actions = [{ key: 'a', label: 'A', onClick: vi.fn() }];
+      const result = renderExtraActionButtons(actions, {}, { children: [] }, '');
+      const { container } = render(<>{result}</>);
+      expect(screen.getByText('A')).toBeInTheDocument();
+    });
+
+    it('applies action.className when provided', () => {
+      const actions = [{ key: 'a', label: 'A', onClick: vi.fn(), className: 'custom-cls' }];
+      const result = renderExtraActionButtons(actions, {}, { children: [] }, 'base');
+      const { container } = render(<>{result}</>);
+      const btn = screen.getByText('A');
+      expect(btn.className).toContain('custom-cls');
+    });
+
+    it('passes data and children to function form', () => {
+      const fn = vi.fn(({ data, children }) => [{ key: 'x', label: `${data.id}-${children.length}`, onClick: vi.fn() }]);
+      const result = renderExtraActionButtons(fn, { id: 'R1' }, { children: ['L1', 'L2'] }, '');
+      const { container } = render(<>{result}</>);
+      expect(screen.getByText('R1-2')).toBeInTheDocument();
+    });
+  });
+
+  describe('renderEmbeddedStatusPill (extended branches)', () => {
+    it('renders pill with statusEnumLabels passed to DocumentStatusPill', () => {
+      const result = renderEmbeddedStatusPill('documentStatus', { documentStatus: 'CO' }, { CO: 'Completed', DR: 'Draft' });
+      const { container } = render(<>{result}</>);
+      expect(screen.getByTestId('doc-status-pill')).toBeInTheDocument();
+      expect(screen.getByTestId('doc-status-pill').textContent).toBe('CO');
+    });
+
+    it('returns null when statusField is falsy empty string', () => {
+      expect(renderEmbeddedStatusPill('', { documentStatus: 'DR' }, {})).toBeNull();
+    });
+
+    it('returns null when data[statusField] is empty string', () => {
+      expect(renderEmbeddedStatusPill('documentStatus', { documentStatus: '' }, {})).toBeNull();
+    });
+
+    it('returns null when data[statusField] is null', () => {
+      expect(renderEmbeddedStatusPill('documentStatus', { documentStatus: null }, {})).toBeNull();
+    });
+  });
+
+  describe('buildLineRowClickHandler', () => {
+    it('returns undefined when no DetailForm', () => {
+      expect(buildLineRowClickHandler(null, 'classic', vi.fn())).toBeUndefined();
+    });
+
+    it('returns undefined for inlineEditable layout', () => {
+      expect(buildLineRowClickHandler(() => null, 'inlineEditable', vi.fn())).toBeUndefined();
+    });
+
+    it('returns a handler function when DetailForm and classic layout', () => {
+      const setSelectedLine = vi.fn();
+      const handler = buildLineRowClickHandler(() => null, 'classic', setSelectedLine);
+      expect(typeof handler).toBe('function');
+      handler({ id: 'L1', product: 'P1' });
+      expect(setSelectedLine).toHaveBeenCalledWith({ id: 'L1', product: 'P1' });
+    });
+  });
+
+  describe('renderSidePanel', () => {
+    it('renders function sidePanel as React element', () => {
+      const SideComp = ({ data }) => <div data-testid="sp">{data?.name}</div>;
+      const result = renderSidePanel(SideComp, { name: 'Test' }, 'R1', 'token', '/api', {}, false);
+      const { container } = render(<>{result}</>);
+      expect(screen.getByTestId('sp')).toBeInTheDocument();
+      expect(screen.getByText('Test')).toBeInTheDocument();
+    });
+
+    it('returns non-function sidePanel as-is', () => {
+      expect(renderSidePanel(null, {}, 'R1', 'tok', '/api', {}, false)).toBeNull();
+      expect(renderSidePanel('static', {}, 'R1', 'tok', '/api', {}, false)).toBe('static');
+    });
+  });
+
+  describe('getDocumentIds (extended branches)', () => {
+    it('returns array with recordId when truthy', () => {
+      expect(getDocumentIds('abc-123')).toEqual(['abc-123']);
+    });
+
+    it('returns empty array when recordId is falsy', () => {
+      expect(getDocumentIds(null)).toEqual([]);
+      expect(getDocumentIds('')).toEqual([]);
+      expect(getDocumentIds(undefined)).toEqual([]);
+    });
+  });
+
+  describe('applyLocalChildRowUpdate (extended branches)', () => {
+    it('includes unitPrice in localUpdate when present in fieldValues', () => {
+      const hook = { handleUpdateChild: vi.fn() };
+      applyLocalChildRowUpdate({}, 'product', 'P1', { product: 'P1', unitPrice: 25.5 }, {}, hook, { id: 'R1' });
+      expect(hook.handleUpdateChild).toHaveBeenCalledWith('R1', expect.objectContaining({ unitPrice: 25.5 }));
+    });
+
+    it('does not include unitPrice when not in fieldValues', () => {
+      const hook = { handleUpdateChild: vi.fn() };
+      applyLocalChildRowUpdate({}, 'product', 'P1', { product: 'P1' }, {}, hook, { id: 'R1' });
+      const callArgs = hook.handleUpdateChild.mock.calls[0][1];
+      expect(callArgs.unitPrice).toBeUndefined();
+    });
+
+    it('does not add identifier key when opts.identifier is undefined', () => {
+      const hook = { handleUpdateChild: vi.fn() };
+      applyLocalChildRowUpdate({}, 'product', 'P1', { product: 'P1' }, {}, hook, { id: 'R1' });
+      const callArgs = hook.handleUpdateChild.mock.calls[0][1];
+      expect(callArgs['product$_identifier']).toBeUndefined();
+    });
+
+    it('handles opts being null gracefully', () => {
+      const hook = { handleUpdateChild: vi.fn() };
+      applyLocalChildRowUpdate({}, 'product', 'P1', { product: 'P1' }, null, hook, { id: 'R1' });
+      expect(hook.handleUpdateChild).toHaveBeenCalled();
     });
   });
 });

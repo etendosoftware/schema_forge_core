@@ -571,3 +571,178 @@ describe('findSource', () => {
     assert.equal(result, null);
   });
 });
+
+// ---------------------------------------------------------------------------
+// analyzeJavaSource — try-catch blocks and nested if-else
+// ---------------------------------------------------------------------------
+
+describe('analyzeJavaSource — try-catch and nested if-else', () => {
+  it('counts branches inside try-catch blocks', () => {
+    const source = `
+      public void run() {
+        try {
+          if (x > 0) doStuff();
+        } catch (Exception e) {
+          if (y > 0) handleError();
+        }
+      }
+    `;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.branches, 2);
+  });
+
+  it('counts nested if-else chains', () => {
+    const source = `
+      public void run() {
+        if (a) {
+          if (b) {
+            if (c) doC();
+          }
+        }
+      }
+    `;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.branches, 3);
+  });
+
+  it('counts branches in if-else-if ladder', () => {
+    const source = `
+      public void run() {
+        if (a) doA();
+        else if (b) doB();
+        else if (c) doC();
+      }
+    `;
+    const result = analyzeJavaSource(source);
+    // 3 if statements
+    assert.equal(result.branches, 3);
+  });
+
+  it('handles source with only try-catch (no branches)', () => {
+    const source = `
+      public void run() {
+        try {
+          doSomething();
+        } catch (Exception e) {
+          log.error(e);
+        }
+      }
+    `;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.branches, 0);
+    assert.equal(result.hasDml, false);
+  });
+
+  it('returns low confidence and warning for null source', () => {
+    const result = analyzeJavaSource(null);
+    assert.equal(result.confidence, 'low');
+    assert.equal(result.warning, 'Source not found');
+    assert.deepEqual(result.effects, []);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// translateExpression — compound & and | operators (more coverage)
+// ---------------------------------------------------------------------------
+
+describe('translateExpression — compound logical operators', () => {
+  it('handles single & between two conditions', () => {
+    const result = translateExpression("@A@='Y' & @B@='Y'");
+    assert.equal(result.success, true);
+    assert.ok(result.result.includes('&&'));
+    assert.ok(!result.result.includes(' & '));
+  });
+
+  it('handles single | between two conditions', () => {
+    const result = translateExpression("@A@='Y' | @B@='Y'");
+    assert.equal(result.success, true);
+    assert.ok(result.result.includes('||'));
+    assert.ok(!result.result.includes(' | '));
+  });
+
+  it('handles mixed & and | in complex expression', () => {
+    const result = translateExpression("@A@='Y' & @B@='N' | @C@='Y' & @D@='N'");
+    assert.equal(result.success, true);
+    const r = result.result;
+    // Should have both && and ||
+    assert.ok(r.includes('&&'));
+    assert.ok(r.includes('||'));
+  });
+
+  it('does not double-replace existing || operators', () => {
+    const result = translateExpression("@A@='Y' || @B@='N'");
+    assert.equal(result.success, true);
+    // Should not turn || into ||||
+    assert.ok(!result.result.includes('||||'));
+  });
+
+  it('does not double-replace existing && operators', () => {
+    const result = translateExpression("@A@='Y' && @B@='N'");
+    assert.equal(result.success, true);
+    assert.ok(!result.result.includes('&&&&'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// translateExpression — rejection patterns
+// ---------------------------------------------------------------------------
+
+describe('translateExpression — rejection patterns', () => {
+  it('rejects function keyword (case insensitive)', () => {
+    const result = translateExpression('function () { return true; }');
+    assert.equal(result.success, false);
+    assert.ok(result.error.includes('framework'));
+  });
+
+  it('rejects checkRule call', () => {
+    const result = translateExpression("checkRule('SomeRule')");
+    assert.equal(result.success, false);
+  });
+
+  it('rejects Utilities. calls', () => {
+    const result = translateExpression("Utilities.getValue('fieldA')");
+    assert.equal(result.success, false);
+  });
+
+  it('rejects OB. calls', () => {
+    const result = translateExpression("OB.getContext().getClient()");
+    assert.equal(result.success, false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isSimpleValidation — additional patterns
+// ---------------------------------------------------------------------------
+
+describe('isSimpleValidation — additional patterns', () => {
+  it('returns false for EXISTS with inner SELECT', () => {
+    const sql = "SELECT 1 WHERE EXISTS (SELECT id FROM C_Order WHERE docStatus = 'CO')";
+    assert.equal(isSimpleValidation(sql), false);
+  });
+
+  it('returns false for UNION ALL', () => {
+    const sql = "SELECT Name FROM A UNION ALL SELECT Name FROM B";
+    assert.equal(isSimpleValidation(sql), false);
+  });
+
+  it('returns false for multiple JOINs (3 joins)', () => {
+    const sql = `SELECT x FROM A
+      JOIN B ON A.id = B.a_id
+      JOIN C ON B.id = C.b_id
+      JOIN D ON C.id = D.c_id`;
+    assert.equal(isSimpleValidation(sql), false);
+  });
+
+  it('returns true for simple query with one JOIN', () => {
+    const sql = "SELECT p.Name FROM M_Product p JOIN M_Product_Category pc ON p.M_Product_Category_ID = pc.M_Product_Category_ID";
+    assert.equal(isSimpleValidation(sql), true);
+  });
+
+  it('returns true for empty string', () => {
+    assert.equal(isSimpleValidation(''), true);
+  });
+
+  it('returns true for undefined', () => {
+    assert.equal(isSimpleValidation(undefined), true);
+  });
+});

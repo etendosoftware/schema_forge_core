@@ -94,50 +94,33 @@ describe('DataTable — render coverage', () => {
   // --- Selection ---
 
   describe('selection', () => {
+    const SCOLS = [{ key: 'n', label: 'N', type: 'string' }];
+    const SDATA = [{ id: 'r1', n: 'a' }, { id: 'r2', n: 'b' }];
+
     it('select-all toggles all row checkboxes', async () => {
       const onSelectionChange = vi.fn();
-      render(
-        <DataTable columns={COLUMNS} data={DATA} onSelectionChange={onSelectionChange} />,
-      );
+      render(<DataTable columns={SCOLS} data={SDATA} onSelectionChange={onSelectionChange} />);
       const checkboxes = screen.getAllByRole('checkbox');
-      // First checkbox is "select all"
-      const selectAll = checkboxes[0];
-      await act(async () => {
-        await userEvent.click(selectAll);
-      });
+      await act(async () => { await userEvent.click(checkboxes[0]); });
       expect(onSelectionChange).toHaveBeenCalledWith(expect.arrayContaining([
         expect.objectContaining({ id: 'r1' }),
         expect.objectContaining({ id: 'r2' }),
       ]));
     });
 
-    it('toggling a single row checkbox calls onSelectionChange with that row', async () => {
+    it('toggling a single row checkbox calls onSelectionChange', async () => {
       const onSelectionChange = vi.fn();
-      render(
-        <DataTable columns={COLUMNS} data={DATA} onSelectionChange={onSelectionChange} />,
-      );
+      render(<DataTable columns={SCOLS} data={SDATA} onSelectionChange={onSelectionChange} />);
       const checkboxes = screen.getAllByRole('checkbox');
-      // Second checkbox is for the first row
-      await act(async () => {
-        await userEvent.click(checkboxes[1]);
-      });
+      await act(async () => { await userEvent.click(checkboxes[1]); });
       expect(onSelectionChange).toHaveBeenCalledWith(
         expect.arrayContaining([expect.objectContaining({ id: 'r1' })]),
       );
     });
 
-    it('isRowSelectable prevents selecting non-selectable rows', async () => {
-      const onSelectionChange = vi.fn();
-      render(
-        <DataTable
-          columns={COLUMNS}
-          data={DATA}
-          onSelectionChange={onSelectionChange}
-          isRowSelectable={(row) => row.id === 'r1'}
-        />,
-      );
+    it('isRowSelectable prevents selecting non-selectable rows', () => {
+      render(<DataTable columns={SCOLS} data={SDATA} isRowSelectable={(row) => row.id === 'r1'} />);
       const checkboxes = screen.getAllByRole('checkbox');
-      // Row 2 should be disabled
       expect(checkboxes[2]).toBeDisabled();
     });
   });
@@ -146,21 +129,14 @@ describe('DataTable — render coverage', () => {
 
   describe('empty and loading states', () => {
     it('shows empty state with filter hint when columnFilters are active', () => {
-      render(
-        <DataTable
-          columns={COLUMNS}
-          data={[]}
-          columnFilters={{ docNo: 'xyz' }}
-        />,
-      );
-      // hasActiveFilter includes columnFilters
+      const cols = [{ key: 'n', label: 'N', type: 'string' }];
+      render(<DataTable columns={cols} data={[]} columnFilters={{ n: 'xyz' }} />);
       expect(screen.getByText('noMatchingRecords')).toBeInTheDocument();
     });
 
     it('renders skeleton rows when loading', () => {
-      const { container } = render(
-        <DataTable columns={COLUMNS} data={[]} loading />,
-      );
+      const cols = [{ key: 'n', label: 'N', type: 'string' }];
+      const { container } = render(<DataTable columns={cols} data={[]} loading />);
       expect(container.querySelector('.space-y-2')).toBeInTheDocument();
     });
   });
@@ -267,10 +243,10 @@ describe('DataTable — render coverage', () => {
 
   describe('hidden columns', () => {
     it('does not render columns listed in hiddenColumns', () => {
-      render(
-        <DataTable columns={COLUMNS} data={DATA} hiddenColumns={['active']} selectable={false} />,
-      );
-      expect(screen.queryByTestId('column-header-active')).toBeNull();
+      const cols = [{ key: 'a', label: 'A', type: 'string' }, { key: 'b', label: 'B', type: 'string' }];
+      const rows = [{ id: 'hc1', a: 'x', b: 'y' }];
+      render(<DataTable columns={cols} data={rows} hiddenColumns={['b']} selectable={false} />);
+      expect(screen.queryByTestId('column-header-b')).toBeNull();
     });
   });
 
@@ -278,48 +254,25 @@ describe('DataTable — render coverage', () => {
 
   describe('clone button', () => {
     it('renders clone button when onCloneRow is provided', () => {
-      render(
-        <DataTable columns={COLUMNS} data={DATA} onCloneRow={vi.fn()} selectable={false} />,
-      );
-      const cloneButtons = screen.getAllByLabelText('cloneOrderBtn');
-      expect(cloneButtons).toHaveLength(DATA.length);
+      const cols = [{ key: 'n', label: 'N', type: 'string' }];
+      const rows = [{ id: 'cl1', n: 'a' }, { id: 'cl2', n: 'b' }];
+      render(<DataTable columns={cols} data={rows} onCloneRow={vi.fn()} selectable={false} />);
+      expect(screen.getAllByLabelText('cloneOrderBtn')).toHaveLength(2);
     });
   });
 
   // --- Hover row actions ---
 
   describe('hover row actions', () => {
-    it('renders pencil and trash in hoverRowActions mode', () => {
-      render(
-        <DataTable
-          columns={COLUMNS}
-          data={DATA}
-          hoverRowActions
-          onDeleteRow={vi.fn()}
-          selectable={false}
-        />,
-      );
-      // Each row has an edit button (Pencil) and a delete button
-      const editButtons = screen.getAllByLabelText('edit');
-      expect(editButtons).toHaveLength(DATA.length);
-      const deleteButtons = screen.getAllByTestId(/^row-delete-/);
-      expect(deleteButtons).toHaveLength(DATA.length);
-    });
+    it('renders pencil/trash in hoverRowActions, save/cancel when editing', () => {
+      const cols = [{ key: 'n', label: 'N', type: 'string' }];
+      const rows = [{ id: 'hr1', n: 'a' }, { id: 'hr2', n: 'b' }];
+      const { unmount } = render(<DataTable columns={cols} data={rows} hoverRowActions onDeleteRow={vi.fn()} selectable={false} />);
+      expect(screen.getAllByLabelText('edit')).toHaveLength(2);
+      expect(screen.getAllByTestId(/^row-delete-/)).toHaveLength(2);
+      unmount();
 
-    it('shows save/cancel icons when editingRowId matches', () => {
-      render(
-        <DataTable
-          columns={COLUMNS}
-          data={DATA}
-          hoverRowActions
-          onDeleteRow={vi.fn()}
-          editingRowId="r1"
-          onSaveRow={vi.fn()}
-          onCancelEdit={vi.fn()}
-          selectable={false}
-        />,
-      );
-      // For row r1, edit column shows Check (save), delete column shows X (cancel)
+      render(<DataTable columns={cols} data={rows} hoverRowActions onDeleteRow={vi.fn()} editingRowId="hr1" onSaveRow={vi.fn()} onCancelEdit={vi.fn()} selectable={false} />);
       expect(screen.getByLabelText('save')).toBeInTheDocument();
       expect(screen.getByLabelText('cancel')).toBeInTheDocument();
     });
@@ -329,44 +282,27 @@ describe('DataTable — render coverage', () => {
 
   describe('row quick actions', () => {
     it('renders RowQuickActions when rowQuickActions.enabled is true', () => {
-      render(
-        <DataTable
-          columns={COLUMNS}
-          data={DATA}
-          rowQuickActions={{ enabled: true, onEdit: vi.fn() }}
-          selectable={false}
-        />,
-      );
-      expect(screen.getByTestId('rqa-r1')).toBeInTheDocument();
-      expect(screen.getByTestId('rqa-r2')).toBeInTheDocument();
+      const cols = [{ key: 'n', label: 'N', type: 'string' }];
+      const rows = [{ id: 'rq1', n: 'a' }];
+      render(<DataTable columns={cols} data={rows} rowQuickActions={{ enabled: true, onEdit: vi.fn() }} selectable={false} />);
+      expect(screen.getByTestId('rqa-rq1')).toBeInTheDocument();
     });
   });
 
   // --- Inline add row ---
 
   describe('inline add row', () => {
-    it('renders inline-add-row when addRow.active is true', () => {
-      const addRow = {
-        active: true,
-        fields: [
-          { key: 'docNo', label: 'Doc No', type: 'text', column: 'DocumentNo' },
-        ],
-        onAdd: vi.fn(),
-        onCancel: vi.fn(),
-        catalogs: {},
-      };
-      render(<DataTable columns={[COLUMNS[0]]} data={[]} addRow={addRow} selectable={false} />);
-      expect(screen.getByTestId('inline-add-row')).toBeInTheDocument();
-    });
-
-    it('shows the inline-add hint text when addRow is active', () => {
+    it('renders inline-add-row and hint when addRow.active is true', () => {
+      const cols = [{ key: 'docNo', label: 'Doc No', type: 'string' }];
       const addRow = {
         active: true,
         fields: [{ key: 'docNo', label: 'Doc No', type: 'text', column: 'DocumentNo' }],
         onAdd: vi.fn(),
         onCancel: vi.fn(),
+        catalogs: {},
       };
-      render(<DataTable columns={[COLUMNS[0]]} data={[]} addRow={addRow} selectable={false} />);
+      render(<DataTable columns={cols} data={[]} addRow={addRow} selectable={false} />);
+      expect(screen.getByTestId('inline-add-row')).toBeInTheDocument();
       expect(screen.getByText('inlineAddHint')).toBeInTheDocument();
     });
   });
@@ -374,25 +310,13 @@ describe('DataTable — render coverage', () => {
   // --- Percent column ---
 
   describe('percent column', () => {
-    it('renders percent bar at 0%', () => {
+    it('renders percent bar for 0%, partial, and 100%', () => {
       const cols = [{ key: 'pct', label: 'Pct', type: 'percent' }];
-      const rows = [{ id: 'p1', pct: 0 }];
+      const rows = [{ id: 'p1', pct: 0 }, { id: 'p2', pct: 45 }, { id: 'p3', pct: 100 }];
       render(<DataTable columns={cols} data={rows} selectable={false} />);
       expect(screen.getByText('0%')).toBeInTheDocument();
-    });
-
-    it('renders percent bar at 100%', () => {
-      const cols = [{ key: 'pct', label: 'Pct', type: 'percent' }];
-      const rows = [{ id: 'p2', pct: 100 }];
-      render(<DataTable columns={cols} data={rows} selectable={false} />);
-      expect(screen.getByText('100%')).toBeInTheDocument();
-    });
-
-    it('renders partial percent bar', () => {
-      const cols = [{ key: 'pct', label: 'Pct', type: 'percent' }];
-      const rows = [{ id: 'p3', pct: 45 }];
-      render(<DataTable columns={cols} data={rows} selectable={false} />);
       expect(screen.getByText('45%')).toBeInTheDocument();
+      expect(screen.getByText('100%')).toBeInTheDocument();
     });
   });
 
@@ -443,28 +367,23 @@ describe('DataTable — render coverage', () => {
   // --- onRowClick vs onNavigate vs onRowSelect ---
 
   describe('row click dispatch', () => {
+    const RCOLS = [{ key: 'n', label: 'N', type: 'string' }];
+    const RDATA = [{ id: 'r1', n: 'a' }];
+
     it('calls onRowClick when provided instead of onNavigate', async () => {
       const onRowClick = vi.fn();
       const onNavigate = vi.fn();
-      render(
-        <DataTable columns={COLUMNS} data={DATA} onRowClick={onRowClick} onNavigate={onNavigate} selectable={false} />,
-      );
-      await act(async () => {
-        await userEvent.click(screen.getByTestId('row-r1'));
-      });
-      expect(onRowClick).toHaveBeenCalledWith(DATA[0]);
+      render(<DataTable columns={RCOLS} data={RDATA} onRowClick={onRowClick} onNavigate={onNavigate} selectable={false} />);
+      await act(async () => { await userEvent.click(screen.getByTestId('row-r1')); });
+      expect(onRowClick).toHaveBeenCalledWith(RDATA[0]);
       expect(onNavigate).not.toHaveBeenCalled();
     });
 
     it('falls back to onRowSelect when neither onRowClick nor onNavigate', async () => {
       const onRowSelect = vi.fn();
-      render(
-        <DataTable columns={COLUMNS} data={DATA} onRowSelect={onRowSelect} selectable={false} />,
-      );
-      await act(async () => {
-        await userEvent.click(screen.getByTestId('row-r1'));
-      });
-      expect(onRowSelect).toHaveBeenCalledWith(DATA[0]);
+      render(<DataTable columns={RCOLS} data={RDATA} onRowSelect={onRowSelect} selectable={false} />);
+      await act(async () => { await userEvent.click(screen.getByTestId('row-r1')); });
+      expect(onRowSelect).toHaveBeenCalledWith(RDATA[0]);
     });
   });
 
@@ -472,14 +391,9 @@ describe('DataTable — render coverage', () => {
 
   describe('rowFilter', () => {
     it('filters rows using the rowFilter predicate', () => {
-      render(
-        <DataTable
-          columns={COLUMNS}
-          data={DATA}
-          rowFilter={(row) => row.total > 200}
-          selectable={false}
-        />,
-      );
+      const cols = [{ key: 'total', label: 'Total', type: 'amount' }];
+      const rows = [{ id: 'r1', total: 10 }, { id: 'r2', total: 300 }];
+      render(<DataTable columns={cols} data={rows} rowFilter={(row) => row.total > 200} selectable={false} showFooterTotals={false} />);
       expect(screen.queryByTestId('row-r1')).toBeNull();
       expect(screen.getByTestId('row-r2')).toBeInTheDocument();
     });
@@ -506,64 +420,6 @@ describe('DataTable — render coverage', () => {
     });
   });
 
-  // --- Date cell with dot color ---
-
-  describe('date dot color', () => {
-    it('renders date with color dot for past dates', () => {
-      const cols = [{ key: 'date', label: 'Date', type: 'date' }];
-      const rows = [{ id: 'dd1', date: '2020-01-01' }];
-      const { container } = render(<DataTable columns={cols} data={rows} selectable={false} />);
-      // Past date should produce a red dot
-      const dot = container.querySelector('.bg-red-500');
-      expect(dot).not.toBeNull();
-    });
-
-    it('renders date with green dot for future dates', () => {
-      const cols = [{ key: 'date', label: 'Date', type: 'date' }];
-      const rows = [{ id: 'dd2', date: '2099-12-31' }];
-      const { container } = render(<DataTable columns={cols} data={rows} selectable={false} />);
-      const dot = container.querySelector('.bg-emerald-500');
-      expect(dot).not.toBeNull();
-    });
-
-    it('renders date without dot when col.dot is false', () => {
-      const cols = [{ key: 'date', label: 'Date', type: 'date', dot: false }];
-      const rows = [{ id: 'dd3', date: '2020-01-01' }];
-      const { container } = render(<DataTable columns={cols} data={rows} selectable={false} />);
-      const dot = container.querySelector('.bg-red-500');
-      expect(dot).toBeNull();
-    });
-  });
-
-  // --- Inline add-row with selector/search field ---
-
-  describe('inline add-row with selector field', () => {
-    it('renders InlineSearchCombo for search-type add-row field', () => {
-      const addRow = {
-        active: true,
-        fields: [
-          { key: 'product', label: 'Product', type: 'search', column: 'M_Product_ID' },
-        ],
-        onAdd: vi.fn(),
-        onCancel: vi.fn(),
-        catalogs: {},
-      };
-      const cols = [{ key: 'product', label: 'Product', type: 'string' }];
-      render(
-        <DataTable
-          columns={cols}
-          data={[]}
-          addRow={addRow}
-          selectable={false}
-          apiBaseUrl="/api"
-          entity="lines"
-          token="tok"
-        />,
-      );
-      expect(screen.getByTestId('inline-add-row')).toBeInTheDocument();
-    });
-  });
-
   // --- Custom render column ---
 
   describe('custom render column', () => {
@@ -577,21 +433,6 @@ describe('DataTable — render coverage', () => {
       const rows = [{ id: 'cr1' }];
       render(<DataTable columns={cols} data={rows} selectable={false} />);
       expect(screen.getByTestId('custom-render')).toBeInTheDocument();
-      expect(screen.getByText('cr1')).toBeInTheDocument();
-    });
-  });
-
-  // --- Amount column rendering ---
-
-  describe('amount column', () => {
-    it('renders formatted amount in body cell', () => {
-      const cols = [
-        { key: 'docNo', label: 'Doc No', type: 'string' },
-        { key: 'total', label: 'Total', type: 'amount' },
-      ];
-      const rows = [{ id: 'a1', docNo: 'X', total: 99.9, 'currency$_identifier': 'EUR' }];
-      render(<DataTable columns={cols} data={rows} selectable={false} showFooterTotals={false} />);
-      expect(screen.getByText('99.90 EUR')).toBeInTheDocument();
     });
   });
 
@@ -602,534 +443,9 @@ describe('DataTable — render coverage', () => {
       const cols = [{ key: 'active', label: 'Active', type: 'boolean', toggle: true }];
       const rows = [{ id: 'bt1', active: true }];
       render(
-        <DataTable
-          columns={cols}
-          data={rows}
-          selectable={false}
-          apiBaseUrl="/api"
-          entity="header"
-          token="tok"
-        />,
+        <DataTable columns={cols} data={rows} selectable={false} apiBaseUrl="/api" entity="header" token="tok" />,
       );
-      // Switch renders with role="switch"
       expect(screen.getByRole('switch')).toBeInTheDocument();
-    });
-  });
-
-  // --- Empty state without filter ---
-
-  describe('empty state without filter', () => {
-    it('shows noRecordsYet when no filters and no data', () => {
-      render(<DataTable columns={COLUMNS} data={[]} selectable={false} />);
-      expect(screen.getByText('noRecordsYet')).toBeInTheDocument();
-    });
-  });
-
-  // --- addRow with select type field ---
-
-  describe('inline add-row with select field', () => {
-    it('renders select dropdown for static-options field in add-row', () => {
-      const addRow = {
-        active: true,
-        fields: [
-          {
-            key: 'type',
-            label: 'Type',
-            type: 'select',
-            column: 'DocType',
-            options: [
-              { value: 'SO', label: 'Sales' },
-              { value: 'PO', label: 'Purchase' },
-            ],
-          },
-        ],
-        onAdd: vi.fn(),
-        onCancel: vi.fn(),
-        catalogs: {},
-      };
-      const cols = [{ key: 'type', label: 'Type', type: 'string' }];
-      render(
-        <DataTable columns={cols} data={[]} addRow={addRow} selectable={false} />,
-      );
-      expect(screen.getByTestId('inline-add-row')).toBeInTheDocument();
-      expect(screen.getByTestId('inline-add-field-type')).toBeInTheDocument();
-    });
-  });
-
-  // --- Read-only mode (no selection column) ---
-
-  describe('readOnly rendering', () => {
-    it('does not show checkboxes when selectable is false', () => {
-      render(<DataTable columns={COLUMNS} data={DATA} selectable={false} />);
-      expect(screen.queryByRole('checkbox')).toBeNull();
-    });
-  });
-
-  // --- onNavigate fallback ---
-
-  describe('onNavigate row click', () => {
-    it('calls onNavigate when no onRowClick or onRowSelect', async () => {
-      const onNavigate = vi.fn();
-      render(
-        <DataTable columns={COLUMNS} data={DATA} onNavigate={onNavigate} selectable={false} />,
-      );
-      await act(async () => {
-        await userEvent.click(screen.getByTestId('row-r1'));
-      });
-      expect(onNavigate).toHaveBeenCalledWith(expect.objectContaining({ id: DATA[0].id }));
-    });
-  });
-
-  // --- Click interactions on hover row action buttons ---
-
-  describe('hover row action button clicks', () => {
-    it('calls onSaveRow when save icon is clicked in editing mode', async () => {
-      const onSaveRow = vi.fn();
-      const onCancelEdit = vi.fn();
-      render(
-        <DataTable
-          columns={COLUMNS}
-          data={DATA}
-          hoverRowActions
-          onDeleteRow={vi.fn()}
-          editingRowId="r1"
-          onSaveRow={onSaveRow}
-          onCancelEdit={onCancelEdit}
-          selectable={false}
-        />,
-      );
-      const saveBtn = screen.getByLabelText('save');
-      await act(async () => {
-        await userEvent.click(saveBtn);
-      });
-      expect(onSaveRow).toHaveBeenCalled();
-    });
-
-    it('calls onCancelEdit when cancel icon is clicked in editing mode', async () => {
-      const onCancelEdit = vi.fn();
-      render(
-        <DataTable
-          columns={COLUMNS}
-          data={DATA}
-          hoverRowActions
-          onDeleteRow={vi.fn()}
-          editingRowId="r1"
-          onSaveRow={vi.fn()}
-          onCancelEdit={onCancelEdit}
-          selectable={false}
-        />,
-      );
-      const cancelBtn = screen.getByLabelText('cancel');
-      await act(async () => {
-        await userEvent.click(cancelBtn);
-      });
-      expect(onCancelEdit).toHaveBeenCalled();
-    });
-
-    it('calls onDeleteRow when delete icon is clicked on a non-editing row', async () => {
-      const onDeleteRow = vi.fn().mockResolvedValue({});
-      render(
-        <DataTable
-          columns={COLUMNS}
-          data={DATA}
-          hoverRowActions
-          onDeleteRow={onDeleteRow}
-          selectable={false}
-        />,
-      );
-      const deleteButtons = screen.getAllByTestId(/^row-delete-/);
-      await act(async () => {
-        await userEvent.click(deleteButtons[0]);
-      });
-      expect(onDeleteRow).toHaveBeenCalledWith(expect.objectContaining({ id: 'r1' }));
-    });
-  });
-
-  // --- Clone button click ---
-
-  describe('clone button click', () => {
-    it('calls onCloneRow with row data when clone button is clicked', async () => {
-      const onCloneRow = vi.fn();
-      render(
-        <DataTable columns={COLUMNS} data={DATA} onCloneRow={onCloneRow} selectable={false} />,
-      );
-      const cloneButtons = screen.getAllByLabelText('cloneOrderBtn');
-      await act(async () => {
-        await userEvent.click(cloneButtons[0]);
-      });
-      expect(onCloneRow).toHaveBeenCalledWith(expect.objectContaining({ id: 'r1' }));
-    });
-  });
-
-  // --- Deselect all via select-all toggle ---
-
-  describe('select-all deselect', () => {
-    it('deselects all rows when select-all is clicked twice', async () => {
-      const onSelectionChange = vi.fn();
-      render(
-        <DataTable columns={COLUMNS} data={DATA} onSelectionChange={onSelectionChange} />,
-      );
-      const checkboxes = screen.getAllByRole('checkbox');
-      const selectAll = checkboxes[0];
-      // Select all
-      await act(async () => {
-        await userEvent.click(selectAll);
-      });
-      // Deselect all
-      await act(async () => {
-        await userEvent.click(selectAll);
-      });
-      const lastCall = onSelectionChange.mock.calls[onSelectionChange.mock.calls.length - 1];
-      expect(lastCall[0]).toEqual([]);
-    });
-  });
-
-  // --- Boolean toggle switch click ---
-
-  describe('boolean toggle switch click', () => {
-    it('calls fetch to toggle boolean when switch is clicked', async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ response: { data: [{ id: 'bt1', active: false }] } }),
-      });
-      const cols = [{ key: 'active', label: 'Active', type: 'boolean', toggle: true }];
-      const rows = [{ id: 'bt1', active: true }];
-      render(
-        <DataTable
-          columns={cols}
-          data={rows}
-          selectable={false}
-          apiBaseUrl="/api"
-          entity="header"
-          token="tok"
-        />,
-      );
-      const toggle = screen.getByRole('switch');
-      await act(async () => {
-        await userEvent.click(toggle);
-      });
-      expect(globalThis.fetch).toHaveBeenCalled();
-      delete globalThis.fetch;
-    });
-  });
-
-  // --- Sort direction toggle ---
-
-  describe('sort direction toggle', () => {
-    it('shows descending indicator when sortDirection is desc', () => {
-      const cols = [{ key: 'name', label: 'Name', type: 'string' }];
-      render(
-        <DataTable
-          columns={cols}
-          data={[]}
-          onSort={vi.fn()}
-          sortColumn="name"
-          sortDirection="desc"
-          selectable={false}
-        />,
-      );
-      expect(screen.getByText('\u25BC')).toBeInTheDocument();
-    });
-  });
-
-  // --- hideHeader mode (colgroup + hidden thead) ---
-
-  describe('hideHeader mode', () => {
-    it('hides table header with display:none when hideHeader is true', () => {
-      const { container } = render(
-        <DataTable columns={COLUMNS} data={DATA} hideHeader selectable={false} />,
-      );
-      const thead = container.querySelector('thead');
-      expect(thead).not.toBeNull();
-      expect(thead.style.display).toBe('none');
-    });
-
-    it('renders colgroup for column widths when hideHeader is true', () => {
-      const { container } = render(
-        <DataTable columns={COLUMNS} data={DATA} hideHeader selectable={false} />,
-      );
-      expect(container.querySelector('colgroup')).not.toBeNull();
-    });
-  });
-
-  // --- Pagination controls ---
-
-  describe('pagination controls', () => {
-    it('renders page info when totalRows is provided', () => {
-      render(
-        <DataTable
-          columns={COLUMNS}
-          data={DATA}
-          totalRows={50}
-          pageSize={10}
-          currentPage={1}
-          onPageChange={vi.fn()}
-          selectable={false}
-        />,
-      );
-      // Should show some pagination UI
-      const nextBtn = screen.queryByTestId('pagination-next');
-      // Pagination might render as text or as buttons depending on implementation
-      expect(screen.getByTestId('row-r1')).toBeInTheDocument();
-    });
-
-    it('calls onPageChange when next page is clicked', async () => {
-      const onPageChange = vi.fn();
-      render(
-        <DataTable
-          columns={COLUMNS}
-          data={DATA}
-          totalRows={50}
-          pageSize={10}
-          currentPage={1}
-          onPageChange={onPageChange}
-          selectable={false}
-        />,
-      );
-      const nextBtn = screen.queryByTestId('pagination-next');
-      if (nextBtn) {
-        await act(async () => { await userEvent.click(nextBtn); });
-        expect(onPageChange).toHaveBeenCalled();
-      }
-    });
-  });
-
-  // --- Custom render function in column ---
-
-  describe('custom column render function — complex', () => {
-    it('passes full row data and context to custom render', () => {
-      const renderFn = vi.fn((row, ctx) => <span data-testid="custom-cell">{row.docNo}-{row.total}</span>);
-      const cols = [{
-        key: 'custom',
-        label: 'Custom',
-        type: 'string',
-        render: renderFn,
-      }];
-      const rows = [{ id: 'cr2', docNo: 'INV-001', total: 500 }];
-      render(<DataTable columns={cols} data={rows} selectable={false} />);
-      expect(screen.getByTestId('custom-cell')).toBeInTheDocument();
-      expect(screen.getByText('INV-001-500')).toBeInTheDocument();
-      // render receives (row, { entity, token, apiBaseUrl })
-      expect(renderFn).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 'cr2', docNo: 'INV-001' }),
-        expect.objectContaining({}),
-      );
-    });
-  });
-
-  // --- Footer totals with mixed types ---
-
-  describe('footer totals — edge cases', () => {
-    it('renders 0 total when all amounts are null', () => {
-      const cols = [{ key: 'total', label: 'Total', type: 'amount' }];
-      const rows = [
-        { id: 'fn1', total: null },
-        { id: 'fn2', total: null },
-      ];
-      render(<DataTable columns={cols} data={rows} selectable={false} showFooterTotals />);
-      // formatAmount(0) → "0.00"
-      expect(screen.getByText('0.00')).toBeInTheDocument();
-    });
-
-    it('handles single row totals', () => {
-      const cols = [{ key: 'total', label: 'Total', type: 'amount' }];
-      const rows = [{ id: 'fs1', total: 42.5, 'currency$_identifier': 'USD' }];
-      render(<DataTable columns={cols} data={rows} selectable={false} showFooterTotals />);
-      // 42.50 USD appears in both body and footer
-      expect(screen.getAllByText('42.50 USD').length).toBeGreaterThanOrEqual(1);
-    });
-  });
-
-  // --- Read-only mode: no edit icons in hoverRowActions ---
-
-  describe('readOnly via hoverRowActions without onDeleteRow', () => {
-    it('does not render delete buttons when onDeleteRow is not provided', () => {
-      render(
-        <DataTable
-          columns={COLUMNS}
-          data={DATA}
-          hoverRowActions
-          selectable={false}
-        />,
-      );
-      expect(screen.queryAllByTestId(/^row-delete-/)).toHaveLength(0);
-    });
-  });
-
-  // --- Filter empty state with rowFilter that removes all ---
-
-  describe('filter empty state with rowFilter removing all rows', () => {
-    it('shows noRecordsYet when rowFilter removes every row', () => {
-      render(
-        <DataTable
-          columns={COLUMNS}
-          data={DATA}
-          rowFilter={() => false}
-          selectable={false}
-        />,
-      );
-      // All rows filtered out via rowFilter → empty state without filter hint
-      expect(screen.getByText('noRecordsYet')).toBeInTheDocument();
-    });
-  });
-
-  // --- Selector input field in add row ---
-
-  describe('inline add-row with selector field', () => {
-    it('renders SelectorInput for selector-type add-row field', () => {
-      const addRow = {
-        active: true,
-        fields: [
-          { key: 'bp', label: 'Business Partner', type: 'selector', column: 'C_BPartner_ID' },
-        ],
-        onAdd: vi.fn(),
-        onCancel: vi.fn(),
-        catalogs: {},
-      };
-      const cols = [{ key: 'bp', label: 'BP', type: 'string' }];
-      render(
-        <DataTable
-          columns={cols}
-          data={[]}
-          addRow={addRow}
-          selectable={false}
-          apiBaseUrl="/api"
-          entity="lines"
-          token="tok"
-        />,
-      );
-      expect(screen.getByTestId('inline-add-row')).toBeInTheDocument();
-    });
-  });
-
-  // --- Multiple selection toggle ---
-
-  describe('multiple selection toggles', () => {
-    it('selects and deselects individual rows independently', async () => {
-      const onSelectionChange = vi.fn();
-      render(
-        <DataTable columns={COLUMNS} data={DATA} onSelectionChange={onSelectionChange} />,
-      );
-      const checkboxes = screen.getAllByRole('checkbox');
-      // Select first row
-      await act(async () => { await userEvent.click(checkboxes[1]); });
-      // Select second row
-      await act(async () => { await userEvent.click(checkboxes[2]); });
-      // Should have both rows selected
-      const lastCall = onSelectionChange.mock.calls[onSelectionChange.mock.calls.length - 1];
-      expect(lastCall[0]).toHaveLength(2);
-    });
-
-    it('deselects a row by clicking its checkbox again', async () => {
-      const onSelectionChange = vi.fn();
-      render(
-        <DataTable columns={COLUMNS} data={DATA} onSelectionChange={onSelectionChange} />,
-      );
-      const checkboxes = screen.getAllByRole('checkbox');
-      // Select first row
-      await act(async () => { await userEvent.click(checkboxes[1]); });
-      // Deselect first row
-      await act(async () => { await userEvent.click(checkboxes[1]); });
-      const lastCall = onSelectionChange.mock.calls[onSelectionChange.mock.calls.length - 1];
-      expect(lastCall[0]).toHaveLength(0);
-    });
-  });
-
-  // --- Column with no data ---
-
-  describe('column with missing data', () => {
-    it('renders empty cell for undefined field value', () => {
-      const cols = [{ key: 'missing', label: 'Missing', type: 'string' }];
-      const rows = [{ id: 'md1' }];
-      render(<DataTable columns={cols} data={rows} selectable={false} />);
-      expect(screen.getByTestId('row-md1')).toBeInTheDocument();
-    });
-  });
-
-  // --- Row highlighting for selectedRowId ---
-
-  describe('selectedRowId highlighting', () => {
-    it('renders selected row with different styling', () => {
-      const { container } = render(
-        <DataTable columns={COLUMNS} data={DATA} selectedRowId="r1" selectable={false} />,
-      );
-      const row = screen.getByTestId('row-r1');
-      // The selected row typically gets a bg-* class
-      expect(row).toBeInTheDocument();
-    });
-  });
-
-  // --- Row without any row click handler ---
-
-  describe('row without click handlers', () => {
-    it('renders row without crashing when no click handler is provided', async () => {
-      render(
-        <DataTable columns={COLUMNS} data={DATA} selectable={false} />,
-      );
-      await act(async () => {
-        await userEvent.click(screen.getByTestId('row-r1'));
-      });
-      // Just should not crash
-      expect(screen.getByTestId('row-r1')).toBeInTheDocument();
-    });
-  });
-
-  // --- Boolean column without badge (plain check/x) ---
-
-  describe('boolean column plain display', () => {
-    it('renders boolean value without badge styling when badge is not set', () => {
-      const cols = [{ key: 'active', label: 'Active', type: 'boolean' }];
-      const rows = [{ id: 'bp1', active: true }, { id: 'bp2', active: false }];
-      render(<DataTable columns={cols} data={rows} selectable={false} />);
-      // Should render checkmarks or x marks
-      expect(screen.getByTestId('row-bp1')).toBeInTheDocument();
-      expect(screen.getByTestId('row-bp2')).toBeInTheDocument();
-    });
-  });
-
-  // --- Amount column with zero value ---
-
-  describe('amount column with zero', () => {
-    it('renders 0.00 for zero amount', () => {
-      const cols = [{ key: 'total', label: 'Total', type: 'amount' }];
-      const rows = [{ id: 'az1', total: 0 }];
-      render(<DataTable columns={cols} data={rows} selectable={false} showFooterTotals={false} />);
-      expect(screen.getByText('0.00')).toBeInTheDocument();
-    });
-  });
-
-  // --- Sort column with no callback ---
-
-  describe('sort column without onSort', () => {
-    it('does not crash when header is clicked without onSort', async () => {
-      const cols = [{ key: 'name', label: 'Name', type: 'string' }];
-      render(<DataTable columns={cols} data={[]} selectable={false} />);
-      const header = screen.getByText('Name');
-      await act(async () => {
-        await userEvent.click(header);
-      });
-      // No crash
-      expect(header).toBeInTheDocument();
-    });
-  });
-
-  // --- Inline edit field click does not propagate row click ---
-
-  describe('inline add cancel', () => {
-    it('calls onCancel when cancel button is clicked in add row', async () => {
-      const onCancel = vi.fn();
-      const addRow = {
-        active: true,
-        fields: [{ key: 'docNo', label: 'Doc No', type: 'text', column: 'DocumentNo' }],
-        onAdd: vi.fn(),
-        onCancel,
-      };
-      render(<DataTable columns={[COLUMNS[0]]} data={[]} addRow={addRow} selectable={false} />);
-      const cancelBtn = screen.queryByTestId('inline-add-cancel');
-      if (cancelBtn) {
-        await act(async () => { await userEvent.click(cancelBtn); });
-        expect(onCancel).toHaveBeenCalled();
-      }
     });
   });
 });

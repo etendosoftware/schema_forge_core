@@ -1031,4 +1031,199 @@ describe('getDisplayText — edge cases', () => {
     expect(getDisplayText({ active: false }, col)).toBe('No');
     expect(getDisplayText({ active: 'false' }, col)).toBe('No');
   });
+
+  it('returns identifier for filterMode=identifier when type is not selector', () => {
+    // filterMode=identifier but type is undefined (not 'selector')
+    const row = { warehouse: 'uuid-wh', 'warehouse$_identifier': 'Main Warehouse' };
+    const col = { key: 'warehouse', filterMode: 'identifier' };
+    expect(getDisplayText(row, col)).toBe('Main Warehouse');
+  });
+
+  it('returns enum label for filterMode=enumLabel when type is not status', () => {
+    const col = { key: 'priority', type: 'number', filterMode: 'enumLabel', enumLabels: { 1: 'High', 5: 'Low' } };
+    expect(getDisplayText({ priority: 1 }, col)).toBe('High');
+    expect(getDisplayText({ priority: 5 }, col)).toBe('Low');
+    // Falls through to raw when no matching key
+    expect(getDisplayText({ priority: 99 }, col)).toBe('99');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// parseDateString — yyyy/mm/dd branch (a > 999)
+// ---------------------------------------------------------------------------
+
+describe('parseUserFilter — parseDateString yyyy/mm/dd branch', () => {
+  it('parses yyyy/mm/dd (slash-separated ISO-like)', () => {
+    const col = { key: 'd', type: 'date' };
+    const result = parseUserFilter(col, '2026/04/14');
+    expect(result).toEqual({
+      mode: 'date', op: '=', value: '2026-04-14', originalValue: '2026/04/14',
+    });
+  });
+
+  it('parses yyyy.mm.dd (dot-separated)', () => {
+    const col = { key: 'd', type: 'date' };
+    const result = parseUserFilter(col, '2026.04.14');
+    expect(result).toEqual({
+      mode: 'date', op: '=', value: '2026-04-14', originalValue: '2026.04.14',
+    });
+  });
+
+  it('returns null for date parts containing NaN', () => {
+    const col = { key: 'd', type: 'date' };
+    expect(parseUserFilter(col, 'ab/cd/efgh')).toBeNull();
+  });
+
+  it('returns null for three-part date where no part > 999', () => {
+    const col = { key: 'd', type: 'date' };
+    // "12/04/99" — c=99, a=12; neither > 999 -> falls through to null
+    expect(parseUserFilter(col, '12/04/99')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// parseNumericExpression — all operators
+// ---------------------------------------------------------------------------
+
+describe('parseUserFilter — parseNumericExpression operators', () => {
+  const col = { key: 'n', type: 'number' };
+
+  it('parses >= operator', () => {
+    const result = parseUserFilter(col, '>=500');
+    expect(result).toEqual({ mode: 'numeric', op: '>=', value: 500, originalValue: '>=500' });
+  });
+
+  it('parses <= operator', () => {
+    const result = parseUserFilter(col, '<=200');
+    expect(result).toEqual({ mode: 'numeric', op: '<=', value: 200, originalValue: '<=200' });
+  });
+
+  it('parses > operator', () => {
+    const result = parseUserFilter(col, '>100');
+    expect(result).toEqual({ mode: 'numeric', op: '>', value: 100, originalValue: '>100' });
+  });
+
+  it('parses < operator', () => {
+    const result = parseUserFilter(col, '<50');
+    expect(result).toEqual({ mode: 'numeric', op: '<', value: 50, originalValue: '<50' });
+  });
+
+  it('parses = operator', () => {
+    const result = parseUserFilter(col, '=42');
+    expect(result).toEqual({ mode: 'numeric', op: '=', value: 42, originalValue: '=42' });
+  });
+
+  it('parses comma-formatted number without operator', () => {
+    const result = parseUserFilter(col, '1,234,567.89');
+    expect(result).toEqual({ mode: 'numeric', op: '=', value: 1234567.89, originalValue: '1,234,567.89' });
+  });
+
+  it('parses comma-formatted number with operator', () => {
+    const result = parseUserFilter(col, '>=1,000');
+    expect(result).toEqual({ mode: 'numeric', op: '>=', value: 1000, originalValue: '>=1,000' });
+  });
+
+  it('returns null for non-numeric text without operator', () => {
+    expect(parseUserFilter(col, 'abc')).toBeNull();
+  });
+
+  it('returns NaN value for operator + non-numeric text (parseNumericExpression extracts operator)', () => {
+    // parseNumericExpression matches the operator prefix but parseFloat returns NaN
+    const result = parseUserFilter(col, '>abc');
+    expect(result).not.toBeNull();
+    expect(result.op).toBe('>');
+    expect(Number.isNaN(result.value)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildAdvancedFilterCriteria — buildCriteria returning null
+// ---------------------------------------------------------------------------
+
+describe('buildAdvancedFilterCriteria — custom buildCriteria edge cases', () => {
+  it('returns null when all custom buildCriteria return null', () => {
+    const col = {
+      key: 'custom',
+      type: 'string',
+      buildCriteria: () => null,
+    };
+    const filter = {
+      rowOperator: 'and',
+      conditions: [
+        { field: 'custom', operator: 'equals', value: 'test' },
+        { field: 'custom', operator: 'iContains', value: 'foo' },
+      ],
+    };
+    expect(buildAdvancedFilterCriteria(filter, [col])).toBeNull();
+  });
+
+  it('skips null buildCriteria results in mixed conditions', () => {
+    const cols = [
+      { key: 'custom', type: 'string', buildCriteria: () => null },
+      { key: 'name', type: 'string' },
+    ];
+    const filter = {
+      rowOperator: 'and',
+      conditions: [
+        { field: 'custom', operator: 'equals', value: 'x' },
+        { field: 'name', operator: 'iContains', value: 'test' },
+      ],
+    };
+    const result = buildAdvancedFilterCriteria(filter, cols);
+    expect(result).toEqual([{ fieldName: 'name', operator: 'iContains', value: 'test' }]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildAdvancedFilterCriteria — empty/null value conditions
+// ---------------------------------------------------------------------------
+
+describe('buildAdvancedFilterCriteria — empty/null value edge cases', () => {
+  const columns = [{ key: 'name', type: 'string' }];
+
+  it('returns null for undefined value', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'iContains', value: undefined }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, columns)).toBeNull();
+  });
+
+  it('returns null for null value with non-null operator', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'equals', value: null }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, columns)).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// inferSortMode — enumLabels vs badgeLabels
+// ---------------------------------------------------------------------------
+
+describe('resolveBackendSort — inferSortMode with enumLabels vs badgeLabels', () => {
+  it('uses enumLabel sort mode when col has enumLabels (space suffix)', () => {
+    const col = { key: 'priority', enumLabels: { 1: 'High', 2: 'Low' } };
+    expect(resolveBackendSort(col, 'asc')).toBe('priority asc');
+    expect(resolveBackendSort(col, 'desc')).toBe('priority desc');
+  });
+
+  it('uses booleanLabel sort mode when col has badgeLabels (space suffix)', () => {
+    const col = { key: 'isActive', badgeLabels: { true: 'Active', false: 'Inactive' } };
+    expect(resolveBackendSort(col, 'asc')).toBe('isActive asc');
+    expect(resolveBackendSort(col, 'desc')).toBe('isActive desc');
+  });
+
+  it('enumLabels takes precedence over type for sort mode', () => {
+    // col has both type=selector and enumLabels; enumLabels wins in inferSortMode
+    const col = { key: 'cat', enumLabels: { A: 'Alpha', B: 'Beta' } };
+    // enumLabel sort mode => space suffix, not identifier
+    expect(resolveBackendSort(col, 'asc')).toBe('cat asc');
+  });
+
+  it('badgeLabels takes precedence over type for sort mode', () => {
+    const col = { key: 'flag', badgeLabels: { true: 'On', false: 'Off' } };
+    expect(resolveBackendSort(col, 'desc')).toBe('flag desc');
+  });
 });

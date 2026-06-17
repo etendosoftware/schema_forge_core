@@ -375,4 +375,124 @@ describe('purchaseInvoiceDescriptor', () => {
       expect(buildTaxSearchTerm({ tax_rate: '10.5' })).toBe('10.5%');
     });
   });
+
+  describe('findBp — response format variations', () => {
+    beforeEach(() => {
+      globalThis.fetch = vi.fn();
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('returns bp id when response uses .data instead of .response.data', async () => {
+      // Some endpoints return { data: [...] } instead of { response: { data: [...] } }
+      globalThis.fetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [{ id: 'BP-DATA' }] }),
+      });
+      const result = await findBp({ token: 'tk', apiBaseUrl: '/api/purchase-invoice', taxId: '99999', name: 'Test' });
+      expect(result).toBe('BP-DATA');
+    });
+
+    it('returns null when taxId matches multiple (ambiguous) via .data format', async () => {
+      globalThis.fetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [{ id: 'BP1' }, { id: 'BP2' }] }),
+      });
+      const result = await findBp({ token: 'tk', apiBaseUrl: '/api/pi', taxId: 'DUPE', name: 'X' });
+      expect(result).toBeNull();
+    });
+
+    it('returns null when json() parsing fails', async () => {
+      globalThis.fetch.mockResolvedValue({
+        ok: true,
+        json: async () => { throw new Error('invalid json'); },
+      });
+      const result = await findBp({ token: 'tk', apiBaseUrl: '/api/pi', taxId: 'X' });
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('buildLineOps — quantity without unit_price and vice versa', () => {
+    it('sets quantity but not price when unit_price is missing', () => {
+      const lines = [{ description: 'Item A', quantity: 5 }];
+      const { lineOps } = buildLineOps(lines, { 0: 'P1' });
+      expect(lineOps[0].body.invoicedQuantity).toBe(5);
+      expect(lineOps[0].body.unitPrice).toBeUndefined();
+      expect(lineOps[0].body.listPrice).toBeUndefined();
+    });
+
+    it('sets price but not quantity when quantity is missing', () => {
+      const lines = [{ description: 'Item B', unit_price: 25.5 }];
+      const { lineOps } = buildLineOps(lines, { 0: 'P1' });
+      expect(lineOps[0].body.invoicedQuantity).toBeUndefined();
+      expect(lineOps[0].body.unitPrice).toBe(25.5);
+      expect(lineOps[0].body.listPrice).toBe(25.5);
+    });
+
+    it('sets both when both are present', () => {
+      const lines = [{ description: 'Item C', quantity: 3, unit_price: 10 }];
+      const { lineOps } = buildLineOps(lines, { 0: 'P1' });
+      expect(lineOps[0].body.invoicedQuantity).toBe(3);
+      expect(lineOps[0].body.unitPrice).toBe(10);
+      expect(lineOps[0].body.listPrice).toBe(10);
+    });
+
+    it('sets neither when both are zero (nonBlank returns true for 0)', () => {
+      const lines = [{ description: 'Item D', quantity: 0, unit_price: 0 }];
+      const { lineOps } = buildLineOps(lines, { 0: 'P1' });
+      // nonBlank(0) is true, so both should be set
+      expect(lineOps[0].body.invoicedQuantity).toBe(0);
+      expect(lineOps[0].body.unitPrice).toBe(0);
+    });
+  });
+
+  describe('toIsoDate — various separators', () => {
+    it('returns dot-separated input as-is (only / and - are recognized)', () => {
+      // toIsoDate regex only handles [/-] separators, not dots
+      expect(toIsoDate('25.12.2025')).toBe('25.12.2025');
+    });
+
+    it('handles mixed digit lengths with slash', () => {
+      expect(toIsoDate('1/2/2025')).toBe('2025-02-01');
+    });
+
+    it('handles slash separator with two-digit year', () => {
+      expect(toIsoDate('15/06/25')).toBe('2025-06-15');
+    });
+
+    it('handles dash separator dd-mm-yyyy', () => {
+      expect(toIsoDate('25-12-2025')).toBe('2025-12-25');
+    });
+  });
+
+  describe('resolveTaxesForLines — simSearch returns objects without .id', () => {
+    it('returns null for entries where match has no .id property', async () => {
+      const { simSearch } = await import('../../../../../lib/simSearch.js');
+      simSearch.mockResolvedValueOnce([
+        { name: 'IVA 21%' },          // no .id
+        { similarity: 0.8 },           // no .id
+        { id: 'TAX-OK', name: 'OK' }, // has .id
+      ]);
+      const lines = [
+        { tax_label: 'IVA 21%' },
+        { tax_rate: 10 },
+        { tax_label: 'Exento' },
+      ];
+      const result = await resolveTaxesForLines({ token: 'tk', lines });
+      expect(result).toEqual([null, null, 'TAX-OK']);
+    });
+
+    it('returns null for undefined match entries', async () => {
+      const { simSearch } = await import('../../../../../lib/simSearch.js');
+      simSearch.mockResolvedValueOnce([undefined, null]);
+      const lines = [
+        { tax_label: 'Missing' },
+        { tax_rate: 5 },
+      ];
+      const result = await resolveTaxesForLines({ token: 'tk', lines });
+      expect(result).toEqual([null, null]);
+    });
+  });
 });

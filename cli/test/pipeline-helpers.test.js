@@ -571,3 +571,180 @@ describe('writeCustomScaffoldFiles', () => {
     assert.equal(writeCalls[1].p, '/out/mockCatalogs.js.new');
   });
 });
+
+// ---------------------------------------------------------------------------
+// buildProcessPipelineSteps — process type variations
+// ---------------------------------------------------------------------------
+
+describe('buildProcessPipelineSteps — step structure', () => {
+  it('contains extract-process as first step', () => {
+    const steps = buildProcessPipelineSteps();
+    assert.equal(steps[0].name, 'extract-process');
+    assert.equal(steps[0].phase, 'P1');
+  });
+
+  it('contains generate-process-contract step', () => {
+    const steps = buildProcessPipelineSteps();
+    const contractStep = steps.find(s => s.name === 'generate-process-contract');
+    assert.ok(contractStep);
+    assert.equal(contractStep.phase, 'P2');
+  });
+
+  it('contains push-process-to-neo step', () => {
+    const steps = buildProcessPipelineSteps();
+    const pushStep = steps.find(s => s.name === 'push-process-to-neo');
+    assert.ok(pushStep);
+    assert.equal(pushStep.phase, 'P3');
+  });
+
+  it('contains generate-process-frontend step', () => {
+    const steps = buildProcessPipelineSteps();
+    const genStep = steps.find(s => s.name === 'generate-process-frontend');
+    assert.ok(genStep);
+    assert.equal(genStep.phase, 'P4');
+  });
+
+  it('each step description is non-empty', () => {
+    const steps = buildProcessPipelineSteps();
+    for (const step of steps) {
+      assert.ok(step.description.length > 0, `${step.name} has empty description`);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// validatePipelineInput — all invalid mode combinations
+// ---------------------------------------------------------------------------
+
+describe('validatePipelineInput — invalid combinations', () => {
+  it('rejects windowId without windowName', () => {
+    const result = validatePipelineInput({ windowId: 'W1' });
+    assert.equal(result.valid, false);
+    assert.ok(result.error.includes('windowName'));
+  });
+
+  it('rejects empty object', () => {
+    const result = validatePipelineInput({});
+    assert.equal(result.valid, false);
+  });
+
+  it('rejects processId without processName', () => {
+    const result = validatePipelineInput({ processId: 'P1' });
+    assert.equal(result.valid, false);
+    assert.ok(result.error.includes('processName'));
+  });
+
+  it('rejects reportId without reportName', () => {
+    const result = validatePipelineInput({ reportId: 'R1' });
+    assert.equal(result.valid, false);
+    assert.ok(result.error.includes('reportName'));
+  });
+
+  it('accepts windowId + windowName as window mode', () => {
+    const result = validatePipelineInput({ windowId: 'W1', windowName: 'sales-order' });
+    assert.equal(result.valid, true);
+    assert.equal(result.mode, 'window');
+  });
+
+  it('menu mode takes precedence over window mode', () => {
+    const result = validatePipelineInput({ menuName: 'Sales', windowId: 'W1', windowName: 'x' });
+    assert.equal(result.mode, 'menu');
+  });
+
+  it('report mode takes precedence over process mode', () => {
+    const result = validatePipelineInput({ reportId: 'R1', reportName: 'Report', processId: 'P1', processName: 'Proc' });
+    assert.equal(result.mode, 'report');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// parseArgs — every flag combination
+// ---------------------------------------------------------------------------
+
+describe('parseArgs — all flag combinations', () => {
+  const run = (...tokens) => parseArgs(['node', 'pipeline.js', ...tokens]);
+
+  it('parses --menu-id flag', () => {
+    const result = run('--menu-id', 'M100');
+    assert.equal(result.menuId, 'M100');
+  });
+
+  it('parses --menu-name flag', () => {
+    const result = run('--menu-name', 'Purchase Invoice');
+    assert.equal(result.menuName, 'Purchase Invoice');
+  });
+
+  it('parses --process-id flag', () => {
+    const result = run('--process-id', 'PRC1');
+    assert.equal(result.processId, 'PRC1');
+  });
+
+  it('parses --process-name flag', () => {
+    const result = run('--process-name', 'Generate Lines');
+    assert.equal(result.processName, 'Generate Lines');
+  });
+
+  it('parses --report-id flag', () => {
+    const result = run('--report-id', 'RPT1');
+    assert.equal(result.reportId, 'RPT1');
+  });
+
+  it('parses --report-name flag', () => {
+    const result = run('--report-name', 'Balance Sheet');
+    assert.equal(result.reportName, 'Balance Sheet');
+  });
+
+  it('parses --dry-run flag', () => {
+    const result = run('--dry-run');
+    assert.equal(result.dryRun, true);
+  });
+
+  it('parses --skip-interactive flag', () => {
+    const result = run('--skip-interactive');
+    assert.equal(result.skipInteractive, true);
+  });
+
+  it('parses --skip-to flag', () => {
+    const result = run('--skip-to', 'generate-frontend');
+    assert.equal(result.skipTo, 'generate-frontend');
+  });
+
+  it('parses all flags together', () => {
+    const result = run(
+      '--menu-id', 'M1',
+      '--menu-name', 'SO',
+      '--process-id', 'P1',
+      '--process-name', 'Gen',
+      '--report-id', 'R1',
+      '--report-name', 'Bal',
+      '--dry-run',
+      '--skip-interactive',
+      '--skip-to', 'resolve-curated',
+    );
+    assert.equal(result.menuId, 'M1');
+    assert.equal(result.menuName, 'SO');
+    assert.equal(result.processId, 'P1');
+    assert.equal(result.processName, 'Gen');
+    assert.equal(result.reportId, 'R1');
+    assert.equal(result.reportName, 'Bal');
+    assert.equal(result.dryRun, true);
+    assert.equal(result.skipInteractive, true);
+    assert.equal(result.skipTo, 'resolve-curated');
+  });
+
+  it('parses positional args with no flags', () => {
+    const result = run('WINDOWID123', 'my-window-name');
+    assert.equal(result.windowId, 'WINDOWID123');
+    assert.equal(result.windowName, 'my-window-name');
+  });
+
+  it('does not set dryRun when not passed', () => {
+    const result = run('--menu-name', 'Test');
+    assert.equal(result.dryRun, undefined);
+  });
+
+  it('does not set skipInteractive when not passed', () => {
+    const result = run('--menu-name', 'Test');
+    assert.equal(result.skipInteractive, undefined);
+  });
+});

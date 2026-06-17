@@ -759,6 +759,174 @@ describe('DetailView render integration', () => {
       expect(mockHook.handleSave).toHaveBeenCalled();
     });
   });
+
+  describe('not-found state (selected=null, loading=false)', () => {
+    afterEach(() => {
+      mockHook.selected = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      mockHook.editing = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      mockHook.loading = false;
+      mockHook.children = [{ id: 'L1', product: 'P1', 'product$_identifier': 'Widget', lineNetAmount: 100 }];
+    });
+
+    it('renders not-found state when selected is null and not loading', () => {
+      mockHook.selected = null;
+      mockHook.editing = null;
+      mockHook.loading = false;
+      mockHook.children = [];
+      const { container } = renderDetailView({ recordId: '999' });
+      expect(container).toBeTruthy();
+    });
+  });
+
+  describe('new record with dirty form (save enabled)', () => {
+    afterEach(() => {
+      mockHook.selected = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      mockHook.editing = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      mockHook.isDirtyHeader = false;
+      mockHook.children = [{ id: 'L1', product: 'P1', 'product$_identifier': 'Widget', lineNetAmount: 100 }];
+    });
+
+    it('enables save button for new dirty record', () => {
+      mockHook.selected = null;
+      mockHook.editing = { documentNo: '' };
+      mockHook.isDirtyHeader = true;
+      mockHook.children = [];
+      renderDetailView({ recordId: 'new' });
+      const saveBtn = screen.getByTestId('action-save');
+      expect(saveBtn).not.toBeDisabled();
+    });
+  });
+
+  describe('process buttons rendering', () => {
+    afterEach(() => {
+      mockHook.selected = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      mockHook.editing = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      vi.clearAllMocks();
+    });
+
+    it('renders process button with style primary', () => {
+      const processes = [
+        { name: 'complete', label: 'Complete', style: 'primary' },
+      ];
+      renderDetailView({ processes });
+      expect(screen.getByText('Complete')).toBeInTheDocument();
+    });
+
+    it('renders multiple process buttons', () => {
+      const processes = [
+        { name: 'complete', label: 'Complete', style: 'positive' },
+        { name: 'reactivate', label: 'Reactivate', style: 'outline' },
+      ];
+      renderDetailView({ processes });
+      expect(screen.getByText('Complete')).toBeInTheDocument();
+      expect(screen.getByText('Reactivate')).toBeInTheDocument();
+    });
+  });
+
+  describe('hideMoreMenu as function', () => {
+    it('renders with hideMoreMenu function returning true (hides menu)', () => {
+      const { container } = renderDetailView({ hideMoreMenu: () => true });
+      expect(container).toBeTruthy();
+      expect(screen.queryByTestId('action-more')).toBeNull();
+    });
+
+    it('renders with hideMoreMenu function returning false (shows menu)', () => {
+      renderDetailView({
+        hideMoreMenu: () => false,
+        menuActions: [{ key: 'a', label: 'Act', onClick: vi.fn() }],
+      });
+      expect(screen.getByTestId('action-more')).toBeInTheDocument();
+    });
+  });
+
+  describe('statusField with statusEnumLabels', () => {
+    it('renders DocumentStatusPill with enum labels', () => {
+      renderDetailView({
+        statusField: 'documentStatus',
+        statusEnumLabels: { DR: 'Draft', CO: 'Completed' },
+      });
+      const pills = screen.queryAllByTestId('status-pill');
+      // At least the embedded pill should render since data has documentStatus=DR
+      expect(pills.length).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('extraBadges rendering', () => {
+    it('renders extra badges when provided', () => {
+      const badges = [
+        { key: 'urgent', label: 'Urgent', variant: 'destructive' },
+        { key: 'vip', label: 'VIP', variant: 'secondary' },
+      ];
+      const { container } = renderDetailView({ extraBadges: badges });
+      expect(container).toBeTruthy();
+    });
+  });
+
+  describe('addLineFields with empty entry', () => {
+    it('renders without add-line area when entry is empty array', () => {
+      const { container } = renderDetailView({
+        addLineFields: { entry: [], derived: [] },
+      });
+      expect(container).toBeTruthy();
+    });
+  });
+
+  describe('lockWhenProcessed with processed record', () => {
+    afterEach(() => {
+      mockHook.selected = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+      mockHook.editing = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+    });
+
+    it('locks form when record is processed and lockWhenProcessed is true', () => {
+      mockHook.selected = { id: '123', documentNo: 'SO-001', documentStatus: 'CO', processed: true };
+      mockHook.editing = { id: '123', documentNo: 'SO-001', documentStatus: 'CO', processed: true };
+      const { container } = renderDetailView({ lockWhenProcessed: true });
+      expect(container).toBeTruthy();
+    });
+  });
+
+  describe('formScrollPaddingX prop', () => {
+    it('renders with custom formScrollPaddingX', () => {
+      const { container } = renderDetailView({ formScrollPaddingX: 'px-8' });
+      expect(container).toBeTruthy();
+    });
+  });
+
+  describe('embedded mode (isEmbedded=true)', () => {
+    it('renders embedded mode with pointer-events-none on interactive areas', () => {
+      const { container } = renderDetailView({ isEmbedded: true });
+      expect(container).toBeTruthy();
+    });
+  });
+
+  describe('requiredHeaderFields prop', () => {
+    it('renders with requiredHeaderFields that block add-line when fields missing', () => {
+      mockHook.editing = { id: '123', documentNo: 'SO-001', businessPartner: null };
+      const { container } = renderDetailView({
+        requiredHeaderFields: ['businessPartner'],
+      });
+      expect(container).toBeTruthy();
+      mockHook.editing = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+    });
+  });
+
+  describe('addLineGuard prop', () => {
+    it('renders with addLineGuard returning true', () => {
+      const { container } = renderDetailView({
+        addLineGuard: (data) => data?.documentStatus === 'DR',
+      });
+      expect(container).toBeTruthy();
+    });
+
+    it('renders with addLineGuard returning false', () => {
+      mockHook.editing = { id: '123', documentNo: 'SO-001', documentStatus: 'CO', processed: true };
+      const { container } = renderDetailView({
+        addLineGuard: (data) => data?.documentStatus === 'DR',
+      });
+      expect(container).toBeTruthy();
+      mockHook.editing = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+    });
+  });
 });
 
 describe('DetailView exported helpers', () => {

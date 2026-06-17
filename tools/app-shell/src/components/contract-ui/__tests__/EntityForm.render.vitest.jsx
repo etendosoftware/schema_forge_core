@@ -824,6 +824,295 @@ describe('EntityForm — extended render coverage', () => {
     expect(container.querySelector('.text-red-500')).toBeTruthy();
   });
 
+  // --- Field with required=true + empty value → shows error via fieldErrors ---
+
+  describe('required field error state', () => {
+    it('shows error message for required field with empty value when fieldErrors is set', () => {
+      const fields = [
+        { key: 'name', label: 'Name', type: 'text', column: 'Name', required: true },
+      ];
+      render(
+        <EntityForm
+          fields={fields}
+          data={{ name: '' }}
+          onChange={vi.fn()}
+          fieldErrors={{ name: 'requiredFieldsMissing' }}
+        />,
+      );
+      expect(screen.getByTestId('error-name')).toBeInTheDocument();
+      expect(screen.getByText('requiredFieldsMissing')).toBeInTheDocument();
+    });
+
+    it('does not show error for required field with a value present', () => {
+      const fields = [
+        { key: 'name', label: 'Name', type: 'text', column: 'Name', required: true },
+      ];
+      render(
+        <EntityForm
+          fields={fields}
+          data={{ name: 'filled' }}
+          onChange={vi.fn()}
+          fieldErrors={{}}
+        />,
+      );
+      expect(screen.queryByTestId('error-name')).toBeNull();
+    });
+  });
+
+  // --- Field with maxLength → input has maxLength attribute (handled by native HTML) ---
+
+  describe('field maxLength and placeholder', () => {
+    it('renders placeholder when field value is empty', () => {
+      const fields = [
+        { key: 'code', label: 'Code', type: 'text', column: 'Code' },
+      ];
+      render(
+        <EntityForm fields={fields} data={{ code: '' }} onChange={vi.fn()} />,
+      );
+      const input = screen.getByTestId('field-code');
+      expect(input).toBeInTheDocument();
+    });
+  });
+
+  // --- Enum (select) field with empty value → shows placeholder option ---
+
+  describe('select field with empty value', () => {
+    it('renders select trigger with placeholder when value is empty', () => {
+      const fields = [
+        {
+          key: 'docType',
+          label: 'Doc Type',
+          type: 'select',
+          column: 'DocType',
+          options: [
+            { value: 'SO', label: 'Sales Order' },
+            { value: 'PO', label: 'Purchase Order' },
+          ],
+        },
+      ];
+      render(
+        <EntityForm fields={fields} data={{ docType: '' }} onChange={vi.fn()} />,
+      );
+      const trigger = screen.getByTestId('field-docType');
+      expect(trigger).toBeInTheDocument();
+    });
+
+    it('renders non-required select with empty option available', () => {
+      const fields = [
+        {
+          key: 'docType',
+          label: 'Doc Type',
+          type: 'select',
+          column: 'DocType',
+          required: false,
+          options: [{ value: 'SO', label: 'Sales Order' }],
+        },
+      ];
+      render(
+        <EntityForm fields={fields} data={{}} onChange={vi.fn()} />,
+      );
+      // Non-required selects have the __empty__ option
+      expect(screen.getByTestId('field-docType')).toBeInTheDocument();
+    });
+  });
+
+  // --- Selector field with selectorUrl → renders SelectorInput ---
+
+  describe('selector field with selectorUrl', () => {
+    it('renders SelectorInput when field type is selector and not readOnly', () => {
+      const fields = [
+        { key: 'warehouse', label: 'Warehouse', type: 'selector', column: 'M_Warehouse_ID' },
+      ];
+      render(
+        <EntityForm
+          fields={fields}
+          data={{ warehouse: 'W1', 'warehouse$_identifier': 'Main WH' }}
+          onChange={vi.fn()}
+          token="tok"
+          apiBaseUrl="/api"
+          entity="header"
+        />,
+      );
+      expect(screen.getByTestId('selector-input-warehouse')).toBeInTheDocument();
+    });
+
+    it('renders disabled input when selector field is readOnly', () => {
+      const fields = [
+        { key: 'warehouse', label: 'Warehouse', type: 'selector', column: 'M_Warehouse_ID' },
+      ];
+      render(
+        <EntityForm
+          fields={fields}
+          data={{ warehouse: 'W1', 'warehouse$_identifier': 'Main WH' }}
+          onChange={vi.fn()}
+          readOnly
+        />,
+      );
+      const input = screen.getByTestId('field-warehouse');
+      expect(input).toBeInTheDocument();
+      // In readOnly, renders as a plain disabled Input, not SelectorInput
+      expect(screen.queryByTestId('selector-input-warehouse')).toBeNull();
+    });
+  });
+
+  // --- Dependent field disabled when parent value is empty ---
+
+  describe('dependent field with dependsOn', () => {
+    it('renders DependentSelect disabled when parent value is empty', () => {
+      const fields = [
+        {
+          key: 'location',
+          label: 'Location',
+          type: 'dependent',
+          column: 'C_Location_ID',
+          dependsOn: { field: 'bp', filterKey: 'bpartner' },
+        },
+      ];
+      render(
+        <EntityForm
+          fields={fields}
+          data={{ location: '', bp: '' }}
+          onChange={vi.fn()}
+          token="tok"
+          apiBaseUrl="/api"
+          entity="header"
+        />,
+      );
+      // DependentSelect renders with a select trigger
+      const trigger = screen.getByTestId('field-location');
+      expect(trigger).toBeInTheDocument();
+    });
+  });
+
+  // --- Horizontal layout with section → section fields render ---
+
+  describe('horizontal layout with section filtering', () => {
+    it('renders section header fields in horizontal layout when section is specified', () => {
+      const fields = [
+        { key: 'a', label: 'FieldA', type: 'text', column: 'A', section: 'billing' },
+        { key: 'b', label: 'FieldB', type: 'text', column: 'B', section: 'shipping' },
+        { key: 'c', label: 'FieldC', type: 'text', column: 'C', section: 'billing', readOnly: true },
+      ];
+      render(
+        <EntityForm fields={fields} data={{}} onChange={vi.fn()} layout="horizontal" section="billing" />,
+      );
+      // Section includes both editable and readOnly fields
+      expect(screen.getByText('A')).toBeInTheDocument();
+      expect(screen.getByText('C')).toBeInTheDocument();
+      expect(screen.queryByText('B')).not.toBeInTheDocument();
+    });
+  });
+
+  // --- Fields with different sections grouped by section ---
+
+  describe('fields grouped by section', () => {
+    it('only renders fields for the specified section', () => {
+      const fields = [
+        { key: 'f1', label: 'F1', type: 'text', column: 'F1', section: 'general' },
+        { key: 'f2', label: 'F2', type: 'text', column: 'F2', section: 'general' },
+        { key: 'f3', label: 'F3', type: 'text', column: 'F3', section: 'details' },
+      ];
+      render(
+        <EntityForm fields={fields} data={{}} onChange={vi.fn()} section="general" />,
+      );
+      expect(screen.getByText('F1')).toBeInTheDocument();
+      expect(screen.getByText('F2')).toBeInTheDocument();
+      expect(screen.queryByText('F3')).not.toBeInTheDocument();
+    });
+  });
+
+  // --- onChange fires with (key, value, column) signature ---
+
+  describe('onChange callback signature', () => {
+    it('fires onChange with (key, value, column) for text input', async () => {
+      const user = userEvent.setup();
+      const onChange = vi.fn();
+      const fields = [
+        { key: 'code', label: 'Code', type: 'text', column: 'DocumentNo' },
+      ];
+      render(
+        <EntityForm fields={fields} data={{ code: '' }} onChange={onChange} />,
+      );
+      const input = screen.getByTestId('field-code');
+      await user.type(input, 'X');
+      expect(onChange).toHaveBeenCalledWith('code', 'X', 'DocumentNo');
+    });
+
+    it('fires onChange with (key, value, column) for checkbox toggle', async () => {
+      const user = userEvent.setup();
+      const onChange = vi.fn();
+      const fields = [
+        { key: 'active', label: 'Active', type: 'checkbox', column: 'IsActive' },
+      ];
+      render(
+        <EntityForm fields={fields} data={{ active: false }} onChange={onChange} />,
+      );
+      const checkbox = screen.getByTestId('field-active');
+      await user.click(checkbox);
+      expect(onChange).toHaveBeenCalledWith('active', true, 'IsActive');
+    });
+  });
+
+  // --- Boolean select with valueType handling ---
+
+  describe('boolean select value resolution', () => {
+    it('handles "N" string as false for boolean select', () => {
+      const fields = [
+        {
+          key: 'flag',
+          label: 'Flag',
+          type: 'select',
+          column: 'Flag',
+          valueType: 'boolean',
+          options: [
+            { value: 'true', label: 'Yes' },
+            { value: 'false', label: 'No' },
+          ],
+        },
+      ];
+      render(
+        <EntityForm fields={fields} data={{ flag: 'N' }} onChange={vi.fn()} />,
+      );
+      expect(screen.getByTestId('field-flag')).toBeInTheDocument();
+    });
+
+    it('handles null/undefined as empty for boolean select', () => {
+      const fields = [
+        {
+          key: 'flag',
+          label: 'Flag',
+          type: 'select',
+          column: 'Flag',
+          valueType: 'boolean',
+          options: [
+            { value: 'true', label: 'Yes' },
+            { value: 'false', label: 'No' },
+          ],
+        },
+      ];
+      render(
+        <EntityForm fields={fields} data={{ flag: null }} onChange={vi.fn()} />,
+      );
+      expect(screen.getByTestId('field-flag')).toBeInTheDocument();
+    });
+  });
+
+  // --- Textarea field default rows ---
+
+  describe('textarea field defaults', () => {
+    it('renders textarea with default 4 rows when rows prop is not specified', () => {
+      const fields = [
+        { key: 'notes', label: 'Notes', type: 'textarea', column: 'Notes' },
+      ];
+      render(
+        <EntityForm fields={fields} data={{ notes: '' }} onChange={vi.fn()} />,
+      );
+      const textarea = screen.getByTestId('field-notes');
+      expect(textarea.tagName).toBe('TEXTAREA');
+      expect(textarea).toHaveAttribute('rows', '4');
+    });
+  });
+
   // --- excludeFields ---
 
   it('excludes fields listed in excludeFields', () => {
