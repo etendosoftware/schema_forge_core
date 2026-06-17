@@ -1,8 +1,8 @@
 {
-  "version": "0.45.0",
+  "version": "0.46.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-06-16T19:18:45.167Z",
-  "checksum": "dd667e9d03037d2b",
+  "updatedAt": "2026-06-17T15:53:37.451Z",
+  "checksum": "a013191cc744dd81",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -5154,14 +5154,6 @@
             "column": "em_etgo_delivery_status",
             "type": "integer",
             "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "etgoOriginInvoice",
-            "apiKey": "etgoOriginInvoice",
-            "column": "EM_Etgo_Origin_Invoice_ID",
-            "type": "foreignKey",
-            "visibility": "discarded",
             "required": false
           },
           {
@@ -14688,14 +14680,6 @@
         "description": "System field 'etcopagCopilotFeedback' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-system-field-header-etgoOriginInvoice",
-        "category": "system-field",
-        "entity": "header",
-        "field": "etgoOriginInvoice",
-        "runner": "node",
-        "description": "System field 'etgoOriginInvoice' should exist in backend but not frontend for header"
-      },
-      {
         "id": "t-system-field-header-etsgIsF3",
         "category": "system-field",
         "entity": "header",
@@ -16269,7 +16253,7 @@
       }
     ],
     "summary": {
-      "total": 928,
+      "total": 927,
       "byCategory": {
         "action-endpoint": 25,
         "crud-flags": 12,
@@ -16283,11 +16267,11 @@
         "rule-declared": 21,
         "searchable-filters": 6,
         "selector-endpoint": 50,
-        "system-field": 315,
+        "system-field": 314,
         "visibility": 12
       },
       "byRunner": {
-        "node": 928,
+        "node": 927,
         "junit": 0
       }
     }

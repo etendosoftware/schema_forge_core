@@ -1,8 +1,8 @@
 {
-  "version": "0.44.0",
+  "version": "0.45.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-06-16T19:12:46.907Z",
-  "checksum": "e17946cb4c7fde98",
+  "updatedAt": "2026-06-16T19:18:45.167Z",
+  "checksum": "dd667e9d03037d2b",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -40,16 +40,14 @@
           "OutstandingAmt": "Pendiente de pago",
           "EM_Etgo_Due_Date": "Vencimiento",
           "em_etgo_delivery_status": "Estado de entrega",
-          "C_DocTypeTarget_ID": "Tipo de documento",
-          "EM_Etgo_Origin_Invoice_ID": "Factura origen"
+          "C_DocTypeTarget_ID": "Tipo de documento"
         },
         "en_US": {
           "POReference": "Document No.",
           "OutstandingAmt": "Pending Payment",
           "EM_Etgo_Due_Date": "Due Date",
           "em_etgo_delivery_status": "Delivery Status",
-          "C_DocTypeTarget_ID": "Document Type",
-          "EM_Etgo_Origin_Invoice_ID": "Origin Invoice"
+          "C_DocTypeTarget_ID": "Document Type"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -1196,42 +1194,6 @@
             "grid": true,
             "form": false,
             "gridOrder": 8
-          },
-          {
-            "name": "etgoOriginInvoice",
-            "apiKey": "etgoOriginInvoice",
-            "column": "EM_Etgo_Origin_Invoice_ID",
-            "label": "Origin Invoice",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "Invoice",
-            "inputMode": "dependent",
-            "dependsOn": {
-              "field": "businessPartner",
-              "filterKey": "C_BPartner_ID",
-              "noAutoSelect": true
-            },
-            "section": "principal",
-            "seq": 16,
-            "validationRule": {
-              "code": "C_Invoice.C_BPartner_ID=@C_BPartner_ID@",
-              "contextParams": [],
-              "cascadeParams": [
-                "C_BPartner_ID"
-              ]
-            },
-            "displayLogic": {
-              "js": "['AP CreditMemo','Return Material Purchase Invoice','Reversed Purchase Invoice','Nota de Crédito','Factura de Devolución'].includes(record['transactionDocument$_identifier'])",
-              "evaluable": true
-            },
-            "readOnlyLogic": {
-              "js": "record['processed'] === true",
-              "evaluable": true
-            }
           }
         ],
         "searchableFields": [
@@ -3889,16 +3851,14 @@
           "OutstandingAmt": "Pendiente de pago",
           "EM_Etgo_Due_Date": "Vencimiento",
           "em_etgo_delivery_status": "Estado de entrega",
-          "C_DocTypeTarget_ID": "Tipo de documento",
-          "EM_Etgo_Origin_Invoice_ID": "Factura origen"
+          "C_DocTypeTarget_ID": "Tipo de documento"
         },
         "en_US": {
           "POReference": "Document No.",
           "OutstandingAmt": "Pending Payment",
           "EM_Etgo_Due_Date": "Due Date",
           "em_etgo_delivery_status": "Delivery Status",
-          "C_DocTypeTarget_ID": "Document Type",
-          "EM_Etgo_Origin_Invoice_ID": "Origin Invoice"
+          "C_DocTypeTarget_ID": "Document Type"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -5201,7 +5161,7 @@
             "apiKey": "etgoOriginInvoice",
             "column": "EM_Etgo_Origin_Invoice_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -8381,23 +8341,6 @@
         "url": "/sws/neo/purchase-invoice/header/selectors/aeatsiiCauseExemption"
       },
       {
-        "entity": "header",
-        "field": "etgoOriginInvoice",
-        "column": "EM_Etgo_Origin_Invoice_ID",
-        "reference": "Invoice",
-        "inputMode": "dependent",
-        "url": "/sws/neo/purchase-invoice/header/selectors/etgoOriginInvoice",
-        "context": {
-          "required": [
-            {
-              "param": "C_BPartner_ID",
-              "source": "field",
-              "field": "businessPartner"
-            }
-          ]
-        }
-      },
-      {
         "entity": "lines",
         "field": "product",
         "column": "M_Product_ID",
@@ -8932,16 +8875,14 @@
         "OutstandingAmt": "Pendiente de pago",
         "EM_Etgo_Due_Date": "Vencimiento",
         "em_etgo_delivery_status": "Estado de entrega",
-        "C_DocTypeTarget_ID": "Tipo de documento",
-        "EM_Etgo_Origin_Invoice_ID": "Factura origen"
+        "C_DocTypeTarget_ID": "Tipo de documento"
       },
       "en_US": {
         "POReference": "Document No.",
         "OutstandingAmt": "Pending Payment",
         "EM_Etgo_Due_Date": "Due Date",
         "em_etgo_delivery_status": "Delivery Status",
-        "C_DocTypeTarget_ID": "Document Type",
-        "EM_Etgo_Origin_Invoice_ID": "Origin Invoice"
+        "C_DocTypeTarget_ID": "Document Type"
       }
     }
   },
@@ -9592,14 +9533,6 @@
         "description": "Display logic for 'aeatsiiPurDescription' in header should have evaluable flag"
       },
       {
-        "id": "t-displaylogic-evaluable-header-etgoOriginInvoice",
-        "category": "displaylogic-evaluable",
-        "entity": "header",
-        "field": "etgoOriginInvoice",
-        "runner": "node",
-        "description": "Display logic for 'etgoOriginInvoice' in header should have evaluable flag"
-      },
-      {
         "id": "t-displaylogic-evaluable-header-etsgDateOperation",
         "category": "displaylogic-evaluable",
         "entity": "header",
@@ -9726,14 +9659,6 @@
         "field": "aeatsiiPurDescription",
         "runner": "node",
         "description": "Display logic for 'aeatsiiPurDescription' in header should be valid JS"
-      },
-      {
-        "id": "t-displaylogic-valid-header-etgoOriginInvoice",
-        "category": "displaylogic-valid",
-        "entity": "header",
-        "field": "etgoOriginInvoice",
-        "runner": "node",
-        "description": "Display logic for 'etgoOriginInvoice' in header should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-header-etsgDateOperation",
@@ -10254,14 +10179,6 @@
         "field": "eTGODueDate",
         "runner": "node",
         "description": "Field 'eTGODueDate' should be present in header"
-      },
-      {
-        "id": "t-field-presence-header-etgoOriginInvoice",
-        "category": "field-presence",
-        "entity": "header",
-        "field": "etgoOriginInvoice",
-        "runner": "node",
-        "description": "Field 'etgoOriginInvoice' should be present in header"
       },
       {
         "id": "t-field-presence-header-etgoTotalDiscount",
@@ -11432,14 +11349,6 @@
         "description": "Field 'eTGODueDate' should have type 'string' in header"
       },
       {
-        "id": "t-field-type-header-etgoOriginInvoice",
-        "category": "field-type",
-        "entity": "header",
-        "field": "etgoOriginInvoice",
-        "runner": "node",
-        "description": "Field 'etgoOriginInvoice' should have type 'string' in header"
-      },
-      {
         "id": "t-field-type-header-etgoTotalDiscount",
         "category": "field-type",
         "entity": "header",
@@ -12304,14 +12213,6 @@
         "description": "Read-only logic for 'documentNo' in header should have evaluable flag"
       },
       {
-        "id": "t-readonlylogic-evaluable-header-etgoOriginInvoice",
-        "category": "readonlylogic-evaluable",
-        "entity": "header",
-        "field": "etgoOriginInvoice",
-        "runner": "node",
-        "description": "Read-only logic for 'etgoOriginInvoice' in header should have evaluable flag"
-      },
-      {
         "id": "t-readonlylogic-evaluable-header-etsgDateOperation",
         "category": "readonlylogic-evaluable",
         "entity": "header",
@@ -12814,14 +12715,6 @@
         "field": "documentNo",
         "runner": "node",
         "description": "Read-only logic for 'documentNo' in header should be valid JS"
-      },
-      {
-        "id": "t-readonlylogic-valid-header-etgoOriginInvoice",
-        "category": "readonlylogic-valid",
-        "entity": "header",
-        "field": "etgoOriginInvoice",
-        "runner": "node",
-        "description": "Read-only logic for 'etgoOriginInvoice' in header should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-header-etsgDateOperation",
@@ -13537,14 +13430,6 @@
         "field": "currency",
         "runner": "node",
         "description": "Selector endpoint for 'currency' in header should exist"
-      },
-      {
-        "id": "t-selector-endpoint-header-etgoOriginInvoice",
-        "category": "selector-endpoint",
-        "entity": "header",
-        "field": "etgoOriginInvoice",
-        "runner": "node",
-        "description": "Selector endpoint for 'etgoOriginInvoice' in header should exist"
       },
       {
         "id": "t-selector-endpoint-header-partnerAddress",
@@ -14801,6 +14686,14 @@
         "field": "etcopagCopilotFeedback",
         "runner": "node",
         "description": "System field 'etcopagCopilotFeedback' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-etgoOriginInvoice",
+        "category": "system-field",
+        "entity": "header",
+        "field": "etgoOriginInvoice",
+        "runner": "node",
+        "description": "System field 'etgoOriginInvoice' should exist in backend but not frontend for header"
       },
       {
         "id": "t-system-field-header-etsgIsF3",
@@ -16376,25 +16269,25 @@
       }
     ],
     "summary": {
-      "total": 934,
+      "total": 928,
       "byCategory": {
         "action-endpoint": 25,
         "crud-flags": 12,
         "default-value-type": 37,
-        "displaylogic-evaluable": 17,
-        "displaylogic-valid": 17,
-        "field-presence": 147,
-        "field-type": 147,
-        "readonlylogic-evaluable": 64,
-        "readonlylogic-valid": 64,
+        "displaylogic-evaluable": 16,
+        "displaylogic-valid": 16,
+        "field-presence": 146,
+        "field-type": 146,
+        "readonlylogic-evaluable": 63,
+        "readonlylogic-valid": 63,
         "rule-declared": 21,
         "searchable-filters": 6,
-        "selector-endpoint": 51,
-        "system-field": 314,
+        "selector-endpoint": 50,
+        "system-field": 315,
         "visibility": 12
       },
       "byRunner": {
-        "node": 934,
+        "node": 928,
         "junit": 0
       }
     }
