@@ -230,11 +230,30 @@ export function ListModalWindow({
   // --- Local search over the configured filter columns ----------------------
   const [searchQuery, setSearchQuery] = useState('');
   const data = useMemo(
-    () => applyConditions(
-      filterRows(allRows, { toolbarFilters, filterValues, searchQuery, filters }),
-      advancedFilter,
-    ),
-    [allRows, searchQuery, filters, toolbarFilters, filterValues, advancedFilter],
+    () => {
+      const filtered = applyConditions(
+        filterRows(allRows, { toolbarFilters, filterValues, searchQuery, filters }),
+        advancedFilter,
+      );
+      // Order by the auto-priority field ascending when the window declares one
+      // (e.g. match rules: the banner states rows are evaluated in ascending
+      // priority order, so the list must mirror that — 10, 20, 30…). Rows with a
+      // missing/non-numeric priority sink to the end; ties keep their order
+      // (Array.prototype.sort is stable).
+      const priorityField = config?.autoPriorityField;
+      if (!priorityField) return filtered;
+      return [...filtered].sort((a, b) => {
+        const av = Number(a?.[priorityField]);
+        const bv = Number(b?.[priorityField]);
+        const aok = Number.isFinite(av);
+        const bok = Number.isFinite(bv);
+        if (aok && bok) return av - bv;
+        if (aok) return -1;
+        if (bok) return 1;
+        return 0;
+      });
+    },
+    [allRows, searchQuery, filters, toolbarFilters, filterValues, advancedFilter, config],
   );
 
   // --- Create / edit modal --------------------------------------------------
