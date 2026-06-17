@@ -1026,8 +1026,12 @@ function getDraftModeCompleted(draftMode, _headerData, isProcessed) {
   );
 }
 
+function getIsProcessed(_headerData) {
+  return _headerData?.processed === true || _headerData?.processed === 'Y';
+}
+
 function getDocumentReadOnly(lockWhenProcessed, _headerData) {
-  return lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
+  return lockWhenProcessed && getIsProcessed(_headerData);
 }
 
 export function insertLinesTab(detailLabel, detailEntity, hook, detailTabIndex, tabs) {
@@ -1687,7 +1691,7 @@ export function DetailView({
   ), [_headerData, windowName, _detailTabTitle, hook.editing, _isFormEditing]);
   useRegisterWindowContext(_windowContextInfo);
   const isDocumentReadOnly = getDocumentReadOnly(lockWhenProcessed, _headerData);
-  const isProcessed = _headerData?.processed === true || _headerData?.processed === 'Y';
+  const isProcessed = getIsProcessed(_headerData);
   // When draftMode declares an explicit completedStatuses array, only those documentStatus
   // values hide the Save/Confirm pair. This lets windows like sales-quotation keep the
   // pair visible during intermediate processed states (UE) while still hiding it in
