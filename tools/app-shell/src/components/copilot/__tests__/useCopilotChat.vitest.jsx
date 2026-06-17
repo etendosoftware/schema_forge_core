@@ -668,5 +668,524 @@ describe('useCopilotChat', () => {
       const conv = result.current.state.conversations.find((c) => c.conversation_id === 'c1');
       expect(conv.title).toBe('Generated Title');
     });
+
+    it('uses generated_title fallback when title is absent', async () => {
+      const { getConversations, generateTitle } = await import('../copilotApi.js');
+      getConversations.mockResolvedValueOnce([{ conversation_id: 'c1', title: '' }]);
+      generateTitle.mockResolvedValueOnce({ generated_title: 'Fallback Title' });
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.selectAssistant({ app_id: 'APP1' });
+      });
+      await act(async () => {
+        await result.current.actions.generateTitle('c1');
+      });
+      const conv = result.current.state.conversations.find((c) => c.conversation_id === 'c1');
+      expect(conv.title).toBe('Fallback Title');
+    });
+
+    it('does nothing when token is null', async () => {
+      const { generateTitle } = await import('../copilotApi.js');
+      generateTitle.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: null }));
+      await act(async () => {
+        await result.current.actions.generateTitle('c1');
+      });
+      expect(generateTitle).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when id is falsy', async () => {
+      const { generateTitle } = await import('../copilotApi.js');
+      generateTitle.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.generateTitle(null);
+      });
+      expect(generateTitle).not.toHaveBeenCalled();
+    });
+
+    it('sets error when generateTitle fails', async () => {
+      const { getConversations, generateTitle } = await import('../copilotApi.js');
+      getConversations.mockResolvedValueOnce([{ conversation_id: 'c1', title: '' }]);
+      generateTitle.mockRejectedValueOnce(new Error('Title gen fail'));
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.selectAssistant({ app_id: 'APP1' });
+      });
+      await act(async () => {
+        await result.current.actions.generateTitle('c1');
+      });
+      expect(result.current.state.error).toBe('Title gen fail');
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // sendMessage — files and attachments
+  // -----------------------------------------------------------------
+  describe('sendMessage — files', () => {
+    it('sends message with uploaded file ids', async () => {
+      const { sendQuestion } = await import('../copilotApi.js');
+      sendQuestion.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.selectAssistant({ app_id: 'APP1' });
+      });
+      // Upload a file first
+      await act(async () => {
+        await result.current.actions.uploadFile(new File(['data'], 'test.txt'));
+      });
+      expect(result.current.state.fileIds).toContain('F1');
+      // Now send a message — fileIds should be included
+      await act(async () => {
+        await result.current.actions.sendMessage('Check this file');
+      });
+      expect(sendQuestion).toHaveBeenCalled();
+      const callArgs = sendQuestion.mock.calls[0];
+      expect(callArgs[1].file).toEqual(['F1']);
+    });
+
+    it('clears files after successful send', async () => {
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.selectAssistant({ app_id: 'APP1' });
+      });
+      await act(async () => {
+        await result.current.actions.uploadFile(new File(['data'], 'test.txt'));
+      });
+      expect(result.current.state.files).toHaveLength(1);
+      await act(async () => {
+        await result.current.actions.sendMessage('Check file');
+      });
+      expect(result.current.state.files).toHaveLength(0);
+      expect(result.current.state.fileIds).toHaveLength(0);
+    });
+
+    it('sets isSending flag during send', async () => {
+      const { sendQuestion } = await import('../copilotApi.js');
+      let resolveSend;
+      sendQuestion.mockImplementationOnce(() => new Promise(r => { resolveSend = r; }));
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.selectAssistant({ app_id: 'APP1' });
+      });
+      // Start a send that will hang
+      let sendPromise;
+      act(() => {
+        sendPromise = result.current.actions.sendMessage('First');
+      });
+      // isSending should be true while send is in flight
+      expect(result.current.state.isSending).toBe(true);
+      // Resolve the send
+      await act(async () => {
+        resolveSend({ answer: 'Reply', conversation_id: 'C2' });
+        await sendPromise;
+      });
+      // After resolving, isSending should be false
+      expect(result.current.state.isSending).toBe(false);
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // sendMessage — attachments context
+  // -----------------------------------------------------------------
+  describe('sendMessage — with attachments', () => {
+    it('prepends context prefix when attachments are present', async () => {
+      const { sendQuestion } = await import('../copilotApi.js');
+      sendQuestion.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.selectAssistant({ app_id: 'APP1' });
+      });
+      act(() => {
+        result.current.actions.attachCurrentWindow({
+          spec: 'sales-order',
+          tabTitle: 'Sales Order',
+          selectedRecords: [{ id: 'r1', _identifier: 'SO-001' }],
+        });
+      });
+      await act(async () => {
+        await result.current.actions.sendMessage('Analyze this');
+      });
+      expect(sendQuestion).toHaveBeenCalled();
+      const wireQuestion = sendQuestion.mock.calls[0][1].question;
+      expect(wireQuestion).toContain('[Context]');
+      expect(wireQuestion).toContain('sales-order');
+      expect(wireQuestion).toContain('Analyze this');
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // deleteConversation — deleting non-active
+  // -----------------------------------------------------------------
+  describe('deleteConversation — non-active', () => {
+    it('removes from list without resetting when not active', async () => {
+      const { getConversations, getConversationMessages } = await import('../copilotApi.js');
+      getConversations.mockResolvedValueOnce([
+        { conversation_id: 'c1', title: 'Chat 1' },
+        { conversation_id: 'c2', title: 'Chat 2' },
+      ]);
+      getConversationMessages.mockResolvedValueOnce([{ id: 'm1', role: 'user', text: 'Hi' }]);
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.selectAssistant({ app_id: 'APP1' });
+      });
+      // Select c1 as active
+      await act(async () => {
+        await result.current.actions.selectConversation({ conversation_id: 'c1' });
+      });
+      expect(result.current.state.conversationId).toBe('c1');
+      // Delete c2 (not active)
+      await act(async () => {
+        await result.current.actions.deleteConversation('c2');
+      });
+      // c1 should still be active
+      expect(result.current.state.conversationId).toBe('c1');
+      // c2 should be gone from conversations, added to archived
+      expect(result.current.state.conversations.find(c => c.conversation_id === 'c2')).toBeUndefined();
+      expect(result.current.state.archivedConversations.find(c => c.conversation_id === 'c2')).toBeTruthy();
+    });
+
+    it('sets error when delete API call fails', async () => {
+      const { deleteConversation: apiDelete, getConversations } = await import('../copilotApi.js');
+      getConversations.mockResolvedValueOnce([{ conversation_id: 'c1' }]);
+      apiDelete.mockRejectedValueOnce(new Error('Delete failed'));
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.selectAssistant({ app_id: 'APP1' });
+      });
+      await act(async () => {
+        await result.current.actions.deleteConversation('c1');
+      });
+      expect(result.current.state.error).toBe('Delete failed');
+    });
+
+    it('does nothing when id is falsy', async () => {
+      const { deleteConversation: apiDelete } = await import('../copilotApi.js');
+      apiDelete.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.deleteConversation(null);
+      });
+      expect(apiDelete).not.toHaveBeenCalled();
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // permanentDelete — from archived
+  // -----------------------------------------------------------------
+  describe('permanentDelete — additional', () => {
+    it('removes from archived list', async () => {
+      const { getConversations } = await import('../copilotApi.js');
+      getConversations.mockResolvedValueOnce([{ conversation_id: 'c1', title: 'Chat 1' }]);
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.selectAssistant({ app_id: 'APP1' });
+      });
+      // Move to archived
+      await act(async () => {
+        await result.current.actions.deleteConversation('c1');
+      });
+      expect(result.current.state.archivedConversations).toHaveLength(1);
+      // Permanently delete
+      await act(async () => {
+        await result.current.actions.permanentDelete('c1');
+      });
+      expect(result.current.state.archivedConversations).toHaveLength(0);
+    });
+
+    it('sets error when permanent delete fails', async () => {
+      const { permanentDeleteConversation } = await import('../copilotApi.js');
+      permanentDeleteConversation.mockRejectedValueOnce(new Error('Perm delete fail'));
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.permanentDelete('c1');
+      });
+      expect(result.current.state.error).toBe('Perm delete fail');
+    });
+
+    it('does nothing when id is falsy', async () => {
+      const { permanentDeleteConversation } = await import('../copilotApi.js');
+      permanentDeleteConversation.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.permanentDelete('');
+      });
+      expect(permanentDeleteConversation).not.toHaveBeenCalled();
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // restoreConversation — additional
+  // -----------------------------------------------------------------
+  describe('restoreConversation — additional', () => {
+    it('sets error when restore API fails', async () => {
+      const { restoreConversation: apiRestore, getConversations } = await import('../copilotApi.js');
+      getConversations.mockResolvedValueOnce([{ conversation_id: 'c1' }]);
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.selectAssistant({ app_id: 'APP1' });
+      });
+      await act(async () => {
+        await result.current.actions.deleteConversation('c1');
+      });
+      apiRestore.mockRejectedValueOnce(new Error('Restore failed'));
+      await act(async () => {
+        await result.current.actions.restoreConversation('c1');
+      });
+      expect(result.current.state.error).toBe('Restore failed');
+    });
+
+    it('does nothing when token is null', async () => {
+      const { restoreConversation: apiRestore } = await import('../copilotApi.js');
+      apiRestore.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: null }));
+      await act(async () => {
+        await result.current.actions.restoreConversation('c1');
+      });
+      expect(apiRestore).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when id is falsy', async () => {
+      const { restoreConversation: apiRestore } = await import('../copilotApi.js');
+      apiRestore.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.restoreConversation(null);
+      });
+      expect(apiRestore).not.toHaveBeenCalled();
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // renameConversation — additional
+  // -----------------------------------------------------------------
+  describe('renameConversation — additional', () => {
+    it('sets error when rename API fails', async () => {
+      const { renameConversation, getConversations } = await import('../copilotApi.js');
+      getConversations.mockResolvedValueOnce([{ conversation_id: 'c1', title: 'Old' }]);
+      renameConversation.mockRejectedValueOnce(new Error('Rename fail'));
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.selectAssistant({ app_id: 'APP1' });
+      });
+      await act(async () => {
+        await result.current.actions.renameConversation('c1', 'New Name');
+      });
+      expect(result.current.state.error).toBe('Rename fail');
+    });
+
+    it('does nothing when token is null', async () => {
+      const { renameConversation } = await import('../copilotApi.js');
+      renameConversation.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: null }));
+      await act(async () => {
+        await result.current.actions.renameConversation('c1', 'Title');
+      });
+      expect(renameConversation).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when id is null', async () => {
+      const { renameConversation } = await import('../copilotApi.js');
+      renameConversation.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.renameConversation(null, 'Title');
+      });
+      expect(renameConversation).not.toHaveBeenCalled();
+    });
+
+    it('trims title before sending', async () => {
+      const { renameConversation, getConversations } = await import('../copilotApi.js');
+      getConversations.mockResolvedValueOnce([{ conversation_id: 'c1', title: 'Old' }]);
+      renameConversation.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.selectAssistant({ app_id: 'APP1' });
+      });
+      await act(async () => {
+        await result.current.actions.renameConversation('c1', '  Trimmed Title  ');
+      });
+      expect(renameConversation).toHaveBeenCalledWith('tk', 'c1', 'Trimmed Title');
+      const conv = result.current.state.conversations.find(c => c.conversation_id === 'c1');
+      expect(conv.title).toBe('Trimmed Title');
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // syncAttachments — additional
+  // -----------------------------------------------------------------
+  describe('syncAttachments — additional', () => {
+    it('adds new items from desired set when not already present', () => {
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      act(() => {
+        result.current.actions.syncAttachments({
+          spec: 'so',
+          tabTitle: 'Sales Order',
+          selectedRecords: [
+            { id: 'r1', _identifier: 'SO-001' },
+            { id: 'r2', _identifier: 'SO-002' },
+          ],
+        });
+      });
+      expect(result.current.state.attachments).toHaveLength(2);
+    });
+
+    it('refreshes kept items with latest data', () => {
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      act(() => {
+        result.current.actions.addAttachment({ id: 'so:r1', kind: 'record', windowSpec: 'so', recordData: { old: true } });
+      });
+      act(() => {
+        result.current.actions.syncAttachments({
+          spec: 'so',
+          tabTitle: 'Sales Order',
+          selectedRecords: [{ id: 'r1', _identifier: 'SO-001-updated' }],
+        });
+      });
+      const att = result.current.state.attachments.find(a => a.id === 'so:r1');
+      expect(att).toBeTruthy();
+      // Should have updated data from sync
+      expect(att.recordIdentifier).toBe('SO-001-updated');
+    });
+
+    it('handles sync with empty selected records (list view)', () => {
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      act(() => {
+        result.current.actions.addAttachment({ id: 'so:r1', kind: 'record', windowSpec: 'so' });
+      });
+      act(() => {
+        result.current.actions.syncAttachments({
+          spec: 'so',
+          tabTitle: 'Sales Order',
+          selectedRecords: [],
+        });
+      });
+      // Old record attachment removed, replaced with list view
+      expect(result.current.state.attachments).toHaveLength(1);
+      expect(result.current.state.attachments[0].kind).toBe('listView');
+    });
+
+    it('handles undefined current (non-window route preserves chips)', () => {
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      act(() => {
+        result.current.actions.addAttachment({ id: 'a1', kind: 'record' });
+      });
+      act(() => {
+        result.current.actions.syncAttachments(undefined);
+      });
+      // Preserved
+      expect(result.current.state.attachments).toHaveLength(1);
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // loadConversations / loadArchivedConversations — error branches
+  // -----------------------------------------------------------------
+  describe('loadConversations — error branches', () => {
+    it('does nothing when no assistant is selected', async () => {
+      const { getConversations } = await import('../copilotApi.js');
+      getConversations.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.loadConversations();
+      });
+      expect(getConversations).not.toHaveBeenCalled();
+    });
+
+    it('sets error when loadConversations fails', async () => {
+      const { getConversations } = await import('../copilotApi.js');
+      getConversations.mockResolvedValueOnce([]); // for selectAssistant
+      getConversations.mockRejectedValueOnce(new Error('Load conv fail'));
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.selectAssistant({ app_id: 'APP1' });
+      });
+      await act(async () => {
+        await result.current.actions.loadConversations();
+      });
+      expect(result.current.state.error).toBe('Load conv fail');
+    });
+  });
+
+  describe('loadArchivedConversations — error branches', () => {
+    it('does nothing when no assistant is selected', async () => {
+      const { getArchivedConversations } = await import('../copilotApi.js');
+      getArchivedConversations.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.loadArchivedConversations();
+      });
+      expect(getArchivedConversations).not.toHaveBeenCalled();
+    });
+
+    it('sets error when loadArchivedConversations fails', async () => {
+      const { getArchivedConversations } = await import('../copilotApi.js');
+      getArchivedConversations.mockRejectedValueOnce(new Error('Load archived fail'));
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.selectAssistant({ app_id: 'APP1' });
+      });
+      await act(async () => {
+        await result.current.actions.loadArchivedConversations();
+      });
+      expect(result.current.state.error).toBe('Load archived fail');
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // uploadFile — additional branches
+  // -----------------------------------------------------------------
+  describe('uploadFile — additional', () => {
+    it('does nothing when file is null', async () => {
+      const { uploadFile: mockUpload } = await import('../copilotApi.js');
+      mockUpload.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.uploadFile(null);
+      });
+      expect(mockUpload).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when token is null', async () => {
+      const { uploadFile: mockUpload } = await import('../copilotApi.js');
+      mockUpload.mockClear();
+      const { result } = renderHook(() => useCopilotChat({ token: null }));
+      await act(async () => {
+        await result.current.actions.uploadFile(new File(['d'], 'f.txt'));
+      });
+      expect(mockUpload).not.toHaveBeenCalled();
+    });
+
+    it('handles upload response with fileId key', async () => {
+      const { uploadFile: mockUpload } = await import('../copilotApi.js');
+      mockUpload.mockResolvedValueOnce({ fileId: 'FILE-UUID-1' });
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.uploadFile(new File(['data'], 'test.txt'));
+      });
+      expect(result.current.state.fileIds).toContain('FILE-UUID-1');
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // removeFile — additional
+  // -----------------------------------------------------------------
+  describe('removeFile — additional', () => {
+    it('removes file from middle of list', async () => {
+      const { result } = renderHook(() => useCopilotChat({ token: 'tk' }));
+      await act(async () => {
+        await result.current.actions.uploadFile(new File(['a'], 'a.txt'));
+      });
+      await act(async () => {
+        await result.current.actions.uploadFile(new File(['b'], 'b.txt'));
+      });
+      await act(async () => {
+        await result.current.actions.uploadFile(new File(['c'], 'c.txt'));
+      });
+      expect(result.current.state.files).toHaveLength(3);
+      act(() => { result.current.actions.removeFile(1); });
+      expect(result.current.state.files).toHaveLength(2);
+      expect(result.current.state.fileIds).toHaveLength(2);
+    });
   });
 });

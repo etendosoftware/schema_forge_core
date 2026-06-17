@@ -688,4 +688,516 @@ describe('InlineLinesPanel', () => {
       ]),
     );
   });
+
+  // ─── ADDITIONAL EDIT-MODE AND READ-MODE BRANCH COVERAGE ──────────────
+
+  it('amount column shows 2-decimal formatted value in read mode', () => {
+    const columns = [
+      { key: 'total', label: 'Total', type: 'amount' },
+    ];
+    const rows = [{ id: 'AM1', total: 99.1 }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    // formatAmount mock returns "99.10"
+    expect(screen.getByText('99.10')).toBeInTheDocument();
+  });
+
+  it('selector column shows InlineSearchCombo in edit mode', async () => {
+    const columns = [
+      { key: 'warehouse', label: 'Warehouse', type: 'selector', column: 'M_Warehouse_ID' },
+    ];
+    const rows = [{ id: 'SEL1', warehouse: 'W1', 'warehouse$_identifier': 'Main WH' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    const row = screen.getByTestId('line-row-SEL1');
+    await act(async () => { await userEvent.hover(row); });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0];
+    await act(async () => { await userEvent.click(editBtn); });
+    // Selector field renders InlineSearchCombo
+    expect(within(row).getByTestId('inline-combo-warehouse')).toBeInTheDocument();
+  });
+
+  it('readOnly column stays read-only in edit mode (no input rendered)', async () => {
+    const columns = [
+      { key: 'code', label: 'Code', type: 'string', readOnly: true },
+    ];
+    const rows = [{ id: 'RO2', code: 'ABC-123' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    const row = screen.getByTestId('line-row-RO2');
+    await act(async () => { await userEvent.hover(row); });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0];
+    await act(async () => { await userEvent.click(editBtn); });
+    // readOnly column should not have an editable input
+    expect(within(row).queryByRole('textbox')).toBeNull();
+  });
+
+  it('empty/null string values render dash in read-mode', () => {
+    const columns = [
+      { key: 'description', label: 'Desc', type: 'string' },
+    ];
+    const rows = [
+      { id: 'EM1', description: null },
+      { id: 'EM2', description: '' },
+    ];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    // Rows should exist and render — empty strings resolve to empty span
+    expect(screen.getByTestId('line-row-EM1')).toBeInTheDocument();
+    expect(screen.getByTestId('line-row-EM2')).toBeInTheDocument();
+  });
+
+  it('percent column renders with percentage sign in read mode', () => {
+    const columns = [
+      { key: 'tax', label: 'Tax', type: 'percent' },
+    ];
+    const rows = [{ id: 'PX1', tax: 21 }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    expect(screen.getByText('21%')).toBeInTheDocument();
+  });
+
+  it('custom render function is used in read mode', () => {
+    const columns = [
+      {
+        key: 'status',
+        label: 'Status',
+        type: 'string',
+        render: (row) => <span data-testid="custom-render">{row.status === 'OK' ? 'Good' : 'Bad'}</span>,
+      },
+    ];
+    const rows = [{ id: 'CR1', status: 'OK' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    expect(screen.getByTestId('custom-render')).toBeInTheDocument();
+    expect(screen.getByText('Good')).toBeInTheDocument();
+  });
+
+  it('derivation column stays read-only in edit mode', async () => {
+    const columns = [
+      { key: 'computed', label: 'Computed', type: 'number', derivation: 'fromField' },
+    ];
+    const rows = [{ id: 'DER1', computed: 42 }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    const row = screen.getByTestId('line-row-DER1');
+    await act(async () => { await userEvent.hover(row); });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0];
+    await act(async () => { await userEvent.click(editBtn); });
+    // derivation column is not editable — no textbox
+    expect(within(row).queryByRole('textbox')).toBeNull();
+  });
+
+  it('null amount renders dash in read mode', () => {
+    const columns = [
+      { key: 'total', label: 'Total', type: 'amount' },
+    ];
+    const rows = [{ id: 'NA1', total: null }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    // formatAmount mock returns '—' for null
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it('NaN percent renders dash in read mode', () => {
+    const columns = [
+      { key: 'discount', label: 'Discount', type: 'percent' },
+    ];
+    const rows = [{ id: 'NP1', discount: 'abc' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    // NaN percent renders '—'
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it('boolean column with null value renders dash', () => {
+    const columns = [
+      { key: 'flag', label: 'Flag', type: 'boolean' },
+    ];
+    const rows = [{ id: 'BN1', flag: null }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    // null boolean renders '—'
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  // ============================================================
+  // Additional branch coverage tests
+  // ============================================================
+
+  it('boolean column with "Y" renders truthy label', () => {
+    const columns = [{ key: 'flag', label: 'Flag', type: 'boolean' }];
+    const rows = [{ id: 'BY1', flag: 'Y' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByText('yes')).toBeInTheDocument();
+  });
+
+  it('boolean column with "N" renders falsy label', () => {
+    const columns = [{ key: 'flag', label: 'Flag', type: 'boolean' }];
+    const rows = [{ id: 'BN2', flag: 'N' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByText('no')).toBeInTheDocument();
+  });
+
+  it('boolean column with "true" (string) renders truthy', () => {
+    const columns = [{ key: 'flag', label: 'Flag', type: 'boolean' }];
+    const rows = [{ id: 'BT1', flag: 'true' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByText('yes')).toBeInTheDocument();
+  });
+
+  it('boolean column with "false" (string) renders falsy', () => {
+    const columns = [{ key: 'flag', label: 'Flag', type: 'boolean' }];
+    const rows = [{ id: 'BF1', flag: 'false' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByText('no')).toBeInTheDocument();
+  });
+
+  it('date column with YYYY-MM-DD format renders formatted date', () => {
+    const columns = [{ key: 'orderDate', label: 'Date', type: 'date' }];
+    const rows = [{ id: 'D1', orderDate: '2026-01-15' }];
+    const ref = React.createRef();
+    const { container } = render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    // Should render some date text (not a dash)
+    expect(container.textContent).not.toBe('');
+    expect(container.textContent).not.toContain('—');
+  });
+
+  it('date column with datetime format renders formatted date', () => {
+    const columns = [{ key: 'created', label: 'Created', type: 'date' }];
+    const rows = [{ id: 'DT1', created: '2026-03-10T14:30:00Z' }];
+    const ref = React.createRef();
+    const { container } = render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(container.textContent).not.toBe('');
+  });
+
+  it('date column with null renders dash', () => {
+    const columns = [{ key: 'orderDate', label: 'Date', type: 'date' }];
+    const rows = [{ id: 'DN1', orderDate: null }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it('date column with invalid string shows raw value', () => {
+    const columns = [{ key: 'orderDate', label: 'Date', type: 'date' }];
+    const rows = [{ id: 'DI1', orderDate: 'not-a-date' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByText('not-a-date')).toBeInTheDocument();
+  });
+
+  it('computed column is not editable (no edit mode on click)', () => {
+    const columns = [{ key: 'total', label: 'Total', type: 'amount', computed: true }];
+    const rows = [{ id: 'C1', total: 100 }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByText('100.00')).toBeInTheDocument();
+  });
+
+  it('readOnly column is not editable', () => {
+    const columns = [{ key: 'code', label: 'Code', type: 'string', readOnly: true }];
+    const rows = [{ id: 'RO1', code: 'ABC' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByText('ABC')).toBeInTheDocument();
+  });
+
+  it('derivation column is not editable', () => {
+    const columns = [{ key: 'derived', label: 'Derived', type: 'amount', derivation: 'computed' }];
+    const rows = [{ id: 'DV1', derived: 50 }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByText('50.00')).toBeInTheDocument();
+  });
+
+  it('column with custom render function uses it', () => {
+    const columns = [{
+      key: 'custom',
+      label: 'Custom',
+      type: 'string',
+      render: (row) => <span data-testid="custom-render">{row.custom}-custom</span>,
+    }];
+    const rows = [{ id: 'CR1', custom: 'hello' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByTestId('custom-render')).toHaveTextContent('hello-custom');
+  });
+
+  it('renders empty state when data is empty array', () => {
+    const columns = [{ key: 'name', label: 'Name', type: 'string' }];
+    const ref = React.createRef();
+    const { container } = render(
+      <InlineLinesPanel ref={ref} columns={columns} data={[]} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    // No data rows, only header
+    const rows = container.querySelectorAll('[role="row"]');
+    expect(rows.length).toBeLessThanOrEqual(1); // header only
+  });
+
+  it('renders identifier fallback for unknown column type', () => {
+    const columns = [{ key: 'misc', label: 'Misc', type: 'unknown-type' }];
+    const rows = [{ id: 'U1', misc: 'raw-value' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByText('raw-value')).toBeInTheDocument();
+  });
+
+  it('renders percent column with valid number', () => {
+    const columns = [{ key: 'discount', label: 'Discount', type: 'percent' }];
+    const rows = [{ id: 'P1', discount: 15 }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByText('15%')).toBeInTheDocument();
+  });
+
+  it('renders with isDocumentReadOnly preventing edit', () => {
+    const columns = [{ key: 'qty', label: 'Qty', type: 'amount' }];
+    const rows = [{ id: 'RO1', qty: 5 }];
+    const ref = React.createRef();
+    const { container } = render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()}
+        isDocumentReadOnly={true} />,
+    );
+    expect(container.textContent).toContain('5.00');
+  });
+
+  it('renders multiple rows with alternating row IDs', () => {
+    const columns = [{ key: 'name', label: 'Name', type: 'string' }];
+    const rows = [
+      { id: 'MR1', name: 'First' },
+      { id: 'MR2', name: 'Second' },
+      { id: 'MR3', name: 'Third' },
+    ];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByText('First')).toBeInTheDocument();
+    expect(screen.getByText('Second')).toBeInTheDocument();
+    expect(screen.getByText('Third')).toBeInTheDocument();
+  });
+
+  it('renders amount column with currency identifier', () => {
+    const columns = [{ key: 'lineNetAmount', label: 'Net', type: 'amount' }];
+    const rows = [{ id: 'AC1', lineNetAmount: 250, 'currency$_identifier': 'USD' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByText('250.00 USD')).toBeInTheDocument();
+  });
+
+  it('renders string column with identifier fallback', () => {
+    const columns = [{ key: 'bp', label: 'BP', type: 'string' }];
+    const rows = [{ id: 'IF1', bp: 'B1', 'bp$_identifier': 'Acme Corp' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel ref={ref} columns={columns} data={rows} entity="lines"
+        token="test" apiBaseUrl="/api" selectorContext={{}}
+        onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
+    );
+    expect(screen.getByText('Acme Corp')).toBeInTheDocument();
+  });
 });

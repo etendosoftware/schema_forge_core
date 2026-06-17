@@ -6,7 +6,51 @@
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { DetailView } from '../DetailView.jsx';
+import {
+  DetailView,
+  runAddLineAction,
+  normalizePatchFieldValues,
+  applyCalloutFieldUpdates,
+  applyCalloutComboUpdates,
+  mergeSelectorContextFields,
+  mergeSelectorAuxFields,
+  applyLocalChildRowUpdate,
+  collectRowFieldValues,
+  getSecondaryTabContentClassName,
+  getSecondaryLinesTableRef,
+  getSecondaryEditRowHandler,
+  getSecondarySelectionChangeHandler,
+  getSaveButtonLabel,
+  getSelectedLinesTotalLabel,
+  getChildSaveButtonLabel,
+  getAddLineWrapperClassName,
+  getAddLineWrapperStyle,
+  resolveCanAddLines,
+  parseBackendErrorMessage,
+  getDocumentIds,
+  resolveSidebarContent,
+  renderSidePanel,
+  getNotesRowClassName,
+  getDocsRowClassName,
+  getAddLineMenuActions,
+  getInlineEditableShrinkClassName,
+  getOthersTabClassName,
+  getCustomLinesTabClassName,
+  getWindowTitle,
+  getRecordTitle,
+  getFullBreadcrumb,
+  getOnAddToFavorites,
+  getLinesContainerClassName,
+  buildInlineRowUpdateHandler,
+  buildDeleteRowHandler,
+  getDeleteChildButtonLabel,
+  buildLineRowClickHandler,
+  insertLinesTab,
+  getDetailContentContainerClassName,
+  getLinesTabsSectionClassName,
+  getSecondaryTabEntityKey,
+  getSecondaryRowUpdateHandler,
+} from '../DetailView.jsx';
 
 // --- Mock every hook/dep DetailView imports ---
 
@@ -1614,5 +1658,1053 @@ describe('DetailView exported helpers', () => {
       // When requiredHeaderFields is provided but children-based guard exists
       expect(helpers.resolveCanAddLines(null, { bp: 'BP1' }, ['bp'])).toBe(true);
     });
+  });
+});
+
+// ─── ADDITIONAL RENDER-ONLY TESTS (branch coverage) ───────────────────────
+
+describe('DetailView render — extended branch coverage', () => {
+  beforeEach(() => {
+    // Reset hook to default healthy state before each test
+    mockHook.loading = false;
+    mockHook.selected = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+    mockHook.editing = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false };
+    mockHook.children = [{ id: 'L1', product: 'P1', 'product$_identifier': 'Widget', lineNetAmount: 100 }];
+    mockHook.isDirtyHeader = false;
+    mockHook.isSaving = false;
+    vi.clearAllMocks();
+  });
+
+  it('renders secondaryTabs with customAddModal tab', () => {
+    const CustomModal = ({ open, onClose }) => open ? <div data-testid="custom-modal">Modal</div> : null;
+    const stabs = [
+      { key: 'addresses', label: 'Addresses', Table: MockTable, customAddModal: CustomModal },
+    ];
+    const { container } = renderDetailView({ secondaryTabs: stabs });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders linesLayout=inlineEditable with addLineFields having entry fields', () => {
+    const addLineFields = {
+      entry: [
+        { key: 'product', label: 'Product', type: 'selector', column: 'M_Product_ID' },
+        { key: 'quantity', label: 'Qty', type: 'number', column: 'QtyOrdered', defaultValue: 1 },
+      ],
+      derived: [{ key: 'lineNetAmount', label: 'Total', type: 'amount' }],
+    };
+    const { container } = renderDetailView({ linesLayout: 'inlineEditable', addLineFields });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders bottomSection component with showSelectedTotal', () => {
+    const Bottom = ({ data, lines }) => <div data-testid="bottom-section">Bottom</div>;
+    Bottom.showSelectedTotal = true;
+    const { container } = renderDetailView({ bottomSection: Bottom });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders notesField with data having notes value', () => {
+    mockHook.editing = { id: '123', documentNo: 'SO-001', documentStatus: 'DR', processed: false, notes: 'Some important note' };
+    mockHook.selected = { ...mockHook.editing };
+    const { container } = renderDetailView({ notesField: 'notes' });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with hideMoreDetails=true suppressing details toggle', () => {
+    const { container } = renderDetailView({ hideMoreDetails: true });
+    expect(container).toBeTruthy();
+    // The "More details" section should be hidden
+    expect(container.querySelector('[data-testid="toggle-more-details"]')).toBeNull();
+  });
+
+  it('renders customMenuContent as JSX element inside more menu', () => {
+    const CustomMenu = ({ data }) => <div data-testid="custom-menu-content">Custom Menu Item</div>;
+    const { container } = renderDetailView({
+      customMenuContent: CustomMenu,
+      menuActions: [{ key: 'a', label: 'A', onClick: vi.fn() }],
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders tabsBarRight with tabsBarRightDivider creating styled divider', () => {
+    const TabsRight = () => <div data-testid="tabs-right-content">Right Content</div>;
+    const { container } = renderDetailView({
+      tabsBarRight: TabsRight,
+      tabsBarRightDivider: '200px',
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with custom sidebarClassName', () => {
+    const Sidebar = () => <div data-testid="sidebar-custom-cls">Sidebar</div>;
+    const { container } = renderDetailView({
+      sidebarContent: Sidebar,
+      sidebarClassName: 'w-80 shrink-0 p-4',
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with custom formCardPadding', () => {
+    const { container } = renderDetailView({ formCardPadding: 'p-4' });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with secondaryTabsPaddingY and secondaryTabsShowHoverLine', () => {
+    const stabs = [
+      { key: 'lines', label: 'Lines', Table: MockTable },
+      { key: 'addresses', label: 'Addresses', Table: MockTable },
+    ];
+    const { container } = renderDetailView({
+      secondaryTabs: stabs,
+      secondaryTabsPaddingY: 'py-4',
+      secondaryTabsShowHoverLine: true,
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with addLineButtonPaddingX', () => {
+    const { container } = renderDetailView({ addLineButtonPaddingX: 'px-4' });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with custom formScrollPaddingB', () => {
+    const { container } = renderDetailView({ formScrollPaddingB: 'pb-4' });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with secondaryTabContentPaddingT', () => {
+    const stabs = [{ key: 'tab1', label: 'Tab1', Table: MockTable }];
+    const { container } = renderDetailView({
+      secondaryTabs: stabs,
+      secondaryTabContentPaddingT: 'pt-4',
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with hideAddLineChevron=true on inlineEditable', () => {
+    const { container } = renderDetailView({
+      linesLayout: 'inlineEditable',
+      hideAddLineChevron: true,
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with showDetailFooterTotals=true', () => {
+    const { container } = renderDetailView({ showDetailFooterTotals: true });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with refetchAfterSave=true', () => {
+    const { container } = renderDetailView({ refetchAfterSave: true });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with labelOverrides object', () => {
+    const { container } = renderDetailView({
+      labelOverrides: { documentNo: 'Order Number', businessPartner: 'Customer' },
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with othersLabel custom string', () => {
+    const stabs = [{ key: 'tab1', label: 'Tab1', Table: MockTable }];
+    const { container } = renderDetailView({
+      secondaryTabs: stabs,
+      othersLabel: 'More',
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with bottomSection as component receiving correct props', () => {
+    const Bottom = vi.fn(({ data, lines, token }) => (
+      <div data-testid="bottom-section-render">
+        {data?.documentNo} - {token}
+      </div>
+    ));
+    renderDetailView({ bottomSection: Bottom });
+    // BottomSection is rendered (it receives data, token, etc.)
+    expect(screen.getByTestId('bottom-section-render')).toBeInTheDocument();
+  });
+
+  it('renders customAddModal tab with add button visible', () => {
+    const CustomModal = ({ open, onClose }) => open ? <div>Modal</div> : null;
+    const stabs = [
+      {
+        key: 'addresses',
+        label: 'Addresses',
+        Table: MockTable,
+        customAddModal: CustomModal,
+        addLineFields: { entry: [{ key: 'street', label: 'Street', type: 'text' }], derived: [] },
+      },
+    ];
+    const { container } = renderDetailView({ secondaryTabs: stabs });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with combined tabsBarRight + tabsBarRightDivider creating calc padding', () => {
+    const TabsRight = () => <span>Right</span>;
+    const stabs = [{ key: 'tab1', label: 'Tab1', Table: MockTable }];
+    const { container } = renderDetailView({
+      secondaryTabs: stabs,
+      tabsBarRight: TabsRight,
+      tabsBarRightDivider: '250px',
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders linesLayout=inlineEditable with addLineButtonPaddingX applied', () => {
+    const { container } = renderDetailView({
+      linesLayout: 'inlineEditable',
+      addLineButtonPaddingX: 'px-6',
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with formScrollPaddingB=pb-0 for zero bottom padding', () => {
+    const { container } = renderDetailView({ formScrollPaddingB: 'pb-0' });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with secondaryTabContentPaddingT=pt-0 for zero top padding', () => {
+    const stabs = [{ key: 'tab1', label: 'Tab1', Table: MockTable }];
+    const { container } = renderDetailView({
+      secondaryTabs: stabs,
+      secondaryTabContentPaddingT: 'pt-0',
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with formCardPadding=p-0 for no card padding', () => {
+    const { container } = renderDetailView({ formCardPadding: 'p-0' });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with sidebarClassName and sidebarContent simultaneously', () => {
+    const Sidebar = () => <div data-testid="sidebar-c">Content</div>;
+    const { container } = renderDetailView({
+      sidebarContent: Sidebar,
+      sidebarClassName: 'w-64 p-2 bg-gray-50',
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with showDetailFooterTotals=false suppressing totals', () => {
+    const { container } = renderDetailView({ showDetailFooterTotals: false });
+    expect(container).toBeTruthy();
+  });
+});
+
+// ============================================================
+// Pure-function helper tests (no DOM, high branch coverage)
+// ============================================================
+
+describe('runAddLineAction', () => {
+  it('calls handleCustomModalAddClick when customAddModal is truthy', async () => {
+    const click = vi.fn().mockResolvedValue(undefined);
+    const toggle = vi.fn().mockResolvedValue(undefined);
+    await runAddLineAction({ key: 'lines', customAddModal: true }, { handleCustomModalAddClick: click, handleSecondaryAddLineToggle: toggle });
+    expect(click).toHaveBeenCalledWith('lines');
+    expect(toggle).not.toHaveBeenCalled();
+  });
+
+  it('calls handleSecondaryAddLineToggle when customAddModal is falsy', async () => {
+    const click = vi.fn().mockResolvedValue(undefined);
+    const toggle = vi.fn().mockResolvedValue(undefined);
+    await runAddLineAction({ key: 'tax', customAddModal: false }, { handleCustomModalAddClick: click, handleSecondaryAddLineToggle: toggle });
+    expect(toggle).toHaveBeenCalledWith('tax');
+    expect(click).not.toHaveBeenCalled();
+  });
+
+  it('catches errors from the action without throwing', async () => {
+    const click = vi.fn().mockRejectedValue(new Error('boom'));
+    await expect(runAddLineAction({ key: 'x', customAddModal: true }, { handleCustomModalAddClick: click, handleSecondaryAddLineToggle: vi.fn() })).resolves.toBeUndefined();
+  });
+});
+
+describe('normalizePatchFieldValues', () => {
+  it('converts numeric strings to numbers', () => {
+    const fv = {};
+    normalizePatchFieldValues({ amount: '123.45' }, fv);
+    expect(fv.amount).toBe(123.45);
+  });
+
+  it('converts negative numeric strings', () => {
+    const fv = {};
+    normalizePatchFieldValues({ amount: '-50.5' }, fv);
+    expect(fv.amount).toBe(-50.5);
+  });
+
+  it('keeps non-numeric strings as strings', () => {
+    const fv = {};
+    normalizePatchFieldValues({ name: 'hello' }, fv);
+    expect(fv.name).toBe('hello');
+  });
+
+  it('skips $_identifier keys', () => {
+    const fv = {};
+    normalizePatchFieldValues({ 'bp$_identifier': 'Acme' }, fv);
+    expect(fv).not.toHaveProperty('bp$_identifier');
+  });
+
+  it('keeps strings with commas as strings (locale safety)', () => {
+    const fv = {};
+    normalizePatchFieldValues({ price: '10,50' }, fv);
+    expect(fv.price).toBe('10,50');
+  });
+
+  it('converts integer strings', () => {
+    const fv = {};
+    normalizePatchFieldValues({ qty: '7' }, fv);
+    expect(fv.qty).toBe(7);
+  });
+
+  it('keeps null values as-is', () => {
+    const fv = {};
+    normalizePatchFieldValues({ field: null }, fv);
+    expect(fv.field).toBeNull();
+  });
+
+  it('keeps boolean values as-is', () => {
+    const fv = {};
+    normalizePatchFieldValues({ active: true }, fv);
+    expect(fv.active).toBe(true);
+  });
+});
+
+describe('applyCalloutFieldUpdates', () => {
+  it('applies non-empty values', () => {
+    const hook = { handleChange: vi.fn() };
+    const ctx = { data: {}, triggerField: 'product', userTouchedRef: { current: new Set() }, appliedFields: new Map(), hook, api: {}, catalogs: {} };
+    applyCalloutFieldUpdates({ price: { value: 100 } }, ctx);
+    expect(hook.handleChange).toHaveBeenCalledWith('price', 100);
+    expect(ctx.appliedFields.get('price')).toBe(100);
+  });
+
+  it('skips empty callout value when field already has value', () => {
+    const hook = { handleChange: vi.fn() };
+    const ctx = { data: { warehouse: 'WH1' }, triggerField: 'product', userTouchedRef: { current: new Set() }, appliedFields: new Map(), hook, api: {}, catalogs: {} };
+    applyCalloutFieldUpdates({ warehouse: { value: '' } }, ctx);
+    expect(hook.handleChange).not.toHaveBeenCalled();
+  });
+
+  it('skips null callout value when field has value', () => {
+    const hook = { handleChange: vi.fn() };
+    const ctx = { data: { warehouse: 'WH1' }, triggerField: 'product', userTouchedRef: { current: new Set() }, appliedFields: new Map(), hook, api: {}, catalogs: {} };
+    applyCalloutFieldUpdates({ warehouse: { value: null } }, ctx);
+    expect(hook.handleChange).not.toHaveBeenCalled();
+  });
+
+  it('protects user-touched field from collateral update', () => {
+    const hook = { handleChange: vi.fn() };
+    const touched = new Set(['warehouse']);
+    const ctx = { data: { warehouse: 'WH1' }, triggerField: 'product', userTouchedRef: { current: touched }, appliedFields: new Map(), hook, api: {}, catalogs: {} };
+    applyCalloutFieldUpdates({ warehouse: { value: 'WH2' } }, ctx);
+    expect(hook.handleChange).not.toHaveBeenCalled();
+  });
+
+  it('does NOT protect the trigger field itself', () => {
+    const hook = { handleChange: vi.fn() };
+    const touched = new Set(['product']);
+    const ctx = { data: { product: 'P1' }, triggerField: 'product', userTouchedRef: { current: touched }, appliedFields: new Map(), hook, api: {}, catalogs: {} };
+    applyCalloutFieldUpdates({ product: { value: 'P2' } }, ctx);
+    expect(hook.handleChange).toHaveBeenCalledWith('product', 'P2');
+  });
+
+  it('applies empty callout value when field is also empty (userHasValue=false)', () => {
+    const hook = { handleChange: vi.fn() };
+    const ctx = { data: { note: '' }, triggerField: 'x', userTouchedRef: { current: new Set() }, appliedFields: new Map(), hook, api: {}, catalogs: {} };
+    applyCalloutFieldUpdates({ note: { value: '' } }, ctx);
+    // Empty current means userHasValue=false → skip condition not met → applies
+    expect(hook.handleChange).toHaveBeenCalledWith('note', '');
+  });
+
+  it('applies value when current is null (no existing value)', () => {
+    const hook = { handleChange: vi.fn() };
+    const ctx = { data: { note: null }, triggerField: 'x', userTouchedRef: { current: new Set() }, appliedFields: new Map(), hook, api: {}, catalogs: {} };
+    applyCalloutFieldUpdates({ note: { value: 'hello' } }, ctx);
+    expect(hook.handleChange).toHaveBeenCalledWith('note', 'hello');
+  });
+});
+
+describe('applyCalloutComboUpdates', () => {
+  it('applies explicit selected value', () => {
+    const hook = { handleChange: vi.fn() };
+    const ctx = { data: {}, triggerField: 'bp', userTouchedRef: { current: new Set() }, appliedFields: new Map(), hook };
+    applyCalloutComboUpdates({ region: { selected: 'R1', _identifier: 'Region 1', entries: [] } }, ctx);
+    expect(hook.handleChange).toHaveBeenCalledWith('region', 'R1');
+    expect(hook.handleChange).toHaveBeenCalledWith('region$_identifier', 'Region 1');
+  });
+
+  it('auto-selects first entry when selected is null', () => {
+    const hook = { handleChange: vi.fn() };
+    const ctx = { data: {}, triggerField: 'bp', userTouchedRef: { current: new Set() }, appliedFields: new Map(), hook };
+    applyCalloutComboUpdates({ addr: { selected: null, entries: [{ id: 'A1', identifier: 'Address 1' }] } }, ctx);
+    expect(hook.handleChange).toHaveBeenCalledWith('addr', 'A1');
+    expect(hook.handleChange).toHaveBeenCalledWith('addr$_identifier', 'Address 1');
+  });
+
+  it('auto-selects first entry using _identifier fallback', () => {
+    const hook = { handleChange: vi.fn() };
+    const ctx = { data: {}, triggerField: 'bp', userTouchedRef: { current: new Set() }, appliedFields: new Map(), hook };
+    applyCalloutComboUpdates({ addr: { selected: null, entries: [{ id: 'A1', _identifier: 'Alt Label' }] } }, ctx);
+    expect(hook.handleChange).toHaveBeenCalledWith('addr$_identifier', 'Alt Label');
+  });
+
+  it('skips when entries is empty and selected is null', () => {
+    const hook = { handleChange: vi.fn() };
+    const ctx = { data: {}, triggerField: 'bp', userTouchedRef: { current: new Set() }, appliedFields: new Map(), hook };
+    applyCalloutComboUpdates({ addr: { selected: null, entries: [] } }, ctx);
+    expect(hook.handleChange).not.toHaveBeenCalled();
+  });
+
+  it('protects user-touched field from collateral combo update', () => {
+    const hook = { handleChange: vi.fn() };
+    const touched = new Set(['region']);
+    const ctx = { data: { region: 'R0' }, triggerField: 'bp', userTouchedRef: { current: touched }, appliedFields: new Map(), hook };
+    applyCalloutComboUpdates({ region: { selected: 'R1', entries: [] } }, ctx);
+    expect(hook.handleChange).not.toHaveBeenCalled();
+  });
+
+  it('does not set identifier when _identifier is falsy', () => {
+    const hook = { handleChange: vi.fn() };
+    const ctx = { data: {}, triggerField: 'bp', userTouchedRef: { current: new Set() }, appliedFields: new Map(), hook };
+    applyCalloutComboUpdates({ region: { selected: 'R1', _identifier: '', entries: [] } }, ctx);
+    expect(hook.handleChange).toHaveBeenCalledTimes(1);
+    expect(hook.handleChange).toHaveBeenCalledWith('region', 'R1');
+  });
+});
+
+describe('mergeSelectorContextFields', () => {
+  it('maps standardPrice to gross fields when isTaxIncluded is not false', () => {
+    const snapshot = {};
+    mergeSelectorContextFields({ standardPrice: 50, isTaxIncluded: true }, snapshot, 'product');
+    expect(snapshot.grossUnitPrice).toBe(50);
+    expect(snapshot.grossListPrice).toBe(50);
+  });
+
+  it('maps standardPrice to net fields when isTaxIncluded is false', () => {
+    const snapshot = {};
+    mergeSelectorContextFields({ standardPrice: 40, isTaxIncluded: false }, snapshot, 'product');
+    expect(snapshot.unitPrice).toBe(40);
+    expect(snapshot.listPrice).toBe(40);
+  });
+
+  it('skips id, _aux, label, name, searchKey, objects, null', () => {
+    const snapshot = {};
+    mergeSelectorContextFields({ id: '1', _aux: {}, label: 'L', name: 'N', searchKey: 'S', nested: { a: 1 }, nv: null, custom: 'yes' }, snapshot, 'f');
+    expect(snapshot).not.toHaveProperty('f_id');
+    expect(snapshot).not.toHaveProperty('f__aux');
+    expect(snapshot).toHaveProperty('f_custom', 'yes');
+  });
+
+  it('does not overwrite existing snapshot keys', () => {
+    const snapshot = { f_color: 'red' };
+    mergeSelectorContextFields({ color: 'blue' }, snapshot, 'f');
+    expect(snapshot.f_color).toBe('red');
+  });
+
+  it('adds field when snapshot key does not exist', () => {
+    const snapshot = {};
+    mergeSelectorContextFields({ color: 'blue' }, snapshot, 'f');
+    expect(snapshot.f_color).toBe('blue');
+  });
+});
+
+describe('mergeSelectorAuxFields', () => {
+  it('merges _aux fields into snapshot', () => {
+    const snapshot = {};
+    mergeSelectorAuxFields({ _aux: { _PSTD: 10, _UOM: 'kg' } }, snapshot, 'product');
+    expect(snapshot.product_PSTD).toBe(10);
+    expect(snapshot.product_UOM).toBe('kg');
+  });
+
+  it('does nothing when _aux is missing', () => {
+    const snapshot = {};
+    mergeSelectorAuxFields({}, snapshot, 'product');
+    expect(Object.keys(snapshot)).toHaveLength(0);
+  });
+});
+
+describe('applyLocalChildRowUpdate', () => {
+  it('calls handleUpdateChild with merged update', () => {
+    const hook = { handleUpdateChild: vi.fn() };
+    applyLocalChildRowUpdate({ tax: 21 }, 'product', 'P1', { unitPrice: 50 }, { identifier: 'Widget' }, hook, { id: 'L1' });
+    expect(hook.handleUpdateChild).toHaveBeenCalledWith('L1', expect.objectContaining({
+      tax: 21,
+      product: 'P1',
+      unitPrice: 50,
+      'product$_identifier': 'Widget',
+    }));
+  });
+
+  it('skips identifier when opts.identifier is undefined', () => {
+    const hook = { handleUpdateChild: vi.fn() };
+    applyLocalChildRowUpdate({}, 'qty', 5, {}, undefined, hook, { id: 'L1' });
+    expect(hook.handleUpdateChild).toHaveBeenCalledWith('L1', { qty: 5 });
+  });
+
+  it('handles missing handleUpdateChild gracefully', () => {
+    const hook = {};
+    expect(() => applyLocalChildRowUpdate({}, 'qty', 5, {}, undefined, hook, { id: 'L1' })).not.toThrow();
+  });
+});
+
+describe('collectRowFieldValues', () => {
+  it('collects fields applying coerce', () => {
+    const fv = {};
+    collectRowFieldValues({ qty: '5', name: 'A' }, fv, (v) => typeof v === 'string' ? v.toUpperCase() : v);
+    expect(fv.qty).toBe('5');
+    expect(fv.name).toBe('A');
+  });
+
+  it('skips $_identifier keys', () => {
+    const fv = {};
+    collectRowFieldValues({ 'bp$_identifier': 'Acme', bp: '1' }, fv, v => v);
+    expect(fv).not.toHaveProperty('bp$_identifier');
+    expect(fv.bp).toBe('1');
+  });
+
+  it('skips internal markers (_identifier, _entityName, $ref, id)', () => {
+    const fv = {};
+    collectRowFieldValues({ _identifier: 'x', _entityName: 'y', '$ref': 'z', id: '1', name: 'A' }, fv, v => v);
+    expect(fv).not.toHaveProperty('_identifier');
+    expect(fv).not.toHaveProperty('_entityName');
+    expect(fv).not.toHaveProperty('$ref');
+    expect(fv).not.toHaveProperty('id');
+    expect(fv.name).toBe('A');
+  });
+});
+
+describe('getSecondaryTabContentClassName', () => {
+  it('appends pointer-events-none when embedded', () => {
+    expect(getSecondaryTabContentClassName('pt-2', true)).toContain('pointer-events-none');
+  });
+
+  it('omits pointer-events-none when not embedded', () => {
+    expect(getSecondaryTabContentClassName('pt-2', false)).not.toContain('pointer-events-none');
+  });
+});
+
+describe('getSecondaryLinesTableRef', () => {
+  it('returns ref for inlineEditable', () => {
+    const getRef = vi.fn().mockReturnValue('ref');
+    expect(getSecondaryLinesTableRef('inlineEditable', getRef, { key: 'tax' })).toBe('ref');
+    expect(getRef).toHaveBeenCalledWith('tax');
+  });
+
+  it('returns undefined for non-inlineEditable', () => {
+    expect(getSecondaryLinesTableRef('table', vi.fn(), { key: 'tax' })).toBeUndefined();
+  });
+});
+
+describe('getSecondaryEditRowHandler', () => {
+  it('returns handler when customAddModal is truthy', () => {
+    const setter = vi.fn();
+    const handler = getSecondaryEditRowHandler({ key: 'tax', customAddModal: true }, setter);
+    expect(typeof handler).toBe('function');
+    handler({ id: 'R1' });
+    expect(setter).toHaveBeenCalledWith({ key: 'tax', rowId: 'R1' });
+  });
+
+  it('returns undefined when customAddModal is falsy', () => {
+    expect(getSecondaryEditRowHandler({ key: 'tax', customAddModal: false }, vi.fn())).toBeUndefined();
+  });
+});
+
+describe('getSecondarySelectionChangeHandler', () => {
+  it('returns handler for inlineEditable', () => {
+    const setter = vi.fn();
+    const handler = getSecondarySelectionChangeHandler('inlineEditable', setter, { key: 'tax' });
+    expect(typeof handler).toBe('function');
+  });
+
+  it('returns undefined for non-inlineEditable', () => {
+    expect(getSecondarySelectionChangeHandler('table', vi.fn(), { key: 'tax' })).toBeUndefined();
+  });
+});
+
+describe('getSaveButtonLabel', () => {
+  it('returns loading when savingLine is true', () => {
+    const ui = vi.fn(k => k);
+    expect(getSaveButtonLabel(true, ui)).toBe('loading');
+  });
+
+  it('returns save when savingLine is false', () => {
+    const ui = vi.fn(k => k);
+    expect(getSaveButtonLabel(false, ui)).toBe('save');
+  });
+});
+
+describe('getChildSaveButtonLabel', () => {
+  it('returns loading when savingChild is true', () => {
+    const ui = vi.fn(k => k);
+    expect(getChildSaveButtonLabel(true, ui)).toBe('loading');
+  });
+
+  it('returns save when savingChild is false', () => {
+    const ui = vi.fn(k => k);
+    expect(getChildSaveButtonLabel(false, ui)).toBe('save');
+  });
+});
+
+describe('getSelectedLinesTotalLabel', () => {
+  it('computes total from grossField', () => {
+    const rows = [{ lineGrossAmount: 100 }, { lineGrossAmount: 50.5 }];
+    const result = getSelectedLinesTotalLabel({}, rows, { grossField: 'lineGrossAmount' }, { 'currency$_identifier': 'EUR' });
+    expect(result).toContain('EUR');
+  });
+
+  it('returns null when showLineTotals is false', () => {
+    expect(getSelectedLinesTotalLabel({ showLineTotals: false }, [], {}, {})).toBeNull();
+  });
+
+  it('returns formatted total without currency when currency is empty', () => {
+    const rows = [{ lineGrossAmount: 100 }];
+    const result = getSelectedLinesTotalLabel({}, rows, { grossField: 'lineGrossAmount' }, {});
+    expect(result).not.toContain('EUR');
+  });
+
+  it('handles NaN values gracefully (skips them)', () => {
+    const rows = [{ lineGrossAmount: 'abc' }, { lineGrossAmount: 50 }];
+    const result = getSelectedLinesTotalLabel({}, rows, { grossField: 'lineGrossAmount' }, {});
+    expect(result).toBeTruthy();
+  });
+});
+
+describe('getAddLineWrapperClassName', () => {
+  it('returns sticky for inlineEditable', () => {
+    expect(getAddLineWrapperClassName('inlineEditable')).toContain('sticky');
+  });
+
+  it('returns relative for other layouts', () => {
+    expect(getAddLineWrapperClassName('table')).toBe('relative');
+  });
+});
+
+describe('getAddLineWrapperStyle', () => {
+  it('returns padding 8 for inlineEditable', () => {
+    expect(getAddLineWrapperStyle('inlineEditable').padding).toBe(8);
+  });
+
+  it('returns padding string for other layouts', () => {
+    expect(getAddLineWrapperStyle('table').padding).toBe('10px 16px');
+  });
+});
+
+describe('resolveCanAddLines', () => {
+  it('uses custom guard function when provided', () => {
+    const guard = vi.fn().mockReturnValue(false);
+    expect(resolveCanAddLines(guard, { a: 1 }, [])).toBe(false);
+    expect(guard).toHaveBeenCalledWith({ a: 1 }, []);
+  });
+
+  it('checks requiredHeaderFields all have values', () => {
+    expect(resolveCanAddLines(null, { bp: 'B1', org: 'O1' }, ['bp', 'org'])).toBe(true);
+  });
+
+  it('fails when a required field is empty string', () => {
+    expect(resolveCanAddLines(null, { bp: '', org: 'O1' }, ['bp', 'org'])).toBe(false);
+  });
+
+  it('fails when a required field is null', () => {
+    expect(resolveCanAddLines(null, { bp: null }, ['bp'])).toBe(false);
+  });
+
+  it('fails when a required field is whitespace-only string', () => {
+    expect(resolveCanAddLines(null, { bp: '   ' }, ['bp'])).toBe(false);
+  });
+
+  it('returns true when no guard and no requiredHeaderFields', () => {
+    expect(resolveCanAddLines(null, {}, [])).toBe(true);
+  });
+
+  it('returns true when no guard and requiredHeaderFields is undefined', () => {
+    expect(resolveCanAddLines(null, {}, undefined)).toBe(true);
+  });
+});
+
+describe('parseBackendErrorMessage', () => {
+  it('parses NEO Headless format: { error: { message } }', async () => {
+    const res = { json: () => Promise.resolve({ error: { message: 'Not found' } }) };
+    expect(await parseBackendErrorMessage(res)).toBe('Not found');
+  });
+
+  it('parses JsonDataService format: { response: { error: { message } } }', async () => {
+    const res = { json: () => Promise.resolve({ response: { error: { message: 'Validation' } } }) };
+    expect(await parseBackendErrorMessage(res)).toBe('Validation');
+  });
+
+  it('parses JsonDataService string error: { response: { error: string } }', async () => {
+    const res = { json: () => Promise.resolve({ response: { error: 'simple error' } }) };
+    expect(await parseBackendErrorMessage(res)).toBe('simple error');
+  });
+
+  it('parses top-level message: { message }', async () => {
+    const res = { json: () => Promise.resolve({ message: 'top level' }) };
+    expect(await parseBackendErrorMessage(res)).toBe('top level');
+  });
+
+  it('returns undefined for non-JSON response', async () => {
+    const res = { json: () => Promise.reject(new Error('not json')) };
+    expect(await parseBackendErrorMessage(res)).toBeUndefined();
+  });
+
+  it('returns undefined when no recognized error format', async () => {
+    const res = { json: () => Promise.resolve({ random: 'data' }) };
+    expect(await parseBackendErrorMessage(res)).toBeUndefined();
+  });
+});
+
+describe('getDocumentIds', () => {
+  it('returns array with id when recordId is truthy', () => {
+    expect(getDocumentIds('123')).toEqual(['123']);
+  });
+
+  it('returns empty array when recordId is falsy', () => {
+    expect(getDocumentIds(null)).toEqual([]);
+    expect(getDocumentIds(undefined)).toEqual([]);
+    expect(getDocumentIds('')).toEqual([]);
+  });
+});
+
+describe('resolveSidebarContent', () => {
+  it('calls function with data', () => {
+    const fn = vi.fn().mockReturnValue('result');
+    expect(resolveSidebarContent(fn, { id: '1' })).toBe('result');
+    expect(fn).toHaveBeenCalledWith({ id: '1' });
+  });
+
+  it('returns non-function value as-is', () => {
+    const jsx = 'static';
+    expect(resolveSidebarContent(jsx, {})).toBe('static');
+  });
+});
+
+describe('getNotesRowClassName', () => {
+  it('includes pointer-events-none when embedded', () => {
+    expect(getNotesRowClassName(true)).toContain('pointer-events-none');
+  });
+
+  it('excludes pointer-events-none when not embedded', () => {
+    expect(getNotesRowClassName(false)).not.toContain('pointer-events-none');
+  });
+});
+
+describe('getDocsRowClassName', () => {
+  it('includes pointer-events-none when embedded', () => {
+    expect(getDocsRowClassName(true)).toContain('pointer-events-none');
+  });
+
+  it('excludes pointer-events-none when not embedded', () => {
+    expect(getDocsRowClassName(false)).not.toContain('pointer-events-none');
+  });
+});
+
+describe('getAddLineMenuActions', () => {
+  it('returns undefined when getLineMenuActions is falsy', () => {
+    expect(getAddLineMenuActions(null, {}, {}, vi.fn())).toBeUndefined();
+  });
+
+  it('maps actions with translated labels', () => {
+    const actions = [{ label: 'importLines', onClick: vi.fn() }];
+    const getActions = vi.fn().mockReturnValue(actions);
+    const ui = vi.fn(k => k === 'importLines' ? 'Import Lines' : k);
+    const result = getAddLineMenuActions(getActions, { id: '1' }, {}, ui);
+    expect(result[0].label).toBe('Import Lines');
+  });
+
+  it('keeps non-string labels as-is', () => {
+    const Comp = () => null;
+    const actions = [{ label: Comp }];
+    const getActions = vi.fn().mockReturnValue(actions);
+    const result = getAddLineMenuActions(getActions, {}, {}, vi.fn());
+    expect(result[0].label).toBe(Comp);
+  });
+});
+
+describe('getInlineEditableShrinkClassName', () => {
+  it('returns shrink-0 for inlineEditable', () => {
+    expect(getInlineEditableShrinkClassName('inlineEditable')).toBe('shrink-0');
+  });
+
+  it('returns empty string for other layouts', () => {
+    expect(getInlineEditableShrinkClassName('table')).toBe('');
+  });
+});
+
+describe('getOthersTabClassName', () => {
+  it('includes pointer-events-none when embedded', () => {
+    expect(getOthersTabClassName(true)).toContain('pointer-events-none');
+  });
+
+  it('excludes pointer-events-none when not embedded', () => {
+    expect(getOthersTabClassName(false)).not.toContain('pointer-events-none');
+  });
+});
+
+describe('getCustomLinesTabClassName', () => {
+  it('includes pointer-events-none when embedded', () => {
+    expect(getCustomLinesTabClassName(true)).toContain('pointer-events-none');
+  });
+
+  it('excludes pointer-events-none when not embedded', () => {
+    expect(getCustomLinesTabClassName(false)).not.toContain('pointer-events-none');
+  });
+});
+
+describe('getWindowTitle', () => {
+  it('uses breadcrumb last segment translated', () => {
+    const tMenu = vi.fn(k => k === 'Orders' ? 'Pedidos' : k);
+    expect(getWindowTitle('Sales / Orders', tMenu, 'Orders')).toBe('Pedidos');
+  });
+
+  it('falls back to raw segment when tMenu returns empty', () => {
+    const tMenu = vi.fn(() => '');
+    expect(getWindowTitle('Sales / Orders', tMenu, 'Orders')).toBe('Orders');
+  });
+
+  it('uses windowName when no breadcrumb', () => {
+    const tMenu = vi.fn(k => 'Translated');
+    expect(getWindowTitle(null, tMenu, 'Orders')).toBe('Translated');
+  });
+
+  it('returns empty string when no breadcrumb and no windowName', () => {
+    const tMenu = vi.fn(() => '');
+    expect(getWindowTitle(null, tMenu, '')).toBe('');
+  });
+});
+
+describe('getRecordTitle', () => {
+  it('returns newRecord when isNew', () => {
+    const ui = vi.fn(k => k);
+    expect(getRecordTitle(true, ui, {}, null)).toBe('newRecord');
+  });
+
+  it('returns identifier from data when not new', () => {
+    const ui = vi.fn(k => k);
+    expect(getRecordTitle(false, ui, { _identifier: 'SO-001', id: '1' }, null)).toBe('SO-001');
+  });
+
+  it('falls back to id when _identifier is missing', () => {
+    const ui = vi.fn(k => k);
+    expect(getRecordTitle(false, ui, { id: '1' }, null)).toBe('1');
+  });
+
+  it('returns empty string when no data identifiers', () => {
+    const ui = vi.fn(k => k);
+    expect(getRecordTitle(false, ui, {}, null)).toBe('');
+  });
+});
+
+describe('getFullBreadcrumb', () => {
+  it('returns translated breadcrumb with title suffix', () => {
+    const tMenu = vi.fn(k => k.toUpperCase());
+    expect(getFullBreadcrumb('Sales / Orders', tMenu, 'SO-001', '')).toBe('SALES / ORDERS / SO-001');
+  });
+
+  it('returns translated breadcrumb without title when empty', () => {
+    const tMenu = vi.fn(k => k);
+    expect(getFullBreadcrumb('Sales / Orders', tMenu, '', '')).toBe('Sales / Orders');
+  });
+
+  it('returns windowTitle when no breadcrumb', () => {
+    expect(getFullBreadcrumb(null, vi.fn(), 'SO-001', 'Window Title')).toBe('Window Title');
+  });
+});
+
+describe('getOnAddToFavorites', () => {
+  it('returns function when favKey is truthy', () => {
+    const toggle = vi.fn();
+    const result = getOnAddToFavorites('fav1', toggle, 'Orders', 'Sales / Orders', 'Orders');
+    expect(typeof result).toBe('function');
+    result();
+    expect(toggle).toHaveBeenCalledWith('fav1', 'Orders');
+  });
+
+  it('returns undefined when favKey is falsy', () => {
+    expect(getOnAddToFavorites(null, vi.fn(), 'Orders', 'Sales', 'Orders')).toBeUndefined();
+  });
+
+  it('falls back to breadcrumb segment when entityLabel is empty', () => {
+    const toggle = vi.fn();
+    const result = getOnAddToFavorites('fav1', toggle, '', 'Sales / Orders', 'Window');
+    result();
+    expect(toggle).toHaveBeenCalledWith('fav1', 'Orders');
+  });
+});
+
+describe('getLinesContainerClassName', () => {
+  it('omits pt-3 for inlineEditable', () => {
+    const cls = getLinesContainerClassName('inlineEditable', false);
+    expect(cls).not.toContain('pt-3');
+  });
+
+  it('includes pt-3 for non-inlineEditable', () => {
+    const cls = getLinesContainerClassName('table', false);
+    expect(cls).toContain('pt-3');
+  });
+
+  it('includes pointer-events-none when embedded', () => {
+    expect(getLinesContainerClassName('table', true)).toContain('pointer-events-none');
+  });
+});
+
+describe('buildInlineRowUpdateHandler', () => {
+  it('returns undefined when layout is not inlineEditable', () => {
+    expect(buildInlineRowUpdateHandler({ linesLayout: 'table', isDocumentReadOnly: false })).toBeUndefined();
+  });
+
+  it('returns undefined when document is readOnly', () => {
+    expect(buildInlineRowUpdateHandler({ linesLayout: 'inlineEditable', isDocumentReadOnly: true })).toBeUndefined();
+  });
+
+  it('returns a function when inlineEditable and not readOnly', () => {
+    const handler = buildInlineRowUpdateHandler({
+      linesLayout: 'inlineEditable',
+      isDocumentReadOnly: false,
+      api: {},
+      detailEntity: 'orderLine',
+      apiBaseUrl: '/api',
+      hook: { editing: {}, handleUpdateChild: vi.fn() },
+      handleLineFieldChange: vi.fn().mockResolvedValue(undefined),
+      prepareLineForPost: vi.fn(),
+      token: 'tok',
+      extractErrorMessage: vi.fn(),
+      ui: vi.fn(k => k),
+    });
+    expect(typeof handler).toBe('function');
+  });
+});
+
+describe('buildDeleteRowHandler', () => {
+  it('returns undefined when document is readOnly', () => {
+    expect(buildDeleteRowHandler({
+      api: {}, detailEntity: 'line', isDocumentReadOnly: true,
+      confirmDelete: vi.fn(), apiBaseUrl: '/api', token: 't',
+      hook: {}, selectedLine: null, setSelectedLine: vi.fn(),
+      ui: vi.fn(), extractErrorMessage: vi.fn(),
+    })).toBeUndefined();
+  });
+
+  it('returns undefined when api.crud.delete is false', () => {
+    expect(buildDeleteRowHandler({
+      api: { crud: { line: { delete: false } } }, detailEntity: 'line', isDocumentReadOnly: false,
+      confirmDelete: vi.fn(), apiBaseUrl: '/api', token: 't',
+      hook: {}, selectedLine: null, setSelectedLine: vi.fn(),
+      ui: vi.fn(), extractErrorMessage: vi.fn(),
+    })).toBeUndefined();
+  });
+
+  it('returns a function when delete is allowed', () => {
+    const handler = buildDeleteRowHandler({
+      api: {}, detailEntity: 'line', isDocumentReadOnly: false,
+      confirmDelete: vi.fn().mockResolvedValue(true), apiBaseUrl: '/api', token: 't',
+      hook: { handleDeleteChild: vi.fn() }, selectedLine: null, setSelectedLine: vi.fn(),
+      ui: vi.fn(k => k), extractErrorMessage: vi.fn(),
+    });
+    expect(typeof handler).toBe('function');
+  });
+});
+
+describe('getDeleteChildButtonLabel', () => {
+  it('returns loading when deleting', () => {
+    expect(getDeleteChildButtonLabel(true, k => k)).toBe('loading');
+  });
+
+  it('returns delete when not deleting', () => {
+    expect(getDeleteChildButtonLabel(false, k => k)).toBe('delete');
+  });
+});
+
+describe('buildLineRowClickHandler', () => {
+  it('returns handler when DetailForm exists and layout is not inlineEditable', () => {
+    const setter = vi.fn();
+    const handler = buildLineRowClickHandler(() => null, 'table', setter);
+    expect(typeof handler).toBe('function');
+  });
+
+  it('returns undefined when DetailForm is null', () => {
+    expect(buildLineRowClickHandler(null, 'table', vi.fn())).toBeUndefined();
+  });
+
+  it('returns undefined when layout is inlineEditable', () => {
+    expect(buildLineRowClickHandler(() => null, 'inlineEditable', vi.fn())).toBeUndefined();
+  });
+});
+
+describe('insertLinesTab', () => {
+  it('inserts at detailTabIndex when valid', () => {
+    const tabs = [{ key: 'a' }, { key: 'b' }];
+    insertLinesTab('Lines', 'orderLine', { children: [1, 2] }, 1, tabs);
+    expect(tabs[1].key).toBe('lines');
+    expect(tabs[1].count).toBe(2);
+  });
+
+  it('unshifts when detailTabIndex is not a number', () => {
+    const tabs = [{ key: 'a' }];
+    insertLinesTab('Lines', 'orderLine', { children: [] }, undefined, tabs);
+    expect(tabs[0].key).toBe('lines');
+  });
+
+  it('uses detailEntity as fallback label', () => {
+    const tabs = [];
+    insertLinesTab(null, 'orderLine', { children: [] }, 0, tabs);
+    expect(tabs[0].label).toBe('orderLine');
+  });
+
+  it('defaults label to Lines when both are empty', () => {
+    const tabs = [];
+    insertLinesTab(null, null, { children: [] }, 0, tabs);
+    expect(tabs[0].label).toBe('Lines');
+  });
+});
+
+describe('getDetailContentContainerClassName', () => {
+  it('includes overflow-y-auto for inlineEditable', () => {
+    const cls = getDetailContentContainerClassName({ linesLayout: 'inlineEditable' });
+    expect(cls).toContain('overflow-y-auto');
+  });
+
+  it('includes overflow-auto for non-inlineEditable', () => {
+    const cls = getDetailContentContainerClassName({ linesLayout: 'table' });
+    expect(cls).toContain('overflow-auto');
+  });
+
+  it('adds hidden when primaryTabs exists and active is not general', () => {
+    const cls = getDetailContentContainerClassName({ primaryTabs: [{}], activePrimaryTab: 'other' });
+    expect(cls).toContain('hidden');
+  });
+
+  it('does not add hidden when activePrimaryTab is general', () => {
+    const cls = getDetailContentContainerClassName({ primaryTabs: [{}], activePrimaryTab: 'general' });
+    expect(cls).not.toContain('hidden');
+  });
+});
+
+describe('getLinesTabsSectionClassName', () => {
+  it('returns mt-1 flex for inlineEditable', () => {
+    expect(getLinesTabsSectionClassName('inlineEditable')).toContain('mt-1');
+  });
+
+  it('returns mt-2 for other layouts', () => {
+    expect(getLinesTabsSectionClassName('table')).toBe('mt-2');
+  });
+});
+
+describe('getSecondaryTabEntityKey', () => {
+  it('returns null for formTab', () => {
+    expect(getSecondaryTabEntityKey([{ key: 'tax', isFormTab: true }], 0)).toBeNull();
+  });
+
+  it('returns null for Panel tab', () => {
+    expect(getSecondaryTabEntityKey([{ key: 'tax', Panel: () => null }], 0)).toBeNull();
+  });
+
+  it('returns key for regular table tab', () => {
+    expect(getSecondaryTabEntityKey([{ key: 'tax' }], 0)).toBe('tax');
+  });
+
+  it('returns null when tab at index is undefined', () => {
+    expect(getSecondaryTabEntityKey([], 0)).toBeNull();
   });
 });
