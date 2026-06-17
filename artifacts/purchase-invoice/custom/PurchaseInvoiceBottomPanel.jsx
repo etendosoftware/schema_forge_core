@@ -1,20 +1,9 @@
-import { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useState, useMemo, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
 import { useUI } from '@/i18n';
 import { LinesBottomSection } from '@/components/contract-ui';
 import RelatedDocuments from '@/windows/custom/purchase-invoice/RelatedDocuments.jsx';
 import ImportFromGoodsReceiptModal from './ImportFromGoodsReceiptModal';
-import ImportFromReturnDeliveryModal from './ImportFromReturnDeliveryModal';
-
-const RETURN_INVOICE_DOC_TYPES = new Set([
-  'Return Material Purchase Invoice',
-  'Reversed Purchase Invoice',
-  'Factura de Devolución',
-]);
-
-function isReturnInvoice(data) {
-  return RETURN_INVOICE_DOC_TYPES.has(data?.['transactionDocument$_identifier']);
-}
 
 /* eslint-disable react/prop-types */
 
@@ -36,38 +25,24 @@ export default function PurchaseInvoiceBottomPanel(props) {
 function PurchaseInvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, token, apiBaseUrl, onSave, forceOpen, onForceOpenHandled, onRefresh }) {
   const ui = useUI();
   const [showImportReceiptModal, setShowImportReceiptModal] = useState(false);
-  const [showImportReturnModal, setShowImportReturnModal] = useState(false);
-  const pendingModal = useRef('receipt');
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
-  const isReturn = isReturnInvoice(data);
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
   useEffect(() => {
     if (forceOpen) {
-      if (pendingModal.current === 'return') { setShowImportReturnModal(true); }
-      else { setShowImportReceiptModal(true); }
+      setShowImportReceiptModal(true);
       onForceOpenHandled?.();
     }
   }, [forceOpen, onForceOpenHandled]);
 
   const handleImportReceiptClick = async () => {
-    pendingModal.current = 'receipt';
     if (onSave) {
       const shouldOpen = await onSave();
       if (!shouldOpen) return;
     }
     setShowImportReceiptModal(true);
-  };
-
-  const handleImportReturnClick = async () => {
-    pendingModal.current = 'return';
-    if (onSave) {
-      const shouldOpen = await onSave();
-      if (!shouldOpen) return;
-    }
-    setShowImportReturnModal(true);
   };
 
   if (!isDraft) return null;
@@ -80,10 +55,6 @@ function PurchaseInvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, re
     </svg>
   );
 
-  const subtitleKey = isReturn
-    ? 'addLinesManuallyOrImportFromReturnDelivery'
-    : 'addLinesManuallyOrImportFromReceipt';
-
   return (
     <div style={{ margin: '24px 16px', padding: '32px 24px', background: 'var(--color-background-secondary)', borderRadius: 'var(--border-radius-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: 40, height: 40, borderRadius: 'var(--border-radius-md)', background: 'var(--color-background-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
@@ -95,19 +66,13 @@ function PurchaseInvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, re
         </svg>
       </div>
       <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 4 }}>{ui('noLinesYet')}</span>
-      <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>{ui(subtitleKey)}</span>
+      <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>{ui('addLinesManuallyOrImportFromReceipt')}</span>
       {canAddLine && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
           <button type="button" onClick={onAddLine} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, background: '#18181b', color: '#fff', border: 'none', cursor: 'pointer' }}>
             + {ui('addLines')}
           </button>
-          {bpId && isReturn && (
-            <button type="button" onClick={handleImportReturnClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
-              {importIconSvg}
-              {ui('importFromReturnDelivery')}
-            </button>
-          )}
-          {bpId && !isReturn && (
+          {bpId && (
             <button type="button" onClick={handleImportReceiptClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
               {importIconSvg}
               {ui('importFromGoodsReceipt')}
@@ -126,17 +91,6 @@ function PurchaseInvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, re
         />,
         document.body,
       )}
-      {showImportReturnModal && createPortal(
-        <ImportFromReturnDeliveryModal
-          invoiceId={recordId}
-          bpId={bpId}
-          base={base}
-          headers={headers}
-          onClose={() => setShowImportReturnModal(false)}
-          onSuccess={() => { setShowImportReturnModal(false); onRefresh?.(); }}
-        />,
-        document.body,
-      )}
     </div>
   );
 }
@@ -147,24 +101,19 @@ const PurchaseInvoiceLineActions = forwardRef(function PurchaseInvoiceLineAction
 ) {
   const ui = useUI();
   const [showImportReceiptModal, setShowImportReceiptModal] = useState(false);
-  const [showImportReturnModal, setShowImportReturnModal] = useState(false);
-  const pendingModal = useRef('receipt');
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
-  const isReturn = isReturnInvoice(data);
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
   useEffect(() => {
     if (forceOpen) {
-      if (pendingModal.current === 'return') { setShowImportReturnModal(true); }
-      else { setShowImportReceiptModal(true); }
+      setShowImportReceiptModal(true);
       onForceOpenHandled?.();
     }
   }, [forceOpen, onForceOpenHandled]);
 
   const openReceiptModal = async () => {
-    pendingModal.current = 'receipt';
     if (onSave) {
       const shouldOpen = await onSave();
       if (!shouldOpen) return;
@@ -172,31 +121,18 @@ const PurchaseInvoiceLineActions = forwardRef(function PurchaseInvoiceLineAction
     setShowImportReceiptModal(true);
   };
 
-  const openReturnModal = async () => {
-    pendingModal.current = 'return';
-    if (onSave) {
-      const shouldOpen = await onSave();
-      if (!shouldOpen) return;
-    }
-    setShowImportReturnModal(true);
-  };
-
   useImperativeHandle(ref, () => ({
     openImportReceiptModal: openReceiptModal,
-    openImportReturnModal: openReturnModal,
   }), [onSave]);
 
   if (!isDraft || !bpId) return null;
-
-  const triggerLabel = isReturn ? ui('importFromReturnDelivery') : ui('importFromGoodsReceipt');
-  const triggerAction = isReturn ? openReturnModal : openReceiptModal;
 
   return (
     <>
       {!hideTrigger && (
         <button
           type="button"
-          onClick={triggerAction}
+          onClick={openReceiptModal}
           style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -204,7 +140,7 @@ const PurchaseInvoiceLineActions = forwardRef(function PurchaseInvoiceLineAction
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
-          {triggerLabel}
+          {ui('importFromGoodsReceipt')}
         </button>
       )}
       {showImportReceiptModal && createPortal(
@@ -215,17 +151,6 @@ const PurchaseInvoiceLineActions = forwardRef(function PurchaseInvoiceLineAction
           headers={headers}
           onClose={() => setShowImportReceiptModal(false)}
           onSuccess={() => { setShowImportReceiptModal(false); onRefresh?.(); }}
-        />,
-        document.body,
-      )}
-      {showImportReturnModal && createPortal(
-        <ImportFromReturnDeliveryModal
-          invoiceId={recordId}
-          bpId={bpId}
-          base={base}
-          headers={headers}
-          onClose={() => setShowImportReturnModal(false)}
-          onSuccess={() => { setShowImportReturnModal(false); onRefresh?.(); }}
         />,
         document.body,
       )}
@@ -240,15 +165,6 @@ PurchaseInvoiceBottomPanel.lineMenuActions = function lineMenuActions({ data, im
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
   if (!isDraft || !bpId) return [];
-  if (isReturnInvoice(data)) {
-    return [
-      {
-        key: 'import-return',
-        label: 'importFromReturnDelivery',
-        onClick: () => importRef.current?.openImportReturnModal?.(),
-      },
-    ];
-  }
   return [
     {
       key: 'import-receipt',
