@@ -38,6 +38,14 @@ const CUSTOM_ONLY_ARTIFACTS = new Set([
   'financial-account',
 ]);
 
+// Backend-only artifacts: they run the contract + push-to-neo pipeline (so they have a
+// contract.json) to expose a NEO W spec for selectors / inline create, but they have NO
+// frontend window — no AD menu, no route, no registry entry, no generated/ output. The
+// registry checks (F3, F10) must not fire for these.
+const BACKEND_ONLY_ARTIFACTS = new Set([
+  'transaction-type',
+]);
+
 // ---------------------------------------------------------------------------
 // Artifact classifier
 // ---------------------------------------------------------------------------
@@ -209,6 +217,9 @@ async function ruleF2(artifactDir, artifactName) {
  * The caller passes registryContent (raw text of registry.js), or null if unreadable.
  */
 async function ruleF3(artifactDir, artifactName, registryContent) {
+  if (BACKEND_ONLY_ARTIFACTS.has(artifactName)) {
+    return skipped('F3', artifactName, 'backend-only artifact (NEO spec, no frontend window) — F3 not applicable');
+  }
   if (registryContent === null) {
     return skipped('F3', artifactName, 'registry.js could not be read — F3 check skipped');
   }

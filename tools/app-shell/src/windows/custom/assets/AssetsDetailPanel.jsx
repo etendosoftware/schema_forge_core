@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { EntityForm } from '@/components/contract-ui';
+import { PillToggle } from '@/components/PillToggle';
 import { useUI } from '@/i18n';
 
 function GroupHead({ title, description }) {
@@ -33,21 +34,7 @@ function ToggleCard({ label, description, fieldKey, value, onChange, editing }) 
         <div className="text-sm font-medium text-[#121217]">{label}</div>
         {description && <div className="text-xs text-[#6C6C89] mt-0.5">{description}</div>}
       </div>
-      <button
-        type="button"
-        onClick={handleToggle}
-        disabled={!editing}
-        className={`relative inline-flex h-6 w-[42px] items-center rounded-full transition-colors focus:outline-none
-          ${isOn ? 'bg-[#121217]' : 'bg-[#D1D1DB]'}
-          ${!editing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-        aria-checked={isOn}
-        role="switch"
-      >
-        <span
-          className={`inline-block h-[18px] w-[18px] transform rounded-full bg-white shadow-sm transition-all duration-150
-            ${isOn ? 'translate-x-[19px]' : 'translate-x-[3px]'}`}
-        />
-      </button>
+      <PillToggle checked={isOn} disabled={!editing} onCheckedChange={handleToggle} aria-label={label} />
     </div>
   );
 }
