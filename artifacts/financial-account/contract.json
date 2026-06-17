@@ -1,8 +1,8 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-06-11T01:47:08.755Z",
-  "updatedAt": "2026-06-11T14:58:13.876Z",
-  "checksum": "3765e501ae85a012",
+  "updatedAt": "2026-06-12T19:37:11.919Z",
+  "checksum": "98d6a084f6dfc30c",
   "frontendContract": {
     "window": {
       "id": "94EAA455D2644E04AB25D93BE5157B6D",
@@ -583,7 +583,8 @@
               "source": "'DC'"
             }
           }
-        ]
+        ],
+        "javaQualifier": "financialAccountHeaderHandler"
       },
       "transaction": {
         "tableName": "FIN_Finacc_Transaction",
@@ -1721,7 +1722,7 @@
             "apiKey": "country",
             "column": "C_Country_ID",
             "type": "foreignKey",
-            "visibility": "discarded",
+            "visibility": "system",
             "required": false
           },
           {
@@ -2020,7 +2021,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "financialAccountHeaderHandler"
       },
       "transaction": {
         "tableName": "FIN_Finacc_Transaction",

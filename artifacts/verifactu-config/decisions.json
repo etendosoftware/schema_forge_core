@@ -65,10 +65,6 @@
           "visibility": "system",
           "derivation": "fromConfig"
         },
-        "refreshData": {
-          "visibility": "system",
-          "derivation": "fromConfig"
-        },
         "updated": {
           "visibility": "system",
           "derivation": "fromConfig"
