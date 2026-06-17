@@ -75,7 +75,7 @@ function CasillasTab({ decl, orgIdent, identChecks, onIdentChange, liveBoxes, on
             identification={{ ...orgIdent, ...identChecks }}
             onIdentChange={onIdentChange}
             onBoxChange={onBoxChange}
-          />
+            data-testid="FmBoxes303__4f6c0d" />
         </div>
       </div>
     </div>
@@ -99,16 +99,24 @@ function MoreOptionsMenu({ onCompare, onConfig, onGenerate, generating, fileBloc
         onClick={() => setOpen(o => !o)}
         aria-label="Más opciones"
       >
-        <MoreVertical size={15} strokeWidth={1.75} />
+        <MoreVertical size={15} strokeWidth={1.75} data-testid="MoreVertical__4f6c0d" />
       </button>
       {open && (
         <div className="fm-status-select__menu" role="menu" style={{ right: 0, left: 'auto', minWidth: 220 }}>
           <button className="fm-status-select__item fm-status-select__item--14" role="menuitem" onClick={() => { onCompare(); setOpen(false); }}>
-            <ArrowLeftRight size={14} strokeWidth={1.75} style={{ color: '#121217' }} />
+            <ArrowLeftRight
+              size={14}
+              strokeWidth={1.75}
+              style={{ color: '#121217' }}
+              data-testid="ArrowLeftRight__4f6c0d" />
             {t('fm.action.compare') ?? 'Comparar'}
           </button>
           <button className="fm-status-select__item fm-status-select__item--14" role="menuitem" onClick={() => { onConfig(); setOpen(false); }}>
-            <Settings size={14} strokeWidth={1.75} style={{ color: '#121217' }} />
+            <Settings
+              size={14}
+              strokeWidth={1.75}
+              style={{ color: '#121217' }}
+              data-testid="Settings__4f6c0d" />
             {t('fm.config.title') ?? 'Configuración'}
           </button>
           <button
@@ -117,7 +125,11 @@ function MoreOptionsMenu({ onCompare, onConfig, onGenerate, generating, fileBloc
             onClick={() => { onGenerate(); setOpen(false); }}
             disabled={generating}
           >
-            <Download size={14} strokeWidth={1.75} style={{ color: fileBlocked ? '#dc2626' : '#121217' }} />
+            <Download
+              size={14}
+              strokeWidth={1.75}
+              style={{ color: fileBlocked ? '#dc2626' : '#121217' }}
+              data-testid="Download__4f6c0d" />
             {t('fm.action.gen303') ?? 'Generar fichero 303'}
           </button>
         </div>
@@ -254,26 +266,25 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
 
   const tabs = [
     { id: 'boxes',     label: t('fm.tab.boxes') ?? 'Casillas',
-      icon: <ClipboardCheck size={16} strokeWidth={1.75} /> },
+      icon: <ClipboardCheck size={16} strokeWidth={1.75} data-testid="ClipboardCheck__4f6c0d" /> },
     { id: 'sources',   label: t('fm.tab.sources') ?? 'Facturas',
       badge: (liveSources ?? decl.sources)?.length ?? null,
-      icon: <ReceiptText size={16} strokeWidth={1.75} /> },
+      icon: <ReceiptText size={16} strokeWidth={1.75} data-testid="ReceiptText__4f6c0d" /> },
     { id: 'incidents', label: t('fm.tab.incidents') ?? 'Incidencias',
       badge: incidentCount > 0 ? incidentCount : null,
       badgeTone: incidentBadgeTone,
-      icon: <TriangleAlert size={16} strokeWidth={1.75} /> },
+      icon: <TriangleAlert size={16} strokeWidth={1.75} data-testid="TriangleAlert__4f6c0d" /> },
     { id: 'files',     label: t('fm.tab.files') ?? 'Ficheros',
       badge: decl.file ? 1 : null,
-      icon: <Folder size={16} strokeWidth={1.75} /> },
+      icon: <Folder size={16} strokeWidth={1.75} data-testid="Folder__4f6c0d" /> },
     { id: 'history',   label: t('fm.tab.history') ?? 'Historial',
-      icon: <Clock size={16} strokeWidth={1.75} /> },
+      icon: <Clock size={16} strokeWidth={1.75} data-testid="Clock__4f6c0d" /> },
   ];
 
   const periodLabel = `${decl.year}/${formatPeriod(decl.period)}`;
 
   return (
     <div className="fm-page fm-page--freeflow">
-
       {/* ── Title bar ────────────────────────────────────────────── */}
       <div style={{
         padding: '10px 20px',
@@ -284,13 +295,16 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
           <span style={{ fontWeight: 600, fontSize: 20, color: '#121217' }}>
             Modelo 303 - {periodLabel}
           </span>
-          <MoreVertical size={14} strokeWidth={1.75} style={{ color: '#9ca3af', cursor: 'pointer' }} />
+          <MoreVertical
+            size={14}
+            strokeWidth={1.75}
+            style={{ color: '#9ca3af', cursor: 'pointer' }}
+            data-testid="MoreVertical__4f6c0d" />
         </div>
         <div style={{ fontSize: 12, color: '#828FA3', marginTop: 1 }}>
           Tesorería / Modelo 303 - {periodLabel}
         </div>
       </div>
-
       {/* ── Action bar ───────────────────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
@@ -320,7 +334,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
           generating={generating}
           fileBlocked={fileBlocked}
           t={t}
-        />
+          data-testid="MoreOptionsMenu__4f6c0d" />
 
         <button
           className="fm-btn"
@@ -329,8 +343,12 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, boxShadow: '0px 1px 2px rgba(18,18,23,0.05)', border: '1px solid #D1D4DB' }}
         >
           {computing
-            ? <Loader2 size={24} strokeWidth={1.75} style={{ animation: 'spin 1s linear infinite' }} />
-            : <Calculator size={24} strokeWidth={1.75} />
+            ? <Loader2
+            size={24}
+            strokeWidth={1.75}
+            style={{ animation: 'spin 1s linear infinite' }}
+            data-testid="Loader2__4f6c0d" />
+            : <Calculator size={24} strokeWidth={1.75} data-testid="Calculator__4f6c0d" />
           }
           {computing ? (t('fm.action.computing') ?? 'Calculando…') : (t('fm.action.compute') ?? 'Calcular')}
         </button>
@@ -341,12 +359,11 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 8, padding: '8px 12px', fontSize: 14, fontWeight: 500 }}
             onClick={() => setShowPresent(true)}
           >
-            <CircleCheck size={16} strokeWidth={1.75} />
+            <CircleCheck size={16} strokeWidth={1.75} data-testid="CircleCheck__4f6c0d" />
             {t('fm.action.submit') ?? "Marcar como 'Presentado'"}
           </button>
         )}
       </div>
-
       {/* ── KPI bar ──────────────────────────────────────────────── */}
       <div style={{
         display: 'flex', flexDirection: 'row', alignItems: 'center',
@@ -357,8 +374,8 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
         {/* Incidencias */}
         <KpiWidget
           icon={blocking > 0
-            ? <OctagonAlert size={20} strokeWidth={1.75} />
-            : <TriangleAlert size={20} strokeWidth={1.75} />
+            ? <OctagonAlert size={20} strokeWidth={1.75} data-testid="OctagonAlert__4f6c0d" />
+            : <TriangleAlert size={20} strokeWidth={1.75} data-testid="TriangleAlert__4f6c0d" />
           }
           iconColor={incidentIconColor}
           label={t('fm.tab.incidents') ?? 'Incidencias'}
@@ -366,47 +383,49 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
           badge={incidentBadge}
           badgeBg={blocking > 0 ? '#FEF0F4' : '#FFF9EB'}
           badgeColor={blocking > 0 ? '#D50B3E' : '#8A6100'}
-        />
+          data-testid="KpiWidget__4f6c0d" />
 
         {/* IVA Devengado */}
         <KpiWidget
-          icon={<TrendingUp size={20} strokeWidth={1.75} />}
+          icon={<TrendingUp size={20} strokeWidth={1.75} data-testid="TrendingUp__4f6c0d" />}
           iconColor="#121217"
           label={t('fm.m303.summary.accrued') ?? 'IVA Devengado'}
           value={formatAmount(summary.accrued ?? 0)}
           badge={t('fm.m303.summary.accrued_sub') ?? 'De ventas'}
           badgeBg="#F5F7F9"
           badgeColor="#3F3F50"
-        />
+          data-testid="KpiWidget__4f6c0d" />
 
         {/* IVA Deducible */}
         <KpiWidget
-          icon={<TrendingDown size={20} strokeWidth={1.75} />}
+          icon={<TrendingDown size={20} strokeWidth={1.75} data-testid="TrendingDown__4f6c0d" />}
           iconColor="#121217"
           label={t('fm.m303.summary.deductible') ?? 'IVA Deducible'}
           value={formatAmount(summary.deductible ?? 0)}
           badge={t('fm.m303.summary.deductible_sub') ?? 'De compras'}
           badgeBg="#F5F7F9"
           badgeColor="#3F3F50"
-        />
+          data-testid="KpiWidget__4f6c0d" />
 
         {/* Resultado */}
         <KpiWidget
-          icon={<Calculator size={20} strokeWidth={1.75} />}
+          icon={<Calculator size={20} strokeWidth={1.75} data-testid="Calculator__4f6c0d" />}
           iconColor="#121217"
           label={t('fm.m303.summary.result') ?? 'Resultado'}
           value={formatAmount(summary.result ?? 0)}
           badge={resultSubLabel}
           badgeBg="#F5F7F9"
           badgeColor="#3F3F50"
-        />
+          data-testid="KpiWidget__4f6c0d" />
       </div>
-
       {/* ── Tabs bar ─────────────────────────────────────────────── */}
       <div className="fm-tabs-sticky">
-        <Tabs tabs={tabs} active={activeTab} onSelect={setActiveTab} />
+        <Tabs
+          tabs={tabs}
+          active={activeTab}
+          onSelect={setActiveTab}
+          data-testid="Tabs__4f6c0d" />
       </div>
-
       {/* ── Tab content ──────────────────────────────────────────── */}
       {activeTab === 'boxes' && (
         <CasillasTab
@@ -417,17 +436,24 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
           liveBoxes={liveBoxes}
           onBoxChange={handleBoxChange}
           t={t}
-        />
+          data-testid="CasillasTab__4f6c0d" />
       )}
-
       {activeTab !== 'boxes' && (
         <div className="fm-page__body" style={{ display: 'flex', flexDirection: 'column', overflowY: 'hidden', ...(activeTab === 'sources' || activeTab === 'incidents' ? { padding: 0 } : {}) }}>
           {activeTab === 'sources' && (
-            <SourcesTab decl={{ ...decl, sources: liveSources ?? decl.sources }} t={t} />
+            <SourcesTab
+              decl={{ ...decl, sources: liveSources ?? decl.sources }}
+              t={t}
+              data-testid="SourcesTab__4f6c0d" />
           )}
           {activeTab === 'incidents' && (
-            <IncidentsTab decl={decl} blocking={blocking} warning={warning} t={t}
-              onGoToSources={() => setActiveTab('sources')} />
+            <IncidentsTab
+              decl={decl}
+              blocking={blocking}
+              warning={warning}
+              t={t}
+              onGoToSources={() => setActiveTab('sources')}
+              data-testid="IncidentsTab__4f6c0d" />
           )}
           {activeTab === 'files' && (
             <FilesTab
@@ -436,22 +462,37 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
               fileBlocked={fileBlocked}
               onGenerate={() => setShowFilegen(true)}
               genLabel={t('fm.action.gen303') ?? 'Generar fichero 303'}
-            />
+              data-testid="FilesTab__4f6c0d" />
           )}
           {activeTab === 'history' && (
-            <HistoryTab decl={decl} t={t} />
+            <HistoryTab decl={decl} t={t} data-testid="HistoryTab__4f6c0d" />
           )}
         </div>
       )}
-
       {showPresent && (
-        <PresentModal decl={decl} onConfirm={handlePresent} onClose={() => setShowPresent(false)} />
+        <PresentModal
+          decl={decl}
+          onConfirm={handlePresent}
+          onClose={() => setShowPresent(false)}
+          data-testid="PresentModal__4f6c0d" />
       )}
       {showFilegen && (
-        <FileGenModal decl={decl} onConfirm={handleGenerate} onClose={() => setShowFilegen(false)} />
+        <FileGenModal
+          decl={decl}
+          onConfirm={handleGenerate}
+          onClose={() => setShowFilegen(false)}
+          data-testid="FileGenModal__4f6c0d" />
       )}
-      {showConfig && <ConfigDrawer onClose={() => setShowConfig(false)} token={token} apiBaseUrl={apiBaseUrl} model="303" />}
-      {showCompare && <CompareDrawer decl={decl} onClose={() => setShowCompare(false)} />}
+      {showConfig && <ConfigDrawer
+        onClose={() => setShowConfig(false)}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        model="303"
+        data-testid="ConfigDrawer__4f6c0d" />}
+      {showCompare && <CompareDrawer
+        decl={decl}
+        onClose={() => setShowCompare(false)}
+        data-testid="CompareDrawer__4f6c0d" />}
     </div>
   );
 }

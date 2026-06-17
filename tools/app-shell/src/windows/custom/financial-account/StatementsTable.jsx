@@ -135,7 +135,7 @@ function StatusPill({ status, matched, total, ui }) {
   const tone = STATUS_TO_TONE[status] ?? 'neutral';
   const base = ui(STATUS_TO_LABEL_KEY[status] ?? STATUS_TO_LABEL_KEY.PENDING);
   const label = status === 'PARTIAL' ? `${base} ${matched}/${total}` : base;
-  return <StatusTag tone={tone} label={label} />;
+  return <StatusTag tone={tone} label={label} data-testid="StatusTag__3acaeb" />;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -188,7 +188,11 @@ export function StatementsTable({
       >
         <span aria-hidden="true" />
         <span>
-          <Checkbox checked={allSelected} indeterminate={someSelected} onChange={handleSelectAll} />
+          <Checkbox
+            checked={allSelected}
+            indeterminate={someSelected}
+            onChange={handleSelectAll}
+            data-testid="Checkbox__3acaeb" />
         </span>
         {STATEMENT_COLUMNS.map((col) => (
           <span key={col.name}>
@@ -201,7 +205,6 @@ export function StatementsTable({
         <span>{ui('financeAccountStatementsColStatus')}</span>
         <span aria-hidden="true" />
       </div>
-
       {/* Body */}
       {renderBody({
         loading, statements, ui, currency, bcpLocale, openId, toggle, actions,
@@ -223,7 +226,7 @@ function renderBody({
     return [1, 2, 3, 4, 5].map((n) => (
       <div key={n} role="row" style={GRID_STYLE} className={cn(GRID_CLASS, 'border-b border-[#F0F2F5] px-4 py-3')}>
         {SKELETON_CELL_KEYS.map((k) => (
-          <Skeleton key={k} className="h-4 w-full" />
+          <Skeleton key={k} className="h-4 w-full" data-testid="Skeleton__3acaeb" />
         ))}
       </div>
     ));
@@ -232,7 +235,7 @@ function renderBody({
     return (
       <div className="flex flex-col items-center gap-2 px-4 py-16 text-center">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F5F7F9]">
-          <FileText className="h-5 w-5 text-[#828FA3]" />
+          <FileText className="h-5 w-5 text-[#828FA3]" data-testid="FileText__3acaeb" />
         </div>
         <p className="text-sm font-medium text-[#121217]">
           {ui('financeAccountStatementsEmpty')}
@@ -257,7 +260,7 @@ function renderBody({
         actions={actions}
         selected={selectedIds.has(s.id)}
         onSelectionChange={onSelectionChange}
-      />
+        data-testid="StatementRow__3acaeb" />
     );
   });
 }
@@ -281,14 +284,14 @@ function RowActions({ statement: s, actions, ui }) {
           onClick={(e) => { e.stopPropagation(); actions.onEdit(s); }}
           className={cn(iconBtn, 'text-[#828FA3] hover:bg-[#E8EAEF] hover:text-[#121217]')}
         >
-          <Pencil className="h-4 w-4" />
+          <Pencil className="h-4 w-4" data-testid="Pencil__3acaeb" />
         </button>
       ) : null}
       <StatementRowKebab
         statement={s}
         onProcess={actions.onProcess}
         onReactivate={actions.onReactivate}
-      />
+        data-testid="StatementRowKebab__3acaeb" />
       {isDraft ? (
         <button
           type="button"
@@ -298,7 +301,7 @@ function RowActions({ statement: s, actions, ui }) {
           onClick={(e) => { e.stopPropagation(); actions.onDelete(s); }}
           className={cn(iconBtn, 'text-[#D50B3E] hover:bg-[#FBE9EE] hover:text-[#A3082F]')}
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4" data-testid="Trash2__3acaeb" />
         </button>
       ) : null}
     </>
@@ -341,16 +344,19 @@ function StatementRow({
           className="flex h-7 w-7 items-center justify-center rounded-full border border-[#D1D4DB] bg-white text-[#6C6C89] transition-transform hover:bg-[#F5F7F9] hover:text-[#121217]"
           style={{ transform: open ? 'rotate(180deg)' : undefined }}
         >
-          <ChevronDown className="h-4 w-4" />
+          <ChevronDown className="h-4 w-4" data-testid="ChevronDown__3acaeb" />
         </button>
         <span onClick={(e) => e.stopPropagation()}>
-          <Checkbox checked={selected} onChange={() => onSelectionChange(s.id)} />
+          <Checkbox
+            checked={selected}
+            onChange={() => onSelectionChange(s.id)}
+            data-testid="Checkbox__3acaeb" />
         </span>
         {/* Contract-driven data columns (decisions.json → contract.json) */}
         {STATEMENT_COLUMNS.map((col) => {
           const renderer = STATEMENT_CELL_RENDERERS[col.name];
           return (
-            <Fragment key={col.name}>
+            <Fragment key={col.name} data-testid="Fragment__3acaeb">
               {renderer
                 ? renderer.render(s, cellCtx)
                 : <span className="truncate text-[#121217]">{s[col.name] ?? '—'}</span>}
@@ -370,7 +376,7 @@ function StatementRow({
             matched={s.matchedCount ?? 0}
             total={s.lineCount ?? 0}
             ui={ui}
-          />
+            data-testid="StatusPill__3acaeb" />
         </span>
         <span aria-hidden="true" />
         {actions ? (
@@ -378,17 +384,16 @@ function StatementRow({
             className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 items-center gap-0.5 rounded-lg bg-white px-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
             onClick={(e) => e.stopPropagation()}
           >
-            <RowActions statement={s} actions={actions} ui={ui} />
+            <RowActions statement={s} actions={actions} ui={ui} data-testid="RowActions__3acaeb" />
           </div>
         ) : null}
       </div>
-
       {open ? (
         <div className="border-b border-[#E8EAEF] bg-[#F8F9FB] px-4 pb-4">
           <StatementLinesInline
             statementId={s.id}
             currency={currency}
-          />
+            data-testid="StatementLinesInline__3acaeb" />
         </div>
       ) : (
         <div className="border-b border-[#F0F2F5]" aria-hidden="true" />

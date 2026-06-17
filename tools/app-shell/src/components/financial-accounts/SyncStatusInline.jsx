@@ -22,7 +22,7 @@ export function SyncStatusInline({ account }) {
   if (account.psd2Pending) {
     return (
       <span className="inline-flex items-center gap-1 text-xs text-[#faaf00]">
-        <AlertTriangle className="h-3 w-3" />
+        <AlertTriangle className="h-3 w-3" data-testid="AlertTriangle__8e9c56" />
         {ui('financeAccountsSyncPending')}
       </span>
     );

@@ -46,7 +46,11 @@ export default function DocumentStatusPill({ status, label, enumLabels, tone: to
       data-tone={tone}
       style={{ ...PILL_STYLE, background: palette.background, color: palette.color }}
     >
-      {Icon ? <Icon size={16} color={TONE_ICON_COLOR[tone]} aria-hidden="true" /> : null}
+      {Icon ? <Icon
+        size={16}
+        color={TONE_ICON_COLOR[tone]}
+        aria-hidden="true"
+        data-testid="Icon__1e4f01" /> : null}
       <span style={LABEL_STYLE}>{text}</span>
     </span>
   );

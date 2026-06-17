@@ -64,10 +64,13 @@ export function EditAccountModal({ open, onClose, onSaved, account }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(value) => { if (!value) onClose?.(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => { if (!value) onClose?.(); }}
+      data-testid="Dialog__73027d">
       <DialogContent className="bg-white" data-testid="edit-account-modal">
-        <DialogHeader>
-          <DialogTitle>{ui('financeAccountsEditTitle')}</DialogTitle>
+        <DialogHeader data-testid="DialogHeader__73027d">
+          <DialogTitle data-testid="DialogTitle__73027d">{ui('financeAccountsEditTitle')}</DialogTitle>
         </DialogHeader>
 
         <p className="text-sm font-medium text-[#121217]">{ui('financeAccountsEditDataSection')}</p>
@@ -84,7 +87,7 @@ export function EditAccountModal({ open, onClose, onSaved, account }) {
           submitting={submitting}
           error={error}
           onSubmit={handleSave}
-        />
+          data-testid="AccountFormStep__73027d" />
 
         {isBank ? (
           <div
@@ -93,7 +96,7 @@ export function EditAccountModal({ open, onClose, onSaved, account }) {
           >
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2 text-sm font-medium text-[#6C6C89]">
-                <Link2 className="h-4 w-4" />
+                <Link2 className="h-4 w-4" data-testid="Link2__73027d" />
                 {ui('financeAccountsEditConnectionSection')}
               </span>
               <span className="rounded-full bg-[#E8EAEF] px-2 py-0.5 text-xs font-normal text-[#6C6C89]">

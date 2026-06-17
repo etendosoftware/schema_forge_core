@@ -166,7 +166,14 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
           </text>
         ))}
         {hovered && (
-          <SvgTooltip x={hovered.x} y={hovered.y} label={labels[hovered.i]} value={values[hovered.i]} cw={cw} ui={ui} />
+          <SvgTooltip
+            x={hovered.x}
+            y={hovered.y}
+            label={labels[hovered.i]}
+            value={values[hovered.i]}
+            cw={cw}
+            ui={ui}
+            data-testid="SvgTooltip__931883" />
         )}
       </svg>
     );
@@ -208,7 +215,14 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
         );
       })}
       {hovered && (
-        <SvgTooltip x={hovered.x} y={hovered.y} label={labels[hovered.i]} value={values[hovered.i]} cw={cw} ui={ui} />
+        <SvgTooltip
+          x={hovered.x}
+          y={hovered.y}
+          label={labels[hovered.i]}
+          value={values[hovered.i]}
+          cw={cw}
+          ui={ui}
+          data-testid="SvgTooltip__931883" />
       )}
     </svg>
   );
@@ -250,14 +264,14 @@ function StockChart({ transactions }) {
           className={`p-1 transition-colors ${chartType === 'line' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
           title={ui('warehouseLineChart')}
         >
-          <LineChart className="h-3 w-3" />
+          <LineChart className="h-3 w-3" data-testid="LineChart__931883" />
         </button>
         <button
           onClick={() => switchType('bar')}
           className={`p-1 transition-colors ${chartType === 'bar' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
           title={ui('warehouseBarChart')}
         >
-          <BarChart2 className="h-3 w-3" />
+          <BarChart2 className="h-3 w-3" data-testid="BarChart2__931883" />
         </button>
       </div>
       <button
@@ -265,7 +279,7 @@ function StockChart({ transactions }) {
         className="p-1 border rounded-md text-muted-foreground hover:bg-muted transition-colors"
         title={ui('warehouseExpandChart')}
       >
-        <Maximize2 className="h-3 w-3" />
+        <Maximize2 className="h-3 w-3" data-testid="Maximize2__931883" />
       </button>
     </div>
   );
@@ -280,22 +294,33 @@ function StockChart({ transactions }) {
         {!hasData ? (
           <p className="text-xs text-muted-foreground py-10 text-center">{ui('warehouseNoMovementData')}</p>
         ) : (
-          <StockSvg values={values} labels={labels} chartType={chartType} cw={CW} ch={CH} />
+          <StockSvg
+            values={values}
+            labels={labels}
+            chartType={chartType}
+            cw={CW}
+            ch={CH}
+            data-testid="StockSvg__931883" />
         )}
       </div>
-
-      <Dialog open={maximized} onOpenChange={setMaximized}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
+      <Dialog open={maximized} onOpenChange={setMaximized} data-testid="Dialog__931883">
+        <DialogContent className="max-w-4xl" data-testid="DialogContent__931883">
+          <DialogHeader data-testid="DialogHeader__931883">
             <div className="flex items-center justify-between pr-6">
-              <DialogTitle className="text-sm font-medium">{ui('warehouseStockTrend')}</DialogTitle>
+              <DialogTitle className="text-sm font-medium" data-testid="DialogTitle__931883">{ui('warehouseStockTrend')}</DialogTitle>
               {toolbar}
             </div>
           </DialogHeader>
           {!hasData ? (
             <p className="text-xs text-muted-foreground py-10 text-center">{ui('warehouseNoMovementData')}</p>
           ) : (
-            <StockSvg values={values} labels={labels} chartType={chartType} cw={CW_MODAL} ch={CH_MODAL} />
+            <StockSvg
+              values={values}
+              labels={labels}
+              chartType={chartType}
+              cw={CW_MODAL}
+              ch={CH_MODAL}
+              data-testid="StockSvg__931883" />
           )}
         </DialogContent>
       </Dialog>
@@ -325,7 +350,7 @@ export default function WarehouseSummary({ data, token, apiBaseUrl }) {
           <p className="text-2xl font-light tabular-nums">{fmtNum(totalUnits)}</p>
         </div>
       </div>
-      <StockChart transactions={transactions} />
+      <StockChart transactions={transactions} data-testid="StockChart__931883" />
     </div>
   );
 }

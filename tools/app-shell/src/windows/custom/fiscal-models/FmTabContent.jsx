@@ -50,7 +50,7 @@ export function SourcesTab({ decl, t }) {
             style={{ fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }}
             onClick={() => setOnlyIncidents(v => !v)}
           >
-            <TriangleAlert size={11} strokeWidth={2} />
+            <TriangleAlert size={11} strokeWidth={2} data-testid="TriangleAlert__931756" />
             {t('fm.sources.filter.incidents') ?? 'Con incidencias'}
             <span className="fm-toolbar__count-badge">{incidentRowCount}</span>
           </button>
@@ -108,8 +108,8 @@ export function SourcesTab({ decl, t }) {
                           title={tooltip}
                         >
                           {hasBlock
-                            ? <OctagonAlert size={12} strokeWidth={2} />
-                            : <TriangleAlert size={12} strokeWidth={2} />
+                            ? <OctagonAlert size={12} strokeWidth={2} data-testid="OctagonAlert__931756" />
+                            : <TriangleAlert size={12} strokeWidth={2} data-testid="TriangleAlert__931756" />
                           }
                         </span>
                       )}
@@ -154,7 +154,6 @@ export function IncidentsTab({ decl, blocking, warning, t, onGoToSources }) {
         <span style={{ flex: 1, color: '#8A6100' }}>{t('fm.incidents.block_sub') ?? 'Resuélvelas antes de generar el fichero'}</span>
         <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#828FA3', fontSize: 18, padding: 0, lineHeight: 1 }}>×</button>
       </div>
-
       {sorted.length > 0 ? (
         <div className="fm-table-wrap">
           <table className="fm-dtable fm-dtable--plain">
@@ -185,7 +184,7 @@ export function IncidentsTab({ decl, blocking, warning, t, onGoToSources }) {
                         onClick={() => onGoToSources()}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 14, color: '#121217', display: 'inline-flex', alignItems: 'center', gap: 2, textDecoration: 'underline' }}
                       >
-                        {t('fm.sources.title')} <ChevronRight size={13} strokeWidth={2} />
+                        {t('fm.sources.title')} <ChevronRight size={13} strokeWidth={2} data-testid="ChevronRight__931756" />
                       </button>
                     )}
                   </td>
@@ -196,10 +195,10 @@ export function IncidentsTab({ decl, blocking, warning, t, onGoToSources }) {
         </div>
       ) : (
         <EmptyState
-          icon={<CircleCheck size={28} strokeWidth={1.5} />}
+          icon={<CircleCheck size={28} strokeWidth={1.5} data-testid="CircleCheck__931756" />}
           title={t('fm.incidents.empty')}
           sub={t('fm.incidents.empty_sub')}
-        />
+          data-testid="EmptyState__931756" />
       )}
     </div>
   );
@@ -213,7 +212,11 @@ export function FilesTab({ decl, t, onGenerate, fileBlocked, genLabel }) {
       {file ? (
         <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', border: '1px solid #d1fae5', borderRadius: 8, background: '#f0fdf4' }}>
-            <CircleCheck size={20} strokeWidth={1.75} style={{ color: '#16a34a', flexShrink: 0 }} />
+            <CircleCheck
+              size={20}
+              strokeWidth={1.75}
+              style={{ color: '#16a34a', flexShrink: 0 }}
+              data-testid="CircleCheck__931756" />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{file.name}</div>
               <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
@@ -221,11 +224,19 @@ export function FilesTab({ decl, t, onGenerate, fileBlocked, genLabel }) {
               </div>
             </div>
             <button className="fm-btn" onClick={() => {}}>
-              <Download size={13} strokeWidth={1.75} style={{ display:'inline',verticalAlign:'middle',marginRight:4 }} />
+              <Download
+                size={13}
+                strokeWidth={1.75}
+                style={{ display:'inline',verticalAlign:'middle',marginRight:4 }}
+                data-testid="Download__931756" />
               {t('fm.action.download')}
             </button>
           </div>
-          <Banner tone="info" title={t('fm.files.next_step')} sub={t('fm.files.next_step_sub')} />
+          <Banner
+            tone="info"
+            title={t('fm.files.next_step')}
+            sub={t('fm.files.next_step_sub')}
+            data-testid="Banner__931756" />
         </div>
       ) : (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
@@ -240,7 +251,7 @@ export function FilesTab({ decl, t, onGenerate, fileBlocked, genLabel }) {
             style={{ marginTop: 8, borderRadius: 20, padding: '8px 20px' }}
             onClick={onGenerate}
           >
-            <FileText size={14} strokeWidth={1.75} />
+            <FileText size={14} strokeWidth={1.75} data-testid="FileText__931756" />
             {genLabel ?? t('fm.action.generate_file') ?? 'Generar fichero'}
           </button>
         </div>

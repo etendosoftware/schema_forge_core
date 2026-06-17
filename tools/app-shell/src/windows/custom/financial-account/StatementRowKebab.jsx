@@ -42,23 +42,23 @@ export function StatementRowKebab({ statement: s, onProcess, onReactivate }) {
         data-testid={testid}
         onClick={enabled ? () => onClick(s) : undefined}
       >
-        <Icon className="h-5 w-5 text-[#828FA3]" />
+        <Icon className="h-5 w-5 text-[#828FA3]" data-testid="Icon__b97a5b" />
         <span className="text-sm font-normal leading-6 text-[#121217]">{label}</span>
       </DropdownMenuItem>
     );
     if (enabled) return item;
     return (
-      <Tooltip>
-        <TooltipTrigger asChild><span>{item}</span></TooltipTrigger>
-        <TooltipContent>{tip}</TooltipContent>
+      <Tooltip data-testid="Tooltip__b97a5b">
+        <TooltipTrigger asChild data-testid="TooltipTrigger__b97a5b"><span>{item}</span></TooltipTrigger>
+        <TooltipContent data-testid="TooltipContent__b97a5b">{tip}</TooltipContent>
       </Tooltip>
     );
   };
 
   return (
-    <TooltipProvider>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+    <TooltipProvider data-testid="TooltipProvider__b97a5b">
+      <DropdownMenu data-testid="DropdownMenu__b97a5b">
+        <DropdownMenuTrigger asChild data-testid="DropdownMenuTrigger__b97a5b">
           <button
             type="button"
             aria-label={ui('financeAccountStatementsRowActions')}
@@ -66,10 +66,14 @@ export function StatementRowKebab({ statement: s, onProcess, onReactivate }) {
             onClick={(e) => e.stopPropagation()}
             className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#828FA3] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[#E8EAEF]"
           >
-            <MoreVertical className="h-5 w-5" />
+            <MoreVertical className="h-5 w-5" data-testid="MoreVertical__b97a5b" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[220px]" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuContent
+          align="end"
+          className="w-[220px]"
+          onClick={(e) => e.stopPropagation()}
+          data-testid="DropdownMenuContent__b97a5b">
           {gatedItem({
             icon: PlayCircle,
             label: ui('financeAccountStatementsRowProcess'),

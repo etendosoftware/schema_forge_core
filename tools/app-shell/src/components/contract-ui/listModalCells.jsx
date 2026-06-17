@@ -163,25 +163,39 @@ function DefaultCell({ row, col, tMenu }) {
 export function ListModalCell({ row, col, tMenu, ui, onToggle, savingToggle }) {
   switch (col.cellType) {
     case 'priorityPill':
-      return <PriorityPill row={row} col={col} />;
+      return <PriorityPill row={row} col={col} data-testid="PriorityPill__846bd2" />;
     case 'nameWithSubline':
-      return <NameWithSubline row={row} col={col} ui={ui} />;
+      return <NameWithSubline row={row} col={col} ui={ui} data-testid="NameWithSubline__846bd2" />;
     case 'conditionChip':
-      return <ConditionChip row={row} col={col} tMenu={tMenu} />;
+      return <ConditionChip row={row} col={col} tMenu={tMenu} data-testid="ConditionChip__846bd2" />;
     case 'typePill':
-      return <TypePill row={row} col={col} tMenu={tMenu} />;
+      return <TypePill row={row} col={col} tMenu={tMenu} data-testid="TypePill__846bd2" />;
     case 'percent':
-      return <PercentCell row={row} col={col} />;
+      return <PercentCell row={row} col={col} data-testid="PercentCell__846bd2" />;
     case 'boldText':
-      return <BoldTextCell row={row} col={col} />;
+      return <BoldTextCell row={row} col={col} data-testid="BoldTextCell__846bd2" />;
     case 'toggle':
-      return <ToggleCell row={row} col={col} onToggle={onToggle} saving={savingToggle} />;
+      return (
+        <ToggleCell
+          row={row}
+          col={col}
+          onToggle={onToggle}
+          saving={savingToggle}
+          data-testid="ToggleCell__846bd2" />
+      );
     default:
       // `toggle: true` (legacy inlineToggle flag) without an explicit cellType.
       if (col.toggle) {
-        return <ToggleCell row={row} col={col} onToggle={onToggle} saving={savingToggle} />;
+        return (
+          <ToggleCell
+            row={row}
+            col={col}
+            onToggle={onToggle}
+            saving={savingToggle}
+            data-testid="ToggleCell__846bd2" />
+        );
       }
-      return <DefaultCell row={row} col={col} tMenu={tMenu} />;
+      return <DefaultCell row={row} col={col} tMenu={tMenu} data-testid="DefaultCell__846bd2" />;
   }
 }
 

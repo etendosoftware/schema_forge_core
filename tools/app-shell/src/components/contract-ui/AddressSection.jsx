@@ -52,13 +52,15 @@ function OptionPicker({ open, onClose, title, options, loading, failed, loadErro
             className="text-gray-400 hover:text-gray-600 transition-colors"
             aria-label={ui('cancel')}
           >
-            <X size={16} />
+            <X size={16} data-testid="X__e483be" />
           </button>
         </div>
 
         <div className="px-4 py-3 border-b border-gray-100">
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
+            <Search
+              className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400 pointer-events-none"
+              data-testid="Search__e483be" />
             <input
               ref={searchRef}
               type="text"
@@ -89,7 +91,7 @@ function OptionPicker({ open, onClose, title, options, loading, failed, loadErro
                 ].join(' ')}
               >
                 <span className="w-4 shrink-0">
-                  {selected === opt.id ? <Check size={14} /> : null}
+                  {selected === opt.id ? <Check size={14} data-testid="Check__e483be" /> : null}
                 </span>
                 <span className="truncate">{opt.label}</span>
               </button>
@@ -146,28 +148,31 @@ export default function AddressSection({ form, onChange, opts, requiredFields = 
       <div className="address-grid">
         {/* Row 1 */}
         <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('addressLine1')}{isRequired('address') && <RequiredMark />}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('addressLine1')}{isRequired('address') && <RequiredMark data-testid="RequiredMark__e483be" />}</label>
           <input type="text" className={INPUT_CLS} value={form.address ?? ''} onChange={e => onChange('address', e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('addressLine2')}{isRequired('address2') && <RequiredMark />}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('addressLine2')}{isRequired('address2') && <RequiredMark data-testid="RequiredMark__e483be" />}</label>
           <input type="text" className={INPUT_CLS} value={form.address2 ?? ''} onChange={e => onChange('address2', e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('postalCodeLabel')}{isRequired('postalCode') && <RequiredMark />}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('postalCodeLabel')}{isRequired('postalCode') && <RequiredMark data-testid="RequiredMark__e483be" />}</label>
           <input type="text" className={INPUT_CLS} value={form.postalCode ?? ''} onChange={e => onChange('postalCode', e.target.value.replace(/[^\d\s-]/g, ''))} />
         </div>
         <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('cityLabel')}{isRequired('city') && <RequiredMark />}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('cityLabel')}{isRequired('city') && <RequiredMark data-testid="RequiredMark__e483be" />}</label>
           <input type="text" className={INPUT_CLS} value={form.city ?? ''} onChange={e => onChange('city', e.target.value)} />
         </div>
 
         {/* Row 2 */}
         <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('countryLabel')}{isRequired('country') && <RequiredMark />}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('countryLabel')}{isRequired('country') && <RequiredMark data-testid="RequiredMark__e483be" />}</label>
           <button type="button" onClick={() => setCountryPickerOpen(true)} className={`picker-btn ${PICKER_BTN_CLS}`}>
             <span className={`truncate ${form.country ? 'text-foreground' : 'text-muted-foreground'}`}>{countryLabel || '—'}</span>
-            <ChevronDown size={14} className="text-muted-foreground shrink-0" />
+            <ChevronDown
+              size={14}
+              className="text-muted-foreground shrink-0"
+              data-testid="ChevronDown__e483be" />
           </button>
         </div>
         <div className="space-y-1.5">
@@ -181,12 +186,14 @@ export default function AddressSection({ form, onChange, opts, requiredFields = 
             <span className={`truncate ${form.region ? 'text-foreground' : 'text-muted-foreground'}`}>
               {!form.country ? ui('selectCountryFirst') : (regionLabel || '—')}
             </span>
-            <ChevronDown size={14} className="text-muted-foreground shrink-0" />
+            <ChevronDown
+              size={14}
+              className="text-muted-foreground shrink-0"
+              data-testid="ChevronDown__e483be" />
           </button>
         </div>
         <div /><div />
       </div>
-
       {/* Country picker */}
       <OptionPicker
         open={countryPickerOpen}
@@ -201,8 +208,7 @@ export default function AddressSection({ form, onChange, opts, requiredFields = 
         onSelect={handleCountrySelect}
         selected={form.country}
         searchPlaceholder={ui('countrySearchPlaceholder')}
-      />
-
+        data-testid="OptionPicker__e483be" />
       {/* Region picker */}
       <OptionPicker
         open={regionPickerOpen}
@@ -217,7 +223,7 @@ export default function AddressSection({ form, onChange, opts, requiredFields = 
         onSelect={handleRegionSelect}
         selected={form.region}
         searchPlaceholder={ui('regionSearchPlaceholder')}
-      />
+        data-testid="OptionPicker__e483be" />
     </>
   );
 }

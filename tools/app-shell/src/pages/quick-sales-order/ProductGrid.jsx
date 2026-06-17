@@ -98,7 +98,7 @@ export default function ProductGrid({ products, categories: categoriesProp, cate
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <LayoutGrid className="h-3.5 w-3.5" />
+              <LayoutGrid className="h-3.5 w-3.5" data-testid="LayoutGrid__ff9d59" />
             </button>
             <button
               type="button"
@@ -110,12 +110,11 @@ export default function ProductGrid({ products, categories: categoriesProp, cate
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <List className="h-3.5 w-3.5" />
+              <List className="h-3.5 w-3.5" data-testid="List__ff9d59" />
             </button>
           </div>
         )}
       </div>
-
       {/* Product display */}
       {sorted.length === 0 ? (
         <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
@@ -123,7 +122,7 @@ export default function ProductGrid({ products, categories: categoriesProp, cate
         </div>
       ) : viewMode === 'list' ? (
         /* List mode: compact rows */
-        <div className="flex flex-col rounded-lg border border-border bg-white overflow-hidden">
+        (<div className="flex flex-col rounded-lg border border-border bg-white overflow-hidden">
           {sorted.map((product, idx) => {
             const isTop = showPriority && topSellerIds?.has(product.productId || product.id);
             return (
@@ -143,52 +142,50 @@ export default function ProductGrid({ products, categories: categoriesProp, cate
                 >
                   {product.name.charAt(0)}
                 </div>
-
                 {/* Name + searchKey */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-medium truncate">{product.name}</span>
                     {isTop && (
-                      <Badge className="bg-amber-500 hover:bg-amber-500 text-white text-[9px] px-1 py-0 gap-0.5 shrink-0">
-                        <TrendingUp className="h-2 w-2" />
+                      <Badge
+                        className="bg-amber-500 hover:bg-amber-500 text-white text-[9px] px-1 py-0 gap-0.5 shrink-0"
+                        data-testid="Badge__ff9d59">
+                        <TrendingUp className="h-2 w-2" data-testid="TrendingUp__ff9d59" />
                         {ui('qsoTopSeller')}
                       </Badge>
                     )}
                   </div>
                   <p className="text-[11px] text-muted-foreground truncate">{product.searchKey}</p>
                 </div>
-
                 {/* Price */}
                 <span className="text-sm font-bold text-foreground shrink-0">
                   {product.price.toFixed(2)} &euro;
                 </span>
-
                 {/* Stock badge */}
                 {product.stock != null && (
                   <Badge
                     variant={product.stock > 0 ? 'secondary' : 'destructive'}
                     className="text-[10px] px-1.5 py-0 shrink-0"
-                  >
+                    data-testid="Badge__ff9d59">
                     {product.stock > 0
                       ? `${product.stock} ${ui('qsoInStock')}`
                       : ui('qsoOutOfStock')
                     }
                   </Badge>
                 )}
-
                 {/* Add icon on hover */}
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">
-                    <Plus className="h-3.5 w-3.5" />
+                    <Plus className="h-3.5 w-3.5" data-testid="Plus__ff9d59" />
                   </div>
                 </div>
               </button>
             );
           })}
-        </div>
+        </div>)
       ) : (
         /* Grid mode: card grid */
-        <div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        (<div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
           {sorted.map(product => {
             const isTop = showPriority && topSellerIds?.has(product.productId || product.id);
             return (
@@ -206,13 +203,14 @@ export default function ProductGrid({ products, categories: categoriesProp, cate
                 {/* Top seller badge */}
                 {isTop && (
                   <div className="absolute top-2 left-2 z-10">
-                    <Badge className="bg-amber-500 hover:bg-amber-500 text-white text-[10px] px-1.5 py-0 gap-0.5">
-                      <TrendingUp className="h-2.5 w-2.5" />
+                    <Badge
+                      className="bg-amber-500 hover:bg-amber-500 text-white text-[10px] px-1.5 py-0 gap-0.5"
+                      data-testid="Badge__ff9d59">
+                      <TrendingUp className="h-2.5 w-2.5" data-testid="TrendingUp__ff9d59" />
                       {ui('qsoTopSeller')}
                     </Badge>
                   </div>
                 )}
-
                 {/* Avatar */}
                 <div className={`flex w-full items-center gap-2.5 ${isTop ? 'mt-4' : ''}`}>
                   <div
@@ -226,7 +224,6 @@ export default function ProductGrid({ products, categories: categoriesProp, cate
                     <p className="text-[11px] text-muted-foreground">{product.searchKey}</p>
                   </div>
                 </div>
-
                 {/* Price + stock */}
                 <div className="flex w-full items-center justify-between">
                   <span className="text-base font-bold text-foreground">
@@ -236,7 +233,7 @@ export default function ProductGrid({ products, categories: categoriesProp, cate
                     <Badge
                       variant={product.stock > 0 ? 'secondary' : 'destructive'}
                       className="text-[10px] px-1.5 py-0"
-                    >
+                      data-testid="Badge__ff9d59">
                       {product.stock > 0
                         ? `${product.stock} ${ui('qsoInStock')}`
                         : ui('qsoOutOfStock')
@@ -244,17 +241,16 @@ export default function ProductGrid({ products, categories: categoriesProp, cate
                     </Badge>
                   )}
                 </div>
-
                 {/* Hover add icon */}
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">
-                    <Plus className="h-3.5 w-3.5" />
+                    <Plus className="h-3.5 w-3.5" data-testid="Plus__ff9d59" />
                   </div>
                 </div>
               </button>
             );
           })}
-        </div>
+        </div>)
       )}
     </div>
   );

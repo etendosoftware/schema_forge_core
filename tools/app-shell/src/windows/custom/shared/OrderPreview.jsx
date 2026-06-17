@@ -63,10 +63,8 @@ function OrderGeneralTab({ order, specName, token, apiBaseUrl }) {
         statusLabel={statusLabel}
         invoicePercent={invoicePercent}
         deliveryPercent={deliveryPercent != null ? deliveryPercent : undefined}
-      />
-
-      <EmailsCard onSend={undefined} />
-
+        data-testid="SummaryCard__90f59a" />
+      <EmailsCard onSend={undefined} data-testid="EmailsCard__90f59a" />
       {isSalesOrder && (
         <RelatedDocumentsCard
           documentId={order.id}
@@ -74,7 +72,7 @@ function OrderGeneralTab({ order, specName, token, apiBaseUrl }) {
           apiBaseUrl={apiBaseUrl}
           specs={SO_SPECS}
           fetchExtra={fetchPaymentsIn}
-        />
+          data-testid="RelatedDocumentsCard__90f59a" />
       )}
     </div>
   );
@@ -110,7 +108,7 @@ export default function OrderPreview({ order, token, apiBaseUrl, windowName, spe
       pdfUrl={pdfUrl}
       generatingText={ui(pdfGeneratingKey)}
       errorText={ui(pdfErrorKey)}
-    />
+      data-testid="PreviewPdfPanel__90f59a" />
   );
 
   // ── Attachment config ───────────────────────────────────────────────────────
@@ -125,17 +123,28 @@ export default function OrderPreview({ order, token, apiBaseUrl, windowName, spe
     {
       key: 'general',
       label: ui('orderPreviewGeneral'),
-      content: <OrderGeneralTab order={order} specName={specName} token={token} apiBaseUrl={apiBaseUrl} />,
+      content: <OrderGeneralTab
+        order={order}
+        specName={specName}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        data-testid="OrderGeneralTab__90f59a" />,
     },
     {
       key: 'messages',
       label: ui('orderPreviewMessages'),
-      content: <PreviewEmptyPanel icon="💬" text={ui('orderPreviewMessages')} />,
+      content: <PreviewEmptyPanel
+        icon="💬"
+        text={ui('orderPreviewMessages')}
+        data-testid="PreviewEmptyPanel__90f59a" />,
     },
     {
       key: 'history',
       label: ui('orderPreviewHistory'),
-      content: <PreviewEmptyPanel icon="🕐" text={ui('orderPreviewHistory')} />,
+      content: <PreviewEmptyPanel
+        icon="🕐"
+        text={ui('orderPreviewHistory')}
+        data-testid="PreviewEmptyPanel__90f59a" />,
     },
   ];
 
@@ -171,7 +180,7 @@ export default function OrderPreview({ order, token, apiBaseUrl, windowName, spe
       sendLabel={ui('orderPreviewSend')}
       downloadLabel={ui('orderPreviewDownloadPdf')}
       editLabel={ui('orderPreviewEdit')}
-    />
+      data-testid="PreviewActionButtons__90f59a" />
   );
 
   return (
@@ -188,8 +197,7 @@ export default function OrderPreview({ order, token, apiBaseUrl, windowName, spe
         onEdit={() => onEdit?.(order.id)}
         tabs={tabs}
         actionButtons={actionButtons}
-      />
-
+        data-testid="GenericPreviewModal__90f59a" />
       {showSendModal && (
         <SendDocumentModal
           documentType={windowLabel}
@@ -203,7 +211,7 @@ export default function OrderPreview({ order, token, apiBaseUrl, windowName, spe
           pdfBlobUrl={pdfUrl}
           isClosing={sendModalClosing}
           onClose={closeEmailModal}
-        />
+          data-testid="SendDocumentModal__90f59a" />
       )}
     </>
   );

@@ -57,7 +57,9 @@ function EditablePrice({ price, originalPrice, uom, onChange }) {
       )}
       <span className={changed ? 'text-primary font-medium' : ''}>{price.toFixed(2)}</span>
       <span>&euro; / {uom}</span>
-      <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <Pencil
+        className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 transition-opacity"
+        data-testid="Pencil__5911c8" />
     </button>
   );
 }
@@ -88,7 +90,7 @@ export default function CartPanel({
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
-          <ShoppingCart className="h-4 w-4" />
+          <ShoppingCart className="h-4 w-4" data-testid="ShoppingCart__5911c8" />
           {ui('qpoCart')}
           {lines.length > 0 && (
             <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-medium text-white">
@@ -104,18 +106,23 @@ export default function CartPanel({
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
-          <ClipboardList className="h-4 w-4" />
+          <ClipboardList className="h-4 w-4" data-testid="ClipboardList__5911c8" />
           {ui('qpoPreviousOrders')}
         </button>
       </div>
-
       {/* Tab content */}
       <div className="flex-1 overflow-auto">
         {activeTab === 'history' ? (
-          <PreviousOrdersTab supplierId={supplierId} onRepeatOrder={onRepeatOrder} orders={previousOrders} />
+          <PreviousOrdersTab
+            supplierId={supplierId}
+            onRepeatOrder={onRepeatOrder}
+            orders={previousOrders}
+            data-testid="PreviousOrdersTab__5911c8" />
         ) : lines.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full py-12 px-4 text-center">
-            <ShoppingCart className="h-10 w-10 text-muted-foreground/30 mb-3" />
+            <ShoppingCart
+              className="h-10 w-10 text-muted-foreground/30 mb-3"
+              data-testid="ShoppingCart__5911c8" />
             <p className="text-sm font-medium text-muted-foreground">{ui('qpoEmptyCart')}</p>
             <p className="text-xs text-muted-foreground/60 mt-1">{ui('qpoEmptyCartHint')}</p>
           </div>
@@ -140,7 +147,7 @@ export default function CartPanel({
                       originalPrice={line.product.price}
                       uom={line.product.uom}
                       onChange={(price) => dispatch({ type: 'UPDATE_PRICE', id: line.id, price })}
-                    />
+                      data-testid="EditablePrice__5911c8" />
                   </div>
 
                   <div className="flex items-center gap-1 shrink-0">
@@ -148,14 +155,14 @@ export default function CartPanel({
                       onClick={() => dispatch({ type: 'UPDATE_QTY', id: line.id, qty: line.qty - 1 })}
                       className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors"
                     >
-                      <Minus className="h-3 w-3" />
+                      <Minus className="h-3 w-3" data-testid="Minus__5911c8" />
                     </button>
                     <span className="min-w-8 text-center text-sm font-medium tabular-nums">{line.qty.toLocaleString()}</span>
                     <button
                       onClick={() => dispatch({ type: 'UPDATE_QTY', id: line.id, qty: line.qty + 1 })}
                       className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors"
                     >
-                      <Plus className="h-3 w-3" />
+                      <Plus className="h-3 w-3" data-testid="Plus__5911c8" />
                     </button>
                   </div>
 
@@ -167,7 +174,7 @@ export default function CartPanel({
                     onClick={() => dispatch({ type: 'REMOVE_ITEM', id: line.id })}
                     className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-3.5 w-3.5" data-testid="Trash2__5911c8" />
                   </button>
                 </div>
               ))}
@@ -175,7 +182,6 @@ export default function CartPanel({
           </div>
         )}
       </div>
-
       {/* Summary + Actions (only on cart tab with items) */}
       {activeTab === 'cart' && lines.length > 0 && (
         <div className="border-t border-border">
@@ -195,13 +201,27 @@ export default function CartPanel({
           </div>
 
           <div className="flex gap-2 px-4 pb-4">
-            <Button variant="outline" size="sm" className="flex-1" onClick={onCancel}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={onCancel}
+              data-testid="Button__5911c8">
               {ui('qpoCancel')}
             </Button>
-            <Button variant="outline" size="sm" className="flex-1" onClick={onCreateOrder}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={onCreateOrder}
+              data-testid="Button__5911c8">
               {ui('qpoCreateOrder')}
             </Button>
-            <Button size="sm" className="flex-1" onClick={onSendOrder}>
+            <Button
+              size="sm"
+              className="flex-1"
+              onClick={onSendOrder}
+              data-testid="Button__5911c8">
               {ui('qpoSendOrder')}
             </Button>
           </div>

@@ -55,7 +55,7 @@ export default function ReturnWindowShell({
         token={token}
         hidePrint={true}
         {...pageProps}
-      />
+        data-testid="PageComponent__3ea846" />
     );
   }
 
@@ -69,7 +69,7 @@ export default function ReturnWindowShell({
         refreshTrigger={refreshKey}
         renderPreview={renderPreview}
         {...pageProps}
-      />
+        data-testid="PageComponent__3ea846" />
       {deleteDialog}
       {cloneTargets && createPortal(
         <CloneOrderModal
@@ -80,7 +80,7 @@ export default function ReturnWindowShell({
           routePrefix={routePrefix}
           onClose={() => setCloneTargets(null)}
           onCloned={() => setRefreshKey(k => k + 1)}
-        />,
+          data-testid="CloneOrderModal__3ea846" />,
         document.body,
       )}
     </>

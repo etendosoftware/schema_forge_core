@@ -35,16 +35,14 @@ function QuotationGeneralTab({ quotation, onSend, token, apiBaseUrl }) {
         statusCode={statusCode}
         statusLabel={statusLabel}
         validUntil={quotation.validUntil || null}
-      />
-
-      <EmailsCard onSend={onSend} />
-
+        data-testid="SummaryCard__7eb018" />
+      <EmailsCard onSend={onSend} data-testid="EmailsCard__7eb018" />
       <RelatedDocumentsCard
         documentId={quotation.id}
         token={token}
         apiBaseUrl={apiBaseUrl}
         specs={QUOTATION_SPECS}
-      />
+        data-testid="RelatedDocumentsCard__7eb018" />
     </div>
   );
 }
@@ -94,7 +92,7 @@ export default function QuotationPreview({ quotation, token, apiBaseUrl, windowN
       pdfUrl={pdfUrl}
       generatingText={ui('quotationPdfGenerating')}
       errorText={ui('quotationPdfError')}
-    />
+      data-testid="PreviewPdfPanel__7eb018" />
   );
 
   // ── Attachment config ───────────────────────────────────────────────────────
@@ -123,17 +121,28 @@ export default function QuotationPreview({ quotation, token, apiBaseUrl, windowN
     {
       key: 'general',
       label: ui('quotationPreviewGeneral'),
-      content: <QuotationGeneralTab quotation={quotation} onSend={openEmailModal} token={token} apiBaseUrl={apiBaseUrl} />,
+      content: <QuotationGeneralTab
+        quotation={quotation}
+        onSend={openEmailModal}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        data-testid="QuotationGeneralTab__7eb018" />,
     },
     {
       key: 'messages',
       label: ui('quotationPreviewMessages'),
-      content: <PreviewEmptyPanel icon="💬" text={ui('quotationPreviewMessages')} />,
+      content: <PreviewEmptyPanel
+        icon="💬"
+        text={ui('quotationPreviewMessages')}
+        data-testid="PreviewEmptyPanel__7eb018" />,
     },
     {
       key: 'history',
       label: ui('quotationPreviewHistory'),
-      content: <PreviewEmptyPanel icon="🕐" text={ui('quotationPreviewHistory')} />,
+      content: <PreviewEmptyPanel
+        icon="🕐"
+        text={ui('quotationPreviewHistory')}
+        data-testid="PreviewEmptyPanel__7eb018" />,
     },
   ];
 
@@ -151,7 +160,7 @@ export default function QuotationPreview({ quotation, token, apiBaseUrl, windowN
       sendLabel={ui('quotationPreviewSend')}
       downloadLabel={ui('quotationPreviewDownloadPdf')}
       editLabel={ui('quotationPreviewEdit')}
-    />
+      data-testid="PreviewActionButtons__7eb018" />
   );
 
   return (
@@ -166,8 +175,7 @@ export default function QuotationPreview({ quotation, token, apiBaseUrl, windowN
         onEdit={() => onEdit?.(quotation.id)}
         tabs={tabs}
         actionButtons={actionButtons}
-      />
-
+        data-testid="GenericPreviewModal__7eb018" />
       {showSendModal && (
         <SendDocumentModal
           documentType={windowLabel}
@@ -181,7 +189,7 @@ export default function QuotationPreview({ quotation, token, apiBaseUrl, windowN
           pdfBlobUrl={pdfUrl}
           isClosing={sendModalClosing}
           onClose={closeEmailModal}
-        />
+          data-testid="SendDocumentModal__7eb018" />
       )}
     </>
   );

@@ -43,7 +43,7 @@ function CreditLimitStepper({ value, readOnly, onChange, onBlur, saving }) {
           disabled={readOnly || saving}
           className="w-10 h-[38px] flex items-center justify-center border-l border-[#E8EAEF] text-[#828FA3] hover:bg-gray-50 disabled:opacity-40 shrink-0"
         >
-          <Minus size={16} />
+          <Minus size={16} data-testid="Minus__d55d36" />
         </button>
         <button
           type="button"
@@ -51,7 +51,7 @@ function CreditLimitStepper({ value, readOnly, onChange, onBlur, saving }) {
           disabled={readOnly || saving}
           className="w-10 h-[38px] flex items-center justify-center border-l border-[#E8EAEF] text-[#828FA3] hover:bg-gray-50 disabled:opacity-40 shrink-0"
         >
-          <Plus size={16} />
+          <Plus size={16} data-testid="Plus__d55d36" />
         </button>
       </div>
     </div>
@@ -142,12 +142,10 @@ export default function ContactsFinancialPanel({ data, token, apiBaseUrl, catalo
             onChange={(val) => handleCreditTaxChange('creditLimit', val)}
             onBlur={() => persistCreditTaxField('creditLimit')}
             saving={savingField === 'creditLimit'}
-          />
+            data-testid="CreditLimitStepper__d55d36" />
         </div>
       </div>
-
       <hr className="border-t border-[#E8EAEF] mx-5" />
-
       {/* Preferencias de facturación — layout fila: texto izquierda + contenido derecha */}
       <div className="flex flex-row items-start px-5 pt-2 pb-3 gap-5">
         <div className="flex flex-col gap-1 w-[148px] shrink-0">
@@ -164,7 +162,7 @@ export default function ContactsFinancialPanel({ data, token, apiBaseUrl, catalo
             onChange={onChange}
             editing={editing}
             apiBaseUrl={apiBaseUrl}
-          />
+            data-testid="BillingPreferencesForm__d55d36" />
         </div>
       </div>
     </div>
