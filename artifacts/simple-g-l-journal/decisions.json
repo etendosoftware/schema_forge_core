@@ -8,15 +8,12 @@
       "debitField": "foreignCurrencyDebit",
       "creditField": "foreignCurrencyCredit"
     },
-    "processOverrides": {
-      "complete": {
-        "add": true,
-        "label": "Complete",
-        "style": "positive",
-        "columnName": "documentAction",
-        "requiresLines": true,
-        "requiresBalance": true
-      }
+    "draftMode": {
+      "enabled": true,
+      "processField": "documentAction",
+      "processValue": "CO",
+      "label": "complete",
+      "disableWhenEmpty": true
     }
   },
   "entities": {

@@ -1848,6 +1848,10 @@ export function DetailView({
       )
     : null;
   const blockSaveForBalance = !!balanceFooter && balanceState != null && !balanceState.isBalanced;
+  // Completion is stricter than save: the journal must balance AND carry a non-zero amount.
+  // (A 0=0 draft is "balanced" but must not be completable.)
+  const blockCompleteForBalance = !!balanceFooter && balanceState != null
+    && (!balanceState.isBalanced || (balanceState.totalDebit ?? 0) <= 0);
   const { computeLineGrossAmount, resolveTaxFactor, prepareLineForPost } = useLineGrossAmount(taxRateCacheRef, hook.children, lineConfig);
   // Batching refs for the sidebar onChange: product selector fires multiple synchronous
   // onChange calls (product, product$_identifier, unitPrice/grossUnitPrice). Without
@@ -2601,7 +2605,6 @@ export function DetailView({
                   ? evalDisplayLogicRaw(p.displayLogicRaw, data)
                   : displayLogic?.visibility?.[p.name] !== false)
                 .filter(p => !p.requiresLines || hook.children.length > 0)
-                .filter(p => !p.requiresBalance || (balanceState?.isBalanced && (balanceState?.totalDebit ?? 0) > 0))
                 .map(p => {
                   const isPrimary = p.style === 'positive';
                   const btnClass = getButtonClass(salesTheme, p, isPrimary);
@@ -2642,7 +2645,7 @@ export function DetailView({
                         {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" color="#64748B" />}
                         {ui('save')}
                       </Button>
-                      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving || (draftMode.disableWhenEmpty === true && !hook.childrenLoading && hook.children.length === 0)} onClick={async () => {
+                      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving || blockCompleteForBalance || (draftMode.disableWhenEmpty === true && !hook.childrenLoading && hook.children.length === 0)} title={blockCompleteForBalance ? ui('journalUnbalancedCompleteBlocked') : undefined} onClick={async () => {
                         if (!(await flushPendingLines())) return;
                         if (typeof draftMode.onConfirm === 'function') { draftMode.onConfirm(); return; }
                         const saved = await hook.handleSaveAndProcess(draftMode);
@@ -2679,7 +2682,7 @@ export function DetailView({
                         {ui('save')}
                       </Button>
                       {!isProcessed && hook.children.length > 0 && (
-                        <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
+                        <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving || blockCompleteForBalance} title={blockCompleteForBalance ? ui('journalUnbalancedCompleteBlocked') : undefined} onClick={async () => {
                           if (!(await flushPendingLines())) return;
                           const saved = await hook.handleSaveAndProcess(draftMode);
                           if (saved) {

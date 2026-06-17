@@ -1195,11 +1195,10 @@ function buildProcessesArray({ processes, buttonFields, processOverrides }) {
           ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
           : '';
         const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
-        const requiresBalancePart = fragmentIf(ovr.requiresBalance, ', requiresBalance: true');
         const fieldMaxPart = ovr.requiresFieldMax
           ? `, requiresFieldMax: ${JSON.stringify(ovr.requiresFieldMax)}`
           : '';
-        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart}${requiresBalancePart}${fieldMaxPart} },`;
+        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart}${fieldMaxPart} },`;
       }),
   ].join('\n');
 }

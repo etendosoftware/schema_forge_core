@@ -1,8 +1,8 @@
 {
   "version": "0.6.1",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-17T11:56:40.041Z",
-  "checksum": "5abbc9bf7f7f0ea2",
+  "updatedAt": "2026-06-17T16:08:17.774Z",
+  "checksum": "0dec2b3001dbcf49",
   "frontendContract": {
     "window": {
       "id": "B917E8A7B0864ACEA9D941E3B7494E53",
@@ -10,16 +10,6 @@
       "primaryEntity": "gLJournal",
       "category": "finance",
       "breadcrumb": "Finance / Manual Journals",
-      "processOverrides": {
-        "complete": {
-          "add": true,
-          "label": "Complete",
-          "style": "positive",
-          "columnName": "documentAction",
-          "requiresLines": true,
-          "requiresBalance": true
-        }
-      },
       "layoutType": "default",
       "balanceFooter": {
         "debitField": "foreignCurrencyDebit",
@@ -253,7 +243,14 @@
             }
           }
         ],
-        "javaQualifier": "glJournalHeaderHandler"
+        "javaQualifier": "glJournalHeaderHandler",
+        "draftMode": {
+          "enabled": true,
+          "processField": "documentAction",
+          "processValue": "CO",
+          "label": "complete",
+          "disableWhenEmpty": true
+        }
       },
       "gLJournalLine": {
         "tableName": "GL_JournalLine",
@@ -556,16 +553,6 @@
       "primaryEntity": "gLJournal",
       "category": "finance",
       "breadcrumb": "Finance / Manual Journals",
-      "processOverrides": {
-        "complete": {
-          "add": true,
-          "label": "Complete",
-          "style": "positive",
-          "columnName": "documentAction",
-          "requiresLines": true,
-          "requiresBalance": true
-        }
-      },
       "balanceFooter": {
         "debitField": "foreignCurrencyDebit",
         "creditField": "foreignCurrencyCredit"

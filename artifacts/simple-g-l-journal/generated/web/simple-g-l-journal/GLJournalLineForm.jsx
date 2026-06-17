@@ -7,7 +7,7 @@ const fields = [
   { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'principal', defaultValue: '@DESCRIPTION1@', readOnlyLogic: (record) => record['processed'] === true },
   { key: 'foreignCurrencyDebit', column: 'AmtSourceDr', type: 'number', label: 'Debit', required: true, section: 'principal', readOnlyLogic: (record) => record['processed'] === true },
   { key: 'foreignCurrencyCredit', column: 'AmtSourceCr', type: 'number', label: 'Credit', required: true, section: 'principal', readOnlyLogic: (record) => record['processed'] === true },
-  { key: 'openItems', column: 'Open_Items', type: 'checkbox', label: 'Open Items', required: true, section: 'other' },
+  { key: 'openItems', column: 'Open_Items', type: 'checkbox', label: 'Open Items', section: 'other' },
   { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'search', label: 'Business Partner', section: 'other', reference: 'BPartner', inputMode: 'search', displayLogic: (record) => record['openItems'] === true, readOnlySource: 'server', readOnlyLogicReason: 'untranslatable-token' },
   { key: 'product', column: 'M_Product_ID', type: 'selector', label: 'Product', section: 'other', reference: 'Product', inputMode: 'selector', displayLogic: (record) => record['openItems'] === true, readOnlyLogic: (record) => record['posted'] === 'Y' },
   { key: 'project', column: 'C_Project_ID', type: 'search', label: 'Project', section: 'other', reference: 'Project', inputMode: 'search', displayLogic: (record) => record['openItems'] === true, readOnlyLogic: (record) => record['posted'] === 'Y' },

@@ -25,12 +25,18 @@ const extraBadges = [];
 
 // @sf-generated-start processes:gLJournal
 const processes = [
-  { name: 'complete', label: 'Complete', style: 'positive', columnName: 'documentAction', requiresLines: true, requiresBalance: true },
+
 ];
 // @sf-generated-end processes:gLJournal
 
 // @sf-generated-start draftMode:gLJournal
-const draftMode = null;
+const draftMode = {
+  "enabled": true,
+  "processField": "documentAction",
+  "processValue": "CO",
+  "label": "complete",
+  "disableWhenEmpty": true
+};
 // @sf-generated-end draftMode:gLJournal
 
 // @sf-generated-start requiredHeaderFields:gLJournal
@@ -226,6 +232,7 @@ export default function GLJournalPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "GL_Journal", config: {} } }]}
+        draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         balanceFooter={{"debitField":"foreignCurrencyDebit","creditField":"foreignCurrencyCredit"}}
         {...props}
