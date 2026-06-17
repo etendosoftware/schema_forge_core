@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { ReconciliationTab } from '../ReconciliationTab';
 
 // Mock the heavy split panel — this unit only verifies the tab wires props through.
@@ -11,19 +12,31 @@ vi.mock('@/components/contract-ui/ReconciliationSplitPanel.jsx', () => ({
 
 describe('ReconciliationTab', () => {
   it('renders the reconciliation split panel', () => {
-    render(<ReconciliationTab account={{ id: 'ACC-1', currency: 'EUR' }} />);
+    render(
+      <MemoryRouter>
+        <ReconciliationTab account={{ id: 'ACC-1', currency: 'EUR' }} />
+      </MemoryRouter>,
+    );
     expect(screen.getByTestId('split-panel')).toBeDefined();
   });
 
   it('forwards the account id and currency to the split panel', () => {
-    render(<ReconciliationTab account={{ id: 'ACC-9', currency: 'USD' }} />);
+    render(
+      <MemoryRouter>
+        <ReconciliationTab account={{ id: 'ACC-9', currency: 'USD' }} />
+      </MemoryRouter>,
+    );
     const panel = screen.getByTestId('split-panel');
     expect(panel.getAttribute('data-account')).toBe('ACC-9');
     expect(panel.getAttribute('data-currency')).toBe('USD');
   });
 
   it('does not crash when no account is provided', () => {
-    render(<ReconciliationTab account={null} />);
+    render(
+      <MemoryRouter>
+        <ReconciliationTab account={null} />
+      </MemoryRouter>,
+    );
     expect(screen.getByTestId('split-panel')).toBeDefined();
   });
 });
