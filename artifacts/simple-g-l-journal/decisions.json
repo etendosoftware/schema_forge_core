@@ -12,6 +12,7 @@
   "entities": {
     "header": {
       "name": "gLJournal",
+      "javaQualifier": "glJournalHeaderHandler",
       "fields": {
         "documentNo": {
           "visibility": "system",
@@ -95,8 +96,8 @@
           "reason": "DocAction button — posting/complete flow deferred to workstream D."
         },
         "accountingSchema": {
-          "visibility": "discarded",
-          "reason": "Posting-only field; not needed for the simplified manual-journal UI."
+          "visibility": "system",
+          "reason": "Required by gl_journal_multiacct_check; auto-injected from session $C_AcctSchema_ID by GlJournalHeaderHandler when Multi_Gl=N."
         },
         "totalDebitAmount": {
           "visibility": "discarded",

@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.3.1",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-16T17:42:44.269Z",
-  "checksum": "8d9b2f33ac7ec80e",
+  "updatedAt": "2026-06-17T02:08:59.127Z",
+  "checksum": "59aad9b9f249903b",
   "frontendContract": {
     "window": {
       "id": "B917E8A7B0864ACEA9D941E3B7494E53",
@@ -242,7 +242,8 @@
               "source": "N"
             }
           }
-        ]
+        ],
+        "javaQualifier": "glJournalHeaderHandler"
       },
       "gLJournalLine": {
         "tableName": "GL_JournalLine",
@@ -559,7 +560,7 @@
             "apiKey": "accountingSchema",
             "column": "C_AcctSchema_ID",
             "type": "foreignKey",
-            "visibility": "discarded",
+            "visibility": "system",
             "required": false
           },
           {
@@ -874,7 +875,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "glJournalHeaderHandler"
       },
       "gLJournalLine": {
         "tableName": "GL_JournalLine",
