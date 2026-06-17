@@ -82,6 +82,7 @@ export default function FinancialAccountsPage() {
           search={search}
           onSearchChange={setSearch}
           onNewAccount={() => setWizardOpen(true)}
+          onMatchingRules={() => navigate('/match-rule')}
           advancedFilter={advancedFilter}
           onAdvancedFilterChange={setAdvancedFilter}
           rows={accounts}
