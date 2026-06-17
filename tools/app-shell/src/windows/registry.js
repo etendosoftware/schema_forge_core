@@ -16,13 +16,14 @@ import { APP_CATALOG } from '../apps-registry.js';
  */
 const windowLoaders = {
   'sales-order': () => import('@generated/sales-order/generated/web/sales-order/index.jsx'),
+  'match-rule': () => import('@generated/match-rule/generated/web/match-rule/index.jsx'),
   'business-partner': () => import('@generated/business-partner/generated/web/business-partner/index.jsx'),
   'contacts': () => import('@/windows/custom/contacts/index.jsx'),
   'warehouse': () => import('@generated/warehouse/generated/web/warehouse/index.jsx'),
   'price-list': () => import('@generated/price-list/generated/web/price-list/index.jsx'),
   'payment-term': () => import('@generated/payment-term/generated/web/payment-term/index.jsx'),
-  'product': () => import('@generated/product/generated/web/product/index.jsx'),
-  'product-category': () => import('@generated/product-category/generated/web/product-category/index.jsx'),
+  'product': () => import('@/windows/custom/product/index.jsx'),
+  'product-category': () => import('@/windows/custom/product-category/index.jsx'),
   'tax': () => import('@generated/tax/generated/web/tax/index.jsx'),
   'user': () => import('@generated/user/generated/web/user/index.jsx'),
   'purchase-order': () => import('@generated/purchase-order/generated/web/purchase-order/index.jsx'),
@@ -156,6 +157,7 @@ const customLoaders = {
   'quick-order-sales': () => import('./quick-order/index.jsx'),
   'quick-order-purchase': () => import('./quick-order/index.jsx'),
   'financial-account': () => import('./custom/financial-account/index.jsx'),
+  'return-to-vendor-shipment': () => import('./custom/return-to-vendor-shipment/index.jsx'),
 };
 
 /**

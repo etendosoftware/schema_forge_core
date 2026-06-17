@@ -10,6 +10,9 @@ import { Button } from '@/components/ui/button';
 import { useUI } from '@/i18n';
 
 // i18n key triples per variant. Keeps the JSX free of nested ternaries.
+// The `title`/`body`/`confirm` values are i18n KEYS resolved via ui(keys.title);
+// they are not user-facing literals.
+// i18n-allowlist: ["financeAccountStatementsProcessTitle", "financeAccountStatementsReactivateTitle", "financeAccountStatementsDeleteTitle"]
 const VARIANT_KEYS = {
   process: {
     title: 'financeAccountStatementsProcessTitle',

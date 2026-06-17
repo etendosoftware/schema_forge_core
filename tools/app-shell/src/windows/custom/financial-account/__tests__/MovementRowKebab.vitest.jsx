@@ -24,7 +24,7 @@ describe('MovementRowKebab', () => {
 
   it('exposes an accessible label on the trigger button', () => {
     render(<MovementRowKebab movement={{ id: 'm1' }} />);
-    expect(screen.getByLabelText('Movement actions')).toBeInTheDocument();
+    expect(screen.getByLabelText('financeAccountMovementsRowActions')).toBeInTheDocument();
   });
 
   it('opens the menu and renders the three action items', async () => {

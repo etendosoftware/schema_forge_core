@@ -21,7 +21,7 @@ import { useUI } from '@/i18n';
  *   testId?: string,
  * }} props
  */
-export function AdvancedFilterButton({ columns, rows = [], value = null, onChange, testId }) {
+export function AdvancedFilterButton({ columns, rows = [], value = null, onChange, testId, entity = null, apiBaseUrl = null, labelOverrides = null }) {
   const ui = useUI();
   const [open, setOpen] = useState(false);
 
@@ -52,6 +52,9 @@ export function AdvancedFilterButton({ columns, rows = [], value = null, onChang
         <AdvancedFilterBuilder
           columns={columns}
           rows={rows}
+          entity={entity}
+          apiBaseUrl={apiBaseUrl}
+          labelOverrides={labelOverrides}
           value={value}
           onApply={(next) => onChange(next)}
           onClear={() => onChange(null)}

@@ -41,6 +41,7 @@ The Assets window should let a finance user register fixed assets, define how ea
 - After a successful asset process event (`neo:processSuccess` for the current asset), the amortization footer re-fetches its lines. This is the clearest visible evidence that generating an amortization plan should refresh the schedule immediately in the detail view.
 - `AssetsSidebar.jsx` reads `data.etgoAmortizationStatus` (DB-backed integer 0–100, maintained by `ETGO_A_ASSET_AMORT_STATUS_TRG`) for the "Depreciado %" card — no frontend math. `renderDepreciationProgress` in the list table does the same. `AssetsAmortizationPanel.jsx` batch-fetches the `processed` field of each parent amortization document (`/amortization/header/{id}`) to show accurate "Confirmado/Pendiente" badges — the previous heuristic based on `depreciatedValue` was removed because it inverted statuses when individual amortizations were reactivated out of order.
 - In the Asset Amortization child surface, editable fields become read-only when the line is processed, which indicates that posted or finalized schedule lines should no longer be freely editable.
+- The `GroupDivider` component in `AssetsDetailPanel.jsx` carries `mt-5` so each section heading (Depreciación, Financiero, Fechas, Dimensiones contables) has visible breathing room above the separator line. Without this margin the border-t line was flush against the fields from the previous section.
 - In the Accounting child surface, selectors are exposed for general ledger, accumulated depreciation, and depreciation accounts. The current evidence shows selectable mappings, but no additional reactive cross-field behavior is visible.
 - No totals, discounts, or tax-style recalculations are visible here beyond depreciation progress, planned amount totals, and sequence-based schedule refresh.
 
@@ -70,6 +71,12 @@ The Assets window should let a finance user register fixed assets, define how ea
 9. Open the **Accounting** child surface and confirm the record exposes selectors for general ledger, accumulated depreciation, and depreciation accounts.
 10. If amortization lines already exist, confirm the asset currency can no longer be edited.
 11. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
+
+## ETP-4190 changes (feature/ETP-4190)
+
+### Section divider spacing fix
+
+- `AssetsDetailPanel.jsx` — `GroupDivider` wrapper now includes `mt-5`. This adds 20 px of top margin before the `border-t` line that separates each configuration group (Depreciation, Financial, Dates, Accounting dimensions). Previously the line sat flush against the fields above it with no visual gap.
 
 ## Automated evidence
 
@@ -112,7 +119,7 @@ Changes landed in `feature/ETP-4103`. Covers visual polish, full-form restructur
 - `AssetsDetailPanel.jsx` added at `tools/app-shell/src/windows/custom/assets/AssetsDetailPanel.jsx` — custom `formFooter` component that renders all fields in four grouped sections. Replaces both the standard `EntityForm` and `AssetsConfigPanel` as the primary form UI.
 - Group 1 (Asset Info): renders searchKey, name, assetCategory, description in a 4-column grid **without a subtitle or GroupHead** — the `assetsGroupInfoTitle` title was removed. Fields render inline.
 - Group 2 (Financial Info): currency, assetValue, residualAssetValue, depreciationAmt, previouslyDepreciatedAmt — moved **inside** Group 3 (Depreciation Config). It only appears when `depreciate=true`. When depreciation is disabled, only the ToggleCard and a disabled hint text are shown.
-- Group 3 (Depreciation Config): ToggleCards + conditional depreciation fields. Financial Info (Group 2) is nested here, visible only when `depreciate=true`.
+- Group 3 (Depreciation Config): ToggleCards + conditional depreciation fields. Financial Info (Group 2) is nested here, visible only when `depreciate=true`. The `ToggleCard` switch now renders the shared `PillToggle` component (`@/components/PillToggle`) instead of an inline `<button role="switch">` — same size/colors/behavior (disabled while not editing), deduped with the match-rule footer and grid toggles. No behavior change.
 - Group 4 (Dates): still visible only when `depreciate=true`.
 - Group 5 (Accounting dimensions): **last section**, visible only when `depreciate=true`. Title key `assetsGroupDimensionsTitle` ("Dimensiones contables" / "Accounting dimensions"). Renders 8 dimension selectors in a 4-column grid (`cols={4}`) via `EntityForm`: Project (C_Project_ID), Cost Center (EM_Etadas_Costcenter_ID), Business Partner (C_BPartner_ID), 1st Dimension (EM_Etadas_User1_ID), 2nd Dimension (EM_Etadas_User2_ID), Sales Region (EM_Etadas_Salesregion_ID), Activity (EM_Etadas_C_Activity_ID), Sales Campaign (EM_Etadas_Campaign_ID). Placed after Dates because it is optional. The grid wrapper forces white backgrounds on selectors (`[&_button[role=combobox]]:!bg-white [&_input]:!bg-white`).
 - All header fields set to `form: false` in `decisions.json` — the standard `EntityForm` renders nothing. `hideFormCard: true` hides the now-empty card. The 8 dimension fields are set to `visibility: editable, form: false` in `decisions.json` so they are registered in the NEO spec (`ETGO_SF_FIELD`) — required for the `/assets/selectors/<column>` endpoints to return options — without being rendered by the standard form. `project` was previously `discarded` and is now re-enabled.
@@ -165,3 +172,20 @@ Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functio
 - `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
 - `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.
 - LinesTable template updated in ETP-3908 to include the inline-editable add-row alignment fix. This window uses `linesLayout: "classic"` so the new template branch is dead code here — no behavioral change.
+
+## ETP-4229 — Fix spec assets: defaults + depreciationEndDate callout
+
+### Default values fix
+
+- `decisions.json`: `depreciate` field now has `defaultExpr: "Y"` — `neo_defaults` returns `depreciate: true` (boolean, coerced from Yes/No column). Previously returned null.
+- `decisions.json`: `calculateType` field now has `defaultExpr: "TI"` — `neo_defaults` returns `calculateType: "TI"` (Time-based). Previously returned `"PE"` (Percentage), which was the wrong default for the standard amortization flow.
+- Both values are written to `ETGO_SF_FIELD.DefaultValue` via `push-to-neo.js` and persisted to `src-db/database/sourcedata/ETGO_SF_FIELD.xml` via `export.database`.
+
+### depreciationEndDate auto-computation (AssetsHandler)
+
+- `decisions.json`: `entities.assets.javaQualifier: "assetsHandler"` — wires the `AssetsHandler` CDI bean to the assets entity via `ETGO_SF_ENTITY.JAVA_QUALIFIER`.
+- `AssetsHandler.java` (com.etendoerp.go): new `NeoHandler` that auto-computes `depreciationEndDate = depreciationStartDate + usableLifeMonths` on every POST and PATCH that touches either source field.
+  - **POST**: both `depreciationStartDate` and `usableLifeMonths` must be present in the body. Computes and injects `depreciationEndDate` before the record is persisted.
+  - **PATCH (partial update)**: fires whenever either source field is in the diff body. The missing field is loaded from the persisted record via `OBDal.getInstance().get(Asset.class, recordId)`, so single-field edits (e.g., only changing `usableLifeMonths`) still trigger a recompute.
+  - Date arithmetic uses `java.time.LocalDate.plusMonths()`. The persisted `Date` is formatted via `SimpleDateFormat("yyyy-MM-dd")` (consistent with the rest of the module; avoids `java.sql.Date.toInstant()` which throws `UnsupportedOperationException`).
+  - `depreciationEndDate` must remain `visibility: editable` in the spec — if reclassified to `readOnly`, the PATCH write is filtered by `NeoFieldFilter.filterWriteRequest` and the recompute silently stops persisting. Move the write to `afterHandle()` if that classification ever changes.

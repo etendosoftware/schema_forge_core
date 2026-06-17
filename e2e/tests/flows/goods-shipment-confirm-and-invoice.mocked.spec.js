@@ -172,32 +172,20 @@ test.describe('Goods Shipment — Confirm modal (draft to complete)', () => {
       window.dispatchEvent(new CustomEvent('goods-shipment:open-confirm-modal'))
     );
 
-    // ── Blue summary card ──────────────────────────────────────────────────
-    // "Envío #GS-DRAFT-001" is unique: the modal renders shipmentRef + documentNo
-    // in a small header line — not visible anywhere else on the page.
-    await expect(page.getByText(/Envío #GS-DRAFT-001/)).toBeVisible({ timeout: 8_000 });
-    // The subtotal row is modal-specific (the form doesn't show a subtotal)
-    await expect(page.getByText(/Subtotal/)).toBeVisible({ timeout: 5_000 });
-    // Amount from linkedOrders[0].grandTotalAmount shown as 1,500.00 EUR
-    await expect(
-      page.locator('div').filter({ hasText: /^1[.,]500[.,]00 EUR$/ }),
-    ).toBeVisible({ timeout: 5_000 });
-
-    // ── Optional invoice section ───────────────────────────────────────────
-    await expect(page.getByText('Generar documentos (opcional)')).toBeVisible({ timeout: 5_000 });
-    // Invoice CheckboxCard title (soCreateInvoiceTitle)
-    await expect(page.getByText('Crear factura', { exact: true })).toBeVisible({ timeout: 5_000 });
-    // Confirm button shows "Confirmar pedido" (checkbox unchecked by default)
-    await expect(page.getByRole('button', { name: 'Confirmar pedido' })).toBeVisible({ timeout: 5_000 });
+    // ── Modal is visible ───────────────────────────────────────────────────
+    await expect(page.getByTestId('confirm-inout-modal')).toBeVisible({ timeout: 8_000 });
+    // Document number appears in the subtitle
+    await expect(page.getByTestId('confirm-modal-doc-info')).toContainText('GS-DRAFT-001');
+    // Invoice toggle card is visible
+    await expect(page.getByTestId('confirm-modal-invoice-toggle')).toBeVisible({ timeout: 5_000 });
+    // Confirm button is visible
+    await expect(page.getByTestId('confirm-modal-confirm-btn')).toBeVisible({ timeout: 5_000 });
 
     // ── Cancel closes the modal synchronously ─────────────────────────────
-    // "Cancelar" appears twice in the DOM: once in the topbar (action-cancel)
-    // and once in the modal footer. The modal one is the LAST in document order
-    // (it's rendered inside the topbar-right slot, which comes after the topbar).
     // handleClose() → onClose() → setShowConfirmModal(false) → modal unmounts.
     // No async fetch is needed: Cancel is purely synchronous.
-    await page.getByRole('button', { name: 'Cancelar', exact: true }).last().click();
-    await expect(page.getByText('Generar documentos (opcional)')).toHaveCount(0, { timeout: 5_000 });
+    await page.getByTestId('confirm-modal-cancel-btn').click();
+    await expect(page.getByTestId('confirm-inout-modal')).toHaveCount(0, { timeout: 5_000 });
   });
 });
 

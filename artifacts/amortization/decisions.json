@@ -80,6 +80,7 @@
   },
   "entities": {
     "header": {
+      "javaQualifier": "amortizationHeaderHandler",
       "fields": {
         "name": {
           "grid": true,
@@ -96,7 +97,8 @@
           "grid": true,
           "searchable": true,
           "seq": 20,
-          "dot": false
+          "dot": false,
+          "defaultExpr": "@#Date@"
         },
         "startingDate": {
           "grid": true,
