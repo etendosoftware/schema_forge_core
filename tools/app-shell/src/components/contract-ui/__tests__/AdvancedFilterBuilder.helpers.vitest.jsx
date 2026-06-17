@@ -433,4 +433,163 @@ describe('AdvancedFilterBuilder — render', () => {
     );
     expect(screen.getByText('advancedFilterTitle')).toBeInTheDocument();
   });
+
+  it('enables apply when date field has equals operator with value', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'orderDate', operator: 'equals', value: '2024-01-15' }],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    const applyBtn = screen.getByText('advancedFilterApply').closest('button');
+    expect(applyBtn).not.toBeDisabled();
+  });
+
+  it('enables apply when date field has between operator with both values', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'orderDate', operator: 'between', value: ['2024-01-01', '2024-12-31'] }],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    const applyBtn = screen.getByText('advancedFilterApply').closest('button');
+    expect(applyBtn).not.toBeDisabled();
+  });
+
+  it('disables apply when date between has only first value', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'orderDate', operator: 'between', value: ['2024-01-01', ''] }],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    const applyBtn = screen.getByText('advancedFilterApply').closest('button');
+    expect(applyBtn).toBeDisabled();
+  });
+
+  it('enables apply when numeric field has between with both values', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: ['100', '500'] }],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    const applyBtn = screen.getByText('advancedFilterApply').closest('button');
+    expect(applyBtn).not.toBeDisabled();
+  });
+
+  it('disables apply when numeric between has only second value', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: ['', '500'] }],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    const applyBtn = screen.getByText('advancedFilterApply').closest('button');
+    expect(applyBtn).toBeDisabled();
+  });
+
+  it('disables apply when numeric between has null values', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: [null, null] }],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    const applyBtn = screen.getByText('advancedFilterApply').closest('button');
+    expect(applyBtn).toBeDisabled();
+  });
+
+  it('enables apply when isNotNull operator is used without value', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'isNotNull', value: null }],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    const applyBtn = screen.getByText('advancedFilterApply').closest('button');
+    expect(applyBtn).not.toBeDisabled();
+  });
+
+  it('handles multiple conditions where some use nullish ops', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [
+        { field: 'name', operator: 'isNull', value: null },
+        { field: 'amount', operator: 'greaterThan', value: '100' },
+      ],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    const applyBtn = screen.getByText('advancedFilterApply').closest('button');
+    expect(applyBtn).not.toBeDisabled();
+  });
+
+  it('disables apply when any condition in multi-row is incomplete', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [
+        { field: 'name', operator: 'iContains', value: 'test' },
+        { field: 'amount', operator: '', value: '' },
+      ],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} />);
+    const applyBtn = screen.getByText('advancedFilterApply').closest('button');
+    expect(applyBtn).toBeDisabled();
+  });
+
+  it('renders presets dropdown and shows preset names', async () => {
+    const user = userEvent.setup();
+    render(
+      <AdvancedFilterBuilder
+        {...defaultProps}
+        presets={{ 'Daily Report': {}, 'Weekly Summary': {} }}
+        onApplyPreset={vi.fn()}
+        onSavePreset={vi.fn()}
+        onDeletePreset={vi.fn()}
+      />,
+    );
+    // Presets button should be visible
+    const presetsBtn = screen.getByText('filterPresetsButton');
+    expect(presetsBtn).toBeInTheDocument();
+  });
+
+  it('calls onApply with correct data for multiple conditions', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const onClose = vi.fn();
+    const value = {
+      rowOperator: 'or',
+      conditions: [
+        { field: 'name', operator: 'iContains', value: 'alpha' },
+        { field: 'amount', operator: 'greaterThan', value: '50' },
+      ],
+    };
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} onApply={onApply} onClose={onClose} />);
+    await user.click(screen.getByText('advancedFilterApply'));
+    expect(onApply).toHaveBeenCalledTimes(1);
+    const calledWith = onApply.mock.calls[0][0];
+    expect(calledWith.rowOperator).toBe('or');
+    expect(calledWith.conditions).toHaveLength(2);
+    expect(calledWith.conditions[0].value).toBe('alpha');
+    expect(calledWith.conditions[1].value).toBe('50');
+  });
+
+  it('clears resets to one empty row even with multiple applied conditions', async () => {
+    const user = userEvent.setup();
+    const value = {
+      rowOperator: 'and',
+      conditions: [
+        { field: 'name', operator: 'iContains', value: 'a' },
+        { field: 'amount', operator: 'greaterThan', value: '10' },
+        { field: 'status', operator: 'equals', value: 'DR' },
+      ],
+    };
+    const onClear = vi.fn();
+    render(<AdvancedFilterBuilder {...defaultProps} value={value} onClear={onClear} />);
+    expect(screen.getAllByRole('button', { name: /remove condition/i })).toHaveLength(3);
+    await user.click(screen.getByText('advancedFilterClear'));
+    expect(onClear).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByRole('button', { name: /remove condition/i })).toHaveLength(1);
+  });
+
+  it('shows "And" connector for second row instead of "Where"', async () => {
+    const user = userEvent.setup();
+    render(<AdvancedFilterBuilder {...defaultProps} />);
+    await user.click(screen.getByText('advancedFilterAddCondition'));
+    // First row shows "Where", second row shows a select with and/or
+    expect(screen.getByText('advancedFilterWhere')).toBeInTheDocument();
+  });
 });

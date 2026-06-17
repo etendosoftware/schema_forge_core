@@ -124,4 +124,189 @@ describe('ProductResolverPopup', () => {
     // Should still render without crashing
     expect(screen.getByText('Widget A')).toBeInTheDocument();
   });
+
+  it('renders unmatched items with descriptions and quantities', () => {
+    const unmatched = [
+      { idx: 0, description: 'Bolt M8x50', quantity: 100, unitPrice: 0.35 },
+      { idx: 1, description: 'Washer M8', quantity: 200 },
+      { idx: 2, description: 'Nut M8', unitPrice: 0.12 },
+    ];
+    render(<ProductResolverPopup {...defaultProps} unmatched={unmatched} />);
+    expect(screen.getByText('Bolt M8x50')).toBeInTheDocument();
+    expect(screen.getByText('Washer M8')).toBeInTheDocument();
+    expect(screen.getByText('Nut M8')).toBeInTheDocument();
+    // Quantities and prices are shown
+    expect(screen.getByText(/100/)).toBeInTheDocument();
+    expect(screen.getByText(/0\.35/)).toBeInTheDocument();
+    expect(screen.getByText(/200/)).toBeInTheDocument();
+    expect(screen.getByText(/0\.12/)).toBeInTheDocument();
+  });
+
+  it('opens inline selector when clicking a product row selector button', async () => {
+    const user = userEvent.setup();
+    const unmatched = [
+      { idx: 0, description: 'Widget A' },
+    ];
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [{ id: 'p1', name: 'Product One' }] }),
+    });
+    render(<ProductResolverPopup {...defaultProps} unmatched={unmatched} />);
+    // Click the selector button (shows "ocrProductSkip" initially)
+    const selectorBtn = screen.getByText('ocrProductSkip');
+    await user.click(selectorBtn);
+    // After opening, the search input and dropdown appear
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('ocrProductSearchPlaceholder')).toBeInTheDocument();
+    });
+  });
+
+  it('selects a product from the inline selector dropdown', async () => {
+    const user = userEvent.setup();
+    const unmatched = [
+      { idx: 0, description: 'Widget A' },
+    ];
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [{ id: 'p1', name: 'Product One' }] }),
+    });
+    render(<ProductResolverPopup {...defaultProps} unmatched={unmatched} />);
+    // Open selector
+    await user.click(screen.getByText('ocrProductSkip'));
+    // Wait for options to load
+    await waitFor(() => {
+      expect(screen.getByText('Product One')).toBeInTheDocument();
+    });
+    // Pick the product
+    await user.click(screen.getByText('Product One'));
+    // Now the selector should show the selected product label
+    await waitFor(() => {
+      expect(screen.getByText('Product One')).toBeInTheDocument();
+    });
+  });
+
+  it('submits with resolved product ids', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    const unmatched = [
+      { idx: 0, description: 'Widget A' },
+    ];
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [{ id: 'p1', name: 'Product One' }] }),
+    });
+    render(<ProductResolverPopup {...defaultProps} unmatched={unmatched} onSubmit={onSubmit} />);
+    // Open selector and pick product
+    await user.click(screen.getByText('ocrProductSkip'));
+    await waitFor(() => {
+      expect(screen.getByText('Product One')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Product One'));
+    // Submit
+    await user.click(screen.getByText('continue'));
+    expect(onSubmit).toHaveBeenCalledWith({ 0: 'p1' });
+  });
+
+  it('submits null for unresolved products when some rows are unselected', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    const unmatched = [
+      { idx: 0, description: 'Widget A' },
+      { idx: 1, description: 'Widget B' },
+    ];
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [{ id: 'p1', name: 'Product One' }] }),
+    });
+    render(<ProductResolverPopup {...defaultProps} unmatched={unmatched} onSubmit={onSubmit} />);
+    // Only pick product for first row
+    const skipBtns = screen.getAllByText('ocrProductSkip');
+    await user.click(skipBtns[0]);
+    await waitFor(() => {
+      expect(screen.getByText('Product One')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Product One'));
+    // Submit — second row still unresolved
+    await user.click(screen.getByText('continue'));
+    expect(onSubmit).toHaveBeenCalledWith({ 0: 'p1', 1: null });
+  });
+
+  it('calls onCancel when bottom cancel button is clicked', async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+    render(<ProductResolverPopup {...defaultProps} onCancel={onCancel} />);
+    await user.click(screen.getByText('cancel'));
+    expect(onCancel).toHaveBeenCalled();
+  });
+
+  it('shows create new button in inline selector when productSpecUrl is set', async () => {
+    const user = userEvent.setup();
+    const unmatched = [
+      { idx: 0, description: 'Widget A' },
+    ];
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [] }),
+    });
+    render(<ProductResolverPopup {...defaultProps} unmatched={unmatched} />);
+    await user.click(screen.getByText('ocrProductSkip'));
+    await waitFor(() => {
+      expect(screen.getByText('ocrProductCreateNew')).toBeInTheDocument();
+    });
+  });
+
+  it('shows noResults when selector returns empty items', async () => {
+    const user = userEvent.setup();
+    const unmatched = [
+      { idx: 0, description: 'Widget A' },
+    ];
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [] }),
+    });
+    render(<ProductResolverPopup {...defaultProps} unmatched={unmatched} />);
+    await user.click(screen.getByText('ocrProductSkip'));
+    await waitFor(() => {
+      expect(screen.getByText('noResults')).toBeInTheDocument();
+    });
+  });
+
+  it('shows load error when fetch fails in inline selector', async () => {
+    const user = userEvent.setup();
+    const unmatched = [
+      { idx: 0, description: 'Widget A' },
+    ];
+    globalThis.fetch.mockRejectedValue(new Error('network error'));
+    render(<ProductResolverPopup {...defaultProps} unmatched={unmatched} />);
+    await user.click(screen.getByText('ocrProductSkip'));
+    await waitFor(() => {
+      expect(screen.getByText('ocrProductLoadError')).toBeInTheDocument();
+    });
+  });
+
+  it('renders quantity only when unitPrice is null', () => {
+    const unmatched = [
+      { idx: 0, description: 'Only Qty', quantity: 50 },
+    ];
+    render(<ProductResolverPopup {...defaultProps} unmatched={unmatched} />);
+    expect(screen.getByText(/50/)).toBeInTheDocument();
+  });
+
+  it('renders unitPrice only when quantity is null', () => {
+    const unmatched = [
+      { idx: 0, description: 'Only Price', unitPrice: 9.99 },
+    ];
+    render(<ProductResolverPopup {...defaultProps} unmatched={unmatched} />);
+    expect(screen.getByText(/9\.99/)).toBeInTheDocument();
+  });
+
+  it('does not show quantity/price section when both are absent', () => {
+    const unmatched = [
+      { idx: 0, description: 'No extras' },
+    ];
+    const { container } = render(<ProductResolverPopup {...defaultProps} unmatched={unmatched} />);
+    // The ocrProductQty/ocrProductUnit labels should not be present
+    expect(screen.queryByText('ocrProductQty')).toBeNull();
+    expect(screen.queryByText('ocrProductUnit')).toBeNull();
+  });
 });

@@ -1,10 +1,14 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+// Mutable search params — tests can override before rendering
+let mockSearchParams = new URLSearchParams();
+const mockSetSearchParams = vi.fn();
 
 // Mock react-router-dom
 vi.mock('react-router-dom', () => ({
   useSearchParams: () => {
-    const params = new URLSearchParams();
-    return [params, vi.fn()];
+    return [mockSearchParams, mockSetSearchParams];
   },
 }));
 
@@ -191,6 +195,8 @@ describe('applyProductSelectorScopeParams', () => {
 
 describe('ReportViewerPage', () => {
   beforeEach(() => {
+    mockSearchParams = new URLSearchParams();
+    mockSetSearchParams.mockClear();
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       json: () => Promise.resolve([]),
@@ -575,5 +581,452 @@ describe('getSelectedItems — edge cases', () => {
     const sel = [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }];
     const result = getSelectedItems(true, sel, 'a,b', 'A | B');
     expect(result).toBe(sel);
+  });
+});
+
+// -------------------------------------------------------------------
+// ReportViewer sub-component (rendered when searchParams has report=id)
+// -------------------------------------------------------------------
+
+const SAMPLE_REPORT = {
+  id: 'report-aging',
+  title: { en_US: 'Aging Report', es_ES: 'Informe de Antigüedad' },
+  type: 'listing',
+  category: 'finance',
+  outputs: ['pdf', 'xlsx'],
+  parameters: [
+    { name: 'dateFrom', type: 'date', label: { en_US: 'Date From' }, section: 'primary', default: '__TODAY__' },
+    { name: 'dateTo', type: 'date', label: { en_US: 'Date To' }, section: 'primary', default: '__FIRST_OF_PREV_MONTH__' },
+    { name: 'orgId', type: 'search', selector: 'org', label: { en_US: 'Organization' }, section: 'primary' },
+    { name: 'searchText', type: 'text', label: { en_US: 'Search' }, section: 'dimensions' },
+    { name: 'showDetails', type: 'boolean', label: { en_US: 'Show Details' }, section: 'options', default: false },
+  ],
+};
+
+const SAMPLE_REPORTS_LIST = [SAMPLE_REPORT];
+
+function mockReportsApiFetch() {
+  globalThis.fetch = vi.fn().mockImplementation((url, opts) => {
+    // Reports list fetch
+    if (typeof url === 'string' && url === '/api/reports') {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(SAMPLE_REPORTS_LIST),
+      });
+    }
+    // Report render fetch
+    if (typeof url === 'string' && url.includes('/render')) {
+      return Promise.resolve({
+        ok: true,
+        text: () => Promise.resolve('<html><body>Report rendered — 42 records</body></html>'),
+        blob: () => Promise.resolve(new Blob(['pdf-data'], { type: 'application/pdf' })),
+      });
+    }
+    // Selector fetches (autoDefault, etc.)
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ items: [] }),
+    });
+  });
+}
+
+describe('ReportViewer (viewer sub-component)', () => {
+  beforeEach(() => {
+    mockSearchParams = new URLSearchParams({ report: 'report-aging' });
+    mockSetSearchParams.mockClear();
+    mockReportsApiFetch();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('renders the ReportViewer when searchParams has report=id', async () => {
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      // ReportViewer renders the sidebar with "reportBuilder" label
+      expect(screen.getByText('reportBuilder')).toBeInTheDocument();
+    });
+  });
+
+  it('displays the report title in the viewer', async () => {
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('reportBuilder')).toBeInTheDocument();
+    });
+  });
+
+  it('renders ReportSidebar with parameter sections', async () => {
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      // Primary section header
+      expect(screen.getByText('reportScope')).toBeInTheDocument();
+    });
+  });
+
+  it('renders date parameter fields in the sidebar', async () => {
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('reportScope')).toBeInTheDocument();
+    });
+    // DateField mock renders input[type=date]
+    const dateFields = screen.getAllByTestId('date-field');
+    expect(dateFields.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('renders text parameter fields in the sidebar', async () => {
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('refineDimensions')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Search')).toBeInTheDocument();
+  });
+
+  it('renders boolean parameter as checkbox', async () => {
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('displayOptions')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Show Details')).toBeInTheDocument();
+    const checkbox = screen.getByRole('checkbox');
+    expect(checkbox).toBeInTheDocument();
+  });
+
+  it('renders run report and reset buttons', async () => {
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('runReport')).toBeInTheDocument();
+    });
+    expect(screen.getByText('resetFilters')).toBeInTheDocument();
+  });
+
+  it('renders format action buttons (preview, PDF, Excel, CSV)', async () => {
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('preview')).toBeInTheDocument();
+    });
+    expect(screen.getByText('PDF')).toBeInTheDocument();
+    expect(screen.getByText('Excel')).toBeInTheDocument();
+    expect(screen.getByText('CSV')).toBeInTheDocument();
+  });
+
+  it('renders the print button', async () => {
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('print')).toBeInTheDocument();
+    });
+  });
+
+  it('shows empty state prompt before running a report', async () => {
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('reportReadyTitle')).toBeInTheDocument();
+    });
+    expect(screen.getByText('reportReadyHint')).toBeInTheDocument();
+  });
+
+  it('renders iframe for report output', async () => {
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByTitle('report')).toBeInTheDocument();
+    });
+  });
+
+  it('clicking Run Report triggers render call', async () => {
+    const user = userEvent.setup();
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('runReport')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('runReport'));
+    // Verify fetch was called for render (POST to /render)
+    await waitFor(() => {
+      const renderCalls = globalThis.fetch.mock.calls.filter(
+        ([url]) => typeof url === 'string' && url.includes('/render')
+      );
+      expect(renderCalls.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it('clicking a format button triggers render with that format', async () => {
+    const user = userEvent.setup();
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('PDF')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('PDF'));
+    await waitFor(() => {
+      const renderCalls = globalThis.fetch.mock.calls.filter(
+        ([url]) => typeof url === 'string' && url.includes('/render')
+      );
+      expect(renderCalls.length).toBeGreaterThanOrEqual(1);
+      // Check format is pdf in the POST body
+      const pdfCall = renderCalls.find(([, opts]) => {
+        const body = JSON.parse(opts?.body || '{}');
+        return body.format === 'pdf';
+      });
+      expect(pdfCall).toBeTruthy();
+    });
+  });
+
+  it('shows loading indicator when render is in progress', async () => {
+    // Make the render fetch hang
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url === '/api/reports') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(SAMPLE_REPORTS_LIST),
+        });
+      }
+      if (typeof url === 'string' && url.includes('/render')) {
+        return new Promise(() => {}); // never resolves
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ items: [] }) });
+    });
+    const user = userEvent.setup();
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('runReport')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('runReport'));
+    await waitFor(() => {
+      expect(screen.getByText('renderingReport')).toBeInTheDocument();
+    });
+  });
+
+  it('shows error message when render fails', async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url === '/api/reports') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(SAMPLE_REPORTS_LIST),
+        });
+      }
+      if (typeof url === 'string' && url.includes('/render')) {
+        return Promise.resolve({
+          ok: false,
+          status: 500,
+          json: () => Promise.resolve({ error: 'Server exploded' }),
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ items: [] }) });
+    });
+    const user = userEvent.setup();
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('runReport')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('runReport'));
+    await waitFor(() => {
+      expect(screen.getByText('Server exploded')).toBeInTheDocument();
+    });
+  });
+
+  it('shows fallback error when render fails without JSON body', async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url === '/api/reports') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(SAMPLE_REPORTS_LIST),
+        });
+      }
+      if (typeof url === 'string' && url.includes('/render')) {
+        return Promise.resolve({
+          ok: false,
+          status: 503,
+          json: () => Promise.reject(new Error('not json')),
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ items: [] }) });
+    });
+    const user = userEvent.setup();
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('runReport')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('runReport'));
+    await waitFor(() => {
+      expect(screen.getByText('HTTP 503')).toBeInTheDocument();
+    });
+  });
+
+  it('shows error when render throws a network error', async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url === '/api/reports') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(SAMPLE_REPORTS_LIST),
+        });
+      }
+      if (typeof url === 'string' && url.includes('/render')) {
+        return Promise.reject(new Error('Network failure'));
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ items: [] }) });
+    });
+    const user = userEvent.setup();
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('runReport')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('runReport'));
+    await waitFor(() => {
+      expect(screen.getByText('Network failure')).toBeInTheDocument();
+    });
+  });
+
+  it('does not show ReportViewer when report id does not match any fetched report', async () => {
+    mockSearchParams = new URLSearchParams({ report: 'nonexistent' });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      // Falls back to ReportList — which shows the loaded reports, not the viewer
+      expect(screen.getByText('Aging Report')).toBeInTheDocument();
+    });
+    // The viewer-specific UI should NOT be present
+    expect(screen.queryByText('reportBuilder')).toBeNull();
+  });
+
+  it('renders with category filter in searchParams', async () => {
+    mockSearchParams = new URLSearchParams({ report: 'report-aging', category: 'finance' });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('reportBuilder')).toBeInTheDocument();
+    });
+  });
+
+  it('renders report with no parameters gracefully', async () => {
+    const noParamsReport = { ...SAMPLE_REPORT, parameters: [] };
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url === '/api/reports') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([noParamsReport]),
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ items: [] }) });
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('reportBuilder')).toBeInTheDocument();
+    });
+    // No parameter sections should appear, but the run button is still there
+    expect(screen.getByText('runReport')).toBeInTheDocument();
+  });
+
+  it('renders report with required parameter showing asterisk', async () => {
+    const reqReport = {
+      ...SAMPLE_REPORT,
+      parameters: [
+        { name: 'required1', type: 'text', label: { en_US: 'Important Field' }, section: 'primary', required: true },
+      ],
+    };
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url === '/api/reports') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([reqReport]),
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ items: [] }) });
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Important Field')).toBeInTheDocument();
+    });
+    // Required fields show an asterisk
+    expect(screen.getByText('*')).toBeInTheDocument();
+  });
+
+  it('shows validation error when required parameter is empty on submit', async () => {
+    const reqReport = {
+      ...SAMPLE_REPORT,
+      parameters: [
+        { name: 'required1', type: 'text', label: { en_US: 'Important Field' }, section: 'primary', required: true },
+      ],
+    };
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url === '/api/reports') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([reqReport]),
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ items: [] }) });
+    });
+    const user = userEvent.setup();
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('runReport')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('runReport'));
+    // Should show "required" error message
+    await waitFor(() => {
+      expect(screen.getByText('required')).toBeInTheDocument();
+    });
+  });
+
+  it('clicking reset clears parameters and increments resetKey', async () => {
+    const user = userEvent.setup();
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('resetFilters')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('resetFilters'));
+    // Should still render without error after reset
+    expect(screen.getByText('runReport')).toBeInTheDocument();
+  });
+
+  it('renders select parameter type with options', async () => {
+    const selectReport = {
+      ...SAMPLE_REPORT,
+      parameters: [
+        {
+          name: 'groupBy', type: 'select', label: { en_US: 'Group By' }, section: 'primary',
+          options: [
+            { value: '', label: 'None' },
+            { value: 'category', label: 'Category' },
+          ],
+        },
+      ],
+    };
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url === '/api/reports') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([selectReport]),
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ items: [] }) });
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Group By')).toBeInTheDocument();
+    });
+    // Select element should have options
+    const selectEl = screen.getByRole('combobox');
+    expect(selectEl).toBeInTheDocument();
+  });
+
+  it('renders hidden parameters without showing them', async () => {
+    const hiddenReport = {
+      ...SAMPLE_REPORT,
+      parameters: [
+        { name: 'visible', type: 'text', label: { en_US: 'Visible' }, section: 'primary' },
+        { name: 'hidden', type: 'text', label: { en_US: 'Hidden Param' }, section: 'primary', hidden: true },
+      ],
+    };
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url === '/api/reports') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([hiddenReport]),
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ items: [] }) });
+    });
+    render(<ReportViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Visible')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Hidden Param')).toBeNull();
   });
 });

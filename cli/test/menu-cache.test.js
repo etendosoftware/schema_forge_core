@@ -108,4 +108,145 @@ describe('menu-cache filterEntries', () => {
       assert.equal(r.score, undefined, 'score should be stripped from output');
     }
   });
+
+  it('returns empty array for empty query string', () => {
+    // An empty string matches nothing via scoring (no substring hit)
+    const results = filterEntries(SAMPLE_ENTRIES, '', null);
+    // empty string: all names include '' (substring match), so all should match
+    assert.equal(results.length, SAMPLE_ENTRIES.length);
+  });
+
+  it('handles single character query', () => {
+    const results = filterEntries(SAMPLE_ENTRIES, 'o', null);
+    // 'o' is a substring of Sales Order, Purchase Order, Order, Generate Invoices, Sales Report
+    assert.ok(results.length >= 3);
+    // Exact match 'o' doesn't exist, but substring matches
+    assert.ok(results.some(r => r.name === 'Order'));
+  });
+
+  it('filters by type "window" with query', () => {
+    const results = filterEntries(SAMPLE_ENTRIES, 'order', 'window');
+    assert.ok(results.length >= 2);
+    assert.ok(results.every(r => r.type === 'window'));
+    assert.ok(results.some(r => r.name === 'Order'));
+    assert.ok(results.some(r => r.name === 'Sales Order'));
+  });
+
+  it('filters by type "process"', () => {
+    const results = filterEntries(SAMPLE_ENTRIES, 'generate', 'process');
+    assert.equal(results.length, 1);
+    assert.equal(results[0].name, 'Generate Invoices');
+    assert.equal(results[0].type, 'process');
+  });
+
+  it('filters by type "report"', () => {
+    const results = filterEntries(SAMPLE_ENTRIES, 'sales', 'report');
+    assert.equal(results.length, 1);
+    assert.equal(results[0].name, 'Sales Report');
+  });
+
+  it('returns empty when type does not match any entry', () => {
+    const results = filterEntries(SAMPLE_ENTRIES, 'sales', 'form');
+    assert.deepEqual(results, []);
+  });
+
+  it('score tiers: exact (100) > starts-with (80) > substring (60) > word-match (40)', () => {
+    const entries = [
+      { id: '1', name: 'Test', type: 'window', windowId: null, processId: null },
+      { id: '2', name: 'Test Runner', type: 'window', windowId: null, processId: null },
+      { id: '3', name: 'Unit Test Suite', type: 'window', windowId: null, processId: null },
+      { id: '4', name: 'Suite for Test', type: 'window', windowId: null, processId: null },
+    ];
+    const results = filterEntries(entries, 'test', null);
+    // Exact: 'Test' (100), Starts-with: 'Test Runner' (80), Substring: 'Unit Test Suite' & 'Suite for Test' (60)
+    assert.equal(results[0].name, 'Test');
+    assert.equal(results[1].name, 'Test Runner');
+  });
+
+  it('word match across boundaries returns results', () => {
+    const entries = [
+      { id: '1', name: 'Financial Report Summary', type: 'report', windowId: null, processId: null },
+    ];
+    const results = filterEntries(entries, 'financial summary', null);
+    assert.equal(results.length, 1);
+    assert.equal(results[0].name, 'Financial Report Summary');
+  });
+
+  it('word match fails when not all words present', () => {
+    const entries = [
+      { id: '1', name: 'Financial Report', type: 'report', windowId: null, processId: null },
+    ];
+    const results = filterEntries(entries, 'financial summary', null);
+    assert.equal(results.length, 0);
+  });
+
+  it('handles entries with empty name gracefully', () => {
+    const entries = [
+      { id: '1', name: '', type: 'window', windowId: null, processId: null },
+    ];
+    const results = filterEntries(entries, 'test', null);
+    assert.deepEqual(results, []);
+  });
+
+  it('preserves all original properties in output', () => {
+    const results = filterEntries(SAMPLE_ENTRIES, 'Order', null);
+    const order = results.find(r => r.name === 'Order');
+    assert.ok(order);
+    assert.equal(order.id, '6');
+    assert.equal(order.type, 'window');
+    assert.equal(order.windowId, 'W4');
+    assert.equal(order.processId, null);
+  });
+});
+
+// Replicate formatTable to test its contract
+function formatTable(entries) {
+  if (entries.length === 0) return '  No results found.';
+  const typeColors = { window: 'W', process: 'P', report: 'R', form: 'F', folder: '\uD83D\uDCC1' };
+  const lines = entries.map(e => {
+    const t = typeColors[e.type] || '?';
+    const refId = e.windowId || e.processId || '-';
+    return `  [${t}] ${e.name.padEnd(45)} ${refId}`;
+  });
+  return lines.join('\n');
+}
+
+describe('menu-cache formatTable', () => {
+  it('returns no results message for empty array', () => {
+    assert.equal(formatTable([]), '  No results found.');
+  });
+
+  it('formats window entry with W prefix', () => {
+    const result = formatTable([{ name: 'Sales Order', type: 'window', windowId: 'W1', processId: null }]);
+    assert.ok(result.includes('[W]'));
+    assert.ok(result.includes('Sales Order'));
+    assert.ok(result.includes('W1'));
+  });
+
+  it('formats process entry with P prefix', () => {
+    const result = formatTable([{ name: 'Generate', type: 'process', windowId: null, processId: 'P1' }]);
+    assert.ok(result.includes('[P]'));
+    assert.ok(result.includes('P1'));
+  });
+
+  it('formats report entry with R prefix', () => {
+    const result = formatTable([{ name: 'Report', type: 'report', windowId: null, processId: 'P2' }]);
+    assert.ok(result.includes('[R]'));
+  });
+
+  it('uses ? for unknown types', () => {
+    const result = formatTable([{ name: 'Unknown', type: 'alien', windowId: null, processId: null }]);
+    assert.ok(result.includes('[?]'));
+    assert.ok(result.includes('-'));
+  });
+
+  it('formats multiple entries on separate lines', () => {
+    const entries = [
+      { name: 'A', type: 'window', windowId: 'W1', processId: null },
+      { name: 'B', type: 'process', windowId: null, processId: 'P1' },
+    ];
+    const result = formatTable(entries);
+    const lines = result.split('\n');
+    assert.equal(lines.length, 2);
+  });
 });

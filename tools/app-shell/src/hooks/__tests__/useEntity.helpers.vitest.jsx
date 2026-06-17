@@ -27,7 +27,6 @@ import {
   reportMissingRequiredFields,
   shouldRefetchAfterSave,
   showSaveSuccessToast,
-  getFilteredKey,
 } from '../useEntity';
 
 describe('useEntity helpers', () => {
@@ -921,6 +920,159 @@ describe('useEntity helpers', () => {
     it('does not skip 10-digit numeric value (too long for FK pattern)', () => {
       const bRef = { current: new Set(['x']) };
       expect(shouldSkipPayloadField('x', '1234567890', bRef, { current: new Set() }, new Set(), false, {})).toBe(false);
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // extractErrorMessage — decodeHtml branch coverage
+  // -------------------------------------------------------------------
+  describe('extractErrorMessage — decodeHtml edge cases', () => {
+    const ui = vi.fn((key, params) => {
+      if (params) {
+        let text = key;
+        Object.keys(params).forEach((p) => { text = text.replace(`{${p}}`, params[p]); });
+        return text;
+      }
+      return key;
+    });
+
+    function mockResponse(data, status = 400) {
+      return { json: async () => data, status };
+    }
+
+    beforeEach(() => { ui.mockClear(); });
+
+    it('decodes &lt; and &gt; HTML entities', async () => {
+      const data = { error: { message: 'Value must be &lt;100&gt;' } };
+      const msg = await extractErrorMessage(mockResponse(data), ui);
+      expect(msg).toContain('<100>');
+    });
+
+    it('decodes &amp; entity', async () => {
+      const data = { error: { message: 'A &amp; B' } };
+      const msg = await extractErrorMessage(mockResponse(data), ui);
+      expect(msg).toContain('A & B');
+    });
+
+    it('decodes mixed entities in one string', async () => {
+      const data = { error: { message: '&lt;b&gt;Error&lt;/b&gt; &amp; &quot;details&quot;' } };
+      const msg = await extractErrorMessage(mockResponse(data), ui);
+      expect(msg).toContain('<b>Error</b>');
+      expect(msg).toContain('& "details"');
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // extractErrorMessage — toReadableLabel branch coverage
+  // -------------------------------------------------------------------
+  describe('extractErrorMessage — toReadableLabel', () => {
+    const ui = vi.fn((key, params) => {
+      if (params) {
+        let text = key;
+        Object.keys(params).forEach((p) => { text = text.replace(`{${p}}`, params[p]); });
+        return text;
+      }
+      return key;
+    });
+
+    function mockResponse(data, status = 400) {
+      return { json: async () => data, status };
+    }
+
+    beforeEach(() => { ui.mockClear(); });
+
+    it('converts underscore_column to Title Case', async () => {
+      const data = { error: { message: 'null value in column "first_name" of relation "unknown_table"' } };
+      const msg = await extractErrorMessage(mockResponse(data), ui);
+      expect(msg).toContain('First Name');
+    });
+
+    it('converts camelCase column to Title Case', async () => {
+      const data = { error: { message: 'null value in column "firstName" of relation "unknown_table"' } };
+      const msg = await extractErrorMessage(mockResponse(data), ui);
+      expect(msg).toContain('First Name');
+    });
+
+    it('handles empty column name gracefully', async () => {
+      const data = { error: { message: 'null value in column "" of relation "some_table"' } };
+      const msg = await extractErrorMessage(mockResponse(data), ui);
+      // Empty column triggers the fallback validationFieldGeneric → 'Field'
+      expect(msg).toBeTruthy();
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // extractErrorMessage — REQUIRED_LABELS_BY_TABLE c_bpartner entries
+  // -------------------------------------------------------------------
+  describe('extractErrorMessage — REQUIRED_LABELS_BY_TABLE entries', () => {
+    const ui = vi.fn((key, params) => {
+      if (params) {
+        let text = key;
+        Object.keys(params).forEach((p) => { text = text.replace(`{${p}}`, params[p]); });
+        return text;
+      }
+      return key;
+    });
+
+    function mockResponse(data, status = 400) {
+      return { json: async () => data, status };
+    }
+
+    beforeEach(() => { ui.mockClear(); });
+
+    it('maps c_bpartner.c_bp_group_id to validationFieldBusinessPartnerCategory', async () => {
+      const data = { error: { message: 'null value in column "c_bp_group_id" of relation "c_bpartner" violates not-null' } };
+      const msg = await extractErrorMessage(mockResponse(data), ui);
+      expect(msg).toContain('is required');
+      // ui should have been called with validationFieldBusinessPartnerCategory
+      expect(ui).toHaveBeenCalledWith('validationFieldBusinessPartnerCategory', expect.anything());
+    });
+
+    it('maps c_bpartner.em_obtik_tax_id_key to validationFieldNifCountryKey', async () => {
+      const data = { error: { message: 'null value in column "em_obtik_tax_id_key" of relation "c_bpartner" violates not-null' } };
+      const msg = await extractErrorMessage(mockResponse(data), ui);
+      expect(msg).toContain('is required');
+      expect(ui).toHaveBeenCalledWith('validationFieldNifCountryKey', expect.anything());
+    });
+
+    it('maps global ad_client_id to validationFieldClient', async () => {
+      const data = { error: { message: 'null value in column "ad_client_id" of relation "some_random_table"' } };
+      const msg = await extractErrorMessage(mockResponse(data), ui);
+      expect(msg).toContain('is required');
+      expect(ui).toHaveBeenCalledWith('validationFieldClient', expect.anything());
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // extractErrorMessage — normalizeServerError with translateBackendError fallback
+  // -------------------------------------------------------------------
+  describe('extractErrorMessage — normalizeServerError fallthrough', () => {
+    const ui = vi.fn((key, params) => {
+      if (params) {
+        let text = key;
+        Object.keys(params).forEach((p) => { text = text.replace(`{${p}}`, params[p]); });
+        return text;
+      }
+      return key;
+    });
+
+    function mockResponse(data, status = 400) {
+      return { json: async () => data, status };
+    }
+
+    beforeEach(() => { ui.mockClear(); });
+
+    it('passes through unrecognized error message as-is', async () => {
+      const data = { error: { message: 'Something completely unexpected happened' } };
+      const msg = await extractErrorMessage(mockResponse(data), ui);
+      expect(msg).toContain('Something completely unexpected happened');
+    });
+
+    it('handles multiline whitespace in error messages', async () => {
+      const data = { error: { message: 'Error   with   extra    spaces' } };
+      const msg = await extractErrorMessage(mockResponse(data), ui);
+      // normalizeServerError collapses whitespace
+      expect(msg).toContain('Error with extra spaces');
     });
   });
 

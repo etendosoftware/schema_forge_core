@@ -332,5 +332,154 @@ describe('reconcile-schema', () => {
       assert.ok(result.includes('10 field(s) need decisions'));
       assert.ok(result.includes('5 orphaned decision(s)'));
     });
+
+    it('handles many unclassified across multiple entities', () => {
+      const diff = {
+        mode: 'decisions',
+        hasDiff: true,
+        entities: {
+          unclassified: [
+            { entityKey: 'e1', tableName: 'T1', tabName: 'Tab1', fields: [
+              { fieldName: 'f1', columnName: 'F1' },
+              { fieldName: 'f2', columnName: 'F2' },
+              { fieldName: 'f3', columnName: 'F3' },
+            ]},
+            { entityKey: 'e2', tableName: 'T2', tabName: 'Tab2', fields: [
+              { fieldName: 'f4', columnName: 'F4' },
+            ]},
+            { entityKey: 'e3', tableName: 'T3', tabName: 'Tab3', fields: [
+              { fieldName: 'f5', columnName: 'F5' },
+              { fieldName: 'f6', columnName: 'F6' },
+            ]},
+          ],
+          orphaned: [],
+        },
+      };
+      const result = formatDiffSummary(diff);
+      assert.ok(result.includes('Tab1'));
+      assert.ok(result.includes('Tab2'));
+      assert.ok(result.includes('Tab3'));
+      // total unclassified = 3 + 1 + 2 = 6
+      assert.ok(result.includes('6 field(s) need decisions'));
+      assert.ok(result.includes('0 orphaned decision(s)'));
+    });
+
+    it('handles both unclassified and orphaned in same entity', () => {
+      const diff = {
+        mode: 'decisions',
+        hasDiff: true,
+        entities: {
+          unclassified: [
+            { entityKey: 'shared_entity', tableName: 'T1', tabName: 'SharedTab', fields: [
+              { fieldName: 'newF1', columnName: 'NewF1' },
+              { fieldName: 'newF2', columnName: 'NewF2' },
+            ]},
+          ],
+          orphaned: [
+            { entityKey: 'shared_entity', fieldName: 'oldField1' },
+            { entityKey: 'shared_entity', fieldName: 'oldField2' },
+            { entityKey: 'shared_entity', fieldName: 'oldField3' },
+          ],
+        },
+      };
+      const result = formatDiffSummary(diff);
+      assert.ok(result.includes('UNCLASSIFIED'));
+      assert.ok(result.includes('ORPHANED'));
+      assert.ok(result.includes('SharedTab'));
+      assert.ok(result.includes('shared_entity.oldField1'));
+      assert.ok(result.includes('shared_entity.oldField3'));
+      assert.ok(result.includes('2 field(s) need decisions'));
+      assert.ok(result.includes('3 orphaned decision(s)'));
+    });
+  });
+
+  describe('formatDiffSummary — curated mode additional edges', () => {
+    it('handles only added entities (no removed, no changed)', () => {
+      const diff = {
+        mode: 'curated',
+        hasDiff: true,
+        entities: {
+          added: [
+            { tabName: 'NewTab1', tableName: 'NEW_T1', fieldCount: 8, fields: [] },
+            { tabName: 'NewTab2', tableName: 'NEW_T2', fieldCount: 3, fields: [] },
+          ],
+          removed: [],
+          changed: [],
+        },
+      };
+      const result = formatDiffSummary(diff);
+      assert.ok(result.includes('NEW entities'));
+      assert.ok(result.includes('NewTab1'));
+      assert.ok(result.includes('NewTab2'));
+      assert.ok(result.includes('8 fields'));
+      assert.ok(result.includes('3 fields'));
+      // No ORPHANED or CHANGED sections
+      assert.ok(!result.includes('ORPHANED'));
+      assert.ok(!result.includes('CHANGED'));
+      // total new = 8 + 3 = 11
+      assert.ok(result.includes('11 field(s) to classify'));
+      assert.ok(result.includes('0 orphaned field(s)'));
+    });
+
+    it('handles only removed entities (no added, no changed)', () => {
+      const diff = {
+        mode: 'curated',
+        hasDiff: true,
+        entities: {
+          added: [],
+          removed: [
+            { tabName: 'OldTab1', tableName: 'OLD_T1', fieldCount: 5 },
+            { tabName: 'OldTab2', tableName: 'OLD_T2', fieldCount: 7 },
+          ],
+          changed: [],
+        },
+      };
+      const result = formatDiffSummary(diff);
+      assert.ok(result.includes('ORPHANED entities'));
+      assert.ok(result.includes('OldTab1'));
+      assert.ok(result.includes('OldTab2'));
+      assert.ok(!result.includes('NEW entities'));
+      assert.ok(!result.includes('CHANGED'));
+      assert.ok(result.includes('0 field(s) to classify'));
+      // total orphaned = 5 + 7 = 12
+      assert.ok(result.includes('12 orphaned field(s)'));
+    });
+
+    it('handles multiple changed entities with different field counts', () => {
+      const diff = {
+        mode: 'curated',
+        hasDiff: true,
+        entities: {
+          added: [],
+          removed: [],
+          changed: [
+            {
+              entityKey: 'e1', tableName: 'T1', tabName: 'Header',
+              fields: { added: [{ columnName: 'A1' }], removed: [{ columnName: 'R1' }, { columnName: 'R2' }], unchanged: 15 },
+            },
+            {
+              entityKey: 'e2', tableName: 'T2', tabName: 'Lines',
+              fields: { added: [{ columnName: 'A2' }, { columnName: 'A3' }, { columnName: 'A4' }], removed: [], unchanged: 20 },
+            },
+            {
+              entityKey: 'e3', tableName: 'T3', tabName: 'Tax',
+              fields: { added: [], removed: [{ columnName: 'R3' }], unchanged: 3 },
+            },
+          ],
+        },
+      };
+      const result = formatDiffSummary(diff);
+      assert.ok(result.includes('CHANGED'));
+      assert.ok(result.includes('Header'));
+      assert.ok(result.includes('Lines'));
+      assert.ok(result.includes('Tax'));
+      assert.ok(result.includes('15 field(s) unchanged'));
+      assert.ok(result.includes('20 field(s) unchanged'));
+      assert.ok(result.includes('3 field(s) unchanged'));
+      // total new = 1 + 3 + 0 = 4
+      assert.ok(result.includes('4 field(s) to classify'));
+      // total orphaned = 2 + 0 + 1 = 3
+      assert.ok(result.includes('3 orphaned field(s)'));
+    });
   });
 });
