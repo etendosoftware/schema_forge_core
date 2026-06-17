@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { ReconciliationSplitPanel } from '@/components/contract-ui/ReconciliationSplitPanel.jsx';
 
 /**
@@ -10,11 +11,14 @@ import { ReconciliationSplitPanel } from '@/components/contract-ui/Reconciliatio
  * @param {{ account: object|null, onReconcileSuccess?: () => void }} props
  */
 export function ReconciliationTab({ account, onReconcileSuccess }) {
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <ReconciliationSplitPanel
         accountId={account?.id}
         currency={account?.currency}
+        onBack={() => navigate(-1)}
         onReconcileSuccess={onReconcileSuccess}
       />
     </div>

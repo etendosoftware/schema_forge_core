@@ -33,11 +33,11 @@ const LINE_B = { id: 'L2', date: '2026-05-11T00:00:00Z', description: 'Payroll',
 const LINE_RECONCILED = { id: 'L3', date: '2026-05-12T00:00:00Z', description: 'Done line', status: 'reconciled', amount: 50 };
 
 const CAND_MATCH = {
-  id: 'C1', date: '2026-05-10T00:00:00Z', documentNo: 'INV-1', partnerName: 'ACME',
+  id: 'C1', date: '2026-06-10T00:00:00Z', documentNo: 'INV-1', partnerName: 'ACME',
   amount: -8.31, pendingBalance: -8.31, status: 'pending', suggested: true,
 };
 const CAND_OTHER = {
-  id: 'C2', date: '2026-05-09T00:00:00Z', documentNo: 'INV-2', partnerName: 'Globex',
+  id: 'C2', date: '2026-06-09T00:00:00Z', documentNo: 'INV-2', partnerName: 'Globex',
   amount: -100, pendingBalance: -100, status: 'pending', suggested: false,
 };
 
@@ -82,6 +82,25 @@ describe('ReconciliationSplitPanel', () => {
     renderPanel();
     expect(screen.getByTestId('recon-right-empty')).toBeInTheDocument();
     expect(screen.getByText('financeReconcileRightEmptyTitle')).toBeInTheDocument();
+  });
+
+  it('renders a back button and movement-style filter controls on the left toolbar', () => {
+    const onBack = vi.fn();
+    setLines([LINE_A]);
+    renderPanel({ onBack });
+    fireEvent.click(screen.getByTestId('recon-toolbar-back'));
+    expect(onBack).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('financeReconcileFilterStatusPending (1)')).toBeInTheDocument();
+    expect(screen.getAllByText('dateRangeLast30Days').length).toBeGreaterThan(0);
+  });
+
+  it('passes the selected docType filter to the candidates hook', () => {
+    setLines([LINE_A]);
+    renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L1'));
+    fireEvent.click(screen.getByText('financeReconcileFilterDocTypeAll'));
+    fireEvent.click(screen.getByText('financeReconcileFilterDocTypePayments'));
+    expect(screen.getByText('financeReconcileFilterDocTypePayments')).toBeInTheDocument();
   });
 
   it('populates the right panel after selecting a line', () => {
@@ -140,6 +159,23 @@ describe('ReconciliationSplitPanel', () => {
     expect(linesState.reload).toHaveBeenCalled();
   });
 
+  it('clears both left and right selections when cancel selection is clicked', () => {
+    setLines([LINE_A]);
+    setCandidates([CAND_MATCH, CAND_OTHER]);
+    renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L1'));
+    fireEvent.click(screen.getByTestId('recon-cand-check-C1'));
+
+    expect(screen.getByTestId('recon-line-radio-L1')).toBeChecked();
+    expect(screen.getByTestId('recon-action-cancel')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('recon-action-cancel'));
+
+    expect(screen.getByTestId('recon-line-radio-L1')).not.toBeChecked();
+    expect(screen.queryByTestId('recon-action-cancel')).not.toBeInTheDocument();
+    expect(screen.getByTestId('recon-right-empty')).toBeInTheDocument();
+  });
+
   it('shows a disabled "Reactivate" label when a reconciled line is selected', () => {
     setLines([LINE_RECONCILED]);
     setCandidates([CAND_MATCH]);
@@ -150,9 +186,4 @@ describe('ReconciliationSplitPanel', () => {
     expect(btn).toBeDisabled();
   });
 
-  it('renders the Automatch button disabled', () => {
-    setLines([LINE_A]);
-    renderPanel();
-    expect(screen.getByTestId('recon-automatch')).toBeDisabled();
-  });
 });
