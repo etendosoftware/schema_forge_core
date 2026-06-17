@@ -35,8 +35,13 @@ WHERE c.ad_client_id = :client_id
 --   2. C_ELEMENTVALUE       8. C_ACCTSCHEMA_GL
 --   3. C_ELEMENTVALUE_TRL   9. C_ACCTSCHEMA_DEFAULT
 --   4. C_ACCTSCHEMA        10. AD_ORG_ACCTSCHEMA
---   5. C_ACCTSCHEMA_ELEMENT 11. A2 per-entity posting accounts (*_acct,
---                              incl. 11f c_tax_acct tax-due/tax-credit)
+--   5. C_ACCTSCHEMA_ELEMENT 11. A2 per-entity posting accounts (*_acct).
+--                              NOTE: the tax-due/tax-credit posting accounts
+--                              (c_tax_acct) are NOT created here; they are owned
+--                              by the R7-tax-accounts corrective, which joins the
+--                              tenant's real schema(s) and so covers both this
+--                              chart-creation case and tenants that already had a
+--                              schema but no tax accounts.
 --                          12. B1 AD_ORG_TREE hierarchy rows
 --                          13. B2 AD_TREENODE account-element tree hierarchy
 --
@@ -6356,29 +6361,12 @@ WHERE p.ad_client_id = :client_id
        AND a.c_acctschema_id = '@uuid_C06B100312FA48159DB36B9A4B461019@'
   );
 
--- 11f. c_tax_acct — one row per tax of the tenant. AcctServer resolves the
--- tax-due / tax-credit posting accounts from this table (it does NOT fall back to
--- c_acctschema_default); without it, posting a sales/purchase invoice fails with
--- "org.openbravo.base.exception.OBException: Account could not be found". Both
--- t_due_acct and t_credit_acct are NOT NULL on c_tax_acct and always populated in
--- the shipped default. Lockstep twin: the TAX_ACCT_SQL statement in
--- OnboardingAccountingWiringService.provisionEntityPostingAccounts.
-INSERT INTO c_tax_acct (
-  c_tax_acct_id, ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby,
-  c_tax_id, c_acctschema_id, t_due_acct, t_credit_acct
-)
-SELECT
-  get_uuid(), :client_id, t.ad_org_id, 'Y', now(), '0', now(), '0',
-  t.c_tax_id, '@uuid_C06B100312FA48159DB36B9A4B461019@',
-  d.t_due_acct, d.t_credit_acct
-FROM c_tax t, c_acctschema_default d
-WHERE t.ad_client_id = :client_id
-  AND d.c_acctschema_id = '@uuid_C06B100312FA48159DB36B9A4B461019@'
-  AND NOT EXISTS (
-    SELECT 1 FROM c_tax_acct a
-     WHERE a.c_tax_id = t.c_tax_id
-       AND a.c_acctschema_id = '@uuid_C06B100312FA48159DB36B9A4B461019@'
-  );
+-- 11f. c_tax_acct — intentionally NOT here. The tax-due / tax-credit posting accounts are
+-- created by the R7-tax-accounts corrective, which joins the tenant's real c_acctschema
+-- row(s) and reads from the system tax catalog (C_TAX at ad_client_id = '0'). R7 runs after
+-- R1 in the chain, so for a tenant that lands here (no schema) R7 sees the schema R1 just
+-- created and fills in the tax accounts; for a tenant that already had a schema (R1 skipped),
+-- R7 still fires on its own @check. One owner, both populations covered.
 
 -- 12. AD_ORG_TREE (B1) — the precomputed org-hierarchy cache that AD_ISORGINCLUDED()
 -- queries. Left empty for tenants onboarded before AD_Org_Ready ran (or whose run could

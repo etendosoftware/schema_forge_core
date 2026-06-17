@@ -204,14 +204,19 @@ posting rows. So a new tenant is born with the same A2 gap the corrective fixes.
 Fix: `OnboardingAccountingWiringService.provisionEntityPostingAccounts(client, ledger)`
 runs right after `rebrandImportedChartNames` (so the imported ledger + its
 `c_acctschema_default` defaults already exist) and before `flushChanges()`. It
-executes the **same six `INSERT … SELECT` statements as R1 step 11**, kept in
-lockstep (identical column lists, `NOT EXISTS` idempotency guards, `ad_org_id`
-inherited from each source entity, `get_uuid()` PKs, defaults copied from the
-single `c_acctschema_default` row). The sixth (`TAX_ACCT_SQL` ↔ R1 step 11f)
-provisions `c_tax_acct` (`t_due_acct` / `t_credit_acct`) for every `c_tax` of the
-tenant — without it, posting a sales/purchase invoice fails with
-`OBException: Account could not be found` (taxes are dataset-imported via
-`C_TAX`/`C_TAXCATEGORY` in `INCLUDED_TABLES`, so they exist when wiring runs).
+executes **six `INSERT … SELECT` statements**, kept in lockstep with the
+corrective fronts (identical column lists, `NOT EXISTS` idempotency guards,
+`ad_org_id` inherited from each source entity, `get_uuid()` PKs, defaults copied
+from the single `c_acctschema_default` row). Five mirror **R1 step 11** (bp_group,
+product_category, bp_customer/vendor, product). The sixth (`TAX_ACCT_SQL`)
+provisions `c_tax_acct` (`t_due_acct` / `t_credit_acct`) for every tax — without
+it, posting a sales/purchase invoice fails with `OBException: Account could not be
+found`. Taxes are no longer per-client: `C_TAX` and `C_TAXCATEGORY` were **removed
+from `INCLUDED_TABLES`** because they are now provisioned at **system level**
+(`ad_client_id = '0'`) and shared by every tenant, so `TAX_ACCT_SQL` reads the
+system tax catalog (`t.ad_client_id = '0'`). Its corrective twin is the standalone
+**`R7-tax-accounts`** fix (not R1 step 11f), which joins the tenant's real schema(s)
+and therefore covers both freshly-charted and already-charted tenants in one body.
 Implemented as native SQL
 (`createNativeQuery(...).setParameter("clientId"/"schemaId")`) because it is a
 set-based copy, not a DAL-object workflow. Idempotent → re-running onboarding
@@ -228,7 +233,7 @@ separate concern the research notes flag, not covered by either A2 front here.
 
 | Gap | Area | Preventive front | Corrective front |
 |---|---|---|---|
-| A2 | `*_acct` tables (bp_group, product_category, bp_customer/vendor, product, **tax**) | ✅ `OnboardingAccountingWiringService.provisionEntityPostingAccounts` (post-import, mirrors R1 step 11; `TAX_ACCT_SQL` added 2026-06-17) — entity-creation hook for post-onboarding entities still open | ✅ appended to `R1-chart-of-accounts.sql` (step 11; **11f `c_tax_acct`** added 2026-06-17, validated 653 rows on PruebaFixOnb4, rolled back) |
+| A2 | `*_acct` tables (bp_group, product_category, bp_customer/vendor, product, **tax**) | ✅ `OnboardingAccountingWiringService.provisionEntityPostingAccounts` (post-import; 5 stmts mirror R1 step 11, `TAX_ACCT_SQL` reads system taxes `ad_client_id='0'`) — entity-creation hook for post-onboarding entities still open | ✅ `*_acct` in `R1-chart-of-accounts.sql` step 11; **`c_tax_acct` owned by standalone `R7-tax-accounts`** (2026-06-17) which joins the tenant's real schema(s) + system tax catalog, covering both no-schema (post-R1) and has-schema tenants. Dry-run validated 653 rows on SantiCorp |
 | B1 | `AD_ORG_TREE` empty | ✅ `OnboardingMarkOrgReadyService.provisionOrgTree` — defensive idempotent insert of the 2 rows on the DAL session connection after `AD_Org_Ready` (its own tree INSERT runs on a separate connection that can't see the just-flushed org → tree stayed empty) | ✅ `R1-chart-of-accounts.sql` step 12 (2 rows, `NOT EXISTS` guarded) |
 | C1 | period-control flags on `ad_org` | ✅ `OnboardingPeriodControlService` (`wirePeriodControl` step, after `wireAccounting`) | ✅ `UPDATE ad_org` in `R3-periodcontrol.sql` |
 | C2 | `c_periodcontrol` missing (**516** = 43 docbasetypes × 12 periods) | ✅ `C_PERIODCONTROL` added to `INCLUDED_TABLES` (auto-packaged via `prepareOnboardingSampledata`) | ✅ 516-row backfill in `R3-periodcontrol.sql` |
