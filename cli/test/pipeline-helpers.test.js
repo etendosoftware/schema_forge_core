@@ -748,3 +748,158 @@ describe('parseArgs — all flag combinations', () => {
     assert.equal(result.skipInteractive, undefined);
   });
 });
+
+// ---------------------------------------------------------------------------
+// validatePipelineInput — window mode edge cases
+// ---------------------------------------------------------------------------
+
+describe('validatePipelineInput — window mode edge cases', () => {
+  it('accepts windowId + windowName in window mode', () => {
+    const result = validatePipelineInput({ windowId: 'W1', windowName: 'purchase-order' });
+    assert.equal(result.valid, true);
+    assert.equal(result.mode, 'window');
+  });
+
+  it('rejects when only windowName is provided without windowId', () => {
+    const result = validatePipelineInput({ windowName: 'sales-order' });
+    assert.equal(result.valid, false);
+  });
+
+  it('rejects when windowId is empty string', () => {
+    const result = validatePipelineInput({ windowId: '', windowName: 'sales-order' });
+    assert.equal(result.valid, false);
+  });
+
+  it('menu mode takes precedence over all other modes', () => {
+    const result = validatePipelineInput({
+      menuId: 'M1',
+      windowId: 'W1',
+      windowName: 'x',
+      processId: 'P1',
+      processName: 'y',
+      reportId: 'R1',
+      reportName: 'z',
+    });
+    assert.equal(result.mode, 'menu');
+    assert.equal(result.valid, true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// handleStepError — additional
+// ---------------------------------------------------------------------------
+
+describe('handleStepError — additional', () => {
+  it('does not throw for optional step with complex error', () => {
+    const step = { name: 'validate-field-names', optional: true };
+    // Should log but not throw
+    handleStepError(step, new Error('complex optional failure with details'));
+  });
+
+  it('handles optional step with empty error message', () => {
+    const step = { name: 'validate-field-names', optional: true };
+    handleStepError(step, new Error(''));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// loadPreviousContract — additional edge cases
+// ---------------------------------------------------------------------------
+
+describe('loadPreviousContract — additional', () => {
+  it('handles deeply nested version (3 levels)', async () => {
+    const contractData = { version: { version: { version: '3.0.0' } } };
+    const readFile = async () => JSON.stringify(contractData);
+    const result = await loadPreviousContract(readFile, 'test', null, null, null);
+    assert.equal(result.prevVersion, '3.0.0');
+  });
+
+  it('handles version as a string directly', async () => {
+    const contractData = { version: '1.5.0', frontendContract: {} };
+    const readFile = async () => JSON.stringify(contractData);
+    const result = await loadPreviousContract(readFile, 'test', null, null, null);
+    assert.equal(result.prevVersion, '1.5.0');
+  });
+
+  it('falls back to defaults on any read error', async () => {
+    const readFile = async () => { throw new Error('permission denied'); };
+    const result = await loadPreviousContract(readFile, 'test', 'fallback-v', { old: true }, 'raw');
+    // Catch-all: returns fallback values instead of throwing
+    assert.equal(result.prevVersion, 'fallback-v');
+    assert.deepEqual(result.prevContract, { old: true });
+    assert.equal(result.prevContractRaw, 'raw');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveWindowNameFromId — additional
+// ---------------------------------------------------------------------------
+
+describe('resolveWindowNameFromId — additional', () => {
+  it('converts multi-word window name to kebab-case', async () => {
+    const queryFn = async () => ({ rows: [{ name: 'Internal Consumption' }] });
+    const result = await resolveWindowNameFromId('W1', { queryFn });
+    assert.equal(result, 'internal-consumption');
+  });
+
+  it('throws when empty string passed as windowId', async () => {
+    await assert.rejects(
+      () => resolveWindowNameFromId(''),
+      /windowId is required/,
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// writeGeneratedFiles — additional
+// ---------------------------------------------------------------------------
+
+describe('writeGeneratedFiles — additional', () => {
+  it('handles single file', async () => {
+    const writeCalls = [];
+    const mockWriteFile = async (path, code, enc) => { writeCalls.push({ path, code }); };
+    const mockResolve = (...parts) => parts.join('/');
+    const files = { 'Only.jsx': 'code' };
+    await writeGeneratedFiles(files, mockResolve, '/dir', mockWriteFile);
+    assert.equal(writeCalls.length, 1);
+    assert.equal(writeCalls[0].path, '/dir/Only.jsx');
+  });
+
+  it('handles empty files object', async () => {
+    const writeCalls = [];
+    const mockWriteFile = async (path, code, enc) => { writeCalls.push({ path }); };
+    const mockResolve = (...parts) => parts.join('/');
+    await writeGeneratedFiles({}, mockResolve, '/dir', mockWriteFile);
+    assert.equal(writeCalls.length, 0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildPipelineSteps — step ordering
+// ---------------------------------------------------------------------------
+
+describe('buildPipelineSteps — step ordering', () => {
+  it('has all step names unique', () => {
+    const steps = buildPipelineSteps();
+    const names = steps.map(s => s.name);
+    assert.equal(new Set(names).size, names.length);
+  });
+
+  it('contains resolve-curated step', () => {
+    const steps = buildPipelineSteps();
+    const found = steps.find(s => s.name === 'resolve-curated');
+    assert.ok(found);
+  });
+
+  it('contains generate-frontend step', () => {
+    const steps = buildPipelineSteps();
+    const found = steps.find(s => s.name === 'generate-frontend');
+    assert.ok(found);
+  });
+
+  it('contains generate-contract step', () => {
+    const steps = buildPipelineSteps();
+    const found = steps.find(s => s.name === 'generate-contract');
+    assert.ok(found);
+  });
+});

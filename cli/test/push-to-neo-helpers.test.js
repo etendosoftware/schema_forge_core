@@ -456,4 +456,157 @@ describe('loadConfig', () => {
     assert.equal(config.user, 'cuser');
     assert.equal(config.password, 'cpass');
   });
+
+  it('handles properties file with spaces around = sign', async () => {
+    delete process.env.ETENDO_URL;
+    delete process.env.ETENDO_USER;
+    delete process.env.ETENDO_PASSWORD;
+    const spacesDir = join(tmpBase, 'spaces');
+    mkdirSync(spacesDir, { recursive: true });
+    writeFileSync(join(spacesDir, 'schema_forge.properties'), [
+      'etendo.url = http://spaced.local',
+      'etendo.user = spaceduser',
+      'etendo.password = spacedpass',
+    ].join('\n'));
+    const config = await loadConfig(spacesDir);
+    assert.equal(config.url, 'http://spaced.local');
+    assert.equal(config.user, 'spaceduser');
+    assert.equal(config.password, 'spacedpass');
+  });
+
+  it('handles properties file with values containing = sign', async () => {
+    delete process.env.ETENDO_URL;
+    delete process.env.ETENDO_USER;
+    delete process.env.ETENDO_PASSWORD;
+    const eqDir = join(tmpBase, 'eqval');
+    mkdirSync(eqDir, { recursive: true });
+    writeFileSync(join(eqDir, 'schema_forge.properties'), [
+      'etendo.url=http://eq.local',
+      'etendo.user=admin',
+      'etendo.password=p@ss=word',
+    ].join('\n'));
+    const config = await loadConfig(eqDir);
+    assert.equal(config.url, 'http://eq.local');
+    assert.equal(config.user, 'admin');
+    // Password should preserve everything after first =
+    assert.equal(config.password, 'p@ss=word');
+  });
+
+  it('env vars override partial properties', async () => {
+    const partialDir = join(tmpBase, 'partial');
+    mkdirSync(partialDir, { recursive: true });
+    writeFileSync(join(partialDir, 'schema_forge.properties'), [
+      'etendo.url=http://partial.local',
+      'etendo.user=fileuser',
+      'etendo.password=filepass',
+    ].join('\n'));
+    // Override only URL from env
+    process.env.ETENDO_URL = 'http://env-override.local';
+    process.env.ETENDO_USER = 'envuser';
+    process.env.ETENDO_PASSWORD = 'envpass';
+    const config = await loadConfig(partialDir);
+    assert.equal(config.url, 'http://env-override.local');
+    assert.equal(config.user, 'envuser');
+    assert.equal(config.password, 'envpass');
+  });
+
+  it('handles properties file with lines without = sign', async () => {
+    delete process.env.ETENDO_URL;
+    delete process.env.ETENDO_USER;
+    delete process.env.ETENDO_PASSWORD;
+    const noEqDir = join(tmpBase, 'noeq');
+    mkdirSync(noEqDir, { recursive: true });
+    writeFileSync(join(noEqDir, 'schema_forge.properties'), [
+      'this line has no equals sign',
+      'etendo.url=http://noeq.local',
+      'etendo.user=admin',
+      'etendo.password=pass',
+    ].join('\n'));
+    const config = await loadConfig(noEqDir);
+    assert.equal(config.url, 'http://noeq.local');
+    assert.equal(config.user, 'admin');
+    assert.equal(config.password, 'pass');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildWebhookUrl — additional edge cases
+// ---------------------------------------------------------------------------
+describe('buildWebhookUrl — trailing slash and path edge cases', () => {
+  it('handles URL with trailing slash and path', () => {
+    assert.equal(
+      buildWebhookUrl('https://etendo.example.com/etendo/', 'MyHook'),
+      'https://etendo.example.com/etendo/sws/webhooks/MyHook',
+    );
+  });
+
+  it('handles empty webhook name', () => {
+    const url = buildWebhookUrl('https://etendo.example.com', '');
+    assert.equal(url, 'https://etendo.example.com/sws/webhooks/');
+  });
+
+  it('handles empty base URL', () => {
+    const url = buildWebhookUrl('', 'Hook');
+    assert.equal(url, '/sws/webhooks/Hook');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// extractFieldsFromContract — more edge cases
+// ---------------------------------------------------------------------------
+describe('extractFieldsFromContract — edge cases', () => {
+  it('handles entity with empty fields array', () => {
+    const contract = { entities: { header: { tabId: 't1', tableName: 'T1', fields: [] } } };
+    const fields = extractFieldsFromContract(contract);
+    assert.deepEqual(fields, []);
+  });
+
+  it('handles entity with single field', () => {
+    const contract = {
+      entities: {
+        header: {
+          tabId: 't1',
+          tableName: 'T1',
+          fields: [{ name: 'x', column: 'X', visibility: 'editable' }],
+        },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    assert.equal(fields.length, 1);
+    assert.equal(fields[0].entityName, 'header');
+  });
+
+  it('returns flat list across multiple entities', () => {
+    const contract = {
+      entities: {
+        header: { fields: [{ name: 'a', column: 'A', visibility: 'editable' }] },
+        lines: { fields: [{ name: 'b', column: 'B', visibility: 'readOnly' }] },
+        tax: { fields: [{ name: 'c', column: 'C', visibility: 'system' }] },
+        schedule: { fields: [{ name: 'd', column: 'D', visibility: 'discarded' }] },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    assert.equal(fields.length, 4);
+    assert.equal(fields[3].entityName, 'schedule');
+  });
+
+  it('field output only includes known properties', () => {
+    const contract = {
+      entities: {
+        header: {
+          tabId: 't1',
+          tableName: 'T1',
+          fields: [
+            { name: 'f1', column: 'C1', visibility: 'editable' },
+          ],
+        },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    // extractFieldsFromContract returns fixed keys: entityName, tabId, tableName, fieldName, column, visibility
+    assert.equal(fields[0].fieldName, 'f1');
+    assert.equal(fields[0].column, 'C1');
+    assert.equal(fields[0].visibility, 'editable');
+    assert.equal(fields[0].entityName, 'header');
+  });
 });

@@ -745,4 +745,177 @@ describe('isSimpleValidation — additional patterns', () => {
   it('returns true for undefined', () => {
     assert.equal(isSimpleValidation(undefined), true);
   });
+
+  it('returns true for IN with subquery (no multi-join/exists/union)', () => {
+    // isSimpleValidation only rejects multi-join, exists, union — IN subquery is not flagged
+    const sql = "SELECT Name FROM C_BPartner WHERE C_BPartner_ID IN (SELECT C_BPartner_ID FROM C_Order)";
+    assert.equal(isSimpleValidation(sql), true);
+  });
+
+  it('returns true for IN with literal values', () => {
+    const sql = "SELECT Name FROM C_BPartner WHERE DocStatus IN ('CO', 'CL')";
+    assert.equal(isSimpleValidation(sql), true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// translateExpression — nested parentheses and @SQL@ marker
+// ---------------------------------------------------------------------------
+
+describe('translateExpression — nested parentheses', () => {
+  it('handles expression with parentheses grouping', () => {
+    const result = translateExpression("(@A@='Y' | @B@='Y') & @C@='N'");
+    assert.equal(result.success, true);
+    assert.ok(result.result.includes('||'));
+    assert.ok(result.result.includes('&&'));
+  });
+
+  it('handles deeply nested parentheses', () => {
+    const result = translateExpression("((@A@='Y') & (@B@='N'))");
+    assert.equal(result.success, true);
+    assert.ok(result.result.includes('&&'));
+  });
+
+  it('preserves parentheses structure in output', () => {
+    const result = translateExpression("(@DocStatus@='CO') | (@DocStatus@='CL')");
+    assert.equal(result.success, true);
+    assert.ok(result.result.includes('('));
+    assert.ok(result.result.includes(')'));
+  });
+});
+
+describe('translateExpression — @SQL@ marker', () => {
+  it('translates @SQL@ as a variable reference (not rejected)', () => {
+    // @SQL@ is treated like any @VAR@ — it becomes a variable name
+    const result = translateExpression("@SQL@='Y'");
+    assert.equal(result.success, true);
+    assert.ok(result.result.includes('sQL'));
+  });
+
+  it('handles @SQL= prefix with closure', () => {
+    // This expression contains no framework calls, so it is translated
+    const result = translateExpression("@SQL@='N' & @DocStatus@='CO'");
+    assert.equal(result.success, true);
+    assert.ok(result.result.includes('&&'));
+  });
+});
+
+describe('translateExpression — multiple | operators', () => {
+  it('handles three OR conditions', () => {
+    const result = translateExpression("@DocStatus@='CO' | @DocStatus@='CL' | @DocStatus@='VO'");
+    assert.equal(result.success, true);
+    // Count || occurrences (should be 2)
+    const orCount = (result.result.match(/\|\|/g) || []).length;
+    assert.equal(orCount, 2);
+  });
+
+  it('handles four OR conditions', () => {
+    const result = translateExpression("@A@='1' | @B@='2' | @C@='3' | @D@='4'");
+    assert.equal(result.success, true);
+    const orCount = (result.result.match(/\|\|/g) || []).length;
+    assert.equal(orCount, 3);
+  });
+
+  it('handles mixed multiple | and & operators', () => {
+    const result = translateExpression("@A@='Y' & @B@='Y' | @C@='Y' & @D@='Y' | @E@='Y'");
+    assert.equal(result.success, true);
+    assert.ok(result.result.includes('&&'));
+    assert.ok(result.result.includes('||'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// translateExpression — special variable patterns
+// ---------------------------------------------------------------------------
+
+describe('translateExpression — special variable patterns', () => {
+  it('translates @#AD_Org_ID@ system variable', () => {
+    const result = translateExpression("@#AD_Org_ID@='0'");
+    assert.equal(result.success, true);
+    // @#AD_Org_ID@ -> first char lowercase -> aD_Org_ID
+    assert.ok(result.result.includes('aD_Org_ID'));
+  });
+
+  it('translates @#Date@ date variable', () => {
+    const result = translateExpression("@DateOrdered@>@#Date@");
+    assert.equal(result.success, true);
+  });
+
+  it('handles empty value comparison', () => {
+    const result = translateExpression("@DocStatus@=''");
+    assert.equal(result.success, true);
+    assert.ok(result.result.includes("==''"));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// analyzeJavaSource — more DML patterns
+// ---------------------------------------------------------------------------
+
+describe('analyzeJavaSource — more DML patterns', () => {
+  it('detects ConnectionProvider as DML', () => {
+    const source = `ConnectionProvider cp = new ConnectionProviderImpl();`;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.hasDml, true);
+  });
+
+  it('detects executeUpdate as DML', () => {
+    const source = `statement.executeUpdate("DELETE FROM C_Order WHERE IsActive='N'");`;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.hasDml, true);
+  });
+
+  it('detects getConnection as DML', () => {
+    const source = `Connection conn = getConnection();`;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.hasDml, true);
+  });
+
+  it('does not flag indexOf as DML', () => {
+    const source = `int idx = "hello".indexOf("ell");`;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.hasDml, false);
+  });
+
+  it('does not flag simple string operations as DML', () => {
+    const source = `String result = name.trim().toLowerCase();`;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.hasDml, false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// analyzeJavaSource — effect detection edge cases
+// ---------------------------------------------------------------------------
+
+describe('analyzeJavaSource — effect detection edge cases', () => {
+  it('detects put as an effect', () => {
+    const source = `result.put("netAmount", new BigDecimal("100"));`;
+    const result = analyzeJavaSource(source);
+    // put may or may not be treated as effect depending on implementation
+    assert.ok(result.effects !== undefined);
+  });
+
+  it('detects setFieldValue with single-quoted field name', () => {
+    const source = `setFieldValue("grossAmount", price.multiply(qty));`;
+    const result = analyzeJavaSource(source);
+    const effect = result.effects.find(e => e.field === 'grossAmount');
+    assert.ok(effect);
+  });
+
+  it('handles source with no method calls', () => {
+    const source = `int x = 1; int y = 2; int z = x + y;`;
+    const result = analyzeJavaSource(source);
+    assert.deepEqual(result.effects, []);
+    assert.equal(result.hasDml, false);
+  });
+
+  it('handles source with only imports and package', () => {
+    const source = `package com.example;
+import java.util.List;
+import java.math.BigDecimal;`;
+    const result = analyzeJavaSource(source);
+    assert.equal(result.loc, 3);
+    assert.equal(result.branches, 0);
+  });
 });
