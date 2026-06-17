@@ -497,9 +497,8 @@ export function generateFormComponent(entityName, contract) {
     const searchSelectPart = fragmentIf(f.searchSelect, ', searchSelect: true');
     const allowCreatePart = fragmentIf(f.allowCreate, ', allowCreate: true');
     const createPart = buildInlineCreatePart(f);
-    const noAutoSelectPart = f.dependsOn && f.dependsOn.noAutoSelect ? ', noAutoSelect: true' : '';
     const dependsOnPart = f.dependsOn
-      ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}'${noAutoSelectPart} }`
+      ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
     // Section classification
     const sectionPart = `, section: '${fieldSections[idx]}'`;
@@ -1523,9 +1522,8 @@ function buildEntryFieldLine(f, i, firstSearchIdx) {
   const labelPart = wrapIf(", label: '", f.label, "'");
   const referencePart = wrapIf(", reference: '", f.reference, "'");
   const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
-  const noAutoSelectPart = f.dependsOn && f.dependsOn.noAutoSelect ? ', noAutoSelect: true' : '';
   const dependsOnPart = f.dependsOn
-    ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}'${noAutoSelectPart} }`
+    ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
     : '';
   // Include defaultValue for quantity/numeric fields so the add-line form starts with a
   // sensible value. Skip redundant unchecked YESNO/checkbox defaults (backend coerces).
