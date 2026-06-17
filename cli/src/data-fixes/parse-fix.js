@@ -1,7 +1,7 @@
 /**
  * parse-fix.js
  *
- * Parser for tenant data-fix `.sql` files.
+ * Parser + apply-time templating for tenant data-fix `.sql` files.
  *
  * A fix file has a metadata header (`-- @key: value` lines) followed by two
  * labeled sections introduced by bare marker lines `-- @check` and `-- @apply`:
@@ -22,6 +22,8 @@
  * The `fix_id` is the file name without the `.sql` extension (the leading
  * `<YYYYMMDDThhmmssZ>` prefix makes lexical sort == chronological order).
  */
+
+import { randomUUID } from 'node:crypto';
 
 const SECTION_MARKER = /^--\s*@(check|apply)\s*$/i;
 // No `\s*` after the colon on purpose: it would overlap `(.*)` (both match
@@ -142,4 +144,61 @@ export function inlineParams(sql, binds) {
   let out = sql.replace(/:client_id\b/g, `'${client_id}'`);
   if (org_id != null) out = out.replace(/:org_id\b/g, `'${org_id}'`);
   return out;
+}
+
+/**
+ * Replace the `@name_client@` label with the target tenant's client display
+ * name. The token lives INSIDE SQL string literals (e.g. `'Chart of @name_client@'`),
+ * so the substitution is the bare, single-quote-escaped name with no surrounding
+ * quotes. This keeps per-tenant text (names/descriptions copied from the source
+ * client) from being hard-coded to the source client's name.
+ *
+ * @param {string} sql
+ * @param {string|null|undefined} clientName  - ad_client.name of the target tenant
+ * @returns {string}
+ */
+export function inlineClientName(sql, clientName) {
+  if (!sql.includes('@name_client@')) return sql;
+  if (clientName == null || clientName === '') {
+    throw new Error('inlineClientName: target client name not found for @name_client@ substitution');
+  }
+  const escaped = String(clientName).replace(/'/g, "''");
+  return sql.replace(/@name_client@/g, escaped);
+}
+
+// A label inside a fix body that must become a fresh, per-tenant Etendo id at
+// apply time. The KEY (the original source id, e.g. a 32-hex GOAdmin id) is
+// opaque and only used to keep relationships: the SAME `@uuid_<KEY>@` token —
+// a primary key in one row, a foreign key in another — always resolves to the
+// SAME generated id, so intra-set references stay linked without any runtime
+// id-map. Distinct KEYs get distinct ids. A fresh map is built per call, so a
+// new apply (i.e. a different tenant) gets a brand-new set of ids and there are
+// ZERO cross-client references.
+const UUID_TOKEN = /@uuid_([0-9A-Za-z]+)@/g;
+
+/** A fresh Etendo-style id: 32 uppercase hex chars, no hyphens. */
+function freshEtendoId() {
+  return randomUUID().replace(/-/g, '').toUpperCase();
+}
+
+/**
+ * Replace every `@uuid_<KEY>@` label in a fix body with a fresh Etendo id, one
+ * per distinct KEY. The replacement is the bare id (no quotes) — the SQL author
+ * writes the surrounding quotes, e.g. `'@uuid_ABC...@'`, exactly as for any id
+ * literal. KEYs are restricted to `[0-9A-Za-z]+` by the token pattern and the
+ * generated value is hex, so the substitution is injection-safe.
+ *
+ * @param {string} sql
+ * @returns {string}
+ */
+export function inlineFreshUuids(sql) {
+  const map = new Map();
+  return sql.replace(UUID_TOKEN, (_, key) => {
+    let id = map.get(key);
+    if (!id) {
+      id = freshEtendoId();
+      map.set(key, id);
+    }
+    return id;
+  });
 }

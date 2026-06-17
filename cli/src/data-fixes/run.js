@@ -29,7 +29,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createDbPool, closePool } from '../db.js';
-import { parseFix, parseFixTimestamp, inlineParams } from './parse-fix.js';
+import { parseFix, parseFixTimestamp, inlineParams, inlineClientName, inlineFreshUuids } from './parse-fix.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -193,12 +193,27 @@ async function runBody(querier, body) {
  * @returns {Promise<{status: string, rows: number, detail: string|null}>}
  */
 async function applyFix(pool, fix, clientId, { dryRun }) {
-  const binds = { client_id: clientId, org_id: SYSTEM_ORG };
+  const binds = { client_id: clientId };
 
   if (fix.type === 'webhook') {
     // The webhook owns its own atomicity; the runner cannot wrap it in a SQL tx.
     // (Webhook invocation is not implemented yet — surface that clearly.)
     throw new Error(`${fix.fixId}: @type webhook not implemented yet (webhook="${fix.webhook}")`);
+  }
+
+  // :org_id means the tenant's onboarding (operative) org — the non-System org
+  // created at onboarding. Resolved only when a fix actually uses the bind; the
+  // System/client-level org is written as the literal '0' in SQL, never via :org_id.
+  if (`${fix.check}\n${fix.apply}`.includes(':org_id')) {
+    const orgRes = await pool.query(
+      `SELECT ad_org_id FROM ad_org
+        WHERE ad_client_id = $1 AND ad_org_id <> '0' AND isactive = 'Y'
+        ORDER BY created LIMIT 1`, [clientId]);
+    const orgId = orgRes.rows[0]?.ad_org_id;
+    if (!orgId) {
+      throw new Error(`${fix.fixId}: :org_id used but tenant ${clientId} has no operative org`);
+    }
+    binds.org_id = orgId;
   }
 
   const checkSql = inlineParams(fix.check, binds);
@@ -219,8 +234,20 @@ async function applyFix(pool, fix, clientId, { dryRun }) {
     return { status: 'WOULD_APPLY', rows: 0, detail: `@check matched (${checkRows} row(s))` };
   }
 
-  // @apply + ledger write share ONE transaction (atomic).
-  const applySql = inlineParams(fix.apply, binds);
+  // @apply + ledger write share ONE transaction (atomic). Templating order:
+  //   1. inlineParams      -> bakes the tenant client/org (:client_id / :org_id)
+  //   2. inlineClientName   -> replaces @name_client@ with the tenant's ad_client.name
+  //      (resolved here so copied text doesn't stay hard-coded to the source client)
+  //   3. inlineFreshUuids   -> replaces every @uuid_<KEY>@ label with a fresh
+  //      per-tenant id (same KEY => same id, so intra-set FKs stay linked; a new
+  //      tenant gets a brand-new id set => zero cross-client references).
+  let applyTemplate = inlineParams(fix.apply, binds);
+  if (applyTemplate.includes('@name_client@')) {
+    const nameRes = await pool.query(
+      'SELECT name FROM ad_client WHERE ad_client_id = $1', [clientId]);
+    applyTemplate = inlineClientName(applyTemplate, nameRes.rows[0]?.name);
+  }
+  const applySql = inlineFreshUuids(applyTemplate);
   const client = await pool.connect();
   try {
     await client.query('BEGIN');

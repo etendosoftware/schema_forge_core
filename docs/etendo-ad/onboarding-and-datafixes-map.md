@@ -11,6 +11,24 @@
 
 ---
 
+## 0. Two-front policy (MANDATORY for every onboarding-provisioning gap)
+
+**Any defect where a tenant ends up missing provisioning data that onboarding should have created is fixed on BOTH fronts — never just one:**
+
+1. **① Preventive — fix the onboarding process** so NEW tenants are born clean.
+   The fix lives in `com.etendoerp.go` (the live service chain in `EtendoGoJwtServlet`, see §1), not in a step class (§2 is not wired). This is the root-cause fix: it stops the gap from ever appearing again.
+2. **② Corrective — author a static `.sql` data-fix** (this repo, `cli/src/data-fixes/sql/`) so tenants that were **already onboarded** with the gap get repaired. The fix must be **frozen** (literal values baked in, no runtime dependency on GOClient existing in the DB) and **idempotent** (`NOT EXISTS` / `WHERE NOT` guards → safe to re-run).
+
+**Why both:** the preventive fix does nothing for the tenants already in production with the gap; the corrective fix does nothing to stop the next onboarding from reproducing it. Shipping only one leaves half the fleet broken.
+
+**Keep the two in lockstep.** When the same logic appears on both fronts (e.g. A2's six `*_acct` `INSERT … SELECT` statements — bp_group, product_category, bp_customer, bp_vendor, product, **tax** — live both in `OnboardingAccountingWiringService.provisionEntityPostingAccounts` and in `R1-chart-of-accounts.sql` step 11/11a–11f), the column lists, defaults source, org-inheritance and idempotency guards must match one-for-one. Note the lockstep relationship in both files' comments so a future edit to one is mirrored in the other.
+
+**Worked examples (both fronts done):** A2 (per-entity `*_acct`), C1 (period-control flags), C2 (`c_periodcontrol` backfill), C2a/C2b (calendar moniker + dangling calendar). See `docs/plans/onboarding-gaps-remediation-plan.md` for the per-gap table.
+
+**Boundary:** a gap that is purely about *existing-tenant* state with no onboarding-process cause (rare) may be corrective-only — but state that explicitly and say why the preventive front is N/A. The default is both.
+
+---
+
 ## 1. Onboarding — the LIVE path (the one that actually runs)
 
 > **CRITICAL (corrected 2026-06-11):** The live onboarding path is the **service chain inside `EtendoGoJwtServlet`**, NOT the `OnboardingStep` classes. The `OnboardingStep` abstraction (section 2) is real and unit-tested but **NOT wired into any production path**. Writing an `OnboardingStep` alone changes nothing at runtime.
@@ -168,11 +186,14 @@ Both fronts must be closed. Preventive = where it goes in onboarding so new tena
 |---|---|---|---|
 | **A1** | Posting fails — chart of accounts missing (~1790 `c_elementvalue`) | New accounting `*Service` in the chain (per `docs/proposals/initial-organization-setup-accounting.md`); NOT `AccountingPackageCloner` (it does taxes/combinations, not the chart) | `R1` — clone chart from GOOrg source client; guard `NOT EXISTS (c_element_id, value)` |
 | **A2** | "Account Not Defined" — `*_acct` empty | Same accounting service: populate from `c_acctschema_default` | `R2` — per-schema accounting defaults |
-| **B1** | "Lines org does not depend on header org"; `AD_ORG_TREE` empty | `OnboardingMarkOrgReadyService` (runs `AD_Org_Ready`, which populates the tree) | `R-orgtree` — insert the 2 `AD_ORG_TREE` rows |
+| **B1** | "Lines org does not depend on header org"; `AD_ORG_TREE` empty | ✅ `OnboardingMarkOrgReadyService.provisionOrgTree` — defensive idempotent insert of the 2 rows on the DAL session connection, after `AD_Org_Ready` (whose own tree INSERT runs on a separate `DalConnectionProvider` connection that cannot see the just-flushed org, leaving the tree empty) | ✅ `R1` step 12 — insert the 2 `AD_ORG_TREE` rows |
+| **B2** | Chart of accounts flat — `AD_TREENODE` empty (broken Balance/P&L roll-ups; posting unaffected) | ✅ `OnboardingAccountingWiringService.provisionElementTreeNodes` — reads bundled `AD_TREENODE.xml` (tree `D937…`, `org='0'`), bridges source `C_ELEMENTVALUE` ids → account `value` via bundled `C_ELEMENTVALUE.xml`, resolves against the tenant's own accounts by `value` (source ids don't survive import; `value` is the stable key), inserts idempotent (`NOT EXISTS`) on the tenant EV tree | ✅ `R1` step 13 — 1790 `AD_TREENODE` inserts via the runner's `@uuid_<srcid>@` placeholder scheme |
 | **C1** | Period-control flags on `ad_org` unset | A service before period creation: set `isperiodcontrolallowed='Y'`, `ad_periodcontrolallowed_org_id`, `c_calendar_id`, `ad_inheritedcalendar_id` | part of `R3` |
 | **C2** | Open/Close Period Control empty; `c_periodcontrol` missing (~504/yr) | Same as C1 (flags set before periods) | `R3-periodcontrol` — backfill `c_periodcontrol` |
 | **D1** | SII fields empty; `AD_GET_ORG_LE_BU` returns NULL | `OnboardingMarkOrgReadyService` / `OnboardingFiscalDataSetupService` recompute LE columns after `AD_Org_Ready` (ETP-4177) | `R-legalentity` — recompute denormalized LE columns |
 | **E1** | Session org stuck at `'0'`/`*` | `CreateOrgAdminStep`/`CreateClientAdminStep` analogue in the live chain set `AD_User.ad_org_id` | `R-userorg` — `UPDATE AD_User.ad_org_id` |
+| **F1** | Default customer (`c_bpartner.value='ONBOARDING_DEFAULT_CUSTOMER'`) has no currency, no address — cannot be bill-to/ship-to on a Sales Invoice — and no linked contact | ✅ `OnboardingDefaultCustomerService.ensureDefaultCustomerCurrency` (defaults `bp_currency_id` to EUR when missing) + `ensureDefaultCustomerLocation` (creates `C_LOCATION` + `C_BPARTNER_LOCATION`, country reused from an existing client location) + `ensureDefaultCustomerContact` (creates/links an `AD_USER` contact to the BP and its address) | ✅ `R4-default-customer-location` — set currency to EUR if missing, insert address, then link any existing unlinked contact / insert one if none |
+| **F2** | Organization `AD_ORGINFO` has no location (`c_location_id` NULL) — the dataset import creates the org-info row but unlocated, so the **tax engine cannot resolve taxes** for the org. The web onboarding form gathers a country/address but earlier endpoint versions dropped it (`parseOnboardingRequest` ignored `countryCode`/`address`; `buildOnboardingPayload` never sent `address`) | ✅ `OnboardingOrgInfoService.ensureOrgInfo` — finds/creates `AD_ORGINFO` for the onboarding org and links a `C_LOCATION` with a country, defaulting to Spain (ISO `ES`) when the form sends none; uses the form's `countryCode`/`address` now that the endpoint reads them (`OnboardingRequestData.countryCode/address`) and the SPA sends them (`onboardingApi`/`onboardingState` payload) | ✅ `R6-org-info-location` — insert a Spain-located `C_LOCATION`, link the existing unlocated `AD_ORGINFO` (or insert one if absent); validated on Prueba13 |
 | **(baseline)** | — | **`OnboardingBaselineService` (step 6, LIVE)** — stamps the `BASELINE` row (preventive counterpart to the sweep's `DETECTED`) | n/a (the runner's Phase-0 sweep handles legacy tenants) |
 
 > Field-verified SQL and exact column quirks for each gap live in `onboarding-gaps.md` and `tenant-remediation-knowledge.md`. The "Recommended Order of Operations" (onboarding-gaps.md §"Recommended Order of Operations") is the canonical manual sequence A1–C2.

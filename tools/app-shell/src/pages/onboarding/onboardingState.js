@@ -40,6 +40,7 @@ export function buildOnboardingPayload(form) {
     currency: form.currency,
     language: form.language,
     countryCode: form.countryCode,
+    address: form.address,
   };
 }
 
