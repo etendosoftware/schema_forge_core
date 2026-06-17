@@ -6,8 +6,8 @@ const columns = [
   { key: 'lineNo', column: 'Line', type: 'number', label: 'LineNo', required: true },
   { key: 'accountingCombination', column: 'C_ValidCombination_ID', type: 'selector', label: 'Account', lookup: true },
   { key: 'description', column: 'Description', type: 'string', label: 'Description' },
-  { key: 'foreignCurrencyDebit', column: 'AmtSourceDr', type: 'amount', label: 'Debit', required: true },
-  { key: 'foreignCurrencyCredit', column: 'AmtSourceCr', type: 'amount', label: 'Credit', required: true },
+  { key: 'foreignCurrencyDebit', column: 'AmtSourceDr', type: 'amount', labels: {"en_US":"Debit","es_ES":"Débito"}, label: 'Debit', required: true },
+  { key: 'foreignCurrencyCredit', column: 'AmtSourceCr', type: 'amount', labels: {"en_US":"Credit","es_ES":"Crédito"}, label: 'Credit', required: true },
 ];
 // @sf-generated-end columns:gLJournalLine
 

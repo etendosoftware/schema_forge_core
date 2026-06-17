@@ -1,8 +1,8 @@
 {
-  "version": "0.3.1",
+  "version": "0.4.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-17T02:08:59.127Z",
-  "checksum": "59aad9b9f249903b",
+  "updatedAt": "2026-06-17T11:11:50.331Z",
+  "checksum": "3223aac222f6185e",
   "frontendContract": {
     "window": {
       "id": "B917E8A7B0864ACEA9D941E3B7494E53",
@@ -332,6 +332,10 @@
             "grid": true,
             "form": true,
             "sourceRequired": true,
+            "labels": {
+              "en_US": "Debit",
+              "es_ES": "Débito"
+            },
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_JournalLineAmt"
             },
@@ -353,6 +357,10 @@
             "grid": true,
             "form": true,
             "sourceRequired": true,
+            "labels": {
+              "en_US": "Credit",
+              "es_ES": "Crédito"
+            },
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_JournalLineAmt"
             },

@@ -156,11 +156,13 @@
         "foreignCurrencyDebit": {
           "visibility": "editable",
           "grid": true,
+          "labels": { "en_US": "Debit", "es_ES": "Débito" },
           "reason": "Debit amount (AmtSourceDr) — drives the balanceFooter Σ debit."
         },
         "foreignCurrencyCredit": {
           "visibility": "editable",
           "grid": true,
+          "labels": { "en_US": "Credit", "es_ES": "Crédito" },
           "reason": "Credit amount (AmtSourceCr) — drives the balanceFooter Σ credit."
         },
         "businessPartner": {
