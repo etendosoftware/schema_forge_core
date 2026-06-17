@@ -381,6 +381,12 @@ export function buildFieldUpdateParams(f, ctx, fieldId, entityId) {
       ? ctx.fieldAgentPrompts[fieldKey]
       : null;
   }
+  // When the camelCase field key differs from the AD column name (e.g.
+  // "documentAction" vs "DocAction"), store the key as java_qualifier so
+  // NeoButtonActionHelper.findButtonColumn can match it by URL segment.
+  if (f.fieldName && f.fieldName !== f.column) {
+    fieldParams.javaQualifier = f.fieldName;
+  }
   return fieldParams;
 }
 
