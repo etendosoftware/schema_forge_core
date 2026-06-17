@@ -172,3 +172,20 @@ Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functio
 - `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
 - `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.
 - LinesTable template updated in ETP-3908 to include the inline-editable add-row alignment fix. This window uses `linesLayout: "classic"` so the new template branch is dead code here — no behavioral change.
+
+## ETP-4229 — Fix spec assets: defaults + depreciationEndDate callout
+
+### Default values fix
+
+- `decisions.json`: `depreciate` field now has `defaultExpr: "Y"` — `neo_defaults` returns `depreciate: true` (boolean, coerced from Yes/No column). Previously returned null.
+- `decisions.json`: `calculateType` field now has `defaultExpr: "TI"` — `neo_defaults` returns `calculateType: "TI"` (Time-based). Previously returned `"PE"` (Percentage), which was the wrong default for the standard amortization flow.
+- Both values are written to `ETGO_SF_FIELD.DefaultValue` via `push-to-neo.js` and persisted to `src-db/database/sourcedata/ETGO_SF_FIELD.xml` via `export.database`.
+
+### depreciationEndDate auto-computation (AssetsHandler)
+
+- `decisions.json`: `entities.assets.javaQualifier: "assetsHandler"` — wires the `AssetsHandler` CDI bean to the assets entity via `ETGO_SF_ENTITY.JAVA_QUALIFIER`.
+- `AssetsHandler.java` (com.etendoerp.go): new `NeoHandler` that auto-computes `depreciationEndDate = depreciationStartDate + usableLifeMonths` on every POST and PATCH that touches either source field.
+  - **POST**: both `depreciationStartDate` and `usableLifeMonths` must be present in the body. Computes and injects `depreciationEndDate` before the record is persisted.
+  - **PATCH (partial update)**: fires whenever either source field is in the diff body. The missing field is loaded from the persisted record via `OBDal.getInstance().get(Asset.class, recordId)`, so single-field edits (e.g., only changing `usableLifeMonths`) still trigger a recompute.
+  - Date arithmetic uses `java.time.LocalDate.plusMonths()`. The persisted `Date` is formatted via `SimpleDateFormat("yyyy-MM-dd")` (consistent with the rest of the module; avoids `java.sql.Date.toInstant()` which throws `UnsupportedOperationException`).
+  - `depreciationEndDate` must remain `visibility: editable` in the spec — if reclassified to `readOnly`, the PATCH write is filtered by `NeoFieldFilter.filterWriteRequest` and the recompute silently stops persisting. Move the write to `afterHandle()` if that classification ever changes.
