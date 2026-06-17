@@ -67,6 +67,104 @@ describe('statusBadge', () => {
     it('returns border for draft', () => { expect(getStatusGridPillClass('DR')).toContain('border'); });
   });
 
+  describe('getStatusTone (extended)', () => {
+    it.each([
+      ['ca', 'success'], ['etgo_ci', 'success'], ['rppc', 'success'], ['ppm', 'success'],
+      ['pwnc', 'success'], ['rdnc', 'success'], ['confirmed', 'success'], ['booked', 'success'],
+      ['paid', 'success'], ['processed', 'success'], ['yes', 'success'],
+      ['rpae', 'warning'], ['rpr', 'warning'], ['ue', 'warning'], ['under evaluation', 'warning'],
+      ['rpvoid', 'destructive'], ['rpvd', 'destructive'], ['cancelled', 'destructive'], ['void', 'destructive'],
+    ])('maps %s to %s', (status, expected) => {
+      expect(getStatusTone(status)).toBe(expected);
+    });
+  });
+
+  describe('getStatusBadgeProps (extended)', () => {
+    it('returns emerald for true/processed', () => {
+      expect(getStatusBadgeProps('true').className).toContain('emerald');
+      expect(getStatusBadgeProps('processed').className).toContain('emerald');
+    });
+
+    it('returns secondary for false/not processed', () => {
+      expect(getStatusBadgeProps('false').variant).toBe('secondary');
+      expect(getStatusBadgeProps('not processed').variant).toBe('secondary');
+    });
+
+    it('returns emerald for ca/etgo_ci/rppc/ppm/pwnc/rdnc', () => {
+      for (const code of ['ca', 'etgo_ci', 'rppc', 'ppm', 'pwnc', 'rdnc']) {
+        expect(getStatusBadgeProps(code).className).toContain('emerald');
+      }
+    });
+
+    it('returns blue for pa/paid', () => {
+      expect(getStatusBadgeProps('PA').className).toContain('blue');
+      expect(getStatusBadgeProps('paid').className).toContain('blue');
+    });
+
+    it('returns destructive for rpvoid/rejected', () => {
+      expect(getStatusBadgeProps('rpvoid').variant).toBe('destructive');
+      expect(getStatusBadgeProps('rejected').variant).toBe('destructive');
+    });
+
+    it('returns amber for rpap/rpae/rpr', () => {
+      for (const code of ['RPAP', 'RPAE', 'RPR']) {
+        expect(getStatusBadgeProps(code).className).toContain('amber');
+      }
+    });
+  });
+
+  describe('getStatusDotColor (extended)', () => {
+    it.each([
+      ['true', 'emerald'], ['processed', 'emerald'],
+      ['false', 'gray'], ['not processed', 'gray'],
+      ['ca', 'emerald'], ['etgo_ci', 'emerald'], ['rppc', 'emerald'],
+      ['ppm', 'emerald'], ['pwnc', 'emerald'], ['rdnc', 'emerald'],
+      ['pa', 'blue'], ['paid', 'blue'],
+      ['rpvoid', 'red'], ['cj', 'red'], ['rejected', 'red'], ['cancelled', 'red'],
+      ['rpae', 'amber'], ['rpap', 'amber'], ['rpr', 'amber'],
+      ['ue', 'purple'],
+    ])('maps %s to contain %s', (status, expected) => {
+      expect(getStatusDotColor(status)).toContain(expected);
+    });
+  });
+
+  describe('getStatusPillClass (extended)', () => {
+    it.each([
+      ['true', 'emerald'], ['processed', 'emerald'],
+      ['false', 'gray'], ['not processed', 'gray'],
+      ['confirmed', 'emerald'], ['ca', 'emerald'],
+      ['pa', 'blue'], ['cl', 'blue'],
+      ['rpvoid', 'red'], ['cancelled', 'red'],
+      ['rpae', 'amber'], ['rpap', 'amber'], ['rpr', 'amber'],
+      ['ue', 'purple'],
+    ])('maps %s to contain %s', (status, expected) => {
+      expect(getStatusPillClass(status)).toContain(expected);
+    });
+
+    it('returns gray fallback for unknown code', () => {
+      expect(getStatusPillClass('XYZ')).toContain('gray');
+    });
+  });
+
+  describe('getStatusGridPillClass (extended)', () => {
+    it.each([
+      ['true', 'emerald'], ['processed', 'emerald'],
+      ['false', 'gray'], ['not processed', 'gray'],
+      ['confirmed', 'emerald'], ['booked', 'emerald'],
+      ['ca', 'emerald'], ['etgo_ci', 'emerald'],
+      ['cl', 'slate'], ['pa', 'slate'],
+      ['rpvoid', 'red'], ['cj', 'red'], ['rejected', 'red'],
+      ['rpae', 'amber'], ['rpap', 'amber'], ['rpr', 'amber'],
+      ['ue', 'purple'],
+    ])('maps %s to contain %s', (status, expected) => {
+      expect(getStatusGridPillClass(status)).toContain(expected);
+    });
+
+    it('returns border for unknown code', () => {
+      expect(getStatusGridPillClass('XYZ')).toContain('border');
+    });
+  });
+
   describe('statusLabel', () => {
     it('returns DB-sourced label when available', () => {
       const dict = { statuses: { CO: { label: 'Completado' } } };
@@ -93,6 +191,51 @@ describe('statusBadge', () => {
 
     it('handles null dictionary', () => {
       expect(statusLabel('DR', null)).toBe('Draft');
+    });
+
+    it('returns translate result when it differs from key', () => {
+      const translate = (key) => key === 'statusDraft' ? 'Borrador' : key;
+      expect(statusLabel('DR', {}, translate)).toBe('Borrador');
+    });
+
+    it('falls through translate when result equals key', () => {
+      const translate = (key) => key; // returns the key unchanged
+      expect(statusLabel('DR', {}, translate)).toBe('Draft'); // humanize fallback
+    });
+
+    it('maps boolean-like statuses', () => {
+      expect(statusLabel('true', {})).toBe('Processed');
+      // 'false' maps to literal string 'Not Processed'; humanize adds space before 'P'
+      expect(statusLabel('false', {})).toBe('Not  Processed');
+    });
+
+    it('maps Y/N statuses', () => {
+      const dict = { genericLabels: { statusProcessed: 'Procesado' } };
+      expect(statusLabel('Y', dict)).toBe('Procesado');
+    });
+
+    it('maps payment status codes', () => {
+      expect(statusLabel('RPR', {})).toContain('Payment');
+      expect(statusLabel('RPAE', {})).toContain('Awaiting');
+      expect(statusLabel('RPPC', {})).toContain('Payment');
+      expect(statusLabel('PPM', {})).toContain('Payment');
+    });
+
+    it('maps RPVOID to Void', () => {
+      expect(statusLabel('RPVOID', {})).toBe('Void');
+    });
+
+    it('maps CA to Order Created', () => {
+      expect(statusLabel('CA', {})).toContain('Order');
+    });
+
+    it('maps ETGO_CI to Invoice Created', () => {
+      expect(statusLabel('ETGO_CI', {})).toContain('Invoice');
+    });
+
+    it('maps PWNC and RDNC statuses', () => {
+      expect(statusLabel('PWNC', {})).toBeTruthy();
+      expect(statusLabel('RDNC', {})).toBeTruthy();
     });
   });
 });

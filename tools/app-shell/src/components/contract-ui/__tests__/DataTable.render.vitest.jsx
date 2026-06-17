@@ -484,4 +484,219 @@ describe('DataTable — render coverage', () => {
       expect(screen.getByTestId('row-r2')).toBeInTheDocument();
     });
   });
+
+  // ---------- NEW: additional coverage for uncovered DataTable branches ----------
+
+  // --- Status cell rendering ---
+
+  describe('status column', () => {
+    it('renders StatusTag for status type column', () => {
+      const cols = [{ key: 'status', label: 'Status', type: 'status' }];
+      const rows = [{ id: 's1', status: 'DR' }];
+      render(<DataTable columns={cols} data={rows} selectable={false} />);
+      expect(screen.getByTestId('status-tag')).toBeInTheDocument();
+    });
+
+    it('renders status with dot display', () => {
+      const cols = [{ key: 'status', label: 'Status', type: 'status', display: 'dot' }];
+      const rows = [{ id: 's2', status: 'CO' }];
+      render(<DataTable columns={cols} data={rows} selectable={false} />);
+      // statusLabel mock returns "lbl-CO"
+      expect(screen.getByText('lbl-CO')).toBeInTheDocument();
+    });
+  });
+
+  // --- Date cell with dot color ---
+
+  describe('date dot color', () => {
+    it('renders date with color dot for past dates', () => {
+      const cols = [{ key: 'date', label: 'Date', type: 'date' }];
+      const rows = [{ id: 'dd1', date: '2020-01-01' }];
+      const { container } = render(<DataTable columns={cols} data={rows} selectable={false} />);
+      // Past date should produce a red dot
+      const dot = container.querySelector('.bg-red-500');
+      expect(dot).not.toBeNull();
+    });
+
+    it('renders date with green dot for future dates', () => {
+      const cols = [{ key: 'date', label: 'Date', type: 'date' }];
+      const rows = [{ id: 'dd2', date: '2099-12-31' }];
+      const { container } = render(<DataTable columns={cols} data={rows} selectable={false} />);
+      const dot = container.querySelector('.bg-emerald-500');
+      expect(dot).not.toBeNull();
+    });
+
+    it('renders date without dot when col.dot is false', () => {
+      const cols = [{ key: 'date', label: 'Date', type: 'date', dot: false }];
+      const rows = [{ id: 'dd3', date: '2020-01-01' }];
+      const { container } = render(<DataTable columns={cols} data={rows} selectable={false} />);
+      const dot = container.querySelector('.bg-red-500');
+      expect(dot).toBeNull();
+    });
+  });
+
+  // --- Inline add-row with selector/search field ---
+
+  describe('inline add-row with selector field', () => {
+    it('renders InlineSearchCombo for search-type add-row field', () => {
+      const addRow = {
+        active: true,
+        fields: [
+          { key: 'product', label: 'Product', type: 'search', column: 'M_Product_ID' },
+        ],
+        onAdd: vi.fn(),
+        onCancel: vi.fn(),
+        catalogs: {},
+      };
+      const cols = [{ key: 'product', label: 'Product', type: 'string' }];
+      render(
+        <DataTable
+          columns={cols}
+          data={[]}
+          addRow={addRow}
+          selectable={false}
+          apiBaseUrl="/api"
+          entity="lines"
+          token="tok"
+        />,
+      );
+      expect(screen.getByTestId('inline-add-row')).toBeInTheDocument();
+    });
+  });
+
+  // --- Custom render column ---
+
+  describe('custom render column', () => {
+    it('calls col.render function for custom columns', () => {
+      const cols = [{
+        key: 'custom',
+        label: 'Custom',
+        type: 'string',
+        render: (row) => <span data-testid="custom-render">{row.id}</span>,
+      }];
+      const rows = [{ id: 'cr1' }];
+      render(<DataTable columns={cols} data={rows} selectable={false} />);
+      expect(screen.getByTestId('custom-render')).toBeInTheDocument();
+      expect(screen.getByText('cr1')).toBeInTheDocument();
+    });
+  });
+
+  // --- Amount column rendering ---
+
+  describe('amount column', () => {
+    it('renders formatted amount in body cell', () => {
+      const cols = [
+        { key: 'docNo', label: 'Doc No', type: 'string' },
+        { key: 'total', label: 'Total', type: 'amount' },
+      ];
+      const rows = [{ id: 'a1', docNo: 'X', total: 99.9, 'currency$_identifier': 'EUR' }];
+      render(<DataTable columns={cols} data={rows} selectable={false} showFooterTotals={false} />);
+      expect(screen.getByText('99.90 EUR')).toBeInTheDocument();
+    });
+  });
+
+  // --- Boolean toggle column ---
+
+  describe('boolean toggle column', () => {
+    it('renders Switch for boolean column with toggle: true', () => {
+      const cols = [{ key: 'active', label: 'Active', type: 'boolean', toggle: true }];
+      const rows = [{ id: 'bt1', active: true }];
+      render(
+        <DataTable
+          columns={cols}
+          data={rows}
+          selectable={false}
+          apiBaseUrl="/api"
+          entity="header"
+          token="tok"
+        />,
+      );
+      // Switch renders with role="switch"
+      expect(screen.getByRole('switch')).toBeInTheDocument();
+    });
+  });
+
+  // --- Empty state without filter ---
+
+  describe('empty state without filter', () => {
+    it('shows noRecordsYet when no filters and no data', () => {
+      render(<DataTable columns={COLUMNS} data={[]} selectable={false} />);
+      expect(screen.getByText('noRecordsYet')).toBeInTheDocument();
+    });
+  });
+
+  // --- addRow with select type field ---
+
+  describe('inline add-row with select field', () => {
+    it('renders select dropdown for static-options field in add-row', () => {
+      const addRow = {
+        active: true,
+        fields: [
+          {
+            key: 'type',
+            label: 'Type',
+            type: 'select',
+            column: 'DocType',
+            options: [
+              { value: 'SO', label: 'Sales' },
+              { value: 'PO', label: 'Purchase' },
+            ],
+          },
+        ],
+        onAdd: vi.fn(),
+        onCancel: vi.fn(),
+        catalogs: {},
+      };
+      const cols = [{ key: 'type', label: 'Type', type: 'string' }];
+      render(
+        <DataTable columns={cols} data={[]} addRow={addRow} selectable={false} />,
+      );
+      expect(screen.getByTestId('inline-add-row')).toBeInTheDocument();
+      expect(screen.getByTestId('inline-add-field-type')).toBeInTheDocument();
+    });
+  });
+
+  // --- Read-only mode (no selection column) ---
+
+  describe('readOnly rendering', () => {
+    it('does not show checkboxes when selectable is false', () => {
+      render(<DataTable columns={COLUMNS} data={DATA} selectable={false} />);
+      expect(screen.queryByRole('checkbox')).toBeNull();
+    });
+  });
+
+  // --- onNavigate fallback ---
+
+  describe('onNavigate row click', () => {
+    it('calls onNavigate when no onRowClick or onRowSelect', async () => {
+      const onNavigate = vi.fn();
+      render(
+        <DataTable columns={COLUMNS} data={DATA} onNavigate={onNavigate} selectable={false} />,
+      );
+      await act(async () => {
+        await userEvent.click(screen.getByTestId('row-r1'));
+      });
+      expect(onNavigate).toHaveBeenCalledWith(expect.objectContaining({ id: DATA[0].id }));
+    });
+  });
+
+  // --- hideHeader mode (colgroup + hidden thead) ---
+
+  describe('hideHeader mode', () => {
+    it('hides table header with display:none when hideHeader is true', () => {
+      const { container } = render(
+        <DataTable columns={COLUMNS} data={DATA} hideHeader selectable={false} />,
+      );
+      const thead = container.querySelector('thead');
+      expect(thead).not.toBeNull();
+      expect(thead.style.display).toBe('none');
+    });
+
+    it('renders colgroup for column widths when hideHeader is true', () => {
+      const { container } = render(
+        <DataTable columns={COLUMNS} data={DATA} hideHeader selectable={false} />,
+      );
+      expect(container.querySelector('colgroup')).not.toBeNull();
+    });
+  });
 });

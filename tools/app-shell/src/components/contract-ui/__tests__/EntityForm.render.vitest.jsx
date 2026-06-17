@@ -601,4 +601,240 @@ describe('EntityForm — extended render coverage', () => {
     // formatReadOnlyDisplayValue strips float noise
     expect(input).toHaveValue(243.21);
   });
+
+  // ---------- NEW: additional coverage for uncovered EntityForm branches ----------
+
+  // --- Popup search field ---
+
+  it('renders popup search button for search field with popup: true', () => {
+    const fields = [
+      {
+        key: 'product',
+        label: 'Product',
+        type: 'search',
+        column: 'M_Product_ID',
+        popup: true,
+      },
+    ];
+    render(
+      <EntityForm
+        fields={fields}
+        data={{ product: 'P1', 'product$_identifier': 'Widget' }}
+        onChange={vi.fn()}
+        token="tok"
+        apiBaseUrl="/api"
+        entity="header"
+      />,
+    );
+    const btn = screen.getByTestId('field-product');
+    expect(btn).toBeInTheDocument();
+    // Popup renders as a button, not an input
+    expect(btn.tagName).toBe('BUTTON');
+  });
+
+  // --- Lookup search field ---
+
+  it('renders lookup button for search field with lookup: true', () => {
+    const fields = [
+      {
+        key: 'product',
+        label: 'Product',
+        type: 'search',
+        column: 'M_Product_ID',
+        lookup: true,
+      },
+    ];
+    render(
+      <EntityForm
+        fields={fields}
+        data={{ product: 'P1', 'product$_identifier': 'Widget' }}
+        onChange={vi.fn()}
+        token="tok"
+        apiBaseUrl="/api"
+        entity="header"
+      />,
+    );
+    const btn = screen.getByTestId('field-product');
+    expect(btn).toBeInTheDocument();
+    expect(btn.tagName).toBe('BUTTON');
+  });
+
+  // --- PartnerAddressPicker field ---
+
+  it('renders PartnerAddressPicker for dependent field with C_BPartner_Location_ID column', () => {
+    const fields = [
+      {
+        key: 'partnerAddress',
+        label: 'Address',
+        type: 'dependent',
+        column: 'C_BPartner_Location_ID',
+        dependsOn: { field: 'bp', filterKey: 'bpartner' },
+      },
+    ];
+    render(
+      <EntityForm
+        fields={fields}
+        data={{ partnerAddress: 'addr-1', 'partnerAddress$_identifier': '123 Main St', bp: 'BP1' }}
+        onChange={vi.fn()}
+        token="tok"
+        apiBaseUrl="/api"
+        entity="header"
+      />,
+    );
+    expect(screen.getByTestId('partner-address-picker')).toBeInTheDocument();
+  });
+
+  // --- Image field with stretch (side panel layout) ---
+
+  it('renders image field in side-panel layout with stretch', () => {
+    const fields = [
+      { key: 'name', label: 'Name', type: 'text', column: 'Name' },
+      { key: 'photo', label: 'Photo', type: 'image', column: 'AD_Image_ID' },
+    ];
+    const { container } = render(
+      <EntityForm
+        fields={fields}
+        data={{ name: 'test', photo: 'img-123' }}
+        onChange={vi.fn()}
+        token="tok"
+        apiBaseUrl="/api"
+      />,
+    );
+    // Side-panel image layout: flex container with two children
+    expect(container.querySelector('.flex.gap-6')).toBeTruthy();
+    expect(screen.getByTestId('image-field-photo')).toBeInTheDocument();
+  });
+
+  // --- colSpan handling ---
+
+  it('applies col-span-3 class when field has span: 3', () => {
+    const fields = [
+      { key: 'desc', label: 'Description', type: 'text', column: 'Description', span: 3 },
+    ];
+    const { container } = render(
+      <EntityForm fields={fields} data={{}} onChange={vi.fn()} />,
+    );
+    expect(container.querySelector('.col-span-3')).toBeTruthy();
+  });
+
+  // --- Required asterisk visibility ---
+
+  it('shows required asterisk for editable required field', () => {
+    const fields = [
+      { key: 'name', label: 'Name', type: 'text', column: 'Name', required: true },
+    ];
+    const { container } = render(
+      <EntityForm fields={fields} data={{}} onChange={vi.fn()} />,
+    );
+    expect(container.querySelector('.text-red-500')).toBeTruthy();
+  });
+
+  it('does not show required asterisk when field is readOnly', () => {
+    const fields = [
+      { key: 'name', label: 'Name', type: 'text', column: 'Name', required: true, readOnly: true },
+    ];
+    const { container } = render(
+      <EntityForm fields={fields} data={{}} onChange={vi.fn()} />,
+    );
+    // readOnly fields don't show the asterisk
+    expect(container.querySelector('.text-red-500')).toBeNull();
+  });
+
+  // --- onChange callback with different field types ---
+
+  it('calls onChange with value and column for text input', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const fields = [
+      { key: 'name', label: 'Name', type: 'text', column: 'Name' },
+    ];
+    render(
+      <EntityForm fields={fields} data={{ name: '' }} onChange={onChange} />,
+    );
+    const input = screen.getByTestId('field-name');
+    await user.type(input, 'A');
+    expect(onChange).toHaveBeenCalledWith('name', 'A', 'Name');
+  });
+
+  // --- fieldErrors error state ---
+
+  it('renders error message when fieldErrors contains entry for field', () => {
+    const fields = [
+      { key: 'name', label: 'Name', type: 'text', column: 'Name' },
+    ];
+    render(
+      <EntityForm
+        fields={fields}
+        data={{ name: '' }}
+        onChange={vi.fn()}
+        fieldErrors={{ name: 'This field is required' }}
+      />,
+    );
+    expect(screen.getByTestId('error-name')).toBeInTheDocument();
+    expect(screen.getByText('This field is required')).toBeInTheDocument();
+  });
+
+  it('does not render error when fieldErrors is empty', () => {
+    const fields = [
+      { key: 'name', label: 'Name', type: 'text', column: 'Name' },
+    ];
+    render(
+      <EntityForm fields={fields} data={{ name: '' }} onChange={vi.fn()} fieldErrors={{}} />,
+    );
+    expect(screen.queryByTestId('error-name')).toBeNull();
+  });
+
+  // --- Inline image field within grid ---
+
+  it('renders inline image within the grid (not side panel)', () => {
+    const fields = [
+      { key: 'name', label: 'Name', type: 'text', column: 'Name' },
+      { key: 'thumb', label: 'Thumb', type: 'image', column: 'AD_Image_ID', inline: true },
+    ];
+    const { container } = render(
+      <EntityForm
+        fields={fields}
+        data={{ name: 'test', thumb: 'img-456' }}
+        onChange={vi.fn()}
+        token="tok"
+        apiBaseUrl="/api"
+      />,
+    );
+    // Inline image should NOT trigger the side-panel flex layout
+    expect(container.querySelector('.flex.gap-6')).toBeNull();
+    expect(screen.getByTestId('image-field-thumb')).toBeInTheDocument();
+  });
+
+  // --- Select with required shows asterisk ---
+
+  it('shows asterisk on required select field', () => {
+    const fields = [
+      {
+        key: 'type',
+        label: 'Type',
+        type: 'select',
+        column: 'DocType',
+        required: true,
+        options: [{ value: 'A', label: 'Option A' }],
+      },
+    ];
+    const { container } = render(
+      <EntityForm fields={fields} data={{}} onChange={vi.fn()} />,
+    );
+    expect(container.querySelector('.text-red-500')).toBeTruthy();
+  });
+
+  // --- excludeFields ---
+
+  it('excludes fields listed in excludeFields', () => {
+    const fields = [
+      { key: 'a', label: 'A', type: 'text', column: 'A' },
+      { key: 'b', label: 'B', type: 'text', column: 'B' },
+    ];
+    render(
+      <EntityForm fields={fields} data={{}} onChange={vi.fn()} excludeFields={['b']} />,
+    );
+    expect(screen.getByText('A')).toBeInTheDocument();
+    expect(screen.queryByText('B')).not.toBeInTheDocument();
+  });
 });

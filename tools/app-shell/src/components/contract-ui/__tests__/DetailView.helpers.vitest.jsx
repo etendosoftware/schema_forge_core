@@ -3,6 +3,7 @@
  * We import only the exported functions — internal ones are tested
  * indirectly through their callers or via source-reading.
  */
+import { render, screen } from '@testing-library/react';
 import {
   getCustomLinesTabClassName,
   getWindowTitle,
@@ -57,6 +58,12 @@ import {
   getSecondaryTabEntityKey,
   getAddLineMenuActions,
   renderEmbeddedStatusPill,
+  renderExtraActionButtons,
+  getDetailContentContainerClassName,
+  renderPrimaryTabButtons,
+  renderNotesField,
+  renderSidePanel,
+  buildLineRowClickHandler,
 } from '../DetailView.jsx';
 
 // Mock all the heavy dependencies DetailView imports
@@ -86,6 +93,13 @@ vi.mock('@/lib/documentTotals', () => ({ resolveTotalDiscountPct: () => 0 }));
 vi.mock('@/lib/backendErrors.js', () => ({ translateBackendError: (m) => m }));
 vi.mock('@/utils/recordActions.js', () => ({ isDeleteVisibleForRecord: () => true }));
 vi.mock('@/lib/utils.js', () => ({ cn: (...args) => args.filter(Boolean).join(' ') }));
+vi.mock('@/components/ui/button.jsx', () => ({
+  Button: ({ children, ...rest }) => <button {...rest}>{children}</button>,
+}));
+vi.mock('../DocumentStatusPill.jsx', () => ({
+  DocumentStatusPill: ({ status }) => <span data-testid="doc-status-pill">{status}</span>,
+  default: ({ status }) => <span data-testid="doc-status-pill">{status}</span>,
+}));
 
 describe('DetailView helper functions', () => {
   describe('getCustomLinesTabClassName', () => {
@@ -735,6 +749,255 @@ describe('DetailView helper functions', () => {
       const ui = (k) => `t:${k}`;
       const result = getAddLineMenuActions(getActions, { id: '1' }, {}, ui);
       expect(result[0].label).toBe('t:import');
+    });
+  });
+
+  // ---------- NEW: additional coverage for uncovered helpers ----------
+
+  describe('renderExtraActionButtons', () => {
+    it('renders buttons from a static array', () => {
+      const actions = [
+        { key: 'a1', label: 'Action 1', onClick: vi.fn() },
+        { key: 'a2', label: 'Action 2', onClick: vi.fn(), className: 'custom' },
+      ];
+      const result = renderExtraActionButtons(actions, {}, { children: [] }, 'btn-cls');
+      const { container } = render(<>{result}</>);
+      expect(container.querySelectorAll('button')).toHaveLength(2);
+      expect(screen.getByText('Action 1')).toBeInTheDocument();
+    });
+
+    it('renders buttons from a function returning actions', () => {
+      const actionsFn = ({ data }) => [{ key: 'x', label: data.name, onClick: vi.fn() }];
+      const result = renderExtraActionButtons(actionsFn, { name: 'Go' }, { children: [] }, '');
+      const { container } = render(<>{result}</>);
+      expect(screen.getByText('Go')).toBeInTheDocument();
+    });
+
+    it('filters out actions with visible === false', () => {
+      const actions = [
+        { key: 'show', label: 'Show', onClick: vi.fn() },
+        { key: 'hide', label: 'Hide', onClick: vi.fn(), visible: false },
+      ];
+      const result = renderExtraActionButtons(actions, {}, { children: [] }, '');
+      const { container } = render(<>{result}</>);
+      expect(screen.getByText('Show')).toBeInTheDocument();
+      expect(screen.queryByText('Hide')).toBeNull();
+    });
+  });
+
+  describe('getDetailContentContainerClassName', () => {
+    it('returns inline layout classes for inlineEditable', () => {
+      const cls = getDetailContentContainerClassName({ linesLayout: 'inlineEditable' });
+      expect(cls).toContain('flex flex-col overflow-y-auto');
+    });
+
+    it('returns overflow-auto for non-inline layout', () => {
+      const cls = getDetailContentContainerClassName({ linesLayout: 'classic' });
+      expect(cls).toContain('overflow-auto');
+    });
+
+    it('appends hidden when primaryTabs exist and activePrimaryTab is not general', () => {
+      const cls = getDetailContentContainerClassName({
+        linesLayout: 'classic',
+        primaryTabs: [{ key: 'custom' }],
+        activePrimaryTab: 'custom',
+      });
+      expect(cls).toContain('hidden');
+    });
+
+    it('does not append hidden when activePrimaryTab is general', () => {
+      const cls = getDetailContentContainerClassName({
+        linesLayout: 'classic',
+        primaryTabs: [{ key: 'general' }],
+        activePrimaryTab: 'general',
+      });
+      expect(cls).not.toContain('hidden');
+    });
+
+    it('handles empty arguments gracefully (defaults)', () => {
+      const cls = getDetailContentContainerClassName();
+      expect(typeof cls).toBe('string');
+    });
+  });
+
+  describe('renderPrimaryTabButtons', () => {
+    it('renders pill variant with active styling', () => {
+      const setActive = vi.fn();
+      const tabs = [{ key: 'general', label: 'General' }, { key: 'extra', label: 'Extra' }];
+      const result = renderPrimaryTabButtons('pill', tabs, setActive, 'general', (k) => k);
+      const { container } = render(<>{result}</>);
+      expect(screen.getByText('General')).toBeInTheDocument();
+      expect(screen.getByText('Extra')).toBeInTheDocument();
+    });
+
+    it('renders default (non-pill) variant', () => {
+      const setActive = vi.fn();
+      const tabs = [{ key: 'general', label: 'General' }];
+      const result = renderPrimaryTabButtons('default', tabs, setActive, 'general', (k) => k);
+      const { container } = render(<>{result}</>);
+      expect(screen.getByText('General')).toBeInTheDocument();
+    });
+  });
+
+  describe('canShowAddLineArea', () => {
+    it('true when editing, not readonly, has entry fields, canAddLines', () => {
+      expect(canShowAddLineArea(
+        { editing: { id: '1' } },
+        false,
+        [{ key: 'product' }],
+        null,
+        true,
+      )).toBeTruthy();
+    });
+
+    it('false when not editing', () => {
+      expect(canShowAddLineArea({ editing: null }, false, [{ key: 'x' }], null, true)).toBeFalsy();
+    });
+
+    it('false when isDocumentReadOnly', () => {
+      expect(canShowAddLineArea({ editing: { id: '1' } }, true, [{ key: 'x' }], null, true)).toBeFalsy();
+    });
+
+    it('false when no entry fields and no DetailExtraActions', () => {
+      expect(canShowAddLineArea({ editing: { id: '1' } }, false, [], null, true)).toBeFalsy();
+    });
+
+    it('true when no entry fields but DetailExtraActions exists', () => {
+      expect(canShowAddLineArea({ editing: { id: '1' } }, false, [], () => null, true)).toBeTruthy();
+    });
+
+    it('false when canAddLines is false', () => {
+      expect(canShowAddLineArea({ editing: { id: '1' } }, false, [{ key: 'x' }], null, false)).toBeFalsy();
+    });
+  });
+
+  describe('applyLocalChildRowUpdate', () => {
+    it('calls handleUpdateChild with merged updates', () => {
+      const hook = { handleUpdateChild: vi.fn() };
+      const row = { id: 'R1', qty: 5 };
+      applyLocalChildRowUpdate({ lineNetAmount: 100 }, 'qty', 10, { qty: 10, lineNetAmount: 100 }, {}, hook, row);
+      expect(hook.handleUpdateChild).toHaveBeenCalledWith(
+        'R1',
+        expect.objectContaining({ qty: 10, lineNetAmount: 100 }),
+      );
+    });
+
+    it('includes identifier from opts when provided', () => {
+      const hook = { handleUpdateChild: vi.fn() };
+      const row = { id: 'R2', product: 'P1' };
+      applyLocalChildRowUpdate({}, 'product', 'P2', { product: 'P2' }, { identifier: 'Widget' }, hook, row);
+      expect(hook.handleUpdateChild).toHaveBeenCalledWith(
+        'R2',
+        expect.objectContaining({ product: 'P2', 'product$_identifier': 'Widget' }),
+      );
+    });
+  });
+
+  describe('renderEmbeddedStatusPill (JSX rendering)', () => {
+    it('renders DocumentStatusPill when statusField and data have value', () => {
+      const result = renderEmbeddedStatusPill('documentStatus', { documentStatus: 'DR' }, { DR: 'Draft' });
+      const { container } = render(<>{result}</>);
+      expect(screen.getByTestId('doc-status-pill')).toBeInTheDocument();
+    });
+
+    it('returns null when statusField is missing', () => {
+      expect(renderEmbeddedStatusPill(null, { documentStatus: 'DR' }, {})).toBeNull();
+    });
+
+    it('returns null when data has no value for statusField', () => {
+      expect(renderEmbeddedStatusPill('documentStatus', {}, {})).toBeNull();
+    });
+  });
+
+  describe('getSecondaryTabEntityKey (extended branches)', () => {
+    it('returns null for isFormTab', () => {
+      const tabs = [{ key: 'form1', isFormTab: true }];
+      expect(getSecondaryTabEntityKey(tabs, 0)).toBeNull();
+    });
+
+    it('returns null for Panel tab', () => {
+      const tabs = [{ key: 'panel1', Panel: () => null }];
+      expect(getSecondaryTabEntityKey(tabs, 0)).toBeNull();
+    });
+
+    it('returns key for regular tab', () => {
+      const tabs = [{ key: 'lines' }];
+      expect(getSecondaryTabEntityKey(tabs, 0)).toBe('lines');
+    });
+
+    it('returns null for out-of-bounds index', () => {
+      expect(getSecondaryTabEntityKey([], 5)).toBeNull();
+    });
+  });
+
+  describe('getTabsBarStyle (extended branches)', () => {
+    it('returns paddingRight style when both args truthy', () => {
+      const style = getTabsBarStyle('120px', '100px');
+      expect(style).toEqual({ paddingRight: 'calc(100px + 24px)' });
+    });
+
+    it('returns undefined when tabsBarRight is falsy', () => {
+      expect(getTabsBarStyle(null, '100px')).toBeUndefined();
+    });
+
+    it('returns undefined when tabsBarRightDivider is falsy', () => {
+      expect(getTabsBarStyle('120px', null)).toBeUndefined();
+    });
+  });
+
+  describe('getTabsBarClassName (extended branches)', () => {
+    it('includes relative when tabsBarRightDivider is truthy', () => {
+      expect(getTabsBarClassName('px-6', '100px')).toContain('relative');
+    });
+
+    it('does not include relative when tabsBarRightDivider is falsy', () => {
+      expect(getTabsBarClassName('px-6', null)).not.toContain('relative');
+    });
+  });
+
+  describe('getDetailContentClassName (extended branches)', () => {
+    it('returns max-w-full when no sidePanel', () => {
+      const cls = getDetailContentClassName(null, 'classic');
+      expect(cls).toContain('max-w-full');
+    });
+
+    it('returns flex-1 when sidePanel is present', () => {
+      const cls = getDetailContentClassName(() => null, 'classic');
+      expect(cls).toContain('flex-1');
+    });
+
+    it('returns flex flex-col for inlineEditable', () => {
+      const cls = getDetailContentClassName(null, 'inlineEditable');
+      expect(cls).toContain('flex flex-col');
+    });
+
+    it('returns space-y-2 for classic', () => {
+      const cls = getDetailContentClassName(null, 'classic');
+      expect(cls).toContain('space-y-2');
+    });
+  });
+
+  describe('shouldShowLinesEmptyState (readonly branch)', () => {
+    it('falsy when isDocumentReadOnly is true', () => {
+      expect(shouldShowLinesEmptyState({ children: [], editing: { id: '1' } }, false, () => null, true)).toBeFalsy();
+    });
+  });
+
+  describe('resolveCanAddLines (extended branches)', () => {
+    it('calls guard with (data, children)', () => {
+      const guard = vi.fn(() => true);
+      const data = { status: 'DR' };
+      const children = [{ id: 'L1' }];
+      resolveCanAddLines(guard, data, [], children);
+      expect(guard).toHaveBeenCalledWith(data, children);
+    });
+
+    it('returns false when multiple requiredHeaderFields, some empty', () => {
+      expect(resolveCanAddLines(null, { bp: 'ID1', warehouse: null }, ['bp', 'warehouse'])).toBe(false);
+    });
+
+    it('returns true when all requiredHeaderFields are filled', () => {
+      expect(resolveCanAddLines(null, { bp: 'ID1', warehouse: 'W1' }, ['bp', 'warehouse'])).toBe(true);
     });
   });
 });

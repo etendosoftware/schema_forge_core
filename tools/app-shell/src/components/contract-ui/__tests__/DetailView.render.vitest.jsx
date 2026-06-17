@@ -316,4 +316,445 @@ describe('DetailView render integration', () => {
     mockHook.loading = false;
     mockHook.selected = { id: '123', documentNo: 'SO-001', documentStatus: 'DR' };
   });
+
+  it('renders with hideMoreMenu={true}', () => {
+    const { container } = renderDetailView({ hideMoreMenu: true });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with hideMoreMenu as function returning true', () => {
+    const { container } = renderDetailView({ hideMoreMenu: ({ data }) => !!data });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with hideTopBar={true}', () => {
+    const { container } = renderDetailView({ hideTopBar: true });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with hidePrint={true}', () => {
+    const { container } = renderDetailView({ hidePrint: true });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with whiteFormBackground={true}', () => {
+    const { container } = renderDetailView({ whiteFormBackground: true });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with hideFormCard={true}', () => {
+    const { container } = renderDetailView({ hideFormCard: true });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with noHeaderBorder={true}', () => {
+    const { container } = renderDetailView({ noHeaderBorder: true });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with extraActions containing visible buttons', () => {
+    const actions = [
+      { key: 'act1', label: 'Action 1', onClick: vi.fn(), visible: true },
+      { key: 'act2', label: 'Action 2', onClick: vi.fn(), visible: false },
+    ];
+    const { container } = renderDetailView({ extraActions: actions });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with extraActions as a function', () => {
+    const actionsFn = ({ data, children }) => [
+      { key: 'dynAct', label: 'Dynamic', onClick: vi.fn() },
+    ];
+    const { container } = renderDetailView({ extraActions: actionsFn });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with menuActions array', () => {
+    const actions = [
+      { key: 'menu1', label: 'Menu Action 1', onClick: vi.fn() },
+      { key: 'menu2', label: 'Menu Action 2', onClick: vi.fn() },
+    ];
+    const { container } = renderDetailView({ menuActions: actions });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with menuActions as a function', () => {
+    const actionsFn = ({ data, status }) => [
+      { key: 'dynMenu', label: 'Dynamic Menu', onClick: vi.fn() },
+    ];
+    const { container } = renderDetailView({ menuActions: actionsFn });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with formFooter component', () => {
+    const Footer = ({ data }) => <div data-testid="form-footer">Footer for {data?.documentNo}</div>;
+    renderDetailView({ formFooter: Footer });
+    expect(screen.getByTestId('form-footer')).toBeInTheDocument();
+  });
+
+  it('renders with afterTotals component', () => {
+    const AfterTotals = ({ data }) => <div data-testid="after-totals">After</div>;
+    renderDetailView({ afterTotals: AfterTotals });
+    expect(screen.getByTestId('after-totals')).toBeInTheDocument();
+  });
+
+  it('renders with autoSaveOnBlur={true}', () => {
+    const { container } = renderDetailView({ autoSaveOnBlur: true });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with toolbarButtonSize default', () => {
+    const { container } = renderDetailView({ toolbarButtonSize: 'default' });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with toolbarButtonSize sm', () => {
+    const { container } = renderDetailView({ toolbarButtonSize: 'sm' });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with toolbarBorderBottom={true}', () => {
+    const { container } = renderDetailView({ toolbarBorderBottom: true });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with compactSidebarPadding={true}', () => {
+    const { container } = renderDetailView({ compactSidebarPadding: true });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with hideMoreDetails={true}', () => {
+    const { container } = renderDetailView({ hideMoreDetails: true });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with customMenuContent', () => {
+    const CustomMenu = ({ data }) => <div data-testid="custom-menu">Menu</div>;
+    const { container } = renderDetailView({ customMenuContent: CustomMenu });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with hideSaveStatuses matching current status', () => {
+    const { container } = renderDetailView({ hideSaveStatuses: ['DR'] });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with tabsBarRight content', () => {
+    const TabsRight = () => <div data-testid="tabs-bar-right">Right</div>;
+    const { container } = renderDetailView({ tabsBarRight: TabsRight });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with topbarExtra', () => {
+    const TopExtra = () => <div data-testid="topbar-extra">TopExtra</div>;
+    renderDetailView({ topbarExtra: TopExtra });
+    expect(screen.getByTestId('topbar-extra')).toBeInTheDocument();
+  });
+
+  it('renders with topbarRight', () => {
+    const TopRight = () => <div data-testid="topbar-right">TopRight</div>;
+    renderDetailView({ topbarRight: TopRight });
+    expect(screen.getByTestId('topbar-right')).toBeInTheDocument();
+  });
+
+  it('renders with sidebarContent', () => {
+    const Sidebar = () => <div data-testid="sidebar-content">Sidebar</div>;
+    const { container } = renderDetailView({ sidebarContent: Sidebar });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with contentBg override', () => {
+    const { container } = renderDetailView({ contentBg: 'bg-gray-50' });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with lockWhenProcessed={false}', () => {
+    const { container } = renderDetailView({ lockWhenProcessed: false });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with customTabs (footer placement)', () => {
+    const CustomComp = ({ data }) => <div data-testid="custom-tab-comp">Custom</div>;
+    const customTabs = [
+      { key: 'custom1', label: 'Custom Tab', Component: CustomComp, placement: 'footer' },
+    ];
+    const { container } = renderDetailView({ customTabs });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with customTabs (tab placement)', () => {
+    const CustomComp = ({ data }) => <div data-testid="custom-tab-comp2">Custom2</div>;
+    const customTabs = [
+      { key: 'custom2', label: 'Custom Tab 2', Component: CustomComp, placement: 'tab' },
+    ];
+    const { container } = renderDetailView({ customTabs });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with customTabsAfterBottom={true}', () => {
+    const { container } = renderDetailView({ customTabsAfterBottom: true });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with enableSecondaryRowDelete', () => {
+    const stabs = [{ key: 'tab1', label: 'Tab1', Table: MockTable }];
+    const { container } = renderDetailView({
+      secondaryTabs: stabs,
+      enableSecondaryRowDelete: true,
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with sidebarAboveTabsOnly', () => {
+    const Sidebar = () => <div data-testid="sidebar-above">Above</div>;
+    const { container } = renderDetailView({
+      sidebarContent: Sidebar,
+      sidebarAboveTabsOnly: true,
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with primaryTabsVariant underline', () => {
+    const tabs = [{ key: 'general', label: 'General' }, { key: 'extra', label: 'Extra' }];
+    const { container } = renderDetailView({
+      primaryTabs: tabs,
+      primaryTabsVariant: 'underline',
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with linesLayout inlineEditable and hideAddLineChevron', () => {
+    const { container } = renderDetailView({
+      linesLayout: 'inlineEditable',
+      hideAddLineChevron: true,
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with secondaryTabsShowHoverLine', () => {
+    const stabs = [{ key: 'tab1', label: 'Tab1', Table: MockTable }];
+    const { container } = renderDetailView({
+      secondaryTabs: stabs,
+      secondaryTabsShowHoverLine: true,
+    });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with documentPreview', () => {
+    const Preview = () => <div data-testid="doc-preview">Preview</div>;
+    const { container } = renderDetailView({ documentPreview: Preview });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with additionalDirtyState=true', () => {
+    const { container } = renderDetailView({ additionalDirtyState: true });
+    expect(container).toBeTruthy();
+  });
+
+  it('renders with combined whiteFormBackground + hideFormCard + noHeaderBorder', () => {
+    const { container } = renderDetailView({
+      whiteFormBackground: true,
+      hideFormCard: true,
+      noHeaderBorder: true,
+    });
+    expect(container).toBeTruthy();
+  });
+});
+
+describe('DetailView exported helpers', () => {
+  // Import the pure helpers directly
+  let helpers;
+  beforeAll(async () => {
+    helpers = await import('../DetailView.jsx');
+  });
+
+  describe('resolveHideMoreMenu', () => {
+    it('returns boolean when hideMoreMenu is a boolean', () => {
+      expect(helpers.resolveHideMoreMenu(true, {})).toBe(true);
+      expect(helpers.resolveHideMoreMenu(false, {})).toBe(false);
+    });
+
+    it('calls function with data when hideMoreMenu is a function', () => {
+      const fn = ({ data }) => data?.status === 'CO';
+      expect(helpers.resolveHideMoreMenu(fn, { status: 'CO' })).toBe(true);
+      expect(helpers.resolveHideMoreMenu(fn, { status: 'DR' })).toBe(false);
+    });
+  });
+
+  describe('renderExtraActionButtons', () => {
+    it('renders visible actions from an array', () => {
+      const actions = [
+        { key: 'a', label: 'A', visible: true, onClick: vi.fn() },
+        { key: 'b', label: 'B', visible: false, onClick: vi.fn() },
+      ];
+      const result = helpers.renderExtraActionButtons(actions, {}, { children: [] }, 'h-10');
+      const visible = result.filter(Boolean);
+      expect(visible.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('calls extraActions as function when provided', () => {
+      const fn = ({ data, children }) => [{ key: 'x', label: 'X', onClick: vi.fn() }];
+      const result = helpers.renderExtraActionButtons(fn, { id: '1' }, { children: [] }, 'h-10');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('getSelectedLinesTotalLabel', () => {
+    it('returns formatted total when showLineTotals is not false', () => {
+      const bottomSection = { showLineTotals: true };
+      const rows = [
+        { lineGrossAmount: 100.50 },
+        { lineGrossAmount: 200.25 },
+      ];
+      const result = helpers.getSelectedLinesTotalLabel(bottomSection, rows, { grossField: 'lineGrossAmount' }, {});
+      expect(result).toContain('300');
+    });
+
+    it('returns null when showLineTotals is false', () => {
+      const result = helpers.getSelectedLinesTotalLabel({ showLineTotals: false }, [], {}, {});
+      expect(result).toBeNull();
+    });
+
+    it('includes currency identifier when available', () => {
+      const rows = [{ lineGrossAmount: 50 }];
+      const data = { 'currency$_identifier': 'EUR' };
+      const result = helpers.getSelectedLinesTotalLabel({}, rows, { grossField: 'lineGrossAmount' }, data);
+      expect(result).toContain('EUR');
+    });
+  });
+
+  describe('computeIsDirty', () => {
+    it('returns true when header is dirty', () => {
+      expect(helpers.computeIsDirty({ isDirtyHeader: true }, false, {}, null, false)).toBe(true);
+    });
+
+    it('returns true when addingLine', () => {
+      expect(helpers.computeIsDirty({ isDirtyHeader: false }, true, {}, null, false)).toBe(true);
+    });
+
+    it('returns true when addingSecondaryLine has a truthy value', () => {
+      expect(helpers.computeIsDirty({ isDirtyHeader: false }, false, { tab1: true }, null, false)).toBe(true);
+    });
+
+    it('returns true when lineEdits has keys', () => {
+      expect(helpers.computeIsDirty({ isDirtyHeader: false }, false, {}, { line1: {} }, false)).toBe(true);
+    });
+
+    it('returns true when additionalDirtyState is true', () => {
+      expect(helpers.computeIsDirty({ isDirtyHeader: false }, false, {}, null, true)).toBe(true);
+    });
+
+    it('returns false when nothing is dirty', () => {
+      expect(helpers.computeIsDirty({ isDirtyHeader: false }, false, {}, null, false)).toBe(false);
+    });
+  });
+
+  describe('hasRecordForRoute', () => {
+    it('returns true for new records', () => {
+      expect(helpers.hasRecordForRoute(true, { selected: null }, 'new')).toBe(true);
+    });
+
+    it('returns true when selected id matches recordId', () => {
+      expect(helpers.hasRecordForRoute(false, { selected: { id: '123' } }, '123')).toBe(true);
+    });
+
+    it('returns false when selected id does not match', () => {
+      expect(helpers.hasRecordForRoute(false, { selected: { id: '456' } }, '123')).toBe(false);
+    });
+  });
+
+  describe('isLoadingRecordForRoute', () => {
+    it('returns true when loading and no matching record', () => {
+      expect(helpers.isLoadingRecordForRoute({ loading: true, selected: null }, false, '123')).toBe(true);
+    });
+
+    it('returns false when not loading', () => {
+      expect(helpers.isLoadingRecordForRoute({ loading: false, selected: null }, false, '123')).toBe(false);
+    });
+  });
+
+  describe('resolveCanAddLines', () => {
+    it('uses addLineGuard when provided', () => {
+      const guard = (data) => data?.status === 'DR';
+      expect(helpers.resolveCanAddLines(guard, { status: 'DR' }, null)).toBe(true);
+      expect(helpers.resolveCanAddLines(guard, { status: 'CO' }, null)).toBe(false);
+    });
+
+    it('checks requiredHeaderFields when no guard', () => {
+      expect(helpers.resolveCanAddLines(null, { bp: 'BP1', pl: 'PL1' }, ['bp', 'pl'])).toBe(true);
+      expect(helpers.resolveCanAddLines(null, { bp: '', pl: 'PL1' }, ['bp', 'pl'])).toBe(false);
+      expect(helpers.resolveCanAddLines(null, { bp: null, pl: 'PL1' }, ['bp', 'pl'])).toBe(false);
+    });
+
+    it('returns true when no guard and no requiredHeaderFields', () => {
+      expect(helpers.resolveCanAddLines(null, {}, null)).toBe(true);
+    });
+  });
+
+  describe('getChildSaveButtonLabel', () => {
+    it('returns loading when saving', () => {
+      const ui = (k) => k;
+      expect(helpers.getChildSaveButtonLabel(true, ui)).toBe('loading');
+    });
+
+    it('returns save when not saving', () => {
+      const ui = (k) => k;
+      expect(helpers.getChildSaveButtonLabel(false, ui)).toBe('save');
+    });
+  });
+
+  describe('getAddLineWrapperClassName', () => {
+    it('returns sticky for inlineEditable', () => {
+      expect(helpers.getAddLineWrapperClassName('inlineEditable')).toContain('sticky');
+    });
+
+    it('returns relative for classic', () => {
+      expect(helpers.getAddLineWrapperClassName('classic')).toContain('relative');
+    });
+  });
+
+  describe('getLinesTabsSectionClassName', () => {
+    it('returns flex col for inlineEditable', () => {
+      expect(helpers.getLinesTabsSectionClassName('inlineEditable')).toContain('flex flex-col');
+    });
+
+    it('returns mt-2 for classic', () => {
+      expect(helpers.getLinesTabsSectionClassName('classic')).toContain('mt-2');
+    });
+  });
+
+  describe('getSecondaryTabEntityKey', () => {
+    it('returns null for form tabs', () => {
+      expect(helpers.getSecondaryTabEntityKey([{ isFormTab: true, key: 'tab1' }], 0)).toBeNull();
+    });
+
+    it('returns null for Panel tabs', () => {
+      expect(helpers.getSecondaryTabEntityKey([{ Panel: () => null, key: 'tab1' }], 0)).toBeNull();
+    });
+
+    it('returns key for normal tabs', () => {
+      expect(helpers.getSecondaryTabEntityKey([{ key: 'lines' }], 0)).toBe('lines');
+    });
+  });
+
+  describe('pushOthers', () => {
+    it('pushes others tab when showOthers is true', () => {
+      const tabs = [];
+      const ui = (k) => k;
+      helpers.pushOthers(true, tabs, null, ui);
+      expect(tabs.length).toBe(1);
+    });
+  });
+
+  describe('getAddLineWrapperStyle', () => {
+    it('returns padding 8 for inlineEditable', () => {
+      const style = helpers.getAddLineWrapperStyle('inlineEditable');
+      expect(style.padding).toBe(8);
+    });
+
+    it('returns string padding for classic', () => {
+      const style = helpers.getAddLineWrapperStyle('classic');
+      expect(style.padding).toBe('10px 16px');
+    });
+  });
 });

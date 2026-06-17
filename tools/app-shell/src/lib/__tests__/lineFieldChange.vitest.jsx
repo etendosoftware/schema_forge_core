@@ -169,4 +169,115 @@ describe('lineFieldChange', () => {
       expect(result['uOM$_identifier']).toBe('Existing');
     });
   });
+
+  describe('shouldFireCascade (extended)', () => {
+    it('returns false when grossUnitPrice is set and lineNetAmount > 0', () => {
+      expect(shouldFireCascade({ grossUnitPrice: 12.5, lineNetAmount: 50 })).toBe(false);
+    });
+
+    it('returns true when grossUnitPrice is set and lineNetAmount is 0', () => {
+      expect(shouldFireCascade({ grossUnitPrice: 12.5, lineNetAmount: 0 })).toBe(true);
+    });
+
+    it('returns false when lineNetAmt variant is present and > 0', () => {
+      expect(shouldFireCascade({ unitPrice: 10, lineNetAmt: 50 })).toBe(false);
+    });
+
+    it('returns true when grossUnitPrice set but no amount fields', () => {
+      expect(shouldFireCascade({ grossUnitPrice: 15 })).toBe(true);
+    });
+
+    it('returns false when lineNetAmt variant is 0 and no price', () => {
+      expect(shouldFireCascade({ lineNetAmt: 0 })).toBe(false);
+    });
+  });
+
+  describe('selectCascadeField (extended)', () => {
+    it('uses addLineFields column for grossUnitPrice when available', () => {
+      const fields = [{ key: 'grossUnitPrice', column: 'GrossCol' }];
+      const { field, value } = selectCascadeField({ grossUnitPrice: 20 }, fields);
+      expect(field).toBe('GrossCol');
+      expect(value).toBe('20');
+    });
+
+    it('falls back to netUnitPrice when unitPrice is absent', () => {
+      const { field, value } = selectCascadeField({ netUnitPrice: 8 }, []);
+      expect(field).toBe('PriceActual');
+      expect(value).toBe('8');
+    });
+
+    it('handles null addLineFields gracefully', () => {
+      const { field } = selectCascadeField({ unitPrice: 10 }, null);
+      expect(field).toBe('PriceActual');
+    });
+  });
+
+  describe('normalizeCalloutResponse (extended)', () => {
+    it('skips empty updates when existing value is standard UUID with dashes', () => {
+      const uuid = '95e2a8b5-0a25-4b2a-ae67-74b8c2f28120';
+      const callout = { updates: { product: { value: '' } } };
+      const result = normalizeCalloutResponse(callout, { product: uuid });
+      expect(result.product).toBeUndefined();
+    });
+
+    it('handles calloutData with no updates and no combos', () => {
+      const result = normalizeCalloutResponse({}, { name: 'test' });
+      expect(Object.keys(result)).toHaveLength(0);
+    });
+
+    it('handles combos with _identifier', () => {
+      const callout = { combos: { warehouse: { selected: 'W1', _identifier: 'Main Warehouse' } } };
+      const result = normalizeCalloutResponse(callout, {});
+      expect(result.warehouse).toBe('W1');
+      expect(result['warehouse$_identifier']).toBe('Main Warehouse');
+    });
+  });
+
+  describe('applyQtyZeroGuard (extended)', () => {
+    it('removes zero movementQuantity when user had a positive value', () => {
+      const result = { movementQuantity: 0 };
+      applyQtyZeroGuard(result, { movementQuantity: 10 });
+      expect(result.movementQuantity).toBeUndefined();
+    });
+
+    it('keeps non-zero movementQuantity regardless of previous value', () => {
+      const result = { movementQuantity: 5 };
+      applyQtyZeroGuard(result, { movementQuantity: 10 });
+      expect(result.movementQuantity).toBe(5);
+    });
+  });
+
+  describe('roundAmounts (extended)', () => {
+    it('rounds lineNetAmount to 2 decimals', () => {
+      const result = { lineNetAmount: 123.456 };
+      roundAmounts(result);
+      expect(result.lineNetAmount).toBe(123.46);
+    });
+
+    it('does not touch null amount values (null != null is false)', () => {
+      const result = { grossAmount: null };
+      roundAmounts(result);
+      expect(result.grossAmount).toBeNull();
+    });
+  });
+
+  describe('buildCascadeState (extended)', () => {
+    it('excludes multiple $_identifier keys', () => {
+      const state = buildCascadeState(
+        { unitPrice: 10, 'tax$_identifier': 'VAT', 'product$_identifier': 'Widget', name: 'N' },
+        { qty: 5 }
+      );
+      expect(state.unitPrice).toBe(10);
+      expect(state.name).toBe('N');
+      expect(state.qty).toBe(5);
+      expect(state['tax$_identifier']).toBeUndefined();
+      expect(state['product$_identifier']).toBeUndefined();
+    });
+
+    it('overwrites form state values with primary result', () => {
+      const state = buildCascadeState({ unitPrice: 20 }, { unitPrice: 10, qty: 5 });
+      expect(state.unitPrice).toBe(20);
+      expect(state.qty).toBe(5);
+    });
+  });
 });

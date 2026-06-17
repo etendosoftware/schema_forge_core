@@ -383,4 +383,309 @@ describe('InlineLinesPanel', () => {
     // In read mode, product renders as a span, not an input
     expect(within(rowAfter).queryAllByRole('textbox').length).toBe(0);
   });
+
+  // ---------- NEW: additional coverage for uncovered InlineLinesPanel branches ----------
+
+  it('renders enum column with Select dropdown in edit mode', async () => {
+    const columns = [
+      {
+        key: 'taxCategory',
+        label: 'Tax',
+        type: 'enum',
+        column: 'C_TaxCategory_ID',
+        enumLabels: { VAT21: '21% VAT', VAT10: '10% VAT' },
+      },
+    ];
+    const rows = [{ id: 'E1', taxCategory: 'VAT21' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    const row = screen.getByTestId('line-row-E1');
+    // Enter edit mode
+    await act(async () => { await userEvent.hover(row); });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0];
+    await act(async () => { await userEvent.click(editBtn); });
+    // Enum field should render a Select trigger
+    const trigger = within(row).getByTestId('field-taxCategory');
+    expect(trigger).toBeInTheDocument();
+  });
+
+  it('renders date input type in edit mode', async () => {
+    const columns = [
+      { key: 'orderDate', label: 'Date', type: 'date', column: 'DateOrdered' },
+    ];
+    const rows = [{ id: 'DT1', orderDate: '2026-03-15' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    const row = screen.getByTestId('line-row-DT1');
+    await act(async () => { await userEvent.hover(row); });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0];
+    await act(async () => { await userEvent.click(editBtn); });
+    // Date field renders as type="date" input
+    const dateInput = within(row).getByTestId('field-orderDate');
+    expect(dateInput).toBeInTheDocument();
+    expect(dateInput).toHaveAttribute('type', 'date');
+  });
+
+  it('renders numeric field with decimal inputMode in edit mode', async () => {
+    const columns = [
+      { key: 'quantity', label: 'Qty', type: 'number', column: 'QtyOrdered' },
+    ];
+    const rows = [{ id: 'N1', quantity: 10 }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    const row = screen.getByTestId('line-row-N1');
+    await act(async () => { await userEvent.hover(row); });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0];
+    await act(async () => { await userEvent.click(editBtn); });
+    const numInput = within(row).getByTestId('field-quantity');
+    expect(numInput).toHaveAttribute('inputmode', 'decimal');
+  });
+
+  it('renders integer field with numeric inputMode in edit mode', async () => {
+    const columns = [
+      { key: 'lineNo', label: 'Line', type: 'integer', column: 'Line' },
+    ];
+    const rows = [{ id: 'INT1', lineNo: 10 }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    const row = screen.getByTestId('line-row-INT1');
+    await act(async () => { await userEvent.hover(row); });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0];
+    await act(async () => { await userEvent.click(editBtn); });
+    const intInput = within(row).getByTestId('field-lineNo');
+    expect(intInput).toHaveAttribute('inputmode', 'numeric');
+  });
+
+  it('shows validation error for value below col.min', async () => {
+    const columns = [
+      { key: 'quantity', label: 'Qty', type: 'number', column: 'QtyOrdered', min: 1 },
+    ];
+    const rows = [{ id: 'MV1', quantity: 5 }];
+    const onUpdateRow = vi.fn().mockResolvedValue();
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={onUpdateRow}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    const row = screen.getByTestId('line-row-MV1');
+    // Enter edit mode
+    await act(async () => { await userEvent.hover(row); });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0];
+    await act(async () => { await userEvent.click(editBtn); });
+    // Type a value below min
+    const qtyInput = within(row).getByTestId('field-quantity');
+    await act(async () => {
+      await userEvent.clear(qtyInput);
+      await userEvent.type(qtyInput, '0');
+      qtyInput.blur();
+    });
+    // commitField should NOT have been called successfully (min validation fails)
+    // The toast.error is called with 'fieldMinValueError'
+    const { toast } = await import('sonner');
+    expect(toast.error).toHaveBeenCalled();
+  });
+
+  it('formats amount type with two decimals in edit mode', async () => {
+    const columns = [
+      { key: 'name', label: 'Name', type: 'string', column: 'Name' },
+      { key: 'unitPrice', label: 'Price', type: 'amount', column: 'PriceActual', noTrailing: true },
+    ];
+    const rows = [{ id: 'FE1', name: 'Item', unitPrice: 23 }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    const row = screen.getByTestId('line-row-FE1');
+    await act(async () => { await userEvent.hover(row); });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0];
+    await act(async () => { await userEvent.click(editBtn); });
+    // Amount field should display "23.00" (formatForEdit)
+    const priceInput = within(row).getByTestId('field-unitPrice');
+    expect(priceInput).toHaveValue('23.00');
+  });
+
+  it('renders readonly LookupTrigger for lookup fields in edit mode', async () => {
+    const columns = [
+      {
+        key: 'product',
+        label: 'Product',
+        type: 'search',
+        column: 'M_Product_ID',
+        lookup: true,
+      },
+    ];
+    const rows = [{ id: 'LT1', product: 'P1', 'product$_identifier': 'Widget' }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    const row = screen.getByTestId('line-row-LT1');
+    await act(async () => { await userEvent.hover(row); });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0];
+    await act(async () => { await userEvent.click(editBtn); });
+    // LookupTrigger renders a button with data-testid="field-product"
+    const lookupBtn = within(row).getByTestId('field-product');
+    expect(lookupBtn).toBeInTheDocument();
+    expect(lookupBtn.tagName).toBe('BUTTON');
+  });
+
+  it('renders percent column with percentage sign', () => {
+    const columns = [
+      { key: 'discount', label: 'Discount', type: 'percent' },
+    ];
+    const rows = [{ id: 'PC1', discount: 15 }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    expect(screen.getByText('15%')).toBeInTheDocument();
+  });
+
+  it('renders computed/readOnly column as non-editable in edit mode', async () => {
+    const columns = [
+      { key: 'lineNetAmount', label: 'Total', type: 'amount', computed: true },
+    ];
+    const rows = [{ id: 'RO1', lineNetAmount: 500 }];
+    const ref = React.createRef();
+    render(
+      <InlineLinesPanel
+        ref={ref}
+        columns={columns}
+        data={rows}
+        entity="lines"
+        token="test"
+        apiBaseUrl="/api"
+        selectorContext={{}}
+        onSelectionChange={vi.fn()}
+        onUpdateRow={vi.fn().mockResolvedValue()}
+        onDeleteRow={vi.fn().mockResolvedValue()}
+      />,
+    );
+    const row = screen.getByTestId('line-row-RO1');
+    await act(async () => { await userEvent.hover(row); });
+    const actions = within(row).getByTestId('line-actions');
+    const editBtn = within(actions).getAllByRole('button')[0];
+    await act(async () => { await userEvent.click(editBtn); });
+    // Computed column should NOT render an input — EditCell returns null for non-editable
+    expect(within(row).queryByRole('textbox')).toBeNull();
+  });
+
+  it('select-all checkbox toggles all rows', async () => {
+    const onSelectionChange = vi.fn();
+    renderPanel({ onSelectionChange });
+    // Find the select-all checkbox (first checkbox in the header)
+    const checkboxes = screen.getAllByRole('checkbox');
+    const selectAll = checkboxes[0];
+    await act(async () => {
+      await userEvent.click(selectAll);
+    });
+    expect(onSelectionChange).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'L1' }),
+        expect.objectContaining({ id: 'L2' }),
+      ]),
+    );
+  });
 });
