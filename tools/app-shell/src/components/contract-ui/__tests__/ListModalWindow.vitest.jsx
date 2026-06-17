@@ -415,6 +415,51 @@ describe('ListModalWindow — auto-priority seeding', () => {
   });
 });
 
+describe('ListModalWindow — auto-priority ordering', () => {
+  // Read the rendered grid rows in DOM order and return their id suffixes.
+  function renderedRowIds() {
+    return screen
+      .queryAllByTestId(/^list-modal-row-/)
+      .map((el) => el.getAttribute('data-testid').replace('list-modal-row-', ''));
+  }
+
+  it('renders rows in ascending priority order when config.autoPriorityField is set', () => {
+    // Unsorted on arrival: priorities 20, 30, 10.
+    neoState.data = [
+      { id: 'p20', name: 'Twenty', priority: 20 },
+      { id: 'p30', name: 'Thirty', priority: 30 },
+      { id: 'p10', name: 'Ten', priority: 10 },
+    ];
+    renderWindow({ config: { autoPriorityField: 'priority' } });
+    // Should render sorted ascending: 10, 20, 30.
+    expect(renderedRowIds()).toEqual(['p10', 'p20', 'p30']);
+  });
+
+  it('preserves the original row order when config.autoPriorityField is not set', () => {
+    neoState.data = [
+      { id: 'p20', name: 'Twenty', priority: 20 },
+      { id: 'p30', name: 'Thirty', priority: 30 },
+      { id: 'p10', name: 'Ten', priority: 10 },
+    ];
+    renderWindow({ config: {} });
+    // No sorting applied — original (unsorted) order is preserved.
+    expect(renderedRowIds()).toEqual(['p20', 'p30', 'p10']);
+  });
+
+  it('sinks rows with a missing/non-numeric priority to the end (stable)', () => {
+    neoState.data = [
+      { id: 'p20', name: 'Twenty', priority: 20 },
+      { id: 'missing', name: 'NoPriority' }, // missing priority → sinks
+      { id: 'p10', name: 'Ten', priority: 10 },
+      { id: 'nan', name: 'BadPriority', priority: 'abc' }, // non-numeric → sinks
+    ];
+    renderWindow({ config: { autoPriorityField: 'priority' } });
+    // Numeric rows ascending first (10, 20), then the non-finite ones in
+    // their original relative order (missing before nan).
+    expect(renderedRowIds()).toEqual(['p10', 'p20', 'missing', 'nan']);
+  });
+});
+
 describe('ListModalWindow — modal header subtitle', () => {
   it('renders the subtitle when config.subtitleKey is set', () => {
     renderWindow({ config: { titleKey: 'matchRuleNewTitle', subtitleKey: 'matchRuleNewSubtitle' } });

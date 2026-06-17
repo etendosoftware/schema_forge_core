@@ -1,8 +1,8 @@
 {
   "version": "0.34.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-06-11T15:42:59.760Z",
-  "checksum": "f236b671bb1bbffc",
+  "updatedAt": "2026-06-12T16:50:01.218Z",
+  "checksum": "023b1b3bf7a341b5",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -822,7 +822,8 @@
               "source": "0"
             }
           }
-        ]
+        ],
+        "javaQualifier": "assetsHandler"
       },
       "amortizationLine": {
         "tableName": "A_Amortizationline",
@@ -1623,7 +1624,8 @@
             "visibility": "readOnly",
             "required": false
           }
-        ]
+        ],
+        "javaQualifier": "assetsHandler"
       },
       "amortizationLine": {
         "tableName": "A_Amortizationline",
