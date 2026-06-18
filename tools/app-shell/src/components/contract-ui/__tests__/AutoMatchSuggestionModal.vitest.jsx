@@ -193,12 +193,6 @@ describe('AutoMatchSuggestionModal', () => {
     expect(props.onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onClose when X button is clicked', () => {
-    const { props } = renderModal();
-    fireEvent.click(screen.getByTestId('automatch-modal-close'));
-    expect(props.onClose).toHaveBeenCalledTimes(1);
-  });
-
   it('shows empty state when no groups', () => {
     renderModal({ groups: [] });
     expect(screen.getByText('financeReconcileAutomatchEmpty')).toBeInTheDocument();

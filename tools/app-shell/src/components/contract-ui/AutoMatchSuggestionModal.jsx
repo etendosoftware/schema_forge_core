@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { X, ArrowUpRight, Info } from 'lucide-react';
+import { ArrowUpRight, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -270,18 +270,10 @@ export function AutoMatchSuggestionModal({
         data-testid="automatch-suggestion-modal"
       >
         {/* ── Header ────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-5 pt-3 pb-2" style={{ height: 48, borderBottom: '1px solid #E8EAEF' }}>
+        <div className="flex items-center px-5 pt-3 pb-2" style={{ height: 48, borderBottom: '1px solid #E8EAEF' }}>
           <DialogTitle className="m-0 text-xl font-semibold leading-7 text-[#121217]">
             {ui('financeReconcileAutomatchModalTitle')}
           </DialogTitle>
-          <button
-            type="button"
-            onClick={onClose}
-            data-testid="automatch-modal-close"
-            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#F5F7F9]"
-          >
-            <X className="h-5 w-5 text-[#828FA3]" />
-          </button>
         </div>
 
         {/* ── KPI strip ─────────────────────────────────────────────────── */}
