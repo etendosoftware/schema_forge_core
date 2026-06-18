@@ -254,17 +254,24 @@ function ScreenLayout({ toolbar, subBar, children, actions, padContent = true })
   );
 }
 
-// ── Step screens ──────────────────────────────────────────────────────────────
+// ── Shared helpers ───────────────────────────────────────────────────────────
 
-function SkippedScreen({ orgName, selectedOrg, orgList, onSelectOrg, ui, onGoHome, onComplete, goTo }) {
-  const pageHeadEl = (
+function renderPageHead({ selectedOrg, orgList, onSelectOrg, ui, onGoToManual }) {
+  return (
     <PageHead
       selectedOrg={selectedOrg}
       orgList={orgList}
       onSelectOrg={onSelectOrg}
+      {...(onGoToManual ? { onGoToManual } : {})}
       ui={ui}
       data-testid="PageHead__e9ef3f" />
   );
+}
+
+// ── Step screens ──────────────────────────────────────────────────────────────
+
+function SkippedScreen({ orgName, selectedOrg, orgList, onSelectOrg, ui, onGoHome, onComplete, goTo }) {
+  const pageHeadEl = renderPageHead({ selectedOrg, orgList, onSelectOrg, ui });
   return (
     <ScreenLayout
       toolbar={pageHeadEl}
@@ -310,14 +317,7 @@ function AppliedScreen({ orgId, orgName, selectedOrg, orgList, onSelectOrg, syst
   const sys = SYSTEMS[system];
   const terr = TERRITORIES[selectedTerritory ?? ''];
   const certContext = getCertificateContext(system);
-  const pageHeadEl = (
-    <PageHead
-      selectedOrg={selectedOrg}
-      orgList={orgList}
-      onSelectOrg={onSelectOrg}
-      ui={ui}
-      data-testid="PageHead__e9ef3f" />
-  );
+  const pageHeadEl = renderPageHead({ selectedOrg, orgList, onSelectOrg, ui });
 
   return (
     <>
@@ -527,15 +527,7 @@ function ConfirmScreen({ resolvedSystem, selectedTerritory, alsoNational, volume
     { label: ui('fiscal.onboarding.confirm.row.system'), value: systemValue, onEdit: () => goTo(prevStep) },
   ].filter(Boolean);
 
-  const pageHeadEl = (
-    <PageHead
-      selectedOrg={selectedOrg}
-      orgList={orgList}
-      onSelectOrg={onSelectOrg}
-      onGoToManual={onGoToManual}
-      ui={ui}
-      data-testid="PageHead__e9ef3f" />
-  );
+  const pageHeadEl = renderPageHead({ selectedOrg, orgList, onSelectOrg, ui, onGoToManual });
 
   return (
     <ScreenLayout
@@ -777,14 +769,7 @@ function ManualTerrCard({ territory, selected, onPick }) {
 
 function ManualScreen({ selectedTerritory, manualSystem, orgName, selectedOrg, orgList, onSelectOrg, ui, TERRITORIES, SYSTEMS, goTo, onSelectTerritory, onSetManualSystem }) {
   const manualAllowedSystems = getAllowedSystemsForTerritory(selectedTerritory);
-  const pageHeadEl = (
-    <PageHead
-      selectedOrg={selectedOrg}
-      orgList={orgList}
-      onSelectOrg={onSelectOrg}
-      ui={ui}
-      data-testid="PageHead__e9ef3f" />
-  );
+  const pageHeadEl = renderPageHead({ selectedOrg, orgList, onSelectOrg, ui });
 
   return (
     <ScreenLayout
@@ -893,15 +878,7 @@ function SubquestionScreen({ t, orgName, selectedOrg, orgList, onSelectOrg, onGo
     (t.askVolume && volume === 'high') ||
     (t.askVolume && volume === 'low' && lowChoice !== null)
   );
-  const pageHeadEl = (
-    <PageHead
-      selectedOrg={selectedOrg}
-      orgList={orgList}
-      onSelectOrg={onSelectOrg}
-      onGoToManual={onGoToManual}
-      ui={ui}
-      data-testid="PageHead__e9ef3f" />
-  );
+  const pageHeadEl = renderPageHead({ selectedOrg, orgList, onSelectOrg, ui, onGoToManual });
 
   if (!t) return null;
 

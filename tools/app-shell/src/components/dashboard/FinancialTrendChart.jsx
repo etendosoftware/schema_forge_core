@@ -161,6 +161,10 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
     );
   };
 
+  const renderTooltipBox = (tx, ty, idx, expense) => (
+    <TooltipBox tx={tx} ty={ty} idx={idx} expense={expense} data-testid="TooltipBox__14828e" />
+  );
+
   const resolveTooltipTy = (anchorY, upperY, boxH) => {
     let ty = anchorY - boxH - 16;
     if (ty < 0) ty = upperY + 16;
@@ -181,15 +185,6 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
     const upperY  = Math.min(incY, expY);
     const ty = resolveTooltipTy(anchorY, upperY, boxH);
     const tx = Math.min(Math.max(x - boxW / 2, PAD_X), chartW - PAD_RIGHT - boxW);
-    const tooltipBoxEl = (
-      <TooltipBox
-        tx={tx}
-        ty={ty}
-        idx={idx}
-        expense={expense}
-        data-testid="TooltipBox__14828e" />
-    );
-
     return (
       <g pointerEvents="none">
         <line x1={x} y1={0} x2={x} y2={baseY} stroke="#6C6C89" strokeWidth="1" />
@@ -197,7 +192,7 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
         {hasExpenses && expPts[idx] && (
           <circle cx={expPts[idx].x} cy={expPts[idx].y} r="6" fill="#FFFFFF" stroke="#121217" strokeWidth="1.5" />
         )}
-        {tooltipBoxEl}
+        {renderTooltipBox(tx, ty, idx, expense)}
       </g>
     );
   })();
@@ -213,19 +208,10 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
     // y = tipY = top of the taller bar (smallest y = highest on screen)
     const ty = Math.max(0, Math.min(y - boxH - 8, baseY - boxH));
     const tx = Math.min(Math.max(x - boxW / 2, PAD_X), chartW - PAD_RIGHT - boxW);
-    const tooltipBoxEl = (
-      <TooltipBox
-        tx={tx}
-        ty={ty}
-        idx={idx}
-        expense={expense}
-        data-testid="TooltipBox__14828e" />
-    );
-
     return (
       <g pointerEvents="none">
         <line x1={x} y1={0} x2={x} y2={baseY} stroke="#6C6C89" strokeWidth="1" />
-        {tooltipBoxEl}
+        {renderTooltipBox(tx, ty, idx, expense)}
       </g>
     );
   })();
