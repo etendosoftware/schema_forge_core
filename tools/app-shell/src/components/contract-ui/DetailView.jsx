@@ -3395,17 +3395,20 @@ export function DetailView({
                           });
                           return (
                           <div key={st.key} className={getSecondaryTabContentClassName(secondaryTabContentPaddingT, embedded)}>
-                            {st.isFormTab ? (
+                            {(() => {
+                              if (st.isFormTab) return (
                               <SecondaryFormTab data={data} hook={hook} onChange={(key, val, column) => {
                                 setSecondaryLineEdits(prev => ({...(prev ?? {}), [key]: val}));
                                 if (column) setSecondaryLineEditColumns(prev => ({...prev, [key]: column}));
                               }} st={st} catalogs={catalogs} token={token} apiBaseUrl={apiBaseUrl}
                                                 selectorContextByEntity={selectorContextByEntity}
                                                 labelOverrides={labelOverrides}/>
-                            ) : st.Panel ? (
+                            );
+                              if (st.Panel) return (
                               <SecondaryPanelTab st={st} data={data} token={token} apiBaseUrl={apiBaseUrl}
                                                  onCount={(n) => setPanelCounts(prev => ({...prev, [st.key]: n}))}/>
-                            ) : (
+                            );
+                              return (
                               <SecondaryTableTab
                                 st={st}
                                 stIdx={stIdx}
@@ -3473,7 +3476,8 @@ export function DetailView({
                                   setSecondarySelectedRows(prev => ({...prev, [st.key]: []}));
                                 }}
                               />
-                            )}
+                            );
+                            })()}
                           </div>
                           );
                         })}
