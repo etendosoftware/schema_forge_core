@@ -1,6 +1,6 @@
 {
-  "refreshedAt": "2026-06-08T12:17:35.778Z",
-  "count": 462,
+  "refreshedAt": "2026-06-16T17:44:37.707Z",
+  "count": 470,
   "entries": [
     {
       "id": "120",
@@ -129,28 +129,21 @@
       "processId": null
     },
     {
+      "id": "280",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800075",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
       "id": "800076",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800077",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800079",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800078",
       "name": "Analysis Tools",
       "type": "folder",
       "windowId": null,
@@ -164,7 +157,7 @@
       "processId": null
     },
     {
-      "id": "280",
+      "id": "800077",
       "name": "Analysis Tools",
       "type": "folder",
       "windowId": null,
@@ -178,7 +171,14 @@
       "processId": null
     },
     {
-      "id": "800075",
+      "id": "800078",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800079",
       "name": "Analysis Tools",
       "type": "folder",
       "windowId": null,
@@ -227,13 +227,6 @@
       "processId": "462033447A1548F09BBFB0683FA976CC"
     },
     {
-      "id": "800114",
-      "name": "Assets",
-      "type": "window",
-      "windowId": "800027",
-      "processId": null
-    },
-    {
       "id": "345",
       "name": "Assets",
       "type": "folder",
@@ -241,10 +234,10 @@
       "processId": null
     },
     {
-      "id": "037FAE527C4140E49F868669BB7A6665",
-      "name": "Async Process Log",
+      "id": "800114",
+      "name": "Assets",
       "type": "window",
-      "windowId": "4F02F39384C64915AC3BCB7003178A75",
+      "windowId": "800027",
       "processId": null
     },
     {
@@ -252,6 +245,13 @@
       "name": "Async Process Log",
       "type": "window",
       "windowId": "37DDB0FC24D34C3D91EF29F1E6F3C0BB",
+      "processId": null
+    },
+    {
+      "id": "037FAE527C4140E49F868669BB7A6665",
+      "name": "Async Process Log",
+      "type": "window",
+      "windowId": "4F02F39384C64915AC3BCB7003178A75",
       "processId": null
     },
     {
@@ -329,6 +329,13 @@
       "name": "Bank File Format",
       "type": "window",
       "windowId": "557A0AA1D0D745F9A61557C05483072C",
+      "processId": null
+    },
+    {
+      "id": "48CD9B15B86340DDAD234EF9F353D6C2",
+      "name": "Bank Provider",
+      "type": "window",
+      "windowId": "62A02BF89678412AA2B5118234FD7048",
       "processId": null
     },
     {
@@ -514,17 +521,17 @@
       "processId": null
     },
     {
-      "id": "156",
-      "name": "Client",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
       "id": "148",
       "name": "Client",
       "type": "window",
       "windowId": "109",
+      "processId": null
+    },
+    {
+      "id": "156",
+      "name": "Client",
+      "type": "folder",
+      "windowId": null,
       "processId": null
     },
     {
@@ -630,6 +637,20 @@
       "name": "Conversations",
       "type": "window",
       "windowId": "ED6F763A2C5F49189AD2760A2509F11D",
+      "processId": null
+    },
+    {
+      "id": "67AB359DD59344CE932FBB97D878B898",
+      "name": "Conversion Rate Downloader Log",
+      "type": "window",
+      "windowId": "6FEBA130CDE24CC09041FFA6117ADFA9",
+      "processId": null
+    },
+    {
+      "id": "26F293D1F1374C20BA4BEADE311E6856",
+      "name": "Conversion Rate Download Rule",
+      "type": "window",
+      "windowId": "E9F23872C757473EA7310DAD7FBAE782",
       "processId": null
     },
     {
@@ -756,6 +777,13 @@
       "name": "Currency",
       "type": "window",
       "windowId": "115",
+      "processId": null
+    },
+    {
+      "id": "47074A705B6943DFA19572AD877AA16F",
+      "name": "Currency Converters",
+      "type": "window",
+      "windowId": "7FCA3B15B7B84B89B01A74D586C08096",
       "processId": null
     },
     {
@@ -1039,14 +1067,14 @@
       "processId": null
     },
     {
-      "id": "566763B9A33E4EDC8FA445343FE4AB55",
+      "id": "0DAED7EBCD2A4F27BFB1C85ED1555192",
       "name": "External ID Mappings",
       "type": "window",
       "windowId": "065197A6A36E4D9C856BF6B0831F8916",
       "processId": null
     },
     {
-      "id": "0DAED7EBCD2A4F27BFB1C85ED1555192",
+      "id": "566763B9A33E4EDC8FA445343FE4AB55",
       "name": "External ID Mappings",
       "type": "window",
       "windowId": "065197A6A36E4D9C856BF6B0831F8916",
@@ -2166,6 +2194,20 @@
       "processId": null
     },
     {
+      "id": "D3C8D3653B7142DFBC8B9B85A4DF077E",
+      "name": "PSD2",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "D94E650304874F68B30237D86A623283",
+      "name": "PSD2 Logs",
+      "type": "window",
+      "windowId": "FF4C333DC6024DCF9F9B7C8D392F8314",
+      "processId": null
+    },
+    {
       "id": "800266",
       "name": "Purchase Dimensional Report",
       "type": "report",
@@ -2551,34 +2593,6 @@
       "processId": null
     },
     {
-      "id": "800256",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "167",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800248",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800189",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
       "id": "800233",
       "name": "Setup",
       "type": "folder",
@@ -2593,7 +2607,28 @@
       "processId": null
     },
     {
+      "id": "167",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
       "id": "800255",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800256",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800189",
       "name": "Setup",
       "type": "folder",
       "windowId": null,
@@ -2607,6 +2642,13 @@
       "processId": null
     },
     {
+      "id": "272",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
       "id": "C3805F4FAB2E491B8B18D5F6CB4F1737",
       "name": "Setup",
       "type": "folder",
@@ -2614,7 +2656,7 @@
       "processId": null
     },
     {
-      "id": "272",
+      "id": "800248",
       "name": "Setup",
       "type": "folder",
       "windowId": null,
@@ -2764,6 +2806,20 @@
       "id": "5D501B7F2ED84F1ABCA21CF9D0409C4A",
       "name": "Suministro Inmediato de Información (SII)",
       "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "B261674B983D4D30B0869DA2ED69E788",
+      "name": "Synchronize Bank Connections",
+      "type": "other",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "5D823057D64F43F5A0C677B294E42220",
+      "name": "Synchronize Bank Providers",
+      "type": "other",
       "windowId": null,
       "processId": null
     },
@@ -2943,6 +2999,20 @@
       "processId": null
     },
     {
+      "id": "800247",
+      "name": "Transactions",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800245",
+      "name": "Transactions",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
       "id": "800254",
       "name": "Transactions",
       "type": "folder",
@@ -2971,13 +3041,6 @@
       "processId": null
     },
     {
-      "id": "800247",
-      "name": "Transactions",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
       "id": "800244",
       "name": "Transactions",
       "type": "folder",
@@ -2986,13 +3049,6 @@
     },
     {
       "id": "800242",
-      "name": "Transactions",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800245",
       "name": "Transactions",
       "type": "folder",
       "windowId": null,

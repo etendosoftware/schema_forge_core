@@ -351,6 +351,10 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.displayLogic) {
         processDisplayLogic(mapped, f, rules);
       }
+      // Standalone displayLogicJs on custom fields that have no raw displayLogic
+      if (f.displayLogicJs != null && !mapped.displayLogic) {
+        mapped.displayLogic = { js: f.displayLogicJs, evaluable: true };
+      }
 
       // Behavioral metadata: readOnlyLogic
       if (f.readOnlyLogic) {
