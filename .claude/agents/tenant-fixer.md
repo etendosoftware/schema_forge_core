@@ -145,9 +145,62 @@ Location: `{etendo_root}/modules/com.etendoerp.go/src/com/etendoerp/go/onboardin
 - **The `OnboardingStep` interface + 9 step classes (`…/onboarding/steps/`) are NOT wired into any production path** — the only assembler is the unit test `OnboardingTest.java` (~line 219). **Writing a step alone changes nothing at runtime.** To affect onboarding you must extend the live service chain (recipe in the map doc): add a final `*Service`-style call after `ensureDefaultCustomer` and BEFORE `commitDalChanges`, so it commits atomically and rolls back on failure. **`OnboardingBaselineService` (step 6) is the worked example of this recipe** (the duplicate `RegisterBaselineStep.java` was removed — the service is the single source).
 - **There is NO accounting step today** — A1/A2's preventive fix means adding one (per the accounting proposal). This is the largest preventive piece and touches the live new-org path.
 - `MarkOrgReadyStep` runs the `AD_Org_Ready` process (resolved by search key, never hardcoded ID) and is the home for B1 (org tree) and D1 (LE columns).
-- **Baseline registration — WIRED LIVE (2026-06-11).** When a new tenant finishes provisioning, onboarding inserts a **BASELINE** row into `ETGO_DATA_FIX_HISTORY` (`ad_client_id='0'`, `ad_org_id='0'`, `remediated_client_id=<new tenant>`, `fix_id='__baseline__'`, `status='BASELINE'`, `applied_utc=now()`). This is the cutoff: every corrective `.sql` authored *before* `now()` is, by definition, the corrective sibling of a preventive fix already baked into onboarding — so the new tenant never had that gap and the runner skips those fixes for it. It is the preventive-front counterpart to the runner's Phase 0 DETECTED sweep for legacy tenants, System-owned data regardless of the tenant. **Implementation:** `OnboardingBaselineService.java` + a `registerBaseline(writer, clientId)` helper in `EtendoGoJwtServlet`, wired as the LAST action (step 6) in `ensureOnboardingDataset`, after `ensureDefaultCustomer` and before `commitDalChanges` — so it commits atomically. **Transaction-safety rule (learned here):** it runs on the SHARED DAL connection, so a SQL error there would poison the final commit. Therefore `registerBaseline` is the ONE helper that does NOT catch-and-return-false — a genuine error PROPAGATES so the outer `handleOnboarding` catch rolls back cleanly; the expected `ON CONFLICT`→0-rows case never throws (DETECTED conserved). Never swallow a SQL error on the shared connection. (The duplicate `RegisterBaselineStep.java` was removed — `OnboardingBaselineService` is the single source.)
+- **Baseline registration — WIRED LIVE (2026-06-11).** When a new tenant finishes provisioning, onboarding inserts a **BASELINE** row into `ETGO_DATA_FIX_HISTORY` (`ad_client_id='0'`, `ad_org_id='0'`, `remediated_client_id=<new tenant>`, `fix_id='__baseline__'`, `status='BASELINE'`, `applied_utc=ONBOARDING_PROVISIONED_THROUGH`). **NOT `now()`** — the cutoff is a hardcoded constant in `OnboardingBaselineService.java` (`ONBOARDING_PROVISIONED_THROUGH`) set to the timestamp of the last `.sql` fix already incorporated into the onboarding preventive front. The runner skips every fix at-or-before that cutoff for new tenants (they were provisioned correctly from birth). **BUMP THIS CONSTANT** each time a new gap is closed on the preventive front — see the gap-closing workflow below. Implementation: `OnboardingBaselineService.java` + `registerBaseline(clientId)` helper in `EtendoGoJwtServlet`, wired as LAST action (step 6) in `ensureOnboardingDataset`. **Transaction-safety rule:** runs on the SHARED DAL connection — a genuine error PROPAGATES (never caught) so the outer `handleOnboarding` catch rolls back cleanly; `ON CONFLICT DO NOTHING` → 0 rows is expected and benign; DETECTED row conserved. (The duplicate `RegisterBaselineStep.java` was removed — `OnboardingBaselineService` is the single source.)
 - **`AccountingPackageCloner`** clones taxes/accounting-combinations on the new-org path — it is NOT the chart-of-accounts (~1790 `c_elementvalue`) generator, and it is NOT idempotent (only `ensureOrganizationAcctSchema` checks existence; the `clone*` methods duplicate on re-run). It belongs to the **preventive** front (the accounting step), NOT the corrective SQL data-fix. If reused for remediation via webhook, it must first be refactored to be idempotent + decoupled from `InitialOrgSetupAccountingContext`.
-</onboarding_pipeline>
+<gap_closing_workflow>
+## Workflow — closing a gap end-to-end (MANDATORY ORDER)
+
+Every gap fix has three deliverables that must ship together in one PR.
+The central constraint: **the `.sql` timestamp T must equal `ONBOARDING_PROVISIONED_THROUGH`** when the CUT is bumped.
+
+### Step 1 — Choose timestamp T
+Pick a UTC timestamp **after** all existing `.sql` files in `cli/src/data-fixes/sql/`.
+This exact value goes in TWO places: the filename and the CUT constant.
+```
+T = 20260619T120000Z   (example)
+```
+
+### Step 2 — Write the corrective SQL
+```
+cli/src/data-fixes/sql/<T>__R<n>-<slug>.sql
+```
+Rules: `@check` returns ≥1 row when the gap exists; `@apply` is also guarded (`WHERE NOT EXISTS`).
+Both must filter `ad_client_id = :client_id`. Full authoring rules: `cli/src/data-fixes/sql/README.md`.
+
+### Step 3 — Write the preventive onboarding fix
+New `Onboarding<Thing>Service.java` in `{etendo_root}/modules/com.etendoerp.go/src/com/etendoerp/go/onboarding/`.
+Wire it as the LAST step in `ensureOnboardingDataset` BEFORE `commitDalChanges` (recipe in the map doc §1).
+
+### Step 4 — Bump the CUT constant
+In `OnboardingBaselineService.java`:
+```java
+private static final Instant ONBOARDING_PROVISIONED_THROUGH = Instant.parse("<T as ISO-8601>");
+// Current watermark: R<n> <slug> (<date>).
+```
+`T` must match the filename prefix exactly. Update the "Current watermark" comment.
+
+### Step 5 — Ship all three together
+The three deliverables (`.sql`, `Onboarding*Service`, CUT bump) MUST be in the same PR.
+
+| What ships alone | Safe? | Why |
+|---|---|---|
+| Only the `.sql` (no preventive, no CUT bump) | ✅ Safe | Runner applies it to legacy tenants; new tenants get `@check → SKIPPED_NOT_NEEDED`. Slightly redundant but correct. |
+| CUT bump without its `.sql` already in the repo | ❌ Never | Runner skips that fix for new tenants even though they may need it. |
+| Preventive fix without CUT bump | ❌ Never | Onboarding provisions correctly but new tenants still see the fix queued in the runner (misleading). |
+
+### What each group of tenants gets
+- **Legacy tenants** (onboarded before this deploy) → runner applies the `.sql` corrective
+- **New tenants** (onboarded after this deploy) → onboarding provisions correctly; CUT watermark skips the `.sql` in the runner
+
+### Checklist
+- [ ] Timestamp T chosen (after the latest existing `.sql`)
+- [ ] `<T>__R<n>-<slug>.sql` written — `@check` + `@apply` idempotent, scoped to `:client_id`
+- [ ] `Onboarding<Thing>Service.java` written and wired in `ensureOnboardingDataset`
+- [ ] `ONBOARDING_PROVISIONED_THROUGH` bumped to T in `OnboardingBaselineService.java`
+- [ ] "Current watermark" comment updated
+- [ ] Gap documented in `onboarding-gaps.md` + row added/updated in `onboarding-and-datafixes-map.md`
+- [ ] Tests: corrective (needs/skips/re-run) + preventive (new tenant has no gap)
+</gap_closing_workflow>
 
 <orientation_checklist>
 Before doing ANYTHING:

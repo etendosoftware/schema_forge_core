@@ -27,6 +27,19 @@
 
 **Boundary:** a gap that is purely about *existing-tenant* state with no onboarding-process cause (rare) may be corrective-only — but state that explicitly and say why the preventive front is N/A. The default is both.
 
+### Gap-closing workflow — mandatory order
+
+Every gap fix produces three deliverables that **must ship in the same PR**:
+
+1. **Choose timestamp T** — a UTC string after all existing `.sql` files in `cli/src/data-fixes/sql/` (e.g. `20260619T120000Z`). This value appears in two places: the filename and the CUT constant.
+2. **Write `<T>__R<n>-<slug>.sql`** — corrective fix for legacy tenants. `@check` + `@apply`, both scoped to `:client_id`, both idempotent.
+3. **Write `Onboarding<Thing>Service.java`** + wire it in `ensureOnboardingDataset` — preventive fix so new tenants are born clean.
+4. **Bump `ONBOARDING_PROVISIONED_THROUGH`** in `OnboardingBaselineService.java` to T (ISO-8601). Update the "Current watermark" comment.
+
+**Ordering rule:** the `.sql` can ship alone (safe — legacy tenants get fixed, new tenants hit `@check → SKIPPED_NOT_NEEDED`). The CUT bump **must never** ship without its `.sql` already in the repo — that would silently skip the fix for new tenants who actually need it.
+
+**Result:** legacy tenants → runner applies the `.sql`. New tenants → onboarding provisions correctly, runner skips via watermark.
+
 ---
 
 ## 1. Onboarding — the LIVE path (the one that actually runs)
@@ -128,7 +141,7 @@ Every row: `ad_client_id='0'`, `ad_org_id='0'`, tenant in `remediated_client_id`
 
 | Status | Written by | Meaning |
 |---|---|---|
-| `BASELINE` | **onboarding** (preventive front; `applied_utc=now()`) | tenant born clean; only fixes newer than now apply |
+| `BASELINE` | **onboarding** (preventive front; `applied_utc=ONBOARDING_PROVISIONED_THROUGH`) | tenant born clean; only fixes newer than the CUT apply. **NOT `now()`** — the CUT is a hardcoded constant in `OnboardingBaselineService` that must be bumped when a new gap is closed preventively. |
 | `DETECTED` | **runner Phase-0 sweep** (`applied_utc='2026-01-01'`) | legacy tenant, never remediated; all fixes are candidates |
 | `APPLIED` | runner `@apply` success | fix ran, `rows_affected` set |
 | `SKIPPED_NOT_NEEDED` | runner when `@check` returns 0 | fix not needed; advances watermark |
