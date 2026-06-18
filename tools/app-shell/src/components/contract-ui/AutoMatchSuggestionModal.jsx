@@ -104,7 +104,7 @@ function OperationRow({ op, isLast }) {
       <div className="flex min-w-0 flex-col gap-0.5">
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-medium leading-5 text-[#121217]">
-            {isNew ? (op.glItemId || '—') : (op.partnerName || op.documentNo || '—')}
+            {isNew ? (op.name || op.glItemId || '—') : (op.partnerName || op.documentNo || '—')}
           </span>
           <RuleTypeBadge
             label={isNew ? ui('financeReconcileAutomatchBadgeNew') : (op.documentNo || op.typeLabel || '')}
@@ -132,7 +132,18 @@ function OperationRow({ op, isLast }) {
 }
 
 function GroupRow({ group, checked, onToggle, currency }) {
-  const ops = group.operations ?? [];
+  const realOps = group.operations ?? [];
+  // Rule-origin groups have no existing transaction — the system will create a payment.
+  // For now this is purely visual: show one proposed "New / Create payment" operation with the
+  // rule name and the statement-line amount. The actual creation is wired in a later step.
+  const ops = group.origin === 'rule'
+    ? [{
+        id: 'new',
+        isNew: true,
+        name: group.ruleName,
+        amount: Number(group.statementLine?.amount ?? 0),
+      }]
+    : realOps;
 
   return (
     <div className="flex flex-row items-stretch overflow-hidden rounded-lg border border-[#E8EAEF]">
