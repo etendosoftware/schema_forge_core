@@ -77,7 +77,7 @@ export default function ProductGrid({ products, categories: categoriesProp, cate
   } else if (viewMode === 'list') {
     productDisplay = (
       /* List mode: compact rows */
-      <div className="flex flex-col rounded-lg border border-border bg-white overflow-hidden">
+      (<div className="flex flex-col rounded-lg border border-border bg-white overflow-hidden">
         {sorted.map((product, idx) => {
           const isTop = showPriority && topSellerIds?.has(product.productId || product.id);
           return (
@@ -137,12 +137,12 @@ export default function ProductGrid({ products, categories: categoriesProp, cate
             </button>
           );
         })}
-      </div>
+      </div>)
     );
   } else {
     productDisplay = (
       /* Grid mode: card grid */
-      <div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+      (<div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
         {sorted.map(product => {
           const isTop = showPriority && topSellerIds?.has(product.productId || product.id);
           return (
@@ -207,7 +207,7 @@ export default function ProductGrid({ products, categories: categoriesProp, cate
             </button>
           );
         })}
-      </div>
+      </div>)
     );
   }
 

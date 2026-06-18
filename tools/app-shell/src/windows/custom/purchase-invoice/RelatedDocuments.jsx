@@ -95,7 +95,10 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
 
   for (const rd of returnDeliveries) {
     chips.push(
-      <DocChip key={`return-delivery-${rd.id}`} {...docChipProps({ type: 'return-to-vendor', doc: rd, ui, navigate })} />
+      <DocChip
+        key={`return-delivery-${rd.id}`}
+        {...docChipProps({ type: 'return-to-vendor', doc: rd, ui, navigate })}
+        data-testid="DocChip__bb79ed" />
     );
   }
 

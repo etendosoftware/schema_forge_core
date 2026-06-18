@@ -363,10 +363,12 @@ export function ListFilterBar({
           </PopoverContent>
         </Popover>
       )}
-
       {typeCol && (
-        <Popover open={typeMenuOpen} onOpenChange={setTypeMenuOpen}>
-          <PopoverTrigger asChild>
+        <Popover
+          open={typeMenuOpen}
+          onOpenChange={setTypeMenuOpen}
+          data-testid="Popover__6d5e90">
+          <PopoverTrigger asChild data-testid="PopoverTrigger__6d5e90">
             <Button
               data-testid="filter-type"
               variant="outline"
@@ -378,12 +380,14 @@ export function ListFilterBar({
             >
               {activeTypeLabel}
               {typeDistinct.loading && (
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                <Loader2
+                  className="h-3.5 w-3.5 animate-spin text-muted-foreground"
+                  data-testid="Loader2__6d5e90" />
               )}
-              <ChevronDown className="h-3.5 w-3.5" />
+              <ChevronDown className="h-3.5 w-3.5" data-testid="ChevronDown__6d5e90" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-64 p-0">
+          <PopoverContent align="start" className="w-64 p-0" data-testid="PopoverContent__6d5e90">
             <DistinctValuesList
               activeCode={activeTypeCode}
               allLabel={ui('allTypes')}
@@ -395,11 +399,10 @@ export function ListFilterBar({
                 setTypeMenuOpen(false);
               }}
               searchPlaceholder={ui('searchTypes')}
-            />
+              data-testid="DistinctValuesList__6d5e90" />
           </PopoverContent>
         </Popover>
       )}
-
       {dateCol && (
         <Popover
           open={dateMenuOpen}
