@@ -117,6 +117,16 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
   const lastIdx = n - 1;
 
   const gradId = `wh-stock-grad-${cw}`; // unique per size to avoid SVG id collision
+  const svgTooltipEl = hovered && (
+    <SvgTooltip
+      x={hovered.x}
+      y={hovered.y}
+      label={labels[hovered.i]}
+      value={values[hovered.i]}
+      cw={cw}
+      ui={ui}
+      data-testid="SvgTooltip__931883" />
+  );
 
   if (showLine) {
     return (
@@ -165,16 +175,7 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
             {m}
           </text>
         ))}
-        {hovered && (
-          <SvgTooltip
-            x={hovered.x}
-            y={hovered.y}
-            label={labels[hovered.i]}
-            value={values[hovered.i]}
-            cw={cw}
-            ui={ui}
-            data-testid="SvgTooltip__931883" />
-        )}
+        {svgTooltipEl}
       </svg>
     );
   }

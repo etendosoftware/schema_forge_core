@@ -271,6 +271,19 @@ function RepeatableSection({ section, rows, onAdd, onUpdate, onRemove, ui }) {
   );
 }
 
+function renderFieldInput(f, { form, onChange, opts, ui }) {
+  return (
+    <FieldRenderer
+      field={f}
+      value={form[f.id] ?? ''}
+      onChange={onChange}
+      opts={opts}
+      ui={ui}
+      form={form}
+      data-testid="FieldRenderer__195103" />
+  );
+}
+
 function CollapsibleFieldSection({ section, form, onChange, opts, ui }) {
   const [expanded, setExpanded] = useState(false);
   const allFields = section.fields ?? [];
@@ -336,14 +349,7 @@ function CollapsibleFieldSection({ section, form, onChange, opts, ui }) {
           {allFields.map(f => (
             <div key={f.id} className={`space-y-1.5${f.fullWidth ? ' col-span-4' : ''}`}>
               <label style={MODAL_STYLES.fieldLabel}>{ui(f.labelKey)}</label>
-              <FieldRenderer
-                field={f}
-                value={form[f.id] ?? ''}
-                onChange={onChange}
-                opts={opts}
-                ui={ui}
-                form={form}
-                data-testid="FieldRenderer__195103" />
+              {renderFieldInput(f, { form, onChange, opts, ui })}
             </div>
           ))}
         </div>
@@ -466,14 +472,7 @@ export default function EntityCreationModal({
           {section.fields.map(f => (
             <div key={f.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <label style={MODAL_STYLES.fieldLabel}>{ui(f.labelKey)}</label>
-              <FieldRenderer
-                field={f}
-                value={form[f.id] ?? ''}
-                onChange={onChange}
-                opts={opts}
-                ui={ui}
-                form={form}
-                data-testid="FieldRenderer__195103" />
+              {renderFieldInput(f, { form, onChange, opts, ui })}
             </div>
           ))}
         </div>

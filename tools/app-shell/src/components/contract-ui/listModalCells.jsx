@@ -161,6 +161,14 @@ function DefaultCell({ row, col, tMenu }) {
  * Selects a renderer by `col.cellType`, falling back to a plain value cell.
  */
 export function ListModalCell({ row, col, tMenu, ui, onToggle, savingToggle }) {
+  const toggleCellEl = (
+    <ToggleCell
+      row={row}
+      col={col}
+      onToggle={onToggle}
+      saving={savingToggle}
+      data-testid="ToggleCell__846bd2" />
+  );
   switch (col.cellType) {
     case 'priorityPill':
       return <PriorityPill row={row} col={col} data-testid="PriorityPill__846bd2" />;
@@ -175,25 +183,11 @@ export function ListModalCell({ row, col, tMenu, ui, onToggle, savingToggle }) {
     case 'boldText':
       return <BoldTextCell row={row} col={col} data-testid="BoldTextCell__846bd2" />;
     case 'toggle':
-      return (
-        <ToggleCell
-          row={row}
-          col={col}
-          onToggle={onToggle}
-          saving={savingToggle}
-          data-testid="ToggleCell__846bd2" />
-      );
+      return toggleCellEl;
     default:
       // `toggle: true` (legacy inlineToggle flag) without an explicit cellType.
       if (col.toggle) {
-        return (
-          <ToggleCell
-            row={row}
-            col={col}
-            onToggle={onToggle}
-            saving={savingToggle}
-            data-testid="ToggleCell__846bd2" />
-        );
+        return toggleCellEl;
       }
       return <DefaultCell row={row} col={col} tMenu={tMenu} data-testid="DefaultCell__846bd2" />;
   }
