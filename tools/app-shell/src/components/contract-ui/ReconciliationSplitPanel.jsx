@@ -32,7 +32,7 @@ const SKELETON_CELL_KEYS = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5'];
 // Elevation shadow shared by the selected row in both panels.
 const ELEVATED_SHADOW =
   'shadow-[0px_10px_15px_-3px_rgba(18,18,23,0.08),0px_4px_6px_-2px_rgba(18,18,23,0.05)]';
-const STATUS_CODES = ['pending'];
+const STATUS_CODES = ['pending', 'reconciled'];
 const DOC_TYPE_CODES = ['receipts', 'payments'];
 
 /** Pill badge for line/candidate status. Suggested → blue, reconciled → green, else grey. */
@@ -69,16 +69,17 @@ function ToolbarShell({ children, search, onSearchChange, testIdPrefix }) {
   );
 }
 
-function ReconciliationStatusFilter({ value, onChange, count }) {
+function ReconciliationStatusFilter({ value, onChange }) {
   const ui = useUI();
-  const pendingLabel = `${ui('financeReconcileFilterStatusPending')} (${count})`;
   return (
     <DistinctValuesFilter
       value={value}
       onChange={onChange}
       codes={STATUS_CODES}
-      labelFor={() => pendingLabel}
-      allLabel={pendingLabel}
+      labelFor={(code) => (code === 'reconciled'
+        ? ui('financeReconcileFilterStatusReconciled')
+        : ui('financeReconcileFilterStatusPending'))}
+      allLabel={ui('financeReconcileFilterStatusAll')}
       searchPlaceholder={ui('financeReconcileFilterStatusSearchPlaceholder')}
       popoverWidth="w-56"
     />
@@ -276,7 +277,7 @@ function StatementLinesPanel({
       >
         <ArrowLeft className="h-4 w-4" />
       </button>
-      <ReconciliationStatusFilter value={status} onChange={onStatusChange} count={total} />
+      <ReconciliationStatusFilter value={status} onChange={onStatusChange} />
       <DateRangePopover value={dateRange} onChange={onDateRangeChange} placeholder={ui('financeReconcileFilterDate')} />
     </ToolbarShell>
   );

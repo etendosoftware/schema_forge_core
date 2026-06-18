@@ -96,7 +96,7 @@ describe('ReconciliationSplitPanel', () => {
     renderPanel({ onBack });
     fireEvent.click(screen.getByTestId('recon-toolbar-back'));
     expect(onBack).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('financeReconcileFilterStatusPending (1)')).toBeInTheDocument();
+    expect(screen.getByText('financeReconcileFilterStatusPending')).toBeInTheDocument();
     expect(screen.getAllByText('dateRangeLast30Days').length).toBeGreaterThan(0);
   });
 
