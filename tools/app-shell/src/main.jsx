@@ -18,6 +18,19 @@ createRoot(document.getElementById('root')).render(
     forcedTheme="light"
     data-testid="ThemeProvider__bc6e1f">
     <App data-testid="App__bc6e1f" />
-    <Toaster position="bottom-right" richColors data-testid="Toaster__bc6e1f" />
+    <Toaster
+      position="bottom-right"
+      richColors
+      data-testid="Toaster__bc6e1f"
+      containerAriaLabel="Notifications"
+      toastOptions={{
+        classNames: {
+          error: 'toast-error',
+          success: 'toast-success',
+          warning: 'toast-warning',
+          info: 'toast-info',
+        },
+      }}
+    />
   </ThemeProvider>
 );
