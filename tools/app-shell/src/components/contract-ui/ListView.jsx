@@ -630,7 +630,6 @@ export function ListView({
                     {subsetFilters.map((sf, i) => (
                       <button
                         key={i}
-                        data-testid={`subset-filter-${sf.label}`}
                         onClick={() => selectSubset(i)}
                         data-testid={`filter-${sf.key || sf.label?.toLowerCase()}`}
                         className={[
