@@ -31,6 +31,7 @@
  */
 
 import { readdir, readFile } from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createDbPool, closePool } from '../db.js';
@@ -67,7 +68,7 @@ const PROCESSED = new Set([STATUS.APPLIED, STATUS.MANUALLY_FIXED, STATUS.SKIPPED
 // Arg parsing
 // ---------------------------------------------------------------------------
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   // Maps a value-taking flag to the args key it populates with the next token.
   const VALUE_FLAGS = { '--client': 'client', '--fix': 'fix', '--reason': 'reason' };
   const args = { dryRun: false, markFixed: false, listClients: false, client: null, fix: null, reason: null };
@@ -88,7 +89,7 @@ function parseArgs(argv) {
 // ---------------------------------------------------------------------------
 
 /** Load and parse every `.sql` fix, sorted chronologically by file name. */
-async function loadCatalog() {
+export async function loadCatalog() {
   let files;
   try {
     files = await readdir(SQL_DIR);
@@ -136,7 +137,7 @@ async function fetchClientNames(pool) {
 }
 
 /** Human label for a tenant: "Name (clientId)", falling back to the bare id. */
-function tenantLabel(names, clientId) {
+export function tenantLabel(names, clientId) {
   const name = names && names.get(clientId);
   return name ? `${name} (${clientId})` : clientId;
 }
@@ -314,7 +315,7 @@ async function sweepBaseline(pool, onlyClient, names, { dryRun }) {
  * the baseline row and every PROCESSED fix. The runner applies only fixes with
  * timestamp strictly greater than this — it never looks back before it.
  */
-function computeWatermark(catalog, ledger) {
+export function computeWatermark(catalog, ledger) {
   const baseline = ledger.get(BASELINE_FIX_ID);
   let watermark = baseline ? new Date(baseline.appliedUtc).getTime() : -Infinity;
   for (const fix of catalog) {
@@ -453,7 +454,7 @@ async function cmdListClients(pool, catalog) {
 // ---------------------------------------------------------------------------
 
 /** Map a count of failed/halted tenants to a process exit code. */
-function toExitCode(count) {
+export function toExitCode(count) {
   return count > 0 ? 1 : 0;
 }
 
@@ -488,7 +489,13 @@ async function main() {
   process.exit(exitCode);
 }
 
-main().catch(err => {
-  console.error('data-fixes runner failed:', err.message || err);
-  process.exit(2);
-});
+// Only run the CLI when executed directly as a script — importing this module
+// for tests must NOT trigger main() (which connects to the DB and calls
+// process.exit). The guard is true when argv[1] resolves to this file.
+const isEntryPoint = process.argv[1] && realpathSync(process.argv[1]) === __filename;
+if (isEntryPoint) {
+  main().catch(err => {
+    console.error('data-fixes runner failed:', err.message || err);
+    process.exit(2);
+  });
+}
