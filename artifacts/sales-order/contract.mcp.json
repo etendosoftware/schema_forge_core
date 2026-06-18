@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.5.0",
   "generatedAt": "2026-05-12T16:47:39.614Z",
-  "updatedAt": "2026-06-25T00:35:58.671Z",
-  "contractChecksum": "fa5627d6540b8c3b",
+  "updatedAt": "2026-06-18T14:46:38.018Z",
+  "contractChecksum": "7f7b8fe7eb7f5b4d",
   "apiPrediction": {
     "specName": "sales-order",
     "baseUrl": "/sws/neo/sales-order",
@@ -148,6 +148,14 @@
             }
           ]
         }
+      },
+      {
+        "entity": "lines",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/sales-order/lines/selectors/currency"
       }
     ],
     "actions": [
@@ -802,8 +810,8 @@
             "required": true
           },
           "currency": {
-            "readOnly": true,
             "required": true,
+            "readOnlyLogic": "@Processed@='Y'",
             "defaultValue": "@C_Currency_ID@"
           },
           "description": {},
@@ -857,6 +865,10 @@
           "grossUnitPrice": {
             "readOnlyLogic": "@Processed@='Y' | @GROSSPRICE@='N'",
             "defaultValue": "0"
+          },
+          "currency": {
+            "required": true,
+            "defaultValue": "@C_Currency_ID@"
           }
         }
       }
@@ -876,14 +888,16 @@
         "partnerAddress",
         "priceList",
         "paymentTerms",
-        "warehouse"
+        "warehouse",
+        "currency"
       ],
       "lineFields": [
         "product",
         "orderedQuantity",
         "listPrice",
         "tax",
-        "unitPrice"
+        "unitPrice",
+        "currency"
       ],
       "recommendedOrder": [
         "createHeader",
@@ -989,7 +1003,8 @@
           "partnerAddress",
           "priceList",
           "paymentTerms",
-          "warehouse"
+          "warehouse",
+          "currency"
         ]
       },
       {
@@ -1000,7 +1015,8 @@
           "orderedQuantity",
           "listPrice",
           "tax",
-          "unitPrice"
+          "unitPrice",
+          "currency"
         ]
       },
       {
@@ -1016,5 +1032,5 @@
       "confirmCancelAndReplace"
     ]
   },
-  "checksum": "6be7e3a3fdfd2080"
+  "checksum": "abf7e85ffa55f8ed"
 }

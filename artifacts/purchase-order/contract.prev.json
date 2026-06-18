@@ -1,5 +1,5 @@
 {
-  "version": "0.24.0",
+  "version": "0.22.1",
   "generatedAt": "2026-04-30T15:42:46.497Z",
   "updatedAt": "2026-06-25T00:35:57.406Z",
   "checksum": "75d31ff181010004",
@@ -1738,7 +1738,7 @@
             "label": "Currency",
             "type": "foreignKey",
             "tsType": "string",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true,
             "grid": false,
             "form": false,
@@ -3118,20 +3118,1553 @@
             "required": true
           },
           {
-            "name": "psd2GenerateBankPayment",
-            "apiKey": "psd2GenerateBankPayment",
-            "column": "EM_Psd2_Generate_Bank_Payment",
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_OrderLine_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "salesOrder",
+            "apiKey": "salesOrder",
+            "column": "C_Order_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "dateDelivered",
+            "apiKey": "dateDelivered",
+            "column": "DateDelivered",
+            "type": "date",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "invoiceDate",
+            "apiKey": "invoiceDate",
+            "column": "DateInvoiced",
+            "type": "date",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "chargeAmount",
+            "apiKey": "chargeAmount",
+            "column": "ChargeAmt",
+            "type": "amount",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "manageReservation",
+            "apiKey": "manageReservation",
+            "column": "Manage_Reservation",
             "type": "button",
             "visibility": "discarded",
             "required": false
           },
           {
-            "name": "eTPRRemovePayment",
-            "apiKey": "eTPRRemovePayment",
-            "column": "EM_Etpr_Remove_Payment",
-            "type": "button",
-            "visibility": "discarded",
+            "name": "priceLimit",
+            "apiKey": "priceLimit",
+            "column": "PriceLimit",
+            "type": "price",
+            "visibility": "system",
             "required": true
+          },
+          {
+            "name": "resourceAssignment",
+            "apiKey": "resourceAssignment",
+            "column": "S_ResourceAssignment_ID",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "sOPOReference",
+            "apiKey": "sOPOReference",
+            "column": "Ref_OrderLine_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "descriptionOnly",
+            "apiKey": "descriptionOnly",
+            "column": "IsDescription",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "priceAdjustment",
+            "apiKey": "priceAdjustment",
+            "column": "M_Offer_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "cOrderDiscountID",
+            "apiKey": "cOrderDiscountID",
+            "column": "C_Order_Discount_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "warehouseRule",
+            "apiKey": "warehouseRule",
+            "column": "M_Warehouse_Rule_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "createReservation",
+            "apiKey": "createReservation",
+            "column": "Create_Reservation",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "reservationStatus",
+            "apiKey": "reservationStatus",
+            "column": "SO_Res_Status",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "CreatedBy",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "overdueReturnDays",
+            "apiKey": "overdueReturnDays",
+            "column": "Overdue_Return_Days",
+            "type": "integer",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "printDescription",
+            "apiKey": "printDescription",
+            "column": "Print_Description",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "selectOrderLine",
+            "apiKey": "selectOrderLine",
+            "column": "Relate_Orderline",
+            "type": "button",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "replacedorderline",
+            "apiKey": "replacedorderline",
+            "column": "Replacedorderline_id",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "returnline",
+            "apiKey": "returnline",
+            "column": "Returnline",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "UpdatedBy",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ],
+        "javaQualifier": "orderLineHandler"
+      },
+      "lineTax": {
+        "tableName": "C_OrderLineTax",
+        "tabId": "ADBD1719BFA14C97A32C7B6E8452D14F",
+        "tabName": "Line Tax",
+        "fields": [
+          {
+            "name": "lineNo",
+            "apiKey": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "tax",
+            "apiKey": "tax",
+            "column": "C_Tax_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "taxableAmount",
+            "apiKey": "taxableAmount",
+            "column": "Taxbaseamt",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "taxAmount",
+            "apiKey": "taxAmount",
+            "column": "Taxamt",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "cOrderlinetaxID",
+            "apiKey": "cOrderlinetaxID",
+            "column": "C_Orderlinetax_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "salesOrderLine",
+            "apiKey": "salesOrderLine",
+            "column": "C_Orderline_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "salesOrder",
+            "apiKey": "salesOrder",
+            "column": "C_Order_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      },
+      "reservedStock": {
+        "tableName": "M_Reservation_Stock",
+        "tabId": "64B971D786A646DC9656534AABB13FA9",
+        "tabName": "Prereserved Qty",
+        "fields": [
+          {
+            "name": "reservation",
+            "apiKey": "reservation",
+            "column": "M_Reservation_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "businessPartner",
+            "apiKey": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "storageBin",
+            "apiKey": "storageBin",
+            "column": "M_Locator_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "attributeSetValue",
+            "apiKey": "attributeSetValue",
+            "column": "M_Attributesetinstance_ID",
+            "type": "productAttribute",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "allocated",
+            "apiKey": "allocated",
+            "column": "IsAllocated",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "quantity",
+            "apiKey": "quantity",
+            "column": "Quantity",
+            "type": "quantity",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "released",
+            "apiKey": "released",
+            "column": "ReleasedQty",
+            "type": "quantity",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "salesOrderLine",
+            "apiKey": "salesOrderLine",
+            "column": "C_Orderline_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "M_Reservation_Stock_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      },
+      "paymentDetails": {
+        "tableName": "FIN_Payment_Detail_V",
+        "tabId": "6707D7449A8D45DB851F608BA88329C8",
+        "tabName": "Payment Details",
+        "fields": [
+          {
+            "name": "payment",
+            "apiKey": "payment",
+            "column": "FIN_Payment_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "paymentDate",
+            "apiKey": "paymentDate",
+            "column": "Paymentdate",
+            "type": "date",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "dueDate",
+            "apiKey": "dueDate",
+            "column": "Duedate",
+            "type": "date",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "paymentMethod",
+            "apiKey": "paymentMethod",
+            "column": "Fin_Paymentmethod_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "finFinancialAccountID",
+            "apiKey": "finFinancialAccountID",
+            "column": "Fin_Financial_Account_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "expected",
+            "apiKey": "expected",
+            "column": "Expected",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "paidAmount",
+            "apiKey": "paidAmount",
+            "column": "Paidamt",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "writeoffAmount",
+            "apiKey": "writeoffAmount",
+            "column": "Writeoffamt",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "expectedConverted",
+            "apiKey": "expectedConverted",
+            "column": "ExpectedConverted",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "paidConverted",
+            "apiKey": "paidConverted",
+            "column": "PaidConverted",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "finaccTxnConvertRate",
+            "apiKey": "finaccTxnConvertRate",
+            "column": "Finacc_Txn_Convert_Rate",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "paymentno",
+            "apiKey": "paymentno",
+            "column": "Paymentno",
+            "type": "string",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "finaccCurrencyID",
+            "apiKey": "finaccCurrencyID",
+            "column": "Finacc_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "canceled",
+            "apiKey": "canceled",
+            "column": "Iscanceled",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "status",
+            "apiKey": "status",
+            "column": "Status",
+            "type": "enum",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "businessPartner",
+            "apiKey": "businessPartner",
+            "column": "C_Bpartner_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "invoiceno",
+            "apiKey": "invoiceno",
+            "column": "Invoiceno",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "finPaymentDetailVID",
+            "apiKey": "finPaymentDetailVID",
+            "column": "Fin_Payment_Detail_V_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "invoiceAmount",
+            "apiKey": "invoiceAmount",
+            "column": "Invoicedamt",
+            "type": "amount",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "orderno",
+            "apiKey": "orderno",
+            "column": "Orderno",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "orderPaymentPlan",
+            "apiKey": "orderPaymentPlan",
+            "column": "Fin_Payment_Sched_Ord_V_Id",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "activity",
+            "apiKey": "activity",
+            "column": "C_Activity_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "businessPartnerdim",
+            "apiKey": "businessPartnerdim",
+            "column": "C_Bpartner_Id_Dim",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "salesCampaign",
+            "apiKey": "salesCampaign",
+            "column": "C_Campaign_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "project",
+            "apiKey": "project",
+            "column": "C_Project_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "salesRegion",
+            "apiKey": "salesRegion",
+            "column": "C_Salesregion_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "aPRMDisplayedAcc",
+            "apiKey": "aPRMDisplayedAcc",
+            "column": "EM_APRM_Displayed_Acc_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "aPRMDisplayedPaymmeth",
+            "apiKey": "aPRMDisplayedPaymmeth",
+            "column": "EM_APRM_Displayed_Paymmeth_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "paymentPlanInvoice",
+            "apiKey": "paymentPlanInvoice",
+            "column": "FIN_Payment_Sched_Inv_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "paymentPlanOrder",
+            "apiKey": "paymentPlanOrder",
+            "column": "FIN_Payment_Sched_Ord_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "glitemname",
+            "apiKey": "glitemname",
+            "column": "Glitemname",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "product",
+            "apiKey": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/header",
+        "entity": "header",
+        "supportedFilters": [
+          "businessPartner",
+          "documentNo",
+          "orderDate",
+          "documentStatus",
+          "orderReference"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/header/:id",
+        "entity": "header",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/header",
+        "entity": "header",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/header/:id",
+        "entity": "header",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/header/:id",
+        "entity": "header",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/lines",
+        "entity": "lines",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/lines/:id",
+        "entity": "lines",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/lines",
+        "entity": "lines",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/lines/:id",
+        "entity": "lines",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/lines/:id",
+        "entity": "lines",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/lineTax",
+        "entity": "lineTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/lineTax/:id",
+        "entity": "lineTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/lineTax",
+        "entity": "lineTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/lineTax/:id",
+        "entity": "lineTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/lineTax/:id",
+        "entity": "lineTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/reservedStock",
+        "entity": "reservedStock",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/reservedStock/:id",
+        "entity": "reservedStock",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/reservedStock",
+        "entity": "reservedStock",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/reservedStock/:id",
+        "entity": "reservedStock",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/reservedStock/:id",
+        "entity": "reservedStock",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/paymentDetails",
+        "entity": "paymentDetails",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/paymentDetails/:id",
+        "entity": "paymentDetails",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/paymentDetails",
+        "entity": "paymentDetails",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/paymentDetails/:id",
+        "entity": "paymentDetails",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/paymentDetails/:id",
+        "entity": "paymentDetails",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "apiPrediction": {
+    "specName": "purchase-order",
+    "baseUrl": "/sws/neo/purchase-order",
+    "crud": {
+      "header": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-order/header",
+        "detailUrl": "/sws/neo/purchase-order/header/{id}",
+        "supportedFilters": [
+          "businessPartner",
+          "documentNo",
+          "orderDate",
+          "documentStatus",
+          "orderReference"
+        ]
+      },
+      "lines": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-order/lines",
+        "detailUrl": "/sws/neo/purchase-order/lines/{id}",
+        "supportedFilters": []
+      },
+      "lineTax": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-order/lineTax",
+        "detailUrl": "/sws/neo/purchase-order/lineTax/{id}",
+        "supportedFilters": []
+      },
+      "reservedStock": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-order/reservedStock",
+        "detailUrl": "/sws/neo/purchase-order/reservedStock/{id}",
+        "supportedFilters": []
+      },
+      "paymentDetails": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-order/paymentDetails",
+        "detailUrl": "/sws/neo/purchase-order/paymentDetails/{id}",
+        "supportedFilters": []
+      }
+    },
+    "selectors": [
+      {
+        "entity": "header",
+        "field": "businessPartner",
+        "column": "C_BPartner_ID",
+        "reference": "BusinessPartner",
+        "inputMode": "search",
+        "url": "/sws/neo/purchase-order/header/selectors/businessPartner"
+      },
+      {
+        "entity": "header",
+        "field": "partnerAddress",
+        "column": "C_BPartner_Location_ID",
+        "reference": "BusinessPartnerLocation",
+        "inputMode": "dependent",
+        "url": "/sws/neo/purchase-order/header/selectors/partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "transactionDocument",
+        "column": "C_DocTypeTarget_ID",
+        "reference": "DocumentType",
+        "url": "/sws/neo/purchase-order/header/selectors/transactionDocument",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "warehouse",
+        "column": "M_Warehouse_ID",
+        "reference": "Warehouse",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/header/selectors/warehouse"
+      },
+      {
+        "entity": "header",
+        "field": "paymentMethod",
+        "column": "FIN_Paymentmethod_ID",
+        "reference": "PaymentMethod",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/header/selectors/paymentMethod",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "paymentTerms",
+        "column": "C_PaymentTerm_ID",
+        "reference": "PaymentTerm",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/header/selectors/paymentTerms"
+      },
+      {
+        "entity": "header",
+        "field": "priceList",
+        "column": "M_PriceList_ID",
+        "reference": "PriceList",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/header/selectors/priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/header/selectors/currency"
+      },
+      {
+        "entity": "header",
+        "field": "companyAgent",
+        "column": "SalesRep_ID",
+        "url": "/sws/neo/purchase-order/header/selectors/companyAgent"
+      },
+      {
+        "entity": "header",
+        "field": "invoiceFrom",
+        "column": "BillTo_ID",
+        "reference": "BusinessPartnerLocation",
+        "inputMode": "dependent",
+        "url": "/sws/neo/purchase-order/header/selectors/invoiceFrom",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "incoterms",
+        "column": "C_Incoterms_ID",
+        "url": "/sws/neo/purchase-order/header/selectors/incoterms"
+      },
+      {
+        "entity": "header",
+        "field": "shippingCompany",
+        "column": "M_Shipper_ID",
+        "reference": "Shipper",
+        "url": "/sws/neo/purchase-order/header/selectors/shippingCompany"
+      },
+      {
+        "entity": "header",
+        "field": "charge",
+        "column": "C_Charge_ID",
+        "url": "/sws/neo/purchase-order/header/selectors/charge"
+      },
+      {
+        "entity": "header",
+        "field": "project",
+        "column": "C_Project_ID",
+        "reference": "Project",
+        "inputMode": "search",
+        "url": "/sws/neo/purchase-order/header/selectors/project",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "costcenter",
+        "column": "C_Costcenter_ID",
+        "reference": "CostCenter",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/header/selectors/costcenter"
+      },
+      {
+        "entity": "header",
+        "field": "asset",
+        "column": "A_Asset_ID",
+        "reference": "Asset",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/header/selectors/asset"
+      },
+      {
+        "entity": "header",
+        "field": "stDimension",
+        "column": "User1_ID",
+        "reference": "UserDimension1",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/header/selectors/stDimension"
+      },
+      {
+        "entity": "header",
+        "field": "ndDimension",
+        "column": "User2_ID",
+        "reference": "UserDimension2",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/header/selectors/ndDimension"
+      },
+      {
+        "entity": "lines",
+        "field": "product",
+        "column": "M_Product_ID",
+        "reference": "Product",
+        "inputMode": "search",
+        "url": "/sws/neo/purchase-order/lines/selectors/product"
+      },
+      {
+        "entity": "lines",
+        "field": "tax",
+        "column": "C_Tax_ID",
+        "reference": "Tax",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/lines/selectors/tax",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "DateInvoiced",
+              "source": "parentField",
+              "field": "orderDate",
+              "format": "DD-MM-YYYY"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "lines",
+        "field": "operativeUOM",
+        "column": "C_Aum",
+        "reference": "UOM",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/lines/selectors/operativeUOM",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "M_Product_ID",
+              "source": "field",
+              "field": "product"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "lines",
+        "field": "uOM",
+        "column": "C_UOM_ID",
+        "reference": "UOM",
+        "url": "/sws/neo/purchase-order/lines/selectors/uOM"
+      },
+      {
+        "entity": "lines",
+        "field": "warehouse",
+        "column": "M_Warehouse_ID",
+        "reference": "Warehouse",
+        "url": "/sws/neo/purchase-order/lines/selectors/warehouse"
+      },
+      {
+        "entity": "lines",
+        "field": "shippingCompany",
+        "column": "M_Shipper_ID",
+        "reference": "Shipper",
+        "url": "/sws/neo/purchase-order/lines/selectors/shippingCompany"
+      },
+      {
+        "entity": "lines",
+        "field": "partnerAddress",
+        "column": "C_BPartner_Location_ID",
+        "reference": "BusinessPartnerLocation",
+        "url": "/sws/neo/purchase-order/lines/selectors/partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "parentField",
+              "field": "businessPartner"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "lines",
+        "field": "project",
+        "column": "C_Project_ID",
+        "reference": "Project",
+        "inputMode": "search",
+        "url": "/sws/neo/purchase-order/lines/selectors/project"
+      },
+      {
+        "entity": "lines",
+        "field": "costcenter",
+        "column": "C_Costcenter_ID",
+        "reference": "CostCenter",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/lines/selectors/costcenter"
+      },
+      {
+        "entity": "lines",
+        "field": "asset",
+        "column": "A_Asset_ID",
+        "reference": "Asset",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/lines/selectors/asset"
+      },
+      {
+        "entity": "lines",
+        "field": "stDimension",
+        "column": "User1_ID",
+        "reference": "UserDimension1",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/lines/selectors/stDimension"
+      },
+      {
+        "entity": "lines",
+        "field": "ndDimension",
+        "column": "User2_ID",
+        "reference": "UserDimension2",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/lines/selectors/ndDimension"
+      },
+      {
+        "entity": "lines",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "url": "/sws/neo/purchase-order/lines/selectors/currency"
+      },
+      {
+        "entity": "lineTax",
+        "field": "tax",
+        "column": "C_Tax_ID",
+        "reference": "Tax",
+        "url": "/sws/neo/purchase-order/lineTax/selectors/tax"
+      },
+      {
+        "entity": "reservedStock",
+        "field": "reservation",
+        "column": "M_Reservation_ID",
+        "reference": "Reservation",
+        "url": "/sws/neo/purchase-order/reservedStock/selectors/reservation"
+      },
+      {
+        "entity": "reservedStock",
+        "field": "businessPartner",
+        "column": "C_BPartner_ID",
+        "reference": "BusinessPartner",
+        "url": "/sws/neo/purchase-order/reservedStock/selectors/businessPartner"
+      },
+      {
+        "entity": "reservedStock",
+        "field": "storageBin",
+        "column": "M_Locator_ID",
+        "reference": "Locator",
+        "url": "/sws/neo/purchase-order/reservedStock/selectors/storageBin"
+      },
+      {
+        "entity": "paymentDetails",
+        "field": "payment",
+        "column": "FIN_Payment_ID",
+        "reference": "Payment",
+        "url": "/sws/neo/purchase-order/paymentDetails/selectors/payment"
+      },
+      {
+        "entity": "paymentDetails",
+        "field": "paymentMethod",
+        "column": "Fin_Paymentmethod_ID",
+        "reference": "PaymentMethod",
+        "url": "/sws/neo/purchase-order/paymentDetails/selectors/paymentMethod"
+      },
+      {
+        "entity": "paymentDetails",
+        "field": "finFinancialAccountID",
+        "column": "Fin_Financial_Account_ID",
+        "reference": "FinancialAccount",
+        "url": "/sws/neo/purchase-order/paymentDetails/selectors/finFinancialAccountID"
+      }
+    ],
+    "actions": [
+      {
+        "entity": "header",
+        "field": "generateTemplate",
+        "column": "Generatetemplate",
+        "url": "/sws/neo/purchase-order/header/{id}/action/generateTemplate",
+        "processId": "800022",
+        "processType": "classic"
+      },
+      {
+        "entity": "header",
+        "field": "rMPickFromShipment",
+        "column": "RM_PickFromShipment",
+        "url": "/sws/neo/purchase-order/header/{id}/action/rMPickFromShipment",
+        "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "header",
+        "field": "rMReceiveMaterials",
+        "column": "RM_ReceiveMaterials",
+        "url": "/sws/neo/purchase-order/header/{id}/action/rMReceiveMaterials"
+      },
+      {
+        "entity": "header",
+        "field": "rMCreateInvoice",
+        "column": "RM_CreateInvoice",
+        "url": "/sws/neo/purchase-order/header/{id}/action/rMCreateInvoice",
+        "processId": "FF80808133362F6A013336781FCE0066",
+        "processType": "classic"
+      },
+      {
+        "entity": "header",
+        "field": "aPRMAddPayment",
+        "column": "EM_APRM_AddPayment",
+        "url": "/sws/neo/purchase-order/header/{id}/action/aPRMAddPayment",
+        "processId": "9BED7889E1034FE68BD85D5D16857320",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "header",
+        "field": "documentAction",
+        "column": "DocAction",
+        "url": "/sws/neo/purchase-order/header/{id}/action/documentAction",
+        "processId": "104",
+        "processType": "classic"
+      },
+      {
+        "entity": "header",
+        "field": "copyFrom",
+        "column": "CopyFrom",
+        "url": "/sws/neo/purchase-order/header/{id}/action/copyFrom",
+        "processId": "211",
+        "processType": "classic"
+      },
+      {
+        "entity": "header",
+        "field": "copyFromPO",
+        "column": "CopyFromPO",
+        "url": "/sws/neo/purchase-order/header/{id}/action/copyFromPO",
+        "processId": "8B81D80B06364566B87853FEECAB5DE0",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "header",
+        "field": "rMAddOrphanLine",
+        "column": "RM_AddOrphanLine",
+        "url": "/sws/neo/purchase-order/header/{id}/action/rMAddOrphanLine",
+        "processId": "23D1B163EC0B41F790CE39BF01DA320E",
+        "processType": "classic"
+      },
+      {
+        "entity": "header",
+        "field": "createOrder",
+        "column": "Convertquotation",
+        "url": "/sws/neo/purchase-order/header/{id}/action/createOrder",
+        "processId": "A3FE1F9892394386A49FB707AA50A0FA",
+        "processType": "classic"
+      },
+      {
+        "entity": "header",
+        "field": "calculatePromotions",
+        "column": "Calculate_Promotions",
+        "url": "/sws/neo/purchase-order/header/{id}/action/calculatePromotions",
+        "processId": "9EB2228A60684C0DBEC12D5CD8D85218",
+        "processType": "classic"
+      },
+      {
+        "entity": "header",
+        "field": "createPOLines",
+        "column": "Create_POLines",
+        "url": "/sws/neo/purchase-order/header/{id}/action/createPOLines",
+        "processId": "6995A4C2592D434A9E16B71E1694CBCA",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "header",
+        "field": "processNow",
+        "column": "Processing",
+        "url": "/sws/neo/purchase-order/header/{id}/action/processNow",
+        "processId": "104",
+        "processType": "classic"
+      },
+      {
+        "entity": "header",
+        "field": "posted",
+        "column": "Posted",
+        "url": "/sws/neo/purchase-order/header/{id}/action/posted",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "header",
+        "field": "cancelandreplace",
+        "column": "Cancelandreplace",
+        "url": "/sws/neo/purchase-order/header/{id}/action/cancelandreplace",
+        "processId": "A2FAF49712D1445ABE750315CE1B473A",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "header",
+        "field": "confirmcancelandreplace",
+        "column": "Confirmcancelandreplace",
+        "url": "/sws/neo/purchase-order/header/{id}/action/confirmcancelandreplace",
+        "processId": "0C2AFAEFB67B4CB8A1429195EB119A49",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "header",
+        "field": "rMPickfromreceipt",
+        "column": "RM_Pickfromreceipt",
+        "url": "/sws/neo/purchase-order/header/{id}/action/rMPickfromreceipt",
+        "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "column": "EM_Psd2_Generate_Bank_Payment",
+        "url": "/sws/neo/purchase-order/header/{id}/action/psd2GenerateBankPayment",
+        "processId": "0661406A983B4D8EA611F8596F114D52",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "lines",
         "field": "managePrereservation",
         "column": "Manage_Prereservation",
@@ -3300,6 +4833,14 @@
         "field": "processNow",
         "runner": "node",
         "description": "Action endpoint for 'processNow' in header should exist"
+      },
+      {
+        "id": "t-action-endpoint-header-psd2GenerateBankPayment",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "runner": "node",
+        "description": "Action endpoint for 'psd2GenerateBankPayment' in header should exist"
       },
       {
         "id": "t-action-endpoint-header-rMAddOrphanLine",
@@ -6632,6 +8173,13 @@
         "description": "Rule 'FIN_PaymentMethodsWithAccountIsSOTrxControl' (validation) should be declared"
       },
       {
+        "id": "t-rule-declared-Generate-Bank-Payment",
+        "category": "rule-declared",
+        "rule": "Generate Bank Payment",
+        "runner": "node",
+        "description": "Rule 'Generate Bank Payment' (process) should be declared"
+      },
+      {
         "id": "t-rule-declared-Insert-Orphan-Line",
         "category": "rule-declared",
         "rule": "Insert Orphan Line",
@@ -6968,7 +8516,14 @@
         "description": "Rule 'purchase-order-Header-EM_APRM_AddPayment-displayLogic' (displayLogic) should be declared"
       },
       {
-        "id": "t-rule-declared-purchase-order-Header-EM-Etpr-Remove-Payment-displayLogic",
+        "id": "t-rule-declared-purchase-order-Header-EM-Psd2-Generate-Bank-Payment-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Header-EM_Psd2_Generate_Bank_Payment-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Header-EM_Psd2_Generate_Bank_Payment-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Header-PaymentRule-displayLogic",
         "category": "rule-declared",
         "rule": "purchase-order-Header-EM_Etpr_Remove_Payment-displayLogic",
         "runner": "node",
@@ -6982,22 +8537,16 @@
         "description": "Rule 'purchase-order-Header-EM_Psd2_Generate_Bank_Payment-displayLogic' (displayLogic) should be declared"
       },
       {
-        "crud-flags": 5,
-        "default-value-type": 26,
-        "displaylogic-evaluable": 1,
-        "displaylogic-valid": 1,
-        "field-presence": 94,
-        "field-type": 94,
-        "readonlylogic-evaluable": 43,
-        "readonlylogic-valid": 43,
-        "rule-declared": 233,
+        "readonlylogic-evaluable": 44,
+        "readonlylogic-valid": 44,
+        "rule-declared": 231,
         "searchable-filters": 5,
         "selector-endpoint": 38,
-        "system-field": 153,
+        "system-field": 152,
         "visibility": 5
       },
       "byRunner": {
-        "node": 764,
+        "node": 762,
         "junit": 0
       }
     }
