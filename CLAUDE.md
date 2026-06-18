@@ -281,6 +281,18 @@ Requires `SONAR_TOKEN` and `SONAR_HOST_URL` exported in `~/.zshrc` or `~/.bashrc
 The script scans, waits for the report to process, and prints issues sorted by severity. Exit code 0 = clean, 1 = issues found.
 **Delegate to Alex (Reviewer) or Sentinel (QA)** for running static analysis as part of the pipeline.
 
+### Per-file line coverage (`make sonar-file-coverage` / `cli/sonar-coverage.sh`)
+
+`cli/sonar-coverage.sh` reads EXISTING SonarQube analysis (it does NOT run a scan) and reports, for given files, which lines remain uncovered — collapsed into ranges. It works for files in BOTH repos (schema_forge and com.etendoerp.go): each file's repo and project key are auto-detected from its on-disk location (override with `--project schema-forge|etendo-go`). Use `NEW_ONLY=1` to show only new-code uncovered lines — the "coverage dropped in this PR" review case. Other flags: `BRANCH=`, `PR=`, plus `--partial` (also list partial branches) and `-q`. Exit 0 = fully covered, 1 = uncovered lines found, 2 = error.
+
+```bash
+make sonar-file-coverage FILES="cli/src/push-to-neo.js"
+make sonar-file-coverage FILES="cli/src/push-to-neo.js" NEW_ONLY=1 PR=123
+./cli/sonar-coverage.sh --project etendo-go src/com/etendoerp/go/schemaforge/NeoServlet.java
+```
+
+Requires a User Token (`squ_…`) with Browse permission in `SONAR_TOKEN`. Full design/reference: `docs/sonar-file-coverage-investigation.md`.
+
 ## Decisions
 
 `decisions.json` is the primary config per window. Before modifying, read `docs/decisions-reference.md`.
