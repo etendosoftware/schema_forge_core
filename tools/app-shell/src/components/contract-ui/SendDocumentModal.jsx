@@ -1,8 +1,14 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import { Mail, Search } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { sendDocumentEmail } from './documentEmailSend.js';
+import RecipientChipEditor from './RecipientChipEditor.jsx';
+import { buildRecipientEdits, normalizeRecipientList } from './recipientEdits.js';
+
+// ETP-4226 — default send policy: editable To/CC recipients everywhere unless
+// the window's `decisions.json → window.sendDocument` override says otherwise.
+const DEFAULT_SEND_POLICY = { editableRecipients: true, cc: true, maxRecipients: 10 };
 
 function resolveEmailSendErrorMessage(ui, data, documentType) {
   if (data?.status === 'THROTTLED') {
@@ -55,6 +61,7 @@ async function sendDocumentFromModal({
   ui,
   setSendFeedback,
   onClose,
+  recipientEdits,
 }) {
   const data = await sendDocumentEmail({
     apiBaseUrl,
@@ -64,6 +71,7 @@ async function sendDocumentFromModal({
     documentNo,
     pdfBlob: cachePreviewBeforeSend ? pdfBlob : null,
     pdfBlobUrl: cachePreviewBeforeSend ? pdfBlobUrl : null,
+    recipientEdits,
   });
 
   if (data.status === 'SENT' || data.status === 'DUPLICATE') {
@@ -101,15 +109,18 @@ async function renderPdfIntoIframe(node, reportId, documentId, token, setPdfLoad
   setPdfLoading(false);
 }
 
-function EmailFormPanel({ to, emailLoading, subject, message, ui }) {
-  return (
-    <div style={{ width: '40%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
+// ETP-4226 — editable-recipients To/CC block. The read-only branch below is
+// the `sendPolicy.editableRecipients: false` opt-out (legacy rendering).
+function RecipientFields({ editableRecipients, ccEnabled, toRecipients, ccRecipients, onToChange, onCcChange, onToValidityChange, onCcValidityChange, emailLoading, noToRecipient, overMaxRecipients, maxRecipients, ui }) {
+  const [ccExpanded, setCcExpanded] = useState(false);
+  if (!editableRecipients) {
+    return (
       <div style={{ position: 'relative' }}>
         <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalTo')}</label>
         <div style={{ position: 'relative' }}>
           <input
             type="text"
-            value={to}
+            value={toRecipients.join(', ')}
             readOnly
             placeholder={emailLoading ? '' : 'email@company.com'}
             style={{ width: '100%', fontSize: 13, padding: '8px 32px 8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', background: '#f9fafb', boxSizing: 'border-box' }}
@@ -117,6 +128,50 @@ function EmailFormPanel({ to, emailLoading, subject, message, ui }) {
           <Search size={13} strokeWidth={1.5} color="#9ca3af" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
         </div>
       </div>
+    );
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <RecipientChipEditor
+        recipients={toRecipients}
+        onChange={onToChange}
+        label={ui('sendModalTo')}
+        testIdPrefix="send-modal-to"
+        onValidityChange={onToValidityChange}
+      />
+      {ccEnabled && !ccExpanded && (
+        <button
+          type="button"
+          data-testid="send-modal-add-cc"
+          onClick={() => setCcExpanded(true)}
+          style={{ alignSelf: 'flex-start', fontSize: 12, color: '#2563eb', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}
+        >
+          {ui('sendModalAddCc')}
+        </button>
+      )}
+      {ccEnabled && ccExpanded && (
+        <RecipientChipEditor
+          recipients={ccRecipients}
+          onChange={onCcChange}
+          label={ui('sendModalCc')}
+          testIdPrefix="send-modal-cc"
+          onValidityChange={onCcValidityChange}
+        />
+      )}
+      {noToRecipient && (
+        <span role="alert" style={{ fontSize: 12, color: '#dc2626' }}>{ui('sendModalNoToRecipient')}</span>
+      )}
+      {overMaxRecipients && (
+        <span role="alert" style={{ fontSize: 12, color: '#dc2626' }}>{ui('sendModalMaxRecipients', { max: maxRecipients })}</span>
+      )}
+    </div>
+  );
+}
+
+function EmailFormPanel({ recipientFieldsProps, subject, message, ui }) {
+  return (
+    <div style={{ width: '40%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
+      <RecipientFields {...recipientFieldsProps} ui={ui} />
       <div>
         <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalSubject')}</label>
         <input
@@ -232,15 +287,27 @@ function downloadExistingPdfBlobUrl(pdfBlobUrl, windowName, documentNo) {
  * - cachePreviewBeforeSend: caches pdfBlob/pdfBlobUrl through /preview-file before sending.
  * When pdfBlobUrl is provided, preview and download use it directly and bypass
  * the /api/reports render endpoint.
+ *
+ * ETP-4226 — recipient policy:
+ * - sendPolicy: spec-derived override object merged over
+ *   `{ editableRecipients: true, cc: true, maxRecipients: 10 }`. Pass the
+ *   window's `sendDocument` config verbatim (one opaque prop).
  */
-export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, pdfBlob, pdfBlobLoading = false, cachePreviewBeforeSend = true, isClosing = false, allowEmail = true }) {
+export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, pdfBlob, pdfBlobLoading = false, cachePreviewBeforeSend = true, isClosing = false, allowEmail = true, sendPolicy = {} }) {
   const ui = useUI();
+  const policy = useMemo(() => ({ ...DEFAULT_SEND_POLICY, ...(sendPolicy || {}) }), [sendPolicy]);
+  const editableRecipients = policy.editableRecipients !== false;
   const initialEmail = resolveInitialEmail(bpEmail);
   const hasEmail = Boolean(initialEmail);
-  const [to, setTo] = useState(initialEmail);
+  const [toRecipients, setToRecipients] = useState(() => (initialEmail ? [initialEmail] : []));
+  const [ccRecipients, setCcRecipients] = useState([]);
+  const [invalidDrafts, setInvalidDrafts] = useState({ to: false, cc: false });
+  // Server-proposed base recipient list used for diffing in buildRecipientEdits.
+  // Captures the contact email whether it came from the bpEmail prop or the fetch.
+  const baseRecipientsRef = useRef(initialEmail ? [initialEmail] : []);
   const [emailLoading, setEmailLoading] = useState(false);
 
-  // Fetch trusted contact data only to display the server-resolved recipient preview.
+  // Fetch trusted contact data to seed the server-resolved recipient proposal.
   useEffect(() => {
     if (!bPartnerId || !apiBaseUrl || !token) return;
     let cancelled = false;
@@ -250,13 +317,41 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
       token,
       bPartnerId,
       hasEmail,
-      setTo,
+      setTo: (email) => {
+        baseRecipientsRef.current = [email];
+        // Merge ahead of any address the user typed while loading.
+        setToRecipients(prev => normalizeRecipientList([email, ...prev]));
+      },
       isCancelled: () => cancelled,
     })
       .catch(() => {})
       .finally(() => { if (!cancelled) setEmailLoading(false); });
     return () => { cancelled = true; };
   }, [hasEmail, bPartnerId, apiBaseUrl, token]);
+
+  // Cross-channel precedence mirror (backend `to > cc`): an address present in
+  // To is silently dropped from CC, and adding it to CC merges into To.
+  const handleToChange = useCallback((next) => {
+    const normalized = normalizeRecipientList(next);
+    const toKeys = new Set(normalized.map(address => address.toLowerCase()));
+    setToRecipients(normalized);
+    setCcRecipients(prev => prev.filter(address => !toKeys.has(address.toLowerCase())));
+  }, []);
+
+  const handleCcChange = useCallback((next) => {
+    setCcRecipients(() => {
+      const toKeys = new Set(toRecipients.map(address => address.toLowerCase()));
+      return normalizeRecipientList(next).filter(address => !toKeys.has(address.toLowerCase()));
+    });
+  }, [toRecipients]);
+
+  const handleToValidityChange = useCallback((isValid) => {
+    setInvalidDrafts(prev => ({ ...prev, to: !isValid }));
+  }, []);
+
+  const handleCcValidityChange = useCallback((isValid) => {
+    setInvalidDrafts(prev => ({ ...prev, cc: !isValid }));
+  }, []);
 
   const subject = `${documentType} #${documentNo} — ${bpName}`;
   const message = '';
@@ -308,6 +403,11 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
     setSending(true);
     setSendFeedback(null);
     try {
+      // Untouched sends yield null here, keeping the command byte-identical to
+      // the legacy one (client idempotencyKey, no recipientEdits).
+      const recipientEdits = editableRecipients
+        ? buildRecipientEdits(baseRecipientsRef.current, { to: toRecipients, cc: ccRecipients })
+        : null;
       await sendDocumentFromModal({
         apiBaseUrl,
         token,
@@ -321,6 +421,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
         ui,
         setSendFeedback,
         onClose,
+        recipientEdits,
       });
     } catch {
       const errorMessage = resolveEmailSendExceptionMessage(ui, documentType);
@@ -334,7 +435,14 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
   const shouldCachePreview = cachePreviewBeforeSend && Boolean(pdfBlob || pdfBlobUrl || pdfBlobLoading);
   const hasCacheablePreview = Boolean(pdfBlob || pdfBlobUrl);
   const waitingForCacheablePreview = shouldCachePreview && pdfBlobLoading && !hasCacheablePreview;
-  const sendDisabled = !documentId || sending || waitingForCacheablePreview;
+  // ETP-4226 — recipient gating only applies to the editable default; the
+  // read-only opt-out keeps the exact legacy disable conditions.
+  const hasInvalidDraft = invalidDrafts.to || invalidDrafts.cc;
+  const noToRecipient = editableRecipients && toRecipients.length === 0;
+  const overMaxRecipients = editableRecipients
+    && toRecipients.length + ccRecipients.length > policy.maxRecipients;
+  const sendDisabled = !documentId || sending || waitingForCacheablePreview
+    || (editableRecipients && (hasInvalidDraft || noToRecipient || overMaxRecipients));
 
   return (
     <>
@@ -386,8 +494,20 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
 
           {allowEmail && (
             <EmailFormPanel
-              to={to}
-              emailLoading={emailLoading}
+              recipientFieldsProps={{
+                editableRecipients,
+                ccEnabled: policy.cc !== false,
+                toRecipients,
+                ccRecipients,
+                onToChange: handleToChange,
+                onCcChange: handleCcChange,
+                onToValidityChange: handleToValidityChange,
+                onCcValidityChange: handleCcValidityChange,
+                emailLoading,
+                noToRecipient,
+                overMaxRecipients,
+                maxRecipients: policy.maxRecipients,
+              }}
               subject={subject}
               message={message}
               ui={ui}
