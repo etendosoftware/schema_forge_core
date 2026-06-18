@@ -8,7 +8,7 @@
 
 import * as p from '@clack/prompts';
 import { resolveDbDefaults, createDbPool, closePool } from '../db.js';
-import { loadCatalog, runMain, tenantLabel } from './run.js';
+import { loadCatalog, runMain } from './run.js';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -48,9 +48,12 @@ async function fetchTenants(config) {
 
 async function promptDbConfig() {
   const defaults = resolveDbDefaults();
-  const sourceLabel =
-    defaults.source === 'gradle' ? 'gradle.properties' :
-    defaults.source === 'env'    ? 'env vars'          : 'built-in defaults';
+  const SOURCE_LABELS = {
+    gradle: 'gradle.properties',
+    env: 'env vars',
+    defaults: 'built-in defaults',
+  };
+  const sourceLabel = SOURCE_LABELS[defaults.source] || 'built-in defaults';
 
   const useDefaults = exitOnCancel(await p.confirm({
     message: `Use DB config from ${sourceLabel}? (${defaults.user}@${defaults.host}:${defaults.port}/${defaults.database})`,

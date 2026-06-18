@@ -224,7 +224,12 @@ export function resolveDbDefaults(gradlePropertiesPath) {
   const envPassword = explicit ? null : process.env.ETENDO_DB_PASSWORD;
   const envDatabase = explicit ? null : process.env.ETENDO_DB_NAME;
 
-  const source = gradle ? 'gradle' : (envHost ? 'env' : 'defaults');
+  let source = 'defaults';
+  if (gradle) {
+    source = 'gradle';
+  } else if (envHost) {
+    source = 'env';
+  }
   return {
     host: (gradleHost === 'db' ? 'localhost' : gradleHost) || envHost || 'localhost',
     port: gradlePort || envPort || 5432,
