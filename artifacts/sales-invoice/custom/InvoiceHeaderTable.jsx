@@ -15,9 +15,16 @@ import { FiscalStatusBadge } from '@/windows/custom/shared/FiscalStatusBadge.jsx
 
 // ─── Invoice-specific status logic ───────────────────────────────
 
-function isCreditNote(row) {
-  return (row['transactionDocument$_identifier'] || '').toLowerCase().includes('credit');
+// 'NC' = credit memo (ARC), 'DEV' = return material (ARI_RM), 'FAC' = standard (ARI)
+function getArSubtype(row) {
+  return row.arInvoiceSubtype || (
+    (row['transactionDocument$_identifier'] || '').toLowerCase().includes('credit') ? 'NC' : 'FAC'
+  );
 }
+
+function isCreditNote(row) { return getArSubtype(row) === 'NC'; }
+function isReturn(row)     { return getArSubtype(row) === 'DEV'; }
+function isCreditType(row) { return isCreditNote(row) || isReturn(row); }
 
 function getInvoiceStatus(row) {
   const docStatus = row.documentStatus;
@@ -94,11 +101,24 @@ export default function InvoiceHeaderTable(props) {
     return [
       { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', dot: false },
       {
-        key: 'documentNo', column: 'DocumentNo', type: 'string',
-        pill: {
-          when: (row) => isCreditNote(row),
-          label: t('creditNoteLabel'),
-          className: 'bg-purple-50 text-purple-700 border-purple-200',
+        key: 'documentNo', column: 'DocumentNo', type: 'custom', label: gl['documentNo'] || 'Document No.',
+        render: (row) => {
+          const sub = getArSubtype(row);
+          const pill = sub === 'NC'
+            ? { label: t('creditNoteLabel'), className: 'bg-purple-50 text-purple-700 border-purple-200' }
+            : sub === 'DEV'
+              ? { label: t('returnsTab'), className: 'bg-orange-50 text-orange-700 border-orange-200' }
+              : null;
+          return (
+            <span className="inline-flex items-center gap-2">
+              <span>{row.documentNo}</span>
+              {pill && (
+                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${pill.className}`} style={{ borderWidth: '0.5px' }}>
+                  {pill.label}
+                </span>
+              )}
+            </span>
+          );
         },
       },
       {
@@ -106,6 +126,7 @@ export default function InvoiceHeaderTable(props) {
         render: (row) => {
           const d = row.eTGODueDate;
           if (!d) return <span className="text-muted-foreground">—</span>;
+          if (isCreditType(row)) return <span className="text-muted-foreground">{formatCalendarDate(d, locale)}</span>;
           const state = getDueDateState(d, row.outstandingAmount);
           return (
             <span className="inline-flex items-center gap-1.5" style={getDueDateTextStyle(state)}>
@@ -129,6 +150,7 @@ export default function InvoiceHeaderTable(props) {
     { value: 'all',          label: t('allTab') },
     { value: 'invoices',     label: t('invoicesTab') },
     { value: 'credit-notes', label: t('creditNotesTab') },
+    { value: 'returns',      label: t('returnsTab') },
   ], [gl]);
 
   const PAYMENT_STATUS_OPTIONS = useMemo(() => [
@@ -154,7 +176,8 @@ export default function InvoiceHeaderTable(props) {
     let rows = data;
     if (!rows) return rows;
     if (typeFilter === 'credit-notes') rows = rows.filter(isCreditNote);
-    else if (typeFilter === 'invoices') rows = rows.filter(r => !isCreditNote(r));
+    else if (typeFilter === 'returns')      rows = rows.filter(isReturn);
+    else if (typeFilter === 'invoices')     rows = rows.filter(r => !isCreditType(r));
     if (paymentFilter !== 'all') rows = rows.filter(r => getPaymentFilter(r) === paymentFilter);
     return rows;
   }, [data, typeFilter, paymentFilter]);
