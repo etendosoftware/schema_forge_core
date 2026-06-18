@@ -581,7 +581,7 @@ export function ListView({
           {selectedRows.length > 0 ? (
             <div className={`flex items-center justify-between ${listbarPaddingX} py-3 border-b border-border/30`}>
               <div className="flex items-center gap-3 h-10">
-                <span className="text-sm font-semibold" data-testid="selection-count">{ui('selected').replace('{count}', selectedRows.length)}</span>
+                <span role="status" className="text-sm font-semibold" data-testid="selection-count">{ui('selected').replace('{count}', selectedRows.length)}</span>
               </div>
               <div className="flex items-center gap-2 h-10">
                 <Button
@@ -626,7 +626,7 @@ export function ListView({
             <div className={`flex items-center justify-between ${listbarPaddingX} py-3`}>
               <div className="flex items-center gap-2">
                 {subsetFilters && (
-                  <div className="inline-flex items-center gap-1 rounded-xl bg-[#F5F7F9] p-1 h-10">
+                  <div role="group" aria-label="Filters" className="inline-flex items-center gap-1 rounded-xl bg-[#F5F7F9] p-1 h-10">
                     {subsetFilters.map((sf, i) => (
                       <button
                         key={i}
@@ -646,7 +646,7 @@ export function ListView({
                   </div>
                 )}
                 {quickFilters && (
-                  <div className="flex items-center gap-1">
+                  <div role="group" aria-label="Filters" className="flex items-center gap-1">
                     {quickFilters.map((qf, i) => (
                       <button
                         key={i}
@@ -815,7 +815,7 @@ export function ListView({
           {/* Indeterminate top progress bar — visible while refreshing existing data */}
           {hook.loading && hook.items.length > 0 && (
             <>
-              <div className="h-0.5 w-full overflow-hidden bg-primary/10" data-testid="list-progress-bar">
+              <div role="progressbar" className="h-0.5 w-full overflow-hidden bg-primary/10" data-testid="list-progress-bar">
                 <div
                   className="h-full w-1/3 bg-primary"
                   style={{ animation: 'sf-list-progress 1.1s ease-in-out infinite' }}

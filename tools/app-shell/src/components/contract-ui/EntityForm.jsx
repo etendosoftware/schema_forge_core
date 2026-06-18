@@ -1289,7 +1289,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         existing,
         React.createElement(
           'p',
-          { key: '__err', className: 'text-xs text-red-500 mt-0.5', 'data-testid': `error-${f.key}` },
+          { key: '__err', role: 'alert', className: 'text-xs text-red-500 mt-0.5', 'data-testid': `error-${f.key}` },
           err
         )
       );
