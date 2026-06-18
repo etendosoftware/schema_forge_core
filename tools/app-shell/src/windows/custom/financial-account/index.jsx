@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { Sparkles, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -12,6 +12,8 @@ import { DetailTabs } from './DetailTabs';
 import { MovementsTab } from './MovementsTab';
 import { ReconciliationTab } from './ReconciliationTab';
 import { ImportedStatementsTab } from './ImportedStatementsTab';
+import { AutoMatchSuggestionModal } from '@/components/contract-ui/AutoMatchSuggestionModal';
+import { useAutoMatch } from '@/hooks/useReconciliation';
 
 const STATEMENTS_API_PATH = '/sws/neo/bank-statements';
 const TRANSACTIONS_API_PATH = '/sws/neo/financial-account-transactions';
@@ -77,7 +79,15 @@ const LINE_CSV_COLUMNS = [
 export default function FinancialAccountWindow({ recordId }) {
   const ui = useUI();
   const [activeTab, setActiveTab] = useState('movements');
+  const [autoMatchOpen, setAutoMatchOpen] = useState(false);
   const { account, reload: reloadAccount } = useFinancialAccount(recordId);
+  const { groups: autoMatchGroups, kpis: autoMatchKpis, loading: autoMatchLoading, reload: reloadAutoMatch } = useAutoMatch(
+    autoMatchOpen ? recordId : null,
+  );
+  const handleAutoMatchSuccess = useCallback(() => {
+    reloadAccount();
+    reloadAutoMatch();
+  }, [reloadAccount, reloadAutoMatch]);
   const { movements, totals, enabledDimensions, headerDimensions, trxTypes, accountOrgId, paymentMethods, loading: movementsLoading, reload: reloadMovements } = useAccountMovements(recordId);
   const { statements } = useBankStatements(recordId);
   const movementsTabRef = useRef(null);
@@ -188,7 +198,7 @@ export default function FinancialAccountWindow({ recordId }) {
             <button
               type="button"
               data-testid="financial-account-automatch"
-              onClick={() => {}}
+              onClick={() => setAutoMatchOpen(true)}
               className="inline-flex h-10 items-center gap-1 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium leading-6 text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9]"
             >
               <Sparkles className="h-5 w-5 text-[#828FA3]" />
@@ -235,6 +245,16 @@ export default function FinancialAccountWindow({ recordId }) {
           )}
         </div>
       </div>
+
+      <AutoMatchSuggestionModal
+        accountId={recordId}
+        groups={autoMatchGroups}
+        kpis={autoMatchKpis}
+        currency={account?.currencyIso ?? 'EUR'}
+        open={autoMatchOpen}
+        onClose={() => setAutoMatchOpen(false)}
+        onSuccess={handleAutoMatchSuccess}
+      />
     </TooltipProvider>
   );
 }

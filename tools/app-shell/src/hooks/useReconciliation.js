@@ -160,3 +160,96 @@ export function useReconcileGroup() {
 
   return { reconcile, loading, error };
 }
+
+/**
+ * Fetches an automatch preview for a financial account (GET, no mutations).
+ *
+ * GET /sws/neo/bank-reconciliation?action=autoMatch&accountId={id}
+ *
+ * Response: { response: { data: { account, kpis: { pendingLines, groupsFound, opsToLink, willCreate },
+ *             groups: [{ groupKey, statementLine, operations, origin, ruleName?, isNew, difference, createPayment? }] } } }
+ *
+ * @param {string|null} accountId
+ * @returns {{ groups: Array<object>, kpis: object, loading: boolean, error: Error|null, reload: () => void }}
+ */
+export function useAutoMatch(accountId) {
+  const path = accountId
+    ? `${BASE_PATH}${buildQuery({ action: 'autoMatch', accountId })}`
+    : null;
+
+  const mapPayload = useMemo(
+    () => (raw) => ({
+      groups: Array.isArray(raw.groups) ? raw.groups : [],
+      kpis: raw.kpis ?? { pendingLines: 0, groupsFound: 0, opsToLink: 0, willCreate: 0 },
+    }),
+    [],
+  );
+
+  const { data, loading, error, reload } = useNeoResource({
+    path,
+    deps: [accountId],
+    mapPayload,
+    label: 'useAutoMatch',
+  });
+
+  return {
+    groups: data?.groups ?? [],
+    kpis: data?.kpis ?? { pendingLines: 0, groupsFound: 0, opsToLink: 0, willCreate: 0 },
+    loading,
+    error,
+    reload,
+  };
+}
+
+/**
+ * Applies accepted automatch suggestion groups (POST, commits payments + reconciliations).
+ *
+ * POST /sws/neo/bank-reconciliation?action=applySuggestions
+ *   body: { financialAccountId, groups: [{ statementLineId, operationIds, createPayment? }] }
+ *
+ * @returns {{ apply: (payload: object) => Promise<object>, loading: boolean, error: Error|null }}
+ */
+export function useApplySuggestions() {
+  const { token } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const apply = useCallback(async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const url = `${getApiBase()}${BASE_PATH}?action=applySuggestions`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      let json = null;
+      try {
+        json = await res.json();
+      } catch {
+        json = null;
+      }
+
+      if (!res.ok) {
+        const message = json?.error?.message || `HTTP ${res.status}`;
+        const err = new Error(message);
+        err.status = json?.error?.status ?? res.status;
+        throw err;
+      }
+
+      return json?.response?.data ?? {};
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  return { apply, loading, error };
+}
