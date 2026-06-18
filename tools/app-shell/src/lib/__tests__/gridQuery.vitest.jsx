@@ -1227,3 +1227,198 @@ describe('resolveBackendSort — inferSortMode with enumLabels vs badgeLabels', 
     expect(resolveBackendSort(col, 'desc')).toBe('flag desc');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Coverage: tryBooleanText — empty object badge label fallback
+// ---------------------------------------------------------------------------
+
+describe('getDisplayText — boolean badge label edge cases for coverage', () => {
+  it('returns empty string when badge label is empty object (no locale keys)', () => {
+    const col = {
+      key: 'flag', type: 'boolean',
+      badgeLabels: { true: {}, false: {} },
+    };
+    // Object.values({}) is [] → [0] is undefined → ?? '' → ''
+    expect(getDisplayText({ flag: true }, col)).toBe('');
+    expect(getDisplayText({ flag: false }, col)).toBe('');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Coverage: parseBooleanLabelFilter — undefined badgeLabels.true / .false
+// ---------------------------------------------------------------------------
+
+describe('parseUserFilter — boolean label with missing true/false keys', () => {
+  it('matches when badgeLabels.true is undefined (covers ?? fallback)', () => {
+    const col = { key: 'b', type: 'boolean', badgeLabels: { false: 'Inactive' } };
+    // badgeLabels.true is undefined → String(undefined ?? '') → ''
+    // Searching for 'inact' should match falseLabel
+    expect(parseUserFilter(col, 'inact').value).toBe(false);
+    // Searching for something that matches neither → null
+    expect(parseUserFilter(col, 'zzz')).toBeNull();
+  });
+
+  it('matches when badgeLabels.false is undefined (covers ?? fallback)', () => {
+    const col = { key: 'b', type: 'boolean', badgeLabels: { true: 'Active' } };
+    expect(parseUserFilter(col, 'act').value).toBe(true);
+    expect(parseUserFilter(col, 'zzz')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Coverage: buildBackendFilter numeric — COMPARISON_OP fallback to 'equals'
+// ---------------------------------------------------------------------------
+
+describe('buildBackendFilter — numeric op fallback', () => {
+  it('falls back to equals when op is not in COMPARISON_OP map', () => {
+    // op '!=' is not in the map → COMPARISON_OP['!='] is undefined → ?? 'equals'
+    const result = buildBackendFilter(
+      { key: 'n' },
+      { mode: 'numeric', op: '!=', value: 42 },
+    );
+    expect(result).toEqual([{ fieldName: 'n', operator: 'equals', value: 42 }]);
+  });
+
+  it('falls back to equals when op is null', () => {
+    const result = buildBackendFilter(
+      { key: 'n' },
+      { mode: 'numeric', op: null, value: 10 },
+    );
+    expect(result).toEqual([{ fieldName: 'n', operator: 'equals', value: 10 }]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Coverage: buildAdvancedFilterCriteria — columns not an array
+// ---------------------------------------------------------------------------
+
+describe('buildAdvancedFilterCriteria — invalid columns parameter', () => {
+  it('returns null when columns is null', () => {
+    const filter = { conditions: [{ field: 'x', operator: 'equals', value: 'y' }] };
+    expect(buildAdvancedFilterCriteria(filter, null)).toBeNull();
+  });
+
+  it('returns null when columns is a string', () => {
+    const filter = { conditions: [{ field: 'x', operator: 'equals', value: 'y' }] };
+    expect(buildAdvancedFilterCriteria(filter, 'not-an-array')).toBeNull();
+  });
+
+  it('returns null when columns is an object', () => {
+    const filter = { conditions: [{ field: 'x', operator: 'equals', value: 'y' }] };
+    expect(buildAdvancedFilterCriteria(filter, { key: 'x' })).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Coverage: between with null 'to' value
+// ---------------------------------------------------------------------------
+
+describe('buildAdvancedFilterCriteria — between edge cases for coverage', () => {
+  const columns = [{ key: 'amount', type: 'amount' }];
+
+  it('returns null when between to is null', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: ['100', null] }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, columns)).toBeNull();
+  });
+
+  it('returns null when between to is empty string', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: ['100', ''] }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, columns)).toBeNull();
+  });
+
+  it('returns null when numeric coercion fails on to', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: ['100', 'xyz'] }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, columns)).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Coverage: inSet with null/empty values mixed in array
+// ---------------------------------------------------------------------------
+
+describe('buildAdvancedFilterCriteria — inSet filtering edge cases', () => {
+  const columns = [{ key: 'name', type: 'string' }];
+
+  it('filters out null and empty values from inSet array', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'inSet', value: [null, '', 'valid'] }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    expect(result).toEqual([{ fieldName: 'name', operator: 'equals', value: 'valid' }]);
+  });
+
+  it('returns null when inSet array has only null/empty values', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'inSet', value: [null, '', undefined] }],
+    };
+    expect(buildAdvancedFilterCriteria(filter, columns)).toBeNull();
+  });
+
+  it('handles inSet with string containing commas', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'inSet', value: 'a, b' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    expect(result).toEqual([{ fieldName: 'name', operator: 'inSet', value: 'a,b' }]);
+  });
+
+  it('handles inSet string with single value after trim', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'inSet', value: 'solo' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    expect(result).toEqual([{ fieldName: 'name', operator: 'equals', value: 'solo' }]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Coverage: resolveFilterMode — enum type
+// ---------------------------------------------------------------------------
+
+describe('resolveFilterMode — additional type coverage', () => {
+  it('infers numeric for percent type', () => {
+    expect(resolveFilterMode({ key: 'p', type: 'percent' })).toBe('numeric');
+  });
+
+  it('infers enumLabel for enum type', () => {
+    expect(resolveFilterMode({ key: 'e', type: 'enum' })).toBe('enumLabel');
+  });
+
+  it('returns text for type=string without _ID column', () => {
+    expect(resolveFilterMode({ key: 'name', type: 'string' })).toBe('text');
+  });
+
+  it('returns text for type=string with non-matching column name', () => {
+    expect(resolveFilterMode({ key: 'name', type: 'string', column: 'Name' })).toBe('text');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Coverage: invertEnumLabels edge cases
+// ---------------------------------------------------------------------------
+
+describe('parseUserFilter — invertEnumLabels edge cases', () => {
+  it('handles enumLabels being null', () => {
+    const col = { key: 's', type: 'status', enumLabels: null };
+    expect(parseUserFilter(col, 'anything')).toBeNull();
+  });
+
+  it('handles enumLabels being a non-object', () => {
+    const col = { key: 's', type: 'status', enumLabels: 'not-an-object' };
+    // invertEnumLabels returns empty map → no matches → null
+    expect(parseUserFilter(col, 'anything')).toBeNull();
+  });
+});

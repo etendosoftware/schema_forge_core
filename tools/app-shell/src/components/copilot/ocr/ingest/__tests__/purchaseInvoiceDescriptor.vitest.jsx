@@ -467,6 +467,269 @@ describe('purchaseInvoiceDescriptor', () => {
     });
   });
 
+  // ---------------------------------------------------------------------------
+  // buildPurchaseInvoiceBatch — orchestrator coverage
+  // ---------------------------------------------------------------------------
+
+  describe('buildPurchaseInvoiceBatch', () => {
+    let buildPurchaseInvoiceBatch;
+    let simSearchMock;
+
+    beforeEach(async () => {
+      const mod = await import('../purchaseInvoiceDescriptor');
+      buildPurchaseInvoiceBatch = mod.buildPurchaseInvoiceBatch;
+      const simMod = await import('../../../../../lib/simSearch.js');
+      simSearchMock = simMod.simSearch;
+      simSearchMock.mockReset();
+      globalThis.fetch = vi.fn();
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('returns ops with header when vendor found via findBp', async () => {
+      // findBp finds a match by taxID
+      globalThis.fetch.mockImplementation(async (url) => {
+        if (url.includes('businessPartner')) {
+          return { ok: true, json: async () => ({ response: { data: [{ id: 'bp-1' }] } }) };
+        }
+        if (url.includes('locationAddress')) {
+          return { ok: true, json: async () => ({ response: { data: [{ id: 'loc-1' }] } }) };
+        }
+        return { ok: true, json: async () => ({ response: { data: [] } }) };
+      });
+      // simSearch: product match for all lines, no tax
+      simSearchMock.mockResolvedValue([{ id: 'prod-1', name: 'Widget' }]);
+
+      const result = await buildPurchaseInvoiceBatch(
+        { vendor_name: 'Acme', tax_id: 'B12345', line_items: [{ description: 'Widget', quantity: 2, unit_price: 10 }] },
+        { token: 'tok', apiBaseUrl: 'http://test/neo/purchase-invoice' },
+      );
+
+      expect(result.cancelled).toBeUndefined();
+      expect(result.ops).toBeDefined();
+      const header = result.ops.find(o => o.entity === 'Header');
+      expect(header).toBeTruthy();
+      expect(header.body.businessPartner).toBe('bp-1');
+      // partnerAddress is resolved via findBpLocation which also uses the mocked fetch
+      expect(header.body.partnerAddress).toBeTruthy();
+      const line = result.ops.find(o => o.entity === 'Lines');
+      expect(line).toBeTruthy();
+      expect(line.body.product).toBe('prod-1');
+    });
+
+    it('returns cancelled when user dismisses BP popup', async () => {
+      // findBp finds nothing
+      globalThis.fetch.mockResolvedValue({ ok: true, json: async () => ({ response: { data: [] } }) });
+      simSearchMock.mockResolvedValue([]);
+
+      const result = await buildPurchaseInvoiceBatch(
+        { vendor_name: 'Unknown', line_items: [{ description: 'X' }] },
+        {
+          token: 'tok',
+          apiBaseUrl: 'http://test/neo/purchase-invoice',
+          askUserForBp: async () => null, // user cancels
+        },
+      );
+
+      expect(result.cancelled).toBe(true);
+    });
+
+    it('creates bpCreate op when user fills popup with location', async () => {
+      globalThis.fetch.mockResolvedValue({ ok: true, json: async () => ({ response: { data: [] } }) });
+      simSearchMock.mockResolvedValue([{ id: 'prod-1' }]);
+
+      const result = await buildPurchaseInvoiceBatch(
+        { vendor_name: 'New Co', line_items: [{ description: 'X', quantity: 1, unit_price: 5 }] },
+        {
+          token: 'tok',
+          apiBaseUrl: 'http://test/neo/purchase-invoice',
+          askUserForBp: async () => ({
+            name: 'New Co',
+            searchKey: 'NEWCO',
+            location: { addressLine1: '123 Main', city: 'Test' },
+          }),
+        },
+      );
+
+      expect(result.cancelled).toBeUndefined();
+      const bpOp = result.ops.find(o => o.id === 'bp');
+      expect(bpOp).toBeTruthy();
+      expect(bpOp.body.name).toBe('New Co');
+      const locOp = result.ops.find(o => o.id === 'loc');
+      expect(locOp).toBeTruthy();
+      expect(locOp.body.businessPartner).toBe('$ref:bp');
+      const header = result.ops.find(o => o.entity === 'Header');
+      expect(header.body.businessPartner).toBe('$ref:bp');
+      expect(header.body.partnerAddress).toBe('$ref:loc');
+    });
+
+    it('uses reviewedHeader.vendor when present', async () => {
+      simSearchMock.mockResolvedValue([{ id: 'prod-1' }]);
+
+      const result = await buildPurchaseInvoiceBatch(
+        { line_items: [{ description: 'X', quantity: 1 }] },
+        {
+          token: 'tok',
+          apiBaseUrl: 'http://test/neo/purchase-invoice',
+          reviewedHeader: {
+            vendor: { bpId: 'bp-reviewed', bpCreate: null, locationCreate: null },
+            documentNo: 'INV-001',
+            invoiceDate: '2026-01-15',
+          },
+        },
+      );
+
+      // findBpLocation called with bpId from reviewed vendor
+      const header = result.ops.find(o => o.entity === 'Header');
+      expect(header.body.businessPartner).toBe('bp-reviewed');
+      expect(header.body.orderReference).toBe('INV-001');
+      expect(header.body.invoiceDate).toBe('2026-01-15');
+    });
+
+    it('returns cancelled when user dismisses product popup', async () => {
+      // findBp succeeds
+      globalThis.fetch.mockImplementation(async (url) => {
+        if (url.includes('businessPartner')) return { ok: true, json: async () => ({ response: { data: [{ id: 'bp-1' }] } }) };
+        return { ok: true, json: async () => ({ response: { data: [] } }) };
+      });
+      // No product matches
+      simSearchMock.mockResolvedValue([]);
+
+      const result = await buildPurchaseInvoiceBatch(
+        { vendor_name: 'Acme', tax_id: 'B1', line_items: [{ description: 'Unknown product' }] },
+        {
+          token: 'tok',
+          apiBaseUrl: 'http://test/neo/purchase-invoice',
+          askUserForProducts: async () => null, // user cancels
+        },
+      );
+
+      expect(result.cancelled).toBe(true);
+    });
+
+    it('merges reviewedLines overrides', async () => {
+      globalThis.fetch.mockImplementation(async (url) => {
+        if (url.includes('businessPartner')) return { ok: true, json: async () => ({ response: { data: [{ id: 'bp-1' }] } }) };
+        if (url.includes('locationAddress')) return { ok: true, json: async () => ({ response: { data: [{ id: 'loc-1' }] } }) };
+        return { ok: true, json: async () => ({ response: { data: [] } }) };
+      });
+      simSearchMock.mockResolvedValue([{ id: 'prod-1' }]);
+
+      const result = await buildPurchaseInvoiceBatch(
+        {
+          vendor_name: 'A', tax_id: 'B1',
+          line_items: [{ description: 'Widget', quantity: 1, unit_price: 10 }],
+        },
+        {
+          token: 'tok',
+          apiBaseUrl: 'http://test/neo/purchase-invoice',
+          reviewedLines: [{ description: 'Edited Widget', quantity: 5, unit_price: 20, tax_id: 'tax-manual' }],
+        },
+      );
+
+      const lineOp = result.ops.find(o => o.entity === 'Lines');
+      expect(lineOp.body.description).toBe('Edited Widget');
+      expect(lineOp.body.invoicedQuantity).toBe(5);
+      expect(lineOp.body.unitPrice).toBe(20);
+      expect(lineOp.body.tax).toBe('tax-manual');
+    });
+
+    it('handles null extracted data', async () => {
+      simSearchMock.mockResolvedValue([]);
+
+      const result = await buildPurchaseInvoiceBatch(null, {
+        token: 'tok',
+        apiBaseUrl: 'http://test/neo/purchase-invoice',
+      });
+
+      // No lines → no line ops, just header
+      expect(result.ops).toBeDefined();
+      const header = result.ops.find(o => o.entity === 'Header');
+      expect(header).toBeTruthy();
+    });
+
+    it('handles null ctx', async () => {
+      simSearchMock.mockResolvedValue([]);
+
+      const result = await buildPurchaseInvoiceBatch(
+        { line_items: [] },
+        null,
+      );
+
+      expect(result.ops).toBeDefined();
+    });
+
+    it('drops unmatched lines and includes them in unmatched array', async () => {
+      globalThis.fetch.mockResolvedValue({ ok: true, json: async () => ({ response: { data: [{ id: 'bp-1' }] } }) });
+      // Only first product matches
+      simSearchMock.mockImplementation(async ({ items }) => {
+        return items.map((item, i) => i === 0 ? { id: 'prod-1' } : null);
+      });
+
+      const result = await buildPurchaseInvoiceBatch(
+        {
+          vendor_name: 'A', tax_id: 'B1',
+          line_items: [
+            { description: 'Matched', quantity: 1 },
+            { description: 'Unmatched', quantity: 2 },
+          ],
+        },
+        { token: 'tok', apiBaseUrl: 'http://test/neo/purchase-invoice' },
+      );
+
+      expect(result.unmatched).toContain('Unmatched');
+      const lineOps = result.ops.filter(o => o.entity === 'Lines');
+      expect(lineOps).toHaveLength(1);
+    });
+
+    it('skips BP popup when askUserForBp is not a function', async () => {
+      globalThis.fetch.mockResolvedValue({ ok: true, json: async () => ({ response: { data: [] } }) });
+      simSearchMock.mockResolvedValue([{ id: 'prod-1' }]);
+
+      const result = await buildPurchaseInvoiceBatch(
+        { vendor_name: 'X', line_items: [{ description: 'Y', quantity: 1 }] },
+        {
+          token: 'tok',
+          apiBaseUrl: 'http://test/neo/purchase-invoice',
+          askUserForBp: 'not-a-function',
+        },
+      );
+
+      // Should not cancel, just proceed with $ref:bp
+      expect(result.cancelled).toBeUndefined();
+      const header = result.ops.find(o => o.entity === 'Header');
+      expect(header.body.businessPartner).toBe('$ref:bp');
+    });
+
+    it('uses tax from simSearch when no reviewedLine _tax_id', async () => {
+      globalThis.fetch.mockImplementation(async (url) => {
+        if (url.includes('businessPartner')) return { ok: true, json: async () => ({ response: { data: [{ id: 'bp-1' }] } }) };
+        return { ok: true, json: async () => ({ response: { data: [] } }) };
+      });
+
+      // First call: product simSearch, second call: tax simSearch
+      let callCount = 0;
+      simSearchMock.mockImplementation(async ({ entityName }) => {
+        if (entityName === 'Product') return [{ id: 'prod-1' }];
+        if (entityName === 'FinancialMgmtTaxRate') return [{ id: 'tax-sim' }];
+        return [];
+      });
+
+      const result = await buildPurchaseInvoiceBatch(
+        {
+          vendor_name: 'A', tax_id: 'B1',
+          line_items: [{ description: 'Widget', quantity: 1, tax_label: 'IVA 21%' }],
+        },
+        { token: 'tok', apiBaseUrl: 'http://test/neo/purchase-invoice' },
+      );
+
+      const lineOp = result.ops.find(o => o.entity === 'Lines');
+      expect(lineOp.body.tax).toBe('tax-sim');
+    });
+  });
+
   describe('resolveTaxesForLines — simSearch returns objects without .id', () => {
     it('returns null for entries where match has no .id property', async () => {
       const { simSearch } = await import('../../../../../lib/simSearch.js');
