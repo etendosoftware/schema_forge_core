@@ -24,6 +24,15 @@ const LINE_CELL_RENDERERS = {
     labelKey: 'financeAccountStatementLinesColDate',
     render: (line, ctx) => <span className="whitespace-nowrap text-[#121217]">{formatDate(line.date, ctx.bcpLocale)}</span>,
   },
+  description: {
+    width: 'minmax(140px,1fr)',
+    labelKey: 'financeAccountStatementLinesColDescription',
+    render: (line) => (
+      <span className={cn('truncate', line.description ? 'text-[#3F3F50]' : 'text-[#C1C3CC]')} title={line.description || ''}>
+        {line.description || '—'}
+      </span>
+    ),
+  },
   bpartnername: {
     width: 'minmax(140px,1fr)',
     labelKey: 'financeAccountStatementLinesColBpartner',
