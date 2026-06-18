@@ -1343,6 +1343,17 @@ function renderDraftModeSaveActions({
   );
 }
 
+async function handlePostSaveNavigation(saved, { isNew, onAfterCreate, onAfterSave, navigate, windowName, token, apiBaseUrl, hook }) {
+  if (!saved) return;
+  if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
+  if (onAfterSave) {
+    navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
+  } else if (saved.id && isNew) {
+    hook.primeSaved?.(saved);
+    navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+  }
+}
+
 /**
  * Save (+ optional Confirm) toolbar buttons for a brand-new (unsaved) record.
  * Extracted from the DetailView footer IIFE. New-record Save is never gated by
@@ -1370,15 +1381,7 @@ function renderNewRecordSaveActions({
         <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving || blockCompleteForBalance} title={blockCompleteForBalance ? ui('journalUnbalancedCompleteBlocked') : undefined} onClick={async () => {
           if (!(await flushPendingLines())) return;
           const saved = await hook.handleSaveAndProcess(draftMode);
-          if (saved) {
-            if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
-            if (onAfterSave) {
-              navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
-            } else if (saved.id && isNew) {
-              hook.primeSaved?.(saved);
-              navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-            }
-          }
+          await handlePostSaveNavigation(saved, { isNew, onAfterCreate, onAfterSave, navigate, windowName, token, apiBaseUrl, hook });
         }}>
           {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
           {ui(draftMode.label) || tMenu(draftMode.label) || ui('process')}
@@ -1402,15 +1405,7 @@ function renderExistingRecordSaveAction({
     <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || !isDirty || blockSaveForBalance} title={blockSaveForBalance ? ui('journalUnbalancedSaveBlocked') : undefined} onClick={async () => {
       if (!(await flushPendingLines())) return;
       const saved = await hook.handleSave(data);
-      if (saved) {
-        if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
-        if (onAfterSave) {
-          navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
-        } else if (saved.id && isNew) {
-          hook.primeSaved?.(saved);
-          navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-        }
-      }
+      await handlePostSaveNavigation(saved, { isNew, onAfterCreate, onAfterSave, navigate, windowName, token, apiBaseUrl, hook });
     }}>
       {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
       {ui('save')}
@@ -2023,7 +2018,7 @@ export function DetailView({
   // Avoids repeated API calls when the same tax appears on multiple lines.
   const taxRateCacheRef = useRef({});
   // Balance state for double-entry windows (decisions.json window.balanceFooter).
-  // blockSaveForBalance disables the save action until Σ debit === Σ credit (> 0).
+  // blockSaveForBalance disables the save action until Σ debit === Σ credit.
   const { blockSaveForBalance, blockCompleteForBalance } = computeBalanceGate({
     balanceFooter,
     children: hook.children,

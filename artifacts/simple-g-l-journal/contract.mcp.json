@@ -1,8 +1,8 @@
 {
   "version": "0.6.1",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-17T11:41:16.853Z",
-  "contractChecksum": "0dec2b3001dbcf49",
+  "updatedAt": "2026-06-18T11:35:30.497Z",
+  "contractChecksum": "88b28e0ca63b9a67",
   "apiPrediction": {
     "specName": "simple-g-l-journal",
     "baseUrl": "/sws/neo/simple-g-l-journal",
@@ -318,6 +318,7 @@
             "readOnlyLogic": "@Processed@='Y'"
           },
           "openItems": {
+            "required": true,
             "defaultValue": "N"
           },
           "businessPartner": {
@@ -358,7 +359,8 @@
       ],
       "lineFields": [
         "foreignCurrencyDebit",
-        "foreignCurrencyCredit"
+        "foreignCurrencyCredit",
+        "openItems"
       ],
       "recommendedOrder": [
         "createHeader",
@@ -407,7 +409,8 @@
         "description": "Add a line after the header exists and parent context is available.",
         "fields": [
           "foreignCurrencyDebit",
-          "foreignCurrencyCredit"
+          "foreignCurrencyCredit",
+          "openItems"
         ]
       },
       {
@@ -420,5 +423,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "42fb60e81f71b67b"
+  "checksum": "553859500df6d790"
 }

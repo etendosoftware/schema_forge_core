@@ -10,7 +10,6 @@
       },
       "journalLine": {
         "fields": [
-          { "name": "amtSourceDr" },
           { "name": "amtSourceCr" },
           { "name": "account" }
         ]

@@ -636,6 +636,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     const clearsKey = fieldMap[key]?.clearsField;
     if (clearsKey && val !== '' && val !== null && val !== undefined && Number(val) !== 0) {
       handleChange(clearsKey, '0');
+      snapshot[clearsKey] = '0';
     }
     // Store _aux data from selector items as auxiliaryValues (e.g., product_UOM, product_PSTD)
     if (selectedItem?._aux) {

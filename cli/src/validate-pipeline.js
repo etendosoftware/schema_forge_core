@@ -773,13 +773,17 @@ async function ruleF17(artifactDir, artifactName) {
  * never emitted, so balanceFooter validation must read from here.
  */
 function collectFrontendLineFields(contract) {
-  const fields = new Set();
   const entities = contract.frontendContract?.entities ?? {};
-  for (const [entityName, entity] of Object.entries(entities)) {
-    if (isHeaderEntity(contract, entityName)) continue;
-    for (const field of entity.fields ?? []) {
-      if (field?.name) fields.add(field.name);
-    }
+  const win = contract.frontendContract?.window ?? {};
+  const primaryEntity = win.primaryEntity;
+  const entityNames = Object.keys(entities);
+  const detailEntity = 'detailEntity' in win
+    ? win.detailEntity
+    : entityNames.find(name => name !== primaryEntity);
+  if (!detailEntity) return new Set();
+  const fields = new Set();
+  for (const field of entities[detailEntity]?.fields ?? []) {
+    if (field?.name) fields.add(field.name);
   }
   return fields;
 }

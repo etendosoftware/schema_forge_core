@@ -2,7 +2,7 @@
 
 ## Intent
 
-Use this window to record simplified manual accounting journals ("Asientos Manuales") in Etendo GO. It ports the Classic `Simple G/L Journal` window (AD id `B917E8A7B0864ACEA9D941E3B7494E53`) as a 2-level master-detail surface: a journal header plus debit/credit lines. The defining domain rule is that an entry must be **balanced** — the sum of the debit column must equal the sum of the credit column, with a total greater than zero — before it can be saved.
+Use this window to record simplified manual accounting journals ("Asientos Manuales") in Etendo GO. It ports the Classic `Simple G/L Journal` window (AD id `B917E8A7B0864ACEA9D941E3B7494E53`) as a 2-level master-detail surface: a journal header plus debit/credit lines. The defining domain rule is that an entry must be **balanced** — the sum of the debit column must equal the sum of the credit column — before it can be saved. Completing (confirming) the journal additionally requires the total to be greater than zero.
 
 This is **slice 1 of workstream C (Manual Journals Simplified)** under ETP-4244. It provides full CRUD over journals and lines. **Posting is deferred** to workstream D (see Gap assessment).
 
@@ -70,8 +70,9 @@ This window declares `window.balanceFooter = { "debitField": "foreignCurrencyDeb
 
 - A generic `BalanceFooterPanel` renders below the lines, showing **Total debit**, **Total credit**, **Difference**, and a balanced ✓ / unbalanced ✗ badge.
 - The footer sums the saved lines plus any in-progress add-row and any sidebar editing snapshot, so it reflects the live state as the user types.
-- The entry is **balanced** only when `Σ debit === Σ credit` **and** the total is greater than zero. An all-zero set is not balanced.
-- While the entry is unbalanced, the document **Save** button is disabled and shows the tooltip "El debe y el haber deben ser iguales antes de guardar" / "Debit and credit must be equal before saving".
+- **Save gate** (`blockSaveForBalance`): the **Save** button is disabled while `Σ debit ≠ Σ credit` (difference ≠ 0). An all-zero journal (0 = 0) is treated as balanced and is savable.
+- **Completion gate** (`blockCompleteForBalance`): the **Complete/Confirm** button additionally requires the total to be greater than zero — an all-zero set cannot be completed.
+- While the save gate is active, the Save button shows the tooltip "El debe y el haber deben ser iguales antes de guardar" / "Debit and credit must be equal before saving".
 - Validator rule **F17** enforces that the `debitField` / `creditField` named here exist on the line entity in the generated contract.
 
 ## Gap assessment

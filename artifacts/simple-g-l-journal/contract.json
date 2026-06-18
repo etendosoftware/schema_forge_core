@@ -1,8 +1,8 @@
 {
-  "version": "0.6.1",
+  "version": "0.7.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-17T16:08:17.774Z",
-  "checksum": "0dec2b3001dbcf49",
+  "updatedAt": "2026-06-18T11:35:30.497Z",
+  "checksum": "88b28e0ca63b9a67",
   "frontendContract": {
     "window": {
       "id": "B917E8A7B0864ACEA9D941E3B7494E53",
@@ -39,7 +39,11 @@
               "type": "fromConfig",
               "source": "context.description0"
             },
-            "defaultValue": "@DESCRIPTION0@"
+            "defaultValue": "@DESCRIPTION0@",
+            "readOnlyLogic": {
+              "js": "record['processed'] === true",
+              "evaluable": true
+            }
           },
           {
             "name": "documentDate",
@@ -142,6 +146,10 @@
             "defaultValue": "@C_Currency_ID@",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Journal_Period"
+            },
+            "readOnlyLogic": {
+              "js": "record['processed'] === true",
+              "evaluable": true
             }
           },
           {
@@ -160,7 +168,11 @@
               "type": "computed",
               "source": "N"
             },
-            "defaultValue": "N"
+            "defaultValue": "N",
+            "readOnlyLogic": {
+              "js": "record['processed'] === true",
+              "evaluable": true
+            }
           },
           {
             "name": "multigeneralLedger",
@@ -387,7 +399,7 @@
             "type": "boolean",
             "tsType": "boolean",
             "visibility": "editable",
-            "required": false,
+            "required": true,
             "grid": false,
             "form": true,
             "sourceRequired": true,
@@ -1010,7 +1022,7 @@
             "column": "Open_Items",
             "type": "boolean",
             "visibility": "editable",
-            "required": false
+            "required": true
           },
           {
             "name": "financialAccount",
@@ -1976,6 +1988,22 @@
         "description": "Read-only logic for 'accountingDate' in gLJournal should have evaluable flag"
       },
       {
+        "id": "t-readonlylogic-evaluable-gLJournal-currency",
+        "category": "readonlylogic-evaluable",
+        "entity": "gLJournal",
+        "field": "currency",
+        "runner": "node",
+        "description": "Read-only logic for 'currency' in gLJournal should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-gLJournal-description",
+        "category": "readonlylogic-evaluable",
+        "entity": "gLJournal",
+        "field": "description",
+        "runner": "node",
+        "description": "Read-only logic for 'description' in gLJournal should have evaluable flag"
+      },
+      {
         "id": "t-readonlylogic-evaluable-gLJournal-documentDate",
         "category": "readonlylogic-evaluable",
         "entity": "gLJournal",
@@ -1990,6 +2018,14 @@
         "field": "multigeneralLedger",
         "runner": "node",
         "description": "Read-only logic for 'multigeneralLedger' in gLJournal should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-gLJournal-opening",
+        "category": "readonlylogic-evaluable",
+        "entity": "gLJournal",
+        "field": "opening",
+        "runner": "node",
+        "description": "Read-only logic for 'opening' in gLJournal should have evaluable flag"
       },
       {
         "id": "t-readonlylogic-evaluable-gLJournal-period",
@@ -2088,6 +2124,22 @@
         "description": "Read-only logic for 'accountingDate' in gLJournal should be valid JS"
       },
       {
+        "id": "t-readonlylogic-valid-gLJournal-currency",
+        "category": "readonlylogic-valid",
+        "entity": "gLJournal",
+        "field": "currency",
+        "runner": "node",
+        "description": "Read-only logic for 'currency' in gLJournal should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-gLJournal-description",
+        "category": "readonlylogic-valid",
+        "entity": "gLJournal",
+        "field": "description",
+        "runner": "node",
+        "description": "Read-only logic for 'description' in gLJournal should be valid JS"
+      },
+      {
         "id": "t-readonlylogic-valid-gLJournal-documentDate",
         "category": "readonlylogic-valid",
         "entity": "gLJournal",
@@ -2102,6 +2154,14 @@
         "field": "multigeneralLedger",
         "runner": "node",
         "description": "Read-only logic for 'multigeneralLedger' in gLJournal should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-gLJournal-opening",
+        "category": "readonlylogic-valid",
+        "entity": "gLJournal",
+        "field": "opening",
+        "runner": "node",
+        "description": "Read-only logic for 'opening' in gLJournal should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-gLJournal-period",
@@ -3654,7 +3714,7 @@
       }
     ],
     "summary": {
-      "total": 290,
+      "total": 296,
       "byCategory": {
         "action-endpoint": 4,
         "crud-flags": 2,
@@ -3663,8 +3723,8 @@
         "displaylogic-valid": 6,
         "field-presence": 18,
         "field-type": 18,
-        "readonlylogic-evaluable": 14,
-        "readonlylogic-valid": 14,
+        "readonlylogic-evaluable": 17,
+        "readonlylogic-valid": 17,
         "rule-declared": 121,
         "searchable-filters": 1,
         "selector-endpoint": 8,
@@ -3672,7 +3732,7 @@
         "visibility": 2
       },
       "byRunner": {
-        "node": 290,
+        "node": 296,
         "junit": 0
       }
     }

@@ -18,7 +18,8 @@ import { login } from '../helpers/auth.js';
  * line-editing callout flow — no live backend required.
  *
  * Balance semantics (see tools/app-shell/src/lib/balanceTotals.js):
- *   isBalanced === (Σ debit - Σ credit === 0) && Σ debit > 0
+ *   isBalanced === (Σ debit - Σ credit === 0)
+ *   (non-zero total is a separate gate: blockCompleteForBalance in DetailView)
  */
 
 const SPEC = 'simple-g-l-journal';

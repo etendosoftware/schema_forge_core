@@ -29,7 +29,8 @@
         "description": {
           "visibility": "editable",
           "grid": true,
-          "searchable": true
+          "searchable": true,
+          "readOnlyLogicJs": "record['processed'] === true"
         },
         "documentType": {
           "visibility": "system",
@@ -48,10 +49,12 @@
           "visibility": "editable"
         },
         "currency": {
-          "visibility": "editable"
+          "visibility": "editable",
+          "readOnlyLogicJs": "record['processed'] === true"
         },
         "opening": {
           "visibility": "editable",
+          "readOnlyLogicJs": "record['processed'] === true",
           "reason": "Kept (cheap boolean) per spec — marks an opening-balance journal."
         },
         "multigeneralLedger": {
@@ -244,8 +247,8 @@
         "openItems": {
           "visibility": "editable",
           "grid": false,
-          "required": false,
-          "reason": "Open Items checkbox — lives in the side-panel line editor; toggling it reveals the per-line dimensions (businessPartner/product/project/costCenter/asset). Not required — false/unchecked is a valid state."
+          "required": true,
+          "reason": "Open Items checkbox — lives in the side-panel line editor; toggling it reveals the per-line dimensions (businessPartner/product/project/costCenter/asset). Source column is NOT NULL; defaults to false/unchecked ('N')."
         },
         "financialAccount": {
           "visibility": "discarded",
