@@ -39,7 +39,7 @@ function RuleTypeBadge({ label, tone = 'default' }) {
 // Row components
 // ---------------------------------------------------------------------------
 
-function StatementSide({ group, checked, onToggle, currency }) {
+function StatementContent({ group, currency }) {
   const ui = useUI();
   const line = group.statementLine ?? {};
   const opCount = (group.operations ?? []).length;
@@ -47,12 +47,97 @@ function StatementSide({ group, checked, onToggle, currency }) {
   const isRule = group.origin === 'rule';
 
   return (
-    <div className="flex flex-row items-stretch border border-[#E8EAEF]" style={{ borderRadius: '8px 0 0 8px' }}>
+    <div className="flex flex-col gap-1">
+      {/* Header row: name (+ count) + amount */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-sm font-semibold leading-5 text-[#121217]">
+            {line.description || line.referenceNo || '—'}
+          </span>
+          {opCount > 0 && (
+            <span className="flex-none rounded-lg bg-[#F5F7F9] px-1.5 py-0.5 text-xs text-[#3F3F50]">
+              {opCount}
+            </span>
+          )}
+        </div>
+        <MoneyAmount
+          value={amount}
+          currency={currency || 'EUR'}
+          tone={amount < 0 ? 'negative' : 'positive'}
+          className="flex-none text-sm font-semibold"
+        />
+      </div>
+
+      {/* Rule badge (rule-origin groups only) */}
+      {isRule && group.ruleName && (
+        <div className="flex">
+          <RuleTypeBadge
+            label={`${ui('financeReconcileAutomatchBadgeByRule')} ${group.ruleName}`}
+            tone="rule"
+          />
+        </div>
+      )}
+
+      {/* Reference + date */}
+      {line.referenceNo && (
+        <span className="text-xs leading-4 text-[#6C6C89]">{line.referenceNo}</span>
+      )}
+      {line.date && (
+        <span className="text-xs font-medium leading-4 text-[#6C6C89]">{formatLineDate(line.date)}</span>
+      )}
+    </div>
+  );
+}
+
+function OperationRow({ op, isLast }) {
+  const ui = useUI();
+  const amount = Number(op.amount ?? 0);
+  const isNew = op.isNew;
+
+  return (
+    <div
+      className={cn(
+        'flex items-center justify-between gap-2 px-3 py-3',
+        !isLast && 'border-b border-[#E8EAEF]',
+      )}
+    >
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-sm font-medium leading-5 text-[#121217]">
+            {isNew ? (op.glItemId || '—') : (op.partnerName || op.documentNo || '—')}
+          </span>
+          <RuleTypeBadge
+            label={isNew ? ui('financeReconcileAutomatchBadgeNew') : (op.documentNo || op.typeLabel || '')}
+            tone={isNew ? 'new' : 'default'}
+          />
+        </div>
+        {isNew && (
+          <span className="text-xs leading-4 text-[#6C6C89]">
+            {ui('financeReconcileAutomatchOpNew')}
+          </span>
+        )}
+      </div>
+      <div className="flex-none text-right">
+        <div className="text-sm font-semibold leading-5 text-[#D50B3E]">
+          {amount !== 0
+            ? `${amount < 0 ? '-' : '+'}${Math.abs(amount).toFixed(2).replace('.', ',')} €`
+            : '—'}
+        </div>
+        {op.date && (
+          <div className="text-xs font-medium leading-4 text-[#6C6C89]">{formatLineDate(op.date)}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GroupRow({ group, checked, onToggle, currency }) {
+  const ops = group.operations ?? [];
+
+  return (
+    <div className="flex flex-row items-stretch overflow-hidden rounded-lg border border-[#E8EAEF]">
       {/* Checkbox sidebar */}
-      <div
-        className="flex w-8 flex-none items-start justify-center bg-[#F5F7F9] px-1 py-3"
-        style={{ borderRadius: '8px 0 0 8px', borderRight: '1px solid #E8EAEF' }}
-      >
+      <div className="flex w-8 flex-none items-start justify-center border-r border-[#E8EAEF] bg-[#F5F7F9] px-1 py-3">
         <input
           type="checkbox"
           checked={checked}
@@ -62,120 +147,22 @@ function StatementSide({ group, checked, onToggle, currency }) {
         />
       </div>
 
-      {/* Content */}
-      <div className="flex flex-1 flex-col gap-1 px-3 py-3">
-        {/* Header row: name + amount */}
-        <div className="flex items-center justify-between gap-1">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-sm font-semibold leading-5 text-[#121217]">
-              {line.description || line.referenceNo || '—'}
-            </span>
-            {opCount > 0 && (
-              <span className="flex-none rounded-lg bg-[#F5F7F9] px-1.5 py-0.5 text-xs text-[#3F3F50]">
-                {opCount}
-              </span>
-            )}
-          </div>
-          <MoneyAmount value={amount} currency={currency || 'EUR'} tone={amount < 0 ? 'negative' : 'positive'} className="flex-none text-sm font-semibold" />
+      {/* Statement line (left half) */}
+      <div className="flex flex-1 items-start border-r border-[#E8EAEF] bg-white px-3 py-3">
+        <div className="w-full">
+          <StatementContent group={group} currency={currency} />
         </div>
-
-        {/* Type badge row — only shown for rule-origin groups. */}
-        {isRule && group.ruleName && (
-          <div className="flex items-center gap-2">
-            <RuleTypeBadge
-              label={`${ui('financeReconcileAutomatchBadgeByRule')} ${group.ruleName}`}
-              tone="rule"
-            />
-          </div>
-        )}
-
-        {/* Reference + date */}
-        {line.referenceNo && (
-          <span className="text-xs text-[#6C6C89]">{line.referenceNo}</span>
-        )}
-        {line.date && (
-          <span className="text-xs font-medium text-[#6C6C89]">{formatLineDate(line.date)}</span>
-        )}
       </div>
-    </div>
-  );
-}
 
-function OperationRow({ op, isLast, currency }) {
-  const ui = useUI();
-  const amount = Number(op.amount ?? 0);
-  const isNew = op.isNew;
-
-  return (
-    <div
-      className={cn(
-        'flex items-center justify-between gap-1 px-3 py-3',
-        !isLast && 'border-b border-[#E8EAEF]',
-      )}
-    >
-      <div className="flex min-w-0 items-center gap-2">
-        <span className="truncate text-sm font-medium leading-5 text-[#121217]">
-          {isNew ? op.glItemId || '—' : (op.partnerName || op.documentNo || '—')}
-        </span>
-        <RuleTypeBadge
-          label={isNew ? ui('financeReconcileAutomatchBadgeNew') : (op.documentNo || op.typeLabel || '')}
-          tone={isNew ? 'new' : 'default'}
-        />
-      </div>
-      <div className="flex-none text-right">
-        <div className="text-sm font-semibold leading-5 text-[#D50B3E]">
-          {amount !== 0
-            ? `${amount < 0 ? '' : '+'}${Math.abs(amount).toFixed(2).replace('.', ',')} €`
-            : '—'}
-        </div>
-        {op.date && (
-          <div className="text-xs font-medium text-[#6C6C89]">{formatLineDate(op.date)}</div>
+      {/* Operations (right half) */}
+      <div className="flex flex-1 flex-col bg-white">
+        {ops.length === 0 ? (
+          <div className="px-3 py-3 text-sm text-[#6C6C89]">—</div>
+        ) : (
+          ops.map((op, i) => (
+            <OperationRow key={op.id ?? i} op={op} isLast={i === ops.length - 1} />
+          ))
         )}
-      </div>
-    </div>
-  );
-}
-
-function OperationsSide({ group, currency }) {
-  const ops = group.operations ?? [];
-
-  return (
-    <div
-      className="flex flex-1 flex-col"
-      style={{
-        borderTop: '1px solid #E8EAEF',
-        borderRight: '1px solid #E8EAEF',
-        borderBottom: '1px solid #E8EAEF',
-        borderRadius: '0 8px 8px 0',
-        background: '#FFFFFF',
-      }}
-    >
-      {ops.length === 0 ? (
-        <div className="px-3 py-3 text-xs text-[#6C6C89]">—</div>
-      ) : (
-        ops.map((op, i) => (
-          <OperationRow
-            key={op.id ?? i}
-            op={op}
-            isLast={i === ops.length - 1}
-            currency={currency}
-          />
-        ))
-      )}
-    </div>
-  );
-}
-
-function GroupRow({ group, checked, onToggle, currency }) {
-  return (
-    <div className="flex flex-row items-stretch">
-      {/* Left: statement line (50%) */}
-      <div className="flex-1 pr-0">
-        <StatementSide group={group} checked={checked} onToggle={onToggle} currency={currency} />
-      </div>
-      {/* Right: operations (50%) */}
-      <div className="flex-1">
-        <OperationsSide group={group} currency={currency} />
       </div>
     </div>
   );
