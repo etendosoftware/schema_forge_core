@@ -1,8 +1,8 @@
 {
   "version": "0.22.0",
   "generatedAt": "2026-05-22T16:00:10.872Z",
-  "updatedAt": "2026-06-03T23:04:15.774Z",
-  "checksum": "213abbe45c8319bd",
+  "updatedAt": "2026-06-16T01:59:36.382Z",
+  "checksum": "3ff8f0cc48576bc1",
   "frontendContract": {
     "window": {
       "id": "800026",
@@ -247,6 +247,7 @@
             }
           }
         ],
+        "javaQualifier": "amortizationHeaderHandler",
         "draftMode": {
           "enabled": true,
           "processField": "Processed",
@@ -779,7 +780,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "amortizationHeaderHandler"
       },
       "lines": {
         "tableName": "A_Amortizationline",

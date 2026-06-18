@@ -1348,6 +1348,7 @@ export function DetailView({
   addLineButtonPaddingX = '',
   formScrollPaddingB = 'pb-6',
   secondaryTabContentPaddingT = 'pt-3',
+  transformRecord = null,
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
   // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
@@ -2213,7 +2214,9 @@ export function DetailView({
     }
   }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected, catalogs, api, addLineFields, computeLineGrossAmount, resolveTaxFactor]);
 
-  const data = hook.editing || currentItem || {};
+  const data = transformRecord
+    ? transformRecord(hook.editing || currentItem || {})
+    : (hook.editing || currentItem || {});
 
   // Send total-discount percentage to the backend on blur. Also mirror the
   // saved value into the editing state so subsequent form saves don't overwrite
