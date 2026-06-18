@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, MoreVertical, CircleCheckBig, CheckCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUI, useLocaleSwitch } from '@/i18n';
@@ -508,7 +508,7 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
 
   const visibleCandidates = useMemo(() => {
     const q = rightSearch.trim().toLowerCase();
-    return candidates.filter((c) => {
+    const filtered = candidates.filter((c) => {
       if (rightBounds.from || rightBounds.to) {
         const d = new Date(c.date);
         if (rightBounds.from && d < rightBounds.from) return false;
@@ -517,7 +517,24 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
       if (!q) return true;
       return [c.documentNo, c.partnerName].some((v) => (v || '').toLowerCase().includes(q));
     });
-  }, [candidates, rightBounds.from, rightBounds.to, rightSearch]);
+    // Float SELECTED rows to the very top, then the standard-algorithm
+    // suggestions; stable within each group (so checking any row lifts it up,
+    // and multiple selected rows all gather at the top).
+    return [...filtered].sort((a, b) => {
+      const sel = (selectedOpIds.has(b.id) ? 1 : 0) - (selectedOpIds.has(a.id) ? 1 : 0);
+      if (sel !== 0) return sel;
+      return (b.suggested ? 1 : 0) - (a.suggested ? 1 : 0);
+    });
+  }, [candidates, rightBounds.from, rightBounds.to, rightSearch, selectedOpIds]);
+
+  // Pre-select the candidates the standard algorithm suggests, so a clean match
+  // is one click away. Depends on the line id + loading state (not the candidates
+  // array reference) to avoid an infinite loop when the hook returns a new array
+  // reference on every render (common in tests and after background refreshes).
+  useEffect(() => {
+    setSelectedOpIds(new Set(candidates.filter((c) => c.suggested).map((c) => c.id)));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLine?.id, candLoading]);
 
   const selectedSum = useMemo(
     () => Number(
