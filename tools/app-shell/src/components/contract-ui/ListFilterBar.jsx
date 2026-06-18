@@ -44,6 +44,12 @@ export function ListFilterBar({
     () => columns.find(c => c.type === 'status') || null,
     [columns],
   );
+
+  const typeCol = useMemo(
+    () => columns.find(c => c.isTypeFilter) || null,
+    [columns],
+  );
+
   const dateCol = useMemo(
     () => {
       if (!dateFilterKey) return null;
@@ -100,6 +106,66 @@ export function ListFilterBar({
     enabled: !!(statusCol && entity && apiBaseUrl && statusMenuOpen),
     apiBaseUrl,
   });
+
+  const activeType = columnFilters?.[typeCol?.key]?.value;
+  const activeTypeCode = Array.isArray(activeType) ? activeType[0] : null;
+
+  const inMemoryTypeCodes = useMemo(() => {
+    if (!typeCol) return [];
+    const backendKey = typeCol.backendFilterKey || typeCol.key;
+    const seen = new Set();
+    for (const r of rows || []) {
+      const v = r?.[backendKey] ?? r?.[`${typeCol.key}$_identifier`];
+      if (v !== null && v !== undefined && v !== '') seen.add(String(v));
+    }
+    return Array.from(seen);
+  }, [rows, typeCol]);
+
+  const [typeMenuOpen, setTypeMenuOpen] = useState(false);
+
+  const typeDistinct = useDistinctValues(
+    entity,
+    typeCol ? (typeCol.backendFilterKey || typeCol.key) : null,
+    { enabled: !!(typeCol && entity && apiBaseUrl && typeMenuOpen), apiBaseUrl },
+  );
+
+  const labelForType = (code) => {
+    const enumLabel = typeCol?.enumLabels?.[code];
+    if (enumLabel !== undefined) return ui(enumLabel) || enumLabel;
+    return code;
+  };
+
+  const activeTypeLabel = useMemo(() => {
+    if (!activeTypeCode) return ui('allTypes');
+    return labelForType(activeTypeCode);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTypeCode, typeCol, ui]);
+
+  const mergedTypeCodes = useMemo(() => {
+    if (!typeCol) return [];
+    const seen = new Set();
+    const out = [];
+    for (const entry of typeDistinct.values) {
+      const c = entry?.id;
+      if (c == null || c === '') continue;
+      if (!seen.has(c)) { seen.add(c); out.push(c); }
+    }
+    for (const c of inMemoryTypeCodes) {
+      if (!seen.has(c)) { seen.add(c); out.push(c); }
+    }
+    if (activeTypeCode && !seen.has(activeTypeCode)) {
+      seen.add(activeTypeCode); out.push(activeTypeCode);
+    }
+    return out;
+  }, [typeCol, typeDistinct.values, inMemoryTypeCodes, activeTypeCode]);
+
+  const handleTypeSelect = (code) => {
+    if (!typeCol) return;
+    const parsed = code
+      ? { mode: 'enumLabel', value: [code], originalValue: code }
+      : null;
+    onFilterChange?.(typeCol.key, parsed);
+  };
 
   // Merge backend + in-memory + currently-active code. Backend order is kept
   // (already sorted alphabetically server-side), in-memory extras are appended.
@@ -288,6 +354,42 @@ export function ListFilterBar({
                 setStatusMenuOpen(false);
               }}
               searchPlaceholder={ui('searchStatuses')}
+            />
+          </PopoverContent>
+        </Popover>
+      )}
+
+      {typeCol && (
+        <Popover open={typeMenuOpen} onOpenChange={setTypeMenuOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              data-testid="filter-type"
+              variant="outline"
+              size="sm"
+              className={[
+                'gap-1.5 font-normal h-9 px-3 rounded-lg bg-white',
+                activeTypeCode ? 'text-foreground border-primary/40' : 'text-muted-foreground',
+              ].join(' ')}
+            >
+              {activeTypeLabel}
+              {typeDistinct.loading && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+              )}
+              <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-64 p-0">
+            <DistinctValuesList
+              activeCode={activeTypeCode}
+              allLabel={ui('allTypes')}
+              codes={mergedTypeCodes}
+              labelFor={labelForType}
+              distinct={typeDistinct}
+              onSelect={(code) => {
+                handleTypeSelect(code);
+                setTypeMenuOpen(false);
+              }}
+              searchPlaceholder={ui('searchTypes')}
             />
           </PopoverContent>
         </Popover>

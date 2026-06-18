@@ -4,6 +4,7 @@ import {
   generatePageComponent,
   generateListModalPage,
   generateAll,
+  buildInlineCreatePart,
 } from '../src/generate-frontend.js';
 
 // ---------------------------------------------------------------------------
@@ -356,5 +357,135 @@ describe('generateAll — list-modal file emission', () => {
     assert.ok(names.includes('OrderLineTable.jsx'), 'default layout must keep detail Table');
     assert.ok(names.includes('OrderLineForm.jsx'), 'default layout must keep detail Form');
     assert.ok(names.includes('OrderPage.jsx'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildInlineCreatePart — unit tests for the exported helper
+// ---------------------------------------------------------------------------
+describe('buildInlineCreatePart', () => {
+  it('returns empty string when allowCreate is falsy', () => {
+    assert.equal(buildInlineCreatePart({}), '');
+    assert.equal(buildInlineCreatePart({ allowCreate: false }), '');
+    assert.equal(buildInlineCreatePart({ allowCreate: null }), '');
+  });
+
+  it('returns empty string when allowCreate is true but no create keys are set', () => {
+    assert.equal(buildInlineCreatePart({ allowCreate: true }), '');
+  });
+
+  it('emits createLabelKey when present', () => {
+    const out = buildInlineCreatePart({ allowCreate: true, createLabelKey: 'addTransactionType' });
+    assert.ok(out.includes(", createLabelKey: 'addTransactionType'"), `got: ${out}`);
+  });
+
+  it('emits createTitleKey when present', () => {
+    const out = buildInlineCreatePart({ allowCreate: true, createTitleKey: 'newTransactionType' });
+    assert.ok(out.includes(", createTitleKey: 'newTransactionType'"), `got: ${out}`);
+  });
+
+  it('emits createNamePlaceholderKey when present', () => {
+    const out = buildInlineCreatePart({ allowCreate: true, createNamePlaceholderKey: 'typeNamePh' });
+    assert.ok(out.includes(", createNamePlaceholderKey: 'typeNamePh'"), `got: ${out}`);
+  });
+
+  it('emits createSpec when present', () => {
+    const out = buildInlineCreatePart({ allowCreate: true, createSpec: 'transaction-type' });
+    assert.ok(out.includes(", createSpec: 'transaction-type'"), `got: ${out}`);
+  });
+
+  it('emits createEntity when present', () => {
+    const out = buildInlineCreatePart({ allowCreate: true, createEntity: 'EtgoTransactionType' });
+    assert.ok(out.includes(", createEntity: 'EtgoTransactionType'"), `got: ${out}`);
+  });
+
+  it('escapes single quotes in string values', () => {
+    const out = buildInlineCreatePart({ allowCreate: true, createLabelKey: "it's" });
+    assert.ok(out.includes("createLabelKey: 'it\\'s'"), `got: ${out}`);
+  });
+
+  it('emits all five create keys when all are provided', () => {
+    const f = {
+      allowCreate: true,
+      createLabelKey: 'addType',
+      createTitleKey: 'newType',
+      createNamePlaceholderKey: 'typePh',
+      createSpec: 'transaction-type',
+      createEntity: 'EtgoTransactionType',
+    };
+    const out = buildInlineCreatePart(f);
+    assert.ok(out.includes("createLabelKey: 'addType'"));
+    assert.ok(out.includes("createTitleKey: 'newType'"));
+    assert.ok(out.includes("createNamePlaceholderKey: 'typePh'"));
+    assert.ok(out.includes("createSpec: 'transaction-type'"));
+    assert.ok(out.includes("createEntity: 'EtgoTransactionType'"));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// list-modal field line — allowCreate + inline-create props + placeholderKey
+// ---------------------------------------------------------------------------
+describe('generatePageComponent — allowCreate and placeholderKey in field lines', () => {
+  function contractWithAllowCreate() {
+    const base = listModalContract();
+    // Add a field with allowCreate + full inline-create config
+    base.frontendContract.entities.etgoMatchRuleHeader.fields.push({
+      name: 'transactionType',
+      column: 'ETGO_Transaction_Type_ID',
+      type: 'foreignKey',
+      tsType: 'string',
+      visibility: 'editable',
+      required: false,
+      grid: false,
+      form: true,
+      section: 'general',
+      reference: 'EtgoTransactionType',
+      inputMode: 'selector',
+      searchSelect: true,
+      allowCreate: true,
+      createLabelKey: 'addTransactionType',
+      createSpec: 'transaction-type',
+      createEntity: 'EtgoTransactionType',
+      placeholderKey: 'selectTransactionType',
+    });
+    return base;
+  }
+
+  it('emits allowCreate: true on a field that opts in', () => {
+    const code = generatePageComponent('etgoMatchRuleHeader', null, contractWithAllowCreate());
+    const fieldsMatch = code.match(/const fields = \[([\s\S]*?)\];/);
+    assert.ok(fieldsMatch, 'fields block should exist');
+    const ttLine = fieldsMatch[1].split('\n').find(l => l.includes("key: 'transactionType'"));
+    assert.ok(ttLine, 'transactionType field should exist');
+    assert.ok(ttLine.includes('allowCreate: true'), `allowCreate missing — got: ${ttLine}`);
+  });
+
+  it('emits createLabelKey on an allowCreate field', () => {
+    const code = generatePageComponent('etgoMatchRuleHeader', null, contractWithAllowCreate());
+    const fieldsMatch = code.match(/const fields = \[([\s\S]*?)\];/);
+    const ttLine = fieldsMatch[1].split('\n').find(l => l.includes("key: 'transactionType'"));
+    assert.ok(ttLine.includes("createLabelKey: 'addTransactionType'"), `got: ${ttLine}`);
+  });
+
+  it('emits createSpec on an allowCreate field', () => {
+    const code = generatePageComponent('etgoMatchRuleHeader', null, contractWithAllowCreate());
+    const fieldsMatch = code.match(/const fields = \[([\s\S]*?)\];/);
+    const ttLine = fieldsMatch[1].split('\n').find(l => l.includes("key: 'transactionType'"));
+    assert.ok(ttLine.includes("createSpec: 'transaction-type'"), `got: ${ttLine}`);
+  });
+
+  it('emits placeholderKey on a field that declares it', () => {
+    const code = generatePageComponent('etgoMatchRuleHeader', null, contractWithAllowCreate());
+    const fieldsMatch = code.match(/const fields = \[([\s\S]*?)\];/);
+    const ttLine = fieldsMatch[1].split('\n').find(l => l.includes("key: 'transactionType'"));
+    assert.ok(ttLine.includes("placeholderKey: 'selectTransactionType'"), `got: ${ttLine}`);
+  });
+
+  it('does NOT emit placeholderKey on fields that lack it', () => {
+    const code = generatePageComponent('etgoMatchRuleHeader', null, contractWithAllowCreate());
+    const fieldsMatch = code.match(/const fields = \[([\s\S]*?)\];/);
+    const nameLine = fieldsMatch[1].split('\n').find(l => l.includes("key: 'name'"));
+    assert.ok(nameLine, 'name field should exist');
+    assert.ok(!nameLine.includes('placeholderKey'), `name should not have placeholderKey — got: ${nameLine}`);
   });
 });
