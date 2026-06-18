@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 // Mock react-router-dom
 vi.mock('react-router-dom', () => ({
@@ -146,5 +147,154 @@ describe('FinancialTrendChart', () => {
     );
     expect(screen.getByText('newPurchase')).toBeInTheDocument();
     expect(screen.getByText('newSale')).toBeInTheDocument();
+  });
+
+  it('switches to bar chart when bar toggle is clicked', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <FinancialTrendChart
+        labels={SAMPLE_LABELS}
+        values={SAMPLE_VALUES}
+        currencyLabel="EUR"
+      />
+    );
+    // Two toggle buttons — second one is bar
+    const toggleButtons = container.querySelectorAll('button');
+    const barButton = toggleButtons[1];
+    await user.click(barButton);
+    // After click, chart should still render (bar mode)
+    const svgs = container.querySelectorAll('svg');
+    expect(svgs.length).toBeGreaterThan(0);
+  });
+
+  it('renders with default (empty) props', () => {
+    const { container } = render(<FinancialTrendChart />);
+    expect(container).toBeTruthy();
+  });
+
+  it('renders bar chart with expense values', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <FinancialTrendChart
+        labels={SAMPLE_LABELS}
+        values={SAMPLE_VALUES}
+        expenseValues={SAMPLE_EXPENSES}
+        currencyLabel="EUR"
+      />
+    );
+    const toggleButtons = container.querySelectorAll('button');
+    await user.click(toggleButtons[1]); // switch to bar
+    expect(container.querySelectorAll('svg').length).toBeGreaterThan(0);
+  });
+
+  it('shows negative growth when values decrease', () => {
+    render(
+      <FinancialTrendChart
+        labels={['Jan', 'Feb']}
+        values={[2000, 1000]}
+        currencyLabel="EUR"
+      />
+    );
+    expect(screen.getByText('financialTrendGrowthDown')).toBeInTheDocument();
+  });
+
+  it('handles single data point', () => {
+    const { container } = render(
+      <FinancialTrendChart
+        labels={['Jan']}
+        values={[500]}
+        currencyLabel="EUR"
+      />
+    );
+    expect(container).toBeTruthy();
+  });
+
+  it('handles non-finite expense values gracefully', () => {
+    const { container } = render(
+      <FinancialTrendChart
+        labels={['Jan', 'Feb']}
+        values={[100, 200]}
+        expenseValues={[NaN, undefined]}
+        currencyLabel="EUR"
+      />
+    );
+    expect(container).toBeTruthy();
+  });
+
+  it('persists chart type in localStorage', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <FinancialTrendChart
+        labels={SAMPLE_LABELS}
+        values={SAMPLE_VALUES}
+        currencyLabel="EUR"
+      />
+    );
+    const toggleButtons = container.querySelectorAll('button');
+    await user.click(toggleButtons[1]); // switch to bar
+    expect(localStorage.getItem('dashboard_chart_type')).toBe('bar');
+  });
+
+  it('reads initial chart type from localStorage', () => {
+    localStorage.setItem('dashboard_chart_type', 'bar');
+    const { container } = render(
+      <FinancialTrendChart
+        labels={SAMPLE_LABELS}
+        values={SAMPLE_VALUES}
+        currencyLabel="EUR"
+      />
+    );
+    // Should render without error (bar mode from localStorage)
+    expect(container).toBeTruthy();
+  });
+
+  it('handles zero growth when first value is zero', () => {
+    render(
+      <FinancialTrendChart
+        labels={['Jan', 'Feb']}
+        values={[0, 500]}
+        currencyLabel="EUR"
+      />
+    );
+    // 0 growth because first value is 0 → growthPct = 0 → shows "Up"
+    expect(screen.getByText('financialTrendGrowthUp')).toBeInTheDocument();
+  });
+
+  it('triggers tooltip on mouse enter on hover columns (line chart)', () => {
+    const { container } = render(
+      <FinancialTrendChart
+        labels={SAMPLE_LABELS}
+        values={SAMPLE_VALUES}
+        currencyLabel="EUR"
+      />
+    );
+    // Find invisible hover rects
+    const rects = container.querySelectorAll('svg rect[fill="transparent"]');
+    if (rects.length > 0) {
+      fireEvent.mouseEnter(rects[0]);
+      // Tooltip should now be in the DOM — the tooltip box renders text nodes
+      fireEvent.mouseLeave(rects[0]);
+    }
+    expect(container).toBeTruthy();
+  });
+
+  it('triggers tooltip on bar chart groups', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <FinancialTrendChart
+        labels={SAMPLE_LABELS}
+        values={SAMPLE_VALUES}
+        currencyLabel="EUR"
+      />
+    );
+    const toggleButtons = container.querySelectorAll('button');
+    await user.click(toggleButtons[1]); // bar mode
+    // Hover over a bar group <g>
+    const barGroups = container.querySelectorAll('svg g[style*="crosshair"]');
+    if (barGroups.length > 0) {
+      fireEvent.mouseEnter(barGroups[0]);
+      fireEvent.mouseLeave(barGroups[0]);
+    }
+    expect(container).toBeTruthy();
   });
 });

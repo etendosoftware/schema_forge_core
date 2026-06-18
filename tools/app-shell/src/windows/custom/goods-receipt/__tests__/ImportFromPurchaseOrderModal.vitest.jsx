@@ -137,4 +137,154 @@ describe('ImportFromPurchaseOrderModal', () => {
     fireEvent.click(backdrop);
     expect(props.onClose).toHaveBeenCalled();
   });
+
+  it('renders close X button in header', () => {
+    renderModal();
+    // The close button contains the times symbol
+    const closeBtn = screen.getByText('\u00D7');
+    expect(closeBtn).toBeInTheDocument();
+  });
+
+  it('calls onClose when X button is clicked', () => {
+    const { props } = renderModal();
+    const closeBtn = screen.getByText('\u00D7');
+    fireEvent.click(closeBtn);
+    expect(props.onClose).toHaveBeenCalled();
+  });
+
+  it('import button is disabled when no lines are selected', () => {
+    renderModal();
+    // The import button text includes the UI key
+    const buttons = screen.getAllByRole('button');
+    const importBtn = buttons.find(b => b.textContent.includes('importSelected'));
+    expect(importBtn).toBeDefined();
+    expect(importBtn.disabled).toBe(true);
+  });
+
+  it('search input filters orders by document number', async () => {
+    renderModal();
+    await screen.findByText('PO-001');
+
+    const searchInput = screen.getByPlaceholderText('searchPurchaseOrder');
+    fireEvent.change(searchInput, { target: { value: 'NONEXISTENT' } });
+
+    // Should show "no orders match" message
+    expect(screen.getByText('noOrdersMatchYourSearch')).toBeInTheDocument();
+  });
+
+  it('search input clears to show all orders again', async () => {
+    renderModal();
+    await screen.findByText('PO-001');
+
+    const searchInput = screen.getByPlaceholderText('searchPurchaseOrder');
+    fireEvent.change(searchInput, { target: { value: 'NONEXISTENT' } });
+    expect(screen.getByText('noOrdersMatchYourSearch')).toBeInTheDocument();
+
+    fireEvent.change(searchInput, { target: { value: '' } });
+    expect(screen.getByText('PO-001')).toBeInTheDocument();
+  });
+
+  it('filters out non-completed orders', async () => {
+    const mixedOrders = [
+      ...sampleOrders,
+      { id: 'order-2', documentNo: 'PO-002', documentStatus: 'DR', businessPartner: 'bp-1', orderDate: '2024-02-01' },
+    ];
+
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/purchase-order/header')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ response: { data: mixedOrders } }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ response: { data: [] } }),
+      });
+    });
+
+    renderModal();
+    await screen.findByText('PO-001');
+    // PO-002 is draft, should not appear
+    expect(screen.queryByText('PO-002')).not.toBeInTheDocument();
+  });
+
+  it('filters out orders for different business partner', async () => {
+    const otherBpOrders = [
+      ...sampleOrders,
+      { id: 'order-3', documentNo: 'PO-003', documentStatus: 'CO', businessPartner: 'bp-other', orderDate: '2024-03-01' },
+    ];
+
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/purchase-order/header')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ response: { data: otherBpOrders } }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ response: { data: [] } }),
+      });
+    });
+
+    renderModal();
+    await screen.findByText('PO-001');
+    // PO-003 is for different BP, should not appear
+    expect(screen.queryByText('PO-003')).not.toBeInTheDocument();
+  });
+
+  it('shows order date formatted', async () => {
+    renderModal();
+    await screen.findByText('PO-001');
+    // Date '2024-01-15' formatted as 'en-GB' day month year: "15 Jan 2024"
+    expect(screen.getByText('15 Jan 2024')).toBeInTheDocument();
+  });
+
+  it('shows order total amount formatted', async () => {
+    renderModal();
+    await screen.findByText('PO-001');
+    // grandTotalAmount = 1500, formatted as currency
+    expect(screen.getByText('$1500.00')).toBeInTheDocument();
+  });
+
+  it('shows selected lines count in footer', async () => {
+    renderModal();
+    await screen.findByText('PO-001');
+    // No lines selected initially
+    expect(screen.getByText('selectLinesToImport')).toBeInTheDocument();
+  });
+
+  it('handles fetch failure gracefully', async () => {
+    global.fetch = vi.fn(() => Promise.reject(new Error('Network failure')));
+    renderModal();
+    // Should eventually show the empty state after loading
+    await screen.findByText('noCompletedPurchaseOrdersWithPendingQuantitiesForThisVendor');
+  });
+
+  it('expands order on click to show lines', async () => {
+    const sampleLines = [
+      { id: 'line-1', product: 'prod-1', 'product$_identifier': 'Widget A', orderedQuantity: 10, deliveredQuantity: 0 },
+    ];
+
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/purchase-order/header')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ response: { data: sampleOrders } }) });
+      }
+      if (url.includes('/purchase-order/lines')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ response: { data: sampleLines } }) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ response: { data: [] } }) });
+    });
+
+    renderModal();
+    await screen.findByText('PO-001');
+
+    // Click the order row to expand
+    fireEvent.click(screen.getByText('PO-001'));
+
+    // Should show line product name
+    await screen.findByText('Widget A');
+    expect(screen.getByText('Widget A')).toBeInTheDocument();
+  });
 });
