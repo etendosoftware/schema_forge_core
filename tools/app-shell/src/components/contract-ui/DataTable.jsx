@@ -1666,6 +1666,7 @@ export function DataTable({
                     key={row.id ?? idx}
                     role="row"
                     data-testid={`row-${row.id ?? idx}`}
+                    data-row-status={row.documentStatus}
                     onClick={() => {
                       if (editingRowId === row.id) return;
                       if (onRowClick) onRowClick(row);

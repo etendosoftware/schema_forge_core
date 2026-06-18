@@ -43,6 +43,7 @@ export default function DocumentStatusPill({ status, label, enumLabels, tone: to
   return (
     <span
       data-testid="document-status-pill"
+      data-status={status}
       data-tone={tone}
       style={{ ...PILL_STYLE, background: palette.background, color: palette.color }}
     >
