@@ -458,9 +458,19 @@ export function toExitCode(count) {
   return count > 0 ? 1 : 0;
 }
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
-  const pool = createDbPool();
+/**
+ * Run the data-fixes CLI logic.
+ *
+ * @param {object} [dbConfig] - Explicit DB connection config (host, port, user,
+ *   password, database). When omitted, auto-resolves from gradle.properties /
+ *   env vars (standard behaviour). Passed by the interactive TUI after the user
+ *   configures and tests the connection.
+ * @param {string[]} [argv] - Parsed argument tokens. Defaults to process.argv.
+ * @returns {Promise<number>} Exit code (0 = success, 1 = failures, 2 = error).
+ */
+export async function runMain({ dbConfig, argv } = {}) {
+  const args = parseArgs(argv ?? process.argv.slice(2));
+  const pool = createDbPool(dbConfig);
   let exitCode = 0;
 
   try {
@@ -486,16 +496,23 @@ async function main() {
     await closePool(pool);
   }
 
-  process.exit(exitCode);
+  return exitCode;
 }
 
 // Only run the CLI when executed directly as a script — importing this module
-// for tests must NOT trigger main() (which connects to the DB and calls
+// for tests must NOT trigger runMain() (which connects to the DB and calls
 // process.exit). The guard is true when argv[1] resolves to this file.
 const isEntryPoint = process.argv[1] && realpathSync(process.argv[1]) === __filename;
 if (isEntryPoint) {
-  main().catch(err => {
-    console.error('data-fixes runner failed:', err.message || err);
-    process.exit(2);
-  });
+  const isTty = process.stdin.isTTY && process.argv.length === 2;
+  const runner = isTty
+    ? import('./tui.js').then(m => m.runTui())
+    : runMain();
+
+  runner
+    .then(code => { if (typeof code === 'number') process.exit(code); })
+    .catch(err => {
+      console.error('data-fixes runner failed:', err.message || err);
+      process.exit(2);
+    });
 }
