@@ -367,11 +367,11 @@ describe('loadConfig', () => {
   it('loads config from env vars', async () => {
     process.env.ETENDO_URL = 'http://test.local';
     process.env.ETENDO_USER = 'admin';
-    process.env.ETENDO_PASSWORD = 'secret';
+    process.env.ETENDO_PASSWORD = 'test-val-1';
     const config = await loadConfig(tmpBase);
     assert.equal(config.url, 'http://test.local');
     assert.equal(config.user, 'admin');
-    assert.equal(config.password, 'secret');
+    assert.equal(config.password, 'test-val-1');
   });
 
   it('loads config from properties file', async () => {
@@ -381,23 +381,23 @@ describe('loadConfig', () => {
     writeFileSync(join(tmpBase, 'schema_forge.properties'), [
       'etendo.url=http://props.local',
       'etendo.user=propuser',
-      'etendo.password=propsecret',
+      'etendo.password=test-val-2',
     ].join('\n'));
     const config = await loadConfig(tmpBase);
     assert.equal(config.url, 'http://props.local');
     assert.equal(config.user, 'propuser');
-    assert.equal(config.password, 'propsecret');
+    assert.equal(config.password, 'test-val-2');
   });
 
   it('env vars override properties file', async () => {
     process.env.ETENDO_URL = 'http://env.local';
     process.env.ETENDO_USER = 'envuser';
-    process.env.ETENDO_PASSWORD = 'envsecret';
+    process.env.ETENDO_PASSWORD = 'test-val-3';
     // Properties file still exists from previous test
     const config = await loadConfig(tmpBase);
     assert.equal(config.url, 'http://env.local');
     assert.equal(config.user, 'envuser');
-    assert.equal(config.password, 'envsecret');
+    assert.equal(config.password, 'test-val-3');
   });
 
   it('throws when URL is missing', async () => {
@@ -448,13 +448,13 @@ describe('loadConfig', () => {
       'etendo.url=http://comment.local',
       '# Another comment',
       'etendo.user=cuser',
-      'etendo.password=cpass',
+      'etendo.password=test-val-4',
       '',
     ].join('\n'));
     const config = await loadConfig(commentDir);
     assert.equal(config.url, 'http://comment.local');
     assert.equal(config.user, 'cuser');
-    assert.equal(config.password, 'cpass');
+    assert.equal(config.password, 'test-val-4');
   });
 
   it('handles properties file with spaces around = sign', async () => {
@@ -466,12 +466,12 @@ describe('loadConfig', () => {
     writeFileSync(join(spacesDir, 'schema_forge.properties'), [
       'etendo.url = http://spaced.local',
       'etendo.user = spaceduser',
-      'etendo.password = spacedpass',
+      'etendo.password = test-val-5',
     ].join('\n'));
     const config = await loadConfig(spacesDir);
     assert.equal(config.url, 'http://spaced.local');
     assert.equal(config.user, 'spaceduser');
-    assert.equal(config.password, 'spacedpass');
+    assert.equal(config.password, 'test-val-5');
   });
 
   it('handles properties file with values containing = sign', async () => {
@@ -483,13 +483,13 @@ describe('loadConfig', () => {
     writeFileSync(join(eqDir, 'schema_forge.properties'), [
       'etendo.url=http://eq.local',
       'etendo.user=admin',
-      'etendo.password=p@ss=word',
+      'etendo.password=t@st=val',
     ].join('\n'));
     const config = await loadConfig(eqDir);
     assert.equal(config.url, 'http://eq.local');
     assert.equal(config.user, 'admin');
     // Password should preserve everything after first =
-    assert.equal(config.password, 'p@ss=word');
+    assert.equal(config.password, 't@st=val');
   });
 
   it('env vars override partial properties', async () => {
@@ -498,16 +498,16 @@ describe('loadConfig', () => {
     writeFileSync(join(partialDir, 'schema_forge.properties'), [
       'etendo.url=http://partial.local',
       'etendo.user=fileuser',
-      'etendo.password=filepass',
+      'etendo.password=test-val-6',
     ].join('\n'));
     // Override only URL from env
     process.env.ETENDO_URL = 'http://env-override.local';
     process.env.ETENDO_USER = 'envuser';
-    process.env.ETENDO_PASSWORD = 'envpass';
+    process.env.ETENDO_PASSWORD = 'test-val-7';
     const config = await loadConfig(partialDir);
     assert.equal(config.url, 'http://env-override.local');
     assert.equal(config.user, 'envuser');
-    assert.equal(config.password, 'envpass');
+    assert.equal(config.password, 'test-val-7');
   });
 
   it('handles properties file with lines without = sign', async () => {
@@ -520,12 +520,12 @@ describe('loadConfig', () => {
       'this line has no equals sign',
       'etendo.url=http://noeq.local',
       'etendo.user=admin',
-      'etendo.password=pass',
+      'etendo.password=test-val-8',
     ].join('\n'));
     const config = await loadConfig(noEqDir);
     assert.equal(config.url, 'http://noeq.local');
     assert.equal(config.user, 'admin');
-    assert.equal(config.password, 'pass');
+    assert.equal(config.password, 'test-val-8');
   });
 });
 
