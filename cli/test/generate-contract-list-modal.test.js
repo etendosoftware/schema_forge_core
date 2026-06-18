@@ -137,3 +137,113 @@ describe('generateFrontendContract — templateConfig on list-modal window', () 
     assert.equal(fc.window.templateConfig, undefined, 'default layout should not carry templateConfig');
   });
 });
+
+describe('generateFrontendContract — inline-create create keys', () => {
+  function schemaWithInlineCreate() {
+    return {
+      ...listModalSchema,
+      entities: [{
+        ...listModalSchema.entities[0],
+        fields: [
+          ...listModalSchema.entities[0].fields,
+          {
+            name: 'transactionType',
+            column: 'ETGO_Transaction_Type_ID',
+            type: 'foreignKey',
+            visibility: 'editable',
+            required: false,
+            searchable: false,
+            grid: false,
+            form: true,
+            reference: 'EtgoTransactionType',
+            inputMode: 'selector',
+            searchSelect: true,
+            allowCreate: true,
+            createLabelKey: 'addTransactionType',
+            createTitleKey: 'newTransactionType',
+            createNamePlaceholderKey: 'typeNamePh',
+            createSpec: 'transaction-type',
+            createEntity: 'EtgoTransactionType',
+          },
+        ],
+      }],
+    };
+  }
+
+  it('carries createLabelKey into the mapped field', () => {
+    const fc = generateFrontendContract(schemaWithInlineCreate());
+    const f = fc.entities.etgoMatchRuleHeader.fields.find(f => f.name === 'transactionType');
+    assert.equal(f.createLabelKey, 'addTransactionType');
+  });
+
+  it('carries createTitleKey into the mapped field', () => {
+    const fc = generateFrontendContract(schemaWithInlineCreate());
+    const f = fc.entities.etgoMatchRuleHeader.fields.find(f => f.name === 'transactionType');
+    assert.equal(f.createTitleKey, 'newTransactionType');
+  });
+
+  it('carries createNamePlaceholderKey into the mapped field', () => {
+    const fc = generateFrontendContract(schemaWithInlineCreate());
+    const f = fc.entities.etgoMatchRuleHeader.fields.find(f => f.name === 'transactionType');
+    assert.equal(f.createNamePlaceholderKey, 'typeNamePh');
+  });
+
+  it('carries createSpec into the mapped field', () => {
+    const fc = generateFrontendContract(schemaWithInlineCreate());
+    const f = fc.entities.etgoMatchRuleHeader.fields.find(f => f.name === 'transactionType');
+    assert.equal(f.createSpec, 'transaction-type');
+  });
+
+  it('carries createEntity into the mapped field', () => {
+    const fc = generateFrontendContract(schemaWithInlineCreate());
+    const f = fc.entities.etgoMatchRuleHeader.fields.find(f => f.name === 'transactionType');
+    assert.equal(f.createEntity, 'EtgoTransactionType');
+  });
+
+  it('does NOT emit create keys on a field that lacks them', () => {
+    const fc = generateFrontendContract(schemaWithInlineCreate());
+    const name = fc.entities.etgoMatchRuleHeader.fields.find(f => f.name === 'name');
+    assert.equal(name.createLabelKey, undefined);
+    assert.equal(name.createSpec, undefined);
+    assert.equal(name.createEntity, undefined);
+  });
+});
+
+describe('generateFrontendContract — displayLogicJs standalone path', () => {
+  function schemaWithDisplayLogicJs() {
+    return {
+      ...listModalSchema,
+      entities: [{
+        ...listModalSchema.entities[0],
+        fields: [
+          ...listModalSchema.entities[0].fields,
+          {
+            name: 'conditionalField',
+            column: 'ConditionalField',
+            type: 'string',
+            visibility: 'editable',
+            required: false,
+            searchable: false,
+            grid: false,
+            form: true,
+            displayLogicJs: "row.status === 'A'",
+          },
+        ],
+      }],
+    };
+  }
+
+  it('sets displayLogic.js from displayLogicJs when no raw displayLogic exists', () => {
+    const fc = generateFrontendContract(schemaWithDisplayLogicJs());
+    const f = fc.entities.etgoMatchRuleHeader.fields.find(f => f.name === 'conditionalField');
+    assert.ok(f.displayLogic, 'displayLogic should be set');
+    assert.equal(f.displayLogic.js, "row.status === 'A'");
+    assert.equal(f.displayLogic.evaluable, true);
+  });
+
+  it('does NOT add displayLogic to fields that lack displayLogicJs', () => {
+    const fc = generateFrontendContract(schemaWithDisplayLogicJs());
+    const name = fc.entities.etgoMatchRuleHeader.fields.find(f => f.name === 'name');
+    assert.equal(name.displayLogic, undefined);
+  });
+});

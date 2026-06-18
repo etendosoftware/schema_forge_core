@@ -625,9 +625,10 @@ export function ListView({
                     {subsetFilters.map((sf, i) => (
                       <button
                         key={i}
+                        data-testid={`subset-filter-${sf.label}`}
                         onClick={() => selectSubset(i)}
                         className={[
-                          'flex-1 h-8 px-2 text-sm font-medium text-[#121217] rounded-lg transition-all',
+                          'h-8 px-3 text-sm font-medium text-[#121217] rounded-lg transition-all whitespace-nowrap',
                           activeSubsetIndex === i
                             ? 'bg-white shadow-sm'
                             : 'bg-[#F5F7F9] hover:brightness-95',
