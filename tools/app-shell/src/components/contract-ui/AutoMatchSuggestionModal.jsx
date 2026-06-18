@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { ArrowUpRight, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
@@ -193,6 +193,12 @@ export function AutoMatchSuggestionModal({
 
   const allKeys = useMemo(() => new Set(groups.map((g) => g.groupKey)), [groups]);
   const [checked, setChecked] = useState(allKeys);
+
+  // Default to all groups checked whenever the suggestions (re)load — the initial useState only
+  // runs on first render, when `groups` is still empty because autoMatch is loading.
+  useEffect(() => {
+    setChecked(new Set(groups.map((g) => g.groupKey)));
+  }, [groups]);
 
   const allChecked = checked.size === groups.length && groups.length > 0;
   const someChecked = checked.size > 0 && !allChecked;
