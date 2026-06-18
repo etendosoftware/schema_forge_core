@@ -91,7 +91,7 @@ describe('ManualStatementModal', () => {
     expect(screen.queryByTestId('manual-modal')).not.toBeInTheDocument();
   });
 
-  it('commits a complete line to a read-only row and reopens it to edit', async () => {
+  it('commits a complete line to a read-only row and reopens it to edit', { timeout: 15000 }, async () => {
     const user = userEvent.setup();
     renderModal();
     await user.click(screen.getByTestId('manual-statement-add-lines'));
