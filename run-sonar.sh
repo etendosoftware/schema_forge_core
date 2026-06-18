@@ -231,7 +231,8 @@ if [[ -z "${SONAR_HOST_URL:-}" || -z "${SONAR_TOKEN:-}" ]]; then
 fi
 
 SONAR_HOST_URL="${SONAR_HOST_URL%/}"
-export SONAR_HOST_URL SONAR_TOKEN REPORT_DIR BASE_REF CHANGED_ONLY PROJECT_KEY
+REPO_ROOT="$SCRIPT_DIR"
+export SONAR_HOST_URL SONAR_TOKEN REPORT_DIR BASE_REF CHANGED_ONLY PROJECT_KEY REPO_ROOT
 
 prompt_for_base_ref
 validate_base_ref
@@ -325,7 +326,7 @@ echo "==> Downloading reports..."
 
 # Issues (paginated, saved to a single file)
 python3 - <<'PYEOF'
-import json, os, urllib.request, sys
+import json, os, urllib.parse, urllib.request, sys
 
 base = os.environ["SONAR_HOST_URL"]
 token = os.environ["SONAR_TOKEN"]
@@ -488,6 +489,185 @@ if measures:
     with open(f"{report_dir}/sonar-measures.json", "w") as f:
         json.dump(measures, f, indent=2)
     print(f"    Saved: {report_dir}/sonar-measures.json")
+
+# ── Duplicated-file enumeration ──
+# When the Quality Gate fails on a duplication metric, only naming a density %
+# is useless — the dev needs to know WHICH files carry the duplicated lines (and
+# their partner files). We resolve them in two ways:
+#   1. The Sonar API (component_tree + duplications/show) — authoritative.
+#   2. A local CPD-like heuristic over THIS push's changed source files — used as
+#      a fallback when the analysis token gets 403 on /api/measures/* (common,
+#      since analysis tokens often lack the "Browse" project permission).
+def gate_has_duplication_failure(qg_doc):
+    for c in (qg_doc or {}).get("projectStatus", {}).get("conditions", []):
+        if c.get("status") == "ERROR" and "duplicated" in c.get("metricKey", ""):
+            return True
+    return False
+
+def measure_values(component):
+    vals = {}
+    for x in component.get("measures", []):
+        v = x.get("value")
+        if v is None:
+            v = (x.get("period") or {}).get("value")
+        vals[x["metric"]] = v
+    return vals
+
+def fetch_duplications_via_api():
+    tree = api_get(
+        f"/api/measures/component_tree?component={project}"
+        f"&metricKeys=new_duplicated_lines,duplicated_lines,duplicated_lines_density"
+        f"&qualifier=FIL&ps=500&s=metric&metricSort=new_duplicated_lines&asc=false{PR_Q}")
+    dup_files = []
+    for comp in (tree or {}).get("components", []):
+        vals = measure_values(comp)
+        new_dup = vals.get("new_duplicated_lines")
+        total_dup = vals.get("duplicated_lines")
+        try:
+            new_dup_n = float(new_dup) if new_dup is not None else 0.0
+        except ValueError:
+            new_dup_n = 0.0
+        try:
+            total_dup_n = float(total_dup) if total_dup is not None else 0.0
+        except ValueError:
+            total_dup_n = 0.0
+        # Prefer files with new duplicated lines; fall back to total duplication.
+        if new_dup_n <= 0 and not (new_dup is None and total_dup_n > 0):
+            continue
+        dup_files.append({
+            "file": comp.get("key", "").split(":", 1)[-1],
+            "componentKey": comp.get("key", ""),
+            "new_duplicated_lines": new_dup,
+            "duplicated_lines": total_dup,
+            "duplicated_lines_density": vals.get("duplicated_lines_density"),
+        })
+    for df in dup_files:
+        show = api_get(
+            f"/api/duplications/show?key={urllib.parse.quote(df['componentKey'], safe='')}{PR_Q}")
+        partners = set()
+        blocks = []
+        if show:
+            ref_to_name = {k: (v.get("name") or v.get("key", ""))
+                           for k, v in (show.get("files", {}) or {}).items()}
+            for dup in show.get("duplications", []):
+                blk = []
+                for b in dup.get("blocks", []):
+                    name = ref_to_name.get(b.get("_ref"), "")
+                    short = name.split(":", 1)[-1] if name else ""
+                    blk.append({"file": short, "from": b.get("from"), "size": b.get("size")})
+                    if short and short != df["file"]:
+                        partners.add(short)
+                blocks.append(blk)
+        df["partners"] = sorted(partners)
+        df["blocks"] = blocks
+    return dup_files
+
+# Local CPD approximation. JS/JSX-adapted (this repo is JavaScript, not Java):
+# globs every sonar.sources dir for *.js and *.jsx, hashes ~10-significant-line
+# sliding windows, and reports windows that recur in >=2 places, restricted to
+# THIS push's changed files. Mirrors sonar-project.properties' sources and CPD
+# exclusions. Heuristic — ranges are approximate; verify against the Sonar UI.
+def local_duplication_scan():
+    import glob
+    WINDOW = 10
+    repo_root = os.environ.get("REPO_ROOT") or os.getcwd()
+    base_ref = os.environ.get("BASE_REF", "")
+    # Mirror sonar.sources from sonar-project.properties.
+    source_dirs = ["cli/src", "tools/app-shell/src", "tools/decision-panel/src",
+                   "tools/ui-preview/src", "tools/report-server"]
+    # Mirror sonar.cpd.exclusions plus the usual generated/vendored dirs.
+    def excluded(rel):
+        r = rel.replace("\\", "/")
+        if r.endswith((".test.js", ".test.jsx", ".spec.js", ".spec.jsx")):
+            return True
+        if "/__tests__/" in r:
+            return True
+        for marker in ("node_modules/", "dist/", "build/", "artifacts/", "e2e/",
+                       "packages/app-shell-core/src/", "packages/schema-forge-core/src/"):
+            if marker in r:
+                return True
+        return False
+    src_files = []
+    for d in source_dirs:
+        for ext in ("*.js", "*.jsx"):
+            src_files.extend(glob.glob(os.path.join(repo_root, d, "**", ext), recursive=True))
+    def significant_lines(path):
+        out = []
+        try:
+            with open(path, encoding="utf-8", errors="replace") as fh:
+                for idx, raw in enumerate(fh, 1):
+                    s = raw.strip()
+                    if not s or s in ("{", "}", "};", "});", ");", ")", "(") \
+                            or s.startswith(("//", "*", "/*", "*/")):
+                        continue
+                    out.append((idx, s))
+        except OSError:
+            pass
+        return out
+    seeds = {}
+    for path in src_files:
+        rel = os.path.relpath(path, repo_root)
+        if excluded(rel):
+            continue
+        sig = significant_lines(path)
+        for i in range(len(sig) - WINDOW + 1):
+            window = tuple(t for _, t in sig[i:i + WINDOW])
+            seeds.setdefault(window, []).append((rel, sig[i][0], sig[i + WINDOW - 1][0]))
+    dup_seeds = [v for v in seeds.values() if len(v) >= 2]
+    changed = set()
+    if base_ref:
+        try:
+            import subprocess
+            diff = subprocess.run(["git", "diff", "--name-only", f"{base_ref}...HEAD"],
+                                  cwd=repo_root, capture_output=True, text=True, check=False)
+            changed = {l.strip() for l in diff.stdout.splitlines()
+                       if l.strip().endswith((".js", ".jsx"))
+                       and any(l.strip().startswith(d + "/") for d in source_dirs)}
+        except Exception:
+            changed = set()
+    per_file = {}
+    for occ_list in dup_seeds:
+        files_in_seed = {o[0] for o in occ_list}
+        for (rel, s_line, e_line) in occ_list:
+            if changed and rel not in changed:
+                continue
+            entry = per_file.setdefault(rel, {"ranges": [], "partners": set()})
+            entry["ranges"].append((s_line, e_line))
+            entry["partners"].update(f for f in files_in_seed if f != rel)
+    def merge(ranges):
+        merged = []
+        for s, e in sorted(ranges):
+            if merged and s <= merged[-1][1] + 1:
+                merged[-1] = (merged[-1][0], max(merged[-1][1], e))
+            else:
+                merged.append([s, e])
+        return merged
+    results = []
+    for rel, entry in per_file.items():
+        blocks = merge(entry["ranges"])
+        results.append({
+            "file": rel, "componentKey": "",
+            "new_duplicated_lines": None,
+            "duplicated_lines": sum(e - s + 1 for s, e in blocks),
+            "duplicated_lines_density": None,
+            "partners": sorted(entry["partners"]),
+            "blocks": [[{"file": rel, "from": s, "size": e - s + 1}] for s, e in blocks],
+        })
+    results.sort(key=lambda d: d["duplicated_lines"], reverse=True)
+    return results
+
+if gate_has_duplication_failure(qg):
+    dup_files = fetch_duplications_via_api()
+    dup_source = "sonar-api"
+    if not dup_files:
+        # API gave nothing (often a 403 on /api/measures/*) — approximate locally.
+        dup_files = local_duplication_scan()
+        dup_source = "local-heuristic"
+    with open(f"{report_dir}/sonar-duplications.json", "w") as f:
+        json.dump({"total": len(dup_files), "source": dup_source,
+                   "files": dup_files}, f, indent=2)
+    print(f"    Saved: {report_dir}/sonar-duplications.json "
+          f"({len(dup_files)} {'file' if len(dup_files) == 1 else 'files'}, source: {dup_source})")
 
 # ── Summary ──
 print()
@@ -663,6 +843,13 @@ hotspots_forbidden = bool(hs_doc.get("apiForbidden", False))
 hotspot_metrics = [d for (m, d) in failing
                    if "security_hotspot" in m or "security_review" in m]
 
+# Files carrying duplicated lines, enumerated during report download. "source"
+# is "sonar-api" (authoritative) or "local-heuristic" (approximate diff scan).
+dup_path = os.path.join(report_dir, "sonar-duplications.json")
+dup_doc = json.load(open(dup_path)) if os.path.isfile(dup_path) else {}
+dup_files = dup_doc.get("files", [])
+dup_source = dup_doc.get("source", "sonar-api")
+
 # ── Local heuristic: candidate hotspot locations from the diff ──
 # Only used when the gate flags a hotspot condition but the API would not name it
 # (403). Greps THIS push's changed files for the security-sensitive patterns Sonar
@@ -748,6 +935,33 @@ if other_failing:
     lines.append("Failing Quality Gate condition(s):")
     for d in other_failing:
         lines.append(f"  - {d}")
+    lines.append("")
+if dup_files:
+    lines.append(f"Files carrying duplicated lines ({len(dup_files)}, most-duplicated first) —")
+    lines.append("dedupe these; a duplicated block needs only ONE copy refactored to clear it:")
+    if dup_source == "local-heuristic":
+        lines.append("  NOTE: the SonarQube API could not be read (likely HTTP 403 on /api/measures/*),")
+        lines.append("  so these were approximated by a LOCAL scan of this push's changed files.")
+        lines.append("  Line ranges are approximate — verify against the SonarQube UI.")
+    for n, df in enumerate(dup_files, 1):
+        bits = []
+        if df.get("new_duplicated_lines") is not None:
+            bits.append(f"new dup lines: {df['new_duplicated_lines']}")
+        if df.get("duplicated_lines") is not None:
+            bits.append(f"total dup lines: {df['duplicated_lines']}")
+        if df.get("duplicated_lines_density") is not None:
+            bits.append(f"file density: {df['duplicated_lines_density']}%")
+        suffix = f"  ({', '.join(bits)})" if bits else ""
+        lines.append(f"  {n}. {df['file']}{suffix}")
+        partners = df.get("partners", [])
+        if partners:
+            lines.append(f"     duplicates with: {', '.join(partners)}")
+        for blk in df.get("blocks", [])[:3]:
+            locs = "; ".join(
+                f"{b['file']}:{b['from']}-{b['from'] + (b['size'] or 1) - 1}"
+                for b in blk if b.get("from") is not None and b.get("file"))
+            if locs:
+                lines.append(f"       block: {locs}")
     lines.append("")
 if hotspot_metrics:
     host = os.environ.get("SONAR_HOST_URL", "").rstrip("/")
