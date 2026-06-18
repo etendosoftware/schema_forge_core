@@ -248,6 +248,7 @@ export default function FinancialAccountWindow({ recordId }) {
 
       <AutoMatchSuggestionModal
         accountId={recordId}
+        accountName={account?.name ?? ''}
         groups={autoMatchGroups}
         kpis={autoMatchKpis}
         currency={account?.currencyIso ?? 'EUR'}
