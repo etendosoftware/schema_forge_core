@@ -10,45 +10,7 @@ import { ImportStatementModal } from './ImportStatementModal';
 import { ManualStatementModal } from './ManualStatementModal';
 import { StatementConfirmDialog } from './StatementConfirmDialog';
 import { applyAdvancedFilter } from './statementAdvancedFilter';
-
-function presetBounds(presetId) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const to = new Date(today);
-  const from = new Date(today);
-  if (presetId === 'today') {
-    /* from = to = start of today */
-  } else if (presetId === 'yesterday') {
-    from.setDate(from.getDate() - 1);
-    to.setDate(to.getDate() - 1);
-  } else if (presetId === 'last7') {
-    from.setDate(from.getDate() - 6);
-  } else if (presetId === 'last30') {
-    from.setDate(from.getDate() - 29);
-  } else if (presetId === 'last12m') {
-    from.setMonth(from.getMonth() - 12);
-  } else {
-    return null;
-  }
-  to.setHours(23, 59, 59, 999);
-  return { from, to };
-}
-
-function getDateBounds(dateRange) {
-  if (!dateRange) return { from: null, to: null };
-  if ('presetId' in dateRange) {
-    const bounds = presetBounds(dateRange.presetId);
-    return bounds ?? { from: null, to: null };
-  }
-  if ('from' in dateRange && 'to' in dateRange) {
-    const from = dateRange.from instanceof Date ? new Date(dateRange.from) : null;
-    const to = dateRange.to instanceof Date ? new Date(dateRange.to) : null;
-    if (from) from.setHours(0, 0, 0, 0);
-    if (to) to.setHours(23, 59, 59, 999);
-    return { from, to };
-  }
-  return { from: null, to: null };
-}
+import { getDateBounds } from '@/lib/dateRangeBounds';
 
 /**
  * Imported Statements tab for the Financial Account detail view.
