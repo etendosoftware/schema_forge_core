@@ -1,8 +1,8 @@
 {
-  "version": "0.10.0",
+  "version": "0.10.1",
   "generatedAt": "2026-05-06T15:52:09.982Z",
-  "updatedAt": "2026-06-18T14:44:43.828Z",
-  "checksum": "7097ccf3057d6c9a",
+  "updatedAt": "2026-06-18T15:19:07.025Z",
+  "checksum": "86f9f47797027775",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -9105,7 +9105,7 @@
             "apiKey": "psd2ApiKey",
             "column": "EM_Psd2_Api_Key",
             "type": "string",
-            "visibility": "system",
+            "visibility": "discarded",
             "required": false
           }
         ]

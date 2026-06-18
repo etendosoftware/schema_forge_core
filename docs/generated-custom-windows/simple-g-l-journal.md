@@ -18,7 +18,7 @@ This is **slice 1 of workstream C (Manual Journals Simplified)** under ETP-4244.
 
 - **Route:** `/simple-g-l-journal`, `/simple-g-l-journal/:recordId`.
 - **Visibility:** visible from the **Finance** menu as **Manual Journals** (es: **Asientos Manuales**), wired via `menus["Manual Journals"]` in both locales.
-- **Implementation type:** fully generated window (no custom components, no `NeoHandler` for this slice). CRUD runs through NEO Headless generic CRUD.
+- **Implementation type:** fully generated window (no custom components). CRUD runs through NEO Headless generic CRUD. A `GlJournalHeaderHandler` (`@Named("glJournalHeaderHandler")`) injects `C_AcctSchema_ID` from the session on POST and routes document-completion (CO) through `FIN_AddPaymentFromJournal`.
 - **Window shape:** master-detail. The header entity is `gLJournal` (table `GL_Journal`) and the line entity is `gLJournalLine` (table `GL_JournalLine`). The two Classic auxiliary tabs — `Fact_Acct` (posting result) and `C_Conversion_Rate_Document` (document rates) — are **dropped** (`exclude: true`) for V1.
 - **Lines tab layout:** classic grid + side-panel editor (no `linesLayout` declared). The lines table shows the five core columns; clicking a row opens a side panel for editing, where the Open Items toggle and its dependent dimensions live.
 - An **Attachments** tab is available in the detail tab strip.
