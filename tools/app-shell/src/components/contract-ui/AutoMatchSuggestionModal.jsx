@@ -39,7 +39,7 @@ function RuleTypeBadge({ label, tone = 'default' }) {
 // Row components
 // ---------------------------------------------------------------------------
 
-function StatementSide({ group, checked, onToggle }) {
+function StatementSide({ group, checked, onToggle, currency }) {
   const ui = useUI();
   const line = group.statementLine ?? {};
   const opCount = (group.operations ?? []).length;
@@ -76,7 +76,7 @@ function StatementSide({ group, checked, onToggle }) {
               </span>
             )}
           </div>
-          <MoneyAmount value={amount} currency="" tone={amount < 0 ? 'negative' : 'positive'} className="flex-none text-sm font-semibold" />
+          <MoneyAmount value={amount} currency={currency || 'EUR'} tone={amount < 0 ? 'negative' : 'positive'} className="flex-none text-sm font-semibold" />
         </div>
 
         {/* Type badge row — only shown for rule-origin groups. */}
@@ -171,7 +171,7 @@ function GroupRow({ group, checked, onToggle, currency }) {
     <div className="flex flex-row items-stretch">
       {/* Left: statement line (50%) */}
       <div className="flex-1 pr-0">
-        <StatementSide group={group} checked={checked} onToggle={onToggle} />
+        <StatementSide group={group} checked={checked} onToggle={onToggle} currency={currency} />
       </div>
       {/* Right: operations (50%) */}
       <div className="flex-1">
