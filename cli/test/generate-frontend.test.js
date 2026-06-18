@@ -1795,6 +1795,82 @@ describe('generatePageComponent — F3 drawer + display emission (secondary-tab 
   });
 });
 
+// ---------------------------------------------------------------------------
+// generatePageComponent — clearsField and labels in secondary-tab addLineFields
+// ---------------------------------------------------------------------------
+
+const clearsFieldTabContract = {
+  frontendContract: {
+    window: {
+      id: '810',
+      name: 'G/L Journal',
+      primaryEntity: 'glJournal',
+      category: 'accounting',
+      secondaryTabs: {
+        glJournalLine: {
+          label: 'Lines',
+          tabOrder: 1,
+          addLineFields: ['debit', 'credit'],
+        },
+      },
+    },
+    entities: {
+      glJournal: {
+        fields: [
+          { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string',
+            visibility: 'readOnly', required: true, grid: true, form: true },
+        ],
+        searchableFields: ['documentNo'],
+        computedFields: [],
+      },
+      glJournalLine: {
+        fields: [
+          { name: 'debit', column: 'AmtSourceDr', type: 'amount', tsType: 'number',
+            visibility: 'editable', required: false, grid: true, form: true,
+            clearsField: 'credit',
+            labels: { zero: 'DR', positive: 'Debit' } },
+          { name: 'credit', column: 'AmtSourceCr', type: 'amount', tsType: 'number',
+            visibility: 'editable', required: false, grid: true, form: true,
+            clearsField: 'debit' },
+        ],
+        searchableFields: [],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+describe('generatePageComponent — clearsField and labels in secondary-tab addLineFields', () => {
+  it('emits clearsField for a field that declares it', () => {
+    const code = generatePageComponent('glJournal', null, clearsFieldTabContract);
+    assert.ok(
+      code.includes("clearsField: 'credit'"),
+      `expected clearsField: 'credit' in addLineFields entry`,
+    );
+  });
+
+  it('emits labels dict for a field that declares labels', () => {
+    const code = generatePageComponent('glJournal', null, clearsFieldTabContract);
+    assert.ok(
+      code.includes('"zero":"DR"') || code.includes('"zero": "DR"'),
+      `expected labels dict with zero key in addLineFields entry`,
+    );
+  });
+
+  it('does NOT emit clearsField for a field that lacks it', () => {
+    // Build a contract where only debit has clearsField — verify credit entry omits it
+    const codeWithOneSide = (() => {
+      const oneSide = JSON.parse(JSON.stringify(clearsFieldTabContract));
+      oneSide.frontendContract.entities.glJournalLine.fields[1].clearsField = undefined;
+      return generatePageComponent('glJournal', null, oneSide);
+    })();
+    const creditEntry = codeWithOneSide.match(/\{\s*key:\s*'credit'[^}]*\}/);
+    assert.ok(creditEntry, 'expected credit entry to be emitted');
+    assert.ok(!creditEntry[0].includes('clearsField'), 'credit entry must not include clearsField when not declared');
+  });
+});
+
 describe('fragmentIf', () => {
   it('returns the string when the condition is truthy', () => {
     assert.equal(fragmentIf(true, ', required: true'), ', required: true');
