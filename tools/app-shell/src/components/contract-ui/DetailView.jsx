@@ -1026,12 +1026,8 @@ function getDraftModeCompleted(draftMode, _headerData, isProcessed) {
   );
 }
 
-function getIsProcessed(_headerData) {
-  return _headerData?.processed === true || _headerData?.processed === 'Y';
-}
-
 function getDocumentReadOnly(lockWhenProcessed, _headerData) {
-  return lockWhenProcessed && getIsProcessed(_headerData);
+  return lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
 }
 
 export function insertLinesTab(detailLabel, detailEntity, hook, detailTabIndex, tabs) {
@@ -1041,6 +1037,39 @@ export function insertLinesTab(detailLabel, detailEntity, hook, detailTabIndex, 
   } else {
     tabs.unshift(linesTab);
   }
+}
+
+function customTabKey(ct) {
+  return `custom:${ct.key}`;
+}
+
+/**
+ * Builds the initial tab list (secondary tabs + lines/customLines + inline custom tabs).
+ * Extracted from DetailView so its branch logic does not count toward the component's
+ * cognitive complexity. `Others` is appended later via pushOthers.
+ */
+function buildInitialTabs(p) {
+  const tabs = [];
+  p.secondaryTabs.forEach((st, i) => {
+    const secondaryChildCount = !st.isFormTab ? (p.secondaryHooks[i]?.children?.length ?? null) : null;
+    const childCount = st.Panel ? (p.panelCounts[st.key] ?? null) : secondaryChildCount;
+    tabs.push({ key: st.key, label: st.label, count: childCount });
+  });
+  if (p.DetailTable) {
+    insertLinesTab(p.detailLabel, p.detailEntity, p.hook, p.detailTabIndex, tabs);
+  } else if (p.CustomLines) {
+    tabs.unshift({ key: 'customLines', label: p.customLinesLabel, count: p.customLinesCount ?? null });
+  }
+  // Append 'tab' placement custom items after lines/secondary tabs but before Others.
+  // Items may pass `labelKey` to resolve a generic i18n label via useUI() instead of a
+  // hardcoded string in `label`.
+  if (!p.customTabsAfterBottom) {
+    p.tabCustomTabs.forEach(ct => {
+      const resolvedLabel = ct.labelKey ? p.ui(ct.labelKey) : ct.label;
+      tabs.push({ key: customTabKey(ct), label: resolvedLabel, count: p.customTabCounts[ct.key] ?? null });
+    });
+  }
+  return tabs;
 }
 
 export function renderExtraActionButtons(extraActions, data, hook, saveBtnCls) {
@@ -1702,7 +1731,7 @@ export function DetailView({
   ), [_headerData, windowName, _detailTabTitle, hook.editing, _isFormEditing]);
   useRegisterWindowContext(_windowContextInfo);
   const isDocumentReadOnly = getDocumentReadOnly(lockWhenProcessed, _headerData);
-  const isProcessed = getIsProcessed(_headerData);
+  const isProcessed = _headerData?.processed === true || _headerData?.processed === 'Y';
   // When draftMode declares an explicit completedStatuses array, only those documentStatus
   // values hide the Save/Confirm pair. This lets windows like sales-quotation keep the
   // pair visible during intermediate processed states (UE) while still hiding it in
@@ -2476,29 +2505,13 @@ export function DetailView({
   const [activeCustomBelowTab, setActiveCustomBelowTab] = useState(0);
   // Reuse the secondaryTabs/lines/others activeTab state for custom tabs by prefixing
   // their keys with `custom:` so they cannot collide with secondaryTabs/lines/others/customLines.
-  const customTabKey = (ct) => `custom:${ct.key}`;
 
   // Build tabs: child entity lines + secondary tabs + custom 'tab' placement + "Others"
-  const tabs = [];
-  secondaryTabs.forEach((st, i) => {
-    const secondaryChildCount = !st.isFormTab ? (secondaryHooks[i]?.children?.length ?? null) : null;
-    const childCount = st.Panel ? (panelCounts[st.key] ?? null) : secondaryChildCount;
-    tabs.push({ key: st.key, label: st.label, count: childCount });
+  const tabs = buildInitialTabs({
+    secondaryTabs, secondaryHooks, panelCounts, DetailTable, detailLabel, detailEntity,
+    hook, detailTabIndex, CustomLines, customLinesLabel, customLinesCount,
+    customTabsAfterBottom, tabCustomTabs, ui, customTabCounts,
   });
-  if (DetailTable) {
-    insertLinesTab(detailLabel, detailEntity, hook, detailTabIndex, tabs);
-  } else if (CustomLines) {
-    tabs.unshift({ key: 'customLines', label: customLinesLabel, count: customLinesCount ?? null });
-  }
-  // Append 'tab' placement custom items after lines/secondary tabs but before Others.
-  // Items may pass `labelKey` to resolve a generic i18n label via useUI() instead of a
-  // hardcoded string in `label`.
-  if (!customTabsAfterBottom) {
-    tabCustomTabs.forEach(ct => {
-      const resolvedLabel = ct.labelKey ? ui(ct.labelKey) : ct.label;
-      tabs.push({ key: customTabKey(ct), label: resolvedLabel, count: customTabCounts[ct.key] ?? null });
-    });
-  }
 
   // When primaryTabs is in use, skip auto-adding Others (handled by a primary tab)
   const [showOthers, setShowOthers] = useState(primaryTabs ? false : null);
