@@ -81,7 +81,19 @@ export default function FinancialAccountWindow({ recordId }) {
   const ui = useUI();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') ?? 'movements');
-  const [autoMatchOpen, setAutoMatchOpen] = useState(() => searchParams.get('autoMatch') === 'true');
+  // The automatch modal opens whenever the user enters the Reconciliation tab — either via the
+  // accounts-list pill (autoMatch=true), a deep link to the tab, or by clicking the tab here.
+  const [autoMatchOpen, setAutoMatchOpen] = useState(
+    () => searchParams.get('autoMatch') === 'true' || searchParams.get('tab') === 'reconciliation',
+  );
+
+  // Switching INTO the Reconciliation tab opens the automatch modal first.
+  const handleTabChange = useCallback((tab) => {
+    setActiveTab(tab);
+    if (tab === 'reconciliation') {
+      setAutoMatchOpen(true);
+    }
+  }, []);
 
   // Clear the URL params once consumed so back-navigation doesn't re-trigger them.
   useEffect(() => {
@@ -198,7 +210,7 @@ export default function FinancialAccountWindow({ recordId }) {
         <div className="flex items-center justify-between border-b border-[#E8EAEF] pl-0 pr-2">
           <DetailTabs
             value={activeTab}
-            onValueChange={setActiveTab}
+            onValueChange={handleTabChange}
             movementsCount={movements.length}
             reconciliationCount={account?.pendingCount ?? 0}
             statementsCount={statements.length}
