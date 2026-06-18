@@ -101,6 +101,7 @@ function CountryPicker({
                             onChange={onSearchChange}
                             placeholder={searchPlaceholder}
                             className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            data-testid="location-country-search"
                         />
                     </div>
                 </div>
@@ -756,6 +757,7 @@ export default function LocationEditorModal({
                                 value={form.address}
                                 onChange={e => setField('address', e.target.value)}
                                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                data-testid="location-field-address1"
                             />
                         </div>
 
@@ -783,6 +785,7 @@ export default function LocationEditorModal({
                                     value={form.postalCode}
                                     onChange={e => setField('postalCode', e.target.value)}
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    data-testid="location-field-postalCode"
                                 />
                             </div>
                             <div>
@@ -794,6 +797,7 @@ export default function LocationEditorModal({
                                     value={form.city}
                                     onChange={e => setField('city', e.target.value)}
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    data-testid="location-field-city"
                                 />
                             </div>
                         </div>
@@ -809,6 +813,7 @@ export default function LocationEditorModal({
                                 aria-haspopup="dialog"
                                 aria-expanded={countryPickerOpen}
                                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors flex items-center justify-between gap-2"
+                                data-testid="location-country-picker"
                             >
                 <span className={`truncate ${form.country ? 'text-gray-900' : 'text-gray-500'}`}>
                   {selectedCountryLabel}
@@ -984,6 +989,7 @@ export default function LocationEditorModal({
                             onClick={handleSave}
                             disabled={saving || initialLoading}
                             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                            data-testid="location-save"
                         >
                             {saving && <Loader2 size={13} className="animate-spin" data-testid="Loader2__927831" />}
                             {ui('save')}

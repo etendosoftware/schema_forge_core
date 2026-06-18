@@ -33,17 +33,17 @@ export function ReadOnly({ children }) {
   return <Input disabled readOnly value={text} data-testid="Input__7183e9" />;
 }
 
-export function TextInput({ className = '', ...rest }) {
+export function TextInput({ className = '', name, ...rest }) {
   // White background: these are editable; the app's default Input is grey, which
   // reads as read-only. Caller className can still override.
-  return <Input className={`bg-white ${className}`} {...rest} data-testid="Input__7183e9" />;
+  return <Input className={`bg-white ${className}`} name={name} {...rest} data-testid={name ? `field-text-${name}` : 'field-text'} />;
 }
 
 /**
  * Enum select. `onChange` receives the selected value (string), matching the
  * Radix Select contract used across the app.
  */
-export function Select({ label, required, value, onChange, options, placeholder, className }) {
+export function Select({ label, required, value, onChange, options, placeholder, className, name }) {
   // Accept options as plain strings or as { id, name } / { value, label } objects.
   const items = (options || []).map((o) =>
     (typeof o === 'string' ? { value: o, label: o } : { value: o.id ?? o.value, label: o.name ?? o.label }));
@@ -59,7 +59,7 @@ export function Select({ label, required, value, onChange, options, placeholder,
         data-testid="RSelect__7183e9">
         <SelectTrigger
           className="focus:ring-2 focus:ring-primary"
-          data-testid="SelectTrigger__7183e9">
+          data-testid={name ? `field-select-${name}` : 'SelectTrigger__7183e9'}>
           <SelectValue
             placeholder={placeholder || 'Seleccionar…'}
             data-testid="SelectValue__7183e9" />
@@ -73,14 +73,14 @@ export function Select({ label, required, value, onChange, options, placeholder,
 }
 
 /** Date field. `value` is an ISO date (yyyy-mm-dd); `onChange` emits the same. */
-export function DateInput({ label, required, value, onChange, className }) {
+export function DateInput({ label, required, value, onChange, className, name }) {
   return (
     <Field
       label={label}
       required={required}
       className={className}
       data-testid="Field__7183e9">
-      <DateField value={value} onChange={onChange} data-testid="DateField__7183e9" />
+      <DateField value={value} onChange={onChange} data-testid={name ? `field-date-${name}` : 'DateField__7183e9'} />
     </Field>
   );
 }
@@ -92,7 +92,7 @@ export function DateInput({ label, required, value, onChange, className }) {
  * `value`. Same UX as the Sales Order line amount fields. Unstyled — pass a
  * `className` for table-cell / inline use.
  */
-export function MoneyInput({ value, onChange, className = '', disabled, placeholder }) {
+export function MoneyInput({ value, onChange, className = '', disabled, placeholder, name }) {
   const [buffer, setBuffer] = useState(value);
   const [focused, setFocused] = useState(false);
   useEffect(() => { if (!focused) setBuffer(value); }, [value, focused]);
@@ -105,11 +105,12 @@ export function MoneyInput({ value, onChange, className = '', disabled, placehol
       onBlur={() => setFocused(false)}
       disabled={disabled}
       placeholder={placeholder}
+      data-testid={name ? `field-number-${name}` : 'field-number'}
     />
   );
 }
 
-export function AmountInput({ label, required, value, onChange, placeholder, readOnly, className }) {
+export function AmountInput({ label, required, value, onChange, placeholder, readOnly, className, name }) {
   // Keep what the user types verbatim while the field is focused, so a parent
   // that re-formats `value` on every change (e.g. eur(parseEur(x))) doesn't
   // fight the keystrokes. On blur we fall back to the formatted `value`.
@@ -132,7 +133,7 @@ export function AmountInput({ label, required, value, onChange, placeholder, rea
           onBlur={() => setFocused(false)}
           placeholder={placeholder}
           disabled={readOnly}
-          data-testid="Input__7183e9" />
+          data-testid={name ? `field-number-${name}` : 'field-number'} />
         <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] font-medium text-muted-foreground">€</span>
       </div>
     </Field>
