@@ -69,7 +69,7 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 |----------|------|---------|--------|---------|
 | `category` | string | Inferred | `"sales"`, `"purchases"`, `"inventory"`, `"finance"`, `"accounting"`, `"master"`, `"project"`, `"general"` | UI routing and navigation grouping. |
 | `name` | string | From AD | — | Display name for breadcrumbs and titles. |
-| `agentPrompt` | string | `null` | Free text | Spec-level guidance for AI agents that consume the NEO Headless MCP server. Surfaced in `agentProfile.agentPrompt` (contract) and persisted to `ETGO_SF_SPEC.AGENT_PROMPT`, from where `neo_discover` returns it per spec. Omitted from the MCP response when empty. |
+| `agentPrompt` | string | `null` | Free text | Spec-level guidance for AI agents that consume the NEO Headless MCP server. Surfaced in `agentProfile.agentPrompt` (contract) and persisted to `ETGO_SF_SPEC.AGENT_PROMPT`, from where `neo_discover` returns it per spec. Empty or whitespace-only values clear the persisted prompt and are omitted from the MCP response. |
 | `layoutType` | string | `"default"` | `"default"`, `"kanban"`, `"calendar"`, `"list-modal"`, `"custom"` | Frontend rendering mode. See `docs/window-templates.md`. |
 | `templateConfig` | object | `null` | Layout-specific | Extra config for non-default layouts. `kanban`/`calendar`: `groupBy`, `dateField`, etc. `list-modal`: `titleKey`, `editTitleKey`, `bannerKey`, `searchPlaceholderKey`, `newLabelKey`, `autoPriorityField`, `autoPriorityStep`, `sections` (ordered `[{ key, label }]`), `backLabelKey` (toolbar back-button i18n key; default `cancel`), `backTo` (route to navigate to on back; defaults to history `-1`), `toolbarFilters` (declarative dropdown filters `[{ key, field, allLabelKey, options: [{ value, labelKey }] }]`, applied client-side over the loaded rows). All strings are i18n keys. See the `list-modal` section in `docs/window-templates.md`. |
 | `detailEntity` | string \| null | Auto-inferred | Entity name or `null` | Explicitly sets which entity is the detail/lines tab. When omitted, the generator picks the first non-primary entity automatically. Set to `null` to create a header-only page (no detail tab). Set to a specific entity name to override the auto-inference. |
@@ -561,7 +561,7 @@ Setting `dependsOn` automatically sets `inputMode` to `"dependent"`.
 | `required` | boolean | From AD mandatory | Force field as required. |
 | `readOnlyLogic` | string \| null | `null` | Expression for conditional read-only. Set `null` to omit. |
 | `displayLogic` | string \| null | `null` | Expression for conditional visibility. Set `null` to omit. |
-| `agentPrompt` | string | `null` | Per-field guidance for AI agents. Carried into the curated field and persisted to `ETGO_SF_FIELD.AGENT_PROMPT`, from where `neo_schema` returns it inside each field object. Omitted from the MCP response when empty. |
+| `agentPrompt` | string | `null` | Per-field guidance for AI agents. Carried into the curated field and persisted to `ETGO_SF_FIELD.AGENT_PROMPT`, from where `neo_schema` returns it inside each field object. Empty or whitespace-only values clear the persisted prompt and are omitted from the MCP response. |
 
 ### Explicit null
 

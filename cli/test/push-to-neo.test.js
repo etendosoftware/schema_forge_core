@@ -9,6 +9,8 @@ import {
   loadConfig,
   stepExcludeNonContractFields,
   buildFieldAgentPromptMap,
+  buildFieldUpdateParams,
+  buildSpecUpsertParams,
 } from '../src/push-to-neo.js';
 import {
   generateId,
@@ -48,7 +50,7 @@ describe('buildFieldAgentPromptMap', () => {
     );
   });
 
-  it('omits whitespace-only field prompts and trims the rest', () => {
+  it('maps whitespace-only field prompts to null and trims the rest', () => {
     const decisions = {
       entities: {
         header: {
@@ -61,8 +63,67 @@ describe('buildFieldAgentPromptMap', () => {
       },
     };
     assert.deepEqual(buildFieldAgentPromptMap(decisions), {
+      'Order.blank': null,
       'Order.real': 'pick nearest warehouse',
     });
+  });
+});
+
+describe('push-to-neo agentPrompt upsert params', () => {
+  it('passes spec agentPrompt into upsertSpec params', () => {
+    const params = buildSpecUpsertParams({
+      specName: 'purchase-order',
+      moduleId: 'MOD1',
+      windowId: 'WIN1',
+      specAgentPrompt: 'Confirm before completing.',
+      auditOpts: { userId: 'USR1' },
+    }, 'SPEC1');
+
+    assert.equal(params.agentPrompt, 'Confirm before completing.');
+    assert.equal(params.specId, 'SPEC1');
+    assert.equal(params.name, 'purchase-order');
+  });
+
+  it('passes field agentPrompt into upsertField params', () => {
+    const params = buildFieldUpdateParams(
+      {
+        entityName: 'Order',
+        fieldName: 'docStatus',
+        visibility: 'readOnly',
+      },
+      {
+        moduleId: 'MOD1',
+        auditOpts: {},
+        fieldDefaultExprs: {},
+        fieldAgentPrompts: { 'Order.docStatus': 'Only advance status forward.' },
+      },
+      'FIELD1',
+      'ENTITY1',
+    );
+
+    assert.equal(params.agentPrompt, 'Only advance status forward.');
+    assert.equal(params.isReadOnly, 'Y');
+  });
+
+  it('passes null field agentPrompt when decisions do not declare one, clearing stale DB values', () => {
+    const params = buildFieldUpdateParams(
+      {
+        entityName: 'Order',
+        fieldName: 'plain',
+        visibility: 'editable',
+      },
+      {
+        moduleId: 'MOD1',
+        auditOpts: {},
+        fieldDefaultExprs: {},
+        fieldAgentPrompts: { 'Order.docStatus': 'Prompt' },
+      },
+      'FIELD2',
+      'ENTITY1',
+    );
+
+    assert.equal(params.agentPrompt, null);
+    assert.equal(params.isIncluded, 'Y');
   });
 });
 
