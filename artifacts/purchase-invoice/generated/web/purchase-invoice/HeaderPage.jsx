@@ -45,7 +45,7 @@ const draftMode = {
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start requiredHeaderFields:header
-const requiredHeaderFields = ['invoiceDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'paymentMethod'];
+const requiredHeaderFields = ['transactionDocument', 'invoiceDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'paymentMethod'];
 // @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
@@ -164,17 +164,6 @@ export const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-invoice/paymentDetails",
       "detailUrl": "/sws/neo/purchase-invoice/paymentDetails/{id}",
-      "supportedFilters": []
-    },
-    "reversedInvoices": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/reversedInvoices",
-      "detailUrl": "/sws/neo/purchase-invoice/reversedInvoices/{id}",
       "supportedFilters": []
     },
     "exchangeRates": {
@@ -573,14 +562,6 @@ export const api = {
       "url": "/sws/neo/purchase-invoice/paymentDetails/selectors/finPaymentID"
     },
     {
-      "entity": "reversedInvoices",
-      "field": "reversedInvoice",
-      "column": "Reversed_C_Invoice_ID",
-      "reference": "Invoice",
-      "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/reversedInvoices/selectors/reversedInvoice"
-    },
-    {
       "entity": "exchangeRates",
       "field": "currency",
       "column": "C_Currency_ID",
@@ -932,13 +913,15 @@ export const api = {
       "POReference": "Nº documento",
       "OutstandingAmt": "Pendiente de pago",
       "EM_Etgo_Due_Date": "Vencimiento",
-      "em_etgo_delivery_status": "Estado de entrega"
+      "em_etgo_delivery_status": "Estado de entrega",
+      "C_DocTypeTarget_ID": "Tipo de documento"
     },
     "en_US": {
       "POReference": "Document No.",
       "OutstandingAmt": "Pending Payment",
       "EM_Etgo_Due_Date": "Due Date",
-      "em_etgo_delivery_status": "Delivery Status"
+      "em_etgo_delivery_status": "Delivery Status",
+      "C_DocTypeTarget_ID": "Document Type"
     }
   }
 };

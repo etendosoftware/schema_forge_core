@@ -517,6 +517,33 @@ describe('--scope flag (parseCLIArgs)', () => {
     assert.equal(opts.scope, null);
     assert.equal(opts.staged, true);
   });
+
+  it('parses --strict flag', () => {
+    const opts = parseCLIArgs(['node', 'validate-pipeline.js', '--strict']);
+    assert.equal(opts.strict, true);
+  });
+
+  it('parses --format=json flag', () => {
+    const opts = parseCLIArgs(['node', 'validate-pipeline.js', '--format=json']);
+    assert.equal(opts.format, 'json');
+  });
+
+  it('parses --skip flag with multiple rules', () => {
+    const opts = parseCLIArgs(['node', 'validate-pipeline.js', '--skip=F1,F2,F3']);
+    assert.deepEqual(opts.skip, ['F1', 'F2', 'F3']);
+  });
+
+  it('parses --changed-since flag', () => {
+    const opts = parseCLIArgs(['node', 'validate-pipeline.js', '--changed-since=origin/main']);
+    assert.equal(opts.changedSince, 'origin/main');
+  });
+
+  it('defaults to text format', () => {
+    const opts = parseCLIArgs(['node', 'validate-pipeline.js']);
+    assert.equal(opts.format, 'text');
+    assert.equal(opts.strict, false);
+    assert.deepEqual(opts.skip, []);
+  });
 });
 
 describe('--scope flag (validatePipeline API)', () => {
