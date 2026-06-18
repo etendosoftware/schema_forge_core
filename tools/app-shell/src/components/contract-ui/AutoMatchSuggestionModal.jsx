@@ -40,6 +40,7 @@ function RuleTypeBadge({ label, tone = 'default' }) {
 // ---------------------------------------------------------------------------
 
 function StatementSide({ group, checked, onToggle }) {
+  const ui = useUI();
   const line = group.statementLine ?? {};
   const opCount = (group.operations ?? []).length;
   const amount = Number(line.amount ?? 0);
@@ -78,15 +79,15 @@ function StatementSide({ group, checked, onToggle }) {
           <MoneyAmount value={amount} currency="" tone={amount < 0 ? 'negative' : 'positive'} className="flex-none text-sm font-semibold" />
         </div>
 
-        {/* Type badge row */}
-        <div className="flex items-center gap-2">
-          {isRule && group.ruleName && (
-            <RuleTypeBadge label={`Por regla '${group.ruleName}'`} tone="rule" />
-          )}
-          {!isRule && (
-            <RuleTypeBadge label="F. Venta" />
-          )}
-        </div>
+        {/* Type badge row — only shown for rule-origin groups. */}
+        {isRule && group.ruleName && (
+          <div className="flex items-center gap-2">
+            <RuleTypeBadge
+              label={`${ui('financeReconcileAutomatchBadgeByRule')} ${group.ruleName}`}
+              tone="rule"
+            />
+          </div>
+        )}
 
         {/* Reference + date */}
         {line.referenceNo && (
@@ -101,6 +102,7 @@ function StatementSide({ group, checked, onToggle }) {
 }
 
 function OperationRow({ op, isLast, currency }) {
+  const ui = useUI();
   const amount = Number(op.amount ?? 0);
   const isNew = op.isNew;
 
@@ -116,7 +118,7 @@ function OperationRow({ op, isLast, currency }) {
           {isNew ? op.glItemId || '—' : (op.partnerName || op.documentNo || '—')}
         </span>
         <RuleTypeBadge
-          label={isNew ? 'Nueva' : (op.documentNo || op.typeLabel || '')}
+          label={isNew ? ui('financeReconcileAutomatchBadgeNew') : (op.documentNo || op.typeLabel || '')}
           tone={isNew ? 'new' : 'default'}
         />
       </div>
