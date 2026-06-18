@@ -162,7 +162,7 @@ function CollapsedGroupPopover({
                     ? 'bg-accent-highlight text-accent-highlight-foreground font-semibold'
                     : 'text-foreground hover:bg-muted/50'
                 )}
-                data-testid="NavLink__247c75">
+                data-testid={`menu-item-${item.slug || item.name?.replace(/\s+/g, '-').toLowerCase()}`}>
                 {tMenu(item.label)}
               </NavLink>
             );
@@ -223,7 +223,7 @@ function ExpandedDirectLink({ group, singleItem, Icon, showSectionLabel, section
               ? 'bg-accent-highlight text-accent-highlight-foreground font-medium'
               : 'hover:bg-muted/50'
           )}
-          data-testid="NavLink__247c75">
+          data-testid={`menu-item-${singleItem.slug || singleItem.name?.replace(/\s+/g, '-').toLowerCase()}`}>
           <Icon
             weight={isActive ? 'fill' : 'regular'}
             className={cn('h-5 w-5 shrink-0', !isActive && 'text-muted-foreground')}
@@ -500,7 +500,7 @@ export default function SideMenu({
                               ? 'bg-accent-highlight text-accent-highlight-foreground'
                               : 'bg-page-bg text-muted-foreground hover:text-foreground'
                           )}
-                          data-testid="NavLink__247c75">
+                          data-testid={`menu-item-${singleItem.slug || singleItem.name?.replace(/\s+/g, '-').toLowerCase()}`}>
                           <Icon
                             weight={isItemActive || isGroupActive ? 'fill' : 'regular'}
                             className="h-5 w-5"
@@ -568,7 +568,7 @@ export default function SideMenu({
                       ? 'text-accent-highlight-foreground font-semibold'
                       : 'text-text-primary hover:bg-muted/50'
                   )}
-                  data-testid="NavLink__247c75">
+                  data-testid={`menu-item-${item.slug || item.name?.replace(/\s+/g, '-').toLowerCase()}`}>
                   <span className={cn(
                     'absolute left-[33px] top-0 bottom-0 w-px',
                     isItemActive ? 'bg-white/40' : 'bg-[#E8EAEF]'

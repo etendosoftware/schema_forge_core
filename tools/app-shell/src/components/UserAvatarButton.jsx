@@ -32,6 +32,7 @@ export function UserAvatarButton({ expanded = false }) {
     <button
       type="button"
       aria-label={username || ui('account')}
+      data-testid="topbar-user-menu"
       className="flex w-full items-center gap-2.5 px-3 py-2 text-sm rounded-md text-foreground hover:bg-muted/50 transition-colors"
     >
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -46,6 +47,7 @@ export function UserAvatarButton({ expanded = false }) {
     <button
       type="button"
       aria-label={username || ui('account')}
+      data-testid="topbar-user-menu"
       className="relative h-10 w-10 flex items-center justify-center rounded-lg bg-page-bg text-muted-foreground hover:text-foreground transition-colors"
       title={username}
     >
@@ -101,6 +103,7 @@ export function UserAvatarButton({ expanded = false }) {
                   key={l.code}
                   type="button"
                   onClick={() => setLocale(l.code)}
+                  data-testid={`user-menu-language-${l.code}`}
                   className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors ${
                     locale === l.code
                       ? 'bg-muted font-semibold text-foreground'
@@ -120,7 +123,7 @@ export function UserAvatarButton({ expanded = false }) {
           <DropdownMenuItem
             onClick={logout}
             className="text-red-500 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
-            data-testid="DropdownMenuItem__9f3744">
+            data-testid="user-menu-logout">
             <LogOut className="h-3.5 w-3.5 mr-2" data-testid="LogOut__9f3744" />
             {ui('logout')}
           </DropdownMenuItem>

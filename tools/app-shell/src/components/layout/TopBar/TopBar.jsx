@@ -74,6 +74,7 @@ export default function TopBar({
                 type="button"
                 onClick={onBack}
                 aria-label={ui('back')}
+                data-testid="topbar-back"
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-topbar-icon hover:bg-muted hover:text-foreground transition-colors shrink-0"
               >
                 <ArrowLeft className="h-4 w-4" data-testid="ArrowLeft__133e64" />
@@ -103,6 +104,7 @@ export default function TopBar({
                   <button
                     type="button"
                     aria-label={ui('more')}
+                    data-testid="topbar-more-actions"
                     className="flex h-7 w-7 items-center justify-center rounded-md text-topbar-icon hover:bg-muted hover:text-foreground transition-colors"
                   >
                     <MoreVertical className="h-4 w-4" data-testid="MoreVertical__133e64" />
@@ -155,6 +157,7 @@ export default function TopBar({
           <button
             type="button"
             onClick={handleSearchClick}
+            data-testid="global-search-trigger"
             className="pointer-events-auto relative flex h-9 w-full max-w-xl items-center gap-2 rounded-full bg-search-bg px-4 text-sm hover:bg-search-bg/80 transition-colors"
           >
             <Search
@@ -215,6 +218,7 @@ export default function TopBar({
                 type="button"
                 onClick={onBellClick}
                 aria-label={ui('notifications')}
+                data-testid="topbar-notifications"
                 className="flex h-10 w-10 items-center justify-center rounded-lg text-topbar-icon hover:text-foreground hover:bg-muted transition-colors"
               >
                 <Bell className="h-5 w-5" data-testid="Bell__133e64" />

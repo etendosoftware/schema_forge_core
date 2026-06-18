@@ -57,7 +57,7 @@ export function CommandPalette() {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen} data-testid="CommandDialog__73263e">
-      <CommandInput placeholder={ui('searchPages')} data-testid="CommandInput__73263e" />
+      <CommandInput placeholder={ui('searchPages')} data-testid="global-search-input" />
       <CommandList data-testid="CommandList__73263e">
         <CommandEmpty data-testid="CommandEmpty__73263e">{ui('noResultsFound')}</CommandEmpty>
         {menuConfig.menu.filter(g => !g.hidden).map((group) => {
