@@ -35,6 +35,8 @@ const DRAFT_INVOICE = {
   'businessPartner$_identifier': 'Proveedor Test',
   // All required header fields must be present so DetailView sets canAddLine=true
   // which reveals the import buttons inside PurchaseInvoiceLinesEmptyState
+  transactionDocument: 'doc-type-ap-invoice',
+  'transactionDocument$_identifier': 'AP Invoice',
   partnerAddress: 'addr-1',
   priceList: 'pl-1',
   paymentTerms: 'pt-1',
