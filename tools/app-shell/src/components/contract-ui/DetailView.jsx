@@ -1343,7 +1343,7 @@ function renderDraftModeSaveActions({
   );
 }
 
-async function handlePostSaveNavigation(saved, { isNew, onAfterCreate, onAfterSave, navigate, windowName, token, apiBaseUrl, hook }) {
+export async function handlePostSaveNavigation(saved, { isNew, onAfterCreate, onAfterSave, navigate, windowName, token, apiBaseUrl, hook }) {
   if (!saved) return;
   if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
   if (onAfterSave) {
