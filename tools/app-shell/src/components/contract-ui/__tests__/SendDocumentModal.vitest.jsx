@@ -55,10 +55,19 @@ describe('SendDocumentModal', () => {
     expect(document.querySelector('[style]')).toBeTruthy();
   });
 
-  it('Send button stays enabled when bpEmail is empty because backend resolves recipients', () => {
+  it('Send button is disabled when no To recipient is resolved, and enables once one is added', async () => {
+    // ETP-4226 — editable recipients: an empty proposed To list means there is
+    // nothing to send to, so the send button gates until the operator adds one.
+    const user = userEvent.setup();
     render(<SendDocumentModal {...BASE} bpEmail="" />);
     const btn = getSendButton();
-    expect(btn).not.toBeDisabled();
+    expect(btn).toBeDisabled();
+
+    const toInput = screen.getByTestId('send-modal-to-input');
+    await user.type(toInput, 'added@example.com{Enter}');
+
+    expect(screen.getByTestId('send-modal-to-chip-added@example.com')).toBeInTheDocument();
+    expect(getSendButton()).not.toBeDisabled();
   });
 
   it('Send button is enabled when bpEmail is a valid email', () => {
@@ -124,16 +133,46 @@ describe('SendDocumentModal', () => {
     expect(screen.queryByText('sendModalNoEmail')).not.toBeInTheDocument();
   });
 
-  it('renders contract-driven email fields as read-only', async () => {
+  it('renders the To recipients as an editable chip editor, not a read-only field', async () => {
+    // ETP-4226 — recipients are now editable by default (the read-only input is
+    // only the `sendPolicy.editableRecipients: false` opt-out branch).
     const user = userEvent.setup();
     render(<SendDocumentModal {...BASE} bpEmail="user@domain.com" />);
-    const input = screen.getByPlaceholderText('email@company.com');
-    expect(input).toHaveAttribute('readonly');
-    await user.type(input, 'changed@example.com');
-    expect(input).toHaveValue('user@domain.com');
+
+    // The proposed recipient is rendered as a removable chip.
+    expect(screen.getByTestId('send-modal-to-chip-user@domain.com')).toBeInTheDocument();
+
+    // The chip editor input is present and NOT read-only.
+    const toInput = screen.getByTestId('send-modal-to-input');
+    expect(toInput).not.toHaveAttribute('readonly');
+
+    // The legacy read-only single-line input must not be rendered.
+    expect(screen.queryByPlaceholderText('email@company.com')).not.toBeInTheDocument();
+
+    // Operator can append another address.
+    await user.type(toInput, 'second@example.com{Enter}');
+    expect(screen.getByTestId('send-modal-to-chip-second@example.com')).toBeInTheDocument();
   });
 
-  it('prefills the display recipient from contacts without allowing operator overrides', async () => {
+  it('renders a read-only single-line field when sendPolicy opts out of editable recipients', () => {
+    // ETP-4226 opt-out: `sendPolicy.editableRecipients: false` keeps legacy rendering.
+    render(
+      <SendDocumentModal
+        {...BASE}
+        bpEmail="user@domain.com"
+        sendPolicy={{ editableRecipients: false }}
+      />,
+    );
+    const input = screen.getByPlaceholderText('email@company.com');
+    expect(input).toHaveAttribute('readonly');
+    expect(input).toHaveValue('user@domain.com');
+    // The chip editor must not be rendered in the opt-out branch.
+    expect(screen.queryByTestId('send-modal-to-input')).not.toBeInTheDocument();
+  });
+
+  it('prefills the To recipient from contacts and lets the operator add and remove addresses', async () => {
+    // ETP-4226 — the fetched contact email seeds the To chip list, but it is now
+    // a fully editable proposal: the operator can add and remove addresses.
     const user = userEvent.setup();
     global.fetch.mockResolvedValue({
       ok: true,
@@ -151,17 +190,26 @@ describe('SendDocumentModal', () => {
         apiBaseUrl="http://localhost:8080/etendo/neo/sales-invoice"
       />,
     );
-    // Allow the contacts fetch to settle
+
+    // The fetched contact email is seeded as a chip.
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalled();
     });
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('email@company.com')).toHaveValue('john@acme.com');
+      expect(screen.getByTestId('send-modal-to-chip-john@acme.com')).toBeInTheDocument();
     });
-    const input = screen.getByPlaceholderText('email@company.com');
-    await user.type(input, 'changed@example.com');
-    expect(input).toHaveValue('john@acme.com');
-    expect(screen.queryByText('John Doe <john@acme.com>')).not.toBeInTheDocument();
+
+    // Operator adds a second recipient.
+    const toInput = screen.getByTestId('send-modal-to-input');
+    await user.type(toInput, 'extra@example.com{Enter}');
+    expect(screen.getByTestId('send-modal-to-chip-extra@example.com')).toBeInTheDocument();
+
+    // Operator removes the proposed recipient.
+    await user.click(screen.getByTestId('send-modal-to-remove-john@acme.com'));
+    expect(screen.queryByTestId('send-modal-to-chip-john@acme.com')).not.toBeInTheDocument();
+    // The remaining recipient is still present, so send stays enabled.
+    expect(screen.getByTestId('send-modal-to-chip-extra@example.com')).toBeInTheDocument();
+    expect(getSendButton()).not.toBeDisabled();
   });
 
   it('sends a contract command without provider payload fields', async () => {
