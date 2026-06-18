@@ -118,6 +118,46 @@ function MenuSelector({ onSelect, onClose }) {
     : null;
   const items = filtered || tree;
 
+  let menuContent;
+  if (loading) {
+    menuContent = (
+      <div className="flex items-center justify-center gap-2 py-4 text-zinc-500">
+        <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__1a98b9" />
+        <span className="text-xs">Loading menu...</span>
+      </div>
+    );
+  } else if (error) {
+    menuContent = <div className="px-2 py-3 text-xs text-red-400">{error}</div>;
+  } else if (!items || items.length === 0) {
+    menuContent = <div className="px-2 py-3 text-xs text-zinc-500">No items found</div>;
+  } else if (filtered) {
+    // Flat filtered results
+    menuContent = items.map(item => (
+      <button
+        key={item.id}
+        onClick={() => onSelect(item)}
+        className="w-full flex items-center gap-1.5 px-2 py-1.5 text-xs text-zinc-300 hover:bg-blue-600/20 hover:text-blue-300 rounded transition-colors"
+      >
+        <TypeIcon type={item.type} data-testid="TypeIcon__1a98b9" />
+        <span className="truncate">{item.name}</span>
+        {item.type !== 'folder' && (
+          <span className="text-[10px] text-zinc-500 ml-auto">{item.type}</span>
+        )}
+      </button>
+    ));
+  } else {
+    // Tree view
+    menuContent = items.map(node => (
+      <TreeNode
+        key={node.id}
+        node={node}
+        onSelect={onSelect}
+        expanded={expanded}
+        onToggle={toggleExpand}
+        data-testid="TreeNode__1a98b9" />
+    ));
+  }
+
   return (
     <div className="border border-zinc-700 rounded bg-zinc-800/90 overflow-hidden">
       <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-zinc-700">
@@ -138,42 +178,7 @@ function MenuSelector({ onSelect, onClose }) {
         )}
       </div>
       <div className="max-h-56 overflow-y-auto p-1">
-        {loading ? (
-          <div className="flex items-center justify-center gap-2 py-4 text-zinc-500">
-            <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__1a98b9" />
-            <span className="text-xs">Loading menu...</span>
-          </div>
-        ) : error ? (
-          <div className="px-2 py-3 text-xs text-red-400">{error}</div>
-        ) : !items || items.length === 0 ? (
-          <div className="px-2 py-3 text-xs text-zinc-500">No items found</div>
-        ) : filtered ? (
-          // Flat filtered results
-          (items.map(item => (
-            <button
-              key={item.id}
-              onClick={() => onSelect(item)}
-              className="w-full flex items-center gap-1.5 px-2 py-1.5 text-xs text-zinc-300 hover:bg-blue-600/20 hover:text-blue-300 rounded transition-colors"
-            >
-              <TypeIcon type={item.type} data-testid="TypeIcon__1a98b9" />
-              <span className="truncate">{item.name}</span>
-              {item.type !== 'folder' && (
-                <span className="text-[10px] text-zinc-500 ml-auto">{item.type}</span>
-              )}
-            </button>
-          )))
-        ) : (
-          // Tree view
-          (items.map(node => (
-            <TreeNode
-              key={node.id}
-              node={node}
-              onSelect={onSelect}
-              expanded={expanded}
-              onToggle={toggleExpand}
-              data-testid="TreeNode__1a98b9" />
-          )))
-        )}
+        {menuContent}
       </div>
     </div>
   );

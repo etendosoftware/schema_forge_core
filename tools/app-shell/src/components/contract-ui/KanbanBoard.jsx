@@ -98,9 +98,9 @@ function DefaultCard({ card }) {
       </div>
       {card.badges && card.badges.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {card.badges.map((badge, i) => (
+          {card.badges.map((badge) => (
             <Badge
-              key={i}
+              key={typeof badge === 'string' ? badge : badge.label}
               variant="secondary"
               className="text-[10px] px-1.5 py-0"
               data-testid="Badge__22de88">

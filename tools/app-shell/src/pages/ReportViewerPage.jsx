@@ -1382,41 +1382,50 @@ function ReportList({ reports, loading, searchQuery, setSearchQuery, categoryFil
     grouped[cat].push(r);
   }
 
+  let reportListContent;
+  if (loading) {
+    reportListContent = (
+      <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" data-testid="Loader2__3c998a" /> {ui('loading')}
+      </div>
+    );
+  } else if (filtered.length === 0) {
+    reportListContent = (
+      <div className="text-center text-muted-foreground py-12">
+        <FileText
+          className="h-10 w-10 mx-auto mb-3 opacity-30"
+          data-testid="FileText__3c998a" />
+        <p>{ui('noResults')}</p>
+      </div>
+    );
+  } else {
+    reportListContent = (
+      <div className="space-y-6 max-w-2xl">
+        {Object.entries(grouped).map(([cat, catReports]) => (
+          <div key={cat}>
+            {!categoryFilter && Object.keys(grouped).length > 1 && (
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                {CATEGORY_LABELS[cat]?.[localeLangKey] || cat}
+              </h2>
+            )}
+            <div className="grid gap-3">
+              {catReports.map(r => (
+                <ReportCard
+                  key={r.id}
+                  report={r}
+                  onRun={selectReport}
+                  data-testid="ReportCard__3c998a" />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 min-h-0 overflow-auto px-6 py-6">
-      {loading ? (
-        <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" data-testid="Loader2__3c998a" /> {ui('loading')}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center text-muted-foreground py-12">
-          <FileText
-            className="h-10 w-10 mx-auto mb-3 opacity-30"
-            data-testid="FileText__3c998a" />
-          <p>{ui('noResults')}</p>
-        </div>
-      ) : (
-        <div className="space-y-6 max-w-2xl">
-          {Object.entries(grouped).map(([cat, catReports]) => (
-            <div key={cat}>
-              {!categoryFilter && Object.keys(grouped).length > 1 && (
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  {CATEGORY_LABELS[cat]?.[localeLangKey] || cat}
-                </h2>
-              )}
-              <div className="grid gap-3">
-                {catReports.map(r => (
-                  <ReportCard
-                    key={r.id}
-                    report={r}
-                    onRun={selectReport}
-                    data-testid="ReportCard__3c998a" />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {reportListContent}
     </div>
   );
 }

@@ -1052,8 +1052,9 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   const setupGreetingName = (form.fullName || accountName || ui('onboardingGreetingFallback')).trim().split(/\s+/)[0];
   const activeSetupStep = steps.find((step) => step.status === 'running')?.name;
   const readinessFailureText = (result?.readinessFailures ?? []).map((failure) => ui(failure.key)).join(' ');
-  const setupProgressState = result?.status === 'success'
-    ? {
+  let setupProgressState;
+  if (result?.status === 'success') {
+    setupProgressState = {
       progress: 100,
       title: ui('onboardingSuccessTitle'),
       description: ui('onboardingSuccessDescription'),
@@ -1063,45 +1064,47 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         data-testid="Check__79cf84" />,
       statusLabel: ui('onboardingCompleted'),
       success: true,
-    }
-    : activeSetupStep === 'client'
-      ? {
-        progress: 50,
-        title: ui('onboardingPreparingTitle'),
-        description: ui('onboardingPreparingActivatingDescription'),
-        leading: <Sparkles className="h-8 w-8 text-slate-400" data-testid="Sparkles__79cf84" />,
-        statusLabel: ui('loading'),
-        success: false,
-      }
-      : activeSetupStep === 'sequences'
-        ? {
-          progress: 80,
-          title: ui('onboardingPreparingTitle'),
-          description: ui('onboardingPreparingSequencesDescription'),
-          leading: <Settings className="h-8 w-8 text-slate-400" data-testid="Settings__79cf84" />,
-          statusLabel: ui('loading'),
-          success: false,
-        }
-        : activeSetupStep === 'organization' || activeSetupStep === 'finalize'
-        ? {
-          progress: 80,
-          title: ui('onboardingPreparingTitle'),
-          description: ui('onboardingPreparingFinishingDescription'),
-          leading: <Check
-            className="h-8 w-8 text-slate-400"
-            strokeWidth={3}
-            data-testid="Check__79cf84" />,
-          statusLabel: ui('loading'),
-          success: false,
-        }
-        : {
-          progress: 20,
-          title: ui('onboardingPreparingTitle'),
-          description: ui('onboardingPreparingTaxesDescription'),
-          leading: form.countryCode === 'ES' ? '🇪🇸' : '🌍',
-          statusLabel: ui('loading'),
-          success: false,
-        };
+    };
+  } else if (activeSetupStep === 'client') {
+    setupProgressState = {
+      progress: 50,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingActivatingDescription'),
+      leading: <Sparkles className="h-8 w-8 text-slate-400" data-testid="Sparkles__79cf84" />,
+      statusLabel: ui('loading'),
+      success: false,
+    };
+  } else if (activeSetupStep === 'sequences') {
+    setupProgressState = {
+      progress: 80,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingSequencesDescription'),
+      leading: <Settings className="h-8 w-8 text-slate-400" data-testid="Settings__79cf84" />,
+      statusLabel: ui('loading'),
+      success: false,
+    };
+  } else if (activeSetupStep === 'organization' || activeSetupStep === 'finalize') {
+    setupProgressState = {
+      progress: 80,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingFinishingDescription'),
+      leading: <Check
+        className="h-8 w-8 text-slate-400"
+        strokeWidth={3}
+        data-testid="Check__79cf84" />,
+      statusLabel: ui('loading'),
+      success: false,
+    };
+  } else {
+    setupProgressState = {
+      progress: 20,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingTaxesDescription'),
+      leading: form.countryCode === 'ES' ? '🇪🇸' : '🌍',
+      statusLabel: ui('loading'),
+      success: false,
+    };
+  }
 
 
   // ── LOADING (initial token check) ──

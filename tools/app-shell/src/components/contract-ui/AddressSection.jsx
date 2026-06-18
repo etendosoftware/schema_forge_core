@@ -73,14 +73,11 @@ function OptionPicker({ open, onClose, title, options, loading, failed, loadErro
         </div>
 
         <div className="flex-1 overflow-auto py-1">
-          {loading ? (
-            <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('loading')}</div>
-          ) : failed ? (
-            <div className="px-4 py-6 text-center text-sm text-gray-500">{loadError}</div>
-          ) : filtered.length === 0 ? (
-            <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('noResults')}</div>
-          ) : (
-            filtered.map(opt => (
+          {(() => {
+            if (loading) return <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('loading')}</div>;
+            if (failed) return <div className="px-4 py-6 text-center text-sm text-gray-500">{loadError}</div>;
+            if (filtered.length === 0) return <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('noResults')}</div>;
+            return filtered.map(opt => (
               <button
                 key={opt.id}
                 type="button"
@@ -95,8 +92,8 @@ function OptionPicker({ open, onClose, title, options, loading, failed, loadErro
                 </span>
                 <span className="truncate">{opt.label}</span>
               </button>
-            ))
-          )}
+            ));
+          })()}
         </div>
       </div>
     </div>
