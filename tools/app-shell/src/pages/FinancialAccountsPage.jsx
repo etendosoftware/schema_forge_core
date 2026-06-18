@@ -67,8 +67,8 @@ export default function FinancialAccountsPage() {
     navigate(`/financial-account/${account.id}`);
   };
 
-  const handleReconcile = () => {
-    toast(ui('financeAccountsReconcileToast'));
+  const handleReconcile = (account) => {
+    navigate(`/financial-account/${account.id}?tab=reconciliation&autoMatch=true`);
   };
 
   return (

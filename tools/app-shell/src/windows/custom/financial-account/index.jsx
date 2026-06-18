@@ -1,4 +1,5 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Sparkles, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -78,8 +79,16 @@ const LINE_CSV_COLUMNS = [
  */
 export default function FinancialAccountWindow({ recordId }) {
   const ui = useUI();
-  const [activeTab, setActiveTab] = useState('movements');
-  const [autoMatchOpen, setAutoMatchOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') ?? 'movements');
+  const [autoMatchOpen, setAutoMatchOpen] = useState(() => searchParams.get('autoMatch') === 'true');
+
+  // Clear the URL params once consumed so back-navigation doesn't re-trigger them.
+  useEffect(() => {
+    if (searchParams.has('tab') || searchParams.has('autoMatch')) {
+      setSearchParams({}, { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const { account, reload: reloadAccount } = useFinancialAccount(recordId);
   const { groups: autoMatchGroups, kpis: autoMatchKpis, loading: autoMatchLoading, reload: reloadAutoMatch } = useAutoMatch(
     autoMatchOpen ? recordId : null,
