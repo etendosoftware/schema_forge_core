@@ -79,6 +79,7 @@ describe('onboardingState', () => {
       currency: 'EUR',
       language: 'es_ES',
       countryCode: 'ES',
+      address: 'QA Street',
     });
   });
 
