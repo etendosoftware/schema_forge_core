@@ -162,6 +162,7 @@ const FIELD_DECISION_COPY_PROPS = [
   'filterOnly',
   'filterable',
   'labels',
+  'clearsField',
   'columnType',
   'display',
   'cellType',
@@ -648,6 +649,7 @@ const WINDOW_TRUTHY_PROPS = [
   'rowQuickActions',
   'sendDocument',
   'linesLayout',
+  'balanceFooter',
   'extraTabs',
   'customPanelTabs',
 ];
@@ -697,7 +699,7 @@ export const WINDOW_KEY_ORDER = [
   'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
   'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
-  'layoutType', 'linesLayout',
+  'layoutType', 'linesLayout', 'balanceFooter',
 ];
 
 // Generic helper: returns a new object with keys in `canonicalOrder` first

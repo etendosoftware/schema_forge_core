@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "generatedAt": "2026-04-29T18:12:34.035Z",
-  "updatedAt": "2026-05-20T11:45:15.798Z",
-  "checksum": "13324a7107dca071",
+  "updatedAt": "2026-06-18T14:44:44.421Z",
+  "checksum": "8ecf3524f72d7a17",
   "frontendContract": {
     "window": {
       "id": "108",
@@ -1107,6 +1107,14 @@
             "type": "boolean",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "psd2ApiKey",
+            "apiKey": "psd2ApiKey",
+            "column": "EM_Psd2_Api_Key",
+            "type": "string",
+            "visibility": "discarded",
+            "required": false
           }
         ]
       },
@@ -2855,6 +2863,14 @@
         "description": "System field 'processNow' should exist in backend but not frontend for user"
       },
       {
+        "id": "t-system-field-user-psd2ApiKey",
+        "category": "system-field",
+        "entity": "user",
+        "field": "psd2ApiKey",
+        "runner": "node",
+        "description": "System field 'psd2ApiKey' should exist in backend but not frontend for user"
+      },
+      {
         "id": "t-system-field-user-smfswsDefaultWsRole",
         "category": "system-field",
         "entity": "user",
@@ -2997,7 +3013,7 @@
       }
     ],
     "summary": {
-      "total": 165,
+      "total": 166,
       "byCategory": {
         "action-endpoint": 3,
         "crud-flags": 3,
@@ -3007,11 +3023,11 @@
         "rule-declared": 16,
         "searchable-filters": 5,
         "selector-endpoint": 8,
-        "system-field": 46,
+        "system-field": 47,
         "visibility": 3
       },
       "byRunner": {
-        "node": 165,
+        "node": 166,
         "junit": 0
       }
     }

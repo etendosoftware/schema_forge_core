@@ -112,4 +112,48 @@ describe('TbaiMonitorSection', () => {
     expect(screen.getByText('7')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
   });
+
+  it('fetches from API with organization param', async () => {
+    render(<TbaiMonitorSection {...baseProps} mockRows={null} />);
+    await waitFor(() => expect(stableApiFetch).toHaveBeenCalledWith(
+      expect.stringContaining('organization=org-1'),
+    ));
+  });
+
+  it('fetches with sent criteria when switching to sent filter', async () => {
+    render(<TbaiMonitorSection {...baseProps} mockRows={null} />);
+    await waitFor(() => expect(stableApiFetch).toHaveBeenCalled());
+    stableApiFetch.mockClear();
+    fireEvent.click(screen.getByText('fiscalMonitor.tbai.pill.sent'));
+    await waitFor(() => expect(stableApiFetch).toHaveBeenCalledWith(
+      expect.stringContaining('criteria='),
+    ));
+  });
+
+  it('fetches with rejected criteria when switching to rejected filter', async () => {
+    render(<TbaiMonitorSection {...baseProps} mockRows={null} />);
+    await waitFor(() => expect(stableApiFetch).toHaveBeenCalled());
+    stableApiFetch.mockClear();
+    fireEvent.click(screen.getByText('fiscalMonitor.tbai.pill.rejected'));
+    await waitFor(() => expect(stableApiFetch).toHaveBeenCalledWith(
+      expect.stringContaining('criteria='),
+    ));
+  });
+
+  it('renders tbai-tablecard testid when wrapped', () => {
+    render(<TbaiMonitorSection {...baseProps} mockRows={[]} />);
+    expect(screen.getByTestId('tbai-tablecard')).toBeInTheDocument();
+  });
+
+  it('maps Recibido initial filter to sent tab', () => {
+    render(<TbaiMonitorSection {...baseProps} mockRows={[]} initialFilter="Recibido" />);
+    const pill = screen.getByText('fiscalMonitor.tbai.pill.sent').closest('button');
+    expect(pill?.className).toContain('active');
+  });
+
+  it('maps Rechazado initial filter to rejected tab', () => {
+    render(<TbaiMonitorSection {...baseProps} mockRows={[]} initialFilter="Rechazado" />);
+    const pill = screen.getByText('fiscalMonitor.tbai.pill.rejected').closest('button');
+    expect(pill?.className).toContain('active');
+  });
 });

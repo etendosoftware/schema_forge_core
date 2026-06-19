@@ -16360,6 +16360,13 @@
     }
   },
   "genericLabels": {
+    "balanced": "Balanced",
+    "difference": "Difference",
+    "journalUnbalancedSaveBlocked": "Debit and credit must be equal before saving",
+    "journalUnbalancedCompleteBlocked": "Debit and credit must be equal and non-zero before completing",
+    "totalCredit": "Total credit",
+    "totalDebit": "Total debit",
+    "unbalanced": "Unbalanced",
     "taxScopeSales": "Sales",
     "taxScopePurchase": "Purchase",
     "save": "Save",
@@ -16370,6 +16377,7 @@
     "create": "Create",
     "clone": "Clone",
     "confirm": "Confirm",
+    "complete": "Complete",
     "retry": "Retry",
     "discard": "Discard",
     "optional": "optional",
@@ -20274,6 +20282,9 @@
     },
     "Manual Settlement": {
       "label": "Manual Settlement"
+    },
+    "Manual Journals": {
+      "label": "Manual Journals"
     },
     "G/L Item": {
       "label": "G/L Item"
