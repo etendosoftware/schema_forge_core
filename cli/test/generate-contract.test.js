@@ -2058,3 +2058,37 @@ describe('generateFrontendContract — gridReadOnly', () => {
     assert.equal(product.gridReadOnly, undefined);
   });
 });
+
+// ---------------------------------------------------------------------------
+// generateFrontendContract — balanceFooter passthrough
+// ---------------------------------------------------------------------------
+
+describe('generateFrontendContract — balanceFooter', () => {
+  const schemaBase = {
+    version: '0.1.0',
+    window: { id: '820', name: 'G/L Journal', primaryEntity: 'journal', category: 'accounting' },
+    entities: [{
+      name: 'journal',
+      table: 'GL_Journal',
+      level: 'header',
+      fields: [
+        { name: 'documentNo', column: 'DocumentNo', type: 'string', visibility: 'editable',
+          required: true, searchable: false, grid: true, form: true },
+      ],
+    }],
+  };
+
+  it('copies balanceFooter to frontendContract.window when declared', () => {
+    const schema = {
+      ...schemaBase,
+      window: { ...schemaBase.window, balanceFooter: { debitField: 'amtSourceDr', creditField: 'amtSourceCr' } },
+    };
+    const fc = generateFrontendContract(schema);
+    assert.deepEqual(fc.window.balanceFooter, { debitField: 'amtSourceDr', creditField: 'amtSourceCr' });
+  });
+
+  it('does NOT add balanceFooter to frontendContract.window when absent', () => {
+    const fc = generateFrontendContract(schemaBase);
+    assert.equal(fc.window.balanceFooter, undefined);
+  });
+});
