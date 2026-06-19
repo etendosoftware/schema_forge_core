@@ -269,12 +269,6 @@
           "hidden": true
         },
         {
-          "name": "bank-reconciliation",
-          "label": "Bank Reconciliation",
-          "favname": "Bank Reconciliation",
-          "hidden": true
-        },
-        {
           "name": "match-rule",
           "label": "Match Rule",
           "favname": "Match Rule",
@@ -297,6 +291,12 @@
           "label": "Amortization",
           "favname": "Amortization",
           "windowId": "800026"
+        },
+        {
+          "name": "simple-g-l-journal",
+          "label": "Manual Journals",
+          "favname": "Manual Journals",
+          "windowId": "B917E8A7B0864ACEA9D941E3B7494E53"
         },
         {
           "name": "recurring-invoice",

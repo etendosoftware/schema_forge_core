@@ -705,6 +705,40 @@ describe('generateTestManifest — edge cases', () => {
   });
 });
 
+describe('generateContract — agentProfile.agentPrompt (ETP-4252)', () => {
+  it('surfaces window.agentPrompt in agentProfile', () => {
+    const schema = {
+      ...minimalSchema,
+      window: { ...minimalSchema.window, agentPrompt: 'Confirm before completing.' },
+    };
+    const contract = generateContract(schema);
+    assert.equal(contract.agentProfile.agentPrompt, 'Confirm before completing.');
+  });
+
+  it('omits agentProfile.agentPrompt when the window declares none', () => {
+    const contract = generateContract(minimalSchema);
+    assert.equal(contract.agentProfile.agentPrompt, undefined);
+  });
+
+  it('omits agentProfile.agentPrompt when the value is whitespace-only', () => {
+    const schema = {
+      ...minimalSchema,
+      window: { ...minimalSchema.window, agentPrompt: '   ' },
+    };
+    const contract = generateContract(schema);
+    assert.equal(contract.agentProfile.agentPrompt, undefined);
+  });
+
+  it('trims surrounding whitespace from agentProfile.agentPrompt', () => {
+    const schema = {
+      ...minimalSchema,
+      window: { ...minimalSchema.window, agentPrompt: '  Confirm first.  ' },
+    };
+    const contract = generateContract(schema);
+    assert.equal(contract.agentProfile.agentPrompt, 'Confirm first.');
+  });
+});
+
 describe('generateContract — orchestrator', () => {
   it('returns version from schema', () => {
     const contract = generateContract(minimalSchema, sampleRules, sampleProcesses);
@@ -2022,5 +2056,39 @@ describe('generateFrontendContract — gridReadOnly', () => {
     const fc = generateFrontendContract(schemaWithGridReadOnly);
     const product = fc.entities.shipment.fields.find(f => f.name === 'product');
     assert.equal(product.gridReadOnly, undefined);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateFrontendContract — balanceFooter passthrough
+// ---------------------------------------------------------------------------
+
+describe('generateFrontendContract — balanceFooter', () => {
+  const schemaBase = {
+    version: '0.1.0',
+    window: { id: '820', name: 'G/L Journal', primaryEntity: 'journal', category: 'accounting' },
+    entities: [{
+      name: 'journal',
+      table: 'GL_Journal',
+      level: 'header',
+      fields: [
+        { name: 'documentNo', column: 'DocumentNo', type: 'string', visibility: 'editable',
+          required: true, searchable: false, grid: true, form: true },
+      ],
+    }],
+  };
+
+  it('copies balanceFooter to frontendContract.window when declared', () => {
+    const schema = {
+      ...schemaBase,
+      window: { ...schemaBase.window, balanceFooter: { debitField: 'amtSourceDr', creditField: 'amtSourceCr' } },
+    };
+    const fc = generateFrontendContract(schema);
+    assert.deepEqual(fc.window.balanceFooter, { debitField: 'amtSourceDr', creditField: 'amtSourceCr' });
+  });
+
+  it('does NOT add balanceFooter to frontendContract.window when absent', () => {
+    const fc = generateFrontendContract(schemaBase);
+    assert.equal(fc.window.balanceFooter, undefined);
   });
 });

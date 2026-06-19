@@ -272,6 +272,7 @@ const FIELD_HINTS_PRE_GRID = [
   ['badgeVariants', Boolean],
   ['enumVariants', Boolean],
   ['labels', Boolean],
+  ['clearsField', Boolean],
   ['summable', Boolean, setTrue],
   ['display', Boolean],
   ['cellType', Boolean],
@@ -351,6 +352,10 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.displayLogic) {
         processDisplayLogic(mapped, f, rules);
       }
+      // Standalone displayLogicJs on custom fields that have no raw displayLogic
+      if (f.displayLogicJs != null && !mapped.displayLogic) {
+        mapped.displayLogic = { js: f.displayLogicJs, evaluable: true };
+      }
 
       // Behavioral metadata: readOnlyLogic
       if (f.readOnlyLogic) {
@@ -403,6 +408,10 @@ export function generateFrontendContract(schema, rules = []) {
   // "classic" at runtime, so leaving the key out keeps contracts clean of the
   // implicit default.
   if (schema.window.linesLayout) win.linesLayout = schema.window.linesLayout;
+
+  // Double-entry balance footer config { debitField, creditField }. Carried
+  // through so generate-frontend.js can emit the BalanceFooterPanel prop.
+  if (schema.window.balanceFooter) win.balanceFooter = schema.window.balanceFooter;
 
   return { window: reorderKeys(win, WINDOW_KEY_ORDER), entities };
 }
@@ -1450,7 +1459,7 @@ function generateAgentProfile(schema, apiPrediction, formState, windowConfig) {
     .filter(a => ['void', 'reverse', 'reactivate', 'cancel'].some(p => (a.name ?? '').toLowerCase().includes(p)))
     .map(a => a.name);
 
-  return {
+  const profile = {
     purpose,
     whenToUse,
     minimumCreate,
@@ -1463,6 +1472,15 @@ function generateAgentProfile(schema, apiPrediction, formState, windowConfig) {
     knownLimitations: [],
     dangerousOperations,
   };
+
+  // Author-provided agent guidance for the whole spec (returned by neo_discover).
+  // Omit when empty/blank to match the documented "omit when empty" behavior
+  // (the runtime MCP layer trims and omits blank prompts too).
+  if (windowConfig?.agentPrompt && windowConfig.agentPrompt.trim() !== '') {
+    profile.agentPrompt = windowConfig.agentPrompt.trim();
+  }
+
+  return profile;
 }
 
 function derivePurpose(windowName, category) {

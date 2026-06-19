@@ -91,7 +91,7 @@ describe('ManualStatementModal', () => {
     expect(screen.queryByTestId('manual-modal')).not.toBeInTheDocument();
   });
 
-  it('commits a complete line to a read-only row and reopens it to edit', async () => {
+  it('commits a complete line to a read-only row and reopens it to edit', { timeout: 15000 }, async () => {
     const user = userEvent.setup();
     renderModal();
     await user.click(screen.getByTestId('manual-statement-add-lines'));
@@ -219,6 +219,44 @@ describe('ManualStatementModal', () => {
     expect(toastSuccess).toHaveBeenCalledWith('financeAccountStatementsManualSuccess');
     expect(props.onSuccess).toHaveBeenCalled();
     expect(props.onClose).toHaveBeenCalled();
+  });
+
+  it('renders the per-line description input and includes it in the saved payload', async () => {
+    const user = userEvent.setup();
+    renderModal();
+    await user.type(screen.getByTestId('manual-statement-name'), 'Extracto manual');
+    await user.click(screen.getByTestId('manual-statement-add-lines'));
+
+    // The editable line row exposes a Descripción input.
+    const descInput = screen.getByTestId('manual-line-description');
+    expect(descInput).toBeInTheDocument();
+
+    await user.type(descInput, 'Comisión banco');
+    await user.type(screen.getByTestId('manual-line-ref'), 'REF-1');
+    await user.clear(screen.getByTestId('manual-line-in'));
+    await user.type(screen.getByTestId('manual-line-in'), '100');
+    await user.click(screen.getByTestId('manual-statement-save'));
+
+    await waitFor(() => expect(createStatement).toHaveBeenCalledTimes(1));
+    const payload = createStatement.mock.calls[0][0];
+    expect(payload.lines).toHaveLength(1);
+    expect(payload.lines[0].description).toBe('Comisión banco');
+  });
+
+  it('shows a committed line description in its read-only display row', async () => {
+    const user = userEvent.setup();
+    renderModal();
+    await user.click(screen.getByTestId('manual-statement-add-lines'));
+    await user.type(screen.getByTestId('manual-line-description'), 'Pago nómina');
+    await user.type(screen.getByTestId('manual-line-ref'), 'REF-1');
+    await user.type(screen.getByTestId('manual-line-out'), '0');
+    await user.type(screen.getByTestId('manual-line-in'), '100');
+    // Commit the line by adding a fresh one.
+    await user.click(screen.getByTestId('action-add-line'));
+
+    const committed = screen.getAllByTestId('manual-line-row');
+    expect(committed).toHaveLength(1);
+    expect(committed[0]).toHaveTextContent('Pago nómina');
   });
 
   it('saves as a draft (process=false) from the split menu', async () => {

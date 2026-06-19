@@ -400,9 +400,10 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
           // the new options list, auto-select the first available option (FIC parity —
           // the user explicitly chose the parent, so filling the dependent is helpful).
           // If no options exist and the field had a stale value, clear it.
+          const noAutoSelect = field.dependsOn?.noAutoSelect;
           const currentValid = value && items.some(i => i.id === value);
           if (!currentValid) {
-            if (items.length > 0) {
+            if (!noAutoSelect && items.length > 0) {
               onChange(items[0].id, items[0].name);
             } else if (value) {
               onChange('', '');
@@ -1118,8 +1119,8 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   };
 
   const renderField = (f) => {
-    // Resolution order: per-window AD_Field label (most specific) → global locale by column → camelCase key
-    const label = t(f.column) ?? f.label ?? f.key;
+    // Resolution order: per-window labels dict (locale-pinned) → AD_Field label → camelCase key
+    const label = f.labels?.[locale] ?? f.labels?.en_US ?? t(f.column) ?? f.label ?? f.key;
     // Field is read-only if statically declared, dynamically set by evaluate-display, or readOnlyLogic evaluates to true
     const isReadOnly = formReadOnly
       || f.readOnly

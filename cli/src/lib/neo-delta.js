@@ -56,6 +56,24 @@ function mapVisibility(visibility) {
   }
 }
 
+function normalizeAgentPrompt(value) {
+  if (value == null) return null;
+  const trimmed = String(value).trim();
+  return trimmed === '' ? null : trimmed;
+}
+
+function hasColumn(row, columnName) {
+  return row != null && Object.hasOwn(row, columnName);
+}
+
+function applyAgentPromptColumn(row, normalizedPrompt, previousRow) {
+  if (normalizedPrompt !== null) {
+    row.AGENT_PROMPT = String(normalizedPrompt);
+  } else if (hasColumn(previousRow, 'AGENT_PROMPT')) {
+    row.AGENT_PROMPT = null;
+  }
+}
+
 /**
  * Local copy of extractFieldsFromContract() from push-to-neo.js. Same
  * rationale as mapVisibility — avoid circular import.
@@ -186,6 +204,8 @@ export function computeWindowDelta(args) {
     AD_MODULE_ID: moduleId,
     ...SPEC_DEFAULTS,
   };
+  const specAgentPrompt = normalizeAgentPrompt(decisions.window?.agentPrompt);
+  applyAgentPromptColumn(specUpsert, specAgentPrompt, prevSpecRow);
 
   // ---- Walk tabs → entities --------------------------------------------
 
@@ -283,6 +303,7 @@ export function computeWindowDelta(args) {
     adTabs,
     adColumns,
     entityIdByNK,
+    prevFieldByNatural,
     fieldUpserts,
   });
 
@@ -404,7 +425,15 @@ function groupColumnsByTable(adColumns) {
   return colsByTable;
 }
 
-function buildContractVisibilityIndex({ specName, contractFields, fieldDefaultExprs, adTabs, adColumns, entityIdByNK }) {
+function buildContractVisibilityIndex({
+  specName,
+  contractFields,
+  fieldDefaultExprs,
+  fieldAgentPrompts,
+  adTabs,
+  adColumns,
+  entityIdByNK,
+}) {
   // push-to-neo's stepUpdateFieldVisibility resolves visibility PER-ENTITY:
   // upsertSingleField runs WHERE sf.etgo_sf_entity_id = $1 AND c.columnname = $2.
   // The same ad_column_id (e.g. IsCustomer on C_BPartner) can belong to
@@ -432,21 +461,34 @@ function buildContractVisibilityIndex({ specName, contractFields, fieldDefaultEx
     const entityId = entityIdByNK.get(entityNaturalKey(specName, f.tabId));
     if (!entityId) continue;
     const vis = mapVisibility(f.visibility);
-    const defaultKey = `${f.entityName}.${f.fieldName}`;
+    const fieldKey = `${f.entityName}.${f.fieldName}`;
     result.set(`${entityId}/${String(adColumnId)}`, {
       isIncluded: vis.isIncluded,
       isReadOnly: vis.isReadOnly,
-      defaultValue: defaultKey in fieldDefaultExprs
-        ? fieldDefaultExprs[defaultKey]
+      defaultValue: fieldKey in fieldDefaultExprs
+        ? fieldDefaultExprs[fieldKey]
         : undefined,
+      agentPrompt: fieldKey in fieldAgentPrompts
+        ? fieldAgentPrompts[fieldKey]
+        : null,
     });
   }
   return result;
 }
 
-function applyContractVisibilityToFields({ specName, contract, decisions, adTabs, adColumns, entityIdByNK, fieldUpserts }) {
+function applyContractVisibilityToFields({
+  specName,
+  contract,
+  decisions,
+  adTabs,
+  adColumns,
+  entityIdByNK,
+  prevFieldByNatural,
+  fieldUpserts,
+}) {
   const contractFields = extractFieldsFromContract(contract.backendContract);
   const fieldDefaultExprs = buildFieldDefaultExprMap(decisions);
+  const fieldAgentPrompts = buildFieldAgentPromptMap(decisions);
 
   // Build the GLOBAL contract columnname set (case-SENSITIVE). Mirrors
   // stepExcludeNonContractFields, which builds
@@ -459,7 +501,13 @@ function applyContractVisibilityToFields({ specName, contract, decisions, adTabs
   const contractColumnSet = new Set(contractFields.map((f) => String(f.column)));
 
   const contractFieldByEntityAndColumn = buildContractVisibilityIndex({
-    specName, contractFields, fieldDefaultExprs, adTabs, adColumns, entityIdByNK,
+    specName,
+    contractFields,
+    fieldDefaultExprs,
+    fieldAgentPrompts,
+    adTabs,
+    adColumns,
+    entityIdByNK,
   });
 
   // Index columns by ad_column_id for the exclude step.
@@ -478,6 +526,11 @@ function applyContractVisibilityToFields({ specName, contract, decisions, adTabs
       if (colHit.defaultValue !== undefined && colHit.defaultValue !== null) {
         row.DEFAULTVALUE = String(colHit.defaultValue);
       }
+      applyAgentPromptColumn(
+        row,
+        colHit.agentPrompt,
+        prevFieldByNatural.get(row._naturalKey),
+      );
     } else {
       // stepExcludeNonContractFields: a field is excluded only when its
       // columnname does NOT appear in ANY contract entity. ISREADONLY is not
@@ -517,6 +570,19 @@ function buildFieldDefaultExprMap(decisions) {
     for (const [fieldName, fieldConf] of Object.entries(entityConf.fields || {})) {
       if (fieldConf.defaultExpr != null) {
         map[`${entityName}.${fieldName}`] = fieldConf.defaultExpr;
+      }
+    }
+  }
+  return map;
+}
+
+function buildFieldAgentPromptMap(decisions) {
+  const map = {};
+  for (const [entityKey, entityConf] of Object.entries(decisions.entities || {})) {
+    const entityName = entityConf.name || entityKey;
+    for (const [fieldName, fieldConf] of Object.entries(entityConf.fields || {})) {
+      if (Object.hasOwn(fieldConf, 'agentPrompt')) {
+        map[`${entityName}.${fieldName}`] = normalizeAgentPrompt(fieldConf.agentPrompt);
       }
     }
   }

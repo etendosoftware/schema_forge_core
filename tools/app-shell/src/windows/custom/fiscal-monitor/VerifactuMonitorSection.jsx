@@ -3,7 +3,7 @@ import { useUI } from '@/i18n';
 import { useApiFetch } from '@/auth/useApiFetch.js';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { Checkbox } from '@/components/ui/checkbox';
-import { StatusPill, NumFactura, ScrollSentinel, isErrorStatus, PAGE_SIZE, ExportIcon, useFmSelection } from './FmPrimitives.jsx';
+import { StatusPill, NumFactura, ScrollSentinel, isErrorStatus, PAGE_SIZE, ExportIcon, useFmSelection, buildCsvAndDownload, fetchCsvAndDownload } from './FmPrimitives.jsx';
 import {
   VF_SPEC,
   VF_ACEPTADAS_ENTITY,
@@ -16,6 +16,15 @@ const FILTER_CORRECT  = 'correct';
 const FILTER_PROBLEMS = 'problems';
 
 const INVOICE_FK_FIELD = 'invoice';
+
+const VF_CORRECT_EXPORT_COLS = [
+  { label: 'Invoice No.',    get: r => r['invoice$documentNo'] ?? r['invoice$_identifier']?.split(/\s[–-]\s/)[0]?.trim() ?? r.invoice ?? '' },
+  { label: 'Operation Type', get: r => r['typeOperation$_identifier'] ?? r.typeOperation ?? '' },
+  { label: 'CSV',            get: r => r.cSV ?? '' },
+  { label: 'Status',         get: r => mapVfStatus(r.verifactuSendingStatus ?? '') },
+  { label: 'Error Code',     get: r => r.codeError ?? '' },
+  { label: 'Error Reason',   get: r => r.errorReason ?? '' },
+];
 
 // Map raw DB status codes → StatusPill-compatible keys
 const VF_STATUS_MAP = {
@@ -88,6 +97,7 @@ export default function VerifactuMonitorSection({
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
   const { selectedIds, setSelectedIds, allSelected, someSelected, handleToggleAll, handleToggleRow } = useFmSelection(rows);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     // Accept legacy 'accepted' key for backward compat
@@ -124,6 +134,34 @@ export default function VerifactuMonitorSection({
   // Reset to first page, rows and selection when tab changes
   useEffect(() => { setPage(1); setRows([]); setSelectedIds(new Set()); }, [activeTab, setSelectedIds]);
 
+  async function handleExport() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      if (activeTab === FILTER_CORRECT) {
+        await fetchCsvAndDownload(
+          apiFetch,
+          `/${VF_SPEC}/${encodeURIComponent(VF_ACEPTADAS_ENTITY)}`,
+          { _org: orgId },
+          'verifactu_correct',
+          VF_CORRECT_EXPORT_COLS,
+        );
+      } else {
+        // Problems tab loads all rows at once (no pagination) — client-side export is complete
+        buildCsvAndDownload('verifactu_problems', [
+          { label: 'Invoice No.',    get: r => parseInvoiceNo(r) },
+          { label: 'Operation Type', get: r => parseTypeLabel(r) },
+          { label: 'CSV',            get: r => r.cSV ?? '' },
+          { label: 'Status',         get: r => mapVfStatus(r.verifactuSendingStatus ?? '') },
+          { label: 'Error Code',     get: r => r.codeError ?? '' },
+          { label: 'Error Reason',   get: r => r.errorReason ?? '' },
+        ], rows);
+      }
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const vfKpis         = kpis?.verifactu ?? {};
   const countCorrect   = vfKpis.accepted ?? 0;
   const countProblems  = (vfKpis.partiallyAccepted ?? 0) + (vfKpis.rejected ?? 0) + (vfKpis.invalid ?? 0);
@@ -148,7 +186,7 @@ export default function VerifactuMonitorSection({
             </button>
           ))}
         </div>
-        <button className="fm-export-btn">
+        <button className="fm-export-btn" onClick={handleExport} disabled={loading || exporting}>
           <ExportIcon /> {ui('fiscalMonitor.export')}
         </button>
       </div>

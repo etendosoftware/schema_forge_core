@@ -34,7 +34,7 @@ function NameCell({ account, ui }) {
   // psd2Connected === true is treated as offline for bank/card rows.
   const isDisconnected = !isCashLike && account.psd2Connected !== true;
   return (
-    <TableCell className="w-[336px] p-0">
+    <TableCell className="w-[480px] p-0">
       <div className="flex h-full items-center">
         <div className="flex w-[44px] shrink-0 items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
           <GripVertical className="h-5 w-5 text-[#828FA3]" aria-hidden="true" />
@@ -44,7 +44,7 @@ function NameCell({ account, ui }) {
           <div className="flex items-center gap-1">
             <span className="text-sm font-semibold leading-5 text-[#121217]">{account.name}</span>
             {isDisconnected ? (
-              <span className="inline-flex h-6 items-center rounded-full bg-[#F5F7F9] px-2 py-1 text-xs font-normal leading-4 text-[#3F3F50]">
+              <span className="inline-flex h-6 shrink-0 items-center whitespace-nowrap rounded-full bg-[#F5F7F9] px-2 py-1 text-xs font-normal leading-4 text-[#3F3F50]">
                 {ui('financeAccountsBadgeOffline')}
               </span>
             ) : null}
@@ -108,11 +108,11 @@ function BalanceCell({ account }) {
 // Contract field name → header meta + cell/skeleton renderers.
 export const ACCOUNT_CELL_RENDERERS = {
   name: {
-    headClass: 'w-[336px] pl-[84px] pr-2',
+    headClass: 'w-[480px] pl-[84px] pr-2',
     labelKey: 'financeAccountsColAccount',
     renderCell: (account, ctx) => <NameCell account={account} ui={ctx.ui} />,
     renderSkeleton: (key) => (
-      <TableCell key={key} className="w-[336px] p-0">
+      <TableCell key={key} className="w-[480px] p-0">
         <div className="flex items-center">
           <div className="w-[44px]" />
           <Skeleton className="h-8 w-8 rounded-full" />
