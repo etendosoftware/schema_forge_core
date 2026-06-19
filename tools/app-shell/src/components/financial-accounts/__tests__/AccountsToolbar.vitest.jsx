@@ -74,7 +74,7 @@ describe('AccountsToolbar', () => {
     expect(onMatchingRules).toHaveBeenCalledTimes(1);
   });
 
-  it('hides the advanced ("by conditions") filter when no handler is wired', () => {
+  it('does not render the advanced ("by conditions") filter', () => {
     render(
       <AccountsToolbar
         typeFilter={null}
@@ -84,23 +84,6 @@ describe('AccountsToolbar', () => {
       />,
     );
     expect(screen.queryByTestId('cuentas-advanced-filter')).not.toBeInTheDocument();
-  });
-
-  it('shows the advanced filter button with the active-conditions badge', () => {
-    render(
-      <AccountsToolbar
-        typeFilter={null}
-        onTypeFilterChange={vi.fn()}
-        search=""
-        onSearchChange={vi.fn()}
-        advancedFilter={{ rowOperator: 'and', conditions: [{ field: 'type', operator: 'equals', value: 'B' }] }}
-        onAdvancedFilterChange={vi.fn()}
-        rows={[]}
-      />,
-    );
-    const funnel = screen.getByTestId('cuentas-advanced-filter');
-    expect(funnel).toBeInTheDocument();
-    expect(funnel).toHaveTextContent('1');
   });
 
   it('keeps the "Nueva cuenta" button enabled with no click handler in T1', () => {

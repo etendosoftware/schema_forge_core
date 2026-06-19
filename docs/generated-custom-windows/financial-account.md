@@ -170,15 +170,15 @@ Detail view for a single `FIN_Financial_Account` reached from the Cuentas list p
 
 ## Intent
 
-Display the full detail of a financial account: a summary strip with KPIs, and three tabs for Movements, Reconciliation and Imported Statements. The Movements tab is the primary working surface; the other two are placeholders pending later iterations.
+Display the full detail of a financial account: a summary strip with KPIs, and three tabs for Movements, Reconciliation and Imported Statements. The Movements tab is the primary working surface; the Reconciliation tab hosts the manual bank reconciliation split panel (T6); the Imported Statements tab is a placeholder pending a later iteration.
 
 ## What this view does
 
 - Navigate to `/financial-account/:id` from the Cuentas list (row click).
 - Topbar shows `{accountName}` as title and `Finanzas / Cuentas / {accountName}` as breadcrumb via `useSetPageMeta` (inlined in `index.jsx` — no per-window header bar).
 - Account Summary Strip (single horizontal bar inside the Movements tab body): avatar + IBAN (chunked in groups of 4, with copy-to-clipboard) | Saldo total | Entradas (30D) | Salidas (30D). The three KPI sections use `flex-1` so they spread evenly.
-- Three tabs with counts: Movements (live data), Reconciliation (placeholder), Imported Statements (placeholder).
-- Export button at the right of the tab strip — context-aware CSV download. **All exports go through the generic backend CSV flow** (`?export=csv`, see `neo-headless.md` §4.3) via the shared `useCsvExport` hook, so the server streams the file and large lists never get assembled in the browser:
+- Three tabs with counts: Movements (live data), Reconciliation (live data — manual reconciliation split panel, T6), Imported Statements (placeholder).
+- Right-side tab-strip action is contextual. On **Movements** and **Imported Statements** it shows the Export button and performs a CSV download. On **Reconciliation** it switches to a disabled **Automatch** button placeholder (enabled in T7). **All exports go through the generic backend CSV flow** (`?export=csv`, see `neo-headless.md` §4.3) via the shared `useCsvExport` hook, so the server streams the file and large lists never get assembled in the browser:
   - **Movements tab** → exports the filtered movements (`GET /sws/neo/financial-account-transactions?...&export=csv`, `ids` = filtered movement ids). Classic-parity columns (Transaction Type / Status labels, Deposit/Withdrawal split, synthetic "Payment", Processed flag) are **pre-derived server-side** on the transaction rows so the exporter stays generic. Column order/labels live in `MOVEMENT_CSV_COLUMNS` (`index.jsx`).
   - **Imported Statements tab, no statement selected** → exports the filtered statement **headers** (`GET /sws/neo/bank-statements?...&export=csv&ids=<filtered ids>`).
   - **Imported Statements tab, statement(s) selected** → exports the **lines** of the selected statement(s) (`...&action=lines&statementIds=<ids>`), mirroring Classic's line export.
@@ -193,11 +193,25 @@ Display the full detail of a financial account: a summary strip with KPIs, and t
 - Back arrow in the toolbar runs `navigate(-1)`.
 - `+ Nuevo movimiento` button (yellow hover) — currently fires a "coming soon" toast.
 
+### Reconciliation tab (T6)
+
+The Reconciliation tab renders `ReconciliationSplitPanel` (`tools/app-shell/src/components/contract-ui/ReconciliationSplitPanel.jsx`), a 50/50 split panel that composes the backend at `/sws/neo/bank-reconciliation` (handler `@Named("bankReconciliation")`). It never reimplements Etendo's reconciliation logic — the POST hands the grouped ids over to the Classic flow.
+
+- **Left panel — pending statement lines** (`usePendingStatementLines(accountId, filters)`): a movements-style toolbar with **back arrow** + status dropdown + date-range picker + search. The current T6 backend only exposes pending lines, so the status dropdown is wired but currently contains `Pendiente (N)` only. Below it, a table with **radio single-select** rows (Fecha · Descripción + status badge · Importe with sign tone) and a `Total: X,XX €` footer.
+- **Right panel — candidate operations** (`useCandidateOperations(accountId, lineId, docType)` — does NOT fetch while no line is selected): an empty state (`Selecciona un movimiento` / hint) until a line is picked, then a `SelectedLineHeader` (line metadata + amount in red/green), a real docType/date/search toolbar, and a table with **checkbox multi-select** rows (Fecha · Información = documentNo + partnerName + badge · Saldo pendiente · Importe). Backend-suggested candidates carry a blue **"Sugerida"** badge; the rest "Pendiente".
+- **Action bar**: `Documentos seleccionados: ±X,XX €` · `Restante por conciliar: ±X,XX €` · `[Cancelar selección] [Transferir] [Nuevo documento] [Conciliar (N)]`. `Conciliar` is enabled only when `|line.amount − sum(selected ops)| ≤ 0.01`. On click → `useReconcileGroup().reconcile({ financialAccountId, statementLineId, operationIds })` → success toast (`sonner`) + `onReconcileSuccess()` (reloads the account so the tab badge `pendingCount` decrements, and reloads movements) + clears the selection.
+- When a **reconciled** line is selected, the `Conciliar` button label switches to `Reactivar` and stays disabled (its handler lands in T8).
+- The right-side header action becomes a disabled `Automatch` button while the Reconciliation tab is active (enabled in T7). `Transferir` / `Nuevo documento` render but fire a "próximamente" toast (follow-up).
+- i18n keys: `financeReconcile*` in `packages/app-shell-core/src/locales/{en_US,es_ES}.json`.
+- Hooks: `tools/app-shell/src/hooks/useReconciliation.js` — `usePendingStatementLines`, `useCandidateOperations`, `useReconcileGroup` (all over `useNeoResource` / the shared auth+fetch pattern). The reconcile POST surfaces the backend `{ error: { message } }` text on the thrown Error so it shows in the error toast.
+
 ## Not implemented yet
 
 - `+ Nuevo movimiento` real action — toast placeholder for now.
-- Reconciliation tab body — placeholder (T6/T7).
-- Statement matching / reconciliation — import leaves statements with `processed='N'` (T6/T7).
+- Reconciliation against **invoices** (creating a payment via `FIN_AddPayment`) — T6 reconciles only against existing financial-account transactions; invoice reconciliation is a follow-up.
+- `Automatch` functional behaviour — T7.
+- `Reactivar` execution — T8 (T6 only prepares the disabled label/state).
+- `Transferir` / `Nuevo documento` real actions — render but show a "próximamente" toast.
 - Unreconcile / Post row actions — visible but disabled, with tooltip.
 - Real bank logos (Santander, BBVA, etc.) — uses the generic `AccountLogoAvatar` for all accounts.
 - Server-side filtering for movements and statements — filters are applied client-side.
@@ -213,7 +227,7 @@ Display the full detail of a financial account: a summary strip with KPIs, and t
 ```
 index.jsx                          — receives { recordId }, sets page meta, mounts TooltipProvider
   DetailTabs.jsx + Tabs primitives — 3 tabs with icon + label + badge
-    ExportButton (inline)          — right of tab strip, context-aware CSV (useCsvExport)
+    Header action button (inline)  — right of tab strip; Export for Movements/Statements, disabled Automatch for Reconciliation
     MovimientosTab.jsx             — toolbar + summary strip + table; runs applyFilters client-side
       MovementsToolbar/index.jsx   — back ←, 4 filters, search, + Nuevo movimiento
         StatusFilter.jsx           — wraps DistinctValuesFilter (8 codes)
