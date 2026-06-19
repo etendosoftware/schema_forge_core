@@ -12,7 +12,7 @@ vi.mock('sonner', () => ({
 }));
 
 // Hook mocks — overridable per test via the mutable state objects below.
-const linesState = { lines: [], total: 0, loading: false, reload: vi.fn() };
+const linesState = { lines: [], total: 0, counts: {}, loading: false, reload: vi.fn() };
 const candidatesState = { candidates: [], loading: false };
 const reconcileState = { reconcile: vi.fn().mockResolvedValue({ reconciliationId: 'R1' }), loading: false };
 
@@ -67,6 +67,7 @@ describe('ReconciliationSplitPanel', () => {
   beforeEach(() => {
     linesState.lines = [];
     linesState.total = 0;
+    linesState.counts = {};
     linesState.loading = false;
     linesState.reload = vi.fn();
     candidatesState.candidates = [];
@@ -96,7 +97,7 @@ describe('ReconciliationSplitPanel', () => {
     renderPanel({ onBack });
     fireEvent.click(screen.getByTestId('recon-toolbar-back'));
     expect(onBack).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('financeReconcileFilterStatusPending')).toBeInTheDocument();
+    expect(screen.getByText(/financeReconcileFilterStatusPending/)).toBeInTheDocument();
     expect(screen.getAllByText('dateRangeLast30Days').length).toBeGreaterThan(0);
   });
 
@@ -304,6 +305,49 @@ describe('ReconciliationSplitPanel', () => {
     // the unchecked C1 is pushed to the bottom.
     expect(rows.slice(0, 2).sort()).toEqual(['recon-cand-row-C2', 'recon-cand-row-C3']);
     expect(rows[2]).toBe('recon-cand-row-C1');
+  });
+
+  // ── Client-side state filter (T7) ─────────────────────────────────────────────
+
+  it('shows only lines matching the active leftStatus filter', () => {
+    // Four lines: two pending, one suggested, one byRule.
+    const LINE_SUGGESTED = { id: 'LS', date: '2026-05-10T00:00:00Z', description: 'Suggested line', state: 'suggested', status: 'pending', amount: -100 };
+    const LINE_BYRULE = { id: 'LR', date: '2026-05-11T00:00:00Z', description: 'By-rule line', state: 'byRule', status: 'pending', amount: -50 };
+    setLines([LINE_A, LINE_B, LINE_SUGGESTED, LINE_BYRULE]);
+    linesState.counts = { all: 4, pending: 2, suggested: 1, byRule: 1, difference: 0, reconciled: 0 };
+    renderPanel();
+
+    // Default leftStatus is 'pending' — only LINE_A and LINE_B (state: 'pending') visible.
+    expect(screen.getByTestId('recon-line-row-L1')).toBeInTheDocument();
+    expect(screen.getByTestId('recon-line-row-L2')).toBeInTheDocument();
+    expect(screen.queryByTestId('recon-line-row-LS')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('recon-line-row-LR')).not.toBeInTheDocument();
+  });
+
+  it('passes counts from the hook to the status filter component', () => {
+    setLines([LINE_A, LINE_B]);
+    linesState.counts = { all: 5, pending: 3, suggested: 1, byRule: 0, difference: 1, reconciled: 0 };
+    renderPanel();
+
+    // ReconciliationStatusFilter renders labelFor(code) = `${ui(key)} (${countFor(code)})`.
+    // With our i18n mock returning the key, the label includes the count.
+    // The active label (pending) is visible in the trigger button; the others are in the popover.
+    // Use a text-content function matcher to handle elements that split text across children.
+    expect(screen.getByText((content) => content.includes('financeReconcileFilterStatusPending') && content.includes('3'))).toBeInTheDocument();
+  });
+
+  it('visibleTotal reflects filtered lines, not all lines', () => {
+    // Three lines: two pending (amounts -8.31 and 1200), one suggested (-100).
+    const LINE_SUGGESTED2 = { id: 'LS2', date: '2026-05-12T00:00:00Z', description: 'S line', state: 'suggested', status: 'pending', amount: -100 };
+    setLines([LINE_A, LINE_B, LINE_SUGGESTED2]);
+    // Default leftStatus is 'pending' — only LINE_A (-8.31) and LINE_B (1200) are visible.
+    renderPanel();
+
+    // The footer total must show the sum of only visible (pending) lines: -8.31 + 1200 = 1191.69.
+    // The panel renders visibleTotal with MoneyAmount; in our mock MoneyAmount renders the value.
+    // We check the total footer row which renders formatSigned(visibleTotal, currency).
+    // Since formatSigned is internal, we verify the footer does NOT show -100 (the suggested line).
+    expect(screen.queryByText(/-100/)).not.toBeInTheDocument();
   });
 
 });

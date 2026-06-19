@@ -117,16 +117,16 @@ describe('AutoMatchSuggestionModal', () => {
 
   it("shows rule badge with rule name for rule-origin groups", () => {
     renderModal();
-    expect(screen.getByText(/Impuestos/)).toBeInTheDocument();
+    // The rule badge appears in both the group badge and the operation name; at least one must exist.
+    expect(screen.getAllByText(/Impuestos/).length).toBeGreaterThan(0);
   });
 
   it('all groups are checked by default', () => {
     renderModal();
-    // The individual group checkboxes + the select-all
-    const checkboxes = screen.getAllByRole('checkbox');
-    // The two group checkboxes should be checked
+    // SelectBox renders <button aria-checked> elements, not <input type="checkbox">.
+    // The two group-level buttons should have aria-checked="true".
     const groupCheckboxes = screen.getAllByTestId(/automatch-group-check-/);
-    groupCheckboxes.forEach((cb) => expect(cb).toBeChecked());
+    groupCheckboxes.forEach((cb) => expect(cb).toHaveAttribute('aria-checked', 'true'));
   });
 
   it('select-all checkbox unchecks all groups', () => {
@@ -134,7 +134,7 @@ describe('AutoMatchSuggestionModal', () => {
     const selectAll = screen.getByTestId('automatch-select-all');
     fireEvent.click(selectAll); // uncheck all
     const groupCheckboxes = screen.getAllByTestId(/automatch-group-check-/);
-    groupCheckboxes.forEach((cb) => expect(cb).not.toBeChecked());
+    groupCheckboxes.forEach((cb) => expect(cb).toHaveAttribute('aria-checked', 'false'));
   });
 
   it('apply button is disabled when no groups are checked', () => {
@@ -196,5 +196,57 @@ describe('AutoMatchSuggestionModal', () => {
   it('shows empty state when no groups', () => {
     renderModal({ groups: [] });
     expect(screen.getByText('financeReconcileAutomatchEmpty')).toBeInTheDocument();
+  });
+
+  // ── SelectBox header dash / empty (T7) ────────────────────────────────────────
+
+  it('SelectBox header shows dash (active state) when any groups are checked', () => {
+    renderModal();
+    const selectAll = screen.getByTestId('automatch-select-all');
+    // With groups loaded, at least one is checked by default — the header must show dash.
+    expect(selectAll).toHaveAttribute('aria-checked', 'mixed');
+  });
+
+  it('SelectBox header shows empty (unchecked) when all groups are deselected', () => {
+    renderModal();
+    // Uncheck all groups via the select-all toggle.
+    fireEvent.click(screen.getByTestId('automatch-select-all'));
+    const selectAll = screen.getByTestId('automatch-select-all');
+    // No groups selected → no dash, no check → aria-checked = false.
+    expect(selectAll).toHaveAttribute('aria-checked', 'false');
+  });
+
+  // ── Amount color rendering (T7) ───────────────────────────────────────────────
+
+  it('operation with positive amount renders with green color class', () => {
+    const positiveOp = { ...GROUP_STANDARD.operations[0], amount: 500 };
+    const positiveGroup = { ...GROUP_STANDARD, operations: [positiveOp] };
+    renderModal({ groups: [positiveGroup] });
+    // MoneyAmount mock renders the value directly; the color class is on the wrapper div.
+    // The OperationRow applies text-[#1E874C] for positive amounts.
+    expect(document.querySelector('.text-\\[\\#1E874C\\]')).toBeTruthy();
+  });
+
+  it('operation with negative amount renders with red color class', () => {
+    renderModal({ groups: [GROUP_STANDARD] }); // GROUP_STANDARD has amount: -500
+    // OperationRow applies text-[#D50B3E] for negative amounts.
+    expect(document.querySelector('.text-\\[\\#D50B3E\\]')).toBeTruthy();
+  });
+
+  // ── Rule group subtitle (T7) ──────────────────────────────────────────────────
+
+  it('rule group shows "Nuevo movimiento (se creará)" subtitle for the proposed operation', () => {
+    renderModal({ groups: [GROUP_RULE] });
+    // OperationRow renders the ui key 'financeReconcileAutomatchOpNew' as the subtitle
+    // for isNew operations (our i18n mock returns the key as-is).
+    expect(screen.getByText('financeReconcileAutomatchOpNew')).toBeInTheDocument();
+  });
+
+  // ── Cancel button label (T7) ──────────────────────────────────────────────────
+
+  it('cancel button shows the "cancel" i18n key, not a hardcoded string', () => {
+    renderModal();
+    // The cancel button uses ui('cancel') — the mock returns the key 'cancel'.
+    expect(screen.getByTestId('automatch-modal-cancel')).toHaveTextContent('cancel');
   });
 });
