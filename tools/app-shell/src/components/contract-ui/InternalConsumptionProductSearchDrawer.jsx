@@ -269,7 +269,6 @@ export default function InternalConsumptionProductSearchDrawer({
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/30" onClick={onClose} />
-
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh]" onClick={onClose}>
         <div
           className="w-full max-w-xl bg-background rounded-xl border border-border shadow-2xl flex flex-col overflow-hidden"
@@ -281,7 +280,9 @@ export default function InternalConsumptionProductSearchDrawer({
         >
           {/* Search bar */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Search
+              className="h-4 w-4 text-muted-foreground shrink-0"
+              data-testid="Search__cd0fc5" />
             <input
               ref={inputRef}
               type="text"
@@ -290,16 +291,20 @@ export default function InternalConsumptionProductSearchDrawer({
               placeholder={`${ui('searchLabelPrefix')} ${resolvedTitle}...`}
               className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
-            {(loading || loadingMore) && <Loader2 className="h-4 w-4 text-muted-foreground animate-spin shrink-0" />}
+            {(loading || loadingMore) && <Loader2
+              className="h-4 w-4 text-muted-foreground animate-spin shrink-0"
+              data-testid="Loader2__cd0fc5" />}
             <button onClick={onClose} className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground shrink-0">
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" data-testid="X__cd0fc5" />
             </button>
           </div>
 
           {/* Warehouse filter pills */}
           {availableWarehouses.length > 0 && (
             <div className="flex items-center gap-1.5 px-4 py-2 border-b border-border overflow-x-auto shrink-0">
-              <Warehouse className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <Warehouse
+                className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+                data-testid="Warehouse__cd0fc5" />
               <button
                 type="button"
                 onClick={() => { setWarehouseFilter(null); setActiveIdx(-1); }}
@@ -332,7 +337,9 @@ export default function InternalConsumptionProductSearchDrawer({
           <div className="flex-1 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
             {loading && results.length === 0 && (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
+                <Loader2
+                  className="h-6 w-6 text-muted-foreground animate-spin"
+                  data-testid="Loader2__cd0fc5" />
               </div>
             )}
 
@@ -349,14 +356,13 @@ export default function InternalConsumptionProductSearchDrawer({
                   return (
                     <li key={group.productId}>
                       {gi > 0 && <div className="mx-4 my-1.5 border-t border-border" />}
-
                       {/* Product header — clickable to expand/collapse */}
                       <button
                         type="button"
                         onClick={() => toggleProduct(group.productId)}
                         className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
                       >
-                        <Avatar name={group.name} id={group.productId} />
+                        <Avatar name={group.name} id={group.productId} data-testid="Avatar__cd0fc5" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-foreground truncate">{group.name}</p>
                           {group.code && <p className="text-xs text-muted-foreground">{group.code}</p>}
@@ -365,11 +371,14 @@ export default function InternalConsumptionProductSearchDrawer({
                           {group.locations.length} {group.locations.length === 1 ? 'location' : 'locations'}
                         </span>
                         {isExpanded
-                          ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-                          : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                          ? <ChevronDown
+                          className="h-4 w-4 text-muted-foreground shrink-0"
+                          data-testid="ChevronDown__cd0fc5" />
+                          : <ChevronRight
+                          className="h-4 w-4 text-muted-foreground shrink-0"
+                          data-testid="ChevronRight__cd0fc5" />
                         }
                       </button>
-
                       {/* Location sub-rows — only rendered when expanded */}
                       {isExpanded && (
                         <div className="px-4 pb-2 flex flex-col gap-1">
@@ -399,8 +408,10 @@ export default function InternalConsumptionProductSearchDrawer({
                                   <span className="text-xs tabular-nums text-muted-foreground shrink-0">{qty} ud</span>
                                 )}
                                 {isSelected
-                                  ? <Check className="h-3.5 w-3.5 text-primary shrink-0" />
-                                  : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                  ? <Check className="h-3.5 w-3.5 text-primary shrink-0" data-testid="Check__cd0fc5" />
+                                  : <ChevronRight
+                                  className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+                                  data-testid="ChevronRight__cd0fc5" />
                                 }
                               </button>
                             );
@@ -412,7 +423,9 @@ export default function InternalConsumptionProductSearchDrawer({
                 })}
                 {loadingMore && (
                   <li className="flex items-center justify-center py-3">
-                    <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+                    <Loader2
+                      className="h-4 w-4 text-muted-foreground animate-spin"
+                      data-testid="Loader2__cd0fc5" />
                   </li>
                 )}
               </ul>

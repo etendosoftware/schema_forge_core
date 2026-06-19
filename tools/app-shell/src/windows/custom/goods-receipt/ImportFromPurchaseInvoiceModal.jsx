@@ -102,6 +102,6 @@ export default function ImportFromPurchaseInvoiceModal({ receiptId, ...rest }) {
       fetchLines={fetchLines}
       getDocDisplay={getDocDisplay}
       buildLineBody={buildLineBody}
-    />
+      data-testid="ImportLinesModal__ee0cc2" />
   );
 }

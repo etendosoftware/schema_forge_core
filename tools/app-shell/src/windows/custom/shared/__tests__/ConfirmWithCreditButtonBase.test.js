@@ -84,7 +84,7 @@ describe('ConfirmWithCreditButtonBase', () => {
   // ── PrintButton integration ────────────────────────────────────────────────
 
   it('renders PrintButton with onClick and loading props', () => {
-    assert.match(src, /<PrintButton onClick=\{handlePrint\} loading=\{pdfLoading\}/);
+    assert.match(src, /<PrintButton[\s\S]*?onClick=\{handlePrint\}[\s\S]*?loading=\{pdfLoading\}/);
   });
 
   // ── Portals ────────────────────────────────────────────────────────────────

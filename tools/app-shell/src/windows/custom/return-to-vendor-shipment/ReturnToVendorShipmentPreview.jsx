@@ -45,7 +45,7 @@ export default function ReturnToVendorShipmentPreview({ shipment, token, apiBase
       pdfUrl={pdfUrl}
       generatingText={ui('returnToVendorPdfGenerating')}
       errorText={ui('returnToVendorPdfError')}
-    />
+      data-testid="PreviewPdfPanel__93f029" />
   );
 
   const { actionButtons, tabs } = buildReturnPreviewContent({
@@ -64,7 +64,7 @@ export default function ReturnToVendorShipmentPreview({ shipment, token, apiBase
         onEdit={() => onEdit?.(shipment.id)}
         tabs={tabs}
         actionButtons={actionButtons}
-      />
+        data-testid="GenericPreviewModal__93f029" />
       {showSendModal && (
         <SendDocumentModal
           documentType={windowLabel}
@@ -78,7 +78,7 @@ export default function ReturnToVendorShipmentPreview({ shipment, token, apiBase
           pdfBlobUrl={pdfUrl}
           isClosing={sendModalClosing}
           onClose={closeEmailModal}
-        />
+          data-testid="SendDocumentModal__93f029" />
       )}
     </>
   );

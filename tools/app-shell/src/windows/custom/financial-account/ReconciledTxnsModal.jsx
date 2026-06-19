@@ -57,14 +57,19 @@ export function ReconciledTxnsModal({ line, currency = 'EUR', onClose }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => { if (!v) onClose(); }}
+      data-testid="Dialog__2dbb84">
       <DialogContent className="w-[92vw] max-w-[900px] overflow-hidden p-0" data-testid="reconciled-txns-modal">
         {/* Header */}
         <div className="flex items-start gap-3 border-b border-[#E8EAEF] px-6 pb-4 pt-5">
           <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-[#F5F7F9] text-[#121217]">
-            <Layers className="h-5 w-5" />
+            <Layers className="h-5 w-5" data-testid="Layers__2dbb84" />
           </span>
-          <DialogTitle className="m-0 text-[17px] font-bold leading-[22px] tracking-[-0.01em] text-[#121217]">
+          <DialogTitle
+            className="m-0 text-[17px] font-bold leading-[22px] tracking-[-0.01em] text-[#121217]"
+            data-testid="DialogTitle__2dbb84">
             {ui('financeAccountStatementLinesTxnModalTitle')}
           </DialogTitle>
         </div>
@@ -90,7 +95,7 @@ export function ReconciledTxnsModal({ line, currency = 'EUR', onClose }) {
               currency={currency}
               tone="auto"
               className="whitespace-nowrap text-lg font-bold tabular-nums"
-            />
+              data-testid="MoneyAmount__2dbb84" />
           </div>
         ) : null}
 
@@ -127,14 +132,14 @@ export function ReconciledTxnsModal({ line, currency = 'EUR', onClose }) {
                 <span className="truncate" title={t.description || ''}>{t.description || <span className="text-[#A8AAB8]">—</span>}</span>
                 <span className="flex flex-col gap-0.5">
                   <span className="leading-[17px]">{trxTypeLabel(t.trxType, ui)}</span>
-                  <PostingStatusDot paymentStatus={t.paymentStatus} />
+                  <PostingStatusDot paymentStatus={t.paymentStatus} data-testid="PostingStatusDot__2dbb84" />
                 </span>
                 <MoneyAmount
                   value={t.amount}
                   currency={currency}
                   tone="auto"
                   className="justify-self-end whitespace-nowrap text-sm font-semibold tabular-nums"
-                />
+                  data-testid="MoneyAmount__2dbb84" />
                 <span className="flex justify-center">
                   {t.paymentId ? (
                     <button
@@ -145,7 +150,7 @@ export function ReconciledTxnsModal({ line, currency = 'EUR', onClose }) {
                       onClick={() => goToMovement(t)}
                       className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-md border border-[#E8EAEF] bg-white text-[#6C6C89] hover:border-[#D1D4DB] hover:bg-[#F5F7F9] hover:text-[#121217]"
                     >
-                      <ArrowUpRight className="h-3.5 w-3.5" />
+                      <ArrowUpRight className="h-3.5 w-3.5" data-testid="ArrowUpRight__2dbb84" />
                     </button>
                   ) : null}
                 </span>
@@ -161,23 +166,33 @@ export function ReconciledTxnsModal({ line, currency = 'EUR', onClose }) {
               <span className="text-[11px] font-medium uppercase leading-[14px] tracking-[0.03em] text-[#6C6C89]">
                 {ui('financeAccountStatementLinesTxnFootLineAmount')}
               </span>
-              <MoneyAmount value={lineNet} currency={currency} tone="neutral" className="text-[15px] font-semibold tabular-nums" />
+              <MoneyAmount
+                value={lineNet}
+                currency={currency}
+                tone="neutral"
+                className="text-[15px] font-semibold tabular-nums"
+                data-testid="MoneyAmount__2dbb84" />
             </div>
             <div className="flex flex-col gap-px">
               <span className="text-[11px] font-medium uppercase leading-[14px] tracking-[0.03em] text-[#6C6C89]">
                 {ui('financeAccountStatementLinesTxnFootSum')}
               </span>
-              <MoneyAmount value={txnSum} currency={currency} tone="neutral" className="text-[15px] font-semibold tabular-nums" />
+              <MoneyAmount
+                value={txnSum}
+                currency={currency}
+                tone="neutral"
+                className="text-[15px] font-semibold tabular-nums"
+                data-testid="MoneyAmount__2dbb84" />
             </div>
           </div>
           {balanced ? (
             <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[#E8F6EE] px-3 text-xs font-semibold text-[#1E874C]">
-              <CheckCircle2 className="h-3.5 w-3.5" />
+              <CheckCircle2 className="h-3.5 w-3.5" data-testid="CheckCircle2__2dbb84" />
               {ui('financeAccountStatementLinesTxnBalanced')}
             </span>
           ) : (
             <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[#FBF1DD] px-3 text-xs font-semibold text-[#A8670B]">
-              <AlertTriangle className="h-3.5 w-3.5" />
+              <AlertTriangle className="h-3.5 w-3.5" data-testid="AlertTriangle__2dbb84" />
               {ui('financeAccountStatementLinesTxnDiff', { amount: formatSigned(diff, currency) })}
             </span>
           )}
