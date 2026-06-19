@@ -47,13 +47,16 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
     <>
       {recordId && (
         <>
-          <CloneButton onClick={() => setShowClone(true)} title={ui('cloneOrderBtn')} />
+          <CloneButton
+            onClick={() => setShowClone(true)}
+            title={ui('cloneOrderBtn')}
+            data-testid="CloneButton__8addd1" />
           <SendToSifButton
             data={data}
             recordId={recordId}
             apiBaseUrl={apiBaseUrl}
             status={data?.documentStatus}
-          />
+            data-testid="SendToSifButton__8addd1" />
           {showClone && createPortal(
             <CloneOrderModal
               recordId={recordId}
@@ -71,7 +74,7 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
                 setShowClone(false);
                 navigate(`/purchase-invoice/${newId}`);
               }}
-            />,
+              data-testid="CloneOrderModal__8addd1" />,
             document.body,
           )}
         </>
@@ -125,7 +128,7 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
           specName="purchase-invoice"
           apiBaseUrl={apiBaseUrl}
           onClose={handleModalClose}
-        />
+          data-testid="InvoicePaymentModal__8addd1" />
       )}
     </>
   );

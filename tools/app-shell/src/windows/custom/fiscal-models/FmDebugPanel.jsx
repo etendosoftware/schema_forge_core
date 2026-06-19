@@ -237,7 +237,6 @@ export default function FmDebugPanel({ view, setView }) {
           {collapsed ? '▾' : '▴'}
         </button>
       </div>
-
       {!collapsed && (
         <>
           {/* State bar */}
@@ -308,9 +307,9 @@ export default function FmDebugPanel({ view, setView }) {
           {tab === 'incidents' && (
             <>
               <div style={sectionLabel}>Blocking</div>
-              <QuickNum value={blocking} onChange={setBlocking} />
+              <QuickNum value={blocking} onChange={setBlocking} data-testid="QuickNum__a5e98b" />
               <div style={sectionLabel}>Warning</div>
-              <QuickNum value={warning} onChange={setWarning} />
+              <QuickNum value={warning} onChange={setWarning} data-testid="QuickNum__a5e98b" />
               <div style={divider} />
               <div style={sectionLabel}>Presets</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>

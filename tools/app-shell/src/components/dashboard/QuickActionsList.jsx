@@ -38,7 +38,9 @@ export function QuickActionsList({ actions = [] }) {
               }}
               className="hover:brightness-95 transition-all"
             >
-              <Icon style={{ width: '16px', height: '16px', flexShrink: 0, color: '#828FA3' }} />
+              <Icon
+                style={{ width: '16px', height: '16px', flexShrink: 0, color: '#828FA3' }}
+                data-testid="Icon__961429" />
               <span style={{
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 400,

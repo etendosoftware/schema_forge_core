@@ -55,7 +55,7 @@ export default function PaymentsCard({
       </button>
     );
   } else if (isFullyPaid) {
-    titleRight = <Check size={13} className="text-green-500" />;
+    titleRight = <Check size={13} className="text-green-500" data-testid="Check__c6fe34" />;
   }
 
   let content;
@@ -75,7 +75,11 @@ export default function PaymentsCard({
               style={{ backgroundColor: '#F5F7F9' }}
             >
               <div className="flex items-center gap-1 min-w-0">
-                <Ban size={20} className="shrink-0" style={{ color: '#828FA3' }} />
+                <Ban
+                  size={20}
+                  className="shrink-0"
+                  style={{ color: '#828FA3' }}
+                  data-testid="Ban__c6fe34" />
                 <span className="text-sm text-gray-900 truncate">{acctLabel}</span>
               </div>
               <div className="flex flex-col items-end shrink-0">
@@ -104,7 +108,11 @@ export default function PaymentsCard({
   }
 
   return (
-    <SectionCard title={ui('previewCardPayments')} titleRight={titleRight} noPadding>
+    <SectionCard
+      title={ui('previewCardPayments')}
+      titleRight={titleRight}
+      noPadding
+      data-testid="SectionCard__c6fe34">
       {content}
     </SectionCard>
   );

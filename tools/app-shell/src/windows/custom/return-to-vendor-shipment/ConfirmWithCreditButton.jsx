@@ -7,7 +7,10 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
 
   return (
     <ConfirmWithCreditButtonBase
-      data={data} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl}
+      data={data}
+      recordId={recordId}
+      token={token}
+      apiBaseUrl={apiBaseUrl}
       entitySegment="returnToVendorShipment"
       invoiceRoute="/purchase-invoice/"
       invoiceType="facturaCompra"
@@ -22,6 +25,6 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
       infoRowBold={ui('returnToVendor.confirmModal.infoRowBold')}
       infoRowPost={ui('returnToVendor.confirmModal.infoRowPost')}
       confirmWithInvoiceLabel={ui('returnToVendor.confirmModal.confirmWithInvoice')}
-    />
+      data-testid="ConfirmWithCreditButtonBase__218245" />
   );
 }

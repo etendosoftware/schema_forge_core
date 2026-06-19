@@ -497,7 +497,10 @@ export default function CreateContactModal({
       title={ui('newContact')}
       saveLabel={ui('saveContact')}
       {...contactModalConfig}
-      titleRightContent={<ContactModeToggle contactType={contactType} onChange={setContactType} />}
+      titleRightContent={<ContactModeToggle
+        contactType={contactType}
+        onChange={setContactType}
+        data-testid="ContactModeToggle__d67dd1" />}
       headerFields={headerFields}
       requiredFields={requiredFields}
       progressFields={progressFields}
@@ -537,6 +540,6 @@ export default function CreateContactModal({
       onSave={handleSave}
       onCancel={onClose}
       onFieldChange={handleFieldChange}
-    />
+      data-testid="EntityCreationModal__d67dd1" />
   );
 }
