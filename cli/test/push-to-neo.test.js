@@ -7,6 +7,10 @@ import {
   extractFieldsFromContract,
   pushToNeo,
   loadConfig,
+  stepExcludeNonContractFields,
+  buildFieldAgentPromptMap,
+  buildFieldUpdateParams,
+  buildSpecUpsertParams,
 } from '../src/push-to-neo.js';
 import {
   generateId,
@@ -19,6 +23,139 @@ import { tmpdir } from 'node:os';
 // ---------------------------------------------------------------------------
 // 1. Visibility mapping
 // ---------------------------------------------------------------------------
+
+describe('buildFieldAgentPromptMap', () => {
+  it('maps entity.field -> agentPrompt, resolving entity name like defaultExpr', () => {
+    const decisions = {
+      entities: {
+        header: { name: 'Order', fields: { docStatus: { agentPrompt: 'confirm before complete' }, note: {} } },
+        lines: { fields: { qty: { agentPrompt: 'quantity hint' } } },
+      },
+    };
+
+    const map = buildFieldAgentPromptMap(decisions);
+
+    assert.deepEqual(map, {
+      'Order.docStatus': 'confirm before complete',
+      'lines.qty': 'quantity hint',
+    });
+  });
+
+  it('returns an empty object when there are no prompts or no entities', () => {
+    assert.deepEqual(buildFieldAgentPromptMap({}), {});
+    assert.deepEqual(buildFieldAgentPromptMap({ entities: {} }), {});
+    assert.deepEqual(
+      buildFieldAgentPromptMap({ entities: { h: { fields: { a: {} } } } }),
+      {},
+    );
+  });
+
+  it('maps whitespace-only field prompts to null and trims the rest', () => {
+    const decisions = {
+      entities: {
+        header: {
+          name: 'Order',
+          fields: {
+            blank: { agentPrompt: '   ' },
+            real: { agentPrompt: '  pick nearest warehouse  ' },
+          },
+        },
+      },
+    };
+    assert.deepEqual(buildFieldAgentPromptMap(decisions), {
+      'Order.blank': null,
+      'Order.real': 'pick nearest warehouse',
+    });
+  });
+});
+
+describe('push-to-neo agentPrompt upsert params', () => {
+  it('passes spec agentPrompt into upsertSpec params', () => {
+    const params = buildSpecUpsertParams({
+      specName: 'purchase-order',
+      moduleId: 'MOD1',
+      windowId: 'WIN1',
+      specAgentPrompt: 'Confirm before completing.',
+      auditOpts: { userId: 'USR1' },
+    }, 'SPEC1');
+
+    assert.equal(params.agentPrompt, 'Confirm before completing.');
+    assert.equal(params.specId, 'SPEC1');
+    assert.equal(params.name, 'purchase-order');
+  });
+
+  it('passes field agentPrompt into upsertField params', () => {
+    const params = buildFieldUpdateParams(
+      {
+        entityName: 'Order',
+        fieldName: 'docStatus',
+        visibility: 'readOnly',
+      },
+      {
+        moduleId: 'MOD1',
+        auditOpts: {},
+        fieldDefaultExprs: {},
+        fieldAgentPrompts: { 'Order.docStatus': 'Only advance status forward.' },
+      },
+      'FIELD1',
+      'ENTITY1',
+    );
+
+    assert.equal(params.agentPrompt, 'Only advance status forward.');
+    assert.equal(params.isReadOnly, 'Y');
+  });
+
+  it('passes null field agentPrompt when decisions do not declare one, clearing stale DB values', () => {
+    const params = buildFieldUpdateParams(
+      {
+        entityName: 'Order',
+        fieldName: 'plain',
+        visibility: 'editable',
+      },
+      {
+        moduleId: 'MOD1',
+        auditOpts: {},
+        fieldDefaultExprs: {},
+        fieldAgentPrompts: { 'Order.docStatus': 'Prompt' },
+      },
+      'FIELD2',
+      'ENTITY1',
+    );
+
+    assert.equal(params.agentPrompt, null);
+    assert.equal(params.isIncluded, 'Y');
+  });
+
+  it('sets java_qualifier when the field key differs from the AD column', () => {
+    const params = buildFieldUpdateParams(
+      {
+        entityName: 'Order',
+        fieldName: 'documentAction',
+        column: 'DocAction',
+        visibility: 'editable',
+      },
+      { moduleId: 'MOD1', auditOpts: {}, fieldDefaultExprs: {} },
+      'FIELD1',
+      'ENTITY1',
+    );
+    assert.equal(params.javaQualifier, 'documentAction');
+  });
+
+  it('omits java_qualifier when the field key equals the AD column', () => {
+    const params = buildFieldUpdateParams(
+      {
+        entityName: 'Order',
+        fieldName: 'DocAction',
+        column: 'DocAction',
+        visibility: 'editable',
+      },
+      { moduleId: 'MOD1', auditOpts: {}, fieldDefaultExprs: {} },
+      'FIELD1',
+      'ENTITY1',
+    );
+    assert.equal('javaQualifier' in params, false);
+  });
+});
 
 describe('mapVisibility', () => {
   it('maps editable to included, not read-only', () => {
@@ -386,5 +523,116 @@ describe('auditDefaults', () => {
     assert.equal(audit.ad_org_id, 'DEF');
     assert.equal(audit.createdby, 'GHI');
     assert.equal(audit.updatedby, 'GHI');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 9. stepExcludeNonContractFields — extractedColumns scoping (ETP-4177)
+// ---------------------------------------------------------------------------
+
+function makeClient(rows) {
+  return {
+    query: async (sql) => {
+      if (sql.includes('SELECT')) return { rows };
+      return {};
+    },
+  };
+}
+
+describe('stepExcludeNonContractFields', () => {
+  it('excludes a field that is in schemaRawData but not in contract', async () => {
+    const updated = [];
+    const client = {
+      query: async (sql, params) => {
+        if (sql.includes('SELECT')) {
+          return { rows: [{ etgo_sf_field_id: 'F1', columnname: 'description' }] };
+        }
+        updated.push(params[0]);
+        return {};
+      },
+    };
+    const popResult = { entities: [{ entityId: 'E1' }] };
+    const allFields = [{ column: 'name' }];
+    const schemaRawData = { entities: [{ fields: [{ columnName: 'description' }, { columnName: 'name' }] }] };
+
+    await stepExcludeNonContractFields(client, popResult, allFields, schemaRawData);
+    assert.deepEqual(updated, ['F1'], 'description should be excluded (in AD but not in contract)');
+  });
+
+  it('does NOT exclude a field from an uninstalled module (not in schemaRawData)', async () => {
+    const updated = [];
+    const client = {
+      query: async (sql, params) => {
+        if (sql.includes('SELECT')) {
+          // em_sii_description belongs to an uninstalled module — not in schemaRawData
+          return { rows: [{ etgo_sf_field_id: 'F2', columnname: 'em_sii_description' }] };
+        }
+        updated.push(params[0]);
+        return {};
+      },
+    };
+    const popResult = { entities: [{ entityId: 'E1' }] };
+    const allFields = [{ column: 'name' }];
+    const schemaRawData = { entities: [{ fields: [{ columnName: 'name' }] }] };
+
+    await stepExcludeNonContractFields(client, popResult, allFields, schemaRawData);
+    assert.deepEqual(updated, [], 'em_sii_description must not be toggled — module not extracted');
+  });
+
+  it('does NOT exclude a field that is already in the contract', async () => {
+    const updated = [];
+    const client = {
+      query: async (sql, params) => {
+        if (sql.includes('SELECT')) {
+          return { rows: [{ etgo_sf_field_id: 'F3', columnname: 'name' }] };
+        }
+        updated.push(params[0]);
+        return {};
+      },
+    };
+    const popResult = { entities: [{ entityId: 'E1' }] };
+    const allFields = [{ column: 'name' }];
+    const schemaRawData = { entities: [{ fields: [{ columnName: 'name' }] }] };
+
+    await stepExcludeNonContractFields(client, popResult, allFields, schemaRawData);
+    assert.deepEqual(updated, [], 'name is in contract — must not be excluded');
+  });
+
+  it('excludes nothing when schemaRawData is null', async () => {
+    const updated = [];
+    const client = {
+      query: async (sql, params) => {
+        if (sql.includes('SELECT')) {
+          return { rows: [{ etgo_sf_field_id: 'F4', columnname: 'description' }] };
+        }
+        updated.push(params[0]);
+        return {};
+      },
+    };
+    const popResult = { entities: [{ entityId: 'E1' }] };
+    const allFields = [{ column: 'name' }];
+
+    await stepExcludeNonContractFields(client, popResult, allFields, null);
+    assert.deepEqual(updated, [], 'null schemaRawData → extractedColumns is empty → nothing excluded');
+  });
+
+  it('returns the count of excluded fields', async () => {
+    const client = {
+      query: async (sql) => {
+        if (sql.includes('SELECT')) {
+          return { rows: [
+            { etgo_sf_field_id: 'FA', columnname: 'col_a' },
+            { etgo_sf_field_id: 'FB', columnname: 'col_b' },
+          ]};
+        }
+        return {};
+      },
+    };
+    const popResult = { entities: [{ entityId: 'E1' }] };
+    const allFields = [];
+    const schemaRawData = { entities: [{ fields: [{ columnName: 'col_a' }, { columnName: 'col_b' }] }] };
+
+    const count = await stepExcludeNonContractFields(client, popResult, allFields, schemaRawData);
+    assert.equal(count, 2);
   });
 });

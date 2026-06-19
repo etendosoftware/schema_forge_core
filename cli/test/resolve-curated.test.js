@@ -254,6 +254,50 @@ describe('resolveCurated — field-level drawer + display passthroughs (F3)', ()
   });
 });
 
+describe('resolveCurated — agentPrompt passthrough (ETP-4252)', () => {
+  const schemaRaw = {
+    window: { id: '700', name: 'Purchase Order' },
+    entities: [{
+      name: 'order', tableName: 'C_Order', tabId: '1', tabName: 'Header',
+      fields: [
+        { name: 'docStatus', columnName: 'DocStatus', label: 'Status', type: 'string', visibility: 'editable' },
+        { name: 'plain', columnName: 'PlainCol', label: 'Plain', type: 'string', visibility: 'editable' },
+      ],
+    }],
+  };
+  const decisions = {
+    version: 2,
+    window: { name: 'Purchase Order', agentPrompt: 'Confirm before completing.' },
+    entities: {
+      order: {
+        name: 'order',
+        fields: {
+          docStatus: { agentPrompt: 'Only advance status forward.' },
+          plain: {},
+        },
+      },
+    },
+    rules: {},
+  };
+
+  it('copies window.agentPrompt into the curated window', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.window.agentPrompt, 'Confirm before completing.');
+  });
+
+  it('copies field agentPrompt into the curated field', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const docStatus = schema.entities[0].fields.find(f => f.name === 'docStatus');
+    assert.equal(docStatus.agentPrompt, 'Only advance status forward.');
+  });
+
+  it('omits agentPrompt when a field does not declare one', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const plain = schema.entities[0].fields.find(f => f.name === 'plain');
+    assert.equal(plain.agentPrompt, undefined);
+  });
+});
+
 // ─── virtualFields — appendVirtualFields exercised via resolveCurated ───
 describe('resolveCurated — virtualFields', () => {
   const baseSchema = {
@@ -375,5 +419,71 @@ describe('resolveCurated — virtualFields', () => {
     const { schema } = await resolveCurated(baseSchema, { rules: [] }, decisions);
     const virtualFields = schema.entities[0].fields.filter(f => f.virtual === true);
     assert.equal(virtualFields.length, 0);
+  });
+});
+
+// ─── gridReadOnly — FIELD_DECISION_COPY_PROPS passthrough ───────────────────
+describe('resolveCurated — gridReadOnly passthrough', () => {
+  const schemaRaw = {
+    window: { id: '901', name: 'Return To Vendor Shipment' },
+    entities: [{
+      name: 'rtvShipment',
+      tableName: 'M_InOut',
+      tabId: '50',
+      tabName: 'Header',
+      fields: [
+        { name: 'quantity', columnName: 'Qty', label: 'Quantity',
+          type: 'number', visibility: 'editable', mandatory: false },
+        { name: 'product', columnName: 'M_Product_ID', label: 'Product',
+          type: 'foreignKey', visibility: 'editable', mandatory: false },
+      ],
+    }],
+  };
+
+  const decisionsWithGridReadOnly = {
+    version: 2,
+    window: { name: 'Return To Vendor Shipment' },
+    entities: {
+      rtvShipment: {
+        name: 'returnToVendorShipment',
+        fields: {
+          quantity: { gridReadOnly: true },
+          product: {},
+        },
+      },
+    },
+    rules: {},
+  };
+
+  it('copies gridReadOnly: true from decisions to the curated field', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisionsWithGridReadOnly);
+    const qty = schema.entities[0].fields.find(f => f.name === 'quantity');
+    assert.equal(qty.gridReadOnly, true);
+  });
+
+  it('does NOT set gridReadOnly on a field that lacks it in decisions', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisionsWithGridReadOnly);
+    const product = schema.entities[0].fields.find(f => f.name === 'product');
+    assert.equal(product.gridReadOnly, undefined);
+  });
+
+  it('does NOT set gridReadOnly when decisions field entry is absent', async () => {
+    const decisionsNoGridReadOnly = {
+      version: 2,
+      window: { name: 'Return To Vendor Shipment' },
+      entities: {
+        rtvShipment: {
+          name: 'returnToVendorShipment',
+          fields: {
+            quantity: {},
+            product: {},
+          },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisionsNoGridReadOnly);
+    const qty = schema.entities[0].fields.find(f => f.name === 'quantity');
+    assert.equal(qty.gridReadOnly, undefined);
   });
 });

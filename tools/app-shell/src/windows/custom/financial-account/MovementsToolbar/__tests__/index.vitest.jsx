@@ -69,7 +69,11 @@ describe('MovementsToolbar', () => {
 
   it('renders the back button, filter triggers, search and new-movement button', () => {
     render(
-      <MovementsToolbar filters={defaultFilters} onFiltersChange={() => () => {}} />,
+      <MovementsToolbar
+        filters={defaultFilters}
+        onFiltersChange={() => () => {}}
+        onAdvancedFilterChange={() => {}}
+      />,
     );
 
     expect(screen.getByTestId('movements-toolbar-back')).toBeInTheDocument();
@@ -180,6 +184,7 @@ describe('MovementsToolbar', () => {
       <MovementsToolbar
         filters={defaultFilters}
         onFiltersChange={() => () => {}}
+        onAdvancedFilterChange={() => {}}
         advancedFilter={advancedFilter}
       />,
     );
@@ -193,6 +198,7 @@ describe('MovementsToolbar', () => {
       <MovementsToolbar
         filters={defaultFilters}
         onFiltersChange={() => () => {}}
+        onAdvancedFilterChange={() => {}}
         advancedFilter={{ rowOperator: 'and', conditions: [] }}
       />,
     );
@@ -206,6 +212,7 @@ describe('MovementsToolbar', () => {
       <MovementsToolbar
         filters={defaultFilters}
         onFiltersChange={() => () => {}}
+        onAdvancedFilterChange={() => {}}
         advancedFilter={null}
       />,
     );

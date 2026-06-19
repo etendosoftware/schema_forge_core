@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react';
-import { ArrowLeft, Filter } from 'lucide-react';
+import { useMemo } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUI } from '@/i18n';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { AdvancedFilterBuilder } from '@/components/contract-ui/AdvancedFilterBuilder.jsx';
+import { AdvancedFilterButton } from '@/components/contract-ui/AdvancedFilterButton.jsx';
 import { DateRangeFilter } from './DateRangeFilter';
 import { TypeFilter } from './TypeFilter';
 import { buildMovementFilterColumns } from '../movementAdvancedFilter';
@@ -33,9 +32,7 @@ export function MovementsToolbar({
 }) {
   const ui = useUI();
   const navigate = useNavigate();
-  const [advancedOpen, setAdvancedOpen] = useState(false);
   const columns = useMemo(() => buildMovementFilterColumns(ui), [ui]);
-  const activeConditions = advancedFilter?.conditions?.length ?? 0;
 
   return (
     <div className="flex h-auto min-h-[52px] flex-wrap items-center gap-2 px-2 py-2">
@@ -45,43 +42,24 @@ export function MovementsToolbar({
         aria-label={ui('financeAccountDetailBack')}
         data-testid="movements-toolbar-back"
         onClick={() => navigate(-1)}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white text-[#6c6c89] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9] hover:text-[#121217]"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-colors hover:bg-[#F5F7F9] hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
       </button>
 
-      {/* Remaining quick filters */}
-      <DateRangeFilter value={filters.dateRange} onChange={onFiltersChange('dateRange')} />
+      {/* Quick filters — type/status first, then date, mirroring the standard
+          list toolbar (e.g. Sales Order). */}
       <TypeFilter value={filters.type} onChange={onFiltersChange('type')} />
+      <DateRangeFilter value={filters.dateRange} onChange={onFiltersChange('dateRange')} />
 
       {/* Advanced "by conditions" filter — right after the Type filter */}
-      <Popover open={advancedOpen} onOpenChange={setAdvancedOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            data-testid="movements-advanced-filter"
-            title={ui('advancedFilterTitle')}
-            className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white text-[#6c6c89] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9] hover:text-[#121217]"
-          >
-            <Filter className="h-4 w-4" />
-            {activeConditions > 0 ? (
-              <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#121217] px-1 text-[10px] font-semibold leading-none text-white">
-                {activeConditions}
-              </span>
-            ) : null}
-          </button>
-        </PopoverTrigger>
-        <PopoverContent align="start" className="w-auto p-4">
-          <AdvancedFilterBuilder
-            columns={columns}
-            rows={rows}
-            value={advancedFilter}
-            onApply={(next) => onAdvancedFilterChange?.(next)}
-            onClear={() => onAdvancedFilterChange?.(null)}
-            onClose={() => setAdvancedOpen(false)}
-          />
-        </PopoverContent>
-      </Popover>
+      <AdvancedFilterButton
+        columns={columns}
+        rows={rows}
+        value={advancedFilter}
+        onChange={onAdvancedFilterChange}
+        testId="movements-advanced-filter"
+      />
 
       {/* Search */}
       <div className="flex-1" />

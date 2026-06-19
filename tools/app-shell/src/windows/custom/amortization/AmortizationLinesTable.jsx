@@ -32,11 +32,11 @@ const VISIBLE_DIMENSION_FIELDS = DIMENSION_FIELDS.filter(f => !f.hidden);
 // ── DimensionGrid ────────────────────────────────────────────────────
 // Renders DIMENSION_FIELDS directly via SelectorInput so we can control
 // the placeholder (empty resolvedLabel → "Seleccionar..." / "Select...").
-function DimensionGrid({ fields, data, onChange, onFieldSave, apiBaseUrl, token, catalogs, readOnly, labelOverrides }) {
+function DimensionGrid({ fields, data, onChange, onFieldSave, apiBaseUrl, token, catalogs, readOnly, isCompleted, labelOverrides }) {
   const t = useLabel(labelOverrides);
   return (
     <div
-      className="[&_button[role=combobox]]:!bg-white [&_button[role=combobox]:hover]:!bg-[#F5F7F9] [&_input]:!bg-white [&_input:disabled]:!opacity-100"
+      className={`[&_button[role=combobox]]:!bg-white [&_button[role=combobox]:hover]:!bg-[#F5F7F9] [&_input]:!bg-white${isCompleted ? '' : ' [&_input:disabled]:!opacity-100'}`}
       style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}
     >
       {fields.filter(f => !f.hidden).map(f => {
@@ -385,7 +385,7 @@ export default function AmortizationLinesTable({
                 <Checkbox checked={allSelected} indeterminate={someSelected} onChange={toggleAll} disabled={isReadOnly} aria-label={ui('selectAll')} />
               </div>
             </th>
-            <th className="h-10 px-3 text-left align-middle text-xs leading-4 font-semibold text-text-primary tracking-normal">
+            <th className="h-10 w-64 px-3 text-left align-middle text-xs leading-4 font-semibold text-text-primary tracking-normal">
               {t('A_Asset_ID')}
             </th>
             <th className="h-10 w-36 px-3 text-right align-middle text-xs leading-4 font-semibold text-text-primary tracking-normal">
@@ -556,6 +556,7 @@ export default function AmortizationLinesTable({
                             onChange={(k, v) => handleChange(line.id, k, v)}
                             onFieldSave={(k, v) => saveField(line.id, line, k, v)}
                             apiBaseUrl={apiBaseUrl} token={token} catalogs={catalogs} readOnly={isReadOnly}
+                            isCompleted={processed}
                             labelOverrides={api?.labelOverrides} />
                         </td>
                       </tr>

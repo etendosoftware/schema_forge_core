@@ -83,9 +83,9 @@ describe('StatementsTable', () => {
     expect(screen.queryByText('financeAccountStatementsEmpty')).not.toBeInTheDocument();
   });
 
-  it('maps PENDING → neutral, PARTIAL → warning, RECONCILED → success status tones', () => {
+  it('maps PENDING → info, PARTIAL → warning, RECONCILED → success status tones', () => {
     render(<StatementsTable statements={ROWS} loading={false} />);
-    expect(screen.getByTestId('status-neutral')).toBeInTheDocument();
+    expect(screen.getByTestId('status-info')).toBeInTheDocument();
     expect(screen.getByTestId('status-warning')).toBeInTheDocument();
     expect(screen.getByTestId('status-success')).toBeInTheDocument();
   });
@@ -135,6 +135,44 @@ describe('StatementsTable', () => {
     expect(
       screen.getAllByLabelText('financeAccountStatementsExpandAria').length,
     ).toBeGreaterThanOrEqual(1);
+  });
+
+  describe('row actions', () => {
+    const DRAFT = {
+      id: 'd1', documentNo: 'BS-D', name: 'Borrador',
+      importDate: '2026-06-01T00:00:00Z', transactionDate: '2026-06-01T00:00:00Z',
+      lineCount: 1, matchedCount: 0, status: 'DRAFT', processed: 'N',
+    };
+
+    it('shows inline Edit + Delete for a draft and fires the handlers', async () => {
+      const user = userEvent.setup();
+      const onEdit = vi.fn();
+      const onDelete = vi.fn();
+      render(
+        <StatementsTable
+          statements={[DRAFT]}
+          loading={false}
+          actions={{ onEdit, onDelete, onProcess: vi.fn(), onReactivate: vi.fn() }}
+        />,
+      );
+      await user.click(screen.getByTestId('statement-row-edit-d1'));
+      expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 'd1' }));
+      await user.click(screen.getByTestId('statement-row-delete-d1'));
+      expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 'd1' }));
+    });
+
+    it('hides inline Edit + Delete for a processed statement (only the kebab remains)', () => {
+      render(
+        <StatementsTable
+          statements={[ROWS[0]]}
+          loading={false}
+          actions={{ onEdit: vi.fn(), onDelete: vi.fn(), onProcess: vi.fn(), onReactivate: vi.fn() }}
+        />,
+      );
+      expect(screen.queryByTestId('statement-row-edit-s1')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('statement-row-delete-s1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('statement-row-menu-s1')).toBeInTheDocument();
+    });
   });
 
   describe('selection', () => {

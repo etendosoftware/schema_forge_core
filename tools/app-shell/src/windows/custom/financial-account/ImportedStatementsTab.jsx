@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, forwardRef, useImperativeHandle } from 'react';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 import { useBankStatements } from '@/hooks/useBankStatements';
@@ -10,45 +10,7 @@ import { ImportStatementModal } from './ImportStatementModal';
 import { ManualStatementModal } from './ManualStatementModal';
 import { StatementConfirmDialog } from './StatementConfirmDialog';
 import { applyAdvancedFilter } from './statementAdvancedFilter';
-
-function presetBounds(presetId) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const to = new Date(today);
-  const from = new Date(today);
-  if (presetId === 'today') {
-    /* from = to = start of today */
-  } else if (presetId === 'yesterday') {
-    from.setDate(from.getDate() - 1);
-    to.setDate(to.getDate() - 1);
-  } else if (presetId === 'last7') {
-    from.setDate(from.getDate() - 6);
-  } else if (presetId === 'last30') {
-    from.setDate(from.getDate() - 29);
-  } else if (presetId === 'last12m') {
-    from.setMonth(from.getMonth() - 12);
-  } else {
-    return null;
-  }
-  to.setHours(23, 59, 59, 999);
-  return { from, to };
-}
-
-function getDateBounds(dateRange) {
-  if (!dateRange) return { from: null, to: null };
-  if ('presetId' in dateRange) {
-    const bounds = presetBounds(dateRange.presetId);
-    return bounds ?? { from: null, to: null };
-  }
-  if ('from' in dateRange && 'to' in dateRange) {
-    const from = dateRange.from instanceof Date ? new Date(dateRange.from) : null;
-    const to = dateRange.to instanceof Date ? new Date(dateRange.to) : null;
-    if (from) from.setHours(0, 0, 0, 0);
-    if (to) to.setHours(23, 59, 59, 999);
-    return { from, to };
-  }
-  return { from: null, to: null };
-}
+import { getDateBounds } from '@/lib/dateRangeBounds';
 
 /**
  * Imported Statements tab for the Financial Account detail view.
@@ -57,9 +19,13 @@ function getDateBounds(dateRange) {
  *   selectedStatementId == null  → list view
  *   selectedStatementId != null  → lines sub-view (← button clears it)
  *
+ * Exposes `getSelectedStatementIds()` and `getFilteredStatements()` via ref so
+ * the parent's Export button can decide what to export: the filtered statement
+ * headers (no selection) or the lines of the selected statement(s).
+ *
  * @param {{ account: object }} props
  */
-export function ImportedStatementsTab({ account }) {
+export const ImportedStatementsTab = forwardRef(function ImportedStatementsTab({ account }, ref) {
   const ui = useUI();
   const accountId = account?.id ?? null;
   const currency = account?.currencyIso ?? 'EUR';
@@ -104,6 +70,9 @@ export function ImportedStatementsTab({ account }) {
 
   // Per-variant wiring for the confirm dialog: the action to run plus its
   // success / error toast keys. Keeps runConfirm free of nested branching.
+  // The `error`/`success` values are i18n KEYS resolved later via ui(cfg.error);
+  // they are not user-facing literals.
+  // i18n-allowlist: ["financeAccountStatementsDeleteError", "financeAccountStatementsReactivateError", "financeAccountStatementsProcessError"]
   const CONFIRM_ACTIONS = {
     delete: {
       run: deleteStatement,
@@ -159,6 +128,17 @@ export function ImportedStatementsTab({ account }) {
     });
     return applyAdvancedFilter(base, advancedFilter);
   }, [statements, search, dateRange, status, advancedFilter]);
+
+  // Latest filtered headers + current selection reachable via ref, so the
+  // parent's Export button can read them on click without subscribing here.
+  const filteredRef = useRef(filteredStatements);
+  filteredRef.current = filteredStatements;
+  const selectedRef = useRef(selectedIds);
+  selectedRef.current = selectedIds;
+  useImperativeHandle(ref, () => ({
+    getFilteredStatements: () => filteredRef.current,
+    getSelectedStatementIds: () => Array.from(selectedRef.current),
+  }), []);
 
   if (selectedStatementId) {
     return (
@@ -224,4 +204,4 @@ export function ImportedStatementsTab({ account }) {
       />
     </div>
   );
-}
+});

@@ -162,3 +162,14 @@ See [Shared validation & UX changes — ETP-4005](app-shell-functional-flows.md#
 - **ETP-4096 — Restore `rejectReason` to `readOnly`**: commit `c4907e08` (ETP-4070 mass regen, 2026-05-22) accidentally reverted `decisions.json → entities.header.fields.rejectReason.visibility` from `"readOnly"` back to `"editable"`, re-introducing the regression that ETP-4006 had fixed. ETP-4096 restores it to `"readOnly"`, regenerates the contract and frontend, and updates the contract-integrity test assertion to match.
 
 - **ETP-4103 — Generator fix (labelOverrides deduplication)**: `const labelOverrides` in the generated page now references `api.labelOverrides` instead of re-embedding the full object. No functional change — field labels and selectors behave identically.
+
+## PSD2 dependency — `EM_Psd2_Generate_Bank_Payment`
+
+`com.etendoerp.go` now depends on the **PSD2** module, which adds the
+`EM_Psd2_Generate_Bank_Payment` ("Generate Bank Payment") column to the shared
+core table this window sits on (`C_Order` / `C_Invoice` / `FIN_Payment`). Because
+Schema Forge extracts from AD, that column surfaces in this window's contract as a
+**system field** — present in the backend contract but **not** rendered in the
+frontend (there is no `AD_Field` for it on this window). No UI or behavior change;
+this note only records why the contract was regenerated when the PSD2 dependency
+was added. Full rationale: [`docs/plans/psd2-dependency-cross-domain.md`](../plans/psd2-dependency-cross-domain.md).

@@ -82,6 +82,7 @@
   },
   "entities": {
     "assets": {
+      "javaQualifier": "assetsHandler",
       "fields": {
         "searchKey": {
           "searchable": true,
