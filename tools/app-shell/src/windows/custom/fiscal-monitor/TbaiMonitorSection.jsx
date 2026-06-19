@@ -3,7 +3,7 @@ import { useUI } from '@/i18n';
 import { useApiFetch } from '@/auth/useApiFetch.js';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { Checkbox } from '@/components/ui/checkbox';
-import { StatusPill, NumFactura, ScrollSentinel, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE, ExportIcon, useFmSelection } from './FmPrimitives.jsx';
+import { StatusPill, NumFactura, ScrollSentinel, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE, ExportIcon, useFmSelection, fetchCsvAndDownload } from './FmPrimitives.jsx';
 import { TBAI_SPEC, TBAI_ENTITY } from './useFiscalMonitor.js';
 
 const STATUS_FIELD = 'estado';
@@ -11,6 +11,14 @@ const STATUS_FIELD = 'estado';
 const FILTER_ALL      = 'all';
 const FILTER_SENT     = 'sent';
 const FILTER_REJECTED = 'rejected';
+
+const TBAI_EXPORT_COLS = [
+  { label: 'Date',        get: r => { const inv = parseIdentifier(r); return r.invoiceDate ?? inv.date ?? ''; } },
+  { label: 'Invoice No.', get: r => parseIdentifier(r).docNo },
+  { label: 'Description', get: r => r['invoice$description'] ?? r.descripcion ?? '' },
+  { label: 'Signature',   get: r => r.estado === 'Recibido' ? 'Yes' : 'No' },
+  { label: 'Status',      get: r => r.estado ?? '' },
+];
 
 function parseIdentifier(row) {
   const raw = row['invoice$_identifier'] ?? row.invoiceIdentifier ?? null;
@@ -62,6 +70,7 @@ export default function TbaiMonitorSection({
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
   const { selectedIds, setSelectedIds, allSelected, someSelected, handleToggleAll, handleToggleRow } = useFmSelection(rows);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => { setFilter(mapInitialFilter(initialFilter)); }, [initialFilter]);
 
@@ -96,6 +105,28 @@ export default function TbaiMonitorSection({
   // Reset to first page, rows and selection when filter changes
   useEffect(() => { setPage(1); setRows([]); setSelectedIds(new Set()); }, [filter, setSelectedIds]);
 
+  async function handleExport() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const params = { organization: orgId };
+      if (filter === FILTER_SENT) {
+        params.criteria = JSON.stringify([{ fieldName: 'estado', operator: 'equals', value: 'Recibido' }]);
+      } else if (filter === FILTER_REJECTED) {
+        params.criteria = JSON.stringify([{ fieldName: 'estado', operator: 'inSet', value: ['Rechazado', 'Error'] }]);
+      }
+      await fetchCsvAndDownload(
+        apiFetch,
+        `/${TBAI_SPEC}/${encodeURIComponent(TBAI_ENTITY)}`,
+        params,
+        `tbai_${filter}`,
+        TBAI_EXPORT_COLS,
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const tbaiKpis      = kpis?.tbai ?? {};
   const countAll      = tbaiKpis.total    ?? 0;
   const countSent     = tbaiKpis.received ?? 0;
@@ -123,7 +154,7 @@ export default function TbaiMonitorSection({
             </button>
           ))}
         </div>
-        <button className="fm-export-btn">
+        <button className="fm-export-btn" onClick={handleExport} disabled={loading || exporting}>
           <ExportIcon /> {ui('fiscalMonitor.export')}
         </button>
       </div>

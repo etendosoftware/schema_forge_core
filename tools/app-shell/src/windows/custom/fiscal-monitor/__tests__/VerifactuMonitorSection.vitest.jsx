@@ -106,4 +106,36 @@ describe('VerifactuMonitorSection', () => {
     render(<VerifactuMonitorSection {...baseProps} mockRows={[]} />);
     expect(screen.getByTestId('verifactu-tablecard')).toBeInTheDocument();
   });
+
+  it('accepts legacy initialTab="accepted" mapping to correct', () => {
+    render(<VerifactuMonitorSection {...baseProps} mockRows={[]} initialTab="accepted" />);
+    const pill = screen.getByText('fiscalMonitor.verifactu.pill.correct').closest('button');
+    expect(pill?.className).toContain('active');
+  });
+
+  it('renders error message when API fails', async () => {
+    stableApiFetch.mockRejectedValueOnce(new Error('HTTP 500'));
+    render(<VerifactuMonitorSection {...baseProps} mockRows={null} />);
+    await waitFor(() => expect(screen.getByText(/HTTP 500/)).toBeInTheDocument());
+  });
+
+  it('fetches correct tab with _org param', async () => {
+    render(<VerifactuMonitorSection {...baseProps} mockRows={null} />);
+    await waitFor(() => expect(stableApiFetch).toHaveBeenCalledWith(
+      expect.stringContaining('_org=org-1'),
+    ));
+  });
+
+  it('fetches problems tab when switching filter', async () => {
+    render(<VerifactuMonitorSection {...baseProps} mockRows={null} />);
+    await waitFor(() => expect(stableApiFetch).toHaveBeenCalled());
+    stableApiFetch.mockClear();
+    fireEvent.click(screen.getByText('fiscalMonitor.verifactu.pill.problems'));
+    await waitFor(() => expect(stableApiFetch).toHaveBeenCalled());
+  });
+
+  it('does not show resolve button when no rows are selected', () => {
+    render(<VerifactuMonitorSection {...baseProps} mockRows={[]} />);
+    expect(screen.queryByText('vfSolveError.resolveBtn')).toBeNull();
+  });
 });

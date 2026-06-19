@@ -16602,6 +16602,13 @@
     }
   },
   "genericLabels": {
+    "balanced": "Cuadrado",
+    "difference": "Diferencia",
+    "journalUnbalancedSaveBlocked": "El debe y el haber deben ser iguales antes de guardar",
+    "journalUnbalancedCompleteBlocked": "El debe y el haber deben ser iguales y distintos de cero antes de completar",
+    "totalCredit": "Total haber",
+    "totalDebit": "Total debe",
+    "unbalanced": "Descuadrado",
     "taxScopeSales": "Ventas",
     "taxScopePurchase": "Compras",
     "save": "Guardar",
@@ -16612,6 +16619,7 @@
     "create": "Crear",
     "clone": "Clonar",
     "confirm": "Confirmar",
+    "complete": "Completar",
     "retry": "Reintentar",
     "discard": "Descartar",
     "optional": "opcional",
@@ -21223,6 +21231,9 @@
     },
     "Manual Settlement": {
       "label": "Liquidación manual"
+    },
+    "Manual Journals": {
+      "label": "Asientos Manuales"
     },
     "G/L Item": {
       "label": "Concepto contable"
