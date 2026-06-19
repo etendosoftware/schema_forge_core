@@ -86,21 +86,31 @@ export default function FinancialAccountWindow({ recordId }) {
   const [autoMatchOpen, setAutoMatchOpen] = useState(
     () => searchParams.get('autoMatch') === 'true' || searchParams.get('tab') === 'reconciliation',
   );
+  // Transaction to highlight in the Movements tab (deep-link from the reconciled-txns modal arrow).
+  const [highlightTxnId, setHighlightTxnId] = useState(() => searchParams.get('txn') || null);
 
   // Switching INTO the Reconciliation tab opens the automatch modal first.
   const handleTabChange = useCallback((tab) => {
     setActiveTab(tab);
+    setHighlightTxnId(null);
     if (tab === 'reconciliation') {
       setAutoMatchOpen(true);
     }
   }, []);
 
-  // Clear the URL params once consumed so back-navigation doesn't re-trigger them.
+  // Apply deep-link params (tab / autoMatch / txn) and clear them. Reacts to searchParams changes
+  // — not just mount — because navigating within the SAME account (e.g. from the reconciled-txns
+  // modal to the Movements tab) updates the URL without remounting this window.
   useEffect(() => {
-    if (searchParams.has('tab') || searchParams.has('autoMatch')) {
-      setSearchParams({}, { replace: true });
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const tab = searchParams.get('tab');
+    const txn = searchParams.get('txn');
+    const autoMatch = searchParams.get('autoMatch');
+    if (!tab && !txn && !autoMatch) return;
+    if (tab) setActiveTab(tab);
+    if (txn) setHighlightTxnId(txn);
+    if (autoMatch === 'true' || tab === 'reconciliation') setAutoMatchOpen(true);
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
   const { account, reload: reloadAccount } = useFinancialAccount(recordId);
   const { groups: autoMatchGroups, kpis: autoMatchKpis, loading: autoMatchLoading, reload: reloadAutoMatch } = useAutoMatch(
     autoMatchOpen ? recordId : null,
@@ -253,6 +263,7 @@ export default function FinancialAccountWindow({ recordId }) {
               paymentMethods={paymentMethods}
               loading={movementsLoading}
               onReload={reloadMovements}
+              highlightTxnId={highlightTxnId}
             />
           )}
           {activeTab === 'reconciliation' && (

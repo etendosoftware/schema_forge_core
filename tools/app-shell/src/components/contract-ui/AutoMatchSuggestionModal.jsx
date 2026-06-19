@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { ArrowUpRight, Info } from 'lucide-react';
+import { ArrowUpRight, Info, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -32,6 +32,30 @@ function RuleTypeBadge({ label, tone = 'default' }) {
     <span className={cn('inline-flex items-center rounded-lg px-2 py-1 text-xs font-normal leading-4', cls)}>
       {label}
     </span>
+  );
+}
+
+/**
+ * Shared checkbox control so the header select-all and the per-group checkboxes look identical:
+ * a 16px box with `rounded-[4px]`, dark when active, showing a check (rows) or a dash (header).
+ */
+function SelectBox({ checked = false, dash = false, onClick, testId, ariaLabel }) {
+  const active = checked || dash;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-testid={testId}
+      aria-label={ariaLabel}
+      aria-checked={dash ? 'mixed' : (checked ? 'true' : 'false')}
+      className={cn(
+        'flex h-4 w-4 flex-none cursor-pointer items-center justify-center rounded-[4px] border',
+        active ? 'border-[#121217] bg-[#121217]' : 'border-[#D1D4DB] bg-white',
+      )}
+    >
+      {dash && <span className="h-[2px] w-2 rounded-full bg-white" />}
+      {checked && !dash && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+    </button>
   );
 }
 
@@ -118,7 +142,10 @@ function OperationRow({ op, isLast }) {
         )}
       </div>
       <div className="flex-none text-right">
-        <div className="text-sm font-semibold leading-5 text-[#D50B3E]">
+        <div className={cn(
+          'text-sm font-semibold leading-5',
+          amount < 0 ? 'text-[#D50B3E]' : 'text-[#1E874C]',
+        )}>
           {amount !== 0
             ? `${amount < 0 ? '-' : '+'}${Math.abs(amount).toFixed(2).replace('.', ',')} €`
             : '—'}
@@ -149,12 +176,10 @@ function GroupRow({ group, checked, onToggle, currency }) {
     <div className="flex flex-row items-stretch overflow-hidden rounded-lg border border-[#E8EAEF]">
       {/* Checkbox sidebar */}
       <div className="flex w-8 flex-none items-start justify-center border-r border-[#E8EAEF] bg-[#F5F7F9] px-1 py-3">
-        <input
-          type="checkbox"
+        <SelectBox
           checked={checked}
-          onChange={() => onToggle(group.groupKey)}
-          data-testid={`automatch-group-check-${group.groupKey}`}
-          className="mt-0.5 h-4 w-4 cursor-pointer accent-[#121217]"
+          onClick={() => onToggle(group.groupKey)}
+          testId={`automatch-group-check-${group.groupKey}`}
         />
       </div>
 
@@ -212,7 +237,6 @@ export function AutoMatchSuggestionModal({
   }, [groups]);
 
   const allChecked = checked.size === groups.length && groups.length > 0;
-  const someChecked = checked.size > 0 && !allChecked;
 
   const toggleAll = useCallback(() => {
     setChecked(allChecked ? new Set() : allKeys);
@@ -302,21 +326,25 @@ export function AutoMatchSuggestionModal({
           {/* Column headers */}
           <div className="flex flex-row px-5 pb-0 pt-3">
             {/* Left header */}
-            <div className="flex flex-1 items-center gap-2 pl-1">
-              <input
-                type="checkbox"
-                checked={allChecked}
-                ref={(el) => { if (el) el.indeterminate = someChecked; }}
-                onChange={toggleAll}
-                data-testid="automatch-select-all"
-                className="h-4 w-4 cursor-pointer accent-[#121217]"
-              />
-              <span className="text-base font-semibold leading-6 text-[#121217]">
-                {ui('financeReconcileAutomatchColStatement')}
-              </span>
-              <span className="rounded-lg border border-[#D1D4DB] bg-[#F5F7F9] px-1.5 py-0.5 text-xs text-[#3F3F50]">
-                {groups.length}
-              </span>
+            <div className="flex flex-1 items-center">
+              {/* Select-all sits in a w-8 box so its center lines up with the per-row checkbox
+                  sidebar. Shows a dash whenever there is any selection (same control as the rows). */}
+              <div className="flex w-8 flex-none items-center justify-center">
+                <SelectBox
+                  dash={checked.size > 0}
+                  onClick={toggleAll}
+                  testId="automatch-select-all"
+                  ariaLabel={ui('financeReconcileColSelect')}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-base font-semibold leading-6 text-[#121217]">
+                  {ui('financeReconcileAutomatchColStatement')}
+                </span>
+                <span className="rounded-lg border border-[#D1D4DB] bg-[#F5F7F9] px-1.5 py-0.5 text-xs text-[#3F3F50]">
+                  {groups.length}
+                </span>
+              </div>
             </div>
             {/* Right header */}
             <div className="flex flex-1 items-center pl-3">
@@ -366,7 +394,7 @@ export function AutoMatchSuggestionModal({
               data-testid="automatch-modal-cancel"
               className="flex h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[#121217] hover:bg-[#F5F7F9]"
             >
-              {ui('financeReconcileActionCancel')}
+              {ui('cancel')}
             </button>
 
             {/* Open reconciliation */}
@@ -389,7 +417,7 @@ export function AutoMatchSuggestionModal({
               className={cn(
                 'flex h-10 items-center gap-1 rounded-full px-3 text-sm font-medium transition-colors',
                 checkedGroups.length > 0 && !loading
-                  ? 'bg-[#121217] text-white hover:bg-[#2A2A35]'
+                  ? 'bg-[#121217] text-white hover:bg-[#FFD500] hover:text-[#121217]'
                   : 'cursor-not-allowed bg-[#D1D4DB] text-[#6C6C89]',
               )}
             >

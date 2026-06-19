@@ -1,8 +1,8 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-06-11T18:36:13.442Z",
-  "updatedAt": "2026-06-16T23:12:22.120Z",
-  "checksum": "4d753b16c8489175",
+  "updatedAt": "2026-06-18T22:18:00.996Z",
+  "checksum": "01438675ab0c702a",
   "frontendContract": {
     "window": {
       "id": "24963D64E83B4543A7F6BD248CF944EE",
@@ -340,7 +340,7 @@
             "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
-            "required": false,
+            "required": true,
             "grid": true,
             "form": true,
             "reference": "GLItem",
@@ -635,7 +635,7 @@
             "column": "C_GLItem_ID",
             "type": "foreignKey",
             "visibility": "editable",
-            "required": false
+            "required": true
           },
           {
             "name": "product",
@@ -842,7 +842,9 @@
           "textCondition": {
             "required": true
           },
-          "accountingConcept": {},
+          "accountingConcept": {
+            "required": true
+          },
           "product": {}
         }
       }
@@ -861,7 +863,8 @@
         "name",
         "priority",
         "textPattern",
-        "textCondition"
+        "textCondition",
+        "accountingConcept"
       ],
       "recommendedOrder": [
         "createHeader"
@@ -884,7 +887,8 @@
           "name",
           "priority",
           "textPattern",
-          "textCondition"
+          "textCondition",
+          "accountingConcept"
         ]
       }
     ],

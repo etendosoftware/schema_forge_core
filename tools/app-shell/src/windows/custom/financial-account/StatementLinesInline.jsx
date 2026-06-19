@@ -12,9 +12,10 @@ import { getContractGridColumns } from '@/components/financial-accounts/contract
 // the window contract (entity `bankStatementLines`); the synthetic tail (match
 // pill, transaction chip, flexible spacer) stays fixed. Grid template built
 // dynamically and applied inline (Tailwind can't JIT a dynamic class).
-//   <contract columns> · 100 status pill · 120 txn chip · minmax(0,1fr) spacer
+//   <contract columns> · 100 status pill · 120 txn chip
+// No trailing spacer: the description column (2fr) absorbs the leftover width.
 const MINI_GRID_CLASS = 'grid gap-3';
-const MINI_TAIL_TRACKS = '100px 120px minmax(0,1fr)';
+const MINI_TAIL_TRACKS = '100px 120px';
 
 // Contract field name → width + i18n header + cell renderer. Amount OUT/IN are
 // derived from the signed `line.amount`, so dramount/cramount render the split.
@@ -25,7 +26,7 @@ const LINE_CELL_RENDERERS = {
     render: (line, ctx) => <span className="whitespace-nowrap text-[#121217]">{formatDate(line.date, ctx.bcpLocale)}</span>,
   },
   description: {
-    width: 'minmax(140px,1fr)',
+    width: 'minmax(220px,2fr)',
     labelKey: 'financeAccountStatementLinesColDescription',
     render: (line) => (
       <span className={cn('truncate', line.description ? 'text-[#3F3F50]' : 'text-[#C1C3CC]')} title={line.description || ''}>
@@ -57,6 +58,15 @@ const LINE_CELL_RENDERERS = {
     render: (line) => (
       <span className={cn('truncate', line.glItemName ? 'text-[#3F3F50]' : 'text-[#C1C3CC]')} title={line.glItemName || ''}>
         {line.glItemName || '—'}
+      </span>
+    ),
+  },
+  referenceNo: {
+    width: 'minmax(120px,1fr)',
+    labelKey: 'financeAccountStatementLinesColReference',
+    render: (line) => (
+      <span className={cn('truncate', line.reference ? 'text-[#3F3F50]' : 'text-[#C1C3CC]')} title={line.reference || ''}>
+        {line.reference || '—'}
       </span>
     ),
   },
@@ -195,18 +205,18 @@ export function StatementLinesInline({ statementId, currency = 'EUR' }) {
       <div
         style={MINI_GRID_STYLE}
         className={cn(
+          // Same recipe as the parent Statements table header (h-10 items-center) — centered.
           MINI_GRID_CLASS,
           'h-10 items-center border-b border-[#E8EAEF] px-3 text-xs font-semibold leading-4 text-[#121217]',
         )}
       >
         {LINE_COLUMNS.map((col) => (
-          <span key={col.name}>
+          <span key={col.name} className="truncate">
             {LINE_CELL_RENDERERS[col.name] ? ui(LINE_CELL_RENDERERS[col.name].labelKey) : col.label}
           </span>
         ))}
-        <span>{ui('financeAccountStatementLinesColMatched')}</span>
-        <span>{ui('financeAccountStatementLinesColTransaction')}</span>
-        <span aria-hidden="true" />
+        <span className="truncate">{ui('financeAccountStatementLinesColMatched')}</span>
+        <span className="truncate">{ui('financeAccountStatementLinesColTransaction')}</span>
       </div>
 
       {/* Body */}
@@ -226,11 +236,10 @@ export function StatementLinesInline({ statementId, currency = 'EUR' }) {
 function renderBody({ loading, lines, ui, currency, bcpLocale, onOpenTxns }) {
   if (loading) {
     return [1, 2, 3].map((n) => (
-      <div key={n} style={MINI_GRID_STYLE} className={cn(MINI_GRID_CLASS, 'border-b border-[#F0F2F5] px-3 py-2.5')}>
+      <div key={n} style={MINI_GRID_STYLE} className={cn(MINI_GRID_CLASS, 'items-center border-b border-[#F0F2F5] px-3 py-2.5')}>
         {SKELETON_CELL_KEYS.map((k) => (
           <Skeleton key={k} className="h-4 w-full" />
         ))}
-        <span aria-hidden="true" />
       </div>
     ));
   }
@@ -257,7 +266,7 @@ function LineRow({ line, ui, currency, bcpLocale, onOpenTxns }) {
       style={MINI_GRID_STYLE}
       className={cn(
         MINI_GRID_CLASS,
-        'border-b border-[#F0F2F5] px-3 py-2.5 text-sm transition-colors last:border-0 hover:bg-[#FAFBFC]',
+        'items-center border-b border-[#F0F2F5] px-3 py-2.5 text-sm transition-colors last:border-0 hover:bg-[#FAFBFC]',
       )}
     >
       {/* Contract-driven data columns (decisions.json → contract.json) */}
@@ -273,7 +282,6 @@ function LineRow({ line, ui, currency, bcpLocale, onOpenTxns }) {
       })}
       <span><MatchPill kind={matchKind} ui={ui} /></span>
       <span className="min-w-0"><TxnChip line={line} ui={ui} onOpen={onOpenTxns} /></span>
-      <span aria-hidden="true" />
     </div>
   );
 }

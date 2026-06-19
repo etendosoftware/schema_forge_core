@@ -32,16 +32,28 @@ const SKELETON_CELL_KEYS = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5'];
 // Elevation shadow shared by the selected row in both panels.
 const ELEVATED_SHADOW =
   'shadow-[0px_10px_15px_-3px_rgba(18,18,23,0.08),0px_4px_6px_-2px_rgba(18,18,23,0.05)]';
-const STATUS_CODES = ['pending', 'reconciled'];
+const STATUS_CODES = ['pending', 'suggested', 'byRule', 'difference', 'reconciled'];
 const DOC_TYPE_CODES = ['receipts', 'payments'];
+
+// i18n label key per status code, shared by the filter and the row badges.
+const STATUS_LABEL_KEY = {
+  pending: 'financeReconcileFilterStatusPending',
+  suggested: 'financeReconcileFilterStatusSuggested',
+  byRule: 'financeReconcileFilterStatusByRule',
+  difference: 'financeReconcileFilterStatusDifference',
+  reconciled: 'financeReconcileFilterStatusReconciled',
+};
 
 /** Pill badge for line/candidate status. Suggested → blue, reconciled → green, else grey. */
 function StatusBadge({ kind }) {
   const ui = useUI();
+  // Figma badge palette: grey / blue / amber / red / green (all full pills).
   const map = {
-    suggested: { labelKey: 'financeReconcileBadgeSuggested', cls: 'bg-[#E6EEFF] text-[#1B4FD6]' },
-    reconciled: { labelKey: 'financeReconcileBadgeReconciled', cls: 'bg-[#E8F6EE] text-[#1E874C]' },
-    pending: { labelKey: 'financeReconcileBadgePending', cls: 'bg-[#F0F1F4] text-[#6C6C89]' },
+    suggested: { labelKey: 'financeReconcileBadgeSuggested', cls: 'bg-[#F0FAFF] text-[#0075AD]' },
+    byRule: { labelKey: 'financeReconcileBadgeByRule', cls: 'bg-[#FFF9EB] text-[#92600A]' },
+    difference: { labelKey: 'financeReconcileBadgeDifference', cls: 'bg-[#FEF0F4] text-[#D50B3E]' },
+    reconciled: { labelKey: 'financeReconcileBadgeReconciled', cls: 'bg-[#EEFBF4] text-[#17663A]' },
+    pending: { labelKey: 'financeReconcileBadgePending', cls: 'bg-[#F5F7F9] text-[#3F3F50]' },
   };
   const cfg = map[kind] ?? map.pending;
   return (
@@ -69,19 +81,18 @@ function ToolbarShell({ children, search, onSearchChange, testIdPrefix }) {
   );
 }
 
-function ReconciliationStatusFilter({ value, onChange }) {
+function ReconciliationStatusFilter({ value, onChange, counts = {} }) {
   const ui = useUI();
+  const countFor = (code) => counts[code] ?? 0;
   return (
     <DistinctValuesFilter
       value={value}
       onChange={onChange}
       codes={STATUS_CODES}
-      labelFor={(code) => (code === 'reconciled'
-        ? ui('financeReconcileFilterStatusReconciled')
-        : ui('financeReconcileFilterStatusPending'))}
-      allLabel={ui('financeReconcileFilterStatusAll')}
+      labelFor={(code) => `${ui(STATUS_LABEL_KEY[code] ?? STATUS_LABEL_KEY.pending)} (${countFor(code)})`}
+      allLabel={`${ui('financeReconcileFilterStatusAll')} (${counts.all ?? 0})`}
       searchPlaceholder={ui('financeReconcileFilterStatusSearchPlaceholder')}
-      popoverWidth="w-56"
+      popoverWidth="w-60"
     />
   );
 }
@@ -208,13 +219,14 @@ function PanelShell({ className, toolbar, headCells, loading, items, renderRow, 
  */
 function StatementLinesPanel({
   lines, total, loading, currency, bcpLocale, selectedLineId, onSelectLine, search, onSearchChange,
-  status, onStatusChange, dateRange, onDateRangeChange, onBack,
+  status, onStatusChange, statusCounts, dateRange, onDateRangeChange, onBack,
 }) {
   const ui = useUI();
 
   const renderRow = (line) => {
     const selected = line.id === selectedLineId;
-    const reconciled = line.status === 'reconciled';
+    // The engine-computed `state` drives the badge (suggested/byRule/difference/reconciled/pending).
+    const badgeKind = line.state || (line.status === 'reconciled' ? 'reconciled' : 'pending');
     const cellBg = cn('transition-colors', selected ? 'bg-[#F5F7F9]' : 'bg-white');
     return (
       <TableRow
@@ -245,7 +257,7 @@ function StatementLinesPanel({
             <span className={cn('w-full truncate leading-5', selected ? 'font-semibold' : 'font-normal')}>
               {line.description || line.partnerName || line.referenceNo || '—'}
             </span>
-            <StatusBadge kind={reconciled ? 'reconciled' : 'pending'} />
+            <StatusBadge kind={badgeKind} />
           </div>
         </TableCell>
         <MoneyCell value={line.amount} currency={currency} bold cellClassName={cn('w-[139px]', cellBg)} />
@@ -277,7 +289,7 @@ function StatementLinesPanel({
       >
         <ArrowLeft className="h-4 w-4" />
       </button>
-      <ReconciliationStatusFilter value={status} onChange={onStatusChange} />
+      <ReconciliationStatusFilter value={status} onChange={onStatusChange} counts={statusCounts} />
       <DateRangePopover value={dateRange} onChange={onDateRangeChange} placeholder={ui('financeReconcileFilterDate')} />
     </ToolbarShell>
   );
@@ -470,9 +482,8 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
   const leftBounds = useMemo(() => getDateBounds(leftDateRange), [leftDateRange]);
   const rightBounds = useMemo(() => getDateBounds(rightDateRange), [rightDateRange]);
 
-  const { lines, total, loading: linesLoading, reload: reloadLines } =
+  const { lines, counts: statusCounts, loading: linesLoading, reload: reloadLines } =
     usePendingStatementLines(accountId, {
-      status: leftStatus || undefined,
       dateFrom: toDateParam(leftBounds.from),
       dateTo: toDateParam(leftBounds.to),
     });
@@ -501,11 +512,19 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
 
   const visibleLines = useMemo(() => {
     const q = leftSearch.trim().toLowerCase();
-    if (!q) return lines;
-    return lines.filter((l) =>
-      [l.description, l.partnerName, l.referenceNo].some((v) => (v || '').toLowerCase().includes(q)),
-    );
-  }, [lines, leftSearch]);
+    return lines.filter((l) => {
+      // Client-side state filter (null/empty = "Todos"); the backend already computed l.state.
+      if (leftStatus && (l.state || 'pending') !== leftStatus) return false;
+      if (!q) return true;
+      return [l.description, l.partnerName, l.referenceNo]
+        .some((v) => (v || '').toLowerCase().includes(q));
+    });
+  }, [lines, leftSearch, leftStatus]);
+
+  const visibleTotal = useMemo(
+    () => Number(visibleLines.reduce((s, l) => s + (Number(l.amount) || 0), 0).toFixed(2)),
+    [visibleLines],
+  );
 
   const visibleCandidates = useMemo(() => {
     const q = rightSearch.trim().toLowerCase();
@@ -576,7 +595,7 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
       <div className="flex flex-1 overflow-hidden">
         <StatementLinesPanel
           lines={visibleLines}
-          total={total}
+          total={visibleTotal}
           loading={linesLoading}
           currency={currency}
           bcpLocale={bcpLocale}
@@ -584,6 +603,7 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
           onSelectLine={selectLine}
           status={leftStatus}
           onStatusChange={setLeftStatus}
+          statusCounts={statusCounts}
           dateRange={leftDateRange}
           onDateRangeChange={setLeftDateRange}
           search={leftSearch}

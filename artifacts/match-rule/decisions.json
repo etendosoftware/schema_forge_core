@@ -155,7 +155,8 @@
           "section": "general",
           "seq": 5,
           "inputMode": "selector",
-          "searchSelect": true
+          "searchSelect": true,
+          "required": true
         },
         "matchCount": {
           "grid": true,

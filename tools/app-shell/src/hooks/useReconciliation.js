@@ -31,23 +31,26 @@ function buildQuery(params) {
  * @returns {{ lines: Array<object>, total: number, loading: boolean, error: Error|null, reload: () => void }}
  */
 export function usePendingStatementLines(accountId, filters = {}) {
-  const { status, dateFrom, dateTo, q } = filters;
+  const { dateFrom, dateTo, q } = filters;
 
+  // The status/state filter is applied client-side: the backend returns every line annotated
+  // with its `state` plus the per-state `counts`, so changing the dropdown does not refetch.
   const path = accountId
-    ? `${BASE_PATH}${buildQuery({ action: 'pendingLines', accountId, status, dateFrom, dateTo, q })}`
+    ? `${BASE_PATH}${buildQuery({ action: 'pendingLines', accountId, dateFrom, dateTo, q })}`
     : null;
 
   const mapPayload = useMemo(
     () => (raw) => ({
       lines: Array.isArray(raw.lines) ? raw.lines : [],
       total: Number(raw.total ?? 0),
+      counts: raw.counts ?? {},
     }),
     [],
   );
 
   const { data, loading, error, reload } = useNeoResource({
     path,
-    deps: [accountId, status, dateFrom, dateTo, q],
+    deps: [accountId, dateFrom, dateTo, q],
     mapPayload,
     label: 'usePendingStatementLines',
   });
@@ -55,6 +58,7 @@ export function usePendingStatementLines(accountId, filters = {}) {
   return {
     lines: data?.lines ?? [],
     total: data?.total ?? 0,
+    counts: data?.counts ?? {},
     loading,
     error,
     reload,
