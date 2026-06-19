@@ -298,7 +298,7 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
  *  - Header strip + 40px rows.
  *  - Row hover reveals action icons (pencil + trash) on the right, replacing the last
  *    (amount) column.
- *  - Pencil toggles single-row edit mode. Autosave on blur. Trash deletes the row.
+ *  - Clicking any cell (or the pencil) activates single-row edit mode. Autosave on blur. Trash deletes the row.
  *
  * Save flow: every blurred field PATCHes the row diff via `onUpdateRow(row, fieldKey,
  * value, extras)`. The parent's "Guardar" button can call `flushPendingEdits()` through
@@ -335,6 +335,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
   const { locale } = useLocaleSwitch();
 
   const [editingRowId, setEditingRowId] = useState(null);
+  const [focusColIdx, setFocusColIdx] = useState(null);
   const [hoveredRowId, setHoveredRowId] = useState(null);
   const panelRef = useRef(null);
   const hasValidationErrorRef = useRef(false);
@@ -505,8 +506,18 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
       onEditRow(row);
       return;
     }
+    setFocusColIdx(null);
     setEditingRowId(prev => (prev === row.id ? null : row.id));
   }, [isDocumentReadOnly, onEditRow]);
+
+  const handleCellClick = useCallback((row, idx, col) => {
+    if (isDocumentReadOnly) return;
+    if (onEditRow) { onEditRow(row); return; }
+    if (onRowClick) return;
+    if (editingRowId === row.id) return;
+    setFocusColIdx(isCellEditable(col) ? idx : null);
+    setEditingRowId(row.id);
+  }, [isDocumentReadOnly, onEditRow, onRowClick, editingRowId]);
 
   const handleDeleteClick = useCallback(async (row) => {
     if (isDocumentReadOnly) return;
@@ -647,9 +658,10 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
               return (
                 <div
                   key={col.key}
-                  className="flex items-center"
+                  className={['flex items-center', !isEditing && !onRowClick && !isDocumentReadOnly ? 'cursor-pointer' : ''].join(' ')}
                   style={baseStyle}
                   data-cell-key={col.key}
+                  onClick={!isEditing && !onRowClick ? () => handleCellClick(row, idx, col) : undefined}
                 >
                   {editable ? (
                     <EditCell
@@ -663,7 +675,11 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
                       row={row}
                       value={row[col.key]}
                       displayLabel={resolveIdentifier(row, col.key)}
-                      autoFocus={idx === 0 || (idx === 1 && !isCellEditable(visibleColumns[0]))}
+                      autoFocus={
+                        focusColIdx !== null
+                          ? idx === focusColIdx
+                          : idx === 0 || (idx === 1 && !isCellEditable(visibleColumns[0]))
+                      }
                       entity={entity}
                       token={token}
                       apiBaseUrl={apiBaseUrl}
