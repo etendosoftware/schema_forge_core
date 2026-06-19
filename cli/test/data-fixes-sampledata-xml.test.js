@@ -77,6 +77,15 @@ describe('parseSourcedata', () => {
     assert.deepEqual(records, []);
   });
 
+  it('does not let a later empty tag overwrite a CDATA value of the same name', () => {
+    // NAME appears first as CDATA then as an empty self-closing tag: the CDATA
+    // value must win (the empty-field pass only fills names not already set).
+    const record = '<T><NAME><![CDATA[Acme]]></NAME><NAME/></T>';
+    const file = writeXml('DUP.xml', `<data>${record}</data>`);
+    const { records } = parseSourcedata(file, 'T');
+    assert.equal(records[0].NAME, 'Acme');
+  });
+
   it('parses multiple records', () => {
     const r1 = '<T><A><![CDATA[1]]></A></T>';
     const r2 = '<T><A><![CDATA[2]]></A></T>';
