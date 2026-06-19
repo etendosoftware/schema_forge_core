@@ -265,6 +265,24 @@ Required edge cases:
 
 Current status: the contract remains registered but login does not trigger it yet. Login alerts are deferred until the SSO and risk-policy model exists.
 
+### Shared: document-send recipient policy
+
+The three document `*-send` contracts (`sales-invoice-send`, `sales-order-send`,
+`sales-quotation-send`) share one recipient policy. It is defined once here and
+referenced from each descriptor sketch below as
+`"recipient": { "$shared": "document-send-recipient-policy" }` so the three stay
+in sync:
+
+```json
+{
+  "source": "business-partner-contact-with-command-edits",
+  "recordId": "request.recordId",
+  "editingEnabled": true,
+  "channels": ["to", "cc"],
+  "maxRecipientsTotal": 10
+}
+```
+
 ### `sales-invoice-send`
 
 Purpose: send an invoice/document notification to the recipient resolved from the document.
@@ -282,13 +300,7 @@ Descriptor sketch:
     "recordAccess": "recordId",
     "requiresReadableDocument": true
   },
-  "recipient": {
-    "source": "business-partner-contact-with-command-edits",
-    "recordId": "request.recordId",
-    "editingEnabled": true,
-    "channels": ["to", "cc"],
-    "maxRecipientsTotal": 10
-  },
+  "recipient": { "$shared": "document-send-recipient-policy" },
   "variables": {
     "name": { "type": "string", "source": "businessPartner.name", "required": true },
     "document_type": { "type": "string", "source": "contract.documentType", "required": true },
@@ -325,13 +337,7 @@ Descriptor sketch:
     "recordAccess": "recordId",
     "requiresReadableDocument": true
   },
-  "recipient": {
-    "source": "business-partner-contact-with-command-edits",
-    "recordId": "request.recordId",
-    "editingEnabled": true,
-    "channels": ["to", "cc"],
-    "maxRecipientsTotal": 10
-  },
+  "recipient": { "$shared": "document-send-recipient-policy" },
   "variables": {
     "name": { "type": "string", "source": "businessPartner.name", "required": true },
     "document_type": { "type": "string", "source": "contract.documentType", "required": true },
@@ -366,13 +372,7 @@ Descriptor sketch:
     "recordAccess": "recordId",
     "requiresReadableDocument": true
   },
-  "recipient": {
-    "source": "business-partner-contact-with-command-edits",
-    "recordId": "request.recordId",
-    "editingEnabled": true,
-    "channels": ["to", "cc"],
-    "maxRecipientsTotal": 10
-  },
+  "recipient": { "$shared": "document-send-recipient-policy" },
   "variables": {
     "name": { "type": "string", "source": "businessPartner.name", "required": true },
     "document_type": { "type": "string", "source": "contract.documentType", "required": true },
