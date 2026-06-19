@@ -269,12 +269,6 @@
           "hidden": true
         },
         {
-          "name": "bank-reconciliation",
-          "label": "Bank Reconciliation",
-          "favname": "Bank Reconciliation",
-          "hidden": true
-        },
-        {
           "name": "match-rule",
           "label": "Match Rule",
           "favname": "Match Rule",

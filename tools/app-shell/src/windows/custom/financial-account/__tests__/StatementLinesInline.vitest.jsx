@@ -105,6 +105,47 @@ describe('StatementLinesInline', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders the contract-driven Descripción column header after Fecha', () => {
+    linesMock.mockReturnValue({ lines: [], loading: false });
+    render(<StatementLinesInline statementId="s1" />);
+    // The contract (bankStatementLines) declares description at gridOrder 2,
+    // right after transactionDate (gridOrder 1) — so the header is present and
+    // sits immediately after the Fecha header.
+    const headers = screen.getAllByText(/financeAccountStatementLinesCol/);
+    const labels = headers.map((el) => el.textContent);
+    const dateIdx = labels.indexOf('financeAccountStatementLinesColDate');
+    const descIdx = labels.indexOf('financeAccountStatementLinesColDescription');
+    expect(dateIdx).toBeGreaterThanOrEqual(0);
+    expect(descIdx).toBe(dateIdx + 1);
+  });
+
+  it('renders the line description value in its row', () => {
+    linesMock.mockReturnValue({
+      lines: [
+        {
+          id: 'l1', date: '2026-05-06T00:00:00Z', description: 'Comisión mantenimiento',
+          bpartnerName: 'ACME', amount: -12, matched: false,
+        },
+      ],
+      loading: false,
+    });
+    render(<StatementLinesInline statementId="s1" />);
+    expect(screen.getByText('Comisión mantenimiento')).toBeInTheDocument();
+  });
+
+  it('renders "—" in the Descripción cell when the line has no description', () => {
+    linesMock.mockReturnValue({
+      lines: [
+        { id: 'l1', date: '2026-05-06T00:00:00Z', description: '', bpartnerName: '', amount: 100, matched: true },
+      ],
+      loading: false,
+    });
+    render(<StatementLinesInline statementId="s1" />);
+    const row = screen.getByTestId('statement-line-row-l1');
+    // The empty description cell shows the placeholder dash.
+    expect(row).toHaveTextContent('—');
+  });
+
   it('renders the contact name, the contact FK and the G/L item columns', () => {
     linesMock.mockReturnValue({
       lines: [
