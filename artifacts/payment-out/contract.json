@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.5.0",
   "generatedAt": "2026-04-29T18:11:46.137Z",
-  "updatedAt": "2026-06-11T12:55:35.519Z",
-  "checksum": "ad1ea8a85a927cb7",
+  "updatedAt": "2026-06-18T14:46:44.489Z",
+  "checksum": "3fd8073f5e06a7e9",
   "frontendContract": {
     "window": {
       "id": "6F8F913FA60F4CBD93DC1D3AA696E76E",
@@ -670,7 +670,7 @@
             "grid": false,
             "form": true,
             "displayLogic": {
-              "raw": "@PSD2_HasPayments@=0 & @PSD2_ClientHasApiKey@=1 & @Status@='PPM'  & @PSD2_HasFinTransaction@=0",
+              "raw": "@PSD2_HasPayments@=0 & @PSD2_UserHasApiKey@=1 & @Status@='PPM'  & @PSD2_HasFinTransaction@=0",
               "evaluable": true
             }
           }

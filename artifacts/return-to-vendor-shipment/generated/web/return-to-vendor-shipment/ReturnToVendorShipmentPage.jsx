@@ -44,7 +44,7 @@ const requiredHeaderFields = ['documentNo', 'businessPartner', 'partnerAddress',
 // @sf-generated-start addLineFields:returnToVendorShipmentLine
 const addLineFields = {
   entry: [
-    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 0 },
+    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', labels: {"es_ES":"Cant. a devolver","en_US":"Return Qty"}, defaultValue: 0 },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
