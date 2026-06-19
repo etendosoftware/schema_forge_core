@@ -27,7 +27,7 @@ const newLine = () => {
     id: `l${lineSeq}`,
     // Pre-fill the line date with today; it is excluded from the blank-line check
     // so a row with only the default date still counts as empty.
-    date: toLocalIso(new Date()), reference: '', contactName: '', contact: null, glItem: null,
+    date: toLocalIso(new Date()), reference: '', description: '', contactName: '', contact: null, glItem: null,
     // Empty so the amount fields show "0,00" as a placeholder (not a real value
     // the user must clear). parseAmount('') → 0; a line needs at least one amount.
     out: '', in: '',
@@ -64,6 +64,7 @@ function lineToRow(l) {
     id: `e${lineSeq}`,
     date: isoToLocal(l.date) || toLocalIso(new Date()),
     reference: l.reference && l.reference !== '**' ? l.reference : '',
+    description: l.description || '',
     contactName: l.bpartnerName || '',
     contact: l.bpartnerId ? { id: l.bpartnerId, name: l.bpartnerFkName || l.bpartnerName || '' } : null,
     glItem: l.glItemId ? { id: l.glItemId, name: l.glItemName || '' } : null,
@@ -99,7 +100,7 @@ function parseAmount(v) {
 
 function isBlankLine(r) {
   // The auto-filled date is ignored: a row with only the default date is empty.
-  return !r.reference.trim() && !r.contactName.trim() && !r.contact && !r.glItem
+  return !r.reference.trim() && !r.description.trim() && !r.contactName.trim() && !r.contact && !r.glItem
     && parseAmount(r.in) === 0 && parseAmount(r.out) === 0;
 }
 
@@ -193,7 +194,7 @@ function HeaderFields({ form, setForm, ui }) {
 // the editable row so every column lines up. `fr` units let the row fill the
 // modal width without a horizontal scrollbar (which would clip lookup dropdowns).
 const LINES_GRID =
-  'grid grid-cols-[130px_minmax(110px,0.8fr)_minmax(140px,1.1fr)_minmax(150px,1.2fr)_minmax(150px,1.2fr)_110px_110px_72px] gap-2';
+  'grid grid-cols-[130px_minmax(110px,0.8fr)_minmax(180px,1.6fr)_minmax(140px,1.1fr)_minmax(150px,1.2fr)_minmax(150px,1.2fr)_110px_110px_72px] gap-2';
 
 const cellInput = cn(inputClass, 'w-full');
 const cellAmount = cn(inputClass, 'w-full tabular-nums');
@@ -229,6 +230,7 @@ function LinesHeader({ ui }) {
     <div className={cn(LINES_GRID, 'items-center rounded-t-xl border-b border-[#E8EAEF] bg-white px-3 py-2.5 text-xs font-semibold tracking-normal text-[#121217]')}>
       <ColHead label={ui('financeAccountStatementsManualColDate')} required />
       <ColHead label={ui('financeAccountStatementsManualColReference')} required />
+      <ColHead label={ui('financeAccountStatementsManualColDesc')} />
       <ColHead label={ui('financeAccountStatementsManualColContactName')} />
       <ColHead label={ui('financeAccountStatementsManualColContact')} />
       <ColHead label={ui('financeAccountStatementsManualColGlItem')} />
@@ -248,6 +250,7 @@ function DisplayRow({ row, money, bcpLocale, onEdit, onRemove, ui }) {
       data-testid="manual-line-row">
       <span className="truncate">{formatDisplayDate(row.date, bcpLocale)}</span>
       <span className={cn('truncate', !row.reference && MUTED)}>{row.reference || '—'}</span>
+      <span className={cn('truncate', !row.description && MUTED)} title={row.description || ''}>{row.description || '—'}</span>
       <span className={cn('truncate', !row.contactName && MUTED)}>{row.contactName || '—'}</span>
       <span className={cn('truncate', !row.contact && MUTED)}>{row.contact?.name || '—'}</span>
       <span className={cn('truncate', !row.glItem && MUTED)}>{row.glItem?.name || '—'}</span>
@@ -281,6 +284,9 @@ function EditRow({ row, onChange, onRemove, ui, rowRef }) {
     <div ref={rowRef} className={cn(LINES_GRID, 'items-center bg-white px-3 py-2.5')} data-testid="manual-line-editrow">
       <DateField value={row.date} onChange={setVal('date')} data-testid="manual-line-date" className="w-full" />
       <input type="text" value={row.reference} onChange={set('reference')} className={cellInput} data-testid="manual-line-ref" />
+      <input type="text" value={row.description} onChange={set('description')}
+        placeholder={ui('financeAccountStatementsManualDescPlaceholder')}
+        className={cellInput} data-testid="manual-line-description" />
       <input type="text" value={row.contactName} onChange={set('contactName')}
         placeholder={ui('financeAccountStatementsManualCounterpartyPlaceholder')}
         className={cellInput} data-testid="manual-line-contactname" />
@@ -652,6 +658,7 @@ export function ManualStatementModal({
     const payloadLines = usable.map((r) => ({
       date: toIsoUtc(r.date),
       reference: r.reference.trim(),
+      description: r.description.trim(),
       bpartnerName: r.contactName.trim(),
       bpartnerId: r.contact?.id ?? null,
       glItemId: r.glItem?.id ?? null,
@@ -693,7 +700,7 @@ export function ManualStatementModal({
     <>
     <Dialog open={open} onOpenChange={(v) => { if (!v) requestClose(); }}>
       <DialogContent
-        className="w-[96vw] max-w-[1440px] overflow-hidden p-0"
+        className="w-[96vw] max-w-[1680px] overflow-hidden p-0"
         style={{ background: 'var(--surface-overlay, #FFFFFF)' }}
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => { e.preventDefault(); requestClose(); }}
