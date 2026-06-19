@@ -5,7 +5,7 @@ import { neoBase } from '@/components/related-documents/helpers.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { FileUp, FileDown } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { StatusPill, NumFactura, ScrollSentinel, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE, ExportIcon, useFmSelection } from './FmPrimitives.jsx';
+import { StatusPill, NumFactura, ScrollSentinel, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE, ExportIcon, useFmSelection, fetchCsvAndDownload } from './FmPrimitives.jsx';
 import {
   SII_SPEC,
   SII_EMITIDAS_ENTITY,
@@ -32,6 +32,19 @@ const SUBTAB_ENTITIES = {
   issuedPrevious:   SII_EMITIDAS_ANT_ENTITY,
   receivedPrevious: SII_RECIBIDAS_ANT_ENTITY,
 };
+
+const SII_EXPORT_COLS = [
+  { label: 'Date',             get: r => r.invoiceDate ?? '' },
+  { label: 'Invoice No.',      get: r => r.documentNo ?? '' },
+  { label: 'Business Partner', get: r => r['businessPartner$_identifier'] ?? r.businessPartnerIdentifier ?? r.businessPartner ?? '' },
+  { label: 'Type',             get: r => siiTipoLabel(r.aeatsiiClaveTipo ?? r.aeatsiiClaveTipoFc) },
+  { label: 'Total',            get: r => r.grandTotalAmount ?? '' },
+  { label: 'Currency',         get: r => r['currency$_identifier'] ?? '' },
+  { label: 'Status',           get: r => r.aeatsiiEstado ?? '' },
+  { label: 'CSV',              get: r => r.cdigoCSV ?? '' },
+  { label: 'Error Code',       get: r => r.aeatsiiErrorCode ?? '' },
+  { label: 'Error',            get: r => r.aeatsiiErrorMsg ?? '' },
+];
 
 // Entities that hold the CSV code (aeatsii_facturas table)
 const SUBTAB_SII_DATA_ENTITIES = {
@@ -208,6 +221,7 @@ export default function SiiMonitorSection({
   const [error, setError]         = useState(null);
   const [csvMap, setCsvMap]       = useState({});
   const { selectedIds, setSelectedIds, handleToggleAll, handleToggleRow } = useFmSelection(rows);
+  const [exporting, setExporting] = useState(false);
 
   function changeTab(newTab, newPeriod) {
     setTab(newTab);
@@ -262,6 +276,22 @@ export default function SiiMonitorSection({
 
   // Reset to first page, rows and selection when tab/period changes
   useEffect(() => { setPage(1); setRows([]); setCsvMap({}); setSelectedIds(new Set()); }, [tab, period, setSelectedIds]);
+
+  async function handleExport() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await fetchCsvAndDownload(
+        apiFetch,
+        `/${SII_SPEC}/${encodeURIComponent(SUBTAB_ENTITIES[entityKey])}`,
+        { parentId },
+        `sii_${tab}_${period}`,
+        SII_EXPORT_COLS,
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const siiKpis        = kpis?.sii ?? {};
   const issuedTotal    = (siiKpis.issued ?? 0) + (siiKpis.issuedPrevious ?? 0);
@@ -356,7 +386,7 @@ export default function SiiMonitorSection({
             </button>
           </div>
         )}
-        <button className="fm-export-btn">
+        <button className="fm-export-btn" onClick={handleExport} disabled={loading || exporting}>
           <ExportIcon /> {ui('fiscalMonitor.export')}
         </button>
       </div>
