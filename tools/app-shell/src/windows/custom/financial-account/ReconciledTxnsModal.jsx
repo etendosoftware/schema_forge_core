@@ -8,31 +8,13 @@ import {
 } from '@/components/ui/dialog';
 import { MoneyAmount } from '@/components/ui/money-amount';
 import { cn } from '@/lib/utils';
+import { formatDate, formatSigned } from '@/lib/formatSigned';
 import { PostingStatusDot } from './PostingStatusDot';
 
 // Columns of the movements table — mirrors the Movimientos tab:
 //   Fecha · Pago · Contacto · Descripción · Tipo(+estado) · Importe · (ir →)
 const TXN_GRID =
   'grid grid-cols-[88px_92px_minmax(96px,1fr)_minmax(140px,1.5fr)_130px_110px_44px] items-center gap-3';
-
-function formatDate(iso, bcpLocale) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  // Date-only value sent as UTC midnight — format in UTC so a negative-offset
-  // timezone doesn't shift it to the previous day.
-  return new Intl.DateTimeFormat(bcpLocale, {
-    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
-  }).format(d);
-}
-
-function formatSigned(amount, currency) {
-  const abs = Math.abs(Number(amount) || 0);
-  const formatted = new Intl.NumberFormat('es-ES', {
-    style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2,
-  }).format(abs);
-  return (Number(amount) < 0 ? '-' : '+') + formatted;
-}
 
 function trxTypeLabel(trxType, ui) {
   if (trxType === 'BPD') return ui('financeAccountMovementsTypeBPD');
