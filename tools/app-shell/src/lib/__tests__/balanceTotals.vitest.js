@@ -68,6 +68,28 @@ describe('computeBalance', () => {
     expect(computeBalance(lines, null, null, cfg).isBalanced).toBe(true);
   });
 
+  it('rounds negative half-cent boundaries symmetrically (sign-aware)', () => {
+    // A debit and credit that are equal in magnitude must net to exactly 0.
+    // With a naive `n + EPSILON`, the negative side rounds toward +∞ and leaves
+    // a 1-cent residual, breaking the balance. -1.005 and 1.005 must cancel.
+    const lines = [
+      { amtSourceDr: '0', amtSourceCr: '1.005' },
+      { amtSourceDr: '0', amtSourceCr: '-1.005' },
+    ];
+    const r = computeBalance(lines, null, null, cfg);
+    expect(r.totalCredit).toBe(0);
+    expect(r.difference).toBe(0);
+    expect(r.isBalanced).toBe(true);
+  });
+
+  it('keeps a negative difference balanced against an equal negative debit', () => {
+    const lines = [
+      { amtSourceDr: '-1.005', amtSourceCr: '0' },
+      { amtSourceDr: '0', amtSourceCr: '-1.005' },
+    ];
+    expect(computeBalance(lines, null, null, cfg).isBalanced).toBe(true);
+  });
+
   it('returns not-balanced when config is missing', () => {
     expect(computeBalance([{ amtSourceDr: '1' }], null, null, null).isBalanced).toBe(false);
   });

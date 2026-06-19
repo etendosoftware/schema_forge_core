@@ -633,8 +633,13 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     handleChange(key, val);
     // Mutual-exclusion: zero the paired field when a non-zero value is entered (e.g. debit ↔ credit).
     // Use '0' not '' so the sibling still passes required-field validation.
+    // Gate on a FINITE non-zero value: renderInputCell permits partial numeric
+    // input ('-', '.', '-.') where Number(val) is NaN — without the isFinite
+    // check the paired field would be cleared mid-typing.
     const clearsKey = fieldMap[key]?.clearsField;
-    if (clearsKey && val !== '' && val !== null && val !== undefined && Number(val) !== 0) {
+    const clearsNumVal = Number(val);
+    if (clearsKey && val !== '' && val !== null && val !== undefined
+        && Number.isFinite(clearsNumVal) && clearsNumVal !== 0) {
       handleChange(clearsKey, '0');
       snapshot[clearsKey] = '0';
     }

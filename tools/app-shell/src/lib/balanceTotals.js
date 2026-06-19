@@ -11,7 +11,10 @@
  * @param config      - { debitField, creditField }
  * @returns { totalDebit, totalCredit, difference, isBalanced }
  */
-const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+// Sign-aware: Math.round rounds halves toward +∞, so a naive `n + EPSILON`
+// rounds negative half-cent boundaries (e.g. -1.005) the wrong way. Round the
+// magnitude and re-apply the sign so positive and negative totals are symmetric.
+const round2 = (n) => Math.sign(n) * Math.round((Math.abs(n) + Number.EPSILON) * 100) / 100;
 const NOT_BALANCED = { totalDebit: 0, totalCredit: 0, difference: 0, isBalanced: false, hasAmounts: false };
 
 function applyEditingLine(lines, editingLine) {

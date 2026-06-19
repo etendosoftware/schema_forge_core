@@ -152,6 +152,37 @@ describe('DetailView footer save buttons (onClick coverage)', () => {
     await waitFor(() => expect(mockHook.fetchById).toHaveBeenCalledWith('123'));
   });
 
+  it('draftMode: Save Draft is blocked when the journal is unbalanced', () => {
+    // Σ debit (100) ≠ Σ credit (0) → blockSaveForBalance. The draft Save must be
+    // gated too, not just Confirm — persisting an unbalanced journal contradicts
+    // the balance-footer contract.
+    mockHook.children = [{ id: 'l1', debit: '100', credit: '0' }];
+    const draftMode = { enabled: true, draftField: 'documentStatus', draftValue: 'DR', label: 'process' };
+    render(
+      <DetailView
+        {...BASE_PROPS}
+        draftMode={draftMode}
+        balanceFooter={{ debitField: 'debit', creditField: 'credit' }}
+      />,
+    );
+    expect(screen.getByTestId('action-save-draft')).toBeDisabled();
+    // Confirm stays blocked as well (stricter gate).
+    expect(screen.getByTestId('action-save')).toBeDisabled();
+  });
+
+  it('draftMode: Save Draft is enabled when debit equals credit', () => {
+    mockHook.children = [{ id: 'l1', debit: '100', credit: '100' }];
+    const draftMode = { enabled: true, draftField: 'documentStatus', draftValue: 'DR', label: 'process' };
+    render(
+      <DetailView
+        {...BASE_PROPS}
+        draftMode={draftMode}
+        balanceFooter={{ debitField: 'debit', creditField: 'credit' }}
+      />,
+    );
+    expect(screen.getByTestId('action-save-draft')).not.toBeDisabled();
+  });
+
   it('draftMode with onConfirm: Confirm short-circuits to the custom handler', async () => {
     const onConfirm = vi.fn();
     const draftMode = { enabled: true, draftField: 'documentStatus', draftValue: 'DR', onConfirm };

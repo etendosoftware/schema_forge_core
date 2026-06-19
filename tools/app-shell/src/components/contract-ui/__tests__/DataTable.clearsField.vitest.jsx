@@ -123,4 +123,18 @@ describe('DataTable — clearsField mutual exclusion in inline add-row', () => {
     // Credit should still be empty (never set to 0.00 by the guard)
     expect(creditInput).toHaveValue('');
   });
+
+  it('does not zero the paired field for partial numeric input (Number → NaN)', () => {
+    // renderInputCell permits intermediate values like '-', '.', '-.' while
+    // typing; Number(val) is NaN for these. The finite-value guard must keep
+    // the paired field untouched instead of clearing it mid-typing.
+    for (const partial of ['-', '.', '-.']) {
+      const { unmount } = renderTable();
+      const debitInput = screen.getByTestId('inline-add-field-debit');
+      const creditInput = screen.getByTestId('inline-add-field-credit');
+      fireEvent.change(debitInput, { target: { value: partial } });
+      expect(creditInput).toHaveValue('');
+      unmount();
+    }
+  });
 });

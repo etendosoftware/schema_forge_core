@@ -44,9 +44,11 @@ describe('DetailView — additionalDirtyState extension prop', () => {
 });
 
 describe('DetailView — Save button disabled conditions (ETP-3662)', () => {
-  it('gates the draftMode Save Draft button with !isDirty', () => {
-    // action-save-draft is the Save Draft button in draftMode windows.
-    assert.match(src, /data-testid="action-save-draft"[^>]*disabled=\{hook\.isSaving \|\| !isDirty\}/);
+  it('gates the draftMode Save Draft button with !isDirty AND blockSaveForBalance', () => {
+    // action-save-draft is the Save Draft button in draftMode windows. It checks
+    // isSaving, !isDirty, AND blockSaveForBalance (ETP-4244 balance footer gate) —
+    // an unbalanced journal must not be persistable even as a draft.
+    assert.match(src, /data-testid="action-save-draft"[^>]*disabled=\{hook\.isSaving \|\| !isDirty \|\| blockSaveForBalance\}/);
   });
 
   it('gates the existing-record Save button with !isDirty', () => {
