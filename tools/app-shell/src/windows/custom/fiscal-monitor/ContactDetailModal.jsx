@@ -85,7 +85,7 @@ function TaxIDKeyPicker({ options, value, onChange, loading, ui }) {
   if (loading) {
     return (
       <div className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-400 bg-gray-50 flex items-center gap-2">
-        <Loader2 size={13} className="animate-spin" />
+        <Loader2 size={13} className="animate-spin" data-testid="Loader2__3fe37d" />
         {ui('loading')}
       </div>
     );
@@ -103,9 +103,11 @@ function TaxIDKeyPicker({ options, value, onChange, loading, ui }) {
         <span className={`truncate ${selected ? 'text-gray-900' : 'text-gray-400'}`}>
           {selected?.label ?? '—'}
         </span>
-        <ChevronDown size={15} className={`text-gray-500 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          size={15}
+          className={`text-gray-500 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
+          data-testid="ChevronDown__3fe37d" />
       </button>
-
       {open && (
         <>
           <div className="fixed inset-0 z-[60]" data-testid="taxid-picker-backdrop" onMouseDown={close} />
@@ -136,7 +138,7 @@ function TaxIDKeyPicker({ options, value, onChange, loading, ui }) {
                   ].join(' ')}
                 >
                   <span className="w-4 shrink-0">
-                    {opt.id === value && <Check size={13} />}
+                    {opt.id === value && <Check size={13} data-testid="Check__3fe37d" />}
                   </span>
                   {opt.label}
                 </button>
@@ -241,13 +243,16 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
             className="text-gray-400 hover:text-gray-600 transition-colors"
             aria-label={ui('close')}
           >
-            <X size={18} />
+            <X size={18} data-testid="X__3fe37d" />
           </button>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 size={20} className="animate-spin text-muted-foreground" />
+            <Loader2
+              size={20}
+              className="animate-spin text-muted-foreground"
+              data-testid="Loader2__3fe37d" />
           </div>
         ) : (
           <div className="flex flex-col gap-4">
@@ -273,7 +278,7 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
                 onChange={setTaxIDKey}
                 loading={keyOptsLoading}
                 ui={ui}
-              />
+                data-testid="TaxIDKeyPicker__3fe37d" />
             </div>
 
             {/* Tax ID */}
@@ -303,7 +308,7 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
                   onClick={() => setLocationModalOpen(true)}
                   className="shrink-0 px-3 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1.5"
                 >
-                  <MapPin size={13} />
+                  <MapPin size={13} data-testid="MapPin__3fe37d" />
                   {ui('contactDetail.editLocation')}
                 </button>
               </div>
@@ -325,13 +330,12 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
               disabled={saving}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
             >
-              {saving && <Loader2 size={13} className="animate-spin" />}
+              {saving && <Loader2 size={13} className="animate-spin" data-testid="Loader2__3fe37d" />}
               {ui('save')}
             </button>
           </div>
         )}
       </div>
-
       {locationModalOpen && (
         <LocationEditorModal
           open={locationModalOpen}
@@ -343,7 +347,7 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
           rowId={location?.id ?? null}
           bpId={bpId}
           apiBase={contactsApiBase}
-        />
+          data-testid="LocationEditorModal__3fe37d" />
       )}
     </div>
   );

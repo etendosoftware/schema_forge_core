@@ -7,17 +7,14 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const require = createRequire(import.meta.url);
 
-const jscodeshift = require(
-  join(__dirname, '../../node_modules/jscodeshift/index.js')
-);
-const transformer = require(join(__dirname, '../add-data-testid.cjs'));
+// Dynamic imports for CJS modules (jscodeshift + the transformer itself)
+const jscodeshift = (await import(join(__dirname, '../../node_modules/jscodeshift/index.js'))).default;
+const transformer = (await import(join(__dirname, '../add-data-testid.cjs'))).default;
 
 // Build a mock `api` object the way jscodeshift would.
 function makeApi() {
