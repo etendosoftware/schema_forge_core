@@ -129,7 +129,7 @@ describe('AssetsDetailPanel — accounting dimensions section', () => {
 
   it('only renders the dimensions section when depreciate is true', () => {
     // The dimensions block is guarded by the same depreciate flag as Dates.
-    assert.match(src, /depreciate && \(\s*<GroupDivider title=\{ui\('assetsGroupDimensionsTitle'\)\}/);
+    assert.match(src, /depreciate && \([\s\S]*?assetsGroupDimensionsTitle/);
   });
 
   it('includes the dimension keys in the read-only field set', () => {

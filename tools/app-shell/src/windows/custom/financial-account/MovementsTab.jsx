@@ -150,8 +150,12 @@ export const MovementsTab = forwardRef(function MovementsTab(
         onAdvancedFilterChange={setAdvancedFilter}
         onNewMovement={() => setNewMovementOpen(true)}
         rows={movements}
-      />
-      <AccountSummaryStrip account={account} totals={dateScopedTotals} loading={loading} />
+        data-testid="MovementsToolbar__c1f76a" />
+      <AccountSummaryStrip
+        account={account}
+        totals={dateScopedTotals}
+        loading={loading}
+        data-testid="AccountSummaryStrip__c1f76a" />
       <div className="flex-1 overflow-y-auto [&>div]:overflow-visible">
         <MovementsTable
           movements={filteredMovements}
@@ -160,9 +164,8 @@ export const MovementsTab = forwardRef(function MovementsTab(
           selectedIds={selectedIds}
           onSelectionChange={handleSelectionChange}
           highlightTxnId={highlightTxnId}
-        />
+          data-testid="MovementsTable__c1f76a" />
       </div>
-
       <NewMovementWizard
         open={newMovementOpen}
         accountId={account?.id}
@@ -175,7 +178,7 @@ export const MovementsTab = forwardRef(function MovementsTab(
         paymentMethods={paymentMethods}
         onClose={() => setNewMovementOpen(false)}
         onSuccess={() => onReload?.()}
-      />
+        data-testid="NewMovementWizard__c1f76a" />
     </div>
   );
 });

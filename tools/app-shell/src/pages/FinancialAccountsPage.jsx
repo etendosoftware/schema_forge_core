@@ -80,14 +80,13 @@ export default function FinancialAccountsPage() {
           onSearchChange={setSearch}
           onNewAccount={() => setWizardOpen(true)}
           onMatchingRules={() => navigate('/match-rule')}
-        />
+          data-testid="AccountsToolbar__7c3fbc" />
       </div>
-
       <div
         className="flex flex-1 overflow-hidden"
         data-testid="cuentas-card"
       >
-        <AccountsSidebar summary={summary} loading={loading} />
+        <AccountsSidebar summary={summary} loading={loading} data-testid="AccountsSidebar__7c3fbc" />
 
         <div className="w-px self-stretch bg-[#E8EAEF]" aria-hidden="true" />
 
@@ -101,27 +100,26 @@ export default function FinancialAccountsPage() {
             onEdit={setEditAccount}
             onArchive={setArchiveTarget}
             onRetry={reload}
-          />
+            data-testid="AccountsTable__7c3fbc" />
         </div>
       </div>
-
       <NewAccountWizard
         open={wizardOpen}
         onClose={() => setWizardOpen(false)}
         onCreated={reload}
-      />
+        data-testid="NewAccountWizard__7c3fbc" />
       <EditAccountModal
         open={!!editAccount}
         account={editAccount}
         onClose={() => setEditAccount(null)}
         onSaved={reload}
-      />
+        data-testid="EditAccountModal__7c3fbc" />
       <ArchiveAccountDialog
         open={!!archiveTarget}
         account={archiveTarget}
         onClose={() => setArchiveTarget(null)}
         onArchived={reload}
-      />
+        data-testid="ArchiveAccountDialog__7c3fbc" />
     </div>
   );
 }

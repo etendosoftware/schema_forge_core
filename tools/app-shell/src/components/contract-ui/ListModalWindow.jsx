@@ -481,7 +481,7 @@ export function ListModalWindow({
               value={filterValues[f.key] ?? null}
               onChange={(v) => setToolbarFilter(f.key, v)}
               ui={ui}
-            />
+              data-testid="ListModalToolbarFilter__19eda5" />
           ))}
           <AdvancedFilterButton
             columns={filterColumns}
@@ -492,12 +492,14 @@ export function ListModalWindow({
             value={advancedFilter}
             onChange={setAdvancedFilter}
             testId="list-modal-advanced-filter"
-          />
+            data-testid="AdvancedFilterButton__19eda5" />
         </div>
         <div className="flex items-center gap-2">
           {hasSearch && (
             <div className="relative w-[280px]">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#828FA3]" />
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#828FA3]"
+                data-testid="Search__19eda5" />
               <input
                 type="text"
                 value={searchQuery}
@@ -514,12 +516,13 @@ export function ListModalWindow({
             data-testid="list-modal-new"
             className="group inline-flex h-10 items-center gap-1.5 rounded-lg bg-[#121217] px-3 text-sm font-medium leading-6 text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217]"
           >
-            <Plus className="h-4 w-4 text-white/90 group-hover:text-[#121217]" />
+            <Plus
+              className="h-4 w-4 text-white/90 group-hover:text-[#121217]"
+              data-testid="Plus__19eda5" />
             {config?.newLabelKey ? ui(config.newLabelKey) : ui('newRecord')}
           </button>
         </div>
       </div>
-
       {/* Dismissible banner explaining how the rows are evaluated */}
       {showBanner && (
         <InfoBanner
@@ -528,17 +531,16 @@ export function ListModalWindow({
           onDismiss={() => setBannerDismissed(true)}
           dismissTestId="list-modal-banner-dismiss"
           className="mx-2"
-        >
+          data-testid="InfoBanner__19eda5">
           {ui(config.bannerKey)}
         </InfoBanner>
       )}
-
       {/* Grid */}
       {loading && allRows.length === 0 ? (
         <div className="flex flex-col gap-2 px-2">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" data-testid="Skeleton__19eda5" />
+          <Skeleton className="h-10 w-full" data-testid="Skeleton__19eda5" />
+          <Skeleton className="h-10 w-full" data-testid="Skeleton__19eda5" />
         </div>
       ) : (
         <div className="px-2">
@@ -553,18 +555,26 @@ export function ListModalWindow({
             deletingId={deleting ? deletingRow?.id : null}
             onToggle={handleToggle}
             savingToggles={savingToggles}
-          />
+            data-testid="ListModalGrid__19eda5" />
         </div>
       )}
-
       {/* Create / edit modal — Figma "Nueva Regla de matcheo" layout:
           wide container, header (title + subtitle), multi-column body grouped by
           section, and a footer with an optional toggle (left) + pill submit (right). */}
-      <Dialog open={modalOpen} onOpenChange={(o) => (o ? setModalOpen(true) : closeModal())}>
-        <DialogContent className="flex max-h-[90vh] w-full max-w-6xl flex-col gap-0 overflow-hidden rounded-lg bg-white p-0">
+      <Dialog
+        open={modalOpen}
+        onOpenChange={(o) => (o ? setModalOpen(true) : closeModal())}
+        data-testid="Dialog__19eda5">
+        <DialogContent
+          className="flex max-h-[90vh] w-full max-w-6xl flex-col gap-0 overflow-hidden rounded-lg bg-white p-0"
+          data-testid="DialogContent__19eda5">
           {/* Header */}
-          <DialogHeader className="space-y-1 px-5 py-2 text-left">
-            <DialogTitle className="text-xl font-semibold leading-7 tracking-normal text-[#121217]">
+          <DialogHeader
+            className="space-y-1 px-5 py-2 text-left"
+            data-testid="DialogHeader__19eda5">
+            <DialogTitle
+              className="text-xl font-semibold leading-7 tracking-normal text-[#121217]"
+              data-testid="DialogTitle__19eda5">
               {title}
             </DialogTitle>
             {subtitle && (
@@ -599,14 +609,14 @@ export function ListModalWindow({
                     apiBaseUrl={apiBaseUrl}
                     labelOverrides={api?.labelOverrides}
                     cols={colsFor(sec.key)}
-                  />
+                    data-testid="EntityForm__19eda5" />
                 </div>
               );
             })}
 
             {formError && (
               <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                <X size={16} className="mt-0.5 flex-shrink-0" />
+                <X size={16} className="mt-0.5 flex-shrink-0" data-testid="X__19eda5" />
                 <span>{formError}</span>
               </div>
             )}
@@ -624,17 +634,16 @@ export function ListModalWindow({
             submitting={saving}
             submitLabel={submitLabel}
             ui={ui}
-          />
+            data-testid="ModalFooter__19eda5" />
         </DialogContent>
       </Dialog>
-
       <DeleteConfirmDialog
         open={!!deletingRow}
         busy={deleting}
         onCancel={() => setDeletingRow(null)}
         onConfirm={handleDeleteConfirmed}
         ui={ui}
-      />
+        data-testid="DeleteConfirmDialog__19eda5" />
     </div>
   );
 }
@@ -682,10 +691,17 @@ function ModalFooter({ toggleField, toggleKey, toggleLabel, toggleChecked, onTog
 /** Delete confirmation dialog. Extracted to keep its conditional out of the main component. */
 function DeleteConfirmDialog({ open, busy, onCancel, onConfirm, ui }) {
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o && !busy) onCancel(); }}>
-      <DialogContent className="max-w-md gap-0 rounded-lg bg-white p-6">
-        <DialogHeader className="space-y-1.5 text-left">
-          <DialogTitle className="text-lg font-semibold leading-6 text-[#121217]">
+    <Dialog
+      open={open}
+      onOpenChange={(o) => { if (!o && !busy) onCancel(); }}
+      data-testid="Dialog__19eda5">
+      <DialogContent
+        className="max-w-md gap-0 rounded-lg bg-white p-6"
+        data-testid="DialogContent__19eda5">
+        <DialogHeader className="space-y-1.5 text-left" data-testid="DialogHeader__19eda5">
+          <DialogTitle
+            className="text-lg font-semibold leading-6 text-[#121217]"
+            data-testid="DialogTitle__19eda5">
             {ui('deleteConfirmTitle')}
           </DialogTitle>
           <p className="text-sm leading-5 text-[#6C6C89]">{ui('deleteConfirmMessage')}</p>
@@ -706,7 +722,7 @@ function DeleteConfirmDialog({ open, busy, onCancel, onConfirm, ui }) {
             data-testid="list-modal-delete-confirm"
             className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[#D92D20] px-4 text-sm font-medium leading-6 text-white transition-colors hover:bg-[#B42318] disabled:opacity-50"
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__19eda5" /> : null}
             {ui('delete')}
           </button>
         </div>
@@ -728,106 +744,117 @@ function ListModalGrid({ columns, data, tMenu, ui, onEdit, onClone, onDelete, de
     // [&>div]:overflow-visible cancels the base Table's inner overflow-auto so the
     // hovered row's shadow-lg isn't clipped on the last row (matches Cuentas).
     <div className="[&>div]:overflow-visible">
-    <Table>
-      <TableHeader>
-        <TableRow className="border-b border-[#E8EAEF] hover:bg-transparent">
-          {/* Drag-handle column header (44px) */}
-          <TableHead className="w-11 p-0" aria-hidden="true" />
-          {columns.map((col, idx) => (
-            <TableHead
-              key={col.key}
-              className={cn(
-                'h-10 px-3 text-xs font-semibold leading-4 text-[#121217]',
-                cellAlignClass(col),
-                idx === 0 ? 'pl-0' : '',
-              )}
-            >
-              {col.labelKey ? ui(col.labelKey) : (tMenu(col.label) ?? col.label ?? col.key)}
-            </TableHead>
-          ))}
-          {/* Actions column header */}
-          <TableHead className={cn(actionsColClass, 'p-0')} aria-hidden="true" />
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {isEmpty ? (
-          <TableRow className="hover:bg-transparent">
-            <TableCell
-              colSpan={columns.length + 2}
-              className="py-12 text-center text-[#6C6C89]"
-              data-testid="list-modal-empty"
-            >
-              <p className="text-sm font-medium">{ui('noRecordsYet')}</p>
-              <p className="mt-1 text-xs">{ui('createNewRecord')}</p>
-            </TableCell>
-          </TableRow>
-        ) : data.map((row) => (
+      <Table data-testid="Table__19eda5">
+        <TableHeader data-testid="TableHeader__19eda5">
           <TableRow
-            key={row.id}
-            data-testid={`list-modal-row-${row.id}`}
-            className="group/row relative border-b border-[#E8EAEF] bg-white transition-shadow hover:z-10 hover:bg-white hover:shadow-lg"
-          >
-            {/* Drag handle — visual only; drag-to-reorder deferred */}
-            <TableCell className="w-11 p-0">
-              <div className="flex w-11 items-center justify-center opacity-0 transition-opacity group-hover/row:opacity-100">
-                <GripVertical className="h-5 w-5 text-[#828FA3]" aria-hidden="true" />
-              </div>
-            </TableCell>
+            className="border-b border-[#E8EAEF] hover:bg-transparent"
+            data-testid="TableRow__19eda5">
+            {/* Drag-handle column header (44px) */}
+            <TableHead className="w-11 p-0" aria-hidden="true" data-testid="TableHead__19eda5" />
             {columns.map((col, idx) => (
-              <TableCell key={col.key} className={cn('px-3 py-3', cellAlignClass(col))}>
-                <ListModalCell
-                  row={row}
-                  col={col}
-                  tMenu={tMenu}
-                  ui={ui}
-                  onToggle={onToggle}
-                  savingToggle={savingToggles[`${row.id}:${col.key}`]}
-                />
-              </TableCell>
+              <TableHead
+                key={col.key}
+                className={cn(
+                  'h-10 px-3 text-xs font-semibold leading-4 text-[#121217]',
+                  cellAlignClass(col),
+                  idx === 0 ? 'pl-0' : '',
+                )}
+                data-testid="TableHead__19eda5">
+                {col.labelKey ? ui(col.labelKey) : (tMenu(col.label) ?? col.label ?? col.key)}
+              </TableHead>
             ))}
-            {/* Hover row actions */}
-            <TableCell className={cn(actionsColClass, 'p-0')}>
-              <div className={cn('flex items-center justify-center gap-1 opacity-0 transition-opacity group-hover/row:opacity-100', actionsColClass)}>
-                <button
-                  type="button"
-                  onClick={() => onEdit?.(row)}
-                  aria-label={ui('edit')}
-                  data-testid={`list-modal-edit-${row.id}`}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#828FA3] transition-colors hover:bg-[#E8EAEF]"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-                {onClone && (
+            {/* Actions column header */}
+            <TableHead
+              className={cn(actionsColClass, 'p-0')}
+              aria-hidden="true"
+              data-testid="TableHead__19eda5" />
+          </TableRow>
+        </TableHeader>
+        <TableBody data-testid="TableBody__19eda5">
+          {isEmpty ? (
+            <TableRow className="hover:bg-transparent" data-testid="TableRow__19eda5">
+              <TableCell
+                colSpan={columns.length + 2}
+                className="py-12 text-center text-[#6C6C89]"
+                data-testid="list-modal-empty"
+              >
+                <p className="text-sm font-medium">{ui('noRecordsYet')}</p>
+                <p className="mt-1 text-xs">{ui('createNewRecord')}</p>
+              </TableCell>
+            </TableRow>
+          ) : data.map((row) => (
+            <TableRow
+              key={row.id}
+              data-testid={`list-modal-row-${row.id}`}
+              className="group/row relative border-b border-[#E8EAEF] bg-white transition-shadow hover:z-10 hover:bg-white hover:shadow-lg"
+            >
+              {/* Drag handle — visual only; drag-to-reorder deferred */}
+              <TableCell className="w-11 p-0" data-testid="TableCell__19eda5">
+                <div className="flex w-11 items-center justify-center opacity-0 transition-opacity group-hover/row:opacity-100">
+                  <GripVertical
+                    className="h-5 w-5 text-[#828FA3]"
+                    aria-hidden="true"
+                    data-testid="GripVertical__19eda5" />
+                </div>
+              </TableCell>
+              {columns.map((col, idx) => (
+                <TableCell
+                  key={col.key}
+                  className={cn('px-3 py-3', cellAlignClass(col))}
+                  data-testid="TableCell__19eda5">
+                  <ListModalCell
+                    row={row}
+                    col={col}
+                    tMenu={tMenu}
+                    ui={ui}
+                    onToggle={onToggle}
+                    savingToggle={savingToggles[`${row.id}:${col.key}`]}
+                    data-testid="ListModalCell__19eda5" />
+                </TableCell>
+              ))}
+              {/* Hover row actions */}
+              <TableCell className={cn(actionsColClass, 'p-0')} data-testid="TableCell__19eda5">
+                <div className={cn('flex items-center justify-center gap-1 opacity-0 transition-opacity group-hover/row:opacity-100', actionsColClass)}>
                   <button
                     type="button"
-                    onClick={() => onClone(row)}
-                    aria-label={ui('clone')}
-                    data-testid={`list-modal-clone-${row.id}`}
+                    onClick={() => onEdit?.(row)}
+                    aria-label={ui('edit')}
+                    data-testid={`list-modal-edit-${row.id}`}
                     className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#828FA3] transition-colors hover:bg-[#E8EAEF]"
                   >
-                    <Copy className="h-4 w-4" />
+                    <Pencil className="h-4 w-4" data-testid="Pencil__19eda5" />
                   </button>
-                )}
-                {onDelete && (
-                  <button
-                    type="button"
-                    onClick={() => onDelete(row)}
-                    disabled={deletingId === row.id}
-                    aria-label={ui('delete')}
-                    data-testid={`list-modal-delete-${row.id}`}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#D92D20] transition-colors hover:bg-[#FEE4E2] disabled:opacity-50"
-                  >
-                    {deletingId === row.id
-                      ? <Loader2 className="h-4 w-4 animate-spin" />
-                      : <Trash2 className="h-4 w-4" />}
-                  </button>
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+                  {onClone && (
+                    <button
+                      type="button"
+                      onClick={() => onClone(row)}
+                      aria-label={ui('clone')}
+                      data-testid={`list-modal-clone-${row.id}`}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#828FA3] transition-colors hover:bg-[#E8EAEF]"
+                    >
+                      <Copy className="h-4 w-4" data-testid="Copy__19eda5" />
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(row)}
+                      disabled={deletingId === row.id}
+                      aria-label={ui('delete')}
+                      data-testid={`list-modal-delete-${row.id}`}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#D92D20] transition-colors hover:bg-[#FEE4E2] disabled:opacity-50"
+                    >
+                      {deletingId === row.id
+                        ? <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__19eda5" />
+                        : <Trash2 className="h-4 w-4" data-testid="Trash2__19eda5" />}
+                    </button>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

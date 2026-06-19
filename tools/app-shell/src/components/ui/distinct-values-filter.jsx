@@ -55,17 +55,22 @@ export function DistinctValuesFilter({
   const triggerLabel = value ? labelFor(value) : allLabel;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <Popover open={open} onOpenChange={setOpen} data-testid="Popover__cd3aa9">
+      <PopoverTrigger asChild data-testid="PopoverTrigger__cd3aa9">
         <button
           type="button"
           className="inline-flex h-9 items-center justify-between gap-1.5 rounded-lg border border-border bg-white px-3 text-sm font-normal leading-6 text-muted-foreground transition-colors hover:bg-[#F5F7F9]"
         >
           <span className="truncate text-left">{triggerLabel}</span>
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <ChevronDown
+            className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+            data-testid="ChevronDown__cd3aa9" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className={`${popoverWidth} p-0`} align="start">
+      <PopoverContent
+        className={`${popoverWidth} p-0`}
+        align="start"
+        data-testid="PopoverContent__cd3aa9">
         <DistinctValuesList
           activeCode={value}
           allLabel={allLabel}
@@ -77,7 +82,7 @@ export function DistinctValuesFilter({
             setOpen(false);
           }}
           searchPlaceholder={searchPlaceholder}
-        />
+          data-testid="DistinctValuesList__cd3aa9" />
       </PopoverContent>
     </Popover>
   );

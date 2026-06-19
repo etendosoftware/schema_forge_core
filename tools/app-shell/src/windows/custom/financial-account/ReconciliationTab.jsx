@@ -20,7 +20,7 @@ export function ReconciliationTab({ account, onReconcileSuccess }) {
         currency={account?.currency}
         onBack={() => navigate(-1)}
         onReconcileSuccess={onReconcileSuccess}
-      />
+        data-testid="ReconciliationSplitPanel__46a213" />
     </div>
   );
 }

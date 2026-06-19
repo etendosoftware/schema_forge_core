@@ -16,7 +16,7 @@ function PeriodLink({ label, onClick }) {
       <span className="border-b border-[#828FA3] group-hover:border-[#121217] transition-colors leading-6">
         {label}
       </span>
-      <ArrowUpRight className="h-4 w-4 text-[#121217]" />
+      <ArrowUpRight className="h-4 w-4 text-[#121217]" data-testid="ArrowUpRight__34159c" />
     </button>
   );
 }
@@ -26,7 +26,7 @@ function StatusBadge({ isProcessed, ui }) {
     <StatusTag
       status={isProcessed ? 'CO' : 'IP'}
       label={isProcessed ? ui('assetsStatusProcessed') : ui('assetsStatusPlanned')}
-    />
+      data-testid="StatusTag__34159c" />
   );
 }
 
@@ -91,7 +91,7 @@ export default function AssetsAmortizationPanel({ data, recordId: recordIdProp, 
     <div className="pt-2 pb-5">
       {loading ? (
         <div className="text-xs text-gray-400 py-4 text-center inline-flex items-center gap-1.5 justify-center w-full">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          <Loader2 className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__34159c" />
           {ui('assetsLoading')}
         </div>
       ) : lines.length === 0 ? (
@@ -120,7 +120,7 @@ export default function AssetsAmortizationPanel({ data, recordId: recordIdProp, 
                       <PeriodLink
                         label={line['amortization$_identifier'] ?? line.amortization}
                         onClick={() => navigate(`/amortization/${line.amortization}`)}
-                      />
+                        data-testid="PeriodLink__34159c" />
                     ) : (
                       <span className="text-foreground">{line['amortization$_identifier'] ?? '—'}</span>
                     )}
@@ -132,7 +132,10 @@ export default function AssetsAmortizationPanel({ data, recordId: recordIdProp, 
                   </td>
                   <td className="py-3 pr-4 text-foreground">{formatCurrency(orgCurrency, line.amortizationAmount)}</td>
                   <td className="py-3">
-                    <StatusBadge isProcessed={processedMap.get(line.amortization) ?? false} ui={ui} />
+                    <StatusBadge
+                      isProcessed={processedMap.get(line.amortization) ?? false}
+                      ui={ui}
+                      data-testid="StatusBadge__34159c" />
                   </td>
                 </tr>
               ))}

@@ -47,9 +47,11 @@ export default function ConfirmWithCreditButtonBase({
         </button>
       )}
       {extraActions}
-      <PrintButton onClick={handlePrint} loading={pdfLoading} />
+      <PrintButton
+        onClick={handlePrint}
+        loading={pdfLoading}
+        data-testid="PrintButton__f9608e" />
       {extraPortals}
-
       {showModal && status === 'DR' && (
         <ConfirmInOutModal
           base={base}
@@ -76,19 +78,17 @@ export default function ConfirmWithCreditButtonBase({
             if (r) setResult(r); else window.location.reload();
           }}
           onClose={() => setShowModal(false)}
-        />
+          data-testid="ConfirmInOutModal__f9608e" />
       )}
-
       {showModal && status === 'CO' && createPortal(
         <CreateInvoiceConfirmModal
           data={data}
           loading={creatingInvoice}
           onConfirm={() => { setShowModal(false); handleCreateReturnInvoice(); }}
           onClose={() => setShowModal(false)}
-        />,
+          data-testid="CreateInvoiceConfirmModal__f9608e" />,
         document.body,
       )}
-
       {result && createPortal(
         <ConfirmResultModal
           title={result.title}
@@ -97,7 +97,7 @@ export default function ConfirmWithCreditButtonBase({
           navigate={navigate}
           primary={result.docs.length > 0 ? ui('soViewInvoice') : undefined}
           onClose={() => setResult(null)}
-        />,
+          data-testid="ConfirmResultModal__f9608e" />,
         document.body,
       )}
     </>

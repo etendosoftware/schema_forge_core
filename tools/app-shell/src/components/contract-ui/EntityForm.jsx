@@ -78,7 +78,9 @@ function PopupSearchInput({ field, value, displayValue, onChange, label, selecto
         data-testid={`field-${field.key}`}
         className="w-full h-10 text-sm rounded-lg border border-[#D1D4DB] bg-white p-2 text-left flex items-center gap-2 shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
       >
-        <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+        <Search
+          className="h-4 w-4 text-muted-foreground shrink-0"
+          data-testid={"Search__" + field.id} />
         {displayText ? (
           <span className="truncate text-foreground">{displayText}</span>
         ) : (
@@ -93,7 +95,7 @@ function PopupSearchInput({ field, value, displayValue, onChange, label, selecto
         selectorContext={selectorContext}
         token={token}
         title={label}
-      />
+        data-testid={"ProductSearchDrawer__" + field.id} />
     </>
   );
 }
@@ -261,7 +263,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
           clearAriaLabel={ui('clear')}
           testId={`field-${field.key}-chip`}
           clearable={field.clearable !== false}
-        />
+          data-testid={"SelectorChip__" + field.id} />
       ) : (
         <input
           ref={inputRef}
@@ -305,7 +307,9 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
         />
       )}
       {fetching ? (
-        <Loader2 className="h-4 w-4 text-[#828FA3] animate-spin shrink-0 ml-auto" />
+        <Loader2
+          className="h-4 w-4 text-[#828FA3] animate-spin shrink-0 ml-auto"
+          data-testid={"Loader2__" + field.id} />
       ) : (
         <button
           type="button"
@@ -322,7 +326,9 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
           }}
           className="shrink-0 ml-auto flex items-center"
         >
-          <ChevronDown className="h-4 w-4 text-[#828FA3]" />
+          <ChevronDown
+            className="h-4 w-4 text-[#828FA3]"
+            data-testid={"ChevronDown__" + field.id} />
         </button>
       )}
       {open && (canCreate || filtered.length > 0) && (
@@ -443,15 +449,17 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
       }}
       required={field.required}
       disabled={(!parentValue && !value) || loading}
-    >
+      data-testid={"Select__" + field.id}>
       <SelectTrigger id={field.key} data-testid={`field-${field.key}`} className="focus:ring-2 focus:ring-primary">
         <SelectValue
           placeholder={loading ? ui('loading') : (parentValue ? buildSelectPlaceholder(ui, resolvedLabel) : ui('selectParentFirst'))}
-        />
-        {loading && <Loader2 className="h-4 w-4 text-muted-foreground animate-spin ml-auto mr-1" />}
+          data-testid={"SelectValue__" + field.id} />
+        {loading && <Loader2
+          className="h-4 w-4 text-muted-foreground animate-spin ml-auto mr-1"
+          data-testid={"Loader2__" + field.id} />}
       </SelectTrigger>
-      <SelectContent>
-        {!field.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
+      <SelectContent data-testid={"SelectContent__" + field.id}>
+        {!field.required && <SelectItem value="__empty__" data-testid={"SelectItem__" + field.id}>&nbsp;</SelectItem>}
         {options.map(opt => (
           <SelectItem key={opt.id} value={opt.id} data-testid={`option-${field.key}-${opt.id}`}>{opt.name}</SelectItem>
         ))}
@@ -475,7 +483,9 @@ function LookupFormField({ field, value, displayValue, selectorUrl, selectorCont
         onClick={() => setOpen(true)}
         className="w-full flex items-center gap-2 h-10 rounded-lg border border-[#D1D4DB] bg-white p-2 text-sm text-left shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
       >
-        <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+        <Search
+          className="h-4 w-4 text-muted-foreground shrink-0"
+          data-testid={"Search__" + field.id} />
         {display ? (
           <span className="flex-1 truncate text-foreground">{display}</span>
         ) : (
@@ -493,7 +503,7 @@ function LookupFormField({ field, value, displayValue, selectorUrl, selectorCont
         selectorContext={selectorContext}
         token={token}
         title={resolvedLabel}
-      />
+        data-testid={"ProductSearchDrawer__" + field.id} />
     </>
   );
 }
@@ -539,42 +549,50 @@ function renderSelectField(f, data, label, isReadOnly, onChange, ctx) {
     selectValue = data?.[f.key] ?? '';
   }
   return (
-      <div key={f.key} className="space-y-1.5">
-        <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-          {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
-        </Label>
-        <Select
-            value={selectValue || '__empty__'}
-            onValueChange={(val) => {
-              if (val === '__empty__') {
-                onChange?.(f.key, '', f.column);
-                return;
-              }
-              onChange?.(f.key, f.valueType === 'boolean' ? val === 'true' : val, f.column);
-            }}
-            disabled={isReadOnly}
-            required={f.required}
-        >
-          <SelectTrigger id={f.key} data-testid={`field-${f.key}`} className="bg-white focus:ring-2 focus:ring-primary">
-            <SelectValue placeholder={buildSelectPlaceholder(ui, label)}/>
-          </SelectTrigger>
-          <SelectContent>
-            {!f.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
-            {f.options.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>{tMenu(opt.label)}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <div key={f.key} className="space-y-1.5">
+      <Label
+        htmlFor={f.key}
+        className="text-sm text-foreground font-medium"
+        data-testid="Label__a8d626">
+        {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
+      </Label>
+      <Select
+        value={selectValue || '__empty__'}
+        onValueChange={(val) => {
+          if (val === '__empty__') {
+            onChange?.(f.key, '', f.column);
+            return;
+          }
+          onChange?.(f.key, f.valueType === 'boolean' ? val === 'true' : val, f.column);
+        }}
+        disabled={isReadOnly}
+        required={f.required}
+        data-testid="Select__a8d626">
+        <SelectTrigger id={f.key} data-testid={`field-${f.key}`} className="bg-white focus:ring-2 focus:ring-primary">
+          <SelectValue
+            placeholder={buildSelectPlaceholder(ui, label)}
+            data-testid="SelectValue__a8d626" />
+        </SelectTrigger>
+        <SelectContent data-testid="SelectContent__a8d626">
+          {!f.required && <SelectItem value="__empty__" data-testid="SelectItem__a8d626">&nbsp;</SelectItem>}
+          {f.options.map(opt => (
+              <SelectItem key={opt.value} value={opt.value} data-testid="SelectItem__a8d626">{tMenu(opt.label)}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
 
 function PopupSearchField(props) {
-  return <div className="space-y-1.5">
-    <Label className="text-sm text-foreground font-medium">
-      {props.label}{props.f.required ? <span className="text-red-500 ml-0.5">*</span> : ""}
-    </Label>
-    <PopupSearchInput
+  return (
+    <div className="space-y-1.5">
+      <Label
+        className="text-sm text-foreground font-medium"
+        data-testid="Label__a8d626">
+        {props.label}{props.f.required ? <span className="text-red-500 ml-0.5">*</span> : ""}
+      </Label>
+      <PopupSearchInput
         field={props.f}
         value={props.data?.[props.f.key] ?? ""}
         displayValue={props.data?.[props.f.key + "$_identifier"]}
@@ -583,8 +601,9 @@ function PopupSearchField(props) {
         selectorUrl={props.selectorUrl}
         selectorContext={props.selectorContext}
         token={props.token}
-    />
-  </div>;
+        data-testid="PopupSearchInput__a8d626" />
+    </div>
+  );
 }
 
 function getCheckboxStateClass(checked) {
@@ -649,12 +668,16 @@ function getInputStateClass(isReadOnly) {
 }
 
 function DependentFkField(props) {
-  return <div className="space-y-1.5">
-    <Label htmlFor={props.f.key} className="text-sm text-foreground font-medium">
-      {props.label}{requiredAsterisk(props.f)}
-    </Label>
-    {props.f.column === "C_BPartner_Location_ID" ? (
-        <PartnerAddressPicker
+  return (
+    <div className="space-y-1.5">
+      <Label
+        htmlFor={props.f.key}
+        className="text-sm text-foreground font-medium"
+        data-testid="Label__a8d626">
+        {props.label}{requiredAsterisk(props.f)}
+      </Label>
+      {props.f.column === "C_BPartner_Location_ID" ? (
+          <PartnerAddressPicker
             field={props.f}
             value={props.data?.[props.f.key] ?? ""}
             displayValue={props.data?.[props.f.key + "$_identifier"]}
@@ -665,9 +688,9 @@ function DependentFkField(props) {
             selectorContext={props.selectorContext}
             token={props.token}
             apiBaseUrl={props.apiBaseUrl}
-        />
-    ) : (
-        <DependentSelect
+            data-testid="PartnerAddressPicker__a8d626" />
+      ) : (
+          <DependentSelect
             field={props.f}
             value={props.data?.[props.f.key] ?? ""}
             displayValue={props.data?.[props.f.key + "$_identifier"]}
@@ -678,9 +701,10 @@ function DependentFkField(props) {
             selectorUrl={props.selectorUrl}
             selectorContext={props.selectorContext}
             token={props.token}
-        />
-    )}
-  </div>;
+            data-testid="DependentSelect__a8d626" />
+      )}
+    </div>
+  );
 }
 
 function buildDependentSelectorUrl(apiBaseUrl, entity, f) {
@@ -805,7 +829,10 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   // (f, label, isReadOnly) are passed in.
   const renderReadOnlyFk = (f, label) => (
     <div key={f.key} data-testid={`field-${f.key}`} className="space-y-1.5">
-      <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+      <Label
+        htmlFor={f.key}
+        className="text-sm text-foreground font-medium"
+        data-testid="Label__a8d626">
         {label}
       </Label>
       <Input
@@ -813,7 +840,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         name={f.key}
         value={resolveIdentifier(data, f.key) || data?.[f.key] || ''}
         disabled
-      />
+        data-testid="Input__a8d626" />
     </div>
   );
 
@@ -841,7 +868,10 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       : (resolveUiKey(ui, f.createLabelKey) ?? '');
     return (
       <div key={f.key} className="space-y-1.5">
-        <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+        <Label
+          htmlFor={f.key}
+          className="text-sm text-foreground font-medium"
+          data-testid="Label__a8d626">
           {label}{labelMarker(f, false, optionalSuffix, ui)}
         </Label>
         {canCreate ? (
@@ -853,9 +883,9 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             createLabel={resolveUiKey(ui, f.createLabelKey)}
             createTitle={createTitle}
             namePlaceholder={resolveUiKey(ui, f.createNamePlaceholderKey)}
-          />
+            data-testid="InlineCreateSelector__a8d626" />
         ) : (
-          <CreatableSearchSelect {...commonProps} />
+          <CreatableSearchSelect {...commonProps} data-testid="CreatableSearchSelect__a8d626" />
         )}
       </div>
     );
@@ -875,7 +905,10 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     }
     return (
       <div key={f.key} className="space-y-1.5">
-        <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+        <Label
+          htmlFor={f.key}
+          className="text-sm text-foreground font-medium"
+          data-testid="Label__a8d626">
           {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
         </Label>
         <SelectorInput
@@ -889,7 +922,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
           selectorUrl={selectorUrl}
           selectorContext={effectiveSelectorContext}
           token={token}
-        />
+          data-testid="SelectorInput__a8d626" />
       </div>
     );
   };
@@ -909,16 +942,28 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     };
     if (f.popup) {
       return (
-        <PopupSearchField key={f.key} label={label} f={f} data={data} onChange={(val, lbl) => {
-          onChange?.(f.key, val, f.column);
-          if (lbl) onChange?.(f.key + '$_identifier', lbl);
-        }} selectorUrl={selectorUrl} selectorContext={effectiveSelectorContext} token={token}/>
+        <PopupSearchField
+          key={f.key}
+          label={label}
+          f={f}
+          data={data}
+          onChange={(val, lbl) => {
+            onChange?.(f.key, val, f.column);
+            if (lbl) onChange?.(f.key + '$_identifier', lbl);
+          }}
+          selectorUrl={selectorUrl}
+          selectorContext={effectiveSelectorContext}
+          token={token}
+          data-testid="PopupSearchField__a8d626" />
       );
     }
     if (f.lookup) {
       return (
         <div key={f.key} className="space-y-1.5">
-          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+          <Label
+            htmlFor={f.key}
+            className="text-sm text-foreground font-medium"
+            data-testid="Label__a8d626">
             {label}{requiredAsterisk(f)}
           </Label>
           <LookupFormField
@@ -930,13 +975,16 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             token={token}
             resolvedLabel={label}
             onChange={searchOnChange}
-          />
+            data-testid="LookupFormField__a8d626" />
         </div>
       );
     }
     return (
       <div key={f.key} className="space-y-1.5">
-        <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+        <Label
+          htmlFor={f.key}
+          className="text-sm text-foreground font-medium"
+          data-testid="Label__a8d626">
           {label}{requiredAsterisk(f)}
         </Label>
         <SearchInput
@@ -950,7 +998,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
           selectorUrl={selectorUrl}
           selectorContext={effectiveSelectorContext}
           token={token}
-        />
+          data-testid="SearchInput__a8d626" />
       </div>
     );
   };
@@ -962,15 +1010,26 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     if (isReadOnly) {
       return (
         <div key={f.key} data-testid={`field-${f.key}`} className="space-y-1.5">
-          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">{label}</Label>
-          <Input id={f.key} name={f.key} value={selOpt ? tMenu(selOpt.label) : ''} disabled />
+          <Label
+            htmlFor={f.key}
+            className="text-sm text-foreground font-medium"
+            data-testid="Label__a8d626">{label}</Label>
+          <Input
+            id={f.key}
+            name={f.key}
+            value={selOpt ? tMenu(selOpt.label) : ''}
+            disabled
+            data-testid="Input__a8d626" />
         </div>
       );
     }
     const staticOpts = f.options.map(o => ({ id: o.value, name: tMenu(o.label) }));
     return (
       <div key={f.key} className="space-y-1.5">
-        <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+        <Label
+          htmlFor={f.key}
+          className="text-sm text-foreground font-medium"
+          data-testid="Label__a8d626">
           {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
         </Label>
         <CreatableSearchSelect
@@ -980,7 +1039,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
           onChange={(id) => onChange?.(f.key, id, f.column)}
           resolvedLabel={label}
           staticOptions={staticOpts}
-        />
+          data-testid="CreatableSearchSelect__a8d626" />
       </div>
     );
   };
@@ -988,7 +1047,10 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   // Date field (DateField wrapper).
   const renderDateField = (f, label, isReadOnly) => (
     <div key={f.key} className="space-y-1.5">
-      <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+      <Label
+        htmlFor={f.key}
+        className="text-sm text-foreground font-medium"
+        data-testid="Label__a8d626">
         {label}{requiredAsteriskIfEditable(f, isReadOnly)}
       </Label>
       <DateField
@@ -1007,7 +1069,10 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   // Default single-line text/number input (the fall-through renderer).
   const renderInputField = (f, label, isReadOnly, displayValue) => (
     <div key={f.key} className="space-y-1.5">
-      <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+      <Label
+        htmlFor={f.key}
+        className="text-sm text-foreground font-medium"
+        data-testid="Label__a8d626">
         {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
       </Label>
       <Input
@@ -1033,7 +1098,10 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     const placeholder = !isReadOnly ? resolveUiKey(ui, f.placeholderKey) : undefined;
     return (
       <div key={f.key} className="space-y-1.5">
-        <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+        <Label
+          htmlFor={f.key}
+          className="text-sm text-foreground font-medium"
+          data-testid="Label__a8d626">
           {label}{requiredAsteriskIfEditable(f, isReadOnly)}
         </Label>
         <textarea
@@ -1068,9 +1136,18 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       else if (!val) onChange?.(f.key + '$_identifier', '');
     };
     return (
-      <DependentFkField key={f.key} f={f} label={label} data={data} onChange={fieldOnChange}
-                      selectorUrl={fieldSelectorUrl} selectorContext={effectiveSelectorContext} token={token}
-                      apiBaseUrl={apiBaseUrl} catalogs={catalogs}/>
+      <DependentFkField
+        key={f.key}
+        f={f}
+        label={label}
+        data={data}
+        onChange={fieldOnChange}
+        selectorUrl={fieldSelectorUrl}
+        selectorContext={effectiveSelectorContext}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        catalogs={catalogs}
+        data-testid="DependentFkField__a8d626" />
     );
   };
 
@@ -1111,7 +1188,10 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             </svg>
           )}
         </button>
-        <Label htmlFor={f.key} className="text-sm text-foreground font-medium cursor-pointer">
+        <Label
+          htmlFor={f.key}
+          className="text-sm text-foreground font-medium cursor-pointer"
+          data-testid="Label__a8d626">
           {label}
         </Label>
       </div>
@@ -1170,7 +1250,9 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       const imageClass = ['space-y-1.5 row-span-2 flex flex-col', spanClass].filter(Boolean).join(' ');
       return (
         <div key={f.key} className={imageClass}>
-          <Label className="text-sm text-foreground font-medium">{label}</Label>
+          <Label
+            className="text-sm text-foreground font-medium"
+            data-testid="Label__a8d626">{label}</Label>
           <ImageField
             imageId={data?.[f.key] ?? ''}
             onChange={(newId) => onChange?.(f.key, newId, f.column)}
@@ -1179,7 +1261,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             readOnly={isReadOnly}
             fieldKey={f.key}
             stretch
-          />
+            data-testid="ImageField__a8d626" />
         </div>
       );
     }
@@ -1195,7 +1277,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         node,
         { className: `${node.props.className ?? ''}`.trim() },
         existing,
-        <FieldHelp key="__help" field={f} ui={ui} />,
+        <FieldHelp key="__help" field={f} ui={ui} data-testid="FieldHelp__a8d626" />,
       );
     }
 
@@ -1207,7 +1289,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         existing,
         React.createElement(
           'p',
-          { key: '__err', className: 'text-xs text-red-500 mt-0.5', 'data-testid': `error-${f.key}` },
+          { key: '__err', role: 'alert', className: 'text-xs text-red-500 mt-0.5', 'data-testid': `error-${f.key}` },
           err
         )
       );
@@ -1241,7 +1323,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             fieldKey={imageField.key}
             label={imgLabel}
             stretch
-          />
+            data-testid="ImageField__a8d626" />
         </div>
       </div>
     );

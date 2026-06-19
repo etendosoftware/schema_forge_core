@@ -60,7 +60,9 @@ const MOVEMENT_CELL_RENDERERS = {
   transactionDate: {
     labelKey: 'financeAccountMovementsColDate',
     renderCell: (m, ctx) => (
-      <TableCell className="whitespace-nowrap text-sm leading-5 text-[#121217]">
+      <TableCell
+        className="whitespace-nowrap text-sm leading-5 text-[#121217]"
+        data-testid="TableCell__ae5a16">
         {formatDate(m.date, ctx.bcpLocale)}
       </TableCell>
     ),
@@ -68,7 +70,9 @@ const MOVEMENT_CELL_RENDERERS = {
   documentNo: {
     labelKey: 'financeAccountMovementsColDocument',
     renderCell: (m, ctx) => (
-      <TableCell className="whitespace-nowrap text-sm font-semibold leading-5">
+      <TableCell
+        className="whitespace-nowrap text-sm font-semibold leading-5"
+        data-testid="TableCell__ae5a16">
         {m.paymentId ? (
           <button
             type="button"
@@ -76,7 +80,7 @@ const MOVEMENT_CELL_RENDERERS = {
             className="inline-flex items-center gap-1 text-[#121217] underline decoration-[#d1d4db] underline-offset-4 hover:decoration-[#121217]"
           >
             {m.documentNo}
-            <ArrowUpRight className="h-3 w-3" />
+            <ArrowUpRight className="h-3 w-3" data-testid="ArrowUpRight__ae5a16" />
           </button>
         ) : (
           <span className="text-[#121217]">{m.documentNo}</span>
@@ -87,30 +91,34 @@ const MOVEMENT_CELL_RENDERERS = {
   businessPartner: {
     labelKey: 'financeAccountMovementsColContact',
     renderCell: (m) => (
-      <TableCell className="text-sm leading-5 text-[#121217]">{m.contact}</TableCell>
+      <TableCell
+        className="text-sm leading-5 text-[#121217]"
+        data-testid="TableCell__ae5a16">{m.contact}</TableCell>
     ),
   },
   description: {
     labelKey: 'financeAccountMovementsColDescription',
     renderCell: (m) => (
-      <TableCell className="max-w-[200px] truncate text-sm text-[#121217]">{m.description}</TableCell>
+      <TableCell
+        className="max-w-[200px] truncate text-sm text-[#121217]"
+        data-testid="TableCell__ae5a16">{m.description}</TableCell>
     ),
   },
   status: {
     labelKey: 'financeAccountMovementsColStatus',
     renderCell: (m) => (
-      <TableCell>
-        <MovementStatusBadge status={m.paymentStatus} />
+      <TableCell data-testid="TableCell__ae5a16">
+        <MovementStatusBadge status={m.paymentStatus} data-testid="MovementStatusBadge__ae5a16" />
       </TableCell>
     ),
   },
   transactionType: {
     labelKey: 'financeAccountMovementsColType',
     renderCell: (m, ctx) => (
-      <TableCell>
+      <TableCell data-testid="TableCell__ae5a16">
         <div className="flex flex-col gap-0.5">
           <span className="text-sm leading-5 text-[#121217]">{ctx.getTrxTypeLabel(m)}</span>
-          <PostingStatusDot paymentStatus={m.paymentStatus} />
+          <PostingStatusDot paymentStatus={m.paymentStatus} data-testid="PostingStatusDot__ae5a16" />
         </div>
       </TableCell>
     ),
@@ -118,16 +126,21 @@ const MOVEMENT_CELL_RENDERERS = {
   gLItem: {
     labelKey: 'financeAccountMovementsColGlItem',
     renderCell: (m) => (
-      <TableCell className="max-w-[180px] truncate text-sm text-[#121217]">{m.glItem || '—'}</TableCell>
+      <TableCell
+        className="max-w-[180px] truncate text-sm text-[#121217]"
+        data-testid="TableCell__ae5a16">{m.glItem || '—'}</TableCell>
     ),
   },
 };
 
 function renderContractCell(col, movement, ctx) {
   const renderer = MOVEMENT_CELL_RENDERERS[col.name];
-  if (renderer) return <Fragment key={col.name}>{renderer.renderCell(movement, ctx)}</Fragment>;
+  if (renderer) return <Fragment key={col.name} data-testid="Fragment__ae5a16">{renderer.renderCell(movement, ctx)}</Fragment>;
   return (
-    <TableCell key={col.name} className="text-sm leading-5 text-[#121217]">
+    <TableCell
+      key={col.name}
+      className="text-sm leading-5 text-[#121217]"
+      data-testid="TableCell__ae5a16">
       {movement[col.name] ?? '—'}
     </TableCell>
   );
@@ -149,10 +162,10 @@ const DIMENSION_LABEL_KEYS = {
 function renderBody({ loading, movements, ui, renderRow }) {
   if (loading) {
     return SKELETON_ROWS.map((n) => (
-      <TableRow key={n}>
+      <TableRow key={n} data-testid="TableRow__ae5a16">
         {SKELETON_COL_KEYS.map((colKey) => (
-          <TableCell key={colKey}>
-            <Skeleton className="h-4 w-full" />
+          <TableCell key={colKey} data-testid="TableCell__ae5a16">
+            <Skeleton className="h-4 w-full" data-testid="Skeleton__ae5a16" />
           </TableCell>
         ))}
       </TableRow>
@@ -160,11 +173,11 @@ function renderBody({ loading, movements, ui, renderRow }) {
   }
   if (movements.length === 0) {
     return (
-      <TableRow className="hover:bg-transparent">
-        <TableCell colSpan={COL_COUNT} className="py-16">
+      <TableRow className="hover:bg-transparent" data-testid="TableRow__ae5a16">
+        <TableCell colSpan={COL_COUNT} className="py-16" data-testid="TableCell__ae5a16">
           <div className="flex flex-col items-center gap-2 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F5F7F9]">
-              <ArrowLeftRight className="h-5 w-5 text-[#828FA3]" />
+              <ArrowLeftRight className="h-5 w-5 text-[#828FA3]" data-testid="ArrowLeftRight__ae5a16" />
             </div>
             <p className="text-sm font-medium text-[#121217]">
               {ui('financeAccountMovementsEmpty')}
@@ -219,7 +232,12 @@ function DimensionsPanel({ movement, enabledDimensions, ui }) {
           <span className="text-sm font-medium leading-6 text-[#121217]">
             {ui(DIMENSION_LABEL_KEYS[key] ?? key)}
           </span>
-          <Input className="items-center" value={dims[key] || ''} disabled readOnly />
+          <Input
+            className="items-center"
+            value={dims[key] || ''}
+            disabled
+            readOnly
+            data-testid="Input__ae5a16" />
         </div>
       ))}
     </div>
@@ -281,7 +299,7 @@ export function MovementsTable({ movements, loading, enabledDimensions = [], sel
     const expanded = expandedId === movement.id;
     const highlighted = highlightTxnId && movement.id === highlightTxnId;
     return (
-      <Fragment key={movement.id}>
+      <Fragment key={movement.id} data-testid="Fragment__ae5a16">
         <TableRow
           data-testid={`movement-row-${movement.id}`}
           className={`group relative transition-shadow ${hasDimensions ? 'cursor-pointer' : ''} ${
@@ -294,7 +312,7 @@ export function MovementsTable({ movements, loading, enabledDimensions = [], sel
           onClick={() => { if (hasDimensions) toggleExpand(movement.id); }}
         >
           {/* Expand chevron (circular button) */}
-          <TableCell onClick={(e) => e.stopPropagation()}>
+          <TableCell onClick={(e) => e.stopPropagation()} data-testid="TableCell__ae5a16">
             {hasDimensions ? (
               <button
                 type="button"
@@ -305,57 +323,60 @@ export function MovementsTable({ movements, loading, enabledDimensions = [], sel
                 className="flex h-7 w-7 items-center justify-center rounded-full border border-[#D1D4DB] bg-white text-[#6C6C89] transition-transform hover:bg-[#F5F7F9] hover:text-[#121217]"
                 style={{ transform: expanded ? 'rotate(180deg)' : undefined }}
               >
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-4 w-4" data-testid="ChevronDown__ae5a16" />
               </button>
             ) : null}
           </TableCell>
 
           {/* Selection checkbox */}
-          <TableCell onClick={(e) => e.stopPropagation()}>
+          <TableCell onClick={(e) => e.stopPropagation()} data-testid="TableCell__ae5a16">
             <Checkbox
               checked={selectedIds.has(movement.id)}
               onChange={() => onSelectionChange(movement.id)}
-            />
+              data-testid="Checkbox__ae5a16" />
           </TableCell>
 
           {/* Contract-driven data columns (decisions.json → contract.json) */}
           {CONTRACT_COLUMNS.map((col) => renderContractCell(col, movement, cellCtx))}
 
           {/* Amount */}
-          <TableCell className="text-right">
+          <TableCell className="text-right" data-testid="TableCell__ae5a16">
             <MoneyAmount
               value={movement.amount}
               currency={movement.currencyIso}
               tone="auto"
               className="text-sm font-semibold leading-5"
-            />
+              data-testid="MoneyAmount__ae5a16" />
           </TableCell>
 
           {/* Balance */}
-          <TableCell className="text-right">
+          <TableCell className="text-right" data-testid="TableCell__ae5a16">
             <MoneyAmount
               value={movement.balance}
               currency={movement.currencyIso}
               tone="neutral"
               className="text-sm font-semibold text-[#121217]"
-            />
+              data-testid="MoneyAmount__ae5a16" />
           </TableCell>
 
           {/* Kebab — visible on row hover */}
-          <TableCell onClick={(e) => e.stopPropagation()}>
+          <TableCell onClick={(e) => e.stopPropagation()} data-testid="TableCell__ae5a16">
             <div className="opacity-0 transition-opacity group-hover:opacity-100">
-              <MovementRowKebab movement={movement} />
+              <MovementRowKebab movement={movement} data-testid="MovementRowKebab__ae5a16" />
             </div>
           </TableCell>
         </TableRow>
-
         {expanded ? (
           <TableRow
             className="relative z-10 border-b-0 bg-white shadow-lg [&>td]:border-b-0 hover:bg-white"
             data-testid={`movement-moreinfo-${movement.id}`}
           >
-            <TableCell colSpan={COL_COUNT} className="p-0">
-              <DimensionsPanel movement={movement} enabledDimensions={enabledDimensions} ui={ui} />
+            <TableCell colSpan={COL_COUNT} className="p-0" data-testid="TableCell__ae5a16">
+              <DimensionsPanel
+                movement={movement}
+                enabledDimensions={enabledDimensions}
+                ui={ui}
+                data-testid="DimensionsPanel__ae5a16" />
             </TableCell>
           </TableRow>
         ) : null}
@@ -364,25 +385,31 @@ export function MovementsTable({ movements, loading, enabledDimensions = [], sel
   };
 
   return (
-    <TooltipProvider>
-      <Table>
-        <TableHeader>
-          <TableRow className="h-10 [&_th]:text-xs [&_th]:font-semibold [&_th]:leading-4 [&_th]:text-[#121217]">
-            <TableHead className="w-10" />
-            <TableHead className="w-10">
-              <Checkbox checked={allSelected} indeterminate={someSelected} onChange={handleSelectAll} />
+    <TooltipProvider data-testid="TooltipProvider__ae5a16">
+      <Table data-testid="Table__ae5a16">
+        <TableHeader data-testid="TableHeader__ae5a16">
+          <TableRow
+            className="h-10 [&_th]:text-xs [&_th]:font-semibold [&_th]:leading-4 [&_th]:text-[#121217]"
+            data-testid="TableRow__ae5a16">
+            <TableHead className="w-10" data-testid="TableHead__ae5a16" />
+            <TableHead className="w-10" data-testid="TableHead__ae5a16">
+              <Checkbox
+                checked={allSelected}
+                indeterminate={someSelected}
+                onChange={handleSelectAll}
+                data-testid="Checkbox__ae5a16" />
             </TableHead>
             {CONTRACT_COLUMNS.map((col) => (
-              <TableHead key={col.name}>
+              <TableHead key={col.name} data-testid="TableHead__ae5a16">
                 {MOVEMENT_CELL_RENDERERS[col.name] ? ui(MOVEMENT_CELL_RENDERERS[col.name].labelKey) : col.label}
               </TableHead>
             ))}
-            <TableHead>{ui('financeAccountMovementsColAmount')}</TableHead>
-            <TableHead>{ui('financeAccountMovementsColBalance')}</TableHead>
-            <TableHead className="w-10" />
+            <TableHead data-testid="TableHead__ae5a16">{ui('financeAccountMovementsColAmount')}</TableHead>
+            <TableHead data-testid="TableHead__ae5a16">{ui('financeAccountMovementsColBalance')}</TableHead>
+            <TableHead className="w-10" data-testid="TableHead__ae5a16" />
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody data-testid="TableBody__ae5a16">
           {renderBody({
             loading,
             movements,

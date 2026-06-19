@@ -78,7 +78,13 @@ const LINE_CELL_RENDERERS = {
       const out = amount < 0 ? -amount : 0;
       return (
         <span className="text-right tabular-nums">
-          <AmountCell value={out} sign="−" toneClass="font-semibold text-red-700" currency={ctx.currency} bcpLocale={ctx.bcpLocale} />
+          <AmountCell
+            value={out}
+            sign="−"
+            toneClass="font-semibold text-red-700"
+            currency={ctx.currency}
+            bcpLocale={ctx.bcpLocale}
+            data-testid="AmountCell__10cf4a" />
         </span>
       );
     },
@@ -91,7 +97,13 @@ const LINE_CELL_RENDERERS = {
       const inn = amount > 0 ? amount : 0;
       return (
         <span className="text-right tabular-nums">
-          <AmountCell value={inn} sign="+" toneClass="font-semibold text-green-700" currency={ctx.currency} bcpLocale={ctx.bcpLocale} />
+          <AmountCell
+            value={inn}
+            sign="+"
+            toneClass="font-semibold text-green-700"
+            currency={ctx.currency}
+            bcpLocale={ctx.bcpLocale}
+            data-testid="AmountCell__10cf4a" />
         </span>
       );
     },
@@ -122,7 +134,12 @@ const MATCH_TONE = {
 
 function MatchPill({ kind, ui }) {
   const entry = MATCH_TONE[kind] ?? MATCH_TONE.none;
-  return <StatusTag tone={entry.tone} label={ui(entry.labelKey)} />;
+  return (
+    <StatusTag
+      tone={entry.tone}
+      label={ui(entry.labelKey)}
+      data-testid="StatusTag__10cf4a" />
+  );
 }
 
 // "Transacción" cell: shows the reconciled movement(s) of the line. None → "—";
@@ -147,7 +164,7 @@ function TxnChip({ line, ui, onOpen }) {
           : 'border-[#E8EAEF] bg-white text-[#3F3F50] hover:bg-[#F5F7F9] hover:text-[#121217]',
       )}
     >
-      {multi ? <Layers className="h-3 w-3 flex-none text-[#6C6C89]" /> : <Link2 className="h-3 w-3 flex-none text-[#6C6C89]" />}
+      {multi ? <Layers className="h-3 w-3 flex-none text-[#6C6C89]" data-testid="Layers__10cf4a" /> : <Link2 className="h-3 w-3 flex-none text-[#6C6C89]" data-testid="Link2__10cf4a" />}
       <span className="truncate">
         {multi ? ui('financeAccountStatementLinesTxnChipMulti', { count: txns.length }) : txns[0].documentNo}
       </span>
@@ -218,12 +235,14 @@ export function StatementLinesInline({ statementId, currency = 'EUR' }) {
         <span className="truncate">{ui('financeAccountStatementLinesColMatched')}</span>
         <span className="truncate">{ui('financeAccountStatementLinesColTransaction')}</span>
       </div>
-
       {/* Body */}
       {renderBody({ loading, lines, ui, currency, bcpLocale, onOpenTxns: setTxnLine })}
-
       {txnLine ? (
-        <ReconciledTxnsModal line={txnLine} currency={currency} onClose={() => setTxnLine(null)} />
+        <ReconciledTxnsModal
+          line={txnLine}
+          currency={currency}
+          onClose={() => setTxnLine(null)}
+          data-testid="ReconciledTxnsModal__10cf4a" />
       ) : null}
     </div>
   );
@@ -238,7 +257,7 @@ function renderBody({ loading, lines, ui, currency, bcpLocale, onOpenTxns }) {
     return [1, 2, 3].map((n) => (
       <div key={n} style={MINI_GRID_STYLE} className={cn(MINI_GRID_CLASS, 'items-center border-b border-[#F0F2F5] px-3 py-2.5')}>
         {SKELETON_CELL_KEYS.map((k) => (
-          <Skeleton key={k} className="h-4 w-full" />
+          <Skeleton key={k} className="h-4 w-full" data-testid="Skeleton__10cf4a" />
         ))}
       </div>
     ));
@@ -251,7 +270,14 @@ function renderBody({ loading, lines, ui, currency, bcpLocale, onOpenTxns }) {
     );
   }
   return lines.map((line) => (
-    <LineRow key={line.id} line={line} ui={ui} currency={currency} bcpLocale={bcpLocale} onOpenTxns={onOpenTxns} />
+    <LineRow
+      key={line.id}
+      line={line}
+      ui={ui}
+      currency={currency}
+      bcpLocale={bcpLocale}
+      onOpenTxns={onOpenTxns}
+      data-testid="LineRow__10cf4a" />
   ));
 }
 
@@ -273,15 +299,15 @@ function LineRow({ line, ui, currency, bcpLocale, onOpenTxns }) {
       {LINE_COLUMNS.map((col) => {
         const renderer = LINE_CELL_RENDERERS[col.name];
         return (
-          <Fragment key={col.name}>
+          <Fragment key={col.name} data-testid="Fragment__10cf4a">
             {renderer
               ? renderer.render(line, cellCtx)
               : <span className="truncate text-[#3F3F50]">{line[col.name] ?? '—'}</span>}
           </Fragment>
         );
       })}
-      <span><MatchPill kind={matchKind} ui={ui} /></span>
-      <span className="min-w-0"><TxnChip line={line} ui={ui} onOpen={onOpenTxns} /></span>
+      <span><MatchPill kind={matchKind} ui={ui} data-testid="MatchPill__10cf4a" /></span>
+      <span className="min-w-0"><TxnChip line={line} ui={ui} onOpen={onOpenTxns} data-testid="TxnChip__10cf4a" /></span>
     </div>
   );
 }

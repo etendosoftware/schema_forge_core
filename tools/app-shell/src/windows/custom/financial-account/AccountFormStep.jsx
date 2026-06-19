@@ -80,15 +80,17 @@ export function AccountFormStep({
       {isBank && bankName ? (
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E8EAEF] text-[#828FA3]">
-            <Landmark className="h-4 w-4" />
+            <Landmark className="h-4 w-4" data-testid="Landmark__5e0d1d" />
           </span>
           <span className="text-sm font-semibold leading-5 text-[#121217]">{bankName}</span>
         </div>
       ) : null}
-
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="account-form-name-input" className={FIELD_LABEL}>
+          <Label
+            htmlFor="account-form-name-input"
+            className={FIELD_LABEL}
+            data-testid="Label__5e0d1d">
             {ui('financeAccountsNewFieldName')} <span className="text-[#F53D6B]">*</span>
           </Label>
           <Input
@@ -105,7 +107,10 @@ export function AccountFormStep({
         {isBank ? (
           <>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="account-form-iban-input" className={FIELD_LABEL}>
+              <Label
+                htmlFor="account-form-iban-input"
+                className={FIELD_LABEL}
+                data-testid="Label__5e0d1d">
                 {ui('financeAccountsNewFieldIban')}
               </Label>
               <Input
@@ -127,7 +132,10 @@ export function AccountFormStep({
 
             {showBic ? (
               <div className="flex flex-col gap-2">
-                <Label htmlFor="account-form-bic-input" className={FIELD_LABEL}>
+                <Label
+                  htmlFor="account-form-bic-input"
+                  className={FIELD_LABEL}
+                  data-testid="Label__5e0d1d">
                   {ui('financeAccountsNewFieldBic')}
                 </Label>
                 <Input
@@ -145,23 +153,31 @@ export function AccountFormStep({
         ) : null}
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="account-form-currency-trigger" className={FIELD_LABEL}>
+          <Label
+            htmlFor="account-form-currency-trigger"
+            className={FIELD_LABEL}
+            data-testid="Label__5e0d1d">
             {ui('financeAccountsNewFieldCurrency')}
           </Label>
-          <Select value={currencyId} onValueChange={setCurrencyId}>
+          <Select
+            value={currencyId}
+            onValueChange={setCurrencyId}
+            data-testid="Select__5e0d1d">
             <SelectTrigger
               id="account-form-currency-trigger"
               data-testid="account-form-currency"
               className="bg-white"
             >
-              <SelectValue placeholder={ui('financeAccountsNewFieldCurrencyPlaceholder')} />
+              <SelectValue
+                placeholder={ui('financeAccountsNewFieldCurrencyPlaceholder')}
+                data-testid="SelectValue__5e0d1d" />
             </SelectTrigger>
             {/* Force the (long) currency list to open BELOW the trigger instead
                 of flipping up — the form sits near the bottom of the dialog so
                 Radix's collision avoidance would otherwise open it upward. */}
-            <SelectContent side="bottom" avoidCollisions={false}>
+            <SelectContent side="bottom" avoidCollisions={false} data-testid="SelectContent__5e0d1d">
               {currencies.map((currency) => (
-                <SelectItem key={currency.id} value={currency.id}>
+                <SelectItem key={currency.id} value={currency.id} data-testid="SelectItem__5e0d1d">
                   {currency.iso}
                 </SelectItem>
               ))}
@@ -169,13 +185,11 @@ export function AccountFormStep({
           </Select>
         </div>
       </div>
-
       {error ? (
         <p className="text-xs text-[#F53D6B]" data-testid="account-form-error">
           {error}
         </p>
       ) : null}
-
       <div className="flex justify-end py-2">
         <Button
           type="submit"

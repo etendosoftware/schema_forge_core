@@ -93,7 +93,7 @@ function ReconciliationStatusFilter({ value, onChange, counts = {} }) {
       allLabel={`${ui('financeReconcileFilterStatusAll')} (${counts.all ?? 0})`}
       searchPlaceholder={ui('financeReconcileFilterStatusSearchPlaceholder')}
       popoverWidth="w-60"
-    />
+      data-testid="DistinctValuesFilter__d0f4d5" />
   );
 }
 
@@ -113,7 +113,7 @@ function ReconciliationDocTypeFilter({ value, onChange }) {
       allLabel={ui('financeReconcileFilterDocTypeAll')}
       searchPlaceholder={ui('financeReconcileFilterDocTypeSearchPlaceholder')}
       popoverWidth="w-64"
-    />
+      data-testid="DistinctValuesFilter__d0f4d5" />
   );
 }
 
@@ -121,10 +121,10 @@ function ReconciliationDocTypeFilter({ value, onChange }) {
 function renderRows({ loading, items, colSpan, emptyTitle, emptyHint, renderRow }) {
   if (loading) {
     return SKELETON_ROWS.map((n) => (
-      <TableRow key={n}>
+      <TableRow key={n} data-testid="TableRow__d0f4d5">
         {SKELETON_CELL_KEYS.slice(0, colSpan).map((cellKey) => (
-          <TableCell key={cellKey}>
-            <Skeleton className="h-4 w-full" />
+          <TableCell key={cellKey} data-testid="TableCell__d0f4d5">
+            <Skeleton className="h-4 w-full" data-testid="Skeleton__d0f4d5" />
           </TableCell>
         ))}
       </TableRow>
@@ -132,8 +132,8 @@ function renderRows({ loading, items, colSpan, emptyTitle, emptyHint, renderRow 
   }
   if (items.length === 0) {
     return (
-      <TableRow className="hover:bg-transparent">
-        <TableCell colSpan={colSpan} className="py-12">
+      <TableRow className="hover:bg-transparent" data-testid="TableRow__d0f4d5">
+        <TableCell colSpan={colSpan} className="py-12" data-testid="TableCell__d0f4d5">
           <div className="flex flex-col items-center gap-1 text-center">
             <p className="text-sm font-medium text-[#121217]">{emptyTitle}</p>
             {emptyHint ? <p className="max-w-sm text-sm text-[#6C6C89]">{emptyHint}</p> : null}
@@ -154,13 +154,15 @@ function PanelTable({ headCells, loading, items, renderRow }) {
   const ui = useUI();
   return (
     <div className="flex-1 overflow-y-auto [&>div]:overflow-visible">
-      <Table>
-        <TableHeader>
-          <TableRow className="h-11 border-b border-[#E8EAEF] [&_th]:text-xs [&_th]:font-semibold [&_th]:text-[#121217]">
+      <Table data-testid="Table__d0f4d5">
+        <TableHeader data-testid="TableHeader__d0f4d5">
+          <TableRow
+            className="h-11 border-b border-[#E8EAEF] [&_th]:text-xs [&_th]:font-semibold [&_th]:text-[#121217]"
+            data-testid="TableRow__d0f4d5">
             {headCells}
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody data-testid="TableBody__d0f4d5">
           {renderRows({
             loading,
             items,
@@ -178,7 +180,9 @@ function PanelTable({ headCells, loading, items, renderRow }) {
 /** Date cell shared by both panels (per-panel width/background via cellClassName). */
 function DateCell({ date, bcpLocale, cellClassName }) {
   return (
-    <TableCell className={cn('h-[62px] px-3 text-sm font-normal text-[#121217]', cellClassName)}>
+    <TableCell
+      className={cn('h-[62px] px-3 text-sm font-normal text-[#121217]', cellClassName)}
+      data-testid="TableCell__d0f4d5">
       {formatDate(date, bcpLocale)}
     </TableCell>
   );
@@ -187,13 +191,15 @@ function DateCell({ date, bcpLocale, cellClassName }) {
 /** Right-aligned money cell shared by both panels. */
 function MoneyCell({ value, currency, cellClassName, bold = false }) {
   return (
-    <TableCell className={cn('h-[62px] px-3 text-right align-middle', cellClassName)}>
+    <TableCell
+      className={cn('h-[62px] px-3 text-right align-middle', cellClassName)}
+      data-testid="TableCell__d0f4d5">
       <MoneyAmount
         value={Number(value) || 0}
         currency={currency}
         tone="neutral"
         className={cn('text-sm leading-5 text-[#121217]', bold ? 'font-semibold' : 'font-normal')}
-      />
+        data-testid="MoneyAmount__d0f4d5" />
     </TableCell>
   );
 }
@@ -207,7 +213,12 @@ function PanelShell({ className, toolbar, headCells, loading, items, renderRow, 
   return (
     <div className={cn('flex min-w-[30%] flex-1 flex-col overflow-hidden', className)}>
       {toolbar}
-      <PanelTable headCells={headCells} loading={loading} items={items} renderRow={renderRow} />
+      <PanelTable
+        headCells={headCells}
+        loading={loading}
+        items={items}
+        renderRow={renderRow}
+        data-testid="PanelTable__d0f4d5" />
       {footer}
     </div>
   );
@@ -240,7 +251,10 @@ function StatementLinesPanel({
             : 'hover:z-10 hover:bg-white hover:shadow-lg',
         )}
       >
-        <TableCell className={cn('h-[62px] w-8 px-0 pl-2', cellBg)} onClick={(e) => e.stopPropagation()}>
+        <TableCell
+          className={cn('h-[62px] w-8 px-0 pl-2', cellBg)}
+          onClick={(e) => e.stopPropagation()}
+          data-testid="TableCell__d0f4d5">
           <input
             type="radio"
             name="recon-statement-line"
@@ -251,17 +265,30 @@ function StatementLinesPanel({
             className="h-4 w-4 accent-[#121217]"
           />
         </TableCell>
-        <DateCell date={line.date} bcpLocale={bcpLocale} cellClassName={cn('w-[108px]', cellBg)} />
-        <TableCell className={cn('h-[62px] px-3 py-2 text-sm text-[#121217]', cellBg)}>
+        <DateCell
+          date={line.date}
+          bcpLocale={bcpLocale}
+          cellClassName={cn('w-[108px]', cellBg)}
+          data-testid="DateCell__d0f4d5" />
+        <TableCell
+          className={cn('h-[62px] px-3 py-2 text-sm text-[#121217]', cellBg)}
+          data-testid="TableCell__d0f4d5">
           <div className="flex flex-col items-start gap-0.5">
             <span className={cn('w-full truncate leading-5', selected ? 'font-semibold' : 'font-normal')}>
               {line.description || line.partnerName || line.referenceNo || '—'}
             </span>
-            <StatusBadge kind={badgeKind} />
+            <StatusBadge kind={badgeKind} data-testid="StatusBadge__d0f4d5" />
           </div>
         </TableCell>
-        <MoneyCell value={line.amount} currency={currency} bold cellClassName={cn('w-[139px]', cellBg)} />
-        <TableCell className={cn('h-[62px] w-9 px-0 pr-1', cellBg)}>
+        <MoneyCell
+          value={line.amount}
+          currency={currency}
+          bold
+          cellClassName={cn('w-[139px]', cellBg)}
+          data-testid="MoneyCell__d0f4d5" />
+        <TableCell
+          className={cn('h-[62px] w-9 px-0 pr-1', cellBg)}
+          data-testid="TableCell__d0f4d5">
           <button
             type="button"
             tabIndex={-1}
@@ -271,7 +298,7 @@ function StatementLinesPanel({
               selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
             )}
           >
-            <MoreVertical className="h-5 w-5" />
+            <MoreVertical className="h-5 w-5" data-testid="MoreVertical__d0f4d5" />
           </button>
         </TableCell>
       </TableRow>
@@ -279,7 +306,11 @@ function StatementLinesPanel({
   };
 
   const toolbar = (
-    <ToolbarShell search={search} onSearchChange={onSearchChange} testIdPrefix="recon-left">
+    <ToolbarShell
+      search={search}
+      onSearchChange={onSearchChange}
+      testIdPrefix="recon-left"
+      data-testid="ToolbarShell__d0f4d5">
       <button
         type="button"
         aria-label={ui('financeAccountDetailBack')}
@@ -287,10 +318,10 @@ function StatementLinesPanel({
         onClick={onBack}
         className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-colors hover:bg-[#F5F7F9] hover:text-foreground"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="h-4 w-4" data-testid="ArrowLeft__d0f4d5" />
       </button>
-      <ReconciliationStatusFilter value={status} onChange={onStatusChange} counts={statusCounts} />
-      <DateRangePopover value={dateRange} onChange={onDateRangeChange} placeholder={ui('financeReconcileFilterDate')} />
+      <ReconciliationStatusFilter value={status} onChange={onStatusChange} counts={statusCounts} data-testid="ReconciliationStatusFilter__d0f4d5" />
+      <DateRangePopover value={dateRange} onChange={onDateRangeChange} placeholder={ui('financeReconcileFilterDate')} data-testid="DateRangePopover__d0f4d5" />
     </ToolbarShell>
   );
 
@@ -310,14 +341,14 @@ function StatementLinesPanel({
       footer={footer}
       headCells={(
         <>
-          <TableHead className="w-8 px-0 pl-2" />
-          <TableHead className="w-[108px] px-3">{ui('financeReconcileColDate')}</TableHead>
-          <TableHead className="px-3">{ui('financeReconcileColDescription')}</TableHead>
-          <TableHead className="w-[139px] px-3 text-left">{ui('financeReconcileColAmount')}</TableHead>
-          <TableHead className="w-9 px-0 pr-1" />
+          <TableHead className="w-8 px-0 pl-2" data-testid="TableHead__d0f4d5" />
+          <TableHead className="w-[108px] px-3" data-testid="TableHead__d0f4d5">{ui('financeReconcileColDate')}</TableHead>
+          <TableHead className="px-3" data-testid="TableHead__d0f4d5">{ui('financeReconcileColDescription')}</TableHead>
+          <TableHead className="w-[139px] px-3 text-left" data-testid="TableHead__d0f4d5">{ui('financeReconcileColAmount')}</TableHead>
+          <TableHead className="w-9 px-0 pr-1" data-testid="TableHead__d0f4d5" />
         </>
       )}
-    />
+      data-testid="PanelShell__d0f4d5" />
   );
 }
 
@@ -333,7 +364,7 @@ function CandidateOperationsPanel({
       <div className="flex min-w-[30%] flex-1 flex-col items-center justify-center px-0 text-center" data-testid="recon-right-empty">
         <div className="flex w-full flex-col items-center gap-1 px-5">
           <div className="mb-1 flex h-10 w-10 items-center justify-center rounded-full bg-[#F5F7F9] text-[#828FA3]">
-            <CircleCheckBig className="h-6 w-6" />
+            <CircleCheckBig className="h-6 w-6" data-testid="CircleCheckBig__d0f4d5" />
           </div>
           <p className="w-full text-[20px] font-semibold leading-7 text-[#121217]">{ui('financeReconcileRightEmptyTitle')}</p>
           <p className="w-full text-xs leading-4 text-[#282833]">{ui('financeReconcileRightEmptyHint')}</p>
@@ -353,15 +384,21 @@ function CandidateOperationsPanel({
           : 'hover:z-10 hover:bg-white hover:shadow-lg',
       )}
     >
-      <TableCell className="h-[62px] w-8 px-0 pl-2">
+      <TableCell className="h-[62px] w-8 px-0 pl-2" data-testid="TableCell__d0f4d5">
         <Checkbox
           checked={selectedIds.has(cand.id)}
           onChange={() => onToggle(cand.id)}
           data-testid={`recon-cand-check-${cand.id}`}
         />
       </TableCell>
-      <DateCell date={cand.date} bcpLocale={bcpLocale} cellClassName="w-[104px]" />
-      <TableCell className="h-[62px] px-3 py-2 text-sm text-[#121217]">
+      <DateCell
+        date={cand.date}
+        bcpLocale={bcpLocale}
+        cellClassName="w-[104px]"
+        data-testid="DateCell__d0f4d5" />
+      <TableCell
+        className="h-[62px] px-3 py-2 text-sm text-[#121217]"
+        data-testid="TableCell__d0f4d5">
         <div className="flex flex-col items-start gap-0.5">
           <div className="flex w-full items-center gap-1 overflow-hidden text-sm leading-5">
             <span className="shrink-0 font-normal text-[#121217]">
@@ -371,18 +408,40 @@ function CandidateOperationsPanel({
               <span className="truncate text-xs font-medium leading-4 text-[#6C6C89]">{cand.partnerName}</span>
             ) : null}
           </div>
-          <StatusBadge kind={cand.suggested ? 'suggested' : 'pending'} />
+          <StatusBadge
+            kind={cand.suggested ? 'suggested' : 'pending'}
+            data-testid="StatusBadge__d0f4d5" />
         </div>
       </TableCell>
-      <MoneyCell value={cand.pendingBalance} currency={currency} cellClassName="w-[121px]" />
-      <MoneyCell value={cand.amount} currency={currency} bold cellClassName="w-[121px]" />
+      <MoneyCell
+        value={cand.pendingBalance}
+        currency={currency}
+        cellClassName="w-[121px]"
+        data-testid="MoneyCell__d0f4d5" />
+      <MoneyCell
+        value={cand.amount}
+        currency={currency}
+        bold
+        cellClassName="w-[121px]"
+        data-testid="MoneyCell__d0f4d5" />
     </TableRow>
   );
 
   const toolbar = (
-    <ToolbarShell search={search} onSearchChange={onSearchChange} testIdPrefix="recon-right">
-      <ReconciliationDocTypeFilter value={docType} onChange={onDocTypeChange} />
-      <DateRangePopover value={dateRange} onChange={onDateRangeChange} placeholder={ui('financeReconcileFilterDate')} />
+    <ToolbarShell
+      search={search}
+      onSearchChange={onSearchChange}
+      testIdPrefix="recon-right"
+      data-testid="ToolbarShell__d0f4d5">
+      <ReconciliationDocTypeFilter
+        value={docType}
+        onChange={onDocTypeChange}
+        data-testid="ReconciliationDocTypeFilter__d0f4d5" />
+      <DateRangePopover
+        value={dateRange}
+        onChange={onDateRangeChange}
+        placeholder={ui('financeReconcileFilterDate')}
+        data-testid="DateRangePopover__d0f4d5" />
     </ToolbarShell>
   );
 
@@ -395,14 +454,14 @@ function CandidateOperationsPanel({
       footer={footer}
       headCells={(
         <>
-          <TableHead className="w-8 px-0 pl-2" />
-          <TableHead className="w-[104px] px-3">{ui('financeReconcileColDate')}</TableHead>
-          <TableHead className="px-3">{ui('financeReconcileColInfo')}</TableHead>
-          <TableHead className="w-[121px] px-3 text-left">{ui('financeReconcileColPendingBalance')}</TableHead>
-          <TableHead className="w-[121px] px-3 text-left">{ui('financeReconcileColAmount')}</TableHead>
+          <TableHead className="w-8 px-0 pl-2" data-testid="TableHead__d0f4d5" />
+          <TableHead className="w-[104px] px-3" data-testid="TableHead__d0f4d5">{ui('financeReconcileColDate')}</TableHead>
+          <TableHead className="px-3" data-testid="TableHead__d0f4d5">{ui('financeReconcileColInfo')}</TableHead>
+          <TableHead className="w-[121px] px-3 text-left" data-testid="TableHead__d0f4d5">{ui('financeReconcileColPendingBalance')}</TableHead>
+          <TableHead className="w-[121px] px-3 text-left" data-testid="TableHead__d0f4d5">{ui('financeReconcileColAmount')}</TableHead>
         </>
       )}
-    />
+      data-testid="PanelShell__d0f4d5" />
   );
 }
 
@@ -433,7 +492,7 @@ function ReconciliationActionBar({
           data-testid="recon-action-cancel"
           className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#D1D4DB] bg-white px-3 text-sm font-medium text-[#121217] shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9]"
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4" data-testid="X__d0f4d5" />
           {ui('financeReconcileActionCancel')}
         </button>
         <button
@@ -443,7 +502,7 @@ function ReconciliationActionBar({
           data-testid="recon-action-reconcile"
           className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[#121217] px-3 text-sm font-medium text-white hover:bg-[#FFD500] hover:text-[#121217] disabled:cursor-not-allowed disabled:bg-[#D1D4DB] disabled:text-white disabled:hover:bg-[#D1D4DB] disabled:hover:text-white"
         >
-          <CheckCircle className="h-4 w-4" />
+          <CheckCircle className="h-4 w-4" data-testid="CheckCircle__d0f4d5" />
           {isReconciledLine
             ? ui('financeReconcileActionReactivate')
             : ui('financeReconcileActionReconcileCount', { count: reconcileCount })}
@@ -609,7 +668,7 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
           search={leftSearch}
           onSearchChange={setLeftSearch}
           onBack={onBack}
-        />
+          data-testid="StatementLinesPanel__d0f4d5" />
         <CandidateOperationsPanel
           line={selectedLine}
           candidates={visibleCandidates}
@@ -635,9 +694,9 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
               busy={reconciling}
               onCancel={cancelSelection}
               onReconcile={handleReconcile}
-            />
+              data-testid="ReconciliationActionBar__d0f4d5" />
           ) : null}
-        />
+          data-testid="CandidateOperationsPanel__d0f4d5" />
       </div>
     </div>
   );
