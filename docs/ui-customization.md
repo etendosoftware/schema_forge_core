@@ -515,6 +515,34 @@ Default: `"classic"`. Validator F12 enforces the enum (`"classic"` | `"inlineEdi
 
 ---
 
+### 15. `window.balanceFooter` — debit/credit balance footer
+
+**What it does:** replaces the product/discount/tax totals panel with a `BalanceFooterPanel` for double-entry windows. It shows **Σ debit**, **Σ credit**, the **difference**, and a **balanced ✓ / unbalanced ✗** badge, and **disables the Save button** (with a tooltip) only when the entry is **unbalanced** (`Σ debit ≠ Σ credit`). An empty/zero entry is balanced and savable as a draft; the badge stays hidden until the lines carry amounts.
+
+**When to use:** manual journals and any double-entry document where lines carry separate debit and credit amount columns that must balance before saving.
+
+**`decisions.json`:**
+```json
+{
+  "window": {
+    "balanceFooter": { "debitField": "amtSourceDr", "creditField": "amtSourceCr" }
+  }
+}
+```
+
+Both `debitField` and `creditField` must be amount-typed fields on the **lines** entity. Validator **F17** enforces their existence.
+
+**How it threads through the pipeline:**
+- `cli/src/resolve-curated.js` — added to `WINDOW_TRUTHY_PROPS` (auto-passes through).
+- `cli/src/generate-contract.js` — copied into `frontendContract.window.balanceFooter`.
+- `cli/src/generate-frontend.js` — emits `balanceFooter={...}` on `<DetailView>` when present.
+- `tools/app-shell/src/components/contract-ui/DetailView.jsx` — renders `BalanceFooterPanel` instead of `DocumentTotalsPanel` and gates the Save buttons via `blockSaveForBalance`.
+- `tools/app-shell/src/lib/balanceTotals.js` / `BalanceFooterPanel.jsx` — pure aggregation + rendering.
+
+**Real example:** `simple-g-l-journal` (Manual Journals — the first window to ship the balance footer).
+
+---
+
 ## Decision tree: which option to use?
 
 ```
