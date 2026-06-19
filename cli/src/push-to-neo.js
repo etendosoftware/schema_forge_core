@@ -95,6 +95,12 @@ export function extractFieldsFromContract(backendContract) {
   return fields;
 }
 
+export function normalizeAgentPrompt(value) {
+  if (value == null) return null;
+  const trimmed = String(value).trim();
+  return trimmed === '' ? null : trimmed;
+}
+
 // ---------------------------------------------------------------------------
 // Configuration loading
 // ---------------------------------------------------------------------------
@@ -257,6 +263,8 @@ export async function pushToNeo(windowName, options = {}) {
   const windowDisplayName = schemaRawData.window.name;
   const specName = windowName;
   const fieldDefaultExprs = buildFieldDefaultExprMap(decisionsData);
+  const fieldAgentPrompts = buildFieldAgentPromptMap(decisionsData);
+  const specAgentPrompt = normalizeAgentPrompt(decisionsData.window?.agentPrompt);
   const allFields = extractFieldsFromContract(contract.backendContract);
 
   if (options.dryRun === true) {
@@ -268,6 +276,8 @@ export async function pushToNeo(windowName, options = {}) {
     schemaRawData,
     allFields,
     fieldDefaultExprs,
+    fieldAgentPrompts,
+    specAgentPrompt,
     specName,
     windowId,
     moduleId: options.moduleId || '94E1B433CF55451EABB764750AC5902A',
@@ -321,6 +331,59 @@ function buildFieldDefaultExprMap(decisionsData) {
     }
   }
   return map;
+}
+
+/**
+ * Build a `entityName.fieldName` -> agentPrompt map from decisions.json.
+ * Mirrors buildFieldDefaultExprMap so the per-field agent guidance flows to
+ * neo_schema the same way default expressions flow to the contract.
+ */
+export function buildFieldAgentPromptMap(decisionsData) {
+  const map = {};
+  for (const [entityKey, entityConf] of Object.entries(decisionsData.entities || {})) {
+    const entityName = entityConf.name || entityKey;
+    for (const [fieldName, fieldConf] of Object.entries(entityConf.fields || {})) {
+      if (Object.hasOwn(fieldConf, 'agentPrompt')) {
+        map[`${entityName}.${fieldName}`] = normalizeAgentPrompt(fieldConf.agentPrompt);
+      }
+    }
+  }
+  return map;
+}
+
+export function buildSpecUpsertParams(ctx, existingSpecId) {
+  return {
+    name: ctx.specName,
+    moduleId: ctx.moduleId,
+    windowId: ctx.windowId,
+    specType: 'W',
+    specId: existingSpecId,
+    agentPrompt: ctx.specAgentPrompt ?? null,
+    audit: ctx.auditOpts,
+  };
+}
+
+export function buildFieldUpdateParams(f, ctx, fieldId, entityId) {
+  const vis = mapVisibility(f.visibility);
+  const fieldKey = `${f.entityName}.${f.fieldName}`;
+  const fieldParams = {
+    entityId,
+    fieldId,
+    moduleId: ctx.moduleId,
+    isIncluded: vis.isIncluded,
+    isReadOnly: vis.isReadOnly,
+    isBusinessCritical: f.businessCritical ? 'Y' : 'N',
+    audit: ctx.auditOpts,
+  };
+  if (fieldKey in ctx.fieldDefaultExprs) {
+    fieldParams.defaultValue = ctx.fieldDefaultExprs[fieldKey] || null;
+  }
+  if (ctx.fieldAgentPrompts) {
+    fieldParams.agentPrompt = fieldKey in ctx.fieldAgentPrompts
+      ? ctx.fieldAgentPrompts[fieldKey]
+      : null;
+  }
+  return fieldParams;
 }
 
 function reportDryRunPlan({ allFields, specName, windowId, windowDisplayName, windowName }) {
@@ -418,14 +481,7 @@ async function stepUpsertSpec(client, ctx) {
   );
   const existingSpecId = existingSpec.rows.length > 0 ? existingSpec.rows[0].etgo_sf_spec_id : null;
   console.log(`[1/4] Upserting spec '${ctx.specName}' for window ${ctx.windowId}...`);
-  const specResult = await writerUpsertSpec(client, {
-    name: ctx.specName,
-    moduleId: ctx.moduleId,
-    windowId: ctx.windowId,
-    specType: 'W',
-    specId: existingSpecId,
-    audit: ctx.auditOpts,
-  });
+  const specResult = await writerUpsertSpec(client, buildSpecUpsertParams(ctx, existingSpecId));
   console.log(`       Spec ID: ${specResult.specId} (${specResult.created ? 'created' : 'updated'})`);
   return specResult.specId;
 }
@@ -566,20 +622,12 @@ async function upsertSingleField(client, f, ctx, entityMaps) {
   if (colLookup.rows.length === 0) {
     return { column: f.column, entityName: f.entityName, success: true, skipped: true };
   }
-  const vis = mapVisibility(f.visibility);
-  const fieldParams = {
+  const fieldParams = buildFieldUpdateParams(
+    f,
+    ctx,
+    colLookup.rows[0].etgo_sf_field_id,
     entityId,
-    fieldId: colLookup.rows[0].etgo_sf_field_id,
-    moduleId: ctx.moduleId,
-    isIncluded: vis.isIncluded,
-    isReadOnly: vis.isReadOnly,
-    isBusinessCritical: f.businessCritical ? 'Y' : 'N',
-    audit: ctx.auditOpts,
-  };
-  const defaultExprKey = `${f.entityName}.${f.fieldName}`;
-  if (defaultExprKey in ctx.fieldDefaultExprs) {
-    fieldParams.defaultValue = ctx.fieldDefaultExprs[defaultExprKey] || null;
-  }
+  );
   await writerUpsertField(client, fieldParams);
   return { column: f.column, entityName: f.entityName, success: true };
 }
