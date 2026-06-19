@@ -28,18 +28,20 @@ export function ListModalToolbarFilter({ filter, value, onChange, ui }) {
   const active = options.find((o) => o.value === current) ?? options[0];
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
+    <Popover data-testid="Popover__a4c11d">
+      <PopoverTrigger asChild data-testid="PopoverTrigger__a4c11d">
         <button
           type="button"
           data-testid={`list-modal-filter-${filter.key}`}
           className="inline-flex h-10 items-center justify-between gap-2 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-normal leading-6 text-muted-foreground shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:bg-[#F5F7F9]"
         >
           <span className="truncate text-left">{active.label}</span>
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <ChevronDown
+            className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+            data-testid="ChevronDown__a4c11d" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-1" align="start">
+      <PopoverContent className="w-56 p-1" align="start" data-testid="PopoverContent__a4c11d">
         <div role="listbox" aria-label={allLabel}>
           {options.map((opt) => {
             const selected = opt.value === current;
@@ -57,7 +59,7 @@ export function ListModalToolbarFilter({ filter, value, onChange, ui }) {
                 data-testid={`list-modal-filter-${filter.key}-option-${String(opt.value ?? 'all')}`}
               >
                 <span className="flex-1 text-left">{opt.label}</span>
-                {selected ? <Check className="h-4 w-4 text-[#121217]" /> : null}
+                {selected ? <Check className="h-4 w-4 text-[#121217]" data-testid="Check__a4c11d" /> : null}
               </button>
             );
           })}

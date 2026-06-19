@@ -195,7 +195,7 @@ export function InlineSearchCombo({ field, value, options, onChange, onKeyDown, 
         }}
         aria-label={`Toggle ${placeholder} options`}
       >
-        <ChevronDown className="h-4 w-4" />
+        <ChevronDown className="h-4 w-4" data-testid={"ChevronDown__" + field.id} />
       </button>
       {open && filtered.length > 0 && dropdownStyle && createPortal(
         <div

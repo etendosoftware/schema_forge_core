@@ -11,7 +11,11 @@ const columns = [
     type: 'custom',
     sortable: false,
     render: (row, { token, apiBaseUrl }) => (
-      <ProductNameCell row={row} token={token} apiBaseUrl={apiBaseUrl} />
+      <ProductNameCell
+        row={row}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        data-testid="ProductNameCell__f45e24" />
     ),
   },
   { key: 'productCategory', column: 'M_Product_Category_ID', type: 'selector', label: 'Product Category', required: true },
@@ -31,7 +35,11 @@ const columns = [
     type: 'custom',
     sortable: false,
     render: (row, { token, apiBaseUrl }) => (
-      <ProductSalePriceCell row={row} token={token} apiBaseUrl={apiBaseUrl} />
+      <ProductSalePriceCell
+        row={row}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        data-testid="ProductSalePriceCell__f45e24" />
     ),
   },
   {
@@ -40,7 +48,11 @@ const columns = [
     type: 'custom',
     sortable: false,
     render: (row, { token, apiBaseUrl }) => (
-      <ProductPurchasePriceCell row={row} token={token} apiBaseUrl={apiBaseUrl} />
+      <ProductPurchasePriceCell
+        row={row}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        data-testid="ProductPurchasePriceCell__f45e24" />
     ),
   },
   {
@@ -49,7 +61,11 @@ const columns = [
     type: 'custom',
     sortable: false,
     render: (row, { token, apiBaseUrl }) => (
-      <ProductStockCell row={row} token={token} apiBaseUrl={apiBaseUrl} />
+      <ProductStockCell
+        row={row}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        data-testid="ProductStockCell__f45e24" />
     ),
   },
 ];
@@ -57,7 +73,14 @@ const columns = [
 const filters = ['searchKey', 'name', 'productCategory', 'productType'];
 
 const ProductCustomTable = forwardRef(function ProductCustomTable(props, ref) {
-  return <DataTable ref={ref} columns={columns} filters={filters} {...props} />;
+  return (
+    <DataTable
+      ref={ref}
+      columns={columns}
+      filters={filters}
+      {...props}
+      data-testid="DataTable__f45e24" />
+  );
 });
 
 export default ProductCustomTable;

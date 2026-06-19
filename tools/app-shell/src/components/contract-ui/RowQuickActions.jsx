@@ -208,10 +208,9 @@ export default function RowQuickActions({
           title={ui('quickAction.edit')}
           data-testid="row-quick-action-edit"
         >
-          {inFlight.edit ? <Loader2 className="h-5 w-5 animate-spin" /> : <Pencil className="h-5 w-5" />}
+          {inFlight.edit ? <Loader2 className="h-5 w-5 animate-spin" data-testid="Loader2__ec6673" /> : <Pencil className="h-5 w-5" data-testid="Pencil__ec6673" />}
         </button>
       )}
-
       {/* Clone — only when host wires onClone (no generic default exists). */}
       {onClone && passesVisibleWhen('duplicate') && (
         <button
@@ -223,10 +222,9 @@ export default function RowQuickActions({
           title={ui('quickAction.clone')}
           data-testid="row-quick-action-clone"
         >
-          {inFlight.duplicate ? <Loader2 className="h-5 w-5 animate-spin" /> : <Copy className="h-5 w-5" />}
+          {inFlight.duplicate ? <Loader2 className="h-5 w-5 animate-spin" data-testid="Loader2__ec6673" /> : <Copy className="h-5 w-5" data-testid="Copy__ec6673" />}
         </button>
       )}
-
       {/* Email — gated by sendDocument.enabled (default true for eligible
           documental windows) with the legacy `documentPreview` truthy as
           fallback for callers that haven't migrated. */}
@@ -240,10 +238,9 @@ export default function RowQuickActions({
           title={ui('quickAction.email')}
           data-testid="row-quick-action-email"
         >
-          {inFlight.email ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mail className="h-5 w-5" />}
+          {inFlight.email ? <Loader2 className="h-5 w-5 animate-spin" data-testid="Loader2__ec6673" /> : <Mail className="h-5 w-5" data-testid="Mail__ec6673" />}
         </button>
       )}
-
       {/* More — popover with menuActions[] */}
       {visibleMenuActions.length > 0 && (
         <div className="relative" ref={moreRef}>
@@ -255,7 +252,7 @@ export default function RowQuickActions({
             title={ui('quickAction.more')}
             data-testid="row-quick-action-more"
           >
-            <MoreVertical className="h-5 w-5" />
+            <MoreVertical className="h-5 w-5" data-testid="MoreVertical__ec6673" />
           </button>
           {showMenu && menuPos && createPortal(
             <>
@@ -294,12 +291,14 @@ export default function RowQuickActions({
                     ].filter(Boolean).join(' ')}
                   >
                     {pending ? (
-                      <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin" />
+                      <Loader2
+                        className="h-4 w-4 flex-shrink-0 animate-spin"
+                        data-testid="Loader2__ec6673" />
                     ) : ActionIcon && (
                       <ActionIcon
                         className="h-4 w-4 flex-shrink-0"
                         style={{ color: action.destructive ? undefined : '#828FA3' }}
-                      />
+                        data-testid="ActionIcon__ec6673" />
                     )}
                     <span>{label}</span>
                   </button>
@@ -311,7 +310,6 @@ export default function RowQuickActions({
           )}
         </div>
       )}
-
       {/* Delete */}
       {showDelete && passesVisibleWhen('delete') && (
         <button
@@ -323,7 +321,7 @@ export default function RowQuickActions({
           title={ui('quickAction.delete')}
           data-testid="row-quick-action-delete"
         >
-          {inFlight.delete ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
+          {inFlight.delete ? <Loader2 className="h-5 w-5 animate-spin" data-testid="Loader2__ec6673" /> : <Trash2 className="h-5 w-5" data-testid="Trash2__ec6673" />}
         </button>
       )}
     </div>

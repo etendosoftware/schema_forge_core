@@ -56,7 +56,11 @@ export default function WarehouseWindow(props) {
   };
 
   const sidebarContent = (data) => (
-    <WarehouseSummary data={data} token={token} apiBaseUrl={apiBaseUrl} />
+    <WarehouseSummary
+      data={data}
+      token={token}
+      apiBaseUrl={apiBaseUrl}
+      data-testid="WarehouseSummary__f66a03" />
   );
 
   return (
@@ -66,6 +70,6 @@ export default function WarehouseWindow(props) {
       sidebarContent={sidebarContent}
       primaryTabs={primaryTabs}
       secondaryTabs={secondaryTabs}
-    />
+      data-testid="WarehousePage__f66a03" />
   );
 }
