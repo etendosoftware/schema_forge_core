@@ -48,3 +48,42 @@ describe('VerifactuMonitorSection — onBpClick wiring', () => {
     assert.match(src, /onBpClick.*businessPartner/);
   });
 });
+
+// Guards: export button and related state/constants are present
+describe('VerifactuMonitorSection — CSV export wiring', () => {
+  it('imports fetchCsvAndDownload from FmPrimitives', () => {
+    assert.match(src, /fetchCsvAndDownload.*from.*FmPrimitives/);
+  });
+
+  it('imports buildCsvAndDownload from FmPrimitives', () => {
+    assert.match(src, /buildCsvAndDownload.*from.*FmPrimitives/);
+  });
+
+  it('declares VF_CORRECT_EXPORT_COLS constant', () => {
+    assert.match(src, /const VF_CORRECT_EXPORT_COLS/);
+  });
+
+  it('VF_CORRECT_EXPORT_COLS is an array with at least one column definition', () => {
+    assert.match(src, /VF_CORRECT_EXPORT_COLS\s*=\s*\[/);
+  });
+
+  it('declares exporting state with useState', () => {
+    assert.match(src, /const\s+\[exporting,\s*setExporting\]\s*=\s*useState\(false\)/);
+  });
+
+  it('export button has onClick={handleExport}', () => {
+    assert.match(src, /onClick=\{handleExport\}/);
+  });
+
+  it('export button is disabled when loading or exporting', () => {
+    assert.match(src, /disabled=\{loading \|\| exporting\}/);
+  });
+
+  it('handleExport uses fetchCsvAndDownload for the correct tab', () => {
+    assert.match(src, /fetchCsvAndDownload[\s\S]*?VF_CORRECT_EXPORT_COLS/);
+  });
+
+  it('handleExport uses buildCsvAndDownload for the problems tab (client-side)', () => {
+    assert.match(src, /buildCsvAndDownload\s*\(\s*['"]verifactu_problems['"]/);
+  });
+});

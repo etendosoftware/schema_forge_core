@@ -254,6 +254,50 @@ describe('resolveCurated — field-level drawer + display passthroughs (F3)', ()
   });
 });
 
+describe('resolveCurated — agentPrompt passthrough (ETP-4252)', () => {
+  const schemaRaw = {
+    window: { id: '700', name: 'Purchase Order' },
+    entities: [{
+      name: 'order', tableName: 'C_Order', tabId: '1', tabName: 'Header',
+      fields: [
+        { name: 'docStatus', columnName: 'DocStatus', label: 'Status', type: 'string', visibility: 'editable' },
+        { name: 'plain', columnName: 'PlainCol', label: 'Plain', type: 'string', visibility: 'editable' },
+      ],
+    }],
+  };
+  const decisions = {
+    version: 2,
+    window: { name: 'Purchase Order', agentPrompt: 'Confirm before completing.' },
+    entities: {
+      order: {
+        name: 'order',
+        fields: {
+          docStatus: { agentPrompt: 'Only advance status forward.' },
+          plain: {},
+        },
+      },
+    },
+    rules: {},
+  };
+
+  it('copies window.agentPrompt into the curated window', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.window.agentPrompt, 'Confirm before completing.');
+  });
+
+  it('copies field agentPrompt into the curated field', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const docStatus = schema.entities[0].fields.find(f => f.name === 'docStatus');
+    assert.equal(docStatus.agentPrompt, 'Only advance status forward.');
+  });
+
+  it('omits agentPrompt when a field does not declare one', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const plain = schema.entities[0].fields.find(f => f.name === 'plain');
+    assert.equal(plain.agentPrompt, undefined);
+  });
+});
+
 // ─── virtualFields — appendVirtualFields exercised via resolveCurated ───
 describe('resolveCurated — virtualFields', () => {
   const baseSchema = {
