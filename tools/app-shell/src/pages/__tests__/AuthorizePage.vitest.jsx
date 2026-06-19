@@ -26,7 +26,7 @@ vi.mock('@/components/ui/button', () => ({
 }));
 
 vi.mock('@/components/ui/badge', () => ({
-  Badge: ({ children, ...props }) => <span data-testid="badge" {...props}>{children}</span>,
+  Badge: ({ children, ...props }) => <span {...props} data-testid="badge">{children}</span>,
 }));
 
 vi.mock('@/components/ui/separator', () => ({

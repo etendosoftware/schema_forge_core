@@ -334,7 +334,7 @@ export function CreatableSearchSelect({
           onClear={handleClear}
           clearAriaLabel={ui('clear')}
           testId={`field-${field.key}-chip`}
-        />
+          data-testid={"SelectorChip__" + field.id} />
       ) : (
         <input
           ref={inputRef}
@@ -372,7 +372,9 @@ export function CreatableSearchSelect({
         />
       )}
       {loading ? (
-        <Loader2 className="h-4 w-4 text-[#828FA3] animate-spin shrink-0 ml-auto" />
+        <Loader2
+          className="h-4 w-4 text-[#828FA3] animate-spin shrink-0 ml-auto"
+          data-testid={"Loader2__" + field.id} />
       ) : (
         <button
           type="button"
@@ -388,10 +390,11 @@ export function CreatableSearchSelect({
           }}
           className="shrink-0 ml-auto flex items-center"
         >
-          <ChevronDown className="h-4 w-4 text-[#828FA3]" />
+          <ChevronDown
+            className="h-4 w-4 text-[#828FA3]"
+            data-testid={"ChevronDown__" + field.id} />
         </button>
       )}
-
       {showDropdown && dropdownStyle && createPortal(
         <div
           ref={dropdownRef}

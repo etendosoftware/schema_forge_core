@@ -35,11 +35,11 @@ function WeightStepper({ label, value, readOnly, onChange }) {
         />
         <button type="button" onClick={() => step(-1)} disabled={readOnly}
           className="w-10 h-[38px] flex items-center justify-center border-l border-[#E8EAEF] text-[#828FA3] hover:bg-gray-50 disabled:opacity-40 shrink-0">
-          <Minus size={16} />
+          <Minus size={16} data-testid="Minus__fe05d5" />
         </button>
         <button type="button" onClick={() => step(1)} disabled={readOnly}
           className="w-10 h-[38px] flex items-center justify-center border-l border-[#E8EAEF] text-[#828FA3] hover:bg-gray-50 disabled:opacity-40 shrink-0">
-          <Plus size={16} />
+          <Plus size={16} data-testid="Plus__fe05d5" />
         </button>
       </div>
     </div>
@@ -74,7 +74,7 @@ export default function ProductAdditionalInfoPanel({ entity, data, token, apiBas
               api={api}
               token={token}
               apiBaseUrl={apiBaseUrl}
-            />
+              data-testid="EntityForm__fe05d5" />
           </div>
           <CheckboxGroup
             label={ui('availability')}
@@ -85,12 +85,10 @@ export default function ProductAdditionalInfoPanel({ entity, data, token, apiBas
             data={data}
             readOnly={readOnly}
             onChange={onChange}
-          />
+            data-testid="CheckboxGroup__fe05d5" />
         </div>
       </div>
-
       <hr className="border-t border-[#E8EAEF] mx-5" />
-
       <div className="flex flex-row items-start p-2 gap-5">
         <div className="flex flex-col gap-1 w-[148px] shrink-0">
           <div className="text-sm font-semibold text-[#121217]">{ui('logistics')}</div>
@@ -112,7 +110,7 @@ export default function ProductAdditionalInfoPanel({ entity, data, token, apiBas
                 api={api}
                 token={token}
                 apiBaseUrl={apiBaseUrl}
-              />
+                data-testid="EntityForm__fe05d5" />
             </div>
             <div className="w-[236px] shrink-0">
               <WeightStepper
@@ -120,7 +118,7 @@ export default function ProductAdditionalInfoPanel({ entity, data, token, apiBas
                 value={data?.weight ?? 0}
                 readOnly={readOnly}
                 onChange={v => onChange?.('weight', v, 'Weight')}
-              />
+                data-testid="WeightStepper__fe05d5" />
             </div>
           </div>
           <CheckboxGroup
@@ -132,7 +130,7 @@ export default function ProductAdditionalInfoPanel({ entity, data, token, apiBas
             data={data}
             readOnly={readOnly}
             onChange={onChange}
-          />
+            data-testid="CheckboxGroup__fe05d5" />
         </div>
       </div>
     </div>

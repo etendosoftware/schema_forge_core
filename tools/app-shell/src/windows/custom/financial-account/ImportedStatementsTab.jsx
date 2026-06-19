@@ -147,7 +147,7 @@ export const ImportedStatementsTab = forwardRef(function ImportedStatementsTab({
         statementName={selectedStatement?.fileName ?? selectedStatement?.name ?? ''}
         currency={currency}
         onBack={() => setSelectedStatementId(null)}
-      />
+        data-testid="StatementLinesView__6f147a" />
     );
   }
 
@@ -165,8 +165,7 @@ export const ImportedStatementsTab = forwardRef(function ImportedStatementsTab({
         rows={statements}
         onImportClick={() => setImportOpen(true)}
         onManualClick={() => setManualOpen(true)}
-      />
-
+        data-testid="StatementsToolbar__6f147a" />
       <div className="flex-1 overflow-y-auto [&>div]:overflow-visible">
         <StatementsTable
           statements={filteredStatements}
@@ -175,17 +174,15 @@ export const ImportedStatementsTab = forwardRef(function ImportedStatementsTab({
           actions={rowActions}
           selectedIds={selectedIds}
           onSelectionChange={handleSelectionChange}
-        />
+          data-testid="StatementsTable__6f147a" />
       </div>
-
       <ImportStatementModal
         open={importOpen}
         accountId={accountId}
         accountCurrency={currency}
         onClose={() => setImportOpen(false)}
         onSuccess={reload}
-      />
-
+        data-testid="ImportStatementModal__6f147a" />
       <ManualStatementModal
         open={manualOpen || !!editingStatement}
         accountId={accountId}
@@ -193,15 +190,14 @@ export const ImportedStatementsTab = forwardRef(function ImportedStatementsTab({
         statement={editingStatement}
         onClose={() => { setManualOpen(false); setEditingStatement(null); }}
         onSuccess={reload}
-      />
-
+        data-testid="ManualStatementModal__6f147a" />
       <StatementConfirmDialog
         variant={confirm.variant}
         statement={confirm.statement}
         busy={busy}
         onConfirm={runConfirm}
         onClose={closeConfirm}
-      />
+        data-testid="StatementConfirmDialog__6f147a" />
     </div>
   );
 });

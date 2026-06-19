@@ -56,14 +56,21 @@ export function StatementConfirmDialog({ variant, statement, busy, onConfirm, on
   const confirmLabel = ui(keys.confirm);
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => { if (!v) onClose(); }}
+      data-testid="Dialog__858de3">
       <DialogContent className="max-w-md" data-testid="statement-confirm-dialog">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{body}</DialogDescription>
+        <DialogHeader data-testid="DialogHeader__858de3">
+          <DialogTitle data-testid="DialogTitle__858de3">{title}</DialogTitle>
+          <DialogDescription data-testid="DialogDescription__858de3">{body}</DialogDescription>
         </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={busy}>
+        <DialogFooter data-testid="DialogFooter__858de3">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={busy}
+            data-testid="Button__858de3">
             {ui('financeAccountStatementsManualCancel')}
           </Button>
           <Button

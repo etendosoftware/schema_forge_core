@@ -8,7 +8,7 @@ vi.mock('@/i18n', () => ({
 
 // Mock UI components
 vi.mock('@/components/ui/card', () => ({
-  Card: ({ children, ...props }) => <div data-testid="card" {...props}>{children}</div>,
+  Card: ({ children, ...props }) => <div {...props} data-testid="card">{children}</div>,
   CardHeader: ({ children }) => <div>{children}</div>,
   CardTitle: ({ children }) => <div>{children}</div>,
   CardContent: ({ children }) => <div>{children}</div>,

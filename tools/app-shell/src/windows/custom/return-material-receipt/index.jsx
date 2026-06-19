@@ -18,13 +18,13 @@ export default function ReturnMaterialReceiptWindow({ windowName, recordId, apiB
           windowName={windowName}
           onClose={onClose}
           onEdit={onEdit}
-        />
+          data-testid="ReturnMaterialReceiptPreview__4e1c28" />
       )}
       entity="returnMaterialReceipt"
       headerEntity="returnMaterialReceipt"
       routePrefix="/return-material-receipt/"
       duplicateAction={{ show: true, visibleWhen: "@documentStatus@='CO'" }}
       {...rest}
-    />
+      data-testid="ReturnWindowShell__4e1c28" />
   );
 }

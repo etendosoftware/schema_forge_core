@@ -59,14 +59,18 @@ const PO_MANAGE_LABELS = {
 function PurchaseOrderBulkActions(props) {
   return (
     <>
-      <BulkPurchaseOrderMoreMenu {...props} />
-      <BulkDocumentAction {...props} buildActions={buildInOutActions} labelKey="confirmBulk" />
+      <BulkPurchaseOrderMoreMenu {...props} data-testid="BulkPurchaseOrderMoreMenu__b7ace5" />
+      <BulkDocumentAction
+        {...props}
+        buildActions={buildInOutActions}
+        labelKey="confirmBulk"
+        data-testid="BulkDocumentAction__b7ace5" />
     </>
   );
 }
 
 function CustomHeaderTable(props) {
-  return <HeaderTable columns={LIST_COLUMNS} {...props} />;
+  return <HeaderTable columns={LIST_COLUMNS} {...props} data-testid="HeaderTable__b7ace5" />;
 }
 
 export default function PurchaseOrderWindow(props) {
@@ -101,7 +105,7 @@ export default function PurchaseOrderWindow(props) {
           {...props}
           draftMode={draftModeWithModal}
           linesEmptyState={LinesEmptyState}
-        />
+          data-testid="GeneratedApp__b7ace5" />
         {contactPortal}
       </CreateContactContext.Provider>
     );
@@ -125,7 +129,7 @@ export default function PurchaseOrderWindow(props) {
         externalPreviewRow={effectiveRecord}
         onExternalPreviewClose={clearSavedRecord}
         {...props}
-      />
+        data-testid="ListView__b7ace5" />
       {deleteDialog}
       {cloneTargets && createPortal(
         <CloneOrderModal
@@ -135,7 +139,7 @@ export default function PurchaseOrderWindow(props) {
           routePrefix="/purchase-order/"
           onClose={() => setCloneTargets(null)}
           onCloned={() => setRefreshKey(k => k + 1)}
-        />,
+          data-testid="CloneOrderModal__b7ace5" />,
         document.body,
       )}
       {confirmPortal}
