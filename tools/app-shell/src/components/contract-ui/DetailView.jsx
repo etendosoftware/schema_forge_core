@@ -601,6 +601,7 @@ export function SecondaryTableTab(props) {
             entity={props.st.key}
             token={props.token}
             apiBaseUrl={props.apiBaseUrl}
+            labelOverrides={props.labelOverrides}
             selectorContext={props.selectorContextByEntity[props.st.key]}
             linesLayout={props.linesLayout}
             onRowClick={resolveSecondaryRowClickHandler(props.st, {

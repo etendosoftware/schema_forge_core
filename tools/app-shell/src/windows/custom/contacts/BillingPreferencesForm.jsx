@@ -240,7 +240,7 @@ export default function BillingPreferencesForm(props) {
     <div className="flex flex-col gap-3">
 
       {/* ── Descuento ──────────────────────────────────────────────── */}
-      {bpId && (
+      {bpId && discountOptions.length > 0 && (
         <div className="w-[236px]">
           <DiscountSelect
             value={currentDiscountId}

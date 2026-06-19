@@ -302,11 +302,12 @@ export function generateTableComponent(entityName, contract) {
     const popupPart = fragmentIf(f.popup, ', popup: true');
     const minColPart = optProp('min', f.min);
     const growPart = fragmentIf(f.grow, ', grow: true');
+    const columnWidthPart = optProp('minWidth', f.columnWidth);
     const noTrailingPart = fragmentIf(f.noTrailing, ', noTrailing: true');
     const filterOnlyPart = fragmentIf((f.filterOnly || f.filterable === false), ', filterable: false');
     const dotPart = fragmentIf(f.dot === false, ', dot: false');
     const gridReadOnlyPart = fragmentIf(f.gridReadOnly, ', readOnly: true');
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart}${minColPart}${growPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart}${minColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');

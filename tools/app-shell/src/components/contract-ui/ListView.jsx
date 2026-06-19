@@ -579,23 +579,27 @@ export function ListView({
                 <span className="text-sm font-semibold">{ui('selected').replace('{count}', selectedRows.length)}</span>
               </div>
               <div className="flex items-center gap-2 h-10">
-                <Button
-                  variant="outline"
-                  size={selectionBarSize}
-                  className="gap-1.5"
-                  onClick={() => setShowDocPrint(true)}
-                >
-                  <Eye className={iconSizeClass(selectionBarSize)} />
-                  {ui('preview')}
-                </Button>
-                <Button
-                  size={selectionBarSize}
-                  className="gap-1.5"
-                  onClick={() => printDocuments(windowName, selectedRows.map(r => r.id || r), token)}
-                >
-                  <Printer className={iconSizeClass(selectionBarSize)} />
-                  {ui('print')} ({selectedRows.length})
-                </Button>
+                {!(listViewOptions?.hideEye ?? hideEyeCount) && (
+                  <Button
+                    variant="outline"
+                    size={selectionBarSize}
+                    className="gap-1.5"
+                    onClick={() => setShowDocPrint(true)}
+                  >
+                    <Eye className={iconSizeClass(selectionBarSize)} />
+                    {ui('preview')}
+                  </Button>
+                )}
+                {!(listViewOptions?.hidePrint ?? hidePrint) && (
+                  <Button
+                    size={selectionBarSize}
+                    className="gap-1.5"
+                    onClick={() => printDocuments(windowName, selectedRows.map(r => r.id || r), token)}
+                  >
+                    <Printer className={iconSizeClass(selectionBarSize)} />
+                    {ui('print')} ({selectedRows.length})
+                  </Button>
+                )}
                 {onCloneRow && (
                   <Button
                     variant="outline"

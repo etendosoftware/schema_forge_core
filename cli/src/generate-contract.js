@@ -253,6 +253,7 @@ function applyBasicFieldUIHints(f, mapped) {
 function applyGridHints(f, mapped) {
   if (f.gridOrder != null) mapped.gridOrder = f.gridOrder;
   if (f.grow) mapped.grow = true;
+  if (f.columnWidth != null) mapped.columnWidth = f.columnWidth;
   if (f.gridReadOnly) mapped.gridReadOnly = true;
   // Inline-edit affordances in the list grid (used by list-modal and inline lines):
   //  - inlineToggle → render a Switch in the cell that PATCHes the field on change.
