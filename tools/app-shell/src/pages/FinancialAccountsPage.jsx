@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useUI } from '@/i18n';
 import { useFinancialAccounts } from '@/hooks/useFinancialAccounts.js';

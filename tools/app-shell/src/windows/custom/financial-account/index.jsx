@@ -112,7 +112,7 @@ export default function FinancialAccountWindow({ recordId }) {
     setSearchParams({}, { replace: true });
   }, [searchParams, setSearchParams]);
   const { account, reload: reloadAccount } = useFinancialAccount(recordId);
-  const { groups: autoMatchGroups, kpis: autoMatchKpis, loading: autoMatchLoading, reload: reloadAutoMatch } = useAutoMatch(
+  const { groups: autoMatchGroups, kpis: autoMatchKpis, reload: reloadAutoMatch } = useAutoMatch(
     autoMatchOpen ? recordId : null,
   );
   const handleAutoMatchSuccess = useCallback(() => {

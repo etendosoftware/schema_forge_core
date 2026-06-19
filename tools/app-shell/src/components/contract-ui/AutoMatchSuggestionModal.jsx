@@ -35,6 +35,17 @@ function RuleTypeBadge({ label, tone = 'default' }) {
   );
 }
 
+function ariaCheckedValue(dash, checked) {
+  if (dash) return 'mixed';
+  return checked ? 'true' : 'false';
+}
+
+function formatSignedAmount(amount) {
+  if (amount === 0) return '—';
+  const sign = amount < 0 ? '-' : '+';
+  return `${sign}${Math.abs(amount).toFixed(2).replace('.', ',')} €`;
+}
+
 /**
  * Shared checkbox control so the header select-all and the per-group checkboxes look identical:
  * a 16px box with `rounded-[4px]`, dark when active, showing a check (rows) or a dash (header).
@@ -47,7 +58,7 @@ function SelectBox({ checked = false, dash = false, onClick, testId, ariaLabel }
       onClick={onClick}
       data-testid={testId}
       aria-label={ariaLabel}
-      aria-checked={dash ? 'mixed' : (checked ? 'true' : 'false')}
+      aria-checked={ariaCheckedValue(dash, checked)}
       className={cn(
         'flex h-4 w-4 flex-none cursor-pointer items-center justify-center rounded-[4px] border',
         active ? 'border-[#121217] bg-[#121217]' : 'border-[#D1D4DB] bg-white',
@@ -146,9 +157,7 @@ function OperationRow({ op, isLast }) {
           'text-sm font-semibold leading-5',
           amount < 0 ? 'text-[#D50B3E]' : 'text-[#1E874C]',
         )}>
-          {amount !== 0
-            ? `${amount < 0 ? '-' : '+'}${Math.abs(amount).toFixed(2).replace('.', ',')} €`
-            : '—'}
+          {formatSignedAmount(amount)}
         </div>
         {op.date && (
           <div className="text-xs font-medium leading-4 text-[#6C6C89]">{formatLineDate(op.date)}</div>
