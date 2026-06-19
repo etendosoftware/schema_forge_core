@@ -238,6 +238,7 @@ export async function upsertField(client, params) {
     fieldId: existingId = null,
     isIncluded = 'Y',
     isReadOnly = 'N',
+    isBusinessCritical = 'N',
     audit = {},
   } = params;
 
@@ -272,6 +273,10 @@ export async function upsertField(client, params) {
       setClauses.push(`seqno = $${paramIndex++}`);
       values.push(params.seqNo ?? null);
     }
+    if ('isBusinessCritical' in params) {
+      setClauses.push(`isbusinesscritical = $${paramIndex++}`);
+      values.push(params.isBusinessCritical ?? 'N');
+    }
 
     setClauses.push(`updated = $${paramIndex++}`);
     values.push(auditVals.updated);
@@ -295,11 +300,11 @@ export async function upsertField(client, params) {
   await client.query(
     `INSERT INTO etgo_sf_field
      (etgo_sf_field_id, etgo_sf_entity_id, ad_column_id, ad_module_id,
-      isincluded, isreadonly, defaultvalue, java_qualifier, seqno,
+      isincluded, isreadonly, isbusinesscritical, defaultvalue, java_qualifier, seqno,
       ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
     [fieldId, entityId, columnId, moduleId,
-     isIncluded, isReadOnly, defaultValue, javaQualifier, seqNo,
+     isIncluded, isReadOnly, isBusinessCritical, defaultValue, javaQualifier, seqNo,
      auditVals.ad_client_id, auditVals.ad_org_id, auditVals.isactive,
      auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby],
   );

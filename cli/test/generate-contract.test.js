@@ -2024,3 +2024,51 @@ describe('generateFrontendContract — gridReadOnly', () => {
     assert.equal(product.gridReadOnly, undefined);
   });
 });
+
+// ─── businessCritical per-field flag (ETP-4233) ──────────────────────────────
+
+const schemaWithBusinessCritical = {
+  version: '0.1.0',
+  window: { id: '900', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+  entities: [{
+    name: 'order',
+    table: 'C_Order',
+    level: 'header',
+    fields: [
+      { name: 'documentNo', column: 'DocumentNo', type: 'string', visibility: 'readOnly',
+        required: true, searchable: true, grid: true, form: true, businessCritical: true },
+      { name: 'description', column: 'Description', type: 'string', visibility: 'editable',
+        required: false, searchable: false, grid: true, form: true },
+    ],
+  }],
+};
+
+describe('generateFrontendContract — businessCritical (ETP-4233)', () => {
+  it('field with businessCritical:true includes businessCritical in frontendContract', () => {
+    const fc = generateFrontendContract(schemaWithBusinessCritical);
+    const docNo = fc.entities.order.fields.find(f => f.name === 'documentNo');
+    assert.equal(docNo.businessCritical, true);
+  });
+
+  it('field without businessCritical does NOT have the key in frontendContract', () => {
+    const fc = generateFrontendContract(schemaWithBusinessCritical);
+    const desc = fc.entities.order.fields.find(f => f.name === 'description');
+    assert.equal(desc.businessCritical, undefined,
+      'businessCritical must be absent when not set — truthy-only contract');
+  });
+});
+
+describe('generateBackendContract — businessCritical (ETP-4233)', () => {
+  it('field with businessCritical:true includes businessCritical in backendContract', () => {
+    const bc = generateBackendContract(schemaWithBusinessCritical);
+    const docNo = bc.entities.order.fields.find(f => f.name === 'documentNo');
+    assert.equal(docNo.businessCritical, true);
+  });
+
+  it('field without businessCritical does NOT have the key in backendContract', () => {
+    const bc = generateBackendContract(schemaWithBusinessCritical);
+    const desc = bc.entities.order.fields.find(f => f.name === 'description');
+    assert.equal(desc.businessCritical, undefined,
+      'absent businessCritical must not appear in backendContract');
+  });
+});

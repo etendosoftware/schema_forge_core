@@ -163,6 +163,56 @@ describe('extractFieldsFromContract', () => {
     const fields = extractFieldsFromContract({ entities: {} });
     assert.equal(fields.length, 0);
   });
+
+  // ── businessCritical regression guard (ETP-4233) ──────────────────────────
+  // This is the exact point where the flag was silently dropped before the fix.
+
+  it('businessCritical:true on a field is preserved in extracted output', () => {
+    const contract = {
+      entities: {
+        order: {
+          fields: [
+            { name: 'documentNo', column: 'DocumentNo', visibility: 'readOnly', businessCritical: true },
+          ],
+        },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    const f = fields.find(x => x.fieldName === 'documentNo');
+    assert.equal(f.businessCritical, true,
+      'businessCritical:true must survive extractFieldsFromContract — regression guard for ETP-4233');
+  });
+
+  it('businessCritical absent on a field defaults to false', () => {
+    const contract = {
+      entities: {
+        order: {
+          fields: [
+            { name: 'description', column: 'Description', visibility: 'editable' },
+          ],
+        },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    const f = fields.find(x => x.fieldName === 'description');
+    assert.equal(f.businessCritical, false,
+      'absent businessCritical must default to false');
+  });
+
+  it('businessCritical:false on a field stays false', () => {
+    const contract = {
+      entities: {
+        order: {
+          fields: [
+            { name: 'notes', column: 'Notes', visibility: 'editable', businessCritical: false },
+          ],
+        },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    const f = fields.find(x => x.fieldName === 'notes');
+    assert.equal(f.businessCritical, false);
+  });
 });
 
 // ---------------------------------------------------------------------------

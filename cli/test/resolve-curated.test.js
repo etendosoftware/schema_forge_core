@@ -443,3 +443,62 @@ describe('resolveCurated — gridReadOnly passthrough', () => {
     assert.equal(qty.gridReadOnly, undefined);
   });
 });
+
+// ─── businessCritical per-field flag (ETP-4233) ──────────────────────────────
+
+describe('resolveCurated — businessCritical per-field flag (ETP-4233)', () => {
+  const baseSchema = {
+    window: { id: '200', name: 'Sales Order' },
+    entities: [{
+      name: 'cOrder',
+      tableName: 'C_Order',
+      tabId: '10',
+      tabName: 'Header',
+      fields: [
+        { name: 'documentNo', columnName: 'DocumentNo', label: 'Document No',
+          type: 'string', visibility: 'readOnly' },
+        { name: 'description', columnName: 'Description', label: 'Description',
+          type: 'string', visibility: 'editable' },
+      ],
+    }],
+  };
+
+  it('decision businessCritical:true propagates to curated field', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: {
+        cOrder: {
+          name: 'order',
+          fields: {
+            documentNo: { businessCritical: true },
+          },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(baseSchema, { rules: [] }, decisions);
+    const field = schema.entities[0].fields.find(f => f.name === 'documentNo');
+    assert.equal(field.businessCritical, true);
+  });
+
+  it('decision without businessCritical leaves field without the property', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: {
+        cOrder: {
+          name: 'order',
+          fields: {
+            description: {},
+          },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(baseSchema, { rules: [] }, decisions);
+    const field = schema.entities[0].fields.find(f => f.name === 'description');
+    assert.equal(field.businessCritical, undefined,
+      'businessCritical should be absent when not declared in decisions');
+  });
+});

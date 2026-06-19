@@ -88,6 +88,7 @@ export function extractFieldsFromContract(backendContract) {
         fieldName: field.name,
         column: field.column,
         visibility: field.visibility,
+        businessCritical: field.businessCritical || false,
       });
     }
   }
@@ -572,6 +573,7 @@ async function upsertSingleField(client, f, ctx, entityMaps) {
     moduleId: ctx.moduleId,
     isIncluded: vis.isIncluded,
     isReadOnly: vis.isReadOnly,
+    isBusinessCritical: f.businessCritical ? 'Y' : 'N',
     audit: ctx.auditOpts,
   };
   const defaultExprKey = `${f.entityName}.${f.fieldName}`;

@@ -273,6 +273,7 @@ const FIELD_HINTS_PRE_GRID = [
   ['enumVariants', Boolean],
   ['labels', Boolean],
   ['summable', Boolean, setTrue],
+  ['businessCritical', Boolean, setTrue],
   ['display', Boolean],
   ['cellType', Boolean],
   ['subField', Boolean],
@@ -516,14 +517,18 @@ export function generateBackendContract(schema, rules = [], processes = []) {
   const endpoints = [];
 
   for (const entity of schema.entities) {
-    const fields = entity.fields.map(f => ({
-      name: f.name,
-      apiKey: f.apiKey || f.name,
-      column: f.column,
-      type: f.type,
-      visibility: f.visibility,
-      required: f.required,
-    }));
+    const fields = entity.fields.map(f => {
+      const field = {
+        name: f.name,
+        apiKey: f.apiKey || f.name,
+        column: f.column,
+        type: f.type,
+        visibility: f.visibility,
+        required: f.required,
+      };
+      if (f.businessCritical) field.businessCritical = true;
+      return field;
+    });
 
     const beEntity = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields };
     if (entity.javaQualifier) beEntity.javaQualifier = entity.javaQualifier;
