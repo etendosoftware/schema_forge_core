@@ -72,3 +72,20 @@ describe('DetailView — Save button disabled conditions (ETP-3662)', () => {
     assert.doesNotMatch(around, /!isDirty/);
   });
 });
+
+describe('DetailView — distinct test ids for new-record Save vs Confirm (PR #716)', () => {
+  it('uses data-testid="action-complete" for the new-record Confirm button', () => {
+    // The new-record Confirm button (handleSaveAndProcess, gated only by isSaving +
+    // blockCompleteForBalance) must NOT reuse data-testid="action-save" — that would
+    // collide with the new-record Save button and make getByTestId('action-save')
+    // ambiguous in E2E. The draftMode Confirm keeps action-save (its disabled
+    // expression has a trailing "|| (draftMode..." so it won't match this regex).
+    assert.match(src, /data-testid="action-complete" disabled=\{hook\.isSaving \|\| blockCompleteForBalance\}/);
+  });
+
+  it('does not render two action-save buttons in the new-record path', () => {
+    // Guard against re-introducing the duplicate: the new-record Confirm must not
+    // carry the same gate-expression as a second action-save.
+    assert.doesNotMatch(src, /data-testid="action-save" disabled=\{hook\.isSaving \|\| blockCompleteForBalance\}/);
+  });
+});

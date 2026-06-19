@@ -1292,7 +1292,7 @@ export function computeBalanceGate({ balanceFooter, children, pendingLineValues,
     : null;
   const blockSaveForBalance = !!balanceFooter && balanceState != null && !balanceState.isBalanced;
   const blockCompleteForBalance = !!balanceFooter && balanceState != null
-    && (!balanceState.isBalanced || (balanceState.totalDebit ?? 0) <= 0);
+    && (!balanceState.isBalanced || !balanceState.hasAmounts);
   return { balanceState, blockSaveForBalance, blockCompleteForBalance };
 }
 
@@ -1378,7 +1378,7 @@ function renderNewRecordSaveActions({
         {ui('save')}
       </Button>
       {!isProcessed && hook.children.length > 0 && (
-        <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving || blockCompleteForBalance} title={blockCompleteForBalance ? ui('journalUnbalancedCompleteBlocked') : undefined} onClick={async () => {
+        <Button size="default" className={saveBtnCls} data-testid="action-complete" disabled={hook.isSaving || blockCompleteForBalance} title={blockCompleteForBalance ? ui('journalUnbalancedCompleteBlocked') : undefined} onClick={async () => {
           if (!(await flushPendingLines())) return;
           const saved = await hook.handleSaveAndProcess(draftMode);
           await handlePostSaveNavigation(saved, { isNew, onAfterCreate, onAfterSave, navigate, windowName, token, apiBaseUrl, hook });
