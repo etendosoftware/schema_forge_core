@@ -35,7 +35,7 @@ export default function ProductCategoryCustomForm({ entity, data, token, apiBase
             api={api}
             token={token}
             apiBaseUrl={apiBaseUrl}
-          />
+            data-testid="EntityForm__473ce6" />
         </div>
         <div className="w-[325px] shrink-0">
           <EntityForm
@@ -49,7 +49,7 @@ export default function ProductCategoryCustomForm({ entity, data, token, apiBase
             api={api}
             token={token}
             apiBaseUrl={apiBaseUrl}
-          />
+            data-testid="EntityForm__473ce6" />
         </div>
         <div className="flex-1 pb-1">
           <CheckboxGroup
@@ -61,10 +61,9 @@ export default function ProductCategoryCustomForm({ entity, data, token, apiBase
             data={data}
             readOnly={readOnly}
             onChange={onChange}
-          />
+            data-testid="CheckboxGroup__473ce6" />
         </div>
       </div>
-
       {/* Row 2: Description full width */}
       <div>
         <EntityForm
@@ -78,7 +77,7 @@ export default function ProductCategoryCustomForm({ entity, data, token, apiBase
           api={api}
           token={token}
           apiBaseUrl={apiBaseUrl}
-        />
+          data-testid="EntityForm__473ce6" />
       </div>
     </div>
   );

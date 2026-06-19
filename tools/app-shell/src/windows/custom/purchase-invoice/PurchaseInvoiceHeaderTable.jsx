@@ -50,7 +50,9 @@ export default function PurchaseInvoiceHeaderTable(props) {
     if (targets.showSii) {
       fiscalCols.push({
         key: '_siiStatus', type: 'custom', label: siiColLabel,
-        render: (row) => <FiscalStatusBadge status={row.aeatsiiEstado ?? null} />,
+        render: (row) => <FiscalStatusBadge
+          status={row.aeatsiiEstado ?? null}
+          data-testid="FiscalStatusBadge__6b7cdb" />,
       });
     }
 
@@ -110,5 +112,11 @@ export default function PurchaseInvoiceHeaderTable(props) {
     ];
   }, [gl, locale, targets, siiColLabel]);
 
-  return <DataTable columns={columns} filters={filters} {...props} />;
+  return (
+    <DataTable
+      columns={columns}
+      filters={filters}
+      {...props}
+      data-testid="DataTable__6b7cdb" />
+  );
 }

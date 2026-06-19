@@ -324,8 +324,11 @@ export function ListFilterBar({
   return (
     <div className="flex items-center gap-2">
       {statusCol && (
-        <Popover open={statusMenuOpen} onOpenChange={setStatusMenuOpen}>
-          <PopoverTrigger asChild>
+        <Popover
+          open={statusMenuOpen}
+          onOpenChange={setStatusMenuOpen}
+          data-testid="Popover__6d5e90">
+          <PopoverTrigger asChild data-testid="PopoverTrigger__6d5e90">
             <Button
               data-testid="filter-status"
               variant="outline"
@@ -337,12 +340,14 @@ export function ListFilterBar({
             >
               {activeStatusLabel}
               {statusDistinct.loading && (
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                <Loader2
+                  className="h-3.5 w-3.5 animate-spin text-muted-foreground"
+                  data-testid="Loader2__6d5e90" />
               )}
-              <ChevronDown className="h-3.5 w-3.5" />
+              <ChevronDown className="h-3.5 w-3.5" data-testid="ChevronDown__6d5e90" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-64 p-0">
+          <PopoverContent align="start" className="w-64 p-0" data-testid="PopoverContent__6d5e90">
             <DistinctValuesList
               activeCode={activeStatusCode}
               allLabel={ui('allStatuses')}
@@ -354,14 +359,16 @@ export function ListFilterBar({
                 setStatusMenuOpen(false);
               }}
               searchPlaceholder={ui('searchStatuses')}
-            />
+              data-testid="DistinctValuesList__6d5e90" />
           </PopoverContent>
         </Popover>
       )}
-
       {typeCol && (
-        <Popover open={typeMenuOpen} onOpenChange={setTypeMenuOpen}>
-          <PopoverTrigger asChild>
+        <Popover
+          open={typeMenuOpen}
+          onOpenChange={setTypeMenuOpen}
+          data-testid="Popover__6d5e90">
+          <PopoverTrigger asChild data-testid="PopoverTrigger__6d5e90">
             <Button
               data-testid="filter-type"
               variant="outline"
@@ -373,12 +380,14 @@ export function ListFilterBar({
             >
               {activeTypeLabel}
               {typeDistinct.loading && (
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                <Loader2
+                  className="h-3.5 w-3.5 animate-spin text-muted-foreground"
+                  data-testid="Loader2__6d5e90" />
               )}
-              <ChevronDown className="h-3.5 w-3.5" />
+              <ChevronDown className="h-3.5 w-3.5" data-testid="ChevronDown__6d5e90" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-64 p-0">
+          <PopoverContent align="start" className="w-64 p-0" data-testid="PopoverContent__6d5e90">
             <DistinctValuesList
               activeCode={activeTypeCode}
               allLabel={ui('allTypes')}
@@ -390,14 +399,16 @@ export function ListFilterBar({
                 setTypeMenuOpen(false);
               }}
               searchPlaceholder={ui('searchTypes')}
-            />
+              data-testid="DistinctValuesList__6d5e90" />
           </PopoverContent>
         </Popover>
       )}
-
       {dateCol && (
-        <Popover open={dateMenuOpen} onOpenChange={setDateMenuOpen}>
-          <PopoverTrigger asChild>
+        <Popover
+          open={dateMenuOpen}
+          onOpenChange={setDateMenuOpen}
+          data-testid="Popover__6d5e90">
+          <PopoverTrigger asChild data-testid="PopoverTrigger__6d5e90">
             <Button
               data-testid="filter-date"
               variant="outline"
@@ -407,29 +418,31 @@ export function ListFilterBar({
                 hasActiveDate ? 'text-foreground border-primary/40' : 'text-muted-foreground',
               ].join(' ')}
             >
-              <CalendarDays className="h-3.5 w-3.5" />
+              <CalendarDays className="h-3.5 w-3.5" data-testid="CalendarDays__6d5e90" />
               {activeDateLabel}
-              <ChevronDown className="h-3.5 w-3.5" />
+              <ChevronDown className="h-3.5 w-3.5" data-testid="ChevronDown__6d5e90" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-auto p-0">
+          <PopoverContent align="start" className="w-auto p-0" data-testid="PopoverContent__6d5e90">
             <DateRangePopoverContent
               value={dateRangeValue}
               onChange={handleDateRangeChange}
               onClose={() => setDateMenuOpen(false)}
-            />
+              data-testid="DateRangePopoverContent__6d5e90" />
           </PopoverContent>
         </Popover>
       )}
-
-      <Popover open={advancedOpen} onOpenChange={setAdvancedOpen}>
-        <PopoverTrigger asChild>
+      <Popover
+        open={advancedOpen}
+        onOpenChange={setAdvancedOpen}
+        data-testid="Popover__6d5e90">
+        <PopoverTrigger asChild data-testid="PopoverTrigger__6d5e90">
           <button
             type="button"
             data-testid="filter-advanced"
             className="relative inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-white px-3 text-sm font-medium text-foreground transition-colors hover:bg-[#F5F7F9]"
           >
-            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Filter className="h-4 w-4 text-muted-foreground" data-testid="Filter__6d5e90" />
             <span>{ui('filters')}</span>
             {hasActiveAdvancedFilter && (
               <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[#121217] text-white text-[10px] font-semibold leading-none">
@@ -438,7 +451,7 @@ export function ListFilterBar({
             )}
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-auto p-4">
+        <PopoverContent align="start" className="w-auto p-4" data-testid="PopoverContent__6d5e90">
           <AdvancedFilterBuilder
             entity={entity}
             apiBaseUrl={apiBaseUrl}
@@ -454,7 +467,7 @@ export function ListFilterBar({
             onDeletePreset={onDeletePreset}
             hasActiveFilter={hasActiveFilter}
             labelOverrides={labelOverrides}
-          />
+            data-testid="AdvancedFilterBuilder__6d5e90" />
         </PopoverContent>
       </Popover>
     </div>

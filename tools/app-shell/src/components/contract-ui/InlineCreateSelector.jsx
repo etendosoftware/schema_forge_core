@@ -91,7 +91,7 @@ export function InlineCreateSelector({
         token={token}
         createLabel={createLabel}
         onCreateRequest={handleCreateRequest}
-      />
+        data-testid="CreatableSearchSelect__1ec739" />
       <InlineCreateModal
         open={modalOpen}
         title={createTitle}
@@ -99,7 +99,7 @@ export function InlineCreateSelector({
         initialName={initialName}
         onCancel={closeModal}
         onSubmit={handleSubmit}
-      />
+        data-testid="InlineCreateModal__1ec739" />
     </>
   );
 }

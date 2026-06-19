@@ -46,11 +46,30 @@ function MovementBasics({ form, set, dimensions, optionsByDim, trxTypes }) {
   return (
     <div>
       <div className="grid grid-cols-2 gap-x-[18px] gap-y-3.5">
-        <Select label={ui('financeAccountMovementsWizardTrxType')} required value={form.trxType} onChange={(v) => set({ trxType: v })} options={trxTypes} />
+        <Select
+          label={ui('financeAccountMovementsWizardTrxType')}
+          required
+          value={form.trxType}
+          onChange={(v) => set({ trxType: v })}
+          options={trxTypes}
+          data-testid="Select__e2e571" />
         <div />
-        <DateInput label={ui('financeAccountMovementsWizardTrxDate')} required value={form.trxDate} onChange={(v) => set({ trxDate: v })} />
-        <DateInput label={ui('financeAccountMovementsNewAcctDate')} required value={form.acctDate} onChange={(v) => set({ acctDate: v })} />
-        <Field label={ui('financeAccountMovementsNewDescription')} className="col-span-2">
+        <DateInput
+          label={ui('financeAccountMovementsWizardTrxDate')}
+          required
+          value={form.trxDate}
+          onChange={(v) => set({ trxDate: v })}
+          data-testid="DateInput__e2e571" />
+        <DateInput
+          label={ui('financeAccountMovementsNewAcctDate')}
+          required
+          value={form.acctDate}
+          onChange={(v) => set({ acctDate: v })}
+          data-testid="DateInput__e2e571" />
+        <Field
+          label={ui('financeAccountMovementsNewDescription')}
+          className="col-span-2"
+          data-testid="Field__e2e571">
           <textarea
             className="min-h-16 w-full box-border resize-y rounded-lg border border-[#D1D4DB] bg-white px-3 py-2.5 text-sm leading-5 text-[#121217] placeholder:text-[#8A8AA3] focus:outline-none focus:border-[#121217] focus:ring-2 focus:ring-[#121217]/10"
             placeholder={ui('financeAccountMovementsWizardDescriptionPlaceholder')}
@@ -59,10 +78,12 @@ function MovementBasics({ form, set, dimensions, optionsByDim, trxTypes }) {
           />
         </Field>
       </div>
-
-      <SectionLabel>{ui('financeAccountMovementsWizardAmounts')}</SectionLabel>
+      <SectionLabel data-testid="SectionLabel__e2e571">{ui('financeAccountMovementsWizardAmounts')}</SectionLabel>
       <div className="grid grid-cols-3 gap-x-[18px] gap-y-3.5">
-        <Field label={ui('financeAccountMovementsNewCurrency')} required><ReadOnly>{form.currencyIso || 'EUR'}</ReadOnly></Field>
+        <Field
+          label={ui('financeAccountMovementsNewCurrency')}
+          required
+          data-testid="Field__e2e571"><ReadOnly data-testid="ReadOnly__e2e571">{form.currencyIso || 'EUR'}</ReadOnly></Field>
         <AmountInput
           label={ui('financeAccountMovementsNewDepositAmount')}
           required={depositEditable}
@@ -70,7 +91,7 @@ function MovementBasics({ form, set, dimensions, optionsByDim, trxTypes }) {
           value={depositEditable ? form.deposit : '0.00'}
           placeholder={ui('financeAccountAmountPlaceholder')}
           onChange={(e) => set({ deposit: e.target.value })}
-        />
+          data-testid="AmountInput__e2e571" />
         <AmountInput
           label={ui('financeAccountMovementsNewPaymentAmount')}
           required={!depositEditable}
@@ -78,12 +99,11 @@ function MovementBasics({ form, set, dimensions, optionsByDim, trxTypes }) {
           value={!depositEditable ? form.withdrawal : '0.00'}
           placeholder={ui('financeAccountAmountPlaceholder')}
           onChange={(e) => set({ withdrawal: e.target.value })}
-        />
+          data-testid="AmountInput__e2e571" />
       </div>
-
       {visibleDims.length > 0 ? (
         <>
-          <SectionLabel>{ui('financeAccountMovementsWizardDimensions')}</SectionLabel>
+          <SectionLabel data-testid="SectionLabel__e2e571">{ui('financeAccountMovementsWizardDimensions')}</SectionLabel>
           <div className="grid grid-cols-3 gap-x-[18px] gap-y-3.5">
             {visibleDims.map((key) => {
               const meta = DIM_META[key];
@@ -95,7 +115,7 @@ function MovementBasics({ form, set, dimensions, optionsByDim, trxTypes }) {
                   value={form.dims[key] || ''}
                   onChange={(v) => setDim(key, v)}
                   options={optionsByDim[key] || []}
-                />
+                  data-testid="Select__e2e571" />
               );
             })}
           </div>
@@ -123,7 +143,7 @@ function ChoiceCard({ choice, active, onClick }) {
     >
       <div className="flex items-center gap-3">
         <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-md ${active ? 'bg-[#121217] text-white' : 'bg-[#E8E8ED] text-[#121217]'}`}>
-          <Icon className="h-[22px] w-[22px]" />
+          <Icon className="h-[22px] w-[22px]" data-testid="Icon__e2e571" />
         </span>
         <span className="text-[15px] font-bold leading-5 text-[#121217]">{ui(choice.titleKey)}</span>
         <span className={`ml-auto grid h-5 w-5 place-items-center rounded-full border-2 ${active ? 'border-[#121217]' : 'border-[#A9A9BC]'}`}>
@@ -143,8 +163,16 @@ function GLItemBlock({ value, onChange }) {
   const ui = useUI();
   return (
     <div className="grid grid-cols-2 gap-x-[18px] gap-y-3.5">
-      <Field label={ui('financeAccountMovementsWizardGlItemLabel')} required>
-        <LookupPicker value={value} onChange={onChange} useLookup={useGLItemLookup} placeholder={ui('financeAccountMovementsNewGlItemPlaceholder')} />
+      <Field
+        label={ui('financeAccountMovementsWizardGlItemLabel')}
+        required
+        data-testid="Field__e2e571">
+        <LookupPicker
+          value={value}
+          onChange={onChange}
+          useLookup={useGLItemLookup}
+          placeholder={ui('financeAccountMovementsNewGlItemPlaceholder')}
+          data-testid="LookupPicker__e2e571" />
       </Field>
     </div>
   );
@@ -176,10 +204,10 @@ function Stepper({ stage }) {
         const done = state === 'done';
         const connectorClass = done ? 'bg-[#B2EECC]' : 'bg-[#E8EAEF]';
         return (
-          <Fragment key={s.n}>
+          <Fragment key={s.n} data-testid="Fragment__e2e571">
             <div className="inline-flex items-center gap-2.5">
               <span className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-xs font-bold ${STEP_CIRCLE_CLASS[state]}`}>
-                {done ? <Check className="h-3.5 w-3.5" /> : s.n}
+                {done ? <Check className="h-3.5 w-3.5" data-testid="Check__e2e571" /> : s.n}
               </span>
               <span className={`whitespace-nowrap text-[13px] font-semibold leading-[18px] ${STEP_LABEL_CLASS[state]}`}>{s.l}</span>
             </div>
@@ -357,7 +385,15 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
   // keep the component's cognitive complexity low.
   const renderBody = () => {
     if (stage === 1) {
-      return <MovementBasics form={form} set={set} dimensions={dimensions} optionsByDim={optionsByDim} trxTypes={trxOptions} />;
+      return (
+        <MovementBasics
+          form={form}
+          set={set}
+          dimensions={dimensions}
+          optionsByDim={optionsByDim}
+          trxTypes={trxOptions}
+          data-testid="MovementBasics__e2e571" />
+      );
     }
     if (!choice) {
       return (
@@ -368,7 +404,12 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
           </div>
           <div className="grid grid-cols-2 gap-3.5">
             {CHOICES.map((c) => (
-              <ChoiceCard key={c.id} choice={c} active={choice === c.id} onClick={() => setChoice(c.id)} />
+              <ChoiceCard
+                key={c.id}
+                choice={c}
+                active={choice === c.id}
+                onClick={() => setChoice(c.id)}
+                data-testid="ChoiceCard__e2e571" />
             ))}
           </div>
         </>
@@ -390,12 +431,12 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
             onClick={() => setChoice(null)}
             className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-[#D1D4DB] bg-white px-3 py-[7px] text-[13px] font-semibold text-[#3F3F50] hover:border-[#A9A9BC] hover:bg-[#F5F7F9]"
           >
-            <ChevronDown className="h-3.5 w-3.5" /> {ui('financeAccountMovementsWizardChange')}
+            <ChevronDown className="h-3.5 w-3.5" data-testid="ChevronDown__e2e571" /> {ui('financeAccountMovementsWizardChange')}
           </button>
         </div>
         <div className="mt-4">
           {choice === 'gl'
-            ? <GLItemBlock value={glItem} onChange={setGlItem} />
+            ? <GLItemBlock value={glItem} onChange={setGlItem} data-testid="GLItemBlock__e2e571" />
             : (
               <PaymentForm
                 doc={doc}
@@ -404,7 +445,7 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
                 paymentMethods={paymentMethods}
                 showAccountField={false}
                 onChange={(snap) => { paymentSnapshotRef.current = snap; }}
-              />
+                data-testid="PaymentForm__e2e571" />
             )}
         </div>
       </>
@@ -412,13 +453,18 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="flex w-[1280px] max-w-[96vw] max-h-[90vh] flex-col gap-0 overflow-hidden rounded-2xl border border-[#E8EAEF] bg-white p-0 [&>button]:hidden">
+    <Dialog
+      open={open}
+      onOpenChange={(v) => { if (!v) onClose(); }}
+      data-testid="Dialog__e2e571">
+      <DialogContent
+        className="flex w-[1280px] max-w-[96vw] max-h-[90vh] flex-col gap-0 overflow-hidden rounded-2xl border border-[#E8EAEF] bg-white p-0 [&>button]:hidden"
+        data-testid="DialogContent__e2e571">
         {/* Header */}
         <div className="shrink-0 px-6 pt-5">
           <div className="flex items-start justify-between">
             <div>
-              <DialogTitle asChild>
+              <DialogTitle asChild data-testid="DialogTitle__e2e571">
                 <h2 className="m-0 flex items-center gap-2.5 text-lg font-bold leading-6 tracking-[-0.01em] text-[#121217]">
                   {ui('financeAccountMovementsNewTitle')}
                   {stage === 2 && trxLabel ? (
@@ -428,17 +474,17 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
                   ) : null}
                 </h2>
               </DialogTitle>
-              <DialogDescription asChild>
+              <DialogDescription asChild data-testid="DialogDescription__e2e571">
                 <p className="mt-0.5 text-[13px] leading-[18px] text-[#6C6C89]">
                   {ui('financeAccountMovementsWizardSubtitle', { iso: accountCurrency?.iso || 'EUR' })}
                 </p>
               </DialogDescription>
             </div>
             <button type="button" onClick={onClose} className="grid h-[30px] w-[30px] place-items-center rounded-md text-[#6C6C89] hover:bg-[#F5F7F9] hover:text-[#121217]">
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" data-testid="X__e2e571" />
             </button>
           </div>
-          <Stepper stage={stage} />
+          <Stepper stage={stage} data-testid="Stepper__e2e571" />
         </div>
 
         {/* Body */}
@@ -452,12 +498,14 @@ export function NewMovementWizard({ open, accountId, accountCurrency, dimensions
             <>
               <span className="mr-auto text-xs leading-4 text-[#6C6C89]">{ui('financeAccountMovementsWizardStep1Footer')}</span>
               <button type="button" className={BTN_GHOST} onClick={onClose}>{ui('financeAccountMovementsNewCancel')}</button>
-              <button type="button" className={BTN_PRIMARY} onClick={() => setStage(2)}>{ui('financeAccountMovementsWizardNext')} <ChevronDown className="h-[15px] w-[15px] -rotate-90" /></button>
+              <button type="button" className={BTN_PRIMARY} onClick={() => setStage(2)}>{ui('financeAccountMovementsWizardNext')} <ChevronDown
+                className="h-[15px] w-[15px] -rotate-90"
+                data-testid="ChevronDown__e2e571" /></button>
             </>
           ) : (
             <>
               <span className="mr-auto inline-flex items-center gap-1.5 text-xs leading-4 text-[#6C6C89]">
-                <Info className="h-[13px] w-[13px]" /> {ui('financeAccountMovementsWizardWillCreate')} {choice ? <>{ui('financeAccountMovementsWizardWith')} <span className="font-semibold text-[#121217]">{assocLabel}</span></> : ui('financeAccountMovementsWizardWithoutAssoc')}
+                <Info className="h-[13px] w-[13px]" data-testid="Info__e2e571" /> {ui('financeAccountMovementsWizardWillCreate')} {choice ? <>{ui('financeAccountMovementsWizardWith')} <span className="font-semibold text-[#121217]">{assocLabel}</span></> : ui('financeAccountMovementsWizardWithoutAssoc')}
               </span>
               <button type="button" className={BTN_GHOST} onClick={() => setStage(1)}>{ui('financeAccountMovementsWizardBack')}</button>
               <button type="button" className={BTN_PRIMARY} disabled={!choice || creating || creatingPayment} onClick={handleCreate}>

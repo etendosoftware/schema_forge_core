@@ -8,8 +8,8 @@ import { login } from '../helpers/auth.js';
  *   "Todos" (all) / "Facturas" (AP Invoice) / "Notas de crédito" (AP CreditMemo)
  *
  * Mock mode only — no backend required.
- * The subset filter buttons are identified via data-testid="subset-filter-{label}"
- * (added to ListView.jsx as part of ETP-4036).
+ * The subset filter buttons are identified via data-testid="filter-{label.toLowerCase()}"
+ * (convention standardised in ETP-4208, originally added in ETP-4036).
  */
 
 const AP_INVOICE_ROWS = [
@@ -98,9 +98,9 @@ test.describe('Purchase Invoice — subset filter tabs (ETP-4036)', () => {
     await expect(listView).toBeVisible();
 
     // ── Verify the three subset filter buttons are rendered ──────────────────
-    const allTab = page.getByTestId('subset-filter-all');
-    const invoicesTab = page.getByTestId('subset-filter-invoicesTab');
-    const creditNotesTab = page.getByTestId('subset-filter-creditNotesTab');
+    const allTab = page.getByTestId('filter-all');
+    const invoicesTab = page.getByTestId('filter-invoicestab');
+    const creditNotesTab = page.getByTestId('filter-creditnotestab');
 
     await expect(allTab).toBeVisible();
     await expect(invoicesTab).toBeVisible();

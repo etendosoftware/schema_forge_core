@@ -34,7 +34,7 @@ export default function PaymentPanel({
             onClick={onBack}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ChevronUp className="h-3 w-3" />
+            <ChevronUp className="h-3 w-3" data-testid="ChevronUp__e5e0c5" />
             {ui('qsoBackToCart')}
           </button>
         </div>
@@ -58,7 +58,7 @@ export default function PaymentPanel({
                       : 'border-border bg-white text-muted-foreground hover:border-primary/30'
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-4 w-4" data-testid="Icon__e5e0c5" />
                   {ui(m.labelKey)}
                 </button>
               );
@@ -89,7 +89,7 @@ export default function PaymentPanel({
               size="sm"
               onClick={() => onAmountChange(grandTotal)}
               className="shrink-0"
-            >
+              data-testid="Button__e5e0c5">
               {ui('qsoExactAmount')}
             </Button>
           </div>
@@ -110,7 +110,7 @@ export default function PaymentPanel({
           className="w-full"
           disabled={amountTendered < grandTotal}
           onClick={onConfirm}
-        >
+          data-testid="Button__e5e0c5">
           {ui('qsoConfirmPayment')}
         </Button>
       </div>

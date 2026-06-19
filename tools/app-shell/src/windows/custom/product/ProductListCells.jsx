@@ -127,7 +127,7 @@ export function ProductNameCell({ row, token, apiBaseUrl }) {
       <div className="w-10 h-10 rounded-lg bg-[#F5F7F9] flex items-center justify-center overflow-hidden flex-shrink-0">
         {imgSrc
           ? <img src={imgSrc} alt={row.name} className="w-full h-full object-cover" />
-          : <BoxIcon />
+          : <BoxIcon data-testid="BoxIcon__fed565" />
         }
       </div>
       <div className="flex flex-col justify-center gap-0.5">
@@ -144,12 +144,12 @@ export function ProductNameCell({ row, token, apiBaseUrl }) {
 
 export function ProductSalePriceCell({ row, token, apiBaseUrl }) {
   const { sale } = useProductPrices(row.id, token, apiBaseUrl);
-  return <PriceText value={sale} bold />;
+  return <PriceText value={sale} bold data-testid="PriceText__fed565" />;
 }
 
 export function ProductPurchasePriceCell({ row, token, apiBaseUrl }) {
   const { purchase } = useProductPrices(row.id, token, apiBaseUrl);
-  return <PriceText value={purchase} />;
+  return <PriceText value={purchase} data-testid="PriceText__fed565" />;
 }
 
 export function ProductStockCell({ row, token, apiBaseUrl }) {

@@ -65,15 +65,15 @@ export function PercentBar({ value }) {
  */
 export function MovementSummaryCard({ title, rows, statusRowLabel, statusLabel, statusBadgeClass, children }) {
   return (
-    <CardShell>
+    <CardShell data-testid="CardShell__a696d7">
       <div className="px-4 py-3 border-b border-gray-100">
         <span className="font-bold text-gray-900 text-sm">{title}</span>
       </div>
       <div className="px-4 py-2">
         {rows.map(({ label, value }) => (
-          <InfoRow key={label} label={label} value={value} />
+          <InfoRow key={label} label={label} value={value} data-testid="InfoRow__a696d7" />
         ))}
-        <InfoRow label={statusRowLabel}>
+        <InfoRow label={statusRowLabel} data-testid="InfoRow__a696d7">
           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusBadgeClass}`}>
             {statusLabel}
           </span>
@@ -124,28 +124,44 @@ export default function SummaryCard({
   const amountStr = `${currencyCode} ${formatAmount(grandTotal ?? 0)}`;
 
   return (
-    <CardShell>
-      <CardHeader title={ui('previewCardTotal')} amount={amountStr} />
+    <CardShell data-testid="CardShell__a696d7">
+      <CardHeader
+        title={ui('previewCardTotal')}
+        amount={amountStr}
+        data-testid="CardHeader__a696d7" />
       <div className="px-4 py-2">
-        <InfoRow label={ui('previewCardContact')} value={contact} />
-        <InfoRow label={ui('previewCardDate')} value={formattedDate} />
+        <InfoRow
+          label={ui('previewCardContact')}
+          value={contact}
+          data-testid="InfoRow__a696d7" />
+        <InfoRow
+          label={ui('previewCardDate')}
+          value={formattedDate}
+          data-testid="InfoRow__a696d7" />
         {formattedValidUntil && (
-          <InfoRow label={ui('previewCardValidUntil')} value={formattedValidUntil} />
+          <InfoRow
+            label={ui('previewCardValidUntil')}
+            value={formattedValidUntil}
+            data-testid="InfoRow__a696d7" />
         )}
         {formattedDueDate && (
-          <InfoRow label={ui('previewCardDueDate')} value={formattedDueDate} underline />
+          <InfoRow
+            label={ui('previewCardDueDate')}
+            value={formattedDueDate}
+            underline
+            data-testid="InfoRow__a696d7" />
         )}
-        <InfoRow label={ui('previewCardStatus')}>
-          <Badge {...getStatusBadgeProps(statusCode)}>{statusLabel ?? statusCode}</Badge>
+        <InfoRow label={ui('previewCardStatus')} data-testid="InfoRow__a696d7">
+          <Badge {...getStatusBadgeProps(statusCode)} data-testid="Badge__a696d7">{statusLabel ?? statusCode}</Badge>
         </InfoRow>
         {invoicePercent != null && (
-          <InfoRow label={ui('previewCardInvoicePercent')}>
-            <PercentBar value={invoicePercent} />
+          <InfoRow label={ui('previewCardInvoicePercent')} data-testid="InfoRow__a696d7">
+            <PercentBar value={invoicePercent} data-testid="PercentBar__a696d7" />
           </InfoRow>
         )}
         {deliveryPercent != null && (
-          <InfoRow label={ui('previewCardDeliveryPercent')}>
-            <PercentBar value={deliveryPercent} />
+          <InfoRow label={ui('previewCardDeliveryPercent')} data-testid="InfoRow__a696d7">
+            <PercentBar value={deliveryPercent} data-testid="PercentBar__a696d7" />
           </InfoRow>
         )}
         {children}
