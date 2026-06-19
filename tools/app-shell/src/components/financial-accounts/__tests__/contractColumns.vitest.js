@@ -44,6 +44,7 @@ describe('getContractGridColumns', () => {
       'bpartnername',
       'businessPartner',
       'gLItem',
+      'referenceNo',
       'dramount',
       'cramount',
     ]);
