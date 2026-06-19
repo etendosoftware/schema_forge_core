@@ -199,6 +199,32 @@ See `docs/window-templates.md` for full `templateConfig` reference.
 
 ---
 
+### 6b. `window.agentPrompt` / field `agentPrompt` — AI agent guidance
+
+Not a UI feature — guidance text returned to AI agents that consume the NEO Headless MCP server. Declared at two levels and surfaced in different MCP tools:
+
+```json
+"window": {
+  "agentPrompt": "Always confirm with the user before completing a purchase order."
+},
+"entities": {
+  "header": {
+    "fields": {
+      "warehouse": { "agentPrompt": "Pick the warehouse closest to the customer." }
+    }
+  }
+}
+```
+
+| Level | decisions key | Persisted to | Returned by |
+|-------|---------------|--------------|-------------|
+| Spec | `window.agentPrompt` | `ETGO_SF_SPEC.AGENT_PROMPT` | `neo_discover` (per spec) |
+| Field | `entities.{e}.fields.{f}.agentPrompt` | `ETGO_SF_FIELD.AGENT_PROMPT` | `neo_schema` (per field) |
+
+`push-to-neo` reads these straight from `decisions.json` (like `defaultExpr`) and writes the DB columns; the value is also mirrored into `contract.mcp.json → agentProfile.agentPrompt` for inspection. Omitted from the MCP response when empty. See `docs/decisions-reference.md`.
+
+---
+
 ### 7. `window.relatedDocuments` — related documents panel
 
 Adds a "Related Documents" tab/section to the detail view. Requires a hand-written `RelatedDocuments.jsx` in `windows/custom/{window}/`.
