@@ -655,13 +655,14 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
                 minWidth: 0,
               };
 
+              const cellClickable = !isEditing && !onRowClick && !isDocumentReadOnly;
               return (
                 <div
                   key={col.key}
-                  className={['flex items-center', !isEditing && !onRowClick && !isDocumentReadOnly ? 'cursor-pointer' : ''].join(' ')}
+                  className={['flex items-center', cellClickable ? 'cursor-pointer' : ''].join(' ')}
                   style={baseStyle}
                   data-cell-key={col.key}
-                  onClick={!isEditing && !onRowClick ? () => handleCellClick(row, idx, col) : undefined}
+                  onClick={cellClickable ? () => handleCellClick(row, idx, col) : undefined}
                 >
                   {editable ? (
                     <EditCell
