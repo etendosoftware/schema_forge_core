@@ -266,6 +266,44 @@ function downloadExistingPdfBlobUrl(pdfBlobUrl, windowName, documentNo) {
 }
 
 /**
+ * Left column of the modal: PDF preview (with loading/error states) plus the
+ * download button. Extracted to keep SendDocumentModal's complexity in check.
+ */
+function DocumentPreviewPane({ allowEmail, pdfLoading, pdfError, waitingForBlob, iframeRef, downloading, onDownload, ui }) {
+  return (
+    <div style={{ width: allowEmail ? '60%' : '100%', display: 'flex', flexDirection: 'column', borderRight: allowEmail ? '0.5px solid #E5E7EB' : 'none' }}>
+      <div style={{ flex: 1, position: 'relative', background: '#EFEFEF' }}>
+        {pdfLoading && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, gap: 10 }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'sfSpin 0.9s linear infinite' }}>
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
+            <span>{ui('sendModalLoadingPreview')}</span>
+          </div>
+        )}
+        {pdfError && !waitingForBlob && !pdfLoading && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', padding: 24, textAlign: 'center', gap: 8 }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span style={{ fontSize: 14, fontWeight: 500, color: '#6B7280' }}>{ui('sendModalPdfPreview')}</span>
+            <span style={{ fontSize: 13, color: '#9ca3af', maxWidth: 220 }}>{ui('sendModalPdfNotConfigured')}</span>
+          </div>
+        )}
+        <iframe ref={iframeRef} style={{ width: '100%', height: '100%', border: 'none', opacity: pdfLoading ? 0 : 1 }} title="Document preview" />
+      </div>
+      <button
+        type="button"
+        onClick={onDownload}
+        disabled={downloading}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 16px', background: '#fff', border: 'none', borderTop: '0.5px solid #E5E7EB', fontSize: 13, color: '#374151', cursor: downloading ? 'wait' : 'pointer', flexShrink: 0 }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        {downloading ? ui('sendModalDownloading') : ui('downloadPdf')}
+      </button>
+    </div>
+  );
+}
+
+/**
  * Reusable Send/Download modal for any document (invoice, order, quotation, shipment).
  *
  * Props:
@@ -462,35 +500,16 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
           </div>
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          <div style={{ width: allowEmail ? '60%' : '100%', display: 'flex', flexDirection: 'column', borderRight: allowEmail ? '0.5px solid #E5E7EB' : 'none' }}>
-            <div style={{ flex: 1, position: 'relative', background: '#EFEFEF' }}>
-              {pdfLoading && (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, gap: 10 }}>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'sfSpin 0.9s linear infinite' }}>
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                  </svg>
-                  <span>{ui('sendModalLoadingPreview')}</span>
-                </div>
-              )}
-              {pdfError && !waitingForBlob && !pdfLoading && (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', padding: 24, textAlign: 'center', gap: 8 }}>
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                  <span style={{ fontSize: 14, fontWeight: 500, color: '#6B7280' }}>{ui('sendModalPdfPreview')}</span>
-                  <span style={{ fontSize: 13, color: '#9ca3af', maxWidth: 220 }}>{ui('sendModalPdfNotConfigured')}</span>
-                </div>
-              )}
-              <iframe ref={iframeRef} style={{ width: '100%', height: '100%', border: 'none', opacity: pdfLoading ? 0 : 1 }} title="Document preview" />
-            </div>
-            <button
-              type="button"
-              onClick={handleDownload}
-              disabled={downloading}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 16px', background: '#fff', border: 'none', borderTop: '0.5px solid #E5E7EB', fontSize: 13, color: '#374151', cursor: downloading ? 'wait' : 'pointer', flexShrink: 0 }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              {downloading ? ui('sendModalDownloading') : ui('downloadPdf')}
-            </button>
-          </div>
+          <DocumentPreviewPane
+            allowEmail={allowEmail}
+            pdfLoading={pdfLoading}
+            pdfError={pdfError}
+            waitingForBlob={waitingForBlob}
+            iframeRef={iframeRef}
+            downloading={downloading}
+            onDownload={handleDownload}
+            ui={ui}
+          />
 
           {allowEmail && (
             <EmailFormPanel
