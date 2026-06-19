@@ -422,13 +422,13 @@ Auto-memory (NOT committed) only for: GitHub usernames, local paths, personal pr
 
 **Minimal implementation:**
 ```java
-@ApplicationScoped
 @Named("internal-consumption-line")   // matches ETGO_SF_ENTITY.Java_Qualifier
 public class InternalConsumptionLineHandler implements NeoHandler {
     @Override public NeoResponse handle(NeoContext context) { return null; }      // pre-hook
     @Override public NeoResponse afterHandle(NeoContext context) { return null; } // post-hook
 }
 ```
+**⚠️ `@Named` only — NEVER `@ApplicationScoped` (or any normal scope).** `lookupHandler()` reads `@Named` off `handler.getClass()`; a normal-scoped bean resolves to a Weld client proxy whose subclass does not carry the (non-`@Inherited`) `@Named`, so it is silently skipped. `@Named`-only defaults to `@Dependent` (no proxy). See `docs/neo-headless-extensibility.md` §2.2.
 
 - `handle()` → `null` continues to default CRUD; `NeoResponse` short-circuits.
 - `afterHandle()` → `null` keeps default result; `NeoResponse` replaces it.

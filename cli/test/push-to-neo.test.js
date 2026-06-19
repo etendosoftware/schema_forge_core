@@ -125,6 +125,36 @@ describe('push-to-neo agentPrompt upsert params', () => {
     assert.equal(params.agentPrompt, null);
     assert.equal(params.isIncluded, 'Y');
   });
+
+  it('sets java_qualifier when the field key differs from the AD column', () => {
+    const params = buildFieldUpdateParams(
+      {
+        entityName: 'Order',
+        fieldName: 'documentAction',
+        column: 'DocAction',
+        visibility: 'editable',
+      },
+      { moduleId: 'MOD1', auditOpts: {}, fieldDefaultExprs: {} },
+      'FIELD1',
+      'ENTITY1',
+    );
+    assert.equal(params.javaQualifier, 'documentAction');
+  });
+
+  it('omits java_qualifier when the field key equals the AD column', () => {
+    const params = buildFieldUpdateParams(
+      {
+        entityName: 'Order',
+        fieldName: 'DocAction',
+        column: 'DocAction',
+        visibility: 'editable',
+      },
+      { moduleId: 'MOD1', auditOpts: {}, fieldDefaultExprs: {} },
+      'FIELD1',
+      'ENTITY1',
+    );
+    assert.equal('javaQualifier' in params, false);
+  });
 });
 
 describe('mapVisibility', () => {

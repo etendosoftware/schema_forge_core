@@ -272,6 +272,7 @@ const FIELD_HINTS_PRE_GRID = [
   ['badgeVariants', Boolean],
   ['enumVariants', Boolean],
   ['labels', Boolean],
+  ['clearsField', Boolean],
   ['summable', Boolean, setTrue],
   ['display', Boolean],
   ['cellType', Boolean],
@@ -407,6 +408,10 @@ export function generateFrontendContract(schema, rules = []) {
   // "classic" at runtime, so leaving the key out keeps contracts clean of the
   // implicit default.
   if (schema.window.linesLayout) win.linesLayout = schema.window.linesLayout;
+
+  // Double-entry balance footer config { debitField, creditField }. Carried
+  // through so generate-frontend.js can emit the BalanceFooterPanel prop.
+  if (schema.window.balanceFooter) win.balanceFooter = schema.window.balanceFooter;
 
   return { window: reorderKeys(win, WINDOW_KEY_ORDER), entities };
 }

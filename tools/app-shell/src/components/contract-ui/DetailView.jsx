@@ -61,7 +61,9 @@ import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
 import { SummaryBar } from './SummaryBar.jsx';
 import DocumentTotalsPanel from './DocumentTotalsPanel.jsx';
+import BalanceFooterPanel from './BalanceFooterPanel.jsx';
 import { resolveTotalDiscountPct } from '@/lib/documentTotals';
+import { computeBalance } from '@/lib/balanceTotals';
 import LinesSelectionBar from './LinesSelectionBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import {
@@ -1037,6 +1039,39 @@ export function insertLinesTab(detailLabel, detailEntity, hook, detailTabIndex, 
   }
 }
 
+function customTabKey(ct) {
+  return `custom:${ct.key}`;
+}
+
+/**
+ * Builds the initial tab list (secondary tabs + lines/customLines + inline custom tabs).
+ * Extracted from DetailView so its branch logic does not count toward the component's
+ * cognitive complexity. `Others` is appended later via pushOthers.
+ */
+function buildInitialTabs(p) {
+  const tabs = [];
+  p.secondaryTabs.forEach((st, i) => {
+    const secondaryChildCount = !st.isFormTab ? (p.secondaryHooks[i]?.children?.length ?? null) : null;
+    const childCount = st.Panel ? (p.panelCounts[st.key] ?? null) : secondaryChildCount;
+    tabs.push({ key: st.key, label: st.label, count: childCount });
+  });
+  if (p.DetailTable) {
+    insertLinesTab(p.detailLabel, p.detailEntity, p.hook, p.detailTabIndex, tabs);
+  } else if (p.CustomLines) {
+    tabs.unshift({ key: 'customLines', label: p.customLinesLabel, count: p.customLinesCount ?? null });
+  }
+  // Append 'tab' placement custom items after lines/secondary tabs but before Others.
+  // Items may pass `labelKey` to resolve a generic i18n label via useUI() instead of a
+  // hardcoded string in `label`.
+  if (!p.customTabsAfterBottom) {
+    p.tabCustomTabs.forEach(ct => {
+      const resolvedLabel = ct.labelKey ? p.ui(ct.labelKey) : ct.label;
+      tabs.push({ key: customTabKey(ct), label: resolvedLabel, count: p.customTabCounts[ct.key] ?? null });
+    });
+  }
+  return tabs;
+}
+
 export function renderExtraActionButtons(extraActions, data, hook, saveBtnCls) {
   return (typeof extraActions === 'function' ? extraActions({
     data,
@@ -1243,6 +1278,153 @@ export function shouldShowInlineDeleteSelectionBar(linesLayout, api, detailEntit
 }
 
 /**
+ * Balance gate for double-entry windows (decisions.json window.balanceFooter).
+ * Computes the live balance and the two block flags used to disable Save / Confirm.
+ * Extracted from the DetailView body to keep its cognitive complexity low.
+ * - blockSaveForBalance: Save stays disabled until Σ debit === Σ credit.
+ * - blockCompleteForBalance: Completion is stricter — must balance AND carry a
+ *   non-zero amount (a 0=0 draft is "balanced" but must not be completable).
+ */
+export function computeBalanceGate({ balanceFooter, children, pendingLineValues, lineEdits, selectedLine }) {
+  const balanceEditingLine = lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine;
+  const balanceState = balanceFooter
+    ? computeBalance(children, pendingLineValues, balanceEditingLine, balanceFooter)
+    : null;
+  const blockSaveForBalance = !!balanceFooter && balanceState != null && !balanceState.isBalanced;
+  const blockCompleteForBalance = !!balanceFooter && balanceState != null
+    && (!balanceState.isBalanced || !balanceState.hasAmounts);
+  return { balanceState, blockSaveForBalance, blockCompleteForBalance };
+}
+
+/**
+ * Save / Confirm toolbar buttons for draftMode windows (Save Draft + Confirm).
+ * Extracted from the DetailView footer IIFE to keep cognitive complexity low.
+ * All identifiers are destructured with the SAME names used inside the component
+ * so closure-equivalent logic and the dirty-state regression substrings stay intact.
+ */
+function renderDraftModeSaveActions({
+  hook, isDirty, flushPendingLines, data, isNew, navigate, windowName,
+  ui, onAfterCreate, onAfterSave, token, apiBaseUrl, saveBtnCls,
+  draftMode, blockSaveForBalance, blockCompleteForBalance,
+}) {
+  return (
+    <>
+      <Button variant="outline" size="default" className={`${saveBtnCls} bg-white border-[#D1D4DB] text-[#121217]`} data-testid="action-save-draft" disabled={hook.isSaving || !isDirty || blockSaveForBalance} title={blockSaveForBalance ? ui('journalUnbalancedSaveBlocked') : undefined} onClick={async () => {
+        if (!(await flushPendingLines())) return;
+        const saved = await hook.handleSave(data);
+        if (saved?.id && isNew) {
+          hook.primeSaved?.(saved);
+          navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+        }
+      }}>
+        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" color="#64748B" />}
+        {ui('save')}
+      </Button>
+      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving || blockCompleteForBalance || (draftMode.disableWhenEmpty === true && !hook.childrenLoading && hook.children.length === 0)} title={blockCompleteForBalance ? ui('journalUnbalancedCompleteBlocked') : undefined} onClick={async () => {
+        if (!(await flushPendingLines())) return;
+        if (typeof draftMode.onConfirm === 'function') { draftMode.onConfirm(); return; }
+        const saved = await hook.handleSaveAndProcess(draftMode);
+        if (saved) {
+          if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
+          if (onAfterSave) {
+            navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
+          } else if (saved.id && isNew) {
+            hook.primeSaved?.(saved);
+            navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+          } else if (saved.id) {
+            hook.fetchById?.(saved.id);
+          }
+        }
+      }}>
+        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+        {ui(draftMode.label) || draftMode.label || ui('process')}
+      </Button>
+    </>
+  );
+}
+
+export async function handlePostSaveNavigation(saved, { isNew, onAfterCreate, onAfterSave, navigate, windowName, token, apiBaseUrl, hook }) {
+  if (!saved) return;
+  if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
+  if (onAfterSave) {
+    navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
+  } else if (saved.id && isNew) {
+    hook.primeSaved?.(saved);
+    navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+  }
+}
+
+/**
+ * Save (+ optional Confirm) toolbar buttons for a brand-new (unsaved) record.
+ * Extracted from the DetailView footer IIFE. New-record Save is never gated by
+ * !isDirty — only by isDocumentReadOnly, isSaving and blockSaveForBalance.
+ */
+function renderNewRecordSaveActions({
+  hook, flushPendingLines, data, isNew, navigate, windowName,
+  ui, tMenu, onAfterCreate, onAfterSave, token, apiBaseUrl, saveBtnCls,
+  isDocumentReadOnly, isProcessed, draftMode, blockSaveForBalance, blockCompleteForBalance,
+}) {
+  return (
+    <>
+      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || blockSaveForBalance} title={blockSaveForBalance ? ui('journalUnbalancedSaveBlocked') : undefined} onClick={async () => {
+        if (!(await flushPendingLines())) return;
+        const saved = await hook.handleSave(data);
+        if (saved?.id && isNew) {
+          hook.primeSaved?.(saved);
+          navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+        }
+      }}>
+        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+        {ui('save')}
+      </Button>
+      {!isProcessed && hook.children.length > 0 && (
+        <Button size="default" className={saveBtnCls} data-testid="action-complete" disabled={hook.isSaving || blockCompleteForBalance} title={blockCompleteForBalance ? ui('journalUnbalancedCompleteBlocked') : undefined} onClick={async () => {
+          if (!(await flushPendingLines())) return;
+          const saved = await hook.handleSaveAndProcess(draftMode);
+          await handlePostSaveNavigation(saved, { isNew, onAfterCreate, onAfterSave, navigate, windowName, token, apiBaseUrl, hook });
+        }}>
+          {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+          {ui(draftMode.label) || tMenu(draftMode.label) || ui('process')}
+        </Button>
+      )}
+    </>
+  );
+}
+
+/**
+ * Single Save toolbar button for an existing (already-persisted) record.
+ * Extracted from the DetailView footer IIFE. Gated by isDocumentReadOnly,
+ * isSaving, !isDirty and blockSaveForBalance.
+ */
+function renderExistingRecordSaveAction({
+  hook, isDirty, flushPendingLines, data, isNew, navigate, windowName,
+  ui, onAfterCreate, onAfterSave, token, apiBaseUrl, saveBtnCls,
+  isDocumentReadOnly, blockSaveForBalance,
+}) {
+  return (
+    <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || !isDirty || blockSaveForBalance} title={blockSaveForBalance ? ui('journalUnbalancedSaveBlocked') : undefined} onClick={async () => {
+      if (!(await flushPendingLines())) return;
+      const saved = await hook.handleSave(data);
+      await handlePostSaveNavigation(saved, { isNew, onAfterCreate, onAfterSave, navigate, windowName, token, apiBaseUrl, hook });
+    }}>
+      {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+      {ui('save')}
+    </Button>
+  );
+}
+
+/**
+ * Dispatches the footer Save/Confirm action block by record state. Extracted to
+ * module level so the branch logic does not count toward DetailView's cognitive
+ * complexity. All values arrive via the `params` object built in DetailView.
+ */
+function renderSaveActions(params) {
+  if (params.draftMode?.enabled) return renderDraftModeSaveActions(params);
+  if (params.isNew) return renderNewRecordSaveActions(params);
+  return renderExistingRecordSaveAction(params);
+}
+
+/**
  * Full-page detail view for a single entity record.
  * Two-zone layout: gray top bar + white content card with rounded corner.
  *
@@ -1312,6 +1494,7 @@ export function DetailView({
   sidebarAboveTabsOnly = false,
   afterTotals = null,
   bottomSection = null,
+  balanceFooter = null,
   linesEmptyState = null,
   topbarExtra = null,
   topbarRight = null,
@@ -1834,6 +2017,15 @@ export function DetailView({
   // Cache for tax rates fetched from the selector (keyed by tax ID).
   // Avoids repeated API calls when the same tax appears on multiple lines.
   const taxRateCacheRef = useRef({});
+  // Balance state for double-entry windows (decisions.json window.balanceFooter).
+  // blockSaveForBalance disables the save action until Σ debit === Σ credit.
+  const { blockSaveForBalance, blockCompleteForBalance } = computeBalanceGate({
+    balanceFooter,
+    children: hook.children,
+    pendingLineValues,
+    lineEdits,
+    selectedLine,
+  });
   const { computeLineGrossAmount, resolveTaxFactor, prepareLineForPost } = useLineGrossAmount(taxRateCacheRef, hook.children, lineConfig);
   // Batching refs for the sidebar onChange: product selector fires multiple synchronous
   // onChange calls (product, product$_identifier, unitPrice/grossUnitPrice). Without
@@ -2308,29 +2500,13 @@ export function DetailView({
   const [activeCustomBelowTab, setActiveCustomBelowTab] = useState(0);
   // Reuse the secondaryTabs/lines/others activeTab state for custom tabs by prefixing
   // their keys with `custom:` so they cannot collide with secondaryTabs/lines/others/customLines.
-  const customTabKey = (ct) => `custom:${ct.key}`;
 
   // Build tabs: child entity lines + secondary tabs + custom 'tab' placement + "Others"
-  const tabs = [];
-  secondaryTabs.forEach((st, i) => {
-    const secondaryChildCount = !st.isFormTab ? (secondaryHooks[i]?.children?.length ?? null) : null;
-    const childCount = st.Panel ? (panelCounts[st.key] ?? null) : secondaryChildCount;
-    tabs.push({ key: st.key, label: st.label, count: childCount });
+  const tabs = buildInitialTabs({
+    secondaryTabs, secondaryHooks, panelCounts, DetailTable, detailLabel, detailEntity,
+    hook, detailTabIndex, CustomLines, customLinesLabel, customLinesCount,
+    customTabsAfterBottom, tabCustomTabs, ui, customTabCounts,
   });
-  if (DetailTable) {
-    insertLinesTab(detailLabel, detailEntity, hook, detailTabIndex, tabs);
-  } else if (CustomLines) {
-    tabs.unshift({ key: 'customLines', label: customLinesLabel, count: customLinesCount ?? null });
-  }
-  // Append 'tab' placement custom items after lines/secondary tabs but before Others.
-  // Items may pass `labelKey` to resolve a generic i18n label via useUI() instead of a
-  // hardcoded string in `label`.
-  if (!customTabsAfterBottom) {
-    tabCustomTabs.forEach(ct => {
-      const resolvedLabel = ct.labelKey ? ui(ct.labelKey) : ct.label;
-      tabs.push({ key: customTabKey(ct), label: resolvedLabel, count: customTabCounts[ct.key] ?? null });
-    });
-  }
 
   // When primaryTabs is in use, skip auto-adding Others (handled by a primary tab)
   const [showOthers, setShowOthers] = useState(primaryTabs ? false : null);
@@ -2412,6 +2588,12 @@ export function DetailView({
       </div>
     );
   }
+
+  const saveActionParams = {
+    hook, isDirty, flushPendingLines, data, isNew, navigate, windowName,
+    ui, tMenu, onAfterCreate, onAfterSave, token, apiBaseUrl, saveBtnCls,
+    isDocumentReadOnly, isProcessed, draftMode, blockSaveForBalance, blockCompleteForBalance,
+  };
 
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="detail-view">
@@ -2612,97 +2794,8 @@ export function DetailView({
                   );
                 })}
 
-              {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted && (() => {
-                if (draftMode?.enabled) {
-                  return (
-                    <>
-                      <Button variant="outline" size="default" className={`${saveBtnCls} bg-white border-[#D1D4DB] text-[#121217]`} data-testid="action-save-draft" disabled={hook.isSaving || !isDirty} onClick={async () => {
-                        if (!(await flushPendingLines())) return;
-                        const saved = await hook.handleSave(data);
-                        if (saved?.id && isNew) {
-                          hook.primeSaved?.(saved);
-                          navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-                        }
-                      }}>
-                        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" color="#64748B" />}
-                        {ui('save')}
-                      </Button>
-                      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving || (draftMode.disableWhenEmpty === true && !hook.childrenLoading && hook.children.length === 0)} onClick={async () => {
-                        if (!(await flushPendingLines())) return;
-                        if (typeof draftMode.onConfirm === 'function') { draftMode.onConfirm(); return; }
-                        const saved = await hook.handleSaveAndProcess(draftMode);
-                        if (saved) {
-                          if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
-                          if (onAfterSave) {
-                            navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
-                          } else if (saved.id && isNew) {
-                            hook.primeSaved?.(saved);
-                            navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-                          } else if (saved.id) {
-                            hook.fetchById?.(saved.id);
-                          }
-                        }
-                      }}>
-                        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                        {ui(draftMode.label) || draftMode.label || ui('process')}
-                      </Button>
-                    </>
-                  );
-                }
-                if (isNew) {
-                  return (
-                    <>
-                      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving} onClick={async () => {
-                        if (!(await flushPendingLines())) return;
-                        const saved = await hook.handleSave(data);
-                        if (saved?.id && isNew) {
-                          hook.primeSaved?.(saved);
-                          navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-                        }
-                      }}>
-                        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                        {ui('save')}
-                      </Button>
-                      {!isProcessed && hook.children.length > 0 && (
-                        <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
-                          if (!(await flushPendingLines())) return;
-                          const saved = await hook.handleSaveAndProcess(draftMode);
-                          if (saved) {
-                            if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
-                            if (onAfterSave) {
-                              navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
-                            } else if (saved.id && isNew) {
-                              hook.primeSaved?.(saved);
-                              navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-                            }
-                          }
-                        }}>
-                          {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                          {ui(draftMode.label) || tMenu(draftMode.label) || ui('process')}
-                        </Button>
-                      )}
-                    </>
-                  );
-                }
-                return (
-                  <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || !isDirty} onClick={async () => {
-                    if (!(await flushPendingLines())) return;
-                    const saved = await hook.handleSave(data);
-                    if (saved) {
-                      if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
-                      if (onAfterSave) {
-                        navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
-                      } else if (saved.id && isNew) {
-                        hook.primeSaved?.(saved);
-                        navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-                      }
-                    }
-                  }}>
-                    {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                    {ui('save')}
-                  </Button>
-                );
-              })()}
+              {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted
+                && renderSaveActions(saveActionParams)}
             </div>
           </div>
         )}
@@ -3571,8 +3664,17 @@ export function DetailView({
                       );
                     })() : (
                       <>
-                        {/* Totals block: DocumentTotalsPanel with optional discount expansion */}
-                        {(() => {
+                        {/* Totals block: BalanceFooterPanel for double-entry windows, else DocumentTotalsPanel */}
+                        {balanceFooter ? (
+                          <BalanceFooterPanel
+                            lines={hook.children}
+                            pendingLine={pendingLineValues}
+                            editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
+                            config={balanceFooter}
+                            formatAmount={formatAmount}
+                            currency={data['currency$_identifier']}
+                          />
+                        ) : (() => {
                           const subtotalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
                           const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
                           if (!subtotalField && !totalField) return null;
