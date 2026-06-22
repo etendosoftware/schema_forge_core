@@ -143,7 +143,7 @@ function RecipientFields({ editableRecipients, ccEnabled, toRecipients, ccRecipi
         label={ui('sendModalTo')}
         testIdPrefix="send-modal-to"
         onValidityChange={onToValidityChange}
-      />
+        data-testid="RecipientChipEditor__afec0a" />
       {ccEnabled && !ccExpanded && (
         <button
           type="button"
@@ -161,7 +161,7 @@ function RecipientFields({ editableRecipients, ccEnabled, toRecipients, ccRecipi
           label={ui('sendModalCc')}
           testIdPrefix="send-modal-cc"
           onValidityChange={onCcValidityChange}
-        />
+          data-testid="RecipientChipEditor__afec0a" />
       )}
       {noToRecipient && (
         <span role="alert" style={{ fontSize: 12, color: '#dc2626' }}>{ui('sendModalNoToRecipient')}</span>
@@ -176,7 +176,7 @@ function RecipientFields({ editableRecipients, ccEnabled, toRecipients, ccRecipi
 function EmailFormPanel({ recipientFieldsProps, subject, message, ui }) {
   return (
     <div style={{ width: '40%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
-      <RecipientFields {...recipientFieldsProps} ui={ui} />
+      <RecipientFields {...recipientFieldsProps} ui={ui} data-testid="RecipientFields__afec0a" />
       <div>
         <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalSubject')}</label>
         <input
@@ -514,7 +514,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
             downloading={downloading}
             onDownload={handleDownload}
             ui={ui}
-          />
+            data-testid="DocumentPreviewPane__afec0a" />
 
           {allowEmail && (
             <EmailFormPanel

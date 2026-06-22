@@ -56,7 +56,7 @@ describe('SendDocumentModal', () => {
   });
 
   it('Send button is disabled when no To recipient is resolved, and enables once one is added', async () => {
-    // ETP-4226 — editable recipients: an empty proposed To list means there is
+    // Editable recipients: an empty proposed To list means there is
     // nothing to send to, so the send button gates until the operator adds one.
     const user = userEvent.setup();
     render(<SendDocumentModal {...BASE} bpEmail="" />);
@@ -134,7 +134,7 @@ describe('SendDocumentModal', () => {
   });
 
   it('renders the To recipients as an editable chip editor, not a read-only field', async () => {
-    // ETP-4226 — recipients are now editable by default (the read-only input is
+    // Recipients are now editable by default (the read-only input is
     // only the `sendPolicy.editableRecipients: false` opt-out branch).
     const user = userEvent.setup();
     render(<SendDocumentModal {...BASE} bpEmail="user@domain.com" />);
@@ -155,7 +155,7 @@ describe('SendDocumentModal', () => {
   });
 
   it('renders a read-only single-line field when sendPolicy opts out of editable recipients', () => {
-    // ETP-4226 opt-out: `sendPolicy.editableRecipients: false` keeps legacy rendering.
+    // Opt-out: `sendPolicy.editableRecipients: false` keeps legacy rendering.
     render(
       <SendDocumentModal
         {...BASE}
@@ -171,7 +171,7 @@ describe('SendDocumentModal', () => {
   });
 
   it('prefills the To recipient from contacts and lets the operator add and remove addresses', async () => {
-    // ETP-4226 — the fetched contact email seeds the To chip list, but it is now
+    // The fetched contact email seeds the To chip list, but it is now
     // a fully editable proposal: the operator can add and remove addresses.
     const user = userEvent.setup();
     global.fetch.mockResolvedValue({
@@ -478,5 +478,71 @@ describe('SendDocumentModal', () => {
       expect(toast.error).toHaveBeenCalledWith('sendModalSendFailed:{"documentType":"Invoice"}');
     });
     expect(screen.getByRole('status')).toHaveTextContent('sendModalSendFailed');
+  });
+
+  // CC (carbon-copy) handling. CC is enabled by default
+  // (DEFAULT_SEND_POLICY.cc === true), so the "Add CC" affordance renders for
+  // the base props without an explicit sendPolicy.
+  it('reveals the CC editor when the operator clicks Add CC', async () => {
+    const user = userEvent.setup();
+    render(<SendDocumentModal {...BASE} bpEmail="user@domain.com" />);
+
+    // The CC editor is collapsed initially; only the Add CC button is shown.
+    expect(screen.queryByTestId('send-modal-cc-input')).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId('send-modal-add-cc'));
+
+    // Clicking Add CC expands the CC chip editor.
+    expect(screen.getByTestId('send-modal-cc-input')).toBeInTheDocument();
+  });
+
+  it('drops a CC address that is already present in To (cross-channel precedence)', async () => {
+    const user = userEvent.setup();
+    render(<SendDocumentModal {...BASE} bpEmail="user@domain.com" />);
+
+    // To is seeded with user@domain.com.
+    expect(screen.getByTestId('send-modal-to-chip-user@domain.com')).toBeInTheDocument();
+
+    await user.click(screen.getByTestId('send-modal-add-cc'));
+    const ccInput = screen.getByTestId('send-modal-cc-input');
+
+    // Adding an address already in To is filtered out of CC.
+    await user.type(ccInput, 'user@domain.com{Enter}');
+    expect(screen.queryByTestId('send-modal-cc-chip-user@domain.com')).not.toBeInTheDocument();
+
+    // A distinct address still commits to CC, proving the editor works.
+    await user.type(ccInput, 'cc@example.com{Enter}');
+    expect(screen.getByTestId('send-modal-cc-chip-cc@example.com')).toBeInTheDocument();
+  });
+
+  it('drops an address from CC when the same address is later added to To (To wins)', async () => {
+    const user = userEvent.setup();
+    render(<SendDocumentModal {...BASE} bpEmail="user@domain.com" />);
+
+    await user.click(screen.getByTestId('send-modal-add-cc'));
+    await user.type(screen.getByTestId('send-modal-cc-input'), 'dup@example.com{Enter}');
+    expect(screen.getByTestId('send-modal-cc-chip-dup@example.com')).toBeInTheDocument();
+
+    // Adding the same address to To drops it from CC.
+    await user.type(screen.getByTestId('send-modal-to-input'), 'dup@example.com{Enter}');
+    expect(screen.getByTestId('send-modal-to-chip-dup@example.com')).toBeInTheDocument();
+    expect(screen.queryByTestId('send-modal-cc-chip-dup@example.com')).not.toBeInTheDocument();
+  });
+
+  it('disables Send when a CC draft is an invalid email', async () => {
+    const user = userEvent.setup();
+    render(<SendDocumentModal {...BASE} bpEmail="user@domain.com" />);
+
+    // Send is enabled with a valid To and no CC invalidity.
+    expect(getSendButton()).not.toBeDisabled();
+
+    await user.click(screen.getByTestId('send-modal-add-cc'));
+    await user.type(screen.getByTestId('send-modal-cc-input'), 'not-an-email{Enter}');
+
+    // The invalid CC draft shows an inline alert and gates the send button.
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent('sendModalInvalidEmail');
+    });
+    expect(getSendButton()).toBeDisabled();
   });
 });
