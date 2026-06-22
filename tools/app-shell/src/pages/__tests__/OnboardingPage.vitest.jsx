@@ -1153,5 +1153,81 @@ describe('OnboardingPage', () => {
       expect(fetchOnboardingDraft).not.toHaveBeenCalled();
       expect(screen.queryByTestId('draft-restored-notice')).not.toBeInTheDocument();
     });
+
+    it('does not autosave when the platform token has been cleared', async () => {
+      const realSetTimeout = globalThis.setTimeout;
+      vi.spyOn(globalThis, 'setTimeout').mockImplementation((callback, delay, ...args) => {
+        if (delay === 1500) {
+          queueMicrotask(callback);
+          return 1;
+        }
+        return realSetTimeout(callback, delay, ...args);
+      });
+      localStorage.setItem('sf_platform_token', 'platform-token');
+      fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+      fetchEnvironments.mockResolvedValue([]);
+      fetchOnboardingDraft.mockResolvedValue(null);
+
+      render(<OnboardingPage />);
+
+      // Drop the token before triggering the autosave effect again.
+      await screen.findByLabelText(/onboardingFullNameLabel/);
+      localStorage.removeItem('sf_platform_token');
+
+      // A form change re-runs the effect, which now bails on the missing token.
+      fireEvent.change(screen.getByLabelText(/onboardingFullNameLabel/), {
+        target: { value: 'Ana' },
+      });
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(saveOnboardingDraft).not.toHaveBeenCalled();
+    });
+
+    it('does not re-save a restored draft that has not changed', async () => {
+      const realSetTimeout = globalThis.setTimeout;
+      vi.spyOn(globalThis, 'setTimeout').mockImplementation((callback, delay, ...args) => {
+        if (delay === 1500) {
+          queueMicrotask(callback);
+          return 1;
+        }
+        return realSetTimeout(callback, delay, ...args);
+      });
+      localStorage.setItem('sf_platform_token', 'platform-token');
+      fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+      fetchEnvironments.mockResolvedValue([]);
+      // A complete restored form (fullName matches the account so the backfill
+      // effect is a no-op) leaves the live draft identical to the persisted one.
+      fetchOnboardingDraft.mockResolvedValue({
+        step: 2,
+        form: {
+          fullName: 'Ada Lovelace',
+          businessType: 'company',
+          clientName: 'Acme SL',
+          currency: 'EUR',
+          language: 'es_ES',
+          countryCode: 'ES',
+          fiscalIdType: 'NIF',
+          fiscalIdValue: '',
+          address: '',
+          sector: 'technology',
+        },
+      });
+
+      render(<OnboardingPage />);
+
+      // Restored on step 2 with the company name already filled.
+      await waitFor(() => {
+        expect(screen.getByLabelText(/onboardingCompanyNameLabel/)).toHaveValue('Acme SL');
+      });
+
+      // The autosave effect runs but the serialized draft equals the persisted
+      // one, so the dedupe guard short-circuits and nothing is saved.
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(saveOnboardingDraft).not.toHaveBeenCalled();
+    });
   });
 });
