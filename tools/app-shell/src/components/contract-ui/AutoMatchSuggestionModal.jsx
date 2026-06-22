@@ -65,7 +65,10 @@ function SelectBox({ checked = false, dash = false, onClick, testId, ariaLabel }
       )}
     >
       {dash && <span className="h-[2px] w-2 rounded-full bg-white" />}
-      {checked && !dash && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+      {checked && !dash && <Check
+        className="h-3 w-3 text-white"
+        strokeWidth={3}
+        data-testid="Check__a89979" />}
     </button>
   );
 }
@@ -100,19 +103,17 @@ function StatementContent({ group, currency }) {
           currency={currency || 'EUR'}
           tone={amount < 0 ? 'negative' : 'positive'}
           className="flex-none text-sm font-semibold"
-        />
+          data-testid="MoneyAmount__a89979" />
       </div>
-
       {/* Rule badge (rule-origin groups only) */}
       {isRule && group.ruleName && (
         <div className="flex">
           <RuleTypeBadge
             label={`${ui('financeReconcileAutomatchBadgeByRule')} ${group.ruleName}`}
             tone="rule"
-          />
+            data-testid="RuleTypeBadge__a89979" />
         </div>
       )}
-
       {/* Reference + date */}
       {line.referenceNo && (
         <span className="text-xs leading-4 text-[#6C6C89]">{line.referenceNo}</span>
@@ -144,7 +145,7 @@ function OperationRow({ op, isLast }) {
           <RuleTypeBadge
             label={isNew ? ui('financeReconcileAutomatchBadgeNew') : (op.documentNo || op.typeLabel || '')}
             tone={isNew ? 'new' : 'default'}
-          />
+            data-testid="RuleTypeBadge__a89979" />
         </div>
         {isNew && (
           <span className="text-xs leading-4 text-[#6C6C89]">
@@ -189,23 +190,25 @@ function GroupRow({ group, checked, onToggle, currency }) {
           checked={checked}
           onClick={() => onToggle(group.groupKey)}
           testId={`automatch-group-check-${group.groupKey}`}
-        />
+          data-testid="SelectBox__a89979" />
       </div>
-
       {/* Statement line (left half) */}
       <div className="flex flex-1 items-start border-r border-[#E8EAEF] bg-white px-3 py-3">
         <div className="w-full">
-          <StatementContent group={group} currency={currency} />
+          <StatementContent group={group} currency={currency} data-testid="StatementContent__a89979" />
         </div>
       </div>
-
       {/* Operations (right half) */}
       <div className="flex flex-1 flex-col bg-white">
         {ops.length === 0 ? (
           <div className="px-3 py-3 text-sm text-[#6C6C89]">—</div>
         ) : (
           ops.map((op, i) => (
-            <OperationRow key={op.id ?? i} op={op} isLast={i === ops.length - 1} />
+            <OperationRow
+              key={op.id ?? i}
+              op={op}
+              isLast={i === ops.length - 1}
+              data-testid="OperationRow__a89979" />
           ))
         )}
       </div>
@@ -296,7 +299,10 @@ export function AutoMatchSuggestionModal({
       ].filter(Boolean).join(' ');
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => { if (!v) onClose(); }}
+      data-testid="Dialog__a89979">
       <DialogContent
         className="overflow-hidden p-0"
         style={{
@@ -310,7 +316,9 @@ export function AutoMatchSuggestionModal({
       >
         {/* ── Header ────────────────────────────────────────────────────── */}
         <div className="flex items-center px-5 pt-3 pb-2" style={{ height: 48, borderBottom: '1px solid #E8EAEF' }}>
-          <DialogTitle className="m-0 text-xl font-semibold leading-7 text-[#121217]">
+          <DialogTitle
+            className="m-0 text-xl font-semibold leading-7 text-[#121217]"
+            data-testid="DialogTitle__a89979">
             {ui('financeReconcileAutomatchModalTitle')}
           </DialogTitle>
         </div>
@@ -344,7 +352,7 @@ export function AutoMatchSuggestionModal({
                   onClick={toggleAll}
                   testId="automatch-select-all"
                   ariaLabel={ui('financeReconcileColSelect')}
-                />
+                  data-testid="SelectBox__a89979" />
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-base font-semibold leading-6 text-[#121217]">
@@ -377,7 +385,7 @@ export function AutoMatchSuggestionModal({
                   checked={checked.has(group.groupKey)}
                   onToggle={onToggle}
                   currency={currency}
-                />
+                  data-testid="GroupRow__a89979" />
               ))
             )}
           </div>
@@ -390,7 +398,7 @@ export function AutoMatchSuggestionModal({
         >
           {/* Summary info */}
           <div className="flex items-center gap-1 text-sm font-medium text-[#3F3F50]">
-            <Info className="h-5 w-5 flex-none text-[#828FA3]" />
+            <Info className="h-5 w-5 flex-none text-[#828FA3]" data-testid="Info__a89979" />
             <span>{footerSummary}</span>
           </div>
 
@@ -413,7 +421,7 @@ export function AutoMatchSuggestionModal({
               data-testid="automatch-modal-open-reconciliation"
               className="flex h-10 items-center gap-1 rounded-full border border-[#D1D4DB] bg-white px-3 text-sm font-medium text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9]"
             >
-              <ArrowUpRight className="h-5 w-5 text-[#828FA3]" />
+              <ArrowUpRight className="h-5 w-5 text-[#828FA3]" data-testid="ArrowUpRight__a89979" />
               <span>{ui('financeReconcileAutomatchActionOpen')}</span>
             </button>
 

@@ -286,7 +286,6 @@ export default function FinancialAccountWindow({ recordId }) {
           )}
         </div>
       </div>
-
       <AutoMatchSuggestionModal
         accountId={recordId}
         accountName={account?.name ?? ''}
@@ -296,7 +295,7 @@ export default function FinancialAccountWindow({ recordId }) {
         open={autoMatchOpen}
         onClose={() => setAutoMatchOpen(false)}
         onSuccess={handleAutoMatchSuccess}
-      />
+        data-testid="AutoMatchSuggestionModal__f7dbb3" />
     </TooltipProvider>
   );
 }

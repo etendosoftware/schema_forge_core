@@ -121,19 +121,16 @@ const MINI_GRID_STYLE = { gridTemplateColumns: MINI_GRID_TEMPLATE };
 // Stable keys for the skeleton cells (contract columns + match + txn).
 const SKELETON_CELL_KEYS = [...LINE_COLUMNS.map((c) => `c_${c.name}`), 'matched', 'txns'];
 
-// kind → (StatusTag tone, i18n key). Reusing the shared StatusTag keeps the
-// look consistent with the statement-level status pills above and the rest of
-// the app. "Manual" still maps to success because today (pre-T6/T7) the only
-// signal we have is "linked / not linked" — we'll widen this when the engine
-// distinguishes auto vs manual matches.
+// kind → (StatusTag tone, i18n key). The only signal we have per line is whether
+// it is linked to a movement or not, so the badge simply reflects reconciled vs
+// not reconciled (the "Auto"/"Manual" distinction is not meaningful here).
 const MATCH_TONE = {
-  auto:   { tone: 'success', labelKey: 'financeAccountStatementLinesStatusAuto' },
-  manual: { tone: 'success', labelKey: 'financeAccountStatementLinesStatusManual' },
-  none:   { tone: 'info', labelKey: 'financeAccountStatementLinesStatusUnmatched' },
+  reconciled: { tone: 'success', labelKey: 'financeAccountStatementLinesStatusReconciled' },
+  pending:    { tone: 'info', labelKey: 'financeAccountStatementLinesStatusUnmatched' },
 };
 
 function MatchPill({ kind, ui }) {
-  const entry = MATCH_TONE[kind] ?? MATCH_TONE.none;
+  const entry = MATCH_TONE[kind] ?? MATCH_TONE.pending;
   return (
     <StatusTag
       tone={entry.tone}
@@ -284,7 +281,7 @@ function renderBody({ loading, lines, ui, currency, bcpLocale, onOpenTxns }) {
 // Single row of the lines table — split out so we can render the amount
 // columns with simple if/else branching instead of nested ternaries.
 function LineRow({ line, ui, currency, bcpLocale, onOpenTxns }) {
-  const matchKind = line.matched ? 'auto' : 'none';
+  const matchKind = line.matched ? 'reconciled' : 'pending';
   const cellCtx = { ui, currency, bcpLocale };
   return (
     <div
