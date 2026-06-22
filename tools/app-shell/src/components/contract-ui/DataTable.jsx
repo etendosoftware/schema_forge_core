@@ -436,7 +436,7 @@ function renderInputCell({
 // make buildEmpty's effect re-run, wiping in-progress input. Share one frozen ref.
 const EMPTY_SEED = {};
 
-const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, seedValues = EMPTY_SEED, ilpHasNoAmountCol = false, ilpTrailing = false }, ref) {
+const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, seedValues = EMPTY_SEED, resolvedDefaults = EMPTY_SEED, ilpHasNoAmountCol = false, ilpTrailing = false }, ref) {
   const t = useLabel();
   const ui = useUI();
   const { locale } = useLocaleSwitch();
@@ -469,8 +469,20 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     for (const [key, val] of Object.entries(seedValues)) {
       if (!fieldMap[key]) empty[key] = val;
     }
+    // HandleDefaults: fill EMPTY editable fields from backend-resolved line
+    // defaults (e.g. a macro default like @DESCRIPTION1@ → the parent's value).
+    // Fill-empties-only: never override a literal default, the client lineNo, a
+    // display seed, or a field opted out via skipDefault.
+    for (const [key, val] of Object.entries(resolvedDefaults)) {
+      const f = fieldMap[key];
+      if (!f || f.skipDefault) continue;
+      const cur = empty[key];
+      if ((cur == null || cur === '') && val != null && val !== '') {
+        empty[key] = val;
+      }
+    }
     return empty;
-  }, [fields, defaultLineNo, seedValues, fieldMap]);
+  }, [fields, defaultLineNo, seedValues, fieldMap, resolvedDefaults]);
 
   const [values, setValues] = useState(buildEmpty);
   const [isSaving, setIsSaving] = useState(false);
@@ -1905,6 +1917,7 @@ export function DataTable({
                 onFieldChange={addRow.onFieldChange}
                 onValuesChange={addRow.onValuesChange}
                 seedValues={addRow.seedValues}
+                resolvedDefaults={addRow.resolvedDefaults}
                 selectable={selectable}
                 hasDeleteColumn={!hoverRowActions && legacyDeleteEnabled}
                 hasCloneColumn={!hoverRowActions && !!onCloneRow && !quickActionsEnabled}
