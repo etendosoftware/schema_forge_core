@@ -536,6 +536,11 @@ function applyEntityDecisions(entity, entityDecision) {
   if (entityDecision.formCols != null) {
     entity.formCols = entityDecision.formCols;
   }
+  // HandleDefaults opt-out: carry an explicit false so the contract/frontend can
+  // skip fetching line /defaults for this entity. Default (absent) stays on.
+  if (entityDecision.handlesDefaults === false) {
+    entity.handlesDefaults = false;
+  }
 }
 
 /**

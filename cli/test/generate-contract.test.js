@@ -2168,3 +2168,35 @@ describe('generateFrontendContract — skipDefault', () => {
     assert.equal(account.skipDefault, undefined);
   });
 });
+
+describe('generateFrontendContract — handlesDefaults', () => {
+  const make = (handlesDefaults) => ({
+    version: '0.1.0',
+    window: { id: '900', name: 'GL Journal', primaryEntity: 'journal', category: 'finance' },
+    entities: [
+      { name: 'journal', table: 'GL_Journal', level: 'header', fields: [
+        { name: 'description', column: 'Description', type: 'string', visibility: 'editable', required: false, grid: false, form: true },
+      ] },
+      { name: 'journalLine', table: 'GL_JournalLine', level: 'line',
+        ...(handlesDefaults === undefined ? {} : { handlesDefaults }),
+        fields: [
+          { name: 'account', column: 'Account_ID', type: 'foreignKey', reference: 'Account', inputMode: 'selector', visibility: 'editable', required: true, grid: true, form: true },
+        ] },
+    ],
+  });
+
+  it('emits handlesDefaults:false when the entity opts out', () => {
+    const fc = generateFrontendContract(make(false));
+    assert.equal(fc.entities.journalLine.handlesDefaults, false);
+  });
+
+  it('omits handlesDefaults when the entity does not set it (default on)', () => {
+    const fc = generateFrontendContract(make(undefined));
+    assert.equal(fc.entities.journalLine.handlesDefaults, undefined);
+  });
+
+  it('omits handlesDefaults when explicitly true', () => {
+    const fc = generateFrontendContract(make(true));
+    assert.equal(fc.entities.journalLine.handlesDefaults, undefined);
+  });
+});

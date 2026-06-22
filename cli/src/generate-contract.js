@@ -391,6 +391,8 @@ export function generateFrontendContract(schema, rules = []) {
     if (entity.javaQualifier) feEntity.javaQualifier = entity.javaQualifier;
     if (entity.draftMode?.enabled) feEntity.draftMode = entity.draftMode;
     if (entity.formCols != null) feEntity.formCols = entity.formCols;
+    // HandleDefaults opt-out: emit only when explicitly disabled (default is on).
+    if (entity.handlesDefaults === false) feEntity.handlesDefaults = false;
     const siblingFields = entity.fields.filter(f => isSystem(f) && f.addLineFromSibling).map(f => f.name);
     if (siblingFields.length > 0) feEntity.addLineHiddenFromSibling = siblingFields;
     entities[entity.name] = feEntity;
