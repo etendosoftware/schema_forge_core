@@ -147,7 +147,67 @@ GL Journal window plus a generic add-row validation fix.
 - **backend:** the auxiliary-input resolver is inert for tabs without auxiliary
   inputs; revert the `com.etendoerp.go` commits and rebuild.
 
-> Deferred (tracked under ETP-4244): the inline add-row UI does not yet fetch
-> the line `/defaults` endpoint, so the backend-resolved `@DESCRIPTION1@` line
-> description is not pre-filled in the form. Completing it needs a generic
-> frontend `/{detailEntity}/defaults?parentId=…` fetch on add-row open.
+## HandleDefaults — line `/defaults` pre-fill (2026-06-22)
+
+Closes the item deferred above: the inline add-row now fetches the line
+`/defaults` and pre-fills editable fields (e.g. the journal line `Description`
+from `@DESCRIPTION1@`). Generic, on by default, with per-entity / per-field
+opt-outs. Design + plan: `docs/plans/2026-06-22-line-handle-defaults-design.md`
+and `…-plan.md`.
+
+### `generator-change`
+
+- `cli/src/resolve-curated.js` — carry the field `skipDefault` and entity
+  `handlesDefaults: false` decisions through to the curated schema.
+- `cli/src/generate-contract.js` — emit `field.skipDefault` (when true) and
+  `entity.handlesDefaults` (when false); surface `handlesDefaults: false` on the
+  runtime `api.crud` so `DetailView` can honor the opt-out.
+- `cli/src/generate-frontend.js` — emit `skipDefault` in the add-row entry literal.
+- `cli/test/generate-contract.test.js`, `cli/test/generate-frontend.test.js` —
+  knob coverage (skipDefault, handlesDefaults, crud surfacing).
+
+### `platform-change` (app-shell)
+
+- `tools/app-shell/src/hooks/useEntity.js` — `fetchChildDefaults(parentId)` +
+  `childDefaults` state, reusing the shared `normalizeDefaultValue`. Deps exclude
+  the per-render `headers` object (matches `fetchChildren`) to avoid a fetch loop.
+- `tools/app-shell/src/components/contract-ui/DetailView.jsx` — drive the fetch
+  for the primary + secondary detail hooks once the parent record is known
+  (skipped on `handlesDefaults: false`); pass each hook's `childDefaults` to its
+  add-row as `resolvedDefaults`.
+- `tools/app-shell/src/components/contract-ui/DataTable.jsx` — `InlineAddRow`
+  accepts `resolvedDefaults`; `buildEmpty` fills empty, non-`skipDefault` editable
+  fields (fill-empties-only).
+- `__tests__/useEntity.fetchChildDefaults.vitest.jsx`,
+  `__tests__/DataTable.resolvedDefaults.vitest.jsx`,
+  `__tests__/DetailView.handleDefaults.vitest.jsx` — unit coverage.
+
+### `window:simple-g-l-journal`
+
+- No decisions/generated change (the journal uses the defaults-on behavior with
+  neither opt-out knob). `docs/generated-custom-windows/simple-g-l-journal.md` —
+  guide updated: the line description now pre-fills from the parent.
+
+### `e2e`
+
+- `e2e/tests/flows/simple-gl-journal.mocked.spec.js` — mocks the line `/defaults`
+  and asserts the add-row pre-fills the description; enriches the mocked header
+  with required fields so the add-line guard opens the row.
+
+### docs
+
+- `docs/decisions-reference.md` — document `handlesDefaults` (entity) and
+  `skipDefault` (field) plus a Line HandleDefaults explainer.
+
+### Tests
+
+- `cli/test/generate-contract.test.js`, `cli/test/generate-frontend.test.js` —
+  knob emission. App-shell vitest — the three new specs above. Playwright — the
+  journal pre-fill flow. Full suites green (vitest 6842, cli, Playwright 377).
+
+### Rollback
+
+- All additive and gated: with `handlesDefaults` absent the feature is on but
+  inert where the backend returns nothing; revert the `useEntity` / `DetailView`
+  / `DataTable` commits to remove. Generator knobs are emit-when-non-default, so
+  reverting them leaves existing contracts byte-identical.
