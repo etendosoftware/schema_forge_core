@@ -273,7 +273,7 @@ export function applyCalloutComboUpdates(combos, ctx) {
       // Protect user-touched fields from collateral combo updates
       const currentVal = data[key];
       const userHasValue = currentVal !== '' && currentVal != null;
-      if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
+      if (userTouchedRef.current.has(key) && userHasValue) {
         continue;
       }
       appliedFields.set(key, selectedVal);
