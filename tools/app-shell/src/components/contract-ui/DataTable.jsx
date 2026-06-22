@@ -1614,6 +1614,9 @@ export function DataTable({
                 const headStyle = linesLayout === 'inlineEditable'
                   ? { minWidth: columnMinWidthPx(col, colIdx) }
                   : undefined;
+                const sortArrowClass = NUMERIC_FIELD_TYPES.has(col.type)
+                  ? 'left-0 -translate-x-full pr-0.5'
+                  : 'right-0 translate-x-full pl-0.5';
                 return (
                   <TableHead
                     key={col.key}
@@ -1624,19 +1627,19 @@ export function DataTable({
                     {onSort && isSortable ? (
                       <button
                         type="button"
-                        className={`text-xs leading-4 font-semibold text-text-primary tracking-normal cursor-pointer select-none transition-colors bg-transparent border-0 p-0 ${NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right' : 'text-left'}`}
+                        className={`relative inline-block text-xs leading-4 font-semibold text-text-primary tracking-normal cursor-pointer select-none transition-colors bg-transparent border-0 p-0 ${NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right' : 'text-left'}`}
                         onClick={() => onSort(col.key)}
                       >
                         {colLabel}
                         {isSorted && (
-                          <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                          <span className={`absolute top-1/2 -translate-y-1/2 text-primary/70 pointer-events-none ${sortArrowClass}`}>{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
                         )}
                       </button>
                     ) : (
-                      <span className={`text-xs leading-4 font-semibold text-text-primary tracking-normal${NUMERIC_FIELD_TYPES.has(col.type) ? ' text-right' : ''}`}>
+                      <span className={`relative inline-block text-xs leading-4 font-semibold text-text-primary tracking-normal${NUMERIC_FIELD_TYPES.has(col.type) ? ' text-right' : ''}`}>
                         {colLabel}
                         {isSorted && (
-                          <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                          <span className={`absolute top-1/2 -translate-y-1/2 text-primary/70 pointer-events-none ${sortArrowClass}`}>{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
                         )}
                       </span>
                     )}
