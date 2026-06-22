@@ -1329,7 +1329,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
                     className={`flex items-center gap-2 ${met ? 'text-emerald-600' : 'text-slate-400'}`}
                   >
                     {met
-                      ? <Check className="h-4 w-4 shrink-0" />
+                      ? <Check className="h-4 w-4 shrink-0" data-testid="Check__79cf84" />
                       : <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300" aria-hidden="true" />}
                     <span>{ui(passwordRuleLabels[rule])}</span>
                   </li>
