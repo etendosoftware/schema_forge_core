@@ -16,7 +16,7 @@ vi.mock('lucide-react', () => ({
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
-import SendDocumentModal from '../SendDocumentModal.jsx';
+import SendDocumentModal, { SendDocumentButton } from '../SendDocumentModal.jsx';
 
 const BASE = {
   documentType: 'Invoice',
@@ -544,5 +544,179 @@ describe('SendDocumentModal', () => {
       expect(screen.getByRole('alert')).toHaveTextContent('sendModalInvalidEmail');
     });
     expect(getSendButton()).toBeDisabled();
+  });
+});
+
+// ETP-4226 coverage closure: error-message branches, download paths, the iframe
+// preview render path, and the standalone SendDocumentButton export.
+// NOTE: line 18 (the DUPLICATE branch inside resolveEmailSendErrorMessage) is
+// intentionally NOT covered — DUPLICATE is handled as success before the error
+// resolver runs, so it is unreachable from the send flow.
+describe('SendDocumentModal — error resolver branches', () => {
+  // Each test mocks the single send fetch (cachePreviewBeforeSend is false in
+  // BASE, so the preview cache fetch is skipped) and asserts the toast key.
+  async function sendWith(data) {
+    const user = userEvent.setup();
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ response: { data } }),
+    });
+    render(
+      <SendDocumentModal
+        {...BASE}
+        bpEmail="user@domain.com"
+        apiBaseUrl="http://localhost:8080/etendo/neo/sales-invoice"
+      />,
+    );
+    await user.click(getSendButton());
+  }
+
+  it('uses the server message for VALIDATION_FAILED', async () => {
+    await sendWith({ status: 'VALIDATION_FAILED', message: 'Bad address' });
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Bad address');
+    });
+  });
+
+  it('shows the no-recipient message for NO_RECIPIENT', async () => {
+    await sendWith({ status: 'NO_RECIPIENT' });
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('sendModalNoRecipient:{"documentType":"Invoice"}');
+    });
+  });
+
+  it('shows the suppressed message for SUPPRESSED', async () => {
+    await sendWith({ status: 'SUPPRESSED' });
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('sendModalSuppressed');
+    });
+  });
+
+  it('shows the unavailable message for KILL_SWITCHED', async () => {
+    await sendWith({ status: 'KILL_SWITCHED' });
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('sendModalUnavailable');
+    });
+  });
+
+  it('falls back to the generic send-failed message for an unknown status', async () => {
+    await sendWith({ status: 'WAT' });
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('sendModalSendFailed:{"documentType":"Invoice"}');
+    });
+  });
+});
+
+describe('SendDocumentModal — download paths', () => {
+  it('downloads the existing blob URL directly without fetching', async () => {
+    const user = userEvent.setup();
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {});
+
+    render(<SendDocumentModal {...BASE} bpEmail="user@domain.com" />);
+
+    await user.click(screen.getByRole('button', { name: /downloadPdf/i }));
+
+    expect(clickSpy).toHaveBeenCalled();
+    // The blob branch returns before any download fetch fires.
+    expect(global.fetch).not.toHaveBeenCalledWith('/api/reports/print-sales-invoice/render', expect.anything());
+  });
+
+  it('renders and downloads a PDF when no blob URL is available', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    URL.createObjectURL = vi.fn(() => 'blob:generated');
+    URL.revokeObjectURL = vi.fn();
+    // Route-aware mock: the iframe preview path also hits /render on mount, so a
+    // queued mock would be consumed before the click. Match by URL instead.
+    global.fetch.mockImplementation((url) => {
+      if (typeof url === 'string' && url.endsWith('/render')) {
+        return Promise.resolve({ ok: true, text: async () => '<html></html>' });
+      }
+      if (url === '/jsreport/api/report') {
+        return Promise.resolve({ ok: true, blob: async () => new Blob(['%PDF']) });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ response: { data: [] } }) });
+    });
+
+    render(<SendDocumentModal {...BASE} bpEmail="user@domain.com" pdfBlobUrl={null} />);
+
+    await user.click(screen.getByRole('button', { name: /downloadPdf/i }));
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/jsreport/api/report',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+  });
+
+  it('toasts an error when the render fetch fails during download', async () => {
+    const user = userEvent.setup();
+    global.fetch.mockImplementation((url) => {
+      if (typeof url === 'string' && url.endsWith('/render')) {
+        return Promise.resolve({ ok: false });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ response: { data: [] } }) });
+    });
+
+    render(<SendDocumentModal {...BASE} bpEmail="user@domain.com" pdfBlobUrl={null} />);
+
+    await user.click(screen.getByRole('button', { name: /downloadPdf/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Failed to render');
+    });
+  });
+});
+
+describe('SendDocumentModal — iframe preview render path', () => {
+  it('fetches the report render when the iframe mounts without a blob URL', async () => {
+    global.fetch.mockResolvedValue({ ok: true, text: async () => '<p>x</p>' });
+
+    render(
+      <SendDocumentModal
+        {...BASE}
+        bpEmail="user@domain.com"
+        pdfBlobUrl={null}
+        pdfBlobLoading={false}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/reports/print-sales-invoice/render',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+  });
+
+  it('records a preview error when the report render fetch fails', async () => {
+    global.fetch.mockResolvedValue({ ok: false, status: 500, text: async () => '' });
+
+    render(
+      <SendDocumentModal
+        {...BASE}
+        bpEmail="user@domain.com"
+        pdfBlobUrl={null}
+        pdfBlobLoading={false}
+      />,
+    );
+
+    // The catch sets pdfError; the not-configured card surfaces it.
+    await waitFor(() => {
+      expect(screen.getByText('sendModalPdfNotConfigured')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('SendDocumentButton', () => {
+  it('invokes onClick when the send-email action is clicked', async () => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+    render(<SendDocumentButton onClick={onClick} />);
+    await user.click(screen.getByTestId('action-send-email'));
+    expect(onClick).toHaveBeenCalled();
   });
 });
