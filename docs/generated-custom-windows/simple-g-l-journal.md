@@ -54,7 +54,7 @@ The side-panel line editor additionally exposes the **Open Items** checkbox and,
 |---|---|---|---|---|
 | `lineNo` | Line | grid | readOnly | Auto-sequenced line number, displayed read-only (label **LineNo**). |
 | `accountingCombination` | C_ValidCombination_ID | grid | editable | Accounting-combination selector (label **Account**, lookup). |
-| `description` | Description | grid | editable | AD default `@DESCRIPTION1@` resolves to the parent journal's description in the NEO `/defaults` response; editable per line. Inline add-row UI pre-fill is pending a frontend `/defaults` fetch (see Gap assessment). |
+| `description` | Description | grid | editable | Pre-filled with the parent journal's description: AD default `@DESCRIPTION1@` resolves in the NEO `/defaults` response and the inline add-row seeds it on open (HandleDefaults). Editable per line. |
 | `foreignCurrencyDebit` | AmtSourceDr | grid | editable, amount, required | **Debit** — feeds the balance footer Σ debit. |
 | `foreignCurrencyCredit` | AmtSourceCr | grid | editable, amount, required | **Credit** — feeds the balance footer Σ credit. |
 | `openItems` | Open_Items | form-only | editable | **Open Items** checkbox in the side panel; toggling it reveals the dimensions below. |

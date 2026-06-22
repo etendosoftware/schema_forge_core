@@ -523,6 +523,7 @@ Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"order
 | `section` | string | `null` | `"principal"`, `"other"`, custom | Group fields into form sections. |
 | `inline` | boolean | `false` | `true`/`false` | When `true`, keeps the field in the normal form grid flow even if the generator would otherwise pull it out. Currently relevant for image-type fields: an image field with `inline: true` renders inside the form grid using `row-span-2`, spanning two rows for visual balance instead of being extracted to a separate slot. |
 | `skipDefault` | boolean | `false` | `true`/`false` | **HandleDefaults opt-out (per field).** When `true`, the line add-row never applies a backend-resolved default to this field (it stays empty / keeps its literal seed) even when the entity's `handlesDefaults` is on. Emitted to the contract / add-row literal only when `true`. |
+| `clearsField` | string | `null` | Sibling field key | **Mutual exclusion.** Names a sibling field that is cleared (set to `0`/empty) whenever this field gets a non-zero value — e.g. a journal line where entering a Debit clears the Credit, and vice versa. The two fields form a "one-of" group: in the inline add-row's required-field check, an empty member is **not** flagged as missing while its partner carries a value (so a debit-only line submits). A required boolean/checkbox is likewise never treated as missing (unchecked is valid). |
 
 **Visibility defaults** (when not overridden):
 
