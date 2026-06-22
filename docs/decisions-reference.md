@@ -477,6 +477,11 @@ Entity keys use **camelCase from tabName** (e.g., `"header"`, `"lines"`, `"basic
 | `fields` | object | `{}` | Field-level decisions. |
 | `draftMode` | object | `null` | Draft/Processed workflow config. |
 | `javaQualifier` | string | `null` | CDI qualifier for custom NeoHandler. |
+| `handlesDefaults` | boolean | `true` | **HandleDefaults.** When `true` (default), a new detail line's add-row fetches `GET /{detailEntity}/defaults?parentId=…` on open and pre-fills empty editable fields from the backend-resolved defaults (reusing the header-defaults normalization). Set `false` to opt this detail entity out — the add-row keeps literal-only seeding and no `/defaults` request is made. Emitted to the contract / runtime `api.crud` only when `false`. |
+
+### Line HandleDefaults (`entities.{name}.handlesDefaults`)
+
+When a user opens a new detail line, `DetailView` calls `useEntity.fetchChildDefaults(parentId)` → `GET /{detailEntity}/defaults?parentId=…`, normalizes the response with the same `normalizeDefaultValue` the header uses, and passes it to the add-row as `resolvedDefaults`. `DataTable.buildEmpty` then fills **empty** editable fields (fill-empties-only: literal defaults, the client `lineNo`, parent-derived display seeds, and `skipDefault` fields are never overridden). This is how a line field whose AD default is a macro — e.g. a journal line `Description` defaulting to `@DESCRIPTION1@` (the parent journal's description, resolved by NEO's auxiliary-input pipeline) — gets pre-filled. On by default; opt out per entity (`handlesDefaults: false`) or per field (`skipDefault: true`). Covers the inline add-row of the primary lines tab and secondary detail tabs.
 
 ### Draft Mode (`entities.{name}.draftMode`)
 
@@ -517,6 +522,7 @@ Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"order
 | `searchable` | boolean | `false` | `true`/`false` | Enable as filter parameter in list API. |
 | `section` | string | `null` | `"principal"`, `"other"`, custom | Group fields into form sections. |
 | `inline` | boolean | `false` | `true`/`false` | When `true`, keeps the field in the normal form grid flow even if the generator would otherwise pull it out. Currently relevant for image-type fields: an image field with `inline: true` renders inside the form grid using `row-span-2`, spanning two rows for visual balance instead of being extracted to a separate slot. |
+| `skipDefault` | boolean | `false` | `true`/`false` | **HandleDefaults opt-out (per field).** When `true`, the line add-row never applies a backend-resolved default to this field (it stays empty / keeps its literal seed) even when the entity's `handlesDefaults` is on. Emitted to the contract / add-row literal only when `true`. |
 
 **Visibility defaults** (when not overridden):
 
