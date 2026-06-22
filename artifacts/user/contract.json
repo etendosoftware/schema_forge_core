@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T18:12:34.035Z",
-  "updatedAt": "2026-05-12T19:44:45.365Z",
-  "checksum": "43eb66f58e0f74a8",
+  "updatedAt": "2026-05-20T11:45:15.798Z",
+  "checksum": "13324a7107dca071",
   "frontendContract": {
     "window": {
       "id": "108",
@@ -1600,7 +1600,16 @@
         "column": "Default_Ad_Client_ID",
         "reference": "Client",
         "inputMode": "dependent",
-        "url": "/sws/neo/user/user/selectors/defaultClient"
+        "url": "/sws/neo/user/user/selectors/defaultClient",
+        "context": {
+          "required": [
+            {
+              "param": "Default_AD_Role_ID",
+              "source": "field",
+              "field": "defaultRole"
+            }
+          ]
+        }
       },
       {
         "entity": "user",
@@ -1608,7 +1617,16 @@
         "column": "Default_Ad_Org_ID",
         "reference": "Organization",
         "inputMode": "dependent",
-        "url": "/sws/neo/user/user/selectors/defaultOrganization"
+        "url": "/sws/neo/user/user/selectors/defaultOrganization",
+        "context": {
+          "required": [
+            {
+              "param": "Default_AD_Role_ID",
+              "source": "field",
+              "field": "defaultRole"
+            }
+          ]
+        }
       },
       {
         "entity": "user",
@@ -1616,7 +1634,16 @@
         "column": "Default_M_Warehouse_ID",
         "reference": "Warehouse",
         "inputMode": "dependent",
-        "url": "/sws/neo/user/user/selectors/defaultWarehouse"
+        "url": "/sws/neo/user/user/selectors/defaultWarehouse",
+        "context": {
+          "required": [
+            {
+              "param": "Default_AD_Client_ID",
+              "source": "field",
+              "field": "defaultClient"
+            }
+          ]
+        }
       },
       {
         "entity": "userRoles",

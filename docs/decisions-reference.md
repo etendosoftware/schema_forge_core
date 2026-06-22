@@ -69,8 +69,8 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 |----------|------|---------|--------|---------|
 | `category` | string | Inferred | `"sales"`, `"purchases"`, `"inventory"`, `"finance"`, `"accounting"`, `"master"`, `"project"`, `"general"` | UI routing and navigation grouping. |
 | `name` | string | From AD | — | Display name for breadcrumbs and titles. |
-| `layoutType` | string | `"default"` | `"default"`, `"kanban"`, `"calendar"`, `"custom"` | Frontend rendering mode. See `docs/window-templates.md`. |
-| `templateConfig` | object | `null` | Layout-specific | Extra config for non-default layouts (e.g., `groupBy`, `dateField`). |
+| `layoutType` | string | `"default"` | `"default"`, `"kanban"`, `"calendar"`, `"list-modal"`, `"custom"` | Frontend rendering mode. See `docs/window-templates.md`. |
+| `templateConfig` | object | `null` | Layout-specific | Extra config for non-default layouts. `kanban`/`calendar`: `groupBy`, `dateField`, etc. `list-modal`: `titleKey`, `editTitleKey`, `bannerKey`, `searchPlaceholderKey`, `newLabelKey`, `autoPriorityField`, `autoPriorityStep`, `sections` (ordered `[{ key, label }]`), `backLabelKey` (toolbar back-button i18n key; default `cancel`), `backTo` (route to navigate to on back; defaults to history `-1`), `toolbarFilters` (declarative dropdown filters `[{ key, field, allLabelKey, options: [{ value, labelKey }] }]`, applied client-side over the loaded rows). All strings are i18n keys. See the `list-modal` section in `docs/window-templates.md`. |
 | `detailEntity` | string \| null | Auto-inferred | Entity name or `null` | Explicitly sets which entity is the detail/lines tab. When omitted, the generator picks the first non-primary entity automatically. Set to `null` to create a header-only page (no detail tab). Set to a specific entity name to override the auto-inference. |
 | `relatedDocuments` | boolean | `false` | — | Enables the Related Documents footer in the detail view. Requires a hand-written `RelatedDocuments.jsx` in `artifacts/{window}/custom/`. The generator emits the import and `customTabs` prop automatically. |
 | `attachments` | boolean \| object | `true` | See below | Adds an "Attachments" tab to the detail view. Auto-enabled on every window with `layoutType: "default"`. Set to `false` to opt out; pass an object to tune client-side limits. See the Attachments subsection below. |
@@ -80,6 +80,7 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 | `hidePrint` | boolean | `false` | — | Hides the print button in the detail view action bar. |
 | `hideMoreMenu` | boolean | `false` | — | Hides the triple-dot "more" menu in the detail view action bar. |
 | `contentBg` | string | `"bg-white"` | Any Tailwind bg class | Background color of the main content card in the detail view (e.g., `"bg-slate-50"` for a light gray tone). |
+| `formCardPadding` | string | `null` | Any Tailwind padding class | Override the Tailwind padding class applied to the form card div in the detail view. When `null`, `DetailView` falls back to `p-6`. Use `"px-2 pb-2"` for tighter (8px horizontal) padding, for example on windows with dense form layouts. |
 | `hideDeleteWhenComplete` | boolean | `false` | — | Hides the delete button in the detail view when the document status is not Draft. Prevents accidental deletion of completed/processed records. |
 | `customComponents` | object | `null` | See below | Override generated components with custom ones from `artifacts/{window}/custom/`. The generator emits the correct imports and props automatically. |
 | `menuActions` | array | `[]` | See below | Additional actions in the detail view's "more" menu (triple dot). Each action can have visibility conditions based on document status. |
@@ -183,6 +184,28 @@ Adds a generic "Attachments" tab to the detail view, sitting alongside the stand
 | `allowedMimeTypes` | string[] | `undefined` (any) | MIME-type allow-list applied client-side. Supports wildcards like `"image/*"`, `"application/*"`. When omitted, every MIME type is accepted. |
 
 **Note:** the frontend resolves the target `tableName` from `frontendContract.entities.header.tableName` automatically — you do **not** configure it in `decisions.json`. The tab does a lazy fetch on activation (no request until the user opens it). Backend storage uses the standard Etendo `AttachImplementationManager` and the `C_FILE` table.
+
+### Custom Panel Tabs (`window.customPanelTabs`)
+
+Adds custom tabs to the bottom tab strip in the detail view, alongside the standard Attachments tab. The generator reads this array and emits the corresponding `customTabs` prop on `DetailView`. Each tab maps to a component imported from `tools/app-shell/src/windows/custom/{window}/`.
+
+Use this when a window needs supplementary panels (e.g., a pricing breakdown, a related-document viewer, a custom notes area) that sit at the same level as Attachments without modifying generated code.
+
+```json
+{
+  "customPanelTabs": [
+    { "key": "pricing", "labelKey": "price", "component": "ProductPriceBar" }
+  ]
+}
+```
+
+| Property | Type | Purpose |
+|----------|------|---------|
+| `key` | string | Unique tab identifier. Used as the tab's `key` prop. |
+| `labelKey` | string | i18n key resolved through `useUI()`. Rendered as the tab label. |
+| `component` | string | Component name from `tools/app-shell/src/windows/custom/{window}/`. The generator imports it automatically. |
+
+**Note:** Use `customTabsAfterBottom: true` alongside this property to position the custom tabs after the standard bottom section (lines, notes, etc.) rather than interleaved with primary tabs.
 
 ### Subset Filters (`window.subsetFilters`)
 
@@ -408,6 +431,9 @@ Each override entry supports the following properties:
 | `displayLogicRaw` | string | JavaScript expression controlling button visibility (e.g., `"data.status === 'DR'"`). |
 | `exclude` | boolean | If `true`, hides this process button entirely. |
 | `add` | boolean | If `true`, defines a new process button not present in the backend contract. |
+| `columnName` | string | Column name to include in the action POST payload (used with `add: true` when the process maps to a specific column). |
+| `requiresLines` | boolean | If `true`, the button is disabled until at least one line exists. |
+| `requiresFieldMax` | array | Validation rules checked before firing the action. Each entry: `{ field, max, conditionalOnField?, conditionalValue?, errorKey }`. |
 
 When `style` is not specified, the generator defaults to `"destructive"` for processes whose names contain destructive keywords (e.g., `void`, `cancel`, `reverse`) and `"positive"` for all others.
 
@@ -461,6 +487,7 @@ Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"order
 | `form` | boolean | Per visibility | `true`/`false` | Show in detail/form view. |
 | `searchable` | boolean | `false` | `true`/`false` | Enable as filter parameter in list API. |
 | `section` | string | `null` | `"principal"`, `"other"`, custom | Group fields into form sections. |
+| `inline` | boolean | `false` | `true`/`false` | When `true`, keeps the field in the normal form grid flow even if the generator would otherwise pull it out. Currently relevant for image-type fields: an image field with `inline: true` renders inside the form grid using `row-span-2`, spanning two rows for visual balance instead of being extracted to a separate slot. |
 
 **Visibility defaults** (when not overridden):
 
@@ -471,12 +498,48 @@ Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"order
 | `system` | false | false | false |
 | `discarded` | false | false | false |
 
+### Grid cell flags
+
+Applied to fields with `grid: true` to control how the list cell renders.
+
+| Property | Type | Default | Purpose |
+|----------|------|---------|---------|
+| `gridOrder` | integer | `null` | 1-based insertion position of the column in the grid. Only tagged fields move; untagged fields keep their relative order. |
+| `badge` | boolean | `false` | Render an enum/list value as a badge/chip. |
+| `inlineToggle` | boolean | `false` | Render a boolean column as an inline `Switch` that `PATCH`es `{entity}/{id}` with `{ [field]: checked }` on change (used by `list-modal` and inline-line layouts). |
+| `inlineEdit` | boolean | `false` | Mark a column as inline-editable (carried into the contract as `inlineEdit: true`). Consumed by `list-modal`; editing is also available via the modal. |
+| `gridReadOnly` | boolean | `false` | Make an otherwise-editable column read-only in the grid. |
+| `grow` | boolean | `false` | Let the column grow to fill available width. |
+| `cellType` | string | `null` | Selects a cell renderer from the registry (see below). Generic to any grid; the `list-modal` layout ships a styled set. |
+
+#### `list-modal` cell renderers (`cellType`)
+
+The `list-modal` grid renders each cell through a registry keyed by `cellType`
+(`tools/app-shell/src/components/contract-ui/listModalCells.jsx`). The renderers
+are generic and backend-agnostic — every cell reads only from the row payload and
+the column descriptor. Set them per grid field in `decisions.json`; the generator
+emits them into the contract column descriptors and the page consumes them. When
+no `cellType` is set, the cell falls back to a plain value (with enum-label / FK
+identifier resolution).
+
+| `cellType` | Extra keys | Renders |
+|------------|-----------|---------|
+| `priorityPill` | — | A bordered neutral pill with the numeric value. |
+| `nameWithSubline` | `subField` (field name whose `$_identifier` feeds the sub-line), `subPrefix` (default `"→ "`) | Bold name plus a muted sub-line sourced from another field. |
+| `conditionChip` | `kindField` (discriminator field, e.g. `C`/`S`/`R`), `patternField` (literal-text field), `kindLabels` (map of kind value → i18n key) | A chip with derived text `<kindLabel>: "<pattern>"`. |
+| `typePill` | `tones` (map of enum value → tone: `neutral`/`blue`/`green`/`amber`/`red`) | A rounded-full pill showing the enum label, optionally toned. |
+| `percent` | — | The numeric value rendered as `N%`. |
+| `boldText` | — | The value in semibold (e.g. a count column). |
+| `toggle` | — | An inline `Switch` that `PATCH`es `{entity}/{id}` with `{ [field]: checked }`. Equivalent to `inlineToggle`. |
+
 ### Reference & Input Mode (FK fields)
 
 | Property | Type | Default | Purpose |
 |----------|------|---------|---------|
 | `reference` | string \| null | Auto from targetTable | Catalog name for FK lookup (e.g., `"BusinessPartner"`). Set `null` to omit. |
 | `inputMode` | string \| null | Auto from reference type | `"selector"` (dropdown), `"search"` (searchable), `"dependent"` (cascading). Set `null` to omit. |
+| `searchSelect` | boolean | `false` | Opt-in: render an `inputMode: "selector"` FK field as the **searchable combobox** (`CreatableSearchSelect`) — text search + select — instead of the plain pick-only dropdown (`SelectorInput`). When absent/false the dropdown rendering is unchanged. Preserves `required`, the empty/null choice (`emptyOptionLabelKey`), and the same selector URL/context. **Not** the same as `searchable` (which enables a field as a list-API filter parameter). |
+| `allowCreate` | boolean | `false` | Opt-in (future): on a `searchSelect` field, surface the inline "+ create" action in the combobox. Currently OFF for all windows — the flag flows through the pipeline so a field can wire `createLabel`/`onCreateRequest` later without a generator change. |
 | `dependsOn` | object \| null | `null` | Parent field dependency for cascading selectors. |
 
 **dependsOn format:**

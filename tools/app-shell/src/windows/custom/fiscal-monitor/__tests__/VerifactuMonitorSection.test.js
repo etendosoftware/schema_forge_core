@@ -7,29 +7,22 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'VerifactuMonitorSection.jsx'), 'utf8');
 
-// Guards: fmtDate is imported from FmPrimitives (no longer defined locally)
-describe('VerifactuMonitorSection — fmtDate import', () => {
-  it('imports fmtDate from FmPrimitives', () => assert.match(src, /fmtDate.*from.*FmPrimitives/));
-  it('uses fmtDate on the invoiceDate cell', () => assert.match(src, /fmtDate\(row\.invoiceDate\)/));
+// Guards: core primitives are imported from FmPrimitives
+describe('VerifactuMonitorSection — FmPrimitives imports', () => {
+  it('imports StatusPill from FmPrimitives', () => assert.match(src, /StatusPill.*from.*FmPrimitives/));
+  it('imports ScrollSentinel from FmPrimitives', () => assert.match(src, /ScrollSentinel.*from.*FmPrimitives/));
+  it('does not import fmtDate (no date column in Verifactu)', () => assert.doesNotMatch(src, /fmtDate.*from.*FmPrimitives/));
 });
 
-// Guards: date column was added and colSpan updated from 8 to 9
-describe('VerifactuMonitorSection — date column structure', () => {
-  it('header row has exactly 9 <th> elements', () => {
+// Guards: table structure — 6 cols (checkbox + 5 data), no date/issuerNIF columns
+describe('VerifactuMonitorSection — table structure', () => {
+  it('header row has exactly 6 <th> elements', () => {
     const thMatches = src.match(/<th[\s>]/g) || [];
-    assert.equal(thMatches.length, 9);
+    assert.equal(thMatches.length, 6);
   });
 
-  it('empty-state row uses colSpan={9} (not 8)', () => {
-    assert.match(src, /colSpan=\{9\}/);
-  });
-
-  it('date column header uses fiscalMonitor.col.date i18n key', () => {
-    assert.match(src, /fiscalMonitor\.col\.date/);
-  });
-
-  it('date cell renders fmtDate(row.invoiceDate)', () => {
-    assert.match(src, /fmtDate\(row\.invoiceDate\)/);
+  it('empty-state row uses colSpan={6}', () => {
+    assert.match(src, /colSpan=\{6\}/);
   });
 });
 

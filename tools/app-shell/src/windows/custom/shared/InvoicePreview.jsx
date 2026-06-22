@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useMemo } from 'react';
 import { Edit2, FileText, Loader2, AlertCircle, Mail, Download, Wallet, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { useMenuLabel, useUI } from '@/i18n';
@@ -11,10 +11,12 @@ import { useInvoicePreview } from './useInvoicePreview.js';
 import { useFiscalStatus } from './useFiscalStatus.js';
 import { StatusPill } from '@/windows/custom/fiscal-monitor/FmPrimitives.jsx';
 import { getInvoiceFiscalTargets } from './fiscalTargets.js';
+import SifSendingModal from './SifSendingModal.jsx';
 import SummaryCard, { InfoRow } from './preview-cards/SummaryCard.jsx';
 import PaymentsCard from './preview-cards/PaymentsCard.jsx';
 import EmailsCard from './preview-cards/EmailsCard.jsx';
-import CategorizationCard from './preview-cards/CategorizationCard.jsx';
+import RelatedDocumentsCard from './preview-cards/RelatedDocumentsCard.jsx';
+import { fetchByCriteria, fetchById } from '@/components/related-documents';
 
 /**
  * InvoicePreview — wires useInvoicePreview data into GenericPreviewModal.
@@ -104,19 +106,18 @@ function InvoiceGeneralTab({ invoice, partnerName, badgeProps, statusLabel, inst
   const { sii: siiStatus, tbai: tbaiStatus, verifactu: vfStatus, loading: fiscalLoading } = useFiscalStatus(
     invoice?.id, specName, profile, apiBaseUrl, orgId,
   );
-  const [accountingAccount, setAccountingAccount] = useState(null);
+  const invoiceRelatedSpecs = useMemo(() => {
+    const orderId = invoice?.salesOrder;
+    if (!orderId) return [];
+    return [
+      { key: 'sales-order', type: 'sales-order', fetch: (_id, tok, base) => fetchById('sales-order', 'header', orderId, tok, base).then(r => r ? [r] : []) },
+      { key: 'shipment',    type: 'shipment',     fetch: (_id, tok, base) => fetchByCriteria('goods-shipment', 'goodsShipment', 'salesOrder', orderId, tok, base) },
+    ];
+  }, [invoice?.salesOrder]);
+
 
   const latestDueDate = getLatestInstallmentDueDate(installments);
   const currencyCode = installments[0]?.['currency$_identifier'] || invoice?.['currency$_identifier'] || '';
-
-  useEffect(() => {
-    if (!invoice?.id || !apiBaseUrl || !token) return;
-    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-    fetch(`${apiBaseUrl}/lines?parentId=${invoice.id}&_startRow=0&_endRow=1`, { headers })
-      .then((r) => (r.ok ? r.json() : {}))
-      .then((d) => { setAccountingAccount(d?.response?.data?.[0]?.['account$_identifier'] || null); })
-      .catch(() => {});
-  }, [invoice?.id, apiBaseUrl, token]);
 
   return (
     <div className="pb-4">
@@ -164,8 +165,11 @@ function InvoiceGeneralTab({ invoice, partnerName, badgeProps, statusLabel, inst
 
       {specName !== 'purchase-invoice' && <EmailsCard onSend={onSend} />}
 
-      <CategorizationCard
-        rows={[{ label: ui('invoicePreviewAccountingAccount'), value: accountingAccount }]}
+      <RelatedDocumentsCard
+        documentId={invoice?.id}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        specs={invoiceRelatedSpecs}
       />
     </div>
   );
@@ -318,57 +322,22 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
       )}
 
       {p.showSifModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="sif-modal-title"
-          style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', minWidth: '320px', maxWidth: '480px', width: '100%' }}>
-            <h3 id="sif-modal-title" style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
-              {ui('sendToSifTitle')}
-            </h3>
-            {p.sifPhase === 'confirm' && (
-              <>
-                <p style={{ fontSize: '14px', color: '#374151', marginBottom: '20px' }}>{ui(p.sifBodyKey)}</p>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                  <button type="button" onClick={p.closeSifModal} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff' }}>
-                    {ui('cancel')}
-                  </button>
-                  <button type="button" onClick={p.handleSendToSif} style={{ padding: '8px 16px', borderRadius: '8px', background: '#1d4ed8', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                    {ui('sendToSifConfirm')}
-                  </button>
-                </div>
-              </>
-            )}
-            {p.sifPhase === 'sending' && (
-              <p style={{ fontSize: '14px', color: '#6b7280' }}>{ui('sendToSifSending')}</p>
-            )}
-            {p.sifPhase === 'results' && (
-              <>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-                  {p.sifResults.sii && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                      <span style={{ color: p.sifResults.sii.ok ? '#10b981' : '#ef4444', fontWeight: 600 }}>{p.sifResults.sii.ok ? '✓' : '✗'}</span>
-                      <span>{p.sifResults.sii.ok ? ui('sendToSifSuccessSii') : (p.sifResults.sii.error || ui('sendToSifErrorSii'))}</span>
-                    </div>
-                  )}
-                  {p.sifResults.tbai && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                      <span style={{ color: p.sifResults.tbai.ok ? '#10b981' : '#ef4444', fontWeight: 600 }}>{p.sifResults.tbai.ok ? '✓' : '✗'}</span>
-                      <span>{p.sifResults.tbai.ok ? ui('sendToSifSuccessTbai') : (p.sifResults.tbai.error || ui('sendToSifErrorTbai'))}</span>
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button type="button" onClick={p.closeSifModal} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff' }}>
-                    {ui('close')}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+        <SifSendingModal
+          pendingTargets={p.pendingTargets}
+          bodyKey={p.sifBodyKey}
+          base={p.sifBase}
+          specName={specName}
+          recordId={p.displayInvoice?.id}
+          onClose={p.closeSifModal}
+          onAfterSend={async (next) => {
+            if (Object.values(next).some((r) => r?.ok)) {
+              await p.refetchInvoice();
+              p.fetchPayments();
+            }
+          }}
+          zIndex={70}
+          titleId="sif-modal-title"
+        />
       )}
 
       {p.showSendModal && (

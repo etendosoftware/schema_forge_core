@@ -1,6 +1,6 @@
 {
-  "refreshedAt": "2026-04-24T12:16:09.586Z",
-  "count": 468,
+  "refreshedAt": "2026-06-16T17:44:37.707Z",
+  "count": 470,
   "entries": [
     {
       "id": "120",
@@ -122,7 +122,7 @@
       "processId": null
     },
     {
-      "id": "800075",
+      "id": "F11FC6C518B149AFAB4DAED58751119C",
       "name": "Analysis Tools",
       "type": "folder",
       "windowId": null,
@@ -136,35 +136,21 @@
       "processId": null
     },
     {
+      "id": "800075",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800076",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
       "id": "800141",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "F11FC6C518B149AFAB4DAED58751119C",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800081",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800079",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800078",
       "name": "Analysis Tools",
       "type": "folder",
       "windowId": null,
@@ -178,7 +164,21 @@
       "processId": null
     },
     {
-      "id": "800076",
+      "id": "800081",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800078",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800079",
       "name": "Analysis Tools",
       "type": "folder",
       "windowId": null,
@@ -332,6 +332,13 @@
       "processId": null
     },
     {
+      "id": "48CD9B15B86340DDAD234EF9F353D6C2",
+      "name": "Bank Provider",
+      "type": "window",
+      "windowId": "62A02BF89678412AA2B5118234FD7048",
+      "processId": null
+    },
+    {
       "id": "800010",
       "name": "Bank Report",
       "type": "report",
@@ -451,6 +458,13 @@
       "processId": null
     },
     {
+      "id": "A9E0F1B2C3D4E5F6A7B8C9D0E1F2A3B4",
+      "name": "Canales y Endpoints SIF",
+      "type": "window",
+      "windowId": "B31D9E43422C4C18961D06CF42CE9852",
+      "processId": null
+    },
+    {
       "id": "240",
       "name": "Cashbook",
       "type": "window",
@@ -507,17 +521,17 @@
       "processId": null
     },
     {
-      "id": "156",
-      "name": "Client",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
       "id": "148",
       "name": "Client",
       "type": "window",
       "windowId": "109",
+      "processId": null
+    },
+    {
+      "id": "156",
+      "name": "Client",
+      "type": "folder",
+      "windowId": null,
       "processId": null
     },
     {
@@ -623,6 +637,20 @@
       "name": "Conversations",
       "type": "window",
       "windowId": "ED6F763A2C5F49189AD2760A2509F11D",
+      "processId": null
+    },
+    {
+      "id": "67AB359DD59344CE932FBB97D878B898",
+      "name": "Conversion Rate Downloader Log",
+      "type": "window",
+      "windowId": "6FEBA130CDE24CC09041FFA6117ADFA9",
+      "processId": null
+    },
+    {
+      "id": "26F293D1F1374C20BA4BEADE311E6856",
+      "name": "Conversion Rate Download Rule",
+      "type": "window",
+      "windowId": "E9F23872C757473EA7310DAD7FBAE782",
       "processId": null
     },
     {
@@ -745,24 +773,17 @@
       "processId": "800169"
     },
     {
-      "id": "5B13FC397F814D188EF8A2479511FED3",
-      "name": "CRM Connector",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "140E9C8338C64B84B659B5D2FB49F8B5",
-      "name": "CRM Connector Configuration",
-      "type": "window",
-      "windowId": "B282F5FA893E4339A548F2E224B15162",
-      "processId": null
-    },
-    {
       "id": "102",
       "name": "Currency",
       "type": "window",
       "windowId": "115",
+      "processId": null
+    },
+    {
+      "id": "47074A705B6943DFA19572AD877AA16F",
+      "name": "Currency Converters",
+      "type": "window",
+      "windowId": "7FCA3B15B7B84B89B01A74D586C08096",
       "processId": null
     },
     {
@@ -1046,14 +1067,14 @@
       "processId": null
     },
     {
-      "id": "566763B9A33E4EDC8FA445343FE4AB55",
+      "id": "0DAED7EBCD2A4F27BFB1C85ED1555192",
       "name": "External ID Mappings",
       "type": "window",
       "windowId": "065197A6A36E4D9C856BF6B0831F8916",
       "processId": null
     },
     {
-      "id": "0DAED7EBCD2A4F27BFB1C85ED1555192",
+      "id": "566763B9A33E4EDC8FA445343FE4AB55",
       "name": "External ID Mappings",
       "type": "window",
       "windowId": "065197A6A36E4D9C856BF6B0831F8916",
@@ -1235,13 +1256,6 @@
       "processId": null
     },
     {
-      "id": "477C324F87854A4A88D65D913DF052F7",
-      "name": "HQL Query Tool",
-      "type": "form",
-      "windowId": null,
-      "processId": null
-    },
-    {
       "id": "ECED4249C522408C8F8086B3E097408F",
       "name": "IAE Activity Type",
       "type": "window",
@@ -1310,13 +1324,6 @@
       "type": "process",
       "windowId": null,
       "processId": "800130"
-    },
-    {
-      "id": "AA912A0ED1EB4967B6A220291C7C118A",
-      "name": "Instance Activation",
-      "type": "form",
-      "windowId": null,
-      "processId": null
     },
     {
       "id": "1E65CE83C985466C89E25C24352DABA4",
@@ -1865,18 +1872,18 @@
       "processId": null
     },
     {
-      "id": "C662C29A164243C18C71BE164899A71B",
-      "name": "Payment Report",
-      "type": "report",
-      "windowId": null,
-      "processId": "6AD04479EC134BD4826077F36B709876"
-    },
-    {
       "id": "800029",
       "name": "Payment Report",
       "type": "report",
       "windowId": null,
       "processId": "800026"
+    },
+    {
+      "id": "C662C29A164243C18C71BE164899A71B",
+      "name": "Payment Report",
+      "type": "report",
+      "windowId": null,
+      "processId": "6AD04479EC134BD4826077F36B709876"
     },
     {
       "id": "D0022AAFF0F44BBCA96AA7D007E65C7D",
@@ -2187,6 +2194,20 @@
       "processId": null
     },
     {
+      "id": "D3C8D3653B7142DFBC8B9B85A4DF077E",
+      "name": "PSD2",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "D94E650304874F68B30237D86A623283",
+      "name": "PSD2 Logs",
+      "type": "window",
+      "windowId": "FF4C333DC6024DCF9F9B7C8D392F8314",
+      "processId": null
+    },
+    {
       "id": "800266",
       "name": "Purchase Dimensional Report",
       "type": "report",
@@ -2320,24 +2341,10 @@
       "processId": null
     },
     {
-      "id": "FF8080812E71F7C7012E72050E0A0048",
-      "name": "Remittance",
-      "type": "window",
-      "windowId": "FF8080812E71F7C7012E71FD0499001B",
-      "processId": null
-    },
-    {
       "id": "800097",
       "name": "Remittance Type",
       "type": "window",
       "windowId": "800018",
-      "processId": null
-    },
-    {
-      "id": "1976AC5F04094A9E8E020BA9BDD07B89",
-      "name": "Remittance Type",
-      "type": "window",
-      "windowId": "A0186E0FCF444BB889A458F469FF5DCF",
       "processId": null
     },
     {
@@ -2586,13 +2593,6 @@
       "processId": null
     },
     {
-      "id": "FF8080812E9B50A6012E9B958734001C",
-      "name": "Settle / Protest Remittances",
-      "type": "form",
-      "windowId": null,
-      "processId": null
-    },
-    {
       "id": "800233",
       "name": "Setup",
       "type": "folder",
@@ -2600,49 +2600,7 @@
       "processId": null
     },
     {
-      "id": "800189",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "272",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800256",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800255",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "C3805F4FAB2E491B8B18D5F6CB4F1737",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800251",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800248",
+      "id": "164",
       "name": "Setup",
       "type": "folder",
       "windowId": null,
@@ -2656,7 +2614,49 @@
       "processId": null
     },
     {
-      "id": "164",
+      "id": "800255",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800256",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800189",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800251",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "272",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "C3805F4FAB2E491B8B18D5F6CB4F1737",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800248",
       "name": "Setup",
       "type": "folder",
       "windowId": null,
@@ -2806,6 +2806,20 @@
       "id": "5D501B7F2ED84F1ABCA21CF9D0409C4A",
       "name": "Suministro Inmediato de Información (SII)",
       "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "B261674B983D4D30B0869DA2ED69E788",
+      "name": "Synchronize Bank Connections",
+      "type": "other",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "5D823057D64F43F5A0C677B294E42220",
+      "name": "Synchronize Bank Providers",
+      "type": "other",
       "windowId": null,
       "processId": null
     },
@@ -2992,14 +3006,14 @@
       "processId": null
     },
     {
-      "id": "800254",
+      "id": "800245",
       "name": "Transactions",
       "type": "folder",
       "windowId": null,
       "processId": null
     },
     {
-      "id": "800242",
+      "id": "800254",
       "name": "Transactions",
       "type": "folder",
       "windowId": null,
@@ -3034,7 +3048,7 @@
       "processId": null
     },
     {
-      "id": "800245",
+      "id": "800242",
       "name": "Transactions",
       "type": "folder",
       "windowId": null,

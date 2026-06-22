@@ -6,6 +6,7 @@ import RelatedDocuments from './RelatedDocuments';
 import ImportFromShipmentModal from './ImportFromShipmentModal';
 import ImportFromOrderModal from './ImportFromOrderModal';
 import ImportFromReturnShipmentModal from './ImportFromReturnShipmentModal';
+import { getArSubtype } from './invoiceSubtype';
 
 /**
  * Sales Invoice bottom section. Delegates to the shared LinesBottomSection so
@@ -30,7 +31,7 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
   const pendingModal = useRef('shipment');
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
-  const isReturn = data?.arInvoiceSubtype === 'DEV';
+  const isReturn = getArSubtype(data) === 'DEV';
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
@@ -155,7 +156,7 @@ const InvoiceLineActions = forwardRef(function InvoiceLineActions(
   const pendingModal = useRef('shipment');
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
-  const isReturn = data?.arInvoiceSubtype === 'DEV';
+  const isReturn = getArSubtype(data) === 'DEV';
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
@@ -267,7 +268,7 @@ InvoiceBottomPanel.detailExtraActions = InvoiceLineActions;
 InvoiceBottomPanel.lineMenuActions = function lineMenuActions({ data, importRef }) {
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
-  const isReturn = data?.arInvoiceSubtype === 'DEV';
+  const isReturn = getArSubtype(data) === 'DEV';
   if (!isDraft || !bpId) return [];
   if (isReturn) {
     return [

@@ -21,6 +21,7 @@ export const header = [
     "outstandingAmount": 38907,
     "priceList": "Sample priceList",
     "etsgDateOperation": "2026-01-15",
+    "etvfacInvoiceStatus": "DR",
     "tbaiSequence": 90,
     "tbaiInvoicenum": "Sample tbaiInvoicenum",
     "tbaiInvoiceseq": "Sample tbaiInvoiceseq",
@@ -59,6 +60,7 @@ export const header = [
     "outstandingAmount": 9306,
     "priceList": "Sample priceList",
     "etsgDateOperation": "2026-01-16",
+    "etvfacInvoiceStatus": "CO",
     "tbaiSequence": 93,
     "tbaiInvoicenum": "Sample tbaiInvoicenum",
     "tbaiInvoiceseq": "Sample tbaiInvoiceseq",
@@ -97,6 +99,7 @@ export const header = [
     "outstandingAmount": 11544,
     "priceList": "Sample priceList",
     "etsgDateOperation": "2026-01-17",
+    "etvfacInvoiceStatus": "VO",
     "tbaiSequence": 8,
     "tbaiInvoicenum": "Sample tbaiInvoicenum",
     "tbaiInvoiceseq": "Sample tbaiInvoiceseq",
@@ -135,6 +138,7 @@ export const header = [
     "outstandingAmount": 11872,
     "priceList": "Sample priceList",
     "etsgDateOperation": "2026-01-18",
+    "etvfacInvoiceStatus": "IP",
     "tbaiSequence": 91,
     "tbaiInvoicenum": "Sample tbaiInvoicenum",
     "tbaiInvoiceseq": "Sample tbaiInvoiceseq",
@@ -173,6 +177,7 @@ export const header = [
     "outstandingAmount": 48460,
     "priceList": "Sample priceList",
     "etsgDateOperation": "2026-01-19",
+    "etvfacInvoiceStatus": "DR",
     "tbaiSequence": 72,
     "tbaiInvoicenum": "Sample tbaiInvoicenum",
     "tbaiInvoiceseq": "Sample tbaiInvoiceseq",
@@ -211,6 +216,7 @@ export const header = [
     "outstandingAmount": 45418,
     "priceList": "Sample priceList",
     "etsgDateOperation": "2026-01-20",
+    "etvfacInvoiceStatus": "CO",
     "tbaiSequence": 78,
     "tbaiInvoicenum": "Sample tbaiInvoicenum",
     "tbaiInvoiceseq": "Sample tbaiInvoiceseq",
@@ -249,6 +255,7 @@ export const header = [
     "outstandingAmount": 33840,
     "priceList": "Sample priceList",
     "etsgDateOperation": "2026-01-21",
+    "etvfacInvoiceStatus": "VO",
     "tbaiSequence": 31,
     "tbaiInvoicenum": "Sample tbaiInvoicenum",
     "tbaiInvoiceseq": "Sample tbaiInvoiceseq",
@@ -287,6 +294,7 @@ export const header = [
     "outstandingAmount": 25716,
     "priceList": "Sample priceList",
     "etsgDateOperation": "2026-01-22",
+    "etvfacInvoiceStatus": "IP",
     "tbaiSequence": 97,
     "tbaiInvoicenum": "Sample tbaiInvoicenum",
     "tbaiInvoiceseq": "Sample tbaiInvoiceseq",
@@ -325,6 +333,7 @@ export const header = [
     "outstandingAmount": 44780,
     "priceList": "Sample priceList",
     "etsgDateOperation": "2026-01-23",
+    "etvfacInvoiceStatus": "DR",
     "tbaiSequence": 70,
     "tbaiInvoicenum": "Sample tbaiInvoicenum",
     "tbaiInvoiceseq": "Sample tbaiInvoiceseq",
@@ -363,6 +372,7 @@ export const header = [
     "outstandingAmount": 12483,
     "priceList": "Sample priceList",
     "etsgDateOperation": "2026-01-24",
+    "etvfacInvoiceStatus": "CO",
     "tbaiSequence": 77,
     "tbaiInvoicenum": "Sample tbaiInvoicenum",
     "tbaiInvoiceseq": "Sample tbaiInvoiceseq",
@@ -401,6 +411,7 @@ export const header = [
     "outstandingAmount": 46022,
     "priceList": "Sample priceList",
     "etsgDateOperation": "2026-01-25",
+    "etvfacInvoiceStatus": "VO",
     "tbaiSequence": 32,
     "tbaiInvoicenum": "Sample tbaiInvoicenum",
     "tbaiInvoiceseq": "Sample tbaiInvoiceseq",
@@ -439,6 +450,7 @@ export const header = [
     "outstandingAmount": 38634,
     "priceList": "Sample priceList",
     "etsgDateOperation": "2026-01-26",
+    "etvfacInvoiceStatus": "IP",
     "tbaiSequence": 26,
     "tbaiInvoicenum": "Sample tbaiInvoicenum",
     "tbaiInvoiceseq": "Sample tbaiInvoiceseq",
@@ -821,6 +833,105 @@ export const paymentPlan = [
     "description": "Government contract fulfillment",
     "totalDebtAmount": 38634,
     "finPaymentScheduleID": "Sample finPaymentScheduleID",
+    "headerId": "mock-header-012"
+  }
+];
+
+export const exchangeRates = [
+  {
+    "id": "mock-exchangeRates-001",
+    "currency": "USD",
+    "toCurrency": "USD",
+    "rate": "Sample rate",
+    "foreignAmount": 38907,
+    "headerId": "mock-header-001"
+  },
+  {
+    "id": "mock-exchangeRates-002",
+    "currency": "EUR",
+    "toCurrency": "EUR",
+    "rate": "Sample rate",
+    "foreignAmount": 9306,
+    "headerId": "mock-header-002"
+  },
+  {
+    "id": "mock-exchangeRates-003",
+    "currency": "GBP",
+    "toCurrency": "GBP",
+    "rate": "Sample rate",
+    "foreignAmount": 11544,
+    "headerId": "mock-header-003"
+  },
+  {
+    "id": "mock-exchangeRates-004",
+    "currency": "USD",
+    "toCurrency": "USD",
+    "rate": "Sample rate",
+    "foreignAmount": 11872,
+    "headerId": "mock-header-004"
+  },
+  {
+    "id": "mock-exchangeRates-005",
+    "currency": "EUR",
+    "toCurrency": "EUR",
+    "rate": "Sample rate",
+    "foreignAmount": 48460,
+    "headerId": "mock-header-005"
+  },
+  {
+    "id": "mock-exchangeRates-006",
+    "currency": "GBP",
+    "toCurrency": "GBP",
+    "rate": "Sample rate",
+    "foreignAmount": 45418,
+    "headerId": "mock-header-006"
+  },
+  {
+    "id": "mock-exchangeRates-007",
+    "currency": "USD",
+    "toCurrency": "USD",
+    "rate": "Sample rate",
+    "foreignAmount": 33840,
+    "headerId": "mock-header-007"
+  },
+  {
+    "id": "mock-exchangeRates-008",
+    "currency": "EUR",
+    "toCurrency": "EUR",
+    "rate": "Sample rate",
+    "foreignAmount": 25716,
+    "headerId": "mock-header-008"
+  },
+  {
+    "id": "mock-exchangeRates-009",
+    "currency": "GBP",
+    "toCurrency": "GBP",
+    "rate": "Sample rate",
+    "foreignAmount": 44780,
+    "headerId": "mock-header-009"
+  },
+  {
+    "id": "mock-exchangeRates-010",
+    "currency": "USD",
+    "toCurrency": "USD",
+    "rate": "Sample rate",
+    "foreignAmount": 12483,
+    "headerId": "mock-header-010"
+  },
+  {
+    "id": "mock-exchangeRates-011",
+    "currency": "EUR",
+    "toCurrency": "EUR",
+    "rate": "Sample rate",
+    "foreignAmount": 46022,
+    "headerId": "mock-header-011"
+  },
+  {
+    "id": "mock-exchangeRates-012",
+    "currency": "GBP",
+    "toCurrency": "GBP",
+    "rate": "Sample rate",
+    "foreignAmount": 38634,
     "headerId": "mock-header-012"
   }
 ];

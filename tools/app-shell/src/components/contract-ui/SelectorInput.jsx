@@ -8,7 +8,7 @@ import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 const SELECTOR_PAGE = 50;
 
 function buildSelectPlaceholder(ui, label) {
-  return `${ui('selectLabelPrefix')} ${label}...`;
+  return label ? `${ui('selectLabelPrefix')} ${label}...` : ui('selectPlaceholder');
 }
 
 /**
@@ -117,12 +117,16 @@ export function SelectorInput({
   // empty values is mandatory for required fields too (where the '__empty__'
   // SelectItem is not rendered, so Radix would otherwise show nothing).
   const selectValue = value ? value : undefined;
+  // Optional FK fields can label their empty/null choice (e.g. "All accounts")
+  // instead of a blank entry. When set, the empty value also reads as that label
+  // on the trigger rather than the "Select X..." placeholder.
+  const emptyLabel = field.emptyOptionLabelKey ? (ui(field.emptyOptionLabelKey) ?? field.emptyOptionLabelKey) : null;
   // Compact mode (inline tables) mirrors the placeholder style of plain text/
   // number inputs in the same row: just the field label in muted color, no
   // verbose "Select X..." prefix.
   const placeholderText = compact
-    ? (resolvedLabel ?? field.label ?? field.key)
-    : buildSelectPlaceholder(ui, resolvedLabel ?? field.label ?? field.key);
+    ? (emptyLabel ?? resolvedLabel ?? field.label ?? field.key)
+    : (emptyLabel ?? buildSelectPlaceholder(ui, resolvedLabel ?? field.label ?? field.key));
 
   return (
     <Select
@@ -146,7 +150,7 @@ export function SelectorInput({
         {fetching && <Loader2 className="h-4 w-4 text-muted-foreground animate-spin ml-auto mr-1" />}
       </SelectTrigger>
       <SelectContent ref={contentCallbackRef}>
-        {!field.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
+        {!field.required && <SelectItem value="__empty__">{emptyLabel || ' '}</SelectItem>}
         {!hasValue && value && displayValue && (
           <SelectItem
             key={`__current__${value}`}

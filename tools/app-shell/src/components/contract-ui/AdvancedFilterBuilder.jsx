@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu.jsx';
 import { Trash2, Plus, Save, SlidersHorizontal, ChevronDown, Check, Bookmark, Loader2 } from 'lucide-react';
-import { useUI, useLabel, useLocale } from '@/i18n';
+import { useUI, useLabel, useLocale, useLocaleSwitch } from '@/i18n';
 import { resolveFilterMode, getDisplayText } from '@/lib/gridQuery';
 import { useDistinctValues } from '@/hooks/useDistinctValues.js';
 import { DistinctValuesList } from './DistinctValuesList.jsx';
@@ -540,7 +540,41 @@ export function AdvancedFilterBuilder({
   );
 }
 
+function betweenOperator(value, mode, onChange) {
+  const pair = Array.isArray(value) ? value : ['', ''];
+  const inputType = mode === 'date' ? 'date' : mode === 'numeric' ? 'number' : 'text';
+  return (
+      <div className="flex gap-1">
+        <Input
+            type={inputType}
+            value={pair[0] ?? ''}
+            onChange={(e) => onChange([e.target.value, pair[1] ?? ''])}
+            className="h-9 text-xs"
+        />
+        <Input
+            type={inputType}
+            value={pair[1] ?? ''}
+            onChange={(e) => onChange([pair[0] ?? '', e.target.value])}
+            className="h-9 text-xs"
+        />
+      </div>
+  );
+}
+
+function getJoinedValue(value) {
+  return Array.isArray(value) ? value.join(',') : (value ?? '');
+}
+
+// badgeLabels may be a plain string or a per-locale object { es_ES, en_US }.
+// Resolve to the active locale's string so it can be rendered (mirrors
+// createBadgeLabelResolver in DataTable.jsx).
+function resolveBadgeText(raw, locale, fallback) {
+  if (raw && typeof raw === 'object') return raw[locale] ?? raw.en_US ?? fallback;
+  return raw ?? fallback;
+}
+
 function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows, entity, apiBaseUrl, labelOverrides }) {
+  const { locale } = useLocaleSwitch();
   if (mode === 'identifier' && !TEXTUAL_IDENT_OPS.has(operator)) {
     return (
       <IdentifierMultiPicker
@@ -557,24 +591,7 @@ function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows
   }
 
   if (operator === 'between') {
-    const pair = Array.isArray(value) ? value : ['', ''];
-    const inputType = mode === 'date' ? 'date' : mode === 'numeric' ? 'number' : 'text';
-    return (
-      <div className="flex gap-1">
-        <Input
-          type={inputType}
-          value={pair[0] ?? ''}
-          onChange={(e) => onChange([e.target.value, pair[1] ?? ''])}
-          className="h-9 text-xs"
-        />
-        <Input
-          type={inputType}
-          value={pair[1] ?? ''}
-          onChange={(e) => onChange([pair[0] ?? '', e.target.value])}
-          className="h-9 text-xs"
-        />
-      </div>
-    );
+    return betweenOperator(value, mode, onChange);
   }
 
   if (mode === 'enumLabel') {
@@ -582,7 +599,7 @@ function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows
       return (
         <Input
           type="text"
-          value={Array.isArray(value) ? value.join(',') : (value ?? '')}
+          value={getJoinedValue(value)}
           onChange={(e) => onChange(e.target.value)}
           placeholder={ui('advancedFilterInSetPlaceholder')}
           className="h-9 text-xs"
@@ -604,8 +621,8 @@ function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows
   }
 
   if (mode === 'booleanLabel') {
-    const trueLabel = col.badgeLabels?.true ?? ui('yes') ?? 'Yes';
-    const falseLabel = col.badgeLabels?.false ?? ui('no') ?? 'No';
+    const trueLabel = resolveBadgeText(col.badgeLabels?.true, locale, ui('yes') ?? 'Yes');
+    const falseLabel = resolveBadgeText(col.badgeLabels?.false, locale, ui('no') ?? 'No');
     const selected = value === true || value === 'true' ? 'true' : value === false || value === 'false' ? 'false' : undefined;
     return (
       <Select value={selected} onValueChange={(v) => onChange(v === 'true')}>
@@ -801,9 +818,21 @@ function resolveEnumOptions(col, dictionary) {
   return Object.keys(rawMap)
     .map((code) => ({
       code,
-      label: dictionary?.statuses?.[code]?.label || rawMap[code] || code,
+      // The column's own enumLabels (rawMap) take precedence over the global
+      // status dictionary, so a code that collides with an unrelated global
+      // status (e.g. account type "CA" vs an order status "CA") keeps the
+      // column's intended label.
+      label: rawMap[code] || dictionary?.statuses?.[code]?.label || code,
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function fillFallbackCodes(out, labelMap, seen) {
+  if (out.length === 0) {
+    for (const c of Object.keys(labelMap)) {
+      if (!seen.has(c)) out.push(c);
+    }
+  }
 }
 
 /**
@@ -827,7 +856,9 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
     );
   }, [col, dictionary]);
 
-  const labelFor = (code) => dictionary?.statuses?.[code]?.label || labelMap[code] || code;
+  // The column's own enumLabels (labelMap) win over the global status dictionary
+  // so a code colliding with an unrelated global status keeps the column's label.
+  const labelFor = (code) => labelMap[code] || dictionary?.statuses?.[code]?.label || code;
 
   const inMemoryCodes = useMemo(() => {
     const seen = new Set();
@@ -861,9 +892,7 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
     if (value && !seen.has(value)) { seen.add(value); out.push(value); }
     // Fallback: for virtual columns with static enumLabels and no dynamic data, use the
     // enumLabels keys directly so the picker is not empty.
-    if (out.length === 0) {
-      for (const c of Object.keys(labelMap)) { if (!seen.has(c)) out.push(c); }
-    }
+    fillFallbackCodes(out, labelMap, seen);
     return out;
   }, [distinct.values, distinct.search, inMemoryCodes, value, labelMap, dictionary]);
 

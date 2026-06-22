@@ -257,9 +257,28 @@
           "windowId": "6F8F913FA60F4CBD93DC1D3AA696E76E"
         },
         {
+          "name": "financial-accounts",
+          "label": "Accounts",
+          "favname": "Accounts",
+          "path": "finance/accounts"
+        },
+        {
+          "name": "financial-account",
+          "label": "Account Detail",
+          "favname": "Account Detail",
+          "hidden": true
+        },
+        {
           "name": "bank-reconciliation",
           "label": "Bank Reconciliation",
-          "favname": "Bank Reconciliation"
+          "favname": "Bank Reconciliation",
+          "hidden": true
+        },
+        {
+          "name": "match-rule",
+          "label": "Match Rule",
+          "favname": "Match Rule",
+          "hidden": true
         },
         {
           "name": "chart-of-accounts",
@@ -274,6 +293,12 @@
           "windowId": "800027"
         },
         {
+          "name": "amortization",
+          "label": "Amortization",
+          "favname": "Amortization",
+          "windowId": "800026"
+        },
+        {
           "name": "recurring-invoice",
           "label": "Recurring Invoice",
           "favname": "Recurring Invoice",
@@ -283,6 +308,12 @@
           "name": "fiscal-monitor",
           "label": "Fiscal Monitor",
           "favname": "Fiscal Monitor"
+        },
+        {
+          "name": "conversion-rates",
+          "label": "Conversion Rates",
+          "favname": "Conversion Rates",
+          "windowId": "116"
         },
         {
           "name": "fiscal-models",
@@ -327,22 +358,10 @@
           "windowId": "141"
         },
         {
-          "name": "payment-method",
-          "label": "Payment Method",
-          "favname": "Payment Method",
-          "windowId": "3CAAC7D54593489384452416ACF356DD"
-        },
-        {
           "name": "tax",
           "label": "Tax",
           "favname": "Tax",
           "windowId": "137"
-        },
-        {
-          "name": "unit-of-measure",
-          "label": "Unit of Measure",
-          "favname": "Unit of Measure",
-          "windowId": "120"
         },
         {
           "name": "user",
@@ -365,6 +384,12 @@
           "name": "fiscal-config",
           "label": "Fiscal Configuration",
           "favname": "Fiscal Configuration"
+        },
+        {
+          "name": "conversion-rate-downloader-log",
+          "label": "Conversion Rate Downloader Log",
+          "favname": "Conversion Rate Downloader Log",
+          "windowId": "6FEBA130CDE24CC09041FFA6117ADFA9"
         }
       ]
     },

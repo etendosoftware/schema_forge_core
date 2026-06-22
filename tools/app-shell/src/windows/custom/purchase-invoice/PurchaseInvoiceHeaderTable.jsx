@@ -10,15 +10,28 @@ import {
 } from '@/lib/invoiceDueDate';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { getInvoiceFiscalTargets } from '@/windows/custom/shared/fiscalTargets.js';
-import { useInvoiceListFiscalStatus } from '@/windows/custom/shared/useInvoiceListFiscalStatus.js';
 import { FiscalStatusBadge } from '@/windows/custom/shared/FiscalStatusBadge.jsx';
+import { formatAmount } from '@/lib/formatAmount.js';
 
 /* eslint-disable react/prop-types */
 
 const filters = ['documentNo', 'invoiceDate', 'businessPartner', 'orderReference', 'documentStatus'];
 
+const NC_RETURN_TYPES = new Set(['AP CreditMemo', 'Return Material Purchase Invoice', 'Reversed Purchase Invoice']);
+
+const DOC_TYPE_BADGE = {
+  'AP Invoice':                         { color: '#1d4ed8', bg: '#eff6ff', label: 'invoicesTab' },
+  'AP CreditMemo':                      { color: '#92400e', bg: '#fffbeb', label: 'creditNotesTab' },
+  'Return Material Purchase Invoice':   { color: '#9a3412', bg: '#fff7ed', label: 'returnInvoiceTab' },
+  'Reversed Purchase Invoice':          { color: '#9a3412', bg: '#fff7ed', label: 'returnInvoiceTab' },
+};
+
+function isNcOrReturn(row) {
+  return NC_RETURN_TYPES.has(row?.['transactionDocument$_identifier']);
+}
+
 export default function PurchaseInvoiceHeaderTable(props) {
-  const { token, apiBaseUrl, data } = props;
+  const { apiBaseUrl } = props;
   const dictionary = useLocale();
   const { locale } = useLocaleSwitch();
   const gl = dictionary?.genericLabels || {};
@@ -30,24 +43,14 @@ export default function PurchaseInvoiceHeaderTable(props) {
 
   const targets = useMemo(() => getInvoiceFiscalTargets('purchase-invoice', profile), [profile]);
 
-  const ids = useMemo(() => (data || []).map(r => r.id).filter(Boolean), [data]);
-  const { statusMap, loading: fiscalLoading } = useInvoiceListFiscalStatus(ids, 'purchase-invoice', profile, apiBaseUrl, orgId);
-
-  const siiColLabel = gl['invoiceList.col.siiStatus']       || 'SII Status';
-  const vfColLabel  = gl['invoiceList.col.verifactuStatus'] || 'Verifactu Status';
+  const siiColLabel = gl['invoiceList.col.siiStatus'] || 'SII Status';
 
   const columns = useMemo(() => {
     const fiscalCols = [];
     if (targets.showSii) {
       fiscalCols.push({
         key: '_siiStatus', type: 'custom', label: siiColLabel,
-        render: (row) => <FiscalStatusBadge status={statusMap?.[row.id]?.sii} loading={fiscalLoading && !statusMap} />,
-      });
-    }
-    if (targets.showVerifactu) {
-      fiscalCols.push({
-        key: '_vfStatus', type: 'custom', label: vfColLabel,
-        render: (row) => <FiscalStatusBadge status={statusMap?.[row.id]?.verifactu} loading={fiscalLoading && !statusMap} />,
+        render: (row) => <FiscalStatusBadge status={row.aeatsiiEstado ?? null} />,
       });
     }
 
@@ -59,6 +62,9 @@ export default function PurchaseInvoiceHeaderTable(props) {
         render: (row) => {
           const d = row.eTGODueDate;
           if (!d) return <span className="text-muted-foreground">—</span>;
+          if (isNcOrReturn(row)) {
+            return <span>{formatCalendarDate(d, locale)}</span>;
+          }
           const state = getDueDateState(d, row.outstandingAmount);
           return (
             <span className="inline-flex items-center gap-1.5" style={getDueDateTextStyle(state)}>
@@ -71,11 +77,38 @@ export default function PurchaseInvoiceHeaderTable(props) {
       { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector' },
       { key: 'documentStatus', column: 'DocStatus', type: 'status' },
       ...fiscalCols,
-      { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+      {
+        key: 'grandTotalAmount', column: 'GrandTotal', type: 'custom',
+        render: (row) => {
+          const raw = row.grandTotalAmount;
+          const currency = row['currency$_identifier'];
+          const amount = isNcOrReturn(row) ? -Math.abs(Number(raw)) : Number(raw);
+          return <span className="tabular-nums">{formatAmount(amount, currency)}</span>;
+        },
+      },
       { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
       { key: 'eTGODeliveryStatus', column: 'em_etgo_delivery_status', type: 'percent' },
+      {
+        key: 'transactionDocument',
+        column: 'C_DocTypeTarget_ID',
+        type: 'custom',
+        label: t('docType'),
+        render: (row) => {
+          const adName = row['transactionDocument$_identifier'];
+          const cfg = DOC_TYPE_BADGE[adName];
+          if (!cfg) return <span className="text-muted-foreground">—</span>;
+          return (
+            <span
+              className="inline-block rounded-full px-2 py-0.5 text-xs font-medium"
+              style={{ color: cfg.color, backgroundColor: cfg.bg }}
+            >
+              {t(cfg.label)}
+            </span>
+          );
+        },
+      },
     ];
-  }, [gl, locale, targets, fiscalLoading, statusMap, siiColLabel, vfColLabel]);
+  }, [gl, locale, targets, siiColLabel]);
 
   return <DataTable columns={columns} filters={filters} {...props} />;
 }

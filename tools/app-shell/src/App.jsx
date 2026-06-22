@@ -16,6 +16,7 @@ import CrmPage from './pages/CrmPage.jsx';
 import HrPage from './pages/HrPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
 import ReportViewerPage from './pages/ReportViewerPage.jsx';
+import FinancialAccountsPage from './pages/FinancialAccountsPage.jsx';
 import { buildMenuGroups, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
 import { LocaleProvider } from './i18n/index.js';
@@ -70,11 +71,9 @@ async function loadAllMockData() {
     import('@generated/warehouse/generated/web/warehouse/mockData.js'),
     import('@generated/price-list/generated/web/price-list/mockData.js'),
     import('@generated/payment-term/generated/web/payment-term/mockData.js'),
-    import('@generated/payment-method/generated/web/payment-method/mockData.js'),
     import('@generated/product/generated/web/product/mockData.js'),
     import('@generated/product-category/generated/web/product-category/mockData.js'),
     import('@generated/tax/generated/web/tax/mockData.js'),
-    import('@generated/unit-of-measure/generated/web/unit-of-measure/mockData.js'),
     import('@generated/user/generated/web/user/mockData.js'),
     import('@generated/purchase-order/generated/web/purchase-order/mockData.js'),
     import('@generated/goods-receipt/generated/web/goods-receipt/mockData.js'),
@@ -95,6 +94,7 @@ async function loadAllMockData() {
     import('@generated/bank-reconciliation/generated/web/bank-reconciliation/mockData.js'),
     import('@generated/chart-of-accounts/generated/web/chart-of-accounts/mockData.js'),
     import('@generated/assets/generated/web/assets/mockData.js'),
+    import('@generated/amortization/generated/web/amortization/mockData.js'),
     import('@generated/deal/generated/web/deal/mockData.js'),
     import('@generated/activity/generated/web/activity/mockData.js'),
     import('@generated/lead/generated/web/lead/mockData.js'),
@@ -104,10 +104,11 @@ async function loadAllMockData() {
     import('@generated/project/generated/web/project/mockData.js'),
     import('@generated/document/generated/web/document/mockData.js'),
     import('@generated/recurring-invoice/generated/web/recurring-invoice/mockData.js'),
-    import('@generated/unit-of-measure/generated/web/unit-of-measure/mockData.js'),
     import('@generated/fiscal-config/custom/mockData.js'),
     import('@generated/fiscal-monitor/custom/mockData.js'),
     import('@generated/fiscal-models/custom/mockData.js'),
+    import('@generated/conversion-rates/generated/web/conversion-rates/mockData.js'),
+    import('@generated/conversion-rate-downloader-log/generated/web/conversion-rate-downloader-log/mockData.js'),
   ]);
 
   const merged = {};
@@ -167,6 +168,7 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="purchases" element={<PurchasesPage />} />
         <Route path="accounting" element={<AccountingPage />} />
+        <Route path="finance/accounts" element={<FinancialAccountsPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="report-viewer" element={<ReportViewerPage />} />
         <Route path="crm" element={<CrmPage />} />
@@ -182,11 +184,11 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="artifacts/:windowName" element={<ArtifactViewerPage />} />
         <Route
           path=":windowName/:recordId"
-          element={<WindowLoader windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
+          element={<WindowLoader key="with-record" windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
         />
         <Route
           path=":windowName"
-          element={<WindowLoader windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
+          element={<WindowLoader key="list" windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
         />
       </Route>
     </Routes>

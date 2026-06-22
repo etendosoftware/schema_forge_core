@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { EntityForm } from '@/components/contract-ui';
 import { useUI } from '@/i18n';
 
@@ -32,7 +33,7 @@ function ToggleCard({ label, description, fieldKey, value, onChange, editing }) 
         onClick={handleToggle}
         disabled={!editing}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none
-          ${isOn ? 'bg-blue-600' : 'bg-gray-200'}
+          ${isOn ? 'bg-gray-900' : 'bg-gray-200'}
           ${!editing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
         aria-checked={isOn}
         role="switch"
@@ -52,6 +53,15 @@ function isDepreciate(record) {
 
 export default function AssetsConfigPanel({ data, token, apiBaseUrl, catalogs, api, editing, onChange }) {
   const ui = useUI();
+
+  // Register pre-filled currency for new records so it's not dropped on save.
+  // EntityForm here doesn't receive registerFields, so we mark currency as
+  // user-touched via onChange to prevent the legacy-numeric-ID skip in useEntity.
+  useEffect(() => {
+    if (!data?.id && data?.currency) {
+      onChange?.('currency', data.currency);
+    }
+  }, [data?.id, data?.currency, onChange]);
 
   const currencyFields = [
     { key: 'currency', column: 'C_Currency_ID', type: 'selector', label: ui('assetsCurrencyLabel'), section: 'other', reference: 'Currency', inputMode: 'selector', defaultValue: '@C_Currency_ID@', readOnlyLogic: (record) => Number(record.depreciatedPlan || 0) > 0 || Number(record.depreciatedValue || 0) > 0 },
@@ -76,7 +86,7 @@ export default function AssetsConfigPanel({ data, token, apiBaseUrl, catalogs, a
   const deprecFields = [
     { key: 'depreciationType', column: 'Amortizationtype', type: 'select', label: ui('assetsOptLinear'), required: true, section: 'other', options: [{ value: 'LI', label: ui('assetsOptLinear') }] },
     { key: 'calculateType', column: 'Amortizationcalctype', type: 'select', required: true, section: 'other', options: [{ value: 'PE', label: ui('assetsOptPercentage') }, { value: 'TI', label: ui('assetsOptTime') }] },
-    { key: 'annualDepreciation', column: 'Amortizationpercentage', type: 'number', section: 'other', displayLogic: (record) => isDepreciate(record) && record.calculateType !== 'TI' },
+    { key: 'annualDepreciation', column: 'Amortizationpercentage', type: 'number', label: ui('assetsAnnualDepreciationLabel'), section: 'other', displayLogic: (record) => isDepreciate(record) && record.calculateType !== 'TI' },
     { key: 'amortize', column: 'Assetschedule', type: 'select', required: true, section: 'other', options: [{ value: 'MO', label: ui('assetsOptMonthly') }, { value: 'YE', label: ui('assetsOptYearly') }], displayLogic: (record) => isDepreciate(record) && record.calculateType === 'TI' },
     { key: 'usableLifeYears', column: 'UseLifeYears', type: 'number', section: 'other', displayLogic: (record) => isDepreciate(record) && record.calculateType === 'TI' && record.amortize === 'YE' },
     { key: 'usableLifeMonths', column: 'UseLifeMonths', type: 'number', section: 'other', displayLogic: (record) => isDepreciate(record) && record.calculateType === 'TI' && record.amortize !== 'YE' },
@@ -98,7 +108,7 @@ export default function AssetsConfigPanel({ data, token, apiBaseUrl, catalogs, a
   const common = { data: d, onChange, catalogs, api, token, apiBaseUrl, entity: 'assets', layout: 'horizontal' };
 
   return (
-    <div className="space-y-4 pb-6">
+    <div className="space-y-4 pb-6 bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50">
       <SectionCard
         title={null}
         description={ui('assetsConfigDesc')}

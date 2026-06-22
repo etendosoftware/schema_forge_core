@@ -117,7 +117,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BPartner_Location",
       "inputMode": "dependent",
-      "url": "/sws/neo/returns/customerReturn/selectors/partnerAddress"
+      "url": "/sws/neo/returns/customerReturn/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "customerReturn",
@@ -173,7 +182,21 @@ export const api = {
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
-      "url": "/sws/neo/returns/customerReturnLine/selectors/tax"
+      "url": "/sws/neo/returns/customerReturnLine/selectors/tax",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "DateInvoiced",
+            "source": "parentField",
+            "field": "orderDate",
+            "format": "DD-MM-YYYY"
+          }
+        ]
+      }
     },
     {
       "entity": "customerReturnLine",
@@ -317,6 +340,14 @@ export const api = {
       "column": "RM_Pickfromreceipt",
       "url": "/sws/neo/returns/customerReturn/{id}/action/rMPickfromreceipt",
       "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "customerReturn",
+      "field": "psd2GenerateBankPayment",
+      "column": "EM_Psd2_Generate_Bank_Payment",
+      "url": "/sws/neo/returns/customerReturn/{id}/action/psd2GenerateBankPayment",
+      "processId": "0661406A983B4D8EA611F8596F114D52",
       "processType": "obuiapp"
     },
     {

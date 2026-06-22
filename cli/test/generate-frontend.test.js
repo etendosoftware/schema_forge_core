@@ -11,6 +11,12 @@ import {
   generateIndexComponent,
   generateMockCatalogs,
   generateAll,
+  projectApiPredictionForFrontend,
+  fragmentIf,
+  wrapIf,
+  jsonWrapIf,
+  pick,
+  buildHeaderLogicMaps,
 } from '../src/generate-frontend.js';
 
 // ---------------------------------------------------------------------------
@@ -431,6 +437,32 @@ describe('generateFormComponent', () => {
     const code = generateFormComponent('item', singleEntityContract);
     assert.ok(code.includes("key: 'description'"));
     assert.ok(code.includes("type: 'textarea'"));
+  });
+
+  it('respects explicit sections without consuming the automatic principal limit', () => {
+    const sectionContract = {
+      frontendContract: {
+        window: { id: '1', name: 'Test', primaryEntity: 'test', category: 'test' },
+        entities: {
+          test: {
+            fields: [
+              { name: 'first', column: 'First', type: 'string', tsType: 'string', visibility: 'editable', form: true },
+              { name: 'second', column: 'Second', type: 'string', tsType: 'string', visibility: 'editable', form: true, section: 'principal' },
+              { name: 'third', column: 'Third', type: 'string', tsType: 'string', visibility: 'editable', form: true, section: 'principal' },
+              { name: 'fourth', column: 'Fourth', type: 'string', tsType: 'string', visibility: 'editable', form: true },
+              { name: 'fifth', column: 'Fifth', type: 'string', tsType: 'string', visibility: 'editable', form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+
+    const code = generateFormComponent('test', sectionContract);
+    assert.ok(code.includes("key: 'fourth', column: 'Fourth', type: 'text', section: 'principal'"));
+    assert.ok(code.includes("key: 'fifth', column: 'Fifth', type: 'text', section: 'principal'"));
   });
 
   it('does NOT contain inline CSS or save/delete buttons', () => {
@@ -1123,6 +1155,39 @@ describe('generatePageComponent - apiPrediction', () => {
     assert.ok(!code.includes('const api ='), 'should not declare api const without apiPrediction');
     assert.ok(!code.includes('api={api}'), 'should not pass api prop without apiPrediction');
   });
+
+  it('emits a frontend-only action projection', () => {
+    const api = projectApiPredictionForFrontend({
+      specName: 'sales-order',
+      actions: [{
+        name: 'documentAction',
+        label: 'Process Order',
+        actionType: 'documentAction',
+        entity: 'order',
+        column: 'DocAction',
+        requiresRecord: true,
+        endpoint: '/sws/neo/sales-order/order/{id}/action/documentAction',
+        method: 'POST',
+        url: '/sws/neo/sales-order/order/{id}/action/documentAction',
+        parameters: [{ name: 'docAction', type: 'string' }],
+        preconditions: [{ field: 'documentStatus', operator: 'in', values: ['DR'] }],
+        effects: ['Updates document status'],
+        dryRunSupported: true,
+        edgeCases: ['Already processed', 'Missing lines', 'No permission'],
+        provenance: 'extracted',
+        processId: '104',
+        processType: 'classic',
+      }],
+    });
+
+    assert.deepEqual(api.actions, [{
+      entity: 'order',
+      column: 'DocAction',
+      url: '/sws/neo/sales-order/order/{id}/action/documentAction',
+      processId: '104',
+      processType: 'classic',
+    }]);
+  });
 });
 
 describe('generateIndexComponent - apiPrediction', () => {
@@ -1705,5 +1770,253 @@ describe('generatePageComponent — F3 drawer + display emission (secondary-tab 
     assert.ok(!plainEntry[0].includes('lookupTitle'), 'plain entry must not include lookupTitle');
     assert.ok(!plainEntry[0].includes('onSelectMappings'), 'plain entry must not include onSelectMappings');
     assert.ok(!plainEntry[0].includes('displayFromCatalog'), 'plain entry must not include displayFromCatalog');
+  });
+});
+
+describe('fragmentIf', () => {
+  it('returns the string when the condition is truthy', () => {
+    assert.equal(fragmentIf(true, ', required: true'), ', required: true');
+  });
+
+  it('returns an empty string when the condition is falsy', () => {
+    assert.equal(fragmentIf(false, ', required: true'), '');
+  });
+
+  it('treats undefined and null conditions as falsy', () => {
+    assert.equal(fragmentIf(undefined, ', toggle: true'), '');
+    assert.equal(fragmentIf(null, ', toggle: true'), '');
+  });
+
+  it('treats 0 and empty string as falsy', () => {
+    assert.equal(fragmentIf(0, ', min: 0'), '');
+    assert.equal(fragmentIf('', ', label'), '');
+  });
+
+  it('accepts truthy non-boolean conditions (e.g. compound expressions)', () => {
+    const f = { badge: true, cellType: undefined };
+    assert.equal(fragmentIf(f.badge && !f.cellType, ', badge: true'), ', badge: true');
+  });
+
+  it('does not coerce the returned fragment — returns it verbatim', () => {
+    assert.equal(fragmentIf(1, ', isSelectionColumn: true'), ', isSelectionColumn: true');
+  });
+});
+
+describe('wrapIf', () => {
+  it('wraps a truthy value between prefix and suffix', () => {
+    assert.equal(wrapIf('\n  notesField="', 'comment', '"'), '\n  notesField="comment"');
+  });
+
+  it('returns an empty string when the value is falsy', () => {
+    assert.equal(wrapIf('\n  notesField="', '', '"'), '');
+    assert.equal(wrapIf('\n  notesField="', null, '"'), '');
+    assert.equal(wrapIf('\n  notesField="', undefined, '"'), '');
+    assert.equal(wrapIf(', precision: ', 0), '');
+  });
+
+  it('defaults the suffix to an empty string', () => {
+    assert.equal(wrapIf(', precision: ', 4), ', precision: 4');
+    assert.equal(wrapIf(', lineConfig={', 'INVOICE_LINE_CONFIG', '}'), ', lineConfig={INVOICE_LINE_CONFIG}');
+  });
+
+  it('injects the value verbatim — no serialization', () => {
+    assert.equal(wrapIf('={', 'rawExpr', '}'), '={rawExpr}');
+  });
+
+  it('gates on an explicit cond while still injecting value (emits falsy values)', () => {
+    // detailTabIndex={0} must be emitted even though 0 is falsy
+    assert.equal(wrapIf('={', 0, '}', 0 != null), '={0}');
+    assert.equal(wrapIf('={', false, '}', false !== undefined), '={false}');
+  });
+
+  it('suppresses output when an explicit cond is falsy, regardless of value', () => {
+    assert.equal(wrapIf('="', 'classic', '"', false), '');
+  });
+});
+
+describe('jsonWrapIf', () => {
+  it('serializes a truthy value with JSON.stringify between prefix and suffix', () => {
+    assert.equal(
+      jsonWrapIf('\n  listViewOptions={', { density: 'compact' }, '}'),
+      '\n  listViewOptions={{"density":"compact"}}'
+    );
+  });
+
+  it('serializes arrays', () => {
+    assert.equal(jsonWrapIf('={', ['a', 'b'], '}'), '={["a","b"]}');
+  });
+
+  it('returns an empty string when the value is falsy', () => {
+    assert.equal(jsonWrapIf('={', null, '}'), '');
+    assert.equal(jsonWrapIf('={', undefined, '}'), '');
+  });
+
+  it('treats an empty array as truthy (matches the original ternary semantics)', () => {
+    assert.equal(jsonWrapIf('={', [], '}'), '={[]}');
+  });
+
+  it('gates on an explicit cond — empty array suppressed via length check', () => {
+    assert.equal(jsonWrapIf('={', [], '}', [].length > 0), '');
+    assert.equal(jsonWrapIf('={', ['a'], '}', ['a'].length > 0), '={["a"]}');
+  });
+});
+
+describe('pick', () => {
+  it('returns the first value when cond is truthy', () => {
+    assert.equal(pick(true, '#10b981', '#f59e0b'), '#10b981');
+    assert.equal(pick('confirm', 'draftModeWithConfirm', 'draftMode'), 'draftModeWithConfirm');
+  });
+
+  it('returns the second value when cond is falsy', () => {
+    assert.equal(pick(false, '#10b981', '#f59e0b'), '#f59e0b');
+    assert.equal(pick(null, 'draftModeWithConfirm', 'draftMode'), 'draftMode');
+    assert.equal(pick(undefined, '({ data, status })', '({ status })'), '({ status })');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildHeaderLogicMaps
+// ---------------------------------------------------------------------------
+
+describe('buildHeaderLogicMaps', () => {
+  it('maps column to name for fields that have both column and name', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          header: {
+            fields: [
+              { name: 'documentNo', column: 'DocumentNo', type: 'string' },
+              { name: 'grandTotal', column: 'GrandTotal', type: 'amount' },
+            ],
+          },
+        },
+      },
+    };
+    const { headerColumnMap } = buildHeaderLogicMaps(contract, 'header');
+    assert.deepEqual(headerColumnMap, { DocumentNo: 'documentNo', GrandTotal: 'grandTotal' });
+  });
+
+  it('skips fields missing column or missing name', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          header: {
+            fields: [
+              { name: 'documentNo', column: 'DocumentNo', type: 'string' },
+              { name: 'noColumn', type: 'string' },
+              { column: 'NoName', type: 'string' },
+            ],
+          },
+        },
+      },
+    };
+    const { headerColumnMap } = buildHeaderLogicMaps(contract, 'header');
+    assert.deepEqual(headerColumnMap, { DocumentNo: 'documentNo' });
+    assert.ok(!('NoName' in headerColumnMap), 'field without name should be skipped');
+  });
+
+  it('collects boolean fields when tsType is boolean or type is boolean', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          header: {
+            fields: [
+              { name: 'isActive', column: 'IsActive', tsType: 'boolean' },
+              { name: 'processed', column: 'Processed', type: 'boolean' },
+            ],
+          },
+        },
+      },
+    };
+    const { headerBooleanFields } = buildHeaderLogicMaps(contract, 'header');
+    assert.ok(headerBooleanFields.includes('isActive'), 'tsType boolean should be collected');
+    assert.ok(headerBooleanFields.includes('processed'), 'type boolean should be collected');
+  });
+
+  it('does not collect non-boolean fields into headerBooleanFields', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          header: {
+            fields: [
+              { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string' },
+              { name: 'grandTotal', column: 'GrandTotal', type: 'amount', tsType: 'number' },
+            ],
+          },
+        },
+      },
+    };
+    const { headerBooleanFields } = buildHeaderLogicMaps(contract, 'header');
+    assert.deepEqual(headerBooleanFields, []);
+  });
+
+  it('returns empty maps without throwing when the entity is absent', () => {
+    const contract = { frontendContract: { entities: {} } };
+    const result = buildHeaderLogicMaps(contract, 'header');
+    assert.deepEqual(result, { headerColumnMap: {}, headerBooleanFields: [] });
+  });
+
+  it('returns empty maps when the entity exists but has no fields array', () => {
+    const contract = { frontendContract: { entities: { header: {} } } };
+    const result = buildHeaderLogicMaps(contract, 'header');
+    assert.deepEqual(result, { headerColumnMap: {}, headerBooleanFields: [] });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateTableComponent — gridReadOnly
+// ---------------------------------------------------------------------------
+
+describe('generateTableComponent — gridReadOnly', () => {
+  const gridReadOnlyContract = {
+    frontendContract: {
+      window: { id: '900', name: 'Return To Vendor', primaryEntity: 'shipment', category: 'purchasing' },
+      entities: {
+        shipment: {
+          fields: [
+            { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string',
+              visibility: 'readOnly', required: true, grid: true, form: true },
+            { name: 'quantity', column: 'Qty', type: 'number', tsType: 'number',
+              visibility: 'editable', required: true, grid: true, form: true,
+              gridReadOnly: true },
+            { name: 'product', column: 'M_Product_ID', type: 'foreignKey', tsType: 'string',
+              visibility: 'editable', required: true, grid: true, form: true },
+          ],
+          searchableFields: ['documentNo'],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+
+  it('emits readOnly: true in column definition when field has gridReadOnly: true', () => {
+    const code = generateTableComponent('shipment', gridReadOnlyContract);
+    assert.ok(
+      code.includes(", readOnly: true"),
+      'column with gridReadOnly should have readOnly: true'
+    );
+  });
+
+  it('does NOT emit readOnly: true for fields without gridReadOnly', () => {
+    const code = generateTableComponent('shipment', gridReadOnlyContract);
+    // Only the quantity field has gridReadOnly — verify that the count of
+    // readOnly: true occurrences matches exactly one field
+    const matches = code.match(/, readOnly: true/g) ?? [];
+    assert.equal(matches.length, 1, 'exactly one column should have readOnly: true');
+  });
+
+  it('gridReadOnly field still appears as a column in the table', () => {
+    const code = generateTableComponent('shipment', gridReadOnlyContract);
+    assert.ok(code.includes("key: 'quantity'"), 'gridReadOnly field should still be present as a column');
+  });
+
+  it('field without gridReadOnly does NOT get readOnly: true in its column entry', () => {
+    // product column should not contain readOnly
+    const code = generateTableComponent('shipment', gridReadOnlyContract);
+    const lines = code.split('\n');
+    const productLine = lines.find(l => l.includes("key: 'product'"));
+    assert.ok(productLine, 'product column should exist');
+    assert.ok(!productLine.includes('readOnly: true'), 'product column should not have readOnly: true');
   });
 });

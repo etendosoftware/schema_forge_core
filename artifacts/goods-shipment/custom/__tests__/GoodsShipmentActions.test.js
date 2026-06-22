@@ -31,24 +31,16 @@ describe('GoodsShipmentActions', () => {
   });
 
   describe('isFullyInvoiced — still required for Create Invoice button visibility', () => {
-    it('reads completelyInvoiced from data', () => {
-      assert.match(src, /data\?\.completelyInvoiced/);
-    });
-
-    it('computes isFullyInvoiced from completelyInvoiced', () => {
+    it('computes isFullyInvoiced using invoiceStatus', () => {
       assert.match(src, /isFullyInvoiced\s*=/);
     });
 
-    it('treats boolean true as fully invoiced', () => {
-      assert.match(src, /ci\s*===\s*true/);
+    it('uses invoiceStatus >= 100 as the fully-invoiced threshold', () => {
+      assert.match(src, /data\?\.invoiceStatus\s*>=\s*100/);
     });
 
-    it('treats string "true" as fully invoiced', () => {
-      assert.match(src, /ci\s*===\s*'true'/);
-    });
-
-    it('treats string "Y" as fully invoiced', () => {
-      assert.match(src, /ci\s*===\s*'Y'/);
+    it('does not gate on linkedInvoices presence (partial invoicing must remain invoiceable)', () => {
+      assert.doesNotMatch(src, /linkedInvoices\.length\s*>\s*0.*isFullyInvoiced|isFullyInvoiced.*linkedInvoices\.length\s*>\s*0/);
     });
   });
 
@@ -84,6 +76,20 @@ describe('GoodsShipmentActions', () => {
 
     it('renders ReturnWizard with open, onClose, shipmentData, lines, token, and apiBaseUrl props', () => {
       assert.match(src, /<ReturnWizard[^/]*open=\{wizardOpen\}/s);
+    });
+  });
+
+  describe('Create Return button visibility — partial return support', () => {
+    it('derives canCreateReturn from data?.canCreateReturn === true (backend-computed)', () => {
+      assert.match(src, /canCreateReturn\s*=\s*data\?\.canCreateReturn\s*===\s*true/);
+    });
+
+    it('does not use hasReturn to gate the create-return button', () => {
+      assert.doesNotMatch(src, /\bhasReturn\b/);
+    });
+
+    it('gates the create-return button on isCompleted && canCreateReturn', () => {
+      assert.match(src, /isCompleted\s*&&\s*canCreateReturn/);
     });
   });
 

@@ -22,6 +22,7 @@ const expectedKeysInOrder = [
   'grandTotalAmount',
   'outstandingAmount',
   'eTGODeliveryStatus',
+  'transactionDocument',
 ];
 
 describe('PurchaseInvoiceHeaderTable — columns', () => {
@@ -33,7 +34,7 @@ describe('PurchaseInvoiceHeaderTable — columns', () => {
     assert.ok(columnsBlock, 'expected `const columns = useMemo(() => [...], [])` block');
   });
 
-  it('renders the eight expected columns in order', () => {
+  it('renders the nine expected columns in order (transactionDocument is visible badge + type filter)', () => {
     const block = columnsBlock[1];
     const keys = [...block.matchAll(/key:\s*'([^']+)'/g)].map(m => m[1]);
     assert.deepEqual(keys, expectedKeysInOrder);
@@ -56,6 +57,44 @@ describe('PurchaseInvoiceHeaderTable — columns', () => {
       /key: 'eTGODeliveryStatus'.*type: 'percent'/,
       'eTGODeliveryStatus must use type: "percent" so DataTable renders the progress bar',
     );
+  });
+
+  it('does NOT use isTypeFilter — type filtering is handled by subsetFilters in index.jsx', () => {
+    assert.doesNotMatch(src, /isTypeFilter:\s*true/,
+      'isTypeFilter was replaced by subsetFilters pills in the window index (ETP-4036)');
+    assert.doesNotMatch(src, /backendFilterKey:\s*'transactionDocument\$_identifier'/);
+  });
+
+  it('uses DOC_TYPE_BADGE with i18n label keys for the AP doc types', () => {
+    assert.match(src, /label:\s*'invoicesTab'/);
+    assert.match(src, /label:\s*'creditNotesTab'/);
+    assert.match(src, /label:\s*'returnInvoiceTab'/);
+  });
+});
+
+// ── ETP-4125: fiscal status read directly from row data ──────────────────────
+// Risk: regression to batch GET hook would silently reintroduce the nginx URL
+// length issue (403 on 53+ invoices).
+
+describe('PurchaseInvoiceHeaderTable — fiscal status columns (ETP-4125)', () => {
+  it('does NOT import useInvoiceListFiscalStatus (batch hook eliminated)', () => {
+    assert.doesNotMatch(src, /useInvoiceListFiscalStatus/,
+      'The batch-fetch hook was removed in ETP-4125 to fix nginx URL-length errors');
+  });
+
+  it('reads SII status directly from row.aeatsiiEstado', () => {
+    assert.match(src, /row\.aeatsiiEstado/,
+      'SII status must come from the row field, not a separate fetch');
+  });
+
+  it('does not render a Verifactu column (purchase invoices only have SII)', () => {
+    assert.doesNotMatch(src, /row\.etvfacInvoiceStatus/,
+      'Verifactu is sales-only — purchase invoices must not render an etvfacInvoiceStatus column');
+  });
+
+  it('does not maintain a statusMap or fiscalLoading variable', () => {
+    assert.doesNotMatch(src, /statusMap/);
+    assert.doesNotMatch(src, /fiscalLoading/);
   });
 });
 

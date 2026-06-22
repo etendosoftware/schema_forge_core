@@ -213,7 +213,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "Paymentmethod",
       "inputMode": "selector",
-      "url": "/sws/neo/sii-monitor/issuedInvoices/selectors/paymentMethod"
+      "url": "/sws/neo/sii-monitor/issuedInvoices/selectors/paymentMethod",
+      "context": {
+        "optional": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "issuedInvoicesSiiData",
@@ -253,7 +261,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "Paymentmethod",
       "inputMode": "selector",
-      "url": "/sws/neo/sii-monitor/receivedInvoices/selectors/paymentMethod"
+      "url": "/sws/neo/sii-monitor/receivedInvoices/selectors/paymentMethod",
+      "context": {
+        "optional": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "receivedInvoicesSiiData",
@@ -357,7 +373,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "Paymentmethod",
       "inputMode": "selector",
-      "url": "/sws/neo/sii-monitor/issuedInvoices(previousPeriod)/selectors/paymentMethod"
+      "url": "/sws/neo/sii-monitor/issuedInvoices(previousPeriod)/selectors/paymentMethod",
+      "context": {
+        "optional": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "issuedInvoices(previousPeriod)SiiData",
@@ -397,7 +421,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "Paymentmethod",
       "inputMode": "selector",
-      "url": "/sws/neo/sii-monitor/receivedInvoices(previousPeriod)/selectors/paymentMethod"
+      "url": "/sws/neo/sii-monitor/receivedInvoices(previousPeriod)/selectors/paymentMethod",
+      "context": {
+        "optional": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "receivedInvoices(previousPeriod)SiiData",
@@ -598,6 +630,14 @@ export const api = {
       "processType": "classic"
     },
     {
+      "entity": "issuedInvoices",
+      "field": "psd2GenerateBankPayment",
+      "column": "EM_Psd2_Generate_Bank_Payment",
+      "url": "/sws/neo/sii-monitor/issuedInvoices/{id}/action/psd2GenerateBankPayment",
+      "processId": "0661406A983B4D8EA611F8596F114D52",
+      "processType": "obuiapp"
+    },
+    {
       "entity": "receivedInvoices",
       "field": "aeatsiiSend",
       "column": "EM_Aeatsii_Send",
@@ -744,6 +784,14 @@ export const api = {
       "url": "/sws/neo/sii-monitor/receivedInvoices/{id}/action/processNow",
       "processId": "111",
       "processType": "classic"
+    },
+    {
+      "entity": "receivedInvoices",
+      "field": "psd2GenerateBankPayment",
+      "column": "EM_Psd2_Generate_Bank_Payment",
+      "url": "/sws/neo/sii-monitor/receivedInvoices/{id}/action/psd2GenerateBankPayment",
+      "processId": "0661406A983B4D8EA611F8596F114D52",
+      "processType": "obuiapp"
     },
     {
       "entity": "cashCriterionPayments",
@@ -902,6 +950,14 @@ export const api = {
       "processType": "classic"
     },
     {
+      "entity": "issuedInvoices(previousPeriod)",
+      "field": "psd2GenerateBankPayment",
+      "column": "EM_Psd2_Generate_Bank_Payment",
+      "url": "/sws/neo/sii-monitor/issuedInvoices(previousPeriod)/{id}/action/psd2GenerateBankPayment",
+      "processId": "0661406A983B4D8EA611F8596F114D52",
+      "processType": "obuiapp"
+    },
+    {
       "entity": "receivedInvoices(previousPeriod)",
       "field": "aeatsiiSend",
       "column": "EM_Aeatsii_Send",
@@ -1048,6 +1104,14 @@ export const api = {
       "url": "/sws/neo/sii-monitor/receivedInvoices(previousPeriod)/{id}/action/processNow",
       "processId": "111",
       "processType": "classic"
+    },
+    {
+      "entity": "receivedInvoices(previousPeriod)",
+      "field": "psd2GenerateBankPayment",
+      "column": "EM_Psd2_Generate_Bank_Payment",
+      "url": "/sws/neo/sii-monitor/receivedInvoices(previousPeriod)/{id}/action/psd2GenerateBankPayment",
+      "processId": "0661406A983B4D8EA611F8596F114D52",
+      "processType": "obuiapp"
     }
   ],
   "queryParams": {

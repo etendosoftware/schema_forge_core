@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "generatedAt": "2026-04-29T19:46:12.773Z",
-  "updatedAt": "2026-05-11T16:22:44.839Z",
-  "checksum": "7c63ffb4e39aacf3",
+  "updatedAt": "2026-06-11T12:55:36.379Z",
+  "checksum": "79b899b3eb9a5f7e",
   "frontendContract": {
     "window": {
       "id": "FF808081330213E60133021822E40007",
@@ -1533,6 +1533,14 @@
             "type": "decimal",
             "visibility": "system",
             "required": false
+          },
+          {
+            "name": "psd2GenerateBankPayment",
+            "apiKey": "psd2GenerateBankPayment",
+            "column": "EM_Psd2_Generate_Bank_Payment",
+            "type": "button",
+            "visibility": "system",
+            "required": false
           }
         ]
       },
@@ -2264,7 +2272,16 @@
         "column": "C_BPartner_Location_ID",
         "reference": "BPartner_Location",
         "inputMode": "dependent",
-        "url": "/sws/neo/returns/customerReturn/selectors/partnerAddress"
+        "url": "/sws/neo/returns/customerReturn/selectors/partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "customerReturn",
@@ -2320,7 +2337,21 @@
         "column": "C_Tax_ID",
         "reference": "Tax",
         "inputMode": "selector",
-        "url": "/sws/neo/returns/customerReturnLine/selectors/tax"
+        "url": "/sws/neo/returns/customerReturnLine/selectors/tax",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "DateInvoiced",
+              "source": "parentField",
+              "field": "orderDate",
+              "format": "DD-MM-YYYY"
+            }
+          ]
+        }
       },
       {
         "entity": "customerReturnLine",
@@ -2464,6 +2495,14 @@
         "column": "RM_Pickfromreceipt",
         "url": "/sws/neo/returns/customerReturn/{id}/action/rMPickfromreceipt",
         "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "customerReturn",
+        "field": "psd2GenerateBankPayment",
+        "column": "EM_Psd2_Generate_Bank_Payment",
+        "url": "/sws/neo/returns/customerReturn/{id}/action/psd2GenerateBankPayment",
+        "processId": "0661406A983B4D8EA611F8596F114D52",
         "processType": "obuiapp"
       },
       {
@@ -2613,6 +2652,14 @@
         "field": "processNow",
         "runner": "node",
         "description": "Action endpoint for 'processNow' in customerReturn should exist"
+      },
+      {
+        "id": "t-action-endpoint-customerReturn-psd2GenerateBankPayment",
+        "category": "action-endpoint",
+        "entity": "customerReturn",
+        "field": "psd2GenerateBankPayment",
+        "runner": "node",
+        "description": "Action endpoint for 'psd2GenerateBankPayment' in customerReturn should exist"
       },
       {
         "id": "t-action-endpoint-customerReturn-rMAddOrphanLine",
@@ -4039,6 +4086,14 @@
         "description": "System field 'project' should exist in backend but not frontend for customerReturn"
       },
       {
+        "id": "t-system-field-customerReturn-psd2GenerateBankPayment",
+        "category": "system-field",
+        "entity": "customerReturn",
+        "field": "psd2GenerateBankPayment",
+        "runner": "node",
+        "description": "System field 'psd2GenerateBankPayment' should exist in backend but not frontend for customerReturn"
+      },
+      {
         "id": "t-system-field-customerReturn-quotation",
         "category": "system-field",
         "entity": "customerReturn",
@@ -4742,9 +4797,9 @@
       }
     ],
     "summary": {
-      "total": 279,
+      "total": 281,
       "byCategory": {
-        "action-endpoint": 21,
+        "action-endpoint": 22,
         "crud-flags": 2,
         "default-value-type": 5,
         "displaylogic-evaluable": 1,
@@ -4756,11 +4811,11 @@
         "rule-declared": 6,
         "searchable-filters": 5,
         "selector-endpoint": 11,
-        "system-field": 151,
+        "system-field": 152,
         "visibility": 2
       },
       "byRunner": {
-        "node": 279,
+        "node": 281,
         "junit": 0
       }
     }

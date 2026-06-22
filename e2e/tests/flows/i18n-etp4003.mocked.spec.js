@@ -144,9 +144,9 @@ test.describe('CommandPalette i18n (ETP-4003)', () => {
   });
 });
 
-// ─── Group 2: SendDocumentModal email validation ──────────────────────────────
+// ─── Group 2: SendDocumentModal contract-driven recipient preview ─────────────
 
-test.describe('SendDocumentModal email validation (ETP-4003)', () => {
+test.describe('SendDocumentModal contract recipient preview (ETP-4003)', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await installSalesInvoiceMock(page);
@@ -166,62 +166,41 @@ test.describe('SendDocumentModal email validation (ETP-4003)', () => {
     await expect(toInput).toBeVisible({ timeout: 8_000 });
   });
 
-  test('Send button is initially disabled when email is empty', async ({ page }) => {
+  test('Send button remains enabled when email is empty because backend resolves recipients', async ({ page }) => {
     const firstRow = page.locator('tbody tr').filter({ hasText: 'INV-001' }).first();
     await expect(firstRow).toBeVisible({ timeout: 10_000 });
     await firstRow.hover();
     await firstRow.getByTestId('row-quick-action-email').click();
     const toInput = page.locator('input[placeholder="email@company.com"]');
     await expect(toInput).toBeVisible({ timeout: 8_000 });
-    // The BP has no email in our mock, so input starts empty → Send disabled
-    // Find the Send button (contains send icon and no 'cancel' text)
-    const sendBtn = page.locator('button[disabled]').filter({ hasNotText: /cancel|close|download/i }).last();
-    await expect(sendBtn).toBeVisible({ timeout: 5_000 });
+    await expect(toInput).toHaveAttribute('readonly', '');
+    const sendBtn = page.locator('button').filter({ hasText: /^(Enviar|Send)$/i });
+    await expect(sendBtn).toBeEnabled({ timeout: 5_000 });
   });
 
-  test('Send button becomes enabled after filling a valid email', async ({ page }) => {
+  test('recipient preview field is read-only', async ({ page }) => {
     const firstRow = page.locator('tbody tr').filter({ hasText: 'INV-001' }).first();
     await expect(firstRow).toBeVisible({ timeout: 10_000 });
     await firstRow.hover();
     await firstRow.getByTestId('row-quick-action-email').click();
     const toInput = page.locator('input[placeholder="email@company.com"]');
     await expect(toInput).toBeVisible({ timeout: 8_000 });
-    // Fill a valid email
-    await toInput.fill('test@example.com');
-    // The dark send button (black background) should become enabled
-    await page.waitForFunction(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      return btns.some(
-        (b) => !b.disabled && b.style.background === 'rgb(24, 24, 27)',
-      );
-    }, { timeout: 5_000 });
-    // Verify it's actually not disabled
-    const sendBtn = page.locator('button').filter({
-      has: page.locator('[class*="mail"], svg'),
-    }).last();
-    // The send button with black background should exist and not be disabled
-    const enabledSendBtn = page.locator('button[style*="rgb(24, 24, 27)"]:not([disabled])');
-    await expect(enabledSendBtn).toBeVisible({ timeout: 3_000 });
+    await expect(toInput).toHaveAttribute('readonly', '');
+    await expect(toInput).toHaveValue('');
+    await toInput.focus();
+    await page.keyboard.type('test@example.com');
+    await expect(toInput).toHaveValue('');
   });
 
-  test('Send button becomes disabled again after clearing the email', async ({ page }) => {
+  test('Send button is not locally gated by recipient preview value', async ({ page }) => {
     const firstRow = page.locator('tbody tr').filter({ hasText: 'INV-001' }).first();
     await expect(firstRow).toBeVisible({ timeout: 10_000 });
     await firstRow.hover();
     await firstRow.getByTestId('row-quick-action-email').click();
     const toInput = page.locator('input[placeholder="email@company.com"]');
     await expect(toInput).toBeVisible({ timeout: 8_000 });
-    // Fill valid email
-    await toInput.fill('test@example.com');
-    // Verify it's now enabled by waiting briefly
-    await page.waitForTimeout(300);
-    // Now clear the email
-    await toInput.fill('');
-    await toInput.blur();
-    // The send button should be disabled again
-    await page.waitForFunction(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      return btns.some((b) => b.disabled && b.style.background === 'rgb(24, 24, 27)');
-    }, { timeout: 5_000 });
+    await expect(toInput).toHaveValue('');
+    const sendBtn = page.locator('button').filter({ hasText: /^(Enviar|Send)$/i });
+    await expect(sendBtn).toBeEnabled({ timeout: 5_000 });
   });
 });

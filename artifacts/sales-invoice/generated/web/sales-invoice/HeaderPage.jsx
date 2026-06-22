@@ -6,6 +6,8 @@ import HeaderTable from '../../../custom/InvoiceHeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
+import ExchangeRatesTable from './ExchangeRatesTable';
+import ExchangeRatesForm from './ExchangeRatesForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import { AttachmentsTab } from '@/components/attachments';
 import SifTab from '@/windows/custom/shared/SifTab.jsx';
@@ -15,21 +17,6 @@ import catalogs from './mockCatalogs';
 
 
 const breadcrumb = 'Sales / Sales Invoice';
-
-const labelOverrides = {
-  "es_ES": {
-    "OutstandingAmt": "Pendiente de pago",
-    "EM_Etgo_Due_Date": "Vencimiento",
-    "em_etgo_delivery_status": "Estado de entrega",
-    "C_DocTypeTarget_ID": "Tipo de documento"
-  },
-  "en_US": {
-    "OutstandingAmt": "Pending Payment",
-    "EM_Etgo_Due_Date": "Due Date",
-    "em_etgo_delivery_status": "Delivery Status",
-    "C_DocTypeTarget_ID": "Document Type"
-  }
-};
 
 
 // @sf-generated-start summary:header
@@ -128,6 +115,17 @@ export const api = {
       "listUrl": "/sws/neo/sales-invoice/paymentPlan",
       "detailUrl": "/sws/neo/sales-invoice/paymentPlan/{id}",
       "supportedFilters": []
+    },
+    "exchangeRates": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/sales-invoice/exchangeRates",
+      "detailUrl": "/sws/neo/sales-invoice/exchangeRates/{id}",
+      "supportedFilters": []
     }
   },
   "selectors": [
@@ -145,7 +143,20 @@ export const api = {
       "column": "C_DocTypeTarget_ID",
       "reference": "DocumentType",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/header/selectors/cDocTypeTargetId"
+      "url": "/sws/neo/sales-invoice/header/selectors/cDocTypeTargetId",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "AD_Org_ID",
+            "source": "field",
+            "field": "adOrgId"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -161,7 +172,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/sales-invoice/header/selectors/partnerAddress"
+      "url": "/sws/neo/sales-invoice/header/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -177,7 +197,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/header/selectors/paymentMethod"
+      "url": "/sws/neo/sales-invoice/header/selectors/paymentMethod",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -193,7 +221,15 @@ export const api = {
       "column": "M_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/header/selectors/priceList"
+      "url": "/sws/neo/sales-invoice/header/selectors/priceList",
+      "context": {
+        "required": [
+          {
+            "param": "isSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -225,7 +261,21 @@ export const api = {
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/lines/selectors/tax"
+      "url": "/sws/neo/sales-invoice/lines/selectors/tax",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "DateInvoiced",
+            "source": "parentField",
+            "field": "invoiceDate",
+            "format": "DD-MM-YYYY"
+          }
+        ]
+      }
     },
     {
       "entity": "paymentPlan",
@@ -242,6 +292,22 @@ export const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/paymentPlan/selectors/currency"
+    },
+    {
+      "entity": "exchangeRates",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/exchangeRates/selectors/currency"
+    },
+    {
+      "entity": "exchangeRates",
+      "field": "toCurrency",
+      "column": "C_Currency_Id_To",
+      "reference": "Currency",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-invoice/exchangeRates/selectors/toCurrency"
     }
   ],
   "actions": [
@@ -474,6 +540,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
   if (recordId) {
@@ -496,6 +564,13 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        secondaryTabs={[
+          { key: 'exchangeRates', label: 'Exchange Rates', Table: ExchangeRatesTable, Form: ExchangeRatesForm, addLineFields: { entry: [
+          { key: 'toCurrency', column: 'C_Currency_Id_To', type: 'search', required: true, label: 'To Currency', reference: 'Currency', inputMode: 'search', excludeValueOf: 'currency' },
+          { key: 'rate', column: 'Rate', type: 'text', label: 'Rate' },
+          { key: 'foreignAmount', column: 'Foreign_Amount', type: 'number', required: true, label: 'Foreign  Amount', defaultValue: '0' },
+          ], derived: [], hidden: [] }, requireSavedRecord: true, readOnlyLogic: (record) => record['documentStatus'] !== 'DR' },
+        ]}
         hideDeleteWhenComplete
         hidePrint
         noHeaderBorder

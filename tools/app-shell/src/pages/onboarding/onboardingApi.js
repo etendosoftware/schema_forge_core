@@ -4,8 +4,17 @@ export const ONBOARDING_ERROR_CODES = {
   invalidSession: 'onboardingInvalidSession',
   loadEnvironmentsFailed: 'onboardingLoadEnvironmentsFailed',
   environmentLoginFailed: 'onboardingEnvironmentLoginFailed',
+  credentialChangeFailed: 'onboardingCredentialChangeFailed',
+  credentialResetFailed: 'onboardingCredentialResetFailed',
+  ssoFailed: 'onboardingSsoFailed',
   streamUnavailable: 'onboardingStreamUnavailable',
   missingResult: 'onboardingMissingResult',
+};
+
+const SSO_PAYLOAD_BUILDERS = {
+  google: (payload = {}) => ({
+    credential: payload.credential,
+  }),
 };
 
 export function buildAuthHeaders(token) {
@@ -48,6 +57,55 @@ export async function loginAccount(fetchImpl, baseUrl, form) {
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidCredentials);
 }
 
+export async function loginWithSsoProvider(fetchImpl, baseUrl, provider, payload) {
+  const normalizedProvider = String(provider || '').trim().toLowerCase();
+  const buildPayload = SSO_PAYLOAD_BUILDERS[normalizedProvider];
+  if (!buildPayload) {
+    const error = new Error(ONBOARDING_ERROR_CODES.ssoFailed);
+    error.code = ONBOARDING_ERROR_CODES.ssoFailed;
+    throw error;
+  }
+  const response = await fetchImpl(`${baseUrl}/sws/go/sso/${encodeURIComponent(normalizedProvider)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(buildPayload(payload)),
+  });
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.ssoFailed);
+}
+
+export async function requestPasswordReset(fetchImpl, baseUrl, email) {
+  const response = await fetchImpl(`${baseUrl}/sws/go/password-reset/request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.credentialResetFailed);
+}
+
+export async function confirmPasswordReset(fetchImpl, baseUrl, form) {
+  const response = await fetchImpl(`${baseUrl}/sws/go/password-reset/confirm`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token: form.token,
+      password: form.password,
+    }),
+  });
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.credentialResetFailed);
+}
+
+export async function changePassword(fetchImpl, baseUrl, token, form) {
+  const response = await fetchImpl(`${baseUrl}/sws/go/change-password`, {
+    method: 'POST',
+    headers: buildAuthHeaders(token),
+    body: JSON.stringify({
+      currentPassword: form.currentPassword,
+      newPassword: form.newPassword,
+    }),
+  });
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.credentialChangeFailed);
+}
+
 export async function fetchAccount(fetchImpl, baseUrl, token) {
   const response = await fetchImpl(`${baseUrl}/sws/go/me`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -71,6 +129,38 @@ export async function loginEnvironment(fetchImpl, baseUrl, token, env) {
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.environmentLoginFailed);
 }
 
+function processLines(lines, onMessage, finalResult) {
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const message = JSON.parse(line);
+    onMessage?.(message);
+    if (message.type === 'result') {
+      finalResult = message;
+    }
+  }
+  return finalResult;
+}
+
+async function readStreamResult(reader, onMessage) {
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let finalResult = null;
+
+  while (true) {
+    const {done, value} = await reader.read();
+    if (value) buffer += decoder.decode(value, {stream: !done});
+    if (done) buffer += decoder.decode();
+
+    const lines = buffer.split('\n');
+    buffer = done ? '' : lines.pop();
+
+    finalResult = processLines(lines, onMessage, finalResult);
+
+    if (done) break;
+  }
+  return finalResult;
+}
+
 export async function runOnboardingStream(fetchImpl, baseUrl, token, form, onMessage) {
   const response = await fetchImpl(`${baseUrl}/sws/go/onboarding`, {
     method: 'POST',
@@ -90,29 +180,7 @@ export async function runOnboardingStream(fetchImpl, baseUrl, token, form, onMes
   }
 
   const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let finalResult = null;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (value) buffer += decoder.decode(value, { stream: !done });
-    if (done) buffer += decoder.decode();
-
-    const lines = buffer.split('\n');
-    buffer = done ? '' : lines.pop();
-
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      const message = JSON.parse(line);
-      onMessage?.(message);
-      if (message.type === 'result') {
-        finalResult = message;
-      }
-    }
-
-    if (done) break;
-  }
+  const finalResult = await readStreamResult(reader, onMessage);
 
   if (!finalResult) {
     const error = new Error(ONBOARDING_ERROR_CODES.missingResult);

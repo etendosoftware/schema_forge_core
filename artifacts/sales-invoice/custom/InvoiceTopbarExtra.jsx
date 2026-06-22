@@ -3,6 +3,7 @@ import { useUI, useMenuLabel } from '@/i18n';
 import InvoicePaymentModal from '@/windows/custom/shared/InvoicePaymentModal.jsx';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 import SendToSifButton from './SendToSifButton';
+import { getArSubtype } from './invoiceSubtype';
 
 function fmt(val, curr) {
   const n = typeof val === 'string' ? parseFloat(val) : (val ?? 0);
@@ -95,8 +96,8 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
     const handler = (e) => {
       if (e.detail?.entity === 'header' && e.detail?.process?.columnName === 'DocAction' && e.detail?.recordId) {
         sessionStorage.setItem(`invoice:sendAfterConfirm:${e.detail.recordId}`, '1');
-        const subtype = dataRef.current?.arInvoiceSubtype;
-        if (!subtype || subtype === 'FAC') {
+        const subtype = getArSubtype(dataRef.current);
+        if (subtype === 'FAC') {
           sessionStorage.setItem(`invoice:createShipment:${e.detail.recordId}`, '1');
         }
       }
@@ -221,7 +222,8 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
   }
 
   // Credit instruments (NC / DEV) — no payment lifecycle, just show applied amount
-  const isCreditInstrument = data?.arInvoiceSubtype === 'NC' || data?.arInvoiceSubtype === 'DEV';
+  const arSubtype = getArSubtype(data);
+  const isCreditInstrument = arSubtype === 'NC' || arSubtype === 'DEV';
   if (isCompleted && isCreditInstrument) {
     const amount = Math.abs(typeof grandTotal === 'string' ? parseFloat(grandTotal) : (grandTotal ?? 0));
     return (

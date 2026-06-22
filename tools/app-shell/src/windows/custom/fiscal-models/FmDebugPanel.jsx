@@ -28,8 +28,8 @@ const DEMO_303_BOXES = {
 
 const MOCK_303 = {
   id: 'debug-303-2026-T1', model: '303', year: 2026, period: 'T1',
-  type: 'ord', status: 'borrador', nif: 'B12345678',
-  result: { kind: 'compensar', amount: 2816.31 },
+  type: 'ord', status: 'draft', nif: 'B12345678',
+  result: { kind: 'C', amount: 2816.31 },
   incidents: { blocking: 0, warning: 0, items: [] },
   summary: { accrued: 682.08, deductible: 3498.39, result: -2816.31 },
   boxes: REAL_303_BOXES,
@@ -39,8 +39,8 @@ const MOCK_303 = {
 
 const MOCK_349 = {
   id: 'debug-349-2026-01', model: '349', year: 2026, period: '01',
-  type: 'ord', status: 'borrador', nif: 'B12345678',
-  result: { kind: 'informativa', amount: 0 },
+  type: 'ord', status: 'draft', nif: 'B12345678',
+  result: { kind: 'N', amount: 0 },
   incidents: { blocking: 0, warning: 0, items: [] },
   updatedAt: '14/05/2026',
 };
@@ -343,8 +343,8 @@ export default function FmDebugPanel({ view, setView }) {
             <>
               {[
                 { label: 'Summary',          active: !!decl?.summary,                              onInject: () => patchDecl({ summary: MOCK_SUMMARY }),          onClear: () => patchDecl({ summary: null }) },
-                { label: 'Boxes · real',     active: decl?.boxes?.[7] === REAL_303_BOXES[7],       onInject: () => patchDecl({ boxes: REAL_303_BOXES, result: { kind:'compensar', amount:2816.31 }, summary: { accrued:682.08, deductible:3498.39, result:-2816.31 } }), onClear: () => patchDecl({ boxes: {} }) },
-                { label: 'Boxes · demo',     active: decl?.boxes?.[7] === DEMO_303_BOXES[7],       onInject: () => patchDecl({ boxes: DEMO_303_BOXES, result: { kind:'ingresar',  amount:12179.75 }, summary: { accrued:45230.80, deductible:33051.05, result:12179.75 } }), onClear: () => patchDecl({ boxes: {} }) },
+                { label: 'Boxes · real',     active: decl?.boxes?.[7] === REAL_303_BOXES[7],       onInject: () => patchDecl({ boxes: REAL_303_BOXES, result: { kind:'C', amount:2816.31 }, summary: { accrued:682.08, deductible:3498.39, result:-2816.31 } }), onClear: () => patchDecl({ boxes: {} }) },
+                { label: 'Boxes · demo',     active: decl?.boxes?.[7] === DEMO_303_BOXES[7],       onInject: () => patchDecl({ boxes: DEMO_303_BOXES, result: { kind:'I',  amount:12179.75 }, summary: { accrued:45230.80, deductible:33051.05, result:12179.75 } }), onClear: () => patchDecl({ boxes: {} }) },
                 { label: 'File',             active: !!decl?.file,                                 onInject: () => patchDecl({ file: MOCK_FILE }),                 onClear: () => patchDecl({ file: null }) },
                 { label: 'Sources (4 rows)', active: (decl?.sources ?? []).length > 0,            onInject: () => patchDecl({ sources: MOCK_SOURCES }),           onClear: () => patchDecl({ sources: [] }) },
                 { label: 'History (4)',      active: (decl?.history ?? []).length > 0,            onInject: () => patchDecl({ history: MOCK_HISTORY }),           onClear: () => patchDecl({ history: [] }) },
@@ -364,7 +364,7 @@ export default function FmDebugPanel({ view, setView }) {
               <div style={divider} />
               <div style={sectionLabel}>Result kind</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
-                {['ingresar', 'compensar', 'devolver', 'zero', 'informativa'].map(k => (
+                {['I', 'C', 'V', 'N'].map(k => (
                   <button
                     key={k}
                     disabled={!decl}
@@ -406,11 +406,11 @@ export default function FmDebugPanel({ view, setView }) {
               <div style={divider} />
               <div style={sectionLabel}>Modelo 303</div>
               {[
-                { label: '2026 T1 · borrador',        patch: { status: 'borrador', incidents: { blocking: 0, warning: 0, items: [] } } },
-                { label: '2026 T1 · 2 blocking',      patch: { status: 'borrador', incidents: { blocking: 2, warning: 3, items: [...MOCK_INCIDENTS.blocking, ...MOCK_INCIDENTS.warning] } } },
-                { label: '2026 T1 · listo + file',    patch: { status: 'listo', file: MOCK_FILE, incidents: { blocking: 0, warning: 0, items: [] } } },
-                { label: '2026 T1 · presentadoAcuse', patch: { status: 'presentadoAcuse', file: MOCK_FILE, incidents: { blocking: 0, warning: 0, items: [] } } },
-                { label: '2025 T4 · complementaria',  patch: { year: 2025, period: 'T4', type: 'comp', status: 'pendiente' } },
+                { label: '2026 T1 · draft',          patch: { status: 'draft', incidents: { blocking: 0, warning: 0, items: [] } } },
+                { label: '2026 T1 · 2 blocking',      patch: { status: 'draft', incidents: { blocking: 2, warning: 3, items: [...MOCK_INCIDENTS.blocking, ...MOCK_INCIDENTS.warning] } } },
+                { label: '2026 T1 · ready + file',    patch: { status: 'ready', file: MOCK_FILE, incidents: { blocking: 0, warning: 0, items: [] } } },
+                { label: '2026 T1 · submitted_ack',   patch: { status: 'submitted_ack', file: MOCK_FILE, incidents: { blocking: 0, warning: 0, items: [] } } },
+                { label: '2025 T4 · complementaria',  patch: { year: 2025, period: 'T4', type: 'comp', status: 'pending' } },
               ].map(({ label, patch }) => (
                 <button
                   key={label}
@@ -425,8 +425,8 @@ export default function FmDebugPanel({ view, setView }) {
               <div style={divider} />
               <div style={sectionLabel}>Modelo 349</div>
               {[
-                { label: '2026 01 · borrador',        patch: { status: 'borrador' } },
-                { label: '2026 01 · presentadoAcuse', patch: { status: 'presentadoAcuse' } },
+                { label: '2026 01 · draft',           patch: { status: 'draft' } },
+                { label: '2026 01 · submitted_ack',   patch: { status: 'submitted_ack' } },
               ].map(({ label, patch }) => (
                 <button
                   key={label}

@@ -3,7 +3,7 @@ import { strict as assert } from 'node:assert';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildPipelineSteps, validatePipelineInput, resolveWindowNameFromId } from '../src/pipeline.js';
+import { buildPipelineSteps, validatePipelineInput, resolveWindowNameFromId, parseArgs } from '../src/pipeline.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const cliRoot = resolve(__dirname, '..');
@@ -188,6 +188,82 @@ describe('resolveWindowNameFromId', () => {
       () => resolveWindowNameFromId('999999', { queryFn }),
       (err) => !/sales-order/.test(err.message) && /AD_Window not found/.test(err.message)
     );
+  });
+});
+
+describe('parseArgs (consumeArgument branches)', () => {
+  // parseArgs strips the first two argv entries (node + script), so every
+  // fixture is prefixed with two placeholders.
+  const run = (...tokens) => parseArgs(['node', 'pipeline.js', ...tokens]);
+
+  it('returns an empty object for no arguments', () => {
+    assert.deepEqual(run(), {});
+  });
+
+  it('parses --menu-id as a flag+value pair', () => {
+    assert.equal(run('--menu-id', '143').menuId, '143');
+  });
+
+  it('parses --menu-name', () => {
+    assert.equal(run('--menu-name', 'Sales Order').menuName, 'Sales Order');
+  });
+
+  it('parses --process-id', () => {
+    assert.equal(run('--process-id', 'PROC1').processId, 'PROC1');
+  });
+
+  it('parses --process-name', () => {
+    assert.equal(run('--process-name', 'Generate Invoices').processName, 'Generate Invoices');
+  });
+
+  it('parses --report-id', () => {
+    assert.equal(run('--report-id', 'REP1').reportId, 'REP1');
+  });
+
+  it('parses --report-name', () => {
+    assert.equal(run('--report-name', 'Aged Balance').reportName, 'Aged Balance');
+  });
+
+  it('parses --dry-run as a boolean flag (one token)', () => {
+    assert.equal(run('--dry-run').dryRun, true);
+  });
+
+  it('parses --skip-to as a flag+value pair', () => {
+    assert.equal(run('--skip-to', 'resolve-curated').skipTo, 'resolve-curated');
+  });
+
+  it('parses --skip-interactive as a boolean flag (one token)', () => {
+    assert.equal(run('--skip-interactive').skipInteractive, true);
+  });
+
+  it('treats the first bare positional as windowId', () => {
+    assert.equal(run('143').windowId, '143');
+  });
+
+  it('treats a second bare positional as windowName', () => {
+    const result = run('143', 'sales-order');
+    assert.equal(result.windowId, '143');
+    assert.equal(result.windowName, 'sales-order');
+  });
+
+  it('does not overwrite windowId with a later positional', () => {
+    const result = run('143', 'sales-order', 'ignored-third');
+    assert.equal(result.windowId, '143');
+    assert.equal(result.windowName, 'sales-order');
+  });
+
+  it('combines flags and positionals in one pass', () => {
+    const result = run('--menu-id', '143', '--dry-run', '--skip-to', 'push-to-neo');
+    assert.equal(result.menuId, '143');
+    assert.equal(result.dryRun, true);
+    assert.equal(result.skipTo, 'push-to-neo');
+  });
+
+  it('treats --skip-to without a value as an unrecognized single token', () => {
+    // isSkipToArgument requires args[i + 1] to be truthy; a trailing --skip-to
+    // falls through and consumes only one token without setting skipTo.
+    const result = run('--skip-to');
+    assert.equal(result.skipTo, undefined);
   });
 });
 

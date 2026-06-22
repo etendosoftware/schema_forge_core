@@ -158,10 +158,56 @@ const FIELD_DECISION_COPY_PROPS = [
   'badgeColors',
   'badgeVariants',
   'enumVariants',
+  'enumValues',
+  'filterOnly',
+  'filterable',
   'labels',
   'columnType',
   'display',
   'cellType',
+  // Field-level helper text shown below the input (i18n key or literal). Honored
+  // by EntityForm (FieldHelp) and the list-modal footer toggle helper.
+  'help',
+  // Input placeholder (i18n key or literal) rendered by EntityForm on empty
+  // text inputs / textareas — e.g. "Ej. Comisiones bancarias".
+  'placeholderKey',
+  // Label (i18n key) for the empty/null choice of an optional FK selector —
+  // e.g. "All accounts" for a nullable financial-account field.
+  'emptyOptionLabelKey',
+  // list-modal cell-renderer extras (see listModalCells.jsx / generate-frontend.js):
+  'subField',
+  'subPrefix',
+  // i18n key shown in a nameWithSubline cell when subField resolves to empty
+  // (e.g. an unset financial-account scope → "Todas las cuentas").
+  'subEmptyKey',
+  'kindField',
+  'patternField',
+  'kindLabels',
+  'tones',
+  'gridLabelKey',
+  'grow',
+  'gridReadOnly',
+  'inlineToggle',
+  'inlineEdit',
+  'noTrailing',
+  'inline',
+  'addLineFromSibling',
+  // Opt-in: render an FK `inputMode: "selector"` field as the searchable combobox
+  // (CreatableSearchSelect) instead of the plain pick-only dropdown (SelectorInput).
+  // Default false — absent/false keeps the existing dropdown rendering unchanged.
+  'searchSelect',
+  // Opt-in: when true on a searchSelect field, the combobox shows the inline
+  // "+ create" action. Requires createSpec/createEntity to know where to POST.
+  'allowCreate',
+  // i18n key for the inline "+ create" action label (e.g. "+ New transaction type").
+  'createLabelKey',
+  // i18n keys for the inline-create modal: dialog title + name-input placeholder.
+  'createTitleKey',
+  'createNamePlaceholderKey',
+  // NEO spec + entity that back the inline create POST. The new record is created
+  // via POST /sws/neo/<createSpec>/<createEntity> with { name }, then auto-selected.
+  'createSpec',
+  'createEntity',
 ];
 
 const FIELD_RAW_COPY_PROPS = [
@@ -195,6 +241,7 @@ function buildBaseField(rawField, fieldDecision, visibility) {
     searchable: decisionOrDefault(fieldDecision, 'searchable', defaults),
   };
   if (rawField.mandatory === true) field.sourceRequired = true;
+  if (fieldDecision.type) field.explicitType = true;
   return field;
 }
 
@@ -213,11 +260,25 @@ function copyRawProps(field, rawField, props) {
 function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.section) field.section = fieldDecision.section;
   if (fieldDecision.seq != null) field.seq = fieldDecision.seq;
+  if (fieldDecision.span != null && fieldDecision.span >= 2 && fieldDecision.span <= 4) field.span = fieldDecision.span;
+  if (fieldDecision.rows != null && fieldDecision.rows > 0) field.rows = fieldDecision.rows;
+  if (fieldDecision.filterable === false) field.filterable = false;
+  if (fieldDecision.dot === false) field.dot = false;
   if (fieldDecision.badge) field.badge = true;
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
   if (fieldDecision.min !== undefined) field.min = fieldDecision.min;
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
+}
+
+function applyForeignKeyLookupProps(field, fieldDecision) {
+  if (fieldDecision.lookup) field.lookup = true;
+  if (fieldDecision.popup) field.popup = true;
+  if (fieldDecision.lookupDrawer) field.lookupDrawer = fieldDecision.lookupDrawer;
+  if (fieldDecision.lookupTitle) field.lookupTitle = fieldDecision.lookupTitle;
+  const hasMappings = Array.isArray(fieldDecision.onSelectMappings) && fieldDecision.onSelectMappings.length > 0;
+  if (hasMappings) field.onSelectMappings = fieldDecision.onSelectMappings;
+  if (fieldDecision.displayFromCatalog) field.displayFromCatalog = fieldDecision.displayFromCatalog;
 }
 
 function applyForeignKeyProps(field, rawField, fieldDecision) {
@@ -234,17 +295,12 @@ function applyForeignKeyProps(field, rawField, fieldDecision) {
     const dependsOn = fieldDecision.dependsOn || null;
     field.inputMode = dependsOn ? 'dependent' : fieldDecision.inputMode || defaultInputMode(rawField);
   }
+  if (fieldDecision.clearable === false) field.clearable = false;
 
   const dependsOn = fieldDecision.dependsOn || null;
   if (dependsOn) field.dependsOn = dependsOn;
-  if (fieldDecision.lookup) field.lookup = true;
-  if (fieldDecision.popup) field.popup = true;
-  if (fieldDecision.lookupDrawer) field.lookupDrawer = fieldDecision.lookupDrawer;
-  if (fieldDecision.lookupTitle) field.lookupTitle = fieldDecision.lookupTitle;
-  if (Array.isArray(fieldDecision.onSelectMappings) && fieldDecision.onSelectMappings.length > 0) {
-    field.onSelectMappings = fieldDecision.onSelectMappings;
-  }
-  if (fieldDecision.displayFromCatalog) field.displayFromCatalog = fieldDecision.displayFromCatalog;
+
+  applyForeignKeyLookupProps(field, fieldDecision);
 }
 
 function applyVisibleFieldProps(field, rawField, fieldDecision) {
@@ -452,6 +508,12 @@ function buildDraftMode(draftModeDecision, enabled) {
   if (Array.isArray(draftModeDecision.completedStatuses)) {
     draftMode.completedStatuses = draftModeDecision.completedStatuses;
   }
+  if (draftModeDecision.confirmModal) {
+    draftMode.confirmModal = draftModeDecision.confirmModal;
+  }
+  if (draftModeDecision.disableWhenEmpty) {
+    draftMode.disableWhenEmpty = true;
+  }
   return draftMode;
 }
 
@@ -470,9 +532,59 @@ function applyEntityDecisions(entity, entityDecision) {
   }
 }
 
+/**
+ * Append virtual fields declared in decisions.json to a curated field list.
+ *
+ * Virtual fields are fields that do NOT exist as columns in the AD schema (e.g. M_InOut)
+ * but are injected at runtime by a NeoHandler's afterHandle hook. They are the equivalent
+ * of Etendo computed columns when the AD version does not support iscomputed, or when the
+ * derivation logic lives in Java rather than SQL.
+ *
+ * Declaration in decisions.json (entities.header or entities.lines):
+ *   "virtualFields": [
+ *     {
+ *       "name": "sourceShipmentDocNo",   // field key used in API response + frontend
+ *       "column": "sourceShipmentDocNo", // must match what afterHandle puts in the JSON
+ *       "label": "Source Shipment",      // raw label; translated via labelOverrides
+ *       "type": "string",                // contract type: string | number | date | boolean
+ *       "visibility": "readOnly",        // always readOnly — handler fills the value
+ *       "form": true,                    // show in the detail form?
+ *       "grid": true,                    // show in the list grid?
+ *       "gridOrder": 6,                  // insertion position in the grid (1-based)
+ *       "section": "principal"           // form section: principal | other | collapsed
+ *     }
+ *   ]
+ *
+ * Rules:
+ * - Virtual fields are appended AFTER schema-derived fields; orderCuratedFields then
+ *   applies gridOrder sorting the same way as for regular fields.
+ * - The NeoHandler MUST inject the value in afterHandle. NEO will NOT derive it from
+ *   the DB automatically (no AD column → no OBDal property → no automatic value).
+ * - Keep "visibility": "readOnly" — there is no DB column to write to.
+ * - "column" value must exactly match the key the handler puts in the JSON object.
+ */
+function appendVirtualFields(curatedFields, entityDecision) {
+  for (const vf of (entityDecision.virtualFields || [])) {
+    curatedFields.push({
+      name: vf.name,
+      column: vf.column ?? vf.name,
+      label: vf.label ?? vf.name,
+      type: vf.type ?? 'string',
+      visibility: vf.visibility ?? 'readOnly',
+      required: vf.required ?? false,
+      form: vf.form !== false,
+      grid: vf.grid !== false,
+      gridOrder: vf.gridOrder,
+      section: vf.section ?? 'other',
+      virtual: true,
+    });
+  }
+}
+
 function buildCuratedEntity(rawEntity, entityDecision, discardPatterns) {
   const fieldsDecisions = entityDecision.fields || {};
   const curatedFields = buildCuratedFields(rawEntity, fieldsDecisions, discardPatterns);
+  appendVirtualFields(curatedFields, entityDecision);
   const entity = {
     name: entityDecision.name || autoSimplifyEntityName(rawEntity.name),
     tableName: rawEntity.tableName,
@@ -535,6 +647,7 @@ const WINDOW_TRUTHY_PROPS = [
   'sendDocument',
   'linesLayout',
   'extraTabs',
+  'customPanelTabs',
 ];
 
 const WINDOW_BOOLEAN_TRUE_PROPS = [
@@ -548,12 +661,18 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'hideEyeCount',
   'disableProcessedLock',
   'noHeaderBorder',
+  'toolbarBorderBottom',
+  'compactSidebarPadding',
+  'whiteFormBackground',
+  'hideFormCard',
+  'sidebarAboveTabsOnly',
+  'autoSaveOnBlur',
 ];
 
 // `attachments` is defined-only (not truthy) so an explicit `false` from
 // decisions.json reaches the contract and disables the AttachmentsTab in the
 // generator. Accepted shapes: boolean | { enabled?: boolean, ...options }.
-const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments'];
+const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'customLinesComponent', 'customLinesLabel', 'formCardPadding', 'formScrollPaddingX', 'maxDetailLines'];
 const WINDOW_NOT_NULL_PROPS = ['detailTabIndex', 'salesTheme'];
 
 // Canonical key order for the contract window object. Stabilizes contract.json
@@ -573,8 +692,8 @@ export const WINDOW_KEY_ORDER = [
   'labelOverrides', 'primaryTabs', 'othersLabel',
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
-  'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'lineEntityConfig',
-  'extraTabs', 'attachments', 'rowQuickActions',
+  'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
+  'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
   'layoutType', 'linesLayout',
 ];
@@ -663,7 +782,7 @@ function applyWindowDraftModeToPrimaryEntity(curatedEntities, windowDecisions) {
  * @param {Object} schemaRaw  - Parsed schema-raw.json
  * @param {Object} rulesRaw   - Parsed rules-raw.json
  * @param {Object} decisions  - Parsed decisions.json (may be empty {})
- * @returns {{ schema: Object, rules: Array }}
+ * @returns {Promise<{ schema: Object, rules: Array }>}
  */
 export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   // Migrate decisions to current version if needed (in-memory only, no file write)

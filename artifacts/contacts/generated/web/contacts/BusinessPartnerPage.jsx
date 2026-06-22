@@ -17,26 +17,6 @@ import BusinessPartnerSidebar from '@/windows/custom/contacts/BusinessPartnerSid
 
 const breadcrumb = 'Contact';
 
-const labelOverrides = {
-  "en_US": {
-    "Name": "Legal Name",
-    "FIN_Financial_Account_ID": "Account",
-    "PO_Financial_Account_ID": "Expense Account",
-    "EM_Etgo_Web": "Website",
-    "EM_Etgo_Firstname": "First Name",
-    "EM_Etgo_Lastname": "Last Name"
-  },
-  "es_ES": {
-    "Name": "Razón Social",
-    "EM_Etgo_Identifier": "Identificador",
-    "FIN_Financial_Account_ID": "Cuenta",
-    "PO_Financial_Account_ID": "Cuenta contable de gastos",
-    "EM_Etgo_Web": "Página web",
-    "EM_Etgo_Firstname": "Nombre",
-    "EM_Etgo_Lastname": "Apellidos"
-  }
-};
-
 
 // @sf-generated-start summary:businessPartner
 const summary = [
@@ -314,7 +294,16 @@ export const api = {
       "column": "PO_Financial_Account_ID",
       "reference": "FIN_Financial_Account",
       "inputMode": "selector",
-      "url": "/sws/neo/contacts/businessPartner/selectors/pOFinancialAccount"
+      "url": "/sws/neo/contacts/businessPartner/selectors/pOFinancialAccount",
+      "context": {
+        "required": [
+          {
+            "param": "PO_Paymentmethod_ID",
+            "source": "field",
+            "field": "pOPaymentMethod"
+          }
+        ]
+      }
     },
     {
       "entity": "businessPartner",
@@ -458,7 +447,16 @@ export const api = {
       "column": "PO_Financial_Account_ID",
       "reference": "Financial_Account",
       "inputMode": "search",
-      "url": "/sws/neo/contacts/vendorCreditor/selectors/pOFinancialAccount"
+      "url": "/sws/neo/contacts/vendorCreditor/selectors/pOFinancialAccount",
+      "context": {
+        "required": [
+          {
+            "param": "PO_Paymentmethod_ID",
+            "source": "parentField",
+            "field": "pOPaymentMethod"
+          }
+        ]
+      }
     },
     {
       "entity": "vendorCreditor",
@@ -658,6 +656,8 @@ export const api = {
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:BusinessPartnerPage
 export default function BusinessPartnerPage({ windowName, recordId, ...props }) {
   if (recordId) {
