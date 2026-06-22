@@ -8,6 +8,11 @@ import {
   pushToNeo,
   loadConfig,
   stepExcludeNonContractFields,
+  checkDuplicateFields,
+  formatDuplicateFieldsError,
+  pushProcessToNeo,
+  pushReportToNeo,
+  dumpDelta,
   buildFieldAgentPromptMap,
   buildFieldUpdateParams,
   buildSpecUpsertParams,
@@ -298,6 +303,56 @@ describe('extractFieldsFromContract', () => {
   it('handles empty entities object', () => {
     const fields = extractFieldsFromContract({ entities: {} });
     assert.equal(fields.length, 0);
+  });
+
+  // ── businessCritical regression guard (ETP-4233) ──────────────────────────
+  // This is the exact point where the flag was silently dropped before the fix.
+
+  it('businessCritical:true on a field is preserved in extracted output', () => {
+    const contract = {
+      entities: {
+        order: {
+          fields: [
+            { name: 'documentNo', column: 'DocumentNo', visibility: 'readOnly', businessCritical: true },
+          ],
+        },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    const f = fields.find(x => x.fieldName === 'documentNo');
+    assert.equal(f.businessCritical, true,
+      'businessCritical:true must survive extractFieldsFromContract — regression guard for ETP-4233');
+  });
+
+  it('businessCritical absent on a field defaults to false', () => {
+    const contract = {
+      entities: {
+        order: {
+          fields: [
+            { name: 'description', column: 'Description', visibility: 'editable' },
+          ],
+        },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    const f = fields.find(x => x.fieldName === 'description');
+    assert.equal(f.businessCritical, false,
+      'absent businessCritical must default to false');
+  });
+
+  it('businessCritical:false on a field stays false', () => {
+    const contract = {
+      entities: {
+        order: {
+          fields: [
+            { name: 'notes', column: 'Notes', visibility: 'editable', businessCritical: false },
+          ],
+        },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    const f = fields.find(x => x.fieldName === 'notes');
+    assert.equal(f.businessCritical, false);
   });
 });
 
@@ -634,5 +689,454 @@ describe('stepExcludeNonContractFields', () => {
 
     const count = await stepExcludeNonContractFields(client, popResult, allFields, schemaRawData);
     assert.equal(count, 2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 10. extractFieldsFromContract — tabId / tableName propagation
+// ---------------------------------------------------------------------------
+
+describe('extractFieldsFromContract — tabId and tableName propagation', () => {
+  it('propagates tabId from entity onto each field', () => {
+    const contract = {
+      entities: {
+        header: {
+          tabId: 'TAB-99',
+          fields: [
+            { name: 'docNo', column: 'DocumentNo', visibility: 'readOnly' },
+          ],
+        },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    assert.equal(fields[0].tabId, 'TAB-99');
+  });
+
+  it('propagates tableName from entity onto each field', () => {
+    const contract = {
+      entities: {
+        header: {
+          tableName: 'C_Order',
+          fields: [
+            { name: 'docNo', column: 'DocumentNo', visibility: 'readOnly' },
+          ],
+        },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    assert.equal(fields[0].tableName, 'C_Order');
+  });
+
+  it('sets tabId to null when entity has no tabId', () => {
+    const contract = {
+      entities: {
+        header: {
+          fields: [{ name: 'f', column: 'C', visibility: 'editable' }],
+        },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    assert.equal(fields[0].tabId, null);
+  });
+
+  it('sets tableName to null when entity has no tableName', () => {
+    const contract = {
+      entities: {
+        header: {
+          fields: [{ name: 'f', column: 'C', visibility: 'editable' }],
+        },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    assert.equal(fields[0].tableName, null);
+  });
+
+  it('handles an entity with an empty fields array', () => {
+    const contract = {
+      entities: {
+        emptyEntity: { fields: [] },
+        realEntity: { fields: [{ name: 'x', column: 'X', visibility: 'editable' }] },
+      },
+    };
+    const fields = extractFieldsFromContract(contract);
+    assert.equal(fields.length, 1);
+    assert.equal(fields[0].entityName, 'realEntity');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 11. checkDuplicateFields — mock client
+// ---------------------------------------------------------------------------
+
+describe('checkDuplicateFields', () => {
+  it('returns empty array when no duplicates exist', async () => {
+    const client = {
+      query: async () => ({ rows: [] }),
+    };
+    const result = await checkDuplicateFields(client, 'sales-order');
+    assert.deepStrictEqual(result, []);
+  });
+
+  it('returns duplicate records with entityName, columnName, fieldIds', async () => {
+    const client = {
+      query: async () => ({
+        rows: [
+          { entity_name: 'header', column_name: 'DocumentNo', field_ids: ['ID1', 'ID2'] },
+        ],
+      }),
+    };
+    const result = await checkDuplicateFields(client, 'sales-order');
+    assert.equal(result.length, 1);
+    assert.equal(result[0].entityName, 'header');
+    assert.equal(result[0].columnName, 'DocumentNo');
+    assert.deepStrictEqual(result[0].fieldIds, ['ID1', 'ID2']);
+  });
+
+  it('returns multiple duplicates when several columns conflict', async () => {
+    const client = {
+      query: async () => ({
+        rows: [
+          { entity_name: 'header', column_name: 'DocumentNo', field_ids: ['A1', 'A2'] },
+          { entity_name: 'line',   column_name: 'Line',        field_ids: ['B1', 'B2', 'B3'] },
+        ],
+      }),
+    };
+    const result = await checkDuplicateFields(client, 'sales-order');
+    assert.equal(result.length, 2);
+    assert.equal(result[1].fieldIds.length, 3);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 12. formatDuplicateFieldsError — pure function
+// ---------------------------------------------------------------------------
+
+describe('formatDuplicateFieldsError', () => {
+  it('includes the spec name in the error message', () => {
+    const msg = formatDuplicateFieldsError('sales-order', [
+      { entityName: 'header', columnName: 'DocumentNo', fieldIds: ['K1', 'D1'] },
+    ]);
+    assert.match(msg, /sales-order/);
+  });
+
+  it('marks the first fieldId as keep and subsequent ones as delete', () => {
+    const msg = formatDuplicateFieldsError('my-spec', [
+      { entityName: 'h', columnName: 'DocNo', fieldIds: ['KEEP', 'DEL1', 'DEL2'] },
+    ]);
+    assert.match(msg, /keep:\s+KEEP/);
+    assert.match(msg, /delete:\s+DEL1/);
+    assert.match(msg, /delete:\s+DEL2/);
+  });
+
+  it('includes a suggested DELETE SQL statement', () => {
+    const msg = formatDuplicateFieldsError('my-spec', [
+      { entityName: 'h', columnName: 'DocNo', fieldIds: ['K', 'D'] },
+    ]);
+    assert.match(msg, /DELETE FROM etgo_sf_field/);
+    assert.match(msg, /'D'/);
+  });
+
+  it('handles zero duplicates (empty array) gracefully', () => {
+    const msg = formatDuplicateFieldsError('clean-spec', []);
+    assert.match(msg, /clean-spec/);
+    // No keep/delete lines expected
+    assert.doesNotMatch(msg, /keep:/);
+  });
+
+  it('references the spec in the regen reminder at the end', () => {
+    const msg = formatDuplicateFieldsError('purchase-order', [
+      { entityName: 'e', columnName: 'c', fieldIds: ['K', 'D'] },
+    ]);
+    assert.match(msg, /purchase-order/);
+    assert.match(msg, /make regen/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 13. pushProcessToNeo — dry run and error paths
+// ---------------------------------------------------------------------------
+
+describe('pushProcessToNeo dry run', () => {
+  let tmpDir;
+
+  beforeEach(async () => {
+    tmpDir = join(tmpdir(), `push-process-test-${Date.now()}`);
+    const artifactsDir = join(tmpDir, 'artifacts', 'generate-invoices');
+    await mkdir(artifactsDir, { recursive: true });
+
+    const contract = {
+      type: 'process',
+      process: {
+        id: 'PROC-001',
+        specName: 'generate-invoices',
+        name: 'Generate Invoices',
+      },
+    };
+    await writeFile(join(artifactsDir, 'contract.json'), JSON.stringify(contract));
+  });
+
+  it('returns dry-run plan without touching DB', async () => {
+    const result = await pushProcessToNeo('generate-invoices', {
+      dryRun: true,
+      projectRoot: tmpDir,
+    });
+    assert.equal(result.dryRun, true);
+    assert.equal(result.specName, 'generate-invoices');
+    assert.equal(result.processId, 'PROC-001');
+  });
+
+  it('plan spec action is upsertSpec', async () => {
+    const result = await pushProcessToNeo('generate-invoices', {
+      dryRun: true,
+      projectRoot: tmpDir,
+    });
+    assert.equal(result.plan.spec.action, 'upsertSpec');
+    assert.equal(result.plan.spec.params.specType, 'P');
+    assert.equal(result.plan.spec.params.processId, 'PROC-001');
+  });
+
+  it('plan populate action is populateSpec', async () => {
+    const result = await pushProcessToNeo('generate-invoices', {
+      dryRun: true,
+      projectRoot: tmpDir,
+    });
+    assert.equal(result.plan.populate.action, 'populateSpec');
+  });
+
+  it('uses specType=R (report) when options.specType is R', async () => {
+    const result = await pushProcessToNeo('generate-invoices', {
+      dryRun: true,
+      projectRoot: tmpDir,
+      specType: 'R',
+    });
+    assert.equal(result.plan.spec.params.specType, 'R');
+  });
+});
+
+describe('pushProcessToNeo error handling', () => {
+  it('throws when contract.json is missing', async () => {
+    const tmpDir = join(tmpdir(), `push-process-err-${Date.now()}`);
+    const artifactsDir = join(tmpDir, 'artifacts', 'no-contract');
+    await mkdir(artifactsDir, { recursive: true });
+
+    await assert.rejects(
+      () => pushProcessToNeo('no-contract', { dryRun: true, projectRoot: tmpDir }),
+      /Cannot read contract\.json for process/,
+    );
+  });
+
+  it('throws when contract.type is not process', async () => {
+    const tmpDir = join(tmpdir(), `push-process-type-${Date.now()}`);
+    const artifactsDir = join(tmpDir, 'artifacts', 'bad-type');
+    await mkdir(artifactsDir, { recursive: true });
+
+    const contract = {
+      type: 'window',
+      process: { id: 'X', specName: 'x', name: 'X' },
+    };
+    await writeFile(join(artifactsDir, 'contract.json'), JSON.stringify(contract));
+
+    await assert.rejects(
+      () => pushProcessToNeo('bad-type', { dryRun: true, projectRoot: tmpDir }),
+      /expected 'process'/,
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 14. pushReportToNeo — dry run and error path
+// ---------------------------------------------------------------------------
+
+describe('pushReportToNeo dry run', () => {
+  let tmpDir;
+
+  beforeEach(async () => {
+    tmpDir = join(tmpdir(), `push-report-test-${Date.now()}`);
+    const artifactsDir = join(tmpDir, 'artifacts', 'aging-receivable');
+    await mkdir(artifactsDir, { recursive: true });
+
+    const contract = {
+      reportId: 'aging-receivable',
+      title: { en_US: 'Aging Receivable' },
+      neo: { handler: 'aging-receivable-handler' },
+      jasper: { processId: null },
+    };
+    await writeFile(join(artifactsDir, 'report-contract.json'), JSON.stringify(contract));
+  });
+
+  it('returns dry-run result without touching DB', async () => {
+    const result = await pushReportToNeo('aging-receivable', {
+      dryRun: true,
+      projectRoot: tmpDir,
+    });
+    assert.equal(result.dryRun, true);
+    assert.equal(result.specName, 'aging-receivable');
+    assert.equal(result.handler, 'aging-receivable-handler');
+  });
+
+  it('uses reportId as specName', async () => {
+    const result = await pushReportToNeo('aging-receivable', {
+      dryRun: true,
+      projectRoot: tmpDir,
+    });
+    assert.equal(result.specName, 'aging-receivable');
+  });
+
+  it('falls back to reportName when reportId is absent', async () => {
+    const tmpDir2 = join(tmpdir(), `push-report-fallback-${Date.now()}`);
+    const artifactsDir = join(tmpDir2, 'artifacts', 'my-report');
+    await mkdir(artifactsDir, { recursive: true });
+
+    const contract = {
+      // no reportId — falls back to the folder name
+      title: { en_US: 'My Report' },
+      neo: {},
+    };
+    await writeFile(join(artifactsDir, 'report-contract.json'), JSON.stringify(contract));
+
+    const result = await pushReportToNeo('my-report', {
+      dryRun: true,
+      projectRoot: tmpDir2,
+    });
+    assert.equal(result.specName, 'my-report');
+    assert.equal(result.handler, null);
+  });
+});
+
+describe('pushReportToNeo error handling', () => {
+  it('throws when report-contract.json is missing', async () => {
+    const tmpDir = join(tmpdir(), `push-report-err-${Date.now()}`);
+    const artifactsDir = join(tmpDir, 'artifacts', 'no-report');
+    await mkdir(artifactsDir, { recursive: true });
+
+    await assert.rejects(
+      () => pushReportToNeo('no-report', { dryRun: true, projectRoot: tmpDir }),
+      /Cannot read report-contract\.json/,
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 15. loadConfig — error paths (missing URL / user / password)
+// ---------------------------------------------------------------------------
+
+describe('loadConfig error paths', () => {
+  const savedUrl = process.env.ETENDO_URL;
+  const savedUser = process.env.ETENDO_USER;
+  const savedPass = process.env.ETENDO_PASSWORD;
+
+  const cleanup = () => {
+    if (savedUrl !== undefined) process.env.ETENDO_URL = savedUrl; else delete process.env.ETENDO_URL;
+    if (savedUser !== undefined) process.env.ETENDO_USER = savedUser; else delete process.env.ETENDO_USER;
+    if (savedPass !== undefined) process.env.ETENDO_PASSWORD = savedPass; else delete process.env.ETENDO_PASSWORD;
+  };
+
+  it('throws when URL is missing (no env, no file)', async () => {
+    delete process.env.ETENDO_URL;
+    delete process.env.ETENDO_USER;
+    delete process.env.ETENDO_PASSWORD;
+    const emptyDir = join(tmpdir(), `cfg-err-${Date.now()}`);
+    await mkdir(emptyDir, { recursive: true });
+
+    try {
+      await assert.rejects(
+        () => loadConfig(emptyDir),
+        /Missing Etendo URL/,
+      );
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('throws when user is missing', async () => {
+    const tmpDir = join(tmpdir(), `cfg-nouser-${Date.now()}`);
+    await mkdir(tmpDir, { recursive: true });
+    await writeFile(
+      join(tmpDir, 'schema_forge.properties'),
+      'etendo.url=http://host:8080/etendo\n',
+    );
+    delete process.env.ETENDO_URL;
+    delete process.env.ETENDO_USER;
+    delete process.env.ETENDO_PASSWORD;
+
+    try {
+      await assert.rejects(
+        () => loadConfig(tmpDir),
+        /Missing Etendo user/,
+      );
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('throws when password is missing', async () => {
+    const tmpDir = join(tmpdir(), `cfg-nopass-${Date.now()}`);
+    await mkdir(tmpDir, { recursive: true });
+    await writeFile(
+      join(tmpDir, 'schema_forge.properties'),
+      'etendo.url=http://host:8080/etendo\netendo.user=admin\n',
+    );
+    delete process.env.ETENDO_URL;
+    delete process.env.ETENDO_USER;
+    delete process.env.ETENDO_PASSWORD;
+
+    try {
+      await assert.rejects(
+        () => loadConfig(tmpDir),
+        /Missing Etendo password/,
+      );
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 16. dumpDelta — missing outPath guard
+// ---------------------------------------------------------------------------
+
+describe('dumpDelta', () => {
+  it('throws when options is missing', async () => {
+    await assert.rejects(
+      () => dumpDelta('sales-order', undefined),
+      /options\.outPath is required/,
+    );
+  });
+
+  it('throws when options.outPath is not provided', async () => {
+    await assert.rejects(
+      () => dumpDelta('sales-order', {}),
+      /options\.outPath is required/,
+    );
+  });
+
+  it('throws when contract.json is missing even with outPath set', async () => {
+    const tmpDir = join(tmpdir(), `dump-delta-err-${Date.now()}`);
+    const artifactsDir = join(tmpDir, 'artifacts', 'no-window');
+    await mkdir(artifactsDir, { recursive: true });
+
+    await assert.rejects(
+      () => dumpDelta('no-window', { outPath: join(tmpDir, 'out.json'), projectRoot: tmpDir }),
+      /Cannot read contract\.json/,
+    );
+  });
+
+  it('throws when specType is not W (non-window spec)', async () => {
+    const tmpDir = join(tmpdir(), `dump-delta-type-${Date.now()}`);
+    const artifactsDir = join(tmpDir, 'artifacts', 'my-process');
+    await mkdir(artifactsDir, { recursive: true });
+
+    const contract = {
+      specType: 'P',
+      backendContract: { entities: {} },
+    };
+    const schema = { window: { id: '1', name: 'Process' } };
+    await writeFile(join(artifactsDir, 'contract.json'), JSON.stringify(contract));
+    await writeFile(join(artifactsDir, 'schema-raw.json'), JSON.stringify(schema));
+
+    await assert.rejects(
+      () => dumpDelta('my-process', { outPath: join(tmpDir, 'out.json'), projectRoot: tmpDir }),
+      /specType=W/,
+    );
   });
 });
