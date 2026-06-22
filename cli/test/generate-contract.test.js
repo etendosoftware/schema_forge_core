@@ -2140,3 +2140,31 @@ describe('generateFrontendContract — balanceFooter', () => {
     assert.equal(fc.window.balanceFooter, undefined);
   });
 });
+
+describe('generateFrontendContract — skipDefault', () => {
+  const schema = {
+    version: '0.1.0',
+    window: { id: '900', name: 'GL Journal', primaryEntity: 'journal', category: 'finance' },
+    entities: [
+      { name: 'journal', table: 'GL_Journal', level: 'header', fields: [
+        { name: 'description', column: 'Description', type: 'string', visibility: 'editable', required: false, grid: false, form: true },
+      ] },
+      { name: 'journalLine', table: 'GL_JournalLine', level: 'line', fields: [
+        { name: 'account', column: 'Account_ID', type: 'foreignKey', reference: 'Account', inputMode: 'selector', visibility: 'editable', required: true, grid: true, form: true },
+        { name: 'note', column: 'Note', type: 'string', visibility: 'editable', required: false, grid: true, form: true, skipDefault: true },
+      ] },
+    ],
+  };
+
+  it('emits skipDefault on a field that declares it', () => {
+    const fc = generateFrontendContract(schema);
+    const note = fc.entities.journalLine.fields.find(f => f.name === 'note');
+    assert.equal(note.skipDefault, true);
+  });
+
+  it('omits skipDefault when the field does not declare it', () => {
+    const fc = generateFrontendContract(schema);
+    const account = fc.entities.journalLine.fields.find(f => f.name === 'account');
+    assert.equal(account.skipDefault, undefined);
+  });
+});

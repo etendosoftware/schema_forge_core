@@ -335,6 +335,9 @@ export function generateFrontendContract(schema, rules = []) {
       // UI hints
       applyFieldUIHints(f, mapped);
       if (f.inline) mapped.inline = true;
+      // HandleDefaults opt-out: the add-row never applies a backend-resolved
+      // default to a field flagged skipDefault.
+      if (f.skipDefault) mapped.skipDefault = true;
 
       // Behavioral metadata: validationRule (e.g. M_PriceList.issopricelist = @isSOTrx@)
       if (f.validationRule) mapped.validationRule = f.validationRule;

@@ -163,6 +163,9 @@ const FIELD_DECISION_COPY_PROPS = [
   'filterable',
   'labels',
   'clearsField',
+  // HandleDefaults opt-out: the add-row never applies a backend-resolved default
+  // value to this field (it keeps its literal seed / stays empty).
+  'skipDefault',
   'columnType',
   'display',
   'cellType',
