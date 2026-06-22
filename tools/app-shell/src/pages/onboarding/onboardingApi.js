@@ -170,7 +170,7 @@ export async function runOnboardingStream(fetchImpl, baseUrl, token, form, onMes
       currency: form.currency,
       language: form.language,
       countryCode: form.countryCode,
-      address: form.address,
+      ...(form.address ? { address: form.address } : {}),
     }),
   });
 
