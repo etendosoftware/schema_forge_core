@@ -84,6 +84,7 @@ vi.mock('../onboarding/onboardingState.js', () => ({
     { name: 'setup', status: 'pending' },
     { name: 'client', status: 'pending' },
     { name: 'organization', status: 'pending' },
+    { name: 'dataset', status: 'pending' },
     { name: 'finalize', status: 'pending' },
   ],
   isCompanyStepValid: () => true,
@@ -709,6 +710,25 @@ describe('OnboardingPage', () => {
       });
     });
     expect(screen.getByText('onboardingPreparingTitle')).toBeInTheDocument();
+  });
+
+  it('shows the company-data description while the dataset step runs', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+    runOnboardingStream.mockImplementation(async (_fetch, _baseUrl, _token, _form, onMessage) => {
+      onMessage({ type: 'progress', step: 'dataset', status: 'running' });
+      return new Promise(() => {});
+    });
+
+    render(<OnboardingPage />);
+
+    fireEvent.click(await screen.findByText('onboardingContinueAction'));
+    fireEvent.click(screen.getByText('onboardingStartAction'));
+
+    await waitFor(() => {
+      expect(screen.getByText('onboardingPreparingDataDescription')).toBeInTheDocument();
+    });
   });
 
   it('tracks onboarding run failures', async () => {

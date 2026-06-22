@@ -1074,6 +1074,15 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       statusLabel: ui('loading'),
       success: false,
     };
+  } else if (activeSetupStep === 'dataset') {
+    setupProgressState = {
+      progress: 65,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingDataDescription'),
+      leading: <Building2 className="h-8 w-8 text-slate-400" data-testid="Building2__79cf84" />,
+      statusLabel: ui('loading'),
+      success: false,
+    };
   } else if (activeSetupStep === 'sequences') {
     setupProgressState = {
       progress: 80,
