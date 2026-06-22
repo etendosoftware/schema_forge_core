@@ -4,7 +4,7 @@ import { translateBackendError } from '@/lib/backendErrors.js';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
-import { trackDocumentCreated } from '@/lib/observability/health-events.js';
+import { trackDocumentCreated, trackTransactionPosted } from '@/lib/observability/health-events.js';
 
 function buildHeaders(token) {
     let locale = 'es_ES';
@@ -948,6 +948,7 @@ export function useEntity(entity, childEntity, {
             return null;
         }
         toast.success(ui('recordProcessed'));
+        trackTransactionPosted();
         refresh();
         // Fetch updated record and update selected state so the detail view reflects the new status
         try {

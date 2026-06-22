@@ -1,4 +1,4 @@
-import { track, group } from '../observability.js';
+import { track, group, flush } from '../observability.js';
 import { extractWindowName } from './payload.js';
 import { HEALTH_EVENTS_MAP } from './health-events.map.js';
 
@@ -21,21 +21,22 @@ function getSessionContext() {
   }
 }
 
-export function trackSessionStarted({ username, clientId } = {}) {
+export async function trackSessionStarted({ username, clientId } = {}) {
   if (clientId) {
-    group('account_id', clientId);
+    void group('account_id', clientId);
   }
-  track('session_started', {
+  await track('session_started', {
     username: username || undefined,
     account_id: clientId || undefined,
   });
+  await flush();
 }
 
 export function trackDocumentCreated() {
   const windowName = getWindowName();
   const meta = HEALTH_EVENTS_MAP[windowName];
   if (!meta) return;
-  track('document_created', {
+  void track('document_created', {
     document_type: meta.document_type,
     functional_area: meta.functional_area,
     ...getSessionContext(),
@@ -46,7 +47,7 @@ export function trackTransactionPosted() {
   const windowName = getWindowName();
   const meta = HEALTH_EVENTS_MAP[windowName];
   if (!meta || !meta.transactional) return;
-  track('transaction_posted', {
+  void track('transaction_posted', {
     document_type: meta.document_type,
     functional_area: meta.functional_area,
     ...getSessionContext(),

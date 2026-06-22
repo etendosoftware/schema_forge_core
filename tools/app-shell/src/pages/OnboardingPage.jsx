@@ -886,7 +886,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
           action: 'enter_environment',
           status: 'success',
         });
-        trackSessionStarted({ username: env.adminUserName || env.adminUser, clientId: env.clientId });
+        await trackSessionStarted({ username: env.adminUserName || env.adminUser, clientId: env.clientId });
         window.location.href = buildAppReturnToHref(
           getSafeReturnTo(window.location.search),
           window.location.pathname

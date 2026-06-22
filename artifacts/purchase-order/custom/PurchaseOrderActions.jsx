@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUI, useMenuLabel } from '@/i18n';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 import { ConfirmResultModal } from '@/components/contract-ui';
+import { trackTransactionPosted } from '@/lib/observability/health-events.js';
 
 export { ConfirmResultModal as PoConfirmResultModal };
 
@@ -308,6 +309,7 @@ export function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onCo
           throw new Error(rawMsg.includes('@OrderWithoutLines@') ? ui('soNoLinesError') : rawMsg);
         }
         setOrderConfirmed(true);
+        trackTransactionPosted();
         window.dispatchEvent(new CustomEvent('purchase-order:document-created'));
       } catch (e) {
         setError(e.message || ui('poErrorOccurred'));

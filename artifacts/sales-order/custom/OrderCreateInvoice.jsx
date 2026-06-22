@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useUI, useMenuLabel } from '@/i18n';
+import { trackTransactionPosted } from '@/lib/observability/health-events.js';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 import { ConfirmResultModal } from '@/components/contract-ui';
 
@@ -318,6 +319,7 @@ export function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onCo
           throw new Error(e?.response?.message || `Error (${processRes.status})`);
         }
         setOrderConfirmed(true);
+        trackTransactionPosted();
         window.dispatchEvent(new CustomEvent('sales-order:document-created'));
       } catch (e) {
         setError(e.message || ui('soErrorOccurred'));

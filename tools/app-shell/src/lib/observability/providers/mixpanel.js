@@ -3,7 +3,7 @@ function isEnabled(value) {
 }
 
 function normalizeOptions({ apiHost, debug } = {}) {
-  const options = { debug: isEnabled(debug) };
+  const options = { debug: isEnabled(debug), batch_requests: false };
   if (apiHost) {
     options.api_host = apiHost;
   }
@@ -47,7 +47,9 @@ export function createMixpanelProvider({
     async track(eventName, properties = {}) {
       const client = await getClient();
       if (!client || typeof client.track !== 'function') return;
-      client.track(eventName, properties);
+      return new Promise(resolve => {
+        client.track(eventName, properties, {}, resolve);
+      });
     },
 
     async page(path, properties = {}) {
