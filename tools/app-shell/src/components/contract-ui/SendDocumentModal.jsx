@@ -125,7 +125,12 @@ function RecipientFields({ editableRecipients, ccEnabled, toRecipients, ccRecipi
             placeholder={emailLoading ? '' : 'email@company.com'}
             style={{ width: '100%', fontSize: 13, padding: '8px 32px 8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', background: '#f9fafb', boxSizing: 'border-box' }}
           />
-          <Search size={13} strokeWidth={1.5} color="#9ca3af" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          <Search
+            size={13}
+            strokeWidth={1.5}
+            color="#9ca3af"
+            style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+            data-testid="Search__afec0a" />
         </div>
       </div>
     );
@@ -493,7 +498,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
         <div onClick={e => e.stopPropagation()} style={{ width: 800, height: 560, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB', animation: isClosing ? 'sfSlideUpOut 280ms ease-in forwards' : 'sfSlideDownIn 280ms ease-out' }}>
           <div style={{ padding: '12px 16px', background: '#F5F5F5', borderBottom: '1px solid #E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Mail size={16} strokeWidth={1.5} color="#374151" />
+              <Mail size={16} strokeWidth={1.5} color="#374151" data-testid="Mail__afec0a" />
               <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>{ui('sendModalTitle', { documentType, documentNo })}</span>
             </div>
             <button type="button" onClick={onClose} style={{ fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>&times;</button>
@@ -530,7 +535,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
               subject={subject}
               message={message}
               ui={ui}
-            />
+              data-testid="EmailFormPanel__afec0a" />
           )}
         </div>
 
@@ -551,7 +556,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
             {sending ? ui('sendModalSending') : (
               <>
                 {ui('sendModalSend')}
-                <Mail size={14} strokeWidth={1.5} />
+                <Mail size={14} strokeWidth={1.5} data-testid="Mail__afec0a" />
               </>
             )}
           </button>
@@ -578,7 +583,7 @@ export function SendDocumentButton({ onClick }) {
         aria-label={label}
         className="flex items-center justify-center p-[7px] rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors"
       >
-        <Mail className="h-[15px] w-[15px]" />
+        <Mail className="h-[15px] w-[15px]" data-testid="Mail__afec0a" />
       </button>
       <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-800 px-2 py-1 text-[11px] text-white opacity-0 group-hover:opacity-100 transition-opacity" style={{ zIndex: 50 }}>
         {label}

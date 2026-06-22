@@ -155,7 +155,7 @@ export default function TbaiMonitorSection({
           ))}
         </div>
         <button className="fm-export-btn" onClick={handleExport} disabled={loading || exporting}>
-          <ExportIcon /> {ui('fiscalMonitor.export')}
+          <ExportIcon data-testid="ExportIcon__dd7710" /> {ui('fiscalMonitor.export')}
         </button>
       </div>
 
@@ -172,7 +172,11 @@ export default function TbaiMonitorSection({
           <table className="fm-table" data-testid="fm-data-table">
             <thead>
               <tr>
-                <th><Checkbox checked={allSelected} indeterminate={someSelected} onChange={handleToggleAll} /></th>
+                <th><Checkbox
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  onChange={handleToggleAll}
+                  data-testid="Checkbox__dd7710" /></th>
                 <th className="sortable sorted">{ui('fiscalMonitor.col.date')}</th>
                 <th>{ui('fiscalMonitor.col.invoiceNumber')}</th>
                 <th>{ui('fiscalMonitor.col.description')}</th>
@@ -198,19 +202,22 @@ export default function TbaiMonitorSection({
                 }
                 return (
                   <tr key={row.id ?? i}>
-                    <td><Checkbox checked={selectedIds.has(row.id)} onChange={() => handleToggleRow(row.id)} /></td>
+                    <td><Checkbox
+                      checked={selectedIds.has(row.id)}
+                      onChange={() => handleToggleRow(row.id)}
+                      data-testid="Checkbox__dd7710" /></td>
                     <td>{fmtDate(row.invoiceDate ?? inv.date)}</td>
                     <td className="num-factura">
                       <NumFactura
                         n={inv.docNo}
                         onOpen={() => onInvoiceOpen?.(row.invoice, 'sales-invoice')}
-                      />
+                        data-testid="NumFactura__dd7710" />
                     </td>
                     <td>{row['invoice$description'] ?? row.descripcion ?? '—'}</td>
                     <td>
                       {isSigned ? (
                         <span style={{ color: 'var(--fm-success-fg)', display: 'inline-flex', alignItems: 'center' }}>
-                          <CheckIcon />
+                          <CheckIcon data-testid="CheckIcon__dd7710" />
                         </span>
                       ) : (
                         <span style={{ color: 'var(--fm-fg-4)' }}>—</span>
@@ -221,14 +228,18 @@ export default function TbaiMonitorSection({
                         estado={row.estado}
                         onClick={pillClick}
                         title={isPendingStatus(row.estado) ? ui('fiscalMonitor.openInvoice') : undefined}
-                      />
+                        data-testid="StatusPill__dd7710" />
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          <ScrollSentinel hasMore={rows.length < totalRows} loading={loading} onVisible={() => setPage(p => p + 1)} />
+          <ScrollSentinel
+            hasMore={rows.length < totalRows}
+            loading={loading}
+            onVisible={() => setPage(p => p + 1)}
+            data-testid="ScrollSentinel__dd7710" />
         </>
       )}
     </>

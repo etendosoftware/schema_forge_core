@@ -37,9 +37,13 @@ function SidebarPeriodSelector({ period, onChangePeriod, ui, disabled = false })
         className={`h-10 flex items-center gap-1 px-3 border border-[#D1D4DB] rounded-lg shadow-[0px_1px_2px_rgba(18,18,23,0.05)] text-sm font-medium transition-colors
           ${disabled ? 'bg-[#F5F7F9] text-[#828FA3] cursor-not-allowed' : 'bg-white text-[#121217]'}`}
       >
-        <Calendar className={`h-5 w-5 shrink-0 ${disabled ? 'text-[#C1C7D0]' : 'text-[#828FA3]'}`} />
+        <Calendar
+          className={`h-5 w-5 shrink-0 ${disabled ? 'text-[#C1C7D0]' : 'text-[#828FA3]'}`}
+          data-testid="Calendar__59b33d" />
         <span className="flex-1 text-left mx-1">{ui(current.key)}</span>
-        <ChevronDown className={`h-5 w-5 shrink-0 ${disabled ? 'text-[#C1C7D0]' : 'text-[#828FA3]'}`} />
+        <ChevronDown
+          className={`h-5 w-5 shrink-0 ${disabled ? 'text-[#C1C7D0]' : 'text-[#828FA3]'}`}
+          data-testid="ChevronDown__59b33d" />
       </button>
       {open && (
         <div className="absolute top-11 left-0 z-50 min-w-full bg-white border border-[#D1D4DB] rounded-lg shadow-md overflow-hidden">
@@ -64,7 +68,7 @@ function AvailabilityWidget({ label, value, badge }) {
   return (
     <div className="flex-1 flex items-center gap-3 pl-3 pr-2 py-2 bg-white border border-[#E8EAEF] rounded-lg shadow-[0px_1px_2px_rgba(18,18,23,0.05)]">
       <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-white border border-[#D1D4DB] rounded-lg shadow-[0px_1px_2px_rgba(18,18,23,0.05)]">
-        <Box className="w-6 h-6 text-[#828FA3]" />
+        <Box className="w-6 h-6 text-[#828FA3]" data-testid="Box__59b33d" />
       </div>
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="flex items-center justify-between gap-2">
@@ -418,7 +422,7 @@ function StockChart({
             onClick={() => setInternalOpen(true)}
             className="inline-flex items-center gap-1 text-sm font-medium text-[#121217] underline underline-offset-2 shrink-0"
           >
-            {ui('expand')} <ExternalLink size={16} className="text-[#828FA3]" />
+            {ui('expand')} <ExternalLink size={16} className="text-[#828FA3]" data-testid="ExternalLink__59b33d" />
           </button>
         </div>
         {/* Warehouse legend */}
@@ -437,15 +441,25 @@ function StockChart({
             months={seriesChart?.months ?? chart.months}
             series={seriesChart?.series}
             values={chart.values}
-            W={340} H={100} PAD_X={36} PAD_R={8} PAD_Y={12} gradId="sbGrad" fontSize={10} preserveAspectRatio="none" />
+            W={340}
+            H={100}
+            PAD_X={36}
+            PAD_R={8}
+            PAD_Y={12}
+            gradId="sbGrad"
+            fontSize={10}
+            preserveAspectRatio="none"
+            data-testid="ChartSVG__59b33d" />
         </div>
       </div>
-
       {/* Expanded modal */}
-      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-w-4xl w-full">
-          <DialogHeader>
-            <DialogTitle>
+      <Dialog
+        open={isOpen}
+        onOpenChange={handleOpenChange}
+        data-testid="Dialog__59b33d">
+        <DialogContent className="max-w-4xl w-full" data-testid="DialogContent__59b33d">
+          <DialogHeader data-testid="DialogHeader__59b33d">
+            <DialogTitle data-testid="DialogTitle__59b33d">
               <div className="flex items-center justify-between gap-4 pr-8">
                 <span>{ui('stockMovement')}</span>
                 <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
@@ -465,8 +479,13 @@ function StockChart({
                 months={displaySeries?.months ?? chartLargeFallback?.months ?? chart.months}
                 series={displaySeries?.series}
                 values={chartLargeFallback?.values ?? chart.values}
-                W={600} H={250} PAD_X={52} PAD_Y={16} gradId="sbGradLarge" fontSize={13}
-              />
+                W={600}
+                H={250}
+                PAD_X={52}
+                PAD_Y={16}
+                gradId="sbGradLarge"
+                fontSize={13}
+                data-testid="ChartSVG__59b33d" />
             </div>
             {sortedRows.length > 0 && (
               <div className="w-56 flex-shrink-0 flex flex-col gap-2">
@@ -567,7 +586,6 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
 
   return (
     <div className="flex flex-col gap-3">
-
       {/* ── Inventory overview ── */}
       <div>
 
@@ -595,15 +613,29 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
         {/* Summary tab content */}
         {activeTab === 'summary' && (
           <div className="px-4 pt-3 pb-4 flex flex-col gap-3">
-            <SidebarPeriodSelector period={period} onChangePeriod={setPeriod} ui={ui} disabled={!hasChart} />
-            {hasChart && <AvailabilityWidget label={ui('onHand')} value={fmt(onHand)} badge={onHandSubtitle} />}
+            <SidebarPeriodSelector
+              period={period}
+              onChangePeriod={setPeriod}
+              ui={ui}
+              disabled={!hasChart}
+              data-testid="SidebarPeriodSelector__59b33d" />
+            {hasChart && <AvailabilityWidget
+              label={ui('onHand')}
+              value={fmt(onHand)}
+              badge={onHandSubtitle}
+              data-testid="AvailabilityWidget__59b33d" />}
           </div>
         )}
 
         {/* Warehouses tab content */}
         {activeTab === 'warehouses' && (
           <div className="px-4 pt-3 pb-4 flex flex-col gap-3">
-            <SidebarPeriodSelector period={period} onChangePeriod={setPeriod} ui={ui} disabled={!hasChart} />
+            <SidebarPeriodSelector
+              period={period}
+              onChangePeriod={setPeriod}
+              ui={ui}
+              disabled={!hasChart}
+              data-testid="SidebarPeriodSelector__59b33d" />
             {sortedRows.length > 0 && <div className="flex flex-col gap-[10px]">
               {sortedRows.map((b, i) => {
                 const wAvailable = b.quantityOnHand - b.reservedQty;
@@ -633,24 +665,24 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
           </div>
         )}
       </div>
-
       {/* ── Divider ── */}
       {(hasChart || transactions !== null) && (
         <div className="px-4">
           <div className="border-t border-[#E8EAEF]" />
         </div>
       )}
-
       {/* ── Stock movement or empty state ── */}
       {hasChart
-        ? <StockChart {...stockChartProps} />
-        : transactions !== null && <StockEmptyState onAdjustStock={() => navigate('/physical-inventory/new')} onReplenish={() => navigate('/purchase-order/new')} />
+        ? <StockChart {...stockChartProps} data-testid="StockChart__59b33d" />
+        : transactions !== null && <StockEmptyState
+        onAdjustStock={() => navigate('/physical-inventory/new')}
+        onReplenish={() => navigate('/purchase-order/new')}
+        data-testid="StockEmptyState__59b33d" />
       }
-
       {/* Hidden StockChart for warehouse tab modal trigger */}
       {activeTab === 'warehouses' && hasChart && (
         <div className="hidden">
-          <StockChart {...stockChartProps} />
+          <StockChart {...stockChartProps} data-testid="StockChart__59b33d" />
         </div>
       )}
     </div>

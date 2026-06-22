@@ -211,7 +211,7 @@ export default function ImportLinesModal({
                       onClick={e => e.stopPropagation()}
                       onChange={() => toggleDoc(doc.id)}
                       className="mx-2 shrink-0"
-                    />
+                      data-testid="Checkbox__5345ae" />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{display.docNo}</span>
@@ -222,7 +222,6 @@ export default function ImportLinesModal({
                       {display.secondary || (docTotal != null ? fmtNum(docTotal) : '')}
                     </span>
                   </div>
-
                   {isExpanded && (
                     <div style={{ background: 'var(--color-background-secondary, #F9FAFB)' }}>
                       {(() => {
@@ -234,73 +233,73 @@ export default function ImportLinesModal({
                         }
                         return (
                           <>
-                          <div style={{ display: 'flex', padding: '4px 12px 4px 48px', fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '0.5px solid #E5E7EB' }}>
-                            <span style={{ flex: 1 }}>{ui('product')}</span>
-                            <span style={{ width: 70, textAlign: 'right' }}>{ui('qty')}</span>
-                            {showPriceColumns && <span style={{ width: 80, textAlign: 'right' }}>{ui('price')}</span>}
-                            {showPriceColumns && <span style={{ width: 80, textAlign: 'right' }}>{ui('amount')}</span>}
-                          </div>
-                          {lines.map(line => {
-                            const imported = line._alreadyImported;
-                            const lineSelected = !imported && selected.has(line.id);
-                            const maxQty = line._maxQty || 0;
-                            const currentQty = lineQuantities[line.id] ?? maxQty;
-                            const qtyEdited = currentQty !== maxQty;
-                            const unitPrice = line._unitPrice || null;
-                            const lineTotal = unitPrice != null ? unitPrice * currentQty : null;
-                            return (
-                              <div
-                                key={line.id}
-                                onClick={() => !imported && toggleLine(line.id)}
-                                style={{
-                                  display: 'flex', alignItems: 'center', padding: '6px 12px 6px 48px', borderBottom: '0.5px solid #F3F4F6',
-                                  cursor: imported ? 'default' : 'pointer',
-                                  background: lineSelected ? '#F5F7F9' : 'transparent',
-                                  opacity: imported ? 0.4 : 1,
-                                }}
-                              >
-                                <Checkbox
-                                  checked={lineSelected}
-                                  disabled={imported}
-                                  onClick={e => e.stopPropagation()}
-                                  onChange={() => !imported && toggleLine(line.id)}
-                                  className="mr-2 shrink-0"
-                                />
-                                <span style={{ fontSize: 13, color: imported ? '#9ca3af' : '#111827', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: lineSelected ? 500 : 400 }}>
-                                  {line._productName}{imported && <span style={{ fontSize: 11, marginLeft: 6, color: '#9ca3af' }}>{line._inDraftShipments?.length ? `${ui('inDraftShipment')}: ${line._inDraftShipments.join(', ')}` : ui('alreadyImported')}</span>}
-                                </span>
-                                <span style={{ width: 70, flexShrink: 0, textAlign: 'right' }}>
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    max={maxQty}
-                                    value={currentQty}
+                            <div style={{ display: 'flex', padding: '4px 12px 4px 48px', fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '0.5px solid #E5E7EB' }}>
+                              <span style={{ flex: 1 }}>{ui('product')}</span>
+                              <span style={{ width: 70, textAlign: 'right' }}>{ui('qty')}</span>
+                              {showPriceColumns && <span style={{ width: 80, textAlign: 'right' }}>{ui('price')}</span>}
+                              {showPriceColumns && <span style={{ width: 80, textAlign: 'right' }}>{ui('amount')}</span>}
+                            </div>
+                            {lines.map(line => {
+                              const imported = line._alreadyImported;
+                              const lineSelected = !imported && selected.has(line.id);
+                              const maxQty = line._maxQty || 0;
+                              const currentQty = lineQuantities[line.id] ?? maxQty;
+                              const qtyEdited = currentQty !== maxQty;
+                              const unitPrice = line._unitPrice || null;
+                              const lineTotal = unitPrice != null ? unitPrice * currentQty : null;
+                              return (
+                                <div
+                                  key={line.id}
+                                  onClick={() => !imported && toggleLine(line.id)}
+                                  style={{
+                                    display: 'flex', alignItems: 'center', padding: '6px 12px 6px 48px', borderBottom: '0.5px solid #F3F4F6',
+                                    cursor: imported ? 'default' : 'pointer',
+                                    background: lineSelected ? '#F5F7F9' : 'transparent',
+                                    opacity: imported ? 0.4 : 1,
+                                  }}
+                                >
+                                  <Checkbox
+                                    checked={lineSelected}
+                                    disabled={imported}
                                     onClick={e => e.stopPropagation()}
-                                    onChange={e => {
-                                      const v = Math.max(1, Math.min(maxQty, Number(e.target.value) || 1));
-                                      setLineQuantities(prev => ({ ...prev, [line.id]: v }));
-                                    }}
-                                    style={{
-                                      width: 60, fontSize: 12, padding: '3px 4px', borderRadius: 4, textAlign: 'center', fontVariantNumeric: 'tabular-nums', outline: 'none',
-                                      border: qtyEdited ? '1px solid var(--color-border-warning, #f59e0b)' : '0.5px solid var(--color-border-secondary, #d1d5db)',
-                                      background: qtyEdited ? 'var(--color-background-warning, #fffbeb)' : '#fff',
-                                    }}
-                                  />
-                                </span>
-                                {showPriceColumns && (
-                                  <span style={{ width: 80, fontSize: 12, color: '#6B7280', fontVariantNumeric: 'tabular-nums', textAlign: 'right', flexShrink: 0 }}>
-                                    {unitPrice ? fmtNum(unitPrice) : '-'}
+                                    onChange={() => !imported && toggleLine(line.id)}
+                                    className="mr-2 shrink-0"
+                                    data-testid="Checkbox__5345ae" />
+                                  <span style={{ fontSize: 13, color: imported ? '#9ca3af' : '#111827', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: lineSelected ? 500 : 400 }}>
+                                    {line._productName}{imported && <span style={{ fontSize: 11, marginLeft: 6, color: '#9ca3af' }}>{line._inDraftShipments?.length ? `${ui('inDraftShipment')}: ${line._inDraftShipments.join(', ')}` : ui('alreadyImported')}</span>}
                                   </span>
-                                )}
-                                {showPriceColumns && (
-                                  <span style={{ width: 80, fontSize: 12, color: '#6B7280', fontVariantNumeric: 'tabular-nums', textAlign: 'right', flexShrink: 0 }}>
-                                    {lineTotal ? fmtNum(lineTotal) : '-'}
+                                  <span style={{ width: 70, flexShrink: 0, textAlign: 'right' }}>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      max={maxQty}
+                                      value={currentQty}
+                                      onClick={e => e.stopPropagation()}
+                                      onChange={e => {
+                                        const v = Math.max(1, Math.min(maxQty, Number(e.target.value) || 1));
+                                        setLineQuantities(prev => ({ ...prev, [line.id]: v }));
+                                      }}
+                                      style={{
+                                        width: 60, fontSize: 12, padding: '3px 4px', borderRadius: 4, textAlign: 'center', fontVariantNumeric: 'tabular-nums', outline: 'none',
+                                        border: qtyEdited ? '1px solid var(--color-border-warning, #f59e0b)' : '0.5px solid var(--color-border-secondary, #d1d5db)',
+                                        background: qtyEdited ? 'var(--color-background-warning, #fffbeb)' : '#fff',
+                                      }}
+                                    />
                                   </span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </>
+                                  {showPriceColumns && (
+                                    <span style={{ width: 80, fontSize: 12, color: '#6B7280', fontVariantNumeric: 'tabular-nums', textAlign: 'right', flexShrink: 0 }}>
+                                      {unitPrice ? fmtNum(unitPrice) : '-'}
+                                    </span>
+                                  )}
+                                  {showPriceColumns && (
+                                    <span style={{ width: 80, fontSize: 12, color: '#6B7280', fontVariantNumeric: 'tabular-nums', textAlign: 'right', flexShrink: 0 }}>
+                                      {lineTotal ? fmtNum(lineTotal) : '-'}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </>
                         );
                       })()}
                     </div>

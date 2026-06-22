@@ -115,7 +115,7 @@ export function ImageField({ imageId, onChange, token, apiBaseUrl, readOnly = fa
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: file.name, mimeType: file.type || 'application/octet-stream', data: base64 }),
       });
-      if (!res.ok) throw new Error(await res.text() || `Upload failed (${res.status})`);
+      if (!res.ok) throw new Error((await res.text()) || `Upload failed (${res.status})`);
       const { imageId: newId } = await res.json();
       if (!newId) throw new Error('No imageId returned from server');
       onChange?.(newId);
@@ -191,7 +191,7 @@ export function ImageField({ imageId, onChange, token, apiBaseUrl, readOnly = fa
                         className="absolute top-1 right-1 w-6 h-6 flex items-center justify-center bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_rgba(18,18,23,0.05)] rounded-full opacity-0 group-hover:opacity-100 hover:bg-[#F5F7F9] transition-all"
                         aria-label="Remove image"
                       >
-                        <TrashIcon className="w-4 h-4 text-[#828FA3]" />
+                        <TrashIcon className="w-4 h-4 text-[#828FA3]" data-testid="TrashIcon__266d2c" />
                       </button>
                     )}
                   </div>
@@ -206,14 +206,14 @@ export function ImageField({ imageId, onChange, token, apiBaseUrl, readOnly = fa
                       className="h-12 w-12 border border-dashed border-[#D1D4DB] rounded-lg flex items-center justify-center hover:border-[#828FA3] hover:bg-[#F5F7F9] transition-colors disabled:opacity-50"
                       aria-label={ui('uploadImage')}
                     >
-                      <Upload className="h-5 w-5 text-[#828FA3]" />
+                      <Upload className="h-5 w-5 text-[#828FA3]" data-testid="Upload__266d2c" />
                     </button>
                   </div>
                 )}
               </>
             ) : (
               /* Empty state — full-area dashed dropzone with upload affordance */
-              <div className="flex-1 min-h-[180px] px-3 pb-3 flex flex-col">
+              (<div className="flex-1 min-h-[180px] px-3 pb-3 flex flex-col">
                 <div
                   className={`flex-1 flex flex-col items-center justify-center gap-2 px-5 py-5 border border-dashed rounded-lg transition-colors
                     ${!readOnly ? 'cursor-pointer' : ''}
@@ -225,14 +225,16 @@ export function ImageField({ imageId, onChange, token, apiBaseUrl, readOnly = fa
                   onDrop={handleDrop}
                 >
                   {uploading ? (
-                    <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+                    <Loader2
+                      className="h-7 w-7 animate-spin text-muted-foreground"
+                      data-testid="Loader2__266d2c" />
                   ) : (
                     <>
                       <span
                         className="w-8 h-8 flex items-center justify-center bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_rgba(18,18,23,0.05)] rounded-lg"
                         aria-hidden="true"
                       >
-                        <Upload className="h-5 w-5 text-[#828FA3]" />
+                        <Upload className="h-5 w-5 text-[#828FA3]" data-testid="Upload__266d2c" />
                       </span>
                       <div className="flex flex-col items-center gap-1">
                         <span className="text-sm font-normal text-[#121217] text-center">{ui('imageDropTitle')}</span>
@@ -243,7 +245,7 @@ export function ImageField({ imageId, onChange, token, apiBaseUrl, readOnly = fa
                     </>
                   )}
                 </div>
-              </div>
+              </div>)
             )}
           </div>
         ) : (
@@ -256,7 +258,7 @@ export function ImageField({ imageId, onChange, token, apiBaseUrl, readOnly = fa
               ui={ui}
               onRemove={() => onChange?.('')}
               onUpload={openFilePicker}
-            />
+              data-testid="ImagePreview__266d2c" />
           </div>
         )}
 
@@ -270,8 +272,10 @@ export function ImageField({ imageId, onChange, token, apiBaseUrl, readOnly = fa
         />
 
       </div>
-
-      {lightboxOpen && blobUrl && <ImageLightbox blobUrl={blobUrl} onClose={closeLightbox} />}
+      {lightboxOpen && blobUrl && <ImageLightbox
+        blobUrl={blobUrl}
+        onClose={closeLightbox}
+        data-testid="ImageLightbox__266d2c" />}
     </>
   );
 }
@@ -303,7 +307,9 @@ function ImagePreview({ blobUrl, imageId, uploading, readOnly, ui, onRemove, onU
         <img src={blobUrl} alt="Product" className="max-w-full max-h-full object-contain" />
         {/* Hover overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors pointer-events-none flex items-center justify-center">
-          <ZoomIn className="h-7 w-7 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
+          <ZoomIn
+            className="h-7 w-7 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow"
+            data-testid="ZoomIn__266d2c" />
         </div>
         {!readOnly && (
           <>
@@ -313,7 +319,7 @@ function ImagePreview({ blobUrl, imageId, uploading, readOnly, ui, onRemove, onU
               className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
               aria-label="Remove image"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-3.5 w-3.5" data-testid="X__266d2c" />
             </button>
             <button
               type="button"
@@ -321,7 +327,7 @@ function ImagePreview({ blobUrl, imageId, uploading, readOnly, ui, onRemove, onU
               onClick={(e) => { e.stopPropagation(); onUpload(); }}
               className="absolute bottom-2 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/50 text-white text-xs font-medium hover:bg-black/70 disabled:opacity-50 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
             >
-              {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+              {uploading ? <Loader2 className="h-3 w-3 animate-spin" data-testid="Loader2__266d2c" /> : <Upload className="h-3 w-3" data-testid="Upload__266d2c" />}
               {ui('uploadImage')}
             </button>
           </>
@@ -332,13 +338,13 @@ function ImagePreview({ blobUrl, imageId, uploading, readOnly, ui, onRemove, onU
   return (
     <div className="flex flex-col items-center gap-2 text-muted-foreground px-3 text-center">
       {uploading
-        ? <Loader2 className="h-7 w-7 animate-spin" />
-        : <ImageIcon className="h-7 w-7" />
+        ? <Loader2 className="h-7 w-7 animate-spin" data-testid="Loader2__266d2c" />
+        : <ImageIcon className="h-7 w-7" data-testid="ImageIcon__266d2c" />
       }
       <span className="text-xs">{imageId ? 'Loading…' : ui('noImage')}</span>
       {!readOnly && !uploading && (
         <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 group-hover:text-gray-700 mt-1">
-          <Upload className="h-3.5 w-3.5" />
+          <Upload className="h-3.5 w-3.5" data-testid="Upload__266d2c" />
           {ui('uploadImage')}
         </span>
       )}
@@ -359,7 +365,7 @@ function ImageLightbox({ blobUrl, onClose }) {
         className="absolute top-4 right-4 h-9 w-9 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30 transition-colors"
         aria-label="Close"
       >
-        <X className="h-5 w-5" />
+        <X className="h-5 w-5" data-testid="X__266d2c" />
       </button>
       <img
         src={blobUrl}

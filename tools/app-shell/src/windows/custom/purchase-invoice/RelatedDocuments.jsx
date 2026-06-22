@@ -95,30 +95,45 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
 
   for (const rd of returnDeliveries) {
     chips.push(
-      <DocChip key={`return-delivery-${rd.id}`} {...docChipProps({ type: 'return-to-vendor', doc: rd, ui, navigate })} />
+      <DocChip
+        key={`return-delivery-${rd.id}`}
+        {...docChipProps({ type: 'return-to-vendor', doc: rd, ui, navigate })}
+        data-testid="DocChip__bb79ed" />
     );
   }
 
   if (purchaseOrder) {
     chips.push(
-      <DocChip key="purchase-order" {...docChipProps({ type: 'order', doc: purchaseOrder, ui, navigate })} />
+      <DocChip
+        key="purchase-order"
+        {...docChipProps({ type: 'order', doc: purchaseOrder, ui, navigate })}
+        data-testid="DocChip__bb79ed" />
     );
   }
 
   for (const r of receipts) {
     chips.push(
-      <DocChip key={`receipt-${r.id}`} {...docChipProps({ type: 'receipt', doc: r, ui, navigate })} />
+      <DocChip
+        key={`receipt-${r.id}`}
+        {...docChipProps({ type: 'receipt', doc: r, ui, navigate })}
+        data-testid="DocChip__bb79ed" />
     );
   }
 
   for (const p of payments) {
     chips.push(
-      <DocChip key={`payment-${p.id}`} {...docChipProps({ type: 'payment', doc: p, ui, navigate })} />
+      <DocChip
+        key={`payment-${p.id}`}
+        {...docChipProps({ type: 'payment', doc: p, ui, navigate })}
+        data-testid="DocChip__bb79ed" />
     );
   }
 
   return (
-    <RelatedDocumentsShell loading={loading} onRefresh={() => setRefreshKey(k => k + 1)}>
+    <RelatedDocumentsShell
+      loading={loading}
+      onRefresh={() => setRefreshKey(k => k + 1)}
+      data-testid="RelatedDocumentsShell__bb79ed">
       {chips}
     </RelatedDocumentsShell>
   );

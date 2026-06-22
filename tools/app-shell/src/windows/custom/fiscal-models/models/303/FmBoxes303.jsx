@@ -6,8 +6,16 @@ import { getLayout303 } from './fm303Layouts.js';
 import { formatAmount, formatPercent } from '../../fiscalModelsUtils.js';
 
 const SECTION_ICON = {
-  iva_devengado: <TrendingUp  size={20} strokeWidth={1.75} style={{ color: '#121217' }} />,
-  iva_deducible: <TrendingDown size={20} strokeWidth={1.75} style={{ color: '#121217' }} />,
+  iva_devengado: <TrendingUp
+    size={20}
+    strokeWidth={1.75}
+    style={{ color: '#121217' }}
+    data-testid="TrendingUp__49d327" />,
+  iva_deducible: <TrendingDown
+    size={20}
+    strokeWidth={1.75}
+    style={{ color: '#121217' }}
+    data-testid="TrendingDown__49d327" />,
 };
 
 function formatCell(val, colType) {
@@ -63,7 +71,7 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
                     <Checkbox
                       checked={identification?.[f.id] ?? false}
                       onChange={() => onIdentChange?.(f.id, !(identification?.[f.id] ?? false))}
-                    />
+                      data-testid="Checkbox__49d327" />
                     <span className="fm-aeat-ident-cb__label">{t(f.labelKey)}</span>
                   </div>
                 ))}
@@ -77,7 +85,6 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
 
         return (
           <div key={section.id} className={`fm-aeat-section${COMPACT_SECTIONS.has(section.id) ? ' fm-aeat-section--compact' : ''}${section.id === 'iva_deducible' ? ' fm-aeat-section--divided' : ''}`}>
-
             {/* Section title — only for IVA Devengado and IVA Deducible */}
             {TITLED_SECTIONS.has(section.id) && (
               <div className="fm-aeat-section__title">
@@ -87,7 +94,6 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
                 {t(section.titleKey)}
               </div>
             )}
-
             {/* Column headers */}
             {cols > 0 && section.colHeaderKeys?.length > 0 && (
               <div className="fm-aeat-col-headers">
@@ -97,7 +103,6 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
                 ))}
               </div>
             )}
-
             {/* Rows — group consecutive group rows into bracket containers */}
             {(() => {
               const items = [];
@@ -217,7 +222,7 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
                               {unit && <span className="fm-aeat-cell__unit">{unit}</span>}
                               {row.editable && (
                                 <button className="fm-aeat-cell__edit-btn" onClick={() => setEditingCell(boxNum)}>
-                                  <Pencil size={12} strokeWidth={1.5} />
+                                  <Pencil size={12} strokeWidth={1.5} data-testid="Pencil__49d327" />
                                 </button>
                               )}
                             </>

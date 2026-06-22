@@ -9,9 +9,9 @@ const COLUMNS = [
 ];
 
 function CustomMovementTable(props) {
-  return <MovementTable columns={COLUMNS} {...props} />;
+  return <MovementTable columns={COLUMNS} {...props} data-testid="MovementTable__5b4efc" />;
 }
 
 export default function GoodsMovementsWindow(props) {
-  return <GeneratedApp {...props} Table={CustomMovementTable} />;
+  return <GeneratedApp {...props} Table={CustomMovementTable} data-testid="GeneratedApp__5b4efc" />;
 }

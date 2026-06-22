@@ -184,6 +184,18 @@ describe('ListModalCell — toggle', () => {
     // checked=true → next is false.
     expect(onToggle).toHaveBeenCalledWith({ id: '8', active: true }, col, false);
   });
+
+  it('stops pointer-down propagation on the wrapper div', () => {
+    const col = { key: 'active', cellType: 'toggle' };
+    const row = { id: '9', active: false };
+    const { container } = render(<ListModalCell row={row} col={col} tMenu={tMenu} />);
+    const wrapper = container.querySelector('[role="presentation"]');
+    expect(wrapper).toBeInTheDocument();
+    const event = new PointerEvent('pointerdown', { bubbles: true, cancelable: true });
+    const stopSpy = vi.spyOn(event, 'stopPropagation');
+    wrapper.dispatchEvent(event);
+    expect(stopSpy).toHaveBeenCalled();
+  });
 });
 
 describe('ListModalCell — default cell', () => {
@@ -191,6 +203,18 @@ describe('ListModalCell — default cell', () => {
     const col = { key: 'state', type: 'enum', enumLabels: { OK: 'stateOk' } };
     render(<ListModalCell row={{ state: 'OK' }} col={col} tMenu={tMenu} />);
     expect(screen.getByText('stateOk')).toBeInTheDocument();
+  });
+
+  it('resolves identifier for selector columns', () => {
+    const col = { key: 'partner', type: 'selector' };
+    render(<ListModalCell row={{ partner: 'raw-id', 'partner$_identifier': 'Acme Corp' }} col={col} tMenu={tMenu} />);
+    expect(screen.getByText('Acme Corp')).toBeInTheDocument();
+  });
+
+  it('resolves identifier for foreignKey columns', () => {
+    const col = { key: 'product', type: 'foreignKey' };
+    render(<ListModalCell row={{ product: 'P-001', 'product$_identifier': 'Widget' }} col={col} tMenu={tMenu} />);
+    expect(screen.getByText('Widget')).toBeInTheDocument();
   });
 
   it('renders an em-dash for an empty raw value', () => {

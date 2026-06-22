@@ -44,9 +44,8 @@ function DocCard({ doc, currency, ui, navigate, onClose }) {
       }}
     >
       <div style={{ width: 38, height: 38, borderRadius: 9, background: cfg.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <Icon color={cfg.iconColor} />
+        <Icon color={cfg.iconColor} data-testid="Icon__a46cc0" />
       </div>
-
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 10, fontWeight: 600, color: '#9aa1aa', textTransform: 'uppercase', letterSpacing: '.06em', lineHeight: 1 }}>
           {ui(cfg.labelKey)}
@@ -61,7 +60,6 @@ function DocCard({ doc, currency, ui, navigate, onClose }) {
           </span>
         </div>
       </div>
-
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={hovered ? '#2f73d6' : '#d0d4da'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transition: 'stroke .15s' }}>
         <path d="M9 18l6-6-6-6" />
       </svg>
@@ -101,7 +99,14 @@ export function ConfirmResultModal({ title, docs = [], primary, navigate, curren
         {docs.length > 0 && (
           <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
             {docs.map((doc) => (
-              <DocCard key={doc.type + '-' + doc.num} doc={doc} currency={currency} ui={ui} navigate={navigate} onClose={onClose} />
+              <DocCard
+                key={doc.type + '-' + doc.num}
+                doc={doc}
+                currency={currency}
+                ui={ui}
+                navigate={navigate}
+                onClose={onClose}
+                data-testid="DocCard__a46cc0" />
             ))}
           </div>
         )}

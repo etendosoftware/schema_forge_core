@@ -38,23 +38,26 @@ export function AccountRowMenu({ account, onOpen, onEdit, onArchive }) {
   const isCash = account.type === ACCOUNT_TYPE.CASH;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <DropdownMenu data-testid="DropdownMenu__ffaf9f">
+      <DropdownMenuTrigger asChild data-testid="DropdownMenuTrigger__ffaf9f">
         <button
           type="button"
           aria-label={ui('financeAccountsRowMenuLabel')}
           data-testid={`account-row-menu-trigger-${account.id}`}
           className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#828FA3] hover:bg-[#E8EAEF]"
         >
-          <MoreVertical className="h-5 w-5" />
+          <MoreVertical className="h-5 w-5" data-testid="MoreVertical__ffaf9f" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[235px]">
+      <DropdownMenuContent
+        align="end"
+        className="w-[235px]"
+        data-testid="DropdownMenuContent__ffaf9f">
         <DropdownMenuItem
           onClick={() => onOpen?.(account)}
           data-testid={`account-row-menu-open-${account.id}`}
         >
-          <ExternalLink className="h-5 w-5 text-[#828FA3]" />
+          <ExternalLink className="h-5 w-5 text-[#828FA3]" data-testid="ExternalLink__ffaf9f" />
           <span className="text-sm font-normal leading-6 text-[#121217]">
             {ui('financeAccountsMenuOpen')}
           </span>
@@ -64,7 +67,7 @@ export function AccountRowMenu({ account, onOpen, onEdit, onArchive }) {
           onClick={() => onEdit?.(account)}
           data-testid={`account-row-menu-edit-${account.id}`}
         >
-          <Pencil className="h-5 w-5 text-[#828FA3]" />
+          <Pencil className="h-5 w-5 text-[#828FA3]" data-testid="Pencil__ffaf9f" />
           <span className="text-sm font-normal leading-6 text-[#121217]">
             {ui('financeAccountsMenuEdit')}
           </span>
@@ -72,27 +75,27 @@ export function AccountRowMenu({ account, onOpen, onEdit, onArchive }) {
 
         {!isCash ? (
           <>
-            <DropdownMenuItem disabled>
-              <Link2 className="h-5 w-5 text-[#828FA3]" />
+            <DropdownMenuItem disabled data-testid="DropdownMenuItem__ffaf9f">
+              <Link2 className="h-5 w-5 text-[#828FA3]" data-testid="Link2__ffaf9f" />
               <span className="text-sm font-normal leading-6 text-[#121217]">
                 {ui('financeAccountsMenuEditPsd2')}
               </span>
             </DropdownMenuItem>
-            <DropdownMenuItem disabled>
-              <RefreshCw className="h-5 w-5 text-[#828FA3]" />
+            <DropdownMenuItem disabled data-testid="DropdownMenuItem__ffaf9f">
+              <RefreshCw className="h-5 w-5 text-[#828FA3]" data-testid="RefreshCw__ffaf9f" />
               <span className="text-sm font-normal leading-6 text-[#121217]">
                 {ui('financeAccountsMenuSyncNow')}
               </span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>
-              <Plug className="h-5 w-5 text-[#828FA3]" />
+            <DropdownMenuSeparator data-testid="DropdownMenuSeparator__ffaf9f" />
+            <DropdownMenuItem disabled data-testid="DropdownMenuItem__ffaf9f">
+              <Plug className="h-5 w-5 text-[#828FA3]" data-testid="Plug__ffaf9f" />
               <span className="text-sm font-normal leading-6 text-[#121217]">
                 {ui('financeAccountsMenuConnect')}
               </span>
             </DropdownMenuItem>
-            <DropdownMenuItem disabled>
-              <Unlink2 className="h-5 w-5 text-[#828FA3]" />
+            <DropdownMenuItem disabled data-testid="DropdownMenuItem__ffaf9f">
+              <Unlink2 className="h-5 w-5 text-[#828FA3]" data-testid="Unlink2__ffaf9f" />
               <span className="text-sm font-normal leading-6 text-[#121217]">
                 {ui('financeAccountsMenuDisconnect')}
               </span>
@@ -100,12 +103,12 @@ export function AccountRowMenu({ account, onOpen, onEdit, onArchive }) {
           </>
         ) : null}
 
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator data-testid="DropdownMenuSeparator__ffaf9f" />
         <DropdownMenuItem
           onClick={() => onArchive?.(account)}
           data-testid={`account-row-menu-archive-${account.id}`}
         >
-          <Archive className="h-5 w-5 text-[#D50B3E]" />
+          <Archive className="h-5 w-5 text-[#D50B3E]" data-testid="Archive__ffaf9f" />
           <span className="text-sm font-normal leading-6 text-[#D50B3E]">
             {ui('financeAccountsMenuArchive')}
           </span>

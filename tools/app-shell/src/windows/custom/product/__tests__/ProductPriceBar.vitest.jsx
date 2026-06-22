@@ -25,10 +25,10 @@ vi.mock('@/lib/selectorCatalog.js', () => ({
 }));
 
 vi.mock('lucide-react', () => ({
-  Loader2: (props) => <span data-testid="loader" {...props} />,
-  Minus: (props) => <span data-testid="minus-icon" {...props} />,
-  Plus: (props) => <span data-testid="plus-icon" {...props} />,
-  Trash2: (props) => <span data-testid="trash-icon" {...props} />,
+  Loader2: (props) => <span {...props} data-testid="loader" />,
+  Minus: (props) => <span {...props} data-testid="minus-icon" />,
+  Plus: (props) => <span {...props} data-testid="plus-icon" />,
+  Trash2: (props) => <span {...props} data-testid="trash-icon" />,
 }));
 
 vi.mock('sonner', () => ({

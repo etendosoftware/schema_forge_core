@@ -594,124 +594,125 @@ export function SecondaryPanelTab(props) {
 }
 
 export function SecondaryTableTab(props) {
-  return <>
-    <div className="flex items-start gap-4">
-      <div className="flex-1 min-w-0">
-        <props.st.Table
-            ref={getSecondaryLinesTableRef(props.linesLayout, props.secondaryInlineLinesRef, props.st)}
-            data={props.secondaryHooks[props.stIdx]?.children ?? []}
-            entity={props.st.key}
-            token={props.token}
-            apiBaseUrl={props.apiBaseUrl}
-            selectorContext={props.selectorContextByEntity[props.st.key]}
-            linesLayout={props.linesLayout}
-            onRowClick={resolveSecondaryRowClickHandler(props.st, {
-              openCustomModal: props.openCustomModal,
-              openSecondaryLine: props.openSecondaryLine,
-              linesLayout: props.linesLayout,
-            })}
-            // Pencil action for customAddModal tabs (Dirección) opens
-            // the popup editor — rows are not editable in place.
-            onEditRow={getSecondaryEditRowHandler(props.st, props.setCustomModalState)}
-            selectedRowId={props.selectedSecondaryLine?._tabKey === props.st.key ? props.selectedSecondaryLine?.id : undefined}
-            onSelectionChange={getSecondarySelectionChangeHandler(props.linesLayout, props.setSecondarySelectedRows, props.st)}
-            onDeleteRow={(props.enableSecondaryRowDelete || (props.linesLayout === 'inlineEditable' && !props.st.customAddModal)) && (props.crud?.[props.st.key]?.delete ?? true) ? props.onDeleteRow : undefined}
-            // Inline edit save for secondary-tab rows. Fires when a
-            // cell loses focus while in edit mode. Optimistic flow:
-            // we update the local cache FIRST so the Radix Select
-            // (and read-mode label) reflect the new pick instantly,
-            // then PATCH the server and roll back if it rejects.
-            onUpdateRow={getSecondaryRowUpdateHandler(props.st, props.linesLayout, {
-              api: props.api,
-              apiBaseUrl: props.apiBaseUrl,
-              secondaryHooks: props.secondaryHooks,
-              stIdx: props.stIdx,
-              token: props.token,
-              ui: props.ui,
-              extractErrorMessage: props.extractErrorMessage,
-            })}
-            addRow={props.st.addLineFields?.entry?.length > 0 ? {
-              ref: props.secondaryAddRowRef,
-              active: props.addingSecondaryLine[props.st.key] ?? false,
-              fields: props.st.addLineFields.entry,
-              onAdd: props.onAdd,
-              onCancel: props.onCancel,
-              catalogs: props.catalogs,
-              seedValues: props.secondaryAddRowSeed,
-            } : undefined}
-        />
-      </div>
-      {props.st.Form && !props.st.Panel && (props.selectedSecondaryLine?._tabKey === props.st.key || props.closingSecondaryLine) && (
-          <div
-              className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${props.closingSecondaryLine ? "sidebar-slide-out" : "sidebar-slide-in"}`}>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-foreground">{props.detailPanelTitle}</span>
-              <button
-                  onClick={props.onCloseDetailPanel}
-                  className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="h-3.5 w-3.5"/>
-              </button>
-            </div>
-            <props.st.Form
-                data={props.secondaryLineEdits ?? props.selectedSecondaryLine}
-                readOnly={!props.hook.editing}
-                onChange={props.onChange}
-                entity={props.st.key}
-                catalogs={props.catalogs}
-                token={props.token}
-                apiBaseUrl={props.apiBaseUrl}
-                selectorContext={props.selectorContextByEntity[props.st.key]}
-                excludeFields={props.st.key === "contact" ? ["active"] : []}
-                labelOverrides={props.labelOverrides}
-            />
-            {props.hook.editing && (props.secondaryLineEdits || props.selectedSecondaryLine?.id) && (
-                <div className="flex gap-2 mt-4">
-                  {props.secondaryLineEdits && (
-                      <>
+  return (
+    <>
+      <div className="flex items-start gap-4">
+        <div className="flex-1 min-w-0">
+          <props.st.Table
+              ref={getSecondaryLinesTableRef(props.linesLayout, props.secondaryInlineLinesRef, props.st)}
+              data={props.secondaryHooks[props.stIdx]?.children ?? []}
+              entity={props.st.key}
+              token={props.token}
+              apiBaseUrl={props.apiBaseUrl}
+              selectorContext={props.selectorContextByEntity[props.st.key]}
+              linesLayout={props.linesLayout}
+              onRowClick={resolveSecondaryRowClickHandler(props.st, {
+                openCustomModal: props.openCustomModal,
+                openSecondaryLine: props.openSecondaryLine,
+                linesLayout: props.linesLayout,
+              })}
+              // Pencil action for customAddModal tabs (Dirección) opens
+              // the popup editor — rows are not editable in place.
+              onEditRow={getSecondaryEditRowHandler(props.st, props.setCustomModalState)}
+              selectedRowId={props.selectedSecondaryLine?._tabKey === props.st.key ? props.selectedSecondaryLine?.id : undefined}
+              onSelectionChange={getSecondarySelectionChangeHandler(props.linesLayout, props.setSecondarySelectedRows, props.st)}
+              onDeleteRow={(props.enableSecondaryRowDelete || (props.linesLayout === 'inlineEditable' && !props.st.customAddModal)) && (props.crud?.[props.st.key]?.delete ?? true) ? props.onDeleteRow : undefined}
+              // Inline edit save for secondary-tab rows. Fires when a
+              // cell loses focus while in edit mode. Optimistic flow:
+              // we update the local cache FIRST so the Radix Select
+              // (and read-mode label) reflect the new pick instantly,
+              // then PATCH the server and roll back if it rejects.
+              onUpdateRow={getSecondaryRowUpdateHandler(props.st, props.linesLayout, {
+                api: props.api,
+                apiBaseUrl: props.apiBaseUrl,
+                secondaryHooks: props.secondaryHooks,
+                stIdx: props.stIdx,
+                token: props.token,
+                ui: props.ui,
+                extractErrorMessage: props.extractErrorMessage,
+              })}
+              addRow={props.st.addLineFields?.entry?.length > 0 ? {
+                ref: props.secondaryAddRowRef,
+                active: props.addingSecondaryLine[props.st.key] ?? false,
+                fields: props.st.addLineFields.entry,
+                onAdd: props.onAdd,
+                onCancel: props.onCancel,
+                catalogs: props.catalogs,
+                seedValues: props.secondaryAddRowSeed,
+              } : undefined}
+          />
+        </div>
+        {props.st.Form && !props.st.Panel && (props.selectedSecondaryLine?._tabKey === props.st.key || props.closingSecondaryLine) && (
+            <div
+                className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${props.closingSecondaryLine ? "sidebar-slide-out" : "sidebar-slide-in"}`}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-foreground">{props.detailPanelTitle}</span>
+                <button
+                    onClick={props.onCloseDetailPanel}
+                    className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-3.5 w-3.5" data-testid="X__fa3275" />
+                </button>
+              </div>
+              <props.st.Form
+                  data={props.secondaryLineEdits ?? props.selectedSecondaryLine}
+                  readOnly={!props.hook.editing}
+                  onChange={props.onChange}
+                  entity={props.st.key}
+                  catalogs={props.catalogs}
+                  token={props.token}
+                  apiBaseUrl={props.apiBaseUrl}
+                  selectorContext={props.selectorContextByEntity[props.st.key]}
+                  excludeFields={props.st.key === "contact" ? ["active"] : []}
+                  labelOverrides={props.labelOverrides}
+              />
+              {props.hook.editing && (props.secondaryLineEdits || props.selectedSecondaryLine?.id) && (
+                  <div className="flex gap-2 mt-4">
+                    {props.secondaryLineEdits && (
+                        <>
+                          <button
+                              disabled={props.savingLine}
+                              onClick={props.onSaveLine}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                          >
+                            {props.savingLine ? props.loadingLabel : props.saveLabel}
+                          </button>
+                          <button
+                              onClick={props.onDiscardLine}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
+                          >
+                            {props.discardLabel}
+                          </button>
+                        </>
+                    )}
+                    {(props.crud?.[props.st.key]?.delete ?? true) && props.selectedSecondaryLine?.id && (
                         <button
                             disabled={props.savingLine}
-                            onClick={props.onSaveLine}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                            onClick={props.onDeleteLine}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
                         >
-                          {props.savingLine ? props.loadingLabel : props.saveLabel}
+                          <Trash2 className="h-4 w-4" data-testid="Trash2__fa3275" />
+                          {props.deleteLabel}
                         </button>
-                        <button
-                            onClick={props.onDiscardLine}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
-                        >
-                          {props.discardLabel}
-                        </button>
-                      </>
-                  )}
-                  {(props.crud?.[props.st.key]?.delete ?? true) && props.selectedSecondaryLine?.id && (
-                      <button
-                          disabled={props.savingLine}
-                          onClick={props.onDeleteLine}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
-                      >
-                        <Trash2 className="h-4 w-4"/>
-                        {props.deleteLabel}
-                      </button>
-                  )}
-                </div>
-            )}
-          </div>
-      )}
-    </div>
-    {(props.st.addLineFields?.entry?.length > 0 || props.st.customAddModal) && props.hook.editing && (
-        // Wrapper measured by the secondary selection bar — its
-        // `position: fixed` portal overlays exactly this region.
-        <div ref={props.secondaryAddLineWrapperRef} className="relative">
-          <span data-inline-add-portal="true">
-            <AddLineButton
+                    )}
+                  </div>
+              )}
+            </div>
+        )}
+      </div>
+      {(props.st.addLineFields?.entry?.length > 0 || props.st.customAddModal) && props.hook.editing && (
+          // Wrapper measured by the secondary selection bar — its
+          // `position: fixed` portal overlays exactly this region.
+          (<div ref={props.secondaryAddLineWrapperRef} className="relative">
+            <span data-inline-add-portal="true">
+              <AddLineButton
                 onClick={props.onAddLineClick}
                 label={props.addLineLabel}
                 hideChevron={props.hideChevron}
-            />
-          </span>
-          {props.linesLayout === "inlineEditable" && (props.crud?.[props.st.key]?.delete ?? true) && (
-              <LinesSelectionBar
+                data-testid="AddLineButton__fa3275" />
+            </span>
+            {props.linesLayout === "inlineEditable" && (props.crud?.[props.st.key]?.delete ?? true) && (
+                <LinesSelectionBar
                   visible={props.secondaryBarVisible[props.st.key] ?? false}
                   closing={props.secondaryBarClosing[props.st.key] ?? false}
                   barRect={props.secondaryBarRects[props.st.key]}
@@ -724,11 +725,12 @@ export function SecondaryTableTab(props) {
                   compact
                   onDelete={props.onDelete}
                   onClose={props.onClose}
-              />
-          )}
-        </div>
-    )}
-  </>;
+                  data-testid="LinesSelectionBar__fa3275" />
+            )}
+          </div>)
+      )}
+    </>
+  );
 }
 
 export function getSaveButtonLabel(savingLine, ui) {
@@ -1079,12 +1081,12 @@ export function renderExtraActionButtons(extraActions, data, hook, saveBtnCls) {
   }) : extraActions).map((action, i) => (
       action.visible !== false && (
           <Button
-              key={action.key || i}
-              variant="outline"
-              size="default"
-              className={`${action.className || ''} ${saveBtnCls}`.trim()}
-              onClick={action.onClick}
-          >
+            key={action.key || i}
+            variant="outline"
+            size="default"
+            className={`${action.className || ''} ${saveBtnCls}`.trim()}
+            onClick={action.onClick}
+            data-testid="Button__fa3275">
             {action.label}
           </Button>
       )
@@ -1170,9 +1172,9 @@ export function renderEmbeddedStatusPill(statusField, data, statusEnumLabels) {
   return statusField && data[statusField] ? (
       <div className="flex items-center gap-3 px-6 py-3 border-b border-border/30">
         <DocumentStatusPill
-            status={data[statusField]}
-            enumLabels={statusEnumLabels}
-        />
+          status={data[statusField]}
+          enumLabels={statusEnumLabels}
+          data-testid="DocumentStatusPill__fa3275" />
       </div>
   ) : null;
 }
@@ -1317,7 +1319,7 @@ function renderDraftModeSaveActions({
           navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
         }
       }}>
-        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" color="#64748B" />}
+        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__fa3275" /> : <Save className="h-3.5 w-3.5" color="#64748B" data-testid="Save__fa3275" />}
         {ui('save')}
       </Button>
       <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving || blockCompleteForBalance || (draftMode.disableWhenEmpty === true && !hook.childrenLoading && hook.children.length === 0)} title={blockCompleteForBalance ? ui('journalUnbalancedCompleteBlocked') : undefined} onClick={async () => {
@@ -1336,7 +1338,7 @@ function renderDraftModeSaveActions({
           }
         }
       }}>
-        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__fa3275" /> : <Check className="h-3.5 w-3.5" data-testid="Check__fa3275" />}
         {ui(draftMode.label) || draftMode.label || ui('process')}
       </Button>
     </>
@@ -1374,7 +1376,7 @@ function renderNewRecordSaveActions({
           navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
         }
       }}>
-        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__fa3275" /> : <Save className="h-3.5 w-3.5" data-testid="Save__fa3275" />}
         {ui('save')}
       </Button>
       {!isProcessed && hook.children.length > 0 && (
@@ -1383,7 +1385,7 @@ function renderNewRecordSaveActions({
           const saved = await hook.handleSaveAndProcess(draftMode);
           await handlePostSaveNavigation(saved, { isNew, onAfterCreate, onAfterSave, navigate, windowName, token, apiBaseUrl, hook });
         }}>
-          {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+          {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__fa3275" /> : <Check className="h-3.5 w-3.5" data-testid="Check__fa3275" />}
           {ui(draftMode.label) || tMenu(draftMode.label) || ui('process')}
         </Button>
       )}
@@ -1407,7 +1409,7 @@ function renderExistingRecordSaveAction({
       const saved = await hook.handleSave(data);
       await handlePostSaveNavigation(saved, { isNew, onAfterCreate, onAfterSave, navigate, windowName, token, apiBaseUrl, hook });
     }}>
-      {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+      {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__fa3275" /> : <Check className="h-3.5 w-3.5" data-testid="Check__fa3275" />}
       {ui('save')}
     </Button>
   );
@@ -2548,7 +2550,7 @@ export function DetailView({
           isActive={isActive}
           onCountChange={updateCustomTabCount}
           {...(ct.props || {})}
-        />
+          data-testid="TabComponent__fa3275" />
       </div>
     );
   });
@@ -2596,7 +2598,7 @@ export function DetailView({
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col" data-testid="detail-view">
+    <div className="flex-1 min-h-0 flex flex-col" data-testid="detail-view" data-doc-status={_headerData?.documentStatus}>
       {/* Content card with rounded top-left corner */}
       <div className={`flex-1 flex flex-col ${contentBg} rounded-tl-2xl overflow-hidden min-h-0`}>
         {/* Action bar: Cancel + status | actions + save */}
@@ -2614,7 +2616,7 @@ export function DetailView({
               <DocumentStatusPill
                 status={data[statusField]}
                 enumLabels={statusEnumLabels}
-              />
+                data-testid="DocumentStatusPill__fa3275" />
             )}
             {extraBadges.map(b => {
               const when = b.when !== undefined ? b.when : true;
@@ -2626,14 +2628,28 @@ export function DetailView({
                 : 'ml-1 bg-blue-600 hover:bg-blue-700 border-transparent text-white';
               const variant = b.style === 'warning' ? 'outline' : 'default';
               return (
-                <Badge key={`${b.key}-${when}`} variant={variant} className={cls}>
+                <Badge
+                  key={`${b.key}-${when}`}
+                  variant={variant}
+                  className={cls}
+                  data-testid="Badge__fa3275">
                   {b.label}
                 </Badge>
               );
             })}
             {topbarExtra && (() => {
               const TopbarExtraComponent = topbarExtra;
-              return <TopbarExtraComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} onRefresh={() => hook.fetchById?.(data?.id || recordId)} />;
+              return (
+                <TopbarExtraComponent
+                  data={data}
+                  recordId={data?.id || recordId}
+                  token={token}
+                  apiBaseUrl={apiBaseUrl}
+                  api={api}
+                  onProcess={hook.handleProcess}
+                  onRefresh={() => hook.fetchById?.(data?.id || recordId)}
+                  data-testid="TopbarExtraComponent__fa3275" />
+              );
             })()}
           </div>
 
@@ -2641,7 +2657,17 @@ export function DetailView({
               {/* Topbar right slot (e.g. payment status badge) */}
               {topbarRight && (() => {
                 const TopbarRightComponent = topbarRight;
-                return <TopbarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} onRefresh={() => hook.fetchById?.(data?.id || recordId)} />;
+                return (
+                  <TopbarRightComponent
+                    data={data}
+                    recordId={data?.id || recordId}
+                    token={token}
+                    apiBaseUrl={apiBaseUrl}
+                    api={api}
+                    onProcess={hook.handleProcess}
+                    onRefresh={() => hook.fetchById?.(data?.id || recordId)}
+                    data-testid="TopbarRightComponent__fa3275" />
+                );
               })()}
               {/* Send / Print document — uses DocumentPrintDrawer.
                   Icon unified with RowQuickActions (envelope/Mail) so the same
@@ -2653,7 +2679,7 @@ export function DetailView({
                   title={ui('sendPreview')}
                   data-testid="action-document-preview"
                 >
-                  <Mail className="h-[15px] w-[15px]" />
+                  <Mail className="h-[15px] w-[15px]" data-testid="Mail__fa3275" />
                 </button>
               )}
               {/* Print document — shown when documentPreview is not provided */}
@@ -2663,7 +2689,7 @@ export function DetailView({
                   className={`${sqBtnSize} flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors`}
                   title={ui('print')}
                 >
-                  <Printer className="h-4 w-4" />
+                  <Printer className="h-4 w-4" data-testid="Printer__fa3275" />
                 </button>
               )}
               {/* Delete record — hidden when hideDeleteWhenComplete and status matches or record is processed */}
@@ -2674,7 +2700,7 @@ export function DetailView({
                   title={ui('delete')}
                   data-testid="action-delete"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" data-testid="Trash2__fa3275" />
                 </button>
               )}
               {/* More actions */}
@@ -2684,7 +2710,7 @@ export function DetailView({
                   onClick={() => setShowMoreMenu(v => !v)}
                   className={`${sqBtnSize} flex items-center justify-center rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors`}
                 >
-                  <MoreVertical className="h-[15px] w-[15px]" />
+                  <MoreVertical className="h-[15px] w-[15px]" data-testid="MoreVertical__fa3275" />
                 </button>
                 {showMoreMenu && (() => {
                   const resolvedActions = typeof menuActions === 'function'
@@ -2738,7 +2764,7 @@ export function DetailView({
                               <ActionIcon
                                 className="h-4 w-4 flex-shrink-0 ml-1"
                                 style={{ color: action.destructive ? undefined : '#828FA3' }}
-                              />
+                                data-testid="ActionIcon__fa3275" />
                             )}
                             <span className={ActionIcon ? 'pl-1' : ''}>
                               {action.labelKey ? ui(action.labelKey) : action.label}
@@ -2748,14 +2774,16 @@ export function DetailView({
                       })}
                       {customMenuContent && (() => {
                         const CustomMenuContent = customMenuContent;
-                        return <CustomMenuContent
-                          data={data}
-                          recordId={data?.id || recordId}
-                          token={token}
-                          apiBaseUrl={apiBaseUrl}
-                          onClose={() => setShowMoreMenu(false)}
-                          onRefresh={() => hook.fetchById?.(data?.id || recordId)}
-                        />;
+                        return (
+                          <CustomMenuContent
+                            data={data}
+                            recordId={data?.id || recordId}
+                            token={token}
+                            apiBaseUrl={apiBaseUrl}
+                            onClose={() => setShowMoreMenu(false)}
+                            onRefresh={() => hook.fetchById?.(data?.id || recordId)}
+                            data-testid="CustomMenuContent__fa3275" />
+                        );
                       })()}
                     </div>
                   );
@@ -2788,7 +2816,7 @@ export function DetailView({
                         }
                         hook.handleProcess?.(p);
                       }}
-                    >
+                      data-testid="Button__fa3275">
                       {tMenu(p.label)}
                     </Button>
                   );
@@ -2819,7 +2847,13 @@ export function DetailView({
                   const TabsBarRightComponent = tabsBarRight;
                   return (
                     <div className="ml-auto flex-shrink-0">
-                      <TabsBarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} />
+                      <TabsBarRightComponent
+                        data={data}
+                        recordId={data?.id || recordId}
+                        token={token}
+                        apiBaseUrl={apiBaseUrl}
+                        api={api}
+                        data-testid="TabsBarRightComponent__fa3275" />
                     </div>
                   );
                 })()}
@@ -2872,8 +2906,11 @@ export function DetailView({
                         : headerExtra
                     )}
                     {!headerExtra && !sidePanel && ocrDocType && (
-                      <Suspense fallback={null}>
-                        <LazyOcrInlineUploader {...slotProps} docTypeId={ocrDocType.id} />
+                      <Suspense fallback={null} data-testid="Suspense__fa3275">
+                        <LazyOcrInlineUploader
+                          {...slotProps}
+                          docTypeId={ocrDocType.id}
+                          data-testid="LazyOcrInlineUploader__fa3275" />
                       </Suspense>
                     )}
                   </>
@@ -2905,12 +2942,12 @@ export function DetailView({
                               registerFields={hook.registerFields}
                               fieldErrors={hook.fieldErrors}
                               onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
-                            />
+                              data-testid="Form__fa3275" />
                           </div>
 
                           {/* Collapsible secondary header fields (hidden if no collapsed fields or sidebarContent) */}
                           {!hideMoreDetails && !sidebarContent && (
-                            <CollapsibleSection title={ui('moreDetails')}>
+                            <CollapsibleSection title={ui('moreDetails')} data-testid="CollapsibleSection__fa3275">
                               <div className={`px-6 pb-6${embedded ? ' pointer-events-none' : ''}`}>
                                 <Form
                                   entity={entity}
@@ -2929,7 +2966,7 @@ export function DetailView({
                                   registerFields={hook.registerFields}
                                   fieldErrors={hook.fieldErrors}
                                   onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
-                                />
+                                  data-testid="Form__fa3275" />
                               </div>
                             </CollapsibleSection>
                           )}
@@ -2976,7 +3013,7 @@ export function DetailView({
                                 indicatorCls={tabIndicatorCls}
                                 tMenu={tMenu}
                                 testId={`tab-${tab.key}`}
-                              />
+                                data-testid="TabStripButton__fa3275" />
                             );
                           })}
                         </div>
@@ -3007,21 +3044,21 @@ export function DetailView({
                           }
                           if (shouldShowLinesEmptyState(hook, addingLine, LinesEmptyState, isDocumentReadOnly)) {
                             return (
-                            <LinesEmptyState
-                              data={data}
-                              onAddLine={handleAddLineClick}
-                              canAddLine={canAddLines}
-                              recordId={data?.id || recordId}
-                              token={token}
-                              apiBaseUrl={apiBaseUrl}
-                              onRefresh={() => {
-                                hook.fetchChildren?.(data?.id || recordId);
-                                hook.fetchById?.(data?.id || recordId);
-                              }}
-                              onSave={handleImportClick}
-                              forceOpen={forceOpenImport}
-                              onForceOpenHandled={() => setForceOpenImport(false)}
-                            />
+                              <LinesEmptyState
+                                data={data}
+                                onAddLine={handleAddLineClick}
+                                canAddLine={canAddLines}
+                                recordId={data?.id || recordId}
+                                token={token}
+                                apiBaseUrl={apiBaseUrl}
+                                onRefresh={() => {
+                                  hook.fetchChildren?.(data?.id || recordId);
+                                  hook.fetchById?.(data?.id || recordId);
+                                }}
+                                onSave={handleImportClick}
+                                forceOpen={forceOpenImport}
+                                onForceOpenHandled={() => setForceOpenImport(false)}
+                                data-testid="LinesEmptyState__fa3275" />
                             );
                           }
                           return (
@@ -3071,7 +3108,7 @@ export function DetailView({
                                         }}
                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 transition-colors"
                                       >
-                                        <Trash2 className="h-3.5 w-3.5" />
+                                        <Trash2 className="h-3.5 w-3.5" data-testid="Trash2__fa3275" />
                                         {getDeleteChildButtonLabel(deletingChildren, ui)}
                                       </button>
                                     </div>
@@ -3123,7 +3160,7 @@ export function DetailView({
                                     onFieldChange: handleLineFieldChange,
                                     onValuesChange: setPendingLineValues,
                                   }}
-                                />
+                                  data-testid="DetailTable__fa3275" />
 
                                 {/* Inline edit form for selected child row (when no DetailForm) */}
                                 {!DetailForm && editingChild && editableChildFields.length > 0 && (
@@ -3208,13 +3245,13 @@ export function DetailView({
                                       // alignSelf:flex-start keeps this span from being stretched by
                                       // the flex-column parent — otherwise data-inline-add-portal would
                                       // cover the whole 1840px bar and the outside-click save would never fire.
-                                      <span data-inline-add-portal="true" style={{ alignSelf: 'flex-start' }}>
+                                      (<span data-inline-add-portal="true" style={{ alignSelf: 'flex-start' }}>
                                         <AddLineButton
                                           onClick={handleAddLineClick}
                                           label={ui('addLine')}
                                           menuActions={getAddLineMenuActions(getLineMenuActions, data, extraActionsRef, ui)}
-                                        />
-                                      </span>
+                                          data-testid="AddLineButton__fa3275" />
+                                      </span>)
                                     )}
                                     {DetailExtraActions && (
                                       <DetailExtraActions
@@ -3231,7 +3268,7 @@ export function DetailView({
                                         onSave={handleImportClick}
                                         forceOpen={forceOpenImport}
                                         onForceOpenHandled={() => setForceOpenImport(false)}
-                                      />
+                                        data-testid="DetailExtraActions__fa3275" />
                                     )}
                                     {/* Selection toolbar — portaled to document.body so the
                               downward shadow renders OUTSIDE the linesScrollRef's
@@ -3286,12 +3323,11 @@ export function DetailView({
                                           inlineLinesRef.current?.clearSelection?.();
                                           setSelectedChildRows([]);
                                         }}
-                                      />
+                                        data-testid="LinesSelectionBar__fa3275" />
                                     )}
                                   </div>
                                 )}
                               </div>
-
                               {/* Right sidebar: line detail form. Suppressed in inlineEditable mode —
                         edit happens inside the row via InlineLinesPanel. */}
                               {shouldShowDetailFormSidebar(linesLayout, DetailForm, selectedLine, isClosingLine) && (
@@ -3302,7 +3338,7 @@ export function DetailView({
                                       onClick={closeLine}
                                       className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
                                     >
-                                      <X className="h-3.5 w-3.5" />
+                                      <X className="h-3.5 w-3.5" data-testid="X__fa3275" />
                                     </button>
                                   </div>
                                   <DetailForm
@@ -3343,7 +3379,7 @@ export function DetailView({
                                     apiBaseUrl={apiBaseUrl}
                                     selectorContext={selectorContextByEntity[detailEntity]}
                                     labelOverrides={labelOverrides}
-                                  />
+                                    data-testid="DetailForm__fa3275" />
                                   {shouldShowLineActionButtons(hook, lineEdits, selectedLine) && (
                                     <div className="flex gap-2 mt-4">
                                       {lineEdits && !isDocumentReadOnly && (
@@ -3438,7 +3474,7 @@ export function DetailView({
                                           }}
                                           className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
                                         >
-                                          <Trash2 className="h-4 w-4" />
+                                          <Trash2 className="h-4 w-4" data-testid="Trash2__fa3275" />
                                           {ui('delete')}
                                         </button>
                                       )}
@@ -3474,7 +3510,7 @@ export function DetailView({
                                 }
                                 return saved;
                               }}
-                            />
+                              data-testid="CustomLines__fa3275" />
                           </div>
                         )}
 
@@ -3491,17 +3527,22 @@ export function DetailView({
                           });
                           return (
                           <div key={st.key} className={getSecondaryTabContentClassName(secondaryTabContentPaddingT, embedded)}>
-                            {st.isFormTab ? (
+                            {(() => {
+                              if (st.isFormTab) return (
                               <SecondaryFormTab data={data} hook={hook} onChange={(key, val, column) => {
                                 setSecondaryLineEdits(prev => ({...(prev ?? {}), [key]: val}));
                                 if (column) setSecondaryLineEditColumns(prev => ({...prev, [key]: column}));
                               }} st={st} catalogs={catalogs} token={token} apiBaseUrl={apiBaseUrl}
                                                 selectorContextByEntity={selectorContextByEntity}
-                                                labelOverrides={labelOverrides}/>
-                            ) : st.Panel ? (
+                                                labelOverrides={labelOverrides}
+                                                data-testid="SecondaryFormTab__fa3275" />
+                            );
+                              if (st.Panel) return (
                               <SecondaryPanelTab st={st} data={data} token={token} apiBaseUrl={apiBaseUrl}
-                                                 onCount={(n) => setPanelCounts(prev => ({...prev, [st.key]: n}))}/>
-                            ) : (
+                                                 onCount={(n) => setPanelCounts(prev => ({...prev, [st.key]: n}))}
+                                                 data-testid="SecondaryPanelTab__fa3275" />
+                            );
+                              return (
                               <SecondaryTableTab
                                 st={st}
                                 stIdx={stIdx}
@@ -3568,8 +3609,9 @@ export function DetailView({
                                   secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
                                   setSecondarySelectedRows(prev => ({...prev, [st.key]: []}));
                                 }}
-                              />
-                            )}
+                                data-testid="SecondaryTableTab__fa3275" />
+                            );
+                            })()}
                           </div>
                           );
                         })}
@@ -3591,7 +3633,7 @@ export function DetailView({
                               selectorContext={selectorContextByEntity[entity]}
                               labelOverrides={labelOverrides}
                               fieldErrors={hook.fieldErrors}
-                            />
+                              data-testid="Form__fa3275" />
                           </div>
                         )}
 
@@ -3616,7 +3658,7 @@ export function DetailView({
                         onChange={() => { }}
                         catalogs={catalogs}
                         section="other"
-                      />
+                        data-testid="Form__fa3275" />
                     </div>
                   )}
 
@@ -3625,7 +3667,7 @@ export function DetailView({
                     <>
                       {summary.length > 0 && (
                         <div className="mt-1">
-                          <SummaryBar fields={summary} data={data} />
+                          <SummaryBar fields={summary} data={data} data-testid="SummaryBar__fa3275" />
                         </div>
                       )}
                     </>
@@ -3656,7 +3698,7 @@ export function DetailView({
                           totalDiscountPct={Number(data?.etgoTotalDiscount ?? 0)}
                           onTotalDiscountChange={handleTotalDiscountChange}
                           onNotesSave={handleNotesSave}
-                        />
+                          data-testid="BottomComponent__fa3275" />
                       );
                     })() : (
                       <>
@@ -3669,7 +3711,7 @@ export function DetailView({
                             config={balanceFooter}
                             formatAmount={formatAmount}
                             currency={data['currency$_identifier']}
-                          />
+                            data-testid="BalanceFooterPanel__fa3275" />
                         ) : (() => {
                           const subtotalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
                           const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
@@ -3686,14 +3728,22 @@ export function DetailView({
                               readOnly={isDocumentReadOnly}
                               totalDiscountPct={resolveTotalDiscountPct(data, hook.children)}
                               onTotalDiscountChange={handleTotalDiscountChange}
-                            />
+                              data-testid="DocumentTotalsPanel__fa3275" />
                           );
                         })()}
 
                         {/* After-totals slot (e.g. payment footer) */}
                         {afterTotals && (() => {
                           const AfterTotalsComponent = afterTotals;
-                          return <AfterTotalsComponent recordId={data?.id || recordId} data={data} token={token} apiBaseUrl={apiBaseUrl} api={api} />;
+                          return (
+                            <AfterTotalsComponent
+                              recordId={data?.id || recordId}
+                              data={data}
+                              token={token}
+                              apiBaseUrl={apiBaseUrl}
+                              api={api}
+                              data-testid="AfterTotalsComponent__fa3275" />
+                          );
                         })()}
 
                         {/* Footer: Related Docs + Notes */}
@@ -3715,7 +3765,7 @@ export function DetailView({
                                         api={api}
                                         layout="chips"
                                         {...(ct.props || {})}
-                                      />
+                                        data-testid="TabComponent__fa3275" />
                                     );
                                   })}
                                 </div>
@@ -3750,7 +3800,7 @@ export function DetailView({
                                 onClick={() => setActiveCustomBelowTab(idx)}
                                 tMenu={tMenu}
                                 testId={`tab-${customTabKey(ct)}`}
-                              />
+                                data-testid="TabStripButton__fa3275" />
                             );
                           })}
                         </div>
@@ -3785,18 +3835,21 @@ export function DetailView({
         windowName={windowName}
         documentIds={getDocumentIds(recordId)}
         token={token}
-      />
-      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{ui('deleteConfirmTitle')}</DialogTitle>
-            <DialogDescription>
+        data-testid="DocumentPrintDrawer__fa3275" />
+      <Dialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        data-testid="Dialog__fa3275">
+        <DialogContent className="max-w-sm" data-testid="DialogContent__fa3275">
+          <DialogHeader data-testid="DialogHeader__fa3275">
+            <DialogTitle data-testid="DialogTitle__fa3275">{ui('deleteConfirmTitle')}</DialogTitle>
+            <DialogDescription data-testid="DialogDescription__fa3275">
               {ui('deleteConfirmMessage')}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" size="sm">{ui('cancel')}</Button>
+          <DialogFooter data-testid="DialogFooter__fa3275">
+            <DialogClose asChild data-testid="DialogClose__fa3275">
+              <Button variant="outline" size="sm" data-testid="Button__fa3275">{ui('cancel')}</Button>
             </DialogClose>
             <Button
               variant="destructive"
@@ -3813,17 +3866,20 @@ export function DetailView({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog open={Boolean(secondaryDeleteConfirm)} onOpenChange={(open) => { if (!open) setSecondaryDeleteConfirm(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{ui('deleteConfirmTitle')}</DialogTitle>
-            <DialogDescription>
+      <Dialog
+        open={Boolean(secondaryDeleteConfirm)}
+        onOpenChange={(open) => { if (!open) setSecondaryDeleteConfirm(null); }}
+        data-testid="Dialog__fa3275">
+        <DialogContent className="max-w-sm" data-testid="DialogContent__fa3275">
+          <DialogHeader data-testid="DialogHeader__fa3275">
+            <DialogTitle data-testid="DialogTitle__fa3275">{ui('deleteConfirmTitle')}</DialogTitle>
+            <DialogDescription data-testid="DialogDescription__fa3275">
               {ui('deleteConfirmMessage')}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" size="sm">{ui('cancel')}</Button>
+          <DialogFooter data-testid="DialogFooter__fa3275">
+            <DialogClose asChild data-testid="DialogClose__fa3275">
+              <Button variant="outline" size="sm" data-testid="Button__fa3275">{ui('cancel')}</Button>
             </DialogClose>
             <Button
               variant="destructive"
@@ -3851,7 +3907,7 @@ export function DetailView({
                   setSavingSecondaryLine(false);
                 }
               }}
-            >
+              data-testid="Button__fa3275">
               {ui('delete')}
             </Button>
           </DialogFooter>
@@ -3865,13 +3921,13 @@ export function DetailView({
             setPendingDeleteConfirm(null);
           }
         }}
-      >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{ui('deleteConfirmTitle')}</DialogTitle>
-            <DialogDescription>{ui('deleteConfirmMessage')}</DialogDescription>
+        data-testid="Dialog__fa3275">
+        <DialogContent className="max-w-sm" data-testid="DialogContent__fa3275">
+          <DialogHeader data-testid="DialogHeader__fa3275">
+            <DialogTitle data-testid="DialogTitle__fa3275">{ui('deleteConfirmTitle')}</DialogTitle>
+            <DialogDescription data-testid="DialogDescription__fa3275">{ui('deleteConfirmMessage')}</DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter data-testid="DialogFooter__fa3275">
             <Button
               variant="outline"
               size="sm"
@@ -3879,7 +3935,7 @@ export function DetailView({
                 pendingDeleteConfirm?.resolve(false);
                 setPendingDeleteConfirm(null);
               }}
-            >
+              data-testid="Button__fa3275">
               {ui('cancel')}
             </Button>
             <Button
@@ -3889,7 +3945,7 @@ export function DetailView({
                 pendingDeleteConfirm?.resolve(true);
                 setPendingDeleteConfirm(null);
               }}
-            >
+              data-testid="Button__fa3275">
               {ui('delete')}
             </Button>
           </DialogFooter>
@@ -3912,7 +3968,7 @@ export function DetailView({
             apiBase={apiBaseUrl}
             token={token}
             selectorContext={selectorContextByEntity[st.key] ?? {}}
-          />
+            data-testid="CustomModal__fa3275" />
         );
       })}
     </div>

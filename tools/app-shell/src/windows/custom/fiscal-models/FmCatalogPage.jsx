@@ -91,10 +91,9 @@ export default function FmCatalogPage({ onBack, onSave, activeModels, token, api
           aria-label={t('fm.action.close') ?? 'Cerrar'}
           style={{ marginLeft: 'auto' }}
         >
-          <X size={16} strokeWidth={1.75} />
+          <X size={16} strokeWidth={1.75} data-testid="X__4ee693" />
         </button>
       </div>
-
       {/* List */}
       <div className="fm-catalog-body" style={{ padding: '8px 12px' }}>
         {sortedCatalog.map(model => {
@@ -127,16 +126,20 @@ export default function FmCatalogPage({ onBack, onSave, activeModels, token, api
                   <ToggleSwitch
                     checked={!!isActive}
                     onChange={() => toggleModel(model.id)}
-                  />
+                    data-testid="ToggleSwitch__4ee693" />
                 )}
               </div>
             </div>
           );
         })}
       </div>
-
       {configModel && (
-        <ConfigDrawer model={configModel} onClose={() => setConfigModel(null)} token={token} apiBaseUrl={apiBaseUrl} />
+        <ConfigDrawer
+          model={configModel}
+          onClose={() => setConfigModel(null)}
+          token={token}
+          apiBaseUrl={apiBaseUrl}
+          data-testid="ConfigDrawer__4ee693" />
       )}
     </div>
   );

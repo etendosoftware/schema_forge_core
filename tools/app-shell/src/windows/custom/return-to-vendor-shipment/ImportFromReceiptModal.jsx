@@ -47,5 +47,11 @@ export default function ImportFromReceiptModal({ bpId, ...props }) {
       return (await res.json())?.response?.data || [];
     },
   };
-  return <ImportReturnLinesModal bpId={bpId} {...props} config={config} />;
+  return (
+    <ImportReturnLinesModal
+      bpId={bpId}
+      {...props}
+      config={config}
+      data-testid="ImportReturnLinesModal__ebdfa3" />
+  );
 }

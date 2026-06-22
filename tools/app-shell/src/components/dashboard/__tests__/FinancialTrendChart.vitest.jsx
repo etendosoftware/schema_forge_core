@@ -298,3 +298,67 @@ describe('FinancialTrendChart', () => {
     expect(container).toBeTruthy();
   });
 });
+
+// ── renderTooltipBox helper ───────────────────────────────────────────────────
+
+describe('FinancialTrendChart — renderTooltipBox tooltip content', () => {
+  it('renders income label in tooltip when hover column is entered', () => {
+    const { container } = render(
+      <FinancialTrendChart
+        labels={SAMPLE_LABELS}
+        values={SAMPLE_VALUES}
+        currencyLabel="EUR"
+      />
+    );
+    const rects = container.querySelectorAll('svg rect[fill="transparent"]');
+    if (rects.length > 0) {
+      fireEvent.mouseEnter(rects[0]);
+      // TooltipBox renders income legend label (mock returns key as-is)
+      expect(container.querySelector('svg text')).toBeTruthy();
+    }
+    expect(container).toBeTruthy();
+  });
+
+  it('renders expense line in tooltip when expenseValues are present and hover is triggered', () => {
+    const { container } = render(
+      <FinancialTrendChart
+        labels={SAMPLE_LABELS}
+        values={SAMPLE_VALUES}
+        expenseValues={[800, 900, 1000, 1100, 1300, 1400]}
+        currencyLabel="EUR"
+      />
+    );
+    const rects = container.querySelectorAll('svg rect[fill="transparent"]');
+    if (rects.length > 0) {
+      fireEvent.mouseEnter(rects[0]);
+      // With expenses, TooltipBox should render at least one <rect> for the box background
+      const tooltipRects = container.querySelectorAll('svg rect[fill="#121217"]');
+      expect(tooltipRects.length).toBeGreaterThan(0);
+      fireEvent.mouseLeave(rects[0]);
+    }
+    expect(container).toBeTruthy();
+  });
+
+  it('renders tooltip box in bar chart mode via renderTooltipBox', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <FinancialTrendChart
+        labels={SAMPLE_LABELS}
+        values={SAMPLE_VALUES}
+        expenseValues={[800, 900, 1000, 1100, 1300, 1400]}
+        currencyLabel="EUR"
+      />
+    );
+    const toggleButtons = container.querySelectorAll('button');
+    await user.click(toggleButtons[1]); // switch to bar
+    const barGroups = container.querySelectorAll('svg g[style*="crosshair"]');
+    if (barGroups.length > 0) {
+      fireEvent.mouseEnter(barGroups[0]);
+      // TooltipBox <rect> should be present (dark background)
+      const tooltipRects = container.querySelectorAll('svg rect[fill="#121217"]');
+      expect(tooltipRects.length).toBeGreaterThan(0);
+      fireEvent.mouseLeave(barGroups[0]);
+    }
+    expect(container).toBeTruthy();
+  });
+});

@@ -140,24 +140,26 @@ export function SelectorInput({
         onChange(val, opt?.name, opt);
       }}
       required={field.required}
-    >
+      data-testid={"Select__" + field.id}>
       <SelectTrigger
         id={field.key}
         data-testid={`field-${field.key}`}
         className={triggerClassName ?? defaultTriggerClass}
       >
-        <SelectValue placeholder={placeholderText} />
-        {fetching && <Loader2 className="h-4 w-4 text-muted-foreground animate-spin ml-auto mr-1" />}
+        <SelectValue placeholder={placeholderText} data-testid={"SelectValue__" + field.id} />
+        {fetching && <Loader2
+          className="h-4 w-4 text-muted-foreground animate-spin ml-auto mr-1"
+          data-testid={"Loader2__" + field.id} />}
       </SelectTrigger>
-      <SelectContent ref={contentCallbackRef}>
-        {!field.required && <SelectItem value="__empty__">{emptyLabel || ' '}</SelectItem>}
+      <SelectContent ref={contentCallbackRef} data-testid={"SelectContent__" + field.id}>
+        {!field.required && <SelectItem value="__empty__" data-testid={"SelectItem__" + field.id}>{emptyLabel || ' '}</SelectItem>}
         {!hasValue && value && displayValue && (
           <SelectItem
             key={`__current__${value}`}
             value={value}
             style={{ display: 'none', height: 0, padding: 0, overflow: 'hidden' }}
             aria-hidden="true"
-          >
+            data-testid={"SelectItem__" + field.id}>
             {displayValue}
           </SelectItem>
         )}

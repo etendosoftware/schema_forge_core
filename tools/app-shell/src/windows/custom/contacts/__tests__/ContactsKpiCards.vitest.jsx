@@ -13,7 +13,7 @@ vi.mock('@/i18n', () => ({
 
 // Mock lucide-react
 vi.mock('lucide-react', () => ({
-  Users: (props) => <svg data-testid="icon-users" {...props} />,
+  Users: (props) => <svg {...props} data-testid="icon-users" />,
 }));
 
 import ContactsKpiCards from '../ContactsKpiCards.jsx';

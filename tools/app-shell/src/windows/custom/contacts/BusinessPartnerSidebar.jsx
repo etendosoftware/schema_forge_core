@@ -32,9 +32,13 @@ function PeriodSelector({ period, onChangePeriod, ui }) {
         onClick={() => setOpen(o => !o)}
         className="h-10 flex items-center gap-1 px-3 bg-white border border-[#D1D4DB] rounded-lg shadow-[0px_1px_2px_rgba(18,18,23,0.05)] text-sm font-medium text-[#121217]"
       >
-        <Calendar className="h-5 w-5 text-[#828FA3] shrink-0" />
+        <Calendar
+          className="h-5 w-5 text-[#828FA3] shrink-0"
+          data-testid="Calendar__ec1b71" />
         <span className="flex-1 text-left mx-1">{label}</span>
-        <ChevronDown className="h-5 w-5 text-[#828FA3] shrink-0" />
+        <ChevronDown
+          className="h-5 w-5 text-[#828FA3] shrink-0"
+          data-testid="ChevronDown__ec1b71" />
       </button>
       {open && (
         <div className="absolute top-11 left-0 z-50 min-w-full bg-white border border-[#D1D4DB] rounded-lg shadow-md overflow-hidden">
@@ -117,29 +121,34 @@ function ContactsChart({ labels = [], revenue = [], expenses = [], currencyCode,
           title={ui('bpExpandChart')}
         >
           {ui('bpExpand')}
-          <ArrowUpRight size={16} className="text-[#828FA3]" />
+          <ArrowUpRight size={16} className="text-[#828FA3]" data-testid="ArrowUpRight__ec1b71" />
         </button>
       </div>
-
       {/* Legend */}
       <div className="px-4 mb-2">
-        <ChartLegend />
+        <ChartLegend data-testid="ChartLegend__ec1b71" />
       </div>
-
       {/* Chart SVG */}
       <div className="px-5">
         <BPChartSVGContent
-          labels={sl(localizedLabels)} revenue={sl(revenue)} expenses={sl(expenses)}
-          CW={320} CH={200} PX={32} PY={12} PB={22}
-          fontSize={9} chartId="contacts-mini" orgCurrency={currencyCode ?? 'USD'}
-        />
+          labels={sl(localizedLabels)}
+          revenue={sl(revenue)}
+          expenses={sl(expenses)}
+          CW={320}
+          CH={200}
+          PX={32}
+          PY={12}
+          PB={22}
+          fontSize={9}
+          chartId="contacts-mini"
+          orgCurrency={currencyCode ?? 'USD'}
+          data-testid="BPChartSVGContent__ec1b71" />
       </div>
-
       {/* Expanded dialog */}
-      <Dialog open={expanded} onOpenChange={setExpanded}>
-        <DialogContent className="max-w-2xl w-full">
-          <DialogHeader>
-            <DialogTitle>
+      <Dialog open={expanded} onOpenChange={setExpanded} data-testid="Dialog__ec1b71">
+        <DialogContent className="max-w-2xl w-full" data-testid="DialogContent__ec1b71">
+          <DialogHeader data-testid="DialogHeader__ec1b71">
+            <DialogTitle data-testid="DialogTitle__ec1b71">
               <div className="flex items-center justify-between gap-4 pr-8">
                 <span>{ui('bpSalesPurchases')}</span>
                 <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
@@ -161,11 +170,19 @@ function ContactsChart({ labels = [], revenue = [], expenses = [], currencyCode,
             </DialogTitle>
           </DialogHeader>
           <BPChartSVGContent
-            labels={enSl(localizedLabels)} revenue={enSl(revenue)} expenses={enSl(expenses)}
-            CW={580} CH={280} PX={48} PY={16} PB={28}
-            fontSize={12} chartId="contacts-expanded" orgCurrency={currencyCode ?? 'USD'}
-          />
-          <ChartLegend />
+            labels={enSl(localizedLabels)}
+            revenue={enSl(revenue)}
+            expenses={enSl(expenses)}
+            CW={580}
+            CH={280}
+            PX={48}
+            PY={16}
+            PB={28}
+            fontSize={12}
+            chartId="contacts-expanded"
+            orgCurrency={currencyCode ?? 'USD'}
+            data-testid="BPChartSVGContent__ec1b71" />
+          <ChartLegend data-testid="ChartLegend__ec1b71" />
         </DialogContent>
       </Dialog>
     </div>
@@ -198,9 +215,12 @@ export default function ContactsSidebar({ recordId, token, apiBaseUrl }) {
     <div className="flex flex-col gap-3">
       {/* Cabecera: period selector */}
       <div className="pt-2 px-4">
-        <PeriodSelector period={period} onChangePeriod={setPeriod} ui={ui} />
+        <PeriodSelector
+          period={period}
+          onChangePeriod={setPeriod}
+          ui={ui}
+          data-testid="PeriodSelector__ec1b71" />
       </div>
-
       {/* Datos: KPI cards */}
       <div className="flex flex-row items-start gap-2 px-4 pb-3">
         {kpis === null ? (
@@ -217,16 +237,14 @@ export default function ContactsSidebar({ recordId, token, apiBaseUrl }) {
               format={kpi.format}
               color={KPI_CONFIG[kpi.key]?.color ?? 'text-foreground'}
               currencyCode={currencyCode}
-            />
+              data-testid="KPICard__ec1b71" />
           ))
         )}
       </div>
-
       {/* Separador */}
       <div className="px-4">
         <div className="border-t border-[#E8EAEF]" />
       </div>
-
       {/* Trend chart */}
       {trend === null ? (
         <div className="px-4 pb-5 animate-pulse">
@@ -239,7 +257,7 @@ export default function ContactsSidebar({ recordId, token, apiBaseUrl }) {
           expenses={trend.expenses ?? []}
           currencyCode={currencyCode}
           period={period}
-        />
+          data-testid="ContactsChart__ec1b71" />
       )}
     </div>
   );
