@@ -63,19 +63,22 @@ export function ChangePasswordDialog({ open, onOpenChange, onSuccess }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => (next ? onOpenChange(true) : close())}
+      data-testid="Dialog__c015d3">
       <DialogContent className="sm:max-w-md" data-testid="change-password-dialog">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lock className="h-4 w-4" />
+          <DialogHeader data-testid="DialogHeader__c015d3">
+            <DialogTitle className="flex items-center gap-2" data-testid="DialogTitle__c015d3">
+              <Lock className="h-4 w-4" data-testid="Lock__c015d3" />
               {ui('onboardingChangePasswordTitle')}
             </DialogTitle>
-            <DialogDescription>{ui('changePasswordLogoutNotice')}</DialogDescription>
+            <DialogDescription data-testid="DialogDescription__c015d3">{ui('changePasswordLogoutNotice')}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-2">
-            <Label htmlFor="change-current-password">{ui('onboardingCurrentPasswordLabel')}</Label>
+            <Label htmlFor="change-current-password" data-testid="Label__c015d3">{ui('onboardingCurrentPasswordLabel')}</Label>
             <Input
               id="change-current-password"
               type="password"
@@ -84,10 +87,10 @@ export function ChangePasswordDialog({ open, onOpenChange, onSuccess }) {
               value={form.currentPassword}
               onChange={setField('currentPassword')}
               disabled={loading}
-            />
+              data-testid="Input__c015d3" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="change-new-password">{ui('onboardingNewPasswordLabel')}</Label>
+            <Label htmlFor="change-new-password" data-testid="Label__c015d3">{ui('onboardingNewPasswordLabel')}</Label>
             <Input
               id="change-new-password"
               type="password"
@@ -96,10 +99,10 @@ export function ChangePasswordDialog({ open, onOpenChange, onSuccess }) {
               value={form.newPassword}
               onChange={setField('newPassword')}
               disabled={loading}
-            />
+              data-testid="Input__c015d3" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="change-confirm-password">{ui('onboardingConfirmPasswordLabel')}</Label>
+            <Label htmlFor="change-confirm-password" data-testid="Label__c015d3">{ui('onboardingConfirmPasswordLabel')}</Label>
             <Input
               id="change-confirm-password"
               type="password"
@@ -108,7 +111,7 @@ export function ChangePasswordDialog({ open, onOpenChange, onSuccess }) {
               value={form.confirmPassword}
               onChange={setField('confirmPassword')}
               disabled={loading}
-            />
+              data-testid="Input__c015d3" />
           </div>
 
           {error && (
@@ -117,14 +120,19 @@ export function ChangePasswordDialog({ open, onOpenChange, onSuccess }) {
             </div>
           )}
 
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button type="button" variant="ghost" onClick={close} disabled={loading}>
+          <DialogFooter className="gap-2 sm:gap-2" data-testid="DialogFooter__c015d3">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={close}
+              disabled={loading}
+              data-testid="Button__c015d3">
               {ui('cancel')}
             </Button>
             <Button type="submit" disabled={loading} data-testid="change-password-submit">
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" data-testid="Loader2__c015d3" />
                   {ui('onboardingSavingPassword')}
                 </>
               ) : (

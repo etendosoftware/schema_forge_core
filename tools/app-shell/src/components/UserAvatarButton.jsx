@@ -87,88 +87,87 @@ export function UserAvatarButton({ expanded = false }) {
 
   return (
     <>
-    <DropdownMenu data-testid="DropdownMenu__9f3744">
-      <DropdownMenuTrigger asChild data-testid="DropdownMenuTrigger__9f3744">
-        {expanded ? (
-          <div className="w-full">{trigger}</div>
-        ) : (
-          trigger
-        )}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        side="right"
-        align="end"
-        sideOffset={12}
-        className="w-56"
-        data-testid="DropdownMenuContent__9f3744">
-        <div className="border-b px-4 py-3">
-          <p className="truncate text-sm font-semibold">{username || '—'}</p>
-          {(selectedRole?.name || selectedOrg?.name) && (
-            <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-              {selectedRole?.name && (
-                <p className="truncate">{ui('role')}: {selectedRole.name}</p>
-              )}
-              {selectedOrg?.name && (
-                <p className="truncate">{ui('organization')}: {selectedOrg.name}</p>
-              )}
-            </div>
+      <DropdownMenu data-testid="DropdownMenu__9f3744">
+        <DropdownMenuTrigger asChild data-testid="DropdownMenuTrigger__9f3744">
+          {expanded ? (
+            <div className="w-full">{trigger}</div>
+          ) : (
+            trigger
           )}
-        </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          side="right"
+          align="end"
+          sideOffset={12}
+          className="w-56"
+          data-testid="DropdownMenuContent__9f3744">
+          <div className="border-b px-4 py-3">
+            <p className="truncate text-sm font-semibold">{username || '—'}</p>
+            {(selectedRole?.name || selectedOrg?.name) && (
+              <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                {selectedRole?.name && (
+                  <p className="truncate">{ui('role')}: {selectedRole.name}</p>
+                )}
+                {selectedOrg?.name && (
+                  <p className="truncate">{ui('organization')}: {selectedOrg.name}</p>
+                )}
+              </div>
+            )}
+          </div>
 
-        {setLocale && (
-          <>
-            <div className="px-2 pt-2 pb-1">
-              <p className="flex items-center gap-1.5 px-2 pb-1 text-xs font-medium text-muted-foreground">
-                <Languages className="h-3.5 w-3.5" data-testid="Languages__9f3744" />
-                {ui('language')}
-              </p>
-              {LOCALES.map((l) => (
-                <button
-                  key={l.code}
-                  type="button"
-                  onClick={() => setLocale(l.code)}
-                  data-testid={`user-menu-language-${l.code}`}
-                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors ${
-                    locale === l.code
-                      ? 'bg-muted font-semibold text-foreground'
-                      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-                  }`}
-                >
-                  <span className="text-sm leading-none">{l.flag}</span>
-                  {l.label}
-                </button>
-              ))}
-            </div>
-            <DropdownMenuSeparator data-testid="DropdownMenuSeparator__9f3744" />
-          </>
-        )}
+          {setLocale && (
+            <>
+              <div className="px-2 pt-2 pb-1">
+                <p className="flex items-center gap-1.5 px-2 pb-1 text-xs font-medium text-muted-foreground">
+                  <Languages className="h-3.5 w-3.5" data-testid="Languages__9f3744" />
+                  {ui('language')}
+                </p>
+                {LOCALES.map((l) => (
+                  <button
+                    key={l.code}
+                    type="button"
+                    onClick={() => setLocale(l.code)}
+                    data-testid={`user-menu-language-${l.code}`}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors ${
+                      locale === l.code
+                        ? 'bg-muted font-semibold text-foreground'
+                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                    }`}
+                  >
+                    <span className="text-sm leading-none">{l.flag}</span>
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+              <DropdownMenuSeparator data-testid="DropdownMenuSeparator__9f3744" />
+            </>
+          )}
 
-        <div className="px-2 py-2">
-          {canChangePassword && (
+          <div className="px-2 py-2">
+            {canChangePassword && (
+              <DropdownMenuItem
+                onSelect={() => setChangePasswordOpen(true)}
+                data-testid="menu-change-password"
+              >
+                <KeyRound className="h-3.5 w-3.5 mr-2" data-testid="KeyRound__9f3744" />
+                {ui('onboardingChangePasswordAction')}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
-              onSelect={() => setChangePasswordOpen(true)}
-              data-testid="menu-change-password"
-            >
-              <KeyRound className="h-3.5 w-3.5 mr-2" />
-              {ui('onboardingChangePasswordAction')}
+              onClick={logout}
+              className="text-red-500 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
+              data-testid="user-menu-logout">
+              <LogOut className="h-3.5 w-3.5 mr-2" data-testid="LogOut__9f3744" />
+              {ui('logout')}
             </DropdownMenuItem>
-          )}
-          <DropdownMenuItem
-            onClick={logout}
-            className="text-red-500 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
-            data-testid="user-menu-logout">
-            <LogOut className="h-3.5 w-3.5 mr-2" data-testid="LogOut__9f3744" />
-            {ui('logout')}
-          </DropdownMenuItem>
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
-
-    <ChangePasswordDialog
-      open={changePasswordOpen}
-      onOpenChange={setChangePasswordOpen}
-      onSuccess={handlePasswordChanged}
-    />
+          </div>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ChangePasswordDialog
+        open={changePasswordOpen}
+        onOpenChange={setChangePasswordOpen}
+        onSuccess={handlePasswordChanged}
+        data-testid="ChangePasswordDialog__9f3744" />
     </>
   );
 }
