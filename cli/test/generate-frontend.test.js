@@ -737,6 +737,83 @@ describe('generatePageComponent', () => {
 });
 
 // ---------------------------------------------------------------------------
+// sendDocument recipient-policy override emission (ETP-4226)
+// ---------------------------------------------------------------------------
+
+describe('generatePageComponent — sendDocument recipient policy (ETP-4226)', () => {
+  // A documental window (header has a non-discarded `documentNo`) enables the
+  // envelope by default. `window.sendDocument` recipient-policy keys flow
+  // verbatim into the emitted `sendDocument` prop so ListView/DetailView can
+  // forward them to SendDocumentModal as `sendPolicy`.
+  function buildDocumentalContract(sendDocument) {
+    const window = { id: '1', name: 'Sales Order', primaryEntity: 'order', category: 'sales' };
+    if (sendDocument !== undefined) window.sendDocument = sendDocument;
+    return {
+      frontendContract: {
+        window,
+        entities: {
+          order: {
+            fields: [
+              { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+              { name: 'docStatus', column: 'DocStatus', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+          orderLine: {
+            fields: [
+              { name: 'product', column: 'M_Product_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+  }
+
+  it('emits a bare sendDocument prop (no value) when only the defaults apply', () => {
+    const code = generatePageComponent('order', 'orderLine', buildDocumentalContract(undefined));
+    // Default {enabled:true, allowEmail:true} → prop is emitted without a value...
+    assert.ok(/sendDocument(?![=A-Za-z])/.test(code), 'bare sendDocument prop should be present');
+    // ...and never serialized as a JSON object.
+    assert.ok(!code.includes('sendDocument={{'), 'defaults must not emit a JSON sendDocument value');
+  });
+
+  it('serializes recipient-policy keys verbatim when window.sendDocument declares them', () => {
+    const code = generatePageComponent(
+      'order',
+      'orderLine',
+      buildDocumentalContract({ editableRecipients: false, cc: false, maxRecipients: 5 }),
+    );
+    assert.ok(
+      code.includes('sendDocument={{"enabled":true,"allowEmail":true,"editableRecipients":false,"cc":false,"maxRecipients":5}}'),
+      'recipient-policy keys should be emitted verbatim alongside enabled/allowEmail',
+    );
+  });
+
+  it('forwards the policy to BOTH the ListView and DetailView sendDocument props', () => {
+    const code = generatePageComponent(
+      'order',
+      'orderLine',
+      buildDocumentalContract({ editableRecipients: true, maxRecipients: 10 }),
+    );
+    const matches = code.match(/sendDocument=\{\{[^}]*"maxRecipients":10[^}]*\}\}/g) || [];
+    assert.equal(matches.length, 2, 'policy should be emitted for ListView and DetailView');
+  });
+
+  it('omits the sendDocument prop entirely when the feature is force-disabled', () => {
+    const code = generatePageComponent(
+      'order',
+      'orderLine',
+      buildDocumentalContract({ enabled: false, editableRecipients: true }),
+    );
+    assert.ok(!/sendDocument/.test(code), 'force-disabled window emits no sendDocument prop');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // generateIndexComponent
 // ---------------------------------------------------------------------------
 
