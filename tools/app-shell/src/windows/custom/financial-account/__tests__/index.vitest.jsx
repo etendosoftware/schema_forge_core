@@ -129,15 +129,14 @@ describe('FinancialAccountWindow', () => {
     expect(screen.getByTestId('tab-statements')).toBeInTheDocument();
   });
 
-  it('shows the "not on movements tab" toast when exporting from another tab', () => {
+  it('replaces Export with a clickable-looking Automatch button on the reconciliation tab', () => {
     setHooks();
     render(<FinancialAccountWindow recordId="acc-1" />);
 
-    // Switch away from the movements tab first.
     fireEvent.click(screen.getByText('financeAccountDetailTabReconciliation'));
-    fireEvent.click(screen.getByText('financeAccountDetailExport'));
 
-    expect(toastFn).toHaveBeenCalledWith('financeAccountDetailExportToast');
+    expect(screen.queryByTestId('financial-account-export')).not.toBeInTheDocument();
+    expect(screen.getByTestId('financial-account-automatch')).toBeEnabled();
     expect(exportCsvMock).not.toHaveBeenCalled();
   });
 

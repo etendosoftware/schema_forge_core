@@ -58,7 +58,11 @@ function TotalsCard({ operators, t }) {
             onMouseEnter={() => setShowInfo(true)}
             onMouseLeave={() => setShowInfo(false)}
           >
-            <Info size={12} strokeWidth={1.75} style={{ color: 'var(--fm-fg-3)', cursor: 'help' }} />
+            <Info
+              size={12}
+              strokeWidth={1.75}
+              style={{ color: 'var(--fm-fg-3)', cursor: 'help' }}
+              data-testid="Info__346dd5" />
             {showInfo && (
               <div className="fm-349-totals__tooltip">
                 {t('fm.m349.totals.info') ?? 'Calculados a partir de los operadores. No editable. Modifica los operadores para ajustar los totales.'}
@@ -69,7 +73,7 @@ function TotalsCard({ operators, t }) {
         {KEY_IDS.map(k => (
           <div key={k} className="fm-349-total-row">
             <div className="fm-349-total-row__left">
-              <KeyBadge k={k} />
+              <KeyBadge k={k} data-testid="KeyBadge__346dd5" />
               <span className="fm-349-total-row__label">{t(`fm.m349.key.${k}`)}</span>
             </div>
             <span className={`fm-349-total-row__amount${totals[k] === 0 ? ' fm-349-total-row__amount--zero' : ''}`}>
@@ -110,7 +114,11 @@ function KeyFilterDropdown({ value, onChange, t }) {
         aria-haspopup="listbox"
       >
         {selectedLabel}
-        <ChevronDown size={12} strokeWidth={1.75} style={{ opacity: .6 }} />
+        <ChevronDown
+          size={12}
+          strokeWidth={1.75}
+          style={{ opacity: .6 }}
+          data-testid="ChevronDown__346dd5" />
       </button>
       {open && (
         <div className="fm-status-select__menu" role="listbox" style={{ minWidth: 220 }}>
@@ -160,20 +168,32 @@ function MoreOptionsMenu349({ onVies, onPreviewPdf, onGenerate, pdfLoading, gene
         onClick={() => setOpen(o => !o)}
         aria-label="Más opciones"
       >
-        <MoreVertical size={15} strokeWidth={1.75} />
+        <MoreVertical size={15} strokeWidth={1.75} data-testid="MoreVertical__346dd5" />
       </button>
       {open && (
         <div className="fm-status-select__menu" role="menu" style={{ right: 0, left: 'auto', minWidth: 220 }}>
           <button className="fm-status-select__item" role="menuitem" onClick={() => { onVies(); setOpen(false); }}>
-            <Globe size={13} strokeWidth={1.75} style={{ color: '#6b7280' }} />
+            <Globe
+              size={13}
+              strokeWidth={1.75}
+              style={{ color: '#6b7280' }}
+              data-testid="Globe__346dd5" />
             VIES
           </button>
           <button className="fm-status-select__item" role="menuitem" onClick={() => { onPreviewPdf(); setOpen(false); }} disabled={pdfLoading}>
-            <Eye size={13} strokeWidth={1.75} style={{ color: '#6b7280' }} />
+            <Eye
+              size={13}
+              strokeWidth={1.75}
+              style={{ color: '#6b7280' }}
+              data-testid="Eye__346dd5" />
             {t('fm.action.preview_pdf') ?? 'Vista previa PDF'}
           </button>
           <button className="fm-status-select__item" role="menuitem" onClick={() => { onGenerate(); setOpen(false); }} disabled={generating}>
-            <Download size={13} strokeWidth={1.75} style={{ color: '#6b7280' }} />
+            <Download
+              size={13}
+              strokeWidth={1.75}
+              style={{ color: '#6b7280' }}
+              data-testid="Download__346dd5" />
             {t('fm.action.generate_file') ?? 'Generar fichero'}
           </button>
         </div>
@@ -289,19 +309,18 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
   const declNif = decl.nif ?? '';
 
   const TABS = [
-    { id:'operators', label: t('fm.m349.tab.operators'), badge: operators.length,        icon: <Users size={16} strokeWidth={1.75} /> },
-    { id:'rectif',    label: t('fm.m349.tab.rectif'),    badge: rectifications,          icon: <FileEdit size={16} strokeWidth={1.75} /> },
-    { id:'invoices',  label: t('fm.m349.tab.invoices'),  badge: liveInvoices?.length ?? null, icon: <ReceiptText size={16} strokeWidth={1.75} /> },
-    { id:'incidents', label: t('fm.m349.tab.incidents'), badge: blocking || null,        icon: <TriangleAlert size={16} strokeWidth={1.75} /> },
-    { id:'files',     label: t('fm.m349.tab.files'),     badge: null,                   icon: <Folder size={16} strokeWidth={1.75} /> },
-    { id:'history',   label: t('fm.m349.tab.history'),   badge: null,                   icon: <Clock size={16} strokeWidth={1.75} /> },
+    { id:'operators', label: t('fm.m349.tab.operators'), badge: operators.length,        icon: <Users size={16} strokeWidth={1.75} data-testid="Users__346dd5" /> },
+    { id:'rectif',    label: t('fm.m349.tab.rectif'),    badge: rectifications,          icon: <FileEdit size={16} strokeWidth={1.75} data-testid="FileEdit__346dd5" /> },
+    { id:'invoices',  label: t('fm.m349.tab.invoices'),  badge: liveInvoices?.length ?? null, icon: <ReceiptText size={16} strokeWidth={1.75} data-testid="ReceiptText__346dd5" /> },
+    { id:'incidents', label: t('fm.m349.tab.incidents'), badge: blocking || null,        icon: <TriangleAlert size={16} strokeWidth={1.75} data-testid="TriangleAlert__346dd5" /> },
+    { id:'files',     label: t('fm.m349.tab.files'),     badge: null,                   icon: <Folder size={16} strokeWidth={1.75} data-testid="Folder__346dd5" /> },
+    { id:'history',   label: t('fm.m349.tab.history'),   badge: null,                   icon: <Clock size={16} strokeWidth={1.75} data-testid="Clock__346dd5" /> },
   ];
 
   const isSubmitted = ['submitted', 'submitted_ext', 'submitted_ack'].includes(status);
 
   return (
     <div className="fm-page fm-page--freeflow">
-
       {/* ── Title bar ────────────────────────────────────────────── */}
       <div style={{
         padding: '12px 20px',
@@ -313,13 +332,16 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
             Modelo 349 - {periodLabel}
           </span>
           <div style={{ flex: 1 }} />
-          <MoreVertical size={16} strokeWidth={1.75} style={{ color: '#9ca3af', cursor: 'pointer' }} />
+          <MoreVertical
+            size={16}
+            strokeWidth={1.75}
+            style={{ color: '#9ca3af', cursor: 'pointer' }}
+            data-testid="MoreVertical__346dd5" />
         </div>
         <div style={{ fontSize: 12, color: '#828FA3', marginTop: 2 }}>
           Tesorería / Declaraciones / Modelo 349 - {periodLabel}
         </div>
       </div>
-
       {/* ── Action bar ───────────────────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
@@ -346,7 +368,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
           pdfLoading={pdfLoading}
           generating={generating}
           t={t}
-        />
+          data-testid="MoreOptionsMenu349__346dd5" />
 
         <button
           className="fm-btn"
@@ -354,7 +376,11 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
           disabled={computing}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid #D1D4DB', boxShadow: '0px 1px 2px rgba(18,18,23,0.05)', padding: '8px 12px', fontSize: 14 }}
         >
-          <RefreshCw size={20} strokeWidth={1.75} style={computing ? { animation: 'spin 1s linear infinite' } : {}} />
+          <RefreshCw
+            size={20}
+            strokeWidth={1.75}
+            style={computing ? { animation: 'spin 1s linear infinite' } : {}}
+            data-testid="RefreshCw__346dd5" />
           {computing ? (t('fm.action.computing') ?? 'Calculando…') : (t('fm.action.recalc') ?? 'Recalcular')}
         </button>
 
@@ -364,12 +390,11 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 8, padding: '8px 12px', fontSize: 14, fontWeight: 500 }}
             onClick={() => setShowPresent(true)}
           >
-            <CircleCheck size={16} strokeWidth={1.75} />
+            <CircleCheck size={16} strokeWidth={1.75} data-testid="CircleCheck__346dd5" />
             {t('fm.action.present') ?? "Marcar como 'Presentado'"}
           </button>
         )}
       </div>
-
       {/* ── VIES banner ──────────────────────────────────────────── */}
       {viesPending > 0 && !viesBannerDismissed && (
         <div style={{ padding: '8px 20px', flexShrink: 0 }}>
@@ -377,7 +402,11 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '10px 12px', borderRadius: 8, background: '#F0FAFF',
           }}>
-            <Globe size={14} strokeWidth={1.75} style={{ color: '#0075AD', flexShrink: 0 }} />
+            <Globe
+              size={14}
+              strokeWidth={1.75}
+              style={{ color: '#0075AD', flexShrink: 0 }}
+              data-testid="Globe__346dd5" />
             <span style={{ fontSize: 14, flex: 1 }}>
               <span style={{ color: '#0075AD', fontWeight: 500 }}>
                 {t('fm.m349.banner.vies_title', { count: viesPending }) ?? `${viesPending} NIF-IVA con validación VIES pendiente`}
@@ -400,7 +429,6 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
           </div>
         </div>
       )}
-
       {/* ── KPI bar ──────────────────────────────────────────────── */}
       <div style={{
         display: 'flex', flexDirection: 'row', alignItems: 'center',
@@ -408,34 +436,34 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
         height: 84, flexShrink: 0,
       }}>
         <KpiWidget
-          icon={<Users size={20} strokeWidth={1.75} />}
+          icon={<Users size={20} strokeWidth={1.75} data-testid="Users__346dd5" />}
           iconColor="#828FA3"
           label={t('fm.m349.kpi.operators') ?? 'Operadores'}
           value={String(operators.length)}
           badge={t('fm.m349.kpi.operators_desc') ?? 'Activos'}
           badgeBg="#F5F7F9"
           badgeColor="#828FA3"
-        />
+          data-testid="KpiWidget__346dd5" />
         <KpiWidget
-          icon={<Calculator size={20} strokeWidth={1.75} />}
+          icon={<Calculator size={20} strokeWidth={1.75} data-testid="Calculator__346dd5" />}
           iconColor="#828FA3"
           label={t('fm.m349.kpi.total_ops') ?? 'Total operaciones'}
           value={formatAmount(totalBase)}
           badge={t('fm.m349.kpi.total_ops_desc') ?? 'Base total'}
           badgeBg="#F5F7F9"
           badgeColor="#828FA3"
-        />
+          data-testid="KpiWidget__346dd5" />
         <KpiWidget
-          icon={<PenLine size={20} strokeWidth={1.75} />}
+          icon={<PenLine size={20} strokeWidth={1.75} data-testid="PenLine__346dd5" />}
           iconColor="#828FA3"
           label={t('fm.m349.kpi.rectif') ?? 'Rectificaciones'}
           value={String(rectifications)}
           badge={t('fm.m349.kpi.rectif_desc') ?? 'Previos'}
           badgeBg="#FFF9EB"
           badgeColor="#8A6100"
-        />
+          data-testid="KpiWidget__346dd5" />
         <KpiWidget
-          icon={<ShieldAlert size={20} strokeWidth={1.75} />}
+          icon={<ShieldAlert size={20} strokeWidth={1.75} data-testid="ShieldAlert__346dd5" />}
           iconColor="#828FA3"
           label={t('fm.m349.kpi.vies_pending') ?? 'Pendientes VIES'}
           value={String(viesPending)}
@@ -443,18 +471,16 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
           badge={t('fm.m349.kpi.vies_pending_desc') ?? 'Sin validar'}
           badgeBg={viesPending > 0 ? '#FEF0F4' : '#F5F7F9'}
           badgeColor={viesPending > 0 ? '#D50B3E' : '#828FA3'}
-        />
+          data-testid="KpiWidget__346dd5" />
       </div>
-
       {/* ── Tabs ─────────────────────────────────────────────────── */}
       <div className="fm-tabs-sticky" style={{ padding: '0 8px' }}>
         <Tabs
           tabs={TABS}
           active={activeTab}
           onSelect={(id) => { setActiveTab(id); if (id !== 'invoices') setInvoiceNifFilter(null); }}
-        />
+          data-testid="Tabs__346dd5" />
       </div>
-
       {/* ── Body ─────────────────────────────────────────────────── */}
       <div className="fm-page__body">
 
@@ -462,10 +488,18 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
           <div>
             {/* Filter + search + new operator row */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, marginTop: 8, flexWrap: 'wrap' }}>
-              <KeyFilterDropdown value={keyFilter} onChange={setKeyFilter} t={t} />
+              <KeyFilterDropdown
+                value={keyFilter}
+                onChange={setKeyFilter}
+                t={t}
+                data-testid="KeyFilterDropdown__346dd5" />
               <div style={{ flex: 1 }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', border: `1px solid ${searchQuery ? '#6366f1' : '#E8E8ED'}`, borderRadius: 8, fontSize: 14, color: '#6C6C89', background: '#fff', minWidth: 240 }}>
-                <Search size={15} strokeWidth={1.75} style={{ flexShrink: 0, color: '#6C6C89' }} />
+                <Search
+                  size={15}
+                  strokeWidth={1.75}
+                  style={{ flexShrink: 0, color: '#6C6C89' }}
+                  data-testid="Search__346dd5" />
                 <input
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
@@ -486,7 +520,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
 
             {/* Layout: totals panel + table */}
             <div style={{ display: 'flex', gap: 0 }}>
-              <TotalsCard operators={operators} t={t} />
+              <TotalsCard operators={operators} t={t} data-testid="TotalsCard__346dd5" />
 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="fm-table-wrap" style={{ flex: 'none' }}>
@@ -494,7 +528,11 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
                     <thead>
                       <tr>
                         <th style={{ width: 32, paddingLeft: 20 }} onClick={e => e.stopPropagation()}>
-                          <Checkbox checked={allSelected} onChange={() => setSelected(allSelected ? new Set() : new Set(filteredOps.map(o => o.id)))} onClick={e => e.stopPropagation()} />
+                          <Checkbox
+                            checked={allSelected}
+                            onChange={() => setSelected(allSelected ? new Set() : new Set(filteredOps.map(o => o.id)))}
+                            onClick={e => e.stopPropagation()}
+                            data-testid="Checkbox__346dd5" />
                         </th>
                         <th>{t('fm.m349.col.nif_iva')}</th>
                         <th>{t('fm.m349.col.operator')}</th>
@@ -508,18 +546,22 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
                       {filteredOps.map(op => (
                         <tr key={op.id} className={selected.has(op.id) ? 'fm-table__row--selected' : ''}>
                           <td style={{ paddingLeft: 20 }} onClick={e => e.stopPropagation()}>
-                            <Checkbox checked={selected.has(op.id)} onChange={() => toggleSelect(op.id)} onClick={e => e.stopPropagation()} />
+                            <Checkbox
+                              checked={selected.has(op.id)}
+                              onChange={() => toggleSelect(op.id)}
+                              onClick={e => e.stopPropagation()}
+                              data-testid="Checkbox__346dd5" />
                           </td>
                           <td>{op.nif}</td>
                           <td style={{ fontWeight: 600 }}>{op.name}</td>
                           <td>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                              <KeyBadge k={op.key} />
+                              <KeyBadge k={op.key} data-testid="KeyBadge__346dd5" />
                               <span style={{ fontSize: 14, color: 'var(--fm-fg-1)' }}>{t(`fm.m349.key.${op.key}`)}</span>
                             </span>
                           </td>
                           <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatAmount(op.base)}</td>
-                          <td><ViesBadge status={op.vies} /></td>
+                          <td><ViesBadge status={op.vies} data-testid="ViesBadge__346dd5" /></td>
                           <td>
                             {formatOrigin(op)
                               ? <button className="fm-origin-link" onClick={() => { setInvoiceNifFilter(op.nif); setActiveTab('invoices'); }}>{formatOrigin(op)}</button>
@@ -548,7 +590,6 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
         )}
 
       </div>
-
       {/* Shared tab content — same layout as 303 */}
       {(activeTab === 'invoices' || activeTab === 'incidents' || activeTab === 'files' || activeTab === 'history') && (
         <div className="fm-page__body" style={{ display: 'flex', flexDirection: 'column', overflowY: 'hidden', ...(activeTab === 'invoices' || activeTab === 'incidents' ? { padding: 0 } : {}) }}>
@@ -556,7 +597,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
             <SourcesTab
               decl={{ ...decl, sources: liveInvoices ?? decl.invoices }}
               t={t}
-            />
+              data-testid="SourcesTab__346dd5" />
           )}
           {activeTab === 'incidents' && (
             <IncidentsTab
@@ -565,7 +606,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
               warning={warning}
               t={t}
               onGoToSources={() => setActiveTab('invoices')}
-            />
+              data-testid="IncidentsTab__346dd5" />
           )}
           {activeTab === 'files' && (
             <FilesTab
@@ -574,24 +615,27 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
               fileBlocked={fileBlocked}
               onGenerate={() => setShowFilegen(true)}
               genLabel={t('fm.action.gen349') ?? 'Generar fichero 349'}
-            />
+              data-testid="FilesTab__346dd5" />
           )}
           {activeTab === 'history' && (
-            <HistoryTab decl={decl} t={t} />
+            <HistoryTab decl={decl} t={t} data-testid="HistoryTab__346dd5" />
           )}
         </div>
       )}
-
       {/* Overlays */}
       {showPresent && (
-        <PresentModal decl={decl} onConfirm={({ status: s }) => handleStatusChange(s)} onClose={() => setShowPresent(false)} />
+        <PresentModal
+          decl={decl}
+          onConfirm={({ status: s }) => handleStatusChange(s)}
+          onClose={() => setShowPresent(false)}
+          data-testid="PresentModal__346dd5" />
       )}
       {showFilegen && (
         <FileGenModal
           decl={decl}
           onConfirm={({ phone, contact }) => handleGenerate({ phone, contact })}
           onClose={() => setShowFilegen(false)}
-        />
+          data-testid="FileGenModal__346dd5" />
       )}
       {showPdf && (
         <DocumentPreview
@@ -599,7 +643,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange, token, ap
           onClose={() => { setShowPdf(false); clearPdf(); }}
           title={`Modelo 349 · ${decl.year} ${decl.period}`}
           pdfUrl={pdfUrl}
-        />
+          data-testid="DocumentPreview__346dd5" />
       )}
     </div>
   );

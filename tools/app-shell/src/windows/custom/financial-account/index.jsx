@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Upload } from 'lucide-react';
+import { Sparkles, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useUI } from '@/i18n';
@@ -77,7 +77,7 @@ const LINE_CSV_COLUMNS = [
 export default function FinancialAccountWindow({ recordId }) {
   const ui = useUI();
   const [activeTab, setActiveTab] = useState('movements');
-  const { account } = useFinancialAccount(recordId);
+  const { account, reload: reloadAccount } = useFinancialAccount(recordId);
   const { movements, totals, enabledDimensions, headerDimensions, trxTypes, accountOrgId, paymentMethods, loading: movementsLoading, reload: reloadMovements } = useAccountMovements(recordId);
   const { statements } = useBankStatements(recordId);
   const movementsTabRef = useRef(null);
@@ -159,9 +159,7 @@ export default function FinancialAccountWindow({ recordId }) {
     }
     if (activeTab === 'statements') {
       exportStatements();
-      return;
     }
-    toast(ui('financeAccountDetailExportToast'));
   };
 
   const accountName = account?.name ?? '';
@@ -174,7 +172,7 @@ export default function FinancialAccountWindow({ recordId }) {
   );
 
   return (
-    <TooltipProvider>
+    <TooltipProvider data-testid="TooltipProvider__f7dbb3">
       <div className="flex h-full flex-col overflow-hidden">
 
         {/* Tab strip + Export button */}
@@ -185,16 +183,28 @@ export default function FinancialAccountWindow({ recordId }) {
             movementsCount={movements.length}
             reconciliationCount={account?.pendingCount ?? 0}
             statementsCount={statements.length}
-          />
-          <button
-            type="button"
-            data-testid="financial-account-export"
-            onClick={handleExport}
-            className="inline-flex h-10 items-center gap-1 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium leading-6 text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9]"
-          >
-            <Upload className="h-6 w-6 text-[#828FA3]" />
-            <span className="px-1">{ui('financeAccountDetailExport')}</span>
-          </button>
+            data-testid="DetailTabs__f7dbb3" />
+          {activeTab === 'reconciliation' ? (
+            <button
+              type="button"
+              data-testid="financial-account-automatch"
+              onClick={() => {}}
+              className="inline-flex h-10 items-center gap-1 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium leading-6 text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9]"
+            >
+              <Sparkles className="h-5 w-5 text-[#828FA3]" data-testid="Sparkles__f7dbb3" />
+              <span className="px-1">{ui('financeReconcileActionAutomatch')}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              data-testid="financial-account-export"
+              onClick={handleExport}
+              className="inline-flex h-10 items-center gap-1 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium leading-6 text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9]"
+            >
+              <Upload className="h-6 w-6 text-[#828FA3]" data-testid="Upload__f7dbb3" />
+              <span className="px-1">{ui('financeAccountDetailExport')}</span>
+            </button>
+          )}
         </div>
 
         {/* Tab content */}
@@ -212,11 +222,19 @@ export default function FinancialAccountWindow({ recordId }) {
               paymentMethods={paymentMethods}
               loading={movementsLoading}
               onReload={reloadMovements}
-            />
+              data-testid="MovementsTab__f7dbb3" />
           )}
-          {activeTab === 'reconciliation' && <ReconciliationTab />}
+          {activeTab === 'reconciliation' && (
+            <ReconciliationTab
+              account={account}
+              onReconcileSuccess={() => { reloadAccount(); reloadMovements(); }}
+              data-testid="ReconciliationTab__f7dbb3" />
+          )}
           {activeTab === 'statements' && (
-            <ImportedStatementsTab ref={statementsTabRef} account={account} />
+            <ImportedStatementsTab
+              ref={statementsTabRef}
+              account={account}
+              data-testid="ImportedStatementsTab__f7dbb3" />
           )}
         </div>
       </div>

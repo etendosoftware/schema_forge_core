@@ -282,6 +282,9 @@ check_base_conflicts() {
 
 check_base_conflicts
 
+# 0. Run data-testid check (fast, runs before expensive checks)
+run_step "0" "Running data-testid check" "$REPO_DIR" "tmp/pre-push/data-testid-check.log" "npm run check:data-testid"
+
 # Run Step 1
 run_domain_boundary_check
 

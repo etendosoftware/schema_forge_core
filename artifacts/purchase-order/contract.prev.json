@@ -1,8 +1,8 @@
 {
-  "version": "0.20.0",
+  "version": "0.21.0",
   "generatedAt": "2026-04-30T15:42:46.497Z",
-  "updatedAt": "2026-05-20T18:17:18.207Z",
-  "checksum": "b422bbb88c006d20",
+  "updatedAt": "2026-06-11T12:55:36.239Z",
+  "checksum": "2718a4b59698188c",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -3120,6 +3120,14 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "psd2GenerateBankPayment",
+            "apiKey": "psd2GenerateBankPayment",
+            "column": "EM_Psd2_Generate_Bank_Payment",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
           }
         ],
         "javaQualifier": "purchaseOrderHeaderHandler"
@@ -5043,6 +5051,14 @@
         "processType": "obuiapp"
       },
       {
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "column": "EM_Psd2_Generate_Bank_Payment",
+        "url": "/sws/neo/purchase-order/header/{id}/action/psd2GenerateBankPayment",
+        "processId": "0661406A983B4D8EA611F8596F114D52",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "lines",
         "field": "managePrereservation",
         "column": "Manage_Prereservation",
@@ -5203,6 +5219,14 @@
         "field": "processNow",
         "runner": "node",
         "description": "Action endpoint for 'processNow' in header should exist"
+      },
+      {
+        "id": "t-action-endpoint-header-psd2GenerateBankPayment",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "runner": "node",
+        "description": "Action endpoint for 'psd2GenerateBankPayment' in header should exist"
       },
       {
         "id": "t-action-endpoint-header-rMAddOrphanLine",
@@ -8519,6 +8543,13 @@
         "description": "Rule 'FIN_PaymentMethodsWithAccountIsSOTrxControl' (validation) should be declared"
       },
       {
+        "id": "t-rule-declared-Generate-Bank-Payment",
+        "category": "rule-declared",
+        "rule": "Generate Bank Payment",
+        "runner": "node",
+        "description": "Rule 'Generate Bank Payment' (process) should be declared"
+      },
+      {
         "id": "t-rule-declared-Insert-Orphan-Line",
         "category": "rule-declared",
         "rule": "Insert Orphan Line",
@@ -8853,6 +8884,13 @@
         "rule": "purchase-order-Header-EM_APRM_AddPayment-displayLogic",
         "runner": "node",
         "description": "Rule 'purchase-order-Header-EM_APRM_AddPayment-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Header-EM-Psd2-Generate-Bank-Payment-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Header-EM_Psd2_Generate_Bank_Payment-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Header-EM_Psd2_Generate_Bank_Payment-displayLogic' (displayLogic) should be declared"
       },
       {
         "id": "t-rule-declared-purchase-order-Header-PaymentRule-displayLogic",
@@ -10011,6 +10049,14 @@
         "description": "System field 'processNow' should exist in backend but not frontend for header"
       },
       {
+        "id": "t-system-field-header-psd2GenerateBankPayment",
+        "category": "system-field",
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "runner": "node",
+        "description": "System field 'psd2GenerateBankPayment' should exist in backend but not frontend for header"
+      },
+      {
         "id": "t-system-field-header-quotation",
         "category": "system-field",
         "entity": "header",
@@ -10919,9 +10965,9 @@
       }
     ],
     "summary": {
-      "total": 756,
+      "total": 760,
       "byCategory": {
-        "action-endpoint": 21,
+        "action-endpoint": 22,
         "crud-flags": 5,
         "default-value-type": 26,
         "displaylogic-evaluable": 1,
@@ -10930,14 +10976,14 @@
         "field-type": 94,
         "readonlylogic-evaluable": 43,
         "readonlylogic-valid": 43,
-        "rule-declared": 229,
+        "rule-declared": 231,
         "searchable-filters": 5,
         "selector-endpoint": 38,
-        "system-field": 151,
+        "system-field": 152,
         "visibility": 5
       },
       "byRunner": {
-        "node": 756,
+        "node": 760,
         "junit": 0
       }
     }

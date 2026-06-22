@@ -10,7 +10,6 @@ import {
   AccountsTable,
   AccountTypeFilter,
 } from '@/components/financial-accounts';
-import { applyAccountAdvancedFilter } from '@/components/financial-accounts/accountAdvancedFilter.js';
 import { NewAccountWizard } from '@/windows/custom/financial-account/NewAccountWizard.jsx';
 import { EditAccountModal } from '@/windows/custom/financial-account/EditAccountModal.jsx';
 import { ArchiveAccountDialog } from '@/windows/custom/financial-account/ArchiveAccountDialog.jsx';
@@ -42,7 +41,6 @@ export default function FinancialAccountsPage() {
   const { accounts, summary, loading, error, reload } = useFinancialAccounts();
   const [typeFilter, setTypeFilter] = useState(null);
   const [search, setSearch] = useState('');
-  const [advancedFilter, setAdvancedFilter] = useState(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editAccount, setEditAccount] = useState(null);
   const [archiveTarget, setArchiveTarget] = useState(null);
@@ -61,8 +59,8 @@ export default function FinancialAccountsPage() {
   }, [activeCount]);
 
   const visibleAccounts = useMemo(
-    () => applyAccountAdvancedFilter(filterAccounts(accounts, typeFilter, search), advancedFilter),
-    [accounts, typeFilter, search, advancedFilter],
+    () => filterAccounts(accounts, typeFilter, search),
+    [accounts, typeFilter, search],
   );
 
   const handleOpenAccount = (account) => {
@@ -82,17 +80,14 @@ export default function FinancialAccountsPage() {
           search={search}
           onSearchChange={setSearch}
           onNewAccount={() => setWizardOpen(true)}
-          advancedFilter={advancedFilter}
-          onAdvancedFilterChange={setAdvancedFilter}
-          rows={accounts}
-        />
+          onMatchingRules={() => navigate('/match-rule')}
+          data-testid="AccountsToolbar__7c3fbc" />
       </div>
-
       <div
         className="flex flex-1 overflow-hidden"
         data-testid="cuentas-card"
       >
-        <AccountsSidebar summary={summary} loading={loading} />
+        <AccountsSidebar summary={summary} loading={loading} data-testid="AccountsSidebar__7c3fbc" />
 
         <div className="w-px self-stretch bg-[#E8EAEF]" aria-hidden="true" />
 
@@ -106,27 +101,26 @@ export default function FinancialAccountsPage() {
             onEdit={setEditAccount}
             onArchive={setArchiveTarget}
             onRetry={reload}
-          />
+            data-testid="AccountsTable__7c3fbc" />
         </div>
       </div>
-
       <NewAccountWizard
         open={wizardOpen}
         onClose={() => setWizardOpen(false)}
         onCreated={reload}
-      />
+        data-testid="NewAccountWizard__7c3fbc" />
       <EditAccountModal
         open={!!editAccount}
         account={editAccount}
         onClose={() => setEditAccount(null)}
         onSaved={reload}
-      />
+        data-testid="EditAccountModal__7c3fbc" />
       <ArchiveAccountDialog
         open={!!archiveTarget}
         account={archiveTarget}
         onClose={() => setArchiveTarget(null)}
         onArchived={reload}
-      />
+        data-testid="ArchiveAccountDialog__7c3fbc" />
     </div>
   );
 }

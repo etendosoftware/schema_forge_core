@@ -31,7 +31,8 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-
+  { name: 'psd2GenerateBankPayment', label: 'Generate Bank Payment', style: 'positive',
+    displayLogicRaw: "@PSD2_HasPayments@=0 & @PSD2_UserHasApiKey@=1 & @Status@='PPM'  & @PSD2_HasFinTransaction@=0" },
 ];
 // @sf-generated-end processes:header
 
@@ -133,6 +134,17 @@ export const api = {
       "listUrl": "/sws/neo/payment-out/accounting",
       "detailUrl": "/sws/neo/payment-out/accounting/{id}",
       "supportedFilters": []
+    },
+    "bankPayments": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/payment-out/bankPayments",
+      "detailUrl": "/sws/neo/payment-out/bankPayments/{id}",
+      "supportedFilters": []
     }
   },
   "selectors": [
@@ -183,7 +195,16 @@ export const api = {
       "column": "C_Currency_ID",
       "reference": "Currency",
       "inputMode": "selector",
-      "url": "/sws/neo/payment-out/header/selectors/currency"
+      "url": "/sws/neo/payment-out/header/selectors/currency",
+      "context": {
+        "required": [
+          {
+            "param": "FIN_Financial_Account_ID",
+            "source": "parentField",
+            "field": "financialAccount"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -448,6 +469,22 @@ export const api = {
       "reference": "User2",
       "inputMode": "selector",
       "url": "/sws/neo/payment-out/accounting/selectors/ndDimension"
+    },
+    {
+      "entity": "bankPayments",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/payment-out/bankPayments/selectors/currency"
+    },
+    {
+      "entity": "bankPayments",
+      "field": "financialAccount",
+      "column": "FIN_Financial_Account_ID",
+      "reference": "Financial_Account",
+      "inputMode": "selector",
+      "url": "/sws/neo/payment-out/bankPayments/selectors/financialAccount"
     }
   ],
   "actions": [
@@ -501,6 +538,22 @@ export const api = {
       "column": "EM_Aeatsii_Send",
       "url": "/sws/neo/payment-out/header/{id}/action/aeatsiiSend",
       "processId": "EA02D79CA1DE4B46909EA6EF64A66B53",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "psd2GenerateBankPayment",
+      "column": "EM_Psd2_Generate_Bank_Payment",
+      "url": "/sws/neo/payment-out/header/{id}/action/psd2GenerateBankPayment",
+      "processId": "0661406A983B4D8EA611F8596F114D52",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "bankPayments",
+      "field": "refreshPayment",
+      "column": "Refresh_Payment",
+      "url": "/sws/neo/payment-out/bankPayments/{id}/action/refreshPayment",
+      "processId": "3894F258A80D4FAB8A5131B5172145AF",
       "processType": "obuiapp"
     }
   ],

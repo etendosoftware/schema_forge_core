@@ -162,14 +162,54 @@ const FIELD_DECISION_COPY_PROPS = [
   'filterOnly',
   'filterable',
   'labels',
+  'clearsField',
   'columnType',
   'display',
   'cellType',
+  // Field-level helper text shown below the input (i18n key or literal). Honored
+  // by EntityForm (FieldHelp) and the list-modal footer toggle helper.
+  'help',
+  // Input placeholder (i18n key or literal) rendered by EntityForm on empty
+  // text inputs / textareas — e.g. "Ej. Comisiones bancarias".
+  'placeholderKey',
+  // Label (i18n key) for the empty/null choice of an optional FK selector —
+  // e.g. "All accounts" for a nullable financial-account field.
+  'emptyOptionLabelKey',
+  // list-modal cell-renderer extras (see listModalCells.jsx / generate-frontend.js):
+  'subField',
+  'subPrefix',
+  // i18n key shown in a nameWithSubline cell when subField resolves to empty
+  // (e.g. an unset financial-account scope → "Todas las cuentas").
+  'subEmptyKey',
+  'kindField',
+  'patternField',
+  'kindLabels',
+  'tones',
+  'gridLabelKey',
   'grow',
   'gridReadOnly',
+  'inlineToggle',
+  'inlineEdit',
   'noTrailing',
   'inline',
   'addLineFromSibling',
+  'agentPrompt',
+  // Opt-in: render an FK `inputMode: "selector"` field as the searchable combobox
+  // (CreatableSearchSelect) instead of the plain pick-only dropdown (SelectorInput).
+  // Default false — absent/false keeps the existing dropdown rendering unchanged.
+  'searchSelect',
+  // Opt-in: when true on a searchSelect field, the combobox shows the inline
+  // "+ create" action. Requires createSpec/createEntity to know where to POST.
+  'allowCreate',
+  // i18n key for the inline "+ create" action label (e.g. "+ New transaction type").
+  'createLabelKey',
+  // i18n keys for the inline-create modal: dialog title + name-input placeholder.
+  'createTitleKey',
+  'createNamePlaceholderKey',
+  // NEO spec + entity that back the inline create POST. The new record is created
+  // via POST /sws/neo/<createSpec>/<createEntity> with { name }, then auto-selected.
+  'createSpec',
+  'createEntity',
 ];
 
 const FIELD_RAW_COPY_PROPS = [
@@ -228,9 +268,20 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.dot === false) field.dot = false;
   if (fieldDecision.badge) field.badge = true;
   if (fieldDecision.summable) field.summable = true;
+  if (fieldDecision.businessCritical) field.businessCritical = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
   if (fieldDecision.min !== undefined) field.min = fieldDecision.min;
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
+}
+
+function applyForeignKeyLookupProps(field, fieldDecision) {
+  if (fieldDecision.lookup) field.lookup = true;
+  if (fieldDecision.popup) field.popup = true;
+  if (fieldDecision.lookupDrawer) field.lookupDrawer = fieldDecision.lookupDrawer;
+  if (fieldDecision.lookupTitle) field.lookupTitle = fieldDecision.lookupTitle;
+  const hasMappings = Array.isArray(fieldDecision.onSelectMappings) && fieldDecision.onSelectMappings.length > 0;
+  if (hasMappings) field.onSelectMappings = fieldDecision.onSelectMappings;
+  if (fieldDecision.displayFromCatalog) field.displayFromCatalog = fieldDecision.displayFromCatalog;
 }
 
 function applyForeignKeyProps(field, rawField, fieldDecision) {
@@ -247,17 +298,12 @@ function applyForeignKeyProps(field, rawField, fieldDecision) {
     const dependsOn = fieldDecision.dependsOn || null;
     field.inputMode = dependsOn ? 'dependent' : fieldDecision.inputMode || defaultInputMode(rawField);
   }
+  if (fieldDecision.clearable === false) field.clearable = false;
 
   const dependsOn = fieldDecision.dependsOn || null;
   if (dependsOn) field.dependsOn = dependsOn;
-  if (fieldDecision.lookup) field.lookup = true;
-  if (fieldDecision.popup) field.popup = true;
-  if (fieldDecision.lookupDrawer) field.lookupDrawer = fieldDecision.lookupDrawer;
-  if (fieldDecision.lookupTitle) field.lookupTitle = fieldDecision.lookupTitle;
-  if (Array.isArray(fieldDecision.onSelectMappings) && fieldDecision.onSelectMappings.length > 0) {
-    field.onSelectMappings = fieldDecision.onSelectMappings;
-  }
-  if (fieldDecision.displayFromCatalog) field.displayFromCatalog = fieldDecision.displayFromCatalog;
+
+  applyForeignKeyLookupProps(field, fieldDecision);
 }
 
 function applyVisibleFieldProps(field, rawField, fieldDecision) {
@@ -603,6 +649,7 @@ const WINDOW_TRUTHY_PROPS = [
   'rowQuickActions',
   'sendDocument',
   'linesLayout',
+  'balanceFooter',
   'extraTabs',
   'customPanelTabs',
 ];
@@ -629,14 +676,14 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
 // `attachments` is defined-only (not truthy) so an explicit `false` from
 // decisions.json reaches the contract and disables the AttachmentsTab in the
 // generator. Accepted shapes: boolean | { enabled?: boolean, ...options }.
-const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'customLinesComponent', 'customLinesLabel', 'formCardPadding', 'formScrollPaddingX', 'maxDetailLines'];
+const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'customLinesComponent', 'customLinesLabel', 'formCardPadding', 'formScrollPaddingX', 'maxDetailLines', 'agentPrompt'];
 const WINDOW_NOT_NULL_PROPS = ['detailTabIndex', 'salesTheme'];
 
 // Canonical key order for the contract window object. Stabilizes contract.json
 // output so internal refactors of the resolver/generator don't produce cosmetic
 // drift. Keys not listed here land alphabetically at the end of the object.
 export const WINDOW_KEY_ORDER = [
-  'id', 'name', 'primaryEntity', 'category',
+  'id', 'name', 'primaryEntity', 'category', 'agentPrompt',
   'sidebarLayout', 'templateConfig',
   'documentPreview', 'notesField', 'relatedDocuments',
   'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hideSaveStatuses',
@@ -652,7 +699,7 @@ export const WINDOW_KEY_ORDER = [
   'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
   'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
-  'layoutType', 'linesLayout',
+  'layoutType', 'linesLayout', 'balanceFooter',
 ];
 
 // Generic helper: returns a new object with keys in `canonicalOrder` first

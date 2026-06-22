@@ -21,7 +21,7 @@ import { useUI } from '@/i18n';
  *   testId?: string,
  * }} props
  */
-export function AdvancedFilterButton({ columns, rows = [], value = null, onChange, testId }) {
+export function AdvancedFilterButton({ columns, rows = [], value = null, onChange, testId, entity = null, apiBaseUrl = null, labelOverrides = null }) {
   const ui = useUI();
   const [open, setOpen] = useState(false);
 
@@ -32,15 +32,15 @@ export function AdvancedFilterButton({ columns, rows = [], value = null, onChang
   const activeConditions = value?.conditions?.length ?? 0;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <Popover open={open} onOpenChange={setOpen} data-testid="Popover__1026f3">
+      <PopoverTrigger asChild data-testid="PopoverTrigger__1026f3">
         <button
           type="button"
           data-testid={testId}
           title={ui('advancedFilterTitle')}
           className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-colors hover:bg-[#F5F7F9] hover:text-foreground"
         >
-          <Filter className="h-4 w-4" />
+          <Filter className="h-4 w-4" data-testid="Filter__1026f3" />
           {activeConditions > 0 ? (
             <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#121217] px-1 text-[10px] font-semibold leading-none text-white">
               {activeConditions}
@@ -48,15 +48,18 @@ export function AdvancedFilterButton({ columns, rows = [], value = null, onChang
           ) : null}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-auto p-4">
+      <PopoverContent align="start" className="w-auto p-4" data-testid="PopoverContent__1026f3">
         <AdvancedFilterBuilder
           columns={columns}
           rows={rows}
+          entity={entity}
+          apiBaseUrl={apiBaseUrl}
+          labelOverrides={labelOverrides}
           value={value}
           onApply={(next) => onChange(next)}
           onClear={() => onChange(null)}
           onClose={() => setOpen(false)}
-        />
+          data-testid="AdvancedFilterBuilder__1026f3" />
       </PopoverContent>
     </Popover>
   );

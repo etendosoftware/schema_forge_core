@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.7.0",
   "generatedAt": "2026-04-29T19:46:13.628Z",
-  "updatedAt": "2026-05-20T13:04:38.349Z",
-  "checksum": "59b10aa02580d676",
+  "updatedAt": "2026-06-11T12:55:36.583Z",
+  "checksum": "f26c440427448f7b",
   "frontendContract": {
     "window": {
       "id": "C50A8AEE6F044825B5EF54FAAE76826F",
@@ -2593,6 +2593,14 @@
             "type": "decimal",
             "visibility": "system",
             "required": false
+          },
+          {
+            "name": "psd2GenerateBankPayment",
+            "apiKey": "psd2GenerateBankPayment",
+            "column": "EM_Psd2_Generate_Bank_Payment",
+            "type": "button",
+            "visibility": "system",
+            "required": false
           }
         ]
       },
@@ -4766,6 +4774,14 @@
         "processType": "obuiapp"
       },
       {
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "column": "EM_Psd2_Generate_Bank_Payment",
+        "url": "/sws/neo/return-to-vendor/header/{id}/action/psd2GenerateBankPayment",
+        "processId": "0661406A983B4D8EA611F8596F114D52",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "lines",
         "field": "explode",
         "column": "Explode",
@@ -4920,6 +4936,14 @@
         "field": "processNow",
         "runner": "node",
         "description": "Action endpoint for 'processNow' in header should exist"
+      },
+      {
+        "id": "t-action-endpoint-header-psd2GenerateBankPayment",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "runner": "node",
+        "description": "Action endpoint for 'psd2GenerateBankPayment' in header should exist"
       },
       {
         "id": "t-action-endpoint-header-rMAddOrphanLine",
@@ -7867,6 +7891,13 @@
         "description": "Rule 'FIN_PaymentMethodsWithAccountIsSOTrxControl' (validation) should be declared"
       },
       {
+        "id": "t-rule-declared-Generate-Bank-Payment",
+        "category": "rule-declared",
+        "rule": "Generate Bank Payment",
+        "runner": "node",
+        "description": "Rule 'Generate Bank Payment' (process) should be declared"
+      },
+      {
         "id": "t-rule-declared-Insert-Orphan-Line",
         "category": "rule-declared",
         "rule": "Insert Orphan Line",
@@ -9159,6 +9190,14 @@
         "description": "System field 'processNow' should exist in backend but not frontend for header"
       },
       {
+        "id": "t-system-field-header-psd2GenerateBankPayment",
+        "category": "system-field",
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "runner": "node",
+        "description": "System field 'psd2GenerateBankPayment' should exist in backend but not frontend for header"
+      },
+      {
         "id": "t-system-field-header-quotation",
         "category": "system-field",
         "entity": "header",
@@ -10281,9 +10320,9 @@
       }
     ],
     "summary": {
-      "total": 705,
+      "total": 708,
       "byCategory": {
-        "action-endpoint": 22,
+        "action-endpoint": 23,
         "crud-flags": 7,
         "default-value-type": 16,
         "displaylogic-evaluable": 20,
@@ -10292,14 +10331,14 @@
         "field-type": 76,
         "readonlylogic-evaluable": 30,
         "readonlylogic-valid": 30,
-        "rule-declared": 172,
+        "rule-declared": 173,
         "searchable-filters": 1,
         "selector-endpoint": 30,
-        "system-field": 198,
+        "system-field": 199,
         "visibility": 7
       },
       "byRunner": {
-        "node": 705,
+        "node": 708,
         "junit": 0
       }
     }

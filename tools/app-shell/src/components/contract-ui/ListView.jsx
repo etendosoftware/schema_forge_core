@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import { useRowDelete } from '@/hooks/useRowDelete';
 import { useMenuLabel, useLabel, useUI } from '@/i18n';
-import { ArrowUpDown, ChevronDown, Plus, Link2, Printer, LayoutGrid, LayoutList, RefreshCw, Eye, Copy } from 'lucide-react';
+import { ArrowUpDown, ChevronDown, Plus, Link2, Printer, LayoutGrid, RefreshCw, Eye, Copy } from 'lucide-react';
 import { useRegisterWindowContext } from '@/components/CurrentWindowContext';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
@@ -57,26 +57,28 @@ export function splitFilterParts(parts) {
 }
 
 function ListFilterBarSection(props) {
-  return <>
-    {!(props.hideFilters ?? props.hideListFilters) && (
-      <ListFilterBar
-        entity={props.entity}
-        apiBaseUrl={props.apiBaseUrl}
-        columns={props.columns}
-        columnFilters={props.columnFilters}
-        onFilterChange={props.onFilterChange}
-        advancedFilter={props.advancedFilter}
-        onAdvancedFilterChange={props.onAdvancedFilterChange}
-        rows={props.hook.items}
-        dateFilterKey={props.dateFilterKey}
-        presets={props.windowName ? props.filterPresets : null}
-        onApplyPreset={props.windowName ? props.applyPreset : null}
-        onSavePreset={props.windowName ? props.saveCurrentAsPreset : null}
-        onDeletePreset={props.windowName ? props.deletePreset : null}
-        labelOverrides={props.labelOverrides}
-      />
-    )}
-  </>;
+  return (
+    <>
+      {!(props.hideFilters ?? props.hideListFilters) && (
+        <ListFilterBar
+          entity={props.entity}
+          apiBaseUrl={props.apiBaseUrl}
+          columns={props.columns}
+          columnFilters={props.columnFilters}
+          onFilterChange={props.onFilterChange}
+          advancedFilter={props.advancedFilter}
+          onAdvancedFilterChange={props.onAdvancedFilterChange}
+          rows={props.hook.items}
+          dateFilterKey={props.dateFilterKey}
+          presets={props.windowName ? props.filterPresets : null}
+          onApplyPreset={props.windowName ? props.applyPreset : null}
+          onSavePreset={props.windowName ? props.saveCurrentAsPreset : null}
+          onDeletePreset={props.windowName ? props.deletePreset : null}
+          labelOverrides={props.labelOverrides}
+          data-testid="ListFilterBar__620cbc" />
+      )}
+    </>
+  );
 }
 
 function SortToggleButton({ SortIconComponent, isDefaultSort, iconButtonHover, onToggle }) {
@@ -91,7 +93,7 @@ function SortToggleButton({ SortIconComponent, isDefaultSort, iconButtonHover, o
           : 'border-primary/40 bg-primary/10 text-primary',
       ].join(' ')}
     >
-      <SortEl className="h-4 w-4" />
+      <SortEl className="h-4 w-4" data-testid="SortEl__620cbc" />
     </button>
   );
 }
@@ -104,30 +106,42 @@ function RefreshButton({ RefreshIconComponent, iconButtonHover, onRefresh, label
       className={`h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground ${iconButtonHover} transition-colors`}
       title={label || 'Refresh'}
     >
-      <RefreshEl className="h-4 w-4" />
+      <RefreshEl className="h-4 w-4" data-testid="RefreshEl__620cbc" />
     </button>
   );
 }
 
+function TableRowsIcon({ size = 24, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="3" width="18" height="18" rx="2" stroke={color} strokeWidth="1.5" />
+      <line x1="3" y1="9" x2="21" y2="9" stroke={color} strokeWidth="1.5" />
+      <line x1="3" y1="15" x2="21" y2="15" stroke={color} strokeWidth="1.5" />
+    </svg>
+  );
+}
+
 function ViewToggle({ galleryRenderer, onSelectList, onSelectGallery, viewMode }) {
-  return <>
-    {galleryRenderer && (
-      <div className="inline-flex items-center border border-border rounded-lg overflow-hidden">
-        <button
-          onClick={onSelectList}
-          className={`h-9 w-9 flex items-center justify-center transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          <LayoutList className="h-4 w-4" />
-        </button>
-        <button
-          onClick={onSelectGallery}
-          className={`h-9 w-9 flex items-center justify-center transition-colors ${viewMode === "gallery" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          <LayoutGrid className="h-4 w-4" />
-        </button>
-      </div>
-    )}
-  </>;
+  if (!galleryRenderer) return null;
+  return (
+    <div data-testid="view-toggle" className="flex flex-row items-center p-1 gap-1 h-10 w-[108px] bg-[#F5F7F9] rounded-xl">
+      <button
+        onClick={onSelectList}
+        className={`flex items-center justify-center w-12 h-8 rounded-lg transition-all ${viewMode === "list" ? "bg-white shadow-sm" : ""}`}
+      >
+        <TableRowsIcon size={24} color="#828FA3" data-testid="TableRowsIcon__620cbc" />
+      </button>
+      <button
+        onClick={onSelectGallery}
+        className={`flex items-center justify-center w-12 h-8 rounded-lg transition-all ${viewMode === "gallery" ? "bg-white shadow-sm" : ""}`}
+      >
+        <LayoutGrid
+          className="h-6 w-6"
+          style={{ color: '#828FA3' }}
+          data-testid="LayoutGrid__620cbc" />
+      </button>
+    </div>
+  );
 }
 
 function iconSizeClass(selectionBarSize) {
@@ -567,7 +581,7 @@ export function ListView({
           {selectedRows.length > 0 ? (
             <div className={`flex items-center justify-between ${listbarPaddingX} py-3 border-b border-border/30`}>
               <div className="flex items-center gap-3 h-10">
-                <span className="text-sm font-semibold">{ui('selected').replace('{count}', selectedRows.length)}</span>
+                <span role="status" className="text-sm font-semibold" data-testid="selection-count">{ui('selected').replace('{count}', selectedRows.length)}</span>
               </div>
               <div className="flex items-center gap-2 h-10">
                 <Button
@@ -575,16 +589,16 @@ export function ListView({
                   size={selectionBarSize}
                   className="gap-1.5"
                   onClick={() => setShowDocPrint(true)}
-                >
-                  <Eye className={iconSizeClass(selectionBarSize)} />
+                  data-testid="Button__620cbc">
+                  <Eye className={iconSizeClass(selectionBarSize)} data-testid="Eye__620cbc" />
                   {ui('preview')}
                 </Button>
                 <Button
                   size={selectionBarSize}
                   className="gap-1.5"
                   onClick={() => printDocuments(windowName, selectedRows.map(r => r.id || r), token)}
-                >
-                  <Printer className={iconSizeClass(selectionBarSize)} />
+                  data-testid="Button__620cbc">
+                  <Printer className={iconSizeClass(selectionBarSize)} data-testid="Printer__620cbc" />
                   {ui('print')} ({selectedRows.length})
                 </Button>
                 {onCloneRow && (
@@ -593,8 +607,8 @@ export function ListView({
                     size={selectionBarSize}
                     className="gap-1.5"
                     onClick={() => onCloneRow(selectedRows)}
-                  >
-                    <Copy className={iconSizeClass(selectionBarSize)} />
+                    data-testid="Button__620cbc">
+                    <Copy className={iconSizeClass(selectionBarSize)} data-testid="Copy__620cbc" />
                     {ui('cloneOrderBtn')} ({selectedRows.length})
                   </Button>
                 )}
@@ -612,13 +626,14 @@ export function ListView({
             <div className={`flex items-center justify-between ${listbarPaddingX} py-3`}>
               <div className="flex items-center gap-2">
                 {subsetFilters && (
-                  <div className="inline-flex items-center gap-1 rounded-xl bg-[#F5F7F9] p-1 h-10">
+                  <div role="group" aria-label="Filters" className="inline-flex items-center gap-1 rounded-xl bg-[#F5F7F9] p-1 h-10">
                     {subsetFilters.map((sf, i) => (
                       <button
                         key={i}
                         onClick={() => selectSubset(i)}
+                        data-testid={`filter-${sf.key || sf.label?.toLowerCase()}`}
                         className={[
-                          'flex-1 h-8 px-2 text-sm font-medium text-[#121217] rounded-lg transition-all',
+                          'h-8 px-3 text-sm font-medium text-[#121217] rounded-lg transition-all whitespace-nowrap',
                           activeSubsetIndex === i
                             ? 'bg-white shadow-sm'
                             : 'bg-[#F5F7F9] hover:brightness-95',
@@ -630,11 +645,12 @@ export function ListView({
                   </div>
                 )}
                 {quickFilters && (
-                  <div className="flex items-center gap-1">
+                  <div role="group" aria-label="Filters" className="flex items-center gap-1">
                     {quickFilters.map((qf, i) => (
                       <button
                         key={i}
                         onClick={() => toggleQuickFilter(i)}
+                        data-testid={`quick-filter-${qf.key || qf.label?.toLowerCase()}`}
                         className={[
                           'h-9 px-3 text-xs rounded-lg border bg-white transition-colors',
                           activeFilterIndices.has(i)
@@ -647,20 +663,37 @@ export function ListView({
                     ))}
                   </div>
                 )}
-                <ListFilterBarSection hideFilters={listViewOptions?.hideFilters} hideListFilters={hideListFilters}
-                  entity={entity} apiBaseUrl={apiBaseUrl} columns={tableColumns}
-                  columnFilters={columnFilters} onFilterChange={handleFilterChange}
-                  advancedFilter={advancedFilter} onAdvancedFilterChange={setAdvancedFilter}
-                  hook={hook} dateFilterKey={dateFilterKey} windowName={windowName}
-                  filterPresets={filterPresets} applyPreset={applyPreset}
-                  saveCurrentAsPreset={saveCurrentAsPreset} deletePreset={deletePreset}
-                  labelOverrides={labelOverrides} />
+                <ListFilterBarSection
+                  hideFilters={listViewOptions?.hideFilters}
+                  hideListFilters={hideListFilters}
+                  entity={entity}
+                  apiBaseUrl={apiBaseUrl}
+                  columns={tableColumns}
+                  columnFilters={columnFilters}
+                  onFilterChange={handleFilterChange}
+                  advancedFilter={advancedFilter}
+                  onAdvancedFilterChange={setAdvancedFilter}
+                  hook={hook}
+                  dateFilterKey={dateFilterKey}
+                  windowName={windowName}
+                  filterPresets={filterPresets}
+                  applyPreset={applyPreset}
+                  saveCurrentAsPreset={saveCurrentAsPreset}
+                  deletePreset={deletePreset}
+                  labelOverrides={labelOverrides}
+                  data-testid="ListFilterBarSection__620cbc" />
+                <ViewToggle
+                  galleryRenderer={galleryRenderer}
+                  onSelectList={() => handleViewMode('list')}
+                  viewMode={viewMode}
+                  onSelectGallery={() => handleViewMode('gallery')}
+                  data-testid="ViewToggle__620cbc" />
               </div>
               <div className="flex items-center gap-2">
                 {!(listViewOptions?.hideLink ?? hideLink) && (
                   <button
                     className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
-                    <Link2 className="h-4 w-4" />
+                    <Link2 className="h-4 w-4" data-testid="Link2__620cbc" />
                   </button>
                 )}
                 <div className="relative" ref={sortBtnRef}>
@@ -669,7 +702,7 @@ export function ListView({
                     isDefaultSort={isDefaultSort}
                     iconButtonHover={iconButtonHover}
                     onToggle={() => setShowSortPopover(v => !v)}
-                  />
+                    data-testid="SortToggleButton__620cbc" />
                   {showSortPopover && tableColumns.length > 0 && (
                     <div
                       className="absolute right-0 top-full mt-1 z-50 w-56 rounded-lg border border-border bg-card shadow-lg py-1">
@@ -715,21 +748,18 @@ export function ListView({
                   iconButtonHover={iconButtonHover}
                   onRefresh={() => hook.refresh()}
                   label={ui('refresh')}
-                />
+                  data-testid="RefreshButton__620cbc" />
                 {!(listViewOptions?.hidePrint ?? hidePrint) && (
                   <Button
                     variant="outline"
                     size="sm"
                     className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white"
                     onClick={() => setShowReport(true)}
-                  >
-                    <Printer className="h-3.5 w-3.5" />
+                    data-testid="Button__620cbc">
+                    <Printer className="h-3.5 w-3.5" data-testid="Printer__620cbc" />
                     {ui('print')}
                   </Button>
                 )}
-                {/* View toggle */}
-                <ViewToggle galleryRenderer={galleryRenderer} onSelectList={() => handleViewMode('list')} viewMode={viewMode}
-                  onSelectGallery={() => handleViewMode('gallery')} />
                 {/* Split "New" button */}
                 {!hideCreate && (
                   <div className="inline-flex items-stretch rounded-lg overflow-hidden shadow-sm ml-3">
@@ -738,21 +768,21 @@ export function ListView({
                       data-testid="action-new"
                       onClick={() => onNew ? onNew() : navigate(`/${windowName}/new`)}
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-4 w-4" data-testid="Plus__620cbc" />
                       {newLabel ?? tMenu(entityLabel, { field: 'newLabel' }) ?? ui('newRecord')}
                     </Button>
                     {newActions.length > 0 && (
                       <>
                         <div className="w-px bg-primary-foreground/20" />
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
+                        <DropdownMenu data-testid="DropdownMenu__620cbc">
+                          <DropdownMenuTrigger asChild data-testid="DropdownMenuTrigger__620cbc">
                             <Button
                               className="rounded-none rounded-r-lg px-2 hover:bg-[#FFD500] hover:text-[#121217] transition-colors"
                               data-testid="action-new-more">
-                              <ChevronDown className="h-3.5 w-3.5" />
+                              <ChevronDown className="h-3.5 w-3.5" data-testid="ChevronDown__620cbc" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" data-testid="DropdownMenuContent__620cbc">
                             {newActions.map((action) => (
                               <DropdownMenuItem
                                 key={action.key}
@@ -784,7 +814,7 @@ export function ListView({
           {/* Indeterminate top progress bar — visible while refreshing existing data */}
           {hook.loading && hook.items.length > 0 && (
             <>
-              <div className="h-0.5 w-full overflow-hidden bg-primary/10">
+              <div role="progressbar" className="h-0.5 w-full overflow-hidden bg-primary/10" data-testid="list-progress-bar">
                 <div
                   className="h-full w-1/3 bg-primary"
                   style={{ animation: 'sf-list-progress 1.1s ease-in-out infinite' }}
@@ -798,10 +828,10 @@ export function ListView({
           <div ref={scrollRef} onScroll={handleScroll} className={`flex-1 overflow-auto ${tablePaddingX} pb-6`}>
             {hook.loading && hook.items.length === 0 ? (
               <div className="space-y-3">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-10 w-full" data-testid="Skeleton__620cbc" />
+                <Skeleton className="h-8 w-full" data-testid="Skeleton__620cbc" />
+                <Skeleton className="h-8 w-full" data-testid="Skeleton__620cbc" />
+                <Skeleton className="h-8 w-full" data-testid="Skeleton__620cbc" />
               </div>
             ) : (
               <div className={tableOpacityClass(hook)}>
@@ -833,7 +863,7 @@ export function ListView({
                       clearSelectionTrigger={clearSelectionCounter}
                       rowQuickActions={effectiveRowQuickActions}
                       hiddenColumns={hiddenColumns}
-                    />
+                      data-testid="Table__620cbc" />
                   )
                 }
                 {hook.loadingMore && (
@@ -860,14 +890,14 @@ export function ListView({
           token={token}
           sortColumn={hook.sortColumn}
           sortDirection={hook.sortDirection}
-        />
+          data-testid="ReportDrawer__620cbc" />
         <DocumentPrintDrawer
           open={showDocPrint}
           onClose={() => setShowDocPrint(false)}
           windowName={windowName}
           documentIds={selectedRows.map(r => r.id || r)}
           token={token}
-        />
+          data-testid="DocumentPrintDrawer__620cbc" />
         {quickActionsEnabled && !rowQuickActions?.onDelete && defaultDeleteDialog}
         {/* ETP-3914 — Generic Send/Download modal mount for any documental window
           that did not bring its own `onEmail`. Custom windows that mount the
@@ -884,8 +914,9 @@ export function ListView({
             windowName={windowName}
             token={token}
             allowEmail={allowEmail}
+            sendPolicy={effectiveSendDocument}
             onClose={() => setEmailRow(null)}
-          />
+            data-testid="SendDocumentModal__620cbc" />
         )}
       </div>
       {activePreviewRow && renderPreview?.({

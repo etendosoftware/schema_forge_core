@@ -16,13 +16,14 @@ import { APP_CATALOG } from '../apps-registry.js';
  */
 const windowLoaders = {
   'sales-order': () => import('@generated/sales-order/generated/web/sales-order/index.jsx'),
+  'match-rule': () => import('@generated/match-rule/generated/web/match-rule/index.jsx'),
   'business-partner': () => import('@generated/business-partner/generated/web/business-partner/index.jsx'),
   'contacts': () => import('@/windows/custom/contacts/index.jsx'),
   'warehouse': () => import('@generated/warehouse/generated/web/warehouse/index.jsx'),
   'price-list': () => import('@generated/price-list/generated/web/price-list/index.jsx'),
   'payment-term': () => import('@generated/payment-term/generated/web/payment-term/index.jsx'),
-  'product': () => import('@generated/product/generated/web/product/index.jsx'),
-  'product-category': () => import('@generated/product-category/generated/web/product-category/index.jsx'),
+  'product': () => import('@/windows/custom/product/index.jsx'),
+  'product-category': () => import('@/windows/custom/product-category/index.jsx'),
   'tax': () => import('@generated/tax/generated/web/tax/index.jsx'),
   'user': () => import('@generated/user/generated/web/user/index.jsx'),
   'purchase-order': () => import('@generated/purchase-order/generated/web/purchase-order/index.jsx'),
@@ -49,12 +50,12 @@ const windowLoaders = {
   'recurring-invoice': () => import('@generated/recurring-invoice/generated/web/recurring-invoice/index.jsx'),
   'payment-in': () => import('@generated/payment-in/generated/web/payment-in/index.jsx'),
   'payment-out': () => import('@generated/payment-out/generated/web/payment-out/index.jsx'),
-  'bank-reconciliation': () => import('@generated/bank-reconciliation/generated/web/bank-reconciliation/index.jsx'),
   'chart-of-accounts': () => import('@generated/chart-of-accounts/generated/web/chart-of-accounts/index.jsx'),
   'assets': () => import('@generated/assets/generated/web/assets/index.jsx'),
   'conversion-rates': () => import('@generated/conversion-rates/generated/web/conversion-rates/index.jsx'),
   'conversion-rate-downloader-log': () => import('@generated/conversion-rate-downloader-log/generated/web/conversion-rate-downloader-log/index.jsx'),
   'amortization': () => import('@generated/amortization/generated/web/amortization/index.jsx'),
+  'simple-g-l-journal': () => import('@generated/simple-g-l-journal/generated/web/simple-g-l-journal/index.jsx'),
 };
 
 /**

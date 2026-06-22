@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.5.0",
   "generatedAt": "2026-04-29T18:11:46.137Z",
-  "updatedAt": "2026-05-26T18:48:56.919Z",
-  "contractChecksum": "50e2d6f3d51446ad",
+  "updatedAt": "2026-06-11T12:55:35.519Z",
+  "contractChecksum": "3fd8073f5e06a7e9",
   "apiPrediction": {
     "specName": "payment-out",
     "baseUrl": "/sws/neo/payment-out",
@@ -78,6 +78,17 @@
         "listUrl": "/sws/neo/payment-out/accounting",
         "detailUrl": "/sws/neo/payment-out/accounting/{id}",
         "supportedFilters": []
+      },
+      "bankPayments": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/payment-out/bankPayments",
+        "detailUrl": "/sws/neo/payment-out/bankPayments/{id}",
+        "supportedFilters": []
       }
     },
     "selectors": [
@@ -128,7 +139,16 @@
         "column": "C_Currency_ID",
         "reference": "Currency",
         "inputMode": "selector",
-        "url": "/sws/neo/payment-out/header/selectors/currency"
+        "url": "/sws/neo/payment-out/header/selectors/currency",
+        "context": {
+          "required": [
+            {
+              "param": "FIN_Financial_Account_ID",
+              "source": "parentField",
+              "field": "financialAccount"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -393,6 +413,22 @@
         "reference": "User2",
         "inputMode": "selector",
         "url": "/sws/neo/payment-out/accounting/selectors/ndDimension"
+      },
+      {
+        "entity": "bankPayments",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/payment-out/bankPayments/selectors/currency"
+      },
+      {
+        "entity": "bankPayments",
+        "field": "financialAccount",
+        "column": "FIN_Financial_Account_ID",
+        "reference": "Financial_Account",
+        "inputMode": "selector",
+        "url": "/sws/neo/payment-out/bankPayments/selectors/financialAccount"
       }
     ],
     "actions": [
@@ -586,6 +622,52 @@
         ],
         "processId": "EA02D79CA1DE4B46909EA6EF64A66B53",
         "processType": "obuiapp"
+      },
+      {
+        "name": "psd2GenerateBankPayment",
+        "actionType": "paymentAction",
+        "entity": "header",
+        "column": "EM_Psd2_Generate_Bank_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/payment-out/header/{id}/action/psd2GenerateBankPayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "0661406A983B4D8EA611F8596F114D52",
+        "processType": "obuiapp"
+      },
+      {
+        "name": "refreshPayment",
+        "actionType": "paymentAction",
+        "entity": "bankPayments",
+        "column": "Refresh_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/payment-out/bankPayments/{id}/action/refreshPayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "3894F258A80D4FAB8A5131B5172145AF",
+        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -691,7 +773,8 @@
           },
           "ndDimension": {
             "readOnlyLogic": "@Posted@='Y'"
-          }
+          },
+          "psd2GenerateBankPayment": {}
         }
       },
       "lines": {
@@ -860,6 +943,31 @@
             "readOnly": true
           }
         }
+      },
+      "bankPayments": {
+        "fields": {
+          "status": {
+            "required": true,
+            "defaultValue": "requested"
+          },
+          "saltedgeProviderCode": {},
+          "amount": {
+            "required": true,
+            "defaultValue": "0"
+          },
+          "currency": {
+            "required": true
+          },
+          "creditorName": {},
+          "creditorIban": {},
+          "debtorName": {},
+          "debtorIban": {},
+          "description": {},
+          "financialAccount": {
+            "required": true
+          },
+          "refreshPayment": {}
+        }
       }
     },
     "requiredSessionVariables": [],
@@ -886,7 +994,11 @@
         "foreignAmount",
         "creditPaymentUsed",
         "amount",
-        "currency"
+        "currency",
+        "status",
+        "amount",
+        "currency",
+        "financialAccount"
       ],
       "recommendedOrder": [
         "createHeader",
@@ -903,6 +1015,19 @@
               "param": "Fin_Paymentmethod_ID",
               "source": "field",
               "field": "paymentMethod"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "currency",
+        "context": {
+          "required": [
+            {
+              "param": "FIN_Financial_Account_ID",
+              "source": "parentField",
+              "field": "financialAccount"
             }
           ]
         }
@@ -954,7 +1079,11 @@
           "foreignAmount",
           "creditPaymentUsed",
           "amount",
-          "currency"
+          "currency",
+          "status",
+          "amount",
+          "currency",
+          "financialAccount"
         ]
       },
       {
@@ -969,5 +1098,5 @@
       "aPRMReversePayment"
     ]
   },
-  "checksum": "e985a72a9564e072"
+  "checksum": "3271131bf435567d"
 }

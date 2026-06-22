@@ -37,6 +37,6 @@ export function StatementStatusFilter({ value, onChange }) {
       labelFor={(code) => labelMap[code] ?? code}
       allLabel={ui('financeAccountStatementsFilterAllStatuses')}
       searchPlaceholder={ui('searchStatuses')}
-    />
+      data-testid="DistinctValuesFilter__de91e6" />
   );
 }

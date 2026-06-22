@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { EntityForm } from '@/components/contract-ui';
+import { PillToggle } from '@/components/PillToggle';
 import { useUI } from '@/i18n';
 
 function GroupHead({ title, description }) {
@@ -14,7 +15,7 @@ function GroupHead({ title, description }) {
 function GroupDivider({ title, description }) {
   return (
     <div className="mt-5 border-t border-[#E8E8ED] pt-5">
-      <GroupHead title={title} description={description} />
+      <GroupHead title={title} description={description} data-testid="GroupHead__8e32ca" />
     </div>
   );
 }
@@ -33,21 +34,12 @@ function ToggleCard({ label, description, fieldKey, value, onChange, editing }) 
         <div className="text-sm font-medium text-[#121217]">{label}</div>
         {description && <div className="text-xs text-[#6C6C89] mt-0.5">{description}</div>}
       </div>
-      <button
-        type="button"
-        onClick={handleToggle}
+      <PillToggle
+        checked={isOn}
         disabled={!editing}
-        className={`relative inline-flex h-6 w-[42px] items-center rounded-full transition-colors focus:outline-none
-          ${isOn ? 'bg-[#121217]' : 'bg-[#D1D1DB]'}
-          ${!editing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-        aria-checked={isOn}
-        role="switch"
-      >
-        <span
-          className={`inline-block h-[18px] w-[18px] transform rounded-full bg-white shadow-sm transition-all duration-150
-            ${isOn ? 'translate-x-[19px]' : 'translate-x-[3px]'}`}
-        />
-      </button>
+        onCheckedChange={handleToggle}
+        aria-label={label}
+        data-testid="PillToggle__8e32ca" />
     </div>
   );
 }
@@ -140,11 +132,13 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
           fields={group1Fields}
           {...common}
           displayLogic={readOnlyAll}
-        />
+          data-testid="EntityForm__8e32ca" />
       </div>
-
       {/* Group 3 — Depreciation Config */}
-      <GroupDivider title={ui('assetsGroupDepreciationTitle')} description={ui('assetsConfigDesc')} />
+      <GroupDivider
+        title={ui('assetsGroupDepreciationTitle')}
+        description={ui('assetsConfigDesc')}
+        data-testid="GroupDivider__8e32ca" />
       <div className="mb-5 space-y-4">
         <div className={`grid gap-4 ${depreciate ? 'grid-cols-2' : 'grid-cols-1 max-w-sm'}`}>
           <ToggleCard
@@ -154,7 +148,7 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
             value={d.depreciate}
             onChange={onChange}
             editing={editing}
-          />
+            data-testid="ToggleCard__8e32ca" />
           {depreciate && (
             <ToggleCard
               label={ui('assets30DaysLabel')}
@@ -163,44 +157,46 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
               value={d.everyMonthIs30Days}
               onChange={onChange}
               editing={editing}
-            />
+              data-testid="ToggleCard__8e32ca" />
           )}
         </div>
         {depreciate ? (
           <>
             {/* Group 2 — Financial Info (only rendered when depreciation is enabled) */}
-            <GroupDivider title={ui('assetsGroupFinancialTitle')} />
+            <GroupDivider
+              title={ui('assetsGroupFinancialTitle')}
+              data-testid="GroupDivider__8e32ca" />
             <EntityForm
               fields={group2Fields}
               {...common}
               displayLogic={readOnlyAll}
-            />
+              data-testid="EntityForm__8e32ca" />
             <EntityForm
               fields={deprecFields}
               {...common}
               displayLogic={makeDisplayLogic(deprecFields)}
-            />
+              data-testid="EntityForm__8e32ca" />
           </>
         ) : (
           <p className="text-xs text-[#6C6C89]">{ui('assetsDepreciationDisabledHint')}</p>
         )}
       </div>
-
       {/* Group 4 — Dates */}
       {depreciate && (
-        <GroupDivider title={ui('assetsGroupDatesTitle')} />
+        <GroupDivider title={ui('assetsGroupDatesTitle')} data-testid="GroupDivider__8e32ca" />
       )}
       {depreciate && (
         <EntityForm
           fields={dateFields}
           {...common}
           displayLogic={readOnlyAll}
-        />
+          data-testid="EntityForm__8e32ca" />
       )}
-
       {/* Group 5 — Accounting dimensions (optional, last section) */}
       {depreciate && (
-        <GroupDivider title={ui('assetsGroupDimensionsTitle')} />
+        <GroupDivider
+          title={ui('assetsGroupDimensionsTitle')}
+          data-testid="GroupDivider__8e32ca" />
       )}
       {depreciate && (
         <div className="[&_button[role=combobox]]:!bg-white [&_input]:!bg-white">
@@ -209,7 +205,7 @@ export default function AssetsDetailPanel({ data, token, apiBaseUrl, catalogs, a
             {...common}
             cols={4}
             displayLogic={readOnlyAll}
-          />
+            data-testid="EntityForm__8e32ca" />
         </div>
       )}
     </div>
