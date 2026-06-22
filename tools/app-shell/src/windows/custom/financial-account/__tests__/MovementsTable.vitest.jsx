@@ -104,16 +104,18 @@ describe('MovementsTable — expandable dimensions panel', () => {
     expect(screen.queryByTestId('movement-moreinfo-m1')).not.toBeInTheDocument();
   });
 
-  it('shows enabled dimensions (even empty) as read-only fields, excluding bpartner', () => {
+  it('shows only project, cost center and product as read-only fields (never organization)', () => {
     renderTable({
-      enabledDimensions: ['project', 'costcenter', 'campaign', 'bpartner'],
+      enabledDimensions: ['organization', 'project', 'costcenter', 'campaign', 'bpartner'],
       movements: [
         baseMovement({
           dimensions: {
+            organization: 'Org Y',  // must NOT show — organization is excluded from the panel
             project: 'Proj A',
-            costcenter: '', // enabled but empty → still shown as an empty field
-            campaign: 'Camp Z',
-            bpartner: 'Should Not Show', // excluded — it has its own Contacto column
+            costcenter: '',          // shown as an empty read-only field
+            product: 'Prod X',
+            campaign: 'Camp Z',      // must NOT show — only the three fixed dimensions are rendered
+            bpartner: 'Should Not Show',
           },
         }),
       ],
@@ -121,27 +123,31 @@ describe('MovementsTable — expandable dimensions panel', () => {
     fireEvent.click(screen.getByTestId('movement-expand-m1'));
     const panel = screen.getByTestId('movement-moreinfo-m1');
 
-    // Values now render as disabled read-only inputs, so assert by display value.
-    expect(within(panel).getByDisplayValue('Proj A')).toBeInTheDocument();
-    expect(within(panel).getByDisplayValue('Camp Z')).toBeInTheDocument();
-    expect(within(panel).getByDisplayValue('Proj A')).toBeDisabled();
-    expect(within(panel).queryByDisplayValue('Should Not Show')).not.toBeInTheDocument();
-    // Every enabled non-bpartner dimension renders its label — even the empty one.
+    // The three fixed dimensions render (project + product carry values; cost center is empty).
     expect(within(panel).getByText('financeAccountMovementsDimProject')).toBeInTheDocument();
-    expect(within(panel).getByText('financeAccountMovementsDimCampaign')).toBeInTheDocument();
     expect(within(panel).getByText('financeAccountMovementsDimCostcenter')).toBeInTheDocument();
-    // bpartner is never rendered in the panel.
+    expect(within(panel).getByText('financeAccountMovementsDimProduct')).toBeInTheDocument();
+    expect(within(panel).getByDisplayValue('Proj A')).toBeDisabled();
+    expect(within(panel).getByDisplayValue('Prod X')).toBeInTheDocument();
+
+    // Organization, campaign and bpartner are never rendered in the panel.
+    expect(within(panel).queryByText('financeAccountMovementsDimOrganization')).not.toBeInTheDocument();
+    expect(within(panel).queryByText('financeAccountMovementsDimCampaign')).not.toBeInTheDocument();
     expect(within(panel).queryByText('financeAccountMovementsDimBpartner')).not.toBeInTheDocument();
+    expect(within(panel).queryByDisplayValue('Org Y')).not.toBeInTheDocument();
+    expect(within(panel).queryByDisplayValue('Should Not Show')).not.toBeInTheDocument();
   });
 
-  it('shows the no-dimensions message when the only enabled dimension is bpartner', () => {
+  it('renders the three fixed dimensions regardless of which dimensions are enabled', () => {
     renderTable({
       enabledDimensions: ['bpartner'],
-      movements: [baseMovement({ dimensions: { bpartner: 'Acme' } })],
+      movements: [baseMovement({ dimensions: { product: 'Prod X' } })],
     });
     fireEvent.click(screen.getByTestId('movement-expand-m1'));
     const panel = screen.getByTestId('movement-moreinfo-m1');
-    expect(within(panel).getByText('financeAccountMovementsNoDimensions')).toBeInTheDocument();
+    expect(within(panel).getByText('financeAccountMovementsDimProject')).toBeInTheDocument();
+    expect(within(panel).getByText('financeAccountMovementsDimCostcenter')).toBeInTheDocument();
+    expect(within(panel).getByText('financeAccountMovementsDimProduct')).toBeInTheDocument();
   });
 });
 

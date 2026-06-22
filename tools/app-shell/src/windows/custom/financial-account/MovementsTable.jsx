@@ -152,12 +152,17 @@ const DIMENSION_LABEL_KEYS = {
   bpartner: 'financeAccountMovementsDimBpartner',
   project: 'financeAccountMovementsDimProject',
   costcenter: 'financeAccountMovementsDimCostcenter',
+  product: 'financeAccountMovementsDimProduct',
   activity: 'financeAccountMovementsDimActivity',
   campaign: 'financeAccountMovementsDimCampaign',
   salesregion: 'financeAccountMovementsDimSalesregion',
   user1: 'financeAccountMovementsDimUser1',
   user2: 'financeAccountMovementsDimUser2',
 };
+
+// The "more info" panel shows only these three accounting dimensions (in this order),
+// regardless of which dimensions the chart of accounts has enabled.
+const DISPLAYED_DIMENSIONS = ['project', 'costcenter', 'product'];
 
 function renderBody({ loading, movements, ui, renderRow }) {
   if (loading) {
@@ -213,17 +218,9 @@ function useTrxTypeLabel() {
  * Classic), as read-only fields. The business partner is excluded — it already
  * has its own "Contacto" column.
  */
-function DimensionsPanel({ movement, enabledDimensions, ui }) {
+function DimensionsPanel({ movement, ui }) {
   const dims = movement.dimensions || {};
-  const visible = enabledDimensions.filter((key) => key !== 'bpartner');
-
-  if (visible.length === 0) {
-    return (
-      <div className="pl-16 pr-[52px] pb-8 pt-3 text-sm text-[#6C6C89]">
-        {ui('financeAccountMovementsNoDimensions')}
-      </div>
-    );
-  }
+  const visible = DISPLAYED_DIMENSIONS;
 
   return (
     <div className="grid grid-cols-1 gap-5 pl-16 pr-[52px] pb-8 pt-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -374,7 +371,6 @@ export function MovementsTable({ movements, loading, enabledDimensions = [], sel
             <TableCell colSpan={COL_COUNT} className="p-0" data-testid="TableCell__ae5a16">
               <DimensionsPanel
                 movement={movement}
-                enabledDimensions={enabledDimensions}
                 ui={ui}
                 data-testid="DimensionsPanel__ae5a16" />
             </TableCell>

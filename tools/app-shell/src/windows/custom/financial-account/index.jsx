@@ -115,11 +115,16 @@ export default function FinancialAccountWindow({ recordId }) {
   const { groups: autoMatchGroups, kpis: autoMatchKpis, reload: reloadAutoMatch } = useAutoMatch(
     autoMatchOpen ? recordId : null,
   );
+  const { movements, totals, enabledDimensions, headerDimensions, trxTypes, accountOrgId, paymentMethods, loading: movementsLoading, reload: reloadMovements } = useAccountMovements(recordId);
+  // Bumped after an automatch apply so the reconciliation panel remounts and re-runs the matching
+  // algorithms (fresh pending lines + suggestions), keeping the view in sync after each reconcile.
+  const [reconciliationRefreshKey, setReconciliationRefreshKey] = useState(0);
   const handleAutoMatchSuccess = useCallback(() => {
     reloadAccount();
     reloadAutoMatch();
-  }, [reloadAccount, reloadAutoMatch]);
-  const { movements, totals, enabledDimensions, headerDimensions, trxTypes, accountOrgId, paymentMethods, loading: movementsLoading, reload: reloadMovements } = useAccountMovements(recordId);
+    reloadMovements();
+    setReconciliationRefreshKey((k) => k + 1);
+  }, [reloadAccount, reloadAutoMatch, reloadMovements]);
   const { statements } = useBankStatements(recordId);
   const movementsTabRef = useRef(null);
   const statementsTabRef = useRef(null);
@@ -268,8 +273,9 @@ export default function FinancialAccountWindow({ recordId }) {
           )}
           {activeTab === 'reconciliation' && (
             <ReconciliationTab
+              key={reconciliationRefreshKey}
               account={account}
-              onReconcileSuccess={() => { reloadAccount(); reloadMovements(); }}
+              onReconcileSuccess={() => { reloadAccount(); reloadMovements(); reloadAutoMatch(); }}
               data-testid="ReconciliationTab__f7dbb3" />
           )}
           {activeTab === 'statements' && (
