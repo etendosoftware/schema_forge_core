@@ -662,8 +662,10 @@ export function useEntity(entity, childEntity, {
             const res = await fetch(`${apiBaseUrl}/${childEntity}/defaults?parentId=${parentId}`, { headers });
             if (!res.ok) throw new Error(`${res.status}`);
             const data = await res.json();
-            const { id: _discardId, ...rest } = data?.defaults ?? {};
-            const normalized = { ...rest };
+            // Copy the resolved defaults and drop the backend id (never seeded into
+            // the add-row); normalize the remaining values in place.
+            const normalized = { ...(data?.defaults ?? {}) };
+            delete normalized.id;
             for (const [key, val] of Object.entries(normalized)) {
                 normalizeDefaultValue(val, normalized, key);
             }
