@@ -25,6 +25,16 @@ vi.mock('@/components/ui/money-amount', () => ({
   MoneyAmount: ({ value }) => <span data-testid="money">{String(value)}</span>,
 }));
 
+// Inject an extra contract column with NO renderer in MOVEMENT_CELL_RENDERERS so
+// the plain-text fallback branch of renderContractCell is exercised. The known
+// columns keep their bespoke renderers.
+vi.mock('@/components/financial-accounts/contractColumns', () => ({
+  getContractGridColumns: () => [
+    { name: 'documentNo', label: 'Doc' },
+    { name: 'reference', label: 'Reference' }, // no registry entry → fallback cell
+  ],
+}));
+
 import { MovementsTable } from '../MovementsTable.jsx';
 
 const baseMovement = (over = {}) => ({
@@ -51,6 +61,7 @@ function renderTable(props = {}) {
       enabledDimensions={props.enabledDimensions ?? []}
       selectedIds={props.selectedIds ?? new Set()}
       onSelectionChange={props.onSelectionChange ?? vi.fn()}
+      highlightTxnId={props.highlightTxnId}
     />,
   );
 }
@@ -219,6 +230,92 @@ describe('MovementsTable — selection', () => {
     expect(onSelectionChange).toHaveBeenCalledWith('m1');
     expect(navigate).not.toHaveBeenCalled();
     // Expand panel should not open from the checkbox click either.
+    expect(screen.queryByTestId('movement-moreinfo-m1')).not.toBeInTheDocument();
+  });
+});
+
+describe('MovementsTable — contract cell fallback', () => {
+  it('renders a contract column with no renderer as plain text', () => {
+    renderTable({ movements: [baseMovement({ reference: 'REF-42' })] });
+    expect(screen.getByText('REF-42')).toBeInTheDocument();
+  });
+
+  it('renders an em dash when the fallback field value is missing', () => {
+    renderTable({ movements: [baseMovement({ reference: undefined })] });
+    // The fallback cell renders '—' for a nullish value.
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+  });
+});
+
+describe('MovementsTable — loading and empty states', () => {
+  it('renders skeleton placeholder rows while loading', () => {
+    renderTable({ loading: true });
+    // No data rows are rendered while loading.
+    expect(screen.queryByText('DOC-001')).not.toBeInTheDocument();
+    // Skeleton rows expose the stubbed money/badge cells of real rows for none of them.
+    const rows = document.querySelectorAll('tbody tr');
+    expect(rows.length).toBe(5); // SKELETON_ROWS
+  });
+
+  it('renders the empty-state message when there are no movements', () => {
+    renderTable({ movements: [], loading: false });
+    expect(screen.getByText('financeAccountMovementsEmpty')).toBeInTheDocument();
+    expect(screen.getByText('financeAccountMovementsEmptyHint')).toBeInTheDocument();
+  });
+});
+
+describe('MovementsTable — highlightTxnId deep-link', () => {
+  beforeEach(() => {
+    // jsdom does not implement scrollIntoView — provide a no-op by default.
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  it('auto-expands the highlighted row when dimensions are enabled', () => {
+    renderTable({
+      enabledDimensions: ['project'],
+      movements: [
+        baseMovement({ id: 'm1' }),
+        baseMovement({ id: 'm2', dimensions: { project: 'P' } }),
+      ],
+      highlightTxnId: 'm2',
+    });
+    // The useEffect sets expandedId to the highlighted row id.
+    expect(screen.getByTestId('movement-moreinfo-m2')).toBeInTheDocument();
+    expect(screen.queryByTestId('movement-moreinfo-m1')).not.toBeInTheDocument();
+  });
+
+  it('marks the highlighted row but does not auto-expand without dimensions', () => {
+    renderTable({
+      enabledDimensions: [],
+      movements: [baseMovement({ id: 'm1' })],
+      highlightTxnId: 'm1',
+    });
+    const row = screen.getByTestId('movement-row-m1');
+    expect(row.className).toContain('bg-[#F5F7F9]');
+    expect(screen.queryByTestId('movement-moreinfo-m1')).not.toBeInTheDocument();
+  });
+
+  it('scrolls the highlighted row into view', () => {
+    const scrollSpy = vi.fn();
+    // jsdom does not implement scrollIntoView.
+    Element.prototype.scrollIntoView = scrollSpy;
+    renderTable({
+      enabledDimensions: ['project'],
+      movements: [baseMovement({ id: 'm1' })],
+      highlightTxnId: 'm1',
+    });
+    expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+  });
+
+  it('does nothing when highlightTxnId is null', () => {
+    const scrollSpy = vi.fn();
+    Element.prototype.scrollIntoView = scrollSpy;
+    renderTable({
+      enabledDimensions: ['project'],
+      movements: [baseMovement({ id: 'm1' })],
+      highlightTxnId: null,
+    });
+    expect(scrollSpy).not.toHaveBeenCalled();
     expect(screen.queryByTestId('movement-moreinfo-m1')).not.toBeInTheDocument();
   });
 });

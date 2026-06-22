@@ -99,4 +99,33 @@ describe('ReconciledTxnsModal', () => {
       { replace: true },
     );
   });
+
+  it('renders no go-to-movement button when the txn has no transactionId', () => {
+    render(
+      <ReconciledTxnsModal
+        line={line({ txns: [{ ...TXN, transactionId: null }] })}
+        currency="EUR"
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.queryByTestId('reconciled-txn-go-1000034')).not.toBeInTheDocument();
+  });
+
+  it('maps each transaction type to its label, falling back to the raw code', () => {
+    render(
+      <ReconciledTxnsModal
+        line={line({
+          txns: [
+            { ...TXN, documentNo: 'BF-1', trxType: 'BF', transactionId: null },
+            { ...TXN, documentNo: 'X-1', trxType: 'OTHER', transactionId: null },
+          ],
+        })}
+        currency="EUR"
+        onClose={vi.fn()}
+      />,
+    );
+    // BF resolves to its i18n key; an unknown code is rendered verbatim.
+    expect(screen.getByText('financeAccountMovementsTypeBF')).toBeInTheDocument();
+    expect(screen.getByText('OTHER')).toBeInTheDocument();
+  });
 });
