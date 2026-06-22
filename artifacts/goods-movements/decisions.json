@@ -17,6 +17,7 @@
   },
   "entities": {
     "header": {
+      "javaQualifier": "document-posting",
       "name": "movement",
       "fields": {
         "name": {
