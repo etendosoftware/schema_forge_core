@@ -99,3 +99,55 @@ and shared i18n keys — all consumed by the single `simple-g-l-journal` window.
   with no window declaring it, `BalanceFooterPanel`/`balanceTotals` are unused.
   Revert the app-shell commits and rebuild the bundle.
 - **app-shell-core:** added i18n keys are additive; revert to remove.
+
+## Follow-up changes (2026-06-22)
+
+A second cross-domain batch on the same `feature/ETP-4244` branch, refining the
+GL Journal window plus a generic add-row validation fix.
+
+### `platform-change` (app-shell)
+
+- `tools/app-shell/src/components/contract-ui/DataTable.jsx` — inline add-row
+  required-field validation no longer flags a required boolean/checkbox left
+  unchecked, nor the empty member of a `clearsField` mutual-exclusion pair
+  (treated as "one-of"). Fixes a save being blocked client-side with no network
+  call. Generic across all windows.
+- `__tests__/DataTable.requiredValidation.vitest.jsx` (new),
+  `__tests__/DataTable.inlineAddValidation.test.js`,
+  `__tests__/DataTable.helpers.test.js` — regression coverage for the above.
+
+### `window:simple-g-l-journal`
+
+- `artifacts/simple-g-l-journal/decisions.json` — header field order via `seq`
+  (Accounting Date, Period, Description); `documentDate` set to `system` (hidden)
+  so the backend derives `DateDoc` from the accounting date.
+- `contract.json`, `contract.mcp.json`, `generated/web/simple-g-l-journal/*` —
+  regenerated. `docs/generated-custom-windows/simple-g-l-journal.md` — guide.
+
+### Backend (sibling `com.etendoerp.go`, same branch — separate PR)
+
+- `NeoAuxiliaryInputResolver` + `NeoDefaultsService` — generic: evaluate a tab's
+  auxiliary inputs into the session before resolving column defaults, so a
+  default referencing one (line `Description` = `@DESCRIPTION1@`) resolves from
+  the parent. `ETGO_SF_FIELD.xml` — `documentDate` read-only (matches the
+  window change above).
+
+### Tests
+
+- `DataTable.requiredValidation.vitest.jsx` + the two source-pattern node tests —
+  checkbox/boolean and `clearsField` one-of behaviour.
+- `make regen ONLY=simple-g-l-journal` is byte-stable; `validate-pipeline` clean.
+
+### Rollback
+
+- **platform-change:** the validation change is additive and behaviour-narrowing
+  (it only stops false "required" blocks); revert the `DataTable.jsx` commit.
+- **window:simple-g-l-journal:** revert the decisions/regen commit and re-run
+  `make regen` to restore prior field order / `documentDate` visibility.
+- **backend:** the auxiliary-input resolver is inert for tabs without auxiliary
+  inputs; revert the `com.etendoerp.go` commits and rebuild.
+
+> Deferred (tracked under ETP-4244): the inline add-row UI does not yet fetch
+> the line `/defaults` endpoint, so the backend-resolved `@DESCRIPTION1@` line
+> description is not pre-filled in the form. Completing it needs a generic
+> frontend `/{detailEntity}/defaults?parentId=…` fetch on add-row open.
