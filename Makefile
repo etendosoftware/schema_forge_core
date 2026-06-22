@@ -1,4 +1,4 @@
-.PHONY: test test-all-coverage test-ci test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate domain-boundary-check sonar sonar-coverage menu-cache uuid test-xml-regeneration-check test-python xml-regeneration-check dump-delta regen-check regen-check-help regen-check-clean regen-help
+.PHONY: test test-all-coverage test-ci test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate domain-boundary-check sonar sonar-coverage sonar-file-coverage menu-cache uuid test-xml-regeneration-check test-python xml-regeneration-check dump-delta regen-check regen-check-help regen-check-clean regen-help data-fixes data-fixes-help
 
 # --- Testing ---
 
@@ -241,6 +241,54 @@ regen-check-help: ## Show usage and examples for `make regen-check`
 regen-check-clean: ## Remove tmp/regen-check/ outputs
 	rm -rf $(REGEN_CHECK_OUT_ROOT)
 
+# --- Tenant data-fixes runner ---
+
+DRY_RUN    ?= 0
+MARK_FIXED ?= 0
+CLIENT     ?=
+FIX        ?=
+REASON     ?=
+
+data-fixes: ## Run the tenant data-fixes runner (HELP=1 or `make data-fixes-help` for options)
+	@if [ "$(HELP)" = "1" ]; then $(MAKE) -s data-fixes-help; exit 0; fi; \
+	DF_ARGS=""; \
+	if [ "$(LIST_CLIENTS)" = "1" ]; then DF_ARGS="$$DF_ARGS --list-clients"; fi; \
+	if [ "$(MARK_FIXED)" = "1" ]; then DF_ARGS="$$DF_ARGS --mark-fixed"; fi; \
+	if [ "$(DRY_RUN)" = "1" ]; then DF_ARGS="$$DF_ARGS --dry-run"; fi; \
+	if [ -n "$(CLIENT)" ]; then DF_ARGS="$$DF_ARGS --client $(CLIENT)"; fi; \
+	if [ -n "$(FIX)" ]; then DF_ARGS="$$DF_ARGS --fix $(FIX)"; fi; \
+	if [ -n "$(REASON)" ]; then DF_ARGS="$$DF_ARGS --reason \"$(REASON)\""; fi; \
+	eval node cli/src/data-fixes/run.js $$DF_ARGS
+
+data-fixes-help: ## Show usage and examples for `make data-fixes`
+	@echo "Usage: make data-fixes [VAR=value ...]"
+	@echo ""
+	@echo "Applies corrective .sql data-fixes to existing tenants, recording state in the"
+	@echo "System-owned ledger ETGO_DATA_FIX_HISTORY. DB credentials auto-resolve from"
+	@echo "{etendo_root}/gradle.properties (see cli/src/db.js)."
+	@echo ""
+	@echo "Variables:"
+	@echo "  LIST_CLIENTS=1     Read-only overview: each tenant (name+id), last applied fix, # pending/FAILED"
+	@echo "  DRY_RUN=1          Report what WOULD run (executes @check, commits nothing)"
+	@echo "  CLIENT=<clientId>  Restrict to a single tenant (ad_client_id)"
+	@echo "  FIX=<fix_id>       Force exactly ONE fix (ignores chain order + baseline cutoff; does not advance)"
+	@echo "  MARK_FIXED=1       Mark a fix as manually resolved (counts as success; runs nothing)"
+	@echo "  REASON=\"...\"       Mandatory note for MARK_FIXED — what was done by hand"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make data-fixes LIST_CLIENTS=1                         # overview of every tenant's state"
+	@echo "  make data-fixes DRY_RUN=1                              # preview across all tenants"
+	@echo "  make data-fixes                                       # apply across all tenants"
+	@echo "  make data-fixes CLIENT=<id>                           # apply for one tenant"
+	@echo "  make data-fixes FIX=<fix_id>                          # force one fix for all tenants"
+	@echo "  make data-fixes FIX=<fix_id> CLIENT=<id>              # force one fix for one tenant"
+	@echo "  make data-fixes MARK_FIXED=1 CLIENT=<id> FIX=<fix_id> REASON=\"patched by hand\""
+	@echo ""
+	@echo "Notes:"
+	@echo "  - fix_id = the .sql filename without .sql (e.g. 20260611T143000Z__R3-periodcontrol)."
+	@echo "  - Authoring rules + skeleton: cli/src/data-fixes/sql/README.md."
+	@echo "  - Exit code is non-zero if any tenant's chain halted on a FAILED fix."
+
 sync-regen-check-workflow: ## Regenerate the mirror Offline Regen Check workflow in com.etendoerp.go
 	./scripts/sync-offline-regen-check.sh
 
@@ -326,6 +374,9 @@ sonar-coverage: ## Run all tests with coverage then SonarQube analysis
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-test-lcov.info 'tools/app-shell/test/*.test.js'
 	cd tools/app-shell && npx vitest run --coverage && sed 's|^SF:src/|SF:tools/app-shell/src/|' coverage/vitest/lcov.info > ../../coverage/vitest-lcov.info
 	sonar-scanner -Dproject.settings=sonar-project.properties
+
+sonar-file-coverage: ## Show uncovered lines for specific files (SF or com.etendoerp.go). Usage: make sonar-file-coverage FILES="a.js b.java" [NEW_ONLY=1] [BRANCH=x] [PR=123]
+	@./cli/sonar-coverage.sh $(if $(NEW_ONLY),--new-only) $(if $(BRANCH),--branch $(BRANCH)) $(if $(PR),--pull-request $(PR)) $(FILES)
 
 # --- XML Regeneration Check ---
 
