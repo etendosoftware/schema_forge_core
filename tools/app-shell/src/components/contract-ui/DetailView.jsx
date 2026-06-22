@@ -254,34 +254,36 @@ export function applyCalloutFieldUpdates(updates, ctx) {
   }
 }
 
+function applyOneComboEntry(key, combo, ctx) {
+  const { data, userTouchedRef, appliedFields, hook } = ctx;
+  let selectedVal = combo.selected;
+  let selectedLabel = combo._identifier;
+  // Auto-select first entry if no explicit selection (e.g., BP address combo)
+  if (selectedVal == null && Array.isArray(combo.entries) && combo.entries.length > 0) {
+    selectedVal = combo.entries[0].id;
+    selectedLabel = combo.entries[0].identifier || combo.entries[0]._identifier;
+  }
+  if (selectedVal == null) return;
+  // Protect user-touched fields from collateral combo updates
+  const currentVal = data[key];
+  const userHasValue = currentVal !== '' && currentVal != null;
+  if (userTouchedRef.current.has(key) && userHasValue) return;
+  appliedFields.set(key, selectedVal);
+  hook.handleChange(key, selectedVal);
+  if (selectedLabel) {
+    hook.handleChange(key + '$_identifier', selectedLabel);
+  }
+}
+
 export function applyCalloutComboUpdates(combos, ctx) {
-  const { data, triggerField, userTouchedRef, appliedFields, hook } = ctx;
+  const { triggerField } = ctx;
   for (const [key, combo] of Object.entries(combos)) {
     // Never override the field the user just changed via its own combo response.
     // The callout may refresh the list of options for that field, but the user's
     // explicit selection must always win — auto-selecting the first entry would
     // silently revert their choice (e.g., NC → FAC on invoice doc type).
     if (key === triggerField) continue;
-    let selectedVal = combo.selected;
-    let selectedLabel = combo._identifier;
-    // Auto-select first entry if no explicit selection (e.g., BP address combo)
-    if (selectedVal == null && Array.isArray(combo.entries) && combo.entries.length > 0) {
-      selectedVal = combo.entries[0].id;
-      selectedLabel = combo.entries[0].identifier || combo.entries[0]._identifier;
-    }
-    if (selectedVal != null) {
-      // Protect user-touched fields from collateral combo updates
-      const currentVal = data[key];
-      const userHasValue = currentVal !== '' && currentVal != null;
-      if (userTouchedRef.current.has(key) && userHasValue) {
-        continue;
-      }
-      appliedFields.set(key, selectedVal);
-      hook.handleChange(key, selectedVal);
-      if (selectedLabel) {
-        hook.handleChange(key + '$_identifier', selectedLabel);
-      }
-    }
+    applyOneComboEntry(key, combo, ctx);
   }
 }
 
