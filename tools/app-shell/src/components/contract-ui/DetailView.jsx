@@ -257,6 +257,11 @@ export function applyCalloutFieldUpdates(updates, ctx) {
 export function applyCalloutComboUpdates(combos, ctx) {
   const { data, triggerField, userTouchedRef, appliedFields, hook } = ctx;
   for (const [key, combo] of Object.entries(combos)) {
+    // Never override the field the user just changed via its own combo response.
+    // The callout may refresh the list of options for that field, but the user's
+    // explicit selection must always win — auto-selecting the first entry would
+    // silently revert their choice (e.g., NC → FAC on invoice doc type).
+    if (key === triggerField) continue;
     let selectedVal = combo.selected;
     let selectedLabel = combo._identifier;
     // Auto-select first entry if no explicit selection (e.g., BP address combo)

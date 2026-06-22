@@ -37,6 +37,7 @@ export function SelectorInput({
   token,
   compact = false,
   triggerClassName,
+  optionTranslator,
 }) {
   const ui = useUI();
   const catalogOptions = selectorUrl ? [] : getCatalogOptions(catalogs, entityName, field);
@@ -163,7 +164,7 @@ export function SelectorInput({
         )}
         {baseOptions.map(opt => (
           <SelectItem key={opt.id} value={opt.id} data-testid={`option-${field.key}-${opt.id}`}>
-            {opt.name}
+            {optionTranslator ? optionTranslator(opt.name) : opt.name}
           </SelectItem>
         ))}
         {hasMore && selectorUrl && (
