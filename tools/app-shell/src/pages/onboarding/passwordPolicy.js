@@ -19,7 +19,7 @@ export function getPasswordChecks(password) {
     minLength: value.length >= MIN_PASSWORD_LENGTH,
     uppercase: /[A-Z]/.test(value),
     lowercase: /[a-z]/.test(value),
-    number: /[0-9]/.test(value),
+    number: /\d/.test(value),
     // Any non-alphanumeric, non-whitespace character (matches the backend rule).
     special: /[^A-Za-z0-9\s]/.test(value),
   };
