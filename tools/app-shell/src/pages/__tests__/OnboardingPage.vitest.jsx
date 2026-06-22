@@ -1230,4 +1230,165 @@ describe('OnboardingPage', () => {
       expect(saveOnboardingDraft).not.toHaveBeenCalled();
     });
   });
+
+  describe('uncovered branches', () => {
+    it('shows the SSO failure message when the credential login returns no token', async () => {
+      loginWithSsoProvider.mockResolvedValue({});
+      localStorage.removeItem('sf_platform_token');
+      render(<OnboardingPage />);
+
+      await waitFor(() => expect(renderSsoProviderButton).toHaveBeenCalled());
+      const [, , callbacks] = renderSsoProviderButton.mock.calls[0];
+
+      await act(async () => {
+        callbacks.onCredential('google', { credential: 'sso-jwt' });
+      });
+
+      expect(await screen.findByText('onboardingSsoFailed')).toBeInTheDocument();
+    });
+
+    it('shows the SSO failure message from the rejection user message', async () => {
+      loginWithSsoProvider.mockRejectedValue({ userMessage: 'SSO exploded' });
+      localStorage.removeItem('sf_platform_token');
+      render(<OnboardingPage />);
+
+      await waitFor(() => expect(renderSsoProviderButton).toHaveBeenCalled());
+      const [, , callbacks] = renderSsoProviderButton.mock.calls[0];
+
+      await act(async () => {
+        callbacks.onCredential('google', { credential: 'sso-jwt' });
+      });
+
+      expect(await screen.findByText('SSO exploded')).toBeInTheDocument();
+    });
+
+    it('surfaces SSO provider button errors via the onError callback', async () => {
+      localStorage.removeItem('sf_platform_token');
+      render(<OnboardingPage />);
+
+      await waitFor(() => expect(renderSsoProviderButton).toHaveBeenCalled());
+      const [, , callbacks] = renderSsoProviderButton.mock.calls[0];
+
+      await act(async () => {
+        callbacks.onError({ userMessage: 'SSO button broke' });
+      });
+
+      expect(await screen.findByText('SSO button broke')).toBeInTheDocument();
+    });
+
+    it('renders a forgot-password failure message', async () => {
+      requestPasswordReset.mockRejectedValue({ userMessage: 'Reset request failed' });
+      localStorage.removeItem('sf_platform_token');
+      render(<OnboardingPage />);
+
+      fireEvent.click(screen.getByTestId('action-switch-to-login'));
+      fireEvent.click(screen.getByText('onboardingForgotPasswordAction'));
+      fireEvent.submit(screen.getByTestId('action-forgot-password-submit').closest('form'));
+
+      expect(await screen.findByText('Reset request failed')).toBeInTheDocument();
+    });
+
+    it('returns to the login view from the forgot-password view', () => {
+      localStorage.removeItem('sf_platform_token');
+      render(<OnboardingPage />);
+
+      fireEvent.click(screen.getByTestId('action-switch-to-login'));
+      fireEvent.click(screen.getByText('onboardingForgotPasswordAction'));
+      fireEvent.change(screen.getByLabelText(/onboardingEmailLabel/), {
+        target: { value: 'reset@example.com' },
+      });
+      fireEvent.click(screen.getByTestId('action-forgot-back-to-login'));
+
+      expect(screen.getByText('onboardingLoginTitle')).toBeInTheDocument();
+    });
+
+    it('blocks a reset submit when the two passwords do not match', async () => {
+      window.history.replaceState(null, '', '/onboarding?resetToken=reset-token');
+      render(<OnboardingPage />);
+
+      fireEvent.change(screen.getByLabelText(/onboardingNewPasswordLabel/), {
+        target: { value: 'first-secret' },
+      });
+      fireEvent.change(screen.getByLabelText(/onboardingConfirmPasswordLabel/), {
+        target: { value: 'second-secret' },
+      });
+      fireEvent.submit(screen.getByTestId('action-reset-password-submit').closest('form'));
+
+      expect(await screen.findByText('onboardingCredentialsMustMatch')).toBeInTheDocument();
+      expect(confirmPasswordReset).not.toHaveBeenCalled();
+    });
+
+    it('toggles reset password visibility and returns to login from the reset view', () => {
+      window.history.replaceState(null, '', '/onboarding?resetToken=reset-token');
+      render(<OnboardingPage />);
+
+      const newPassword = screen.getByLabelText(/onboardingNewPasswordLabel/);
+      expect(newPassword).toHaveAttribute('type', 'password');
+      fireEvent.click(screen.getByLabelText('onboardingShowPassword'));
+      expect(newPassword).toHaveAttribute('type', 'text');
+
+      fireEvent.click(screen.getByTestId('action-reset-back-to-login'));
+      expect(screen.getByText('onboardingLoginTitle')).toBeInTheDocument();
+    });
+
+    it('returns to login from the reset success screen', async () => {
+      confirmPasswordReset.mockResolvedValue({ success: true });
+      window.history.replaceState(null, '', '/onboarding?resetToken=reset-token');
+      render(<OnboardingPage />);
+
+      fireEvent.change(screen.getByLabelText(/onboardingNewPasswordLabel/), {
+        target: { value: 'new-secret' },
+      });
+      fireEvent.change(screen.getByLabelText(/onboardingConfirmPasswordLabel/), {
+        target: { value: 'new-secret' },
+      });
+      fireEvent.submit(screen.getByTestId('action-reset-password-submit').closest('form'));
+
+      // After success the form is replaced by the standalone success button.
+      await screen.findByText('onboardingResetPasswordSuccess');
+      const buttons = screen.getAllByText('onboardingBackToLoginAction');
+      fireEvent.click(buttons[buttons.length - 1]);
+      expect(screen.getByText('onboardingLoginTitle')).toBeInTheDocument();
+    });
+
+    it('updates the register password field on input', () => {
+      localStorage.removeItem('sf_platform_token');
+      render(<OnboardingPage />);
+
+      const password = screen.getByLabelText(/onboardingPasswordLabel/);
+      fireEvent.change(password, { target: { value: 'typed-secret' } });
+      expect(password).toHaveValue('typed-secret');
+    });
+
+    it('surfaces SSO provider rendering failures via the Promise.all catch', async () => {
+      renderSsoProviderButton.mockRejectedValueOnce({ userMessage: 'SSO render failed' });
+      localStorage.removeItem('sf_platform_token');
+      render(<OnboardingPage />);
+
+      expect(await screen.findByText('SSO render failed')).toBeInTheDocument();
+    });
+
+    it('renders the finalize setup progress state', async () => {
+      localStorage.setItem('sf_platform_token', 'platform-token');
+      fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+      fetchEnvironments.mockResolvedValue([]);
+      let emit;
+      runOnboardingStream.mockImplementation(async (_fetch, _baseUrl, _token, _form, onMessage) => {
+        emit = onMessage;
+        return new Promise(() => {});
+      });
+
+      render(<OnboardingPage />);
+
+      fireEvent.click(await screen.findByText('onboardingContinueAction'));
+      fireEvent.click(screen.getByText('onboardingStartAction'));
+
+      // 'finalize' exists in the mocked initialSetupSteps, so applyProgressMessage
+      // can flip it to running and drive the organization/finalize progress branch.
+      await act(async () => {
+        emit({ type: 'progress', step: 'finalize', status: 'running' });
+      });
+      expect(screen.getByText('onboardingPreparingFinishingDescription')).toBeInTheDocument();
+    });
+  });
 });
