@@ -673,7 +673,12 @@ export function useEntity(entity, childEntity, {
             setChildDefaults({});
             return {};
         }
-    }, [apiBaseUrl, childEntity, token, headers]);
+        // NOTE: `headers` is intentionally omitted — buildHeaders(token) returns a
+        // fresh object every render, so depending on it would make this callback
+        // unstable and re-fire DetailView's fetch effect every render (infinite
+        // loop / network never idles). token covers the only header that changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [apiBaseUrl, childEntity, token]);
 
     const fetchById = useCallback((id) => {
         if (!id) return;
