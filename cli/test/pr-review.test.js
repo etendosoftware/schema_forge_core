@@ -259,6 +259,33 @@ describe('analyzeChangedFiles', () => {
     }
   });
 
+  it('does not flag frozen data-fix SQL migrations as large files', () => {
+    const repoDir = mkdtempSync(join(tmpdir(), 'pr-review-large-datafix-'));
+    const previousCwd = process.cwd();
+
+    try {
+      process.chdir(repoDir);
+      mkdirSync(join(repoDir, 'cli', 'src', 'data-fixes', 'sql'), { recursive: true });
+      writeFileSync(
+        join(repoDir, 'cli', 'src', 'data-fixes', 'sql', '20260612T120000Z__R1-chart-of-accounts.sql'),
+        'x'.repeat(513000),
+      );
+
+      const findings = analyzeChangedFiles({
+        changedFiles: ['cli/src/data-fixes/sql/20260612T120000Z__R1-chart-of-accounts.sql'],
+        newSourceFiles: [],
+        newTestFiles: [],
+        fileContents: {},
+        packageJsonChanges: [],
+      });
+
+      assert.ok(!findings.some((finding) => finding.code === 'LARGE_FILE'));
+    } finally {
+      process.chdir(previousCwd);
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+
   it('still flags a large file under a non-skipped path (size gate is path-scoped)', () => {
     const repoDir = mkdtempSync(join(tmpdir(), 'pr-review-large-control-'));
     const previousCwd = process.cwd();
