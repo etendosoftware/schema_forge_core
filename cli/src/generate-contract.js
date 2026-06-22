@@ -1148,7 +1148,7 @@ function classifyAction(field, entityName, specName, windowCategory, decisionsAc
 // ─── End action classification helpers ───────────────────────────────────────
 
 function buildCrudPrediction(baseUrl, entityName, feEntity) {
-  return {
+  const crud = {
     get: true,
     getById: true,
     post: true,
@@ -1159,6 +1159,10 @@ function buildCrudPrediction(baseUrl, entityName, feEntity) {
     detailUrl: `${baseUrl}/${entityName}/{id}`,
     supportedFilters: feEntity ? feEntity.searchableFields : [],
   };
+  // Surface the HandleDefaults opt-out into the runtime api so DetailView can skip
+  // the line /defaults fetch for this entity. Emitted only when explicitly off.
+  if (feEntity && feEntity.handlesDefaults === false) crud.handlesDefaults = false;
+  return crud;
 }
 
 function collectSelectorPredictions(feEntity, entityName, baseUrl, windowCategory, schema, frontendContract) {

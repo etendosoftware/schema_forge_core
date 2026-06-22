@@ -937,6 +937,27 @@ describe('generateApiPrediction', () => {
     assert.equal(prediction.crud.order.delete, true);
   });
 
+  it('surfaces handlesDefaults:false on crud when an entity opts out', () => {
+    const optOutSchema = {
+      version: '0.1.0',
+      window: { id: '900', name: 'GL Journal', primaryEntity: 'journal', category: 'finance' },
+      entities: [
+        { name: 'journal', table: 'GL_Journal', level: 'header', fields: [
+          { name: 'description', column: 'Description', type: 'string', visibility: 'editable', required: false, grid: false, form: true },
+        ] },
+        { name: 'journalLine', table: 'GL_JournalLine', level: 'line', handlesDefaults: false, fields: [
+          { name: 'account', column: 'Account_ID', type: 'foreignKey', reference: 'Account', inputMode: 'selector', visibility: 'editable', required: true, grid: true, form: true },
+        ] },
+      ],
+    };
+    const fc = generateFrontendContract(optOutSchema);
+    const bc = generateBackendContract(optOutSchema);
+    const prediction = generateApiPrediction(optOutSchema, fc, bc);
+    assert.equal(prediction.crud.journalLine.handlesDefaults, false);
+    // The opted-in entity does not carry the flag.
+    assert.equal(prediction.crud.journal.handlesDefaults, undefined);
+  });
+
   it('CRUD URLs follow correct pattern', () => {
     const fc = generateFrontendContract(fkSchema);
     const bc = generateBackendContract(fkSchema);
