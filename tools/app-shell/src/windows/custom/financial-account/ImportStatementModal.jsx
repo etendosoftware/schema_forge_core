@@ -162,7 +162,12 @@ function Stepper({ step, ui }) {
         const isDone = step > i;
         return (
           <div key={label} className="flex items-center gap-2.5">
-            <StepperItem label={label} isActive={isActive} isDone={isDone} index={i} />
+            <StepperItem
+              label={label}
+              isActive={isActive}
+              isDone={isDone}
+              index={i}
+              data-testid="StepperItem__de9647" />
             {i < items.length - 1 ? (
               <span
                 className={cn(
@@ -195,7 +200,7 @@ function StepperItem({ label, isActive, isDone, index }) {
           badgeClass,
         )}
       >
-        {isDone ? <Check className="h-3 w-3" /> : index + 1}
+        {isDone ? <Check className="h-3 w-3" data-testid="Check__de9647" /> : index + 1}
       </span>
       <span>{label}</span>
     </div>
@@ -225,7 +230,7 @@ function Dropzone({ onPick, dragging, onDragOver, onDragLeave, onDrop, ui }) {
         className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-xl bg-[#FFF7E0] text-[#C28800] shadow-[0_1px_2px_rgba(18,18,23,0.06)]"
         aria-hidden="true"
       >
-        <UploadCloud className="h-[26px] w-[26px]" />
+        <UploadCloud className="h-[26px] w-[26px]" data-testid="UploadCloud__de9647" />
       </div>
       <div className="text-sm font-semibold text-[#121217]">
         {dragging ? (
@@ -254,7 +259,7 @@ function FileRow({ file, format, lineCount, analyzing, onRemove, ui }) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-[#E8EAEF] bg-white p-3.5">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#FFF7E0] text-[#C28800]">
-        <FileText className="h-5 w-5" />
+        <FileText className="h-5 w-5" data-testid="FileText__de9647" />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="truncate text-sm font-semibold text-[#121217]">{file.name}</div>
@@ -263,13 +268,13 @@ function FileRow({ file, format, lineCount, analyzing, onRemove, ui }) {
           <span className="h-1 w-1 rounded-full bg-[#D1D4DB]" />
           {analyzing ? (
             <span className="inline-flex items-center gap-1.5 font-medium text-[#7A5A00]">
-              <Spinner size={12} />
+              <Spinner size={12} data-testid="Spinner__de9647" />
               {ui('financeAccountStatementsImportDetecting')}
             </span>
           ) : (
             <>
               <span className="inline-flex items-center gap-1 rounded-full bg-[#EEFBF4] px-2 py-0.5 font-semibold text-[#17663A]">
-                <Check className="h-3 w-3" />
+                <Check className="h-3 w-3" data-testid="Check__de9647" />
                 {FORMAT_LABEL[format] ?? format}
               </span>
               <span className="h-1 w-1 rounded-full bg-[#D1D4DB]" />
@@ -284,7 +289,7 @@ function FileRow({ file, format, lineCount, analyzing, onRemove, ui }) {
         aria-label={ui('financeAccountStatementsImportRemove')}
         className="flex h-8 w-8 items-center justify-center rounded-full text-[#6C6C89] transition-colors hover:bg-[#FEF0F4] hover:text-[#9A1B1B]"
       >
-        <Trash2 className="h-4 w-4" />
+        <Trash2 className="h-4 w-4" data-testid="Trash2__de9647" />
       </button>
     </div>
   );
@@ -360,10 +365,22 @@ function PreviewLines({ lines, max = 5, currency, bcpLocale, ui }) {
               ) : null}
             </div>
             <span className="text-right tabular-nums">
-              <AmountCell value={dr} sign="−" toneClass="font-semibold text-red-700" currency={currency} bcpLocale={bcpLocale} />
+              <AmountCell
+                value={dr}
+                sign="−"
+                toneClass="font-semibold text-red-700"
+                currency={currency}
+                bcpLocale={bcpLocale}
+                data-testid="AmountCell__de9647" />
             </span>
             <span className="text-right tabular-nums">
-              <AmountCell value={cr} sign="+" toneClass="font-semibold text-green-700" currency={currency} bcpLocale={bcpLocale} />
+              <AmountCell
+                value={cr}
+                sign="+"
+                toneClass="font-semibold text-green-700"
+                currency={currency}
+                bcpLocale={bcpLocale}
+                data-testid="AmountCell__de9647" />
             </span>
           </div>
         );
@@ -404,7 +421,7 @@ function EmptyOrErrorBody({ view, ui, inputRef, dragging, setDragging, handlePic
           const dropped = e.dataTransfer?.files?.[0];
           if (dropped) handlePickFile(dropped);
         }}
-      />
+        data-testid="Dropzone__de9647" />
       {view === 'error' ? (
         <div className="mt-3 rounded-lg border border-[#FAD9D9] bg-[#FEF0F4] p-3 text-sm text-[#9A1B1B]">
           {ui('financeAccountStatementsImportErrorBody')}
@@ -424,11 +441,11 @@ function AnalyzingOrSelectedBody({ view, file, previewData, previewing, reset, u
         analyzing={view === 'analyzing' || previewing}
         onRemove={view === 'analyzing' ? undefined : reset}
         ui={ui}
-      />
+        data-testid="FileRow__de9647" />
       {view === 'analyzing' ? (
         <div className="flex flex-col gap-3 rounded-xl border border-[#E8EAEF] bg-[#FAFBFC] p-4">
           <div className="flex items-center gap-3 text-sm text-[#3F3F50]">
-            <Spinner size={20} />
+            <Spinner size={20} data-testid="Spinner__de9647" />
             <span>{ui('financeAccountStatementsImportAnalyzing')}</span>
           </div>
         </div>
@@ -444,22 +461,22 @@ function PreviewBody({ previewData, totalIn, totalOut, accountCurrency, bcpLocal
         <KpiTile
           label={ui('financeAccountStatementsImportKpiLines')}
           value={previewData.lineCount}
-        />
+          data-testid="KpiTile__de9647" />
         <KpiTile
           label={ui('financeAccountStatementsImportKpiCredits')}
           value={`+${formatMoney(totalIn, accountCurrency, bcpLocale)}`}
           tone="pos"
-        />
+          data-testid="KpiTile__de9647" />
         <KpiTile
           label={ui('financeAccountStatementsImportKpiDebits')}
           value={`−${formatMoney(totalOut, accountCurrency, bcpLocale)}`}
           tone="neg"
-        />
+          data-testid="KpiTile__de9647" />
         <KpiTile
           label={ui('financeAccountStatementsImportKpiPeriod')}
           value={formatPeriod(previewData.periodFrom, previewData.periodTo, bcpLocale)}
           tone="sm"
-        />
+          data-testid="KpiTile__de9647" />
       </div>
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold text-[#121217]">
@@ -474,7 +491,7 @@ function PreviewBody({ previewData, totalIn, totalOut, accountCurrency, bcpLocal
         currency={accountCurrency}
         bcpLocale={bcpLocale}
         ui={ui}
-      />
+        data-testid="PreviewLines__de9647" />
     </div>
   );
 }
@@ -483,14 +500,14 @@ function ImportingBody({ previewData, ui }) {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-[#E8EAEF] bg-[#FAFBFC] p-4">
       <div className="flex items-center gap-3 text-sm text-[#3F3F50]">
-        <Spinner size={20} />
+        <Spinner size={20} data-testid="Spinner__de9647" />
         <span>
           {ui('financeAccountStatementsImportImporting', {
             count: previewData?.lineCount ?? 0,
           })}
         </span>
       </div>
-      <ProgressBar active />
+      <ProgressBar active data-testid="ProgressBar__de9647" />
     </div>
   );
 }
@@ -500,7 +517,7 @@ function SuccessBody({ previewData, importResult, totalIn, accountCurrency, bcpL
   return (
     <div className="flex flex-col items-center gap-3 py-2 text-center">
       <div className="imp-pop-in flex h-14 w-14 items-center justify-center rounded-full bg-[#EEFBF4] text-[#17663A]">
-        <CheckCircle2 className="h-8 w-8" />
+        <CheckCircle2 className="h-8 w-8" data-testid="CheckCircle2__de9647" />
       </div>
       <h3 className="text-base font-semibold text-[#121217]">
         {ui('financeAccountStatementsImportSuccessTitle')}
@@ -512,19 +529,19 @@ function SuccessBody({ previewData, importResult, totalIn, accountCurrency, bcpL
         <SuccessKpi
           label={ui('financeAccountStatementsImportKpiLines')}
           value={lineCount}
-        />
+          data-testid="SuccessKpi__de9647" />
         <span className="h-8 w-px bg-[#E8EAEF]" />
         <SuccessKpi
           label={ui('financeAccountStatementsImportKpiCredits')}
           value={`+${formatMoney(totalIn, accountCurrency, bcpLocale)}`}
           valueClass="text-green-700"
-        />
+          data-testid="SuccessKpi__de9647" />
         <span className="h-8 w-px bg-[#E8EAEF]" />
         <SuccessKpi
           label={ui('financeAccountStatementsImportKpiPeriod')}
           value={formatPeriod(previewData?.periodFrom, previewData?.periodTo, bcpLocale)}
           valueClass="text-[13px] text-[#121217]"
-        />
+          data-testid="SuccessKpi__de9647" />
       </div>
     </div>
   );
@@ -561,7 +578,7 @@ function ModalBody({
         dragging={dragging}
         setDragging={setDragging}
         handlePickFile={handlePickFile}
-      />
+        data-testid="EmptyOrErrorBody__de9647" />
     );
   }
   if ((view === 'analyzing' || view === 'selected') && file) {
@@ -573,7 +590,7 @@ function ModalBody({
         previewing={previewing}
         reset={reset}
         ui={ui}
-      />
+        data-testid="AnalyzingOrSelectedBody__de9647" />
     );
   }
   if (view === 'preview' && previewData) {
@@ -585,11 +602,11 @@ function ModalBody({
         accountCurrency={accountCurrency}
         bcpLocale={bcpLocale}
         ui={ui}
-      />
+        data-testid="PreviewBody__de9647" />
     );
   }
   if (view === 'importing') {
-    return <ImportingBody previewData={previewData} ui={ui} />;
+    return <ImportingBody previewData={previewData} ui={ui} data-testid="ImportingBody__de9647" />;
   }
   if (view === 'success') {
     return (
@@ -600,7 +617,7 @@ function ModalBody({
         accountCurrency={accountCurrency}
         bcpLocale={bcpLocale}
         ui={ui}
-      />
+        data-testid="SuccessBody__de9647" />
     );
   }
   return null;
@@ -626,7 +643,7 @@ function SuccessFooterButtons({ ui, importResult, onOpenStatement, handleClose, 
           onClick={handleOpenStatement}
           className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[#FFD500] px-3 text-sm font-semibold text-[#121217] hover:bg-[#F8D414]"
         >
-          <ExternalLink className="h-4 w-4" />
+          <ExternalLink className="h-4 w-4" data-testid="ExternalLink__de9647" />
           {ui('financeAccountStatementsImportViewStatement')}
         </button>
       ) : null}
@@ -642,7 +659,7 @@ function PreviewFooterButton({ ui, importing, previewData, handleConfirmImport }
       disabled={importing}
       className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[#121217] px-3 text-sm font-medium text-white hover:bg-[#FFD500] hover:text-[#121217] disabled:cursor-not-allowed disabled:opacity-50"
     >
-      <Check className="h-4 w-4" />
+      <Check className="h-4 w-4" data-testid="Check__de9647" />
       {ui('financeAccountStatementsImportConfirm', {
         count: previewData?.lineCount ?? 0,
       })}
@@ -685,7 +702,7 @@ function ModalFooter({
         onOpenStatement={onOpenStatement}
         handleClose={handleClose}
         handleOpenStatement={handleOpenStatement}
-      />
+        data-testid="SuccessFooterButtons__de9647" />
     );
   } else if (view === 'preview') {
     rightButtons = (
@@ -694,7 +711,7 @@ function ModalFooter({
         importing={importing}
         previewData={previewData}
         handleConfirmImport={handleConfirmImport}
-      />
+        data-testid="PreviewFooterButton__de9647" />
     );
   } else {
     rightButtons = (
@@ -704,7 +721,7 @@ function ModalFooter({
         previewing={previewing}
         handleClose={handleClose}
         handleContinue={handleContinue}
-      />
+        data-testid="DefaultFooterButtons__de9647" />
     );
   }
 
@@ -716,11 +733,10 @@ function ModalFooter({
           onClick={() => setView('selected')}
           className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium text-[#121217] hover:bg-[#F5F7F9]"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" data-testid="ArrowLeft__de9647" />
           {ui('financeAccountStatementsImportBack')}
         </button>
       ) : <span />}
-
       <div className="ml-auto flex items-center gap-2">
         {rightButtons}
       </div>
@@ -823,7 +839,10 @@ export function ImportStatementModal({
   const wide = view === 'preview' || view === 'importing';
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => { if (!v) handleClose(); }}
+      data-testid="Dialog__de9647">
       <DialogContent
         className={cn(
           'imp-modal-enter overflow-hidden p-0',
@@ -831,7 +850,7 @@ export function ImportStatementModal({
         )}
         style={{ background: 'var(--surface-overlay, #FFFFFF)' }}
         onPointerDownOutside={(e) => e.preventDefault()}
-      >
+        data-testid="DialogContent__de9647">
         <style>{ANIMATIONS_CSS}</style>
 
         {/* Header */}
@@ -847,7 +866,7 @@ export function ImportStatementModal({
         </div>
 
         {/* Stepper — hidden on success per the design */}
-        {view !== 'success' ? <Stepper step={stepIndex} ui={ui} /> : null}
+        {view !== 'success' ? <Stepper step={stepIndex} ui={ui} data-testid="Stepper__de9647" /> : null}
 
         {/* Body */}
         <div className="px-6 py-4">
@@ -867,7 +886,7 @@ export function ImportStatementModal({
             setDragging={setDragging}
             handlePickFile={handlePickFile}
             reset={reset}
-          />
+            data-testid="ModalBody__de9647" />
         </div>
 
         {/* Footer */}
@@ -884,7 +903,7 @@ export function ImportStatementModal({
           handleConfirmImport={handleConfirmImport}
           handleContinue={handleContinue}
           handleOpenStatement={handleOpenStatement}
-        />
+          data-testid="ModalFooter__de9647" />
       </DialogContent>
     </Dialog>
   );

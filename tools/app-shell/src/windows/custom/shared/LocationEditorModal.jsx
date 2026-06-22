@@ -43,9 +43,9 @@ function PickerMessage({text}) {
 }
 
 function renderCountryPickerBody(isLoading, loadingText, hasLoadFailed, loadErrorText, filteredCountries, emptyText, renderCountryRow) {
-    if (isLoading) return <PickerMessage text={loadingText}/>;
-    if (hasLoadFailed) return <PickerMessage text={loadErrorText}/>;
-    if (filteredCountries.length === 0) return <PickerMessage text={emptyText}/>;
+    if (isLoading) return <PickerMessage text={loadingText} data-testid="PickerMessage__927831" />;
+    if (hasLoadFailed) return <PickerMessage text={loadErrorText} data-testid="PickerMessage__927831" />;
+    if (filteredCountries.length === 0) return <PickerMessage text={emptyText} data-testid="PickerMessage__927831" />;
     return filteredCountries.map(renderCountryRow);
 }
 
@@ -85,12 +85,15 @@ function CountryPicker({
                         className="text-gray-400 hover:text-gray-600 transition-colors"
                         aria-label={closeAriaLabel}
                     >
-                        <X size={16}/>
+                        <X size={16} data-testid="X__927831" />
                     </button>
                 </div>
                 <div className="px-4 py-3 border-b border-gray-100">
                     <div className="relative">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
+                        <Search
+                            size={14}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                            data-testid="Search__927831" />
                         <input
                             ref={searchInputRef}
                             type="text"
@@ -98,6 +101,7 @@ function CountryPicker({
                             onChange={onSearchChange}
                             placeholder={searchPlaceholder}
                             className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            data-testid="location-country-search"
                         />
                     </div>
                 </div>
@@ -105,7 +109,10 @@ function CountryPicker({
                     {renderCountryPickerBody(isLoading, loadingText, hasLoadFailed, loadErrorText, filteredCountries, emptyText, renderCountryRow)}
                     {!isLoading && !hasLoadFailed && (
                         <div ref={loadMoreRef} className="flex justify-center py-2">
-                            {isLoadingMore ? <Loader2 size={14} className="animate-spin text-gray-400"/> :
+                            {isLoadingMore ? <Loader2
+                                size={14}
+                                className="animate-spin text-gray-400"
+                                data-testid="Loader2__927831" /> :
                                 <span className="h-3"/>}
                         </div>
                     )}
@@ -116,9 +123,9 @@ function CountryPicker({
 }
 
 function renderRegionPickerBody(regionsLoading, ui, regionsLoadFailed, filteredRegions, handleRegionSelect, form) {
-    if (regionsLoading) return <PickerMessage text={ui('loading')}/>;
-    if (regionsLoadFailed) return <PickerMessage text={ui('regionLoadError')}/>;
-    if (filteredRegions.length === 0) return <PickerMessage text={ui('noResults')}/>;
+    if (regionsLoading) return <PickerMessage text={ui('loading')} data-testid="PickerMessage__927831" />;
+    if (regionsLoadFailed) return <PickerMessage text={ui('regionLoadError')} data-testid="PickerMessage__927831" />;
+    if (filteredRegions.length === 0) return <PickerMessage text={ui('noResults')} data-testid="PickerMessage__927831" />;
     return filteredRegions.map(region => (
         <button
             key={region.id}
@@ -130,7 +137,7 @@ function renderRegionPickerBody(regionsLoading, ui, regionsLoadFailed, filteredR
             ].join(' ')}
         >
                 <span className="w-4 shrink-0">
-                  {form.region === region.id ? <Check size={14}/> : null}
+                  {form.region === region.id ? <Check size={14} data-testid="Check__927831" /> : null}
                 </span>
             <span className="truncate">{region.label}</span>
         </button>
@@ -725,13 +732,16 @@ export default function LocationEditorModal({
                         className="text-gray-400 hover:text-gray-600 transition-colors"
                         aria-label={ui('close')}
                     >
-                        <X size={18}/>
+                        <X size={18} data-testid="X__927831" />
                     </button>
                 </div>
 
                 {initialLoading ? (
                     <div className="flex items-center justify-center py-8">
-                        <Loader2 size={20} className="animate-spin text-muted-foreground"/>
+                        <Loader2
+                            size={20}
+                            className="animate-spin text-muted-foreground"
+                            data-testid="Loader2__927831" />
                     </div>
                 ) : (
                     <div className="flex flex-col gap-3">
@@ -747,6 +757,7 @@ export default function LocationEditorModal({
                                 value={form.address}
                                 onChange={e => setField('address', e.target.value)}
                                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                data-testid="location-field-address1"
                             />
                         </div>
 
@@ -774,6 +785,7 @@ export default function LocationEditorModal({
                                     value={form.postalCode}
                                     onChange={e => setField('postalCode', e.target.value)}
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    data-testid="location-field-postalCode"
                                 />
                             </div>
                             <div>
@@ -785,6 +797,7 @@ export default function LocationEditorModal({
                                     value={form.city}
                                     onChange={e => setField('city', e.target.value)}
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    data-testid="location-field-city"
                                 />
                             </div>
                         </div>
@@ -800,11 +813,15 @@ export default function LocationEditorModal({
                                 aria-haspopup="dialog"
                                 aria-expanded={countryPickerOpen}
                                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors flex items-center justify-between gap-2"
+                                data-testid="location-country-picker"
                             >
                 <span className={`truncate ${form.country ? 'text-gray-900' : 'text-gray-500'}`}>
                   {selectedCountryLabel}
                 </span>
-                                <ChevronDown size={16} className="text-gray-500 shrink-0"/>
+                                <ChevronDown
+                                    size={16}
+                                    className="text-gray-500 shrink-0"
+                                    data-testid="ChevronDown__927831" />
                             </button>
                         </div>
 
@@ -826,7 +843,10 @@ export default function LocationEditorModal({
                 <span className={`truncate ${form.region ? 'text-gray-900' : 'text-gray-500'}`}>
                   {!form.country ? ui('selectCountryFirst') : selectedRegionLabel}
                 </span>
-                                <ChevronDown size={16} className="text-gray-500 shrink-0"/>
+                                <ChevronDown
+                                    size={16}
+                                    className="text-gray-500 shrink-0"
+                                    data-testid="ChevronDown__927831" />
                             </button>
                         </div>
 
@@ -882,14 +902,14 @@ export default function LocationEditorModal({
                                 ].join(' ')}
                             >
                 <span className="w-4 shrink-0">
-                  {form.country === country.id ? <Check size={14}/> : null}
+                  {form.country === country.id ? <Check size={14} data-testid="Check__927831" /> : null}
                 </span>
                                 <span className="truncate">{country.label}</span>
                             </button>
                         )}
                         loadMoreRef={countryLoadMoreRef}
                         isLoadingMore={countryLoadingMore}
-                    />
+                        data-testid="CountryPicker__927831" />
                 )}
 
                 {regionPickerOpen && (
@@ -909,13 +929,15 @@ export default function LocationEditorModal({
                                     className="text-gray-400 hover:text-gray-600 transition-colors"
                                     aria-label={ui('cancel')}
                                 >
-                                    <X size={16}/>
+                                    <X size={16} data-testid="X__927831" />
                                 </button>
                             </div>
                             <div className="px-4 py-3 border-b border-gray-100">
                                 <div className="relative">
-                                    <Search size={14}
-                                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
+                                    <Search
+                                        size={14}
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                        data-testid="Search__927831" />
                                     <input
                                         ref={regionSearchRef}
                                         type="text"
@@ -931,7 +953,10 @@ export default function LocationEditorModal({
                                 {!regionsLoading && !regionsLoadFailed && (
                                     <div ref={regionLoadMoreRef} className="flex justify-center py-2">
                                         {regionLoadingMore ?
-                                            <Loader2 size={14} className="animate-spin text-gray-400"/> :
+                                            <Loader2
+                                                size={14}
+                                                className="animate-spin text-gray-400"
+                                                data-testid="Loader2__927831" /> :
                                             <span className="h-3"/>}
                                     </div>
                                 )}
@@ -964,8 +989,9 @@ export default function LocationEditorModal({
                             onClick={handleSave}
                             disabled={saving || initialLoading}
                             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                            data-testid="location-save"
                         >
-                            {saving && <Loader2 size={13} className="animate-spin"/>}
+                            {saving && <Loader2 size={13} className="animate-spin" data-testid="Loader2__927831" />}
                             {ui('save')}
                         </button>
                     </div>

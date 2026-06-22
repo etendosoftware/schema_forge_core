@@ -76,11 +76,16 @@ const LABEL_OVERRIDES = {
 };
 
 function PurchaseInvoiceBulkAction(props) {
-  return <BulkDocumentAction {...props} labelKey="confirmBulk" />;
+  return (
+    <BulkDocumentAction
+      {...props}
+      labelKey="confirmBulk"
+      data-testid="BulkDocumentAction__c20e53" />
+  );
 }
 
 function PurchaseInvoiceTable(props) {
-  return <PurchaseInvoiceHeaderTable {...props} />;
+  return <PurchaseInvoiceHeaderTable {...props} data-testid="PurchaseInvoiceHeaderTable__c20e53" />;
 }
 
 /**
@@ -146,7 +151,7 @@ export default function PurchaseInvoiceWindow(props) {
           onAfterSave={true}
           refetchAfterSave={true}
           transformRecord={applyDocTypeLabels}
-        />
+          data-testid="HeaderPage__c20e53" />
         {contactPortal}
       </CreateContactContext.Provider>
     );
@@ -204,11 +209,11 @@ export default function PurchaseInvoiceWindow(props) {
             specName="purchase-invoice"
             onClose={onClose}
             onEdit={onEdit}
-          />
+            data-testid="InvoicePreview__c20e53" />
         )}
         externalPreviewRow={effectiveRecord}
         onExternalPreviewClose={clearSavedRecord}
-      />
+        data-testid="ListView__c20e53" />
       {deleteDialog}
       {cloneTargets && createPortal(
         <CloneOrderModal
@@ -220,7 +225,7 @@ export default function PurchaseInvoiceWindow(props) {
           processingKey="invoiceProcessing"
           onClose={() => setCloneTargets(null)}
           onCloned={() => setRefreshKey(k => k + 1)}
-        />,
+          data-testid="CloneOrderModal__c20e53" />,
         document.body,
       )}
     </>

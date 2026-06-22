@@ -35,5 +35,10 @@ const SHIPMENT_CONFIG = {
 };
 
 export default function ImportFromShipmentModal(props) {
-  return <ImportReturnLinesModal {...props} config={SHIPMENT_CONFIG} />;
+  return (
+    <ImportReturnLinesModal
+      {...props}
+      config={SHIPMENT_CONFIG}
+      data-testid="ImportReturnLinesModal__7efa65" />
+  );
 }

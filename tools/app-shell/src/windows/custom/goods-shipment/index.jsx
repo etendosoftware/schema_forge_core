@@ -27,14 +27,19 @@ const COLUMNS = [
 ];
 
 function CustomGoodsShipmentTable(props) {
-  return <GoodsShipmentTable columns={COLUMNS} {...props} />;
+  return <GoodsShipmentTable columns={COLUMNS} {...props} data-testid="GoodsShipmentTable__9851c7" />;
 }
 
 function GoodsShipmentBulkActions(props) {
   return (
     <>
-      <BulkInvoiceFromShipment {...props} />
-      <BulkDocumentAction {...props} entity="goodsShipment" buildActions={buildInOutActions} labelKey="confirmBulk" />
+      <BulkInvoiceFromShipment {...props} data-testid="BulkInvoiceFromShipment__9851c7" />
+      <BulkDocumentAction
+        {...props}
+        entity="goodsShipment"
+        buildActions={buildInOutActions}
+        labelKey="confirmBulk"
+        data-testid="BulkDocumentAction__9851c7" />
     </>
   );
 }
@@ -90,7 +95,7 @@ export default function GoodsShipmentWindow({ windowName, recordId, apiBaseUrl, 
           draftMode={{ enabled: true, label: 'Confirm', style: 'positive', onConfirm: () => window.dispatchEvent(new CustomEvent('goods-shipment:open-confirm-modal')) }}
           hideMoreMenu={true}
           {...rest}
-        />
+          data-testid="GoodsShipmentPage__9851c7" />
         {contactPortal}
       </CreateContactContext.Provider>
     );
@@ -117,10 +122,10 @@ export default function GoodsShipmentWindow({ windowName, recordId, apiBaseUrl, 
             windowName={windowName}
             onClose={onClose}
             onEdit={onEdit}
-          />
+            data-testid="GoodsShipmentPreview__9851c7" />
         )}
         {...rest}
-      />
+        data-testid="GoodsShipmentPage__9851c7" />
       {deleteDialog}
       {cloneTargets && createPortal(
         <CloneOrderModal
@@ -131,7 +136,7 @@ export default function GoodsShipmentWindow({ windowName, recordId, apiBaseUrl, 
           routePrefix="/goods-shipment/"
           onClose={() => setCloneTargets(null)}
           onCloned={() => setRefreshKey(k => k + 1)}
-        />,
+          data-testid="CloneOrderModal__9851c7" />,
         document.body,
       )}
     </>

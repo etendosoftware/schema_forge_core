@@ -44,14 +44,18 @@ export function MovementsToolbar({
         onClick={() => navigate(-1)}
         className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-colors hover:bg-[#F5F7F9] hover:text-foreground"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="h-4 w-4" data-testid="ArrowLeft__f863ac" />
       </button>
-
       {/* Quick filters — type/status first, then date, mirroring the standard
           list toolbar (e.g. Sales Order). */}
-      <TypeFilter value={filters.type} onChange={onFiltersChange('type')} />
-      <DateRangeFilter value={filters.dateRange} onChange={onFiltersChange('dateRange')} />
-
+      <TypeFilter
+        value={filters.type}
+        onChange={onFiltersChange('type')}
+        data-testid="TypeFilter__f863ac" />
+      <DateRangeFilter
+        value={filters.dateRange}
+        onChange={onFiltersChange('dateRange')}
+        data-testid="DateRangeFilter__f863ac" />
       {/* Advanced "by conditions" filter — right after the Type filter */}
       <AdvancedFilterButton
         columns={columns}
@@ -59,8 +63,7 @@ export function MovementsToolbar({
         value={advancedFilter}
         onChange={onAdvancedFilterChange}
         testId="movements-advanced-filter"
-      />
-
+        data-testid="AdvancedFilterButton__f863ac" />
       {/* Search */}
       <div className="flex-1" />
       <div className="relative flex items-center">
@@ -73,7 +76,6 @@ export function MovementsToolbar({
           className="h-10 w-48 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm text-[#121217] placeholder:text-[#8a8aa3] shadow-[0_1px_2px_rgba(18,18,23,0.05)] focus:outline-none focus:ring-2 focus:ring-[#121217] focus:ring-offset-1"
         />
       </div>
-
       {/* New movement */}
       <button
         type="button"

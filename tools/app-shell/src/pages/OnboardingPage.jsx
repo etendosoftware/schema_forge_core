@@ -101,7 +101,10 @@ function AuthBrand({ label }) {
 function AuthFeaturePill({ children }) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white/70 px-4 py-2 text-xs font-medium text-slate-600 shadow-sm backdrop-blur sm:text-sm">
-      <Check className="h-4 w-4 text-slate-500" strokeWidth={2.5} />
+      <Check
+        className="h-4 w-4 text-slate-500"
+        strokeWidth={2.5}
+        data-testid="Check__79cf84" />
       {children}
     </span>
   );
@@ -138,7 +141,7 @@ function AuthSsoOptions({ providers, buttonRef, error, loading, label, loadingLa
       </div>
       {loading && (
         <div className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500">
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__79cf84" />
           {loadingLabel}
         </div>
       )}
@@ -154,7 +157,10 @@ function AuthSsoOptions({ providers, buttonRef, error, loading, label, loadingLa
 function OnboardingLanguageSelect({ label, locale, onChange, options }) {
   return (
     <div className="min-w-[132px]">
-      <Label htmlFor="onboarding-language" className="mb-2 block text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
+      <Label
+        htmlFor="onboarding-language"
+        className="mb-2 block text-xs font-medium uppercase tracking-[0.08em] text-slate-500"
+        data-testid="Label__79cf84">
         {label}
       </Label>
       <select
@@ -176,12 +182,12 @@ const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeature
 
 function EnterEnvironmentButtonContent({ isLoggingIn, label }) {
   if (isLoggingIn) {
-    return <Loader2 className="h-4 w-4 animate-spin" />;
+    return <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__79cf84" />;
   }
 
   return (
     <>
-      {label} <ChevronRight className="h-4 w-4 ml-1" />
+      {label} <ChevronRight className="h-4 w-4 ml-1" data-testid="ChevronRight__79cf84" />
     </>
   );
 }
@@ -192,7 +198,7 @@ function AuthShell({ brandLabel, switchPrompt, switchAction, switchTestId, onSwi
       <div className="flex min-h-screen w-full bg-white lg:grid lg:grid-cols-[minmax(0,1.12fr)_minmax(420px,0.88fr)]">
         <section className="flex min-h-[720px] flex-col bg-white px-6 py-6 sm:px-8 lg:px-10 xl:px-12">
           <div className="flex flex-col gap-5 border-b border-slate-100 pb-6 sm:flex-row sm:items-start sm:justify-between lg:border-b-0 lg:pb-0">
-            <AuthBrand label={brandLabel} />
+            <AuthBrand label={brandLabel} data-testid="AuthBrand__79cf84" />
             <div className="flex flex-col items-end gap-4">
               {headerContent}
               <p className="text-xs text-slate-700 sm:text-sm">
@@ -218,7 +224,7 @@ function AuthShell({ brandLabel, switchPrompt, switchAction, switchTestId, onSwi
           <div className="relative flex h-full flex-col">
             <div className="max-w-xl">
               <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <Sparkles className="h-6 w-6 text-slate-500" />
+                <Sparkles className="h-6 w-6 text-slate-500" data-testid="Sparkles__79cf84" />
               </div>
               <h2 className="max-w-xl text-3xl font-semibold tracking-[-0.05em] text-slate-900 xl:text-[2.5rem] xl:leading-[1.08]">
                 {marketingTitle}
@@ -228,12 +234,12 @@ function AuthShell({ brandLabel, switchPrompt, switchAction, switchTestId, onSwi
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 {featureLabels.map((feature) => (
-                  <AuthFeaturePill key={feature}>{feature}</AuthFeaturePill>
+                  <AuthFeaturePill key={feature} data-testid="AuthFeaturePill__79cf84">{feature}</AuthFeaturePill>
                 ))}
               </div>
             </div>
 
-            <AuthPreviewMockup />
+            <AuthPreviewMockup data-testid="AuthPreviewMockup__79cf84" />
           </div>
         </aside>
       </div>
@@ -244,19 +250,24 @@ function AuthShell({ brandLabel, switchPrompt, switchAction, switchTestId, onSwi
 function AuthField({ id, label, required = false, icon: Icon, trailing, className = '', inputClassName = '', ...props }) {
   return (
     <div className={className}>
-      <Label htmlFor={id} className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900">
+      <Label
+        htmlFor={id}
+        className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900"
+        data-testid="Label__79cf84">
         {label}
         {required && <span className="ml-1 text-rose-500">*</span>}
       </Label>
       <div className="relative">
         {Icon && (
-          <Icon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+          <Icon
+            className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+            data-testid="Icon__79cf84" />
         )}
         <Input
           id={id}
           className={`h-12 rounded-2xl border border-slate-300 bg-white text-base text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:ring-4 focus-visible:ring-slate-900/5 ${Icon ? 'pl-12' : 'pl-4'} ${trailing ? 'pr-14' : 'pr-4'} ${inputClassName}`}
           {...props}
-        />
+          data-testid="Input__79cf84" />
         {trailing && <div className="absolute inset-y-0 right-3 flex items-center">{trailing}</div>}
       </div>
     </div>
@@ -269,7 +280,7 @@ function SetupShell({ brandLabel, progressLabel, progressValue, headerContent, c
       <div className="flex min-h-screen w-full bg-white lg:grid lg:grid-cols-[minmax(0,1.12fr)_minmax(420px,0.88fr)]">
         <section className="flex min-h-screen flex-col bg-white px-6 py-6 sm:px-8 lg:px-10 xl:px-12">
           <div className="flex items-start justify-between gap-6">
-            <AuthBrand label={brandLabel} />
+            <AuthBrand label={brandLabel} data-testid="AuthBrand__79cf84" />
             <div className="flex w-full max-w-[22rem] flex-col items-end gap-3 pt-1">
               {headerContent}
               <div className="w-full">
@@ -308,7 +319,10 @@ function SetupShell({ brandLabel, progressLabel, progressValue, headerContent, c
 function SetupField({ id, label, required = false, trailingLabel, className = '', ...props }) {
   return (
     <div className={className}>
-      <Label htmlFor={id} className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900">
+      <Label
+        htmlFor={id}
+        className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900"
+        data-testid="Label__79cf84">
         {label}
         {required && <span className="ml-1 text-rose-500">*</span>}
         {trailingLabel && <span className="ml-2 font-normal text-slate-500">{trailingLabel}</span>}
@@ -317,7 +331,7 @@ function SetupField({ id, label, required = false, trailingLabel, className = ''
         id={id}
         className="h-12 rounded-2xl border border-slate-300 bg-white px-4 text-base text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] focus-visible:border-slate-400 focus-visible:ring-4 focus-visible:ring-slate-900/5"
         {...props}
-      />
+        data-testid="Input__79cf84" />
     </div>
   );
 }
@@ -325,7 +339,10 @@ function SetupField({ id, label, required = false, trailingLabel, className = ''
 function SetupSelect({ id, label, required = false, value, onChange, children, className = '' }) {
   return (
     <div className={className}>
-      <Label htmlFor={id} className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900">
+      <Label
+        htmlFor={id}
+        className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900"
+        data-testid="Label__79cf84">
         {label}
         {required && <span className="ml-1 text-rose-500">*</span>}
       </Label>
@@ -352,7 +369,7 @@ function BusinessTypeCard({ icon: Icon, label, selected, onClick }) {
         <span className={`h-3 w-3 rounded-full ${selected ? 'bg-slate-900' : 'bg-transparent'}`} />
       </span>
       <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <Icon className="h-6 w-6 text-slate-500" />
+        <Icon className="h-6 w-6 text-slate-500" data-testid="Icon__79cf84" />
       </div>
       <p className="text-lg font-medium tracking-[-0.02em] text-slate-900 sm:text-xl">{label}</p>
     </button>
@@ -439,7 +456,7 @@ function PageHeader({ accountName, onLogout, isAuthenticated, logoutLabel, brand
               size="sm"
               onClick={onLogout}
               className="text-gray-500 hover:text-gray-700"
-            >
+              data-testid="Button__79cf84">
               {logoutLabel}
             </Button>
           </div>
@@ -1049,7 +1066,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       locale={locale}
       onChange={setOnboardingLocale}
       options={languageOptions}
-    />
+      data-testid="OnboardingLanguageSelect__79cf84" />
   ) : null;
   const setupHeaderContent = (
     <div className="flex flex-wrap items-end justify-end gap-3">
@@ -1061,57 +1078,68 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   const setupGreetingName = (form.fullName || accountName || ui('onboardingGreetingFallback')).trim().split(/\s+/)[0];
   const activeSetupStep = steps.find((step) => step.status === 'running')?.name;
   const readinessFailureText = (result?.readinessFailures ?? []).map((failure) => ui(failure.key)).join(' ');
-  const setupProgressState = result?.status === 'success'
-    ? {
+  let setupProgressState;
+  if (result?.status === 'success') {
+    setupProgressState = {
       progress: 100,
       title: ui('onboardingSuccessTitle'),
       description: ui('onboardingSuccessDescription'),
-      leading: <Check className="h-8 w-8 text-[#54b56a]" strokeWidth={3} />,
+      leading: <Check
+        className="h-8 w-8 text-[#54b56a]"
+        strokeWidth={3}
+        data-testid="Check__79cf84" />,
       statusLabel: ui('onboardingCompleted'),
       success: true,
-    }
-    : activeSetupStep === 'client'
-      ? {
-        progress: 50,
-        title: ui('onboardingPreparingTitle'),
-        description: ui('onboardingPreparingActivatingDescription'),
-        leading: <Sparkles className="h-8 w-8 text-slate-400" />,
-        statusLabel: ui('loading'),
-        success: false,
-      }
-      : activeSetupStep === 'sequences'
-        ? {
-          progress: 80,
-          title: ui('onboardingPreparingTitle'),
-          description: ui('onboardingPreparingSequencesDescription'),
-          leading: <Settings className="h-8 w-8 text-slate-400" />,
-          statusLabel: ui('loading'),
-          success: false,
-        }
-        : activeSetupStep === 'organization' || activeSetupStep === 'finalize'
-        ? {
-          progress: 80,
-          title: ui('onboardingPreparingTitle'),
-          description: ui('onboardingPreparingFinishingDescription'),
-          leading: <Check className="h-8 w-8 text-slate-400" strokeWidth={3} />,
-          statusLabel: ui('loading'),
-          success: false,
-        }
-        : {
-          progress: 20,
-          title: ui('onboardingPreparingTitle'),
-          description: ui('onboardingPreparingTaxesDescription'),
-          leading: form.countryCode === 'ES' ? '🇪🇸' : '🌍',
-          statusLabel: ui('loading'),
-          success: false,
-        };
+    };
+  } else if (activeSetupStep === 'client') {
+    setupProgressState = {
+      progress: 50,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingActivatingDescription'),
+      leading: <Sparkles className="h-8 w-8 text-slate-400" data-testid="Sparkles__79cf84" />,
+      statusLabel: ui('loading'),
+      success: false,
+    };
+  } else if (activeSetupStep === 'sequences') {
+    setupProgressState = {
+      progress: 80,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingSequencesDescription'),
+      leading: <Settings className="h-8 w-8 text-slate-400" data-testid="Settings__79cf84" />,
+      statusLabel: ui('loading'),
+      success: false,
+    };
+  } else if (activeSetupStep === 'organization' || activeSetupStep === 'finalize') {
+    setupProgressState = {
+      progress: 80,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingFinishingDescription'),
+      leading: <Check
+        className="h-8 w-8 text-slate-400"
+        strokeWidth={3}
+        data-testid="Check__79cf84" />,
+      statusLabel: ui('loading'),
+      success: false,
+    };
+  } else {
+    setupProgressState = {
+      progress: 20,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingTaxesDescription'),
+      leading: form.countryCode === 'ES' ? '🇪🇸' : '🌍',
+      statusLabel: ui('loading'),
+      success: false,
+    };
+  }
 
 
   // ── LOADING (initial token check) ──
   if (view === null) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        <Loader2
+          className="h-6 w-6 animate-spin text-gray-400"
+          data-testid="Loader2__79cf84" />
       </div>
     );
   }
@@ -1133,7 +1161,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         marketingTitle={ui('onboardingMarketingTitle')}
         marketingDescription={ui('onboardingMarketingDescription')}
         featureLabels={authFeatureLabels}
-      >
+        data-testid="AuthShell__79cf84">
         <div className="mb-10">
           <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
             {ui('onboardingResetPasswordTitle')}
@@ -1142,13 +1170,12 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             {ui(resetSuccess ? 'onboardingResetPasswordSuccess' : 'onboardingResetPasswordSubtitle')}
           </p>
         </div>
-
         {resetSuccess ? (
           <Button
             type="button"
             onClick={() => setView('login')}
             className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
-          >
+            data-testid="Button__79cf84">
             {ui('onboardingBackToLoginAction')}
           </Button>
         ) : (
@@ -1171,10 +1198,10 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
                   onClick={() => setShowResetPassword(value => !value)}
                   className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
                 >
-                  {showResetPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showResetPassword ? <EyeOff className="h-5 w-5" data-testid="EyeOff__79cf84" /> : <Eye className="h-5 w-5" data-testid="Eye__79cf84" />}
                 </button>
               )}
-            />
+              data-testid="AuthField__79cf84" />
             <AuthField
               id="reset-password-confirm"
               type={showResetPassword ? 'text' : 'password'}
@@ -1186,7 +1213,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
               placeholder={ui('onboardingPasswordPlaceholder')}
               autoComplete="new-password"
               required
-            />
+              data-testid="AuthField__79cf84" />
             {resetError && (
               <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
                 {resetError}
@@ -1199,7 +1226,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
               className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
             >
               {resetLoading
-                ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{ui('onboardingSavingPassword')}</>
+                ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSavingPassword')}</>
                 : ui('onboardingSavePasswordAction')}
             </Button>
           </form>
@@ -1228,7 +1255,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         marketingTitle={ui('onboardingMarketingTitle')}
         marketingDescription={ui('onboardingMarketingDescription')}
         featureLabels={authFeatureLabels}
-      >
+        data-testid="AuthShell__79cf84">
         <div className="mb-10">
           <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
             {ui('onboardingRegisterTitle')}
@@ -1237,7 +1264,6 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             {ui('onboardingRegisterSubtitle')}
           </p>
         </div>
-
         <AuthSsoOptions
           providers={SSO_PROVIDERS}
           buttonRef={registerSsoButtonRef}
@@ -1245,8 +1271,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
           loading={Boolean(ssoLoadingProvider)}
           label={ui('onboardingSsoDivider')}
           loadingLabel={ui('onboardingSsoSigningIn')}
-        />
-
+          data-testid="AuthSsoOptions__79cf84" />
         <form onSubmit={handleRegister} className="space-y-5">
           <AuthField
             id="reg-name"
@@ -1259,7 +1284,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             placeholder={ui('onboardingNamePlaceholder')}
             autoComplete="name"
             required
-          />
+            data-testid="AuthField__79cf84" />
 
           <AuthField
             id="reg-email"
@@ -1272,7 +1297,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             placeholder={ui('onboardingEmailPlaceholder')}
             autoComplete="email"
             required
-          />
+            data-testid="AuthField__79cf84" />
 
           <AuthField
             id="reg-password"
@@ -1292,10 +1317,10 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
                 onClick={() => setShowRegisterPassword(value => !value)}
                 className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
               >
-                {showRegisterPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {showRegisterPassword ? <EyeOff className="h-5 w-5" data-testid="EyeOff__79cf84" /> : <Eye className="h-5 w-5" data-testid="Eye__79cf84" />}
               </button>
             )}
-          />
+            data-testid="AuthField__79cf84" />
 
           {registerError && (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
@@ -1310,7 +1335,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
           >
             {registerLoading
-              ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{ui('onboardingCreatingAccount')}</>
+              ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingCreatingAccount')}</>
               : ui('onboardingCreateAccountAction')}
           </Button>
         </form>
@@ -1335,7 +1360,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         marketingTitle={ui('onboardingMarketingTitle')}
         marketingDescription={ui('onboardingMarketingDescription')}
         featureLabels={authFeatureLabels}
-      >
+        data-testid="AuthShell__79cf84">
         <div className="mb-10">
           <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
             {ui('onboardingForgotPasswordTitle')}
@@ -1344,7 +1369,6 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             {ui(forgotSent ? 'onboardingResetEmailSent' : 'onboardingForgotPasswordSubtitle')}
           </p>
         </div>
-
         <form onSubmit={handleForgotPassword} className="space-y-5">
           <AuthField
             id="forgot-email"
@@ -1357,7 +1381,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             placeholder={ui('onboardingEmailPlaceholder')}
             autoComplete="email"
             required
-          />
+            data-testid="AuthField__79cf84" />
           {forgotError && (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
               {forgotError}
@@ -1375,7 +1399,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
           >
             {forgotLoading
-              ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{ui('onboardingSendingResetEmail')}</>
+              ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSendingResetEmail')}</>
               : ui('onboardingSendResetEmailAction')}
           </Button>
         </form>
@@ -1404,7 +1428,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         marketingTitle={ui('onboardingMarketingTitle')}
         marketingDescription={ui('onboardingMarketingDescription')}
         featureLabels={authFeatureLabels}
-      >
+        data-testid="AuthShell__79cf84">
         <div className="mb-10">
           <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
             {ui('onboardingLoginTitle')}
@@ -1430,8 +1454,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
           loading={Boolean(ssoLoadingProvider)}
           label={ui('onboardingSsoDivider')}
           loadingLabel={ui('onboardingSsoSigningIn')}
-        />
-
+          data-testid="AuthSsoOptions__79cf84" />
         <form onSubmit={handleLogin} className="space-y-5">
           <AuthField
             id="login-email"
@@ -1444,7 +1467,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             placeholder={ui('onboardingEmailPlaceholder')}
             autoComplete="email"
             required
-          />
+            data-testid="AuthField__79cf84" />
 
           <AuthField
             id="login-password"
@@ -1464,10 +1487,10 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
                 onClick={() => setShowLoginPassword(value => !value)}
                 className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
               >
-                {showLoginPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {showLoginPassword ? <EyeOff className="h-5 w-5" data-testid="EyeOff__79cf84" /> : <Eye className="h-5 w-5" data-testid="Eye__79cf84" />}
               </button>
             )}
-          />
+            data-testid="AuthField__79cf84" />
 
           <div className="flex justify-end">
             <button
@@ -1498,7 +1521,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
           >
             {loginLoading
-              ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{ui('onboardingSigningIn')}</>
+              ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSigningIn')}</>
               : ui('onboardingLoginAction')}
           </Button>
         </form>
@@ -1513,7 +1536,9 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       if (loadingEnvs) {
         return (
           <div className="flex justify-center py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+            <Loader2
+              className="h-6 w-6 animate-spin text-gray-400"
+              data-testid="Loader2__79cf84" />
           </div>
         );
       }
@@ -1522,15 +1547,15 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         return (
           <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
             <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Building2 className="h-8 w-8 text-gray-300" />
+              <Building2 className="h-8 w-8 text-gray-300" data-testid="Building2__79cf84" />
             </div>
             <p className="text-lg font-medium text-gray-900 mb-1">{ui('onboardingNoEnvironments')}</p>
             <p className="text-gray-500 text-sm mb-6">{ui('onboardingCreateFirstEnvironment')}</p>
             <Button
               onClick={() => { setCreateStep(1); setResult(null); setView('create'); }}
               className="bg-amber-400 hover:bg-amber-500 text-white"
-            >
-              <Plus className="h-4 w-4 mr-1" /> {ui('onboardingCreateEnvironment')}
+              data-testid="Button__79cf84">
+              <Plus className="h-4 w-4 mr-1" data-testid="Plus__79cf84" /> {ui('onboardingCreateEnvironment')}
             </Button>
           </div>
         );
@@ -1548,7 +1573,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
               >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
-                    <Building2 className="h-5 w-5 text-amber-600" />
+                    <Building2 className="h-5 w-5 text-amber-600" data-testid="Building2__79cf84" />
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">{env.clientName}</p>
@@ -1568,7 +1593,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
                   <EnterEnvironmentButtonContent
                     isLoggingIn={isLoggingIn}
                     label={ui('onboardingEnterEnvironment')}
-                  />
+                    data-testid="EnterEnvironmentButtonContent__79cf84" />
                 </Button>
               </div>
             );
@@ -1585,8 +1610,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
           onLogout={handleLogout}
           logoutLabel={ui('logout')}
           brandLabel={ui('onboardingBrandName')}
-        />
-
+          data-testid="PageHeader__79cf84" />
         {/* Extra header actions row */}
         <div className="bg-white border-b border-gray-100">
           <div className="max-w-2xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -1600,20 +1624,21 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
                   onClick={routeByEnvironments}
                   disabled={loadingEnvs}
                   className="text-gray-500"
-                >
-                  <RefreshCw className={`h-4 w-4 ${loadingEnvs ? 'animate-spin' : ''}`} />
+                  data-testid="Button__79cf84">
+                  <RefreshCw
+                    className={`h-4 w-4 ${loadingEnvs ? 'animate-spin' : ''}`}
+                    data-testid="RefreshCw__79cf84" />
                 </Button>
                 <Button
                   onClick={() => { setCreateStep(1); setResult(null); setView('create'); }}
                   className="bg-amber-400 hover:bg-amber-500 text-white"
-                >
-                  <Plus className="h-4 w-4 mr-1" /> {ui('onboardingNewEnvironment')}
+                  data-testid="Button__79cf84">
+                  <Plus className="h-4 w-4 mr-1" data-testid="Plus__79cf84" /> {ui('onboardingNewEnvironment')}
                 </Button>
               </div>
             </div>
           </div>
         </div>
-
         <div className="max-w-2xl mx-auto p-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">{ui('onboardingEnvironmentsTitle')}</h1>
           <p className="text-gray-500 text-sm mb-6">
@@ -1630,8 +1655,8 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   // ── CREATE VIEW ──
   if (running || result?.status === 'success') {
     return (
-      <SetupProgressShell>
-        <SetupProgressCard {...setupProgressState} />
+      <SetupProgressShell data-testid="SetupProgressShell__79cf84">
+        <SetupProgressCard {...setupProgressState} data-testid="SetupProgressCard__79cf84" />
       </SetupProgressShell>
     );
   }
@@ -1642,7 +1667,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       progressValue={createStep === 1 ? 50 : 90}
       headerContent={setupHeaderContent}
       brandLabel={ui('onboardingBrandName')}
-    >
+      data-testid="SetupShell__79cf84">
       {draftNotice && (
         <div
           data-testid="draft-restored-notice"
@@ -1670,7 +1695,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
               value={form.fullName}
               onChange={e => updateField('fullName', e.target.value)}
               placeholder={ui('onboardingFullNamePlaceholder')}
-            />
+              data-testid="SetupField__79cf84" />
 
             <SetupSelect
               id="countryCode"
@@ -1678,14 +1703,16 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
               required
               value={form.countryCode}
               onChange={e => updateField('countryCode', e.target.value)}
-            >
+              data-testid="SetupSelect__79cf84">
               {countryOptions.map((country) => (
                 <option key={country.value} value={country.value}>{country.label}</option>
               ))}
             </SetupSelect>
 
             <div>
-              <Label className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900">
+              <Label
+                className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900"
+                data-testid="Label__79cf84">
                 {ui('onboardingBusinessTypeLabel')}
               </Label>
               <div className="grid gap-4 sm:grid-cols-3">
@@ -1696,7 +1723,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
                     label={option.label}
                     selected={form.businessType === option.value}
                     onClick={() => updateField('businessType', option.value)}
-                  />
+                    data-testid="BusinessTypeCard__79cf84" />
                 ))}
               </div>
             </div>
@@ -1715,8 +1742,8 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
               }}
               disabled={!isStepOneValid}
               className="h-12 rounded-2xl bg-gray-900 px-6 text-base font-medium text-white hover:bg-gray-800"
-            >
-              {ui('onboardingContinueAction')} <ArrowRight className="ml-2 h-4 w-4" />
+              data-testid="Button__79cf84">
+              {ui('onboardingContinueAction')} <ArrowRight className="ml-2 h-4 w-4" data-testid="ArrowRight__79cf84" />
             </Button>
           </div>
         </div>
@@ -1739,10 +1766,13 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
               value={form.clientName}
               onChange={e => updateField('clientName', e.target.value)}
               placeholder={ui('onboardingCompanyNamePlaceholder')}
-            />
+              data-testid="SetupField__79cf84" />
 
             <div>
-              <Label htmlFor="fiscalIdValue" className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900">
+              <Label
+                htmlFor="fiscalIdValue"
+                className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900"
+                data-testid="Label__79cf84">
                 {ui('onboardingFiscalIdLabel')} <span className="ml-1 text-rose-500">*</span>
               </Label>
               <div className="flex overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] focus-within:ring-4 focus-within:ring-slate-900/5">
@@ -1767,14 +1797,14 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
               value={form.address}
               onChange={e => updateField('address', e.target.value)}
               placeholder={ui('onboardingAddressPlaceholder')}
-            />
+              data-testid="SetupField__79cf84" />
 
             <SetupSelect
               id="sector"
               label={ui('onboardingSectorLabel')}
               value={form.sector}
               onChange={e => updateField('sector', e.target.value)}
-            >
+              data-testid="SetupSelect__79cf84">
               {sectorOptions.map((sector) => (
                 <option key={sector.value} value={sector.value}>{sector.label}</option>
               ))}
@@ -1810,11 +1840,11 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
               onClick={runOnboarding}
               disabled={running || !isStepTwoValid}
               className="h-12 rounded-2xl bg-gray-900 px-6 text-base font-medium text-white hover:bg-gray-800 disabled:bg-slate-200 disabled:text-slate-500"
-            >
+              data-testid="Button__79cf84">
               {running ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{ui('onboardingStarting')}</>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingStarting')}</>
               ) : (
-                <><ArrowRight className="mr-2 h-4 w-4" />{ui('onboardingStartAction')}</>
+                <><ArrowRight className="mr-2 h-4 w-4" data-testid="ArrowRight__79cf84" />{ui('onboardingStartAction')}</>
               )}
             </Button>
           </div>

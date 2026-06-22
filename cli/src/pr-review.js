@@ -317,6 +317,12 @@ function analyzeLargeFiles(changedFiles) {
     if (path.startsWith('cli/cache/')) {
       continue;
     }
+    // Frozen, hand-authored data-fix migrations (chart of accounts, etc.):
+    // intentionally large sampledata dumps, gated by the data-fixes review
+    // criterion rather than the handwritten-source size gate.
+    if (/^cli\/src\/data-fixes\/sql\/.*\.sql$/.test(path)) {
+      continue;
+    }
     if (!existsSync(path)) {
       continue;
     }

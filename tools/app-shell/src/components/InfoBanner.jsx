@@ -43,7 +43,7 @@ export function InfoBanner({
       className={`flex min-h-14 items-center gap-3 rounded-[0_8px_8px_0] border-l-2 px-4 py-2 ${t.container} ${className}`}
       {...rest}
     >
-      {Icon && <Icon className={`h-5 w-5 shrink-0 ${t.icon}`} />}
+      {Icon && <Icon className={`h-5 w-5 shrink-0 ${t.icon}`} data-testid="Icon__f7c55d" />}
       <p className={`flex-1 text-sm font-medium leading-6 ${t.text}`}>{children}</p>
       {dismissible && (
         <button
@@ -53,7 +53,7 @@ export function InfoBanner({
           data-testid={dismissTestId}
           className={`rounded-full p-1 transition-colors ${t.dismiss}`}
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4" data-testid="X__f7c55d" />
         </button>
       )}
     </div>

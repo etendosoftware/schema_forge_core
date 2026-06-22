@@ -45,9 +45,9 @@ export function PresentModal({ decl, onConfirm, onClose }) {
   }
 
   const PATHS = [
-    { id: 'submitted_ack', icon: <Star size={16} strokeWidth={1.75} />, titleKey: 'fm.present.path.acuse',      descKey: 'fm.present.path.acuse_desc' },
-    { id: 'submitted',     icon: <Play size={16} strokeWidth={1.75} />, titleKey: 'fm.present.path.sin_acuse',  descKey: 'fm.present.path.sin_acuse_desc' },
-    { id: 'submitted_ext', icon: <ArrowUpRight size={16} strokeWidth={1.75} />, titleKey: 'fm.present.path.otra', descKey: 'fm.present.path.otra_desc' },
+    { id: 'submitted_ack', icon: <Star size={16} strokeWidth={1.75} data-testid="Star__cda0bb" />, titleKey: 'fm.present.path.acuse',      descKey: 'fm.present.path.acuse_desc' },
+    { id: 'submitted',     icon: <Play size={16} strokeWidth={1.75} data-testid="Play__cda0bb" />, titleKey: 'fm.present.path.sin_acuse',  descKey: 'fm.present.path.sin_acuse_desc' },
+    { id: 'submitted_ext', icon: <ArrowUpRight size={16} strokeWidth={1.75} data-testid="ArrowUpRight__cda0bb" />, titleKey: 'fm.present.path.otra', descKey: 'fm.present.path.otra_desc' },
   ];
 
   return (
@@ -275,7 +275,7 @@ export function IncidentTray({ incidents, onClose }) {
           onClick={onClose}
           aria-label={t('fm.action.close')}
         >
-          <X size={14} />
+          <X size={14} data-testid="X__cda0bb" />
         </button>
       </div>
       {incidents.map((inc) => (
@@ -283,7 +283,7 @@ export function IncidentTray({ incidents, onClose }) {
           key={inc.message}
           className={`fm-incident-tray__item fm-incident-tray__item--${inc.blocking ? 'blocking' : 'warning'}`}
         >
-          {inc.blocking ? <OctagonAlert size={14} /> : <TriangleAlert size={14} />} {inc.message}
+          {inc.blocking ? <OctagonAlert size={14} data-testid="OctagonAlert__cda0bb" /> : <TriangleAlert size={14} data-testid="TriangleAlert__cda0bb" />} {inc.message}
         </div>
       ))}
     </div>
@@ -317,7 +317,7 @@ const INPUT_ST = {
 
 function CfgSection303({ t }) {
   return (
-    <CfgSection title={t('fm.config.m303.title')}>
+    <CfgSection title={t('fm.config.m303.title')} data-testid="CfgSection__cda0bb">
       <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#374151', cursor: 'pointer', marginBottom: 8 }}>
         <input type="checkbox" defaultChecked />
         {t('fm.config.m303.redeme')}
@@ -326,13 +326,13 @@ function CfgSection303({ t }) {
         <input type="checkbox" />
         {t('fm.config.m303.recc')}
       </label>
-      <CfgField label={t('fm.config.m303.prorata')}>
+      <CfgField label={t('fm.config.m303.prorata')} data-testid="CfgField__cda0bb">
         <select style={INPUT_ST}>
           <option>{t('fm.config.m303.prorata_general')}</option>
           <option>{t('fm.config.m303.prorata_especial')}</option>
         </select>
       </CfgField>
-      <CfgField label={t('fm.config.m303.iban')}>
+      <CfgField label={t('fm.config.m303.iban')} data-testid="CfgField__cda0bb">
         <input type="text" placeholder="ES00 0000 0000 0000 0000 0000" style={{ ...INPUT_ST, fontFamily: 'monospace' }} />
       </CfgField>
     </CfgSection>
@@ -341,26 +341,32 @@ function CfgSection303({ t }) {
 
 function CfgSection349({ t }) {
   return (
-    <CfgSection title={t('fm.config.m349.title')}>
+    <CfgSection title={t('fm.config.m349.title')} data-testid="CfgSection__cda0bb">
       <div style={{ display: 'flex', gap: 8 }}>
-        <CfgField label={t('fm.config.m349.periodicity')} style={{ flex: 1 }}>
+        <CfgField
+          label={t('fm.config.m349.periodicity')}
+          style={{ flex: 1 }}
+          data-testid="CfgField__cda0bb">
           <select style={INPUT_ST}>
             <option>{t('fm.config.m349.periodicity_monthly')}</option>
             <option>{t('fm.config.m349.periodicity_quarterly')}</option>
             <option>{t('fm.config.m349.periodicity_annual')}</option>
           </select>
         </CfgField>
-        <CfgField label={t('fm.config.m349.threshold')} style={{ flex: 1 }}>
+        <CfgField
+          label={t('fm.config.m349.threshold')}
+          style={{ flex: 1 }}
+          data-testid="CfgField__cda0bb">
           <input type="text" defaultValue="50.000" style={{ ...INPUT_ST, fontFamily: 'monospace' }} />
         </CfgField>
       </div>
-      <CfgField label={t('fm.config.m349.viespref')}>
+      <CfgField label={t('fm.config.m349.viespref')} data-testid="CfgField__cda0bb">
         <select style={INPUT_ST}>
           <option>{t('fm.config.m349.viespref_auto')}</option>
           <option>{t('fm.config.m349.viespref_manual')}</option>
         </select>
       </CfgField>
-      <CfgField label={t('fm.config.m349.keys')}>
+      <CfgField label={t('fm.config.m349.keys')} data-testid="CfgField__cda0bb">
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {['E', 'A', 'T', 'S', 'I'].map(k => (
             <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>
@@ -463,31 +469,43 @@ export function ConfigDrawer({ model, onClose, token, apiBaseUrl }) {
             <>
               {/* Row 1: NIF + Razón social */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                <CfgField label={t('fm.config.declarant.nif') ?? 'NIF / CIF'}>
+                <CfgField
+                  label={t('fm.config.declarant.nif') ?? 'NIF / CIF'}
+                  data-testid="CfgField__cda0bb">
                   <input type="text" value={form.nif} onChange={set('nif')} placeholder="A12345678" style={INPUT_ST} />
                 </CfgField>
-                <CfgField label={t('fm.config.declarant.name') ?? 'Razón social'}>
+                <CfgField
+                  label={t('fm.config.declarant.name') ?? 'Razón social'}
+                  data-testid="CfgField__cda0bb">
                   <input type="text" value={form.name} onChange={set('name')} style={INPUT_ST} />
                 </CfgField>
               </div>
               {/* Row 2: Teléfono + Dirección */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                <CfgField label={t('fm.config.declarant.phone') ?? 'Teléfono'}>
+                <CfgField
+                  label={t('fm.config.declarant.phone') ?? 'Teléfono'}
+                  data-testid="CfgField__cda0bb">
                   <input type="tel" value={form.phone} onChange={set('phone')} placeholder="+34" style={INPUT_ST} />
                 </CfgField>
-                <CfgField label={t('fm.config.declarant.address') ?? 'Dirección'}>
+                <CfgField
+                  label={t('fm.config.declarant.address') ?? 'Dirección'}
+                  data-testid="CfgField__cda0bb">
                   <input type="text" value={form.address} onChange={set('address')} style={INPUT_ST} />
                 </CfgField>
               </div>
               {/* Row 3: Condición sobre el concepto + Tolerancia de importe */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                <CfgField label={t('fm.config.declarant.concept_condition') ?? 'Condición sobre el concepto'}>
+                <CfgField
+                  label={t('fm.config.declarant.concept_condition') ?? 'Condición sobre el concepto'}
+                  data-testid="CfgField__cda0bb">
                   <select value={form.conceptCondition} onChange={set('conceptCondition')} style={INPUT_ST}>
                     <option value="condición">condición</option>
                     <option value="ninguna">ninguna</option>
                   </select>
                 </CfgField>
-                <CfgField label={t('fm.config.declarant.amount_tolerance') ?? 'Tolerancia de importe'}>
+                <CfgField
+                  label={t('fm.config.declarant.amount_tolerance') ?? 'Tolerancia de importe'}
+                  data-testid="CfgField__cda0bb">
                   <select value={form.amountTolerance} onChange={set('amountTolerance')} style={INPUT_ST}>
                     <option value="0%">0%</option>
                     <option value="1%">1%</option>
@@ -498,13 +516,19 @@ export function ConfigDrawer({ model, onClose, token, apiBaseUrl }) {
               </div>
               {/* Row 4: CP + Municipio + Provincia */}
               <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr', gap: 12 }}>
-                <CfgField label={t('fm.config.declarant.postal') ?? 'CP'}>
+                <CfgField
+                  label={t('fm.config.declarant.postal') ?? 'CP'}
+                  data-testid="CfgField__cda0bb">
                   <input type="text" value={form.postal} onChange={set('postal')} style={INPUT_ST} />
                 </CfgField>
-                <CfgField label={t('fm.config.declarant.city') ?? 'Municipio'}>
+                <CfgField
+                  label={t('fm.config.declarant.city') ?? 'Municipio'}
+                  data-testid="CfgField__cda0bb">
                   <input type="text" value={form.city} onChange={set('city')} style={INPUT_ST} />
                 </CfgField>
-                <CfgField label={t('fm.config.declarant.province') ?? 'Provincia'}>
+                <CfgField
+                  label={t('fm.config.declarant.province') ?? 'Provincia'}
+                  data-testid="CfgField__cda0bb">
                   <input type="text" value={form.province} onChange={set('province')} style={INPUT_ST} />
                 </CfgField>
               </div>
@@ -520,24 +544,34 @@ export function ConfigDrawer({ model, onClose, token, apiBaseUrl }) {
                 </div>
                 <div style={{ display: 'flex', gap: 20 }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#121217', cursor: 'pointer' }}>
-                    <Checkbox checked={redeme} onChange={() => { setRedeme(v => !v); setIsDirty(true); }} />
+                    <Checkbox
+                      checked={redeme}
+                      onChange={() => { setRedeme(v => !v); setIsDirty(true); }}
+                      data-testid="Checkbox__cda0bb" />
                     {t('fm.config.m303.redeme') ?? 'Inscrito en REDEME'}
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#121217', cursor: 'pointer' }}>
-                    <Checkbox checked={recc} onChange={() => { setRecc(v => !v); setIsDirty(true); }} />
+                    <Checkbox
+                      checked={recc}
+                      onChange={() => { setRecc(v => !v); setIsDirty(true); }}
+                      data-testid="Checkbox__cda0bb" />
                     {t('fm.config.m303.recc') ?? 'Régimen RECC'}
                   </label>
                 </div>
               </div>
               {/* Prorrata + IBAN */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <CfgField label={t('fm.config.m303.prorata') ?? 'Prorrata'}>
+                <CfgField
+                  label={t('fm.config.m303.prorata') ?? 'Prorrata'}
+                  data-testid="CfgField__cda0bb">
                   <select style={INPUT_ST}>
                     <option>{t('fm.config.m303.prorata_general') ?? 'General'}</option>
                     <option>{t('fm.config.m303.prorata_especial') ?? 'Especial'}</option>
                   </select>
                 </CfgField>
-                <CfgField label={t('fm.config.m303.iban') ?? 'IBAN Domiciliación'}>
+                <CfgField
+                  label={t('fm.config.m303.iban') ?? 'IBAN Domiciliación'}
+                  data-testid="CfgField__cda0bb">
                   <input type="text" placeholder="ES00 0000 0000 0000 0000 0000" style={{ ...INPUT_ST, fontFamily: 'monospace' }} />
                 </CfgField>
               </div>
@@ -545,7 +579,7 @@ export function ConfigDrawer({ model, onClose, token, apiBaseUrl }) {
           )}
 
           {activeTab === 'model' && modelTab === '349' && (
-            <CfgSection349 t={t} />
+            <CfgSection349 t={t} data-testid="CfgSection349__cda0bb" />
           )}
         </div>
 
@@ -558,7 +592,7 @@ export function ConfigDrawer({ model, onClose, token, apiBaseUrl }) {
             onClick={() => { setIsDirty(false); onClose(); }}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
-            <Check size={14} strokeWidth={2} />
+            <Check size={14} strokeWidth={2} data-testid="Check__cda0bb" />
             {t('fm.action.save') ?? 'Guardar'}
           </button>
         </div>
@@ -638,7 +672,10 @@ export function CompareDrawer({ decl, prevDecl, onClose }) {
             );
           })}
           <div style={{ marginTop: 16, padding: '12px 14px', background: 'var(--fm-info-bg)', borderRadius: 12, fontSize: 14, color: 'var(--fm-info-fg)', display: 'flex', gap: 8 }}>
-            <Info size={14} style={{ flexShrink: 0, marginTop: 1, color: 'var(--fm-info-fg)' }} />
+            <Info
+              size={14}
+              style={{ flexShrink: 0, marginTop: 1, color: 'var(--fm-info-fg)' }}
+              data-testid="Info__cda0bb" />
             <span>
               {devImproved
                 ? t('fm.compare.insight.dev_improved', { prev: prevLabel })

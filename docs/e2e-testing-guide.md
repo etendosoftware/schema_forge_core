@@ -528,6 +528,88 @@ Shared UI components (`EntityForm`, `DetailView`, `ListView`, `DataTable`) emit 
 | `row-quick-action-delete-confirm` | — | Destructive button inside the row delete confirm dialog |
 | `generic-preview-modal` | — | `GenericPreviewModal` card (the right-anchored panel) |
 | `preview-drop-zone` | — | Drop zone inside GenericPreviewModal managed left panel |
+| `filter-{name}` | `filter-todos`, `filter-personas` | ListView subset filter buttons |
+| `quick-filter-{name}` | `quick-filter-active` | ListView quick filter toggle buttons |
+| `selection-count` | — | ListView selection bar (count of selected rows) |
+| `list-progress-bar` | — | ListView loading progress indicator |
+| `global-search-trigger` | — | CommandPalette trigger button |
+| `global-search-input` | — | CommandPalette search input |
+| `menu-item-{slug}` | `menu-item-sales-order` | SideMenu navigation items |
+| `topbar-user-menu` | — | UserAvatarButton trigger |
+| `topbar-notifications` | — | TopBar notification bell |
+| `topbar-back` | — | TopBar back navigation button |
+| `topbar-more-actions` | — | TopBar kebab / 3-dot menu |
+| `user-menu-logout` | — | User menu logout button |
+| `user-menu-language-{code}` | `user-menu-language-en_US` | User menu language option |
+| `location-field-{name}` | `location-field-city`, `location-field-postalCode` | Location modal input fields |
+| `location-country-picker` | — | Location modal country select |
+| `location-save` | — | Location modal save button |
+| `field-{type}-{name}` | `field-select-warehouse`, `field-number-qty` | Generic typed field inputs |
+
+## Stable IDs — Public Contract
+
+The following element `id` attributes are used by E2E tests and **must not change** without
+updating the corresponding test files. They are a public API.
+
+| ID | Screen | Usage |
+|----|--------|-------|
+| `#reg-name` | Register | Full name input |
+| `#reg-email` | Register | Email input |
+| `#reg-password` | Register | Password input |
+| `#login-email` | Login | Email input |
+| `#login-password` | Login | Password input |
+| `#forgot-email` | Forgot Password | Email input |
+| `#fullName` | Profile step | Full name input |
+| `#countryCode` | Profile step | Country code selector |
+| `#clientName` | Company step | Company name input |
+| `#fiscalIdValue` | Company step | Fiscal ID input |
+| `#onboarding-language` | Onboarding | Language selector |
+
+## Component Testability Checklist (MANDATORY for new components)
+
+Every new UI component MUST include:
+
+- [ ] `data-testid` on interactive elements (buttons, inputs, selects, toggles)
+- [ ] `data-testid` on container elements E2E tests need to locate (rows, cards, panels, modals)
+- [ ] `data-testid` on action triggers (save, delete, cancel, confirm, submit)
+- [ ] `aria-label` on icon-only buttons (buttons with only an SVG/icon and no visible text)
+- [ ] `role` attributes on semantic containers that use `<div>` instead of native HTML
+- [ ] No `data-testid` uses dynamic CSS classes or translated text
+
+### Naming convention
+
+`{context}-{element}` or `{context}-{element}-{identifier}`
+
+Examples: `filter-todos`, `subtab-row-{id}`, `location-field-city`, `action-bulk-delete`
+
+### Codemod
+
+Run `npm run check:data-testid` to verify all React components have baseline `data-testid`.
+Run `npm run apply:data-testid` to auto-add missing testids (generates `ComponentName__hash`).
+Files can opt out with `// @data-testid-ignore`.
+
+## Document status attributes
+
+Document-aware components expose status via `data-*` attributes for test assertions:
+
+| Attribute | Element | Values |
+|-----------|---------|--------|
+| `data-doc-status` | Detail view container (`data-testid="detail-view"`) | `DR` (draft), `CO` (completed), `VO` (voided), `CL` (closed) |
+| `data-row-status` | List view rows (`data-testid="row-{id}"`) | Same as above |
+| `data-status` | Status badge (`data-testid="document-status-pill"`) | Same as above |
+
+## Toast selectors
+
+Sonner v2 renders `data-type` on each toast element. Use these selectors in E2E tests:
+
+| Selector | Matches |
+|----------|---------|
+| `[data-type="error"]` | Error toasts (`role="alert"`) |
+| `[data-type="success"]` | Success toasts |
+| `[data-type="warning"]` | Warning toasts |
+| `[data-type="info"]` | Info toasts |
+
+The global `<Toaster />` also adds CSS class hooks: `toast-error`, `toast-success`, `toast-warning`, `toast-info`.
 
 ## Writing a mocked list/detail spec
 

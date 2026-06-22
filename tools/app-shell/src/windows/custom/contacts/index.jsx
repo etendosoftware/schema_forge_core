@@ -65,13 +65,13 @@ export default function ContactsWindow(props) {
           onClick={() => setPendingBulkDelete({ rows: selectedRows, clearSelection, onDataMutated, apiBaseUrl, token })}
           className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#FBB1C4] bg-white shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#FFF0F4] transition-colors"
         >
-          <Trash2 className="h-4 w-4 text-[#F3164E]" />
+          <Trash2 className="h-4 w-4 text-[#F3164E]" data-testid="Trash2__ef097c" />
         </button>
         <button
           onClick={clearSelection}
           className="h-9 w-9 flex items-center justify-center rounded-lg hover:bg-[#F5F7F9] transition-colors"
         >
-          <X className="h-4 w-4 text-[#828FA3]" />
+          <X className="h-4 w-4 text-[#828FA3]" data-testid="X__ef097c" />
         </button>
       </>
     ),
@@ -79,7 +79,7 @@ export default function ContactsWindow(props) {
   );
 
   return (
-    <ContactsProvider>
+    <ContactsProvider data-testid="ContactsProvider__ef097c">
       <div className={CONTACTS_WRAPPER}>
         <BusinessPartnerPage
           {...props}
@@ -110,22 +110,32 @@ export default function ContactsWindow(props) {
           secondaryTabsShowHoverLine={true}
           hideAddLineChevron={true}
           addLineButtonPaddingX="pl-2"
-        />
+          data-testid="BusinessPartnerPage__ef097c" />
       </div>
-
-      <Dialog open={Boolean(pendingBulkDelete)} onOpenChange={(open) => { if (!open) handleBulkDeleteCancel(); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{ui('deleteConfirmTitle')}</DialogTitle>
-            <DialogDescription>
+      <Dialog
+        open={Boolean(pendingBulkDelete)}
+        onOpenChange={(open) => { if (!open) handleBulkDeleteCancel(); }}
+        data-testid="Dialog__ef097c">
+        <DialogContent className="max-w-sm" data-testid="DialogContent__ef097c">
+          <DialogHeader data-testid="DialogHeader__ef097c">
+            <DialogTitle data-testid="DialogTitle__ef097c">{ui('deleteConfirmTitle')}</DialogTitle>
+            <DialogDescription data-testid="DialogDescription__ef097c">
               {ui('deleteConfirmMessage')}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={handleBulkDeleteCancel}>
+          <DialogFooter data-testid="DialogFooter__ef097c">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkDeleteCancel}
+              data-testid="Button__ef097c">
               {ui('cancel')}
             </Button>
-            <Button variant="destructive" size="sm" onClick={handleBulkDeleteConfirm}>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleBulkDeleteConfirm}
+              data-testid="Button__ef097c">
               {ui('delete')}
             </Button>
           </DialogFooter>

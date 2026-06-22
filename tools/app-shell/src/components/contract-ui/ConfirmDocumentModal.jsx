@@ -224,7 +224,7 @@ export default function ConfirmDocumentModal({
               icon="🧾"
               title={ui(cardTitleKey)}
               subtitle={ui(cardSubtitleKey)}
-            />
+              data-testid="CheckboxCard__cdf8d1" />
           </div>
         )}
 
@@ -244,7 +244,7 @@ export default function ConfirmDocumentModal({
             disabled={loading}
             style={{ ...btnPrimaryStyle, opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
           >
-            {loading && <Spinner />}
+            {loading && <Spinner data-testid="Spinner__cdf8d1" />}
             {ui(confirmBtnKey)}
           </button>
         </div>

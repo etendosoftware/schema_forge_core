@@ -125,7 +125,7 @@ export default function CreateInvoiceConfirmModal({
             disabled={loading || !checked}
             style={{ ...btnPrimaryStyle, opacity: (loading || !checked) ? 0.6 : 1, cursor: (loading || !checked) ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
-            {loading && <Spinner />}
+            {loading && <Spinner data-testid="Spinner__e6fb8b" />}
             {loading ? ui('soProcessing') : ui('soCreateDocsBtn')}
           </button>
         </div>

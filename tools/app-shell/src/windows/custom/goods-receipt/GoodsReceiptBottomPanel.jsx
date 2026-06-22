@@ -18,7 +18,7 @@ export default function GoodsReceiptBottomPanel(props) {
       {...props}
       relatedDocuments={RelatedDocuments}
       showTotals={false}
-    />
+      data-testid="LinesBottomSection__fced64" />
   );
 }
 GoodsReceiptBottomPanel.showLineTotals = false;
@@ -56,7 +56,7 @@ function useImportModals({ recordId, bpId, base, headers, onRefresh }) {
           headers={headers}
           onClose={() => setShowImportOrderModal(false)}
           onSuccess={() => { setShowImportOrderModal(false); onRefresh?.(); }}
-        />,
+          data-testid="ImportFromPurchaseOrderModal__fced64" />,
         document.body,
       )}
       {showImportInvoiceModal && createPortal(
@@ -67,7 +67,7 @@ function useImportModals({ recordId, bpId, base, headers, onRefresh }) {
           headers={headers}
           onClose={() => setShowImportInvoiceModal(false)}
           onSuccess={() => { setShowImportInvoiceModal(false); onRefresh?.(); }}
-        />,
+          data-testid="ImportFromPurchaseInvoiceModal__fced64" />,
         document.body,
       )}
     </>
@@ -91,7 +91,7 @@ function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl, 
         onClick={() => setShowImportOrderModal(true)}
         style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}
       >
-        <UploadArrowIcon size={13} />
+        <UploadArrowIcon size={13} data-testid="UploadArrowIcon__fced64" />
         {ui('importFromPurchaseOrder')}
       </button>
       <button
@@ -100,7 +100,7 @@ function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl, 
         onClick={() => setShowImportInvoiceModal(true)}
         style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}
       >
-        <InvoiceDocIcon size={13} />
+        <InvoiceDocIcon size={13} data-testid="InvoiceDocIcon__fced64" />
         {ui('importFromPurchaseInvoice')}
       </button>
     </div>
@@ -113,7 +113,7 @@ function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl, 
         onAddLine={onAddLine}
         description={ui('addLinesManuallyOrImportFromPurchaseOrderOrInvoice')}
         secondaryAction={secondaryActions}
-      />
+        data-testid="LinesEmptyState__fced64" />
       {importModals}
     </>
   );
@@ -150,7 +150,7 @@ const ReceiptLineActions = forwardRef(function ReceiptLineActions(
             onClick={() => setShowImportOrderModal(true)}
             style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
           >
-            <UploadArrowIcon size={12} />
+            <UploadArrowIcon size={12} data-testid="UploadArrowIcon__fced64" />
             {ui('importFromPurchaseOrder')}
           </button>
           <button
@@ -158,7 +158,7 @@ const ReceiptLineActions = forwardRef(function ReceiptLineActions(
             onClick={() => setShowImportInvoiceModal(true)}
             style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
           >
-            <InvoiceDocIcon size={12} />
+            <InvoiceDocIcon size={12} data-testid="InvoiceDocIcon__fced64" />
             {ui('importFromPurchaseInvoice')}
           </button>
         </div>

@@ -387,4 +387,60 @@ describe('onboardingApi', () => {
     }));
     assert.equal(messages.length, 3);
   });
+
+  it('runOnboardingStream omits the address key when address is empty', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, options });
+      return streamResponse([{ type: 'result', success: true }]);
+    };
+
+    await runOnboardingStream(fetchImpl, '', 'platform-token', {
+      clientName: 'QA Company',
+      currency: 'EUR',
+      language: 'es_ES',
+      countryCode: 'ES',
+      address: '',
+    }, () => {});
+
+    const body = JSON.parse(calls[0].options.body);
+    assert.equal('address' in body, false);
+  });
+
+  it('runOnboardingStream omits the address key when address is absent', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, options });
+      return streamResponse([{ type: 'result', success: true }]);
+    };
+
+    await runOnboardingStream(fetchImpl, '', 'platform-token', {
+      clientName: 'QA Company',
+      currency: 'EUR',
+      language: 'es_ES',
+      countryCode: 'ES',
+    }, () => {});
+
+    const body = JSON.parse(calls[0].options.body);
+    assert.equal('address' in body, false);
+  });
+
+  it('runOnboardingStream includes the address key when address is provided', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, options });
+      return streamResponse([{ type: 'result', success: true }]);
+    };
+
+    await runOnboardingStream(fetchImpl, '', 'platform-token', {
+      clientName: 'QA Company',
+      currency: 'EUR',
+      language: 'es_ES',
+      countryCode: 'ES',
+      address: 'QA Street 123',
+    }, () => {});
+
+    const body = JSON.parse(calls[0].options.body);
+    assert.equal(body.address, 'QA Street 123');
+  });
 });

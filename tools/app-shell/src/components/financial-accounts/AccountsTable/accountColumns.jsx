@@ -34,12 +34,15 @@ function NameCell({ account, ui }) {
   // psd2Connected === true is treated as offline for bank/card rows.
   const isDisconnected = !isCashLike && account.psd2Connected !== true;
   return (
-    <TableCell className="w-[480px] p-0">
+    <TableCell className="w-[480px] p-0" data-testid="TableCell__dc050f">
       <div className="flex h-full items-center">
         <div className="flex w-[44px] shrink-0 items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
-          <GripVertical className="h-5 w-5 text-[#828FA3]" aria-hidden="true" />
+          <GripVertical
+            className="h-5 w-5 text-[#828FA3]"
+            aria-hidden="true"
+            data-testid="GripVertical__dc050f" />
         </div>
-        <AccountLogoAvatar account={account} />
+        <AccountLogoAvatar account={account} data-testid="AccountLogoAvatar__dc050f" />
         <div className="flex flex-1 flex-col justify-center gap-1 px-2 py-2">
           <div className="flex items-center gap-1">
             <span className="text-sm font-semibold leading-5 text-[#121217]">{account.name}</span>
@@ -49,7 +52,7 @@ function NameCell({ account, ui }) {
               </span>
             ) : null}
           </div>
-          <SyncStatusInline account={account} />
+          <SyncStatusInline account={account} data-testid="SyncStatusInline__dc050f" />
         </div>
       </div>
     </TableCell>
@@ -66,7 +69,7 @@ function TypeCell({ account, ui }) {
     }
   };
   return (
-    <TableCell className="w-[340px] px-2 py-2">
+    <TableCell className="w-[340px] px-2 py-2" data-testid="TableCell__dc050f">
       <div className="flex flex-col justify-center">
         <span className="text-sm font-normal leading-5 text-[#121217]">{typeLabel}</span>
         {account.iban && (
@@ -79,7 +82,7 @@ function TypeCell({ account, ui }) {
               data-testid={`account-row-copy-iban-${account.id}`}
               className="rounded-full p-0.5 text-[#828FA3] opacity-0 transition-opacity hover:bg-[#E8EAEF] group-hover:opacity-100"
             >
-              <Copy className="h-3.5 w-3.5" />
+              <Copy className="h-3.5 w-3.5" data-testid="Copy__dc050f" />
             </button>
           </span>
         )}
@@ -97,7 +100,7 @@ function TypeCell({ account, ui }) {
 function BalanceCell({ account }) {
   const isNegative = Number(account.currentBalance) < 0;
   return (
-    <TableCell className="w-[200px] px-2 text-right">
+    <TableCell className="w-[200px] px-2 text-right" data-testid="TableCell__dc050f">
       <span className={cn('text-sm font-semibold leading-5 tabular-nums', isNegative ? 'text-[#D50B3E]' : 'text-[#121217]')}>
         {formatCurrency(account.currencyIso, account.currentBalance)}
       </span>
@@ -110,15 +113,15 @@ export const ACCOUNT_CELL_RENDERERS = {
   name: {
     headClass: 'w-[480px] pl-[84px] pr-2',
     labelKey: 'financeAccountsColAccount',
-    renderCell: (account, ctx) => <NameCell account={account} ui={ctx.ui} />,
+    renderCell: (account, ctx) => <NameCell account={account} ui={ctx.ui} data-testid="NameCell__dc050f" />,
     renderSkeleton: (key) => (
-      <TableCell key={key} className="w-[480px] p-0">
+      <TableCell key={key} className="w-[480px] p-0" data-testid="TableCell__dc050f">
         <div className="flex items-center">
           <div className="w-[44px]" />
-          <Skeleton className="h-8 w-8 rounded-full" />
+          <Skeleton className="h-8 w-8 rounded-full" data-testid="Skeleton__dc050f" />
           <div className="flex flex-1 flex-col gap-1 px-3">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-4 w-32" data-testid="Skeleton__dc050f" />
+            <Skeleton className="h-3 w-24" data-testid="Skeleton__dc050f" />
           </div>
         </div>
       </TableCell>
@@ -127,12 +130,12 @@ export const ACCOUNT_CELL_RENDERERS = {
   type: {
     headClass: 'w-[340px] px-2',
     labelKey: 'financeAccountsColType',
-    renderCell: (account, ctx) => <TypeCell account={account} ui={ctx.ui} />,
+    renderCell: (account, ctx) => <TypeCell account={account} ui={ctx.ui} data-testid="TypeCell__dc050f" />,
     renderSkeleton: (key) => (
-      <TableCell key={key} className="w-[340px]">
+      <TableCell key={key} className="w-[340px]" data-testid="TableCell__dc050f">
         <div className="flex flex-col gap-1">
-          <Skeleton className="h-4 w-16" />
-          <Skeleton className="h-3 w-40" />
+          <Skeleton className="h-4 w-16" data-testid="Skeleton__dc050f" />
+          <Skeleton className="h-3 w-40" data-testid="Skeleton__dc050f" />
         </div>
       </TableCell>
     ),
@@ -140,10 +143,13 @@ export const ACCOUNT_CELL_RENDERERS = {
   currentBalance: {
     headClass: 'w-[200px] px-2',
     labelKey: 'financeAccountsColBalance',
-    renderCell: (account) => <BalanceCell account={account} />,
+    renderCell: (account) => <BalanceCell account={account} data-testid="BalanceCell__dc050f" />,
     renderSkeleton: (key) => (
-      <TableCell key={key} className="w-[200px] text-right">
-        <Skeleton className="ml-auto h-4 w-24" />
+      <TableCell
+        key={key}
+        className="w-[200px] text-right"
+        data-testid="TableCell__dc050f">
+        <Skeleton className="ml-auto h-4 w-24" data-testid="Skeleton__dc050f" />
       </TableCell>
     ),
   },

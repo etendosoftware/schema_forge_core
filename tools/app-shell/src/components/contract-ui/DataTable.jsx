@@ -191,14 +191,18 @@ function TableSkeleton({ columns }) {
       {/* Header skeleton */}
       <div className="flex gap-3 px-2">
         {columns.map(col => (
-          <Skeleton key={col.key} className="h-4 flex-1" />
+          <Skeleton key={col.key} className="h-4 flex-1" data-testid="Skeleton__eb5261" />
         ))}
       </div>
       {/* Row skeletons */}
       {Array.from({ length: 5 }).map((_, i) => (
         <div key={i} className="flex gap-3 px-2">
           {columns.map(col => (
-            <Skeleton key={col.key} className="h-8 flex-1" style={{ opacity: 1 - i * 0.15 }} />
+            <Skeleton
+              key={col.key}
+              className="h-8 flex-1"
+              style={{ opacity: 1 - i * 0.15 }}
+              data-testid="Skeleton__eb5261" />
           ))}
         </div>
       ))}
@@ -213,7 +217,7 @@ function EmptyState({ hasFilter, totalCount }) {
   const ui = useUI();
   return (
     <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-      <Inbox className="h-10 w-10 mb-3 opacity-40" />
+      <Inbox className="h-10 w-10 mb-3 opacity-40" data-testid="Inbox__eb5261" />
       {hasFilter ? (
         <>
           <p className="text-sm font-medium">{ui('noMatchingRecords')}</p>
@@ -292,65 +296,69 @@ function renderSelectorCell({
   const selectorUrl = buildSelectorUrl(apiBaseUrl, entity, field);
 
   if (options.length === 0) {
-    if (!selectorUrl) return <TableCell key={col.key} className="py-1 px-2"/>;
+    if (!selectorUrl) return (
+      <TableCell
+        key={col.key}
+        className="py-1 px-2"
+        data-testid={"TableCell__" + field.id} />
+    );
     return (
-        <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
-          <InlineSearchCombo
-              field={field}
-              value={values[field.key] ?? ''}
-              displayLabel={values[field.key + '$_identifier'] || ''}
-              options={[]}
-              onChange={(id, label, selectedItem) => {
-                touchedFieldsRef.current.add(field.key);
-                handleChange(field.key + '$_identifier', label || '');
-                handleFieldChange(field.key, id, selectedItem);
-              }}
-              onKeyDown={handleKeyDown}
-              inputRef={isFirst ? firstInputRef : undefined}
-              placeholder={fieldLabel}
-              selectorUrl={selectorUrl}
-              selectorContext={selectorContext}
-              token={token}
-          />
-        </TableCell>
+      <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
+        <InlineSearchCombo
+          field={field}
+          value={values[field.key] ?? ''}
+          displayLabel={values[field.key + '$_identifier'] || ''}
+          options={[]}
+          onChange={(id, label, selectedItem) => {
+            touchedFieldsRef.current.add(field.key);
+            handleChange(field.key + '$_identifier', label || '');
+            handleFieldChange(field.key, id, selectedItem);
+          }}
+          onKeyDown={handleKeyDown}
+          inputRef={isFirst ? firstInputRef : undefined}
+          placeholder={fieldLabel}
+          selectorUrl={selectorUrl}
+          selectorContext={selectorContext}
+          token={token}
+          data-testid={"InlineSearchCombo__" + field.id} />
+      </TableCell>
     );
   }
   return (
-      <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
-        <Select
-            value={values[field.key] || undefined}
-            onValueChange={(val) => {
-              if (val === '__empty__') {
-                handleChange(field.key + '$_identifier', '');
-                handleFieldChange(field.key, '', null);
-                return;
-              }
-              const opt = options.find(o => o.id === val);
-              if (opt) {
-                handleChange(field.key + '$_identifier', opt.name || opt.label || opt._identifier || '');
-              }
-              handleFieldChange(field.key, val, opt);
+    <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
+      <Select
+        value={values[field.key] || undefined}
+        onValueChange={(val) => {
+          if (val === '__empty__') {
+            handleChange(field.key + '$_identifier', '');
+            handleFieldChange(field.key, '', null);
+            return;
+          }
+          const opt = options.find(o => o.id === val);
+          if (opt) {
+            handleChange(field.key + '$_identifier', opt.name || opt.label || opt._identifier || '');
+          }
+          handleFieldChange(field.key, val, opt);
+        }}
+        data-testid={"Select__" + field.id}>
+        <SelectTrigger
+            ref={isFirst ? firstInputRef : undefined}
+            data-testid={`inline-add-field-${field.key}`}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') handleKeyDown(e);
             }}
+            className="w-full h-8 text-sm bg-white focus:ring-2 focus:ring-primary"
         >
-          <SelectTrigger
-              ref={isFirst ? firstInputRef : undefined}
-              data-testid={`inline-add-field-${field.key}`}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') handleKeyDown(e);
-              }}
-              className="w-full h-8 text-sm bg-white focus:ring-2 focus:ring-primary"
-          >
-            <SelectValue placeholder={fieldLabel}/>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__empty__">&nbsp;</SelectItem>
-            {options.map(opt => (
-                <SelectItem key={opt.id}
-                            value={opt.id}>{opt.name || opt.label || opt._identifier || opt.id}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </TableCell>
+          <SelectValue placeholder={fieldLabel} data-testid={"SelectValue__" + field.id} />
+        </SelectTrigger>
+        <SelectContent data-testid={"SelectContent__" + field.id}>
+          <SelectItem value="__empty__" data-testid={"SelectItem__" + field.id}>&nbsp;</SelectItem>
+          {options.map(opt => (
+              <SelectItem key={opt.id} value={opt.id} data-testid={"SelectItem__" + field.id}>{opt.name || opt.label || opt._identifier || opt.id}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </TableCell>
   );
 }
 
@@ -691,9 +699,12 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     <TableRow ref={rowRef} data-testid="inline-add-row" className="bg-blue-50/50 border-t-2 border-primary/20">
       {/* Saving spinner — aligned with selection checkbox column (empty when idle). */}
       {selectable && (
-        <TableCell className="w-10 px-1">
+        <TableCell className="w-10 px-1" data-testid="TableCell__eb5261">
           <div className="flex items-center justify-center h-7">
-            {isSaving && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-label="Saving line" />}
+            {isSaving && <Loader2
+              className="h-4 w-4 animate-spin text-muted-foreground"
+              aria-label="Saving line"
+              data-testid="Loader2__eb5261" />}
           </div>
         </TableCell>
       )}
@@ -744,7 +755,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
                 onKeyDown={handleKeyDown}
                 title={lookupTitle}
                 drawerKey={drawerKey}
-              />
+                data-testid="LookupField__eb5261" />
             </TableCell>
           );
         }
@@ -775,7 +786,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
                 selectorUrl={selectorUrl}
                 selectorContext={selectorContext}
                 token={token}
-              />
+                data-testid="InlineSearchCombo__eb5261" />
             </TableCell>
           );
         }
@@ -788,19 +799,19 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
                 value={values[field.key] || undefined}
                 onValueChange={(val) => handleFieldChange(field.key, val === '__empty__' ? '' : val)}
                 required={field.required}
-              >
+                data-testid="Select__eb5261">
                 <SelectTrigger
                   ref={isFirst ? firstInputRef : undefined}
                   data-testid={`inline-add-field-${field.key}`}
                   onKeyDown={(e) => { if (e.key === 'Escape') handleKeyDown(e); }}
                   className="w-full h-8 text-sm bg-white focus:ring-2 focus:ring-primary"
                 >
-                  <SelectValue placeholder={field.label ?? field.key} />
+                  <SelectValue placeholder={field.label ?? field.key} data-testid="SelectValue__eb5261" />
                 </SelectTrigger>
-                <SelectContent>
-                  {!field.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
+                <SelectContent data-testid="SelectContent__eb5261">
+                  {!field.required && <SelectItem value="__empty__" data-testid="SelectItem__eb5261">&nbsp;</SelectItem>}
                   {field.options.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    <SelectItem key={opt.value} value={opt.value} data-testid="SelectItem__eb5261">{opt.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -830,18 +841,18 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           InlineLinesPanel's 160px slot, not to separate columns here. */}
       {!ilpTrailing && (hoverRowActions ? (
         <>
-          <TableCell className="w-10" />
-          {hoverRowHasDelete && <TableCell className="w-10" />}
+          <TableCell className="w-10" data-testid="TableCell__eb5261" />
+          {hoverRowHasDelete && <TableCell className="w-10" data-testid="TableCell__eb5261" />}
         </>
       ) : (
         <>
-          {hasDeleteColumn && <TableCell className="w-10" />}
-          {hasCloneColumn && <TableCell className="w-10" />}
+          {hasDeleteColumn && <TableCell className="w-10" data-testid="TableCell__eb5261" />}
+          {hasCloneColumn && <TableCell className="w-10" data-testid="TableCell__eb5261" />}
         </>
       ))}
-      {!ilpTrailing && hasQuickActionsColumn && <TableCell className="w-10" />}
-      {ilpHasNoAmountCol && <TableCell aria-hidden="true" />}
-      {ilpTrailing && <TableCell aria-hidden="true" />}
+      {!ilpTrailing && hasQuickActionsColumn && <TableCell className="w-10" data-testid="TableCell__eb5261" />}
+      {ilpHasNoAmountCol && <TableCell aria-hidden="true" data-testid="TableCell__eb5261" />}
+      {ilpTrailing && <TableCell aria-hidden="true" data-testid="TableCell__eb5261" />}
     </TableRow>
   );
 });
@@ -945,7 +956,9 @@ function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContex
         }}
         className={`w-full h-8 text-sm rounded-md border bg-white px-2 text-left flex items-center gap-2 focus:ring-2 focus:outline-none transition-colors${isInvalid ? ' border-red-500 focus:ring-red-500' : ' border-input hover:border-primary/50 focus:ring-primary'}`}
       >
-        <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        <Search
+          className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+          data-testid="Search__eb5261" />
         {value ? (
           <span className="truncate text-foreground">{value}</span>
         ) : (
@@ -966,7 +979,7 @@ function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContex
         selectorContext={selectorContext}
         token={token}
         title={title || undefined}
-      />
+        data-testid="Drawer__eb5261" />
     </>
   );
 }
@@ -984,7 +997,7 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
         className="h-8 w-8 flex items-center justify-center rounded border border-input hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors shrink-0"
         title={title || ''}
       >
-        <Search className="h-3.5 w-3.5" />
+        <Search className="h-3.5 w-3.5" data-testid="Search__eb5261" />
       </button>
       <ProductSearchDrawer
         open={open}
@@ -994,7 +1007,7 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
         selectorContext={selectorContext}
         token={token}
         title={title || undefined}
-      />
+        data-testid="ProductSearchDrawer__eb5261" />
     </>
   );
 }
@@ -1018,13 +1031,13 @@ function getTableContainerStyle(hideHeader) {
 function renderRowActionHeaderCells(hoverRowActions, onDeleteRow, legacyDeleteEnabled, onCloneRow, quickActionsEnabled) {
   return hoverRowActions ? (
     <>
-      <TableHead className="w-10 px-2" />
-      {onDeleteRow && <TableHead className="w-10 px-2" />}
+      <TableHead className="w-10 px-2" data-testid="TableHead__eb5261" />
+      {onDeleteRow && <TableHead className="w-10 px-2" data-testid="TableHead__eb5261" />}
     </>
   ) : (
     <>
-      {legacyDeleteEnabled && <TableHead className="w-10 px-2" />}
-      {onCloneRow && !quickActionsEnabled && <TableHead className="w-10 px-2" />}
+      {legacyDeleteEnabled && <TableHead className="w-10 px-2" data-testid="TableHead__eb5261" />}
+      {onCloneRow && !quickActionsEnabled && <TableHead className="w-10 px-2" data-testid="TableHead__eb5261" />}
     </>
   );
 }
@@ -1032,13 +1045,13 @@ function renderRowActionHeaderCells(hoverRowActions, onDeleteRow, legacyDeleteEn
 function renderRowActionFooterCells(hoverRowActions, onDeleteRow, legacyDeleteEnabled, onCloneRow, quickActionsEnabled) {
   return hoverRowActions ? (
     <>
-      <TableCell />
-      {onDeleteRow && <TableCell />}
+      <TableCell data-testid="TableCell__eb5261" />
+      {onDeleteRow && <TableCell data-testid="TableCell__eb5261" />}
     </>
   ) : (
     <>
-      {legacyDeleteEnabled && <TableCell />}
-      {onCloneRow && !quickActionsEnabled && <TableCell />}
+      {legacyDeleteEnabled && <TableCell data-testid="TableCell__eb5261" />}
+      {onCloneRow && !quickActionsEnabled && <TableCell data-testid="TableCell__eb5261" />}
     </>
   );
 }
@@ -1073,8 +1086,8 @@ function renderBooleanFallback(val, ui) {
 function renderBooleanBadge(col, val, trueLabel, falseLabel) {
   const trueVariant = col.badgeVariants?.true ?? 'green';
   const falseVariant = col.badgeVariants?.false ?? 'neutral';
-  if (isTruthyBoolean(val)) return <Tag variant={trueVariant} label={trueLabel} />;
-  if (isFalsyBoolean(val)) return <Tag variant={falseVariant} label={falseLabel} />;
+  if (isTruthyBoolean(val)) return <Tag variant={trueVariant} label={trueLabel} data-testid="Tag__eb5261" />;
+  if (isFalsyBoolean(val)) return <Tag variant={falseVariant} label={falseLabel} data-testid="Tag__eb5261" />;
   // Unknown value: caller falls through to em-dash fallback.
   return null;
 }
@@ -1148,7 +1161,7 @@ function renderEnumCell(rawValue, tMenu, col) {
   }
   if (col.enumVariants) {
     const variant = col.enumVariants[raw] ?? 'neutral';
-    return <Tag variant={variant} label={label} />;
+    return <Tag variant={variant} label={label} data-testid="Tag__eb5261" />;
   }
   return <span>{label}</span>;
 }
@@ -1179,7 +1192,7 @@ function renderBooleanCell({ rawValue, col, savingToggles, toggleKey, handleInli
             });
           }}
           aria-label={resolveColumnLabel(col, locale, t)}
-        />
+          data-testid="Switch__eb5261" />
       </div>
     );
   }
@@ -1430,7 +1443,7 @@ export function DataTable({
           </span>
         );
       }
-      return <StatusTag status={raw} label={label} />;
+      return <StatusTag status={raw} label={label} data-testid="StatusTag__eb5261" />;
     }
     // === status-cell: HASTA ACA ===
 
@@ -1495,7 +1508,9 @@ export function DataTable({
   if (loading) {
     return (
       <div className="space-y-4">
-        <TableSkeleton columns={visibleColumns.length > 0 ? visibleColumns : [{ key: '_1' }, { key: '_2' }, { key: '_3' }]} />
+        <TableSkeleton
+          columns={visibleColumns.length > 0 ? visibleColumns : [{ key: '_1' }, { key: '_2' }, { key: '_3' }]}
+          data-testid="TableSkeleton__eb5261" />
       </div>
     );
   }
@@ -1545,7 +1560,7 @@ export function DataTable({
   return (
     <div className="space-y-0">
       <div className={linesLayout === 'inlineEditable' ? '[&>div]:!overflow-visible' : 'overflow-x-auto overflow-y-visible'}>
-        <Table style={getTableContainerStyle(hideHeader)}>
+        <Table style={getTableContainerStyle(hideHeader)} data-testid="Table__eb5261">
           {/* When hideHeader is true (add-row-only mode), a <colgroup> drives column
               widths with the same fixed/auto split used by InlineLinesPanel's flex
               layout. Fixed-size columns (flex-grow: 0) get explicit pixel widths;
@@ -1577,19 +1592,19 @@ export function DataTable({
             className={linesLayout === 'inlineEditable' ? 'sticky top-0 z-20 bg-white' : ''}
             aria-hidden={hideHeader || undefined}
             style={hideHeader ? { display: 'none' } : undefined}
-          >
-            <TableRow className="border-b border-border/40">
+            data-testid="TableHeader__eb5261">
+            <TableRow className="border-b border-border/40" data-testid="TableRow__eb5261">
               {selectable && (
                 <TableHead
                   className="w-10 px-3 align-middle"
                   onClick={(e) => e.stopPropagation()}
-                >
+                  data-testid="TableHead__eb5261">
                   <Checkbox
                     checked={allSelected}
                     indeterminate={someSelected}
                     onChange={toggleAll}
                     onClick={(e) => e.stopPropagation()}
-                  />
+                    data-testid="Checkbox__eb5261" />
                 </TableHead>
               )}
               {visibleColumns.map((col, colIdx) => {
@@ -1629,14 +1644,17 @@ export function DataTable({
                 );
               })}
               {renderRowActionHeaderCells(hoverRowActions, onDeleteRow, legacyDeleteEnabled, onCloneRow, quickActionsEnabled)}
-              {quickActionsEnabled && <TableHead className="w-10 px-2" aria-hidden="true" />}
+              {quickActionsEnabled && <TableHead className="w-10 px-2" aria-hidden="true" data-testid="TableHead__eb5261" />}
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody data-testid="TableBody__eb5261">
             {!hideDataRows && (filteredData.length === 0 && !addRow?.active ? (
-              <TableRow data-empty-state="">
-                <TableCell colSpan={colSpan} className="p-0">
-                  <EmptyState hasFilter={hasActiveFilter} totalCount={data.length} />
+              <TableRow data-empty-state="" data-testid="TableRow__eb5261">
+                <TableCell colSpan={colSpan} className="p-0" data-testid="TableCell__eb5261">
+                  <EmptyState
+                    hasFilter={hasActiveFilter}
+                    totalCount={data.length}
+                    data-testid="EmptyState__eb5261" />
                 </TableCell>
               </TableRow>
             ) : (
@@ -1646,7 +1664,9 @@ export function DataTable({
                 return (
                   <TableRow
                     key={row.id ?? idx}
+                    role="row"
                     data-testid={`row-${row.id ?? idx}`}
+                    data-row-status={row.documentStatus}
                     onClick={() => {
                       if (editingRowId === row.id) return;
                       if (onRowClick) onRowClick(row);
@@ -1658,13 +1678,16 @@ export function DataTable({
                     {selectable && (() => {
                       const rowDisabled = isRowSelectable && !isRowSelectable(row);
                       return (
-                        <TableCell className="w-10 px-3" onClick={(e) => e.stopPropagation()}>
+                        <TableCell
+                          className="w-10 px-3"
+                          onClick={(e) => e.stopPropagation()}
+                          data-testid="TableCell__eb5261">
                           <Checkbox
                             checked={isChecked}
                             disabled={rowDisabled}
                             onChange={(e) => toggleRow(e, row)}
                             onClick={(e) => e.stopPropagation()}
-                          />
+                            data-testid="Checkbox__eb5261" />
                         </TableCell>
                       );
                     })()}
@@ -1689,7 +1712,10 @@ export function DataTable({
                     })}
                     {hoverRowActions ? (
                       <>
-                        <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
+                        <TableCell
+                          className="w-10 px-2"
+                          onClick={(e) => e.stopPropagation()}
+                          data-testid="TableCell__eb5261">
                           {editingRowId === row.id ? (
                             <button
                               type="button"
@@ -1697,7 +1723,7 @@ export function DataTable({
                               className="h-8 w-8 flex items-center justify-center rounded-full text-[#17663A] hover:bg-[#EEFBF4] transition-all"
                               aria-label={ui('save')}
                             >
-                              <Check className="h-5 w-5" aria-hidden="true" />
+                              <Check className="h-5 w-5" aria-hidden="true" data-testid="Check__eb5261" />
                             </button>
                           ) : (
                             <button
@@ -1711,12 +1737,15 @@ export function DataTable({
                               className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 h-8 w-8 flex items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9] transition-all"
                               aria-label={ui('edit')}
                             >
-                              <Pencil className="h-5 w-5" aria-hidden="true" />
+                              <Pencil className="h-5 w-5" aria-hidden="true" data-testid="Pencil__eb5261" />
                             </button>
                           )}
                         </TableCell>
                         {onDeleteRow && (
-                          <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
+                          <TableCell
+                            className="w-10 px-2"
+                            onClick={(e) => e.stopPropagation()}
+                            data-testid="TableCell__eb5261">
                             {editingRowId === row.id ? (
                               <button
                                 type="button"
@@ -1724,7 +1753,7 @@ export function DataTable({
                                 className="h-8 w-8 flex items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9] transition-all"
                                 aria-label={ui('cancel')}
                               >
-                                <X className="h-5 w-5" aria-hidden="true" />
+                                <X className="h-5 w-5" aria-hidden="true" data-testid="X__eb5261" />
                               </button>
                             ) : (
                               <button
@@ -1748,8 +1777,11 @@ export function DataTable({
                                 data-testid={`row-delete-${row.id}`}
                               >
                                 {deletingRows[row.id]
-                                  ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-                                  : <Trash2 className="h-5 w-5" aria-hidden="true" />}
+                                  ? <Loader2
+                                  className="h-5 w-5 animate-spin"
+                                  aria-hidden="true"
+                                  data-testid="Loader2__eb5261" />
+                                  : <Trash2 className="h-5 w-5" aria-hidden="true" data-testid="Trash2__eb5261" />}
                               </button>
                             )}
                           </TableCell>
@@ -1758,7 +1790,10 @@ export function DataTable({
                     ) : (
                       <>
                         {legacyDeleteEnabled && (
-                          <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
+                          <TableCell
+                            className="w-10 px-2"
+                            onClick={(e) => e.stopPropagation()}
+                            data-testid="TableCell__eb5261">
                             <button
                               type="button"
                               disabled={!!deletingRows[row.id]}
@@ -1780,12 +1815,18 @@ export function DataTable({
                               aria-label={ui('deleteRowTooltip')}
                               data-testid={`row-delete-${row.id}`}
                             >
-                              {deletingRows[row.id] ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />}
+                              {deletingRows[row.id] ? <Loader2
+                                className="h-3.5 w-3.5 animate-spin"
+                                aria-hidden="true"
+                                data-testid="Loader2__eb5261" /> : <Trash2 className="h-3.5 w-3.5" aria-hidden="true" data-testid="Trash2__eb5261" />}
                             </button>
                           </TableCell>
                         )}
                         {onCloneRow && !quickActionsEnabled && (
-                          <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
+                          <TableCell
+                            className="w-10 px-2"
+                            onClick={(e) => e.stopPropagation()}
+                            data-testid="TableCell__eb5261">
                             <div className="relative group/clonebtn flex items-center justify-center">
                               <button
                                 type="button"
@@ -1794,7 +1835,7 @@ export function DataTable({
                                 style={{ width: 26, height: 26 }}
                                 aria-label={ui('cloneOrderBtn')}
                               >
-                                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                                <Copy className="h-3.5 w-3.5" aria-hidden="true" data-testid="Copy__eb5261" />
                               </button>
                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-xs font-medium text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover/clonebtn:opacity-100 pointer-events-none transition-opacity z-10">
                                 {ui('cloneOrderBtn')}
@@ -1805,7 +1846,10 @@ export function DataTable({
                       </>
                     )}
                     {quickActionsEnabled && (
-                      <TableCell className="w-10 px-2 relative" onClick={(e) => e.stopPropagation()}>
+                      <TableCell
+                        className="w-10 px-2 relative"
+                        onClick={(e) => e.stopPropagation()}
+                        data-testid="TableCell__eb5261">
                         <RowQuickActions
                           row={row}
                           entity={entity}
@@ -1822,7 +1866,7 @@ export function DataTable({
                           onDelete={rowQuickActions.onDelete}
                           onMenuActionExecuted={rowQuickActions.onMenuActionExecuted}
                           actionsConfig={rowQuickActions.actions}
-                        />
+                          data-testid="RowQuickActions__eb5261" />
                       </TableCell>
                     )}
                   </TableRow>
@@ -1853,22 +1897,25 @@ export function DataTable({
                 selectorContext={selectorContext}
                 ilpHasNoAmountCol={ilpHasNoAmountCol}
                 ilpTrailing={ilpTrailing}
-              />
+                data-testid="InlineAddRow__eb5261" />
             )}
           </TableBody>
           {totals && showFooterTotals && (
-            <TableFooter>
-              <TableRow className="font-medium">
-                {selectable && <TableCell />}
+            <TableFooter data-testid="TableFooter__eb5261">
+              <TableRow className="font-medium" data-testid="TableRow__eb5261">
+                {selectable && <TableCell data-testid="TableCell__eb5261" />}
                 {visibleColumns.map((col, idx) => (
-                  <TableCell key={col.key} className={col.type === 'amount' ? 'tabular-nums text-right font-semibold' : ''}>
+                  <TableCell
+                    key={col.key}
+                    className={col.type === 'amount' ? 'tabular-nums text-right font-semibold' : ''}
+                    data-testid="TableCell__eb5261">
                     {col.type === 'amount'
                       ? formatAmount(totals[col.key], filteredData[0]?.['currency$_identifier'])
                       : ''}
                   </TableCell>
                 ))}
                 {renderRowActionFooterCells(hoverRowActions, onDeleteRow, legacyDeleteEnabled, onCloneRow, quickActionsEnabled)}
-                {quickActionsEnabled && <TableCell />}
+                {quickActionsEnabled && <TableCell data-testid="TableCell__eb5261" />}
               </TableRow>
             </TableFooter>
           )}
