@@ -30,6 +30,7 @@ import { checkSalesInvoiceReadiness } from './onboarding/onboardingReadiness.js'
 import { useLocaleSwitch, useUI } from '../i18n/index.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../lib/oauthReturnTo.js';
 import { track } from '../lib/observability.js';
+import { trackSessionStarted } from '../lib/observability/health-events.js';
 import {
   applyProgressMessage,
   buildEnvironmentSessionStorage,
@@ -885,6 +886,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
           action: 'enter_environment',
           status: 'success',
         });
+        trackSessionStarted({ username: env.adminUserName || env.adminUser, clientId: env.clientId });
         window.location.href = buildAppReturnToHref(
           getSafeReturnTo(window.location.search),
           window.location.pathname

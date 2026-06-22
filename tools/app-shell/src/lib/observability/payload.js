@@ -21,12 +21,15 @@ const DENYLISTED_PROPERTY_KEYS = new Set([
 ]);
 
 const SAFE_EVENT_PROPERTY_KEYS = new Set([
+  'account_id',
   'action',
   'app',
   'component',
+  'document_type',
   'enabled',
   'environment',
   'event',
+  'functional_area',
   'hostname',
   'locale',
   'mockMode',
@@ -37,6 +40,7 @@ const SAFE_EVENT_PROPERTY_KEYS = new Set([
   'status',
   'timestamp',
   'type',
+  'username',
   'windowName',
 ]);
 
