@@ -26,6 +26,9 @@ const SPEC = 'simple-g-l-journal';
 const ENTITY = 'gLJournal';
 const LINE_ENTITY = 'gLJournalLine';
 const RECORD_ID = 'glj-001';
+// Mocked line /defaults response value — the parent journal's description that
+// the backend resolves @DESCRIPTION1@ to. The add-row must pre-fill it.
+const LINE_DEFAULT_DESC = 'Mocked header desc';
 
 // Draft header (processed: 'N' so the form stays editable and the document is
 // not locked — otherwise the save button would be disabled regardless of balance).
@@ -35,7 +38,14 @@ const HEADER = {
   description: 'E2E manual journal',
   processed: 'N',
   posted: 'N',
+  // Required header fields — must all be present so the add-line guard
+  // (resolveCanAddLines) lets the inline add-row open.
+  accountingDate: '2026-06-22',
+  period: 'period-001',
+  currency: 'cur-eur',
   'currency$_identifier': 'EUR',
+  opening: 'N',
+  multigeneralLedger: 'N',
 };
 
 // Two-line journals keyed by scenario. The footer sums foreignCurrencyDebit and
@@ -102,6 +112,18 @@ async function installJournalMock(page, lines) {
     });
   });
 
+  // HandleDefaults: GET /gLJournalLine/defaults?parentId=<id> → backend-resolved
+  // line defaults. Registered AFTER the generic line route so it wins (Playwright
+  // matches routes in reverse registration order). The line description default
+  // (@DESCRIPTION1@) resolves to the parent journal's description on the backend.
+  await page.route(`**/sws/neo/${SPEC}/${LINE_ENTITY}/defaults**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ defaults: { description: LINE_DEFAULT_DESC } }),
+    });
+  });
+
   return { wasSaveRequested: () => saveRequested };
 }
 
@@ -156,5 +178,20 @@ test.describe('Simple G/L Journal — balance footer', () => {
     await descInput.fill('E2E manual journal — edited');
 
     await expect(page.getByTestId('action-save')).toBeDisabled();
+  });
+
+  test('new line add-row pre-fills the description from the line /defaults (HandleDefaults)', async ({ page }) => {
+    await openJournal(page, BALANCED_LINES);
+
+    // Open the inline add-row for a new line. The add-line button lives in the
+    // primary lines' inline-add portal span (classic layout).
+    await page.locator('[data-inline-add-portal="true"] button').first().click();
+    await expect(page.getByTestId('inline-add-row')).toBeVisible({ timeout: 5_000 });
+
+    // The empty description field is seeded from the mocked line /defaults response
+    // (backend resolves @DESCRIPTION1@ → parent journal description).
+    const addDesc = page.getByTestId('inline-add-field-description');
+    await expect(addDesc).toBeVisible();
+    await expect(addDesc).toHaveValue(LINE_DEFAULT_DESC);
   });
 });

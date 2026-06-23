@@ -30,23 +30,26 @@
           "visibility": "editable",
           "grid": true,
           "searchable": true,
-          "readOnlyLogicJs": "record['processed'] === true"
+          "readOnlyLogicJs": "record['processed'] === true",
+          "seq": 30
         },
         "documentType": {
           "visibility": "system",
           "reason": "Hidden from the form but still defaulted under the hood (DocBaseType='GLJ') — needed for posting/sequencing later."
         },
         "documentDate": {
-          "visibility": "editable",
-          "grid": true,
+          "visibility": "system",
+          "grid": false,
           "defaultExpr": "@#Date@"
         },
         "accountingDate": {
           "visibility": "editable",
-          "defaultExpr": "@#Date@"
+          "defaultExpr": "@#Date@",
+          "seq": 10
         },
         "period": {
-          "visibility": "editable"
+          "visibility": "editable",
+          "seq": 20
         },
         "currency": {
           "visibility": "editable",
@@ -166,14 +169,20 @@
         "foreignCurrencyDebit": {
           "visibility": "editable",
           "grid": true,
-          "labels": { "en_US": "Debit", "es_ES": "Débito" },
+          "labels": {
+            "en_US": "Debit",
+            "es_ES": "Débito"
+          },
           "clearsField": "foreignCurrencyCredit",
           "reason": "Debit amount (AmtSourceDr) — drives the balanceFooter Σ debit. Entering a value clears credit (mutually exclusive)."
         },
         "foreignCurrencyCredit": {
           "visibility": "editable",
           "grid": true,
-          "labels": { "en_US": "Credit", "es_ES": "Crédito" },
+          "labels": {
+            "en_US": "Credit",
+            "es_ES": "Crédito"
+          },
           "clearsField": "foreignCurrencyDebit",
           "reason": "Credit amount (AmtSourceCr) — drives the balanceFooter Σ credit. Entering a value clears debit (mutually exclusive)."
         },
