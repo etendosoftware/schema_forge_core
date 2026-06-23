@@ -2195,3 +2195,50 @@ describe('generateTableComponent — gridReadOnly', () => {
     assert.ok(!productLine.includes('readOnly: true'), 'product column should not have readOnly: true');
   });
 });
+
+// ---------------------------------------------------------------------------
+// buildEntryFieldLine — skipDefault (HandleDefaults opt-out)
+// ---------------------------------------------------------------------------
+// A line field flagged skipDefault must surface in the add-row entry literal so
+// DataTable can skip applying a backend-resolved default to it.
+describe('buildEntryFieldLine — skipDefault', () => {
+  const skipDefaultContract = {
+    frontendContract: {
+      window: { id: '900', name: 'GL Journal', primaryEntity: 'header', category: 'finance' },
+      entities: {
+        header: {
+          fields: [
+            { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+          ],
+          searchableFields: ['documentNo'],
+          computedFields: [],
+        },
+        line: {
+          fields: [
+            { name: 'account', column: 'Account_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'Account', inputMode: 'selector' },
+            { name: 'note', column: 'Note', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true, skipDefault: true },
+          ],
+          searchableFields: ['account'],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+
+  it('emits skipDefault in the add-row entry literal for a flagged field', () => {
+    const code = generatePageComponent('header', 'line', skipDefaultContract);
+    const entryMatch = code.match(/entry: \[([\s\S]*?)\],/);
+    assert.ok(entryMatch, 'addLineFields.entry array present');
+    assert.match(entryMatch[1], /key: 'note'[^}]*skipDefault: true/);
+  });
+
+  it('does not emit skipDefault for an unflagged field', () => {
+    const code = generatePageComponent('header', 'line', skipDefaultContract);
+    const entryMatch = code.match(/entry: \[([\s\S]*?)\],/);
+    assert.ok(entryMatch);
+    const accountLine = entryMatch[1].split('\n').find(l => l.includes("key: 'account'"));
+    assert.ok(accountLine, 'account entry present');
+    assert.ok(!accountLine.includes('skipDefault'), 'account must not carry skipDefault');
+  });
+});

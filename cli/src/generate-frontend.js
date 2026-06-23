@@ -1539,6 +1539,7 @@ function buildEntryFieldLine(f, i, firstSearchIdx) {
   const labelPart = wrapIf(", label: '", f.label, "'");
   const labelsDictPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
   const clearsFieldPart = f.clearsField ? `, clearsField: '${String(f.clearsField).replace(/'/g, "\\'")}'` : '';
+  const skipDefaultPart = f.skipDefault ? ', skipDefault: true' : '';
   const referencePart = wrapIf(", reference: '", f.reference, "'");
   const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
   const dependsOnPart = f.dependsOn
@@ -1560,7 +1561,7 @@ function buildEntryFieldLine(f, i, firstSearchIdx) {
     : '';
   const { lookupDrawerPart, lookupTitlePart, onSelectMappingsPart, displayFromCatalogPart } = buildLookupEntryParts(f);
   const minEntryPart = optProp('min', f.min);
-  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart} },`;
+  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${skipDefaultPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart} },`;
 }
 
 /**

@@ -11,22 +11,24 @@ import {
 } from 'lucide-react';
 import {
   ONBOARDING_ERROR_CODES,
-  changePassword,
   confirmPasswordReset,
   fetchAccount,
   fetchEnvironments,
+  fetchOnboardingDraft,
   loginAccount,
   loginEnvironment,
   loginWithSsoProvider,
   registerAccount,
   requestPasswordReset,
   runOnboardingStream,
+  saveOnboardingDraft,
 } from './onboarding/onboardingApi.js';
 import {
   getConfiguredSsoProviders,
   renderSsoProviderButton,
 } from './onboarding/onboardingSso.js';
 import { checkSalesInvoiceReadiness } from './onboarding/onboardingReadiness.js';
+import { getPasswordChecks, isStrongPassword, PASSWORD_RULES } from './onboarding/passwordPolicy.js';
 import { useLocaleSwitch, useUI } from '../i18n/index.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../lib/oauthReturnTo.js';
 import { track } from '../lib/observability.js';
@@ -480,6 +482,9 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   // Login form state
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [loginError, setLoginError] = useState(null);
+  // i18n key for a one-shot confirmation banner on the Sign In panel
+  // (e.g. shown right after a password change logged the user out).
+  const [loginNotice, setLoginNotice] = useState(null);
   const [loginLoading, setLoginLoading] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -487,6 +492,10 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   const [ssoLoadingProvider, setSsoLoadingProvider] = useState(null);
   const registerSsoButtonRef = useRef(null);
   const loginSsoButtonRef = useRef(null);
+  // Highest progress value shown so far in the current run. The backend emits more steps than
+  // the UI tracks (e.g. accounting, fiscal, baseline) which fall to the generic branch; clamping
+  // to this max keeps the progress bar monotonic instead of jumping backwards mid-run.
+  const maxSetupProgressRef = useRef(0);
 
   // Password reset and change state
   const resetTokenFromUrl = new URLSearchParams(window.location.search).get('resetToken') || ''; // NOSONAR: reset links carry single-use server-side tokens.
@@ -503,15 +512,6 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   const [resetSuccess, setResetSuccess] = useState(false);
   const [resetError, setResetError] = useState(null);
   const [showResetPassword, setShowResetPassword] = useState(false);
-  const [showChangePassword, setShowChangePassword] = useState(false);
-  const [changePasswordForm, setChangePasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
-  const [changePasswordError, setChangePasswordError] = useState(null);
-  const [changePasswordMessage, setChangePasswordMessage] = useState(null);
 
   // Environments state
   const [environments, setEnvironments] = useState([]);
@@ -525,8 +525,44 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   const [result, setResult] = useState(null);
   const [running, setRunning] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  // Server-side draft of the create wizard so the user can resume after re-login.
+  const [draftNotice, setDraftNotice] = useState(false);
+  const draftReadyRef = useRef(false); // restore attempt finished — autosave may run
+  const lastSavedDraftRef = useRef(null); // serialized last persisted draft (dedupe)
   const ui = useUI();
   const { locale, setLocale } = useLocaleSwitch();
+
+  // Restore a previously saved wizard draft (step + form values) before
+  // showing the create view. Failures fall back to a fresh wizard.
+  const restoreOnboardingDraft = useCallback(async (token) => {
+    setCreateStep(1);
+    try {
+      const draft = await fetchOnboardingDraft(fetch, BASE_URL, token);
+      if (draft?.form && typeof draft.form === 'object') {
+        const step = draft.step === 2 ? 2 : 1;
+        setForm(prev => ({ ...prev, ...draft.form }));
+        setCreateStep(step);
+        setDraftNotice(true);
+        lastSavedDraftRef.current = JSON.stringify({ step, form: draft.form });
+      }
+    } catch (err) {
+      console.warn('Failed to load onboarding draft', err);
+    } finally {
+      draftReadyRef.current = true;
+    }
+  }, []);
+
+  // Live password-strength feedback for the registration form (UX only; the
+  // backend enforces the same policy). See ./onboarding/passwordPolicy.js.
+  const registerPasswordChecks = getPasswordChecks(registerForm.password);
+  const registerPasswordStrong = isStrongPassword(registerForm.password);
+  const passwordRuleLabels = {
+    minLength: 'onboardingPasswordReqMinLength',
+    uppercase: 'onboardingPasswordReqUppercase',
+    lowercase: 'onboardingPasswordReqLowercase',
+    number: 'onboardingPasswordReqNumber',
+    special: 'onboardingPasswordReqSpecial',
+  };
 
   // Fetch environments and route: 0 → create, 1+ → auto-enter first
   const routeByEnvironments = useCallback(async () => {
@@ -536,7 +572,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       const envs = await fetchEnvironments(fetch, BASE_URL, token);
       setEnvironments(envs);
       if (envs.length === 0) {
-        setCreateStep(1);
+        await restoreOnboardingDraft(token);
         setView('create');
       } else {
         loginToEnvironment(envs[0]);
@@ -548,7 +584,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       setLoadingEnvs(false);
     }
     setView('create');
-  }, []);
+  }, [restoreOnboardingDraft]);
 
   // Validate existing platform token on mount
   useEffect(() => {
@@ -556,9 +592,24 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       setView('reset-password');
       return;
     }
+    // One-shot preference set before an intentional logout (e.g. after a
+    // password change) so we land on Sign In instead of the Create panel.
+    const initialView = localStorage.getItem('sf_onboarding_initial_view');
+    if (initialView) {
+      localStorage.removeItem('sf_onboarding_initial_view');
+    }
+    // One-shot notice set before the logout (e.g. password changed) to show
+    // a confirmation banner on the Sign In panel.
+    const notice = localStorage.getItem('sf_onboarding_notice');
+    if (notice) {
+      localStorage.removeItem('sf_onboarding_notice');
+      if (notice === 'password-changed') {
+        setLoginNotice('onboardingPasswordChangedNotice');
+      }
+    }
     const token = getPlatformToken();
     if (!token) {
-      setView('register');
+      setView(initialView === 'login' ? 'login' : 'register');
       return;
     }
     fetchAccount(fetch, BASE_URL, token)
@@ -568,6 +619,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       })
       .catch(() => {
         localStorage.removeItem('sf_platform_token');
+        localStorage.removeItem('sf_platform_auth_method');
         setView('register');
       });
   }, []);
@@ -582,9 +634,35 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     setForm(prev => (prev.fullName ? prev : { ...prev, fullName: accountName }));
   }, [accountName]);
 
-  // Save token + account name and route by environments
-  const handleAuthSuccess = useCallback((token, account, { route = true } = {}) => {
+  // Debounced autosave of the create wizard draft. Only runs after the restore
+  // attempt finished, never during/after the setup run, and skips pristine
+  // forms so fresh accounts don't get an empty draft stored.
+  useEffect(() => {
+    if (view !== 'create' || running || result || !draftReadyRef.current) return undefined;
+    const token = getPlatformToken();
+    if (!token) return undefined;
+    const draft = { step: createStep, form };
+    const serialized = JSON.stringify(draft);
+    if (serialized === lastSavedDraftRef.current) return undefined;
+    const hasUserContent = createStep > 1
+      || Boolean(form.clientName?.trim() || form.fiscalIdValue?.trim() || form.address?.trim());
+    if (!hasUserContent && lastSavedDraftRef.current === null) return undefined;
+    const timer = setTimeout(() => {
+      lastSavedDraftRef.current = serialized;
+      saveOnboardingDraft(fetch, BASE_URL, token, draft).catch(err => {
+        console.warn('Failed to save onboarding draft', err);
+        lastSavedDraftRef.current = null;
+      });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [view, createStep, form, running, result]);
+
+  // Save token + account name and route by environments.
+  // authMethod records how the platform session was obtained ('password' | 'sso')
+  // so the UI can hide password-only actions for SSO sessions.
+  const handleAuthSuccess = useCallback((token, account, { route = true, authMethod = 'password' } = {}) => {
     localStorage.setItem('sf_platform_token', token);
+    localStorage.setItem('sf_platform_auth_method', authMethod);
     setAccountName(account?.name || account?.email || null);
     setShowRegisterPassword(false);
     setShowLoginPassword(false);
@@ -597,6 +675,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
 
   const handleRegisterSuccess = (token, account) => {
     localStorage.setItem('sf_platform_token', token);
+    localStorage.setItem('sf_platform_auth_method', 'password');
     setAccountName(account?.name || account?.email || null);
     setShowRegisterPassword(false);
     setShowLoginPassword(false);
@@ -613,6 +692,10 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       ...DEFAULT_ONBOARDING_FORM,
       fullName: account?.name || account?.email || '',
     });
+    // Brand-new account: nothing to restore, but allow autosave from here on.
+    setDraftNotice(false);
+    lastSavedDraftRef.current = null;
+    draftReadyRef.current = true;
     setView('create');
   };
 
@@ -623,6 +706,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       status: 'success',
     });
     localStorage.removeItem('sf_platform_token');
+    localStorage.removeItem('sf_platform_auth_method');
     setAccountName(null);
     setRegisterForm({ name: '', email: '', password: '' });
     setLoginForm({ email: '', password: '' });
@@ -633,10 +717,6 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     setResetSuccess(false);
     setResetError(null);
     setShowResetPassword(false);
-    setShowChangePassword(false);
-    setChangePasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setChangePasswordError(null);
-    setChangePasswordMessage(null);
     setForm(DEFAULT_ONBOARDING_FORM);
     setCreateStep(1);
     setRegisterError(null);
@@ -668,7 +748,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
           provider,
           status: 'success',
         });
-        handleAuthSuccess(data.token, data.account);
+        handleAuthSuccess(data.token, data.account, { authMethod: 'sso' });
       } else {
         trackOnboarding('onboarding_auth_failed', {
           action: 'sso',
@@ -761,7 +841,9 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         action: 'register',
         status: 'failed',
       });
-      setRegisterError(err.userMessage || ui(err.code || 'onboardingConnectionError'));
+      setRegisterError(err.code === 'WEAK_PASSWORD'
+        ? ui('onboardingWeakPassword')
+        : (err.userMessage || ui(err.code || 'onboardingConnectionError')));
     } finally {
       setRegisterLoading(false);
     }
@@ -775,6 +857,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       status: 'started',
     });
     setLoginError(null);
+    setLoginNotice(null);
     setLoginLoading(true);
     try {
       const data = await loginAccount(fetch, BASE_URL, loginForm);
@@ -828,35 +911,13 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     try {
       await confirmPasswordReset(fetch, BASE_URL, resetForm);
       localStorage.removeItem('sf_platform_token'); // NOSONAR: clears stale token after server invalidates reset sessions.
+      localStorage.removeItem('sf_platform_auth_method');
       setResetSuccess(true);
       window.history.replaceState({}, document.title, window.location.pathname); // NOSONAR: removes consumed reset token from the visible URL.
     } catch (err) {
       setResetError(err.userMessage || ui(err.code || 'onboardingCredentialResetFailed'));
     } finally {
       setResetLoading(false);
-    }
-  };
-
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    setChangePasswordError(null);
-    setChangePasswordMessage(null);
-    if (changePasswordForm.newPassword !== changePasswordForm.confirmPassword) {
-      setChangePasswordError(ui('onboardingCredentialsMustMatch'));
-      return;
-    }
-    setChangePasswordLoading(true);
-    try {
-      const data = await changePassword(fetch, BASE_URL, getPlatformToken(), changePasswordForm);
-      if (data.token) {
-        handleAuthSuccess(data.token, data.account, { route: false });
-      }
-      setChangePasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setChangePasswordMessage(ui('onboardingCredentialChangeSuccess'));
-    } catch (err) {
-      setChangePasswordError(err.userMessage || ui(err.code || 'onboardingCredentialChangeFailed'));
-    } finally {
-      setChangePasswordLoading(false);
     }
   };
 
@@ -938,6 +999,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     setResult(null);
     setFormSubmitted(true);
     setSteps(initialSetupSteps());
+    maxSetupProgressRef.current = 0;
 
     let succeeded = false;
     try {
@@ -1029,22 +1091,6 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   const setupHeaderContent = (
     <div className="flex flex-wrap items-end justify-end gap-3">
       {localeControl}
-      {accountName && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setShowChangePassword(value => !value);
-            setChangePasswordError(null);
-            setChangePasswordMessage(null);
-          }}
-          className="h-10 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          data-testid="Button__79cf84">
-          <Lock className="mr-2 h-4 w-4" data-testid="Lock__79cf84" />
-          {ui('onboardingChangePasswordAction')}
-        </Button>
-      )}
     </div>
   );
   const isStepOneValid = isProfileStepValid(form);
@@ -1067,31 +1113,62 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     };
   } else if (activeSetupStep === 'client') {
     setupProgressState = {
-      progress: 50,
+      progress: 35,
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingActivatingDescription'),
       leading: <Sparkles className="h-8 w-8 text-slate-400" data-testid="Sparkles__79cf84" />,
       statusLabel: ui('loading'),
       success: false,
     };
+  } else if (activeSetupStep === 'organization') {
+    setupProgressState = {
+      progress: 50,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingConfiguringDescription'),
+      leading: <Building2 className="h-8 w-8 text-slate-400" data-testid="Building2__79cf84" />,
+      statusLabel: ui('loading'),
+      success: false,
+    };
+  } else if (activeSetupStep === 'dataset') {
+    setupProgressState = {
+      progress: 65,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingDataDescription'),
+      leading: <Building2 className="h-8 w-8 text-slate-400" data-testid="Building2__79cf84" />,
+      statusLabel: ui('loading'),
+      success: false,
+    };
   } else if (activeSetupStep === 'sequences') {
     setupProgressState = {
-      progress: 80,
+      progress: 85,
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingSequencesDescription'),
       leading: <Settings className="h-8 w-8 text-slate-400" data-testid="Settings__79cf84" />,
       statusLabel: ui('loading'),
       success: false,
     };
-  } else if (activeSetupStep === 'organization' || activeSetupStep === 'finalize') {
+  } else if (activeSetupStep === 'finalize') {
     setupProgressState = {
-      progress: 80,
+      progress: 92,
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingFinishingDescription'),
       leading: <Check
         className="h-8 w-8 text-slate-400"
         strokeWidth={3}
         data-testid="Check__79cf84" />,
+      statusLabel: ui('loading'),
+      success: false,
+    };
+  } else if (running) {
+    // Untracked backend steps (accounting, periodControl, fiscal, baseline, ...) run between the
+    // tracked milestones. Show a generic "configuring" state; the clamp below holds the bar steady.
+    // A small floor (15) avoids an empty 0% ring at the very start, before the first tracked step
+    // (client, 35%) begins — the clamp only raises from here, so it never pisa a later milestone.
+    setupProgressState = {
+      progress: 15,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingConfiguringDescription'),
+      leading: <Settings className="h-8 w-8 text-slate-400" data-testid="Settings__79cf84" />,
       statusLabel: ui('loading'),
       success: false,
     };
@@ -1104,6 +1181,14 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       statusLabel: ui('loading'),
       success: false,
     };
+  }
+
+  // Keep the progress bar monotonic: never display a value below the highest already shown in
+  // this run. Untracked backend steps (generic branch, progress 0) therefore hold the last
+  // milestone's value instead of dropping the bar backwards. Reset happens in runOnboarding.
+  if (!setupProgressState.success) {
+    setupProgressState.progress = Math.max(setupProgressState.progress, maxSetupProgressRef.current);
+    maxSetupProgressRef.current = setupProgressState.progress;
   }
 
 
@@ -1296,6 +1381,33 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             )}
             data-testid="AuthField__79cf84" />
 
+          {registerForm.password && (
+            <ul
+              data-testid="register-password-requirements"
+              className="space-y-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
+            >
+              <li className="mb-1 font-medium text-slate-600">
+                {ui('onboardingPasswordRequirementsTitle')}
+              </li>
+              {PASSWORD_RULES.map(rule => {
+                const met = registerPasswordChecks[rule];
+                return (
+                  <li
+                    key={rule}
+                    data-testid={`register-password-rule-${rule}`}
+                    data-met={met ? 'true' : 'false'}
+                    className={`flex items-center gap-2 ${met ? 'text-emerald-600' : 'text-slate-400'}`}
+                  >
+                    {met
+                      ? <Check className="h-4 w-4 shrink-0" data-testid="Check__79cf84" />
+                      : <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300" aria-hidden="true" />}
+                    <span>{ui(passwordRuleLabels[rule])}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
           {registerError && (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
               {registerError}
@@ -1305,7 +1417,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
           <Button
             type="submit"
             data-testid="action-register-submit"
-            disabled={registerLoading}
+            disabled={registerLoading || !registerPasswordStrong}
             className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
           >
             {registerLoading
@@ -1391,6 +1503,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         onSwitch={() => {
           setRegisterError(null);
           setLoginError(null);
+          setLoginNotice(null);
           setSsoError(null);
           setShowRegisterPassword(false);
           setShowLoginPassword(false);
@@ -1410,6 +1523,16 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             {ui('onboardingLoginSubtitle')}
           </p>
         </div>
+
+        {loginNotice && (
+          <div
+            data-testid="login-notice"
+            className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
+          >
+            {ui(loginNotice)}
+          </div>
+        )}
+
         <AuthSsoOptions
           providers={SSO_PROVIDERS}
           buttonRef={loginSsoButtonRef}
@@ -1631,76 +1754,13 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       headerContent={setupHeaderContent}
       brandLabel={ui('onboardingBrandName')}
       data-testid="SetupShell__79cf84">
-      {showChangePassword && (
-        <form
-          onSubmit={handleChangePassword}
-          className="mb-8 space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+      {draftNotice && (
+        <div
+          data-testid="draft-restored-notice"
+          className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
         >
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">{ui('onboardingChangePasswordTitle')}</h2>
-            <p className="mt-1 text-sm text-slate-500">{ui('onboardingChangePasswordSubtitle')}</p>
-          </div>
-          <SetupField
-            id="change-current-password"
-            type="password"
-            label={ui('onboardingCurrentPasswordLabel')}
-            required
-            value={changePasswordForm.currentPassword}
-            onChange={e => setChangePasswordForm(f => ({ ...f, currentPassword: e.target.value }))}
-            disabled={changePasswordLoading}
-            autoComplete="current-password"
-            data-testid="SetupField__79cf84" />
-          <SetupField
-            id="change-new-password"
-            type="password"
-            label={ui('onboardingNewPasswordLabel')}
-            required
-            value={changePasswordForm.newPassword}
-            onChange={e => setChangePasswordForm(f => ({ ...f, newPassword: e.target.value }))}
-            disabled={changePasswordLoading}
-            autoComplete="new-password"
-            data-testid="SetupField__79cf84" />
-          <SetupField
-            id="change-confirm-password"
-            type="password"
-            label={ui('onboardingConfirmPasswordLabel')}
-            required
-            value={changePasswordForm.confirmPassword}
-            onChange={e => setChangePasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
-            disabled={changePasswordLoading}
-            autoComplete="new-password"
-            data-testid="SetupField__79cf84" />
-          {changePasswordError && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
-              {changePasswordError}
-            </div>
-          )}
-          {changePasswordMessage && (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-              {changePasswordMessage}
-            </div>
-          )}
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setShowChangePassword(false)}
-              disabled={changePasswordLoading}
-              className="h-10 rounded-xl"
-              data-testid="Button__79cf84">
-              {ui('cancel')}
-            </Button>
-            <Button
-              type="submit"
-              disabled={changePasswordLoading}
-              className="h-10 rounded-xl bg-gray-900 text-white hover:bg-gray-800"
-              data-testid="Button__79cf84">
-              {changePasswordLoading
-                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSavingPassword')}</>
-                : ui('onboardingSavePasswordAction')}
-            </Button>
-          </div>
-        </form>
+          {ui('onboardingDraftRestoredNotice')}
+        </div>
       )}
       {createStep === 1 ? (
         <div>

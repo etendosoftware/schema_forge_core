@@ -86,6 +86,7 @@ export function createLocalAuthStorage({ prefix = DEFAULT_PREFIX, storage = getB
         storage.removeItem(storageKey(prefix, key));
       }
       storage.removeItem('sf_platform_token');
+      storage.removeItem('sf_platform_auth_method');
     },
   };
 }
