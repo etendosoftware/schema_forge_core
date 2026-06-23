@@ -701,7 +701,7 @@
       "description": "A unique and often automatically generated identifier for a sales order."
     },
     "C_DocTypeTarget_ID": {
-      "label": "Transaction Document",
+      "label": "Document Type",
       "description": "The specific document type which should be used for the document."
     },
     "IsDelivered": {
@@ -20072,8 +20072,10 @@
     "returnToVendor.confirmModal.title": "Manage credit?",
     "returnToVendor.confirmModal.infoRowPre": "The return will be",
     "returnToVendor.confirmModal.infoRowBold": "completed",
-    "returnToVendor.confirmModal.infoRowPost": ". If you wish, we can also generate a purchase return invoice.",
-    "returnToVendor.confirmModal.confirmWithInvoice": "Confirm and create invoice",
+    "returnToVendor.confirmModal.infoRowPost": ". If you wish, we can also generate a credit note.",
+    "returnToVendor.confirmModal.confirmWithInvoice": "Confirm and create credit note",
+    "returnToVendor.createCreditNote": "Create Credit Note",
+    "returnToVendor.createCreditNoteDescription": "Created as draft, pre-filled with returned products and prices from the source invoice.",
     "saving": "Saving…",
     "genericError": "Something went wrong. Please try again.",
     "createRecord": "Create record",

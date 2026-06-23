@@ -4209,7 +4209,7 @@
       "description": "El servicio puede modificar el impuesto de los productos asociados."
     },
     "C_DocTypeTarget_ID": {
-      "label": "Documento transacción",
+      "label": "Tipo de documento",
       "description": "Tipo de documento específico que deber utilizarse en una transacción específica."
     },
     "Sendemail": {
@@ -20338,8 +20338,10 @@
     "returnToVendor.confirmModal.title": "¿Gestionar crédito?",
     "returnToVendor.confirmModal.infoRowPre": "El albarán quedará",
     "returnToVendor.confirmModal.infoRowBold": "completado",
-    "returnToVendor.confirmModal.infoRowPost": ". Si lo deseas, generamos también una factura de devolución de compra.",
-    "returnToVendor.confirmModal.confirmWithInvoice": "Confirmar y crear factura",
+    "returnToVendor.confirmModal.infoRowPost": ". Si lo deseas, generamos también una nota de crédito.",
+    "returnToVendor.confirmModal.confirmWithInvoice": "Confirmar y crear nota de crédito",
+    "returnToVendor.createCreditNote": "Crear Nota de Crédito",
+    "returnToVendor.createCreditNoteDescription": "Se crea en borrador, prellenada con los productos devueltos y los precios de la factura origen.",
     "saving": "Guardando…",
     "genericError": "Algo salió mal. Inténtalo de nuevo.",
     "createRecord": "Crear registro",

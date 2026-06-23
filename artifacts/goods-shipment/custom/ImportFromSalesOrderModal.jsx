@@ -36,7 +36,7 @@ async function fetchDraftInfoByOrderLine({ base, headers, bpId, currentShipmentI
 
 const fetchDocuments = async ({ base, headers, bpId, invoiceId: shipmentId }) => {
   const [ordersRes, shipmentLinesRes, draftInfo] = await Promise.all([
-    fetch(`${base}/sales-order/header?_startRow=0&_endRow=500&_sortBy=creationDate desc`, { headers }),
+    fetch(`${base}/sales-order/header?_startRow=0&_endRow=500&_sortBy=orderDate desc`, { headers }),
     fetch(`${base}/goods-shipment/goodsShipmentLine?parentId=${shipmentId}&_startRow=0&_endRow=200`, { headers }),
     fetchDraftInfoByOrderLine({ base, headers, bpId, currentShipmentId: shipmentId }),
   ]);

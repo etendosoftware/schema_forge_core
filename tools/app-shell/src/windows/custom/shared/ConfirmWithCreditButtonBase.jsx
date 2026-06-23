@@ -13,6 +13,8 @@ export default function ConfirmWithCreditButtonBase({
   specName, entityName,
   confirmDrLabel,
   confirmModalTitle, infoRowPre, infoRowBold, infoRowPost, confirmWithInvoiceLabel,
+  cardTitle: cardTitleProp,
+  cardDesc: cardDescProp,
   extraActions,
   extraPortals,
 }) {
@@ -66,8 +68,8 @@ export default function ConfirmWithCreditButtonBase({
           infoRowPre={infoRowPre}
           infoRowBold={infoRowBold}
           infoRowPost={infoRowPost}
-          cardTitle={ui('createReturnInvoice')}
-          cardDesc={ui('createReturnInvoiceDescription')}
+          cardTitle={cardTitleProp ?? ui('createReturnInvoice')}
+          cardDesc={cardDescProp ?? ui('createReturnInvoiceDescription')}
           confirmLabel={confirmDrLabel}
           confirmWithInvoiceLabel={confirmWithInvoiceLabel}
           processingLabel={ui('processing')}
