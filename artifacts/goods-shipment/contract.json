@@ -1,8 +1,8 @@
 {
   "version": "0.16.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "updatedAt": "2026-06-23T18:12:55.125Z",
-  "checksum": "19fcea33f50b7f0f",
+  "updatedAt": "2026-06-23T18:21:08.661Z",
+  "checksum": "7ba9442fee48c3df",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -44,26 +44,19 @@
           "exclude": true
         }
       },
-      "statusBar": {
-        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-        "cards": [
-          {
-            "field": "posted",
-            "labelKey": "accountingStatus",
-            "display": "yesno",
-            "trueKey": "postedStatus",
-            "falseKey": "notPostedStatus",
-            "trueColor": "green",
-            "falseColor": "orange",
-            "icon": "BookOpen"
-          }
-        ]
-      },
       "salesTheme": true,
       "dateFilterKey": "movementDate",
       "noHeaderBorder": true,
       "layoutType": "default",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "goodsShipment": {
@@ -704,25 +697,18 @@
           "exclude": true
         }
       },
-      "statusBar": {
-        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-        "cards": [
-          {
-            "field": "posted",
-            "labelKey": "accountingStatus",
-            "display": "yesno",
-            "trueKey": "postedStatus",
-            "falseKey": "notPostedStatus",
-            "trueColor": "green",
-            "falseColor": "orange",
-            "icon": "BookOpen"
-          }
-        ]
-      },
       "salesTheme": true,
       "dateFilterKey": "movementDate",
       "noHeaderBorder": true,
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "goodsShipment": {

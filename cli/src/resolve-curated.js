@@ -640,6 +640,7 @@ const WINDOW_TRUTHY_PROPS = [
   'detailLabel',
   'secondaryTabs',
   'statusBar',
+  'statusPills',
   'statusField',
   'detailSortBy',
   'listKpiCards',

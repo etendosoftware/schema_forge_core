@@ -55,21 +55,6 @@
           }
         }
       },
-      "statusBar": {
-        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-        "cards": [
-          {
-            "field": "posted",
-            "labelKey": "accountingStatus",
-            "display": "yesno",
-            "trueKey": "postedStatus",
-            "falseKey": "notPostedStatus",
-            "trueColor": "green",
-            "falseColor": "orange",
-            "icon": "BookOpen"
-          }
-        ]
-      },
       "salesTheme": true,
       "labelOverrides": {
         "es_ES": {
@@ -115,7 +100,15 @@
         }
       ],
       "layoutType": "default",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "header": {
@@ -1887,21 +1880,6 @@
           }
         }
       },
-      "statusBar": {
-        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-        "cards": [
-          {
-            "field": "posted",
-            "labelKey": "accountingStatus",
-            "display": "yesno",
-            "trueKey": "postedStatus",
-            "falseKey": "notPostedStatus",
-            "trueColor": "green",
-            "falseColor": "orange",
-            "icon": "BookOpen"
-          }
-        ]
-      },
       "salesTheme": true,
       "labelOverrides": {
         "es_ES": {
@@ -1946,7 +1924,15 @@
           "placement": "tab"
         }
       ],
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "header": {

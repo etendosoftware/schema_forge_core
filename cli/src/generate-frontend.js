@@ -1697,6 +1697,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const menuActionsConfig = windowConfig.menuActions ?? [];
   const newActionsConfig = windowConfig.newActions ?? [];
   const statusBar = windowConfig.statusBar ?? null;
+  const statusPills = windowConfig.statusPills ?? [];
   const detailSortBy = windowConfig.detailSortBy ?? null;
   const titleField = windowConfig.titleField ?? null;
   const salesTheme = windowConfig.salesTheme ?? false;
@@ -2105,7 +2106,9 @@ const statusField = ${statusFieldLine};
 ${MARKERS.GENERATED_END(`summary:${headerEntity}`)}
 
 ${MARKERS.GENERATED_START(`extraBadges:${headerEntity}`)}
-const extraBadges = [];
+const extraBadges = [
+${statusPills.map(p => `  { key: '${p.field}', type: 'statusPill', trueKey: '${p.trueKey}', falseKey: '${p.falseKey}' },`).join('\n')}
+];
 ${MARKERS.GENERATED_END(`extraBadges:${headerEntity}`)}
 
 ${MARKERS.GENERATED_START(`processes:${headerEntity}`)}

@@ -1,8 +1,8 @@
 {
   "version": "0.26.0",
   "generatedAt": "2026-05-22T16:00:10.872Z",
-  "updatedAt": "2026-06-23T18:12:54.866Z",
-  "checksum": "225d505bb49b8bdf",
+  "updatedAt": "2026-06-23T18:21:08.314Z",
+  "checksum": "ab49193b73a1aff1",
   "frontendContract": {
     "window": {
       "id": "800026",
@@ -36,21 +36,6 @@
         "etblkpBulkposting": {
           "exclude": true
         }
-      },
-      "statusBar": {
-        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-        "cards": [
-          {
-            "field": "posted",
-            "labelKey": "accountingStatus",
-            "display": "yesno",
-            "trueKey": "postedStatus",
-            "falseKey": "notPostedStatus",
-            "trueColor": "green",
-            "falseColor": "orange",
-            "icon": "BookOpen"
-          }
-        ]
       },
       "statusField": "processed",
       "labelOverrides": {
@@ -104,7 +89,15 @@
       "layoutType": "default",
       "linesLayout": "inlineEditable",
       "customLinesComponent": "AmortizationLinesTable",
-      "customLinesLabel": "Lines"
+      "customLinesLabel": "Lines",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "header": {
@@ -759,21 +752,6 @@
           "exclude": true
         }
       },
-      "statusBar": {
-        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-        "cards": [
-          {
-            "field": "posted",
-            "labelKey": "accountingStatus",
-            "display": "yesno",
-            "trueKey": "postedStatus",
-            "falseKey": "notPostedStatus",
-            "trueColor": "green",
-            "falseColor": "orange",
-            "icon": "BookOpen"
-          }
-        ]
-      },
       "statusField": "processed",
       "labelOverrides": {
         "es_ES": {
@@ -825,7 +803,15 @@
       "tablePaddingX": "px-2",
       "linesLayout": "inlineEditable",
       "customLinesComponent": "AmortizationLinesTable",
-      "customLinesLabel": "Lines"
+      "customLinesLabel": "Lines",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "header": {

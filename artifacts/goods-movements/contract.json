@@ -1,8 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-29T19:05:48.778Z",
-  "updatedAt": "2026-06-23T18:11:56.826Z",
-  "checksum": "b53ecb8c431c6653",
+  "updatedAt": "2026-06-23T18:21:08.404Z",
+  "checksum": "7caedde23f32f4d4",
   "frontendContract": {
     "window": {
       "id": "170",
@@ -37,25 +37,18 @@
           "requiresLines": true
         }
       },
-      "statusBar": {
-        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-        "cards": [
-          {
-            "field": "posted",
-            "labelKey": "accountingStatus",
-            "display": "yesno",
-            "trueKey": "postedStatus",
-            "falseKey": "notPostedStatus",
-            "trueColor": "green",
-            "falseColor": "orange",
-            "icon": "BookOpen"
-          }
-        ]
-      },
       "statusField": "processed",
       "dateFilterKey": "movementDate",
       "layoutType": "default",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "movement": {
@@ -432,24 +425,17 @@
           "requiresLines": true
         }
       },
-      "statusBar": {
-        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-        "cards": [
-          {
-            "field": "posted",
-            "labelKey": "accountingStatus",
-            "display": "yesno",
-            "trueKey": "postedStatus",
-            "falseKey": "notPostedStatus",
-            "trueColor": "green",
-            "falseColor": "orange",
-            "icon": "BookOpen"
-          }
-        ]
-      },
       "statusField": "processed",
       "dateFilterKey": "movementDate",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "movement": {

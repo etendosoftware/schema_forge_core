@@ -1,8 +1,8 @@
 {
   "version": "0.13.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-23T18:12:55.683Z",
-  "checksum": "07b468ded16eb2b2",
+  "updatedAt": "2026-06-23T18:21:09.913Z",
+  "checksum": "202a685d07d22ea8",
   "frontendContract": {
     "window": {
       "id": "B917E8A7B0864ACEA9D941E3B7494E53",
@@ -29,26 +29,19 @@
           "destructive": true
         }
       ],
-      "statusBar": {
-        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-        "cards": [
-          {
-            "field": "posted",
-            "labelKey": "accountingStatus",
-            "display": "yesno",
-            "trueKey": "postedStatus",
-            "falseKey": "notPostedStatus",
-            "trueColor": "green",
-            "falseColor": "orange",
-            "icon": "BookOpen"
-          }
-        ]
-      },
       "layoutType": "default",
       "balanceFooter": {
         "debitField": "foreignCurrencyDebit",
         "creditField": "foreignCurrencyCredit"
-      }
+      },
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "gLJournal": {
@@ -635,25 +628,18 @@
           "destructive": true
         }
       ],
-      "statusBar": {
-        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-        "cards": [
-          {
-            "field": "posted",
-            "labelKey": "accountingStatus",
-            "display": "yesno",
-            "trueKey": "postedStatus",
-            "falseKey": "notPostedStatus",
-            "trueColor": "green",
-            "falseColor": "orange",
-            "icon": "BookOpen"
-          }
-        ]
-      },
       "balanceFooter": {
         "debitField": "foreignCurrencyDebit",
         "creditField": "foreignCurrencyCredit"
-      }
+      },
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "gLJournal": {

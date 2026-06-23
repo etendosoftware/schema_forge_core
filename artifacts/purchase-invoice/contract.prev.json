@@ -1,5 +1,5 @@
 {
-  "version": "0.51.0",
+  "version": "0.52.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
   "updatedAt": "2026-06-18T18:30:07.340Z",
   "checksum": "44ee4aa0cd2d1f21",
@@ -52,21 +52,6 @@
             "toCurrency": "currency"
           }
         }
-      },
-      "statusBar": {
-        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-        "cards": [
-          {
-            "field": "posted",
-            "labelKey": "accountingStatus",
-            "display": "yesno",
-            "trueKey": "postedStatus",
-            "falseKey": "notPostedStatus",
-            "trueColor": "green",
-            "falseColor": "orange",
-            "icon": "BookOpen"
-          }
-        ]
       },
       "labelOverrides": {
         "es_ES": {
@@ -211,7 +196,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | (@Processed@='Y' & (@DocStatus@!'VO'))",
               "evaluable": true,
-              "js": "record['posted'] === 'Y' || (record['processed'] === true && (record['documentStatus'] !== 'VO'))"
+              "js": "record['posted'] === true || (record['processed'] === true && (record['documentStatus'] !== 'VO'))"
             }
           },
           {
@@ -332,7 +317,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -710,8 +695,8 @@
             "apiKey": "posted",
             "column": "Posted",
             "label": "Posted",
-            "type": "button",
-            "tsType": "string",
+            "type": "boolean",
+            "tsType": "boolean",
             "visibility": "readOnly",
             "required": true,
             "grid": true,
@@ -722,6 +707,7 @@
               "source": "'N'"
             },
             "defaultValue": "N",
+            "explicitType": true,
             "badge": true,
             "badgeLabels": {
               "true": {
@@ -773,7 +759,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -1835,7 +1821,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -1854,7 +1840,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -1873,7 +1859,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -1892,7 +1878,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -1911,7 +1897,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           }
         ],
@@ -3339,7 +3325,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           },
           {
@@ -3364,7 +3350,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           },
           {
@@ -3384,7 +3370,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           },
           {
@@ -3410,7 +3396,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           }
         ],
@@ -3981,21 +3967,6 @@
           }
         }
       },
-      "statusBar": {
-        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-        "cards": [
-          {
-            "field": "posted",
-            "labelKey": "accountingStatus",
-            "display": "yesno",
-            "trueKey": "postedStatus",
-            "falseKey": "notPostedStatus",
-            "trueColor": "green",
-            "falseColor": "orange",
-            "icon": "BookOpen"
-          }
-        ]
-      },
       "labelOverrides": {
         "es_ES": {
           "POReference": "Nº documento",
@@ -4380,7 +4351,7 @@
             "name": "posted",
             "apiKey": "posted",
             "column": "Posted",
-            "type": "button",
+            "type": "boolean",
             "visibility": "readOnly",
             "required": true
           },
@@ -8846,12 +8817,6 @@
       },
       {
         "entity": "header",
-        "field": "posted",
-        "column": "Posted",
-        "url": "/sws/neo/purchase-invoice/header/{id}/action/posted"
-      },
-      {
-        "entity": "header",
         "field": "aPRMProcessinvoice",
         "column": "EM_APRM_Processinvoice",
         "url": "/sws/neo/purchase-invoice/header/{id}/action/aPRMProcessinvoice",
@@ -9187,14 +9152,6 @@
         "field": "generateTo",
         "runner": "node",
         "description": "Action endpoint for 'generateTo' in header should exist"
-      },
-      {
-        "id": "t-action-endpoint-header-posted",
-        "category": "action-endpoint",
-        "entity": "header",
-        "field": "posted",
-        "runner": "node",
-        "description": "Action endpoint for 'posted' in header should exist"
       },
       {
         "id": "t-action-endpoint-header-processNow",
@@ -11710,7 +11667,7 @@
         "entity": "header",
         "field": "posted",
         "runner": "node",
-        "description": "Field 'posted' should have type 'string' in header"
+        "description": "Field 'posted' should have type 'boolean' in header"
       },
       {
         "id": "t-field-type-header-prepaymentAmount",
@@ -16505,9 +16462,9 @@
       }
     ],
     "summary": {
-      "total": 935,
+      "total": 934,
       "byCategory": {
-        "action-endpoint": 26,
+        "action-endpoint": 25,
         "crud-flags": 12,
         "default-value-type": 38,
         "displaylogic-evaluable": 17,
@@ -16523,7 +16480,7 @@
         "visibility": 12
       },
       "byRunner": {
-        "node": 935,
+        "node": 934,
         "junit": 0
       }
     }

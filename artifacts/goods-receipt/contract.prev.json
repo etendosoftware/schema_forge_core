@@ -1,8 +1,8 @@
 {
-  "version": "0.16.0",
+  "version": "0.17.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-06-23T18:11:56.917Z",
-  "checksum": "99b424f9a19b2848",
+  "updatedAt": "2026-06-23T18:19:35.759Z",
+  "checksum": "5c0727ffa5fd8b84",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -37,21 +37,6 @@
           "destructive": true
         }
       ],
-      "statusBar": {
-        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-        "cards": [
-          {
-            "field": "posted",
-            "labelKey": "accountingStatus",
-            "display": "yesno",
-            "trueKey": "postedStatus",
-            "falseKey": "notPostedStatus",
-            "trueColor": "green",
-            "falseColor": "orange",
-            "icon": "BookOpen"
-          }
-        ]
-      },
       "dateFilterKey": "movementDate",
       "noHeaderBorder": true,
       "sendDocument": {
@@ -218,7 +203,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -338,8 +323,8 @@
             "apiKey": "posted",
             "column": "Posted",
             "label": "Posted",
-            "type": "button",
-            "tsType": "string",
+            "type": "boolean",
+            "tsType": "boolean",
             "visibility": "readOnly",
             "required": true,
             "grid": true,
@@ -350,6 +335,7 @@
               "source": "'N'"
             },
             "defaultValue": "N",
+            "explicitType": true,
             "badge": true,
             "badgeLabels": {
               "true": {
@@ -397,7 +383,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -416,7 +402,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -435,7 +421,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -454,7 +440,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -473,7 +459,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -818,7 +804,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -837,7 +823,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -856,7 +842,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -875,7 +861,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -894,7 +880,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -913,7 +899,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -1004,21 +990,6 @@
           "destructive": true
         }
       ],
-      "statusBar": {
-        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-        "cards": [
-          {
-            "field": "posted",
-            "labelKey": "accountingStatus",
-            "display": "yesno",
-            "trueKey": "postedStatus",
-            "falseKey": "notPostedStatus",
-            "trueColor": "green",
-            "falseColor": "orange",
-            "icon": "BookOpen"
-          }
-        ]
-      },
       "dateFilterKey": "movementDate",
       "noHeaderBorder": true,
       "sendDocument": {
@@ -1180,7 +1151,7 @@
             "name": "posted",
             "apiKey": "posted",
             "column": "Posted",
-            "type": "button",
+            "type": "boolean",
             "visibility": "readOnly",
             "required": true
           },
@@ -2226,12 +2197,6 @@
       },
       {
         "entity": "goodsReceipt",
-        "field": "posted",
-        "column": "Posted",
-        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/posted"
-      },
-      {
-        "entity": "goodsReceipt",
         "field": "calculateFreight",
         "column": "Calculate_Freight",
         "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/calculateFreight",
@@ -2361,14 +2326,6 @@
         "field": "invoicefromshipment",
         "runner": "node",
         "description": "Action endpoint for 'invoicefromshipment' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-action-endpoint-goodsReceipt-posted",
-        "category": "action-endpoint",
-        "entity": "goodsReceipt",
-        "field": "posted",
-        "runner": "node",
-        "description": "Action endpoint for 'posted' in goodsReceipt should exist"
       },
       {
         "id": "t-action-endpoint-goodsReceipt-processGoodsJava",
@@ -2918,7 +2875,7 @@
         "entity": "goodsReceipt",
         "field": "posted",
         "runner": "node",
-        "description": "Field 'posted' should have type 'string' in goodsReceipt"
+        "description": "Field 'posted' should have type 'boolean' in goodsReceipt"
       },
       {
         "id": "t-field-type-goodsReceipt-processed",
@@ -4586,9 +4543,9 @@
       }
     ],
     "summary": {
-      "total": 289,
+      "total": 288,
       "byCategory": {
-        "action-endpoint": 13,
+        "action-endpoint": 12,
         "crud-flags": 2,
         "default-value-type": 8,
         "displaylogic-evaluable": 2,
@@ -4604,7 +4561,7 @@
         "visibility": 2
       },
       "byRunner": {
-        "node": 289,
+        "node": 288,
         "junit": 0
       }
     }

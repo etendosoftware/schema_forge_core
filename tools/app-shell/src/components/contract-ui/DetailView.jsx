@@ -2670,6 +2670,21 @@ export function DetailView({
                 data-testid="DocumentStatusPill__fa3275" />
             )}
             {extraBadges.map(b => {
+              // type: 'statusPill' — renders as DocumentStatusPill, always visible,
+              // labels resolved from i18n keys trueKey / falseKey.
+              if (b.type === 'statusPill') {
+                const val = data[b.key];
+                if (val == null) return null;
+                const isTrue = val === true || val === 'Y' || val === 'true';
+                const label = isTrue ? ui(b.trueKey) : ui(b.falseKey);
+                return (
+                  <DocumentStatusPill
+                    key={b.key}
+                    status={val}
+                    label={label}
+                    data-testid="DocumentStatusPill__fa3275" />
+                );
+              }
               const when = b.when !== undefined ? b.when : true;
               const show = when ? !!data[b.key] : !data[b.key];
               if (!show) return null;

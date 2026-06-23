@@ -98,21 +98,14 @@
         "filter": "criteria=%5B%7B%22fieldName%22%3A%22transactionDocument%24documentCategory%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3A%22ARI_RM%22%7D%5D"
       }
     ],
-    "statusBar": {
-      "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
-      "cards": [
-        {
-          "field": "posted",
-          "labelKey": "accountingStatus",
-          "display": "yesno",
-          "trueKey": "postedStatus",
-          "falseKey": "notPostedStatus",
-          "trueColor": "green",
-          "falseColor": "orange",
-          "icon": "BookOpen"
-        }
-      ]
-    }
+    "statusPills": [
+      {
+        "field": "posted",
+        "trueKey": "postedStatus",
+        "falseKey": "notPostedStatus",
+        "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+      }
+    ]
   },
   "entities": {
     "header": {
