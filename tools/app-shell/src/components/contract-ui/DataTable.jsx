@@ -235,10 +235,27 @@ function EmptyState({ hasFilter, totalCount }) {
 
 const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity', 'amount']);
 
-function isMissingRequired(f, valuesRef) {
+function isMissingRequired(f, valuesRef, fields = []) {
   if (!f.required) return false;
-  const v = valuesRef.current[f.key];
-  return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
+  // A boolean/checkbox always carries a valid value (false = deliberately
+  // unchecked), so it can never be "missing". Mirrors the header guard in
+  // useEntity.handleSave and stops a required checkbox left off (e.g. a journal
+  // line's Open Items) from blocking the row.
+  if (f.type === 'checkbox' || f.type === 'boolean') return false;
+  const hasVal = (key) => {
+    const v = valuesRef.current[key];
+    return !(v == null || v === '' || (typeof v === 'string' && v.trim() === ''));
+  };
+  if (hasVal(f.key)) return false;
+  // clearsField forms a mutually-exclusive group (e.g. a journal line is a debit
+  // OR a credit, never both). The requirement is "one of the group", so the empty
+  // member must not be flagged while a sibling it clears — or that clears it —
+  // carries a value.
+  if (f.clearsField && hasVal(f.clearsField)) return false;
+  for (const g of fields) {
+    if (g.clearsField === f.key && hasVal(g.key)) return false;
+  }
+  return true;
 }
 
 function isBelowMin(f, valuesRef) {
@@ -419,7 +436,7 @@ function renderInputCell({
 // make buildEmpty's effect re-run, wiping in-progress input. Share one frozen ref.
 const EMPTY_SEED = {};
 
-const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, seedValues = EMPTY_SEED, ilpHasNoAmountCol = false, ilpTrailing = false }, ref) {
+const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, seedValues = EMPTY_SEED, resolvedDefaults = EMPTY_SEED, ilpHasNoAmountCol = false, ilpTrailing = false }, ref) {
   const t = useLabel();
   const ui = useUI();
   const { locale } = useLocaleSwitch();
@@ -452,8 +469,20 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     for (const [key, val] of Object.entries(seedValues)) {
       if (!fieldMap[key]) empty[key] = val;
     }
+    // HandleDefaults: fill EMPTY editable fields from backend-resolved line
+    // defaults (e.g. a macro default like @DESCRIPTION1@ → the parent's value).
+    // Fill-empties-only: never override a literal default, the client lineNo, a
+    // display seed, or a field opted out via skipDefault.
+    for (const [key, val] of Object.entries(resolvedDefaults)) {
+      const f = fieldMap[key];
+      if (!f || f.skipDefault) continue;
+      const cur = empty[key];
+      if ((cur == null || cur === '') && val != null && val !== '') {
+        empty[key] = val;
+      }
+    }
     return empty;
-  }, [fields, defaultLineNo, seedValues, fieldMap]);
+  }, [fields, defaultLineNo, seedValues, fieldMap, resolvedDefaults]);
 
   const [values, setValues] = useState(buildEmpty);
   const [isSaving, setIsSaving] = useState(false);
@@ -501,7 +530,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     // Validate required fields BEFORE entering the in-flight state — a missing
     // value should leave the row open for the user to complete. Reads from the
     // valuesRef so an in-flight callout cannot mask a still-empty user field.
-    const missing = fields.filter(f => isMissingRequired(f, valuesRef));
+    const missing = fields.filter(f => isMissingRequired(f, valuesRef, fields));
     if (missing.length > 0) {
       setInvalidFields(new Set(missing.map(f => f.key)));
       toast.error(ui('requiredFieldsMissing'));
@@ -1888,6 +1917,7 @@ export function DataTable({
                 onFieldChange={addRow.onFieldChange}
                 onValuesChange={addRow.onValuesChange}
                 seedValues={addRow.seedValues}
+                resolvedDefaults={addRow.resolvedDefaults}
                 selectable={selectable}
                 hasDeleteColumn={!hoverRowActions && legacyDeleteEnabled}
                 hasCloneColumn={!hoverRowActions && !!onCloneRow && !quickActionsEnabled}
