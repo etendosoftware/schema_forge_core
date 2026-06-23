@@ -825,7 +825,7 @@ function getSuccessPart(a) {
   }
 }
 
-function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
+export function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
   let menuActionsProp;
   if (menuActionsConfig.length > 0) {
     menuActionsProp = `\n        menuActions={${menuActionsFnParams} => [\n${menuActionsConfig.map(a => {
@@ -844,12 +844,16 @@ function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
       const visParts = [statusVis, fieldVisFalse, fieldVisTrue].filter(Boolean);
       const vis = getVis(visParts);
       const destr = fragmentIf(a.destructive, 'destructive: true, ');
-      // Handler precedence: documentAction (declarative DocAction) > columnName (AD process button) > onClick placeholder
+      // Handler precedence: documentAction (declarative DocAction) > columnName
+      // (AD process button) > action (declarative NEO action endpoint, ETP-4298)
+      // > onClick placeholder.
       let handler;
       if (a.documentAction) {
         handler = `documentAction: '${a.documentAction}', `;
       } else if (a.columnName) {
         handler = `columnName: '${a.columnName}', `;
+      } else if (a.action) {
+        handler = `neoAction: '${a.action}', `;
       } else {
         handler = `onClick: () => {},`;
       }

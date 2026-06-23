@@ -398,7 +398,8 @@ Additional actions shown in the detail view's "more" menu (triple dot icon). Eac
     { "key": "duplicate", "label": "Duplicate" },
     { "key": "cancel", "labelKey": "cancel", "destructive": true, "visibleWhenStatus": "CO" },
     { "key": "reactivate", "labelKey": "reactivate", "visibleWhenStatus": "CO", "visibleWhenFieldFalse": "hasLinkedDocuments", "documentAction": "RE", "successKey": "actionCompleted" },
-    { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR"], "columnName": "aPRMReversePayment" }
+    { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR"], "columnName": "aPRMReversePayment" },
+    { "key": "post", "label": "Post", "labelKey": "post", "action": "post", "successKey": "documentPosted" }
   ]
 }
 ```
@@ -412,7 +413,8 @@ Additional actions shown in the detail view's "more" menu (triple dot icon). Eac
 | `visibleWhenStatus` | string or string[] | Only show the action when document status matches. Omit to always show. |
 | `visibleWhenFieldFalse` | string | Hide the action when the named field in the record `data` is truthy. Combines with `visibleWhenStatus` using AND. Requires the backend to expose the field (e.g. via a NeoHandler `afterHandle`). When used, the generator emits `({ data, status }) =>` instead of `({ status }) =>`. |
 | `documentAction` | string | Invokes the standard DocAction endpoint with this value (`"RE"`, `"CO"`, `"VO"`, etc.). The record refreshes automatically on success. |
-| `columnName` | string | If set, triggers the named process column via `hook.handleProcess`. If omitted, generates an empty `onClick` placeholder. |
+| `columnName` | string | If set, triggers the named process column via `hook.handleProcess`. If omitted (and no `action`), generates an empty `onClick` placeholder. |
+| `action` | string | Invokes a generic NEO action endpoint (`POST {apiBaseUrl}/{entity}/{recordId}/action/{action}`) via the `useNeoAction` hook — e.g. `"post"` / `"unpost"`. The backend must handle the named action server-side. Emitted as `neoAction: '<value>'` in the contract. **Handler precedence:** `documentAction` > `columnName` > `action` > empty `onClick`. |
 | `successMessage` | string | Text shown in the success banner after `documentAction` resolves. |
 | `successKey` | string | i18n key for the success banner message (alternative to `successMessage`). |
 
