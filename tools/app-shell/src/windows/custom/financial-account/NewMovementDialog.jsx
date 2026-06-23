@@ -81,15 +81,20 @@ export function NewMovementDialog({ open, accountId, accountCurrency, onClose, o
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{ui('financeAccountMovementsNewTitle')}</DialogTitle>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => { if (!v) onClose(); }}
+      data-testid="Dialog__cc1c8b">
+      <DialogContent className="max-w-xl" data-testid="DialogContent__cc1c8b">
+        <DialogHeader data-testid="DialogHeader__cc1c8b">
+          <DialogTitle data-testid="DialogTitle__cc1c8b">{ui('financeAccountMovementsNewTitle')}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {/* Tipo */}
-          <FieldRow label={ui('financeAccountMovementsNewType')}>
+          <FieldRow
+            label={ui('financeAccountMovementsNewType')}
+            data-testid="FieldRow__cc1c8b">
             <select
               value={form.trxType}
               onChange={(e) => setForm({ ...form, trxType: e.target.value })}
@@ -103,7 +108,9 @@ export function NewMovementDialog({ open, accountId, accountCurrency, onClose, o
 
           {/* Fechas */}
           <div className="grid grid-cols-2 gap-4">
-            <FieldRow label={ui('financeAccountMovementsNewTrxDate')}>
+            <FieldRow
+              label={ui('financeAccountMovementsNewTrxDate')}
+              data-testid="FieldRow__cc1c8b">
               <input
                 type="date"
                 value={form.transactionDate}
@@ -111,7 +118,9 @@ export function NewMovementDialog({ open, accountId, accountCurrency, onClose, o
                 className={inputClass}
               />
             </FieldRow>
-            <FieldRow label={ui('financeAccountMovementsNewAcctDate')}>
+            <FieldRow
+              label={ui('financeAccountMovementsNewAcctDate')}
+              data-testid="FieldRow__cc1c8b">
               <input
                 type="date"
                 value={form.accountingDate}
@@ -122,7 +131,9 @@ export function NewMovementDialog({ open, accountId, accountCurrency, onClose, o
           </div>
 
           {/* BP + GL Item */}
-          <FieldRow label={ui('financeAccountMovementsNewBpartner')}>
+          <FieldRow
+            label={ui('financeAccountMovementsNewBpartner')}
+            data-testid="FieldRow__cc1c8b">
             <LookupPicker
               value={bpartner}
               onSelect={setBpartner}
@@ -130,10 +141,12 @@ export function NewMovementDialog({ open, accountId, accountCurrency, onClose, o
               placeholder={ui('financeAccountMovementsNewBpartnerPlaceholder')}
               useLookup={useBPartnerLookup}
               dataTestId="new-movement-bpartner"
-            />
+              data-testid="LookupPicker__cc1c8b" />
           </FieldRow>
           {glItemVisible(form.trxType) ? (
-            <FieldRow label={ui('financeAccountMovementsNewGlItem')}>
+            <FieldRow
+              label={ui('financeAccountMovementsNewGlItem')}
+              data-testid="FieldRow__cc1c8b">
               <LookupPicker
                 value={glItem}
                 onSelect={setGlItem}
@@ -141,12 +154,14 @@ export function NewMovementDialog({ open, accountId, accountCurrency, onClose, o
                 placeholder={ui('financeAccountMovementsNewGlItemPlaceholder')}
                 useLookup={useGLItemLookup}
                 dataTestId="new-movement-glitem"
-              />
+                data-testid="LookupPicker__cc1c8b" />
             </FieldRow>
           ) : null}
 
           {/* Descripción */}
-          <FieldRow label={ui('financeAccountMovementsNewDescription')}>
+          <FieldRow
+            label={ui('financeAccountMovementsNewDescription')}
+            data-testid="FieldRow__cc1c8b">
             <input
               type="text"
               value={form.description}
@@ -156,7 +171,9 @@ export function NewMovementDialog({ open, accountId, accountCurrency, onClose, o
           </FieldRow>
 
           {/* Moneda (read-only, viene de la cuenta) */}
-          <FieldRow label={ui('financeAccountMovementsNewCurrency')}>
+          <FieldRow
+            label={ui('financeAccountMovementsNewCurrency')}
+            data-testid="FieldRow__cc1c8b">
             <input
               type="text"
               readOnly
@@ -167,7 +184,9 @@ export function NewMovementDialog({ open, accountId, accountCurrency, onClose, o
 
           {/* Importes — Classic exposes both columns and toggles readonly by trxType. */}
           <div className="grid grid-cols-2 gap-4">
-            <FieldRow label={ui('financeAccountMovementsNewDepositAmount')}>
+            <FieldRow
+              label={ui('financeAccountMovementsNewDepositAmount')}
+              data-testid="FieldRow__cc1c8b">
               <input
                 type="number"
                 step="0.01"
@@ -181,7 +200,9 @@ export function NewMovementDialog({ open, accountId, accountCurrency, onClose, o
                   : `${inputClass} cursor-not-allowed bg-[#F5F7F9] text-[#6c6c89]`}
               />
             </FieldRow>
-            <FieldRow label={ui('financeAccountMovementsNewPaymentAmount')}>
+            <FieldRow
+              label={ui('financeAccountMovementsNewPaymentAmount')}
+              data-testid="FieldRow__cc1c8b">
               <input
                 type="number"
                 step="0.01"
@@ -197,8 +218,8 @@ export function NewMovementDialog({ open, accountId, accountCurrency, onClose, o
             </FieldRow>
           </div>
 
-          <DialogFooter>
-            <DialogClose asChild>
+          <DialogFooter data-testid="DialogFooter__cc1c8b">
+            <DialogClose asChild data-testid="DialogClose__cc1c8b">
               <button
                 type="button"
                 className="inline-flex h-10 items-center rounded-lg border border-[#D1D4DB] bg-white px-4 text-sm font-medium text-[#121217] hover:bg-[#F5F7F9]"

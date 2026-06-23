@@ -705,6 +705,40 @@ describe('generateTestManifest — edge cases', () => {
   });
 });
 
+describe('generateContract — agentProfile.agentPrompt (ETP-4252)', () => {
+  it('surfaces window.agentPrompt in agentProfile', () => {
+    const schema = {
+      ...minimalSchema,
+      window: { ...minimalSchema.window, agentPrompt: 'Confirm before completing.' },
+    };
+    const contract = generateContract(schema);
+    assert.equal(contract.agentProfile.agentPrompt, 'Confirm before completing.');
+  });
+
+  it('omits agentProfile.agentPrompt when the window declares none', () => {
+    const contract = generateContract(minimalSchema);
+    assert.equal(contract.agentProfile.agentPrompt, undefined);
+  });
+
+  it('omits agentProfile.agentPrompt when the value is whitespace-only', () => {
+    const schema = {
+      ...minimalSchema,
+      window: { ...minimalSchema.window, agentPrompt: '   ' },
+    };
+    const contract = generateContract(schema);
+    assert.equal(contract.agentProfile.agentPrompt, undefined);
+  });
+
+  it('trims surrounding whitespace from agentProfile.agentPrompt', () => {
+    const schema = {
+      ...minimalSchema,
+      window: { ...minimalSchema.window, agentPrompt: '  Confirm first.  ' },
+    };
+    const contract = generateContract(schema);
+    assert.equal(contract.agentProfile.agentPrompt, 'Confirm first.');
+  });
+});
+
 describe('generateContract — orchestrator', () => {
   it('returns version from schema', () => {
     const contract = generateContract(minimalSchema, sampleRules, sampleProcesses);
@@ -2022,5 +2056,87 @@ describe('generateFrontendContract — gridReadOnly', () => {
     const fc = generateFrontendContract(schemaWithGridReadOnly);
     const product = fc.entities.shipment.fields.find(f => f.name === 'product');
     assert.equal(product.gridReadOnly, undefined);
+  });
+});
+
+// ─── businessCritical per-field flag (ETP-4233) ──────────────────────────────
+
+const schemaWithBusinessCritical = {
+  version: '0.1.0',
+  window: { id: '900', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+  entities: [{
+    name: 'order',
+    table: 'C_Order',
+    level: 'header',
+    fields: [
+      { name: 'documentNo', column: 'DocumentNo', type: 'string', visibility: 'readOnly',
+        required: true, searchable: true, grid: true, form: true, businessCritical: true },
+      { name: 'description', column: 'Description', type: 'string', visibility: 'editable',
+        required: false, searchable: false, grid: true, form: true },
+    ],
+  }],
+};
+
+describe('generateFrontendContract — businessCritical (ETP-4233)', () => {
+  it('field with businessCritical:true includes businessCritical in frontendContract', () => {
+    const fc = generateFrontendContract(schemaWithBusinessCritical);
+    const docNo = fc.entities.order.fields.find(f => f.name === 'documentNo');
+    assert.equal(docNo.businessCritical, true);
+  });
+
+  it('field without businessCritical does NOT have the key in frontendContract', () => {
+    const fc = generateFrontendContract(schemaWithBusinessCritical);
+    const desc = fc.entities.order.fields.find(f => f.name === 'description');
+    assert.equal(desc.businessCritical, undefined,
+      'businessCritical must be absent when not set — truthy-only contract');
+  });
+});
+
+describe('generateBackendContract — businessCritical (ETP-4233)', () => {
+  it('field with businessCritical:true includes businessCritical in backendContract', () => {
+    const bc = generateBackendContract(schemaWithBusinessCritical);
+    const docNo = bc.entities.order.fields.find(f => f.name === 'documentNo');
+    assert.equal(docNo.businessCritical, true);
+  });
+
+  it('field without businessCritical does NOT have the key in backendContract', () => {
+    const bc = generateBackendContract(schemaWithBusinessCritical);
+    const desc = bc.entities.order.fields.find(f => f.name === 'description');
+    assert.equal(desc.businessCritical, undefined,
+      'absent businessCritical must not appear in backendContract');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateFrontendContract — balanceFooter passthrough
+// ---------------------------------------------------------------------------
+
+describe('generateFrontendContract — balanceFooter', () => {
+  const schemaBase = {
+    version: '0.1.0',
+    window: { id: '820', name: 'G/L Journal', primaryEntity: 'journal', category: 'accounting' },
+    entities: [{
+      name: 'journal',
+      table: 'GL_Journal',
+      level: 'header',
+      fields: [
+        { name: 'documentNo', column: 'DocumentNo', type: 'string', visibility: 'editable',
+          required: true, searchable: false, grid: true, form: true },
+      ],
+    }],
+  };
+
+  it('copies balanceFooter to frontendContract.window when declared', () => {
+    const schema = {
+      ...schemaBase,
+      window: { ...schemaBase.window, balanceFooter: { debitField: 'amtSourceDr', creditField: 'amtSourceCr' } },
+    };
+    const fc = generateFrontendContract(schema);
+    assert.deepEqual(fc.window.balanceFooter, { debitField: 'amtSourceDr', creditField: 'amtSourceCr' });
+  });
+
+  it('does NOT add balanceFooter to frontendContract.window when absent', () => {
+    const fc = generateFrontendContract(schemaBase);
+    assert.equal(fc.window.balanceFooter, undefined);
   });
 });

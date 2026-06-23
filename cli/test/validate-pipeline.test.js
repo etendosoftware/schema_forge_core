@@ -603,6 +603,20 @@ describe('ETP-3959 quality gates', () => {
     assert.ok(f15, 'F15 should fire for bad profile references');
   });
 
+  it('F17: balanceFooter referencing a missing line field is blocked', async () => {
+    const result = await runOnFixtures(['window-f17-bad-ref']);
+    const f17 = result.violations.find(v => v.rule === 'F17');
+    assert.ok(f17, 'F17 should fire for a missing balanceFooter field');
+    assert.equal(f17.severity, 'BLOCK');
+    assert.match(f17.message, /balanceFooter/);
+  });
+
+  it('F17: valid balanceFooter passes', async () => {
+    const result = await runOnFixtures(['window-f17-ok']);
+    const f17 = result.violations.find(v => v.rule === 'F17');
+    assert.ok(!f17, 'F17 should not fire for a valid balanceFooter');
+  });
+
   it('F15: minimumCreate fields are validated against header and line scope', async () => {
     const tmpRoot = await mkdtemp(join(tmpdir(), 'sf-f15-scope-'));
     try {

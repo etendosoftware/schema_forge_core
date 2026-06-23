@@ -254,6 +254,50 @@ describe('resolveCurated — field-level drawer + display passthroughs (F3)', ()
   });
 });
 
+describe('resolveCurated — agentPrompt passthrough (ETP-4252)', () => {
+  const schemaRaw = {
+    window: { id: '700', name: 'Purchase Order' },
+    entities: [{
+      name: 'order', tableName: 'C_Order', tabId: '1', tabName: 'Header',
+      fields: [
+        { name: 'docStatus', columnName: 'DocStatus', label: 'Status', type: 'string', visibility: 'editable' },
+        { name: 'plain', columnName: 'PlainCol', label: 'Plain', type: 'string', visibility: 'editable' },
+      ],
+    }],
+  };
+  const decisions = {
+    version: 2,
+    window: { name: 'Purchase Order', agentPrompt: 'Confirm before completing.' },
+    entities: {
+      order: {
+        name: 'order',
+        fields: {
+          docStatus: { agentPrompt: 'Only advance status forward.' },
+          plain: {},
+        },
+      },
+    },
+    rules: {},
+  };
+
+  it('copies window.agentPrompt into the curated window', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.window.agentPrompt, 'Confirm before completing.');
+  });
+
+  it('copies field agentPrompt into the curated field', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const docStatus = schema.entities[0].fields.find(f => f.name === 'docStatus');
+    assert.equal(docStatus.agentPrompt, 'Only advance status forward.');
+  });
+
+  it('omits agentPrompt when a field does not declare one', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const plain = schema.entities[0].fields.find(f => f.name === 'plain');
+    assert.equal(plain.agentPrompt, undefined);
+  });
+});
+
 // ─── virtualFields — appendVirtualFields exercised via resolveCurated ───
 describe('resolveCurated — virtualFields', () => {
   const baseSchema = {
@@ -441,5 +485,64 @@ describe('resolveCurated — gridReadOnly passthrough', () => {
     const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisionsNoGridReadOnly);
     const qty = schema.entities[0].fields.find(f => f.name === 'quantity');
     assert.equal(qty.gridReadOnly, undefined);
+  });
+});
+
+// ─── businessCritical per-field flag (ETP-4233) ──────────────────────────────
+
+describe('resolveCurated — businessCritical per-field flag (ETP-4233)', () => {
+  const baseSchema = {
+    window: { id: '200', name: 'Sales Order' },
+    entities: [{
+      name: 'cOrder',
+      tableName: 'C_Order',
+      tabId: '10',
+      tabName: 'Header',
+      fields: [
+        { name: 'documentNo', columnName: 'DocumentNo', label: 'Document No',
+          type: 'string', visibility: 'readOnly' },
+        { name: 'description', columnName: 'Description', label: 'Description',
+          type: 'string', visibility: 'editable' },
+      ],
+    }],
+  };
+
+  it('decision businessCritical:true propagates to curated field', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: {
+        cOrder: {
+          name: 'order',
+          fields: {
+            documentNo: { businessCritical: true },
+          },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(baseSchema, { rules: [] }, decisions);
+    const field = schema.entities[0].fields.find(f => f.name === 'documentNo');
+    assert.equal(field.businessCritical, true);
+  });
+
+  it('decision without businessCritical leaves field without the property', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: {
+        cOrder: {
+          name: 'order',
+          fields: {
+            description: {},
+          },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(baseSchema, { rules: [] }, decisions);
+    const field = schema.entities[0].fields.find(f => f.name === 'description');
+    assert.equal(field.businessCritical, undefined,
+      'businessCritical should be absent when not declared in decisions');
   });
 });

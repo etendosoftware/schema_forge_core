@@ -4,56 +4,7 @@ import { MovementsToolbar } from './MovementsToolbar/index';
 import { MovementsTable } from './MovementsTable';
 import { NewMovementWizard } from './NewMovementWizard/index.jsx';
 import { applyAdvancedFilter } from './movementAdvancedFilter';
-
-// ---------------------------------------------------------------------------
-// Date range helpers
-// ---------------------------------------------------------------------------
-
-function presetBounds(presetId) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const to = new Date(today);
-  const from = new Date(today);
-  if (presetId === 'today') {
-    /* from = to = start of today */
-  } else if (presetId === 'yesterday') {
-    from.setDate(from.getDate() - 1);
-    to.setDate(to.getDate() - 1);
-  } else if (presetId === 'last7') {
-    from.setDate(from.getDate() - 6);
-  } else if (presetId === 'last30') {
-    from.setDate(from.getDate() - 29);
-  } else if (presetId === 'last12m') {
-    from.setMonth(from.getMonth() - 12);
-  } else {
-    return null;
-  }
-  // Include the whole "to" day
-  to.setHours(23, 59, 59, 999);
-  return { from, to };
-}
-
-/**
- * Resolves a DateRangePopover value into concrete `{ from, to }` Date bounds
- * (or null = no constraint).
- *
- * @param {null | { presetId: string } | { from: Date, to: Date }} dateRange
- */
-function getDateBounds(dateRange) {
-  if (!dateRange) return { from: null, to: null };
-  if ('presetId' in dateRange) {
-    const bounds = presetBounds(dateRange.presetId);
-    return bounds ?? { from: null, to: null };
-  }
-  if ('from' in dateRange && 'to' in dateRange) {
-    const from = dateRange.from instanceof Date ? new Date(dateRange.from) : null;
-    const to = dateRange.to instanceof Date ? new Date(dateRange.to) : null;
-    if (from) from.setHours(0, 0, 0, 0);
-    if (to) to.setHours(23, 59, 59, 999);
-    return { from, to };
-  }
-  return { from: null, to: null };
-}
+import { getDateBounds } from '@/lib/dateRangeBounds';
 
 // ---------------------------------------------------------------------------
 // KPI window suffix (shown in parentheses next to Inflows / Outflows labels)
@@ -126,7 +77,7 @@ function applyFilters(movements, filters) {
  * }} props
  */
 export const MovementsTab = forwardRef(function MovementsTab(
-  { account, totals, movements, enabledDimensions = [], headerDimensions = [], trxTypes = [], accountOrgId = null, paymentMethods = [], loading, onReload },
+  { account, totals, movements, enabledDimensions = [], headerDimensions = [], trxTypes = [], accountOrgId = null, paymentMethods = [], loading, onReload, highlightTxnId = null },
   ref,
 ) {
   const [filters, setFilters] = useState({
@@ -199,8 +150,12 @@ export const MovementsTab = forwardRef(function MovementsTab(
         onAdvancedFilterChange={setAdvancedFilter}
         onNewMovement={() => setNewMovementOpen(true)}
         rows={movements}
-      />
-      <AccountSummaryStrip account={account} totals={dateScopedTotals} loading={loading} />
+        data-testid="MovementsToolbar__c1f76a" />
+      <AccountSummaryStrip
+        account={account}
+        totals={dateScopedTotals}
+        loading={loading}
+        data-testid="AccountSummaryStrip__c1f76a" />
       <div className="flex-1 overflow-y-auto [&>div]:overflow-visible">
         <MovementsTable
           movements={filteredMovements}
@@ -208,9 +163,9 @@ export const MovementsTab = forwardRef(function MovementsTab(
           enabledDimensions={enabledDimensions}
           selectedIds={selectedIds}
           onSelectionChange={handleSelectionChange}
-        />
+          highlightTxnId={highlightTxnId}
+          data-testid="MovementsTable__c1f76a" />
       </div>
-
       <NewMovementWizard
         open={newMovementOpen}
         accountId={account?.id}
@@ -223,7 +178,7 @@ export const MovementsTab = forwardRef(function MovementsTab(
         paymentMethods={paymentMethods}
         onClose={() => setNewMovementOpen(false)}
         onSuccess={() => onReload?.()}
-      />
+        data-testid="NewMovementWizard__c1f76a" />
     </div>
   );
 });

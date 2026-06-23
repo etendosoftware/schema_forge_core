@@ -237,8 +237,12 @@ describe('ImportFromPurchaseOrderModal', () => {
   it('shows order date formatted', async () => {
     renderModal();
     await screen.findByText('PO-001');
-    const expectedDate = new Date('2024-01-15').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    expect(screen.getByText(expectedDate)).toBeInTheDocument();
+    // Compute the expected string the same way the component does so the test
+    // is not sensitive to the local timezone of the machine running it.
+    const expected = new Date('2024-01-15').toLocaleDateString('en-GB', {
+      day: 'numeric', month: 'short', year: 'numeric',
+    });
+    expect(screen.getByText(expected)).toBeInTheDocument();
   });
 
   it('shows order total amount formatted', async () => {

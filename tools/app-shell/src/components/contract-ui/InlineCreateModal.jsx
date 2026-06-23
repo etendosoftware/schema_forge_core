@@ -58,10 +58,13 @@ export function InlineCreateModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { if (!next) onCancel(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => { if (!next) onCancel(); }}
+      data-testid="Dialog__9acd2d">
       <DialogContent className="max-w-md gap-0 rounded-lg bg-white p-6" data-testid="inline-create-modal">
-        <DialogHeader>
-          <DialogTitle className="text-xl">{title}</DialogTitle>
+        <DialogHeader data-testid="DialogHeader__9acd2d">
+          <DialogTitle className="text-xl" data-testid="DialogTitle__9acd2d">{title}</DialogTitle>
         </DialogHeader>
 
         <div className="mt-4">

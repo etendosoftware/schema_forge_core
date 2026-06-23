@@ -272,7 +272,9 @@ const FIELD_HINTS_PRE_GRID = [
   ['badgeVariants', Boolean],
   ['enumVariants', Boolean],
   ['labels', Boolean],
+  ['clearsField', Boolean],
   ['summable', Boolean, setTrue],
+  ['businessCritical', Boolean, setTrue],
   ['display', Boolean],
   ['cellType', Boolean],
   ['subField', Boolean],
@@ -408,6 +410,10 @@ export function generateFrontendContract(schema, rules = []) {
   // implicit default.
   if (schema.window.linesLayout) win.linesLayout = schema.window.linesLayout;
 
+  // Double-entry balance footer config { debitField, creditField }. Carried
+  // through so generate-frontend.js can emit the BalanceFooterPanel prop.
+  if (schema.window.balanceFooter) win.balanceFooter = schema.window.balanceFooter;
+
   return { window: reorderKeys(win, WINDOW_KEY_ORDER), entities };
 }
 
@@ -516,14 +522,18 @@ export function generateBackendContract(schema, rules = [], processes = []) {
   const endpoints = [];
 
   for (const entity of schema.entities) {
-    const fields = entity.fields.map(f => ({
-      name: f.name,
-      apiKey: f.apiKey || f.name,
-      column: f.column,
-      type: f.type,
-      visibility: f.visibility,
-      required: f.required,
-    }));
+    const fields = entity.fields.map(f => {
+      const field = {
+        name: f.name,
+        apiKey: f.apiKey || f.name,
+        column: f.column,
+        type: f.type,
+        visibility: f.visibility,
+        required: f.required,
+      };
+      if (f.businessCritical) field.businessCritical = true;
+      return field;
+    });
 
     const beEntity = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields };
     if (entity.javaQualifier) beEntity.javaQualifier = entity.javaQualifier;
@@ -1454,7 +1464,7 @@ function generateAgentProfile(schema, apiPrediction, formState, windowConfig) {
     .filter(a => ['void', 'reverse', 'reactivate', 'cancel'].some(p => (a.name ?? '').toLowerCase().includes(p)))
     .map(a => a.name);
 
-  return {
+  const profile = {
     purpose,
     whenToUse,
     minimumCreate,
@@ -1467,6 +1477,15 @@ function generateAgentProfile(schema, apiPrediction, formState, windowConfig) {
     knownLimitations: [],
     dangerousOperations,
   };
+
+  // Author-provided agent guidance for the whole spec (returned by neo_discover).
+  // Omit when empty/blank to match the documented "omit when empty" behavior
+  // (the runtime MCP layer trims and omits blank prompts too).
+  if (windowConfig?.agentPrompt && windowConfig.agentPrompt.trim() !== '') {
+    profile.agentPrompt = windowConfig.agentPrompt.trim();
+  }
+
+  return profile;
 }
 
 function derivePurpose(windowName, category) {

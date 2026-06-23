@@ -26,10 +26,14 @@ function fmtQty(val) {
 }
 
 function SortIcon({ field, sortKey, sortDir }) {
-  if (sortKey !== field) return <ArrowUpDown className="h-3 w-3 ml-1 inline opacity-40" />;
+  if (sortKey !== field) return (
+    <ArrowUpDown
+      className="h-3 w-3 ml-1 inline opacity-40"
+      data-testid={"ArrowUpDown__" + field.id} />
+  );
   return sortDir === 'asc'
-    ? <ArrowUp className="h-3 w-3 ml-1 inline" />
-    : <ArrowDown className="h-3 w-3 ml-1 inline" />;
+    ? <ArrowUp className="h-3 w-3 ml-1 inline" data-testid={"ArrowUp__" + field.id} />
+    : <ArrowDown className="h-3 w-3 ml-1 inline" data-testid={"ArrowDown__" + field.id} />;
 }
 
 export default function WarehouseTransactionsTable({ parentId, token, apiBaseUrl, onCount }) {
@@ -96,7 +100,7 @@ export default function WarehouseTransactionsTable({ parentId, token, apiBaseUrl
   if (loading) {
     return (
       <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground p-6">
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__4dd2db" />
         {ui('warehouseLoadingTransactions')}
       </div>
     );
@@ -114,7 +118,6 @@ export default function WarehouseTransactionsTable({ parentId, token, apiBaseUrl
           className="w-full max-w-sm text-sm bg-transparent border border-border rounded-md px-3 py-1.5 outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
         />
       </div>
-
       {sorted.length === 0 ? (
         <div className="text-sm text-muted-foreground p-6">
           {transactions?.length === 0 ? ui('warehouseNoTransactions') : ui('warehouseNoFilterResults')}
@@ -128,25 +131,41 @@ export default function WarehouseTransactionsTable({ parentId, token, apiBaseUrl
                   className="text-left py-2 px-4 font-medium cursor-pointer select-none whitespace-nowrap"
                   onClick={() => handleSort('movementDate')}
                 >
-                  {ui('warehouseDate')} <SortIcon field="movementDate" sortKey={sortKey} sortDir={sortDir} />
+                  {ui('warehouseDate')} <SortIcon
+                  field="movementDate"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  data-testid="SortIcon__4dd2db" />
                 </th>
                 <th
                   className="text-left py-2 px-4 font-medium cursor-pointer select-none"
                   onClick={() => handleSort('product')}
                 >
-                  {ui('warehouseProduct')} <SortIcon field="product" sortKey={sortKey} sortDir={sortDir} />
+                  {ui('warehouseProduct')} <SortIcon
+                  field="product"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  data-testid="SortIcon__4dd2db" />
                 </th>
                 <th
                   className="text-left py-2 px-4 font-medium cursor-pointer select-none whitespace-nowrap"
                   onClick={() => handleSort('movementType')}
                 >
-                  {ui('warehouseType')} <SortIcon field="movementType" sortKey={sortKey} sortDir={sortDir} />
+                  {ui('warehouseType')} <SortIcon
+                  field="movementType"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  data-testid="SortIcon__4dd2db" />
                 </th>
                 <th
                   className="text-right py-2 px-4 font-medium cursor-pointer select-none"
                   onClick={() => handleSort('movementQuantity')}
                 >
-                  {ui('warehouseQty')} <SortIcon field="movementQuantity" sortKey={sortKey} sortDir={sortDir} />
+                  {ui('warehouseQty')} <SortIcon
+                  field="movementQuantity"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  data-testid="SortIcon__4dd2db" />
                 </th>
               </tr>
             </thead>

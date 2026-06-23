@@ -63,11 +63,16 @@ const OVERDUE_INITIAL_COLUMNS = [
 ];
 
 function SalesInvoiceBulkAction(props) {
-  return <BulkDocumentAction {...props} labelKey="confirmBulk" />;
+  return (
+    <BulkDocumentAction
+      {...props}
+      labelKey="confirmBulk"
+      data-testid="BulkDocumentAction__c01c21" />
+  );
 }
 
 function SalesInvoiceTable(props) {
-  return <InvoiceHeaderTable {...props} />;
+  return <InvoiceHeaderTable {...props} data-testid="InvoiceHeaderTable__c01c21" />;
 }
 
 /**
@@ -130,7 +135,7 @@ export default function SalesInvoiceWindow(props) {
           onAfterSave={true}
           refetchAfterSave={true}
           breadcrumb={breadcrumb}
-        />
+          data-testid="HeaderPage__c01c21" />
         {contactPortal}
       </CreateContactContext.Provider>
     );
@@ -188,11 +193,11 @@ export default function SalesInvoiceWindow(props) {
             onClose={onClose}
             onEdit={onEdit}
             onInvoiceUpdated={() => setRefreshKey(k => k + 1)}
-          />
+            data-testid="InvoicePreview__c01c21" />
         )}
         externalPreviewRow={effectiveRecord}
         onExternalPreviewClose={clearSavedRecord}
-      />
+        data-testid="ListView__c01c21" />
       {deleteDialog}
       {emailRow && createPortal(
         <SendDocumentModal
@@ -207,7 +212,7 @@ export default function SalesInvoiceWindow(props) {
           pdfBlobUrl={emailPdfUrl}
           pdfBlobLoading={emailPdfLoading}
           onClose={() => setEmailRow(null)}
-        />,
+          data-testid="SendDocumentModal__c01c21" />,
         document.body,
       )}
       {cloneTargets && createPortal(
@@ -220,7 +225,7 @@ export default function SalesInvoiceWindow(props) {
           processingKey="invoiceProcessing"
           onClose={() => setCloneTargets(null)}
           onCloned={() => setRefreshKey(k => k + 1)}
-        />,
+          data-testid="CloneOrderModal__c01c21" />,
         document.body,
       )}
     </>

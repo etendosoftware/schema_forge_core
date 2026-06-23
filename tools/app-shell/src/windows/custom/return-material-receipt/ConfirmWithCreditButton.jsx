@@ -6,7 +6,10 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
   const ui = useUI();
   return (
     <ConfirmWithCreditButtonBase
-      data={data} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl}
+      data={data}
+      recordId={recordId}
+      token={token}
+      apiBaseUrl={apiBaseUrl}
       entitySegment="returnMaterialReceipt"
       invoiceRoute="/sales-invoice/"
       invoiceType="facturaVenta"
@@ -21,6 +24,6 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
       infoRowBold={ui('returnReceipt.confirmModal.infoRowBold')}
       infoRowPost={ui('returnReceipt.confirmModal.infoRowPost')}
       confirmWithInvoiceLabel={ui('returnReceipt.confirmModal.confirmWithInvoice')}
-    />
+      data-testid="ConfirmWithCreditButtonBase__a61728" />
   );
 }

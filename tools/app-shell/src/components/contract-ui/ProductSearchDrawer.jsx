@@ -274,7 +274,6 @@ export default function ProductSearchDrawer({
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/30" onClick={onClose} />
-
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh]" onClick={onClose}>
         <div
           data-testid="product-search-drawer"
@@ -287,7 +286,9 @@ export default function ProductSearchDrawer({
         >
           {/* Search bar */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Search
+              className="h-4 w-4 text-muted-foreground shrink-0"
+              data-testid="Search__2e8824" />
             <input
               ref={inputRef}
               data-testid="product-search-input"
@@ -297,9 +298,11 @@ export default function ProductSearchDrawer({
               placeholder={`${ui('searchLabelPrefix')} ${resolvedTitle}...`}
               className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
-            {(loading || loadingMore) && <Loader2 className="h-4 w-4 text-muted-foreground animate-spin shrink-0" />}
+            {(loading || loadingMore) && <Loader2
+              className="h-4 w-4 text-muted-foreground animate-spin shrink-0"
+              data-testid="Loader2__2e8824" />}
             <button onClick={onClose} className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground shrink-0">
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" data-testid="X__2e8824" />
             </button>
           </div>
 
@@ -307,7 +310,9 @@ export default function ProductSearchDrawer({
           <div className="flex-1 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
             {loading && results.length === 0 && (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
+                <Loader2
+                  className="h-6 w-6 text-muted-foreground animate-spin"
+                  data-testid="Loader2__2e8824" />
               </div>
             )}
 
@@ -339,7 +344,14 @@ export default function ProductSearchDrawer({
                             : `border-transparent ${isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'}`
                         }`}
                       >
-                        <Avatar name={name} id={item.id} imageUrl={image} imageId={getImageId(item) || imageMap[item.searchKey] || imageMap[item.id]} neoBaseUrl={neoBaseUrl} token={token} />
+                        <Avatar
+                          name={name}
+                          id={item.id}
+                          imageUrl={image}
+                          imageId={getImageId(item) || imageMap[item.searchKey] || imageMap[item.id]}
+                          neoBaseUrl={neoBaseUrl}
+                          token={token}
+                          data-testid="Avatar__2e8824" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{name}</p>
                           {code && <p className="text-xs text-muted-foreground">{code}</p>}
@@ -348,7 +360,7 @@ export default function ProductSearchDrawer({
                           <span className="text-sm tabular-nums text-muted-foreground shrink-0">{price}</span>
                         )}
                         {isSelected && (
-                          <Check className="h-4 w-4 text-primary shrink-0" />
+                          <Check className="h-4 w-4 text-primary shrink-0" data-testid="Check__2e8824" />
                         )}
                       </button>
                     </li>
@@ -356,7 +368,9 @@ export default function ProductSearchDrawer({
                 })}
                 {loadingMore && (
                   <li className="flex items-center justify-center py-3">
-                    <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+                    <Loader2
+                      className="h-4 w-4 text-muted-foreground animate-spin"
+                      data-testid="Loader2__2e8824" />
                   </li>
                 )}
               </ul>

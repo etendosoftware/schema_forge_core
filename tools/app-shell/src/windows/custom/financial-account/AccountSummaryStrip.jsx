@@ -56,12 +56,12 @@ export function AccountSummaryStrip({ account, totals, loading }) {
     return (
       <div className="px-2 py-1">
         <div className="flex items-center gap-5 rounded-lg border border-[#E8EAEF] px-3 py-2">
-          <Skeleton className="h-8 w-8 rounded-full" />
-          <Skeleton className="h-5 w-48" />
+          <Skeleton className="h-8 w-8 rounded-full" data-testid="Skeleton__748dd1" />
+          <Skeleton className="h-5 w-48" data-testid="Skeleton__748dd1" />
           <div className="ml-auto flex gap-5">
-            <Skeleton className="h-6 w-28" />
-            <Skeleton className="h-6 w-28" />
-            <Skeleton className="h-6 w-28" />
+            <Skeleton className="h-6 w-28" data-testid="Skeleton__748dd1" />
+            <Skeleton className="h-6 w-28" data-testid="Skeleton__748dd1" />
+            <Skeleton className="h-6 w-28" data-testid="Skeleton__748dd1" />
           </div>
         </div>
       </div>
@@ -77,7 +77,10 @@ export function AccountSummaryStrip({ account, totals, loading }) {
             the IBAN (with "—" when none stored); cards show their card number. */}
         {showIdentifier ? (
           <div className="flex w-[364px] shrink-0 items-center gap-2">
-            <AccountLogoAvatar account={account} className="h-8 w-8 shrink-0" />
+            <AccountLogoAvatar
+              account={account}
+              className="h-8 w-8 shrink-0"
+              data-testid="AccountLogoAvatar__748dd1" />
             <div className="flex min-w-0 flex-col">
               <span className="text-xs leading-4 text-[#3F3F50]">
                 {isCard ? ui('financeAccountDetailCardNumber') : 'IBAN'}
@@ -97,7 +100,7 @@ export function AccountSummaryStrip({ account, totals, loading }) {
                     className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9]"
                     aria-label={ui('financeAccountDetailIbanCopyAria')}
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy className="h-4 w-4" data-testid="Copy__748dd1" />
                   </button>
                 ) : null}
               </div>
@@ -115,7 +118,7 @@ export function AccountSummaryStrip({ account, totals, loading }) {
             currency={totals.currency}
             tone="neutral"
             className="text-base font-medium leading-6"
-          />
+            data-testid="MoneyAmount__748dd1" />
         </div>
 
         {/* Entradas — sufijo dinámico según el filtro de fecha activo */}
@@ -128,7 +131,7 @@ export function AccountSummaryStrip({ account, totals, loading }) {
             currency={totals.currency}
             tone="positive"
             className="text-base font-medium leading-6"
-          />
+            data-testid="MoneyAmount__748dd1" />
         </div>
 
         {/* Salidas — mismo sufijo que Entradas */}
@@ -141,7 +144,7 @@ export function AccountSummaryStrip({ account, totals, loading }) {
             currency={totals.currency}
             tone="negative"
             className="text-base font-medium leading-6"
-          />
+            data-testid="MoneyAmount__748dd1" />
         </div>
 
       </div>

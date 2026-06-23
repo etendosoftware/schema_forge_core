@@ -162,6 +162,7 @@ const FIELD_DECISION_COPY_PROPS = [
   'filterOnly',
   'filterable',
   'labels',
+  'clearsField',
   'columnType',
   'display',
   'cellType',
@@ -192,6 +193,7 @@ const FIELD_DECISION_COPY_PROPS = [
   'noTrailing',
   'inline',
   'addLineFromSibling',
+  'agentPrompt',
   // Opt-in: render an FK `inputMode: "selector"` field as the searchable combobox
   // (CreatableSearchSelect) instead of the plain pick-only dropdown (SelectorInput).
   // Default false — absent/false keeps the existing dropdown rendering unchanged.
@@ -266,6 +268,7 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.dot === false) field.dot = false;
   if (fieldDecision.badge) field.badge = true;
   if (fieldDecision.summable) field.summable = true;
+  if (fieldDecision.businessCritical) field.businessCritical = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
   if (fieldDecision.min !== undefined) field.min = fieldDecision.min;
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
@@ -646,6 +649,7 @@ const WINDOW_TRUTHY_PROPS = [
   'rowQuickActions',
   'sendDocument',
   'linesLayout',
+  'balanceFooter',
   'extraTabs',
   'customPanelTabs',
 ];
@@ -672,14 +676,14 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
 // `attachments` is defined-only (not truthy) so an explicit `false` from
 // decisions.json reaches the contract and disables the AttachmentsTab in the
 // generator. Accepted shapes: boolean | { enabled?: boolean, ...options }.
-const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'customLinesComponent', 'customLinesLabel', 'formCardPadding', 'formScrollPaddingX', 'maxDetailLines'];
+const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'customLinesComponent', 'customLinesLabel', 'formCardPadding', 'formScrollPaddingX', 'maxDetailLines', 'agentPrompt'];
 const WINDOW_NOT_NULL_PROPS = ['detailTabIndex', 'salesTheme'];
 
 // Canonical key order for the contract window object. Stabilizes contract.json
 // output so internal refactors of the resolver/generator don't produce cosmetic
 // drift. Keys not listed here land alphabetically at the end of the object.
 export const WINDOW_KEY_ORDER = [
-  'id', 'name', 'primaryEntity', 'category',
+  'id', 'name', 'primaryEntity', 'category', 'agentPrompt',
   'sidebarLayout', 'templateConfig',
   'documentPreview', 'notesField', 'relatedDocuments',
   'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hideSaveStatuses',
@@ -695,7 +699,7 @@ export const WINDOW_KEY_ORDER = [
   'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
   'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
-  'layoutType', 'linesLayout',
+  'layoutType', 'linesLayout', 'balanceFooter',
 ];
 
 // Generic helper: returns a new object with keys in `canonicalOrder` first

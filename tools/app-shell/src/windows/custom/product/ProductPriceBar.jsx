@@ -112,7 +112,7 @@ function PriceStepper({ value, prefix, disabled, onCommit }) {
         disabled={disabled}
         className="w-10 h-[38px] flex items-center justify-center border-l border-[#E8EAEF] text-[#828FA3] hover:bg-gray-50 disabled:opacity-40 shrink-0"
       >
-        <Minus size={16} />
+        <Minus size={16} data-testid="Minus__d76b90" />
       </button>
       <button
         type="button"
@@ -120,7 +120,7 @@ function PriceStepper({ value, prefix, disabled, onCommit }) {
         disabled={disabled}
         className="w-10 h-[38px] flex items-center justify-center border-l border-[#E8EAEF] text-[#828FA3] hover:bg-gray-50 disabled:opacity-40 shrink-0"
       >
-        <Plus size={16} />
+        <Plus size={16} data-testid="Plus__d76b90" />
       </button>
     </div>
   );
@@ -311,7 +311,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
     return (
       <div className="p-2">
         <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-500 flex items-center gap-2">
-          <Loader2 size={14} className="animate-spin" />
+          <Loader2 size={14} className="animate-spin" data-testid="Loader2__d76b90" />
           {ui('loadingPricing')}
         </div>
       </div>
@@ -344,7 +344,6 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
           </button>
         ))}
       </div>
-
       {/* Right column — active section */}
       <div className="flex-1 min-w-0 flex flex-col gap-3 pt-3">
         <div className="flex items-center gap-2 h-8">
@@ -367,7 +366,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
               <div className="flex flex-row items-end gap-5">
                 {/* Name */}
                 <div className="flex flex-col gap-2 w-[300px] shrink-0">
-                  <FieldLabel>{ui('priceColName')}</FieldLabel>
+                  <FieldLabel data-testid="FieldLabel__d76b90">{ui('priceColName')}</FieldLabel>
                   <input
                     type="text"
                     readOnly
@@ -377,23 +376,23 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
                 </div>
                 {/* Unit price */}
                 <div className="flex flex-col gap-2 w-[201px] shrink-0">
-                  <FieldLabel>{ui('priceColUnitPrice')}</FieldLabel>
+                  <FieldLabel data-testid="FieldLabel__d76b90">{ui('priceColUnitPrice')}</FieldLabel>
                   <PriceStepper
                     value={row.standardPrice}
                     prefix={currencySymbol}
                     disabled={saving}
                     onCommit={v => patchField(row, 'standardPrice', v)}
-                  />
+                    data-testid="PriceStepper__d76b90" />
                 </div>
                 {/* List price */}
                 <div className="flex flex-col gap-2 w-[201px] shrink-0">
-                  <FieldLabel>{ui('priceColListPrice')}</FieldLabel>
+                  <FieldLabel data-testid="FieldLabel__d76b90">{ui('priceColListPrice')}</FieldLabel>
                   <PriceStepper
                     value={row.listPrice}
                     prefix={currencySymbol}
                     disabled={saving}
                     onCommit={v => patchField(row, 'listPrice', v)}
-                  />
+                    data-testid="PriceStepper__d76b90" />
                 </div>
                 {/* Delete */}
                 <div className="flex items-center h-10 shrink-0">
@@ -405,7 +404,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
                     data-testid={`price-delete-${row.id}`}
                     className="w-8 h-8 flex items-center justify-center rounded-full text-[#D50B3E] hover:text-red-700 hover:bg-red-50 disabled:opacity-40 opacity-0 group-hover/row:opacity-100 transition-all"
                   >
-                    {saving ? <Loader2 size={18} className="animate-spin" /> : <Trash2 className="h-5 w-5" />}
+                    {saving ? <Loader2 size={18} className="animate-spin" data-testid="Loader2__d76b90" /> : <Trash2 className="h-5 w-5" data-testid="Trash2__d76b90" />}
                   </button>
                 </div>
               </div>
@@ -416,7 +415,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
         {/* Add-tariff selector row */}
         {adding && (
           <div className="flex flex-col gap-2 w-[300px]">
-            <FieldLabel>{ui('priceColName')}</FieldLabel>
+            <FieldLabel data-testid="FieldLabel__d76b90">{ui('priceColName')}</FieldLabel>
             <select
               autoFocus
               disabled={savingId === 'new' || (lazyLoading && availableOptions.length === 0)}
@@ -443,7 +442,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
             data-testid="price-add-tariff"
             className="flex items-center gap-1 text-sm font-medium text-[#121217] underline w-fit mt-1"
           >
-            <Plus size={20} className="text-[#828FA3]" />
+            <Plus size={20} className="text-[#828FA3]" data-testid="Plus__d76b90" />
             {ui('priceAddTariff')}
           </button>
         )}

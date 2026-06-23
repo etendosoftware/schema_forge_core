@@ -46,7 +46,9 @@ export function SelectorChip({ label, onClick, onClear, clearAriaLabel, testId, 
           onKeyDown={onClearKeyDown}
           className="shrink-0 inline-flex items-center justify-center"
         >
-          <X className="h-4 w-4 text-[#828FA3] hover:text-foreground transition-colors" />
+          <X
+            className="h-4 w-4 text-[#828FA3] hover:text-foreground transition-colors"
+            data-testid="X__88e7eb" />
         </span>
       )}
     </button>

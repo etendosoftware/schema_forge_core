@@ -81,10 +81,11 @@ describe('MovementsToolbar', () => {
     expect(screen.getByTestId('type-filter')).toBeInTheDocument();
     expect(screen.getByTestId('movements-advanced-filter')).toBeInTheDocument();
     expect(screen.getByTestId('movements-search-input')).toBeInTheDocument();
-    expect(screen.getByTestId('new-movement-button')).toBeInTheDocument();
+    // Manual movement creation is feature-flagged off in this release.
+    expect(screen.queryByTestId('new-movement-button')).not.toBeInTheDocument();
   });
 
-  it('renders search input and new-movement button using i18n keys', () => {
+  it('renders the search input using i18n keys', () => {
     render(
       <MovementsToolbar filters={defaultFilters} onFiltersChange={() => () => {}} />,
     );
@@ -92,10 +93,6 @@ describe('MovementsToolbar', () => {
     const searchInput = screen.getByTestId('movements-search-input');
     expect(searchInput).toBeInTheDocument();
     expect(searchInput).toHaveAttribute('placeholder', 'financeAccountMovementsSearch');
-
-    expect(
-      screen.getByRole('button', { name: 'financeAccountMovementsNew' }),
-    ).toBeInTheDocument();
   });
 
   it('navigates back when back button is clicked', async () => {
@@ -129,8 +126,7 @@ describe('MovementsToolbar', () => {
     expect(lastCall[0]).toBe('c');
   });
 
-  it('invokes onNewMovement when the new-movement button is clicked', async () => {
-    const user = userEvent.setup();
+  it('keeps the new-movement button hidden while the feature is disabled', () => {
     const onNewMovement = vi.fn();
     render(
       <MovementsToolbar
@@ -140,9 +136,8 @@ describe('MovementsToolbar', () => {
       />,
     );
 
-    await user.click(screen.getByTestId('new-movement-button'));
-
-    expect(onNewMovement).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('new-movement-button')).not.toBeInTheDocument();
+    expect(onNewMovement).not.toHaveBeenCalled();
   });
 
   it('passes the active filter values to child filter components', () => {

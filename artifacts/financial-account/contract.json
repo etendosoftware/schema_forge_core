@@ -1,8 +1,8 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-06-11T01:47:08.755Z",
-  "updatedAt": "2026-06-12T19:37:11.919Z",
-  "checksum": "98d6a084f6dfc30c",
+  "updatedAt": "2026-06-19T12:29:45.813Z",
+  "checksum": "6fcded41cfce3ebe",
   "frontendContract": {
     "window": {
       "id": "94EAA455D2644E04AB25D93BE5157B6D",
@@ -1395,9 +1395,10 @@
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": true,
             "sourceRequired": true,
+            "gridOrder": 6,
             "readOnlyLogic": {
               "raw": "@APRM_BSProcessed@='Y'",
               "evaluable": false,
@@ -1416,7 +1417,7 @@
             "required": false,
             "grid": true,
             "form": true,
-            "gridOrder": 2,
+            "gridOrder": 3,
             "readOnlyLogic": {
               "raw": "@APRM_BSProcessed@='Y'",
               "evaluable": false,
@@ -1437,7 +1438,7 @@
             "form": true,
             "reference": "BPartner",
             "inputMode": "selector",
-            "gridOrder": 3
+            "gridOrder": 4
           },
           {
             "name": "gLItem",
@@ -1452,7 +1453,7 @@
             "form": true,
             "reference": "Glitem",
             "inputMode": "selector",
-            "gridOrder": 4
+            "gridOrder": 5
           },
           {
             "name": "dramount",
@@ -1471,7 +1472,7 @@
               "source": "0"
             },
             "defaultValue": "0",
-            "gridOrder": 5,
+            "gridOrder": 7,
             "readOnlyLogic": {
               "raw": "@APRM_BSProcessed@='Y'",
               "evaluable": false,
@@ -1496,7 +1497,7 @@
               "source": "0"
             },
             "defaultValue": "0",
-            "gridOrder": 6,
+            "gridOrder": 8,
             "readOnlyLogic": {
               "raw": "@APRM_BSProcessed@='Y'",
               "evaluable": false,
@@ -1513,8 +1514,9 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
-            "form": true
+            "grid": true,
+            "form": true,
+            "gridOrder": 2
           }
         ],
         "searchableFields": [],

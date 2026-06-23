@@ -661,6 +661,28 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('detailLabel="Order Line"'));
   });
 
+  it('emits balanceFooter prop when window.balanceFooter is declared', () => {
+    const contract = {
+      ...masterDetailContract,
+      frontendContract: {
+        ...masterDetailContract.frontendContract,
+        window: {
+          ...masterDetailContract.frontendContract.window,
+          balanceFooter: { debitField: 'amtSourceDr', creditField: 'amtSourceCr' },
+        },
+      },
+    };
+    const code = generatePageComponent('order', 'orderLine', contract);
+    assert.ok(code.includes('balanceFooter={'), `expected balanceFooter prop, got:\n${code}`);
+    assert.ok(code.includes('"debitField":"amtSourceDr"'));
+    assert.ok(code.includes('"creditField":"amtSourceCr"'));
+  });
+
+  it('omits balanceFooter prop when not declared', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('balanceFooter={'));
+  });
+
   it('does NOT contain inline CSS or state hooks', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.ok(!code.includes('useState'));
@@ -711,6 +733,83 @@ describe('generatePageComponent', () => {
     const code = generatePageComponent('contact', null, sidebarContract);
     assert.ok(code.includes('sidebarContent='), 'should render the sidebar slot');
     assert.ok(code.includes('token={props.token}'), 'sidebar custom component should receive token for legacy compatibility');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// sendDocument recipient-policy override emission (ETP-4226)
+// ---------------------------------------------------------------------------
+
+describe('generatePageComponent — sendDocument recipient policy (ETP-4226)', () => {
+  // A documental window (header has a non-discarded `documentNo`) enables the
+  // envelope by default. `window.sendDocument` recipient-policy keys flow
+  // verbatim into the emitted `sendDocument` prop so ListView/DetailView can
+  // forward them to SendDocumentModal as `sendPolicy`.
+  function buildDocumentalContract(sendDocument) {
+    const window = { id: '1', name: 'Sales Order', primaryEntity: 'order', category: 'sales' };
+    if (sendDocument !== undefined) window.sendDocument = sendDocument;
+    return {
+      frontendContract: {
+        window,
+        entities: {
+          order: {
+            fields: [
+              { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+              { name: 'docStatus', column: 'DocStatus', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+          orderLine: {
+            fields: [
+              { name: 'product', column: 'M_Product_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+  }
+
+  it('emits a bare sendDocument prop (no value) when only the defaults apply', () => {
+    const code = generatePageComponent('order', 'orderLine', buildDocumentalContract(undefined));
+    // Default {enabled:true, allowEmail:true} → prop is emitted without a value...
+    assert.ok(/sendDocument(?![=A-Za-z])/.test(code), 'bare sendDocument prop should be present');
+    // ...and never serialized as a JSON object.
+    assert.ok(!code.includes('sendDocument={{'), 'defaults must not emit a JSON sendDocument value');
+  });
+
+  it('serializes recipient-policy keys verbatim when window.sendDocument declares them', () => {
+    const code = generatePageComponent(
+      'order',
+      'orderLine',
+      buildDocumentalContract({ editableRecipients: false, cc: false, maxRecipients: 5 }),
+    );
+    assert.ok(
+      code.includes('sendDocument={{"enabled":true,"allowEmail":true,"editableRecipients":false,"cc":false,"maxRecipients":5}}'),
+      'recipient-policy keys should be emitted verbatim alongside enabled/allowEmail',
+    );
+  });
+
+  it('forwards the policy to BOTH the ListView and DetailView sendDocument props', () => {
+    const code = generatePageComponent(
+      'order',
+      'orderLine',
+      buildDocumentalContract({ editableRecipients: true, maxRecipients: 10 }),
+    );
+    const matches = code.match(/sendDocument=\{\{[^}]*"maxRecipients":10[^}]*\}\}/g) || [];
+    assert.equal(matches.length, 2, 'policy should be emitted for ListView and DetailView');
+  });
+
+  it('omits the sendDocument prop entirely when the feature is force-disabled', () => {
+    const code = generatePageComponent(
+      'order',
+      'orderLine',
+      buildDocumentalContract({ enabled: false, editableRecipients: true }),
+    );
+    assert.ok(!/sendDocument/.test(code), 'force-disabled window emits no sendDocument prop');
   });
 });
 
@@ -1770,6 +1869,82 @@ describe('generatePageComponent — F3 drawer + display emission (secondary-tab 
     assert.ok(!plainEntry[0].includes('lookupTitle'), 'plain entry must not include lookupTitle');
     assert.ok(!plainEntry[0].includes('onSelectMappings'), 'plain entry must not include onSelectMappings');
     assert.ok(!plainEntry[0].includes('displayFromCatalog'), 'plain entry must not include displayFromCatalog');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generatePageComponent — clearsField and labels in secondary-tab addLineFields
+// ---------------------------------------------------------------------------
+
+const clearsFieldTabContract = {
+  frontendContract: {
+    window: {
+      id: '810',
+      name: 'G/L Journal',
+      primaryEntity: 'glJournal',
+      category: 'accounting',
+      secondaryTabs: {
+        glJournalLine: {
+          label: 'Lines',
+          tabOrder: 1,
+          addLineFields: ['debit', 'credit'],
+        },
+      },
+    },
+    entities: {
+      glJournal: {
+        fields: [
+          { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string',
+            visibility: 'readOnly', required: true, grid: true, form: true },
+        ],
+        searchableFields: ['documentNo'],
+        computedFields: [],
+      },
+      glJournalLine: {
+        fields: [
+          { name: 'debit', column: 'AmtSourceDr', type: 'amount', tsType: 'number',
+            visibility: 'editable', required: false, grid: true, form: true,
+            clearsField: 'credit',
+            labels: { zero: 'DR', positive: 'Debit' } },
+          { name: 'credit', column: 'AmtSourceCr', type: 'amount', tsType: 'number',
+            visibility: 'editable', required: false, grid: true, form: true,
+            clearsField: 'debit' },
+        ],
+        searchableFields: [],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+describe('generatePageComponent — clearsField and labels in secondary-tab addLineFields', () => {
+  it('emits clearsField for a field that declares it', () => {
+    const code = generatePageComponent('glJournal', null, clearsFieldTabContract);
+    assert.ok(
+      code.includes("clearsField: 'credit'"),
+      `expected clearsField: 'credit' in addLineFields entry`,
+    );
+  });
+
+  it('emits labels dict for a field that declares labels', () => {
+    const code = generatePageComponent('glJournal', null, clearsFieldTabContract);
+    assert.ok(
+      code.includes('"zero":"DR"') || code.includes('"zero": "DR"'),
+      `expected labels dict with zero key in addLineFields entry`,
+    );
+  });
+
+  it('does NOT emit clearsField for a field that lacks it', () => {
+    // Build a contract where only debit has clearsField — verify credit entry omits it
+    const codeWithOneSide = (() => {
+      const oneSide = JSON.parse(JSON.stringify(clearsFieldTabContract));
+      oneSide.frontendContract.entities.glJournalLine.fields[1].clearsField = undefined;
+      return generatePageComponent('glJournal', null, oneSide);
+    })();
+    const creditEntry = codeWithOneSide.match(/\{\s*key:\s*'credit'[^}]*\}/);
+    assert.ok(creditEntry, 'expected credit entry to be emitted');
+    assert.ok(!creditEntry[0].includes('clearsField'), 'credit entry must not include clearsField when not declared');
   });
 });
 

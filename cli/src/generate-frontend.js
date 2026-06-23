@@ -747,7 +747,16 @@ function resolveSendDocumentConfig(windowConfig, allEntityFields) {
     ? !!sendDocumentOverride.enabled
     : isDocumentalWindow;
   const sdAllowEmail = sendDocumentOverride?.allowEmail !== false;
-  const sendDocument = sdEnabled ? { enabled: true, allowEmail: sdAllowEmail } : null;
+  if (!sdEnabled) return null;
+  const sendDocument = { enabled: true, allowEmail: sdAllowEmail };
+  // ETP-4226 — recipient-edit policy overrides pass through verbatim so
+  // ListView can forward them to SendDocumentModal as `sendPolicy`.
+  // Absence means the shared default applies (editable To/CC, max 10).
+  for (const key of ['editableRecipients', 'cc', 'maxRecipients']) {
+    if (sendDocumentOverride && sendDocumentOverride[key] !== undefined) {
+      sendDocument[key] = sendDocumentOverride[key];
+    }
+  }
   return sendDocument;
 }
 
@@ -875,7 +884,10 @@ function buildSendDocumentProps(sendDocument) {
   let sendDocumentProp = '';
   let sendDocumentDetailProp = '';
   if (sendDocument) {
-    const isDefaults = sendDocument.enabled === true && sendDocument.allowEmail === true;
+    // ETP-4226 — any recipient-policy key (editableRecipients/cc/maxRecipients)
+    // makes the object non-default so it is emitted verbatim.
+    const isDefaults = sendDocument.enabled === true && sendDocument.allowEmail === true
+      && Object.keys(sendDocument).length === 2;
     const propValue = isDefaults ? '' : `={${JSON.stringify(sendDocument)}}`;
     sendDocumentProp = `\n      sendDocument${propValue}`;
     sendDocumentDetailProp = `\n        sendDocument${propValue}`;
@@ -1344,7 +1356,11 @@ function buildListModalFields(formFields) {
     const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
     const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
     const defaultValuePart = getDefaultValuePart(skipCheckboxDefault, skipServerMacro, f);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart} },`;
+    // A boolean field flagged as a grid toggle renders as the shared PillToggle switch in the
+    // modal body too (in place), instead of a plain checkbox.
+    const togglePart = (type === 'checkbox' && (f.cellType === 'toggle' || f.inlineToggle))
+      ? ', toggle: true' : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart}${togglePart} },`;
   }).join('\n');
 }
 
@@ -1520,6 +1536,8 @@ function buildEntryFieldLine(f, i, firstSearchIdx) {
   const requiredPart = fragmentIf(f.required, ', required: true');
   const lookupPart = fragmentIf(i === firstSearchIdx && firstSearchIdx !== -1, ', lookup: true');
   const labelPart = wrapIf(", label: '", f.label, "'");
+  const labelsDictPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
+  const clearsFieldPart = f.clearsField ? `, clearsField: '${String(f.clearsField).replace(/'/g, "\\'")}'` : '';
   const referencePart = wrapIf(", reference: '", f.reference, "'");
   const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
   const dependsOnPart = f.dependsOn
@@ -1541,7 +1559,7 @@ function buildEntryFieldLine(f, i, firstSearchIdx) {
     : '';
   const { lookupDrawerPart, lookupTitlePart, onSelectMappingsPart, displayFromCatalogPart } = buildLookupEntryParts(f);
   const minEntryPart = optProp('min', f.min);
-  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart} },`;
+  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart} },`;
 }
 
 /**
@@ -1648,6 +1666,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const listbarPaddingX = windowConfig.listbarPaddingX ?? null;
   const tablePaddingX = windowConfig.tablePaddingX ?? null;
   const linesLayout = windowConfig.linesLayout ?? 'classic';
+  const balanceFooter = windowConfig.balanceFooter ?? null;
   const listViewOptions = windowConfig.listViewOptions ?? null;
   const listBaseFilter = windowConfig.listBaseFilter ?? null;
   const quickFilters = windowConfig.quickFilters ?? null;
@@ -1720,6 +1739,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           const type = mapFormFieldType(f);
           const requiredPart = fragmentIf(f.required, ', required: true');
           const labelPart = wrapIf(", label: '", f.label, "'");
+          const labelsDictPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
+          const clearsFieldPart = f.clearsField ? `, clearsField: '${String(f.clearsField).replace(/'/g, "\\'")}'` : '';
           const referencePart = wrapIf(", reference: '", f.reference, "'");
           const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
           // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
@@ -1739,7 +1760,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           // document currency). Declared in secondaryTabs.<tab>.addLineFieldExclusions.
           const excludeValueOf = cfg.addLineFieldExclusions?.[fk];
           const excludeValueOfPart = excludeValueOf ? `, excludeValueOf: '${String(excludeValueOf).replace(/'/g, "\\'")}'` : '';
-          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${excludeValueOfPart} }`;
+          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${labelsDictPart}${clearsFieldPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${excludeValueOfPart} }`;
         }).filter(Boolean);
         // Tab-level readOnlyLogic — when truthy at runtime the tab still
         // renders existing rows but blocks add / edit / delete actions.
@@ -1886,6 +1907,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // output diff-free for windows that don't opt in.
   const cond = linesLayout && linesLayout !== 'classic';
   const linesLayoutProp = wrapIf('\n        linesLayout="', linesLayout, '"', cond);
+  // balanceFooter prop (DetailView) — { debitField, creditField } for double-entry windows.
+  const balanceFooterProp = jsonWrapIf('\n        balanceFooter={', balanceFooter, '}');
   // listViewOptions props
   const listViewOptionsProp = jsonWrapIf('\n      listViewOptions={', listViewOptions, '}');
   const listBaseFilterProp = wrapIf('\n      baseFilter="', listBaseFilter, '"');
@@ -2120,7 +2143,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${fragm
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}
         {...props}${sidebarContentProp}
       />${confirmModalName ? `
       {showConfirmModal && (
