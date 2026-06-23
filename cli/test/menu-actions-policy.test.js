@@ -55,13 +55,32 @@ describe('menuActions policy — duplicate must not appear in sales-invoice keba
   });
 });
 
-describe('menuActions policy — goods-shipment kebab is empty', () => {
-  it('goods-shipment: menuActions is empty (no kebab menu rendered)', () => {
+describe('menuActions policy — goods-shipment kebab contains only post/unpost', () => {
+  // ETP-4298 added declarative Post/Unpost actions to goods-shipment. The kebab
+  // must expose exactly those two keys — and still must NOT carry "cancel"
+  // (header button) or "duplicate".
+  it('goods-shipment: menuActions contains exactly "post" and "unpost"', () => {
     const actions = loadMenuActions('goods-shipment');
-    assert.equal(
-      actions.length,
-      0,
-      `goods-shipment menuActions must be empty, got: [${keys(actions).join(', ')}]`,
+    assert.deepEqual(
+      [...keys(actions)].sort(),
+      ['post', 'unpost'],
+      `goods-shipment menuActions must be exactly [post, unpost], got: [${keys(actions).join(', ')}]`,
+    );
+  });
+
+  it('goods-shipment: no "cancel" in menuActions', () => {
+    const actions = loadMenuActions('goods-shipment');
+    assert.ok(
+      !keys(actions).includes('cancel'),
+      '"cancel" must not be in goods-shipment menuActions — it is already shown as a header button',
+    );
+  });
+
+  it('goods-shipment: no "duplicate" in menuActions', () => {
+    const actions = loadMenuActions('goods-shipment');
+    assert.ok(
+      !keys(actions).includes('duplicate'),
+      '"duplicate" must not be in goods-shipment menuActions',
     );
   });
 });
