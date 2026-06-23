@@ -1,4 +1,4 @@
-import { track, group, identify, flush } from '../observability.js';
+import { track, group, groupSet, identify, flush } from '../observability.js';
 import { extractWindowName } from './payload.js';
 import { HEALTH_EVENTS_MAP } from './health-events.map.js';
 
@@ -21,12 +21,16 @@ function getSessionContext() {
   }
 }
 
-export async function trackSessionStarted({ username, clientId } = {}) {
+export async function trackSessionStarted({ username, clientId, clientName } = {}) {
   if (username) {
     await identify(username);
   }
   if (clientId) {
     void group('account_id', clientId);
+    const clientNameValue = clientName || localStorage.getItem('sf_auth_client_name') || undefined;
+    if (clientNameValue) {
+      void groupSet('account_id', clientId, { $name: clientNameValue });
+    }
   }
   await track('session_started', {
     username: username || undefined,

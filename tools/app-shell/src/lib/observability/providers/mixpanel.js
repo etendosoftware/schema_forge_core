@@ -75,6 +75,15 @@ export function createMixpanelProvider({
       client.set_group(groupKey, groupId);
     },
 
+    async groupSet(groupKey, groupId, properties = {}) {
+      const client = await getClient();
+      if (!client) return;
+      const grp = client.get_group?.(groupKey, groupId);
+      if (typeof grp?.set === 'function') {
+        grp.set(properties);
+      }
+    },
+
     async flush() {
       const client = await getClient();
       if (typeof client?.flush === 'function') {

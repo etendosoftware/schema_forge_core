@@ -93,8 +93,12 @@ Helpers live in `tools/app-shell/src/lib/observability/health-events.js`.
 linking the Mixpanel device ID to the user profile so that subsequent events are
 attributed to the identified user rather than an anonymous `$device:…` ID. It then
 calls `group('account_id', clientId)` to associate the session with the Mixpanel
-group, and finally `flush()` to guarantee delivery before the page potentially
-navigates away.
+group. When a client name is available — either from the `clientName` parameter or
+from `localStorage.getItem('sf_auth_client_name')` — it also calls
+`groupSet('account_id', clientId, { $name: clientName })`, which writes the `$name`
+property on the Mixpanel Group Profile so the account appears by its company name
+in Mixpanel → Users → Accounts. Finally it calls `flush()` to guarantee delivery
+before the page potentially navigates away.
 
 `trackDocumentCreated` and `trackTransactionPosted` are `async` functions that
 call `flush()` internally before returning. Call sites must `await` them; no

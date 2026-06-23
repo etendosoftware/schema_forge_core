@@ -96,6 +96,16 @@ export function createObservability(options = {}) {
       );
     },
 
+    async groupSet(groupKey, groupId, properties = {}) {
+      if (!initialized || !groupKey || !groupId) return;
+
+      await Promise.allSettled(
+        providers.map(provider =>
+          callProvider(provider, 'groupSet', [groupKey, groupId, { ...properties }, { context: getContext() }])
+        )
+      );
+    },
+
     async captureException(error, details = {}) {
       if (!initialized || !error) return;
 

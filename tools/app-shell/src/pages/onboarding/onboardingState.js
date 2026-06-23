@@ -52,6 +52,7 @@ export function buildEnvironmentSessionStorage(env, loginResponse) {
     sf_auth_token: loginResponse.token,
     sf_auth_user: env.adminUserName || env.adminUser || '',
     sf_auth_client_id: env.clientId || '',
+    sf_auth_client_name: env.clientName || '',
   };
 
   if (loginResponse.roleList) {

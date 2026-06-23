@@ -6,6 +6,7 @@ vi.mock('@/lib/observability.js', () => ({
   track: vi.fn().mockResolvedValue(undefined),
   flush: vi.fn().mockResolvedValue(undefined),
   group: vi.fn(),
+  groupSet: vi.fn().mockResolvedValue(undefined),
   identify: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -16,7 +17,7 @@ import {
   trackTransactionPosted,
   trackSessionStarted,
 } from '@/lib/observability/health-events.js';
-import { track, flush, group, identify } from '@/lib/observability.js';
+import { track, flush, group, groupSet, identify } from '@/lib/observability.js';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -302,5 +303,27 @@ describe('trackSessionStarted', () => {
     await trackSessionStarted({ username: 'bob', clientId: 'c-1' });
 
     expect(callOrder.indexOf('identify')).toBeLessThan(callOrder.indexOf('track'));
+  });
+
+  it('calls groupSet with $name when clientName is provided', async () => {
+    await trackSessionStarted({ username: 'alice', clientId: 'client-123', clientName: 'Acme Corp' });
+
+    expect(groupSet).toHaveBeenCalledOnce();
+    expect(groupSet).toHaveBeenCalledWith('account_id', 'client-123', { $name: 'Acme Corp' });
+  });
+
+  it('calls groupSet with $name from localStorage sf_auth_client_name when clientName not passed but localStorage is set', async () => {
+    localStorage.setItem('sf_auth_client_name', 'Stored Corp');
+
+    await trackSessionStarted({ username: 'alice', clientId: 'client-123' });
+
+    expect(groupSet).toHaveBeenCalledOnce();
+    expect(groupSet).toHaveBeenCalledWith('account_id', 'client-123', { $name: 'Stored Corp' });
+  });
+
+  it('does NOT call groupSet when clientName is absent and localStorage is empty', async () => {
+    await trackSessionStarted({ username: 'alice', clientId: 'client-123' });
+
+    expect(groupSet).not.toHaveBeenCalled();
   });
 });
