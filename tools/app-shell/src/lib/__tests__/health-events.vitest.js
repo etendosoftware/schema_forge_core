@@ -6,6 +6,7 @@ vi.mock('@/lib/observability.js', () => ({
   track: vi.fn().mockResolvedValue(undefined),
   flush: vi.fn().mockResolvedValue(undefined),
   group: vi.fn(),
+  identify: vi.fn().mockResolvedValue(undefined),
 }));
 
 // ── Imports ────────────────────────────────────────────────────────────────────
@@ -15,7 +16,7 @@ import {
   trackTransactionPosted,
   trackSessionStarted,
 } from '@/lib/observability/health-events.js';
-import { track, flush, group } from '@/lib/observability.js';
+import { track, flush, group, identify } from '@/lib/observability.js';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -272,5 +273,34 @@ describe('trackSessionStarted', () => {
 
     expect(track).toHaveBeenCalledOnce();
     expect(flush).toHaveBeenCalledOnce();
+  });
+
+  it('calls identify(username) when username is provided', async () => {
+    await trackSessionStarted({ username: 'alice', clientId: 'client-123' });
+
+    expect(identify).toHaveBeenCalledOnce();
+    expect(identify).toHaveBeenCalledWith('alice');
+  });
+
+  it('does NOT call identify() when username is absent', async () => {
+    await trackSessionStarted({ clientId: 'client-123' });
+
+    expect(identify).not.toHaveBeenCalled();
+  });
+
+  it('does NOT call identify() when username is undefined', async () => {
+    await trackSessionStarted({ username: undefined, clientId: 'client-123' });
+
+    expect(identify).not.toHaveBeenCalled();
+  });
+
+  it('calls identify() before track() to attribute the session event to the identified user', async () => {
+    const callOrder = [];
+    identify.mockImplementation(() => { callOrder.push('identify'); return Promise.resolve(undefined); });
+    track.mockImplementation(() => { callOrder.push('track'); return Promise.resolve(undefined); });
+
+    await trackSessionStarted({ username: 'bob', clientId: 'c-1' });
+
+    expect(callOrder.indexOf('identify')).toBeLessThan(callOrder.indexOf('track'));
   });
 });

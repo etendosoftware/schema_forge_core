@@ -89,9 +89,12 @@ Helpers live in `tools/app-shell/src/lib/observability/health-events.js`.
 | `document_created` | A new record is saved for the first time (`isNew === true`) | `trackDocumentCreated()` |
 | `transaction_posted` | A transactional document completes a posting action | `trackTransactionPosted()` |
 
-`trackSessionStarted` also calls `group('account_id', clientId)` to associate the
-session with the Mixpanel group, then `flush()` to guarantee delivery before the
-page potentially navigates away.
+`trackSessionStarted` calls `identify(username)` first when a username is present,
+linking the Mixpanel device ID to the user profile so that subsequent events are
+attributed to the identified user rather than an anonymous `$device:…` ID. It then
+calls `group('account_id', clientId)` to associate the session with the Mixpanel
+group, and finally `flush()` to guarantee delivery before the page potentially
+navigates away.
 
 `trackDocumentCreated` and `trackTransactionPosted` are `async` functions that
 call `flush()` internally before returning. Call sites must `await` them; no
