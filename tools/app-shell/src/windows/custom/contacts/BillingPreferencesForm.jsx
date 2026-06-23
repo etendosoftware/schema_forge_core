@@ -285,7 +285,7 @@ export default function BillingPreferencesForm(props) {
               label={ui('customer')}
               checked={!!data?.customer}
               onChange={(val) => onChange?.('customer', val)}
-            />
+              data-testid="CircularCheckbox__7f0756" />
             {data?.customer && (
               <>
                 <EntityForm
@@ -320,7 +320,7 @@ export default function BillingPreferencesForm(props) {
               label={ui('vendor')}
               checked={!!data?.vendor}
               onChange={(val) => onChange?.('vendor', val)}
-            />
+              data-testid="CircularCheckbox__7f0756" />
             {data?.vendor && (
               <>
                 <EntityForm

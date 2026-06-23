@@ -83,70 +83,73 @@ export default function ContactsWindow(props) {
 
   return (
     <ContactsProvider data-testid="ContactsProvider__ef097c">
-     <ContactsFinanceProvider token={props.token} apiBaseUrl={props.apiBaseUrl}>
-      <div className={CONTACTS_WRAPPER}>
-        <BusinessPartnerPage
-          {...props}
-          Form={ContactsBusinessPartnerForm}
-          subsetFilters={SUBSET_FILTERS}
-          autoSaveOnBlur={true}
-          enableSecondaryRowDelete={true}
-          tabsBarAfter={ContactsPeriodButton}
-          headerContent={(data) => <ContactsSummaryWidget data={data} />}
-          noHeaderBorder={true}
-          toolbarBorderBottom={true}
-          toolbarPaddingX="px-2"
-          newLabel={ui('newContact')}
-          listbarPaddingX="px-2"
-          SortIconComponent={SortIcon}
-          RefreshIconComponent={RefreshIcon}
-          iconButtonHover="hover:bg-[#F5F7F9]"
-          tablePaddingX="px-2"
-          selectionBarSize="default"
-          selectionBarRightActions={selectionBarRightActions}
-          toolbarButtonSize="default"
-          primaryTabsVariant="pill"
-          tabsBarPaddingX="pl-2 pr-2"
-          formScrollPaddingX="pl-0 pr-0"
-          formScrollPaddingB="pb-2"
-          secondaryTabContentPaddingT="pt-2"
-          formCardPadding="pt-2 px-5 pb-2"
-          secondaryTabsPaddingY="py-[14px]"
-          secondaryTabsShowHoverLine={true}
-          hideAddLineChevron={true}
-          addLineButtonPaddingX="pl-2"
-          data-testid="BusinessPartnerPage__ef097c" />
-      </div>
-      <Dialog
-        open={Boolean(pendingBulkDelete)}
-        onOpenChange={(open) => { if (!open) handleBulkDeleteCancel(); }}
-        data-testid="Dialog__ef097c">
-        <DialogContent className="max-w-sm" data-testid="DialogContent__ef097c">
-          <DialogHeader data-testid="DialogHeader__ef097c">
-            <DialogTitle data-testid="DialogTitle__ef097c">{ui('deleteConfirmTitle')}</DialogTitle>
-            <DialogDescription data-testid="DialogDescription__ef097c">
-              {ui('deleteConfirmMessage')}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter data-testid="DialogFooter__ef097c">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleBulkDeleteCancel}
-              data-testid="Button__ef097c">
-              {ui('cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleBulkDeleteConfirm}
-              data-testid="Button__ef097c">
-              {ui('delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-     </ContactsFinanceProvider>
+      <ContactsFinanceProvider
+        token={props.token}
+        apiBaseUrl={props.apiBaseUrl}
+        data-testid="ContactsFinanceProvider__ef097c">
+       <div className={CONTACTS_WRAPPER}>
+         <BusinessPartnerPage
+           {...props}
+           Form={ContactsBusinessPartnerForm}
+           subsetFilters={SUBSET_FILTERS}
+           autoSaveOnBlur={true}
+           enableSecondaryRowDelete={true}
+           tabsBarAfter={ContactsPeriodButton}
+           headerContent={(data) => <ContactsSummaryWidget data={data} data-testid="ContactsSummaryWidget__ef097c" />}
+           noHeaderBorder={true}
+           toolbarBorderBottom={true}
+           toolbarPaddingX="px-2"
+           newLabel={ui('newContact')}
+           listbarPaddingX="px-2"
+           SortIconComponent={SortIcon}
+           RefreshIconComponent={RefreshIcon}
+           iconButtonHover="hover:bg-[#F5F7F9]"
+           tablePaddingX="px-2"
+           selectionBarSize="default"
+           selectionBarRightActions={selectionBarRightActions}
+           toolbarButtonSize="default"
+           primaryTabsVariant="pill"
+           tabsBarPaddingX="pl-2 pr-2"
+           formScrollPaddingX="pl-0 pr-0"
+           formScrollPaddingB="pb-2"
+           secondaryTabContentPaddingT="pt-2"
+           formCardPadding="pt-2 px-5 pb-2"
+           secondaryTabsPaddingY="py-[14px]"
+           secondaryTabsShowHoverLine={true}
+           hideAddLineChevron={true}
+           addLineButtonPaddingX="pl-2"
+           data-testid="BusinessPartnerPage__ef097c" />
+       </div>
+       <Dialog
+         open={Boolean(pendingBulkDelete)}
+         onOpenChange={(open) => { if (!open) handleBulkDeleteCancel(); }}
+         data-testid="Dialog__ef097c">
+         <DialogContent className="max-w-sm" data-testid="DialogContent__ef097c">
+           <DialogHeader data-testid="DialogHeader__ef097c">
+             <DialogTitle data-testid="DialogTitle__ef097c">{ui('deleteConfirmTitle')}</DialogTitle>
+             <DialogDescription data-testid="DialogDescription__ef097c">
+               {ui('deleteConfirmMessage')}
+             </DialogDescription>
+           </DialogHeader>
+           <DialogFooter data-testid="DialogFooter__ef097c">
+             <Button
+               variant="outline"
+               size="sm"
+               onClick={handleBulkDeleteCancel}
+               data-testid="Button__ef097c">
+               {ui('cancel')}
+             </Button>
+             <Button
+               variant="destructive"
+               size="sm"
+               onClick={handleBulkDeleteConfirm}
+               data-testid="Button__ef097c">
+               {ui('delete')}
+             </Button>
+           </DialogFooter>
+         </DialogContent>
+       </Dialog>
+      </ContactsFinanceProvider>
     </ContactsProvider>
   );
 }

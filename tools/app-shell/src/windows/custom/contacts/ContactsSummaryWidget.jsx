@@ -69,7 +69,10 @@ function TrendBadge({ trend, period, ui }) {
         color: up ? '#17663A' : '#D50B3E',
       }}
     >
-      <Arrow className="h-4 w-4 shrink-0" style={{ color: up ? '#1E874C' : '#D50B3E' }} />
+      <Arrow
+        className="h-4 w-4 shrink-0"
+        style={{ color: up ? '#1E874C' : '#D50B3E' }}
+        data-testid="Arrow__22ed51" />
       {`${pct} ${vsLabel}`}
     </span>
   );
@@ -84,7 +87,11 @@ function KpiBlock({ kpi, period, currencyCode, ui }) {
         <span className="text-base font-medium leading-6" style={{ color: valueColor }}>
           {formatCurrency(currencyCode ?? 'USD', kpi.value)}
         </span>
-        <TrendBadge trend={kpi.trend} period={period} ui={ui} />
+        <TrendBadge
+          trend={kpi.trend}
+          period={period}
+          ui={ui}
+          data-testid="TrendBadge__22ed51" />
       </div>
     </div>
   );
@@ -133,10 +140,10 @@ function ChartDialog({ open, onOpenChange, trend, period, currencyCode, ui }) {
   const sl = (arr) => arr.slice(-n);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-full">
-        <DialogHeader>
-          <DialogTitle>
+    <Dialog open={open} onOpenChange={onOpenChange} data-testid="Dialog__22ed51">
+      <DialogContent className="max-w-2xl w-full" data-testid="DialogContent__22ed51">
+        <DialogHeader data-testid="DialogHeader__22ed51">
+          <DialogTitle data-testid="DialogTitle__22ed51">
             <div className="flex items-center justify-between gap-4 pr-8">
               <span>{ui('bpSalesPurchases')}</span>
               <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
@@ -170,8 +177,8 @@ function ChartDialog({ open, onOpenChange, trend, period, currencyCode, ui }) {
           fontSize={12}
           chartId="contacts-summary-chart"
           orgCurrency={currencyCode ?? 'USD'}
-        />
-        <ChartLegend ui={ui} />
+          data-testid="BPChartSVGContent__22ed51" />
+        <ChartLegend ui={ui} data-testid="ChartLegend__22ed51" />
       </DialogContent>
     </Dialog>
   );
@@ -214,7 +221,13 @@ export default function ContactsSummaryWidget({ data, optionalProvider = false }
           </>
         ) : (
           kpis.map((kpi) => (
-            <KpiBlock key={kpi.key} kpi={kpi} period={period} currencyCode={currencyCode} ui={ui} />
+            <KpiBlock
+              key={kpi.key}
+              kpi={kpi}
+              period={period}
+              currencyCode={currencyCode}
+              ui={ui}
+              data-testid="KpiBlock__22ed51" />
           ))
         )}
         <button
@@ -222,7 +235,7 @@ export default function ContactsSummaryWidget({ data, optionalProvider = false }
           onClick={() => setChartOpen(true)}
           className="shrink-0 flex items-center gap-1 px-2 py-1 h-8 bg-[#F5F7F9] rounded-lg text-sm font-medium text-[#121217] hover:brightness-95 transition-all"
         >
-          <LineChart className="h-5 w-5 text-[#828FA3]" />
+          <LineChart className="h-5 w-5 text-[#828FA3]" data-testid="LineChart__22ed51" />
           {ui('bpViewChart')}
         </button>
       </div>
@@ -233,7 +246,7 @@ export default function ContactsSummaryWidget({ data, optionalProvider = false }
         period={period}
         currencyCode={currencyCode}
         ui={ui}
-      />
+        data-testid="ChartDialog__22ed51" />
     </div>
   );
 }

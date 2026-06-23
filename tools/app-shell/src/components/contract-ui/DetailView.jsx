@@ -2855,7 +2855,7 @@ export function DetailView({
                         token={token}
                         apiBaseUrl={apiBaseUrl}
                         api={api}
-                      />
+                        data-testid="TabsBarAfterComponent__fa3275" />
                     </div>
                   );
                 })()}

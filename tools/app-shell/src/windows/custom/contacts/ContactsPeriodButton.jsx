@@ -37,9 +37,13 @@ export default function ContactsPeriodButton() {
         onClick={() => setOpen(o => !o)}
         className="h-10 flex items-center gap-1 px-3 bg-white border border-[#D1D4DB] rounded-lg shadow-[0px_1px_2px_rgba(18,18,23,0.05)] text-sm font-medium text-[#121217]"
       >
-        <Calendar className="h-5 w-5 text-[#828FA3] shrink-0" />
+        <Calendar
+          className="h-5 w-5 text-[#828FA3] shrink-0"
+          data-testid="Calendar__28b84a" />
         <span className="flex-1 text-left mx-1">{label}</span>
-        <ChevronDown className="h-5 w-5 text-[#828FA3] shrink-0" />
+        <ChevronDown
+          className="h-5 w-5 text-[#828FA3] shrink-0"
+          data-testid="ChevronDown__28b84a" />
       </button>
       {open && (
         <div className="absolute top-11 right-0 z-50 min-w-full bg-white border border-[#D1D4DB] rounded-lg shadow-md overflow-hidden">

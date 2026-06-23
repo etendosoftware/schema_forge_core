@@ -130,7 +130,10 @@ export default function ContactsFinancialPanel({ data, token, apiBaseUrl, catalo
 
   return (
     <div className="space-y-2 pb-6">
-      <ContactsSummaryWidget data={data} optionalProvider={true} />
+      <ContactsSummaryWidget
+        data={data}
+        optionalProvider={true}
+        data-testid="ContactsSummaryWidget__d55d36" />
       {/* Crédito — layout fila: texto izquierda + stepper derecha */}
       <div className="flex flex-row items-start px-5 pt-2 pb-3 gap-5">
         <div className="flex flex-col gap-1 w-[148px] shrink-0">
