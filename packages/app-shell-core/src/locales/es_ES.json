@@ -16732,6 +16732,7 @@
     "completePartial": "{ok} de {total} pedidos procesados",
     "noDraftSelected": "Ningún borrador en la selección",
     "actionCompleted": "Acción completada",
+    "actionFailed": "La acción falló",
     "assetsGroupInfoTitle": "Información del activo",
     "assetsGroupFinancialTitle": "Información financiera",
     "assetsGroupDepreciationTitle": "Configuración de depreciación",

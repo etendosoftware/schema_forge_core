@@ -56,6 +56,7 @@ import { useCallout } from '@/hooks/useCallout';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useLineGrossAmount, ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import { useDocumentAction } from '@/hooks/useDocumentAction';
+import { useNeoAction } from '@/hooks/useNeoAction';
 import { useMenuLabel, useUI } from '@/i18n';
 import { translateBackendError } from '@/lib/backendErrors.js';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
@@ -1677,6 +1678,7 @@ export function DetailView({
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
   const docAction = useDocumentAction({ apiBaseUrl, entity, token });
+  const neoAction = useNeoAction({ specName: windowName, entityName: entity, apiBaseUrl, token });
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -2782,7 +2784,8 @@ export function DetailView({
                           <button
                             key={action.key || i}
                             type="button"
-                            disabled={docAction.loading}
+                            data-testid={`menu-action-${action.key || i}`}
+                            disabled={docAction.loading || neoAction.loading}
                             onClick={async () => {
                               setShowMoreMenu(false);
                               if (action.documentAction) {
@@ -2797,6 +2800,18 @@ export function DetailView({
                                 }
                                 return;
                               }
+                              if (action.neoAction) {
+                                const currentId = data?.id || recordId;
+                                const result = await neoAction.execute(currentId, action.neoAction);
+                                if (result.success) {
+                                  const msg = (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted');
+                                  toast.success(msg);
+                                  hook.fetchById?.(currentId);
+                                } else {
+                                  toast.error(result.message || ui('actionFailed'));
+                                }
+                                return;
+                              }
                               if (action.columnName) {
                                 hook.handleProcess?.({ columnName: action.columnName, name: action.key });
                               } else if (action.onClick) {
@@ -2806,7 +2821,7 @@ export function DetailView({
                             className={`w-full text-left px-2 py-1 text-sm leading-6 transition-colors flex items-center gap-2 ${action.destructive
                               ? 'text-red-600 hover:bg-red-50'
                               : 'text-foreground hover:bg-secondary'
-                              } ${docAction.loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              } ${docAction.loading || neoAction.loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400 }}
                           >
                             {ActionIcon && (

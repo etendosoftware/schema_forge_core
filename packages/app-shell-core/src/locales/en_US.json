@@ -16491,6 +16491,7 @@
     "completePartial": "{ok} of {total} orders completed",
     "noDraftSelected": "No draft orders in selection",
     "actionCompleted": "Action completed",
+    "actionFailed": "Action failed",
     "assetsGroupInfoTitle": "Asset Information",
     "assetsGroupFinancialTitle": "Financial Information",
     "assetsGroupDepreciationTitle": "Depreciation Setup",
