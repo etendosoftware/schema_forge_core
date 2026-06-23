@@ -500,6 +500,7 @@ export function useEntity(entity, childEntity, {
     const [selected, setSelected] = useState(null);
     const [editing, setEditing] = useState(null);
     const [children, setChildren] = useState([]);
+    const [childDefaults, setChildDefaults] = useState({});
     const [childrenLoading, setChildrenLoading] = useState(false);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -647,6 +648,39 @@ export function useEntity(entity, childEntity, {
             .catch(() => setChildren([]))
             .finally(() => setChildrenLoading(false));
     }, [apiBaseUrl, childEntity, token, childSortBy]);
+
+    // HandleDefaults: fetch backend-resolved defaults for a NEW child line under the
+    // given parent and normalize them (dates, booleans, enum ints) exactly as
+    // handleNew does for the header. Returns a {key: value} map (also stored in
+    // childDefaults). Best-effort: {} when childEntity/parentId is missing or on error.
+    const fetchChildDefaults = useCallback(async (parentId) => {
+        if (!childEntity || !parentId) {
+            setChildDefaults({});
+            return {};
+        }
+        try {
+            const res = await fetch(`${apiBaseUrl}/${childEntity}/defaults?parentId=${parentId}`, { headers });
+            if (!res.ok) throw new Error(`${res.status}`);
+            const data = await res.json();
+            // Copy the resolved defaults and drop the backend id (never seeded into
+            // the add-row); normalize the remaining values in place.
+            const normalized = { ...(data?.defaults ?? {}) };
+            delete normalized.id;
+            for (const [key, val] of Object.entries(normalized)) {
+                normalizeDefaultValue(val, normalized, key);
+            }
+            setChildDefaults(normalized);
+            return normalized;
+        } catch {
+            setChildDefaults({});
+            return {};
+        }
+        // NOTE: `headers` is intentionally omitted — buildHeaders(token) returns a
+        // fresh object every render, so depending on it would make this callback
+        // unstable and re-fire DetailView's fetch effect every render (infinite
+        // loop / network never idles). token covers the only header that changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [apiBaseUrl, childEntity, token]);
 
     const fetchById = useCallback((id) => {
         if (!id) return;
@@ -1011,12 +1045,12 @@ export function useEntity(entity, childEntity, {
     }, []);
 
     return {
-        items, selected, editing, children, childrenLoading, loading, loadingMore, hasMore, saveError, isSaving,
+        items, selected, editing, children, childDefaults, childrenLoading, loading, loadingMore, hasMore, saveError, isSaving,
         isDirtyHeader,
         fieldErrors, registerFields,
         handleSelect, handleNew, handleChange, handleSave, handleSaveAndProcess, handleDelete, handleProcess,
         handleAddChild, handleUpdateChild, handleDeleteChild, primeSaved,
-        refresh, fetchById, fetchChildren, loadMore,
+        refresh, fetchById, fetchChildren, fetchChildDefaults, loadMore,
         sortColumn, sortDirection, setSortColumn, setSortDirection,
     };
 }

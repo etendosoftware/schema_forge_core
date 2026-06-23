@@ -25,6 +25,7 @@ describe('onboardingState', () => {
       'setup',
       'client',
       'organization',
+      'dataset',
       'sequences',
       'finalize',
     ]);
