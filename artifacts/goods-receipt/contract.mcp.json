@@ -1,8 +1,8 @@
 {
   "version": "0.14.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-06-23T00:17:54.734Z",
-  "contractChecksum": "fa8153eefccd0e73",
+  "updatedAt": "2026-06-23T12:41:10.015Z",
+  "contractChecksum": "be8883d22c148944",
   "apiPrediction": {
     "specName": "goods-receipt",
     "baseUrl": "/sws/neo/goods-receipt",
@@ -644,6 +644,11 @@
             "required": true,
             "defaultValue": "DR"
           },
+          "posted": {
+            "readOnly": true,
+            "required": true,
+            "defaultValue": "N"
+          },
           "project": {
             "readOnlyLogic": "@Posted@='Y'"
           },
@@ -661,6 +666,10 @@
           },
           "invoiceStatus": {
             "readOnly": true
+          },
+          "processed": {
+            "readOnly": true,
+            "required": true
           }
         }
       },
@@ -730,7 +739,9 @@
         }
       }
     },
-    "requiredSessionVariables": [],
+    "requiredSessionVariables": [
+      "#ShowAcct"
+    ],
     "evaluationMode": "runtime"
   },
   "agentProfile": {
@@ -876,5 +887,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "dcea6e631b0ac517"
+  "checksum": "ff6973594bbe02de"
 }

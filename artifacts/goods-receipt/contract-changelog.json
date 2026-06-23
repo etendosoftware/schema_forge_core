@@ -855,5 +855,18 @@
     ],
     "author": "pipeline",
     "date": "2026-06-23"
+  },
+  {
+    "from": "0.14.0",
+    "to": "0.15.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"posted\" added to entity \"goodsReceipt\" in frontend",
+      "Field \"processed\" added to entity \"goodsReceipt\" in frontend",
+      "Field \"posted\" property \"visibility\" changed from \"system\" to \"readOnly\" in backend (patch)",
+      "Field \"processed\" property \"visibility\" changed from \"system\" to \"readOnly\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-06-23"
   }
 ]
