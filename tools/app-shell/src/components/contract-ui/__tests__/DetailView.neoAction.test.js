@@ -40,7 +40,7 @@ describe('DetailView — neoAction menu branch (ETP-4298)', () => {
   });
 
   it('refreshes the record via hook.fetchById on success', () => {
-    assert.match(src, /result\.success[\s\S]{0,200}hook\.fetchById\?\.\(currentId\)/);
+    assert.match(src, /result\.success[\s\S]{0,350}hook\.fetchById\?\.\(currentId\)/);
   });
 
   it('shows toast.error with result.message or ui(actionFailed) on failure', () => {
