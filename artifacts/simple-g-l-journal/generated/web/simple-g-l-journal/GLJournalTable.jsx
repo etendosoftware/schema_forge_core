@@ -4,7 +4,6 @@ import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 // @sf-generated-start columns:gLJournal
 const columns = [
   { key: 'description', column: 'Description', type: 'string', label: 'Description', required: true },
-  { key: 'documentDate', column: 'DateDoc', type: 'date', label: 'Document Date', required: true },
 ];
 // @sf-generated-end columns:gLJournal
 

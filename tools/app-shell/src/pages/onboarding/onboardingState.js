@@ -2,6 +2,7 @@ export const SETUP_STEP_DEFINITIONS = [
   { name: 'setup', estimate: '1s' },
   { name: 'client', estimate: '2 min' },
   { name: 'organization', estimate: '1 min' },
+  { name: 'dataset', estimate: '1 min' },
   { name: 'sequences', estimate: '1s' },
   { name: 'finalize', estimate: '1s' },
 ];

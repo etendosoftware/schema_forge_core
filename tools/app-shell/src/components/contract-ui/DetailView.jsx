@@ -639,6 +639,7 @@ export function SecondaryTableTab(props) {
                 onCancel: props.onCancel,
                 catalogs: props.catalogs,
                 seedValues: props.secondaryAddRowSeed,
+                resolvedDefaults: props.secondaryChildDefaults,
               } : undefined}
           />
         </div>
@@ -1591,6 +1592,17 @@ export function DetailView({
     return seed;
   }, [headerCurrencyId, headerCurrencyLabel]);
 
+  // HandleDefaults: once the parent record is known, fetch backend-resolved
+  // defaults for NEW lines so the add-row can pre-fill editable fields (e.g. a
+  // line description defaulting to the parent's via @DESCRIPTION1@). An entity can
+  // opt out via decisions.json `handlesDefaults: false` (surfaced on api.crud).
+  const primaryHandlesDefaults = api?.crud?.[detailEntity]?.handlesDefaults !== false;
+  const primaryFetchChildDefaults = hook.fetchChildDefaults;
+  useEffect(() => {
+    if (!primaryHandlesDefaults || !parentRecordId) return;
+    primaryFetchChildDefaults?.(parentRecordId);
+  }, [primaryHandlesDefaults, parentRecordId, primaryFetchChildDefaults]);
+
   const handleFieldBlur = useCallback(() => {
     if (!hook.editing || !hook.selected) return;
     const hasChanges = Object.entries(hook.editing).some(
@@ -1604,6 +1616,16 @@ export function DetailView({
   // Stringify secondary-tab keys so the memo is immune to the `secondaryTabs = []` default
   // recreating a new array reference on every render.
   const secondaryTabKeysStr = secondaryTabs.map(t => t?.key ?? '').join('|');
+
+  // HandleDefaults for secondary detail tabs: same as the primary, per-tab entity.
+  useEffect(() => {
+    if (!parentRecordId) return;
+    secondaryTabKeysStr.split('|').forEach((key, i) => {
+      if (!key || api?.crud?.[key]?.handlesDefaults === false) return;
+      secondaryHooks[i]?.fetchChildDefaults?.(parentRecordId);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parentRecordId, secondaryTabKeysStr]);
 
   const selectorContextByEntity = useMemo(() => {
     const category = api?.window?.category;
@@ -3134,6 +3156,7 @@ export function DetailView({
                                     ref: primaryAddRowRef,
                                     active: addingLine,
                                     fields: allEntryFields,
+                                    resolvedDefaults: hook.childDefaults,
                                     onAdd: async (lineData) => {
                                       // Send all values: entry fields + callout-derived values (tax, prices, uOM, etc.).
                                       // handleAddChild filters out internal keys (_identifier, _aux, CURSOR_FIELD, etc.)
@@ -3567,6 +3590,7 @@ export function DetailView({
                                 savingLine={savingSecondaryLine}
                                 secondaryAddRowRef={getSecondaryAddRowRef(st.key)}
                                 secondaryAddRowSeed={secondaryAddRowSeed}
+                                secondaryChildDefaults={secondaryHooks[stIdx]?.childDefaults}
                                 secondaryAddLineWrapperRef={getSecondaryAddLineWrapperRef(st.key)}
                                 hideChevron={hideAddLineChevron}
                                 secondaryBarVisible={secondaryBarVisible}

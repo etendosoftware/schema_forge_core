@@ -1,8 +1,8 @@
 {
-  "version": "0.7.0",
+  "version": "0.10.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-18T11:35:30.497Z",
-  "checksum": "88b28e0ca63b9a67",
+  "updatedAt": "2026-06-19T16:51:34.337Z",
+  "checksum": "838ea7712a3f49d9",
   "frontendContract": {
     "window": {
       "id": "B917E8A7B0864ACEA9D941E3B7494E53",
@@ -40,35 +40,10 @@
               "source": "context.description0"
             },
             "defaultValue": "@DESCRIPTION0@",
+            "seq": 30,
             "readOnlyLogic": {
               "js": "record['processed'] === true",
               "evaluable": true
-            }
-          },
-          {
-            "name": "documentDate",
-            "apiKey": "documentDate",
-            "column": "DateDoc",
-            "label": "Document Date",
-            "type": "date",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": true,
-            "grid": true,
-            "form": true,
-            "sourceRequired": true,
-            "derivation": {
-              "type": "lookup",
-              "source": "SELECT COALESCE((SELECT ENDDATE FROM C_PERIOD WHERE C_PERIOD_ID = @C_PERIOD_ID@ and periodtype = 'A'),to_date(@HeaderDateDoc@)) FROM DUAL"
-            },
-            "defaultValue": "@SQL=SELECT COALESCE((SELECT ENDDATE FROM C_PERIOD WHERE C_PERIOD_ID = @C_PERIOD_ID@ and periodtype = 'A'),to_date(@HeaderDateDoc@)) FROM DUAL",
-            "callout": {
-              "className": "org.openbravo.erpCommon.ad_callouts.SL_Journal_Period"
-            },
-            "readOnlyLogic": {
-              "raw": "@Processed@='Y'",
-              "evaluable": true,
-              "js": "record['processed'] === true"
             }
           },
           {
@@ -88,6 +63,7 @@
               "source": "SELECT COALESCE((SELECT ENDDATE FROM C_PERIOD WHERE C_PERIOD_ID = @C_PERIOD_ID@ and periodtype = 'A'),to_date(@HeaderDateAcct@)) FROM DUAL"
             },
             "defaultValue": "@SQL=SELECT COALESCE((SELECT ENDDATE FROM C_PERIOD WHERE C_PERIOD_ID = @C_PERIOD_ID@ and periodtype = 'A'),to_date(@HeaderDateAcct@)) FROM DUAL",
+            "seq": 10,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Journal_Period"
             },
@@ -116,6 +92,7 @@
             "reference": "Period",
             "inputMode": "search",
             "defaultValue": "@SQL= SELECT C_Period_ID FROM C_Period WHERE C_Year_ID IN (SELECT C_Year_ID FROM C_Year WHERE C_Calendar_ID =(SELECT C_Calendar_ID FROM AD_ORG WHERE AD_Client_ID= @AD_Client_ID@ AND AD_ORG_ID=(SELECT AD_ORG_GETCALENDAROWNER( @AD_Org_ID@ ) from dual))) AND to_date( COALESCE(@DateAcct@,@#Date@) ) BETWEEN StartDate AND EndDate AND PeriodType='S' AND exists (select 1 from c_periodcontrol where c_periodcontrol.c_period_id = c_period.c_period_id AND periodstatus = 'O')",
+            "seq": 20,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Journal_Period"
             },
@@ -210,13 +187,6 @@
             "derivation": {
               "type": "fromConfig",
               "source": "context.description0"
-            }
-          },
-          {
-            "name": "documentDate",
-            "derivation": {
-              "type": "lookup",
-              "source": "SELECT COALESCE((SELECT ENDDATE FROM C_PERIOD WHERE C_PERIOD_ID = @C_PERIOD_ID@ and periodtype = 'A'),to_date(@HeaderDateDoc@)) FROM DUAL"
             }
           },
           {
@@ -621,7 +591,7 @@
             "apiKey": "documentDate",
             "column": "DateDoc",
             "type": "date",
-            "visibility": "editable",
+            "visibility": "system",
             "required": true
           },
           {
@@ -1540,14 +1510,6 @@
         "description": "Default value for 'description' in gLJournal should be a string"
       },
       {
-        "id": "t-default-value-type-gLJournal-documentDate",
-        "category": "default-value-type",
-        "entity": "gLJournal",
-        "field": "documentDate",
-        "runner": "node",
-        "description": "Default value for 'documentDate' in gLJournal should be a string"
-      },
-      {
         "id": "t-default-value-type-gLJournal-multigeneralLedger",
         "category": "default-value-type",
         "entity": "gLJournal",
@@ -1716,14 +1678,6 @@
         "description": "Field 'description' should be present in gLJournal"
       },
       {
-        "id": "t-field-presence-gLJournal-documentDate",
-        "category": "field-presence",
-        "entity": "gLJournal",
-        "field": "documentDate",
-        "runner": "node",
-        "description": "Field 'documentDate' should be present in gLJournal"
-      },
-      {
         "id": "t-field-presence-gLJournal-multigeneralLedger",
         "category": "field-presence",
         "entity": "gLJournal",
@@ -1858,14 +1812,6 @@
         "field": "description",
         "runner": "node",
         "description": "Field 'description' should have type 'string' in gLJournal"
-      },
-      {
-        "id": "t-field-type-gLJournal-documentDate",
-        "category": "field-type",
-        "entity": "gLJournal",
-        "field": "documentDate",
-        "runner": "node",
-        "description": "Field 'documentDate' should have type 'string' in gLJournal"
       },
       {
         "id": "t-field-type-gLJournal-multigeneralLedger",
@@ -2004,14 +1950,6 @@
         "description": "Read-only logic for 'description' in gLJournal should have evaluable flag"
       },
       {
-        "id": "t-readonlylogic-evaluable-gLJournal-documentDate",
-        "category": "readonlylogic-evaluable",
-        "entity": "gLJournal",
-        "field": "documentDate",
-        "runner": "node",
-        "description": "Read-only logic for 'documentDate' in gLJournal should have evaluable flag"
-      },
-      {
         "id": "t-readonlylogic-evaluable-gLJournal-multigeneralLedger",
         "category": "readonlylogic-evaluable",
         "entity": "gLJournal",
@@ -2138,14 +2076,6 @@
         "field": "description",
         "runner": "node",
         "description": "Read-only logic for 'description' in gLJournal should be valid JS"
-      },
-      {
-        "id": "t-readonlylogic-valid-gLJournal-documentDate",
-        "category": "readonlylogic-valid",
-        "entity": "gLJournal",
-        "field": "documentDate",
-        "runner": "node",
-        "description": "Read-only logic for 'documentDate' in gLJournal should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-gLJournal-multigeneralLedger",
@@ -3267,6 +3197,14 @@
         "description": "System field 'documentAction' should exist in backend but not frontend for gLJournal"
       },
       {
+        "id": "t-system-field-gLJournal-documentDate",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "documentDate",
+        "runner": "node",
+        "description": "System field 'documentDate' should exist in backend but not frontend for gLJournal"
+      },
+      {
         "id": "t-system-field-gLJournal-documentNo",
         "category": "system-field",
         "entity": "gLJournal",
@@ -3714,25 +3652,25 @@
       }
     ],
     "summary": {
-      "total": 296,
+      "total": 292,
       "byCategory": {
         "action-endpoint": 4,
         "crud-flags": 2,
-        "default-value-type": 10,
+        "default-value-type": 9,
         "displaylogic-evaluable": 6,
         "displaylogic-valid": 6,
-        "field-presence": 18,
-        "field-type": 18,
-        "readonlylogic-evaluable": 17,
-        "readonlylogic-valid": 17,
+        "field-presence": 17,
+        "field-type": 17,
+        "readonlylogic-evaluable": 16,
+        "readonlylogic-valid": 16,
         "rule-declared": 121,
         "searchable-filters": 1,
         "selector-endpoint": 8,
-        "system-field": 66,
+        "system-field": 67,
         "visibility": 2
       },
       "byRunner": {
-        "node": 296,
+        "node": 292,
         "junit": 0
       }
     }
