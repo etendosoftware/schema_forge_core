@@ -198,7 +198,7 @@ export default function VerifactuMonitorSection({
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="fm-export-btn" onClick={handleExport} disabled={loading || exporting}>
-            <ExportIcon /> {ui('fiscalMonitor.export')}
+            <ExportIcon data-testid="ExportIcon__8c1785" /> {ui('fiscalMonitor.export')}
           </button>
           {selectedErrorRows.length > 0 && (
             <button
@@ -226,7 +226,11 @@ export default function VerifactuMonitorSection({
           <table className="fm-table" data-testid="fm-data-table">
             <thead>
               <tr>
-                <th><Checkbox checked={allSelected} indeterminate={someSelected} onChange={handleToggleAll} /></th>
+                <th><Checkbox
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  onChange={handleToggleAll}
+                  data-testid="Checkbox__8c1785" /></th>
                 <th>{ui('fiscalMonitor.col.invoiceNumber')}</th>
                 <th>{ui('fiscalMonitor.col.operationType')}</th>
                 <th>{ui('fiscalMonitor.col.csv')}</th>
@@ -247,12 +251,15 @@ export default function VerifactuMonitorSection({
                 const mappedStatus = mapVfStatus(row.verifactuSendingStatus ?? activeTab);
                 return (
                   <tr key={row.id ?? i}>
-                    <td><Checkbox checked={selectedIds.has(row.id)} onChange={() => handleToggleRow(row.id)} /></td>
+                    <td><Checkbox
+                      checked={selectedIds.has(row.id)}
+                      onChange={() => handleToggleRow(row.id)}
+                      data-testid="Checkbox__8c1785" /></td>
                     <td className="num-factura">
                       <NumFactura
                         n={invoiceNo}
                         onOpen={() => onInvoiceOpen?.(row[INVOICE_FK_FIELD], 'sales-invoice')}
-                      />
+                        data-testid="NumFactura__8c1785" />
                     </td>
                     <td>{typeLabel}</td>
                     <td className="mono">{row.cSV ?? '—'}</td>
@@ -262,7 +269,7 @@ export default function VerifactuMonitorSection({
                         onClick={isErrorStatus(mappedStatus)
                           ? () => onVfErrorClick?.(row)
                           : undefined}
-                      />
+                        data-testid="StatusPill__8c1785" />
                     </td>
                     <td style={{ color: row.errorReason ? 'var(--fm-danger-fg)' : 'var(--fm-fg-3)', fontSize: 12, maxWidth: 280 }}>
                       {row.codeError ? `[${row.codeError}] ` : ''}{row.errorReason ?? '—'}
@@ -272,7 +279,11 @@ export default function VerifactuMonitorSection({
               })}
             </tbody>
           </table>
-          <ScrollSentinel hasMore={rows.length < totalRows} loading={loading} onVisible={() => setPage(p => p + 1)} />
+          <ScrollSentinel
+            hasMore={rows.length < totalRows}
+            loading={loading}
+            onVisible={() => setPage(p => p + 1)}
+            data-testid="ScrollSentinel__8c1785" />
         </>
       )}
     </>

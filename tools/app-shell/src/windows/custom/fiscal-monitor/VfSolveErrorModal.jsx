@@ -117,12 +117,12 @@ export default function VfSolveErrorModal({ open, onClose, rows, neoApiBase, onR
             {isSingle && (
               <div className="fm-config-modal__sub" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
                 <span>{invoiceNo}</span>
-                <StatusPill estado={pillStatus} />
+                <StatusPill estado={pillStatus} data-testid="StatusPill__a6e471" />
               </div>
             )}
           </div>
           <button className="fm-config-modal__close" onClick={onClose} aria-label={ui('close')}>
-            <X size={16} />
+            <X size={16} data-testid="X__a6e471" />
           </button>
         </div>
 
@@ -136,7 +136,10 @@ export default function VfSolveErrorModal({ open, onClose, rows, neoApiBase, onR
               padding: '10px 12px', marginBottom: 14,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <AlertTriangle size={13} style={{ color: '#DC2626', flexShrink: 0 }} />
+                <AlertTriangle
+                  size={13}
+                  style={{ color: '#DC2626', flexShrink: 0 }}
+                  data-testid="AlertTriangle__a6e471" />
                 <span style={{ fontSize: 12, fontWeight: 600, color: '#B91C1C' }}>Error</span>
               </div>
               {row.codeError && (
@@ -167,7 +170,7 @@ export default function VfSolveErrorModal({ open, onClose, rows, neoApiBase, onR
                         cursor: 'pointer', padding: '4px 0', textDecoration: 'underline',
                       }}
                     >
-                      {showDetail ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                      {showDetail ? <ChevronUp size={12} data-testid="ChevronUp__a6e471" /> : <ChevronDown size={12} data-testid="ChevronDown__a6e471" />}
                       {showDetail ? ui('vfSolveError.hideDetail') : ui('vfSolveError.showDetail')}
                     </button>
                   )}
@@ -183,7 +186,7 @@ export default function VfSolveErrorModal({ open, onClose, rows, neoApiBase, onR
               padding: '10px 12px', marginBottom: 14, maxHeight: 160, overflowY: 'auto',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <StatusPill estado={pillStatus} />
+                <StatusPill estado={pillStatus} data-testid="StatusPill__a6e471" />
                 <span style={{ fontSize: 12, fontWeight: 600, color: '#6B7280' }}>
                   {rows.length} {ui('vfSolveError.invoicesSelected')}
                 </span>
@@ -220,7 +223,10 @@ export default function VfSolveErrorModal({ open, onClose, rows, neoApiBase, onR
               onClick={handleResolve}
               disabled={saving}
             >
-              {saving && <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />}
+              {saving && <Loader2
+                size={13}
+                style={{ animation: 'spin 1s linear infinite' }}
+                data-testid="Loader2__a6e471" />}
               {actionLabel}
             </button>
           )}

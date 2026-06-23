@@ -195,7 +195,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
       onMockDataChange={setMockData}
       mockCertDays={mockCertDays}
       onSetCertDays={setMockCertDays}
-    />
+      data-testid="FiscalMonitorDebugPanel__884f90" />
   ) : null;
 
   if (!debugOverrideActive && loading) {
@@ -233,7 +233,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
     return (
       <>
         {DebugPanel}
-        <div className="fm-wrap fm-page"><FmEmpty ui={ui} /></div>
+        <div className="fm-wrap fm-page"><FmEmpty ui={ui} data-testid="FmEmpty__884f90" /></div>
       </>
     );
   }
@@ -265,139 +265,148 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
   return (
     <>
       {DebugPanel}
-    <div className="fm-wrap fm-page">
-      <CertExpiryBanner daysLeft={certDaysLeft} variant="subtle" />
+      <div className="fm-wrap fm-page">
+        <CertExpiryBanner
+          daysLeft={certDaysLeft}
+          variant="subtle"
+          data-testid="CertExpiryBanner__884f90" />
 
-      {/* ── SII + TBAI combined: system tabs ── */}
-      {profile === 'sii+tbai' && (
-        <section className="fm-section">
-          <div className="fm-tablecard">
-            <div className="fm-system-tabs" role="tablist">
-              <button
-                role="tab"
-                aria-selected={systemTab === 'sii'}
-                className={`fm-system-tab${systemTab === 'sii' ? ' active' : ''}`}
-                onClick={() => setSystemTab('sii')}
-              >
-                <SiiTabIcon />
-                {ui('fiscalMonitor.systemTab.sii')}
-                <span className="tab-count">{siiTotal}</span>
-              </button>
-              <button
-                role="tab"
-                aria-selected={systemTab === 'tbai'}
-                className={`fm-system-tab${systemTab === 'tbai' ? ' active' : ''}`}
-                onClick={() => setSystemTab('tbai')}
-              >
-                <TbaiTabIcon />
-                {ui('fiscalMonitor.systemTab.tbai')}
-                <span className="tab-count">{tbaiTotal}</span>
-              </button>
+        {/* ── SII + TBAI combined: system tabs ── */}
+        {profile === 'sii+tbai' && (
+          <section className="fm-section">
+            <div className="fm-tablecard">
+              <div className="fm-system-tabs" role="tablist">
+                <button
+                  role="tab"
+                  aria-selected={systemTab === 'sii'}
+                  className={`fm-system-tab${systemTab === 'sii' ? ' active' : ''}`}
+                  onClick={() => setSystemTab('sii')}
+                >
+                  <SiiTabIcon data-testid="SiiTabIcon__884f90" />
+                  {ui('fiscalMonitor.systemTab.sii')}
+                  <span className="tab-count">{siiTotal}</span>
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={systemTab === 'tbai'}
+                  className={`fm-system-tab${systemTab === 'tbai' ? ' active' : ''}`}
+                  onClick={() => setSystemTab('tbai')}
+                >
+                  <TbaiTabIcon data-testid="TbaiTabIcon__884f90" />
+                  {ui('fiscalMonitor.systemTab.tbai')}
+                  <span className="tab-count">{tbaiTotal}</span>
+                </button>
+              </div>
+
+              {systemTab === 'sii' && (
+                <SiiMonitorSection
+                  noWrap
+                  compact
+                  orgId={orgId}
+                  apiBaseUrl={apiBaseUrl}
+                  parentId={siiParentId}
+                  initialTab={siiInitialTab}
+                  mockRows={siiMockRows}
+                  onTabChange={setSiiInitialTab}
+                  refreshKey={refreshKey}
+                  onInvoiceOpen={handleInvoiceOpen}
+                  onBpClick={(bpId, invoiceId, invoiceSpec) => setBpPopup({ bpId, invoiceId, invoiceSpec })}
+                  kpis={kpis}
+                  data-testid="SiiMonitorSection__884f90" />
+              )}
+              {systemTab === 'tbai' && (
+                <TbaiMonitorSection
+                  noWrap
+                  orgId={orgId}
+                  apiBaseUrl={apiBaseUrl}
+                  initialFilter={tbaiInitialFilter}
+                  mockRows={tbaiMockRows}
+                  onFilterChange={setTbaiInitialFilter}
+                  refreshKey={refreshKey}
+                  onInvoiceOpen={handleInvoiceOpen}
+                  onBpClick={(bpId) => setBpPopup({ bpId })}
+                  kpis={kpis}
+                  data-testid="TbaiMonitorSection__884f90" />
+              )}
             </div>
+          </section>
+        )}
 
-            {systemTab === 'sii' && (
-              <SiiMonitorSection
-                noWrap compact
-                orgId={orgId} apiBaseUrl={apiBaseUrl}
-                parentId={siiParentId}
-                initialTab={siiInitialTab}
-                mockRows={siiMockRows}
-                onTabChange={setSiiInitialTab}
-                refreshKey={refreshKey}
-                onInvoiceOpen={handleInvoiceOpen}
-                onBpClick={(bpId, invoiceId, invoiceSpec) => setBpPopup({ bpId, invoiceId, invoiceSpec })}
-                kpis={kpis}
-              />
-            )}
-            {systemTab === 'tbai' && (
-              <TbaiMonitorSection
-                noWrap
-                orgId={orgId} apiBaseUrl={apiBaseUrl}
-                initialFilter={tbaiInitialFilter}
-                mockRows={tbaiMockRows}
-                onFilterChange={setTbaiInitialFilter}
-                refreshKey={refreshKey}
-                onInvoiceOpen={handleInvoiceOpen}
-                onBpClick={(bpId) => setBpPopup({ bpId })}
-                kpis={kpis}
-              />
-            )}
-          </div>
-        </section>
-      )}
+        {/* ── SII standalone ── */}
+        {(profile === 'sii' || profile === 'sii-navarra') && (
+          <SiiMonitorSection
+            orgId={orgId}
+            apiBaseUrl={apiBaseUrl}
+            parentId={siiParentId}
+            initialTab={siiInitialTab}
+            mockRows={siiMockRows}
+            onTabChange={setSiiInitialTab}
+            refreshKey={refreshKey}
+            onInvoiceOpen={handleInvoiceOpen}
+            onBpClick={(bpId, invoiceId, invoiceSpec) => setBpPopup({ bpId, invoiceId, invoiceSpec })}
+            kpis={kpis}
+            data-testid="SiiMonitorSection__884f90" />
+        )}
 
-      {/* ── SII standalone ── */}
-      {(profile === 'sii' || profile === 'sii-navarra') && (
-        <SiiMonitorSection
-          orgId={orgId} apiBaseUrl={apiBaseUrl}
-          parentId={siiParentId}
-          initialTab={siiInitialTab}
-          mockRows={siiMockRows}
-          onTabChange={setSiiInitialTab}
-          refreshKey={refreshKey}
-          onInvoiceOpen={handleInvoiceOpen}
-          onBpClick={(bpId, invoiceId, invoiceSpec) => setBpPopup({ bpId, invoiceId, invoiceSpec })}
-          kpis={kpis}
-        />
-      )}
+        {/* ── TBAI standalone ── */}
+        {profile === 'tbai' && (
+          <TbaiMonitorSection
+            orgId={orgId}
+            apiBaseUrl={apiBaseUrl}
+            initialFilter={tbaiInitialFilter}
+            mockRows={tbaiMockRows}
+            onFilterChange={setTbaiInitialFilter}
+            refreshKey={refreshKey}
+            onInvoiceOpen={handleInvoiceOpen}
+            onBpClick={(bpId) => setBpPopup({ bpId })}
+            kpis={kpis}
+            data-testid="TbaiMonitorSection__884f90" />
+        )}
 
-      {/* ── TBAI standalone ── */}
-      {profile === 'tbai' && (
-        <TbaiMonitorSection
-          orgId={orgId} apiBaseUrl={apiBaseUrl}
-          initialFilter={tbaiInitialFilter}
-          mockRows={tbaiMockRows}
-          onFilterChange={setTbaiInitialFilter}
-          refreshKey={refreshKey}
-          onInvoiceOpen={handleInvoiceOpen}
-          onBpClick={(bpId) => setBpPopup({ bpId })}
-          kpis={kpis}
-        />
+        {/* ── Verifactu ── */}
+        {profile === 'verifactu' && (
+          <VerifactuMonitorSection
+            orgId={orgId}
+            apiBaseUrl={apiBaseUrl}
+            initialTab={veriInitialTab}
+            mockRows={vfMockRows}
+            onTabChange={setVeriInitialTab}
+            refreshKey={refreshKey}
+            onInvoiceOpen={handleInvoiceOpen}
+            onBpClick={(bpId) => setBpPopup({ bpId })}
+            onVfErrorClick={handleVfErrorClick}
+            onVfResolveClick={handleVfResolveClick}
+            kpis={kpis}
+            data-testid="VerifactuMonitorSection__884f90" />
+        )}
+      </div>
+      {previewInvoice && (
+        <InvoicePreviewModal
+          invoice={previewInvoice}
+          token={token}
+          apiBaseUrl={`${neoBase(apiBaseUrl)}/${previewSpec}`}
+          specName={previewSpec}
+          onClose={() => setPreviewInvoice(null)}
+          data-testid="InvoicePreviewModal__884f90" />
       )}
-
-      {/* ── Verifactu ── */}
-      {profile === 'verifactu' && (
-        <VerifactuMonitorSection
-          orgId={orgId} apiBaseUrl={apiBaseUrl}
-          initialTab={veriInitialTab}
-          mockRows={vfMockRows}
-          onTabChange={setVeriInitialTab}
-          refreshKey={refreshKey}
-          onInvoiceOpen={handleInvoiceOpen}
-          onBpClick={(bpId) => setBpPopup({ bpId })}
-          onVfErrorClick={handleVfErrorClick}
-          onVfResolveClick={handleVfResolveClick}
-          kpis={kpis}
-        />
+      {bpPopup?.bpId && (
+        <ContactDetailModal
+          open={!!bpPopup.bpId}
+          onClose={() => setBpPopup(null)}
+          bpId={bpPopup.bpId}
+          contactsApiBase={contactsApiBase}
+          invoiceId={bpPopup.invoiceId ?? null}
+          invoiceSpec={bpPopup.invoiceSpec ?? null}
+          neoApiBase={neoBase(apiBaseUrl)}
+          data-testid="ContactDetailModal__884f90" />
       )}
-    </div>
-    {previewInvoice && (
-      <InvoicePreviewModal
-        invoice={previewInvoice}
-        token={token}
-        apiBaseUrl={`${neoBase(apiBaseUrl)}/${previewSpec}`}
-        specName={previewSpec}
-        onClose={() => setPreviewInvoice(null)}
-      />
-    )}
-    {bpPopup?.bpId && (
-      <ContactDetailModal
-        open={!!bpPopup.bpId}
-        onClose={() => setBpPopup(null)}
-        bpId={bpPopup.bpId}
-        contactsApiBase={contactsApiBase}
-        invoiceId={bpPopup.invoiceId ?? null}
-        invoiceSpec={bpPopup.invoiceSpec ?? null}
+      <VfSolveErrorModal
+        open={vfErrorModalOpen}
+        onClose={() => setVfErrorModalOpen(false)}
+        rows={vfErrorRows}
         neoApiBase={neoBase(apiBaseUrl)}
-      />
-    )}
-    <VfSolveErrorModal
-      open={vfErrorModalOpen}
-      onClose={() => setVfErrorModalOpen(false)}
-      rows={vfErrorRows}
-      neoApiBase={neoBase(apiBaseUrl)}
-      onResolved={() => setRefreshKey(k => k + 1)}
-    />
+        onResolved={() => setRefreshKey(k => k + 1)}
+        data-testid="VfSolveErrorModal__884f90" />
     </>
   );
 }

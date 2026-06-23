@@ -43,9 +43,9 @@ function PickerMessage({text}) {
 }
 
 function renderCountryPickerBody(isLoading, loadingText, hasLoadFailed, loadErrorText, filteredCountries, emptyText, renderCountryRow) {
-    if (isLoading) return <PickerMessage text={loadingText}/>;
-    if (hasLoadFailed) return <PickerMessage text={loadErrorText}/>;
-    if (filteredCountries.length === 0) return <PickerMessage text={emptyText}/>;
+    if (isLoading) return <PickerMessage text={loadingText} data-testid="PickerMessage__927831" />;
+    if (hasLoadFailed) return <PickerMessage text={loadErrorText} data-testid="PickerMessage__927831" />;
+    if (filteredCountries.length === 0) return <PickerMessage text={emptyText} data-testid="PickerMessage__927831" />;
     return filteredCountries.map(renderCountryRow);
 }
 
@@ -85,12 +85,15 @@ function CountryPicker({
                         className="text-gray-400 hover:text-gray-600 transition-colors"
                         aria-label={closeAriaLabel}
                     >
-                        <X size={16}/>
+                        <X size={16} data-testid="X__927831" />
                     </button>
                 </div>
                 <div className="px-4 py-3 border-b border-gray-100">
                     <div className="relative">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
+                        <Search
+                            size={14}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                            data-testid="Search__927831" />
                         <input
                             ref={searchInputRef}
                             type="text"
@@ -105,7 +108,10 @@ function CountryPicker({
                     {renderCountryPickerBody(isLoading, loadingText, hasLoadFailed, loadErrorText, filteredCountries, emptyText, renderCountryRow)}
                     {!isLoading && !hasLoadFailed && (
                         <div ref={loadMoreRef} className="flex justify-center py-2">
-                            {isLoadingMore ? <Loader2 size={14} className="animate-spin text-gray-400"/> :
+                            {isLoadingMore ? <Loader2
+                                size={14}
+                                className="animate-spin text-gray-400"
+                                data-testid="Loader2__927831" /> :
                                 <span className="h-3"/>}
                         </div>
                     )}
@@ -116,9 +122,9 @@ function CountryPicker({
 }
 
 function renderRegionPickerBody(regionsLoading, ui, regionsLoadFailed, filteredRegions, handleRegionSelect, form) {
-    if (regionsLoading) return <PickerMessage text={ui('loading')}/>;
-    if (regionsLoadFailed) return <PickerMessage text={ui('regionLoadError')}/>;
-    if (filteredRegions.length === 0) return <PickerMessage text={ui('noResults')}/>;
+    if (regionsLoading) return <PickerMessage text={ui('loading')} data-testid="PickerMessage__927831" />;
+    if (regionsLoadFailed) return <PickerMessage text={ui('regionLoadError')} data-testid="PickerMessage__927831" />;
+    if (filteredRegions.length === 0) return <PickerMessage text={ui('noResults')} data-testid="PickerMessage__927831" />;
     return filteredRegions.map(region => (
         <button
             key={region.id}
@@ -127,7 +133,7 @@ function renderRegionPickerBody(regionsLoading, ui, regionsLoadFailed, filteredR
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', fontSize: 14, textAlign: 'left', border: 'none', cursor: 'pointer', background: form.region === region.id ? '#F5F7F9' : '#fff', color: form.region === region.id ? '#121217' : '#374151', fontWeight: form.region === region.id ? 600 : 400 }}
         >
             <span style={{ width: 16, flexShrink: 0 }}>
-                {form.region === region.id ? <Check size={13}/> : null}
+                {form.region === region.id ? <Check size={13} data-testid="Check__927831" /> : null}
             </span>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{region.label}</span>
         </button>
@@ -745,7 +751,10 @@ export default function LocationEditorModal({
                 <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
                     {initialLoading ? (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0' }}>
-                            <Loader2 size={20} style={{ animation: 'spin 1s linear infinite', color: '#828FA3' }} />
+                            <Loader2
+                                size={20}
+                                style={{ animation: 'spin 1s linear infinite', color: '#828FA3' }}
+                                data-testid="Loader2__927831" />
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -781,7 +790,10 @@ export default function LocationEditorModal({
                                     <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: form.country ? '#121217' : '#828FA3' }}>
                                         {selectedCountryLabel}
                                     </span>
-                                    <ChevronDown size={15} style={{ color: '#828FA3', flexShrink: 0 }} />
+                                    <ChevronDown
+                                        size={15}
+                                        style={{ color: '#828FA3', flexShrink: 0 }}
+                                        data-testid="ChevronDown__927831" />
                                 </button>
                             </div>
 
@@ -799,7 +811,10 @@ export default function LocationEditorModal({
                                     <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: form.region ? '#121217' : '#828FA3' }}>
                                         {!form.country ? ui('selectCountryFirst') : selectedRegionLabel}
                                     </span>
-                                    <ChevronDown size={15} style={{ color: '#828FA3', flexShrink: 0 }} />
+                                    <ChevronDown
+                                        size={15}
+                                        style={{ color: '#828FA3', flexShrink: 0 }}
+                                        data-testid="ChevronDown__927831" />
                                 </button>
                             </div>
 
@@ -833,15 +848,17 @@ export default function LocationEditorModal({
                             disabled={saving || initialLoading}
                             style={{ font: '600 14px/20px system-ui', padding: '9px 20px', borderRadius: 20, border: '1px solid #121217', cursor: 'pointer', background: '#121217', color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 6, opacity: (saving || initialLoading) ? 0.5 : 1 }}
                         >
-                            {saving && <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />}
-                            {!saving && <Check size={14} strokeWidth={2} />}
+                            {saving && <Loader2
+                                size={13}
+                                style={{ animation: 'spin 1s linear infinite' }}
+                                data-testid="Loader2__927831" />}
+                            {!saving && <Check size={14} strokeWidth={2} data-testid="Check__927831" />}
                             {ui('save')}
                         </button>
                     </div>
                 </div>
 
             </div>
-
             {/* Country picker */}
             {countryPickerOpen && (
                 <div style={PICKER_MODAL} onMouseDown={() => setCountryPickerOpen(false)}>
@@ -852,7 +869,10 @@ export default function LocationEditorModal({
                         </div>
                         <div style={{ padding: '12px 20px', borderBottom: '1px solid #F5F7F9' }}>
                             <div style={{ position: 'relative' }}>
-                                <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#828FA3' }} />
+                                <Search
+                                    size={14}
+                                    style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#828FA3' }}
+                                    data-testid="Search__927831" />
                                 <input ref={countrySearchRef} type="text" value={countryQuery} onChange={e => setCountryQuery(e.target.value)} placeholder={ui('countrySearchPlaceholder')} style={{ ...INPUT, paddingLeft: 36 }} />
                             </div>
                         </div>
@@ -863,18 +883,20 @@ export default function LocationEditorModal({
                             {filteredCountries.map(country => (
                                 <button key={country.id} type="button" onClick={() => handleCountrySelect(country.id)}
                                     style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', fontSize: 14, textAlign: 'left', border: 'none', cursor: 'pointer', background: form.country === country.id ? '#F5F7F9' : '#fff', color: form.country === country.id ? '#121217' : '#374151', fontWeight: form.country === country.id ? 600 : 400 }}>
-                                    <span style={{ width: 16, flexShrink: 0 }}>{form.country === country.id && <Check size={13} />}</span>
+                                    <span style={{ width: 16, flexShrink: 0 }}>{form.country === country.id && <Check size={13} data-testid="Check__927831" />}</span>
                                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{country.label}</span>
                                 </button>
                             ))}
                             <div ref={countryLoadMoreRef} style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
-                                {countryLoadingMore && <Loader2 size={14} style={{ animation: 'spin 1s linear infinite', color: '#828FA3' }} />}
+                                {countryLoadingMore && <Loader2
+                                    size={14}
+                                    style={{ animation: 'spin 1s linear infinite', color: '#828FA3' }}
+                                    data-testid="Loader2__927831" />}
                             </div>
                         </div>
                     </div>
                 </div>
             )}
-
             {/* Region picker */}
             {regionPickerOpen && (
                 <div style={PICKER_MODAL} onMouseDown={() => setRegionPickerOpen(false)}>
@@ -885,14 +907,20 @@ export default function LocationEditorModal({
                         </div>
                         <div style={{ padding: '12px 20px', borderBottom: '1px solid #F5F7F9' }}>
                             <div style={{ position: 'relative' }}>
-                                <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#828FA3' }} />
+                                <Search
+                                    size={14}
+                                    style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#828FA3' }}
+                                    data-testid="Search__927831" />
                                 <input ref={regionSearchRef} type="text" value={regionQuery} onChange={e => setRegionQuery(e.target.value)} placeholder={ui('regionSearchPlaceholder')} style={{ ...INPUT, paddingLeft: 36 }} />
                             </div>
                         </div>
                         <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
                             {renderRegionPickerBody(regionsLoading, ui, regionsLoadFailed, filteredRegions, handleRegionSelect, form)}
                             <div ref={regionLoadMoreRef} style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
-                                {regionLoadingMore && <Loader2 size={14} style={{ animation: 'spin 1s linear infinite', color: '#828FA3' }} />}
+                                {regionLoadingMore && <Loader2
+                                    size={14}
+                                    style={{ animation: 'spin 1s linear infinite', color: '#828FA3' }}
+                                    data-testid="Loader2__927831" />}
                             </div>
                         </div>
                     </div>

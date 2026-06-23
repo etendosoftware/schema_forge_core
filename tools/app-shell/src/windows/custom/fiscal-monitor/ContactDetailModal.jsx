@@ -134,7 +134,10 @@ function OptionPicker({ options, value, onChange, loading, ariaLabel, ui, error 
   if (loading) {
     return (
       <div style={{ ...INPUT_ST, display: 'flex', alignItems: 'center', gap: 8, color: '#828FA3', background: '#F5F7F9' }}>
-        <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+        <Loader2
+          size={13}
+          style={{ animation: 'spin 1s linear infinite' }}
+          data-testid="Loader2__3fe37d" />
         {ui('loading')}
       </div>
     );
@@ -159,9 +162,11 @@ function OptionPicker({ options, value, onChange, loading, ariaLabel, ui, error 
         <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: selected ? '#121217' : '#828FA3' }}>
           {selected?.label ?? '—'}
         </span>
-        <ChevronDown size={15} style={{ color: '#828FA3', flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+        <ChevronDown
+          size={15}
+          style={{ color: '#828FA3', flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}
+          data-testid="ChevronDown__3fe37d" />
       </button>
-
       {open && (
         <>
           <div data-testid="taxid-picker-backdrop" style={{ position: 'fixed', inset: 0, zIndex: 200 }} onMouseDown={close} />
@@ -203,7 +208,7 @@ function OptionPicker({ options, value, onChange, loading, ariaLabel, ui, error 
                   }}
                 >
                   <span style={{ width: 16, flexShrink: 0 }}>
-                    {opt.id === value && <Check size={13} />}
+                    {opt.id === value && <Check size={13} data-testid="Check__3fe37d" />}
                   </span>
                   {opt.label}
                 </button>
@@ -403,7 +408,10 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
 
             {bpId && loading ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0' }}>
-                <Loader2 size={20} style={{ animation: 'spin 1s linear infinite', color: '#828FA3' }} />
+                <Loader2
+                  size={20}
+                  style={{ animation: 'spin 1s linear infinite', color: '#828FA3' }}
+                  data-testid="Loader2__3fe37d" />
               </div>
             ) : bpId ? (
               <>
@@ -411,7 +419,7 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
                 {(!TABS || activeTab === 'contact') && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-                    <CfgField label={ui('contactDetail.name')} required>
+                    <CfgField label={ui('contactDetail.name')} required data-testid="CfgField__3fe37d">
                       <input
                         type="text"
                         value={name}
@@ -421,7 +429,7 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
                     </CfgField>
 
                     {/* NIF/CIF full width */}
-                    <CfgField label={ui('contactDetail.taxID')}>
+                    <CfgField label={ui('contactDetail.taxID')} data-testid="CfgField__3fe37d">
                       <input
                         type="text"
                         value={taxID}
@@ -431,7 +439,7 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
                     </CfgField>
 
                     {/* Clave Nif País Residencia — full width so label no se parte */}
-                    <CfgField label={ui('contactDetail.taxIDKey')}>
+                    <CfgField label={ui('contactDetail.taxIDKey')} data-testid="CfgField__3fe37d">
                       <OptionPicker
                         options={taxIDKeyOptions}
                         value={taxIDKey}
@@ -439,11 +447,11 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
                         loading={keyOptsLoading}
                         ariaLabel={ui('contactDetail.taxIDKey')}
                         ui={ui}
-                      />
+                        data-testid="OptionPicker__3fe37d" />
                     </CfgField>
 
                     {/* Dirección */}
-                    <CfgField label={ui('contactDetail.location')}>
+                    <CfgField label={ui('contactDetail.location')} data-testid="CfgField__3fe37d">
                       <div style={{ display: 'flex', gap: 8 }}>
                         <div style={{ ...INPUT_ST, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: addressText ? '#121217' : '#828FA3', background: '#F5F7F9', display: 'flex', alignItems: 'center' }}>
                           {addressText ?? '—'}
@@ -461,7 +469,7 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
                             boxShadow: '0px 1px 2px rgba(18,18,23,0.05)',
                           }}
                         >
-                          <MapPin size={13} />
+                          <MapPin size={13} data-testid="MapPin__3fe37d" />
                           {ui('contactDetail.editLocation')}
                         </button>
                       </div>
@@ -474,17 +482,20 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
                 {TABS && activeTab === 'invoice' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-                  <CfgField label={ui('contactDetail.siiInvoiceType')}>
+                  <CfgField label={ui('contactDetail.siiInvoiceType')} data-testid="CfgField__3fe37d">
                     <OptionPicker
                       options={siiTipoOptions}
                       value={invClaveTipo}
                       onChange={v => { setInvClaveTipo(v); setIsDirty(true); }}
                       ariaLabel={ui('contactDetail.siiInvoiceType')}
                       ui={ui}
-                    />
+                      data-testid="OptionPicker__3fe37d" />
                   </CfgField>
 
-                    <CfgField label={ui('contactDetail.siiDescription')} required>
+                    <CfgField
+                      label={ui('contactDetail.siiDescription')}
+                      required
+                      data-testid="CfgField__3fe37d">
                       <input
                         type="text"
                         value={invDescripcionSii}
@@ -517,8 +528,11 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
                   onClick={handleSave}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                 >
-                  {saving && <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />}
-                  {!saving && isDirty && <Check size={14} strokeWidth={2} />}
+                  {saving && <Loader2
+                    size={13}
+                    style={{ animation: 'spin 1s linear infinite' }}
+                    data-testid="Loader2__3fe37d" />}
+                  {!saving && isDirty && <Check size={14} strokeWidth={2} data-testid="Check__3fe37d" />}
                   {ui('save')}
                 </button>
               )}
@@ -526,7 +540,6 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
           )}
         </div>
       </div>
-
       {/* LocationEditorModal fuera del overlay para no quedar tapado */}
       {locationModalOpen && (
         <LocationEditorModal
@@ -536,7 +549,7 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
           rowId={location?.id ?? null}
           bpId={bpId}
           apiBase={contactsApiBase}
-        />
+          data-testid="LocationEditorModal__3fe37d" />
       )}
     </>
   );
