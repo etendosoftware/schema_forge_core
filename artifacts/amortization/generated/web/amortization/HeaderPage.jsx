@@ -14,7 +14,8 @@ const breadcrumb = 'Finance / Amortization';
 
 // @sf-generated-start summary:header
 const summary = [
-
+  { key: 'etblkpAccountingstatus', column: 'EM_Etblkp_Accountingstatus', type: 'status' },
+  { key: 'etblkpBulkposting', column: 'EM_Etblkp_Bulkposting', type: 'string' },
 ];
 
 const statusField = 'processed';
@@ -26,7 +27,8 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-
+  { name: 'etblkpBulkposting', label: 'Bulk Posting', style: 'positive',
+    displayLogicRaw: "@Processed@='Y' & @#ShowAcct@='Y'" },
 ];
 // @sf-generated-end processes:header
 
@@ -41,7 +43,7 @@ const draftMode = {
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start requiredHeaderFields:header
-const requiredHeaderFields = ['name', 'accountingDate', 'currency'];
+const requiredHeaderFields = ['name', 'accountingDate', 'currency', 'etblkpAccountingstatus', 'etblkpBulkposting'];
 // @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
@@ -203,6 +205,14 @@ export const api = {
       "field": "posted",
       "column": "Posted",
       "url": "/sws/neo/amortization/header/{id}/action/posted"
+    },
+    {
+      "entity": "header",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/amortization/header/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
     }
   ],
   "queryParams": {
@@ -298,7 +308,9 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         toolbarButtonSize="default"
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "A_Amortization", config: {} } }]}
         menuActions={({ data, status }) => [
-          { key: 'reactivate', label: 'Reactivate', visible: (data?.processed === 'Y' || data?.processed === true), labelKey: 'reactivate', columnName: 'Processed',  }
+          { key: 'reactivate', label: 'Reactivate', visible: (data?.processed === 'Y' || data?.processed === true), labelKey: 'reactivate', columnName: 'Processed',  },
+          { key: 'post', label: 'Post', visible: !data?.posted, labelKey: 'post', successKey: 'documentPosted', neoAction: 'post',  },
+          { key: 'unpost', label: 'Unpost', destructive: true, visible: (data?.posted === 'Y' || data?.posted === true), labelKey: 'unpost', successKey: 'documentUnposted', neoAction: 'unpost',  }
         ]}
         draftMode={draftModeWithConfirm}
         requiredHeaderFields={requiredHeaderFields}

@@ -15,7 +15,25 @@
       "bottomSection": "GoodsShipmentBottomPanel"
     },
     "linesLayout": "inlineEditable",
-    "menuActions": [],
+    "menuActions": [
+      {
+        "key": "post",
+        "label": "Post",
+        "labelKey": "post",
+        "action": "post",
+        "visibleWhenFieldFalse": "posted",
+        "successKey": "documentPosted"
+      },
+      {
+        "key": "unpost",
+        "label": "Unpost",
+        "labelKey": "unpost",
+        "action": "unpost",
+        "visibleWhenFieldTrue": "posted",
+        "successKey": "documentUnposted",
+        "destructive": true
+      }
+    ],
     "processOverrides": {
       "documentAction": { "exclude": true }
     },

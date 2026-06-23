@@ -1,8 +1,8 @@
 {
-  "version": "0.10.0",
+  "version": "0.11.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-19T16:51:34.337Z",
-  "checksum": "838ea7712a3f49d9",
+  "updatedAt": "2026-06-23T16:55:24.293Z",
+  "checksum": "b8d1acc7d4b4e4a6",
   "frontendContract": {
     "window": {
       "id": "B917E8A7B0864ACEA9D941E3B7494E53",
@@ -10,6 +10,25 @@
       "primaryEntity": "gLJournal",
       "category": "finance",
       "breadcrumb": "Finance / Manual Journals",
+      "menuActions": [
+        {
+          "key": "post",
+          "label": "Post",
+          "labelKey": "post",
+          "action": "post",
+          "visibleWhenFieldFalse": "posted",
+          "successKey": "documentPosted"
+        },
+        {
+          "key": "unpost",
+          "label": "Unpost",
+          "labelKey": "unpost",
+          "action": "unpost",
+          "visibleWhenFieldTrue": "posted",
+          "successKey": "documentUnposted",
+          "destructive": true
+        }
+      ],
       "layoutType": "default",
       "balanceFooter": {
         "debitField": "foreignCurrencyDebit",
@@ -535,6 +554,25 @@
       "primaryEntity": "gLJournal",
       "category": "finance",
       "breadcrumb": "Finance / Manual Journals",
+      "menuActions": [
+        {
+          "key": "post",
+          "label": "Post",
+          "labelKey": "post",
+          "action": "post",
+          "visibleWhenFieldFalse": "posted",
+          "successKey": "documentPosted"
+        },
+        {
+          "key": "unpost",
+          "label": "Unpost",
+          "labelKey": "unpost",
+          "action": "unpost",
+          "visibleWhenFieldTrue": "posted",
+          "successKey": "documentUnposted",
+          "destructive": true
+        }
+      ],
       "balanceFooter": {
         "debitField": "foreignCurrencyDebit",
         "creditField": "foreignCurrencyCredit"
@@ -872,6 +910,22 @@
             "column": "UpdatedBy",
             "type": "foreignKey",
             "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "discarded",
             "required": true
           }
         ],
@@ -1412,6 +1466,14 @@
         "url": "/sws/neo/simple-g-l-journal/gLJournal/{id}/action/processNow"
       },
       {
+        "entity": "gLJournal",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/simple-g-l-journal/gLJournal/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "gLJournalLine",
         "field": "aPRMAddPayment",
         "column": "EM_Aprm_Addpayment",
@@ -1446,6 +1508,14 @@
         "field": "documentAction",
         "runner": "node",
         "description": "Action endpoint for 'documentAction' in gLJournal should exist"
+      },
+      {
+        "id": "t-action-endpoint-gLJournal-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "gLJournal",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in gLJournal should exist"
       },
       {
         "id": "t-action-endpoint-gLJournal-posted",
@@ -2651,6 +2721,13 @@
         "description": "Rule 'GL_JournalLine-User2_ID-readOnlyLogic' (readOnlyLogic) should be declared"
       },
       {
+        "id": "t-rule-declared-Post",
+        "category": "rule-declared",
+        "rule": "Post",
+        "runner": "node",
+        "description": "Rule 'Post' (process) should be declared"
+      },
+      {
         "id": "t-rule-declared-Posted",
         "category": "rule-declared",
         "rule": "Posted",
@@ -2740,6 +2817,13 @@
         "rule": "simple-g-l-journal-Header-DocAction-displayLogic",
         "runner": "node",
         "description": "Rule 'simple-g-l-journal-Header-DocAction-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-simple-g-l-journal-Header-EM-Etblkp-Bulkposting-displayLogic",
+        "category": "rule-declared",
+        "rule": "simple-g-l-journal-Header-EM_Etblkp_Bulkposting-displayLogic",
+        "runner": "node",
+        "description": "Rule 'simple-g-l-journal-Header-EM_Etblkp_Bulkposting-displayLogic' (displayLogic) should be declared"
       },
       {
         "id": "t-rule-declared-simple-g-l-journal-Header-M-Product-ID-displayLogic",
@@ -3229,6 +3313,22 @@
         "description": "System field 'documentType' should exist in backend but not frontend for gLJournal"
       },
       {
+        "id": "t-system-field-gLJournal-etblkpAccountingstatus",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for gLJournal"
+      },
+      {
+        "id": "t-system-field-gLJournal-etblkpBulkposting",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for gLJournal"
+      },
+      {
         "id": "t-system-field-gLJournal-gLCategory",
         "category": "system-field",
         "entity": "gLJournal",
@@ -3652,9 +3752,9 @@
       }
     ],
     "summary": {
-      "total": 292,
+      "total": 297,
       "byCategory": {
-        "action-endpoint": 4,
+        "action-endpoint": 5,
         "crud-flags": 2,
         "default-value-type": 9,
         "displaylogic-evaluable": 6,
@@ -3663,14 +3763,14 @@
         "field-type": 17,
         "readonlylogic-evaluable": 16,
         "readonlylogic-valid": 16,
-        "rule-declared": 121,
+        "rule-declared": 123,
         "searchable-filters": 1,
         "selector-endpoint": 8,
-        "system-field": 67,
+        "system-field": 69,
         "visibility": 2
       },
       "byRunner": {
-        "node": 292,
+        "node": 297,
         "junit": 0
       }
     }

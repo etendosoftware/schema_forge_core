@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
 import { INVOICE_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import HeaderTable from '../../../custom/InvoiceHeaderTable';
 import HeaderForm from './HeaderForm';
@@ -852,6 +853,14 @@ export const api = {
       "processType": "obuiapp"
     },
     {
+      "entity": "header",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
+    },
+    {
       "entity": "lines",
       "field": "explode",
       "column": "Explode",
@@ -962,6 +971,10 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         notesField="description"
         customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Invoice", config: {} } }, { key: 'sif', labelKey: 'sifDataTabs.sectionTitle', Component: SifTab, placement: 'tab' }]}
         bottomSection={PurchaseInvoiceBottomPanel}
+        menuActions={({ data, status }) => [
+          { key: 'post', label: 'Post', visible: !data?.posted, labelKey: 'post', successKey: 'documentPosted', neoAction: 'post',  },
+          { key: 'unpost', label: 'Unpost', destructive: true, visible: (data?.posted === 'Y' || data?.posted === true), labelKey: 'unpost', successKey: 'documentUnposted', neoAction: 'unpost',  }
+        ]}
         draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}

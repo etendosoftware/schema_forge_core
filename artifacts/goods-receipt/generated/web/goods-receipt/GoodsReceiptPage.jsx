@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
 import GoodsReceiptTable from './GoodsReceiptTable';
 import GoodsReceiptForm from './GoodsReceiptForm';
 import GoodsReceiptLineTable from './GoodsReceiptLineTable';
@@ -379,6 +380,14 @@ export const api = {
       "processType": "obuiapp"
     },
     {
+      "entity": "goodsReceipt",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
+    },
+    {
       "entity": "goodsReceiptLine",
       "field": "managePrereservation",
       "column": "Manage_Prereservation",
@@ -442,6 +451,10 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
         bottomSection={GoodsReceiptBottomPanel}
         topbarRight={GoodsReceiptActions}
         topbarExtra={GoodsReceiptDraftChips}
+        menuActions={({ data, status }) => [
+          { key: 'post', label: 'Post', visible: !data?.posted, labelKey: 'post', successKey: 'documentPosted', neoAction: 'post',  },
+          { key: 'unpost', label: 'Unpost', destructive: true, visible: (data?.posted === 'Y' || data?.posted === true), labelKey: 'unpost', successKey: 'documentUnposted', neoAction: 'unpost',  }
+        ]}
         draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         linesLayout="inlineEditable"

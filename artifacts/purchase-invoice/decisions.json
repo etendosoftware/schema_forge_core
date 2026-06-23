@@ -10,7 +10,25 @@
     "relatedDocuments": true,
     "notesField": "description",
     "noHeaderBorder": true,
-    "menuActions": [],
+    "menuActions": [
+      {
+        "key": "post",
+        "label": "Post",
+        "labelKey": "post",
+        "action": "post",
+        "visibleWhenFieldFalse": "posted",
+        "successKey": "documentPosted"
+      },
+      {
+        "key": "unpost",
+        "label": "Unpost",
+        "labelKey": "unpost",
+        "action": "unpost",
+        "visibleWhenFieldTrue": "posted",
+        "successKey": "documentUnposted",
+        "destructive": true
+      }
+    ],
     "customComponents": {
       "headerTable": "InvoiceHeaderTable",
       "bottomSection": "PurchaseInvoiceBottomPanel"

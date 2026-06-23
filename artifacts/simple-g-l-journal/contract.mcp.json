@@ -1,8 +1,8 @@
 {
   "version": "0.10.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-19T16:37:24.495Z",
-  "contractChecksum": "838ea7712a3f49d9",
+  "updatedAt": "2026-06-23T16:55:24.293Z",
+  "contractChecksum": "b8d1acc7d4b4e4a6",
   "apiPrediction": {
     "specName": "simple-g-l-journal",
     "baseUrl": "/sws/neo/simple-g-l-journal",
@@ -216,6 +216,46 @@
         ]
       },
       {
+        "name": "etblkpBulkposting",
+        "actionType": "documentAction",
+        "entity": "gLJournal",
+        "column": "EM_Etblkp_Bulkposting",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/simple-g-l-journal/gLJournal/{id}/action/etblkpBulkposting",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
         "name": "aPRMAddPayment",
         "actionType": "paymentAction",
         "entity": "gLJournalLine",
@@ -365,7 +405,8 @@
     "actions": [
       "documentAction",
       "posted",
-      "processNow"
+      "processNow",
+      "etblkpBulkposting"
     ],
     "workflow": [
       "Create draft header with required fields",
@@ -416,5 +457,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "e8bb5b656a28394b"
+  "checksum": "f42a7eb13df4c1b9"
 }

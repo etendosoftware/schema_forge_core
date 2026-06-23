@@ -1,8 +1,8 @@
 {
   "version": "0.22.0",
   "generatedAt": "2026-05-22T16:00:10.872Z",
-  "updatedAt": "2026-06-01T19:11:48.715Z",
-  "contractChecksum": "3ff8f0cc48576bc1",
+  "updatedAt": "2026-06-23T00:17:54.561Z",
+  "contractChecksum": "6e14b6048bae4c9e",
   "apiPrediction": {
     "specName": "amortization",
     "baseUrl": "/sws/neo/amortization",
@@ -184,6 +184,46 @@
           "Document has pending lines or missing required fields",
           "User lacks permission to execute the action"
         ]
+      },
+      {
+        "name": "etblkpBulkposting",
+        "actionType": "documentAction",
+        "entity": "header",
+        "column": "EM_Etblkp_Bulkposting",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/amortization/header/{id}/action/etblkpBulkposting",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -274,6 +314,16 @@
           "processed": {
             "required": true,
             "defaultValue": "N"
+          },
+          "etblkpAccountingstatus": {
+            "readOnly": true,
+            "required": true,
+            "defaultValue": "N"
+          },
+          "etblkpBulkposting": {
+            "readOnly": true,
+            "required": true,
+            "defaultValue": "N"
           }
         }
       },
@@ -320,7 +370,9 @@
         }
       }
     },
-    "requiredSessionVariables": [],
+    "requiredSessionVariables": [
+      "#ShowAcct"
+    ],
     "evaluationMode": "runtime"
   },
   "agentProfile": {
@@ -345,7 +397,8 @@
     },
     "selectorContexts": [],
     "actions": [
-      "posted"
+      "posted",
+      "etblkpBulkposting"
     ],
     "workflow": [
       "Create draft header with required fields",
@@ -392,5 +445,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "52ad731277edaf4d"
+  "checksum": "c6c4b91c8bca066b"
 }

@@ -12,7 +12,9 @@ export const goodsShipment = [
     "documentStatus": "DR",
     "invoiceStatus": "DR",
     "invoiced": "Sample invoiced",
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-goodsShipment-002",
@@ -25,7 +27,9 @@ export const goodsShipment = [
     "documentStatus": "CO",
     "invoiceStatus": "CO",
     "invoiced": "Sample invoiced",
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-goodsShipment-003",
@@ -38,7 +42,9 @@ export const goodsShipment = [
     "documentStatus": "VO",
     "invoiceStatus": "VO",
     "invoiced": "Sample invoiced",
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-goodsShipment-004",
@@ -51,7 +57,9 @@ export const goodsShipment = [
     "documentStatus": "IP",
     "invoiceStatus": "IP",
     "invoiced": "Sample invoiced",
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-goodsShipment-005",
@@ -64,7 +72,9 @@ export const goodsShipment = [
     "documentStatus": "DR",
     "invoiceStatus": "DR",
     "invoiced": "Sample invoiced",
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-goodsShipment-006",
@@ -77,7 +87,9 @@ export const goodsShipment = [
     "documentStatus": "CO",
     "invoiceStatus": "CO",
     "invoiced": "Sample invoiced",
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-goodsShipment-007",
@@ -90,7 +102,9 @@ export const goodsShipment = [
     "documentStatus": "VO",
     "invoiceStatus": "VO",
     "invoiced": "Sample invoiced",
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-goodsShipment-008",
@@ -103,7 +117,9 @@ export const goodsShipment = [
     "documentStatus": "IP",
     "invoiceStatus": "IP",
     "invoiced": "Sample invoiced",
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-goodsShipment-009",
@@ -116,7 +132,9 @@ export const goodsShipment = [
     "documentStatus": "DR",
     "invoiceStatus": "DR",
     "invoiced": "Sample invoiced",
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-goodsShipment-010",
@@ -129,7 +147,9 @@ export const goodsShipment = [
     "documentStatus": "CO",
     "invoiceStatus": "CO",
     "invoiced": "Sample invoiced",
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-goodsShipment-011",
@@ -142,7 +162,9 @@ export const goodsShipment = [
     "documentStatus": "VO",
     "invoiceStatus": "VO",
     "invoiced": "Sample invoiced",
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-goodsShipment-012",
@@ -155,7 +177,9 @@ export const goodsShipment = [
     "documentStatus": "IP",
     "invoiceStatus": "IP",
     "invoiced": "Sample invoiced",
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   }
 ];
 

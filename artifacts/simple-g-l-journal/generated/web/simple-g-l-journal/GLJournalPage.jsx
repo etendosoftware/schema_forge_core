@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
 import GLJournalTable from './GLJournalTable';
 import GLJournalForm from './GLJournalForm';
 import GLJournalLineTable from './GLJournalLineTable';
@@ -183,6 +184,14 @@ export const api = {
       "url": "/sws/neo/simple-g-l-journal/gLJournal/{id}/action/processNow"
     },
     {
+      "entity": "gLJournal",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/simple-g-l-journal/gLJournal/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
+    },
+    {
       "entity": "gLJournalLine",
       "field": "aPRMAddPayment",
       "column": "EM_Aprm_Addpayment",
@@ -232,6 +241,10 @@ export default function GLJournalPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "GL_Journal", config: {} } }]}
+        menuActions={({ data, status }) => [
+          { key: 'post', label: 'Post', visible: !data?.posted, labelKey: 'post', successKey: 'documentPosted', neoAction: 'post',  },
+          { key: 'unpost', label: 'Unpost', destructive: true, visible: (data?.posted === 'Y' || data?.posted === true), labelKey: 'unpost', successKey: 'documentUnposted', neoAction: 'unpost',  }
+        ]}
         draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         balanceFooter={{"debitField":"foreignCurrencyDebit","creditField":"foreignCurrencyCredit"}}

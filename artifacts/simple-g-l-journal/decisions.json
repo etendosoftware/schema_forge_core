@@ -3,6 +3,25 @@
   "window": {
     "category": "finance",
     "name": "Simple G/L Journal",
+    "menuActions": [
+      {
+        "key": "post",
+        "label": "Post",
+        "labelKey": "post",
+        "action": "post",
+        "visibleWhenFieldFalse": "posted",
+        "successKey": "documentPosted"
+      },
+      {
+        "key": "unpost",
+        "label": "Unpost",
+        "labelKey": "unpost",
+        "action": "unpost",
+        "visibleWhenFieldTrue": "posted",
+        "successKey": "documentUnposted",
+        "destructive": true
+      }
+    ],
     "breadcrumb": "Finance / Manual Journals",
     "balanceFooter": {
       "debitField": "foreignCurrencyDebit",
