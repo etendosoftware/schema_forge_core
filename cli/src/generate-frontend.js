@@ -839,7 +839,7 @@ export function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
           ? `status === '${a.visibleWhenStatus}'`
           : '';
       }
-      const fieldVisFalse = a.visibleWhenFieldFalse ? `!data?.${a.visibleWhenFieldFalse}` : '';
+      const fieldVisFalse = a.visibleWhenFieldFalse ? `!(data?.${a.visibleWhenFieldFalse} === 'Y' || data?.${a.visibleWhenFieldFalse} === true)` : '';
       const fieldVisTrue = a.visibleWhenFieldTrue ? `(data?.${a.visibleWhenFieldTrue} === 'Y' || data?.${a.visibleWhenFieldTrue} === true)` : '';
       const visParts = [statusVis, fieldVisFalse, fieldVisTrue].filter(Boolean);
       const vis = getVis(visParts);

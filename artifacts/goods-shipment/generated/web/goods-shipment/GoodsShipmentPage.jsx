@@ -291,7 +291,7 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         topbarRight={GoodsShipmentActions}
         topbarExtra={GoodsShipmentBillingBadge}
         menuActions={({ data, status }) => [
-          { key: 'post', label: 'Post', visible: !data?.posted, labelKey: 'post', successKey: 'documentPosted', neoAction: 'post',  },
+          { key: 'post', label: 'Post', visible: !(data?.posted === 'Y' || data?.posted === true), labelKey: 'post', successKey: 'documentPosted', neoAction: 'post',  },
           { key: 'unpost', label: 'Unpost', destructive: true, visible: (data?.posted === 'Y' || data?.posted === true), labelKey: 'unpost', successKey: 'documentUnposted', neoAction: 'unpost',  }
         ]}
         requiredHeaderFields={requiredHeaderFields}

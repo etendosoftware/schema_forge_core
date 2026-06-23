@@ -1599,8 +1599,8 @@ describe('generatePageComponent — menuActions visibleWhenFieldFalse', () => {
     ]);
     const code = generatePageComponent('header', null, contract);
     assert.ok(
-      code.includes("visible: status === 'CO' && !data?.hasLinkedDocuments"),
-      'should combine status check and field check with &&',
+      code.includes("visible: status === 'CO' && !(data?.hasLinkedDocuments === 'Y' || data?.hasLinkedDocuments === true)"),
+      'should combine status check and Y/N-aware field check with &&',
     );
   });
 
@@ -1609,7 +1609,10 @@ describe('generatePageComponent — menuActions visibleWhenFieldFalse', () => {
       { key: 'duplicate', label: 'Duplicate', visibleWhenFieldFalse: 'isDraft' },
     ]);
     const code = generatePageComponent('header', null, contract);
-    assert.ok(code.includes('visible: !data?.isDraft'), 'should emit only field condition when no status filter');
+    assert.ok(
+      code.includes("visible: !(data?.isDraft === 'Y' || data?.isDraft === true)"),
+      'should emit only the Y/N-aware field condition when no status filter',
+    );
     assert.ok(!code.includes('status ==='), 'should not include status check when visibleWhenStatus is absent');
   });
 
@@ -1620,7 +1623,7 @@ describe('generatePageComponent — menuActions visibleWhenFieldFalse', () => {
     ]);
     const code = generatePageComponent('header', null, contract);
     assert.ok(
-      code.includes("visible: status === 'CO' && !data?.hasLinkedDocuments"),
+      code.includes("visible: status === 'CO' && !(data?.hasLinkedDocuments === 'Y' || data?.hasLinkedDocuments === true)"),
       'reactivate should have compound condition',
     );
     assert.ok(

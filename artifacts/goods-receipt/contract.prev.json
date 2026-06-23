@@ -1,8 +1,8 @@
 {
-  "version": "0.13.0",
+  "version": "0.14.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-06-03T14:04:33.662Z",
-  "checksum": "c2c8b32368e94888",
+  "updatedAt": "2026-06-23T00:17:54.734Z",
+  "checksum": "fa8153eefccd0e73",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -17,6 +17,25 @@
         "bottomSection": "GoodsReceiptBottomPanel",
         "topbarExtra": "GoodsReceiptDraftChips"
       },
+      "menuActions": [
+        {
+          "key": "post",
+          "label": "Post",
+          "labelKey": "post",
+          "action": "post",
+          "visibleWhenFieldFalse": "posted",
+          "successKey": "documentPosted"
+        },
+        {
+          "key": "unpost",
+          "label": "Unpost",
+          "labelKey": "unpost",
+          "action": "unpost",
+          "visibleWhenFieldTrue": "posted",
+          "successKey": "documentUnposted",
+          "destructive": true
+        }
+      ],
       "dateFilterKey": "movementDate",
       "noHeaderBorder": true,
       "sendDocument": {
@@ -890,6 +909,25 @@
         "bottomSection": "GoodsReceiptBottomPanel",
         "topbarExtra": "GoodsReceiptDraftChips"
       },
+      "menuActions": [
+        {
+          "key": "post",
+          "label": "Post",
+          "labelKey": "post",
+          "action": "post",
+          "visibleWhenFieldFalse": "posted",
+          "successKey": "documentPosted"
+        },
+        {
+          "key": "unpost",
+          "label": "Unpost",
+          "labelKey": "unpost",
+          "action": "unpost",
+          "visibleWhenFieldTrue": "posted",
+          "successKey": "documentUnposted",
+          "destructive": true
+        }
+      ],
       "dateFilterKey": "movementDate",
       "noHeaderBorder": true,
       "sendDocument": {
@@ -1445,6 +1483,22 @@
             "column": "UpdatedBy",
             "type": "foreignKey",
             "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "discarded",
             "required": true
           }
         ],
@@ -2126,6 +2180,14 @@
         "processType": "obuiapp"
       },
       {
+        "entity": "goodsReceipt",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "goodsReceiptLine",
         "field": "managePrereservation",
         "column": "Manage_Prereservation",
@@ -2184,6 +2246,14 @@
         "field": "documentAction",
         "runner": "node",
         "description": "Action endpoint for 'documentAction' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-action-endpoint-goodsReceipt-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "goodsReceipt",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in goodsReceipt should exist"
       },
       {
         "id": "t-action-endpoint-goodsReceipt-generateTo",
@@ -3930,6 +4000,22 @@
         "description": "System field 'documentType' should exist in backend but not frontend for goodsReceipt"
       },
       {
+        "id": "t-system-field-goodsReceipt-etblkpAccountingstatus",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-etblkpBulkposting",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
         "id": "t-system-field-goodsReceipt-externalBusinessPartnerReference",
         "category": "system-field",
         "entity": "goodsReceipt",
@@ -4369,9 +4455,9 @@
       }
     ],
     "summary": {
-      "total": 281,
+      "total": 284,
       "byCategory": {
-        "action-endpoint": 12,
+        "action-endpoint": 13,
         "crud-flags": 2,
         "default-value-type": 7,
         "displaylogic-evaluable": 1,
@@ -4383,11 +4469,11 @@
         "rule-declared": 38,
         "searchable-filters": 5,
         "selector-endpoint": 20,
-        "system-field": 69,
+        "system-field": 71,
         "visibility": 2
       },
       "byRunner": {
-        "node": 281,
+        "node": 284,
         "junit": 0
       }
     }

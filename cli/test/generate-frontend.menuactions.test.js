@@ -50,3 +50,42 @@ describe('getMenuActionsProp — handler precedence', () => {
     assert.equal(getMenuActionsProp([], '({ row, status })'), '');
   });
 });
+
+describe('getMenuActionsProp — field visibility gating (Y/N-aware)', () => {
+  it('emits a Y/N-aware complement for visibleWhenFieldFalse', () => {
+    const out = getMenuActionsProp(
+      [{ key: 'post', label: 'Post', action: 'post', visibleWhenFieldFalse: 'posted' }],
+      '({ row, status, data })',
+    );
+    // Must be the exact logical complement of visibleWhenFieldTrue, so that
+    // an Etendo 'N' string (truthy!) is still treated as "field is false".
+    assert.match(out, /!\(data\?\.posted === 'Y' \|\| data\?\.posted === true\)/);
+    // Must NOT emit the naive `!data?.posted`, which is broken for 'Y'/'N' strings.
+    assert.ok(
+      !/!data\?\.posted(?! === )/.test(out),
+      'should not emit naive !data?.posted for an Etendo Y/N field',
+    );
+  });
+
+  it('emits a Y/N-aware test for visibleWhenFieldTrue', () => {
+    const out = getMenuActionsProp(
+      [{ key: 'unpost', label: 'Unpost', action: 'unpost', visibleWhenFieldTrue: 'posted' }],
+      '({ row, status, data })',
+    );
+    assert.match(out, /\(data\?\.posted === 'Y' \|\| data\?\.posted === true\)/);
+  });
+
+  it('fieldFalse and fieldTrue gates are exact logical complements', () => {
+    const falseOut = getMenuActionsProp(
+      [{ key: 'a', label: 'A', action: 'x', visibleWhenFieldFalse: 'posted' }],
+      '({ row, status, data })',
+    );
+    const trueOut = getMenuActionsProp(
+      [{ key: 'b', label: 'B', action: 'y', visibleWhenFieldTrue: 'posted' }],
+      '({ row, status, data })',
+    );
+    const trueExpr = "(data?.posted === 'Y' || data?.posted === true)";
+    assert.ok(trueOut.includes(trueExpr), 'fieldTrue uses the Y/N-aware expression');
+    assert.ok(falseOut.includes('!' + trueExpr), 'fieldFalse is the negation of fieldTrue');
+  });
+});
