@@ -451,7 +451,11 @@ function CandidateOperationsPanel({
       {/* Single transaction-type selector (sales/purchase invoices, receipts, payments).
           Reconciled lines are read-only, so it is hidden there. */}
       {readOnly ? null : (
-        <ReconciliationSourceFilter value={source} onChange={onSourceChange} counts={sourceCounts} />
+        <ReconciliationSourceFilter
+          value={source}
+          onChange={onSourceChange}
+          counts={sourceCounts}
+          data-testid="ReconciliationSourceFilter__d0f4d5" />
       )}
       <DateRangePopover
         value={dateRange}
