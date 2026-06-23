@@ -1356,7 +1356,11 @@ function buildListModalFields(formFields) {
     const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
     const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
     const defaultValuePart = getDefaultValuePart(skipCheckboxDefault, skipServerMacro, f);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart} },`;
+    // A boolean field flagged as a grid toggle renders as the shared PillToggle switch in the
+    // modal body too (in place), instead of a plain checkbox.
+    const togglePart = (type === 'checkbox' && (f.cellType === 'toggle' || f.inlineToggle))
+      ? ', toggle: true' : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart}${togglePart} },`;
   }).join('\n');
 }
 

@@ -15,16 +15,25 @@ vi.mock('sonner', () => ({
 const linesState = { lines: [], total: 0, counts: {}, loading: false, reload: vi.fn() };
 const candidatesState = { candidates: [], loading: false };
 const reconcileState = { reconcile: vi.fn().mockResolvedValue({ reconciliationId: 'R1' }), loading: false };
+// Records the last (accountId, lineId, docType, kind) the component passed to
+// useCandidateOperations, so tests can assert the kind toggle flows through.
+const candidateCallArgs = { accountId: null, lineId: null, docType: null, kind: null };
 
 // Mirrors the real hook: candidates only resolve once a line is selected, and
 // each (re)load yields a FRESH array reference — which is what drives the
 // pre-select `useEffect([candidates])` in the component.
 vi.mock('@/hooks/useReconciliation', () => ({
   usePendingStatementLines: () => linesState,
-  useCandidateOperations: (_accountId, lineId) => ({
-    candidates: lineId ? [...candidatesState.candidates] : [],
-    loading: candidatesState.loading,
-  }),
+  useCandidateOperations: (accountId, lineId, docType = null, kind = null) => {
+    candidateCallArgs.accountId = accountId;
+    candidateCallArgs.lineId = lineId;
+    candidateCallArgs.docType = docType;
+    candidateCallArgs.kind = kind;
+    return {
+      candidates: lineId ? [...candidatesState.candidates] : [],
+      loading: candidatesState.loading,
+    };
+  },
   useReconcileGroup: () => reconcileState,
 }));
 
@@ -74,6 +83,10 @@ describe('ReconciliationSplitPanel', () => {
     candidatesState.loading = false;
     reconcileState.reconcile = vi.fn().mockResolvedValue({ reconciliationId: 'R1' });
     reconcileState.loading = false;
+    candidateCallArgs.accountId = null;
+    candidateCallArgs.lineId = null;
+    candidateCallArgs.docType = null;
+    candidateCallArgs.kind = null;
   });
 
   it('renders the left panel with the pending statement lines', () => {
@@ -101,13 +114,16 @@ describe('ReconciliationSplitPanel', () => {
     expect(screen.getAllByText('dateRangeLast30Days').length).toBeGreaterThan(0);
   });
 
-  it('passes the selected docType filter to the candidates hook', () => {
-    setLines([LINE_A]);
+  it('passes the selected source filter to the candidates hook', () => {
+    setLines([LINE_B]); // inflow line → default source 'receipts'
     renderPanel();
-    fireEvent.click(screen.getByTestId('recon-line-radio-L1'));
-    fireEvent.click(screen.getByText('financeReconcileFilterDocTypeAll'));
-    fireEvent.click(screen.getByText('financeReconcileFilterDocTypePayments'));
-    expect(screen.getByText('financeReconcileFilterDocTypePayments')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L2'));
+    // Open the source selector (trigger shows the current label) then pick "Pagos".
+    fireEvent.click(screen.getByText(/financeReconcileSourceReceipts/));
+    fireEvent.click(screen.getByText(/financeReconcileSourcePayments/));
+    // payments → (kind null, docType 'payments').
+    expect(candidateCallArgs.kind).toBeNull();
+    expect(candidateCallArgs.docType).toBe('payments');
   });
 
   it('populates the right panel after selecting a line', () => {
@@ -183,14 +199,18 @@ describe('ReconciliationSplitPanel', () => {
     expect(screen.getByTestId('recon-right-empty')).toBeInTheDocument();
   });
 
-  it('shows a disabled "Reactivate" label when a reconciled line is selected', () => {
+  it('shows an enabled "Reactivate" label and a read-only right panel for a reconciled line', () => {
     setLines([LINE_RECONCILED]);
     setCandidates([CAND_MATCH]);
     renderPanel();
     fireEvent.click(screen.getByTestId('recon-line-radio-L3'));
     const btn = screen.getByTestId('recon-action-reconcile');
     expect(btn).toHaveTextContent('financeReconcileActionReactivate');
-    expect(btn).toBeDisabled();
+    // The Reactivate button is live now (the un-reconcile action itself is a follow-up task).
+    expect(btn).not.toBeDisabled();
+    // Read-only: the linked movement renders but exposes no selection checkbox.
+    expect(screen.getByTestId('recon-cand-row-C1')).toBeInTheDocument();
+    expect(screen.queryByTestId('recon-cand-check-C1')).not.toBeInTheDocument();
   });
 
   // ── Suggested-candidate behavior (ETP-4100 / T6) ──────────────────────────────
@@ -348,6 +368,157 @@ describe('ReconciliationSplitPanel', () => {
     // We check the total footer row which renders formatSigned(visibleTotal, currency).
     // Since formatSigned is internal, we verify the footer does NOT show -100 (the suggested line).
     expect(screen.queryByText(/-100/)).not.toBeInTheDocument();
+  });
+
+  // ── Source filter visibility (single "Tipo de transacción" selector) ──────────
+
+  it('renders the source filter only after selecting a non-reconciled line', () => {
+    setLines([LINE_A]); // outflow → default source 'payments'
+    renderPanel();
+    // No line selected yet → right panel is empty, so the source selector is absent.
+    // The selector trigger surfaces the current source label (the i18n mock returns the key).
+    expect(screen.queryByText('financeReconcileSourcePayments')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('recon-line-radio-L1'));
+    // The single "Tipo de transacción" selector is now present (trigger shows the default label).
+    expect(screen.getByText(/financeReconcileSourcePayments/)).toBeInTheDocument();
+  });
+
+  it('hides the source filter for a reconciled (read-only) line', () => {
+    setLines([LINE_RECONCILED]); // inflow (amount 50) → would default to 'receipts'
+    setCandidates([CAND_MATCH]);
+    renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L3'));
+    // Read-only line: no source selector → none of the source labels are rendered.
+    expect(screen.queryByText('financeReconcileSourceReceipts')).not.toBeInTheDocument();
+    expect(screen.queryByText('financeReconcileSourcePayments')).not.toBeInTheDocument();
+    expect(screen.queryByText('financeReconcileSourceSalesInvoices')).not.toBeInTheDocument();
+  });
+
+  // ── Default source by line sign ───────────────────────────────────────────────
+
+  it('defaults the source to receipts for an inflow line (amount > 0)', () => {
+    setLines([LINE_B]); // amount 1200 → inflow → receipts
+    renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L2'));
+    // receipts → (kind null, docType 'receipts').
+    expect(candidateCallArgs.kind).toBeNull();
+    expect(candidateCallArgs.docType).toBe('receipts');
+  });
+
+  it('defaults the source to payments for an outflow line (amount < 0)', () => {
+    setLines([LINE_A]); // amount -8.31 → outflow → payments
+    renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L1'));
+    // payments → (kind null, docType 'payments').
+    expect(candidateCallArgs.kind).toBeNull();
+    expect(candidateCallArgs.docType).toBe('payments');
+  });
+
+  // ── Source → (kind, docType) mapping ──────────────────────────────────────────
+
+  it('maps "Facturas de venta" to (kind invoices, docType receipts)', () => {
+    setLines([LINE_B]); // inflow → default source receipts
+    renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L2'));
+    // Open the selector (trigger shows the current 'receipts' label) and pick sales invoices.
+    fireEvent.click(screen.getByText(/financeReconcileSourceReceipts/));
+    fireEvent.click(screen.getByText(/financeReconcileSourceSalesInvoices/));
+    expect(candidateCallArgs.kind).toBe('invoices');
+    expect(candidateCallArgs.docType).toBe('receipts');
+  });
+
+  it('maps "Cobros" to (kind null, docType receipts)', () => {
+    setLines([LINE_A]); // outflow → default source payments
+    renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L1'));
+    // Open the selector (trigger shows the current 'payments' label) and pick receipts.
+    fireEvent.click(screen.getByText(/financeReconcileSourcePayments/));
+    fireEvent.click(screen.getByText(/financeReconcileSourceReceipts/));
+    expect(candidateCallArgs.kind).toBeNull();
+    expect(candidateCallArgs.docType).toBe('receipts');
+  });
+
+  // ── Invoice candidate badge ───────────────────────────────────────────────────
+
+  it('renders the "Factura" badge on an invoice-kind candidate', () => {
+    setLines([LINE_B]); // inflow → default receipts
+    const INV = { id: 'INV9', date: '2026-06-01T00:00:00Z', documentNo: 'F-9', partnerName: 'ACME',
+      amount: 8.31, pendingBalance: 8.31, kind: 'invoice', invoiceId: 'INV-ID-9', scheduleId: 'SCH-9', suggested: false };
+    setCandidates([INV]);
+    renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L2'));
+    // Switch the source to an invoice option so the invoice candidate is the active mode.
+    fireEvent.click(screen.getByText(/financeReconcileSourceReceipts/));
+    fireEvent.click(screen.getByText(/financeReconcileSourceSalesInvoices/));
+
+    // The i18n mock returns the key; badge kind 'invoice' → financeReconcileBadgeInvoice.
+    expect(screen.getByText('financeReconcileBadgeInvoice')).toBeInTheDocument();
+  });
+
+  // ── Invoice-mode reconcile guard ──────────────────────────────────────────────
+
+  it('enables Conciliar with an invoice source when the selection COVERS the line', () => {
+    setLines([LINE_B]); // line amount 1200 (inflow → default receipts)
+    // A single invoice whose outstanding (1500) covers the line (|1500| >= |1200|).
+    const INV = { id: 'INV9', date: '2026-06-01T00:00:00Z', documentNo: 'F-9', partnerName: 'ACME',
+      amount: 1500, pendingBalance: 1500, kind: 'invoice', invoiceId: 'INV-ID-9', scheduleId: 'SCH-9', suggested: false };
+    setCandidates([INV]);
+    renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L2'));
+    fireEvent.click(screen.getByText(/financeReconcileSourceReceipts/));
+    fireEvent.click(screen.getByText(/financeReconcileSourceSalesInvoices/));
+    // Select the covering invoice.
+    fireEvent.click(screen.getByTestId('recon-cand-check-INV9'));
+
+    expect(screen.getByTestId('recon-action-reconcile')).not.toBeDisabled();
+  });
+
+  it('keeps Conciliar disabled with an invoice source when the selection does NOT cover the line', () => {
+    setLines([LINE_B]); // line amount 1200 (inflow → default receipts)
+    // A single invoice whose outstanding (500) does NOT cover the line (|500| < |1200|).
+    const INV = { id: 'INV9', date: '2026-06-01T00:00:00Z', documentNo: 'F-9', partnerName: 'ACME',
+      amount: 500, pendingBalance: 500, kind: 'invoice', invoiceId: 'INV-ID-9', scheduleId: 'SCH-9', suggested: false };
+    setCandidates([INV]);
+    renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L2'));
+    fireEvent.click(screen.getByText(/financeReconcileSourceReceipts/));
+    fireEvent.click(screen.getByText(/financeReconcileSourceSalesInvoices/));
+    fireEvent.click(screen.getByTestId('recon-cand-check-INV9'));
+
+    expect(screen.getByTestId('recon-action-reconcile')).toBeDisabled();
+  });
+
+  // ── Invoice reconcile payload ─────────────────────────────────────────────────
+
+  it('reconciles with an invoice source using an invoices[] payload (no operationIds)', async () => {
+    setLines([LINE_B]); // line amount 1200 (inflow → default receipts)
+    const INV_A = { id: 'INVA', date: '2026-06-01T00:00:00Z', documentNo: 'F-A', partnerName: 'ACME',
+      amount: 800, pendingBalance: 800, kind: 'invoice', invoiceId: 'INV-ID-A', scheduleId: 'SCH-A', suggested: false };
+    const INV_B = { id: 'INVB', date: '2026-06-02T00:00:00Z', documentNo: 'F-B', partnerName: 'ACME',
+      amount: 600, pendingBalance: 600, kind: 'invoice', invoiceId: 'INV-ID-B', scheduleId: 'SCH-B', suggested: false };
+    setCandidates([INV_A, INV_B]);
+    const { props } = renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L2'));
+    fireEvent.click(screen.getByText(/financeReconcileSourceReceipts/));
+    fireEvent.click(screen.getByText(/financeReconcileSourceSalesInvoices/));
+    // Select both invoices (combined 1400 covers the 1200 line).
+    fireEvent.click(screen.getByTestId('recon-cand-check-INVA'));
+    fireEvent.click(screen.getByTestId('recon-cand-check-INVB'));
+
+    fireEvent.click(screen.getByTestId('recon-action-reconcile'));
+    await waitFor(() => expect(reconcileState.reconcile).toHaveBeenCalledTimes(1));
+
+    const payload = reconcileState.reconcile.mock.calls[0][0];
+    expect(payload.financialAccountId).toBe('ACC-1');
+    expect(payload.statementLineId).toBe('L2');
+    expect(payload.operationIds).toBeUndefined();
+    // Payload carries invoiceId/scheduleId pairs only; order follows the candidates array.
+    expect(payload.invoices).toEqual([
+      { invoiceId: 'INV-ID-A', scheduleId: 'SCH-A' },
+      { invoiceId: 'INV-ID-B', scheduleId: 'SCH-B' },
+    ]);
+    await waitFor(() => expect(props.onReconcileSuccess).toHaveBeenCalled());
   });
 
 });

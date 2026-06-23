@@ -22,7 +22,7 @@ const fields = [
   { key: 'textCondition', column: 'TextCondition', type: 'select', label: 'Text Condition', required: true, searchSelect: true, section: 'general', options: [{ value: 'C', label: 'Contains' }, { value: 'R', label: 'Regex' }, { value: 'S', label: 'Starts with' }], placeholderKey: 'matchRuleConditionPlaceholder' },
   { key: 'priority', column: 'Priority', type: 'number', label: 'Priority', required: true, section: 'general' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner', reference: 'BPartner', inputMode: 'selector', searchSelect: true, section: 'general' },
-  { key: 'active', column: 'Isactive', type: 'checkbox', label: 'Active', required: true, section: 'general', defaultValue: 'Y' },
+  { key: 'active', column: 'Isactive', type: 'checkbox', label: 'Active', required: true, section: 'general', defaultValue: 'Y', toggle: true },
   { key: 'project', column: 'C_Project_ID', type: 'selector', label: 'Project', reference: 'Project', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
   { key: 'costCenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'Costcenter', inputMode: 'selector', searchSelect: true, section: 'dimensions' },
   { key: 'product', column: 'M_Product_ID', type: 'selector', label: 'Product', reference: 'Product', inputMode: 'selector', searchSelect: true, section: 'dimensions' },

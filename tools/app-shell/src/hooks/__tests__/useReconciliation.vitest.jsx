@@ -152,6 +152,23 @@ describe('useCandidateOperations (GET)', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.candidates).toEqual([]);
   });
+
+  it('appends kind=invoices to the query when listing invoices', async () => {
+    globalThis.fetch.mockResolvedValue(getResponse({ candidates: [{ id: 'c1', kind: 'invoice' }] }));
+
+    const { result } = renderHook(() =>
+      useCandidateOperations('acc-1', 'line-1', null, 'invoices'),
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const [url] = globalThis.fetch.mock.calls[0];
+    expect(url).toContain('action=candidates');
+    expect(url).toContain('accountId=acc-1');
+    expect(url).toContain('lineId=line-1');
+    expect(url).toContain('kind=invoices');
+    // docType is null here → must be skipped from the query string.
+    expect(url).not.toContain('docType=');
+  });
 });
 
 describe('useAutoMatch (GET)', () => {

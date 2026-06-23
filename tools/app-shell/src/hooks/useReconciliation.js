@@ -117,28 +117,31 @@ export function usePendingStatementLines(accountId, filters = {}) {
  * @param {string|null} accountId
  * @param {string|null} lineId
  * @param {string|null} [docType]
+ * @param {string|null} [kind] 'invoices' to list unpaid invoices instead of transactions
  * @returns {{ candidates: Array<object>, loading: boolean, error: Error|null }}
  */
-export function useCandidateOperations(accountId, lineId, docType = null) {
+export function useCandidateOperations(accountId, lineId, docType = null, kind = null,
+  dateFrom = null, dateTo = null) {
   const path = accountId && lineId
-    ? `${BASE_PATH}${buildQuery({ action: 'candidates', accountId, lineId, docType })}`
+    ? `${BASE_PATH}${buildQuery({ action: 'candidates', accountId, lineId, docType, kind, dateFrom, dateTo })}`
     : null;
 
   const mapPayload = useMemo(
     () => (raw) => ({
       candidates: Array.isArray(raw.candidates) ? raw.candidates : [],
+      counts: raw.counts ?? {},
     }),
     [],
   );
 
   const { data, loading, error } = useNeoResource({
     path,
-    deps: [accountId, lineId, docType],
+    deps: [accountId, lineId, docType, kind, dateFrom, dateTo],
     mapPayload,
     label: 'useCandidateOperations',
   });
 
-  return { candidates: data?.candidates ?? [], loading, error };
+  return { candidates: data?.candidates ?? [], counts: data?.counts ?? {}, loading, error };
 }
 
 /**

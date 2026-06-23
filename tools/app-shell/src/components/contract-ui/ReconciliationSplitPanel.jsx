@@ -33,8 +33,6 @@ const SKELETON_CELL_KEYS = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5'];
 const ELEVATED_SHADOW =
   'shadow-[0px_10px_15px_-3px_rgba(18,18,23,0.08),0px_4px_6px_-2px_rgba(18,18,23,0.05)]';
 const STATUS_CODES = ['pending', 'suggested', 'byRule', 'difference', 'reconciled'];
-const DOC_TYPE_CODES = ['receipts', 'payments'];
-
 // i18n label key per status code, shared by the filter and the row badges.
 const STATUS_LABEL_KEY = {
   pending: 'financeReconcileFilterStatusPending',
@@ -54,6 +52,7 @@ function StatusBadge({ kind }) {
     difference: { labelKey: 'financeReconcileBadgeDifference', cls: 'bg-[#FEF0F4] text-[#D50B3E]' },
     reconciled: { labelKey: 'financeReconcileBadgeReconciled', cls: 'bg-[#EEFBF4] text-[#17663A]' },
     pending: { labelKey: 'financeReconcileBadgePending', cls: 'bg-[#F5F7F9] text-[#3F3F50]' },
+    invoice: { labelKey: 'financeReconcileBadgeInvoice', cls: 'bg-[#FFF9EB] text-[#92600A]' },
   };
   const cfg = map[kind] ?? map.pending;
   return (
@@ -61,6 +60,13 @@ function StatusBadge({ kind }) {
       {ui(cfg.labelKey)}
     </span>
   );
+}
+
+/** Badge kind for a candidate row: reconciled (read-only) → invoice → suggested → pending. */
+function badgeKindFor(cand, readOnly) {
+  if (readOnly) return 'reconciled';
+  if (cand.kind === 'invoice') return 'invoice';
+  return cand.suggested ? 'suggested' : 'pending';
 }
 
 function ToolbarShell({ children, search, onSearchChange, testIdPrefix }) {
@@ -97,23 +103,30 @@ function ReconciliationStatusFilter({ value, onChange, counts = {} }) {
   );
 }
 
-function ReconciliationDocTypeFilter({ value, onChange }) {
-  const ui = useUI();
-  const labelFor = (code) => {
-    if (code === 'payments') return ui('financeReconcileFilterDocTypePayments');
-    return ui('financeReconcileFilterDocTypeReceipts');
-  };
+// Single "Tipo de transacción" selector (Figma): one dropdown with four mutually-exclusive
+// sources. Each maps to a candidate kind (invoice vs existing transaction) and a direction
+// (docType receipts/payments → isReceipt / issotrx).
+const SOURCE_CODES = ['salesInvoices', 'purchaseInvoices', 'receipts', 'payments'];
+const SOURCE_META = {
+  salesInvoices: { kind: 'invoices', docType: 'receipts', labelKey: 'financeReconcileSourceSalesInvoices' },
+  purchaseInvoices: { kind: 'invoices', docType: 'payments', labelKey: 'financeReconcileSourcePurchaseInvoices' },
+  receipts: { kind: 'transactions', docType: 'receipts', labelKey: 'financeReconcileSourceReceipts' },
+  payments: { kind: 'transactions', docType: 'payments', labelKey: 'financeReconcileSourcePayments' },
+};
 
+function ReconciliationSourceFilter({ value, onChange, counts = {} }) {
+  const ui = useUI();
   return (
     <DistinctValuesFilter
       value={value}
-      onChange={onChange}
-      codes={DOC_TYPE_CODES}
-      labelFor={labelFor}
-      allLabel={ui('financeReconcileFilterDocTypeAll')}
-      searchPlaceholder={ui('financeReconcileFilterDocTypeSearchPlaceholder')}
+      // Always keep a concrete selection — ignore the "clear" (all) action.
+      onChange={(v) => onChange(v || value)}
+      codes={SOURCE_CODES}
+      labelFor={(code) => `${ui(SOURCE_META[code]?.labelKey ?? code)} (${counts[code] ?? 0})`}
+      allLabel={ui('financeReconcileSourceLabel')}
+      searchPlaceholder={ui('financeReconcileSourceLabel')}
       popoverWidth="w-64"
-      data-testid="DistinctValuesFilter__d0f4d5" />
+      data-testid="recon-source-filter" />
   );
 }
 
@@ -355,7 +368,7 @@ function StatementLinesPanel({
 /** Right panel — candidate operations with multi-select checkbox rows. */
 function CandidateOperationsPanel({
   line, candidates, loading, currency, bcpLocale, selectedIds, onToggle, search, onSearchChange,
-  docType, onDocTypeChange, dateRange, onDateRangeChange, footer,
+  source, onSourceChange, sourceCounts = {}, dateRange, onDateRangeChange, footer, readOnly = false,
 }) {
   const ui = useUI();
 
@@ -385,11 +398,13 @@ function CandidateOperationsPanel({
       )}
     >
       <TableCell className="h-[62px] w-8 px-0 pl-2" data-testid="TableCell__d0f4d5">
-        <Checkbox
-          checked={selectedIds.has(cand.id)}
-          onChange={() => onToggle(cand.id)}
-          data-testid={`recon-cand-check-${cand.id}`}
-        />
+        {readOnly ? null : (
+          <Checkbox
+            checked={selectedIds.has(cand.id)}
+            onChange={() => onToggle(cand.id)}
+            data-testid={`recon-cand-check-${cand.id}`}
+          />
+        )}
       </TableCell>
       <DateCell
         date={cand.date}
@@ -409,7 +424,7 @@ function CandidateOperationsPanel({
             ) : null}
           </div>
           <StatusBadge
-            kind={cand.suggested ? 'suggested' : 'pending'}
+            kind={badgeKindFor(cand, readOnly)}
             data-testid="StatusBadge__d0f4d5" />
         </div>
       </TableCell>
@@ -433,10 +448,11 @@ function CandidateOperationsPanel({
       onSearchChange={onSearchChange}
       testIdPrefix="recon-right"
       data-testid="ToolbarShell__d0f4d5">
-      <ReconciliationDocTypeFilter
-        value={docType}
-        onChange={onDocTypeChange}
-        data-testid="ReconciliationDocTypeFilter__d0f4d5" />
+      {/* Single transaction-type selector (sales/purchase invoices, receipts, payments).
+          Reconciled lines are read-only, so it is hidden there. */}
+      {readOnly ? null : (
+        <ReconciliationSourceFilter value={source} onChange={onSourceChange} counts={sourceCounts} />
+      )}
       <DateRangePopover
         value={dateRange}
         onChange={onDateRangeChange}
@@ -498,7 +514,9 @@ function ReconciliationActionBar({
         <button
           type="button"
           onClick={onReconcile}
-          disabled={!canReconcile || busy || isReconciledLine}
+          // A reconciled line shows an enabled "Reactivar" button (the action lands in a
+          // follow-up task); a pending line gates "Conciliar" on a balanced selection.
+          disabled={busy || (isReconciledLine ? false : !canReconcile)}
           data-testid="recon-action-reconcile"
           className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[#121217] px-3 text-sm font-medium text-white hover:bg-[#FFD500] hover:text-[#121217] disabled:cursor-not-allowed disabled:bg-[#D1D4DB] disabled:text-white disabled:hover:bg-[#D1D4DB] disabled:hover:text-white"
         >
@@ -532,7 +550,7 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
   const [leftStatus, setLeftStatus] = useState('pending');
   const [leftDateRange, setLeftDateRange] = useState({ presetId: 'last30' });
   const [leftSearch, setLeftSearch] = useState('');
-  const [rightDocType, setRightDocType] = useState(null);
+  const [rightSource, setRightSource] = useState('receipts');
   const [rightDateRange, setRightDateRange] = useState({ presetId: 'last30' });
   const [rightSearch, setRightSearch] = useState('');
   const [selectedLine, setSelectedLine] = useState(null);
@@ -546,12 +564,23 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
       dateFrom: toDateParam(leftBounds.from),
       dateTo: toDateParam(leftBounds.to),
     });
-  const { candidates, loading: candLoading } =
-    useCandidateOperations(accountId, selectedLine?.id ?? null, rightDocType);
+  const sourceMeta = SOURCE_META[rightSource] ?? SOURCE_META.receipts;
+  const invoiceMode = sourceMeta.kind === 'invoices';
+  const { candidates, counts: sourceCounts, loading: candLoading } = useCandidateOperations(
+    accountId, selectedLine?.id ?? null, sourceMeta.docType,
+    invoiceMode ? 'invoices' : null,
+    toDateParam(rightBounds.from), toDateParam(rightBounds.to));
   const { reconcile, loading: reconciling } = useReconcileGroup();
 
   const selectLine = (line) => {
     setSelectedLine(line);
+    setSelectedOpIds(new Set());
+    // Default the type selector to the matching transaction direction for the line.
+    setRightSource((Number(line?.amount) || 0) < 0 ? 'payments' : 'receipts');
+  };
+
+  const changeSource = (next) => {
+    setRightSource(next);
     setSelectedOpIds(new Set());
   };
 
@@ -586,16 +615,16 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
   );
 
   const visibleCandidates = useMemo(() => {
+    // A reconciled line is read-only: the backend already returns ONLY its linked movement(s),
+    // so show them verbatim without the sign/date/search filters meant for picking candidates.
+    if (selectedLine?.status === 'reconciled') return candidates;
     const q = rightSearch.trim().toLowerCase();
-    const filtered = candidates.filter((c) => {
-      if (rightBounds.from || rightBounds.to) {
-        const d = new Date(c.date);
-        if (rightBounds.from && d < rightBounds.from) return false;
-        if (rightBounds.to && d > rightBounds.to) return false;
-      }
-      if (!q) return true;
-      return [c.documentNo, c.partnerName].some((v) => (v || '').toLowerCase().includes(q));
-    });
+    // Direction AND date range are applied server-side (so the type counts match the list);
+    // here we only do the in-memory text search.
+    const filtered = q
+      ? candidates.filter((c) => [c.documentNo, c.partnerName]
+        .some((v) => (v || '').toLowerCase().includes(q)))
+      : candidates;
     // Float SELECTED rows to the very top, then the standard-algorithm
     // suggestions; stable within each group (so checking any row lifts it up,
     // and multiple selected rows all gather at the top).
@@ -604,13 +633,18 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
       if (sel !== 0) return sel;
       return (b.suggested ? 1 : 0) - (a.suggested ? 1 : 0);
     });
-  }, [candidates, rightBounds.from, rightBounds.to, rightSearch, selectedOpIds]);
+  }, [candidates, rightSearch, selectedOpIds, selectedLine]);
 
   // Pre-select the candidates the standard algorithm suggests, so a clean match
   // is one click away. Depends on the line id + loading state (not the candidates
   // array reference) to avoid an infinite loop when the hook returns a new array
   // reference on every render (common in tests and after background refreshes).
   useEffect(() => {
+    // A reconciled line is read-only — nothing is selectable, so never pre-select its rows.
+    if (selectedLine?.status === 'reconciled') {
+      setSelectedOpIds(new Set());
+      return;
+    }
     setSelectedOpIds(new Set(candidates.filter((c) => c.suggested).map((c) => c.id)));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedLine?.id, candLoading]);
@@ -628,17 +662,34 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
   const lineAmount = Number(selectedLine?.amount) || 0;
   const remaining = Number((lineAmount - selectedSum).toFixed(2));
   const isReconciledLine = selectedLine?.status === 'reconciled';
+  // Invoices must COVER the line (payments are capped at the line amount). Transactions may match
+  // PART of the line — the backend splits it and leaves a remainder — as long as they run in the
+  // line's direction and do NOT exceed it (over-reconciliation is not supported).
+  const lineSign = Math.sign(lineAmount);
+  const sumSign = Math.sign(selectedSum);
+  const sameDirection = sumSign === 0 || lineSign === 0 || sumSign === lineSign;
+  const withinLine = Math.abs(selectedSum) <= Math.abs(lineAmount) + RECONCILE_TOLERANCE;
+  const balanced = invoiceMode
+    ? Math.abs(selectedSum) + RECONCILE_TOLERANCE >= Math.abs(lineAmount)
+    : (sameDirection && withinLine);
   const canReconcile =
-    !!selectedLine && selectedOpIds.size > 0 && Math.abs(remaining) <= RECONCILE_TOLERANCE && !isReconciledLine;
+    !!selectedLine && selectedOpIds.size > 0 && balanced && !isReconciledLine;
 
   const handleReconcile = async () => {
     if (!canReconcile) return;
     try {
-      await reconcile({
+      const payload = {
         financialAccountId: accountId,
         statementLineId: selectedLine.id,
-        operationIds: Array.from(selectedOpIds),
-      });
+      };
+      if (invoiceMode) {
+        payload.invoices = candidates
+          .filter((c) => selectedOpIds.has(c.id) && c.kind === 'invoice')
+          .map((c) => ({ invoiceId: c.invoiceId, scheduleId: c.scheduleId }));
+      } else {
+        payload.operationIds = Array.from(selectedOpIds);
+      }
+      await reconcile(payload);
       toast.success(ui('financeReconcileToastSuccess'));
       setSelectedLine(null);
       setSelectedOpIds(new Set());
@@ -647,6 +698,12 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
     } catch (err) {
       toast.error(err?.message || ui('financeReconcileToastError'));
     }
+  };
+
+  // Reactivate (un-reconcile) is a follow-up task; the button is live but only signals "coming
+  // soon" for now so the surface is ready without performing the action yet.
+  const handleReactivate = () => {
+    toast(ui('financeReconcileToastComingSoon'));
   };
 
   return (
@@ -677,8 +734,10 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
           bcpLocale={bcpLocale}
           selectedIds={selectedOpIds}
           onToggle={toggleOp}
-          docType={rightDocType}
-          onDocTypeChange={setRightDocType}
+          readOnly={isReconciledLine}
+          source={rightSource}
+          onSourceChange={changeSource}
+          sourceCounts={sourceCounts}
           dateRange={rightDateRange}
           onDateRangeChange={setRightDateRange}
           search={rightSearch}
@@ -693,7 +752,7 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
               reconcileCount={selectedOpIds.size}
               busy={reconciling}
               onCancel={cancelSelection}
-              onReconcile={handleReconcile}
+              onReconcile={isReconciledLine ? handleReactivate : handleReconcile}
               data-testid="ReconciliationActionBar__d0f4d5" />
           ) : null}
           data-testid="CandidateOperationsPanel__d0f4d5" />
