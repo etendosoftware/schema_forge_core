@@ -91,7 +91,14 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`${base}/goods-shipment/goodsShipmentLine?parentId=${recordId}&_startRow=0&_endRow=200`, { headers });
+        const res = await fetch(
+          `${base}/return-material-receipt/returnMaterialReceipt/_/action/availableShipmentLines`,
+          {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ shipmentId: recordId }),
+          },
+        );
         if (!res.ok || cancelled) return;
         const json = await res.json();
         if (!cancelled) setReturnLines(json?.response?.data || []);
