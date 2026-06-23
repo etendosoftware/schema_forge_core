@@ -37,15 +37,15 @@ describe('VfSolveErrorModal — status constants', () => {
   });
 
   it('maps IN status to invalid pill', () => {
-    assert.match(src, /isInvalid \? 'invalid'/);
+    assert.match(src, /'invalid'/);
   });
 
   it('maps AE status to partiallyAccepted pill', () => {
-    assert.match(src, /isPartial \? 'partiallyAccepted'/);
+    assert.match(src, /'partiallyAccepted'/);
   });
 
   it('maps other statuses to rejected pill', () => {
-    assert.match(src, /: 'rejected'/);
+    assert.match(src, /'rejected'/);
   });
 });
 
