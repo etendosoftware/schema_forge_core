@@ -219,6 +219,49 @@ function OptionPicker({ options, value, onChange, loading, ariaLabel, ui, error 
   );
 }
 
+async function saveContactData({
+  saving, bpId, hasInvoice, invDescripcionSii,
+  setDescError, setActiveTab, setSaving,
+  apiFetch, invoiceApiFetch, invoiceSpec, invoiceId,
+  invClaveTipo, name, taxID, taxIDKey, ui, onClose,
+}) {
+  if (saving || !bpId) return;
+  if (hasInvoice && !invDescripcionSii?.trim()) {
+    setDescError(true);
+    setActiveTab('invoice');
+    return;
+  }
+  setSaving(true);
+  try {
+    const saves = [
+      apiFetch(`/businessPartner/${bpId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name || null, taxID: taxID || null, oBTIKTaxIDKey: taxIDKey || null }),
+      }),
+    ];
+    if (hasInvoice) {
+      saves.push(invoiceApiFetch(`/${invoiceSpec}/header/${invoiceId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          [invoiceSpec === 'purchase-invoice' ? 'aeatsiiClaveTipoFc' : 'aeatsiiClaveTipo']: invClaveTipo || null,
+          aeatsiiDescripcionSii: invDescripcionSii || null,
+        }),
+      }));
+    }
+    const results = await Promise.all(saves);
+    if (results.every(r => r.ok)) {
+      toast.success(ui('contactDetail.saved'));
+      onClose();
+    } else {
+      toast.error(ui('contactDetail.saveError'));
+    }
+  } finally {
+    setSaving(false);
+  }
+}
+
 export default function ContactDetailModal({ open, onClose, bpId, contactsApiBase, errorCode, errorMessage, invoiceId, invoiceSpec, neoApiBase }) {
   const ui = useUI();
   const apiFetch = useApiFetch(contactsApiBase);
@@ -277,31 +320,12 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
   }, [open, bpId, invoiceId, invoiceSpec, contactsApiBase, neoApiBase, apiFetch, invoiceApiFetch, hasInvoice]);
 
   async function handleSave() {
-    if (saving || !bpId) return;
-    if (hasInvoice && !invDescripcionSii?.trim()) { setDescError(true); setActiveTab('invoice'); return; }
-    setSaving(true);
-    try {
-      const saves = [
-        apiFetch(`/businessPartner/${bpId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name || null, taxID: taxID || null, oBTIKTaxIDKey: taxIDKey || null }),
-        }),
-      ];
-      if (hasInvoice) {
-        saves.push(invoiceApiFetch(`/${invoiceSpec}/header/${invoiceId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-              [invoiceSpec === 'purchase-invoice' ? 'aeatsiiClaveTipoFc' : 'aeatsiiClaveTipo']: invClaveTipo || null,
-              aeatsiiDescripcionSii: invDescripcionSii || null,
-            }),
-        }));
-      }
-      const results = await Promise.all(saves);
-      if (results.every(r => r.ok)) { toast.success(ui('contactDetail.saved')); onClose(); }
-      else { toast.error(ui('contactDetail.saveError')); }
-    } finally { setSaving(false); }
+    await saveContactData({
+      saving, bpId, hasInvoice, invDescripcionSii,
+      setDescError, setActiveTab, setSaving,
+      apiFetch, invoiceApiFetch, invoiceSpec, invoiceId,
+      invClaveTipo, name, taxID, taxIDKey, ui, onClose,
+    });
   }
 
   async function reloadLocation() {
@@ -312,6 +336,7 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
   if (!open) return null;
 
   const addressText = formatAddress(location);
+  const siiTipoOptions = invoiceSpec === 'purchase-invoice' ? SII_TIPO_OPTIONS_PURCHASE : SII_TIPO_OPTIONS_SALES;
 
   const tabStyle = (id) => ({
     flex: 1, textAlign: 'center', padding: '5px 16px', fontSize: 14,
@@ -451,7 +476,7 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
 
                   <CfgField label={ui('contactDetail.siiInvoiceType')}>
                     <OptionPicker
-                      options={invoiceSpec === 'purchase-invoice' ? SII_TIPO_OPTIONS_PURCHASE : SII_TIPO_OPTIONS_SALES}
+                      options={siiTipoOptions}
                       value={invClaveTipo}
                       onChange={v => { setInvClaveTipo(v); setIsDirty(true); }}
                       ariaLabel={ui('contactDetail.siiInvoiceType')}

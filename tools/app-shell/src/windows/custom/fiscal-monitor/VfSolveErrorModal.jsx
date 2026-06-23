@@ -10,6 +10,33 @@ import '../fiscal-models/fiscal-models.css';
 const STATUS_IN = 'IN';
 const STATUS_AE = 'AE';
 
+function getPillStatus(isInvalid, isPartial) {
+  if (isInvalid) return 'invalid';
+  if (isPartial) return 'partiallyAccepted';
+  return 'rejected';
+}
+
+function getVfTitle(isSingle, isInvalid, isPartial, ui) {
+  if (isSingle) {
+    if (isInvalid) return ui('vfSolveError.invalid.title');
+    if (isPartial) return ui('vfSolveError.partial.title');
+    return ui('vfSolveError.rejected.title');
+  }
+  return isInvalid ? ui('vfSolveError.invalid.titleMulti') : ui('vfSolveError.partial.titleMulti');
+}
+
+function getDescription(isInvalid, isPartial, ui) {
+  if (isInvalid) return ui('vfSolveError.invalid.description');
+  if (isPartial) return ui('vfSolveError.partial.description');
+  return ui('vfSolveError.rejected.description');
+}
+
+function getActionLabel(isInvalid, isPartial, ui) {
+  if (isInvalid) return ui('vfSolveError.invalid.action');
+  if (isPartial) return ui('vfSolveError.partial.action');
+  return null;
+}
+
 export default function VfSolveErrorModal({ open, onClose, rows, neoApiBase, onResolved }) {
   const ui = useUI();
   const apiFetch = useApiFetch(neoApiBase);
@@ -29,22 +56,10 @@ export default function VfSolveErrorModal({ open, onClose, rows, neoApiBase, onR
     ?? row['invoice$_identifier']?.split(/\s[–-]\s/)[0]?.trim()
     ?? '—';
 
-  const pillStatus = isInvalid ? 'invalid' : isPartial ? 'partiallyAccepted' : 'rejected';
-
-  const title = isSingle
-    ? (isInvalid ? ui('vfSolveError.invalid.title')
-      : isPartial ? ui('vfSolveError.partial.title')
-      : ui('vfSolveError.rejected.title'))
-    : (isInvalid ? ui('vfSolveError.invalid.titleMulti')
-      : ui('vfSolveError.partial.titleMulti'));
-
-  const description = isInvalid ? ui('vfSolveError.invalid.description')
-                    : isPartial ? ui('vfSolveError.partial.description')
-                    : ui('vfSolveError.rejected.description');
-
-  const actionLabel = isInvalid ? ui('vfSolveError.invalid.action')
-                    : isPartial ? ui('vfSolveError.partial.action')
-                    : null;
+  const pillStatus = getPillStatus(isInvalid, isPartial);
+  const title = getVfTitle(isSingle, isInvalid, isPartial, ui);
+  const description = getDescription(isInvalid, isPartial, ui);
+  const actionLabel = getActionLabel(isInvalid, isPartial, ui);
 
   async function handleResolve() {
     if (saving || !canResolve) return;
