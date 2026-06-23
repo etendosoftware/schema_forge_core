@@ -572,10 +572,19 @@ function generateStatusBarComponent(headerEntity, statusBarConfig) {
 
   // Build cards array literal
   const cardsLiteral = cards.map(card => {
+    // Value expression: identifier FK label | yesno conditional | numeric default
     const valueExpr = card.display === 'identifier'
       ? `(data['${card.field}$_identifier'] || data['${card.field}'] || '—')`
-      : `fmt(data.${card.field})`;
-    return `    { label: '${card.label}', value: ${valueExpr}, color: '${card.color}',  Icon: ${card.icon} },`;
+      : card.display === 'yesno'
+        ? `((data.${card.field} === true || data.${card.field} === 'Y') ? ui('${card.trueKey ?? 'postedStatus'}') : (data.${card.field} === false || data.${card.field} === 'N') ? ui('${card.falseKey ?? 'notPostedStatus'}') : '—')`
+        : `fmt(data.${card.field})`;
+    // Color expression: dynamic for yesno, static otherwise
+    const colorExpr = card.display === 'yesno'
+      ? `((data.${card.field} === true || data.${card.field} === 'Y') ? '${card.trueColor ?? 'green'}' : '${card.falseColor ?? 'orange'}')`
+      : `'${card.color}'`;
+    // Label expression: i18n key via ui() or static string
+    const labelExpr = card.labelKey ? `ui('${card.labelKey}')` : `'${card.label}'`;
+    return `    { label: ${labelExpr}, value: ${valueExpr}, color: ${colorExpr},  Icon: ${card.icon} },`;
   }).join('\n');
 
   // Build progress section

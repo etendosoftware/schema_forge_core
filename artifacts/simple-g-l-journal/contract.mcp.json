@@ -1,8 +1,8 @@
 {
-  "version": "0.11.0",
+  "version": "0.12.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-23T16:55:24.293Z",
-  "contractChecksum": "b8d1acc7d4b4e4a6",
+  "updatedAt": "2026-06-23T18:12:55.683Z",
+  "contractChecksum": "07b468ded16eb2b2",
   "apiPrediction": {
     "specName": "simple-g-l-journal",
     "baseUrl": "/sws/neo/simple-g-l-journal",
@@ -138,44 +138,6 @@
         ],
         "processId": "5BE14AA10165490A9ADEFB7532F7FA94",
         "processType": "classic"
-      },
-      {
-        "name": "posted",
-        "actionType": "documentAction",
-        "entity": "gLJournal",
-        "column": "Posted",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/{id}/action/posted",
-        "parameters": [
-          {
-            "name": "docAction",
-            "type": "string",
-            "required": true,
-            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
-          }
-        ],
-        "preconditions": [
-          {
-            "field": "documentStatus",
-            "operator": "in",
-            "values": [
-              "DR",
-              "IP"
-            ],
-            "description": "Document must be in draft or in-progress state"
-          }
-        ],
-        "effects": [
-          "Updates document status",
-          "May trigger workflow transitions"
-        ],
-        "dryRunSupported": true,
-        "edgeCases": [
-          "Document is already completed or closed",
-          "Document has pending lines or missing required fields",
-          "User lacks permission to execute the action"
-        ]
       },
       {
         "name": "processNow",
@@ -326,6 +288,11 @@
             "required": true,
             "readOnlyLogic": "@Processed@='Y'",
             "defaultValue": "N"
+          },
+          "posted": {
+            "readOnly": true,
+            "required": true,
+            "defaultValue": "N"
           }
         }
       },
@@ -374,7 +341,9 @@
         }
       }
     },
-    "requiredSessionVariables": [],
+    "requiredSessionVariables": [
+      "#ShowAcct"
+    ],
     "evaluationMode": "runtime"
   },
   "agentProfile": {
@@ -404,7 +373,6 @@
     "selectorContexts": [],
     "actions": [
       "documentAction",
-      "posted",
       "processNow",
       "etblkpBulkposting"
     ],
@@ -457,5 +425,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "f42a7eb13df4c1b9"
+  "checksum": "f001a0c221f215e9"
 }

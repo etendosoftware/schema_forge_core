@@ -33,6 +33,21 @@
       "processValue": "CO",
       "label": "complete",
       "disableWhenEmpty": true
+    },
+    "statusBar": {
+      "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+      "cards": [
+        {
+          "field": "posted",
+          "labelKey": "accountingStatus",
+          "display": "yesno",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "trueColor": "green",
+          "falseColor": "orange",
+          "icon": "BookOpen"
+        }
+      ]
     }
   },
   "entities": {
@@ -120,8 +135,26 @@
           "reason": "CurrencyRate — derived from currency/period, not user-edited."
         },
         "posted": {
-          "visibility": "system",
-          "reason": "Posting status — hidden under the hood. Posting itself is deferred to workstream D."
+          "visibility": "readOnly",
+          "reason": "Posting status — hidden under the hood. Posting itself is deferred to workstream D.",
+          "form": false,
+          "grid": true,
+          "badge": true,
+          "badgeLabels": {
+            "true": {
+              "en_US": "Posted",
+              "es_ES": "Contabilizado"
+            },
+            "false": {
+              "en_US": "Not posted",
+              "es_ES": "Sin contabilizar"
+            }
+          },
+          "badgeVariants": {
+            "true": "green",
+            "false": "orange"
+          },
+          "type": "boolean"
         },
         "documentAction": {
           "visibility": "system",

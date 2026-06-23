@@ -1,8 +1,8 @@
 {
-  "version": "0.14.0",
+  "version": "0.16.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "updatedAt": "2026-06-23T13:36:40.486Z",
-  "checksum": "9e5883e12312185e",
+  "updatedAt": "2026-06-23T18:12:55.125Z",
+  "checksum": "19fcea33f50b7f0f",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -43,6 +43,21 @@
         "documentAction": {
           "exclude": true
         }
+      },
+      "statusBar": {
+        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+        "cards": [
+          {
+            "field": "posted",
+            "labelKey": "accountingStatus",
+            "display": "yesno",
+            "trueKey": "postedStatus",
+            "falseKey": "notPostedStatus",
+            "trueColor": "green",
+            "falseColor": "orange",
+            "icon": "BookOpen"
+          }
+        ]
       },
       "salesTheme": true,
       "dateFilterKey": "movementDate",
@@ -270,11 +285,11 @@
             "apiKey": "posted",
             "column": "Posted",
             "label": "Posted",
-            "type": "button",
-            "tsType": "string",
+            "type": "boolean",
+            "tsType": "boolean",
             "visibility": "readOnly",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": false,
             "sourceRequired": true,
             "derivation": {
@@ -282,6 +297,22 @@
               "source": "'N'"
             },
             "defaultValue": "N",
+            "explicitType": true,
+            "badge": true,
+            "badgeLabels": {
+              "true": {
+                "en_US": "Posted",
+                "es_ES": "Contabilizado"
+              },
+              "false": {
+                "en_US": "Not posted",
+                "es_ES": "Sin contabilizar"
+              }
+            },
+            "badgeVariants": {
+              "true": "green",
+              "false": "orange"
+            },
             "displayLogic": {
               "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
               "evaluable": false,
@@ -673,6 +704,21 @@
           "exclude": true
         }
       },
+      "statusBar": {
+        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+        "cards": [
+          {
+            "field": "posted",
+            "labelKey": "accountingStatus",
+            "display": "yesno",
+            "trueKey": "postedStatus",
+            "falseKey": "notPostedStatus",
+            "trueColor": "green",
+            "falseColor": "orange",
+            "icon": "BookOpen"
+          }
+        ]
+      },
       "salesTheme": true,
       "dateFilterKey": "movementDate",
       "noHeaderBorder": true,
@@ -864,7 +910,7 @@
             "name": "posted",
             "apiKey": "posted",
             "column": "Posted",
-            "type": "button",
+            "type": "boolean",
             "visibility": "readOnly",
             "required": true
           },
@@ -1711,12 +1757,6 @@
       },
       {
         "entity": "goodsShipment",
-        "field": "posted",
-        "column": "Posted",
-        "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/posted"
-      },
-      {
-        "entity": "goodsShipment",
         "field": "calculateFreight",
         "column": "Calculate_Freight",
         "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/calculateFreight",
@@ -1854,14 +1894,6 @@
         "field": "invoicefromshipment",
         "runner": "node",
         "description": "Action endpoint for 'invoicefromshipment' in goodsShipment should exist"
-      },
-      {
-        "id": "t-action-endpoint-goodsShipment-posted",
-        "category": "action-endpoint",
-        "entity": "goodsShipment",
-        "field": "posted",
-        "runner": "node",
-        "description": "Action endpoint for 'posted' in goodsShipment should exist"
       },
       {
         "id": "t-action-endpoint-goodsShipment-processGoodsJava",
@@ -2251,7 +2283,7 @@
         "entity": "goodsShipment",
         "field": "posted",
         "runner": "node",
-        "description": "Field 'posted' should have type 'string' in goodsShipment"
+        "description": "Field 'posted' should have type 'boolean' in goodsShipment"
       },
       {
         "id": "t-field-type-goodsShipment-processed",
@@ -3250,9 +3282,9 @@
       }
     ],
     "summary": {
-      "total": 181,
+      "total": 180,
       "byCategory": {
-        "action-endpoint": 13,
+        "action-endpoint": 12,
         "crud-flags": 2,
         "default-value-type": 7,
         "displaylogic-evaluable": 3,
@@ -3268,7 +3300,7 @@
         "visibility": 2
       },
       "byRunner": {
-        "node": 181,
+        "node": 180,
         "junit": 0
       }
     }

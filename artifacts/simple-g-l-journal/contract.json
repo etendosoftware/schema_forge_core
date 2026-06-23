@@ -1,8 +1,8 @@
 {
-  "version": "0.11.0",
+  "version": "0.13.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-23T16:55:24.293Z",
-  "checksum": "b8d1acc7d4b4e4a6",
+  "updatedAt": "2026-06-23T18:12:55.683Z",
+  "checksum": "07b468ded16eb2b2",
   "frontendContract": {
     "window": {
       "id": "B917E8A7B0864ACEA9D941E3B7494E53",
@@ -29,6 +29,21 @@
           "destructive": true
         }
       ],
+      "statusBar": {
+        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+        "cards": [
+          {
+            "field": "posted",
+            "labelKey": "accountingStatus",
+            "display": "yesno",
+            "trueKey": "postedStatus",
+            "falseKey": "notPostedStatus",
+            "trueColor": "green",
+            "falseColor": "orange",
+            "icon": "BookOpen"
+          }
+        ]
+      },
       "layoutType": "default",
       "balanceFooter": {
         "debitField": "foreignCurrencyDebit",
@@ -89,7 +104,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -195,6 +210,46 @@
               "evaluable": true,
               "js": "record['processed'] === true"
             }
+          },
+          {
+            "name": "posted",
+            "apiKey": "posted",
+            "column": "Posted",
+            "label": "Posted",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
+            },
+            "defaultValue": "N",
+            "explicitType": true,
+            "badge": true,
+            "badgeLabels": {
+              "true": {
+                "en_US": "Posted",
+                "es_ES": "Contabilizado"
+              },
+              "false": {
+                "en_US": "Not posted",
+                "es_ES": "Sin contabilizar"
+              }
+            },
+            "badgeVariants": {
+              "true": "green",
+              "false": "orange"
+            },
+            "displayLogic": {
+              "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
+              "evaluable": false,
+              "reason": "session-preference",
+              "js": null
+            }
           }
         ],
         "searchableFields": [
@@ -241,6 +296,13 @@
             "derivation": {
               "type": "computed",
               "source": "N"
+            }
+          },
+          {
+            "name": "posted",
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
             }
           }
         ],
@@ -444,7 +506,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -468,7 +530,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -492,7 +554,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -516,7 +578,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           }
         ],
@@ -573,6 +635,21 @@
           "destructive": true
         }
       ],
+      "statusBar": {
+        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+        "cards": [
+          {
+            "field": "posted",
+            "labelKey": "accountingStatus",
+            "display": "yesno",
+            "trueKey": "postedStatus",
+            "falseKey": "notPostedStatus",
+            "trueColor": "green",
+            "falseColor": "orange",
+            "icon": "BookOpen"
+          }
+        ]
+      },
       "balanceFooter": {
         "debitField": "foreignCurrencyDebit",
         "creditField": "foreignCurrencyCredit"
@@ -724,8 +801,8 @@
             "name": "posted",
             "apiKey": "posted",
             "column": "Posted",
-            "type": "button",
-            "visibility": "system",
+            "type": "boolean",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -1455,12 +1532,6 @@
       },
       {
         "entity": "gLJournal",
-        "field": "posted",
-        "column": "Posted",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/{id}/action/posted"
-      },
-      {
-        "entity": "gLJournal",
         "field": "processNow",
         "column": "Processing",
         "url": "/sws/neo/simple-g-l-journal/gLJournal/{id}/action/processNow"
@@ -1516,14 +1587,6 @@
         "field": "etblkpBulkposting",
         "runner": "node",
         "description": "Action endpoint for 'etblkpBulkposting' in gLJournal should exist"
-      },
-      {
-        "id": "t-action-endpoint-gLJournal-posted",
-        "category": "action-endpoint",
-        "entity": "gLJournal",
-        "field": "posted",
-        "runner": "node",
-        "description": "Action endpoint for 'posted' in gLJournal should exist"
       },
       {
         "id": "t-action-endpoint-gLJournal-processNow",
@@ -1604,6 +1667,14 @@
         "description": "Default value for 'period' in gLJournal should be a string"
       },
       {
+        "id": "t-default-value-type-gLJournal-posted",
+        "category": "default-value-type",
+        "entity": "gLJournal",
+        "field": "posted",
+        "runner": "node",
+        "description": "Default value for 'posted' in gLJournal should be a string"
+      },
+      {
         "id": "t-default-value-type-gLJournalLine-description",
         "category": "default-value-type",
         "entity": "gLJournalLine",
@@ -1626,6 +1697,14 @@
         "field": "openItems",
         "runner": "node",
         "description": "Default value for 'openItems' in gLJournalLine should be a string"
+      },
+      {
+        "id": "t-displaylogic-evaluable-gLJournal-posted",
+        "category": "displaylogic-evaluable",
+        "entity": "gLJournal",
+        "field": "posted",
+        "runner": "node",
+        "description": "Display logic for 'posted' in gLJournal should have evaluable flag"
       },
       {
         "id": "t-displaylogic-evaluable-gLJournalLine-accountingCombination",
@@ -1674,6 +1753,14 @@
         "field": "project",
         "runner": "node",
         "description": "Display logic for 'project' in gLJournalLine should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-gLJournal-posted",
+        "category": "displaylogic-valid",
+        "entity": "gLJournal",
+        "field": "posted",
+        "runner": "node",
+        "description": "Display logic for 'posted' in gLJournal should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-gLJournalLine-accountingCombination",
@@ -1770,6 +1857,14 @@
         "field": "period",
         "runner": "node",
         "description": "Field 'period' should be present in gLJournal"
+      },
+      {
+        "id": "t-field-presence-gLJournal-posted",
+        "category": "field-presence",
+        "entity": "gLJournal",
+        "field": "posted",
+        "runner": "node",
+        "description": "Field 'posted' should be present in gLJournal"
       },
       {
         "id": "t-field-presence-gLJournalLine-accountingCombination",
@@ -1906,6 +2001,14 @@
         "field": "period",
         "runner": "node",
         "description": "Field 'period' should have type 'string' in gLJournal"
+      },
+      {
+        "id": "t-field-type-gLJournal-posted",
+        "category": "field-type",
+        "entity": "gLJournal",
+        "field": "posted",
+        "runner": "node",
+        "description": "Field 'posted' should have type 'boolean' in gLJournal"
       },
       {
         "id": "t-field-type-gLJournalLine-accountingCombination",
@@ -3369,14 +3472,6 @@
         "description": "System field 'organization' should exist in backend but not frontend for gLJournal"
       },
       {
-        "id": "t-system-field-gLJournal-posted",
-        "category": "system-field",
-        "entity": "gLJournal",
-        "field": "posted",
-        "runner": "node",
-        "description": "System field 'posted' should exist in backend but not frontend for gLJournal"
-      },
-      {
         "id": "t-system-field-gLJournal-postingType",
         "category": "system-field",
         "entity": "gLJournal",
@@ -3752,25 +3847,25 @@
       }
     ],
     "summary": {
-      "total": 297,
+      "total": 300,
       "byCategory": {
-        "action-endpoint": 5,
+        "action-endpoint": 4,
         "crud-flags": 2,
-        "default-value-type": 9,
-        "displaylogic-evaluable": 6,
-        "displaylogic-valid": 6,
-        "field-presence": 17,
-        "field-type": 17,
+        "default-value-type": 10,
+        "displaylogic-evaluable": 7,
+        "displaylogic-valid": 7,
+        "field-presence": 18,
+        "field-type": 18,
         "readonlylogic-evaluable": 16,
         "readonlylogic-valid": 16,
         "rule-declared": 123,
         "searchable-filters": 1,
         "selector-endpoint": 8,
-        "system-field": 69,
+        "system-field": 68,
         "visibility": 2
       },
       "byRunner": {
-        "node": 297,
+        "node": 300,
         "junit": 0
       }
     }

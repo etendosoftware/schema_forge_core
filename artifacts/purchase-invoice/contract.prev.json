@@ -1,5 +1,5 @@
 {
-  "version": "0.50.0",
+  "version": "0.51.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
   "updatedAt": "2026-06-18T18:30:07.340Z",
   "checksum": "44ee4aa0cd2d1f21",
@@ -23,7 +23,8 @@
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
           "documentAction": "RE",
-          "successKey": "reactivated"
+          "successKey": "reactivated",
+          "preUnpost": true
         },
         {
           "key": "post",
@@ -33,15 +34,6 @@
           "visibleWhenFieldFalse": "posted",
           "successKey": "documentPosted",
           "visibleWhenFieldTrue": "processed"
-        },
-        {
-          "key": "unpost",
-          "label": "Unpost",
-          "labelKey": "unpost",
-          "action": "unpost",
-          "visibleWhenFieldTrue": "posted",
-          "successKey": "documentUnposted",
-          "destructive": true
         }
       ],
       "processOverrides": {},
@@ -60,6 +52,21 @@
             "toCurrency": "currency"
           }
         }
+      },
+      "statusBar": {
+        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+        "cards": [
+          {
+            "field": "posted",
+            "labelKey": "accountingStatus",
+            "display": "yesno",
+            "trueKey": "postedStatus",
+            "falseKey": "notPostedStatus",
+            "trueColor": "green",
+            "falseColor": "orange",
+            "icon": "BookOpen"
+          }
+        ]
       },
       "labelOverrides": {
         "es_ES": {
@@ -707,7 +714,7 @@
             "tsType": "string",
             "visibility": "readOnly",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": false,
             "sourceRequired": true,
             "derivation": {
@@ -715,6 +722,21 @@
               "source": "'N'"
             },
             "defaultValue": "N",
+            "badge": true,
+            "badgeLabels": {
+              "true": {
+                "en_US": "Posted",
+                "es_ES": "Contabilizado"
+              },
+              "false": {
+                "en_US": "Not posted",
+                "es_ES": "Sin contabilizar"
+              }
+            },
+            "badgeVariants": {
+              "true": "green",
+              "false": "orange"
+            },
             "displayLogic": {
               "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
               "evaluable": false,
@@ -3929,7 +3951,8 @@
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
           "documentAction": "RE",
-          "successKey": "reactivated"
+          "successKey": "reactivated",
+          "preUnpost": true
         },
         {
           "key": "post",
@@ -3939,15 +3962,6 @@
           "visibleWhenFieldFalse": "posted",
           "successKey": "documentPosted",
           "visibleWhenFieldTrue": "processed"
-        },
-        {
-          "key": "unpost",
-          "label": "Unpost",
-          "labelKey": "unpost",
-          "action": "unpost",
-          "visibleWhenFieldTrue": "posted",
-          "successKey": "documentUnposted",
-          "destructive": true
         }
       ],
       "processOverrides": {},
@@ -3966,6 +3980,21 @@
             "toCurrency": "currency"
           }
         }
+      },
+      "statusBar": {
+        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+        "cards": [
+          {
+            "field": "posted",
+            "labelKey": "accountingStatus",
+            "display": "yesno",
+            "trueKey": "postedStatus",
+            "falseKey": "notPostedStatus",
+            "trueColor": "green",
+            "falseColor": "orange",
+            "icon": "BookOpen"
+          }
+        ]
       },
       "labelOverrides": {
         "es_ES": {

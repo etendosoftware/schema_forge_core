@@ -55,6 +55,21 @@
           }
         }
       },
+      "statusBar": {
+        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+        "cards": [
+          {
+            "field": "posted",
+            "labelKey": "accountingStatus",
+            "display": "yesno",
+            "trueKey": "postedStatus",
+            "falseKey": "notPostedStatus",
+            "trueColor": "green",
+            "falseColor": "orange",
+            "icon": "BookOpen"
+          }
+        ]
+      },
       "salesTheme": true,
       "labelOverrides": {
         "es_ES": {
@@ -238,7 +253,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | (@Processed@='Y' & (@DocStatus@!'VO'))",
               "evaluable": true,
-              "js": "record['posted'] === 'Y' || (record['processed'] === true && (record['documentStatus'] !== 'VO'))"
+              "js": "record['posted'] === true || (record['processed'] === true && (record['documentStatus'] !== 'VO'))"
             }
           },
           {
@@ -507,11 +522,11 @@
             "apiKey": "posted",
             "column": "Posted",
             "label": "Posted",
-            "type": "button",
-            "tsType": "string",
+            "type": "boolean",
+            "tsType": "boolean",
             "visibility": "readOnly",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": false,
             "sourceRequired": true,
             "derivation": {
@@ -519,6 +534,22 @@
               "source": "'N'"
             },
             "defaultValue": "N",
+            "explicitType": true,
+            "badge": true,
+            "badgeLabels": {
+              "true": {
+                "en_US": "Posted",
+                "es_ES": "Contabilizado"
+              },
+              "false": {
+                "en_US": "Not posted",
+                "es_ES": "Sin contabilizar"
+              }
+            },
+            "badgeVariants": {
+              "true": "green",
+              "false": "orange"
+            },
             "displayLogic": {
               "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
               "evaluable": false,
@@ -1715,7 +1746,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           },
           {
@@ -1740,7 +1771,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           },
           {
@@ -1760,7 +1791,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           },
           {
@@ -1786,7 +1817,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           }
         ],
@@ -1855,6 +1886,21 @@
             "toCurrency": "currency"
           }
         }
+      },
+      "statusBar": {
+        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+        "cards": [
+          {
+            "field": "posted",
+            "labelKey": "accountingStatus",
+            "display": "yesno",
+            "trueKey": "postedStatus",
+            "falseKey": "notPostedStatus",
+            "trueColor": "green",
+            "falseColor": "orange",
+            "icon": "BookOpen"
+          }
+        ]
       },
       "salesTheme": true,
       "labelOverrides": {
@@ -2056,7 +2102,7 @@
             "name": "posted",
             "apiKey": "posted",
             "column": "Posted",
-            "type": "button",
+            "type": "boolean",
             "visibility": "readOnly",
             "required": true
           },
@@ -4429,12 +4475,6 @@
       },
       {
         "entity": "header",
-        "field": "posted",
-        "column": "Posted",
-        "url": "/sws/neo/sales-invoice/header/{id}/action/posted"
-      },
-      {
-        "entity": "header",
         "field": "aPRMProcessinvoice",
         "column": "EM_APRM_Processinvoice",
         "url": "/sws/neo/sales-invoice/header/{id}/action/aPRMProcessinvoice",
@@ -4776,14 +4816,6 @@
         "field": "generateTo",
         "runner": "node",
         "description": "Action endpoint for 'generateTo' in header should exist"
-      },
-      {
-        "id": "t-action-endpoint-header-posted",
-        "category": "action-endpoint",
-        "entity": "header",
-        "field": "posted",
-        "runner": "node",
-        "description": "Action endpoint for 'posted' in header should exist"
       },
       {
         "id": "t-action-endpoint-header-processNow",
@@ -6171,7 +6203,7 @@
         "entity": "header",
         "field": "posted",
         "runner": "node",
-        "description": "Field 'posted' should have type 'string' in header"
+        "description": "Field 'posted' should have type 'boolean' in header"
       },
       {
         "id": "t-field-type-header-priceList",
@@ -8749,7 +8781,7 @@
     "summary": {
       "total": 510,
       "byCategory": {
-        "action-endpoint": 26,
+        "action-endpoint": 25,
         "crud-flags": 4,
         "default-value-type": 23,
         "displaylogic-evaluable": 21,

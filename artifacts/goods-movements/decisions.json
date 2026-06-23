@@ -33,6 +33,21 @@
     "linesLayout": "inlineEditable",
     "customComponents": {
       "bottomSection": "GoodsMovementsBottomPanel"
+    },
+    "statusBar": {
+      "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+      "cards": [
+        {
+          "field": "posted",
+          "labelKey": "accountingStatus",
+          "display": "yesno",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "trueColor": "green",
+          "falseColor": "orange",
+          "icon": "BookOpen"
+        }
+      ]
     }
   },
   "entities": {

@@ -42,7 +42,22 @@
       "topbarExtra": "GoodsReceiptDraftChips"
     },
     "hideDeleteWhenComplete": true,
-    "hidePrint": true
+    "hidePrint": true,
+    "statusBar": {
+      "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+      "cards": [
+        {
+          "field": "posted",
+          "labelKey": "accountingStatus",
+          "display": "yesno",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "trueColor": "green",
+          "falseColor": "orange",
+          "icon": "BookOpen"
+        }
+      ]
+    }
   },
   "entities": {
     "header": {
@@ -167,7 +182,23 @@
         "posted": {
           "visibility": "readOnly",
           "form": false,
-          "grid": false
+          "grid": true,
+          "badge": true,
+          "badgeLabels": {
+            "true": {
+              "en_US": "Posted",
+              "es_ES": "Contabilizado"
+            },
+            "false": {
+              "en_US": "Not posted",
+              "es_ES": "Sin contabilizar"
+            }
+          },
+          "badgeVariants": {
+            "true": "green",
+            "false": "orange"
+          },
+          "type": "boolean"
         }
       }
     },

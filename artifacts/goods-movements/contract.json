@@ -1,8 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-29T19:05:48.778Z",
-  "updatedAt": "2026-06-23T13:36:40.302Z",
-  "checksum": "5bdc042e54a7a639",
+  "updatedAt": "2026-06-23T18:11:56.826Z",
+  "checksum": "b53ecb8c431c6653",
   "frontendContract": {
     "window": {
       "id": "170",
@@ -36,6 +36,21 @@
         "processNow": {
           "requiresLines": true
         }
+      },
+      "statusBar": {
+        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+        "cards": [
+          {
+            "field": "posted",
+            "labelKey": "accountingStatus",
+            "display": "yesno",
+            "trueKey": "postedStatus",
+            "falseKey": "notPostedStatus",
+            "trueColor": "green",
+            "falseColor": "orange",
+            "icon": "BookOpen"
+          }
+        ]
       },
       "statusField": "processed",
       "dateFilterKey": "movementDate",
@@ -416,6 +431,21 @@
         "processNow": {
           "requiresLines": true
         }
+      },
+      "statusBar": {
+        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+        "cards": [
+          {
+            "field": "posted",
+            "labelKey": "accountingStatus",
+            "display": "yesno",
+            "trueKey": "postedStatus",
+            "falseKey": "notPostedStatus",
+            "trueColor": "green",
+            "falseColor": "orange",
+            "icon": "BookOpen"
+          }
+        ]
       },
       "statusField": "processed",
       "dateFilterKey": "movementDate",

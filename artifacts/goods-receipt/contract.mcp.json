@@ -1,8 +1,8 @@
 {
-  "version": "0.15.0",
+  "version": "0.16.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-06-23T12:41:10.015Z",
-  "contractChecksum": "6acc486325b5cfff",
+  "updatedAt": "2026-06-23T18:12:55.043Z",
+  "contractChecksum": "f44a7716878b6f0d",
   "apiPrediction": {
     "specName": "goods-receipt",
     "baseUrl": "/sws/neo/goods-receipt",
@@ -348,44 +348,6 @@
         ],
         "processId": "49DEE812BF0545269781FCEBF2235924",
         "processType": "classic"
-      },
-      {
-        "name": "posted",
-        "actionType": "documentAction",
-        "entity": "goodsReceipt",
-        "column": "Posted",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/posted",
-        "parameters": [
-          {
-            "name": "docAction",
-            "type": "string",
-            "required": true,
-            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
-          }
-        ],
-        "preconditions": [
-          {
-            "field": "documentStatus",
-            "operator": "in",
-            "values": [
-              "DR",
-              "IP"
-            ],
-            "description": "Document must be in draft or in-progress state"
-          }
-        ],
-        "effects": [
-          "Updates document status",
-          "May trigger workflow transitions"
-        ],
-        "dryRunSupported": true,
-        "edgeCases": [
-          "Document is already completed or closed",
-          "Document has pending lines or missing required fields",
-          "User lacks permission to execute the action"
-        ]
       },
       {
         "name": "calculateFreight",
@@ -833,7 +795,6 @@
       "createLinesFrom",
       "generateTo",
       "documentAction",
-      "posted",
       "receiveMaterials",
       "sendMaterials",
       "etblkpBulkposting"
@@ -887,5 +848,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "ff6973594bbe02de"
+  "checksum": "fc78652a77337d78"
 }

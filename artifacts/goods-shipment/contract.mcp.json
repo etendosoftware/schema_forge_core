@@ -1,8 +1,8 @@
 {
-  "version": "0.14.0",
+  "version": "0.15.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "updatedAt": "2026-06-23T12:41:10.258Z",
-  "contractChecksum": "9e5883e12312185e",
+  "updatedAt": "2026-06-23T18:12:55.125Z",
+  "contractChecksum": "19fcea33f50b7f0f",
   "apiPrediction": {
     "specName": "goods-shipment",
     "baseUrl": "/sws/neo/goods-shipment",
@@ -164,44 +164,6 @@
         ],
         "processId": "109",
         "processType": "classic"
-      },
-      {
-        "name": "posted",
-        "actionType": "documentAction",
-        "entity": "goodsShipment",
-        "column": "Posted",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/posted",
-        "parameters": [
-          {
-            "name": "docAction",
-            "type": "string",
-            "required": true,
-            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
-          }
-        ],
-        "preconditions": [
-          {
-            "field": "documentStatus",
-            "operator": "in",
-            "values": [
-              "DR",
-              "IP"
-            ],
-            "description": "Document must be in draft or in-progress state"
-          }
-        ],
-        "effects": [
-          "Updates document status",
-          "May trigger workflow transitions"
-        ],
-        "dryRunSupported": true,
-        "edgeCases": [
-          "Document is already completed or closed",
-          "Document has pending lines or missing required fields",
-          "User lacks permission to execute the action"
-        ]
       },
       {
         "name": "calculateFreight",
@@ -564,7 +526,6 @@
     "actions": [
       "createLinesFrom",
       "documentAction",
-      "posted",
       "generateTo",
       "receiveMaterials",
       "sendMaterials",
@@ -617,5 +578,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "ce40551326b27885"
+  "checksum": "126b26c4d7f9c2ba"
 }

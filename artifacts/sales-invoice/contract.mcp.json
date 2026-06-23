@@ -267,44 +267,6 @@
         "processType": "obuiapp"
       },
       {
-        "name": "posted",
-        "actionType": "documentAction",
-        "entity": "header",
-        "column": "Posted",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/sales-invoice/header/{id}/action/posted",
-        "parameters": [
-          {
-            "name": "docAction",
-            "type": "string",
-            "required": true,
-            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
-          }
-        ],
-        "preconditions": [
-          {
-            "field": "documentStatus",
-            "operator": "in",
-            "values": [
-              "DR",
-              "IP"
-            ],
-            "description": "Document must be in draft or in-progress state"
-          }
-        ],
-        "effects": [
-          "Updates document status",
-          "May trigger workflow transitions"
-        ],
-        "dryRunSupported": true,
-        "edgeCases": [
-          "Document is already completed or closed",
-          "Document has pending lines or missing required fields",
-          "User lacks permission to execute the action"
-        ]
-      },
-      {
         "name": "aPRMProcessinvoice",
         "actionType": "paymentAction",
         "entity": "header",
@@ -1313,7 +1275,6 @@
       }
     ],
     "actions": [
-      "posted",
       "documentAction",
       "createLinesFromOrder",
       "createLinesFromShipment",
@@ -1374,7 +1335,7 @@
       {
         "operation": "completeDocument",
         "description": "Validate form state and run the document lifecycle action when the draft is complete.",
-        "action": "posted"
+        "action": "documentAction"
       }
     ],
     "warnings": [],

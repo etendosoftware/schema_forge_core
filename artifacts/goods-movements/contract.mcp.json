@@ -2,7 +2,7 @@
   "version": "0.4.0",
   "generatedAt": "2026-04-29T19:05:48.778Z",
   "updatedAt": "2026-06-23T00:17:54.641Z",
-  "contractChecksum": "5bdc042e54a7a639",
+  "contractChecksum": "b53ecb8c431c6653",
   "apiPrediction": {
     "specName": "goods-movements",
     "baseUrl": "/sws/neo/goods-movements",

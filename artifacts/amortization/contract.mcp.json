@@ -1,8 +1,8 @@
 {
-  "version": "0.23.0",
+  "version": "0.25.0",
   "generatedAt": "2026-05-22T16:00:10.872Z",
-  "updatedAt": "2026-06-23T13:49:00.270Z",
-  "contractChecksum": "bd4333c839741659",
+  "updatedAt": "2026-06-23T18:12:54.866Z",
+  "contractChecksum": "225d505bb49b8bdf",
   "apiPrediction": {
     "specName": "amortization",
     "baseUrl": "/sws/neo/amortization",
@@ -146,44 +146,6 @@
         ],
         "processId": "800134",
         "processType": "classic"
-      },
-      {
-        "name": "posted",
-        "actionType": "documentAction",
-        "entity": "header",
-        "column": "Posted",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/amortization/header/{id}/action/posted",
-        "parameters": [
-          {
-            "name": "docAction",
-            "type": "string",
-            "required": true,
-            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
-          }
-        ],
-        "preconditions": [
-          {
-            "field": "documentStatus",
-            "operator": "in",
-            "values": [
-              "DR",
-              "IP"
-            ],
-            "description": "Document must be in draft or in-progress state"
-          }
-        ],
-        "effects": [
-          "Updates document status",
-          "May trigger workflow transitions"
-        ],
-        "dryRunSupported": true,
-        "edgeCases": [
-          "Document is already completed or closed",
-          "Document has pending lines or missing required fields",
-          "User lacks permission to execute the action"
-        ]
       },
       {
         "name": "etblkpBulkposting",
@@ -402,7 +364,6 @@
     },
     "selectorContexts": [],
     "actions": [
-      "posted",
       "etblkpBulkposting"
     ],
     "workflow": [
@@ -443,12 +404,12 @@
       {
         "operation": "completeDocument",
         "description": "Validate form state and run the document lifecycle action when the draft is complete.",
-        "action": "posted"
+        "action": "etblkpBulkposting"
       }
     ],
     "warnings": [],
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "01b21d40e30de268"
+  "checksum": "0f8630a068d50710"
 }

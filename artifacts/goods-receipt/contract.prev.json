@@ -1,8 +1,8 @@
 {
-  "version": "0.15.0",
+  "version": "0.16.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-06-23T13:36:40.394Z",
-  "checksum": "6acc486325b5cfff",
+  "updatedAt": "2026-06-23T18:11:56.917Z",
+  "checksum": "99b424f9a19b2848",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -37,6 +37,21 @@
           "destructive": true
         }
       ],
+      "statusBar": {
+        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+        "cards": [
+          {
+            "field": "posted",
+            "labelKey": "accountingStatus",
+            "display": "yesno",
+            "trueKey": "postedStatus",
+            "falseKey": "notPostedStatus",
+            "trueColor": "green",
+            "falseColor": "orange",
+            "icon": "BookOpen"
+          }
+        ]
+      },
       "dateFilterKey": "movementDate",
       "noHeaderBorder": true,
       "sendDocument": {
@@ -327,7 +342,7 @@
             "tsType": "string",
             "visibility": "readOnly",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": false,
             "sourceRequired": true,
             "derivation": {
@@ -335,6 +350,21 @@
               "source": "'N'"
             },
             "defaultValue": "N",
+            "badge": true,
+            "badgeLabels": {
+              "true": {
+                "en_US": "Posted",
+                "es_ES": "Contabilizado"
+              },
+              "false": {
+                "en_US": "Not posted",
+                "es_ES": "Sin contabilizar"
+              }
+            },
+            "badgeVariants": {
+              "true": "green",
+              "false": "orange"
+            },
             "displayLogic": {
               "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
               "evaluable": false,
@@ -974,6 +1004,21 @@
           "destructive": true
         }
       ],
+      "statusBar": {
+        "_note": "Accounting status card — visible to financial+admin roles only (permissions enforcement pending)",
+        "cards": [
+          {
+            "field": "posted",
+            "labelKey": "accountingStatus",
+            "display": "yesno",
+            "trueKey": "postedStatus",
+            "falseKey": "notPostedStatus",
+            "trueColor": "green",
+            "falseColor": "orange",
+            "icon": "BookOpen"
+          }
+        ]
+      },
       "dateFilterKey": "movementDate",
       "noHeaderBorder": true,
       "sendDocument": {

@@ -7,9 +7,44 @@ import AmortizationLinesTable from '@/windows/custom/amortization/AmortizationLi
 import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
+import { useUI } from '@/i18n';
+import { BookOpen } from 'lucide-react';
 import AmortizationConfirmModal from '../../../custom/AmortizationConfirmModal';
 
 const breadcrumb = 'Finance / Amortization';
+
+// @sf-generated-start statusBar:header
+function HeaderStatusBar({ data }) {
+  const ui = useUI();
+  if (!data) return null;
+  const fmt = (v) => v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+  const colorMap = {
+    blue:   { bg: 'bg-blue-100',   border: 'border-l-blue-500',    text: 'text-blue-800',    sub: 'text-blue-500',    icon: 'text-blue-500',    bar: 'bg-blue-500',    barTrack: 'bg-blue-200'    },
+    teal:   { bg: 'bg-teal-50',    border: 'border-l-teal-500',    text: 'text-teal-800',    sub: 'text-teal-500',    icon: 'text-teal-500',    bar: 'bg-teal-500',    barTrack: 'bg-teal-200'    },
+    orange: { bg: 'bg-orange-50',  border: 'border-l-orange-500',  text: 'text-orange-700',  sub: 'text-orange-500',  icon: 'text-orange-500',  bar: 'bg-orange-500',  barTrack: 'bg-orange-200'  },
+    green:  { bg: 'bg-emerald-50', border: 'border-l-emerald-500', text: 'text-emerald-800', sub: 'text-emerald-500', icon: 'text-emerald-500', bar: 'bg-emerald-500', barTrack: 'bg-emerald-200' },
+  };
+  const cards = [
+    { label: ui('accountingStatus'), value: ((data.posted === true || data.posted === 'Y') ? ui('postedStatus') : (data.posted === false || data.posted === 'N') ? ui('notPostedStatus') : '—'), color: ((data.posted === true || data.posted === 'Y') ? 'green' : 'orange'),  Icon: BookOpen },
+  ];
+  return (
+    <div className="flex flex-wrap gap-3 pt-2 pb-3 mb-2 border-b border-gray-100">
+      {cards.map(({ label, value, color, Icon }) => {
+        const c = colorMap[color];
+        return (
+          <div key={label} className={`flex items-center gap-3 ${c.bg} border-l-4 ${c.border} rounded-lg px-4 py-2.5 min-w-[160px]`}>
+            <Icon size={18} className={c.icon} />
+            <div>
+              <div className={`text-lg font-semibold leading-tight ${c.text}`}>{value}</div>
+              <div className={`text-xs ${c.sub} mt-0.5`}>{ui(label)}</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+// @sf-generated-end statusBar:header
 
 
 // @sf-generated-start summary:header
@@ -201,12 +236,6 @@ export const api = {
     },
     {
       "entity": "header",
-      "field": "posted",
-      "column": "Posted",
-      "url": "/sws/neo/amortization/header/{id}/action/posted"
-    },
-    {
-      "entity": "header",
       "field": "etblkpBulkposting",
       "column": "EM_Etblkp_Bulkposting",
       "url": "/sws/neo/amortization/header/{id}/action/etblkpBulkposting",
@@ -312,6 +341,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         ]}
         draftMode={draftModeWithConfirm}
         requiredHeaderFields={requiredHeaderFields}
+        headerContent={(data) => <HeaderStatusBar data={data} />}
         titleField="name"
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
