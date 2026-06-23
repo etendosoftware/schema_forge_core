@@ -155,6 +155,19 @@ export function useReconcileGroup() {
 }
 
 /**
+ * Reactivates (un-reconciles) a previously reconciled statement line (POST).
+ *
+ * Undoes the reconciliation and deletes any payments auto-created by it.
+ * Payload shape: { financialAccountId, statementLineId }.
+ *
+ * @returns {{ reactivate: (payload: object) => Promise<object>, loading: boolean, error: Error|null }}
+ */
+export function useReactivateReconciliation() {
+  const { post, loading, error } = useNeoPost('reactivate');
+  return { reactivate: post, loading, error };
+}
+
+/**
  * Fetches an automatch preview for a financial account (GET, no mutations).
  *
  * @param {string|null} accountId

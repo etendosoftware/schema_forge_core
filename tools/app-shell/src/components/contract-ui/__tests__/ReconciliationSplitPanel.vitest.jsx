@@ -15,6 +15,7 @@ vi.mock('sonner', () => ({
 const linesState = { lines: [], total: 0, counts: {}, loading: false, reload: vi.fn() };
 const candidatesState = { candidates: [], loading: false };
 const reconcileState = { reconcile: vi.fn().mockResolvedValue({ reconciliationId: 'R1' }), loading: false };
+const reactivateState = { reactivate: vi.fn().mockResolvedValue({ reactivated: true }), loading: false };
 // Records the last (accountId, lineId, docType, kind) the component passed to
 // useCandidateOperations, so tests can assert the kind toggle flows through.
 const candidateCallArgs = { accountId: null, lineId: null, docType: null, kind: null };
@@ -35,6 +36,7 @@ vi.mock('@/hooks/useReconciliation', () => ({
     };
   },
   useReconcileGroup: () => reconcileState,
+  useReactivateReconciliation: () => reactivateState,
 }));
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -83,6 +85,8 @@ describe('ReconciliationSplitPanel', () => {
     candidatesState.loading = false;
     reconcileState.reconcile = vi.fn().mockResolvedValue({ reconciliationId: 'R1' });
     reconcileState.loading = false;
+    reactivateState.reactivate = vi.fn().mockResolvedValue({ reactivated: true });
+    reactivateState.loading = false;
     candidateCallArgs.accountId = null;
     candidateCallArgs.lineId = null;
     candidateCallArgs.docType = null;
@@ -519,6 +523,82 @@ describe('ReconciliationSplitPanel', () => {
       { invoiceId: 'INV-ID-B', scheduleId: 'SCH-B' },
     ]);
     await waitFor(() => expect(props.onReconcileSuccess).toHaveBeenCalled());
+  });
+
+  // ── Reactivate (un-reconcile) — T8 part 1 ─────────────────────────────────────
+
+  it('enables the "Reactivate" action only on a reconciled line', () => {
+    setLines([LINE_RECONCILED]);
+    setCandidates([CAND_MATCH]);
+    renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L3'));
+    const btn = screen.getByTestId('recon-action-reconcile');
+    expect(btn).toHaveTextContent('financeReconcileActionReactivate');
+    expect(btn).not.toBeDisabled();
+  });
+
+  it('does not show the "Reactivate" action for a pending line', () => {
+    setLines([LINE_A]);
+    setCandidates([CAND_MATCH]);
+    renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L1'));
+    const btn = screen.getByTestId('recon-action-reconcile');
+    // A pending line shows the "Conciliar" (count) label, never "Reactivar".
+    expect(btn).not.toHaveTextContent('financeReconcileActionReactivate');
+  });
+
+  it('opens the confirm dialog when "Reactivate" is clicked, without calling the endpoint', () => {
+    setLines([LINE_RECONCILED]);
+    setCandidates([CAND_MATCH]);
+    renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L3'));
+
+    // Dialog is closed before the action.
+    expect(screen.queryByTestId('recon-reactivate-dialog')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('recon-action-reconcile'));
+
+    // Dialog opens; the endpoint is NOT called yet (it requires confirmation).
+    expect(screen.getByTestId('recon-reactivate-dialog')).toBeInTheDocument();
+    expect(reactivateState.reactivate).not.toHaveBeenCalled();
+  });
+
+  it('posts the correct reactivate payload on confirm and clears selection + reloads', async () => {
+    setLines([LINE_RECONCILED]);
+    setCandidates([CAND_MATCH]);
+    const { props } = renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L3'));
+    fireEvent.click(screen.getByTestId('recon-action-reconcile'));
+
+    fireEvent.click(screen.getByTestId('recon-reactivate-confirm'));
+
+    await waitFor(() => expect(reactivateState.reactivate).toHaveBeenCalledTimes(1));
+    expect(reactivateState.reactivate).toHaveBeenCalledWith({
+      financialAccountId: 'ACC-1',
+      statementLineId: 'L3',
+    });
+    // On success: selection cleared (right panel empty again), lines reloaded, caller notified.
+    await waitFor(() => expect(screen.getByTestId('recon-right-empty')).toBeInTheDocument());
+    expect(linesState.reload).toHaveBeenCalled();
+    expect(props.onReconcileSuccess).toHaveBeenCalled();
+  });
+
+  it('does not call reactivate when the confirm dialog is cancelled', async () => {
+    setLines([LINE_RECONCILED]);
+    setCandidates([CAND_MATCH]);
+    renderPanel();
+    fireEvent.click(screen.getByTestId('recon-line-radio-L3'));
+    fireEvent.click(screen.getByTestId('recon-action-reconcile'));
+
+    expect(screen.getByTestId('recon-reactivate-dialog')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('recon-reactivate-cancel'));
+
+    // Dialog closes and the endpoint was never hit.
+    await waitFor(() =>
+      expect(screen.queryByTestId('recon-reactivate-dialog')).not.toBeInTheDocument());
+    expect(reactivateState.reactivate).not.toHaveBeenCalled();
+    // The reconciled line stays selected (read-only right panel still shown).
+    expect(screen.getByTestId('recon-line-radio-L3')).toBeChecked();
   });
 
 });
