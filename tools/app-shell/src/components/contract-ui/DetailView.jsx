@@ -639,6 +639,7 @@ export function SecondaryTableTab(props) {
                 onCancel: props.onCancel,
                 catalogs: props.catalogs,
                 seedValues: props.secondaryAddRowSeed,
+                resolvedDefaults: props.secondaryChildDefaults,
               } : undefined}
           />
         </div>
@@ -1591,6 +1592,17 @@ export function DetailView({
     return seed;
   }, [headerCurrencyId, headerCurrencyLabel]);
 
+  // HandleDefaults: once the parent record is known, fetch backend-resolved
+  // defaults for NEW lines so the add-row can pre-fill editable fields (e.g. a
+  // line description defaulting to the parent's via @DESCRIPTION1@). An entity can
+  // opt out via decisions.json `handlesDefaults: false` (surfaced on api.crud).
+  const primaryHandlesDefaults = api?.crud?.[detailEntity]?.handlesDefaults !== false;
+  const primaryFetchChildDefaults = hook.fetchChildDefaults;
+  useEffect(() => {
+    if (!primaryHandlesDefaults || !parentRecordId) return;
+    primaryFetchChildDefaults?.(parentRecordId);
+  }, [primaryHandlesDefaults, parentRecordId, primaryFetchChildDefaults]);
+
   const handleFieldBlur = useCallback(() => {
     if (!hook.editing || !hook.selected) return;
     const hasChanges = Object.entries(hook.editing).some(
@@ -1604,6 +1616,16 @@ export function DetailView({
   // Stringify secondary-tab keys so the memo is immune to the `secondaryTabs = []` default
   // recreating a new array reference on every render.
   const secondaryTabKeysStr = secondaryTabs.map(t => t?.key ?? '').join('|');
+
+  // HandleDefaults for secondary detail tabs: same as the primary, per-tab entity.
+  useEffect(() => {
+    if (!parentRecordId) return;
+    secondaryTabKeysStr.split('|').forEach((key, i) => {
+      if (!key || api?.crud?.[key]?.handlesDefaults === false) return;
+      secondaryHooks[i]?.fetchChildDefaults?.(parentRecordId);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parentRecordId, secondaryTabKeysStr]);
 
   const selectorContextByEntity = useMemo(() => {
     const category = api?.window?.category;
@@ -3134,6 +3156,7 @@ export function DetailView({
                                     ref: primaryAddRowRef,
                                     active: addingLine,
                                     fields: allEntryFields,
+                                    resolvedDefaults: hook.childDefaults,
                                     onAdd: async (lineData) => {
                                       // Send all values: entry fields + callout-derived values (tax, prices, uOM, etc.).
                                       // handleAddChild filters out internal keys (_identifier, _aux, CURSOR_FIELD, etc.)
@@ -3526,100 +3549,94 @@ export function DetailView({
                             setSecondarySelectedRows,
                           });
                           return (
-                            <div key={st.key} className={getSecondaryTabContentClassName(secondaryTabContentPaddingT, embedded)}>
-                              {st.isFormTab ? (
-                                <SecondaryFormTab
-                                  data={data}
-                                  hook={hook}
-                                  onChange={(key, val, column) => {
-                                    setSecondaryLineEdits(prev => ({...(prev ?? {}), [key]: val}));
-                                    if (column) setSecondaryLineEditColumns(prev => ({...prev, [key]: column}));
-                                  }}
-                                  st={st}
-                                  catalogs={catalogs}
-                                  token={token}
-                                  apiBaseUrl={apiBaseUrl}
-                                  selectorContextByEntity={selectorContextByEntity}
-                                  labelOverrides={labelOverrides}
-                                  data-testid="SecondaryFormTab__fa3275" />
-                              ) : st.Panel ? (
-                                <SecondaryPanelTab
-                                  st={st}
-                                  data={data}
-                                  token={token}
-                                  apiBaseUrl={apiBaseUrl}
-                                  onCount={(n) => setPanelCounts(prev => ({...prev, [st.key]: n}))}
-                                  data-testid="SecondaryPanelTab__fa3275" />
-                              ) : (
-                                <SecondaryTableTab
-                                  st={st}
-                                  stIdx={stIdx}
-                                  linesLayout={linesLayout}
-                                  secondaryInlineLinesRef={getSecondaryInlineLinesRef}
-                                  secondaryHooks={secondaryHooks}
-                                  token={token}
-                                  apiBaseUrl={apiBaseUrl}
-                                  selectorContextByEntity={selectorContextByEntity}
-                                  catalogs={catalogs}
-                                  api={api}
-                                  crud={api?.crud}
-                                  ui={ui}
-                                  hook={hook}
-                                  labelOverrides={labelOverrides}
-                                  extractErrorMessage={extractErrorMessage}
-                                  enableSecondaryRowDelete={enableSecondaryRowDelete}
-                                  selectedSecondaryLine={selectedSecondaryLine}
-                                  secondaryLineEdits={secondaryLineEdits}
-                                  closingSecondaryLine={isClosingSecondaryLine}
-                                  addingSecondaryLine={addingSecondaryLine}
-                                  savingLine={savingSecondaryLine}
-                                  secondaryAddRowRef={getSecondaryAddRowRef(st.key)}
-                                  secondaryAddRowSeed={secondaryAddRowSeed}
-                                  secondaryAddLineWrapperRef={getSecondaryAddLineWrapperRef(st.key)}
-                                  hideChevron={hideAddLineChevron}
-                                  secondaryBarVisible={secondaryBarVisible}
-                                  secondaryBarClosing={secondaryBarClosing}
-                                  secondaryBarRects={secondaryBarRects}
-                                  secondaryDeleting={secondaryDeleting}
-                                  secondarySelectedRows={secondarySelectedRows}
-                                  setSecondarySelectedRows={setSecondarySelectedRows}
-                                  setCustomModalState={setCustomModalState}
-                                  detailPanelTitle={ui('entityDetail', {label: tMenu(st.label)})}
-                                  addLineLabel={ui('addEntity', {label: tMenu(st.label)})}
-                                  selectedLabel={ui('selected', {count: (secondarySelectedRows[st.key] ?? []).length})}
-                                  loadingLabel={ui('loading')}
-                                  saveLabel={ui('save')}
-                                  discardLabel={ui('discard')}
-                                  deleteLabel={ui('delete')}
-                                  closeTitle={ui('close')}
-                                  openCustomModal={(row) => setCustomModalState({key: st.key, rowId: row.id})}
-                                  openSecondaryLine={(row) => {
-                                    setSelectedSecondaryLine({...row, _tabKey: st.key});
-                                    setSecondaryLineEdits(null);
-                                  }}
-                                  onDeleteRow={(row) => setSecondaryDeleteConfirm({tabKey: st.key, tabIndex: stIdx, id: row.id})}
-                                  onCloseDetailPanel={closeSecondaryLine}
-                                  onChange={(key, val, column) => {
-                                    setSecondaryLineEdits(prev => ({...(prev ?? selectedSecondaryLine), [key]: val}));
-                                    if (column) setSecondaryLineEditColumns(prev => ({...prev, [key]: column}));
-                                  }}
-                                  onAdd={secondaryLineHandlers.onAdd}
-                                  onCancel={() => setAddingSecondaryLine(prev => ({...prev, [st.key]: false}))}
-                                  onAddLineClick={() => runAddLineAction(st, {
-                                    handleCustomModalAddClick,
-                                    handleSecondaryAddLineToggle,
-                                  })}
-                                  onSaveLine={secondaryLineHandlers.onSaveLine}
-                                  onDiscardLine={() => setSecondaryLineEdits(null)}
-                                  onDeleteLine={() => setSecondaryDeleteConfirm({tabKey: st.key, tabIndex: stIdx, id: selectedSecondaryLine.id})}
-                                  onDelete={secondaryLineHandlers.onDelete}
-                                  onClose={() => {
-                                    secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
-                                    setSecondarySelectedRows(prev => ({...prev, [st.key]: []}));
-                                  }}
-                                  data-testid="SecondaryTableTab__fa3275" />
-                              )}
-                            </div>
+                          <div key={st.key} className={getSecondaryTabContentClassName(secondaryTabContentPaddingT, embedded)}>
+                            {(() => {
+                              if (st.isFormTab) return (
+                              <SecondaryFormTab data={data} hook={hook} onChange={(key, val, column) => {
+                                setSecondaryLineEdits(prev => ({...(prev ?? {}), [key]: val}));
+                                if (column) setSecondaryLineEditColumns(prev => ({...prev, [key]: column}));
+                              }} st={st} catalogs={catalogs} token={token} apiBaseUrl={apiBaseUrl}
+                                                selectorContextByEntity={selectorContextByEntity}
+                                                labelOverrides={labelOverrides}
+                                                data-testid="SecondaryFormTab__fa3275" />
+                            );
+                              if (st.Panel) return (
+                              <SecondaryPanelTab st={st} data={data} token={token} apiBaseUrl={apiBaseUrl}
+                                                 onCount={(n) => setPanelCounts(prev => ({...prev, [st.key]: n}))}
+                                                 data-testid="SecondaryPanelTab__fa3275" />
+                            );
+                              return (
+                              <SecondaryTableTab
+                                st={st}
+                                stIdx={stIdx}
+                                linesLayout={linesLayout}
+                                secondaryInlineLinesRef={getSecondaryInlineLinesRef}
+                                secondaryHooks={secondaryHooks}
+                                token={token}
+                                apiBaseUrl={apiBaseUrl}
+                                selectorContextByEntity={selectorContextByEntity}
+                                catalogs={catalogs}
+                                api={api}
+                                crud={api?.crud}
+                                ui={ui}
+                                hook={hook}
+                                labelOverrides={labelOverrides}
+                                extractErrorMessage={extractErrorMessage}
+                                enableSecondaryRowDelete={enableSecondaryRowDelete}
+                                selectedSecondaryLine={selectedSecondaryLine}
+                                secondaryLineEdits={secondaryLineEdits}
+                                closingSecondaryLine={isClosingSecondaryLine}
+                                addingSecondaryLine={addingSecondaryLine}
+                                savingLine={savingSecondaryLine}
+                                secondaryAddRowRef={getSecondaryAddRowRef(st.key)}
+                                secondaryAddRowSeed={secondaryAddRowSeed}
+                                secondaryChildDefaults={secondaryHooks[stIdx]?.childDefaults}
+                                secondaryAddLineWrapperRef={getSecondaryAddLineWrapperRef(st.key)}
+                                hideChevron={hideAddLineChevron}
+                                secondaryBarVisible={secondaryBarVisible}
+                                secondaryBarClosing={secondaryBarClosing}
+                                secondaryBarRects={secondaryBarRects}
+                                secondaryDeleting={secondaryDeleting}
+                                secondarySelectedRows={secondarySelectedRows}
+                                setSecondarySelectedRows={setSecondarySelectedRows}
+                                setCustomModalState={setCustomModalState}
+                                detailPanelTitle={ui('entityDetail', {label: tMenu(st.label)})}
+                                addLineLabel={ui('addEntity', {label: tMenu(st.label)})}
+                                selectedLabel={ui('selected', {count: (secondarySelectedRows[st.key] ?? []).length})}
+                                loadingLabel={ui('loading')}
+                                saveLabel={ui('save')}
+                                discardLabel={ui('discard')}
+                                deleteLabel={ui('delete')}
+                                closeTitle={ui('close')}
+                                openCustomModal={(row) => setCustomModalState({key: st.key, rowId: row.id})}
+                                openSecondaryLine={(row) => {
+                                  setSelectedSecondaryLine({...row, _tabKey: st.key});
+                                  setSecondaryLineEdits(null);
+                                }}
+                                onDeleteRow={(row) => setSecondaryDeleteConfirm({tabKey: st.key, tabIndex: stIdx, id: row.id})}
+                                onCloseDetailPanel={closeSecondaryLine}
+                                onChange={(key, val, column) => {
+                                  setSecondaryLineEdits(prev => ({...(prev ?? selectedSecondaryLine), [key]: val}));
+                                  if (column) setSecondaryLineEditColumns(prev => ({...prev, [key]: column}));
+                                }}
+                                onAdd={secondaryLineHandlers.onAdd}
+                                onCancel={() => setAddingSecondaryLine(prev => ({...prev, [st.key]: false}))}
+                                onAddLineClick={() => runAddLineAction(st, {
+                                  handleCustomModalAddClick,
+                                  handleSecondaryAddLineToggle,
+                                })}
+                                onSaveLine={secondaryLineHandlers.onSaveLine}
+                                onDiscardLine={() => setSecondaryLineEdits(null)}
+                                onDeleteLine={() => setSecondaryDeleteConfirm({tabKey: st.key, tabIndex: stIdx, id: selectedSecondaryLine.id})}
+                                onDelete={secondaryLineHandlers.onDelete}
+                                onClose={() => {
+                                  secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
+                                  setSecondarySelectedRows(prev => ({...prev, [st.key]: []}));
+                                }}
+                                data-testid="SecondaryTableTab__fa3275" />
+                            );
+                            })()}
+                          </div>
                           );
                         })}
 

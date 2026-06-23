@@ -147,6 +147,7 @@ describe('useFiscalAutoCompute — sessionStorage cache', () => {
       useFiscalAutoCompute(DECL_A_LIST, makeOpts({ computeFn, checkModifiedFn }))
     );
 
+    await waitFor(() => expect(computeFn).toHaveBeenCalled());
     await waitFor(() =>
       expect(result.current.computedMap[DECL_A.id]).toMatchObject({ boxes: freshBoxes })
     );
@@ -161,6 +162,7 @@ describe('useFiscalAutoCompute — sessionStorage cache', () => {
       useFiscalAutoCompute(DECL_A_LIST, makeOpts({ computeFn, checkModifiedFn }))
     );
 
+    await waitFor(() => expect(computeFn).toHaveBeenCalled());
     await waitFor(() =>
       expect(result.current.computedMap[DECL_A.id]).toMatchObject({ summary: SUMMARY })
     );

@@ -71,8 +71,7 @@ describe('ListFilterBar', () => {
 
   it('renders the advanced filter (funnel) button', () => {
     render(<ListFilterBar columns={COLUMNS} />);
-    // The funnel button has title from ui('advancedFilters')
-    const funnelBtn = screen.getByTitle('advancedFilters');
+    const funnelBtn = screen.getByTestId('filter-advanced');
     expect(funnelBtn).toBeInTheDocument();
   });
 

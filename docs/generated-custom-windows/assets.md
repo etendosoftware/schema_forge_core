@@ -189,3 +189,24 @@ Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functio
   - **PATCH (partial update)**: fires whenever either source field is in the diff body. The missing field is loaded from the persisted record via `OBDal.getInstance().get(Asset.class, recordId)`, so single-field edits (e.g., only changing `usableLifeMonths`) still trigger a recompute.
   - Date arithmetic uses `java.time.LocalDate.plusMonths()`. The persisted `Date` is formatted via `SimpleDateFormat("yyyy-MM-dd")` (consistent with the rest of the module; avoids `java.sql.Date.toInstant()` which throws `UnsupportedOperationException`).
   - `depreciationEndDate` must remain `visibility: editable` in the spec — if reclassified to `readOnly`, the PATCH write is filtered by `NeoFieldFilter.filterWriteRequest` and the recompute silently stops persisting. Move the write to `afterHandle()` if that classification ever changes.
+
+## ETP-4232 — businessCritical advisory flag on depreciation fields
+
+### What changed
+
+- `decisions.json`: 12 fields marked `businessCritical: true` — these are the fields
+  an AI agent must confirm with the user before creating or updating an asset, because
+  they represent business or fiscal decisions that the ERP cannot infer automatically:
+  `assetCategory`, `depreciationType`, `calculateType`, `annualDepreciation`,
+  `amortize`, `usableLifeYears`, `usableLifeMonths`, `depreciationStartDate`,
+  `assetValue`, `residualAssetValue`, `depreciationAmt`, `previouslyDepreciatedAmt`.
+- `contract.json` and `contract.mcp.json` regenerated to reflect the flag.
+
+### What this does NOT change
+
+- No UI behavior is affected. The flag is advisory metadata only: it surfaces in the
+  `neo_schema` MCP response (`businessCritical: true/false` per field) so that AI
+  agents know which fields to ask for explicitly. The window renders identically.
+- `depreciationEndDate` is intentionally excluded — it is auto-computed by
+  `AssetsHandler` from `depreciationStartDate + usableLifeMonths` and should not be
+  requested from the user.

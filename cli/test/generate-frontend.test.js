@@ -737,6 +737,83 @@ describe('generatePageComponent', () => {
 });
 
 // ---------------------------------------------------------------------------
+// sendDocument recipient-policy override emission (ETP-4226)
+// ---------------------------------------------------------------------------
+
+describe('generatePageComponent — sendDocument recipient policy (ETP-4226)', () => {
+  // A documental window (header has a non-discarded `documentNo`) enables the
+  // envelope by default. `window.sendDocument` recipient-policy keys flow
+  // verbatim into the emitted `sendDocument` prop so ListView/DetailView can
+  // forward them to SendDocumentModal as `sendPolicy`.
+  function buildDocumentalContract(sendDocument) {
+    const window = { id: '1', name: 'Sales Order', primaryEntity: 'order', category: 'sales' };
+    if (sendDocument !== undefined) window.sendDocument = sendDocument;
+    return {
+      frontendContract: {
+        window,
+        entities: {
+          order: {
+            fields: [
+              { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+              { name: 'docStatus', column: 'DocStatus', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+          orderLine: {
+            fields: [
+              { name: 'product', column: 'M_Product_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+  }
+
+  it('emits a bare sendDocument prop (no value) when only the defaults apply', () => {
+    const code = generatePageComponent('order', 'orderLine', buildDocumentalContract(undefined));
+    // Default {enabled:true, allowEmail:true} → prop is emitted without a value...
+    assert.ok(/sendDocument(?![=A-Za-z])/.test(code), 'bare sendDocument prop should be present');
+    // ...and never serialized as a JSON object.
+    assert.ok(!code.includes('sendDocument={{'), 'defaults must not emit a JSON sendDocument value');
+  });
+
+  it('serializes recipient-policy keys verbatim when window.sendDocument declares them', () => {
+    const code = generatePageComponent(
+      'order',
+      'orderLine',
+      buildDocumentalContract({ editableRecipients: false, cc: false, maxRecipients: 5 }),
+    );
+    assert.ok(
+      code.includes('sendDocument={{"enabled":true,"allowEmail":true,"editableRecipients":false,"cc":false,"maxRecipients":5}}'),
+      'recipient-policy keys should be emitted verbatim alongside enabled/allowEmail',
+    );
+  });
+
+  it('forwards the policy to BOTH the ListView and DetailView sendDocument props', () => {
+    const code = generatePageComponent(
+      'order',
+      'orderLine',
+      buildDocumentalContract({ editableRecipients: true, maxRecipients: 10 }),
+    );
+    const matches = code.match(/sendDocument=\{\{[^}]*"maxRecipients":10[^}]*\}\}/g) || [];
+    assert.equal(matches.length, 2, 'policy should be emitted for ListView and DetailView');
+  });
+
+  it('omits the sendDocument prop entirely when the feature is force-disabled', () => {
+    const code = generatePageComponent(
+      'order',
+      'orderLine',
+      buildDocumentalContract({ enabled: false, editableRecipients: true }),
+    );
+    assert.ok(!/sendDocument/.test(code), 'force-disabled window emits no sendDocument prop');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // generateIndexComponent
 // ---------------------------------------------------------------------------
 
@@ -2116,5 +2193,52 @@ describe('generateTableComponent — gridReadOnly', () => {
     const productLine = lines.find(l => l.includes("key: 'product'"));
     assert.ok(productLine, 'product column should exist');
     assert.ok(!productLine.includes('readOnly: true'), 'product column should not have readOnly: true');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildEntryFieldLine — skipDefault (HandleDefaults opt-out)
+// ---------------------------------------------------------------------------
+// A line field flagged skipDefault must surface in the add-row entry literal so
+// DataTable can skip applying a backend-resolved default to it.
+describe('buildEntryFieldLine — skipDefault', () => {
+  const skipDefaultContract = {
+    frontendContract: {
+      window: { id: '900', name: 'GL Journal', primaryEntity: 'header', category: 'finance' },
+      entities: {
+        header: {
+          fields: [
+            { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+          ],
+          searchableFields: ['documentNo'],
+          computedFields: [],
+        },
+        line: {
+          fields: [
+            { name: 'account', column: 'Account_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'Account', inputMode: 'selector' },
+            { name: 'note', column: 'Note', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true, skipDefault: true },
+          ],
+          searchableFields: ['account'],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+
+  it('emits skipDefault in the add-row entry literal for a flagged field', () => {
+    const code = generatePageComponent('header', 'line', skipDefaultContract);
+    const entryMatch = code.match(/entry: \[([\s\S]*?)\],/);
+    assert.ok(entryMatch, 'addLineFields.entry array present');
+    assert.match(entryMatch[1], /key: 'note'[^}]*skipDefault: true/);
+  });
+
+  it('does not emit skipDefault for an unflagged field', () => {
+    const code = generatePageComponent('header', 'line', skipDefaultContract);
+    const entryMatch = code.match(/entry: \[([\s\S]*?)\],/);
+    assert.ok(entryMatch);
+    const accountLine = entryMatch[1].split('\n').find(l => l.includes("key: 'account'"));
+    assert.ok(accountLine, 'account entry present');
+    assert.ok(!accountLine.includes('skipDefault'), 'account must not carry skipDefault');
   });
 });

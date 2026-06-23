@@ -274,6 +274,7 @@ const FIELD_HINTS_PRE_GRID = [
   ['labels', Boolean],
   ['clearsField', Boolean],
   ['summable', Boolean, setTrue],
+  ['businessCritical', Boolean, setTrue],
   ['display', Boolean],
   ['cellType', Boolean],
   ['subField', Boolean],
@@ -334,6 +335,9 @@ export function generateFrontendContract(schema, rules = []) {
       // UI hints
       applyFieldUIHints(f, mapped);
       if (f.inline) mapped.inline = true;
+      // HandleDefaults opt-out: the add-row never applies a backend-resolved
+      // default to a field flagged skipDefault.
+      if (f.skipDefault) mapped.skipDefault = true;
 
       // Behavioral metadata: validationRule (e.g. M_PriceList.issopricelist = @isSOTrx@)
       if (f.validationRule) mapped.validationRule = f.validationRule;
@@ -387,6 +391,8 @@ export function generateFrontendContract(schema, rules = []) {
     if (entity.javaQualifier) feEntity.javaQualifier = entity.javaQualifier;
     if (entity.draftMode?.enabled) feEntity.draftMode = entity.draftMode;
     if (entity.formCols != null) feEntity.formCols = entity.formCols;
+    // HandleDefaults opt-out: emit only when explicitly disabled (default is on).
+    if (entity.handlesDefaults === false) feEntity.handlesDefaults = false;
     const siblingFields = entity.fields.filter(f => isSystem(f) && f.addLineFromSibling).map(f => f.name);
     if (siblingFields.length > 0) feEntity.addLineHiddenFromSibling = siblingFields;
     entities[entity.name] = feEntity;
@@ -521,14 +527,18 @@ export function generateBackendContract(schema, rules = [], processes = []) {
   const endpoints = [];
 
   for (const entity of schema.entities) {
-    const fields = entity.fields.map(f => ({
-      name: f.name,
-      apiKey: f.apiKey || f.name,
-      column: f.column,
-      type: f.type,
-      visibility: f.visibility,
-      required: f.required,
-    }));
+    const fields = entity.fields.map(f => {
+      const field = {
+        name: f.name,
+        apiKey: f.apiKey || f.name,
+        column: f.column,
+        type: f.type,
+        visibility: f.visibility,
+        required: f.required,
+      };
+      if (f.businessCritical) field.businessCritical = true;
+      return field;
+    });
 
     const beEntity = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields };
     if (entity.javaQualifier) beEntity.javaQualifier = entity.javaQualifier;
@@ -1138,7 +1148,7 @@ function classifyAction(field, entityName, specName, windowCategory, decisionsAc
 // ─── End action classification helpers ───────────────────────────────────────
 
 function buildCrudPrediction(baseUrl, entityName, feEntity) {
-  return {
+  const crud = {
     get: true,
     getById: true,
     post: true,
@@ -1149,6 +1159,10 @@ function buildCrudPrediction(baseUrl, entityName, feEntity) {
     detailUrl: `${baseUrl}/${entityName}/{id}`,
     supportedFilters: feEntity ? feEntity.searchableFields : [],
   };
+  // Surface the HandleDefaults opt-out into the runtime api so DetailView can skip
+  // the line /defaults fetch for this entity. Emitted only when explicitly off.
+  if (feEntity && feEntity.handlesDefaults === false) crud.handlesDefaults = false;
+  return crud;
 }
 
 function collectSelectorPredictions(feEntity, entityName, baseUrl, windowCategory, schema, frontendContract) {

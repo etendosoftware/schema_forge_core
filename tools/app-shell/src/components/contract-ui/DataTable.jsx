@@ -3,21 +3,18 @@ import { createPortal } from 'react-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
 import { Search, Inbox, X, ChevronDown, Trash2, Copy, Loader2, Pencil, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLabel, useUI, useLocale, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
-import { getStatusDotColor, statusLabel } from '@/lib/statusBadge.js';
-import { StatusTag } from '@/components/ui/status-tag';
-import { Tag } from '@/components/ui/tag';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { applyCalloutUpdates } from '@/lib/applyCalloutUpdates.js';
 import { columnMinWidthPx, columnFlex } from '@/lib/linesColumnWidth.js';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CELL_RENDERERS } from './DataTable.cellRenderers.jsx';
 
 // Extracts grow flag and basis (px) from a columnFlex() shorthand string.
 function flexSpec(col, idx) {
@@ -109,25 +106,6 @@ export function buildDisplayCatalogMaps(visibleColumns, addRow, entity) {
   return out;
 }
 
-
-function getDateDotColor(dateValue) {
-  if (!dateValue) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const str = String(dateValue);
-  const d = /^\d{4}-\d{2}-\d{2}$/.test(str) ? new Date(str + 'T00:00:00') : new Date(str);
-  d.setHours(0, 0, 0, 0);
-  if (d.getTime() === today.getTime()) return null;
-  return d > today ? 'bg-emerald-500' : 'bg-red-500';
-}
-
-function isTruthyBoolean(value) {
-  return value === true || value === 'Y' || value === 'true';
-}
-
-function isFalsyBoolean(value) {
-  return value === false || value === 'N' || value === 'false';
-}
 
 const INLINE_ADD_IGNORED_PORTAL_SELECTORS = [
   '[role="dialog"]',
@@ -235,10 +213,27 @@ function EmptyState({ hasFilter, totalCount }) {
 
 const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity', 'amount']);
 
-function isMissingRequired(f, valuesRef) {
+function isMissingRequired(f, valuesRef, fields = []) {
   if (!f.required) return false;
-  const v = valuesRef.current[f.key];
-  return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
+  // A boolean/checkbox always carries a valid value (false = deliberately
+  // unchecked), so it can never be "missing". Mirrors the header guard in
+  // useEntity.handleSave and stops a required checkbox left off (e.g. a journal
+  // line's Open Items) from blocking the row.
+  if (f.type === 'checkbox' || f.type === 'boolean') return false;
+  const hasVal = (key) => {
+    const v = valuesRef.current[key];
+    return !(v == null || v === '' || (typeof v === 'string' && v.trim() === ''));
+  };
+  if (hasVal(f.key)) return false;
+  // clearsField forms a mutually-exclusive group (e.g. a journal line is a debit
+  // OR a credit, never both). The requirement is "one of the group", so the empty
+  // member must not be flagged while a sibling it clears — or that clears it —
+  // carries a value.
+  if (f.clearsField && hasVal(f.clearsField)) return false;
+  for (const g of fields) {
+    if (g.clearsField === f.key && hasVal(g.key)) return false;
+  }
+  return true;
 }
 
 function isBelowMin(f, valuesRef) {
@@ -419,7 +414,7 @@ function renderInputCell({
 // make buildEmpty's effect re-run, wiping in-progress input. Share one frozen ref.
 const EMPTY_SEED = {};
 
-const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, seedValues = EMPTY_SEED, ilpHasNoAmountCol = false, ilpTrailing = false }, ref) {
+const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, seedValues = EMPTY_SEED, resolvedDefaults = EMPTY_SEED, ilpHasNoAmountCol = false, ilpTrailing = false }, ref) {
   const t = useLabel();
   const ui = useUI();
   const { locale } = useLocaleSwitch();
@@ -452,8 +447,20 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     for (const [key, val] of Object.entries(seedValues)) {
       if (!fieldMap[key]) empty[key] = val;
     }
+    // HandleDefaults: fill EMPTY editable fields from backend-resolved line
+    // defaults (e.g. a macro default like @DESCRIPTION1@ → the parent's value).
+    // Fill-empties-only: never override a literal default, the client lineNo, a
+    // display seed, or a field opted out via skipDefault.
+    for (const [key, val] of Object.entries(resolvedDefaults)) {
+      const f = fieldMap[key];
+      if (!f || f.skipDefault) continue;
+      const cur = empty[key];
+      if ((cur == null || cur === '') && val != null && val !== '') {
+        empty[key] = val;
+      }
+    }
     return empty;
-  }, [fields, defaultLineNo, seedValues, fieldMap]);
+  }, [fields, defaultLineNo, seedValues, fieldMap, resolvedDefaults]);
 
   const [values, setValues] = useState(buildEmpty);
   const [isSaving, setIsSaving] = useState(false);
@@ -501,7 +508,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     // Validate required fields BEFORE entering the in-flight state — a missing
     // value should leave the row open for the user to complete. Reads from the
     // valuesRef so an in-flight callout cannot mask a still-empty user field.
-    const missing = fields.filter(f => isMissingRequired(f, valuesRef));
+    const missing = fields.filter(f => isMissingRequired(f, valuesRef, fields));
     if (missing.length > 0) {
       setInvalidFields(new Set(missing.map(f => f.key)));
       toast.error(ui('requiredFieldsMissing'));
@@ -1077,137 +1084,6 @@ function getRowClassName(onRowClick, onNavigate, isChecked, selectedRowBg, selec
   ].filter(Boolean).join(' ');
 }
 
-function renderBooleanFallback(val, ui) {
-  if (isTruthyBoolean(val)) return <span className="text-emerald-600">{ui('yes')}</span>;
-  if (isFalsyBoolean(val)) return <span className="text-slate-400">{ui('no')}</span>;
-  return <span className="text-slate-300">&mdash;</span>;
-}
-
-function renderBooleanBadge(col, val, trueLabel, falseLabel) {
-  const trueVariant = col.badgeVariants?.true ?? 'green';
-  const falseVariant = col.badgeVariants?.false ?? 'neutral';
-  if (isTruthyBoolean(val)) return <Tag variant={trueVariant} label={trueLabel} data-testid="Tag__eb5261" />;
-  if (isFalsyBoolean(val)) return <Tag variant={falseVariant} label={falseLabel} data-testid="Tag__eb5261" />;
-  // Unknown value: caller falls through to em-dash fallback.
-  return null;
-}
-
-function renderColoredBooleanBadge(col, val, trueLabel, falseLabel) {
-  const trueColor = col.badgeColors.true ?? 'bg-emerald-100 text-emerald-800';
-  const falseColor = col.badgeColors.false ?? 'bg-amber-100 text-amber-700';
-  if (isTruthyBoolean(val)) return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${trueColor}`}>
-      {trueLabel}
-    </span>
-  );
-  if (isFalsyBoolean(val)) return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${falseColor}`}>
-      {falseLabel}
-    </span>
-  );
-  // Unknown value: caller falls through to em-dash fallback.
-  return null;
-}
-
-function parseDateValue(raw) {
-  if (raw) {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-      return new Date(raw + 'T00:00:00');
-    } else {
-      return new Date(raw);
-    }
-  } else {
-    return null;
-  }
-}
-
-function formatDateCellDisplay(row, col, dateFormatter) {
-  const raw = row[col.key];
-  // Parse date-only strings (yyyy-MM-dd) as local to avoid timezone shift
-  const parsed = parseDateValue(raw);
-  const formatted = parsed && !Number.isNaN(parsed) ? dateFormatter.format(parsed) : '\u2014';
-  const dotColor = col.dot === false ? null : getDateDotColor(raw);
-  return { formatted, dotColor };
-}
-
-function createBadgeLabelResolver(locale) {
-  return (raw, fallback) => {
-    if (raw && typeof raw === 'object') return raw[locale] ?? raw.en_US ?? fallback;
-    return raw ?? fallback;
-  };
-}
-
-function renderBooleanBadgeCell(locale, col, ui, val) {
-  const resolveBadgeLabel = createBadgeLabelResolver(locale);
-  const trueLabel = resolveBadgeLabel(col.badgeLabels?.true, ui('statusComplete'));
-  const falseLabel = resolveBadgeLabel(col.badgeLabels?.false, ui('statusInProcess'));
-  if (col.badgeColors) {
-    return renderColoredBooleanBadge(col, val, trueLabel, falseLabel);
-  }
-  return renderBooleanBadge(col, val, trueLabel, falseLabel);
-}
-
-function renderEnumCell(rawValue, tMenu, col) {
-  const raw = rawValue;
-  const label = tMenu(col.enumLabels?.[raw] ?? raw);
-  if (col.display === 'dot') {
-    const dotColor = getStatusDotColor(raw);
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
-        {label}
-      </span>
-    );
-  }
-  if (col.enumVariants) {
-    const variant = col.enumVariants[raw] ?? 'neutral';
-    return <Tag variant={variant} label={label} data-testid="Tag__eb5261" />;
-  }
-  return <span>{label}</span>;
-}
-
-function getPillLabel(pill, row) {
-  return pill?.when(row) ? pill.label : null;
-}
-
-function renderBooleanCell({ rawValue, col, savingToggles, toggleKey, handleInlineToggle, row, locale, t, ui }) {
-  const val = rawValue;
-  // --- boolean-toggle: DE ACA --- (extract: renderBooleanToggle)
-  if (col.toggle) {
-    const checked = isTruthyBoolean(val);
-    const disabled = !!savingToggles[toggleKey] || (!isTruthyBoolean(val) && !isFalsyBoolean(val));
-    return (
-      <div
-        className="flex items-center justify-center"
-        onClick={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        <Switch
-          checked={checked}
-          disabled={disabled}
-          onCheckedChange={(nextChecked) => {
-            handleInlineToggle(row, col, nextChecked).catch((err) => {
-              // Errors are surfaced to the user via toast inside the request; log for diagnostics.
-              console.error('Failed to toggle inline boolean cell:', err);
-            });
-          }}
-          aria-label={resolveColumnLabel(col, locale, t)}
-          data-testid="Switch__eb5261" />
-      </div>
-    );
-  }
-  // --- boolean-toggle: HASTA ACA ---
-  // --- boolean-badge: DE ACA --- (extract: renderBooleanBadge — colors OR variants)
-  if (col.badge) {
-    const badge = renderBooleanBadgeCell(locale, col, ui, val);
-    if (badge) return badge;
-  }
-  // --- boolean-badge: HASTA ACA ---
-  // --- boolean-fallback: DE ACA --- (extract: renderBooleanFallback — yes / no / em-dash)
-  return renderBooleanFallback(val, ui);
-  // --- boolean-fallback: HASTA ACA ---
-}
-
 /**
  * Generic data table driven by column/filter declarations.
  *
@@ -1389,120 +1265,26 @@ export function DataTable({
   }, [apiBaseUrl, entity, onDataMutated, token]);
 
   const renderCellValue = (row, col) => {
-    // === custom-render: DE ACA ===
-    // Extract to: renderCustomCell(row, col, { entity, token, apiBaseUrl })
-    // Custom render function takes priority
     if (typeof col.render === 'function') return col.render(row, { entity, token, apiBaseUrl });
-    // === custom-render: HASTA ACA ===
 
-    // === resolve-display: DE ACA ===
-    // Extract to helper: resolveCellDisplay(row, col, { optimisticToggles, displayCatalogMaps })
-    // → returns { toggleKey, rawValue, display }
     const { display, rawValue, toggleKey } = resolveCellDisplay(row, col, optimisticToggles, displayCatalogMaps);
-    // === resolve-display: HASTA ACA ===
-
-    // === first-column-pill: DE ACA ===
-    // Extract to: renderFirstColumnWithPill({ display, pill: col.pill, row })
-    // Only applies when col is the first visible column AND type === 'string'.
-    if (isFirstVisibleStringColumn(col, visibleColumns)) {
-      const pill = col.pill;
-      const pillLabel = getPillLabel(pill, row);
-      return (
-        <span className="inline-flex items-center gap-2">
-          <span>{display}</span>
-          {pillLabel && (
-            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${pill.className || 'bg-gray-50 text-gray-600 border-gray-200'}`} style={{ borderWidth: '0.5px' }}>
-              {pillLabel}
-            </span>
-          )}
-        </span>
-      );
-    }
-    // === first-column-pill: HASTA ACA ===
-
-    // === enum-cell: DE ACA ===
-    // Extract to: renderEnumCell({ rawValue, col, tMenu })
-    // 3 sub-variants: display === 'dot' | enumVariants (Tag) | plain <span>.
-    if (col.type === 'enum') {
-      return renderEnumCell(rawValue, tMenu, col);
-    }
-    // === enum-cell: HASTA ACA ===
-
-    // === status-cell: DE ACA ===
-    // Extract to: renderStatusCell({ row, col, dictionary })
-    // Variants: display === 'dot' | <StatusTag>.
-    if (col.type === 'status') {
-      const raw = row[col.key];
-      const label = statusLabel(raw, dictionary);
-      if (col.display === 'dot') {
-        const dotColor = getStatusDotColor(raw);
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
-            {label}
-          </span>
-        );
-      }
-      return <StatusTag status={raw} label={label} data-testid="StatusTag__eb5261" />;
-    }
-    // === status-cell: HASTA ACA ===
-
-    // === percent-cell: DE ACA ===
-    // Extract to: renderPercentCell({ value: row[col.key] })
-    // Pure UI — no closure deps beyond the raw numeric value.
-    if (col.type === 'percent') {
-      const { color, pct, textColor } = getPercentCellPalette(row, col);
-      return (
-        <div className="flex items-center gap-2">
-          <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(pct, 100)}%` }} />
-          </div>
-          <span className={`text-xs tabular-nums ${textColor}`}>{pct}%</span>
-        </div>
-      );
-    }
-    // === percent-cell: HASTA ACA ===
-
-    // === boolean-cell: DE ACA ===
-    // Extract to: renderBooleanCell({ row, col, rawValue, toggleKey, savingToggles,
-    //                                  handleInlineToggle, locale, t, ui })
-    // Has 3 internal blocks (toggle / badge / fallback yes-no-dash) — each can be
-    // its own helper if cognitive complexity is still high after the first split.
-    if (col.type === 'boolean') {
-      return renderBooleanCell({ rawValue, col, savingToggles, toggleKey, handleInlineToggle, row, locale, t, ui });
-    }
-    // === boolean-cell: HASTA ACA ===
-
-    // === date-cell: DE ACA ===
-    // Extract to: renderDateCell({ raw: row[col.key], col, dateFormatter })
-    // Edge cases under test: yyyy-MM-dd (date-only, no TZ shift), full ISO, null/empty.
-    if (col.type === 'date') {
-      const { formatted, dotColor } = formatDateCellDisplay(row, col, dateFormatter);
-      return (
-        <span className="inline-flex items-center gap-1.5">
-          {dotColor && <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${dotColor}`} />}
-          {formatted}
-        </span>
-      );
-    }
-    // === date-cell: HASTA ACA ===
-
-    // === amount-cell: DE ACA ===
-    // Extract to: renderAmountCell({ row, col }) — one-liner, optional but consistent.
-    if (col.type === 'amount') {
-      return <span className="tabular-nums">{formatAmount(row[col.key], row['currency$_identifier'])}</span>;
-    }
-    // === amount-cell: HASTA ACA ===
-
-    // === truncated-fallback: DE ACA ===
-    // Extract to: renderTruncatedText({ display }) — the default branch when no
-    // specialized type matched. Truncates string values longer than 30 chars.
-    const val = display;
-    if (typeof val === 'string' && val.length > 30) {
-      return <span className="block max-w-[200px] truncate" title={val}>{val}</span>;
-    }
-    return val;
-    // === truncated-fallback: HASTA ACA ===
+    const renderer = CELL_RENDERERS[col.type] ?? CELL_RENDERERS.default;
+    return renderer({
+      row,
+      col,
+      display,
+      rawValue,
+      toggleKey,
+      visibleColumns,
+      tMenu,
+      dictionary,
+      savingToggles,
+      handleInlineToggle,
+      locale,
+      t,
+      ui,
+      dateFormatter,
+    });
   };
 
   if (loading) {
@@ -1614,6 +1396,9 @@ export function DataTable({
                 const headStyle = linesLayout === 'inlineEditable'
                   ? { minWidth: columnMinWidthPx(col, colIdx) }
                   : undefined;
+                const sortArrowClass = NUMERIC_FIELD_TYPES.has(col.type)
+                  ? 'left-0 -translate-x-full pr-0.5'
+                  : 'right-0 translate-x-full pl-0.5';
                 return (
                   <TableHead
                     key={col.key}
@@ -1624,19 +1409,19 @@ export function DataTable({
                     {onSort && isSortable ? (
                       <button
                         type="button"
-                        className={`text-xs leading-4 font-semibold text-text-primary tracking-normal cursor-pointer select-none transition-colors bg-transparent border-0 p-0 ${NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right' : 'text-left'}`}
+                        className={`relative inline-block text-xs leading-4 font-semibold text-text-primary tracking-normal cursor-pointer select-none transition-colors bg-transparent border-0 p-0 ${NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right' : 'text-left'}`}
                         onClick={() => onSort(col.key)}
                       >
                         {colLabel}
                         {isSorted && (
-                          <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                          <span className={`absolute top-1/2 -translate-y-1/2 text-primary/70 pointer-events-none ${sortArrowClass}`}>{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
                         )}
                       </button>
                     ) : (
-                      <span className={`text-xs leading-4 font-semibold text-text-primary tracking-normal${NUMERIC_FIELD_TYPES.has(col.type) ? ' text-right' : ''}`}>
+                      <span className={`relative inline-block text-xs leading-4 font-semibold text-text-primary tracking-normal${NUMERIC_FIELD_TYPES.has(col.type) ? ' text-right' : ''}`}>
                         {colLabel}
                         {isSorted && (
-                          <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                          <span className={`absolute top-1/2 -translate-y-1/2 text-primary/70 pointer-events-none ${sortArrowClass}`}>{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
                         )}
                       </span>
                     )}
@@ -1885,6 +1670,7 @@ export function DataTable({
                 onFieldChange={addRow.onFieldChange}
                 onValuesChange={addRow.onValuesChange}
                 seedValues={addRow.seedValues}
+                resolvedDefaults={addRow.resolvedDefaults}
                 selectable={selectable}
                 hasDeleteColumn={!hoverRowActions && legacyDeleteEnabled}
                 hasCloneColumn={!hoverRowActions && !!onCloneRow && !quickActionsEnabled}
@@ -1929,10 +1715,6 @@ export function DataTable({
     </div>
   );
 }
-function isFirstVisibleStringColumn(col, visibleColumns) {
-  return col === visibleColumns[0] && col.type === 'string';
-}
-
 function resolveCellDisplay(row, col, optimisticToggles, displayCatalogMaps) {
   const toggleKey = `${row.id}:${col.key}`;
   const rawValue = Object.hasOwn(optimisticToggles, toggleKey)
@@ -1949,30 +1731,3 @@ function resolveCellDisplay(row, col, optimisticToggles, displayCatalogMaps) {
   }
   return { display, rawValue, toggleKey };
 }
-
-function getPercentCellPalette(row, col) {
-  const val = Number(row[col.key]);
-  const pct = Number.isNaN(val) ? 0 : val;
-  let color;
-  if (pct >= 100) {
-    color = 'bg-emerald-500';
-  } else {
-    if (pct > 0) {
-      color = 'bg-amber-400';
-    } else {
-      color = 'bg-slate-200';
-    }
-  }
-  let textColor;
-  if (pct >= 100) {
-    textColor = 'text-emerald-700';
-  } else {
-    if (pct > 0) {
-      textColor = 'text-amber-700';
-    } else {
-      textColor = 'text-slate-400';
-    }
-  }
-  return { color, pct, textColor };
-}
-

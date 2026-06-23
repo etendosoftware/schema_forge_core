@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { DateField } from '@/components/ui/date-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { PillToggle } from '@/components/PillToggle';
 import { ChevronDown, Loader2, Search } from 'lucide-react';
 import { useLabel, useLocaleSwitch, useMenuLabel, useUI } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
@@ -1198,6 +1199,28 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     );
   };
 
+  // A boolean field flagged `toggle` (grid cellType 'toggle') renders as the shared PillToggle
+  // switch in its form position — same control as the grid, instead of a plain checkbox.
+  const renderToggleField = (f, label, isReadOnly) => {
+    const checked = data?.[f.key] === true || data?.[f.key] === 'Y' || data?.[f.key] === 'true';
+    return (
+      <div key={f.key} className="flex items-center gap-2 pt-6">
+        <PillToggle
+          checked={checked}
+          disabled={isReadOnly}
+          onCheckedChange={(next) => !isReadOnly && onChange?.(f.key, next, f.column)}
+          id={f.key}
+          data-testid={`field-${f.key}`} />
+        <Label
+          htmlFor={f.key}
+          className="text-sm text-foreground font-medium cursor-pointer"
+          data-testid="Label__a8d626">
+          {label}
+        </Label>
+      </div>
+    );
+  };
+
   const renderField = (f) => {
     // Resolution order: per-window labels dict (locale-pinned) → AD_Field label → camelCase key
     const label = f.labels?.[locale] ?? f.labels?.en_US ?? t(f.column) ?? f.label ?? f.key;
@@ -1210,6 +1233,9 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     // Strip floating-point noise (e.g. 243.20999999999998 → 243.21) for read-only number fields.
     // toFixed(10) preserves up to 10 significant decimal places while eliminating IEEE 754 drift.
     const displayValue = formatReadOnlyDisplayValue(f, isReadOnly, rawDisplayValue);
+    if (f.type === 'checkbox' && f.toggle) {
+      return renderToggleField(f, label, isReadOnly);
+    }
     if (f.type === 'checkbox') {
       return renderCheckboxField(f, label, isReadOnly);
     }

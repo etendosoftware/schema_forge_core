@@ -92,8 +92,35 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 | `subsetFilters` | array | `null` | See below | Segmented, radio-style filter above the list. One is always active, mutually exclusive, applied before any other filter. Ideal for "which universe am I looking at" selectors (e.g., All / Customers / Vendors). |
 | `quickFilters` | array | `null` | See below | Independent toggle pills above the list. Each can be on/off; multiple can be active simultaneously. Combined with the active subset and column filters using AND. Ideal for "refinements" (e.g., only overdue, only pending delivery). |
 | `rowQuickActions` | object | _absent_ (feature ON with canonical defaults) | See below | Hover-revealed action overlay on each grid row. The feature is ON by default for every window with canonical actions (Edit / Duplicate / Email / Delete) plus a kebab containing everything from `menuActions` — **no contract block is emitted in that case**. Declare the section only to disable the feature (`enabled: false`), override an action's visibility (`actions.<key>.show: false` / `visibleWhen`), or promote a process to a fixed button (`show: "fixed"`). |
+| `sendDocument` | object | _absent_ (auto-enabled on documental windows) | See below | Send/Download envelope config forwarded to the generic `SendDocumentModal`. Auto-enabled when the header exposes `documentNo`; declare it only to disable (`enabled: false`), drop the email panel (`allowEmail: false`), or tune the recipient-edit policy (see the Send Document subsection below). |
 | `balanceFooter` | object | `null` | `{ debitField, creditField }` | Renders a debit/credit balance footer (Σ debit, Σ credit, difference, balanced ✓/✗ badge) for double-entry windows (e.g. manual journals). Both fields must be amount-typed fields on the lines entity. When set, the generator emits `BalanceFooterPanel` instead of `DocumentTotalsPanel` and disables the Save button (with a tooltip) only when the entry is unbalanced (Σ debit ≠ Σ credit). An empty/zero entry is treated as balanced and is savable as a draft; the ✓/✗ badge is hidden until the lines carry amounts. Validator F17 enforces field existence. Example: `"balanceFooter": { "debitField": "amtSourceDr", "creditField": "amtSourceCr" }`. |
 | `linesLayout` | string | `"classic"` | `"classic"`, `"inlineEditable"` | Lines tab rendering mode. `"classic"` keeps the side-panel edit flow (current behavior). `"inlineEditable"` switches the table to `InlineLinesPanel`: pencil + trash hover-action icons on the right, single-row inline edit triggered by the pencil, autosave on blur. All column types (string, number, amount, percent, date, selector, search) are inline-editable; selector/search columns use `InlineSearchCombo` (text input with server-side search) so FK fields with many options are filterable by typing. The add-line button, related-documents panel, notes panel and totals panel are unchanged. Validator F12 enforces the enum. |
+
+### Send Document (`window.sendDocument`)
+
+Recipient-edit policy overrides (ETP-4226). The generator copies these keys
+verbatim into the generated `sendDocument` prop; ListView forwards the object
+to `SendDocumentModal` as `sendPolicy`. Absence of a key means the shared
+default applies — editable To/CC chips are the platform default, so **no
+window needs this section at launch**.
+
+| Key | Type | Default | Purpose |
+|-----|------|---------|---------|
+| `editableRecipients` | boolean | `true` | Set to `false` to restore the read-only To input (recipients locked to the server-resolved contact). |
+| `cc` | boolean | `true` | Set to `false` to hide the "Add CC" affordance (no CC channel). |
+| `maxRecipients` | number | `10` | Maximum recipients across To and CC. Must not exceed the backend contract limit. |
+
+```json
+{
+  "window": {
+    "sendDocument": {
+      "editableRecipients": false,
+      "cc": false,
+      "maxRecipients": 5
+    }
+  }
+}
+```
 
 ### Status Bar (`window.statusBar`)
 
@@ -450,6 +477,11 @@ Entity keys use **camelCase from tabName** (e.g., `"header"`, `"lines"`, `"basic
 | `fields` | object | `{}` | Field-level decisions. |
 | `draftMode` | object | `null` | Draft/Processed workflow config. |
 | `javaQualifier` | string | `null` | CDI qualifier for custom NeoHandler. |
+| `handlesDefaults` | boolean | `true` | **HandleDefaults.** When `true` (default), a new detail line's add-row fetches `GET /{detailEntity}/defaults?parentId=…` on open and pre-fills empty editable fields from the backend-resolved defaults (reusing the header-defaults normalization). Set `false` to opt this detail entity out — the add-row keeps literal-only seeding and no `/defaults` request is made. Emitted to the contract / runtime `api.crud` only when `false`. |
+
+### Line HandleDefaults (`entities.{name}.handlesDefaults`)
+
+When a user opens a new detail line, `DetailView` calls `useEntity.fetchChildDefaults(parentId)` → `GET /{detailEntity}/defaults?parentId=…`, normalizes the response with the same `normalizeDefaultValue` the header uses, and passes it to the add-row as `resolvedDefaults`. `DataTable.buildEmpty` then fills **empty** editable fields (fill-empties-only: literal defaults, the client `lineNo`, parent-derived display seeds, and `skipDefault` fields are never overridden). This is how a line field whose AD default is a macro — e.g. a journal line `Description` defaulting to `@DESCRIPTION1@` (the parent journal's description, resolved by NEO's auxiliary-input pipeline) — gets pre-filled. On by default; opt out per entity (`handlesDefaults: false`) or per field (`skipDefault: true`). Covers the inline add-row of the primary lines tab and secondary detail tabs.
 
 ### Draft Mode (`entities.{name}.draftMode`)
 
@@ -490,6 +522,8 @@ Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"order
 | `searchable` | boolean | `false` | `true`/`false` | Enable as filter parameter in list API. |
 | `section` | string | `null` | `"principal"`, `"other"`, custom | Group fields into form sections. |
 | `inline` | boolean | `false` | `true`/`false` | When `true`, keeps the field in the normal form grid flow even if the generator would otherwise pull it out. Currently relevant for image-type fields: an image field with `inline: true` renders inside the form grid using `row-span-2`, spanning two rows for visual balance instead of being extracted to a separate slot. |
+| `skipDefault` | boolean | `false` | `true`/`false` | **HandleDefaults opt-out (per field).** When `true`, the line add-row never applies a backend-resolved default to this field (it stays empty / keeps its literal seed) even when the entity's `handlesDefaults` is on. Emitted to the contract / add-row literal only when `true`. |
+| `clearsField` | string | `null` | Sibling field key | **Mutual exclusion.** Names a sibling field that is cleared (set to `0`/empty) whenever this field gets a non-zero value — e.g. a journal line where entering a Debit clears the Credit, and vice versa. The two fields form a "one-of" group: in the inline add-row's required-field check, an empty member is **not** flagged as missing while its partner carries a value (so a debit-only line submits). A required boolean/checkbox is likewise never treated as missing (unchecked is valid). |
 
 **Visibility defaults** (when not overridden):
 
@@ -562,6 +596,7 @@ Setting `dependsOn` automatically sets `inputMode` to `"dependent"`.
 | `required` | boolean | From AD mandatory | Force field as required. |
 | `readOnlyLogic` | string \| null | `null` | Expression for conditional read-only. Set `null` to omit. |
 | `displayLogic` | string \| null | `null` | Expression for conditional visibility. Set `null` to omit. |
+| `businessCritical` | boolean | `false` | Advisory-only metadata flag. When `true`, marks the field as business-critical data. This flag does **not** change any functional behavior (validation, read-only logic, visibility, etc.). It travels through the pipeline (`decisions.json` → `resolve-curated` → `contract.json` → `push-to-neo` → `ETGO_SF_FIELD.ISBUSINESSCRITICAL`) so that downstream consumers (e.g., AI agents reading `neo_schema`) know they must confirm with the user before creating or updating records that include this field. |
 | `agentPrompt` | string | `null` | Per-field guidance for AI agents. Carried into the curated field and persisted to `ETGO_SF_FIELD.AGENT_PROMPT`, from where `neo_schema` returns it inside each field object. Empty or whitespace-only values clear the persisted prompt and are omitted from the MCP response. |
 
 ### Explicit null
