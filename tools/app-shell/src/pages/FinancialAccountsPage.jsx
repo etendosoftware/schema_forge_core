@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useUI } from '@/i18n';
 import { useFinancialAccounts } from '@/hooks/useFinancialAccounts.js';
@@ -67,8 +66,8 @@ export default function FinancialAccountsPage() {
     navigate(`/financial-account/${account.id}`);
   };
 
-  const handleReconcile = () => {
-    toast(ui('financeAccountsReconcileToast'));
+  const handleReconcile = (account) => {
+    navigate(`/financial-account/${account.id}?tab=reconciliation&autoMatch=true`);
   };
 
   return (

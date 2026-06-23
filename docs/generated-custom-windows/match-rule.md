@@ -57,9 +57,16 @@ patch  PATCH  /sws/neo/match-rule/etgoMatchRuleHeader/{id}   (inline Active togg
 delete DELETE /sws/neo/match-rule/etgoMatchRuleHeader/{id}
 ```
 
+## Engine integration (ETP-4101 / T7)
+
+The rules maintained here are now **consumed by the bank-reconciliation automatch engine** (`MatchRuleEngine` + `AutoMatchSupport`, invoked from `ReconciliationHandler`, `@Named("bankReconciliation")`):
+
+- Active rules for the account (specific or account-less = all), ordered by ascending `priority`, are evaluated against each pending statement line the standard Etendo algorithm could not match (invoice-backed lines are skipped). `textCondition` (`C`/`S`/`R`) is tested against the line's description + reference + partner name, reusing the same 200 ms regex guard as the validation hook.
+- The first (lowest-priority) match wins; the rest rank as alternatives. A match can create a payment (G/L-item based) when the line has no counterpart, and on apply it **increments the rule's `matchCount`** — surfaced read-only as the "Conciliaciones" column here.
+- This window remains catalog-only (create / list / prioritize / toggle / delete); the matching itself runs in the reconciliation surface (see `docs/generated-custom-windows/financial-account.md` → "Automatch engine (T7)").
+
 ## Gap assessment
 
-- This window only **stores and lists** rules. The engine that evaluates them against bank-statement lines is a separate ticket; nothing here proves a rule actually matches a line.
 - Inline editing of `priority` directly in the grid is carried as a contract flag (`inlineEdit`) but the primary edit path verified here is the modal; treat in-grid priority editing as future behavior.
 - The accounting concept (`C_GLItem`) selector lists every G/L item in scope.
 

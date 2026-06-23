@@ -394,6 +394,9 @@ function EditableLines({ rows, setRows, money, bcpLocale, ui }) {
       const t = e.target;
       if (editRowRef.current?.contains(t)) return;
       if (t?.closest?.('[data-lookup-dropdown]')) return;
+      // The date-field calendar (and any other popover) is portalled out of the row via a Radix
+      // popper; clicking inside it is still editing the row, so it must NOT commit/discard it.
+      if (t?.closest?.('[data-radix-popper-content-wrapper]')) return;
       commitDraft();
     };
     document.addEventListener('mousedown', onDown);
