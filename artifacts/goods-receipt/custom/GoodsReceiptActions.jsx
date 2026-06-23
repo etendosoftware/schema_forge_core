@@ -61,12 +61,18 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
 
   useEffect(() => {
     if (!wizardOpen || !recordId || !base) return;
+    const bpId = data?.businessPartner;
+    if (!bpId) return;
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch(
-          `${base}/goods-receipt/goodsReceiptLine?parentId=${recordId}&_startRow=0&_endRow=200`,
-          { headers },
+          `${base}/return-to-vendor-shipment/returnToVendorShipment/_/action/availableReceiptLines`,
+          {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ receiptId: recordId, businessPartner: bpId }),
+          },
         );
         if (!res.ok || cancelled) return;
         const json = await res.json();
@@ -74,7 +80,7 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
       } catch { /* silent */ }
     })();
     return () => { cancelled = true; };
-  }, [wizardOpen, recordId, base, headers]);
+  }, [wizardOpen, recordId, base, headers, data?.businessPartner]);
 
   const handleCreateInvoice = async () => {
     if (creatingInvoice) return;

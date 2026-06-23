@@ -18,6 +18,19 @@ vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
 }));
 
+vi.mock('@/components/ui/checkbox', () => ({
+  Checkbox: ({ checked, onChange, onClick, disabled, indeterminate, ...props }) =>
+    <input
+      type="checkbox"
+      checked={!!checked}
+      disabled={!!disabled}
+      onChange={onChange || (() => {})}
+      onClick={onClick}
+      ref={el => { if (el) el.indeterminate = !!indeterminate; }}
+      {...props}
+    />,
+}));
+
 // --- Import under test ----------------------------------------------------
 
 import ImportFromPurchaseOrderModal from '../ImportFromPurchaseOrderModal.jsx';
@@ -237,9 +250,9 @@ describe('ImportFromPurchaseOrderModal', () => {
   it('shows order date formatted', async () => {
     renderModal();
     await screen.findByText('PO-001');
-    // Compute the expected string the same way the component does so the test
-    // is not sensitive to the local timezone of the machine running it.
-    const expected = new Date('2024-01-15').toLocaleDateString('en-GB', {
+    // Use the local-time constructor so the result is timezone-independent
+    // (matches ImportLinesModal.fmtDate which parses the ISO string without UTC offset).
+    const expected = new Date(2024, 0, 15).toLocaleDateString('en-GB', {
       day: 'numeric', month: 'short', year: 'numeric',
     });
     expect(screen.getByText(expected)).toBeInTheDocument();
@@ -248,8 +261,9 @@ describe('ImportFromPurchaseOrderModal', () => {
   it('shows order total amount formatted', async () => {
     renderModal();
     await screen.findByText('PO-001');
-    // grandTotalAmount = 1500, formatted as currency
-    expect(screen.getByText('$1500.00')).toBeInTheDocument();
+    // grandTotalAmount = 1500, shown via toLocaleString (no currency symbol).
+    const expected = Number(1500).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    expect(screen.getByText(expected)).toBeInTheDocument();
   });
 
   it('shows selected lines count in footer', async () => {
