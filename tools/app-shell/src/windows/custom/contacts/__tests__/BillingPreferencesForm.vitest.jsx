@@ -54,9 +54,18 @@ describe('BillingPreferencesForm', () => {
       expect(screen.getByText('billingPreferencesAfterSave')).toBeInTheDocument();
     });
 
-    it('renders entity forms when bpId exists', () => {
+    it('renders entity forms when bpId exists and customer is enabled', () => {
       globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ response: { data: [] } }) });
-      render(<BillingPreferencesForm data={{ id: 'BP1' }} token="t" apiBaseUrl="/api" onChange={vi.fn()} />);
+      // EntityForm only renders inside the customer/vendor conditional blocks.
+      // Pass customer:true so the customer billing fields are shown.
+      render(
+        <BillingPreferencesForm
+          data={{ id: 'BP1', customer: true }}
+          token="t"
+          apiBaseUrl="/api"
+          onChange={vi.fn()}
+        />,
+      );
       expect(screen.getAllByTestId('entity-form').length).toBeGreaterThan(0);
     });
   });
