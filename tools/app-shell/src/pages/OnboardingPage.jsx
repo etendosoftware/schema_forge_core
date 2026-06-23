@@ -32,6 +32,7 @@ import { getPasswordChecks, isStrongPassword, PASSWORD_RULES } from './onboardin
 import { useLocaleSwitch, useUI } from '../i18n/index.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../lib/oauthReturnTo.js';
 import { track } from '../lib/observability.js';
+import { OBSERVABILITY_EVENTS, buildObservabilityEvent } from '../lib/observability/events.js';
 import {
   applyProgressMessage,
   buildEnvironmentSessionStorage,
@@ -72,14 +73,16 @@ const DEFAULT_ONBOARDING_FORM = {
 };
 const SSO_PROVIDERS = getConfiguredSsoProviders();
 
-function trackOnboarding(eventName, properties = {}) {
+function trackOnboarding(eventDefinition, properties = {}) {
+  const event = buildObservabilityEvent(eventDefinition, properties);
+
   // Fire-and-forget telemetry: swallow rejections so a failed track() never
   // surfaces as an unhandled promise rejection in the onboarding flow.
   // Promise.resolve(...) tolerates a non-thenable return (e.g. a stubbed track()).
   Promise.resolve(
-    track(eventName, {
+    track(event.name, {
       ...ONBOARDING_EVENT_CONTEXT,
-      ...properties,
+      ...event.properties,
     }),
   ).catch(() => {});
 }
@@ -701,7 +704,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
 
   /* c8 ignore start -- Logout is only reachable from the legacy list view, which current routing bypasses. */
   const handleLogout = () => {
-    trackOnboarding('onboarding_auth_logout', {
+    trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_AUTH_LOGOUT, {
       action: 'logout',
       status: 'success',
     });
@@ -731,7 +734,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   /* c8 ignore stop */
 
   const handleSsoProviderLogin = useCallback(async (provider, payload) => {
-    trackOnboarding('onboarding_auth_submitted', {
+    trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_AUTH_SUBMITTED, {
       action: 'sso',
       provider,
       status: 'started',
@@ -743,14 +746,14 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     try {
       const data = await loginWithSsoProvider(fetch, BASE_URL, provider, payload);
       if (data.token) {
-        trackOnboarding('onboarding_auth_succeeded', {
+        trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_AUTH_SUCCEEDED, {
           action: 'sso',
           provider,
           status: 'success',
         });
         handleAuthSuccess(data.token, data.account, { authMethod: 'sso' });
       } else {
-        trackOnboarding('onboarding_auth_failed', {
+        trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_AUTH_FAILED, {
           action: 'sso',
           provider,
           status: 'failed',
@@ -758,7 +761,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         setSsoError(ui('onboardingSsoFailed'));
       }
     } catch (err) {
-      trackOnboarding('onboarding_auth_failed', {
+      trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_AUTH_FAILED, {
         action: 'sso',
         provider,
         status: 'failed',
@@ -812,7 +815,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   // Register
   const handleRegister = async (e) => {
     e.preventDefault();
-    trackOnboarding('onboarding_auth_submitted', {
+    trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_AUTH_SUBMITTED, {
       action: 'register',
       status: 'started',
     });
@@ -824,20 +827,20 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         language: locale || form.language,
       });
       if (data.token) {
-        trackOnboarding('onboarding_auth_succeeded', {
+        trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_AUTH_SUCCEEDED, {
           action: 'register',
           status: 'success',
         });
         handleRegisterSuccess(data.token, data.account);
       } else {
-        trackOnboarding('onboarding_auth_failed', {
+        trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_AUTH_FAILED, {
           action: 'register',
           status: 'failed',
         });
         setRegisterError(ui('onboardingRegisterFailed'));
       }
     } catch (err) {
-      trackOnboarding('onboarding_auth_failed', {
+      trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_AUTH_FAILED, {
         action: 'register',
         status: 'failed',
       });
@@ -852,7 +855,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   // Login
   const handleLogin = async (e) => {
     e.preventDefault();
-    trackOnboarding('onboarding_auth_submitted', {
+    trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_AUTH_SUBMITTED, {
       action: 'login',
       status: 'started',
     });
@@ -862,20 +865,20 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     try {
       const data = await loginAccount(fetch, BASE_URL, loginForm);
       if (data.token) {
-        trackOnboarding('onboarding_auth_succeeded', {
+        trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_AUTH_SUCCEEDED, {
           action: 'login',
           status: 'success',
         });
         handleAuthSuccess(data.token, data.account);
       } else {
-        trackOnboarding('onboarding_auth_failed', {
+        trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_AUTH_FAILED, {
           action: 'login',
           status: 'failed',
         });
         setLoginError(ui('onboardingInvalidCredentials'));
       }
     } catch (err) {
-      trackOnboarding('onboarding_auth_failed', {
+      trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_AUTH_FAILED, {
         action: 'login',
         status: 'failed',
       });
@@ -923,7 +926,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
 
   const loginToEnvironment = async (env, { requireReadiness = false } = {}) => {
     const token = getPlatformToken();
-    trackOnboarding('onboarding_environment_enter_submitted', {
+    trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_ENVIRONMENT_ENTER_SUBMITTED, {
       action: 'enter_environment',
       status: 'started',
     });
@@ -947,7 +950,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         if (requireReadiness) {
           const readiness = await checkSalesInvoiceReadiness(fetch, BASE_URL, data.token);
           if (!readiness.ready) {
-            trackOnboarding('onboarding_environment_enter_failed', {
+            trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_ENVIRONMENT_ENTER_FAILED, {
               action: 'enter_environment',
               status: 'failed',
             });
@@ -959,7 +962,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             return;
           }
         }
-        trackOnboarding('onboarding_environment_enter_succeeded', {
+        trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_ENVIRONMENT_ENTER_SUCCEEDED, {
           action: 'enter_environment',
           status: 'success',
         });
@@ -969,13 +972,13 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         );
         return;
       }
-      trackOnboarding('onboarding_environment_enter_failed', {
+      trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_ENVIRONMENT_ENTER_FAILED, {
         action: 'enter_environment',
         status: 'failed',
       });
       alert(ui('onboardingEnvironmentLoginFailed'));
     } catch (err) {
-      trackOnboarding('onboarding_environment_enter_failed', {
+      trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_ENVIRONMENT_ENTER_FAILED, {
         action: 'enter_environment',
         status: 'failed',
       });
@@ -991,7 +994,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
 
   const runOnboarding = useCallback(async () => {
     const token = getPlatformToken();
-    trackOnboarding('onboarding_run_started', {
+    trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_RUN_STARTED, {
       action: 'create_environment',
       status: 'started',
     });
@@ -1011,13 +1014,13 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
           };
           setResult(resultObj);
           if (msg.success) {
-            trackOnboarding('onboarding_run_succeeded', {
+            trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_RUN_SUCCEEDED, {
               action: 'create_environment',
               status: 'success',
             });
             succeeded = true;
           } else {
-            trackOnboarding('onboarding_run_failed', {
+            trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_RUN_FAILED, {
               action: 'create_environment',
               status: 'failed',
             });
@@ -1027,7 +1030,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         }
       });
     } catch (err) {
-      trackOnboarding('onboarding_run_failed', {
+      trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_RUN_FAILED, {
         action: 'create_environment',
         status: 'failed',
       });
@@ -1819,7 +1822,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             <Button
               type="button"
               onClick={() => {
-                trackOnboarding('onboarding_setup_step_completed', {
+                trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_SETUP_STEP_COMPLETED, {
                   action: 'continue',
                   status: 'success',
                   type: 'profile',
@@ -1908,7 +1911,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
               type="button"
               onClick={() => {
                 if (running) return;
-                trackOnboarding('onboarding_setup_step_back', {
+                trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_SETUP_STEP_BACK, {
                   action: 'back',
                   status: 'success',
                   type: 'company',
