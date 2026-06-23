@@ -200,7 +200,7 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
           primary={ui('soViewInvoice')}
           currency={data?.['currency$_identifier'] || ''}
           navigate={navigate}
-          onClose={() => setConfirmedDocs(null)}
+          onClose={() => { setConfirmedDocs(null); window.location.reload(); }}
         />,
         document.body,
       )}
@@ -211,7 +211,7 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
           docs={[{ type: 'salida', num: returnedDoc.documentNo, route: `/return-to-vendor-shipment/${returnedDoc.id}` }]}
           primary={ui('soViewShipment')}
           navigate={navigate}
-          onClose={() => setReturnedDoc(null)}
+          onClose={() => { setReturnedDoc(null); window.location.reload(); }}
         />,
         document.body,
       )}

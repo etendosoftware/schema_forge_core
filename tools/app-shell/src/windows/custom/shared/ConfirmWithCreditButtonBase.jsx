@@ -98,7 +98,7 @@ export default function ConfirmWithCreditButtonBase({
           currency={currency}
           navigate={navigate}
           primary={result.docs.length > 0 ? ui('soViewInvoice') : undefined}
-          onClose={() => setResult(null)}
+          onClose={() => { setResult(null); window.location.reload(); }}
           data-testid="ConfirmResultModal__f9608e" />,
         document.body,
       )}
