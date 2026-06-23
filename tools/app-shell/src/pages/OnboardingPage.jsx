@@ -487,6 +487,10 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   const [ssoLoadingProvider, setSsoLoadingProvider] = useState(null);
   const registerSsoButtonRef = useRef(null);
   const loginSsoButtonRef = useRef(null);
+  // Highest progress value shown so far in the current run. The backend emits more steps than
+  // the UI tracks (e.g. accounting, fiscal, baseline) which fall to the generic branch; clamping
+  // to this max keeps the progress bar monotonic instead of jumping backwards mid-run.
+  const maxSetupProgressRef = useRef(0);
 
   // Password reset and change state
   const resetTokenFromUrl = new URLSearchParams(window.location.search).get('resetToken') || ''; // NOSONAR: reset links carry single-use server-side tokens.
@@ -938,6 +942,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     setResult(null);
     setFormSubmitted(true);
     setSteps(initialSetupSteps());
+    maxSetupProgressRef.current = 0;
 
     let succeeded = false;
     try {
@@ -1067,10 +1072,19 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     };
   } else if (activeSetupStep === 'client') {
     setupProgressState = {
-      progress: 50,
+      progress: 35,
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingActivatingDescription'),
       leading: <Sparkles className="h-8 w-8 text-slate-400" data-testid="Sparkles__79cf84" />,
+      statusLabel: ui('loading'),
+      success: false,
+    };
+  } else if (activeSetupStep === 'organization') {
+    setupProgressState = {
+      progress: 50,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingConfiguringDescription'),
+      leading: <Building2 className="h-8 w-8 text-slate-400" data-testid="Building2__79cf84" />,
       statusLabel: ui('loading'),
       success: false,
     };
@@ -1085,22 +1099,33 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     };
   } else if (activeSetupStep === 'sequences') {
     setupProgressState = {
-      progress: 80,
+      progress: 85,
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingSequencesDescription'),
       leading: <Settings className="h-8 w-8 text-slate-400" data-testid="Settings__79cf84" />,
       statusLabel: ui('loading'),
       success: false,
     };
-  } else if (activeSetupStep === 'organization' || activeSetupStep === 'finalize') {
+  } else if (activeSetupStep === 'finalize') {
     setupProgressState = {
-      progress: 80,
+      progress: 92,
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingFinishingDescription'),
       leading: <Check
         className="h-8 w-8 text-slate-400"
         strokeWidth={3}
         data-testid="Check__79cf84" />,
+      statusLabel: ui('loading'),
+      success: false,
+    };
+  } else if (running) {
+    // Untracked backend steps (accounting, periodControl, fiscal, baseline, ...) run between the
+    // tracked milestones. Show a generic "configuring" state; the clamp below holds the bar steady.
+    setupProgressState = {
+      progress: 0,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingConfiguringDescription'),
+      leading: <Settings className="h-8 w-8 text-slate-400" data-testid="Settings__79cf84" />,
       statusLabel: ui('loading'),
       success: false,
     };
@@ -1113,6 +1138,14 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
       statusLabel: ui('loading'),
       success: false,
     };
+  }
+
+  // Keep the progress bar monotonic: never display a value below the highest already shown in
+  // this run. Untracked backend steps (generic branch, progress 0) therefore hold the last
+  // milestone's value instead of dropping the bar backwards. Reset happens in runOnboarding.
+  if (!setupProgressState.success) {
+    setupProgressState.progress = Math.max(setupProgressState.progress, maxSetupProgressRef.current);
+    maxSetupProgressRef.current = setupProgressState.progress;
   }
 
 

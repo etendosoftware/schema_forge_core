@@ -18343,6 +18343,7 @@
     "onboardingCompleted": "Completed",
     "onboardingPreparingTitle": "We are preparing your workspace",
     "onboardingPreparingActivatingDescription": "Activating your modules...",
+    "onboardingPreparingConfiguringDescription": "Configuring your organization...",
     "onboardingPreparingDataDescription": "Loading your company data...",
     "onboardingPreparingFinishingDescription": "Finishing the setup...",
     "onboardingPreparingSequencesDescription": "Generating organization sequences...",

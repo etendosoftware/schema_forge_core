@@ -18594,6 +18594,7 @@
     "onboardingCompleted": "Completado",
     "onboardingPreparingTitle": "Estamos preparando tu espacio",
     "onboardingPreparingActivatingDescription": "Activando tus módulos...",
+    "onboardingPreparingConfiguringDescription": "Configurando tu organización...",
     "onboardingPreparingDataDescription": "Cargando los datos de tu empresa...",
     "onboardingPreparingFinishingDescription": "Dejando todo listo...",
     "onboardingPreparingSequencesDescription": "Generando secuencias de la organización...",
