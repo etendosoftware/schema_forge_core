@@ -573,11 +573,14 @@ function generateStatusBarComponent(headerEntity, statusBarConfig) {
   // Build cards array literal
   const cardsLiteral = cards.map(card => {
     // Value expression: identifier FK label | yesno conditional | numeric default
-    const valueExpr = card.display === 'identifier'
-      ? `(data['${card.field}$_identifier'] || data['${card.field}'] || '—')`
-      : card.display === 'yesno'
-        ? `((data.${card.field} === true || data.${card.field} === 'Y') ? ui('${card.trueKey ?? 'postedStatus'}') : (data.${card.field} === false || data.${card.field} === 'N') ? ui('${card.falseKey ?? 'notPostedStatus'}') : '—')`
-        : `fmt(data.${card.field})`;
+    let valueExpr;
+    if (card.display === 'identifier') {
+      valueExpr = `(data['${card.field}$_identifier'] || data['${card.field}'] || '—')`;
+    } else if (card.display === 'yesno') {
+      valueExpr = `((data.${card.field} === true || data.${card.field} === 'Y') ? ui('${card.trueKey ?? 'postedStatus'}') : (data.${card.field} === false || data.${card.field} === 'N') ? ui('${card.falseKey ?? 'notPostedStatus'}') : '—')`;
+    } else {
+      valueExpr = `fmt(data.${card.field})`;
+    }
     // Color expression: dynamic for yesno, static otherwise
     const colorExpr = card.display === 'yesno'
       ? `((data.${card.field} === true || data.${card.field} === 'Y') ? '${card.trueColor ?? 'green'}' : '${card.falseColor ?? 'orange'}')`

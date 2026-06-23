@@ -2784,6 +2784,35 @@ export function DetailView({
                     : menuActions;
                   const visibleActions = resolvedActions.filter(a => a.visible !== false);
                   if (visibleActions.length === 0 && !customMenuContent) return null;
+                  const currentId = data?.id || recordId;
+                  const runDocumentAction = async (action) => {
+                    if (action.preUnpost && (data?.posted === 'Y' || data?.posted === true)) {
+                      const unpostResult = await neoAction.execute(currentId, 'unpost');
+                      if (!unpostResult.success) {
+                        toast.error(unpostResult.message || ui('actionFailed'));
+                        return false;
+                      }
+                    }
+                    try {
+                      await docAction.execute(currentId, action.documentAction);
+                      const msg = (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted');
+                      toast.success(msg);
+                      hook.fetchById?.(currentId);
+                    } catch (err) {
+                      toast.error(err.message);
+                    }
+                    return true;
+                  };
+                  const runNeoMenuAction = async (action) => {
+                    const result = await neoAction.execute(currentId, action.neoAction);
+                    const msg = (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted');
+                    if (result.success) {
+                      toast.success(msg);
+                      hook.fetchById?.(currentId);
+                    } else {
+                      toast.error(result.message || ui('actionFailed'));
+                    }
+                  };
                   return (
                     <div
                       className="absolute right-0 top-full mt-1 z-50 bg-white py-2 min-w-[148px]"
@@ -2804,38 +2833,14 @@ export function DetailView({
                             onClick={async () => {
                               setShowMoreMenu(false);
                               if (action.documentAction) {
-                                const currentId = data?.id || recordId;
-                                try {
-                                  if (action.preUnpost && (data?.posted === 'Y' || data?.posted === true)) {
-                                    const unpostResult = await neoAction.execute(currentId, 'unpost');
-                                    if (!unpostResult.success) {
-                                      toast.error(unpostResult.message || ui('actionFailed'));
-                                      return;
-                                    }
-                                  }
-                                  await docAction.execute(currentId, action.documentAction);
-                                  const msg = (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted');
-                                  toast.success(msg);
-                                  hook.fetchById?.(currentId);
-                                } catch (err) {
-                                  toast.error(err.message);
-                                }
+                                await runDocumentAction(action);
                                 return;
                               }
                               if (action.neoAction) {
-                                const currentId = data?.id || recordId;
-                                const result = await neoAction.execute(currentId, action.neoAction);
-                                if (result.success) {
-                                  const msg = (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted');
-                                  toast.success(msg);
-                                  hook.fetchById?.(currentId);
-                                } else {
-                                  toast.error(result.message || ui('actionFailed'));
-                                }
+                                await runNeoMenuAction(action);
                                 return;
                               }
                               if (action.preUnpost && (data?.posted === 'Y' || data?.posted === true)) {
-                                const currentId = data?.id || recordId;
                                 const unpostResult = await neoAction.execute(currentId, 'unpost');
                                 if (!unpostResult.success) {
                                   toast.error(unpostResult.message || ui('actionFailed'));

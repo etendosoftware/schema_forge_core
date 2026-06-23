@@ -75,9 +75,12 @@ export default function NotPostedDocumentsPage({ token, apiBaseUrl }) {
       // Handler returns { response: { data: [{ rows: [...], total: N }] } } OR
       // { response: { data: rows[] } } depending on NEO wrapper. Handle both.
       const data = json?.response?.data;
-      const rowsData = Array.isArray(data) && data[0]?.rows
-        ? data[0].rows
-        : Array.isArray(data) ? data : [];
+      let rowsData = [];
+      if (Array.isArray(data) && data[0]?.rows) {
+        rowsData = data[0].rows;
+      } else if (Array.isArray(data)) {
+        rowsData = data;
+      }
       setRows(rowsData);
     } catch (e) {
       if (e.name !== 'AbortError') setLoadError(e.message);
@@ -191,6 +194,80 @@ export default function NotPostedDocumentsPage({ token, apiBaseUrl }) {
   const allChecked = rows.length > 0 && selected.size === rows.length;
   const someChecked = selected.size > 0 && selected.size < rows.length;
 
+  function renderTableContent() {
+    if (loading && !rows.length) return <div className="npd-center"><span>…</span></div>;
+    if (loadError) return <div className="npd-center npd-error">{loadError}</div>;
+    if (rows.length === 0) {
+      return (
+        <div data-testid="npd-empty-state" className="npd-center">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+          <span>{ui('noResults') || 'No unposted documents'}</span>
+        </div>
+      );
+    }
+    return (
+      <div className="npd-table-wrap">
+        <table className="npd-table">
+          <thead>
+            <tr>
+              <th className="col-check">
+                <input
+                  type="checkbox"
+                  checked={allChecked}
+                  ref={el => { if (el) el.indeterminate = someChecked; }}
+                  onChange={toggleAll}
+                />
+              </th>
+              <th>{ui('filterDocumentType')}</th>
+              <th>{ui('description') || 'Document'}</th>
+              <th>{ui('accountingDate') || 'Date'}</th>
+              <th>{ui('organization') || 'Organization'}</th>
+              <th className="col-actions" />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => {
+              const id = row.documentId;
+              const isPosting = posting.has(id);
+              return (
+                <tr key={id} data-testid={`npd-row-${id}`} className={selected.has(id) ? 'is-selected' : ''}>
+                  <td className="col-check">
+                    <input
+                      data-testid={`npd-row-checkbox-${id}`}
+                      type="checkbox"
+                      checked={selected.has(id)}
+                      onChange={() => toggleRow(id)}
+                    />
+                  </td>
+                  <td>
+                    <span className="npd-doc-type-badge">{row.documentType}</span>
+                  </td>
+                  <td>{row.description}</td>
+                  <td className="npd-date">{formatDate(row.accountingDate)}</td>
+                  <td className="npd-date">{row.organization}</td>
+                  <td className="col-actions">
+                    <button
+                      data-testid={`npd-post-row-${id}`}
+                      className="npd-btn npd-btn-ghost"
+                      onClick={() => postRow(row)}
+                      disabled={isPosting || loading}
+                    >
+                      {isPosting ? '…' : ui('post')}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
   return (
     <div className="npd-page">
       {/* ── Filters ──────────────────────────────────────────────────────────── */}
@@ -250,76 +327,7 @@ export default function NotPostedDocumentsPage({ token, apiBaseUrl }) {
       </div>
 
       {/* ── Table ────────────────────────────────────────────────────────────── */}
-      {loading && !rows.length ? (
-        <div className="npd-center"><span>…</span></div>
-      ) : loadError ? (
-        <div className="npd-center npd-error">{loadError}</div>
-      ) : rows.length === 0 ? (
-        <div data-testid="npd-empty-state" className="npd-center">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-            <rect x="9" y="3" width="6" height="4" rx="1"/>
-            <path d="m9 12 2 2 4-4"/>
-          </svg>
-          <span>{ui('noResults') || 'No unposted documents'}</span>
-        </div>
-      ) : (
-        <div className="npd-table-wrap">
-          <table className="npd-table">
-            <thead>
-              <tr>
-                <th className="col-check">
-                  <input
-                    type="checkbox"
-                    checked={allChecked}
-                    ref={el => { if (el) el.indeterminate = someChecked; }}
-                    onChange={toggleAll}
-                  />
-                </th>
-                <th>{ui('filterDocumentType')}</th>
-                <th>{ui('description') || 'Document'}</th>
-                <th>{ui('accountingDate') || 'Date'}</th>
-                <th>{ui('organization') || 'Organization'}</th>
-                <th className="col-actions" />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(row => {
-                const id = row.documentId;
-                const isPosting = posting.has(id);
-                return (
-                  <tr key={id} data-testid={`npd-row-${id}`} className={selected.has(id) ? 'is-selected' : ''}>
-                    <td className="col-check">
-                      <input
-                        data-testid={`npd-row-checkbox-${id}`}
-                        type="checkbox"
-                        checked={selected.has(id)}
-                        onChange={() => toggleRow(id)}
-                      />
-                    </td>
-                    <td>
-                      <span className="npd-doc-type-badge">{row.documentType}</span>
-                    </td>
-                    <td>{row.description}</td>
-                    <td className="npd-date">{formatDate(row.accountingDate)}</td>
-                    <td className="npd-date">{row.organization}</td>
-                    <td className="col-actions">
-                      <button
-                        data-testid={`npd-post-row-${id}`}
-                        className="npd-btn npd-btn-ghost"
-                        onClick={() => postRow(row)}
-                        disabled={isPosting || loading}
-                      >
-                        {isPosting ? '…' : ui('post')}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {renderTableContent()}
     </div>
   );
 }
