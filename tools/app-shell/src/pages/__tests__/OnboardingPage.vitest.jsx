@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const localStorageMock = (() => {
   let store = {};
@@ -728,6 +728,41 @@ describe('OnboardingPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('onboardingPreparingDataDescription')).toBeInTheDocument();
+    });
+  });
+
+  it('keeps the progress bar monotonic when an untracked step runs after a tracked one', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+    let emit;
+    runOnboardingStream.mockImplementation(async (_fetch, _baseUrl, _token, _form, onMessage) => {
+      emit = onMessage;
+      onMessage({ type: 'progress', step: 'client', status: 'running' });
+      return new Promise(() => {});
+    });
+
+    render(<OnboardingPage />);
+
+    fireEvent.click(await screen.findByText('onboardingContinueAction'));
+    fireEvent.click(screen.getByText('onboardingStartAction'));
+
+    // Tracked step: client → 35%.
+    await waitFor(() => {
+      expect(screen.getByText('onboardingPreparingActivatingDescription')).toBeInTheDocument();
+      expect(screen.getByText('35%')).toBeInTheDocument();
+    });
+
+    // Client finishes; an untracked backend step (accounting) starts running.
+    act(() => {
+      emit({ type: 'progress', step: 'client', status: 'done' });
+      emit({ type: 'progress', step: 'accounting', status: 'running' });
+    });
+
+    // Generic "configuring" description shows, but the bar holds at 35% (monotonic, never drops).
+    await waitFor(() => {
+      expect(screen.getByText('onboardingPreparingConfiguringDescription')).toBeInTheDocument();
+      expect(screen.getByText('35%')).toBeInTheDocument();
     });
   });
 

@@ -1121,8 +1121,10 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
   } else if (running) {
     // Untracked backend steps (accounting, periodControl, fiscal, baseline, ...) run between the
     // tracked milestones. Show a generic "configuring" state; the clamp below holds the bar steady.
+    // A small floor (15) avoids an empty 0% ring at the very start, before the first tracked step
+    // (client, 35%) begins — the clamp only raises from here, so it never pisa a later milestone.
     setupProgressState = {
-      progress: 0,
+      progress: 15,
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingConfiguringDescription'),
       leading: <Settings className="h-8 w-8 text-slate-400" data-testid="Settings__79cf84" />,
