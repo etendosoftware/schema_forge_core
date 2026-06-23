@@ -197,7 +197,7 @@ export default function NotPostedDocumentsPage({ token, apiBaseUrl }) {
       <div className="npd-filters">
         <div className="npd-filter-field">
           <label>{ui('filterDocumentType')}</label>
-          <select value={document} onChange={e => setDocument(e.target.value)}>
+          <select data-testid="npd-filter-document-type" value={document} onChange={e => setDocument(e.target.value)}>
             <option value="">—</option>
             {filterOptions.documentTypes.map(o => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -225,7 +225,7 @@ export default function NotPostedDocumentsPage({ token, apiBaseUrl }) {
           <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
         </div>
 
-        <button className="npd-btn npd-btn-ghost" onClick={handleApply} disabled={loading}>
+        <button data-testid="npd-filter-apply" className="npd-btn npd-btn-ghost" onClick={handleApply} disabled={loading}>
           {loading ? '…' : ui('search') || 'Search'}
         </button>
       </div>
@@ -235,6 +235,7 @@ export default function NotPostedDocumentsPage({ token, apiBaseUrl }) {
         <div className="npd-toolbar-left">
           {selected.size > 0 && (
             <button
+              data-testid="npd-post-selected"
               className="npd-btn npd-btn-primary"
               onClick={postSelected}
               disabled={loading}
@@ -254,7 +255,7 @@ export default function NotPostedDocumentsPage({ token, apiBaseUrl }) {
       ) : loadError ? (
         <div className="npd-center npd-error">{loadError}</div>
       ) : rows.length === 0 ? (
-        <div className="npd-center">
+        <div data-testid="npd-empty-state" className="npd-center">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
             <rect x="9" y="3" width="6" height="4" rx="1"/>
@@ -287,9 +288,10 @@ export default function NotPostedDocumentsPage({ token, apiBaseUrl }) {
                 const id = row.documentId;
                 const isPosting = posting.has(id);
                 return (
-                  <tr key={id} className={selected.has(id) ? 'is-selected' : ''}>
+                  <tr key={id} data-testid={`npd-row-${id}`} className={selected.has(id) ? 'is-selected' : ''}>
                     <td className="col-check">
                       <input
+                        data-testid={`npd-row-checkbox-${id}`}
                         type="checkbox"
                         checked={selected.has(id)}
                         onChange={() => toggleRow(id)}
@@ -303,6 +305,7 @@ export default function NotPostedDocumentsPage({ token, apiBaseUrl }) {
                     <td className="npd-date">{row.organization}</td>
                     <td className="col-actions">
                       <button
+                        data-testid={`npd-post-row-${id}`}
                         className="npd-btn npd-btn-ghost"
                         onClick={() => postRow(row)}
                         disabled={isPosting || loading}
