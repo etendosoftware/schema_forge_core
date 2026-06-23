@@ -1,8 +1,8 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-06-11T01:47:08.755Z",
-  "updatedAt": "2026-06-18T12:22:09.820Z",
-  "checksum": "ce24c4484d928843",
+  "updatedAt": "2026-06-19T12:29:45.813Z",
+  "checksum": "6fcded41cfce3ebe",
   "frontendContract": {
     "window": {
       "id": "94EAA455D2644E04AB25D93BE5157B6D",
@@ -1395,9 +1395,10 @@
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": true,
             "sourceRequired": true,
+            "gridOrder": 6,
             "readOnlyLogic": {
               "raw": "@APRM_BSProcessed@='Y'",
               "evaluable": false,
@@ -1471,7 +1472,7 @@
               "source": "0"
             },
             "defaultValue": "0",
-            "gridOrder": 6,
+            "gridOrder": 7,
             "readOnlyLogic": {
               "raw": "@APRM_BSProcessed@='Y'",
               "evaluable": false,
@@ -1496,7 +1497,7 @@
               "source": "0"
             },
             "defaultValue": "0",
-            "gridOrder": 7,
+            "gridOrder": 8,
             "readOnlyLogic": {
               "raw": "@APRM_BSProcessed@='Y'",
               "evaluable": false,

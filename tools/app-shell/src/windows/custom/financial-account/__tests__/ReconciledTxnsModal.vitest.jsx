@@ -2,7 +2,11 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 const navigate = vi.fn();
-vi.mock('react-router-dom', () => ({ useNavigate: () => navigate }));
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => navigate,
+  useParams: () => ({ recordId: 'acc-1' }),
+  useSearchParams: () => [new URLSearchParams(), vi.fn()],
+}));
 
 vi.mock('@/i18n', () => ({
   useUI: () => (key, params) => (params && params.amount ? `${key}:${params.amount}` : key),
@@ -21,7 +25,7 @@ import { ReconciledTxnsModal } from '../ReconciledTxnsModal.jsx';
 const TXN = {
   documentNo: '1000034', date: '2026-01-26T00:00:00Z', contact: 'Laura Morat',
   description: 'Invoice No.: 10000016.', trxType: 'BPW', paymentStatus: 'RPAP',
-  amount: -500, paymentId: 'pay-1', paymentIsReceipt: 'N',
+  amount: -500, transactionId: 'txn-1', paymentId: 'pay-1', paymentIsReceipt: 'N',
 };
 
 function line(overrides = {}) {
@@ -68,16 +72,19 @@ describe('ReconciledTxnsModal', () => {
     expect(screen.queryByText('financeAccountStatementLinesTxnBalanced')).not.toBeInTheDocument();
   });
 
-  it('navigates to payment-out and closes when "go to movement" is clicked', async () => {
+  it('navigates to movements tab with txn highlight and closes when the arrow is clicked', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     render(<ReconciledTxnsModal line={line()} currency="EUR" onClose={onClose} />);
     await user.click(screen.getByTestId('reconciled-txn-go-1000034'));
     expect(onClose).toHaveBeenCalled();
-    expect(navigate).toHaveBeenCalledWith('/payment-out/pay-1');
+    expect(navigate).toHaveBeenCalledWith(
+      '/financial-account/acc-1?tab=movements&txn=txn-1',
+      { replace: true },
+    );
   });
 
-  it('navigates to payment-in for a receipt transaction', async () => {
+  it('navigates to movements tab for a receipt transaction', async () => {
     const user = userEvent.setup();
     render(
       <ReconciledTxnsModal
@@ -87,6 +94,38 @@ describe('ReconciledTxnsModal', () => {
       />,
     );
     await user.click(screen.getByTestId('reconciled-txn-go-1000034'));
-    expect(navigate).toHaveBeenCalledWith('/payment-in/pay-1');
+    expect(navigate).toHaveBeenCalledWith(
+      '/financial-account/acc-1?tab=movements&txn=txn-1',
+      { replace: true },
+    );
+  });
+
+  it('renders no go-to-movement button when the txn has no transactionId', () => {
+    render(
+      <ReconciledTxnsModal
+        line={line({ txns: [{ ...TXN, transactionId: null }] })}
+        currency="EUR"
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.queryByTestId('reconciled-txn-go-1000034')).not.toBeInTheDocument();
+  });
+
+  it('maps each transaction type to its label, falling back to the raw code', () => {
+    render(
+      <ReconciledTxnsModal
+        line={line({
+          txns: [
+            { ...TXN, documentNo: 'BF-1', trxType: 'BF', transactionId: null },
+            { ...TXN, documentNo: 'X-1', trxType: 'OTHER', transactionId: null },
+          ],
+        })}
+        currency="EUR"
+        onClose={vi.fn()}
+      />,
+    );
+    // BF resolves to its i18n key; an unknown code is rendered verbatim.
+    expect(screen.getByText('financeAccountMovementsTypeBF')).toBeInTheDocument();
+    expect(screen.getByText('OTHER')).toBeInTheDocument();
   });
 });

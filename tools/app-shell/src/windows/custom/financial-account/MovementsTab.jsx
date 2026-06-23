@@ -77,7 +77,7 @@ function applyFilters(movements, filters) {
  * }} props
  */
 export const MovementsTab = forwardRef(function MovementsTab(
-  { account, totals, movements, enabledDimensions = [], headerDimensions = [], trxTypes = [], accountOrgId = null, paymentMethods = [], loading, onReload },
+  { account, totals, movements, enabledDimensions = [], headerDimensions = [], trxTypes = [], accountOrgId = null, paymentMethods = [], loading, onReload, highlightTxnId = null },
   ref,
 ) {
   const [filters, setFilters] = useState({
@@ -163,6 +163,7 @@ export const MovementsTab = forwardRef(function MovementsTab(
           enabledDimensions={enabledDimensions}
           selectedIds={selectedIds}
           onSelectionChange={handleSelectionChange}
+          highlightTxnId={highlightTxnId}
           data-testid="MovementsTable__c1f76a" />
       </div>
       <NewMovementWizard

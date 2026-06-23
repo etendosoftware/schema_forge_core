@@ -914,6 +914,7 @@ export function ListView({
             windowName={windowName}
             token={token}
             allowEmail={allowEmail}
+            sendPolicy={effectiveSendDocument}
             onClose={() => setEmailRow(null)}
             data-testid="SendDocumentModal__620cbc" />
         )}

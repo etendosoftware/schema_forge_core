@@ -7,6 +7,11 @@ import { DateRangeFilter } from './DateRangeFilter';
 import { TypeFilter } from './TypeFilter';
 import { buildMovementFilterColumns } from '../movementAdvancedFilter';
 
+// Feature flag: manual movement creation is not part of this first release, so
+// the "New movement" button stays hidden. The wizard and all its wiring are
+// kept intact — flip this to `true` to re-enable the button in a future version.
+const SHOW_NEW_MOVEMENT = false;
+
 /**
  * Toolbar for the movements tab.
  *
@@ -76,15 +81,17 @@ export function MovementsToolbar({
           className="h-10 w-48 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm text-[#121217] placeholder:text-[#8a8aa3] shadow-[0_1px_2px_rgba(18,18,23,0.05)] focus:outline-none focus:ring-2 focus:ring-[#121217] focus:ring-offset-1"
         />
       </div>
-      {/* New movement */}
-      <button
-        type="button"
-        data-testid="new-movement-button"
-        onClick={onNewMovement}
-        className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#121217] px-3 text-sm font-medium text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217]"
-      >
-        {ui('financeAccountMovementsNew')}
-      </button>
+      {/* New movement — hidden in this release (see SHOW_NEW_MOVEMENT). */}
+      {SHOW_NEW_MOVEMENT ? (
+        <button
+          type="button"
+          data-testid="new-movement-button"
+          onClick={onNewMovement}
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#121217] px-3 text-sm font-medium text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217]"
+        >
+          {ui('financeAccountMovementsNew')}
+        </button>
+      ) : null}
     </div>
   );
 }
