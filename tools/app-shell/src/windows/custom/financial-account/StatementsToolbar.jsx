@@ -36,7 +36,7 @@ function ImportSplitButton({ ui, onImportClick, onManualClick }) {
         onClick={onImportClick}
         className="inline-flex h-10 items-center gap-2 rounded-l-lg bg-[#121217] px-3 text-sm font-medium text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217]"
       >
-        <Upload className="h-4 w-4" />
+        <Upload className="h-4 w-4" data-testid="Upload__8a428c" />
         {ui('financeAccountStatementsImport')}
       </button>
       <button
@@ -48,7 +48,9 @@ function ImportSplitButton({ ui, onImportClick, onManualClick }) {
         onClick={() => setOpen((o) => !o)}
         className="inline-flex h-10 w-9 items-center justify-center rounded-r-lg border-l border-white/20 bg-[#121217] text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217]"
       >
-        <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}
+          data-testid="ChevronDown__8a428c" />
       </button>
       {open ? (
         <div
@@ -63,7 +65,7 @@ function ImportSplitButton({ ui, onImportClick, onManualClick }) {
             className="flex w-full items-start gap-3 px-3 py-2.5 text-left hover:bg-[#F5F7F9]"
           >
             <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F0F2F5] text-[#121217]">
-              <Pencil className="h-4 w-4" />
+              <Pencil className="h-4 w-4" data-testid="Pencil__8a428c" />
             </span>
             <span className="flex flex-col">
               <span className="text-sm font-semibold text-[#121217]">
@@ -124,19 +126,19 @@ export function StatementsToolbar({
         onClick={() => navigate(-1)}
         className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-colors hover:bg-[#F5F7F9] hover:text-foreground"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="h-4 w-4" data-testid="ArrowLeft__8a428c" />
       </button>
-
       {/* Status filter — first, mirroring the standard list toolbar (e.g. Sales Order). */}
-      <StatementStatusFilter value={status} onChange={onStatusChange} />
-
+      <StatementStatusFilter
+        value={status}
+        onChange={onStatusChange}
+        data-testid="StatementStatusFilter__8a428c" />
       {/* Date range filter */}
       <DateRangePopover
         value={dateRange}
         onChange={onDateRangeChange}
         placeholder={ui('dateRangeAnyTime')}
-      />
-
+        data-testid="DateRangePopover__8a428c" />
       {/* Advanced "by conditions" filter */}
       <AdvancedFilterButton
         columns={columns}
@@ -144,11 +146,9 @@ export function StatementsToolbar({
         value={advancedFilter}
         onChange={onAdvancedFilterChange}
         testId="statements-advanced-filter"
-      />
-
+        data-testid="AdvancedFilterButton__8a428c" />
       {/* Spacer */}
       <div className="flex-1" />
-
       {/* Search */}
       <div className="relative flex items-center">
         <input
@@ -160,9 +160,12 @@ export function StatementsToolbar({
           className="h-10 w-48 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm text-[#121217] placeholder:text-[#8a8aa3] shadow-[0_1px_2px_rgba(18,18,23,0.05)] focus:outline-none focus:ring-2 focus:ring-[#121217] focus:ring-offset-1"
         />
       </div>
-
       {/* Import (split-button: import file ▾ create manually) */}
-      <ImportSplitButton ui={ui} onImportClick={onImportClick} onManualClick={onManualClick} />
+      <ImportSplitButton
+        ui={ui}
+        onImportClick={onImportClick}
+        onManualClick={onManualClick}
+        data-testid="ImportSplitButton__8a428c" />
     </div>
   );
 }

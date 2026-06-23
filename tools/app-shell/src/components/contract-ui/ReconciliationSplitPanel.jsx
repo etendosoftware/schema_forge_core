@@ -32,16 +32,27 @@ const SKELETON_CELL_KEYS = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5'];
 // Elevation shadow shared by the selected row in both panels.
 const ELEVATED_SHADOW =
   'shadow-[0px_10px_15px_-3px_rgba(18,18,23,0.08),0px_4px_6px_-2px_rgba(18,18,23,0.05)]';
-const STATUS_CODES = ['pending', 'reconciled'];
-const DOC_TYPE_CODES = ['receipts', 'payments'];
+const STATUS_CODES = ['pending', 'suggested', 'byRule', 'difference', 'reconciled'];
+// i18n label key per status code, shared by the filter and the row badges.
+const STATUS_LABEL_KEY = {
+  pending: 'financeReconcileFilterStatusPending',
+  suggested: 'financeReconcileFilterStatusSuggested',
+  byRule: 'financeReconcileFilterStatusByRule',
+  difference: 'financeReconcileFilterStatusDifference',
+  reconciled: 'financeReconcileFilterStatusReconciled',
+};
 
 /** Pill badge for line/candidate status. Suggested → blue, reconciled → green, else grey. */
 function StatusBadge({ kind }) {
   const ui = useUI();
+  // Figma badge palette: grey / blue / amber / red / green (all full pills).
   const map = {
-    suggested: { labelKey: 'financeReconcileBadgeSuggested', cls: 'bg-[#E6EEFF] text-[#1B4FD6]' },
-    reconciled: { labelKey: 'financeReconcileBadgeReconciled', cls: 'bg-[#E8F6EE] text-[#1E874C]' },
-    pending: { labelKey: 'financeReconcileBadgePending', cls: 'bg-[#F0F1F4] text-[#6C6C89]' },
+    suggested: { labelKey: 'financeReconcileBadgeSuggested', cls: 'bg-[#F0FAFF] text-[#0075AD]' },
+    byRule: { labelKey: 'financeReconcileBadgeByRule', cls: 'bg-[#FFF9EB] text-[#92600A]' },
+    difference: { labelKey: 'financeReconcileBadgeDifference', cls: 'bg-[#FEF0F4] text-[#D50B3E]' },
+    reconciled: { labelKey: 'financeReconcileBadgeReconciled', cls: 'bg-[#EEFBF4] text-[#17663A]' },
+    pending: { labelKey: 'financeReconcileBadgePending', cls: 'bg-[#F5F7F9] text-[#3F3F50]' },
+    invoice: { labelKey: 'financeReconcileBadgeInvoice', cls: 'bg-[#FFF9EB] text-[#92600A]' },
   };
   const cfg = map[kind] ?? map.pending;
   return (
@@ -49,6 +60,13 @@ function StatusBadge({ kind }) {
       {ui(cfg.labelKey)}
     </span>
   );
+}
+
+/** Badge kind for a candidate row: reconciled (read-only) → invoice → suggested → pending. */
+function badgeKindFor(cand, readOnly) {
+  if (readOnly) return 'reconciled';
+  if (cand.kind === 'invoice') return 'invoice';
+  return cand.suggested ? 'suggested' : 'pending';
 }
 
 function ToolbarShell({ children, search, onSearchChange, testIdPrefix }) {
@@ -69,40 +87,46 @@ function ToolbarShell({ children, search, onSearchChange, testIdPrefix }) {
   );
 }
 
-function ReconciliationStatusFilter({ value, onChange }) {
+function ReconciliationStatusFilter({ value, onChange, counts = {} }) {
   const ui = useUI();
+  const countFor = (code) => counts[code] ?? 0;
   return (
     <DistinctValuesFilter
       value={value}
       onChange={onChange}
       codes={STATUS_CODES}
-      labelFor={(code) => (code === 'reconciled'
-        ? ui('financeReconcileFilterStatusReconciled')
-        : ui('financeReconcileFilterStatusPending'))}
-      allLabel={ui('financeReconcileFilterStatusAll')}
+      labelFor={(code) => `${ui(STATUS_LABEL_KEY[code] ?? STATUS_LABEL_KEY.pending)} (${countFor(code)})`}
+      allLabel={`${ui('financeReconcileFilterStatusAll')} (${counts.all ?? 0})`}
       searchPlaceholder={ui('financeReconcileFilterStatusSearchPlaceholder')}
-      popoverWidth="w-56"
-    />
+      popoverWidth="w-60"
+      data-testid="DistinctValuesFilter__d0f4d5" />
   );
 }
 
-function ReconciliationDocTypeFilter({ value, onChange }) {
-  const ui = useUI();
-  const labelFor = (code) => {
-    if (code === 'payments') return ui('financeReconcileFilterDocTypePayments');
-    return ui('financeReconcileFilterDocTypeReceipts');
-  };
+// Single "Tipo de transacción" selector (Figma): one dropdown with four mutually-exclusive
+// sources. Each maps to a candidate kind (invoice vs existing transaction) and a direction
+// (docType receipts/payments → isReceipt / issotrx).
+const SOURCE_CODES = ['salesInvoices', 'purchaseInvoices', 'receipts', 'payments'];
+const SOURCE_META = {
+  salesInvoices: { kind: 'invoices', docType: 'receipts', labelKey: 'financeReconcileSourceSalesInvoices' },
+  purchaseInvoices: { kind: 'invoices', docType: 'payments', labelKey: 'financeReconcileSourcePurchaseInvoices' },
+  receipts: { kind: 'transactions', docType: 'receipts', labelKey: 'financeReconcileSourceReceipts' },
+  payments: { kind: 'transactions', docType: 'payments', labelKey: 'financeReconcileSourcePayments' },
+};
 
+function ReconciliationSourceFilter({ value, onChange, counts = {} }) {
+  const ui = useUI();
   return (
     <DistinctValuesFilter
       value={value}
-      onChange={onChange}
-      codes={DOC_TYPE_CODES}
-      labelFor={labelFor}
-      allLabel={ui('financeReconcileFilterDocTypeAll')}
-      searchPlaceholder={ui('financeReconcileFilterDocTypeSearchPlaceholder')}
+      // Always keep a concrete selection — ignore the "clear" (all) action.
+      onChange={(v) => onChange(v || value)}
+      codes={SOURCE_CODES}
+      labelFor={(code) => `${ui(SOURCE_META[code]?.labelKey ?? code)} (${counts[code] ?? 0})`}
+      allLabel={ui('financeReconcileSourceLabel')}
+      searchPlaceholder={ui('financeReconcileSourceLabel')}
       popoverWidth="w-64"
-    />
+      data-testid="recon-source-filter" />
   );
 }
 
@@ -110,10 +134,10 @@ function ReconciliationDocTypeFilter({ value, onChange }) {
 function renderRows({ loading, items, colSpan, emptyTitle, emptyHint, renderRow }) {
   if (loading) {
     return SKELETON_ROWS.map((n) => (
-      <TableRow key={n}>
+      <TableRow key={n} data-testid="TableRow__d0f4d5">
         {SKELETON_CELL_KEYS.slice(0, colSpan).map((cellKey) => (
-          <TableCell key={cellKey}>
-            <Skeleton className="h-4 w-full" />
+          <TableCell key={cellKey} data-testid="TableCell__d0f4d5">
+            <Skeleton className="h-4 w-full" data-testid="Skeleton__d0f4d5" />
           </TableCell>
         ))}
       </TableRow>
@@ -121,8 +145,8 @@ function renderRows({ loading, items, colSpan, emptyTitle, emptyHint, renderRow 
   }
   if (items.length === 0) {
     return (
-      <TableRow className="hover:bg-transparent">
-        <TableCell colSpan={colSpan} className="py-12">
+      <TableRow className="hover:bg-transparent" data-testid="TableRow__d0f4d5">
+        <TableCell colSpan={colSpan} className="py-12" data-testid="TableCell__d0f4d5">
           <div className="flex flex-col items-center gap-1 text-center">
             <p className="text-sm font-medium text-[#121217]">{emptyTitle}</p>
             {emptyHint ? <p className="max-w-sm text-sm text-[#6C6C89]">{emptyHint}</p> : null}
@@ -143,13 +167,15 @@ function PanelTable({ headCells, loading, items, renderRow }) {
   const ui = useUI();
   return (
     <div className="flex-1 overflow-y-auto [&>div]:overflow-visible">
-      <Table>
-        <TableHeader>
-          <TableRow className="h-11 border-b border-[#E8EAEF] [&_th]:text-xs [&_th]:font-semibold [&_th]:text-[#121217]">
+      <Table data-testid="Table__d0f4d5">
+        <TableHeader data-testid="TableHeader__d0f4d5">
+          <TableRow
+            className="h-11 border-b border-[#E8EAEF] [&_th]:text-xs [&_th]:font-semibold [&_th]:text-[#121217]"
+            data-testid="TableRow__d0f4d5">
             {headCells}
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody data-testid="TableBody__d0f4d5">
           {renderRows({
             loading,
             items,
@@ -167,7 +193,9 @@ function PanelTable({ headCells, loading, items, renderRow }) {
 /** Date cell shared by both panels (per-panel width/background via cellClassName). */
 function DateCell({ date, bcpLocale, cellClassName }) {
   return (
-    <TableCell className={cn('h-[62px] px-3 text-sm font-normal text-[#121217]', cellClassName)}>
+    <TableCell
+      className={cn('h-[62px] px-3 text-sm font-normal text-[#121217]', cellClassName)}
+      data-testid="TableCell__d0f4d5">
       {formatDate(date, bcpLocale)}
     </TableCell>
   );
@@ -176,13 +204,15 @@ function DateCell({ date, bcpLocale, cellClassName }) {
 /** Right-aligned money cell shared by both panels. */
 function MoneyCell({ value, currency, cellClassName, bold = false }) {
   return (
-    <TableCell className={cn('h-[62px] px-3 text-right align-middle', cellClassName)}>
+    <TableCell
+      className={cn('h-[62px] px-3 text-right align-middle', cellClassName)}
+      data-testid="TableCell__d0f4d5">
       <MoneyAmount
         value={Number(value) || 0}
         currency={currency}
         tone="neutral"
         className={cn('text-sm leading-5 text-[#121217]', bold ? 'font-semibold' : 'font-normal')}
-      />
+        data-testid="MoneyAmount__d0f4d5" />
     </TableCell>
   );
 }
@@ -196,7 +226,12 @@ function PanelShell({ className, toolbar, headCells, loading, items, renderRow, 
   return (
     <div className={cn('flex min-w-[30%] flex-1 flex-col overflow-hidden', className)}>
       {toolbar}
-      <PanelTable headCells={headCells} loading={loading} items={items} renderRow={renderRow} />
+      <PanelTable
+        headCells={headCells}
+        loading={loading}
+        items={items}
+        renderRow={renderRow}
+        data-testid="PanelTable__d0f4d5" />
       {footer}
     </div>
   );
@@ -208,13 +243,14 @@ function PanelShell({ className, toolbar, headCells, loading, items, renderRow, 
  */
 function StatementLinesPanel({
   lines, total, loading, currency, bcpLocale, selectedLineId, onSelectLine, search, onSearchChange,
-  status, onStatusChange, dateRange, onDateRangeChange, onBack,
+  status, onStatusChange, statusCounts, dateRange, onDateRangeChange, onBack,
 }) {
   const ui = useUI();
 
   const renderRow = (line) => {
     const selected = line.id === selectedLineId;
-    const reconciled = line.status === 'reconciled';
+    // The engine-computed `state` drives the badge (suggested/byRule/difference/reconciled/pending).
+    const badgeKind = line.state || (line.status === 'reconciled' ? 'reconciled' : 'pending');
     const cellBg = cn('transition-colors', selected ? 'bg-[#F5F7F9]' : 'bg-white');
     return (
       <TableRow
@@ -228,7 +264,10 @@ function StatementLinesPanel({
             : 'hover:z-10 hover:bg-white hover:shadow-lg',
         )}
       >
-        <TableCell className={cn('h-[62px] w-8 px-0 pl-2', cellBg)} onClick={(e) => e.stopPropagation()}>
+        <TableCell
+          className={cn('h-[62px] w-8 px-0 pl-2', cellBg)}
+          onClick={(e) => e.stopPropagation()}
+          data-testid="TableCell__d0f4d5">
           <input
             type="radio"
             name="recon-statement-line"
@@ -239,17 +278,30 @@ function StatementLinesPanel({
             className="h-4 w-4 accent-[#121217]"
           />
         </TableCell>
-        <DateCell date={line.date} bcpLocale={bcpLocale} cellClassName={cn('w-[108px]', cellBg)} />
-        <TableCell className={cn('h-[62px] px-3 py-2 text-sm text-[#121217]', cellBg)}>
+        <DateCell
+          date={line.date}
+          bcpLocale={bcpLocale}
+          cellClassName={cn('w-[108px]', cellBg)}
+          data-testid="DateCell__d0f4d5" />
+        <TableCell
+          className={cn('h-[62px] px-3 py-2 text-sm text-[#121217]', cellBg)}
+          data-testid="TableCell__d0f4d5">
           <div className="flex flex-col items-start gap-0.5">
             <span className={cn('w-full truncate leading-5', selected ? 'font-semibold' : 'font-normal')}>
               {line.description || line.partnerName || line.referenceNo || '—'}
             </span>
-            <StatusBadge kind={reconciled ? 'reconciled' : 'pending'} />
+            <StatusBadge kind={badgeKind} data-testid="StatusBadge__d0f4d5" />
           </div>
         </TableCell>
-        <MoneyCell value={line.amount} currency={currency} bold cellClassName={cn('w-[139px]', cellBg)} />
-        <TableCell className={cn('h-[62px] w-9 px-0 pr-1', cellBg)}>
+        <MoneyCell
+          value={line.amount}
+          currency={currency}
+          bold
+          cellClassName={cn('w-[139px]', cellBg)}
+          data-testid="MoneyCell__d0f4d5" />
+        <TableCell
+          className={cn('h-[62px] w-9 px-0 pr-1', cellBg)}
+          data-testid="TableCell__d0f4d5">
           <button
             type="button"
             tabIndex={-1}
@@ -259,7 +311,7 @@ function StatementLinesPanel({
               selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
             )}
           >
-            <MoreVertical className="h-5 w-5" />
+            <MoreVertical className="h-5 w-5" data-testid="MoreVertical__d0f4d5" />
           </button>
         </TableCell>
       </TableRow>
@@ -267,7 +319,11 @@ function StatementLinesPanel({
   };
 
   const toolbar = (
-    <ToolbarShell search={search} onSearchChange={onSearchChange} testIdPrefix="recon-left">
+    <ToolbarShell
+      search={search}
+      onSearchChange={onSearchChange}
+      testIdPrefix="recon-left"
+      data-testid="ToolbarShell__d0f4d5">
       <button
         type="button"
         aria-label={ui('financeAccountDetailBack')}
@@ -275,10 +331,10 @@ function StatementLinesPanel({
         onClick={onBack}
         className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-colors hover:bg-[#F5F7F9] hover:text-foreground"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="h-4 w-4" data-testid="ArrowLeft__d0f4d5" />
       </button>
-      <ReconciliationStatusFilter value={status} onChange={onStatusChange} />
-      <DateRangePopover value={dateRange} onChange={onDateRangeChange} placeholder={ui('financeReconcileFilterDate')} />
+      <ReconciliationStatusFilter value={status} onChange={onStatusChange} counts={statusCounts} data-testid="ReconciliationStatusFilter__d0f4d5" />
+      <DateRangePopover value={dateRange} onChange={onDateRangeChange} placeholder={ui('financeReconcileFilterDate')} data-testid="DateRangePopover__d0f4d5" />
     </ToolbarShell>
   );
 
@@ -298,21 +354,21 @@ function StatementLinesPanel({
       footer={footer}
       headCells={(
         <>
-          <TableHead className="w-8 px-0 pl-2" />
-          <TableHead className="w-[108px] px-3">{ui('financeReconcileColDate')}</TableHead>
-          <TableHead className="px-3">{ui('financeReconcileColDescription')}</TableHead>
-          <TableHead className="w-[139px] px-3 text-left">{ui('financeReconcileColAmount')}</TableHead>
-          <TableHead className="w-9 px-0 pr-1" />
+          <TableHead className="w-8 px-0 pl-2" data-testid="TableHead__d0f4d5" />
+          <TableHead className="w-[108px] px-3" data-testid="TableHead__d0f4d5">{ui('financeReconcileColDate')}</TableHead>
+          <TableHead className="px-3" data-testid="TableHead__d0f4d5">{ui('financeReconcileColDescription')}</TableHead>
+          <TableHead className="w-[139px] px-3 text-left" data-testid="TableHead__d0f4d5">{ui('financeReconcileColAmount')}</TableHead>
+          <TableHead className="w-9 px-0 pr-1" data-testid="TableHead__d0f4d5" />
         </>
       )}
-    />
+      data-testid="PanelShell__d0f4d5" />
   );
 }
 
 /** Right panel — candidate operations with multi-select checkbox rows. */
 function CandidateOperationsPanel({
   line, candidates, loading, currency, bcpLocale, selectedIds, onToggle, search, onSearchChange,
-  docType, onDocTypeChange, dateRange, onDateRangeChange, footer,
+  source, onSourceChange, sourceCounts = {}, dateRange, onDateRangeChange, footer, readOnly = false,
 }) {
   const ui = useUI();
 
@@ -321,7 +377,7 @@ function CandidateOperationsPanel({
       <div className="flex min-w-[30%] flex-1 flex-col items-center justify-center px-0 text-center" data-testid="recon-right-empty">
         <div className="flex w-full flex-col items-center gap-1 px-5">
           <div className="mb-1 flex h-10 w-10 items-center justify-center rounded-full bg-[#F5F7F9] text-[#828FA3]">
-            <CircleCheckBig className="h-6 w-6" />
+            <CircleCheckBig className="h-6 w-6" data-testid="CircleCheckBig__d0f4d5" />
           </div>
           <p className="w-full text-[20px] font-semibold leading-7 text-[#121217]">{ui('financeReconcileRightEmptyTitle')}</p>
           <p className="w-full text-xs leading-4 text-[#282833]">{ui('financeReconcileRightEmptyHint')}</p>
@@ -341,15 +397,23 @@ function CandidateOperationsPanel({
           : 'hover:z-10 hover:bg-white hover:shadow-lg',
       )}
     >
-      <TableCell className="h-[62px] w-8 px-0 pl-2">
-        <Checkbox
-          checked={selectedIds.has(cand.id)}
-          onChange={() => onToggle(cand.id)}
-          data-testid={`recon-cand-check-${cand.id}`}
-        />
+      <TableCell className="h-[62px] w-8 px-0 pl-2" data-testid="TableCell__d0f4d5">
+        {readOnly ? null : (
+          <Checkbox
+            checked={selectedIds.has(cand.id)}
+            onChange={() => onToggle(cand.id)}
+            data-testid={`recon-cand-check-${cand.id}`}
+          />
+        )}
       </TableCell>
-      <DateCell date={cand.date} bcpLocale={bcpLocale} cellClassName="w-[104px]" />
-      <TableCell className="h-[62px] px-3 py-2 text-sm text-[#121217]">
+      <DateCell
+        date={cand.date}
+        bcpLocale={bcpLocale}
+        cellClassName="w-[104px]"
+        data-testid="DateCell__d0f4d5" />
+      <TableCell
+        className="h-[62px] px-3 py-2 text-sm text-[#121217]"
+        data-testid="TableCell__d0f4d5">
         <div className="flex flex-col items-start gap-0.5">
           <div className="flex w-full items-center gap-1 overflow-hidden text-sm leading-5">
             <span className="shrink-0 font-normal text-[#121217]">
@@ -359,18 +423,45 @@ function CandidateOperationsPanel({
               <span className="truncate text-xs font-medium leading-4 text-[#6C6C89]">{cand.partnerName}</span>
             ) : null}
           </div>
-          <StatusBadge kind={cand.suggested ? 'suggested' : 'pending'} />
+          <StatusBadge
+            kind={badgeKindFor(cand, readOnly)}
+            data-testid="StatusBadge__d0f4d5" />
         </div>
       </TableCell>
-      <MoneyCell value={cand.pendingBalance} currency={currency} cellClassName="w-[121px]" />
-      <MoneyCell value={cand.amount} currency={currency} bold cellClassName="w-[121px]" />
+      <MoneyCell
+        value={cand.pendingBalance}
+        currency={currency}
+        cellClassName="w-[121px]"
+        data-testid="MoneyCell__d0f4d5" />
+      <MoneyCell
+        value={cand.amount}
+        currency={currency}
+        bold
+        cellClassName="w-[121px]"
+        data-testid="MoneyCell__d0f4d5" />
     </TableRow>
   );
 
   const toolbar = (
-    <ToolbarShell search={search} onSearchChange={onSearchChange} testIdPrefix="recon-right">
-      <ReconciliationDocTypeFilter value={docType} onChange={onDocTypeChange} />
-      <DateRangePopover value={dateRange} onChange={onDateRangeChange} placeholder={ui('financeReconcileFilterDate')} />
+    <ToolbarShell
+      search={search}
+      onSearchChange={onSearchChange}
+      testIdPrefix="recon-right"
+      data-testid="ToolbarShell__d0f4d5">
+      {/* Single transaction-type selector (sales/purchase invoices, receipts, payments).
+          Reconciled lines are read-only, so it is hidden there. */}
+      {readOnly ? null : (
+        <ReconciliationSourceFilter
+          value={source}
+          onChange={onSourceChange}
+          counts={sourceCounts}
+          data-testid="ReconciliationSourceFilter__d0f4d5" />
+      )}
+      <DateRangePopover
+        value={dateRange}
+        onChange={onDateRangeChange}
+        placeholder={ui('financeReconcileFilterDate')}
+        data-testid="DateRangePopover__d0f4d5" />
     </ToolbarShell>
   );
 
@@ -383,14 +474,14 @@ function CandidateOperationsPanel({
       footer={footer}
       headCells={(
         <>
-          <TableHead className="w-8 px-0 pl-2" />
-          <TableHead className="w-[104px] px-3">{ui('financeReconcileColDate')}</TableHead>
-          <TableHead className="px-3">{ui('financeReconcileColInfo')}</TableHead>
-          <TableHead className="w-[121px] px-3 text-left">{ui('financeReconcileColPendingBalance')}</TableHead>
-          <TableHead className="w-[121px] px-3 text-left">{ui('financeReconcileColAmount')}</TableHead>
+          <TableHead className="w-8 px-0 pl-2" data-testid="TableHead__d0f4d5" />
+          <TableHead className="w-[104px] px-3" data-testid="TableHead__d0f4d5">{ui('financeReconcileColDate')}</TableHead>
+          <TableHead className="px-3" data-testid="TableHead__d0f4d5">{ui('financeReconcileColInfo')}</TableHead>
+          <TableHead className="w-[121px] px-3 text-left" data-testid="TableHead__d0f4d5">{ui('financeReconcileColPendingBalance')}</TableHead>
+          <TableHead className="w-[121px] px-3 text-left" data-testid="TableHead__d0f4d5">{ui('financeReconcileColAmount')}</TableHead>
         </>
       )}
-    />
+      data-testid="PanelShell__d0f4d5" />
   );
 }
 
@@ -421,17 +512,19 @@ function ReconciliationActionBar({
           data-testid="recon-action-cancel"
           className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#D1D4DB] bg-white px-3 text-sm font-medium text-[#121217] shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9]"
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4" data-testid="X__d0f4d5" />
           {ui('financeReconcileActionCancel')}
         </button>
         <button
           type="button"
           onClick={onReconcile}
-          disabled={!canReconcile || busy || isReconciledLine}
+          // A reconciled line shows an enabled "Reactivar" button (the action lands in a
+          // follow-up task); a pending line gates "Conciliar" on a balanced selection.
+          disabled={busy || (isReconciledLine ? false : !canReconcile)}
           data-testid="recon-action-reconcile"
           className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[#121217] px-3 text-sm font-medium text-white hover:bg-[#FFD500] hover:text-[#121217] disabled:cursor-not-allowed disabled:bg-[#D1D4DB] disabled:text-white disabled:hover:bg-[#D1D4DB] disabled:hover:text-white"
         >
-          <CheckCircle className="h-4 w-4" />
+          <CheckCircle className="h-4 w-4" data-testid="CheckCircle__d0f4d5" />
           {isReconciledLine
             ? ui('financeReconcileActionReactivate')
             : ui('financeReconcileActionReconcileCount', { count: reconcileCount })}
@@ -461,7 +554,7 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
   const [leftStatus, setLeftStatus] = useState('pending');
   const [leftDateRange, setLeftDateRange] = useState({ presetId: 'last30' });
   const [leftSearch, setLeftSearch] = useState('');
-  const [rightDocType, setRightDocType] = useState(null);
+  const [rightSource, setRightSource] = useState('receipts');
   const [rightDateRange, setRightDateRange] = useState({ presetId: 'last30' });
   const [rightSearch, setRightSearch] = useState('');
   const [selectedLine, setSelectedLine] = useState(null);
@@ -470,18 +563,28 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
   const leftBounds = useMemo(() => getDateBounds(leftDateRange), [leftDateRange]);
   const rightBounds = useMemo(() => getDateBounds(rightDateRange), [rightDateRange]);
 
-  const { lines, total, loading: linesLoading, reload: reloadLines } =
+  const { lines, counts: statusCounts, loading: linesLoading, reload: reloadLines } =
     usePendingStatementLines(accountId, {
-      status: leftStatus || undefined,
       dateFrom: toDateParam(leftBounds.from),
       dateTo: toDateParam(leftBounds.to),
     });
-  const { candidates, loading: candLoading } =
-    useCandidateOperations(accountId, selectedLine?.id ?? null, rightDocType);
+  const sourceMeta = SOURCE_META[rightSource] ?? SOURCE_META.receipts;
+  const invoiceMode = sourceMeta.kind === 'invoices';
+  const { candidates, counts: sourceCounts, loading: candLoading } = useCandidateOperations(
+    accountId, selectedLine?.id ?? null, sourceMeta.docType,
+    invoiceMode ? 'invoices' : null,
+    toDateParam(rightBounds.from), toDateParam(rightBounds.to));
   const { reconcile, loading: reconciling } = useReconcileGroup();
 
   const selectLine = (line) => {
     setSelectedLine(line);
+    setSelectedOpIds(new Set());
+    // Default the type selector to the matching transaction direction for the line.
+    setRightSource((Number(line?.amount) || 0) < 0 ? 'payments' : 'receipts');
+  };
+
+  const changeSource = (next) => {
+    setRightSource(next);
     setSelectedOpIds(new Set());
   };
 
@@ -501,23 +604,31 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
 
   const visibleLines = useMemo(() => {
     const q = leftSearch.trim().toLowerCase();
-    if (!q) return lines;
-    return lines.filter((l) =>
-      [l.description, l.partnerName, l.referenceNo].some((v) => (v || '').toLowerCase().includes(q)),
-    );
-  }, [lines, leftSearch]);
+    return lines.filter((l) => {
+      // Client-side state filter (null/empty = "Todos"); the backend already computed l.state.
+      if (leftStatus && (l.state || 'pending') !== leftStatus) return false;
+      if (!q) return true;
+      return [l.description, l.partnerName, l.referenceNo]
+        .some((v) => (v || '').toLowerCase().includes(q));
+    });
+  }, [lines, leftSearch, leftStatus]);
+
+  const visibleTotal = useMemo(
+    () => Number(visibleLines.reduce((s, l) => s + (Number(l.amount) || 0), 0).toFixed(2)),
+    [visibleLines],
+  );
 
   const visibleCandidates = useMemo(() => {
+    // A reconciled line is read-only: the backend already returns ONLY its linked movement(s),
+    // so show them verbatim without the sign/date/search filters meant for picking candidates.
+    if (selectedLine?.status === 'reconciled') return candidates;
     const q = rightSearch.trim().toLowerCase();
-    const filtered = candidates.filter((c) => {
-      if (rightBounds.from || rightBounds.to) {
-        const d = new Date(c.date);
-        if (rightBounds.from && d < rightBounds.from) return false;
-        if (rightBounds.to && d > rightBounds.to) return false;
-      }
-      if (!q) return true;
-      return [c.documentNo, c.partnerName].some((v) => (v || '').toLowerCase().includes(q));
-    });
+    // Direction AND date range are applied server-side (so the type counts match the list);
+    // here we only do the in-memory text search.
+    const filtered = q
+      ? candidates.filter((c) => [c.documentNo, c.partnerName]
+        .some((v) => (v || '').toLowerCase().includes(q)))
+      : candidates;
     // Float SELECTED rows to the very top, then the standard-algorithm
     // suggestions; stable within each group (so checking any row lifts it up,
     // and multiple selected rows all gather at the top).
@@ -526,13 +637,18 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
       if (sel !== 0) return sel;
       return (b.suggested ? 1 : 0) - (a.suggested ? 1 : 0);
     });
-  }, [candidates, rightBounds.from, rightBounds.to, rightSearch, selectedOpIds]);
+  }, [candidates, rightSearch, selectedOpIds, selectedLine]);
 
   // Pre-select the candidates the standard algorithm suggests, so a clean match
   // is one click away. Depends on the line id + loading state (not the candidates
   // array reference) to avoid an infinite loop when the hook returns a new array
   // reference on every render (common in tests and after background refreshes).
   useEffect(() => {
+    // A reconciled line is read-only — nothing is selectable, so never pre-select its rows.
+    if (selectedLine?.status === 'reconciled') {
+      setSelectedOpIds(new Set());
+      return;
+    }
     setSelectedOpIds(new Set(candidates.filter((c) => c.suggested).map((c) => c.id)));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedLine?.id, candLoading]);
@@ -550,17 +666,34 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
   const lineAmount = Number(selectedLine?.amount) || 0;
   const remaining = Number((lineAmount - selectedSum).toFixed(2));
   const isReconciledLine = selectedLine?.status === 'reconciled';
+  // Invoices must COVER the line (payments are capped at the line amount). Transactions may match
+  // PART of the line — the backend splits it and leaves a remainder — as long as they run in the
+  // line's direction and do NOT exceed it (over-reconciliation is not supported).
+  const lineSign = Math.sign(lineAmount);
+  const sumSign = Math.sign(selectedSum);
+  const sameDirection = sumSign === 0 || lineSign === 0 || sumSign === lineSign;
+  const withinLine = Math.abs(selectedSum) <= Math.abs(lineAmount) + RECONCILE_TOLERANCE;
+  const balanced = invoiceMode
+    ? Math.abs(selectedSum) + RECONCILE_TOLERANCE >= Math.abs(lineAmount)
+    : (sameDirection && withinLine);
   const canReconcile =
-    !!selectedLine && selectedOpIds.size > 0 && Math.abs(remaining) <= RECONCILE_TOLERANCE && !isReconciledLine;
+    !!selectedLine && selectedOpIds.size > 0 && balanced && !isReconciledLine;
 
   const handleReconcile = async () => {
     if (!canReconcile) return;
     try {
-      await reconcile({
+      const payload = {
         financialAccountId: accountId,
         statementLineId: selectedLine.id,
-        operationIds: Array.from(selectedOpIds),
-      });
+      };
+      if (invoiceMode) {
+        payload.invoices = candidates
+          .filter((c) => selectedOpIds.has(c.id) && c.kind === 'invoice')
+          .map((c) => ({ invoiceId: c.invoiceId, scheduleId: c.scheduleId }));
+      } else {
+        payload.operationIds = Array.from(selectedOpIds);
+      }
+      await reconcile(payload);
       toast.success(ui('financeReconcileToastSuccess'));
       setSelectedLine(null);
       setSelectedOpIds(new Set());
@@ -571,12 +704,18 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
     }
   };
 
+  // Reactivate (un-reconcile) is a follow-up task; the button is live but only signals "coming
+  // soon" for now so the surface is ready without performing the action yet.
+  const handleReactivate = () => {
+    toast(ui('financeReconcileToastComingSoon'));
+  };
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <div className="flex flex-1 overflow-hidden">
         <StatementLinesPanel
           lines={visibleLines}
-          total={total}
+          total={visibleTotal}
           loading={linesLoading}
           currency={currency}
           bcpLocale={bcpLocale}
@@ -584,12 +723,13 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
           onSelectLine={selectLine}
           status={leftStatus}
           onStatusChange={setLeftStatus}
+          statusCounts={statusCounts}
           dateRange={leftDateRange}
           onDateRangeChange={setLeftDateRange}
           search={leftSearch}
           onSearchChange={setLeftSearch}
           onBack={onBack}
-        />
+          data-testid="StatementLinesPanel__d0f4d5" />
         <CandidateOperationsPanel
           line={selectedLine}
           candidates={visibleCandidates}
@@ -598,8 +738,10 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
           bcpLocale={bcpLocale}
           selectedIds={selectedOpIds}
           onToggle={toggleOp}
-          docType={rightDocType}
-          onDocTypeChange={setRightDocType}
+          readOnly={isReconciledLine}
+          source={rightSource}
+          onSourceChange={changeSource}
+          sourceCounts={sourceCounts}
           dateRange={rightDateRange}
           onDateRangeChange={setRightDateRange}
           search={rightSearch}
@@ -614,10 +756,10 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
               reconcileCount={selectedOpIds.size}
               busy={reconciling}
               onCancel={cancelSelection}
-              onReconcile={handleReconcile}
-            />
+              onReconcile={isReconciledLine ? handleReactivate : handleReconcile}
+              data-testid="ReconciliationActionBar__d0f4d5" />
           ) : null}
-        />
+          data-testid="CandidateOperationsPanel__d0f4d5" />
       </div>
     </div>
   );

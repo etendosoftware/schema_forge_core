@@ -54,7 +54,7 @@ function DiscountSelect({ value, options, onChange, loading }) {
   return (
     <div className="relative">
       <div className="flex items-center gap-1.5 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10">
-        <Tag size={13} className="text-muted-foreground" />
+        <Tag size={13} className="text-muted-foreground" data-testid="Tag__7f0756" />
       </div>
       <select
         className="h-10 w-full rounded-lg border border-[#D1D4DB] bg-white pl-8 pr-3 text-sm appearance-none cursor-pointer shadow-[0px_1px_2px_rgba(18,18,23,0.05)] transition-colors disabled:cursor-not-allowed"
@@ -67,7 +67,10 @@ function DiscountSelect({ value, options, onChange, loading }) {
           <option key={o.id} value={o.id}>{o._identifier}</option>
         ))}
       </select>
-      <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground" />
+      <ChevronDown
+        size={13}
+        className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground"
+        data-testid="ChevronDown__7f0756" />
     </div>
   );
 }
@@ -238,7 +241,6 @@ export default function BillingPreferencesForm(props) {
 
   return (
     <div className="flex flex-col gap-3">
-
       {/* ── Descuento ──────────────────────────────────────────────── */}
       {bpId && discountOptions.length > 0 && (
         <div className="w-[236px]">
@@ -247,10 +249,9 @@ export default function BillingPreferencesForm(props) {
             options={discountOptions}
             onChange={handleDiscountChange}
             loading={discountLoading || saving}
-          />
+            data-testid="DiscountSelect__7f0756" />
         </div>
       )}
-
       {!canEditBillingPreferences ? (
         <div className="rounded-md border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">
           {ui('billingPreferencesAfterSave')}
@@ -260,21 +261,34 @@ export default function BillingPreferencesForm(props) {
           {/* ── Cliente ───────────────────────────────────────────────────── */}
           <div className="bg-[#F5F7F9] rounded-lg p-3 flex flex-col gap-3">
             <div className="[&_.pt-6]:pt-0">
-              <EntityForm {...props} fields={customerCheckboxField} selectorContext={customerSelectorContext} />
+              <EntityForm
+                {...props}
+                fields={customerCheckboxField}
+                selectorContext={customerSelectorContext}
+                data-testid="EntityForm__7f0756" />
             </div>
             {data?.customer && (
               <>
-                <EntityForm {...props} fields={customerTopBillingFields} selectorContext={customerSelectorContext} />
+                <EntityForm
+                  {...props}
+                  fields={customerTopBillingFields}
+                  selectorContext={customerSelectorContext}
+                  data-testid="EntityForm__7f0756" />
                 <div className="flex flex-row gap-5 items-start">
                   <div className="flex-1 min-w-0">
-                    <EntityForm {...props} fields={customerPaymentTermsField} cols={1} selectorContext={customerSelectorContext} />
+                    <EntityForm
+                      {...props}
+                      fields={customerPaymentTermsField}
+                      cols={1}
+                      selectorContext={customerSelectorContext}
+                      data-testid="EntityForm__7f0756" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <YesNoRadio
                       label={ui('customerBlockField')}
                       value={data?.customerBlocking}
                       onChange={(val) => onChange?.('customerBlocking', val, 'Customer_Blocking')}
-                    />
+                      data-testid="YesNoRadio__7f0756" />
                   </div>
                 </div>
               </>
@@ -284,21 +298,34 @@ export default function BillingPreferencesForm(props) {
           {/* ── Proveedor ─────────────────────────────────────────────────── */}
           <div className="bg-[#F5F7F9] rounded-lg p-3 flex flex-col gap-3">
             <div className="[&_.pt-6]:pt-0">
-              <EntityForm {...props} fields={vendorCheckboxField} selectorContext={vendorSelectorContext} />
+              <EntityForm
+                {...props}
+                fields={vendorCheckboxField}
+                selectorContext={vendorSelectorContext}
+                data-testid="EntityForm__7f0756" />
             </div>
             {data?.vendor && (
               <>
-                <EntityForm {...props} fields={vendorTopBillingFields} selectorContext={vendorSelectorContext} />
+                <EntityForm
+                  {...props}
+                  fields={vendorTopBillingFields}
+                  selectorContext={vendorSelectorContext}
+                  data-testid="EntityForm__7f0756" />
                 <div className="flex flex-row gap-5 items-start">
                   <div className="flex-1 min-w-0">
-                    <EntityForm {...props} fields={vendorPaymentTermsField} cols={1} selectorContext={vendorSelectorContext} />
+                    <EntityForm
+                      {...props}
+                      fields={vendorPaymentTermsField}
+                      cols={1}
+                      selectorContext={vendorSelectorContext}
+                      data-testid="EntityForm__7f0756" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <YesNoRadio
                       label={ui('vendorBlockField')}
                       value={data?.vendorBlocking}
                       onChange={(val) => onChange?.('vendorBlocking', val, 'Vendor_Blocking')}
-                    />
+                      data-testid="YesNoRadio__7f0756" />
                   </div>
                 </div>
               </>

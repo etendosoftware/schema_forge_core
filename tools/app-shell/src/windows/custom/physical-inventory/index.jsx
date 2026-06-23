@@ -10,7 +10,7 @@ const COLUMNS = [
 ];
 
 function CustomInventoryTable(props) {
-  return <InventoryTable columns={COLUMNS} {...props} />;
+  return <InventoryTable columns={COLUMNS} {...props} data-testid="InventoryTable__4ca591" />;
 }
 
 function hideMenuActions({ data }) {
@@ -18,5 +18,11 @@ function hideMenuActions({ data }) {
 }
 
 export default function PhysicalInventoryWindow(props) {
-  return <GeneratedApp {...props} Table={CustomInventoryTable} hideMoreMenu={hideMenuActions} />;
+  return (
+    <GeneratedApp
+      {...props}
+      Table={CustomInventoryTable}
+      hideMoreMenu={hideMenuActions}
+      data-testid="GeneratedApp__4ca591" />
+  );
 }

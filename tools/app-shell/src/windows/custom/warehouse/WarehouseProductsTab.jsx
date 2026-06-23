@@ -53,7 +53,6 @@ export default function WarehouseProductsTab({ data, token, apiBaseUrl }) {
           </tbody>
         </table>
       </div>
-
       {moveTarget && (
         <MoveStockModal
           product={moveTarget}
@@ -63,7 +62,7 @@ export default function WarehouseProductsTab({ data, token, apiBaseUrl }) {
           apiBaseUrl={apiBaseUrl}
           onSuccess={() => setRefreshKey(k => k + 1)}
           onClose={() => setMoveTarget(null)}
-        />
+          data-testid="MoveStockModal__215b73" />
       )}
     </>
   );

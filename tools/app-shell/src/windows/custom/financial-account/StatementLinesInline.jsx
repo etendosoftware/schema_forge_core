@@ -12,9 +12,10 @@ import { getContractGridColumns } from '@/components/financial-accounts/contract
 // the window contract (entity `bankStatementLines`); the synthetic tail (match
 // pill, transaction chip, flexible spacer) stays fixed. Grid template built
 // dynamically and applied inline (Tailwind can't JIT a dynamic class).
-//   <contract columns> · 100 status pill · 120 txn chip · minmax(0,1fr) spacer
+//   <contract columns> · 100 status pill · 120 txn chip
+// No trailing spacer: the description column (2fr) absorbs the leftover width.
 const MINI_GRID_CLASS = 'grid gap-3';
-const MINI_TAIL_TRACKS = '100px 120px minmax(0,1fr)';
+const MINI_TAIL_TRACKS = '100px 120px';
 
 // Contract field name → width + i18n header + cell renderer. Amount OUT/IN are
 // derived from the signed `line.amount`, so dramount/cramount render the split.
@@ -25,7 +26,7 @@ const LINE_CELL_RENDERERS = {
     render: (line, ctx) => <span className="whitespace-nowrap text-[#121217]">{formatDate(line.date, ctx.bcpLocale)}</span>,
   },
   description: {
-    width: 'minmax(140px,1fr)',
+    width: 'minmax(220px,2fr)',
     labelKey: 'financeAccountStatementLinesColDescription',
     render: (line) => (
       <span className={cn('truncate', line.description ? 'text-[#3F3F50]' : 'text-[#C1C3CC]')} title={line.description || ''}>
@@ -60,6 +61,15 @@ const LINE_CELL_RENDERERS = {
       </span>
     ),
   },
+  referenceNo: {
+    width: 'minmax(120px,1fr)',
+    labelKey: 'financeAccountStatementLinesColReference',
+    render: (line) => (
+      <span className={cn('truncate', line.reference ? 'text-[#3F3F50]' : 'text-[#C1C3CC]')} title={line.reference || ''}>
+        {line.reference || '—'}
+      </span>
+    ),
+  },
   dramount: {
     width: '110px',
     labelKey: 'financeAccountStatementLinesColDramount',
@@ -68,7 +78,13 @@ const LINE_CELL_RENDERERS = {
       const out = amount < 0 ? -amount : 0;
       return (
         <span className="text-right tabular-nums">
-          <AmountCell value={out} sign="−" toneClass="font-semibold text-red-700" currency={ctx.currency} bcpLocale={ctx.bcpLocale} />
+          <AmountCell
+            value={out}
+            sign="−"
+            toneClass="font-semibold text-red-700"
+            currency={ctx.currency}
+            bcpLocale={ctx.bcpLocale}
+            data-testid="AmountCell__10cf4a" />
         </span>
       );
     },
@@ -81,7 +97,13 @@ const LINE_CELL_RENDERERS = {
       const inn = amount > 0 ? amount : 0;
       return (
         <span className="text-right tabular-nums">
-          <AmountCell value={inn} sign="+" toneClass="font-semibold text-green-700" currency={ctx.currency} bcpLocale={ctx.bcpLocale} />
+          <AmountCell
+            value={inn}
+            sign="+"
+            toneClass="font-semibold text-green-700"
+            currency={ctx.currency}
+            bcpLocale={ctx.bcpLocale}
+            data-testid="AmountCell__10cf4a" />
         </span>
       );
     },
@@ -99,20 +121,22 @@ const MINI_GRID_STYLE = { gridTemplateColumns: MINI_GRID_TEMPLATE };
 // Stable keys for the skeleton cells (contract columns + match + txn).
 const SKELETON_CELL_KEYS = [...LINE_COLUMNS.map((c) => `c_${c.name}`), 'matched', 'txns'];
 
-// kind → (StatusTag tone, i18n key). Reusing the shared StatusTag keeps the
-// look consistent with the statement-level status pills above and the rest of
-// the app. "Manual" still maps to success because today (pre-T6/T7) the only
-// signal we have is "linked / not linked" — we'll widen this when the engine
-// distinguishes auto vs manual matches.
+// kind → (StatusTag tone, i18n key). The only signal we have per line is whether
+// it is linked to a movement or not, so the badge simply reflects reconciled vs
+// not reconciled (the "Auto"/"Manual" distinction is not meaningful here).
 const MATCH_TONE = {
-  auto:   { tone: 'success', labelKey: 'financeAccountStatementLinesStatusAuto' },
-  manual: { tone: 'success', labelKey: 'financeAccountStatementLinesStatusManual' },
-  none:   { tone: 'info', labelKey: 'financeAccountStatementLinesStatusUnmatched' },
+  reconciled: { tone: 'success', labelKey: 'financeAccountStatementLinesStatusReconciled' },
+  pending:    { tone: 'info', labelKey: 'financeAccountStatementLinesStatusUnmatched' },
 };
 
 function MatchPill({ kind, ui }) {
-  const entry = MATCH_TONE[kind] ?? MATCH_TONE.none;
-  return <StatusTag tone={entry.tone} label={ui(entry.labelKey)} />;
+  const entry = MATCH_TONE[kind] ?? MATCH_TONE.pending;
+  return (
+    <StatusTag
+      tone={entry.tone}
+      label={ui(entry.labelKey)}
+      data-testid="StatusTag__10cf4a" />
+  );
 }
 
 // "Transacción" cell: shows the reconciled movement(s) of the line. None → "—";
@@ -137,7 +161,7 @@ function TxnChip({ line, ui, onOpen }) {
           : 'border-[#E8EAEF] bg-white text-[#3F3F50] hover:bg-[#F5F7F9] hover:text-[#121217]',
       )}
     >
-      {multi ? <Layers className="h-3 w-3 flex-none text-[#6C6C89]" /> : <Link2 className="h-3 w-3 flex-none text-[#6C6C89]" />}
+      {multi ? <Layers className="h-3 w-3 flex-none text-[#6C6C89]" data-testid="Layers__10cf4a" /> : <Link2 className="h-3 w-3 flex-none text-[#6C6C89]" data-testid="Link2__10cf4a" />}
       <span className="truncate">
         {multi ? ui('financeAccountStatementLinesTxnChipMulti', { count: txns.length }) : txns[0].documentNo}
       </span>
@@ -195,25 +219,27 @@ export function StatementLinesInline({ statementId, currency = 'EUR' }) {
       <div
         style={MINI_GRID_STYLE}
         className={cn(
+          // Same recipe as the parent Statements table header (h-10 items-center) — centered.
           MINI_GRID_CLASS,
           'h-10 items-center border-b border-[#E8EAEF] px-3 text-xs font-semibold leading-4 text-[#121217]',
         )}
       >
         {LINE_COLUMNS.map((col) => (
-          <span key={col.name}>
+          <span key={col.name} className="truncate">
             {LINE_CELL_RENDERERS[col.name] ? ui(LINE_CELL_RENDERERS[col.name].labelKey) : col.label}
           </span>
         ))}
-        <span>{ui('financeAccountStatementLinesColMatched')}</span>
-        <span>{ui('financeAccountStatementLinesColTransaction')}</span>
-        <span aria-hidden="true" />
+        <span className="truncate">{ui('financeAccountStatementLinesColMatched')}</span>
+        <span className="truncate">{ui('financeAccountStatementLinesColTransaction')}</span>
       </div>
-
       {/* Body */}
       {renderBody({ loading, lines, ui, currency, bcpLocale, onOpenTxns: setTxnLine })}
-
       {txnLine ? (
-        <ReconciledTxnsModal line={txnLine} currency={currency} onClose={() => setTxnLine(null)} />
+        <ReconciledTxnsModal
+          line={txnLine}
+          currency={currency}
+          onClose={() => setTxnLine(null)}
+          data-testid="ReconciledTxnsModal__10cf4a" />
       ) : null}
     </div>
   );
@@ -226,11 +252,10 @@ export function StatementLinesInline({ statementId, currency = 'EUR' }) {
 function renderBody({ loading, lines, ui, currency, bcpLocale, onOpenTxns }) {
   if (loading) {
     return [1, 2, 3].map((n) => (
-      <div key={n} style={MINI_GRID_STYLE} className={cn(MINI_GRID_CLASS, 'border-b border-[#F0F2F5] px-3 py-2.5')}>
+      <div key={n} style={MINI_GRID_STYLE} className={cn(MINI_GRID_CLASS, 'items-center border-b border-[#F0F2F5] px-3 py-2.5')}>
         {SKELETON_CELL_KEYS.map((k) => (
-          <Skeleton key={k} className="h-4 w-full" />
+          <Skeleton key={k} className="h-4 w-full" data-testid="Skeleton__10cf4a" />
         ))}
-        <span aria-hidden="true" />
       </div>
     ));
   }
@@ -242,14 +267,21 @@ function renderBody({ loading, lines, ui, currency, bcpLocale, onOpenTxns }) {
     );
   }
   return lines.map((line) => (
-    <LineRow key={line.id} line={line} ui={ui} currency={currency} bcpLocale={bcpLocale} onOpenTxns={onOpenTxns} />
+    <LineRow
+      key={line.id}
+      line={line}
+      ui={ui}
+      currency={currency}
+      bcpLocale={bcpLocale}
+      onOpenTxns={onOpenTxns}
+      data-testid="LineRow__10cf4a" />
   ));
 }
 
 // Single row of the lines table — split out so we can render the amount
 // columns with simple if/else branching instead of nested ternaries.
 function LineRow({ line, ui, currency, bcpLocale, onOpenTxns }) {
-  const matchKind = line.matched ? 'auto' : 'none';
+  const matchKind = line.matched ? 'reconciled' : 'pending';
   const cellCtx = { ui, currency, bcpLocale };
   return (
     <div
@@ -257,23 +289,22 @@ function LineRow({ line, ui, currency, bcpLocale, onOpenTxns }) {
       style={MINI_GRID_STYLE}
       className={cn(
         MINI_GRID_CLASS,
-        'border-b border-[#F0F2F5] px-3 py-2.5 text-sm transition-colors last:border-0 hover:bg-[#FAFBFC]',
+        'items-center border-b border-[#F0F2F5] px-3 py-2.5 text-sm transition-colors last:border-0 hover:bg-[#FAFBFC]',
       )}
     >
       {/* Contract-driven data columns (decisions.json → contract.json) */}
       {LINE_COLUMNS.map((col) => {
         const renderer = LINE_CELL_RENDERERS[col.name];
         return (
-          <Fragment key={col.name}>
+          <Fragment key={col.name} data-testid="Fragment__10cf4a">
             {renderer
               ? renderer.render(line, cellCtx)
               : <span className="truncate text-[#3F3F50]">{line[col.name] ?? '—'}</span>}
           </Fragment>
         );
       })}
-      <span><MatchPill kind={matchKind} ui={ui} /></span>
-      <span className="min-w-0"><TxnChip line={line} ui={ui} onOpen={onOpenTxns} /></span>
-      <span aria-hidden="true" />
+      <span><MatchPill kind={matchKind} ui={ui} data-testid="MatchPill__10cf4a" /></span>
+      <span className="min-w-0"><TxnChip line={line} ui={ui} onOpen={onOpenTxns} data-testid="TxnChip__10cf4a" /></span>
     </div>
   );
 }

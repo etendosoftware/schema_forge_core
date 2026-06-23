@@ -48,7 +48,11 @@ function FilterDropdown({ label, value, options, onChange }) {
         aria-expanded={open}
       >
         {selectedLabel}
-        <ChevronDown size={12} strokeWidth={1.75} style={{ opacity: .6 }} />
+        <ChevronDown
+          size={12}
+          strokeWidth={1.75}
+          style={{ opacity: .6 }}
+          data-testid="ChevronDown__cb728e" />
       </button>
       {open && (
         <div className="fm-status-select__menu" role="listbox" style={{ minWidth: 200 }}>
@@ -60,7 +64,11 @@ function FilterDropdown({ label, value, options, onChange }) {
             onClick={() => { onChange('all'); setOpen(false); }}
           >
             <span style={{ fontSize: 14, color: '#121217', fontWeight: value === 'all' ? 500 : 400 }}>{label}</span>
-            {value === 'all' && <Check size={14} strokeWidth={2} style={{ color: '#121217', flexShrink: 0 }} />}
+            {value === 'all' && <Check
+              size={14}
+              strokeWidth={2}
+              style={{ color: '#121217', flexShrink: 0 }}
+              data-testid="Check__cb728e" />}
           </button>
           <div style={{ height: 1, background: '#E8EAEF', margin: '2px 8px' }} />
           {options.map(opt => {
@@ -81,7 +89,11 @@ function FilterDropdown({ label, value, options, onChange }) {
                 onClick={() => { onChange(opt.value); setOpen(false); }}
               >
                 {optLabel}
-                {value === opt.value && <Check size={14} strokeWidth={2} style={{ color: '#121217', flexShrink: 0 }} />}
+                {value === opt.value && <Check
+                  size={14}
+                  strokeWidth={2}
+                  style={{ color: '#121217', flexShrink: 0 }}
+                  data-testid="Check__cb728e" />}
               </button>
             );
           })}
@@ -107,20 +119,32 @@ function RowKebab({ onDemo, onConfig, onCatalog, activeCount, t }) {
         onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}
         aria-label="Más opciones"
       >
-        <MoreVertical size={16} strokeWidth={1.75} />
+        <MoreVertical size={16} strokeWidth={1.75} data-testid="MoreVertical__cb728e" />
       </button>
       {open && (
         <div className="fm-status-select__menu" role="menu" style={{ right: 0, left: 'auto', minWidth: 220 }}>
           <button className="fm-status-select__item" role="menuitem" onClick={(e) => { e.stopPropagation(); onDemo(); setOpen(false); }}>
-            <Play size={14} strokeWidth={1.75} style={{ color: '#121217' }} />
+            <Play
+              size={14}
+              strokeWidth={1.75}
+              style={{ color: '#121217' }}
+              data-testid="Play__cb728e" />
             Demo
           </button>
           <button className="fm-status-select__item" role="menuitem" onClick={(e) => { e.stopPropagation(); onConfig(); setOpen(false); }}>
-            <Settings size={14} strokeWidth={1.75} style={{ color: '#121217' }} />
+            <Settings
+              size={14}
+              strokeWidth={1.75}
+              style={{ color: '#121217' }}
+              data-testid="Settings__cb728e" />
             {t('fm.config.title') ?? 'Configuración'}
           </button>
           <button className="fm-status-select__item" role="menuitem" onClick={(e) => { e.stopPropagation(); onCatalog(); setOpen(false); }}>
-            <LayoutGrid size={14} strokeWidth={1.75} style={{ color: '#121217' }} />
+            <LayoutGrid
+              size={14}
+              strokeWidth={1.75}
+              style={{ color: '#121217' }}
+              data-testid="LayoutGrid__cb728e" />
             {t('fm.catalog.title') ?? 'Catálogo de modelos'} ({activeCount})
           </button>
         </div>
@@ -218,36 +242,36 @@ function KpiCardsRow({ decls, t }) {
     <div style={{ display: 'flex', gap: 12, padding: '0 16px 8px', background: '#fff', flexShrink: 0 }}>
       <div style={{ width: 360, flexShrink: 0 }}>
         <KpiWidget
-          icon={<Calendar size={20} strokeWidth={1.75} />}
+          icon={<Calendar size={20} strokeWidth={1.75} data-testid="Calendar__cb728e" />}
           iconColor="#828FA3"
           label="Por vencer"
           badge="Esta semana"
           badgeBg="#FFF9EB"
           badgeColor="#8A6100"
           value={upcomingCount}
-        />
+          data-testid="KpiWidget__cb728e" />
       </div>
       <div style={{ width: 360, flexShrink: 0 }}>
         <KpiWidget
-          icon={<Clock size={20} strokeWidth={1.75} />}
+          icon={<Clock size={20} strokeWidth={1.75} data-testid="Clock__cb728e" />}
           iconColor="#828FA3"
           label={t('fm.kpi.pending') ?? 'Pendientes'}
           badge="Sin presentar"
           badgeBg="#F5F7F9"
           badgeColor="#3F3F50"
           value={pendingCount}
-        />
+          data-testid="KpiWidget__cb728e" />
       </div>
       <div style={{ width: 360, flexShrink: 0 }}>
         <KpiWidget
-          icon={<TriangleAlert size={20} strokeWidth={1.75} />}
+          icon={<TriangleAlert size={20} strokeWidth={1.75} data-testid="TriangleAlert__cb728e" />}
           iconColor="#828FA3"
           label="Incidencias"
           badge="Requiere revisión"
           badgeBg="#FEF0F4"
           badgeColor="#D50B3E"
           value={incidentCount}
-        />
+          data-testid="KpiWidget__cb728e" />
       </div>
     </div>
   );
@@ -322,8 +346,8 @@ function FileCell({ file, fileExternal }) {
   if (fileExternal) {
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#2563eb', textDecoration: 'underline', textUnderlineOffset: 2, cursor: 'pointer', fontSize: 12 }}>
-        <ArrowUpRight size={12} strokeWidth={2} /> Externa
-      </span>
+        <ArrowUpRight size={12} strokeWidth={2} data-testid="ArrowUpRight__cb728e" />Externa
+              </span>
     );
   }
   return <span className="fm-file">{file}</span>;
@@ -339,7 +363,7 @@ function IncidentsCell({ blocking, warning, t }) {
           padding: '2px 8px', borderRadius: 6, fontSize: 12, fontWeight: 500,
           background: '#FEF0F4', color: '#D50B3E',
         }}>
-          <OctagonAlert size={12} strokeWidth={1.75} /> {blocking}
+          <OctagonAlert size={12} strokeWidth={1.75} data-testid="OctagonAlert__cb728e" /> {blocking}
         </span>
       )}
       {warning > 0 && (
@@ -348,7 +372,7 @@ function IncidentsCell({ blocking, warning, t }) {
           padding: '2px 8px', borderRadius: 6, fontSize: 12, fontWeight: 500,
           background: '#FFF9EB', color: '#8A6100',
         }}>
-          <TriangleAlert size={12} strokeWidth={1.75} /> {warning}
+          <TriangleAlert size={12} strokeWidth={1.75} data-testid="TriangleAlert__cb728e" /> {warning}
         </span>
       )}
     </span>
@@ -521,7 +545,6 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
 
   return (
     <div className="fm-page">
-
       {/* ── Title bar ────────────────────────────────────────────── */}
       <div style={{ padding: '10px 20px', background: '#fff', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -539,14 +562,17 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
             padding: 2, width: 24, height: 24,
             background: '#F5F7F9', borderRadius: 8, border: 'none', cursor: 'pointer',
           }}>
-            <MoreVertical size={16} strokeWidth={1.75} style={{ color: '#828FA3' }} />
+            <MoreVertical
+              size={16}
+              strokeWidth={1.75}
+              style={{ color: '#828FA3' }}
+              data-testid="MoreVertical__cb728e" />
           </button>
         </div>
         <div style={{ fontSize: 12, color: '#828FA3', marginTop: 2 }}>
           Tesorería / {t('fm.list.title') ?? 'Declaraciones'}
         </div>
       </div>
-
       {/* ── Toolbar ──────────────────────────────────────────────── */}
       <div className="fm-toolbar">
         <FilterDropdown
@@ -554,27 +580,27 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
           value={yearFilter}
           options={yearOptions}
           onChange={setYearFilter}
-        />
+          data-testid="FilterDropdown__cb728e" />
         <FilterDropdown
           label="Todos los modelos"
           value={modelFilter}
           options={modelOptions}
           onChange={setModelFilter}
-        />
+          data-testid="FilterDropdown__cb728e" />
         <FilterDropdown
           label="Todos los estados"
           value={statusFilter}
           options={statusOptions}
           onChange={setStatusFilter}
-        />
+          data-testid="FilterDropdown__cb728e" />
 
         <div className="fm-toolbar__space" />
 
         <button className="fm-section-header__icon-btn" title={t('fm.action.filter')} aria-label={t('fm.action.filter')}>
-          <Search size={16} strokeWidth={1.75} />
+          <Search size={16} strokeWidth={1.75} data-testid="Search__cb728e" />
         </button>
         <button className="fm-section-header__icon-btn" title={t('fm.action.sort')} aria-label={t('fm.action.sort')}>
-          <ArrowUpDown size={16} strokeWidth={1.75} />
+          <ArrowUpDown size={16} strokeWidth={1.75} data-testid="ArrowUpDown__cb728e" />
         </button>
         <RowKebab
           onDemo={() => setDecls(DEMO_DECLARATIONS.map(normDecl))}
@@ -582,7 +608,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
           onCatalog={() => setShowCatalog(true)}
           activeCount={activeCount}
           t={t}
-        />
+          data-testid="RowKebab__cb728e" />
 
         <button
           className="fm-toolbar__btn fm-toolbar__btn--primary"
@@ -592,20 +618,22 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
           + Nueva declaración
         </button>
       </div>
-
       {/* ── KPI cards row ─────────────────────────────────────── */}
-      <KpiCardsRow decls={modelYearFiltered} t={t} />
-
+      <KpiCardsRow decls={modelYearFiltered} t={t} data-testid="KpiCardsRow__cb728e" />
       {/* ── Table ──────────────────────────────────────────────── */}
       <div className="fm-table-wrap">
         {filtered.length === 0
-          ? <EmptyState />
+          ? <EmptyState data-testid="EmptyState__cb728e" />
           : (
             <table className="fm-table">
               <thead>
                 <tr>
                   <th style={{ width: 32 }} onClick={e => e.stopPropagation()}>
-                    <Checkbox checked={allSelected} onChange={toggleAll} onClick={e => e.stopPropagation()} />
+                    <Checkbox
+                      checked={allSelected}
+                      onChange={toggleAll}
+                      onClick={e => e.stopPropagation()}
+                      data-testid="Checkbox__cb728e" />
                   </th>
                   <th>{t('fm.col.model')}</th>
                   <th>{t('fm.col.period')}</th>
@@ -645,24 +673,40 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
                       onClick={() => onSelect?.({ ...decl, _precomputed: computed })}
                     >
                       <td onClick={e => e.stopPropagation()}>
-                        <Checkbox checked={selected.has(decl.id)} onChange={() => toggleSelect(decl.id)} onClick={e => e.stopPropagation()} />
+                        <Checkbox
+                          checked={selected.has(decl.id)}
+                          onChange={() => toggleSelect(decl.id)}
+                          onClick={e => e.stopPropagation()}
+                          data-testid="Checkbox__cb728e" />
                       </td>
                       <td>
-                        <ModelBadge model={decl.model} />
+                        <ModelBadge model={decl.model} data-testid="ModelBadge__cb728e" />
                         <span className="fm-model-year" style={{ marginLeft: 6, fontWeight: 600 }}>{decl.year}</span>
                       </td>
                       <td><span className="fm-period">{decl.period}</span></td>
                       <td>{decl.type === 'ord' ? t('fm.type.ordinary') : t('fm.type.complementary')}</td>
                       <td>
-                        <StatusText status={decl.status} t={t} />
+                        <StatusText status={decl.status} t={t} data-testid="StatusText__cb728e" />
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <ResultText isComputing={isComputingThis} error={computeError} result={displayResult} t={t} />
+                        <ResultText
+                          isComputing={isComputingThis}
+                          error={computeError}
+                          result={displayResult}
+                          t={t}
+                          data-testid="ResultText__cb728e" />
                       </td>
                       <td>
-                        <IncidentsCell blocking={decl.incidents?.blocking ?? 0} warning={decl.incidents?.warning ?? 0} t={t} />
+                        <IncidentsCell
+                          blocking={decl.incidents?.blocking ?? 0}
+                          warning={decl.incidents?.warning ?? 0}
+                          t={t}
+                          data-testid="IncidentsCell__cb728e" />
                       </td>
-                      <td><FileCell file={decl.file} fileExternal={decl.fileExternal} /></td>
+                      <td><FileCell
+                        file={decl.file}
+                        fileExternal={decl.fileExternal}
+                        data-testid="FileCell__cb728e" /></td>
                       <td><span className="fm-date">{decl.updatedAt ?? '—'}</span></td>
                     </tr>
                   );
@@ -671,11 +715,16 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
             </table>
           )}
       </div>
-
       {/* ── Overlays ─────────────────────────────────────────────── */}
-      {showConfig  && <ConfigDrawer onClose={() => setShowConfig(false)} token={token} apiBaseUrl={apiBaseUrl} />}
-      {showNewDecl && <NewDeclModal onConfirm={handleNewDecl} onClose={() => setShowNewDecl(false)} />}
-
+      {showConfig  && <ConfigDrawer
+        onClose={() => setShowConfig(false)}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        data-testid="ConfigDrawer__cb728e" />}
+      {showNewDecl && <NewDeclModal
+        onConfirm={handleNewDecl}
+        onClose={() => setShowNewDecl(false)}
+        data-testid="NewDeclModal__cb728e" />}
       {/* ── Catalog drawer (slides from right) ───────────────────── */}
       {showCatalog && (
         <>
@@ -687,7 +736,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
               onSave={(newActive) => { setActiveModels(newActive); setShowCatalog(false); }}
               token={token}
               apiBaseUrl={apiBaseUrl}
-            />
+              data-testid="FmCatalogPage__cb728e" />
           </div>
         </>
       )}

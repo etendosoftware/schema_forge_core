@@ -18,13 +18,13 @@ export default function ReturnToVendorShipmentWindow({ windowName, recordId, api
           windowName={windowName}
           onClose={onClose}
           onEdit={onEdit}
-        />
+          data-testid="ReturnToVendorShipmentPreview__a5f79c" />
       )}
       entity="returnToVendorShipment"
       headerEntity="returnToVendorShipment"
       routePrefix="/return-to-vendor-shipment/"
       duplicateAction={{ show: false }}
       {...rest}
-    />
+      data-testid="ReturnWindowShell__a5f79c" />
   );
 }

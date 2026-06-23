@@ -14,7 +14,7 @@ export function buildReturnPreviewContent({
       sendLabel={ui('invoicePreviewSend')}
       downloadLabel={ui('invoicePreviewDownloadPdf')}
       editLabel={ui('invoicePreviewEdit')}
-    />
+      data-testid="PreviewActionButtons__634d79" />
   );
 
   const tabs = [
@@ -30,7 +30,7 @@ export function buildReturnPreviewContent({
           apiBaseUrl={apiBaseUrl}
           ui={ui}
           specs={specs}
-        />
+          data-testid="ReturnDocStatsPanel__634d79" />
       ),
     },
     ...makeStaticPreviewTabs(ui),

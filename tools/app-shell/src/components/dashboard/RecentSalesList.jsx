@@ -21,7 +21,7 @@ export function RecentSalesList({ invoices = [], currencyLabel = '' }) {
   const { open: openCopilot } = useCopilot();
 
   return (
-    <DashboardCard title={ui('recentSalesTitle')}>
+    <DashboardCard title={ui('recentSalesTitle')} data-testid="DashboardCard__4af5f2">
       {invoices.length === 0 ? (
         <DashboardEmptyState
           title={ui('recentSalesEmptyTitle')}
@@ -31,7 +31,7 @@ export function RecentSalesList({ invoices = [], currencyLabel = '' }) {
             { key: 'copilot', icon: Sparkles, label: ui('createWithCopilot'), onClick: openCopilot, variant: 'secondary' },
             { key: 'new', icon: Plus, label: ui('newSale'), onClick: () => navigate('/sales-invoice/new'), variant: 'primary' },
           ]}
-        />
+          data-testid="DashboardEmptyState__4af5f2" />
       ) : (
       <div
         data-testid="recent-sales-list"
@@ -186,7 +186,7 @@ export function RecentSalesList({ invoices = [], currencyLabel = '' }) {
                       </span>
                     </div>
                   </div>
-                  <DashboardRowChevron />
+                  <DashboardRowChevron data-testid="DashboardRowChevron__4af5f2" />
                 </Link>
               );
             })

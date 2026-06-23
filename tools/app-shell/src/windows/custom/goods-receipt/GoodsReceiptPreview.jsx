@@ -38,8 +38,10 @@ function ReceiptStatsPanel({ receipt, partnerName, movementDate, token, apiBaseU
         statusRowLabel={ui('shipmentPreviewStatus')}
         statusLabel={statusLabel}
         statusBadgeClass={statusBadgeClass}
-      >
-        <InfoRow label={ui('goodsReceiptPreview.originOrder')}>
+        data-testid="MovementSummaryCard__ba7c74">
+        <InfoRow
+          label={ui('goodsReceiptPreview.originOrder')}
+          data-testid="InfoRow__ba7c74">
           {purchaseOrderNo ? (
             <button
               type="button"
@@ -50,17 +52,16 @@ function ReceiptStatsPanel({ receipt, partnerName, movementDate, token, apiBaseU
             </button>
           ) : null}
         </InfoRow>
-        <InfoRow label={ui('shipmentPreviewInvoiceStatus')}>
-          <PercentBar value={invoiceStatusPct} />
+        <InfoRow label={ui('shipmentPreviewInvoiceStatus')} data-testid="InfoRow__ba7c74">
+          <PercentBar value={invoiceStatusPct} data-testid="PercentBar__ba7c74" />
         </InfoRow>
       </MovementSummaryCard>
-
       <RelatedDocumentsCard
         documentId={receipt.id}
         token={token}
         apiBaseUrl={apiBaseUrl}
         specs={specs}
-      />
+        data-testid="RelatedDocumentsCard__ba7c74" />
     </div>
   );
 }
@@ -94,8 +95,8 @@ export default function GoodsReceiptPreview({ receipt, token, apiBaseUrl, window
           size="sm"
           className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-[#121217] hover:bg-[#2a2a30] text-white [&_svg]:size-5"
           onClick={sendModal.openEmailModal}
-        >
-          <Mail />
+          data-testid="Button__ba7c74">
+          <Mail data-testid="Mail__ba7c74" />
           {ui('invoicePreviewSend')}
         </Button>
       )}
@@ -104,8 +105,8 @@ export default function GoodsReceiptPreview({ receipt, token, apiBaseUrl, window
         variant="outline"
         className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
         onClick={() => modalRef.current?.triggerEdit?.()}
-      >
-        <Edit2 className="text-[#828FA3]" />
+        data-testid="Button__ba7c74">
+        <Edit2 className="text-[#828FA3]" data-testid="Edit2__ba7c74" />
         {ui('invoicePreviewEdit')}
       </Button>
     </>
@@ -126,7 +127,7 @@ export default function GoodsReceiptPreview({ receipt, token, apiBaseUrl, window
           onOrderClick={purchaseOrderId
             ? () => { onClose?.(); navigate(`/purchase-order/${purchaseOrderId}`); }
             : undefined}
-        />
+          data-testid="ReceiptStatsPanel__ba7c74" />
       ),
     },
     ...makeStaticPreviewTabs(ui),
@@ -153,7 +154,7 @@ export default function GoodsReceiptPreview({ receipt, token, apiBaseUrl, window
         onEdit={() => onEdit?.(receipt.id)}
         tabs={tabs}
         actionButtons={actionButtons}
-      />
+        data-testid="GenericPreviewModal__ba7c74" />
       <ReceiptSendModal
         sendModal={sendModal}
         documentType={windowLabel}
@@ -164,7 +165,7 @@ export default function GoodsReceiptPreview({ receipt, token, apiBaseUrl, window
         windowName="goods-receipt"
         pdfBlobUrl={previewFile?.objectUrl}
         pdfBlobLoading={false}
-      />
+        data-testid="ReceiptSendModal__ba7c74" />
     </>
   );
 }

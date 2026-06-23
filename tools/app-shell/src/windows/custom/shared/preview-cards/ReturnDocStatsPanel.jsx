@@ -22,13 +22,13 @@ export default function ReturnDocStatsPanel({ doc, partnerName, movementDate, to
         statusRowLabel={ui('shipmentPreviewStatus')}
         statusLabel={statusLabel}
         statusBadgeClass={statusBadgeClass}
-      />
+        data-testid="MovementSummaryCard__2cd27e" />
       <RelatedDocumentsCard
         documentId={doc.id}
         token={token}
         apiBaseUrl={apiBaseUrl}
         specs={specs}
-      />
+        data-testid="RelatedDocumentsCard__2cd27e" />
     </div>
   );
 }

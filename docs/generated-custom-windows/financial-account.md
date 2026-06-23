@@ -177,21 +177,21 @@ Display the full detail of a financial account: a summary strip with KPIs, and t
 - Navigate to `/financial-account/:id` from the Cuentas list (row click).
 - Topbar shows `{accountName}` as title and `Finanzas / Cuentas / {accountName}` as breadcrumb via `useSetPageMeta` (inlined in `index.jsx` — no per-window header bar).
 - Account Summary Strip (single horizontal bar inside the Movements tab body): avatar + IBAN (chunked in groups of 4, with copy-to-clipboard) | Saldo total | Entradas (30D) | Salidas (30D). The three KPI sections use `flex-1` so they spread evenly.
-- Three tabs with counts: Movements (live data), Reconciliation (live data — manual reconciliation split panel, T6), Imported Statements (placeholder).
-- Right-side tab-strip action is contextual. On **Movements** and **Imported Statements** it shows the Export button and performs a CSV download. On **Reconciliation** it switches to a disabled **Automatch** button placeholder (enabled in T7). **All exports go through the generic backend CSV flow** (`?export=csv`, see `neo-headless.md` §4.3) via the shared `useCsvExport` hook, so the server streams the file and large lists never get assembled in the browser:
+- Three tabs with counts: Movements (live data), Reconciliation (live data — manual reconciliation split panel, T6 + automatch engine, T7), Imported Statements (live data).
+- Right-side tab-strip action is contextual. On **Movements** and **Imported Statements** it shows the Export button and performs a CSV download. On **Reconciliation** it shows the **Automatch** button, which opens the automatch suggestions modal (T7). **All exports go through the generic backend CSV flow** (`?export=csv`, see `neo-headless.md` §4.3) via the shared `useCsvExport` hook, so the server streams the file and large lists never get assembled in the browser:
   - **Movements tab** → exports the filtered movements (`GET /sws/neo/financial-account-transactions?...&export=csv`, `ids` = filtered movement ids). Classic-parity columns (Transaction Type / Status labels, Deposit/Withdrawal split, synthetic "Payment", Processed flag) are **pre-derived server-side** on the transaction rows so the exporter stays generic. Column order/labels live in `MOVEMENT_CSV_COLUMNS` (`index.jsx`).
   - **Imported Statements tab, no statement selected** → exports the filtered statement **headers** (`GET /sws/neo/bank-statements?...&export=csv&ids=<filtered ids>`).
   - **Imported Statements tab, statement(s) selected** → exports the **lines** of the selected statement(s) (`...&action=lines&statementIds=<ids>`), mirroring Classic's line export.
   - Column labels/order and `ids`/`statementIds` are passed as query params; the statements tab exposes the current selection + filtered headers to the window via a ref (`getSelectedStatementIds` / `getFilteredStatements`), the movements tab via `getFilteredMovements`.
-- Movements toolbar: back arrow `←`, status filter (8 payment statuses, search-enabled), date range filter (preset list + dual calendar, same picker as grid views), type filter (BPD/BPW, search-enabled), amount filter (presets + manual min/max), search input, `+ Nuevo movimiento` button (yellow hover, fires toast — real action is T8).
-- Movements table: Expand chevron | Checkbox | Date | Payment | Contact | Description | Status (`MovementStatusBadge`) | Type (with `PostingStatusDot` sub-label) | G/L Item | Amount | Balance | kebab.
+- Movements toolbar: back arrow `←`, type filter (BPD/BPW, search-enabled), date range filter (preset list + dual calendar, same picker as grid views), advanced "by conditions" filter (`AdvancedFilterButton`, applied client-side), search input. The `+ Nuevo movimiento` button is **hidden in this release** behind the `SHOW_NEW_MOVEMENT` feature flag in `MovementsToolbar/index.jsx` — the wizard and all its wiring stay in place; flip the flag to `true` to re-enable it.
+- Movements table: Expand chevron | Checkbox | Date | Payment | Contact | Description | Status (`MovementStatusBadge` — **two states only**: Conciliado / Sin conciliar) | Type (with `PostingStatusDot` sub-label) | G/L Item | Amount | Balance | kebab.
 - **Payment column** (`Pago`): when the movement has a related payment, the document number renders as an underlined link (with an `ArrowUpRight` icon) that navigates to `/payment-in/:id` (received payments, `paymentIsReceipt === 'Y'`) or `/payment-out/:id` (made payments). Movements with no payment show plain text.
-- **Expandable "more info" panel**: the leading circular chevron (or a click anywhere on the row) toggles an inline panel showing the accounting dimensions enabled in the chart of accounts that have a value on the transaction (Organization, Project, Cost Center, Activity, Campaign, Sales Region, User1, User2). The business partner is excluded (it already has its own Contacto column). Dimensions are rendered read-only as label + value (no selector chrome), in a 1/2/4-column responsive grid. The header row and panel form one elevated card (shadow at the bottom only, no seam line — the header row sits at `z-20` over the panel's `z-10` to hide the shadow bleed). When no enabled dimension has a value, the panel shows a "no dimensions" message. The chevron only renders when the account reports at least one enabled dimension (`enabledDimensions`).
+- **Expandable "more info" panel**: the leading circular chevron (or a click anywhere on the row) toggles an inline panel showing a **fixed set of three accounting dimensions — Proyecto, Centro de costes, Producto** (`DISPLAYED_DIMENSIONS = ['project', 'costcenter', 'product']` in `MovementsTable.jsx`). This is intentionally independent of the chart-of-accounts `enabledDimensions`: Organización and the other dimensions are never shown, and the business partner is excluded (it already has its own Contacto column). Each of the three fields renders read-only as label + value (empty when the transaction has no value), in a responsive grid. The header row and panel form one elevated card (shadow at the bottom only, no seam line — the header row sits at `z-20` over the panel's `z-10` to hide the shadow bleed).
 - Locale-aware date format in the Date column (es_ES → `dd/MM/yyyy`, en_US → `M/d/yyyy`).
 - Individual row checkbox + select-all (indeterminate when partial).
 - Row hover: subtle shadow elevation + kebab appears (Unreconcile / Post disabled with tooltip).
 - Back arrow in the toolbar runs `navigate(-1)`.
-- `+ Nuevo movimiento` button (yellow hover) — currently fires a "coming soon" toast.
+- The `+ Nuevo movimiento` button is hidden in this release (feature-flagged off — see the toolbar bullet above).
 
 ### Reconciliation tab (T6)
 
@@ -201,15 +201,21 @@ The Reconciliation tab renders `ReconciliationSplitPanel` (`tools/app-shell/src/
 - **Right panel — candidate operations** (`useCandidateOperations(accountId, lineId, docType)` — does NOT fetch while no line is selected): an empty state (`Selecciona un movimiento` / hint) until a line is picked, then a `SelectedLineHeader` (line metadata + amount in red/green), a real docType/date/search toolbar, and a table with **checkbox multi-select** rows (Fecha · Información = documentNo + partnerName + badge · Saldo pendiente · Importe). Backend-suggested candidates carry a blue **"Sugerida"** badge; the rest "Pendiente".
 - **Action bar**: `Documentos seleccionados: ±X,XX €` · `Restante por conciliar: ±X,XX €` · `[Cancelar selección] [Transferir] [Nuevo documento] [Conciliar (N)]`. `Conciliar` is enabled only when `|line.amount − sum(selected ops)| ≤ 0.01`. On click → `useReconcileGroup().reconcile({ financialAccountId, statementLineId, operationIds })` → success toast (`sonner`) + `onReconcileSuccess()` (reloads the account so the tab badge `pendingCount` decrements, and reloads movements) + clears the selection.
 - When a **reconciled** line is selected, the `Conciliar` button label switches to `Reactivar` and stays disabled (its handler lands in T8).
-- The right-side header action becomes a disabled `Automatch` button while the Reconciliation tab is active (enabled in T7). `Transferir` / `Nuevo documento` render but fire a "próximamente" toast (follow-up).
+- The right-side header action is the `Automatch` button while the Reconciliation tab is active (T7 — see below). `Transferir` / `Nuevo documento` render but fire a "próximamente" toast (follow-up).
+
+### Automatch engine (T7)
+
+The Reconciliation surface gained the automatic matching engine (backend `MatchRuleEngine` + `AutoMatchSupport` inside `ReconciliationHandler`, `@Named("bankReconciliation")`):
+
+- **Automatch modal** (`components/contract-ui/AutoMatchSuggestionModal.jsx`, opened from the `Automatch` header action and from the Cuentas-list `Conciliar (N)` pill): runs the engine in preview (GET `?action=autoMatch`) and shows the suggested groups (statement line + its N operations) with per-group include/exclude checkboxes. Rule-origin groups carry a yellow **"Por regla {nombre}"** badge; candidates that would create a new payment carry a blue **"Nueva"** badge. Applying (POST `?action=applySuggestions`) reconciles only the ticked groups, creating payments for rule matches and incrementing each matched rule's count. On success the panel/list refresh.
+- **1:N reconciliation** is done by Etendo core (`APRM_MatchingUtility.matchBankStatementLine` splits the line into sub-lines sharing `EM_ETGO_Match_Group_ID`). The panel and the imported-statements view **collapse those sub-lines into a single reconciled line** (`BankStatementsSupport.mergeMatchGroups`), so a 1:N group shows as one entry, not N.
+- **Left-panel state filter**: `pendingLines` returns a fine-grained `state` per line (`pending | suggested | byRule | difference | reconciled`) plus per-state counts, and the candidates endpoint flags engine-suggested operations (including the full 1:N group) so the right panel pre-ticks them.
 - i18n keys: `financeReconcile*` in `packages/app-shell-core/src/locales/{en_US,es_ES}.json`.
 - Hooks: `tools/app-shell/src/hooks/useReconciliation.js` — `usePendingStatementLines`, `useCandidateOperations`, `useReconcileGroup` (all over `useNeoResource` / the shared auth+fetch pattern). The reconcile POST surfaces the backend `{ error: { message } }` text on the thrown Error so it shows in the error toast.
 
 ## Not implemented yet
 
-- `+ Nuevo movimiento` real action — toast placeholder for now.
-- Reconciliation against **invoices** (creating a payment via `FIN_AddPayment`) — T6 reconciles only against existing financial-account transactions; invoice reconciliation is a follow-up.
-- `Automatch` functional behaviour — T7.
+- `+ Nuevo movimiento` — hidden behind the `SHOW_NEW_MOVEMENT` flag in this release; the wizard stays wired for a future version.
 - `Reactivar` execution — T8 (T6 only prepares the disabled label/state).
 - `Transferir` / `Nuevo documento` real actions — render but show a "próximamente" toast.
 - Unreconcile / Post row actions — visible but disabled, with tooltip.
@@ -229,15 +235,14 @@ index.jsx                          — receives { recordId }, sets page meta, mo
   DetailTabs.jsx + Tabs primitives — 3 tabs with icon + label + badge
     Header action button (inline)  — right of tab strip; Export for Movements/Statements, disabled Automatch for Reconciliation
     MovimientosTab.jsx             — toolbar + summary strip + table; runs applyFilters client-side
-      MovementsToolbar/index.jsx   — back ←, 4 filters, search, + Nuevo movimiento
-        StatusFilter.jsx           — wraps DistinctValuesFilter (8 codes)
-        DateRangeFilter.jsx        — wraps DateRangePopover
+      MovementsToolbar/index.jsx   — back ←, type filter, date range, advanced "by conditions" filter, search (+ Nuevo movimiento hidden via SHOW_NEW_MOVEMENT flag)
         TypeFilter.jsx             — wraps DistinctValuesFilter (BPD, BPW)
-        AmountFilter.jsx           — presets + manual min/max + Apply/Cancel
+        DateRangeFilter.jsx        — wraps DateRangePopover
+        AdvancedFilterButton       — generic "Filtro por condicionales" (status filter now lives here: 2 options — Conciliado / Sin conciliar)
       AccountSummaryStrip.jsx      — avatar, IBAN (chunked + copy), 3 KPI values
       MovementsTable.jsx           — header + rows / skeleton / empty-state; renderBody helper
-        DimensionsPanel (inline)   — expandable read-only accounting-dimensions grid
-        MovementStatusBadge.jsx    — 8 status chips (5 color families)
+        DimensionsPanel (inline)   — expandable read-only grid of the 3 fixed dimensions (Proyecto / Centro de costes / Producto)
+        MovementStatusBadge.jsx    — 2 status chips: Conciliado (green) / Sin conciliar (neutral)
         PostingStatusDot.jsx       — derived posting status (RPPC → posted/green, else → orange)
         MovementRowKebab.jsx       — on-hover kebab (Unreconcile/Post disabled)
     ReconciliacionTab.jsx          — placeholder (T6)
@@ -249,7 +254,7 @@ index.jsx                          — receives { recordId }, sets page meta, mo
         StatementStatusBadge.jsx   — 3 status chips (COMPLETED / WITH_ISSUES / IN_PROGRESS)
         StatementRowKebab.jsx      — per-row "…" menu: Edit / Process / Delete, enabled ONLY for drafts (processed='N'); disabled with tooltip on processed statements
         ProgressRing              — SVG circular progress indicator (new primitive)
-      StatementLinesInline.jsx     — lines table shown in the expanded accordion row: date, description, contact name (free text), contact (BP FK name), G/L item (concepto contable), out, in, match status
+      StatementLinesInline.jsx     — lines table shown in the expanded accordion row: date, description, contact name (free text), contact (BP FK name), G/L item (concepto contable), out, in, reconciled/unreconciled badge (Conciliado / Sin conciliar) and a **Movimiento** column (its reconciled movement(s); a 1:N group shows as a single "N movimientos" chip opening `ReconciledTxnsModal`)
       StatementLinesView.jsx       — sub-view: header with ← + lines table
         StatementLinesTable.jsx    — 7-column lines table (lineNo, date, desc, ref, bpartner, amount, matched)
       ImportStatementModal.jsx     — multi-step import modal (Upload → Review → Done): dropzone, preview KPIs + lines, base64 POST. White surface (var(--surface-overlay)), borderless footer, round red-hover remove button.
@@ -398,29 +403,25 @@ The artifact directory `artifacts/financial-account/` only contains a stub `deci
 
 | Filter | Value shape | Logic |
 |--------|-------------|-------|
-| Status | `null \| 'RPAP' \| 'RPAE' \| 'RPVOID' \| 'RPR' \| 'PPM' \| 'PWNC' \| 'RDNC' \| 'RPPC'` | `m.paymentStatus === value` |
+| Status (via advanced filter) | derived `statusFamily` = `financeAccountMovementsStatusReconciled` \| `…Unreconciled` | `statusFamily` is `movementStatusLabelKey(paymentStatus)`; RPPC → Reconciled, all others → Unreconciled |
 | Date range | `null \| { presetId } \| { from, to }` | `presetBounds()` resolves preset IDs to `{from, to}` Dates; custom range normalised to whole-day bounds (00:00 → 23:59.999) |
 | Type | `null \| 'BPD' \| 'BPW'` | `m.trxType === value` |
-| Amount | `null \| { presetId: 'gt0' \| 'lt0' } \| { min, max }` | Preset: signed comparison. Manual range: signed comparison (`min: 0` ⇒ only inflows; `max: 0` ⇒ only outflows). Either bound is optional. |
+| Amount (via advanced filter) | `{ min, max }` | signed comparison (`min: 0` ⇒ only inflows; `max: 0` ⇒ only outflows); either bound optional |
 | Search | `string` | Case-insensitive substring over `documentNo + contact + description` |
 
 Selection is cleared whenever the filters object reference changes (every dropdown change creates a new filters object).
 
-## Payment status mapping
+## Payment status mapping (two states)
 
-| Search key | Family | Visual |
-|------------|--------|--------|
-| RPAP | pending | yellow bg `#FFF7E0` |
-| RPAE | pending | yellow bg `#FFF7E0` |
-| RPVOID | voided | gray bg `#F5F7F9` |
-| RPR | executed | purple bg `#EFEAFE` |
-| PPM | executed | purple bg `#EFEAFE` |
-| PWNC | inTransit | orange bg `#FFF1D6` |
-| RDNC | inTransit | orange bg `#FFF1D6` |
-| RPPC | cleared | green bg `#EEFBF4` |
+The movement status was reduced to **two user-facing states**: a payment is either reconciled against a bank statement (`RPPC`) or not. Every other backend `FIN_Payment.Status` code collapses into "Sin conciliar".
 
-Full token palette in `components/financial-accounts/tokens.js` (`MOVEMENT_STATUS_TONE`).
-Config (family + i18n key per search_key) in `windows/custom/financial-account/movementStatusConfig.js`.
+| Search key | Family | Label | Visual |
+|------------|--------|-------|--------|
+| RPPC | cleared | Conciliado | green bg `#EEFBF4` |
+| everything else (RPAP, RPAE, RPVOID, RPR, PPM, PWNC, RDNC) | unreconciled | Sin conciliar | neutral gray bg `#F5F7F9` |
+
+Full token palette in `components/financial-accounts/tokens.js` (`MOVEMENT_STATUS_TONE`, families `cleared` + `unreconciled`).
+Config (family + i18n key per search_key) in `windows/custom/financial-account/movementStatusConfig.js`. Because the advanced "by conditions" filter de-duplicates by label key, the status filter dropdown shows exactly these two options.
 
 ## i18n keys
 
@@ -430,16 +431,15 @@ All keys prefixed `financeAccountDetail*` and `financeAccountMovements*`, added 
 - `financeAccountDetailKpi*` — summary strip labels.
 - `financeAccountDetailIbanCopied` — IBAN-copy success toast.
 - `financeAccountMovementsFilter*` — filter labels and search placeholders.
-- `financeAccountMovementsStatus*` — labels for the 8 payment statuses.
+- `financeAccountMovementsStatusReconciled` / `financeAccountMovementsStatusUnreconciled` — the two movement-status labels (Conciliado / Sin conciliar). The older per-code keys (`StatusDraft`/`StatusVoided`/`StatusInTransit`/`StatusCompleted`) remain defined but are no longer mapped by `movementStatusConfig.js`.
 - `financeAccountMovementsType{BPD,BPW}` — trxType labels (Cobro / Pago in es).
 - `financeAccountMovementsCol*` — table column headers (`ColDocument` now labels the **Payment** / Pago column).
 - `financeAccountMovementsRow*` — kebab actions + their disabled tooltips.
 - `financeAccountMovementsMoreInfo` — chevron aria-label for the expandable panel.
-- `financeAccountMovementsNoDimensions` — message shown when no enabled dimension has a value.
-- `financeAccountMovementsDim*` — accounting-dimension labels (`Organization`, `Bpartner`, `Project`, `Costcenter`, `Activity`, `Campaign`, `Salesregion`, `User1`, `User2`).
+- `financeAccountMovementsDim{Project,Costcenter,Product}` — labels for the three fixed dimensions shown in the more-info panel (other `Dim*` keys remain defined but are no longer rendered).
 - `financeAccountMovementsEmpty` — empty-state message.
 - `financeAccountStatements*` — all statements tab keys (search, import, column headers, status labels, dialog, toasts).
-- `financeAccountStatementLines*` — all lines sub-view keys (column headers, empty state, matched labels).
+- `financeAccountStatementLines*` — all lines sub-view keys; includes the reconciled/unreconciled badge labels (`StatusReconciled` = Conciliado, `StatusUnmatched` = Sin conciliar) and the **Movimiento** column/modal copy (`ColTransaction`, `TxnChipMulti`, `TxnModalTitle`, `TxnFootSum`) — the line's reconciled movement(s).
 - `financeAccountMovementsWizard*` — every label, placeholder, section title, choice card, stepper label, footer and toast/error string of the **New Movement wizard** (`NewMovementWizard/`). The wizard was fully internationalized (it previously hardcoded its Spanish copy); `movementWizardData.DIM_META` now carries a `labelKey` resolved via `ui()` instead of a literal `label`.
 - `financeAccountAmountPlaceholder` — shared decimal placeholder (`0,00` / `0.00`) used by the wizard amount inputs and the manual-statement line amounts.
 

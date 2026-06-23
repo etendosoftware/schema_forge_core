@@ -19,29 +19,27 @@ export default function PreviewActionButtons({
         size="sm"
         className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-[#121217] hover:bg-[#2a2a30] text-white [&_svg]:size-5"
         onClick={onEmail}
-      >
-        <Mail />
+        data-testid="Button__9ccdc3">
+        <Mail data-testid="Mail__9ccdc3" />
         {sendLabel}
       </Button>
-
       <Button
         size="sm"
         variant="outline"
         className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] disabled:opacity-40 disabled:cursor-not-allowed [&_svg]:size-5"
         disabled={!hasPdf}
         onClick={hasPdf ? onDownloadPdf : undefined}
-      >
-        <Download className="text-[#828FA3]" />
+        data-testid="Button__9ccdc3">
+        <Download className="text-[#828FA3]" data-testid="Download__9ccdc3" />
         {downloadLabel}
       </Button>
-
       <Button
         size="sm"
         variant="outline"
         className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
         onClick={triggerEdit}
-      >
-        <Edit2 className="text-[#828FA3]" />
+        data-testid="Button__9ccdc3">
+        <Edit2 className="text-[#828FA3]" data-testid="Edit2__9ccdc3" />
         {editLabel}
       </Button>
     </>
@@ -81,12 +79,18 @@ export function makeStaticPreviewTabs(ui) {
     {
       key: 'messages',
       label: ui('invoicePreviewMessages'),
-      content: <PreviewEmptyPanel icon="💬" text={ui('invoicePreviewNoMessagesYet')} />,
+      content: <PreviewEmptyPanel
+        icon="💬"
+        text={ui('invoicePreviewNoMessagesYet')}
+        data-testid="PreviewEmptyPanel__9ccdc3" />,
     },
     {
       key: 'history',
       label: ui('invoicePreviewHistory'),
-      content: <PreviewEmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />,
+      content: <PreviewEmptyPanel
+        icon="🕐"
+        text={ui('invoicePreviewNoActivityRecorded')}
+        data-testid="PreviewEmptyPanel__9ccdc3" />,
     },
   ];
 }
@@ -111,7 +115,7 @@ export function PreviewSendModal({ show, closing, documentType, documentNo, bpNa
       pdfBlobLoading={pdfBlobLoading}
       isClosing={closing}
       onClose={onClose}
-    />
+      data-testid="SendDocumentModal__9ccdc3" />
   );
 }
 
@@ -135,7 +139,7 @@ export function ReceiptSendModal({ sendModal, documentType, receipt, partnerName
       pdfBlobUrl={pdfBlobUrl}
       pdfBlobLoading={pdfBlobLoading}
       onClose={sendModal.closeEmailModal}
-    />
+      data-testid="PreviewSendModal__9ccdc3" />
   );
 }
 
@@ -145,18 +149,18 @@ export function PreviewPdfPanel({ pdfLoading, pdfError, pdfUrl, generatingText, 
     <div className="flex flex-col h-full min-h-0 w-full overflow-hidden">
       {pdfLoading && (
         <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
+          <Loader2 className="h-5 w-5 animate-spin" data-testid="Loader2__9ccdc3" />
           <span className="text-sm">{generatingText}</span>
         </div>
       )}
       {pdfError && !pdfLoading && (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <AlertCircle className="h-8 w-8 text-amber-400" />
+          <AlertCircle className="h-8 w-8 text-amber-400" data-testid="AlertCircle__9ccdc3" />
           <p className="text-sm text-muted-foreground">{errorText}</p>
           <p className="text-xs text-muted-foreground/60">{pdfError}</p>
         </div>
       )}
-      {pdfUrl && !pdfLoading && <PdfViewer url={pdfUrl} />}
+      {pdfUrl && !pdfLoading && <PdfViewer url={pdfUrl} data-testid="PdfViewer__9ccdc3" />}
     </div>
   );
 }
