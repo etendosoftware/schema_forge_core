@@ -32,6 +32,10 @@ const SUBSET_FILTERS = [
   { label: 'companies', rowFilter: (r) => !isPerson(r) },
 ];
 
+function renderContactsHeaderSummary(data) {
+  return <ContactsSummaryWidget data={data} data-testid="ContactsSummaryWidget__ef097c" />;
+}
+
 export default function ContactsWindow(props) {
   const ui = useUI();
   const [pendingBulkDelete, setPendingBulkDelete] = useState(null);
@@ -95,7 +99,7 @@ export default function ContactsWindow(props) {
            autoSaveOnBlur={true}
            enableSecondaryRowDelete={true}
            tabsBarAfter={ContactsPeriodButton}
-           headerContent={(data) => <ContactsSummaryWidget data={data} data-testid="ContactsSummaryWidget__ef097c" />}
+           headerContent={renderContactsHeaderSummary}
            noHeaderBorder={true}
            toolbarBorderBottom={true}
            toolbarPaddingX="px-2"
