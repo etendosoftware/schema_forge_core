@@ -163,6 +163,9 @@ const FIELD_DECISION_COPY_PROPS = [
   'filterable',
   'labels',
   'clearsField',
+  // HandleDefaults opt-out: the add-row never applies a backend-resolved default
+  // value to this field (it keeps its literal seed / stays empty).
+  'skipDefault',
   'columnType',
   'display',
   'cellType',
@@ -532,6 +535,11 @@ function applyEntityDecisions(entity, entityDecision) {
   }
   if (entityDecision.formCols != null) {
     entity.formCols = entityDecision.formCols;
+  }
+  // HandleDefaults opt-out: carry an explicit false so the contract/frontend can
+  // skip fetching line /defaults for this entity. Default (absent) stays on.
+  if (entityDecision.handlesDefaults === false) {
+    entity.handlesDefaults = false;
   }
 }
 

@@ -26,8 +26,10 @@ export function buildAuthHeaders(token) {
 
 function buildApiError(data, fallbackCode) {
   const error = new Error(data?.error?.message || data?.message || fallbackCode);
-  error.code = fallbackCode;
-  error.userMessage = data?.error?.message || data?.message || null;
+  // Prefer the backend's stable error code (e.g. "WEAK_PASSWORD") when present,
+  // falling back to the generic per-call code.
+  error.code = data?.error?.code || fallbackCode;
+  error.userMessage = data?.error?.userMessage || data?.error?.message || data?.message || null;
   return error;
 }
 
@@ -127,6 +129,23 @@ export async function loginEnvironment(fetchImpl, baseUrl, token, env) {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.environmentLoginFailed);
+}
+
+export async function fetchOnboardingDraft(fetchImpl, baseUrl, token) {
+  const response = await fetchImpl(`${baseUrl}/sws/go/onboarding/draft`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  const data = await readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
+  return data.draft || null;
+}
+
+export async function saveOnboardingDraft(fetchImpl, baseUrl, token, draft) {
+  const response = await fetchImpl(`${baseUrl}/sws/go/onboarding/draft`, {
+    method: 'POST',
+    headers: buildAuthHeaders(token),
+    body: JSON.stringify({ draft }),
+  });
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
 }
 
 function processLines(lines, onMessage, finalResult) {
