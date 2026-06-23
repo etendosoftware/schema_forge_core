@@ -3,7 +3,10 @@ import { toast } from 'sonner';
 import './contacts.css';
 import BusinessPartnerPage from '@generated/contacts/generated/web/contacts/BusinessPartnerPage';
 import { ContactsProvider } from './ContactsContext';
+import { ContactsFinanceProvider } from './ContactsFinanceContext';
 import ContactsBusinessPartnerForm from './ContactsBusinessPartnerForm';
+import ContactsPeriodButton from './ContactsPeriodButton';
+import ContactsSummaryWidget from './ContactsSummaryWidget';
 import { useUI } from '@/i18n';
 import { SortIcon, RefreshIcon } from '@/components/ui/custom-icons';
 import { Trash2, X } from 'lucide-react';
@@ -80,6 +83,7 @@ export default function ContactsWindow(props) {
 
   return (
     <ContactsProvider data-testid="ContactsProvider__ef097c">
+     <ContactsFinanceProvider token={props.token} apiBaseUrl={props.apiBaseUrl}>
       <div className={CONTACTS_WRAPPER}>
         <BusinessPartnerPage
           {...props}
@@ -87,7 +91,8 @@ export default function ContactsWindow(props) {
           subsetFilters={SUBSET_FILTERS}
           autoSaveOnBlur={true}
           enableSecondaryRowDelete={true}
-          sidebarClassName="w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF]"
+          tabsBarAfter={ContactsPeriodButton}
+          headerContent={(data) => <ContactsSummaryWidget data={data} />}
           noHeaderBorder={true}
           toolbarBorderBottom={true}
           toolbarPaddingX="px-2"
@@ -101,7 +106,7 @@ export default function ContactsWindow(props) {
           selectionBarRightActions={selectionBarRightActions}
           toolbarButtonSize="default"
           primaryTabsVariant="pill"
-          tabsBarPaddingX="pl-2 pr-5"
+          tabsBarPaddingX="pl-2 pr-2"
           formScrollPaddingX="pl-0 pr-0"
           formScrollPaddingB="pb-2"
           secondaryTabContentPaddingT="pt-2"
@@ -141,6 +146,7 @@ export default function ContactsWindow(props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+     </ContactsFinanceProvider>
     </ContactsProvider>
   );
 }

@@ -1,15 +1,14 @@
 {
   "version": "0.17.0",
   "generatedAt": "2026-05-06T15:52:09.982Z",
-  "updatedAt": "2026-06-19T13:06:34.080Z",
-  "checksum": "4bbfb9279f9e2e67",
+  "updatedAt": "2026-06-23T13:38:02.798Z",
+  "checksum": "9580b26e2ed091ad",
   "frontendContract": {
     "window": {
       "id": "123",
       "name": "Contacts",
       "primaryEntity": "businessPartner",
       "category": "contact",
-      "sidebarLayout": true,
       "hidePrint": true,
       "hideMoreMenu": true,
       "breadcrumb": "Contact",
@@ -3778,7 +3777,6 @@
       "name": "Contacts",
       "primaryEntity": "businessPartner",
       "category": "contact",
-      "sidebarLayout": true,
       "hidePrint": true,
       "hideMoreMenu": true,
       "breadcrumb": "Contact",

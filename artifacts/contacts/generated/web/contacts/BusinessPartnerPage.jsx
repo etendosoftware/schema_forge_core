@@ -13,7 +13,6 @@ import { AttachmentsTab } from '@/components/attachments';
 import ContactTypeToggle from '@/windows/custom/contacts/ContactTypeToggle';
 import catalogs from './mockCatalogs';
 
-import BusinessPartnerSidebar from '@/windows/custom/contacts/BusinessPartnerSidebar';
 
 const breadcrumb = 'Contact';
 
@@ -705,14 +704,6 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
         {...props}
-        sidebarContent={(data) => (
-          <BusinessPartnerSidebar
-            recordId={recordId}
-            data={data}
-            token={props.token}
-            apiBaseUrl={props.apiBaseUrl}
-          />
-        )}
       />
     );
   }

@@ -162,7 +162,7 @@ function CollapsibleSection({ title, children }) {
  */
 function detailContentPadding(linesLayout, hasSidebar, variant, compact = false, paddingXOverride = null) {
   const isInline = linesLayout === 'inlineEditable';
-  if (hasSidebar) return (isInline || compact) ? 'p-2' : 'pl-6 pr-2';
+  if (hasSidebar) return (isInline || compact) ? 'px-2 pb-2' : 'pl-6 pr-2';
   if (variant === 'panel') return isInline ? 'pr-6' : (paddingXOverride ?? 'px-6');
   return isInline ? '' : (paddingXOverride ?? 'px-6');
 }
@@ -1489,6 +1489,7 @@ export function DetailView({
   hideFormCard = false,
   tabsBarRightDivider = null,
   tabsBarRight = null,
+  tabsBarAfter = null,
   hideTopBar = false,
   CustomLines = null,
   customLinesLabel = 'Invoices',
@@ -2844,6 +2845,20 @@ export function DetailView({
                   <div className="absolute top-0 bottom-0 w-px bg-[#E8EAEF] pointer-events-none" style={{ left: `calc(100% - ${tabsBarRightDivider})` }} />
                 )}
                 {renderPrimaryTabButtons(primaryTabsVariant, primaryTabs, setActivePrimaryTab, activePrimaryTab, tMenu)}
+                {tabsBarAfter && (() => {
+                  const TabsBarAfterComponent = tabsBarAfter;
+                  return (
+                    <div className="ml-2 flex-shrink-0">
+                      <TabsBarAfterComponent
+                        data={data}
+                        recordId={data?.id || recordId}
+                        token={token}
+                        apiBaseUrl={apiBaseUrl}
+                        api={api}
+                      />
+                    </div>
+                  );
+                })()}
                 {tabsBarRight && (() => {
                   const TabsBarRightComponent = tabsBarRight;
                   return (

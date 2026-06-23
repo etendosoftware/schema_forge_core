@@ -25,6 +25,35 @@ function resolveId(value) {
   return String(value);
 }
 
+// ─── Circular checkbox (Figma radio-button visual, independent toggle) ──────
+
+function CircularCheckbox({ label, checked, onChange }) {
+  return (
+    <label className="flex flex-row items-center gap-3 cursor-pointer select-none">
+      <div className="relative flex items-center justify-center w-6 h-6 shrink-0">
+        <div
+          className="w-[14.5px] h-[14.5px] rounded-full bg-white flex items-center justify-center transition-colors"
+          style={{
+            border: `1.5px solid ${checked ? '#121217' : '#D1D4DB'}`,
+            boxShadow: checked ? 'none' : '0px 1px 2px rgba(18,18,23,0.05)',
+          }}
+        >
+          {checked && (
+            <div className="w-2 h-2 rounded-full" style={{ background: '#121217' }} />
+          )}
+        </div>
+      </div>
+      <span className="text-sm font-medium text-[#121217]">{label}</span>
+      <input
+        type="checkbox"
+        checked={!!checked}
+        onChange={e => onChange(e.target.checked)}
+        className="sr-only"
+      />
+    </label>
+  );
+}
+
 // ─── Discount select ────────────────────────────────────────────────────────
 
 function YesNoRadio({ label, value, onChange }) {
@@ -213,10 +242,6 @@ export default function BillingPreferencesForm(props) {
   const discountLoading = discountRecord === undefined;
   const currentDiscountId = discountRecord?.discount ?? null;
 
-  const customerCheckboxField = [
-    { key: 'customer', column: 'IsCustomer', type: 'checkbox', label: ui('customer'), required: true, section: 'principal' },
-  ];
-
   const customerTopBillingFields = [
     { key: 'priceList', column: 'M_PriceList_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
     { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
@@ -224,10 +249,6 @@ export default function BillingPreferencesForm(props) {
   ];
   const customerPaymentTermsField = [
     { key: 'paymentTerms', column: 'C_PaymentTerm_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
-  ];
-
-  const vendorCheckboxField = [
-    { key: 'vendor', column: 'IsVendor', type: 'checkbox', label: ui('vendor'), required: true, section: 'principal' },
   ];
 
   const vendorTopBillingFields = [
@@ -260,13 +281,11 @@ export default function BillingPreferencesForm(props) {
         <>
           {/* ── Cliente ───────────────────────────────────────────────────── */}
           <div className="bg-[#F5F7F9] rounded-lg p-3 flex flex-col gap-3">
-            <div className="[&_.pt-6]:pt-0">
-              <EntityForm
-                {...props}
-                fields={customerCheckboxField}
-                selectorContext={customerSelectorContext}
-                data-testid="EntityForm__7f0756" />
-            </div>
+            <CircularCheckbox
+              label={ui('customer')}
+              checked={!!data?.customer}
+              onChange={(val) => onChange?.('customer', val)}
+            />
             {data?.customer && (
               <>
                 <EntityForm
@@ -297,13 +316,11 @@ export default function BillingPreferencesForm(props) {
 
           {/* ── Proveedor ─────────────────────────────────────────────────── */}
           <div className="bg-[#F5F7F9] rounded-lg p-3 flex flex-col gap-3">
-            <div className="[&_.pt-6]:pt-0">
-              <EntityForm
-                {...props}
-                fields={vendorCheckboxField}
-                selectorContext={vendorSelectorContext}
-                data-testid="EntityForm__7f0756" />
-            </div>
+            <CircularCheckbox
+              label={ui('vendor')}
+              checked={!!data?.vendor}
+              onChange={(val) => onChange?.('vendor', val)}
+            />
             {data?.vendor && (
               <>
                 <EntityForm

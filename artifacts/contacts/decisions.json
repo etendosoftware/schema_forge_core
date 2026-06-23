@@ -4,7 +4,7 @@
     "category": "contact",
     "name": "Contacts",
     "entityLabel": "Contact",
-    "sidebarLayout": true,
+    "sidebarLayout": false,
     "breadcrumb": "Contact",
     "detailEntity": null,
     "summaryFields": [],

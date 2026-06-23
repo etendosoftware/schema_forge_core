@@ -186,12 +186,24 @@ describe('ContactTypeToggle', () => {
   });
 
   it('applies active style to the selected button', () => {
-    // personType is 'company' from mock, so company button should have boxShadow
-    render(<ContactTypeToggle data={{ id: '1' }} />);
-    const companyBtn = screen.getByText('company');
-    expect(companyBtn.style.boxShadow).not.toBe('');
+    // personType is 'company' from the mock, so the company radio should show
+    // the filled inner circle (a <div> with background #121217).
+    // The person radio is unselected — no filled inner circle.
+    const { container } = render(<ContactTypeToggle data={{ id: '1' }} />);
 
-    const personBtn = screen.getByText('Person');
-    expect(personBtn.style.boxShadow).toBe('');
+    // Each label wraps: outer-div > inner-circle-div > (optional) filled-dot-div
+    const labels = container.querySelectorAll('label');
+    // labels[0] = Person, labels[1] = company (render order from the source array)
+    const personLabel = labels[0];
+    const companyLabel = labels[1];
+
+    // The filled dot is the only element with background: rgb(18, 18, 23)
+    const personDot = personLabel.querySelector('[style*="background: rgb(18, 18, 23)"]')
+      ?? personLabel.querySelector('[style*="background: #121217"]');
+    const companyDot = companyLabel.querySelector('[style*="background: rgb(18, 18, 23)"]')
+      ?? companyLabel.querySelector('[style*="background: #121217"]');
+
+    expect(companyDot).not.toBeNull(); // selected — inner dot present
+    expect(personDot).toBeNull();       // unselected — no inner dot
   });
 });
