@@ -2819,6 +2819,14 @@ export function DetailView({
                                 }
                                 return;
                               }
+                              if (action.preUnpost && (data?.posted === 'Y' || data?.posted === true)) {
+                                const currentId = data?.id || recordId;
+                                const unpostResult = await neoAction.execute(currentId, 'unpost');
+                                if (!unpostResult.success) {
+                                  toast.error(unpostResult.message || ui('actionFailed'));
+                                  return;
+                                }
+                              }
                               if (action.columnName) {
                                 hook.handleProcess?.({ columnName: action.columnName, name: action.key });
                               } else if (action.onClick) {

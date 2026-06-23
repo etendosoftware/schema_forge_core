@@ -32,7 +32,8 @@
         "label": "Reactivate",
         "labelKey": "reactivate",
         "visibleWhenFieldTrue": "processed",
-        "columnName": "Processed"
+        "columnName": "Processed",
+        "preUnpost": true
       },
       {
         "key": "post",
@@ -40,16 +41,8 @@
         "labelKey": "post",
         "action": "post",
         "visibleWhenFieldFalse": "posted",
-        "successKey": "documentPosted"
-      },
-      {
-        "key": "unpost",
-        "label": "Unpost",
-        "labelKey": "unpost",
-        "action": "unpost",
-        "visibleWhenFieldTrue": "posted",
-        "successKey": "documentUnposted",
-        "destructive": true
+        "successKey": "documentPosted",
+        "visibleWhenFieldTrue": "processed"
       }
     ],
     "labelOverrides": {
@@ -92,6 +85,11 @@
         "EM_Etadas_Salesregion_ID": "Sales Region",
         "EM_Etadas_C_Activity_ID": "Activity",
         "EM_Etadas_Campaign_ID": "Sales Campaign"
+      }
+    },
+    "processOverrides": {
+      "etblkpBulkposting": {
+        "exclude": true
       }
     }
   },
@@ -148,8 +146,14 @@
           "searchable": false,
           "columnType": "status",
           "enumValues": [
-            { "value": "N", "name": "statusDraft" },
-            { "value": "Y", "name": "statusProcessed" }
+            {
+              "value": "N",
+              "name": "statusDraft"
+            },
+            {
+              "value": "Y",
+              "name": "statusProcessed"
+            }
           ]
         },
         "project": {
@@ -171,6 +175,11 @@
         "ndDimension": {
           "visibility": "discarded",
           "reason": "Accounting dimension — out of MVP scope"
+        },
+        "posted": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         }
       }
     },

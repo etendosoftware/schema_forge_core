@@ -27,8 +27,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-  { name: 'etblkpBulkposting', label: 'Bulk Posting', style: 'positive',
-    displayLogicRaw: "@Processed@='Y' & @#ShowAcct@='Y'" },
+
 ];
 // @sf-generated-end processes:header
 
@@ -308,9 +307,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         toolbarButtonSize="default"
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "A_Amortization", config: {} } }]}
         menuActions={({ data, status }) => [
-          { key: 'reactivate', label: 'Reactivate', visible: (data?.processed === 'Y' || data?.processed === true), labelKey: 'reactivate', columnName: 'Processed',  },
-          { key: 'post', label: 'Post', visible: !(data?.posted === 'Y' || data?.posted === true), labelKey: 'post', successKey: 'documentPosted', neoAction: 'post',  },
-          { key: 'unpost', label: 'Unpost', destructive: true, visible: (data?.posted === 'Y' || data?.posted === true), labelKey: 'unpost', successKey: 'documentUnposted', neoAction: 'unpost',  }
+          { key: 'reactivate', label: 'Reactivate', visible: (data?.processed === 'Y' || data?.processed === true), labelKey: 'reactivate', preUnpost: true, columnName: 'Processed',  },
+          { key: 'post', label: 'Post', visible: !(data?.posted === 'Y' || data?.posted === true) && (data?.processed === 'Y' || data?.processed === true), labelKey: 'post', successKey: 'documentPosted', neoAction: 'post',  }
         ]}
         draftMode={draftModeWithConfirm}
         requiredHeaderFields={requiredHeaderFields}

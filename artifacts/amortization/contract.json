@@ -1,8 +1,8 @@
 {
-  "version": "0.23.0",
+  "version": "0.24.0",
   "generatedAt": "2026-05-22T16:00:10.872Z",
-  "updatedAt": "2026-06-23T00:17:54.561Z",
-  "checksum": "6e14b6048bae4c9e",
+  "updatedAt": "2026-06-23T13:49:00.270Z",
+  "checksum": "bd4333c839741659",
   "frontendContract": {
     "window": {
       "id": "800026",
@@ -19,7 +19,8 @@
           "label": "Reactivate",
           "labelKey": "reactivate",
           "visibleWhenFieldTrue": "processed",
-          "columnName": "Processed"
+          "columnName": "Processed",
+          "preUnpost": true
         },
         {
           "key": "post",
@@ -27,18 +28,15 @@
           "labelKey": "post",
           "action": "post",
           "visibleWhenFieldFalse": "posted",
-          "successKey": "documentPosted"
-        },
-        {
-          "key": "unpost",
-          "label": "Unpost",
-          "labelKey": "unpost",
-          "action": "unpost",
-          "visibleWhenFieldTrue": "posted",
-          "successKey": "documentUnposted",
-          "destructive": true
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
         }
       ],
+      "processOverrides": {
+        "etblkpBulkposting": {
+          "exclude": true
+        }
+      },
       "statusField": "processed",
       "labelOverrides": {
         "es_ES": {
@@ -250,6 +248,30 @@
             "filterOnly": true
           },
           {
+            "name": "posted",
+            "apiKey": "posted",
+            "column": "Posted",
+            "label": "Posted",
+            "type": "button",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
+            },
+            "defaultValue": "N",
+            "displayLogic": {
+              "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
+              "evaluable": false,
+              "reason": "session-preference",
+              "js": null
+            }
+          },
+          {
             "name": "etblkpAccountingstatus",
             "apiKey": "etblkpAccountingstatus",
             "column": "EM_Etblkp_Accountingstatus",
@@ -377,6 +399,13 @@
             "derivation": {
               "type": "computed",
               "source": "false"
+            }
+          },
+          {
+            "name": "posted",
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
             }
           },
           {
@@ -681,7 +710,8 @@
           "label": "Reactivate",
           "labelKey": "reactivate",
           "visibleWhenFieldTrue": "processed",
-          "columnName": "Processed"
+          "columnName": "Processed",
+          "preUnpost": true
         },
         {
           "key": "post",
@@ -689,18 +719,15 @@
           "labelKey": "post",
           "action": "post",
           "visibleWhenFieldFalse": "posted",
-          "successKey": "documentPosted"
-        },
-        {
-          "key": "unpost",
-          "label": "Unpost",
-          "labelKey": "unpost",
-          "action": "unpost",
-          "visibleWhenFieldTrue": "posted",
-          "successKey": "documentUnposted",
-          "destructive": true
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
         }
       ],
+      "processOverrides": {
+        "etblkpBulkposting": {
+          "exclude": true
+        }
+      },
       "statusField": "processed",
       "labelOverrides": {
         "es_ES": {
@@ -829,7 +856,7 @@
             "apiKey": "posted",
             "column": "Posted",
             "type": "button",
-            "visibility": "system",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -1484,6 +1511,14 @@
         "description": "Default value for 'etblkpBulkposting' in header should be a string"
       },
       {
+        "id": "t-default-value-type-header-posted",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "posted",
+        "runner": "node",
+        "description": "Default value for 'posted' in header should be a string"
+      },
+      {
         "id": "t-default-value-type-header-processed",
         "category": "default-value-type",
         "entity": "header",
@@ -1500,6 +1535,14 @@
         "description": "Display logic for 'etblkpBulkposting' in header should have evaluable flag"
       },
       {
+        "id": "t-displaylogic-evaluable-header-posted",
+        "category": "displaylogic-evaluable",
+        "entity": "header",
+        "field": "posted",
+        "runner": "node",
+        "description": "Display logic for 'posted' in header should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-lines-project",
         "category": "displaylogic-evaluable",
         "entity": "lines",
@@ -1514,6 +1557,14 @@
         "field": "etblkpBulkposting",
         "runner": "node",
         "description": "Display logic for 'etblkpBulkposting' in header should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-header-posted",
+        "category": "displaylogic-valid",
+        "entity": "header",
+        "field": "posted",
+        "runner": "node",
+        "description": "Display logic for 'posted' in header should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-lines-project",
@@ -1570,6 +1621,14 @@
         "field": "name",
         "runner": "node",
         "description": "Field 'name' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-posted",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "posted",
+        "runner": "node",
+        "description": "Field 'posted' should be present in header"
       },
       {
         "id": "t-field-presence-header-processed",
@@ -1738,6 +1797,14 @@
         "field": "name",
         "runner": "node",
         "description": "Field 'name' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-posted",
+        "category": "field-type",
+        "entity": "header",
+        "field": "posted",
+        "runner": "node",
+        "description": "Field 'posted' should have type 'string' in header"
       },
       {
         "id": "t-field-type-header-processed",
@@ -2773,14 +2840,6 @@
         "description": "System field 'organization' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-system-field-header-posted",
-        "category": "system-field",
-        "entity": "header",
-        "field": "posted",
-        "runner": "node",
-        "description": "System field 'posted' should exist in backend but not frontend for header"
-      },
-      {
         "id": "t-system-field-header-processNow",
         "category": "system-field",
         "entity": "header",
@@ -2932,25 +2991,25 @@
       }
     ],
     "summary": {
-      "total": 196,
+      "total": 200,
       "byCategory": {
         "action-endpoint": 3,
         "crud-flags": 2,
-        "default-value-type": 3,
-        "displaylogic-evaluable": 2,
-        "displaylogic-valid": 2,
-        "field-presence": 21,
-        "field-type": 21,
+        "default-value-type": 4,
+        "displaylogic-evaluable": 3,
+        "displaylogic-valid": 3,
+        "field-presence": 22,
+        "field-type": 22,
         "readonlylogic-evaluable": 18,
         "readonlylogic-valid": 18,
         "rule-declared": 63,
         "searchable-filters": 3,
         "selector-endpoint": 11,
-        "system-field": 27,
+        "system-field": 26,
         "visibility": 2
       },
       "byRunner": {
-        "node": 196,
+        "node": 200,
         "junit": 0
       }
     }

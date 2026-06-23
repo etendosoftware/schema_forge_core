@@ -1,8 +1,8 @@
 {
   "version": "0.23.0",
   "generatedAt": "2026-05-22T16:00:10.872Z",
-  "updatedAt": "2026-06-23T00:17:54.561Z",
-  "contractChecksum": "6e14b6048bae4c9e",
+  "updatedAt": "2026-06-23T13:49:00.270Z",
+  "contractChecksum": "bd4333c839741659",
   "apiPrediction": {
     "specName": "amortization",
     "baseUrl": "/sws/neo/amortization",
@@ -315,6 +315,11 @@
             "required": true,
             "defaultValue": "N"
           },
+          "posted": {
+            "readOnly": true,
+            "required": true,
+            "defaultValue": "N"
+          },
           "etblkpAccountingstatus": {
             "readOnly": true,
             "required": true,
@@ -445,5 +450,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "c6c4b91c8bca066b"
+  "checksum": "01b21d40e30de268"
 }
