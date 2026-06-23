@@ -27,6 +27,7 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
   const [menuOpen, setMenuOpen] = useState(false);
   const [showClone, setShowClone] = useState(false);
   const menuRef = useRef(null);
+  const resultNavigatedRef = useRef(false);
 
   const isCompleted = data?.documentStatus === 'CO';
   const isFullyInvoiced = data?.invoiceStatus >= 100;
@@ -234,6 +235,7 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
           headers={headers}
           recordId={recordId}
           data={data}
+          hideInvoiceToggle={isFullyInvoiced}
           onConfirmed={({ invoice }) => {
             setShowConfirmModal(false);
             setInvoiceResult({ invoice: invoice || null });
@@ -261,8 +263,14 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
           }
           primary={ui('soViewInvoice')}
           currency={data?.['currency$_identifier'] || ''}
-          navigate={navigate}
-          onClose={() => { setInvoiceResult(null); window.location.reload(); }}
+          navigate={(route) => { resultNavigatedRef.current = true; navigate(route); }}
+          onClose={() => {
+            setInvoiceResult(null);
+            setTimeout(() => {
+              if (!resultNavigatedRef.current) window.location.reload();
+              resultNavigatedRef.current = false;
+            }, 0);
+          }}
         />,
         document.body,
       )}
@@ -281,6 +289,7 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
       )}
 
       <style>{`@keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }`}</style>
+
 
       <ReturnWizard
         open={wizardOpen}
@@ -317,5 +326,4 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
     </>
   );
 }
-
 

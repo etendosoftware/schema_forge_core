@@ -27,6 +27,7 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
   const [isCloneHovered, setIsCloneHovered] = useState(false);
   const [confirmedDocs, setConfirmedDocs] = useState(null);
   const [creatingInvoice, setCreatingInvoice] = useState(false);
+  const resultNavigatedRef = useRef(false);
 
   const isCompleted = data?.documentStatus === 'CO';
   const isFullyInvoiced = (parseFloat(data?.invoiceStatus ?? 0)) >= 100;
@@ -199,8 +200,14 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
           }
           primary={ui('soViewInvoice')}
           currency={data?.['currency$_identifier'] || ''}
-          navigate={navigate}
-          onClose={() => { setConfirmedDocs(null); window.location.reload(); }}
+          navigate={(route) => { resultNavigatedRef.current = true; navigate(route); }}
+          onClose={() => {
+            setConfirmedDocs(null);
+            setTimeout(() => {
+              if (!resultNavigatedRef.current) window.location.reload();
+              resultNavigatedRef.current = false;
+            }, 0);
+          }}
         />,
         document.body,
       )}
@@ -210,8 +217,14 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
           title={ui('purchaseReturnCreatedTitle')}
           docs={[{ type: 'salida', num: returnedDoc.documentNo, route: `/return-to-vendor-shipment/${returnedDoc.id}` }]}
           primary={ui('soViewShipment')}
-          navigate={navigate}
-          onClose={() => { setReturnedDoc(null); window.location.reload(); }}
+          navigate={(route) => { resultNavigatedRef.current = true; navigate(route); }}
+          onClose={() => {
+            setReturnedDoc(null);
+            setTimeout(() => {
+              if (!resultNavigatedRef.current) window.location.reload();
+              resultNavigatedRef.current = false;
+            }, 0);
+          }}
         />,
         document.body,
       )}
@@ -302,7 +315,6 @@ function ConfirmReceiptInvoicedModal({ data, base, headers, recordId, onConfirme
   const [error, setError] = useState(null);
 
   const invoices = Array.isArray(data?.linkedInvoices) ? data.linkedInvoices : [];
-  const inv = invoices[0] || null;
   const docNo = data?.documentNo || '';
   const bpName = data?.['businessPartner$_identifier'] || '';
 
@@ -351,10 +363,9 @@ function ConfirmReceiptInvoicedModal({ data, base, headers, recordId, onConfirme
             {bpName && <><span style={{ color: '#9aa1aa', fontSize: 13 }}>·</span><span style={{ fontSize: 13, color: '#6b7480' }}>{bpName}</span></>}
           </div>
 
-          {/* Invoice card */}
-          {inv && (
-            <div style={{ border: '1px solid #e7e9ec', borderRadius: 11, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              {/* Icon box */}
+          {/* Invoice cards — one per linked invoice */}
+          {invoices.map(inv => (
+            <div key={inv.id} style={{ border: '1px solid #e7e9ec', borderRadius: 11, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 38, height: 38, borderRadius: 9, background: '#f3f0ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c5cff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
@@ -363,7 +374,6 @@ function ConfirmReceiptInvoicedModal({ data, base, headers, recordId, onConfirme
                   <line x1="16" y1="17" x2="8" y2="17"/>
                 </svg>
               </div>
-              {/* Info */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: '#1f2733' }}>{ui('goodsReceipt.confirmModal.invoiceRef')} {inv.documentNo}</span>
@@ -377,7 +387,6 @@ function ConfirmReceiptInvoicedModal({ data, base, headers, recordId, onConfirme
                   </div>
                 )}
               </div>
-              {/* Ver → link */}
               <button
                 type="button"
                 onClick={() => { onClose(); navigate(`/purchase-invoice/${inv.id}`); }}
@@ -388,7 +397,7 @@ function ConfirmReceiptInvoicedModal({ data, base, headers, recordId, onConfirme
                 {ui('goodsReceipt.confirmModal.viewInvoice')}
               </button>
             </div>
-          )}
+          ))}
 
           {/* Microcopy */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>

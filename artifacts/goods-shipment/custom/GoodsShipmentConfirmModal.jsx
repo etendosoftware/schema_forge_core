@@ -1,7 +1,7 @@
 import { useUI } from '@/i18n';
 import ConfirmInOutModal from '@/components/contract-ui/ConfirmInOutModal';
 
-export default function GoodsShipmentConfirmModal({ base, headers, recordId, data, onConfirmed, onClose }) {
+export default function GoodsShipmentConfirmModal({ base, headers, recordId, data, onConfirmed, onClose, hideInvoiceToggle = false }) {
   const ui = useUI();
   return (
     <ConfirmInOutModal
@@ -12,6 +12,7 @@ export default function GoodsShipmentConfirmModal({ base, headers, recordId, dat
       entityName="goodsShipment"
       invoiceAction="createDraftInvoice"
       defaultCreateInvoice={false}
+      hideInvoiceToggle={hideInvoiceToggle}
       title={ui('goodsShipment.confirmModal.title')}
       docInfo={{
         documentNo: data?.documentNo,
@@ -19,7 +20,7 @@ export default function GoodsShipmentConfirmModal({ base, headers, recordId, dat
       }}
       infoRowPre={ui('goodsShipment.confirmModal.infoRowPre')}
       infoRowBold={ui('goodsShipment.confirmModal.infoRowBold')}
-      infoRowPost={ui('goodsShipment.confirmModal.infoRowPost')}
+      infoRowPost={hideInvoiceToggle ? ui('goodsShipment.confirmModal.infoRowPostInvoiced') : ui('goodsShipment.confirmModal.infoRowPost')}
       cardTitle={ui('goodsShipment.confirmModal.createInvoiceTitle')}
       cardDesc={ui('goodsShipment.confirmModal.createInvoiceDesc')}
       confirmLabel={ui('goodsShipment.confirmModal.confirmBtn')}

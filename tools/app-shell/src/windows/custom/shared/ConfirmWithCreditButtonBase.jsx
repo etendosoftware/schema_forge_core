@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { ConfirmResultModal } from '@/components/contract-ui/ConfirmResultModal';
@@ -19,6 +20,7 @@ export default function ConfirmWithCreditButtonBase({
   extraPortals,
 }) {
   const navigate = useNavigate();
+  const resultNavigatedRef = useRef(false);
   const {
     ui, status, currency, confirmDisabled, hasReturnInvoice,
     headers, base, pdfLoading, showModal, setShowModal,
@@ -96,9 +98,15 @@ export default function ConfirmWithCreditButtonBase({
           title={result.title}
           docs={result.docs}
           currency={currency}
-          navigate={navigate}
+          navigate={(route) => { resultNavigatedRef.current = true; navigate(route); }}
           primary={result.docs.length > 0 ? ui('soViewInvoice') : undefined}
-          onClose={() => { setResult(null); window.location.reload(); }}
+          onClose={() => {
+            setResult(null);
+            setTimeout(() => {
+              if (!resultNavigatedRef.current) window.location.reload();
+              resultNavigatedRef.current = false;
+            }, 0);
+          }}
           data-testid="ConfirmResultModal__f9608e" />,
         document.body,
       )}

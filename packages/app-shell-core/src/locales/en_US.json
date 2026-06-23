@@ -19387,6 +19387,7 @@
     "goodsShipment.confirmModal.infoRowPre": "The shipment will be",
     "goodsShipment.confirmModal.infoRowBold": "confirmed",
     "goodsShipment.confirmModal.infoRowPost": ". Optionally, we can also generate a sales invoice.",
+    "goodsShipment.confirmModal.infoRowPostInvoiced": ". This shipment is already fully invoiced. No new invoice will be created.",
     "goodsShipment.confirmModal.confirmWithInvoice": "Confirm and create invoice",
     "quotationStatus.AE": "Automatic Evaluation",
     "quotationStatus.CO": "Booked",

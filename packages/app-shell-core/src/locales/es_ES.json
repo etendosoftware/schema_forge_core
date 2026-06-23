@@ -19637,6 +19637,7 @@
     "goodsShipment.confirmModal.infoRowPre": "El albarán quedará",
     "goodsShipment.confirmModal.infoRowBold": "registrado",
     "goodsShipment.confirmModal.infoRowPost": ". Si lo deseas, generamos también su factura de venta.",
+    "goodsShipment.confirmModal.infoRowPostInvoiced": ". Este albarán ya está completamente facturado. No se generará ninguna factura nueva.",
     "goodsShipment.confirmModal.confirmWithInvoice": "Confirmar y crear factura",
     "quotationStatus.AE": "Evaluación automática",
     "quotationStatus.CO": "Reservado",
