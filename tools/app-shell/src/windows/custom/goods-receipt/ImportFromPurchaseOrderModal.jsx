@@ -98,6 +98,6 @@ export default function ImportFromPurchaseOrderModal({ receiptId, ...rest }) {
       fetchLines={fetchLines}
       getDocDisplay={getDocDisplay}
       buildLineBody={buildLineBody}
-    />
+      data-testid="ImportLinesModal__7ef1ba" />
   );
 }
