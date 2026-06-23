@@ -38,9 +38,10 @@ export function AdvancedFilterButton({ columns, rows = [], value = null, onChang
           type="button"
           data-testid={testId}
           title={ui('advancedFilterTitle')}
-          className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-colors hover:bg-[#F5F7F9] hover:text-foreground"
+          className="relative inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-white px-3 text-sm font-medium text-foreground transition-colors hover:bg-[#F5F7F9]"
         >
-          <Filter className="h-4 w-4" data-testid="Filter__1026f3" />
+          <Filter className="h-4 w-4 text-muted-foreground" data-testid="Filter__1026f3" />
+          <span>{ui('filters')}</span>
           {activeConditions > 0 ? (
             <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#121217] px-1 text-[10px] font-semibold leading-none text-white">
               {activeConditions}

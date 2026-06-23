@@ -88,6 +88,7 @@ export function extractFieldsFromContract(backendContract) {
         fieldName: field.name,
         column: field.column,
         visibility: field.visibility,
+        businessCritical: field.businessCritical || false,
       });
     }
   }
@@ -371,6 +372,7 @@ export function buildFieldUpdateParams(f, ctx, fieldId, entityId) {
     moduleId: ctx.moduleId,
     isIncluded: vis.isIncluded,
     isReadOnly: vis.isReadOnly,
+    isBusinessCritical: f.businessCritical ? 'Y' : 'N',
     audit: ctx.auditOpts,
   };
   if (fieldKey in ctx.fieldDefaultExprs) {

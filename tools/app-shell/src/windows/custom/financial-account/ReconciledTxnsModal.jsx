@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Layers, ArrowUpRight, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import {
@@ -39,6 +39,7 @@ export function ReconciledTxnsModal({ line, currency = 'EUR', onClose }) {
   const { locale: appLocale } = useLocaleSwitch();
   const bcpLocale = (appLocale || 'es_ES').replace('_', '-');
   const navigate = useNavigate();
+  const { recordId } = useParams();
 
   const open = line != null;
   const txns = (line && line.txns) || [];
@@ -49,19 +50,20 @@ export function ReconciledTxnsModal({ line, currency = 'EUR', onClose }) {
 
   const contact = line ? (line.bpartnerFkName || line.bpartnerName || '') : '';
 
+  // Navigate to the financial-account Movements tab and highlight the transaction itself
+  // (FIN_FinaccTransaction) — not its payment. Works for 1:N (each row points to its own txn).
   const goToMovement = (t) => {
-    if (!t.paymentId) return;
-    const win = t.paymentIsReceipt === 'Y' ? 'payment-in' : 'payment-out';
+    if (!t.transactionId || !recordId) return;
     onClose();
-    navigate(`/${win}/${t.paymentId}`);
+    // replace (not push): we stay in the same account window, only switching tab + highlighting.
+    // A push would leave a duplicate clean-URL history entry (the window clears the params after),
+    // forcing the user to press Back twice.
+    navigate(`/financial-account/${recordId}?tab=movements&txn=${t.transactionId}`, { replace: true });
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => { if (!v) onClose(); }}
-      data-testid="Dialog__2dbb84">
-      <DialogContent className="w-[92vw] max-w-[900px] overflow-hidden p-0" data-testid="reconciled-txns-modal">
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }} data-testid="Dialog__2dbb84">
+      <DialogContent className="w-[92vw] max-w-[900px] overflow-hidden rounded-xl bg-white p-0 shadow-[0px_0px_0px_1px_rgba(18,18,23,0.1),0px_24px_48px_rgba(18,18,23,0.08)]" data-testid="reconciled-txns-modal">
         {/* Header */}
         <div className="flex items-start gap-3 border-b border-[#E8EAEF] px-6 pb-4 pt-5">
           <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-[#F5F7F9] text-[#121217]">
@@ -122,7 +124,7 @@ export function ReconciledTxnsModal({ line, currency = 'EUR', onClose }) {
             {/* rows */}
             {txns.map((t) => (
               <div
-                key={t.paymentId || t.documentNo}
+                key={t.transactionId || t.documentNo}
                 data-testid={`reconciled-txn-row-${t.documentNo}`}
                 className={cn(TXN_GRID, 'min-h-[56px] border-b border-[#E8EAEF] px-3.5 text-sm text-[#121217] last:border-0 hover:bg-[#F8F9FB]')}
               >
@@ -141,7 +143,7 @@ export function ReconciledTxnsModal({ line, currency = 'EUR', onClose }) {
                   className="justify-self-end whitespace-nowrap text-sm font-semibold tabular-nums"
                   data-testid="MoneyAmount__2dbb84" />
                 <span className="flex justify-center">
-                  {t.paymentId ? (
+                  {t.transactionId ? (
                     <button
                       type="button"
                       title={ui('financeAccountStatementLinesTxnGoToMovement')}

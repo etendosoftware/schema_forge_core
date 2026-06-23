@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowLeftRight, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUI, useLocaleSwitch } from '@/i18n';
@@ -152,12 +152,17 @@ const DIMENSION_LABEL_KEYS = {
   bpartner: 'financeAccountMovementsDimBpartner',
   project: 'financeAccountMovementsDimProject',
   costcenter: 'financeAccountMovementsDimCostcenter',
+  product: 'financeAccountMovementsDimProduct',
   activity: 'financeAccountMovementsDimActivity',
   campaign: 'financeAccountMovementsDimCampaign',
   salesregion: 'financeAccountMovementsDimSalesregion',
   user1: 'financeAccountMovementsDimUser1',
   user2: 'financeAccountMovementsDimUser2',
 };
+
+// The "more info" panel shows only these three accounting dimensions (in this order),
+// regardless of which dimensions the chart of accounts has enabled.
+const DISPLAYED_DIMENSIONS = ['project', 'costcenter', 'product'];
 
 function renderBody({ loading, movements, ui, renderRow }) {
   if (loading) {
@@ -213,17 +218,9 @@ function useTrxTypeLabel() {
  * Classic), as read-only fields. The business partner is excluded — it already
  * has its own "Contacto" column.
  */
-function DimensionsPanel({ movement, enabledDimensions, ui }) {
+function DimensionsPanel({ movement, ui }) {
   const dims = movement.dimensions || {};
-  const visible = enabledDimensions.filter((key) => key !== 'bpartner');
-
-  if (visible.length === 0) {
-    return (
-      <div className="pl-16 pr-[52px] pb-8 pt-3 text-sm text-[#6C6C89]">
-        {ui('financeAccountMovementsNoDimensions')}
-      </div>
-    );
-  }
+  const visible = DISPLAYED_DIMENSIONS;
 
   return (
     <div className="grid grid-cols-1 gap-5 pl-16 pr-[52px] pb-8 pt-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -256,7 +253,7 @@ function DimensionsPanel({ movement, enabledDimensions, ui }) {
  *   onSelectionChange: (id: string) => void;
  * }} props
  */
-export function MovementsTable({ movements, loading, enabledDimensions = [], selectedIds, onSelectionChange }) {
+export function MovementsTable({ movements, loading, enabledDimensions = [], selectedIds, onSelectionChange, highlightTxnId = null }) {
   const ui = useUI();
   const navigate = useNavigate();
   const { locale: appLocale } = useLocaleSwitch();
@@ -264,6 +261,15 @@ export function MovementsTable({ movements, loading, enabledDimensions = [], sel
   const getTrxTypeLabel = useTrxTypeLabel();
   const [expandedId, setExpandedId] = useState(null);
   const hasDimensions = enabledDimensions.length > 0;
+
+  // Scroll the deep-linked transaction (from the reconciled-txns modal) into view once loaded and
+  // expand it so its accounting dimensions are visible.
+  useEffect(() => {
+    if (!highlightTxnId) return;
+    if (hasDimensions) setExpandedId(highlightTxnId);
+    const row = document.querySelector(`[data-testid="movement-row-${highlightTxnId}"]`);
+    if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [highlightTxnId, movements, hasDimensions]);
 
   const allSelected = movements.length > 0 && selectedIds.size === movements.length;
   const someSelected = selectedIds.size > 0 && !allSelected;
@@ -288,11 +294,14 @@ export function MovementsTable({ movements, loading, enabledDimensions = [], sel
 
   const renderRow = (movement) => {
     const expanded = expandedId === movement.id;
+    const highlighted = highlightTxnId && movement.id === highlightTxnId;
     return (
       <Fragment key={movement.id} data-testid="Fragment__ae5a16">
         <TableRow
           data-testid={`movement-row-${movement.id}`}
-          className={`group relative bg-white transition-shadow ${hasDimensions ? 'cursor-pointer' : ''} ${
+          className={`group relative transition-shadow ${hasDimensions ? 'cursor-pointer' : ''} ${
+            highlighted ? 'bg-[#F5F7F9]' : 'bg-white'
+          } ${
             expanded
               ? 'z-20 border-b-0 [&>td]:border-b-0 hover:bg-white'
               : 'hover:z-10 hover:bg-white hover:shadow-lg'
@@ -362,7 +371,6 @@ export function MovementsTable({ movements, loading, enabledDimensions = [], sel
             <TableCell colSpan={COL_COUNT} className="p-0" data-testid="TableCell__ae5a16">
               <DimensionsPanel
                 movement={movement}
-                enabledDimensions={enabledDimensions}
                 ui={ui}
                 data-testid="DimensionsPanel__ae5a16" />
             </TableCell>
