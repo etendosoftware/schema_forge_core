@@ -1,8 +1,8 @@
 {
-  "version": "0.5.0",
+  "version": "0.11.0",
   "generatedAt": "2026-04-29T18:11:37.816Z",
-  "updatedAt": "2026-05-26T18:48:57.377Z",
-  "contractChecksum": "26ade87ee9e371da",
+  "updatedAt": "2026-06-22T22:43:40.678Z",
+  "contractChecksum": "3c3e7b5b783bb3c9",
   "apiPrediction": {
     "specName": "warehouse",
     "baseUrl": "/sws/neo/warehouse",
@@ -63,14 +63,6 @@
         "reference": "Location",
         "inputMode": "search",
         "url": "/sws/neo/warehouse/warehouse/selectors/locationAddress"
-      },
-      {
-        "entity": "warehouse",
-        "field": "warehouseRule",
-        "column": "M_Warehouse_Rule_ID",
-        "reference": "Warehouse_Rule",
-        "inputMode": "selector",
-        "url": "/sws/neo/warehouse/warehouse/selectors/warehouseRule"
       },
       {
         "entity": "storageBin",
@@ -237,11 +229,6 @@
           "description": {},
           "locationAddress": {
             "required": true
-          },
-          "warehouseRule": {},
-          "allocated": {
-            "required": true,
-            "defaultValue": "N"
           }
         }
       },
@@ -361,8 +348,7 @@
       "headerFields": [
         "searchKey",
         "name",
-        "locationAddress",
-        "allocated"
+        "locationAddress"
       ],
       "lineFields": [
         "searchKey",
@@ -401,8 +387,7 @@
         "fields": [
           "searchKey",
           "name",
-          "locationAddress",
-          "allocated"
+          "locationAddress"
         ]
       },
       {
@@ -428,5 +413,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "fc4ca6e55cceb02a"
+  "checksum": "d2f5a51a75b8023a"
 }

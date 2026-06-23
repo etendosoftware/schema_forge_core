@@ -331,7 +331,7 @@ function StockChart({ transactions }) {
 
 export default function WarehouseSummary({ data, token, apiBaseUrl }) {
   const ui = useUI();
-  const { loading, error, products, transactions } = useWarehouseStock(data?.id, token, apiBaseUrl);
+  const { loading, error, products } = useWarehouseStock(data?.id, token, apiBaseUrl);
 
   const totalProducts = products.length;
   const totalUnits = products.reduce((sum, p) => sum + p.qty, 0);
@@ -351,7 +351,6 @@ export default function WarehouseSummary({ data, token, apiBaseUrl }) {
           <p className="text-2xl font-light tabular-nums">{fmtNum(totalUnits)}</p>
         </div>
       </div>
-      <StockChart transactions={transactions} data-testid="StockChart__931883" />
     </div>
   );
 }

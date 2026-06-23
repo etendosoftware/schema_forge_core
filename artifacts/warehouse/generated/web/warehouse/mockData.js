@@ -6,108 +6,84 @@ export const warehouse = [
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "description": "Standard order for Q1 delivery",
-    "locationAddress": "Sample locationAddress",
-    "warehouseRule": "Main Warehouse",
-    "allocated": "Sample allocated"
+    "locationAddress": "Sample locationAddress"
   },
   {
     "id": "mock-warehouse-002",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "description": "Rush order - priority shipping required",
-    "locationAddress": "Sample locationAddress",
-    "warehouseRule": "East Distribution Center",
-    "allocated": "Sample allocated"
+    "locationAddress": "Sample locationAddress"
   },
   {
     "id": "mock-warehouse-003",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "description": "Bulk purchase for warehouse restocking",
-    "locationAddress": "Sample locationAddress",
-    "warehouseRule": "West Hub",
-    "allocated": "Sample allocated"
+    "locationAddress": "Sample locationAddress"
   },
   {
     "id": "mock-warehouse-004",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "description": "Sample order for client evaluation",
-    "locationAddress": "Sample locationAddress",
-    "warehouseRule": "North Storage",
-    "allocated": "Sample allocated"
+    "locationAddress": "Sample locationAddress"
   },
   {
     "id": "mock-warehouse-005",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "description": "Recurring monthly supply order",
-    "locationAddress": "Sample locationAddress",
-    "warehouseRule": "South Logistics",
-    "allocated": "Sample allocated"
+    "locationAddress": "Sample locationAddress"
   },
   {
     "id": "mock-warehouse-006",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "description": "Special pricing agreement applies",
-    "locationAddress": "Sample locationAddress",
-    "warehouseRule": "Central Depot",
-    "allocated": "Sample allocated"
+    "locationAddress": "Sample locationAddress"
   },
   {
     "id": "mock-warehouse-007",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "description": "Consolidated order from multiple requests",
-    "locationAddress": "Sample locationAddress",
-    "warehouseRule": "Regional Warehouse A",
-    "allocated": "Sample allocated"
+    "locationAddress": "Sample locationAddress"
   },
   {
     "id": "mock-warehouse-008",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "description": "Trial order for new product line",
-    "locationAddress": "Sample locationAddress",
-    "warehouseRule": "Regional Warehouse B",
-    "allocated": "Sample allocated"
+    "locationAddress": "Sample locationAddress"
   },
   {
     "id": "mock-warehouse-009",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "description": "Replacement for damaged goods",
-    "locationAddress": "Sample locationAddress",
-    "warehouseRule": "Main Warehouse",
-    "allocated": "Sample allocated"
+    "locationAddress": "Sample locationAddress"
   },
   {
     "id": "mock-warehouse-010",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "description": "Pre-season inventory build-up",
-    "locationAddress": "Sample locationAddress",
-    "warehouseRule": "East Distribution Center",
-    "allocated": "Sample allocated"
+    "locationAddress": "Sample locationAddress"
   },
   {
     "id": "mock-warehouse-011",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "description": "Customer-specific configuration",
-    "locationAddress": "Sample locationAddress",
-    "warehouseRule": "West Hub",
-    "allocated": "Sample allocated"
+    "locationAddress": "Sample locationAddress"
   },
   {
     "id": "mock-warehouse-012",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "description": "Government contract fulfillment",
-    "locationAddress": "Sample locationAddress",
-    "warehouseRule": "North Storage",
-    "allocated": "Sample allocated"
+    "locationAddress": "Sample locationAddress"
   }
 ];
 

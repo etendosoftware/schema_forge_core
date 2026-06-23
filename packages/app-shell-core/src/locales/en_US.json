@@ -18122,6 +18122,7 @@
     "warehouseTransactionsTab": "Transactions",
     "warehouseFilterPlaceholder": "Filter by product or type…",
     "warehouseDate": "Date",
+    "warehouseDocument": "Document",
     "warehouseProduct": "Product",
     "warehouseType": "Type",
     "warehouseQty": "Qty",
