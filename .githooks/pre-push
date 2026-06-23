@@ -251,9 +251,10 @@ check_base_conflicts() {
   local base_ref="origin/$base_branch"
 
   # Tree-level merge check — no working-tree changes (git >= 2.38).
+  # Use && rc=0 || rc=$? to prevent set -e from triggering on non-zero exit
+  # (e.g. exit 129 when --write-tree is unsupported on git < 2.38).
   local out rc
-  out="$(git merge-tree --write-tree --name-only "$base_ref" HEAD 2>/dev/null)"
-  rc=$?
+  out="$(git merge-tree --write-tree --name-only "$base_ref" HEAD 2>/dev/null)" && rc=0 || rc=$?
 
   if [ "$rc" -eq 0 ]; then
     echo "    SUCCESS ✅ (merges cleanly into $base_ref)"
