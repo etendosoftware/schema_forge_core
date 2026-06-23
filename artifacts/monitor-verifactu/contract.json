@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.7.0",
   "generatedAt": "2026-05-04T17:02:25.021Z",
-  "updatedAt": "2026-06-16T14:53:08.146Z",
-  "checksum": "97118f413f09540d",
+  "updatedAt": "2026-06-23T14:10:27.214Z",
+  "checksum": "db3e1745c8e94d63",
   "frontendContract": {
     "window": {
       "id": "F4675DAB02134762B66881DAE4672AD0",
@@ -432,7 +432,8 @@
           }
         ],
         "searchableFields": [],
-        "computedFields": []
+        "computedFields": [],
+        "javaQualifier": "mark-subsanation-handler"
       },
       "facturasAceptadas": {
         "tableName": "etvfac_inv_sent_status_v",
@@ -1060,6 +1061,14 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": false
+          },
+          {
+            "name": "verifactuConfig",
+            "apiKey": "verifactuConfig",
+            "column": "Etvfac_Verifactu_Config_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
           }
         ]
       },
@@ -1219,8 +1228,17 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": false
+          },
+          {
+            "name": "verifactuConfig",
+            "apiKey": "verifactuConfig",
+            "column": "Etvfac_Verifactu_Config_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
           }
-        ]
+        ],
+        "javaQualifier": "mark-subsanation-handler"
       },
       "facturasAceptadas": {
         "tableName": "etvfac_inv_sent_status_v",
@@ -1375,6 +1393,14 @@
             "name": "updatedBy",
             "apiKey": "updatedBy",
             "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "verifactuConfig",
+            "apiKey": "verifactuConfig",
+            "column": "Etvfac_Verifactu_Config_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": false
@@ -1534,6 +1560,14 @@
             "name": "updatedBy",
             "apiKey": "updatedBy",
             "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "verifactuConfig",
+            "apiKey": "verifactuConfig",
+            "column": "Etvfac_Verifactu_Config_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": false
@@ -2881,6 +2915,14 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for facturasAceptadas"
       },
       {
+        "id": "t-system-field-facturasAceptadas-verifactuConfig",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "verifactuConfig",
+        "runner": "node",
+        "description": "System field 'verifactuConfig' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
         "id": "t-system-field-facturasInv-lidas-client",
         "category": "system-field",
         "entity": "facturasInválidas",
@@ -2969,6 +3011,14 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for facturasInválidas"
       },
       {
+        "id": "t-system-field-facturasInv-lidas-verifactuConfig",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "verifactuConfig",
+        "runner": "node",
+        "description": "System field 'verifactuConfig' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
         "id": "t-system-field-facturasParcialmenteAceptadas-client",
         "category": "system-field",
         "entity": "facturasParcialmenteAceptadas",
@@ -3049,6 +3099,14 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for facturasParcialmenteAceptadas"
       },
       {
+        "id": "t-system-field-facturasParcialmenteAceptadas-verifactuConfig",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "verifactuConfig",
+        "runner": "node",
+        "description": "System field 'verifactuConfig' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
         "id": "t-system-field-facturasRechazadas-client",
         "category": "system-field",
         "entity": "facturasRechazadas",
@@ -3121,6 +3179,14 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for facturasRechazadas"
       },
       {
+        "id": "t-system-field-facturasRechazadas-verifactuConfig",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "verifactuConfig",
+        "runner": "node",
+        "description": "System field 'verifactuConfig' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
         "id": "t-visibility-cabeceraDeEmisor",
         "category": "visibility",
         "entity": "cabeceraDeEmisor",
@@ -3157,7 +3223,7 @@
       }
     ],
     "summary": {
-      "total": 165,
+      "total": 169,
       "byCategory": {
         "action-endpoint": 5,
         "crud-flags": 5,
@@ -3170,11 +3236,11 @@
         "readonlylogic-valid": 1,
         "rule-declared": 5,
         "selector-endpoint": 4,
-        "system-field": 53,
+        "system-field": 57,
         "visibility": 5
       },
       "byRunner": {
-        "node": 165,
+        "node": 169,
         "junit": 0
       }
     }

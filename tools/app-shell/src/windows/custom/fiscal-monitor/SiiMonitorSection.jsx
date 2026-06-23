@@ -161,7 +161,7 @@ function SiiTableContent({
             const invoiceId = row.id ?? row[INVOICE_FK_FIELD];
             let pillClick;
             if (isErrorStatus(row.aeatsiiEstado) && row.businessPartner) {
-              pillClick = () => onBpClick?.(row.businessPartner);
+              pillClick = () => onBpClick?.(row.businessPartner, invoiceId, specHint);
             } else if (isPendingStatus(row.aeatsiiEstado) && row[INVOICE_FK_FIELD]) {
               pillClick = () => onInvoiceOpen?.(row[INVOICE_FK_FIELD], specHint);
             }

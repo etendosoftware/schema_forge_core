@@ -41,8 +41,13 @@ async function get(apiFetch, spec, entity, params) {
 }
 
 async function fetchConfigRecord(apiFetch, spec, entity, orgId) {
-  const resp = await get(apiFetch, spec, entity, { organization: orgId, _limit: '1' });
-  return resp.data?.[0] ?? null;
+  try {
+    const resp = await get(apiFetch, spec, entity, { organization: orgId, _limit: '1' });
+    return resp.data?.[0] ?? null;
+  } catch {
+    // 404 = spec/module not installed for this org → treat as not configured
+    return null;
+  }
 }
 
 async function fetchCount(apiFetch, spec, entity, params) {

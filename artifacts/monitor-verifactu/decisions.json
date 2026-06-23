@@ -6,6 +6,9 @@
     "attachments": false
   },
   "entities": {
+    "facturasParcialmenteAceptadas": {
+      "javaQualifier": "mark-subsanation-handler"
+    },
     "cabeceraDeEmisor": {
       "fields": {
         "organization": {

@@ -54,7 +54,12 @@ async function postRecord(path, body, apiFetch) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText);
+    let msg;
+    try { msg = JSON.parse(text)?.error ?? text; } catch { msg = text; }
+    throw new Error(msg);
+  }
   const json = await res.json().catch(() => null);
   return json?.response?.data?.[0] ?? null;
 }
