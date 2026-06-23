@@ -1,4 +1,11 @@
 import { useState, useEffect } from 'react';
+
+function getSelectedErrorType(rows) {
+  if (!rows.length) return null;
+  if (rows.every(r => r.verifactuSendingStatus === 'IN')) return 'IN';
+  if (rows.every(r => r.verifactuSendingStatus === 'AE')) return 'AE';
+  return 'mixed';
+}
 import { useUI } from '@/i18n';
 import { useApiFetch } from '@/auth/useApiFetch.js';
 import { neoBase } from '@/components/related-documents/helpers.js';
@@ -165,11 +172,7 @@ export default function VerifactuMonitorSection({
   const selectedErrorRows = rows.filter(r =>
     selectedIds.has(r.id) && isErrorStatus(mapVfStatus(r.verifactuSendingStatus))
   );
-  const selectedErrorType = selectedErrorRows.length > 0
-    ? (selectedErrorRows.every(r => r.verifactuSendingStatus === 'IN') ? 'IN'
-      : selectedErrorRows.every(r => r.verifactuSendingStatus === 'AE') ? 'AE'
-      : 'mixed')
-    : null;
+  const selectedErrorType = getSelectedErrorType(selectedErrorRows);
   const canResolve = selectedErrorRows.length > 0 && selectedErrorType !== 'mixed';
 
   const vfKpis         = kpis?.verifactu ?? {};

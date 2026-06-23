@@ -224,6 +224,22 @@ function OptionPicker({ options, value, onChange, loading, ariaLabel, ui, error 
   );
 }
 
+function applyBpData({ cancelled, bp, loc, keyOpts, inv, invoiceSpec, setName, setTaxID, setTaxIDKey, setLocation, setTaxIDKeyOptions, setInvClaveTipo, setInvDescripcionSii }) {
+  if (cancelled) return;
+  if (bp) {
+    setName(bp.name ?? bp.etgoFirstname ?? '');
+    setTaxID(bp.taxID ?? '');
+    setTaxIDKey(bp.oBTIKTaxIDKey ?? '');
+  }
+  setLocation(loc);
+  setTaxIDKeyOptions(keyOpts);
+  if (inv) {
+    const claveTipoKey = invoiceSpec === 'purchase-invoice' ? 'aeatsiiClaveTipoFc' : 'aeatsiiClaveTipo';
+    setInvClaveTipo(inv[claveTipoKey] ?? '');
+    setInvDescripcionSii(inv.aeatsiiDescripcionSii ?? '');
+  }
+}
+
 async function saveContactData({
   saving, bpId, hasInvoice, invDescripcionSii,
   setDescError, setActiveTab, setSaving,
@@ -310,15 +326,7 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
       fetchTaxIDKeyOptions(apiFetch),
       hasInvoice ? fetchInvoice(invoiceApiFetch, invoiceSpec, invoiceId) : Promise.resolve(null),
     ]).then(([bp, loc, keyOpts, inv]) => {
-      if (cancelled) return;
-      if (bp) { setName(bp.name ?? bp.etgoFirstname ?? ''); setTaxID(bp.taxID ?? ''); setTaxIDKey(bp.oBTIKTaxIDKey ?? ''); }
-      setLocation(loc);
-      setTaxIDKeyOptions(keyOpts);
-      if (inv) {
-        const claveTipoKey = invoiceSpec === 'purchase-invoice' ? 'aeatsiiClaveTipoFc' : 'aeatsiiClaveTipo';
-        setInvClaveTipo(inv[claveTipoKey] ?? '');
-        setInvDescripcionSii(inv.aeatsiiDescripcionSii ?? '');
-      }
+      applyBpData({ cancelled, bp, loc, keyOpts, inv, invoiceSpec, setName, setTaxID, setTaxIDKey, setLocation, setTaxIDKeyOptions, setInvClaveTipo, setInvDescripcionSii });
     }).finally(() => { if (!cancelled) { setLoading(false); setKeyOptsLoading(false); } });
 
     return () => { cancelled = true; };
@@ -406,14 +414,15 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
           {/* Body — overflow visible so dropdown escapes (content is short) */}
           <div className="fm-config-modal__body" style={{ minHeight: loading ? 200 : 'auto', overflow: 'visible' }}>
 
-            {bpId && loading ? (
+            {bpId && loading && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0' }}>
                 <Loader2
                   size={20}
                   style={{ animation: 'spin 1s linear infinite', color: '#828FA3' }}
                   data-testid="Loader2__3fe37d" />
               </div>
-            ) : bpId ? (
+            )}
+            {bpId && !loading && (
               <>
                 {/* ── Contacto ── */}
                 {(!TABS || activeTab === 'contact') && (
@@ -512,7 +521,7 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
                   </div>
                 )}
               </>
-            ) : null}
+            )}
           </div>
 
           {/* Footer */}
