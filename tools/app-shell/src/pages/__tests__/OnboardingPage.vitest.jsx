@@ -88,6 +88,7 @@ vi.mock('../onboarding/onboardingState.js', () => ({
     { name: 'setup', status: 'pending' },
     { name: 'client', status: 'pending' },
     { name: 'organization', status: 'pending' },
+    { name: 'dataset', status: 'pending' },
     { name: 'finalize', status: 'pending' },
   ],
   isCompanyStepValid: () => true,
@@ -756,6 +757,60 @@ describe('OnboardingPage', () => {
       });
     });
     expect(screen.getByText('onboardingPreparingTitle')).toBeInTheDocument();
+  });
+
+  it('shows the company-data description while the dataset step runs', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+    runOnboardingStream.mockImplementation(async (_fetch, _baseUrl, _token, _form, onMessage) => {
+      onMessage({ type: 'progress', step: 'dataset', status: 'running' });
+      return new Promise(() => {});
+    });
+
+    render(<OnboardingPage />);
+
+    fireEvent.click(await screen.findByText('onboardingContinueAction'));
+    fireEvent.click(screen.getByText('onboardingStartAction'));
+
+    await waitFor(() => {
+      expect(screen.getByText('onboardingPreparingDataDescription')).toBeInTheDocument();
+    });
+  });
+
+  it('keeps the progress bar monotonic when an untracked step runs after a tracked one', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+    let emit;
+    runOnboardingStream.mockImplementation(async (_fetch, _baseUrl, _token, _form, onMessage) => {
+      emit = onMessage;
+      onMessage({ type: 'progress', step: 'client', status: 'running' });
+      return new Promise(() => {});
+    });
+
+    render(<OnboardingPage />);
+
+    fireEvent.click(await screen.findByText('onboardingContinueAction'));
+    fireEvent.click(screen.getByText('onboardingStartAction'));
+
+    // Tracked step: client → 35%.
+    await waitFor(() => {
+      expect(screen.getByText('onboardingPreparingActivatingDescription')).toBeInTheDocument();
+      expect(screen.getByText('35%')).toBeInTheDocument();
+    });
+
+    // Client finishes; an untracked backend step (accounting) starts running.
+    act(() => {
+      emit({ type: 'progress', step: 'client', status: 'done' });
+      emit({ type: 'progress', step: 'accounting', status: 'running' });
+    });
+
+    // Generic "configuring" description shows, but the bar holds at 35% (monotonic, never drops).
+    await waitFor(() => {
+      expect(screen.getByText('onboardingPreparingConfiguringDescription')).toBeInTheDocument();
+      expect(screen.getByText('35%')).toBeInTheDocument();
+    });
   });
 
   it('tracks onboarding run failures', async () => {

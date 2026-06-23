@@ -18353,6 +18353,8 @@
     "onboardingCompleted": "Completed",
     "onboardingPreparingTitle": "We are preparing your workspace",
     "onboardingPreparingActivatingDescription": "Activating your modules...",
+    "onboardingPreparingConfiguringDescription": "Configuring your organization...",
+    "onboardingPreparingDataDescription": "Loading your company data...",
     "onboardingPreparingFinishingDescription": "Finishing the setup...",
     "onboardingPreparingSequencesDescription": "Generating organization sequences...",
     "onboardingPreparingTaxesDescription": "Configuring taxes for your country...",
