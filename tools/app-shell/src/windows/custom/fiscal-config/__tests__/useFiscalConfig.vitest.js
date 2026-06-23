@@ -136,12 +136,10 @@ describe('useFiscalConfig — API error', () => {
     expect(result.current.loading).toBe(false);
   });
 
-  it('treats network rejection as unconfigured (errors are silenced per design)', async () => {
-    // fetchConfig catches all errors and returns null so a missing module does not
-    // crash the fiscal config flow. Network failures resolve as profile=unconfigured.
+  it('sets error message when API rejects', async () => {
     const { result } = renderHook(() => useFiscalConfig('org-1', '/api'));
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.error).toBeNull();
+    await waitFor(() => expect(result.current.error).not.toBeNull());
+    expect(result.current.error).toContain('Network failure');
   });
 });
 
@@ -152,12 +150,10 @@ describe('useFiscalConfig — API non-ok response', () => {
     vi.mocked(useApiFetch).mockReturnValue(mockApiFetch);
   });
 
-  it('treats non-ok response as unconfigured (errors are silenced per design)', async () => {
-    // fetchConfig catches the thrown error for non-ok responses and returns null,
-    // so HTTP 500 resolves as profile=unconfigured without propagating an error.
+  it('sets error when API returns non-ok response', async () => {
     const { result } = renderHook(() => useFiscalConfig('org-1', '/api'));
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.error).toBeNull();
+    await waitFor(() => expect(result.current.error).not.toBeNull());
+    expect(result.current.error).toBeTruthy();
   });
 });
 

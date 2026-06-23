@@ -9,18 +9,13 @@ const TBAI_ENTITY = 'header';
 const VERIFACTU_ENTITY = 'cabeceraDeConfiguraciónVerifactu';
 
 async function fetchRecord(apiFetch, specName, entityName, orgId) {
-  try {
-    const params = new URLSearchParams({ organization: orgId, _limit: '1' });
-    const res = await apiFetch(`/${specName}/${entityName}?${params}`, {
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (!res.ok) throw new Error(`Failed to load ${specName}: HTTP ${res.status}`);
-    const json = await res.json();
-    return json?.response?.data?.[0] ?? null;
-  } catch {
-    // 404 = spec/module not installed → treat as not configured
-    return null;
-  }
+  const params = new URLSearchParams({ organization: orgId, _limit: '1' });
+  const res = await apiFetch(`/${specName}/${entityName}?${params}`, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) throw new Error(`Failed to load ${specName}: HTTP ${res.status}`);
+  const json = await res.json();
+  return json?.response?.data?.[0] ?? null;
 }
 
 export function useFiscalConfig(orgId, apiBaseUrl) {
