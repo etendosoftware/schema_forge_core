@@ -12,6 +12,14 @@
     "noHeaderBorder": true,
     "menuActions": [
       {
+        "key": "reactivate",
+        "label": "Reactivate",
+        "labelKey": "reactivate",
+        "visibleWhenStatus": "CO",
+        "documentAction": "RE",
+        "successKey": "reactivated"
+      },
+      {
         "key": "post",
         "label": "Post",
         "labelKey": "post",
