@@ -22,7 +22,8 @@
         "labelKey": "post",
         "action": "post",
         "visibleWhenFieldFalse": "posted",
-        "successKey": "documentPosted"
+        "successKey": "documentPosted",
+        "visibleWhenFieldTrue": "processed"
       },
       {
         "key": "unpost",

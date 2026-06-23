@@ -1,8 +1,8 @@
 {
   "version": "0.14.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "updatedAt": "2026-06-23T12:41:10.258Z",
-  "checksum": "3ae88da5430b5429",
+  "updatedAt": "2026-06-23T13:36:40.486Z",
+  "checksum": "9e5883e12312185e",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -26,7 +26,8 @@
           "labelKey": "post",
           "action": "post",
           "visibleWhenFieldFalse": "posted",
-          "successKey": "documentPosted"
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
         },
         {
           "key": "unpost",
@@ -654,7 +655,8 @@
           "labelKey": "post",
           "action": "post",
           "visibleWhenFieldFalse": "posted",
-          "successKey": "documentPosted"
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
         },
         {
           "key": "unpost",

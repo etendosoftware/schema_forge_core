@@ -89,6 +89,7 @@ describe('menuActions policy — reactivate is preserved where expected', () => 
   const WITH_REACTIVATE = [
     'sales-order',
     'sales-invoice',
+    'purchase-invoice',
   ];
 
   for (const win of WITH_REACTIVATE) {
@@ -112,12 +113,3 @@ describe('menuActions policy — reactivate must not appear in purchase-order', 
   });
 });
 
-describe('menuActions policy — reactivate must not appear in purchase-invoice', () => {
-  it('purchase-invoice: no "reactivate" in menuActions', () => {
-    const actions = loadMenuActions('purchase-invoice');
-    assert.ok(
-      !keys(actions).includes('reactivate'),
-      '"reactivate" must not be in purchase-invoice menuActions — removed in ETP-4146',
-    );
-  });
-});

@@ -1,8 +1,8 @@
 {
-  "version": "0.14.0",
+  "version": "0.15.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-06-23T00:17:54.734Z",
-  "checksum": "fa8153eefccd0e73",
+  "updatedAt": "2026-06-23T13:36:40.394Z",
+  "checksum": "6acc486325b5cfff",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -24,7 +24,8 @@
           "labelKey": "post",
           "action": "post",
           "visibleWhenFieldFalse": "posted",
-          "successKey": "documentPosted"
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
         },
         {
           "key": "unpost",
@@ -318,6 +319,30 @@
             "defaultValue": "DR"
           },
           {
+            "name": "posted",
+            "apiKey": "posted",
+            "column": "Posted",
+            "label": "Posted",
+            "type": "button",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
+            },
+            "defaultValue": "N",
+            "displayLogic": {
+              "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
+              "evaluable": false,
+              "reason": "session-preference",
+              "js": null
+            }
+          },
+          {
             "name": "project",
             "apiKey": "project",
             "column": "C_Project_ID",
@@ -432,6 +457,19 @@
             "required": false,
             "grid": true,
             "form": false
+          },
+          {
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "label": "Processed",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": false,
+            "sourceRequired": true
           }
         ],
         "searchableFields": [
@@ -468,6 +506,13 @@
             "derivation": {
               "type": "computed",
               "source": "DR"
+            }
+          },
+          {
+            "name": "posted",
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
             }
           }
         ],
@@ -916,7 +961,8 @@
           "labelKey": "post",
           "action": "post",
           "visibleWhenFieldFalse": "posted",
-          "successKey": "documentPosted"
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
         },
         {
           "key": "unpost",
@@ -1090,7 +1136,7 @@
             "apiKey": "posted",
             "column": "Posted",
             "type": "button",
-            "visibility": "system",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -1362,7 +1408,7 @@
             "apiKey": "processed",
             "column": "Processed",
             "type": "boolean",
-            "visibility": "system",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -2366,6 +2412,14 @@
         "description": "Default value for 'movementDate' in goodsReceipt should be a string"
       },
       {
+        "id": "t-default-value-type-goodsReceipt-posted",
+        "category": "default-value-type",
+        "entity": "goodsReceipt",
+        "field": "posted",
+        "runner": "node",
+        "description": "Default value for 'posted' in goodsReceipt should be a string"
+      },
+      {
         "id": "t-default-value-type-goodsReceiptLine-invoiceQuantity",
         "category": "default-value-type",
         "entity": "goodsReceiptLine",
@@ -2398,12 +2452,28 @@
         "description": "Default value for 'storageBin' in goodsReceiptLine should be a string"
       },
       {
+        "id": "t-displaylogic-evaluable-goodsReceipt-posted",
+        "category": "displaylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "posted",
+        "runner": "node",
+        "description": "Display logic for 'posted' in goodsReceipt should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-goodsReceiptLine-orderQuantity",
         "category": "displaylogic-evaluable",
         "entity": "goodsReceiptLine",
         "field": "orderQuantity",
         "runner": "node",
         "description": "Display logic for 'orderQuantity' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-goodsReceipt-posted",
+        "category": "displaylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "posted",
+        "runner": "node",
+        "description": "Display logic for 'posted' in goodsReceipt should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-goodsReceiptLine-orderQuantity",
@@ -2508,6 +2578,22 @@
         "field": "partnerAddress",
         "runner": "node",
         "description": "Field 'partnerAddress' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-posted",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "posted",
+        "runner": "node",
+        "description": "Field 'posted' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-processed",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "processed",
+        "runner": "node",
+        "description": "Field 'processed' should be present in goodsReceipt"
       },
       {
         "id": "t-field-presence-goodsReceipt-project",
@@ -2780,6 +2866,22 @@
         "field": "partnerAddress",
         "runner": "node",
         "description": "Field 'partnerAddress' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-posted",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "posted",
+        "runner": "node",
+        "description": "Field 'posted' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-processed",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "processed",
+        "runner": "node",
+        "description": "Field 'processed' should have type 'boolean' in goodsReceipt"
       },
       {
         "id": "t-field-type-goodsReceipt-project",
@@ -4152,14 +4254,6 @@
         "description": "System field 'pickDate' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-system-field-goodsReceipt-posted",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "posted",
-        "runner": "node",
-        "description": "System field 'posted' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
         "id": "t-system-field-goodsReceipt-print",
         "category": "system-field",
         "entity": "goodsReceipt",
@@ -4174,14 +4268,6 @@
         "field": "priority",
         "runner": "node",
         "description": "System field 'priority' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-system-field-goodsReceipt-processed",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "processed",
-        "runner": "node",
-        "description": "System field 'processed' should exist in backend but not frontend for goodsReceipt"
       },
       {
         "id": "t-system-field-goodsReceipt-processGoodsJava",
@@ -4455,25 +4541,25 @@
       }
     ],
     "summary": {
-      "total": 284,
+      "total": 289,
       "byCategory": {
         "action-endpoint": 13,
         "crud-flags": 2,
-        "default-value-type": 7,
-        "displaylogic-evaluable": 1,
-        "displaylogic-valid": 1,
-        "field-presence": 34,
-        "field-type": 34,
+        "default-value-type": 8,
+        "displaylogic-evaluable": 2,
+        "displaylogic-valid": 2,
+        "field-presence": 36,
+        "field-type": 36,
         "readonlylogic-evaluable": 28,
         "readonlylogic-valid": 28,
         "rule-declared": 38,
         "searchable-filters": 5,
         "selector-endpoint": 20,
-        "system-field": 71,
+        "system-field": 69,
         "visibility": 2
       },
       "byRunner": {
-        "node": 284,
+        "node": 289,
         "junit": 0
       }
     }

@@ -2791,6 +2791,13 @@ export function DetailView({
                               if (action.documentAction) {
                                 const currentId = data?.id || recordId;
                                 try {
+                                  if (action.preUnpost && (data?.posted === 'Y' || data?.posted === true)) {
+                                    const unpostResult = await neoAction.execute(currentId, 'unpost');
+                                    if (!unpostResult.success) {
+                                      toast.error(unpostResult.message || ui('actionFailed'));
+                                      return;
+                                    }
+                                  }
                                   await docAction.execute(currentId, action.documentAction);
                                   const msg = (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted');
                                   toast.success(msg);

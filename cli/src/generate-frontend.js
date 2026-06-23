@@ -859,7 +859,8 @@ export function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
       }
       const labelKeyPart = a.labelKey ? `labelKey: '${a.labelKey}', ` : '';
       const successPart = getSuccessPart(a);
-      return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${handler} }`;
+      const preUnpostPart = a.preUnpost ? `preUnpost: true, ` : '';
+      return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${preUnpostPart}${handler} }`;
     }).join(',\n')}\n        ]}`;
   } else {
     menuActionsProp = '';

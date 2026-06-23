@@ -25,7 +25,8 @@
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
           "documentAction": "RE",
-          "successKey": "reactivated"
+          "successKey": "reactivated",
+          "preUnpost": true
         },
         {
           "key": "post",
@@ -33,16 +34,8 @@
           "labelKey": "post",
           "action": "post",
           "visibleWhenFieldFalse": "posted",
-          "successKey": "documentPosted"
-        },
-        {
-          "key": "unpost",
-          "label": "Unpost",
-          "labelKey": "unpost",
-          "action": "unpost",
-          "visibleWhenFieldTrue": "posted",
-          "successKey": "documentUnposted",
-          "destructive": true
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
         }
       ],
       "processOverrides": {},
@@ -1833,7 +1826,8 @@
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
           "documentAction": "RE",
-          "successKey": "reactivated"
+          "successKey": "reactivated",
+          "preUnpost": true
         },
         {
           "key": "post",
@@ -1841,16 +1835,8 @@
           "labelKey": "post",
           "action": "post",
           "visibleWhenFieldFalse": "posted",
-          "successKey": "documentPosted"
-        },
-        {
-          "key": "unpost",
-          "label": "Unpost",
-          "labelKey": "unpost",
-          "action": "unpost",
-          "visibleWhenFieldTrue": "posted",
-          "successKey": "documentUnposted",
-          "destructive": true
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
         }
       ],
       "processOverrides": {},
