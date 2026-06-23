@@ -1,8 +1,8 @@
 {
   "version": "0.48.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-06-18T13:09:21.956Z",
-  "checksum": "a013191cc744dd81",
+  "updatedAt": "2026-06-18T18:30:07.340Z",
+  "checksum": "44ee4aa0cd2d1f21",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -50,6 +50,19 @@
           "C_DocTypeTarget_ID": "Document Type"
         }
       },
+      "subsetFilters": [
+        {
+          "label": "allTab"
+        },
+        {
+          "label": "invoicesTab",
+          "filter": "criteria=%5B%7B%22fieldName%22%3A%22transactionDocument%24documentCategory%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3A%22API%22%7D%5D"
+        },
+        {
+          "label": "creditNotesTab",
+          "filter": "criteria=%5B%7B%22fieldName%22%3A%22transactionDocument%24documentCategory%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3A%22APC%22%7D%5D"
+        }
+      ],
       "dateFilterKey": "invoiceDate",
       "noHeaderBorder": true,
       "lineEntityConfig": "invoice",
@@ -3861,6 +3874,19 @@
           "C_DocTypeTarget_ID": "Document Type"
         }
       },
+      "subsetFilters": [
+        {
+          "label": "allTab"
+        },
+        {
+          "label": "invoicesTab",
+          "filter": "criteria=%5B%7B%22fieldName%22%3A%22transactionDocument%24documentCategory%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3A%22API%22%7D%5D"
+        },
+        {
+          "label": "creditNotesTab",
+          "filter": "criteria=%5B%7B%22fieldName%22%3A%22transactionDocument%24documentCategory%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3A%22APC%22%7D%5D"
+        }
+      ],
       "dateFilterKey": "invoiceDate",
       "noHeaderBorder": true,
       "lineEntityConfig": "invoice",
