@@ -1,8 +1,24 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { forwardRef, useImperativeHandle } from 'react';
 
+// useSearchParams and useParams are used by FinancialAccountWindow and its children.
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => vi.fn(),
+  useSearchParams: () => [new URLSearchParams(), vi.fn()],
+  useParams: () => ({ recordId: 'test-account' }),
+}));
+
 vi.mock('@/i18n', () => ({
   useUI: () => (key) => key,
+}));
+
+// useAutoMatch is called by FinancialAccountWindow when the automatch modal is open.
+vi.mock('@/hooks/useReconciliation', () => ({
+  useAutoMatch: () => ({ groups: [], kpis: {}, loading: false, error: null, reload: vi.fn() }),
+  useApplySuggestions: () => ({ apply: vi.fn(), loading: false, error: null }),
+  usePendingStatementLines: () => ({ lines: [], total: 0, counts: {}, loading: false, reload: vi.fn() }),
+  useCandidateOperations: () => ({ candidates: [], loading: false }),
+  useReconcileGroup: () => ({ reconcile: vi.fn(), loading: false }),
 }));
 
 // Generic CSV export hook — stubbed so we assert the params without HTTP/auth.

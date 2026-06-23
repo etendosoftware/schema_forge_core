@@ -440,10 +440,10 @@ export function ListFilterBar({
           <button
             type="button"
             data-testid="filter-advanced"
-            title={ui('advancedFilters')}
-            className="relative h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+            className="relative inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-white px-3 text-sm font-medium text-foreground transition-colors hover:bg-[#F5F7F9]"
           >
-            <Filter className="h-4 w-4" data-testid="Filter__6d5e90" />
+            <Filter className="h-4 w-4 text-muted-foreground" data-testid="Filter__6d5e90" />
+            <span>{ui('filters')}</span>
             {hasActiveAdvancedFilter && (
               <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[#121217] text-white text-[10px] font-semibold leading-none">
                 {advancedFilter.conditions.length}

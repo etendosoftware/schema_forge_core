@@ -747,7 +747,16 @@ function resolveSendDocumentConfig(windowConfig, allEntityFields) {
     ? !!sendDocumentOverride.enabled
     : isDocumentalWindow;
   const sdAllowEmail = sendDocumentOverride?.allowEmail !== false;
-  const sendDocument = sdEnabled ? { enabled: true, allowEmail: sdAllowEmail } : null;
+  if (!sdEnabled) return null;
+  const sendDocument = { enabled: true, allowEmail: sdAllowEmail };
+  // ETP-4226 — recipient-edit policy overrides pass through verbatim so
+  // ListView can forward them to SendDocumentModal as `sendPolicy`.
+  // Absence means the shared default applies (editable To/CC, max 10).
+  for (const key of ['editableRecipients', 'cc', 'maxRecipients']) {
+    if (sendDocumentOverride && sendDocumentOverride[key] !== undefined) {
+      sendDocument[key] = sendDocumentOverride[key];
+    }
+  }
   return sendDocument;
 }
 
@@ -875,7 +884,10 @@ function buildSendDocumentProps(sendDocument) {
   let sendDocumentProp = '';
   let sendDocumentDetailProp = '';
   if (sendDocument) {
-    const isDefaults = sendDocument.enabled === true && sendDocument.allowEmail === true;
+    // ETP-4226 — any recipient-policy key (editableRecipients/cc/maxRecipients)
+    // makes the object non-default so it is emitted verbatim.
+    const isDefaults = sendDocument.enabled === true && sendDocument.allowEmail === true
+      && Object.keys(sendDocument).length === 2;
     const propValue = isDefaults ? '' : `={${JSON.stringify(sendDocument)}}`;
     sendDocumentProp = `\n      sendDocument${propValue}`;
     sendDocumentDetailProp = `\n        sendDocument${propValue}`;
@@ -1344,7 +1356,11 @@ function buildListModalFields(formFields) {
     const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
     const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
     const defaultValuePart = getDefaultValuePart(skipCheckboxDefault, skipServerMacro, f);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart} },`;
+    // A boolean field flagged as a grid toggle renders as the shared PillToggle switch in the
+    // modal body too (in place), instead of a plain checkbox.
+    const togglePart = (type === 'checkbox' && (f.cellType === 'toggle' || f.inlineToggle))
+      ? ', toggle: true' : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart}${togglePart} },`;
   }).join('\n');
 }
 

@@ -1,8 +1,8 @@
 {
-  "version": "0.34.0",
+  "version": "0.35.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-06-12T16:50:01.218Z",
-  "checksum": "023b1b3bf7a341b5",
+  "updatedAt": "2026-06-18T19:17:38.311Z",
+  "checksum": "fbcbd6d88ea681b0",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -133,6 +133,7 @@
             "sourceRequired": true,
             "reference": "AssetGroup",
             "inputMode": "selector",
+            "businessCritical": true,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Depreciate"
             }
@@ -204,6 +205,7 @@
                 "name": "Linear"
               }
             ],
+            "businessCritical": true,
             "displayLogic": {
               "raw": "@IsDepreciated@='Y'",
               "evaluable": true,
@@ -232,6 +234,7 @@
                 "name": "Time"
               }
             ],
+            "businessCritical": true,
             "displayLogic": {
               "raw": "@IsDepreciated@='Y'",
               "evaluable": true,
@@ -249,6 +252,7 @@
             "required": false,
             "grid": false,
             "form": false,
+            "businessCritical": true,
             "displayLogic": {
               "raw": "@IsDepreciated@='Y' & @Amortizationcalctype@!'TI'",
               "evaluable": true,
@@ -277,6 +281,7 @@
                 "name": "Yearly"
               }
             ],
+            "businessCritical": true,
             "displayLogic": {
               "raw": "@IsDepreciated@='Y' & @Amortizationcalctype@='TI'",
               "evaluable": true,
@@ -294,6 +299,7 @@
             "required": false,
             "grid": false,
             "form": false,
+            "businessCritical": true,
             "displayLogic": {
               "raw": "@IsDepreciated@='Y'  & @Amortizationcalctype@ = 'TI' & @Assetschedule@='YE'",
               "evaluable": true,
@@ -311,6 +317,7 @@
             "required": false,
             "grid": false,
             "form": false,
+            "businessCritical": true,
             "displayLogic": {
               "raw": "@IsDepreciated@='Y' & @Amortizationcalctype@='TI' & @Assetschedule@!'YE'",
               "evaluable": true,
@@ -385,6 +392,7 @@
             "required": false,
             "grid": true,
             "form": false,
+            "businessCritical": true,
             "dot": false,
             "displayLogic": {
               "raw": "@IsDepreciated@='Y'",
@@ -421,6 +429,7 @@
             "grid": true,
             "form": false,
             "summable": true,
+            "businessCritical": true,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Assets"
             },
@@ -441,6 +450,7 @@
             "required": false,
             "grid": false,
             "form": false,
+            "businessCritical": true,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Assets"
             },
@@ -462,6 +472,7 @@
             "grid": true,
             "form": false,
             "summable": true,
+            "businessCritical": true,
             "gridOrder": 6,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Assets"
@@ -488,6 +499,7 @@
               "source": "0"
             },
             "defaultValue": "0",
+            "businessCritical": true,
             "displayLogic": {
               "raw": "@IsDepreciated@='Y'",
               "evaluable": true,
@@ -1102,7 +1114,8 @@
             "column": "A_Asset_Group_ID",
             "type": "foreignKey",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "businessCritical": true
           },
           {
             "name": "documentNo",
@@ -1166,7 +1179,8 @@
             "column": "Amortizationtype",
             "type": "enum",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "businessCritical": true
           },
           {
             "name": "calculateType",
@@ -1174,7 +1188,8 @@
             "column": "Amortizationcalctype",
             "type": "enum",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "businessCritical": true
           },
           {
             "name": "annualDepreciation",
@@ -1182,7 +1197,8 @@
             "column": "Annualamortizationpercentage",
             "type": "decimal",
             "visibility": "editable",
-            "required": false
+            "required": false,
+            "businessCritical": true
           },
           {
             "name": "amortize",
@@ -1190,7 +1206,8 @@
             "column": "Assetschedule",
             "type": "enum",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "businessCritical": true
           },
           {
             "name": "usableLifeYears",
@@ -1198,7 +1215,8 @@
             "column": "UseLifeYears",
             "type": "integer",
             "visibility": "editable",
-            "required": false
+            "required": false,
+            "businessCritical": true
           },
           {
             "name": "usableLifeMonths",
@@ -1206,7 +1224,8 @@
             "column": "UseLifeMonths",
             "type": "integer",
             "visibility": "editable",
-            "required": false
+            "required": false,
+            "businessCritical": true
           },
           {
             "name": "everyMonthIs30Days",
@@ -1238,7 +1257,8 @@
             "column": "Amortizationstartdate",
             "type": "date",
             "visibility": "editable",
-            "required": false
+            "required": false,
+            "businessCritical": true
           },
           {
             "name": "depreciationEndDate",
@@ -1254,7 +1274,8 @@
             "column": "AssetValueAmt",
             "type": "amount",
             "visibility": "editable",
-            "required": false
+            "required": false,
+            "businessCritical": true
           },
           {
             "name": "residualAssetValue",
@@ -1262,7 +1283,8 @@
             "column": "Residualassetvalueamt",
             "type": "amount",
             "visibility": "editable",
-            "required": false
+            "required": false,
+            "businessCritical": true
           },
           {
             "name": "depreciationAmt",
@@ -1270,7 +1292,8 @@
             "column": "Amortizationvalueamt",
             "type": "amount",
             "visibility": "editable",
-            "required": false
+            "required": false,
+            "businessCritical": true
           },
           {
             "name": "previouslyDepreciatedAmt",
@@ -1278,7 +1301,8 @@
             "column": "Depreciatedpreviousamt",
             "type": "amount",
             "visibility": "editable",
-            "required": false
+            "required": false,
+            "businessCritical": true
           },
           {
             "name": "processed",
