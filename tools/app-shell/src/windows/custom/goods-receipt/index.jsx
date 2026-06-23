@@ -135,6 +135,7 @@ export default function GoodsReceiptWindow(props) {
     <>
       <GeneratedApp
         {...props}
+        autoSaveOnBlur={true}
         Table={CustomHeaderTable}
         labelOverrides={LABEL_OVERRIDES}
         initialColumnFilters={docStatus ? { documentStatus: { mode: 'enumLabel', value: [docStatus] } } : undefined}
