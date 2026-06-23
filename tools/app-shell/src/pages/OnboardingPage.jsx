@@ -28,6 +28,7 @@ import {
   renderSsoProviderButton,
 } from './onboarding/onboardingSso.js';
 import { checkSalesInvoiceReadiness } from './onboarding/onboardingReadiness.js';
+import { getPasswordChecks, isStrongPassword, PASSWORD_RULES } from './onboarding/passwordPolicy.js';
 import { useLocaleSwitch, useUI } from '../i18n/index.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../lib/oauthReturnTo.js';
 import { track } from '../lib/observability.js';
@@ -547,6 +548,18 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
     }
   }, []);
 
+  // Live password-strength feedback for the registration form (UX only; the
+  // backend enforces the same policy). See ./onboarding/passwordPolicy.js.
+  const registerPasswordChecks = getPasswordChecks(registerForm.password);
+  const registerPasswordStrong = isStrongPassword(registerForm.password);
+  const passwordRuleLabels = {
+    minLength: 'onboardingPasswordReqMinLength',
+    uppercase: 'onboardingPasswordReqUppercase',
+    lowercase: 'onboardingPasswordReqLowercase',
+    number: 'onboardingPasswordReqNumber',
+    special: 'onboardingPasswordReqSpecial',
+  };
+
   // Fetch environments and route: 0 → create, 1+ → auto-enter first
   const routeByEnvironments = useCallback(async () => {
     const token = getPlatformToken();
@@ -824,7 +837,9 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
         action: 'register',
         status: 'failed',
       });
-      setRegisterError(err.userMessage || ui(err.code || 'onboardingConnectionError'));
+      setRegisterError(err.code === 'WEAK_PASSWORD'
+        ? ui('onboardingWeakPassword')
+        : (err.userMessage || ui(err.code || 'onboardingConnectionError')));
     } finally {
       setRegisterLoading(false);
     }
@@ -1322,6 +1337,33 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
             )}
             data-testid="AuthField__79cf84" />
 
+          {registerForm.password && (
+            <ul
+              data-testid="register-password-requirements"
+              className="space-y-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
+            >
+              <li className="mb-1 font-medium text-slate-600">
+                {ui('onboardingPasswordRequirementsTitle')}
+              </li>
+              {PASSWORD_RULES.map(rule => {
+                const met = registerPasswordChecks[rule];
+                return (
+                  <li
+                    key={rule}
+                    data-testid={`register-password-rule-${rule}`}
+                    data-met={met ? 'true' : 'false'}
+                    className={`flex items-center gap-2 ${met ? 'text-emerald-600' : 'text-slate-400'}`}
+                  >
+                    {met
+                      ? <Check className="h-4 w-4 shrink-0" data-testid="Check__79cf84" />
+                      : <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300" aria-hidden="true" />}
+                    <span>{ui(passwordRuleLabels[rule])}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
           {registerError && (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
               {registerError}
@@ -1331,7 +1373,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
           <Button
             type="submit"
             data-testid="action-register-submit"
-            disabled={registerLoading}
+            disabled={registerLoading || !registerPasswordStrong}
             className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
           >
             {registerLoading

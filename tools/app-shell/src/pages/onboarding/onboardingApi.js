@@ -26,8 +26,10 @@ export function buildAuthHeaders(token) {
 
 function buildApiError(data, fallbackCode) {
   const error = new Error(data?.error?.message || data?.message || fallbackCode);
-  error.code = fallbackCode;
-  error.userMessage = data?.error?.message || data?.message || null;
+  // Prefer the backend's stable error code (e.g. "WEAK_PASSWORD") when present,
+  // falling back to the generic per-call code.
+  error.code = data?.error?.code || fallbackCode;
+  error.userMessage = data?.error?.userMessage || data?.error?.message || data?.message || null;
   return error;
 }
 

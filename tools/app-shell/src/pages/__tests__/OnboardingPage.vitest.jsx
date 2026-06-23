@@ -1391,4 +1391,40 @@ describe('OnboardingPage', () => {
       expect(screen.getByText('onboardingPreparingFinishingDescription')).toBeInTheDocument();
     });
   });
+
+  describe('password strength feedback', () => {
+    const typePassword = (container, value) => {
+      const input = container.querySelector('#reg-password');
+      fireEvent.change(input, { target: { value } });
+      return input;
+    };
+
+    it('disables the create account button while the password is empty', () => {
+      localStorage.removeItem('sf_platform_token');
+      render(<OnboardingPage />);
+      expect(screen.getByTestId('action-register-submit')).toBeDisabled();
+      // No requirements list until the user starts typing.
+      expect(screen.queryByTestId('register-password-requirements')).not.toBeInTheDocument();
+    });
+
+    it('shows the checklist and keeps submit disabled for a weak password', () => {
+      localStorage.removeItem('sf_platform_token');
+      const { container } = render(<OnboardingPage />);
+      typePassword(container, '123');
+      expect(screen.getByTestId('register-password-requirements')).toBeInTheDocument();
+      expect(screen.getByTestId('register-password-rule-minLength')).toHaveAttribute('data-met', 'false');
+      expect(screen.getByTestId('register-password-rule-special')).toHaveAttribute('data-met', 'false');
+      expect(screen.getByTestId('action-register-submit')).toBeDisabled();
+    });
+
+    it('marks every rule met and enables submit for a strong password', () => {
+      localStorage.removeItem('sf_platform_token');
+      const { container } = render(<OnboardingPage />);
+      typePassword(container, 'Str0ng!Pass');
+      ['minLength', 'uppercase', 'lowercase', 'number', 'special'].forEach(rule => {
+        expect(screen.getByTestId(`register-password-rule-${rule}`)).toHaveAttribute('data-met', 'true');
+      });
+      expect(screen.getByTestId('action-register-submit')).not.toBeDisabled();
+    });
+  });
 });
