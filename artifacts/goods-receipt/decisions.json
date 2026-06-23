@@ -49,7 +49,9 @@
       "javaQualifier": "goodsReceiptHeaderHandler",
       "fields": {
         "processed": {
-          "visibility": "system"
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         },
         "documentNo": {
           "visibility": "readOnly",
@@ -160,6 +162,11 @@
         "processGoodsJava": {
           "visibility": "discarded",
           "displayLogic": null
+        },
+        "posted": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         }
       }
     },

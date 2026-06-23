@@ -100,14 +100,17 @@ export default function GoodsReceiptWindow(props) {
     { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: 'M_InOut', config: {} } },
   ]), [ui]);
 
-  const menuActionsForForm = useCallback(({ status }) => {
+  const menuActionsForForm = useCallback(({ status, data }) => {
     if (status !== 'CO') return [];
+    const isPosted = data?.posted === 'Y' || data?.posted === true;
     return [
       {
         key: 'downloadPdf',
         label: ui('downloadPdf'),
         onClick: () => window.dispatchEvent(new CustomEvent('goods-receipt:download-pdf')),
       },
+      ...(!isPosted ? [{ key: 'post', labelKey: 'post', neoAction: 'post', successKey: 'documentPosted' }] : []),
+      ...(isPosted ? [{ key: 'unpost', labelKey: 'unpost', neoAction: 'unpost', successKey: 'documentUnposted', destructive: true }] : []),
     ];
   }, [ui]);
 

@@ -1,8 +1,8 @@
 {
-  "version": "0.13.0",
+  "version": "0.14.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "updatedAt": "2026-06-23T00:17:54.804Z",
-  "checksum": "fa76df15bdb68c05",
+  "updatedAt": "2026-06-23T12:41:10.258Z",
+  "checksum": "3ae88da5430b5429",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -265,6 +265,30 @@
             "defaultValue": "DR"
           },
           {
+            "name": "posted",
+            "apiKey": "posted",
+            "column": "Posted",
+            "label": "Posted",
+            "type": "button",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
+            },
+            "defaultValue": "N",
+            "displayLogic": {
+              "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
+              "evaluable": false,
+              "reason": "session-preference",
+              "js": null
+            }
+          },
+          {
             "name": "invoiceStatus",
             "apiKey": "invoiceStatus",
             "column": "InvoiceStatus",
@@ -455,6 +479,13 @@
             "derivation": {
               "type": "computed",
               "source": "DR"
+            }
+          },
+          {
+            "name": "posted",
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
             }
           },
           {
@@ -832,7 +863,7 @@
             "apiKey": "posted",
             "column": "Posted",
             "type": "button",
-            "visibility": "system",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -1933,6 +1964,14 @@
         "description": "Default value for 'movementDate' in goodsShipment should be a string"
       },
       {
+        "id": "t-default-value-type-goodsShipment-posted",
+        "category": "default-value-type",
+        "entity": "goodsShipment",
+        "field": "posted",
+        "runner": "node",
+        "description": "Default value for 'posted' in goodsShipment should be a string"
+      },
+      {
         "id": "t-default-value-type-goodsShipmentLine-movementQuantity",
         "category": "default-value-type",
         "entity": "goodsShipmentLine",
@@ -1949,6 +1988,14 @@
         "description": "Display logic for 'etblkpBulkposting' in goodsShipment should have evaluable flag"
       },
       {
+        "id": "t-displaylogic-evaluable-goodsShipment-posted",
+        "category": "displaylogic-evaluable",
+        "entity": "goodsShipment",
+        "field": "posted",
+        "runner": "node",
+        "description": "Display logic for 'posted' in goodsShipment should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-goodsShipmentLine-orderQuantity",
         "category": "displaylogic-evaluable",
         "entity": "goodsShipmentLine",
@@ -1963,6 +2010,14 @@
         "field": "etblkpBulkposting",
         "runner": "node",
         "description": "Display logic for 'etblkpBulkposting' in goodsShipment should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-goodsShipment-posted",
+        "category": "displaylogic-valid",
+        "entity": "goodsShipment",
+        "field": "posted",
+        "runner": "node",
+        "description": "Display logic for 'posted' in goodsShipment should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-goodsShipmentLine-orderQuantity",
@@ -2051,6 +2106,14 @@
         "field": "partnerAddress",
         "runner": "node",
         "description": "Field 'partnerAddress' should be present in goodsShipment"
+      },
+      {
+        "id": "t-field-presence-goodsShipment-posted",
+        "category": "field-presence",
+        "entity": "goodsShipment",
+        "field": "posted",
+        "runner": "node",
+        "description": "Field 'posted' should be present in goodsShipment"
       },
       {
         "id": "t-field-presence-goodsShipment-processed",
@@ -2179,6 +2242,14 @@
         "field": "partnerAddress",
         "runner": "node",
         "description": "Field 'partnerAddress' should have type 'string' in goodsShipment"
+      },
+      {
+        "id": "t-field-type-goodsShipment-posted",
+        "category": "field-type",
+        "entity": "goodsShipment",
+        "field": "posted",
+        "runner": "node",
+        "description": "Field 'posted' should have type 'string' in goodsShipment"
       },
       {
         "id": "t-field-type-goodsShipment-processed",
@@ -2754,14 +2825,6 @@
         "description": "System field 'pickDate' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-system-field-goodsShipment-posted",
-        "category": "system-field",
-        "entity": "goodsShipment",
-        "field": "posted",
-        "runner": "node",
-        "description": "System field 'posted' should exist in backend but not frontend for goodsShipment"
-      },
-      {
         "id": "t-system-field-goodsShipment-print",
         "category": "system-field",
         "entity": "goodsShipment",
@@ -3185,25 +3248,25 @@
       }
     ],
     "summary": {
-      "total": 177,
+      "total": 181,
       "byCategory": {
         "action-endpoint": 13,
         "crud-flags": 2,
-        "default-value-type": 6,
-        "displaylogic-evaluable": 2,
-        "displaylogic-valid": 2,
-        "field-presence": 16,
-        "field-type": 16,
+        "default-value-type": 7,
+        "displaylogic-evaluable": 3,
+        "displaylogic-valid": 3,
+        "field-presence": 17,
+        "field-type": 17,
         "readonlylogic-evaluable": 8,
         "readonlylogic-valid": 8,
         "rule-declared": 3,
         "searchable-filters": 6,
         "selector-endpoint": 4,
-        "system-field": 89,
+        "system-field": 88,
         "visibility": 2
       },
       "byRunner": {
-        "node": 177,
+        "node": 181,
         "junit": 0
       }
     }

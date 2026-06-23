@@ -35,7 +35,9 @@
       }
     ],
     "processOverrides": {
-      "documentAction": { "exclude": true }
+      "documentAction": {
+        "exclude": true
+      }
     },
     "noHeaderBorder": true,
     "dateFilterKey": "movementDate"
@@ -218,6 +220,11 @@
         },
         "asset": {
           "visibility": "discarded"
+        },
+        "posted": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         }
       }
     },

@@ -347,7 +347,9 @@
           "displayLogic": null
         },
         "posted": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         },
         "trxOrganization": {
           "visibility": "discarded"
@@ -467,6 +469,11 @@
         "cdigoCSV": {
           "visibility": "readOnly",
           "form": false
+        },
+        "processed": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         }
       }
     },
