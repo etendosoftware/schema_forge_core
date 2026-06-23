@@ -4,7 +4,7 @@
     "category": "contact",
     "name": "Contacts",
     "entityLabel": "Contact",
-    "sidebarLayout": true,
+    "sidebarLayout": false,
     "breadcrumb": "Contact",
     "detailEntity": null,
     "summaryFields": [],
@@ -431,7 +431,8 @@
           "visibility": "editable",
           "grid": true,
           "searchable": true,
-          "section": "principal"
+          "section": "principal",
+          "columnWidth": 320
         },
         "phone": {
           "visibility": "editable",
@@ -518,17 +519,21 @@
         "bankFormat": {
           "visibility": "editable",
           "grid": true,
-          "section": "principal"
+          "section": "principal",
+          "labels": { "en_US": "Format", "es_ES": "Formato" },
+          "columnWidth": 320
         },
         "accountNo": {
           "visibility": "editable",
           "grid": true,
-          "section": "principal"
+          "section": "principal",
+          "columnWidth": 360
         },
         "iBAN": {
           "visibility": "editable",
           "grid": true,
-          "section": "principal"
+          "section": "principal",
+          "columnWidth": 400
         },
         "swiftCode": {
           "visibility": "editable",

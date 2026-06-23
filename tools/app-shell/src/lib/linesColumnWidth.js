@@ -12,6 +12,7 @@
  */
 export function columnFlex(col, idx) {
   const g = col.grow ? '1' : '0';
+  if (col.minWidth) return `1 1 ${col.minWidth}px`;
   if (col.type === 'amount') return `${g} 0 172px`;
   if (col.type === 'price') return `${g} 0 152px`;
   if (col.type === 'quantity' || col.type === 'integer') return `${g} 0 152px`;
@@ -38,6 +39,7 @@ export function columnFlex(col, idx) {
  * display table — keeping header wrapping consistent across both modes.
  */
 export function columnMinWidthPx(col, idx) {
+  if (col.minWidth) return col.minWidth;
   if (col.type === 'amount') return 172;
   if (col.type === 'price') return 152;
   if (col.type === 'quantity' || col.type === 'integer') return 152;

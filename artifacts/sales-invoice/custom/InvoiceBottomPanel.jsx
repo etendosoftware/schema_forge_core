@@ -5,6 +5,8 @@ import { LinesBottomSection } from '@/components/contract-ui';
 import RelatedDocuments from './RelatedDocuments';
 import ImportFromShipmentModal from './ImportFromShipmentModal';
 import ImportFromOrderModal from './ImportFromOrderModal';
+import ImportFromReturnShipmentModal from './ImportFromReturnShipmentModal';
+import { getArSubtype } from './invoiceSubtype';
 
 /**
  * Sales Invoice bottom section. Delegates to the shared LinesBottomSection so
@@ -25,36 +27,54 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
   const ui = useUI();
   const [showImportModal, setShowImportModal] = useState(false);
   const [showImportOrderModal, setShowImportOrderModal] = useState(false);
+  const [showImportReturnModal, setShowImportReturnModal] = useState(false);
   const pendingModal = useRef('shipment');
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
+  const isReturn = getArSubtype(data) === 'DEV';
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
   useEffect(() => {
     if (forceOpen) {
-      if (pendingModal.current === 'order') { setShowImportOrderModal(true); } else { setShowImportModal(true); }
+      if (pendingModal.current === 'order') { setShowImportOrderModal(true); }
+      else if (pendingModal.current === 'return') { setShowImportReturnModal(true); }
+      else { setShowImportModal(true); }
       onForceOpenHandled?.();
     }
   }, [forceOpen, onForceOpenHandled]);
 
   const handleImportClick = async () => {
     pendingModal.current = 'shipment';
-    if (onSave) {
-      const shouldOpen = await onSave();
-      if (!shouldOpen) return;
-    }
+    if (onSave) { const ok = await onSave(); if (!ok) return; }
     setShowImportModal(true);
   };
 
   const handleImportOrderClick = async () => {
     pendingModal.current = 'order';
-    if (onSave) {
-      const shouldOpen = await onSave();
-      if (!shouldOpen) return;
-    }
+    if (onSave) { const ok = await onSave(); if (!ok) return; }
     setShowImportOrderModal(true);
   };
+
+  const handleImportReturnClick = async () => {
+    pendingModal.current = 'return';
+    if (onSave) { const ok = await onSave(); if (!ok) return; }
+    setShowImportReturnModal(true);
+  };
+
+  const emptyHintKey = isReturn
+    ? 'addLinesManuallyOrImportFromReturn'
+    : 'addLinesManuallyOrImportFromShipmentOrOrder';
+
+  const importSvg = (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" y1="3" x2="12" y2="15" />
+    </svg>
+  );
+
+  const ghostBtn = { display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' };
 
   return (
     <div style={{ margin: '24px 16px', padding: '32px 24px', background: 'var(--color-background-secondary)', borderRadius: 'var(--border-radius-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -67,40 +87,35 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
         </svg>
       </div>
       <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 4 }}>{ui('noLinesYet')}</span>
-      <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>{ui('addLinesManuallyOrImportFromShipmentOrOrder')}</span>
+      <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>{ui(emptyHintKey)}</span>
       {isDraft && canAddLine && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
           <button type="button" onClick={onAddLine} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, background: '#18181b', color: '#fff', border: 'none', cursor: 'pointer' }}>
             + {ui('addLines')}
           </button>
-          {bpId && (
-            <button type="button" onClick={handleImportClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-              {ui('importFromShipment')}
+          {bpId && isReturn && (
+            <button type="button" onClick={handleImportReturnClick} style={ghostBtn}>
+              {importSvg}
+              {ui('importFromReturnShipment')}
             </button>
           )}
-          {bpId && (
-            <button type="button" onClick={handleImportOrderClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-              {ui('importFromSalesOrder')}
-            </button>
+          {bpId && !isReturn && (
+            <>
+              <button type="button" onClick={handleImportClick} style={ghostBtn}>
+                {importSvg}
+                {ui('importFromShipment')}
+              </button>
+              <button type="button" onClick={handleImportOrderClick} style={ghostBtn}>
+                {importSvg}
+                {ui('importFromSalesOrder')}
+              </button>
+            </>
           )}
         </div>
       )}
       {showImportModal && createPortal(
         <ImportFromShipmentModal
-          invoiceId={recordId}
-          bpId={bpId}
-          base={base}
-          headers={headers}
+          invoiceId={recordId} bpId={bpId} base={base} headers={headers}
           onClose={() => setShowImportModal(false)}
           onSuccess={() => { setShowImportModal(false); onRefresh?.(); }}
         />,
@@ -108,12 +123,17 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
       )}
       {showImportOrderModal && createPortal(
         <ImportFromOrderModal
-          invoiceId={recordId}
-          bpId={bpId}
-          base={base}
-          headers={headers}
+          invoiceId={recordId} bpId={bpId} base={base} headers={headers}
           onClose={() => setShowImportOrderModal(false)}
           onSuccess={() => { setShowImportOrderModal(false); onRefresh?.(); }}
+        />,
+        document.body,
+      )}
+      {showImportReturnModal && createPortal(
+        <ImportFromReturnShipmentModal
+          invoiceId={recordId} bpId={bpId} base={base} headers={headers}
+          onClose={() => setShowImportReturnModal(false)}
+          onSuccess={() => { setShowImportReturnModal(false); onRefresh?.(); }}
         />,
         document.body,
       )}
@@ -132,38 +152,46 @@ const InvoiceLineActions = forwardRef(function InvoiceLineActions(
   const ui = useUI();
   const [showImportModal, setShowImportModal] = useState(false);
   const [showImportOrderModal, setShowImportOrderModal] = useState(false);
+  const [showImportReturnModal, setShowImportReturnModal] = useState(false);
   const pendingModal = useRef('shipment');
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
+  const isReturn = getArSubtype(data) === 'DEV';
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
   useEffect(() => {
     if (forceOpen) {
-      if (pendingModal.current === 'order') { setShowImportOrderModal(true); } else { setShowImportModal(true); }
+      if (pendingModal.current === 'order') { setShowImportOrderModal(true); }
+      else if (pendingModal.current === 'return') { setShowImportReturnModal(true); }
+      else { setShowImportModal(true); }
       onForceOpenHandled?.();
     }
   }, [forceOpen, onForceOpenHandled]);
 
   const openModal = async () => {
     pendingModal.current = 'shipment';
-    if (onSave) {
-      const shouldOpen = await onSave();
-      if (!shouldOpen) return;
-    }
+    if (onSave) { const ok = await onSave(); if (!ok) return; }
     setShowImportModal(true);
   };
 
   const openOrderModal = async () => {
     pendingModal.current = 'order';
-    if (onSave) {
-      const shouldOpen = await onSave();
-      if (!shouldOpen) return;
-    }
+    if (onSave) { const ok = await onSave(); if (!ok) return; }
     setShowImportOrderModal(true);
   };
 
-  useImperativeHandle(ref, () => ({ openImportModal: openModal, openImportOrderModal: openOrderModal }), [onSave]);
+  const openReturnModal = async () => {
+    pendingModal.current = 'return';
+    if (onSave) { const ok = await onSave(); if (!ok) return; }
+    setShowImportReturnModal(true);
+  };
+
+  useImperativeHandle(ref, () => ({
+    openImportModal: openModal,
+    openImportOrderModal: openOrderModal,
+    openImportReturnModal: openReturnModal,
+  }), [onSave]);
 
   if (!isDraft || !bpId) {
     return null;
@@ -171,7 +199,7 @@ const InvoiceLineActions = forwardRef(function InvoiceLineActions(
 
   return (
     <>
-      {!hideTrigger && (
+      {!hideTrigger && !isReturn && (
         <button
           type="button"
           onClick={openModal}
@@ -185,12 +213,23 @@ const InvoiceLineActions = forwardRef(function InvoiceLineActions(
           {ui('importFromShipment')}
         </button>
       )}
+      {!hideTrigger && isReturn && (
+        <button
+          type="button"
+          onClick={openReturnModal}
+          style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          {ui('importFromReturnShipment')}
+        </button>
+      )}
       {showImportModal && createPortal(
         <ImportFromShipmentModal
-          invoiceId={recordId}
-          bpId={bpId}
-          base={base}
-          headers={headers}
+          invoiceId={recordId} bpId={bpId} base={base} headers={headers}
           onClose={() => setShowImportModal(false)}
           onSuccess={() => { setShowImportModal(false); onRefresh?.(); }}
         />,
@@ -198,12 +237,17 @@ const InvoiceLineActions = forwardRef(function InvoiceLineActions(
       )}
       {showImportOrderModal && createPortal(
         <ImportFromOrderModal
-          invoiceId={recordId}
-          bpId={bpId}
-          base={base}
-          headers={headers}
+          invoiceId={recordId} bpId={bpId} base={base} headers={headers}
           onClose={() => setShowImportOrderModal(false)}
           onSuccess={() => { setShowImportOrderModal(false); onRefresh?.(); }}
+        />,
+        document.body,
+      )}
+      {showImportReturnModal && createPortal(
+        <ImportFromReturnShipmentModal
+          invoiceId={recordId} bpId={bpId} base={base} headers={headers}
+          onClose={() => setShowImportReturnModal(false)}
+          onSuccess={() => { setShowImportReturnModal(false); onRefresh?.(); }}
         />,
         document.body,
       )}
@@ -219,12 +263,22 @@ InvoiceBottomPanel.detailExtraActions = InvoiceLineActions;
  * function (NOT a hook) — called every render of DetailView at the top level,
  * so React's hook-order tracking isn't involved. The `importRef` points at the
  * `InvoiceLineActions` instance mounted by DetailView with `hideTrigger`, which
- * exposes `openImportModal` via `useImperativeHandle`.
+ * exposes the open* methods via `useImperativeHandle`.
  */
 InvoiceBottomPanel.lineMenuActions = function lineMenuActions({ data, importRef }) {
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
+  const isReturn = getArSubtype(data) === 'DEV';
   if (!isDraft || !bpId) return [];
+  if (isReturn) {
+    return [
+      {
+        key: 'import-return',
+        label: 'importFromReturnShipment',
+        onClick: () => importRef.current?.openImportReturnModal?.(),
+      },
+    ];
+  }
   return [
     {
       key: 'import-shipment',
