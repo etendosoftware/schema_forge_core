@@ -758,6 +758,25 @@ export function useEntity(entity, childEntity, {
         }
     }, []);
 
+    async function applyRefetchOrSave(saved, refetchUrl, headers, entity, setSelected, setEditing) {
+        if (!shouldRefetchAfterSave(saved, refetchAfterSave)) {
+            setSelected(saved);
+            setEditing({ ...saved });
+            return;
+        }
+        await fetch(refetchUrl, { headers })
+            .then(r => (r.ok ? r.json() : null))
+            .then(data => {
+                const fullSaved = normalizeRecord(data?.response?.data?.[0] ?? data ?? saved, entity);
+                setSelected(fullSaved);
+                setEditing({ ...fullSaved });
+            })
+            .catch(() => {
+                setSelected(saved);
+                setEditing({ ...saved });
+            });
+    }
+
     const handleSave = useCallback(async ({ silent = false } = {}) => {
         if (!editing) return;
         setIsSaving(true);
@@ -813,22 +832,7 @@ export function useEntity(entity, childEntity, {
             if (res.ok) {
                 const data = await res.json();
                 const saved = normalizeRecord(data?.response?.data?.[0] ?? data, entity);
-                if (shouldRefetchAfterSave(saved, refetchAfterSave)) {
-                    await fetch(`${apiBaseUrl}/${entity}/${saved.id}`, { headers })
-                        .then(refetchRes => (refetchRes.ok ? refetchRes.json() : null))
-                        .then(refetchData => {
-                            const fullSaved = normalizeRecord(refetchData?.response?.data?.[0] ?? refetchData ?? saved, entity);
-                            setSelected(fullSaved);
-                            setEditing({ ...fullSaved });
-                        })
-                        .catch(() => {
-                            setSelected(saved);
-                            setEditing({ ...saved });
-                        });
-                } else {
-                    setSelected(saved);
-                    setEditing({ ...saved });
-                }
+                await applyRefetchOrSave(saved, `${apiBaseUrl}/${entity}/${saved.id}`, headers, entity, setSelected, setEditing);
                 setSaveError(null);
                 setFieldErrors({});
                 showSaveSuccessToast(silent, isNew, ui);
