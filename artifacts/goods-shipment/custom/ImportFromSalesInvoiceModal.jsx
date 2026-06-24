@@ -2,7 +2,7 @@ import ImportLinesModal from '@/components/contract-ui/ImportLinesModal';
 
 async function fetchDraftInfoByOrderLine({ base, headers, bpId, currentShipmentId }) {
   const res = await fetch(
-    `${base}/goods-shipment/header?_startRow=0&_endRow=100&_sortBy=movementDate desc`,
+    `${base}/goods-shipment/goodsShipment?_startRow=0&_endRow=100&_sortBy=movementDate desc`,
     { headers },
   );
   if (!res.ok) return {};

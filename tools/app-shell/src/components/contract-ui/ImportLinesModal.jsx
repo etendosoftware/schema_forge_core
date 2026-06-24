@@ -35,6 +35,7 @@ export default function ImportLinesModal({
   const [importing, setImporting] = useState(false);
   const [search, setSearch] = useState('');
   const [lineQuantities, setLineQuantities] = useState({});
+  const [eagerLoadingLines, setEagerLoadingLines] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,13 +51,41 @@ export default function ImportLinesModal({
     return () => { cancelled = true; };
   }, [bpId, base, headers, invoiceId, fetchDocuments]);
 
-  const bpName = documents[0]?.['businessPartner$_identifier'] || '';
-
-  // Eagerly load lines for all documents so fully-imported ones can be filtered out
+  // Eagerly load all lines once documents arrive so fully-imported invoices can be
+  // filtered out before the user sees the list (avoids "appears then disappears" flicker).
   useEffect(() => {
-    if (loading || documents.length === 0) return;
-    documents.forEach(doc => loadLines(doc.id));
-  }, [loading, documents.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (loading) return;
+    const docs = documents;
+    if (docs.length === 0) return;
+    let cancelled = false;
+    setEagerLoadingLines(true);
+    Promise.all(
+      docs.map(doc =>
+        fetchLines({ base, headers, docId: doc.id, sharedContext })
+          .then(lines => ({ docId: doc.id, lines }))
+          .catch(() => ({ docId: doc.id, lines: [] })),
+      ),
+    ).then(results => {
+      if (cancelled) return;
+      const newDocLines = {};
+      const qtyDefaults = {};
+      const toSelect = new Set();
+      results.forEach(({ docId, lines }) => {
+        newDocLines[docId] = lines;
+        lines.forEach(l => {
+          qtyDefaults[l.id] = l._maxQty || 0;
+          if (!l._alreadyImported) toSelect.add(l.id);
+        });
+      });
+      setDocLines(newDocLines);
+      setLineQuantities(prev => ({ ...prev, ...qtyDefaults }));
+      setSelected(toSelect);
+      setEagerLoadingLines(false);
+    });
+    return () => { cancelled = true; };
+  }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const bpName = documents[0]?.['businessPartner$_identifier'] || '';
 
   const filtered = useMemo(() => {
     const visible = documents.filter(d => {
@@ -187,7 +216,7 @@ export default function ImportLinesModal({
 
         <div style={{ flex: 1, overflowY: 'auto', padding: 0 }}>
           {(() => {
-            if (loading) {
+            if (loading || eagerLoadingLines) {
               return <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>{ui('loading')}</p>;
             }
             if (filtered.length === 0) {
