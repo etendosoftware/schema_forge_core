@@ -49,6 +49,14 @@ describe('observability payload normalization', () => {
         specName: 'sales-order',
         entity: 'sales_order',
         component: 'menu',
+        kpiId: 'kpi_adoption_dashboard_quick_actions_7d',
+        module: 'dashboard',
+        flow: 'quick_actions',
+        durationMs: 1250,
+        count: 2,
+        total: 5,
+        correctCount: 4,
+        critical: true,
         documentId: 'secret-doc-id',
         label: 'Customer Name',
         rawUrl: '/sales-order/ABC123?token=secret',
@@ -61,6 +69,30 @@ describe('observability payload normalization', () => {
         specName: 'sales-order',
         entity: 'sales_order',
         component: 'menu',
+        kpiId: 'kpi_adoption_dashboard_quick_actions_7d',
+        module: 'dashboard',
+        flow: 'quick_actions',
+        durationMs: 1250,
+        count: 2,
+        total: 5,
+        correctCount: 4,
+        critical: true,
+      }
+    );
+  });
+
+  it('drops invalid KPI metric values', () => {
+    assert.deepEqual(
+      sanitizeEventProperties({
+        durationMs: Infinity,
+        score: Number.NaN,
+        count: -1,
+        total: '5',
+        critical: 'true',
+        status: 'success',
+      }),
+      {
+        status: 'success',
       }
     );
   });
@@ -106,9 +138,9 @@ describe('observability payload normalization', () => {
         accuracy: 120,
         durationMs: Number.POSITIVE_INFINITY,
         position: -1,
-        score: 11,
-        step: 101,
-        value: 1000001,
+        score: 101,
+        step: 1001,
+        value: 1000000001,
       }),
       {}
     );

@@ -56,13 +56,13 @@ Owner: App Shell / platform frontend.
 
 Tasks:
 
-- Extend the safe payload allowlist with the KPI fields documented in
+- [x] Extend the safe payload allowlist with the KPI fields documented in
   [README.md](../ops/saas-kpis/README.md).
-- Add typed/centralized KPI tracking helpers so feature code does not construct
+- [x] Add typed/centralized KPI tracking helpers so feature code does not construct
   unsafe payloads by hand.
-- Add tests proving the new fields survive sanitization and denylisted values
+- [x] Add tests proving the new fields survive sanitization and denylisted values
   still get stripped.
-- Decide canonical property names before implementation. Recommended:
+- [x] Decide canonical property names before implementation. Recommended:
   `durationMs`, `correctCount`, `kpiId`, and `entityType`.
 
 Acceptance:
@@ -78,12 +78,14 @@ Owner: App Shell feature owners.
 
 Tasks:
 
-- Instrument dashboard quick actions, pending tasks, dashboard-to-document
-  navigation, and screen/report usable-state timings.
-- Instrument contact/product search relevance with bucketed rank/count only.
-- Instrument product photo upload, accounting board view, Copilot interaction
-  start, Copilot NPS, general NPS, and support-needed signals.
-- Align onboarding telemetry with the product document's four-step
+- [x] Instrument dashboard quick actions, pending tasks, and
+  dashboard-to-document navigation.
+- [ ] Instrument screen/report usable-state timings.
+- [ ] Instrument contact/product search relevance with bucketed rank/count only.
+- [x] Instrument accounting board view.
+- [ ] Instrument product photo upload, Copilot interaction start, Copilot NPS,
+  general NPS, and support-needed signals.
+- [ ] Align onboarding telemetry with the product document's four-step
   company/billing/bank/team wizard, or explicitly document the implemented
   onboarding model if the product flow changed.
 

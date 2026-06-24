@@ -27,20 +27,21 @@ enough to validate adoption of specific actions.
 | `bank_account_configured` | Company finishes at least one bank account setup. | `kpiId`, `module`, `source`, `status` |
 | `asset_created` | Fixed asset is created. | `kpiId`, `module`, `channel`, `source`, `status` |
 
-Pending before implementation: add `kpiId`, `module`, `entityType`, and
-`channel` to the safe payload allowlist.
+Implemented in App Shell: `kpiId`, `module`, `entityType`, and `channel` are in
+the safe payload allowlist. Dashboard quick actions, pending-task opens, and
+accounting board views are instrumented with stable metadata only.
 
 ## KPI Matrix
 
 | KPI ID | Module | KPI | Target | Measurement | Status | Pending |
 |--------|--------|-----|--------|-------------|--------|---------|
-| `kpi_adopt_dashboard_quick_actions_7d` | Dashboard | Usuarios que usan acciones rapidas en los primeros 7 dias | `> 60%` | Users with `quick_action_used` within 7 days of first `app_started` / onboarded date. | Mixpanel ready | Instrument quick actions and define eligible user cohort. |
-| `kpi_adopt_dashboard_pending_tasks` | Dashboard | Usuarios que interactuan con Tareas Pendientes | `> 50%` | Users with `pending_task_opened` or task action in measured period. | Mixpanel ready | Instrument widget interactions. |
+| `kpi_adopt_dashboard_quick_actions_7d` | Dashboard | Usuarios que usan acciones rapidas en los primeros 7 dias | `> 60%` | Users with `quick_action_used` within 7 days of first `app_started` / onboarded date. | Developed | Define eligible user cohort. |
+| `kpi_adopt_dashboard_pending_tasks` | Dashboard | Usuarios que interactuan con Tareas Pendientes | `> 50%` | Users with `pending_task_opened` or task action in measured period. | Developed | Define measured period and eligible user cohort. |
 | `kpi_adopt_sales_email_engine` | Ventas | Facturas enviadas por email desde el sistema | `> 70%` | `document_email_sent(channel=system_email,type=sales_invoice,success)` / all sent invoices. | Backend pending | Need invoice denominator and terminal email send event. |
 | `kpi_adopt_purchase_ocr_channel` | Compras | Facturas de proveedor cargadas via OCR | `> 50%` | `invoice_ingestion_completed(channel=ocr,type=supplier_invoice)` / all supplier invoices registered. | Backend pending | OCR flow must emit terminal registration event. |
 | `kpi_adopt_purchase_email_ingestion` | Compras | Facturas recibidas por email dedicado | `> 30% in 60 days` | `invoice_ingestion_completed(channel=email)` / all supplier/creditor invoices in first 60 days. | Backend pending | Email ingestion must emit accepted/rejected terminal event. |
 | `kpi_adopt_accounting_auto_entries` | Contabilidad | Asientos contables generados automaticamente | `> 90%` | `accounting_entry_created(channel=automatic)` / all accounting entries generated from documents. | Backend pending | Accounting engine must expose source channel. |
-| `kpi_adopt_accounting_board_weekly` | Contabilidad | Usuarios que acceden al Tablero de Contabilidad semanalmente | `> 60%` | WAU with `accounting_dashboard_viewed` / active accounting users. | Mixpanel ready | Instrument board view and define accounting-user cohort. |
+| `kpi_adopt_accounting_board_weekly` | Contabilidad | Usuarios que acceden al Tablero de Contabilidad semanalmente | `> 60%` | WAU with `accounting_dashboard_viewed` / active accounting users. | Developed | Define accounting-user cohort. |
 | `kpi_adopt_product_photo_30d` | Productos | Productos con foto cargada a 30 dias | `> 40%` | Products with image at day 30 / active products. | Backend pending | Product media state must be queryable or summarized. |
 | `kpi_adopt_copilot_first_7d` | Copilot IA | Usuarios que usan Copilot al menos una vez en primeros 7 dias | `> 50%` | Users with `copilot_interaction_started` within 7 days of onboarding. | Mixpanel ready | Instrument Copilot start and identity linkage. |
 | `kpi_adopt_copilot_weekly_month_1` | Copilot IA | Usuarios que usan Copilot semanalmente en mes 1 | `> 35%` | Users with at least one weekly `copilot_interaction_started` during first month. | Mixpanel ready | Define week boundaries and user cohort. |

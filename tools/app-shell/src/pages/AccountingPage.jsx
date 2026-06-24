@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { KPIHeader, DataTable } from '@/components/contract-ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { FileText, Receipt, Landmark, Scale } from 'lucide-react';
 import { useUI } from '@/i18n';
+import { track, trackKpiEvent } from '@/lib/observability.js';
 
 import { kpisConfig, sections } from '@generated/accounting/generated/config';
 import * as mockData from '@generated/accounting/generated/mockData';
@@ -28,6 +29,16 @@ const TAX_SUMMARY_DATA = mockData.taxSummary;
 
 export default function AccountingPage() {
   const ui = useUI();
+
+  useEffect(() => {
+    Promise.resolve(trackKpiEvent(track, 'accounting_dashboard_viewed', {
+      kpiId: 'kpi_adopt_accounting_board_weekly',
+      module: 'accounting',
+      source: 'accounting_dashboard',
+      status: 'success',
+    })).catch(() => {});
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* KPIs */}

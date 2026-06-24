@@ -25,14 +25,16 @@ terminal backend events to avoid measuring only button-click latency.
 | `survey_submitted` | NPS or post-interaction survey is submitted. | `kpiId`, `module`, `type`, `status` |
 | `copilot_task_completed` | Copilot completes a task without UI fallback. | `kpiId`, `module`, `type`, `status`, `durationMs` |
 
-Pending before implementation: add `kpiId`, `module`, `flow`, `entityType`,
-`durationMs`, and `count` to the safe payload allowlist.
+Implemented in App Shell: `kpiId`, `module`, `flow`, `entityType`,
+`durationMs`, and `count` are in the safe payload allowlist. Dashboard-origin
+document navigation is instrumented for Recent Sales, Top Clients, and Best
+Products widgets without record IDs or names.
 
 ## KPI Matrix
 
 | KPI ID | Module | KPI | Target | Measurement | Status | Pending |
 |--------|--------|-----|--------|-------------|--------|---------|
-| `kpi_ux_dashboard_to_document` | Dashboard | Sesiones que navegan desde Dashboard a un documento | `> 30%` | Sessions with `dashboard_document_opened` / dashboard sessions. | Mixpanel ready | Instrument dashboard-origin navigation. |
+| `kpi_ux_dashboard_to_document` | Dashboard | Sesiones que navegan desde Dashboard a un documento | `> 30%` | Sessions with `dashboard_document_opened` / dashboard sessions. | Developed | Define dashboard-session denominator. |
 | `kpi_ux_sales_quote_creation_time` | Ventas | Tiempo promedio para crear un presupuesto | `< 3 min` | Average or p75 duration between quote `task_flow_started` and `task_flow_completed`. | Backend pending | Need terminal quote creation success, not just form submit. |
 | `kpi_ux_purchase_ocr_registration_time` | Compras | Registro de factura de proveedor via OCR | `< 1 min` | Duration from OCR upload/scan start to registered invoice. | Backend pending | OCR terminal registration event. |
 | `kpi_ux_purchase_manual_registration_time` | Compras | Registro manual de factura de proveedor | `< 5 min` | Duration from manual invoice start to registered invoice. | Backend pending | Manual flow start/completion events. |

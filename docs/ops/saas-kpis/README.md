@@ -16,6 +16,11 @@ Developed in App Shell:
 - Onboarding telemetry events for auth, setup progress, environment creation,
   and environment entry.
 - Payload normalization and redaction before provider dispatch.
+- KPI-safe payload fields and `trackKpiEvent` helper for low-cardinality
+  product metrics.
+- Dashboard telemetry for quick actions, pending-task opens, and
+  dashboard-origin document navigation.
+- Accounting board view telemetry for weekly adoption measurement.
 - Provider isolation: analytics failures do not block rendering or user flows.
 - Test coverage exists for payload sanitization, provider dispatch/failure
   isolation, browser provider config, Mixpanel lazy loading, route tracking, and
@@ -30,14 +35,16 @@ Events already emitted:
 | Onboarding setup | `onboarding_setup_step_completed`, `onboarding_setup_step_back` |
 | Environment creation | `onboarding_run_started`, `onboarding_run_succeeded`, `onboarding_run_failed` |
 | Environment entry | `onboarding_environment_enter_submitted`, `onboarding_environment_enter_succeeded`, `onboarding_environment_enter_failed` |
+| Dashboard | `quick_action_used`, `pending_task_opened`, `dashboard_document_opened` |
+| Accounting | `accounting_dashboard_viewed` |
 
 Known limits:
 
-- Product/business events outside onboarding are not instrumented yet.
+- Product/business events outside onboarding and the first Dashboard KPI slice
+  are not instrumented yet.
 - `packages/apps-sdk` does not receive observability context yet.
-- KPI-grade numeric properties such as `durationMs`, `count`, `total`,
-  `entityType`, `module`, and `kpiId` are not in the current App Shell payload
-  allowlist and would be stripped unless added.
+- KPI-grade properties such as `durationMs`, `count`, `total`, `entityType`,
+  `module`, and `kpiId` are allowlisted with finite-number and boolean guards.
 - Backend measurements are documented architecturally, but many business facts
   still need terminal domain events or metrics.
 
@@ -76,7 +83,7 @@ Common properties to keep from the developed framework:
 | `locale` | UI locale. |
 | `timestamp` | ISO timestamp injected by the observability layer. |
 
-Recommended KPI properties still pending in the allowlist:
+KPI properties supported by the App Shell payload allowlist:
 
 | Property | Type | Purpose |
 |----------|------|---------|
