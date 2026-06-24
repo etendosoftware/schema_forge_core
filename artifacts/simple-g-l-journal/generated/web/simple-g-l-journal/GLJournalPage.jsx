@@ -180,14 +180,6 @@ export const api = {
       "url": "/sws/neo/simple-g-l-journal/gLJournal/{id}/action/processNow"
     },
     {
-      "entity": "gLJournal",
-      "field": "etblkpBulkposting",
-      "column": "EM_Etblkp_Bulkposting",
-      "url": "/sws/neo/simple-g-l-journal/gLJournal/{id}/action/etblkpBulkposting",
-      "processId": "57496FB9CF9E4E8F847224017941570E",
-      "processType": "obuiapp"
-    },
-    {
       "entity": "gLJournalLine",
       "field": "aPRMAddPayment",
       "column": "EM_Aprm_Addpayment",

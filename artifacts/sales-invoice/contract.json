@@ -1,8 +1,8 @@
 {
-  "version": "0.30.0",
+  "version": "0.31.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-06-22T14:48:53.553Z",
-  "checksum": "a94a83b207df05f5",
+  "updatedAt": "2026-06-24T12:28:15.255Z",
+  "checksum": "be75b0ecc8707d25",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -1354,7 +1354,7 @@
             "section": "principal",
             "gridOrder": 6,
             "validationRule": {
-              "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID IN (@AD_CLIENT_ID@, '0') AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
+              "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID=@AD_CLIENT_ID@ AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
               "contextParams": [],
               "cascadeParams": [
                 "DateInvoiced",
@@ -3219,22 +3219,6 @@
             "type": "button",
             "visibility": "discarded",
             "required": false
-          },
-          {
-            "name": "etblkpAccountingstatus",
-            "apiKey": "etblkpAccountingstatus",
-            "column": "EM_Etblkp_Accountingstatus",
-            "type": "enum",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
-            "name": "etblkpBulkposting",
-            "apiKey": "etblkpBulkposting",
-            "column": "EM_Etblkp_Bulkposting",
-            "type": "button",
-            "visibility": "discarded",
-            "required": true
           }
         ],
         "javaQualifier": "salesInvoiceHeaderHandler"
@@ -4602,14 +4586,6 @@
         "processType": "obuiapp"
       },
       {
-        "entity": "header",
-        "field": "etblkpBulkposting",
-        "column": "EM_Etblkp_Bulkposting",
-        "url": "/sws/neo/sales-invoice/header/{id}/action/etblkpBulkposting",
-        "processId": "57496FB9CF9E4E8F847224017941570E",
-        "processType": "obuiapp"
-      },
-      {
         "entity": "lines",
         "field": "explode",
         "column": "Explode",
@@ -4778,14 +4754,6 @@
         "field": "documentAction",
         "runner": "node",
         "description": "Action endpoint for 'documentAction' in header should exist"
-      },
-      {
-        "id": "t-action-endpoint-header-etblkpBulkposting",
-        "category": "action-endpoint",
-        "entity": "header",
-        "field": "etblkpBulkposting",
-        "runner": "node",
-        "description": "Action endpoint for 'etblkpBulkposting' in header should exist"
       },
       {
         "id": "t-action-endpoint-header-etvfacRectCreate",
@@ -7592,22 +7560,6 @@
         "description": "System field 'dueAmount' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-system-field-header-etblkpAccountingstatus",
-        "category": "system-field",
-        "entity": "header",
-        "field": "etblkpAccountingstatus",
-        "runner": "node",
-        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-system-field-header-etblkpBulkposting",
-        "category": "system-field",
-        "entity": "header",
-        "field": "etblkpBulkposting",
-        "runner": "node",
-        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for header"
-      },
-      {
         "id": "t-system-field-header-etcopagCopilotFeedback",
         "category": "system-field",
         "entity": "header",
@@ -8765,9 +8717,9 @@
       }
     ],
     "summary": {
-      "total": 510,
+      "total": 509,
       "byCategory": {
-        "action-endpoint": 25,
+        "action-endpoint": 24,
         "crud-flags": 4,
         "default-value-type": 23,
         "displaylogic-evaluable": 21,
@@ -8783,7 +8735,7 @@
         "visibility": 4
       },
       "byRunner": {
-        "node": 510,
+        "node": 509,
         "junit": 0
       }
     }

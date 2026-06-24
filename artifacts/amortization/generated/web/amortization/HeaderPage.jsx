@@ -14,8 +14,7 @@ const breadcrumb = 'Finance / Amortization';
 
 // @sf-generated-start summary:header
 const summary = [
-  { key: 'etblkpAccountingstatus', column: 'EM_Etblkp_Accountingstatus', type: 'status' },
-  { key: 'etblkpBulkposting', column: 'EM_Etblkp_Bulkposting', type: 'string' },
+
 ];
 
 const statusField = 'processed';
@@ -44,7 +43,7 @@ const draftMode = {
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start requiredHeaderFields:header
-const requiredHeaderFields = ['name', 'accountingDate', 'currency', 'etblkpAccountingstatus', 'etblkpBulkposting'];
+const requiredHeaderFields = ['name', 'accountingDate', 'currency'];
 // @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
@@ -200,14 +199,6 @@ export const api = {
       "url": "/sws/neo/amortization/header/{id}/action/processed",
       "processId": "800134",
       "processType": "classic"
-    },
-    {
-      "entity": "header",
-      "field": "etblkpBulkposting",
-      "column": "EM_Etblkp_Bulkposting",
-      "url": "/sws/neo/amortization/header/{id}/action/etblkpBulkposting",
-      "processId": "57496FB9CF9E4E8F847224017941570E",
-      "processType": "obuiapp"
     }
   ],
   "queryParams": {

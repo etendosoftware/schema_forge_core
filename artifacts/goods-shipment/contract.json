@@ -1,8 +1,8 @@
 {
-  "version": "0.16.0",
+  "version": "0.17.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "updatedAt": "2026-06-23T18:21:08.661Z",
-  "checksum": "7ba9442fee48c3df",
+  "updatedAt": "2026-06-24T12:28:05.445Z",
+  "checksum": "1d16391352330b79",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -359,122 +359,6 @@
               "type": "computed",
               "source": "false"
             }
-          },
-          {
-            "name": "etblkpAccountingstatus",
-            "apiKey": "etblkpAccountingstatus",
-            "column": "EM_Etblkp_Accountingstatus",
-            "label": "Accounting Status",
-            "type": "enum",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": true,
-            "grid": false,
-            "form": true,
-            "sourceRequired": true,
-            "derivation": {
-              "type": "computed",
-              "source": "N"
-            },
-            "enumValues": [
-              {
-                "value": "NC",
-                "name": "Cost Not Calculated"
-              },
-              {
-                "value": "d",
-                "name": "Disabled For Background"
-              },
-              {
-                "value": "D",
-                "name": "Document Disabled"
-              },
-              {
-                "value": "L",
-                "name": "Document Locked"
-              },
-              {
-                "value": "E",
-                "name": "Error"
-              },
-              {
-                "value": "C",
-                "name": "Error, No cost"
-              },
-              {
-                "value": "i",
-                "name": "Invalid Account"
-              },
-              {
-                "value": "AD",
-                "name": "No Accounting Date"
-              },
-              {
-                "value": "DT",
-                "name": "No Document Type"
-              },
-              {
-                "value": "NO",
-                "name": "No Related PO"
-              },
-              {
-                "value": "b",
-                "name": "Not Balanced"
-              },
-              {
-                "value": "c",
-                "name": "Not Convertible (no rate)"
-              },
-              {
-                "value": "l",
-                "name": "Pending Refresh"
-              },
-              {
-                "value": "p",
-                "name": "Period Closed"
-              },
-              {
-                "value": "y",
-                "name": "Post Prepared"
-              },
-              {
-                "value": "Y",
-                "name": "Posted"
-              },
-              {
-                "value": "T",
-                "name": "Table Disabled"
-              },
-              {
-                "value": "N",
-                "name": "Unposted"
-              }
-            ],
-            "defaultValue": "N"
-          },
-          {
-            "name": "etblkpBulkposting",
-            "apiKey": "etblkpBulkposting",
-            "column": "EM_Etblkp_Bulkposting",
-            "label": "Bulk Posting",
-            "type": "button",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": true,
-            "grid": false,
-            "form": true,
-            "sourceRequired": true,
-            "derivation": {
-              "type": "computed",
-              "source": "N"
-            },
-            "defaultValue": "N",
-            "displayLogic": {
-              "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
-              "evaluable": false,
-              "reason": "session-preference",
-              "js": null
-            }
           }
         ],
         "searchableFields": [
@@ -525,20 +409,6 @@
             "derivation": {
               "type": "computed",
               "source": "false"
-            }
-          },
-          {
-            "name": "etblkpAccountingstatus",
-            "derivation": {
-              "type": "computed",
-              "source": "N"
-            }
-          },
-          {
-            "name": "etblkpBulkposting",
-            "derivation": {
-              "type": "computed",
-              "source": "N"
             }
           }
         ],
@@ -1259,22 +1129,6 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
-          },
-          {
-            "name": "etblkpAccountingstatus",
-            "apiKey": "etblkpAccountingstatus",
-            "column": "EM_Etblkp_Accountingstatus",
-            "type": "enum",
-            "visibility": "readOnly",
-            "required": true
-          },
-          {
-            "name": "etblkpBulkposting",
-            "apiKey": "etblkpBulkposting",
-            "column": "EM_Etblkp_Bulkposting",
-            "type": "button",
-            "visibility": "readOnly",
-            "required": true
           }
         ],
         "javaQualifier": "goodsShipmentHeaderHandler"
@@ -1790,14 +1644,6 @@
         "processType": "obuiapp"
       },
       {
-        "entity": "goodsShipment",
-        "field": "etblkpBulkposting",
-        "column": "EM_Etblkp_Bulkposting",
-        "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/etblkpBulkposting",
-        "processId": "57496FB9CF9E4E8F847224017941570E",
-        "processType": "obuiapp"
-      },
-      {
         "entity": "goodsShipmentLine",
         "field": "explode",
         "column": "Explode",
@@ -1856,14 +1702,6 @@
         "field": "documentAction",
         "runner": "node",
         "description": "Action endpoint for 'documentAction' in goodsShipment should exist"
-      },
-      {
-        "id": "t-action-endpoint-goodsShipment-etblkpBulkposting",
-        "category": "action-endpoint",
-        "entity": "goodsShipment",
-        "field": "etblkpBulkposting",
-        "runner": "node",
-        "description": "Action endpoint for 'etblkpBulkposting' in goodsShipment should exist"
       },
       {
         "id": "t-action-endpoint-goodsShipment-generateTo",
@@ -1952,22 +1790,6 @@
         "description": "Default value for 'documentStatus' in goodsShipment should be a string"
       },
       {
-        "id": "t-default-value-type-goodsShipment-etblkpAccountingstatus",
-        "category": "default-value-type",
-        "entity": "goodsShipment",
-        "field": "etblkpAccountingstatus",
-        "runner": "node",
-        "description": "Default value for 'etblkpAccountingstatus' in goodsShipment should be a string"
-      },
-      {
-        "id": "t-default-value-type-goodsShipment-etblkpBulkposting",
-        "category": "default-value-type",
-        "entity": "goodsShipment",
-        "field": "etblkpBulkposting",
-        "runner": "node",
-        "description": "Default value for 'etblkpBulkposting' in goodsShipment should be a string"
-      },
-      {
         "id": "t-default-value-type-goodsShipment-invoiced",
         "category": "default-value-type",
         "entity": "goodsShipment",
@@ -2000,14 +1822,6 @@
         "description": "Default value for 'movementQuantity' in goodsShipmentLine should be a string"
       },
       {
-        "id": "t-displaylogic-evaluable-goodsShipment-etblkpBulkposting",
-        "category": "displaylogic-evaluable",
-        "entity": "goodsShipment",
-        "field": "etblkpBulkposting",
-        "runner": "node",
-        "description": "Display logic for 'etblkpBulkposting' in goodsShipment should have evaluable flag"
-      },
-      {
         "id": "t-displaylogic-evaluable-goodsShipment-posted",
         "category": "displaylogic-evaluable",
         "entity": "goodsShipment",
@@ -2022,14 +1836,6 @@
         "field": "orderQuantity",
         "runner": "node",
         "description": "Display logic for 'orderQuantity' in goodsShipmentLine should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-valid-goodsShipment-etblkpBulkposting",
-        "category": "displaylogic-valid",
-        "entity": "goodsShipment",
-        "field": "etblkpBulkposting",
-        "runner": "node",
-        "description": "Display logic for 'etblkpBulkposting' in goodsShipment should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-goodsShipment-posted",
@@ -2078,22 +1884,6 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should be present in goodsShipment"
-      },
-      {
-        "id": "t-field-presence-goodsShipment-etblkpAccountingstatus",
-        "category": "field-presence",
-        "entity": "goodsShipment",
-        "field": "etblkpAccountingstatus",
-        "runner": "node",
-        "description": "Field 'etblkpAccountingstatus' should be present in goodsShipment"
-      },
-      {
-        "id": "t-field-presence-goodsShipment-etblkpBulkposting",
-        "category": "field-presence",
-        "entity": "goodsShipment",
-        "field": "etblkpBulkposting",
-        "runner": "node",
-        "description": "Field 'etblkpBulkposting' should be present in goodsShipment"
       },
       {
         "id": "t-field-presence-goodsShipment-invoiced",
@@ -2214,22 +2004,6 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should have type 'string' in goodsShipment"
-      },
-      {
-        "id": "t-field-type-goodsShipment-etblkpAccountingstatus",
-        "category": "field-type",
-        "entity": "goodsShipment",
-        "field": "etblkpAccountingstatus",
-        "runner": "node",
-        "description": "Field 'etblkpAccountingstatus' should have type 'string' in goodsShipment"
-      },
-      {
-        "id": "t-field-type-goodsShipment-etblkpBulkposting",
-        "category": "field-type",
-        "entity": "goodsShipment",
-        "field": "etblkpBulkposting",
-        "runner": "node",
-        "description": "Field 'etblkpBulkposting' should have type 'string' in goodsShipment"
       },
       {
         "id": "t-field-type-goodsShipment-invoiced",
@@ -3268,15 +3042,15 @@
       }
     ],
     "summary": {
-      "total": 180,
+      "total": 171,
       "byCategory": {
-        "action-endpoint": 12,
+        "action-endpoint": 11,
         "crud-flags": 2,
-        "default-value-type": 7,
-        "displaylogic-evaluable": 3,
-        "displaylogic-valid": 3,
-        "field-presence": 17,
-        "field-type": 17,
+        "default-value-type": 5,
+        "displaylogic-evaluable": 2,
+        "displaylogic-valid": 2,
+        "field-presence": 15,
+        "field-type": 15,
         "readonlylogic-evaluable": 8,
         "readonlylogic-valid": 8,
         "rule-declared": 3,
@@ -3286,7 +3060,7 @@
         "visibility": 2
       },
       "byRunner": {
-        "node": 180,
+        "node": 171,
         "junit": 0
       }
     }

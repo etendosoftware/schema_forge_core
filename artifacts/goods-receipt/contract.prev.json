@@ -1,8 +1,8 @@
 {
-  "version": "0.17.0",
+  "version": "0.18.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-06-23T18:19:35.759Z",
-  "checksum": "5c0727ffa5fd8b84",
+  "updatedAt": "2026-06-24T12:28:05.425Z",
+  "checksum": "6e48a605daa61c5c",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -43,7 +43,15 @@
         "allowEmail": true
       },
       "layoutType": "default",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "goodsReceipt": {
@@ -995,7 +1003,15 @@
       "sendDocument": {
         "allowEmail": true
       },
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "goodsReceipt": {
@@ -1545,22 +1561,6 @@
             "column": "UpdatedBy",
             "type": "foreignKey",
             "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "etblkpAccountingstatus",
-            "apiKey": "etblkpAccountingstatus",
-            "column": "EM_Etblkp_Accountingstatus",
-            "type": "enum",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
-            "name": "etblkpBulkposting",
-            "apiKey": "etblkpBulkposting",
-            "column": "EM_Etblkp_Bulkposting",
-            "type": "button",
-            "visibility": "discarded",
             "required": true
           }
         ],
@@ -2236,14 +2236,6 @@
         "processType": "obuiapp"
       },
       {
-        "entity": "goodsReceipt",
-        "field": "etblkpBulkposting",
-        "column": "EM_Etblkp_Bulkposting",
-        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/etblkpBulkposting",
-        "processId": "57496FB9CF9E4E8F847224017941570E",
-        "processType": "obuiapp"
-      },
-      {
         "entity": "goodsReceiptLine",
         "field": "managePrereservation",
         "column": "Manage_Prereservation",
@@ -2302,14 +2294,6 @@
         "field": "documentAction",
         "runner": "node",
         "description": "Action endpoint for 'documentAction' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-action-endpoint-goodsReceipt-etblkpBulkposting",
-        "category": "action-endpoint",
-        "entity": "goodsReceipt",
-        "field": "etblkpBulkposting",
-        "runner": "node",
-        "description": "Action endpoint for 'etblkpBulkposting' in goodsReceipt should exist"
       },
       {
         "id": "t-action-endpoint-goodsReceipt-generateTo",
@@ -4104,22 +4088,6 @@
         "description": "System field 'documentType' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-system-field-goodsReceipt-etblkpAccountingstatus",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "etblkpAccountingstatus",
-        "runner": "node",
-        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-system-field-goodsReceipt-etblkpBulkposting",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "etblkpBulkposting",
-        "runner": "node",
-        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
         "id": "t-system-field-goodsReceipt-externalBusinessPartnerReference",
         "category": "system-field",
         "entity": "goodsReceipt",
@@ -4543,9 +4511,9 @@
       }
     ],
     "summary": {
-      "total": 288,
+      "total": 285,
       "byCategory": {
-        "action-endpoint": 12,
+        "action-endpoint": 11,
         "crud-flags": 2,
         "default-value-type": 8,
         "displaylogic-evaluable": 2,
@@ -4557,11 +4525,11 @@
         "rule-declared": 38,
         "searchable-filters": 5,
         "selector-endpoint": 20,
-        "system-field": 69,
+        "system-field": 67,
         "visibility": 2
       },
       "byRunner": {
-        "node": 288,
+        "node": 285,
         "junit": 0
       }
     }

@@ -1,8 +1,8 @@
 {
-  "version": "0.26.0",
+  "version": "0.27.0",
   "generatedAt": "2026-05-22T16:00:10.872Z",
-  "updatedAt": "2026-06-23T18:12:54.866Z",
-  "contractChecksum": "ab49193b73a1aff1",
+  "updatedAt": "2026-06-24T12:23:08.457Z",
+  "contractChecksum": "21f3cba8916146e9",
   "apiPrediction": {
     "specName": "amortization",
     "baseUrl": "/sws/neo/amortization",
@@ -146,46 +146,6 @@
         ],
         "processId": "800134",
         "processType": "classic"
-      },
-      {
-        "name": "etblkpBulkposting",
-        "actionType": "documentAction",
-        "entity": "header",
-        "column": "EM_Etblkp_Bulkposting",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/amortization/header/{id}/action/etblkpBulkposting",
-        "parameters": [
-          {
-            "name": "docAction",
-            "type": "string",
-            "required": true,
-            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
-          }
-        ],
-        "preconditions": [
-          {
-            "field": "documentStatus",
-            "operator": "in",
-            "values": [
-              "DR",
-              "IP"
-            ],
-            "description": "Document must be in draft or in-progress state"
-          }
-        ],
-        "effects": [
-          "Updates document status",
-          "May trigger workflow transitions"
-        ],
-        "dryRunSupported": true,
-        "edgeCases": [
-          "Document is already completed or closed",
-          "Document has pending lines or missing required fields",
-          "User lacks permission to execute the action"
-        ],
-        "processId": "57496FB9CF9E4E8F847224017941570E",
-        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -281,16 +241,6 @@
             "readOnly": true,
             "required": true,
             "defaultValue": "N"
-          },
-          "etblkpAccountingstatus": {
-            "readOnly": true,
-            "required": true,
-            "defaultValue": "N"
-          },
-          "etblkpBulkposting": {
-            "readOnly": true,
-            "required": true,
-            "defaultValue": "N"
           }
         }
       },
@@ -363,22 +313,15 @@
       ]
     },
     "selectorContexts": [],
-    "actions": [
-      "etblkpBulkposting"
-    ],
+    "actions": [],
     "workflow": [
       "Create draft header with required fields",
-      "Add at least one valid line",
-      "Validate form state",
-      "Complete the document"
+      "Add at least one valid line"
     ],
     "edgeCases": [
       "Required context is missing",
       "User lacks permission",
       "Record is in an incompatible state",
-      "Document is already completed or closed",
-      "Document has pending lines or missing required fields",
-      "User lacks permission to execute the action",
       "Required field without default value must be provided",
       "Validate the current form state before running lifecycle actions",
       "Do not run destructive lifecycle actions without explicit user confirmation"
@@ -400,16 +343,13 @@
         "fields": [
           "amortizationAmount"
         ]
-      },
-      {
-        "operation": "completeDocument",
-        "description": "Validate form state and run the document lifecycle action when the draft is complete.",
-        "action": "etblkpBulkposting"
       }
     ],
-    "warnings": [],
+    "warnings": [
+      "Transactional spec has no generated lifecycle action metadata"
+    ],
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "0f8630a068d50710"
+  "checksum": "67ab4dd9adde96a6"
 }

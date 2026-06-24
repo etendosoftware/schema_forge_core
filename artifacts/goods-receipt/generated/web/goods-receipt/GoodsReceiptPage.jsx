@@ -376,14 +376,6 @@ export const api = {
       "processType": "obuiapp"
     },
     {
-      "entity": "goodsReceipt",
-      "field": "etblkpBulkposting",
-      "column": "EM_Etblkp_Bulkposting",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/etblkpBulkposting",
-      "processId": "57496FB9CF9E4E8F847224017941570E",
-      "processType": "obuiapp"
-    },
-    {
       "entity": "goodsReceiptLine",
       "field": "managePrereservation",
       "column": "Manage_Prereservation",

@@ -1,8 +1,8 @@
 {
   "version": "0.31.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-06-22T14:41:57.746Z",
-  "contractChecksum": "a94a83b207df05f5",
+  "updatedAt": "2026-06-24T12:28:15.255Z",
+  "contractChecksum": "be75b0ecc8707d25",
   "apiPrediction": {
     "specName": "sales-invoice",
     "baseUrl": "/sws/neo/sales-invoice",
@@ -724,46 +724,6 @@
         "processType": "obuiapp"
       },
       {
-        "name": "etblkpBulkposting",
-        "actionType": "documentAction",
-        "entity": "header",
-        "column": "EM_Etblkp_Bulkposting",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/sales-invoice/header/{id}/action/etblkpBulkposting",
-        "parameters": [
-          {
-            "name": "docAction",
-            "type": "string",
-            "required": true,
-            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
-          }
-        ],
-        "preconditions": [
-          {
-            "field": "documentStatus",
-            "operator": "in",
-            "values": [
-              "DR",
-              "IP"
-            ],
-            "description": "Document must be in draft or in-progress state"
-          }
-        ],
-        "effects": [
-          "Updates document status",
-          "May trigger workflow transitions"
-        ],
-        "dryRunSupported": true,
-        "edgeCases": [
-          "Document is already completed or closed",
-          "Document has pending lines or missing required fields",
-          "User lacks permission to execute the action"
-        ],
-        "processId": "57496FB9CF9E4E8F847224017941570E",
-        "processType": "obuiapp"
-      },
-      {
         "name": "explode",
         "actionType": "utilityAction",
         "entity": "lines",
@@ -1284,8 +1244,7 @@
       "aeatsiiSend",
       "processNow",
       "generateTo",
-      "createLinesFrom",
-      "etblkpBulkposting"
+      "createLinesFrom"
     ],
     "workflow": [
       "Create draft header with required fields",
@@ -1344,5 +1303,5 @@
       "tbaiVoidxmlgenerator"
     ]
   },
-  "checksum": "919d3b37ea88ec85"
+  "checksum": "56d2895f53cfabfe"
 }

@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.5.0",
   "generatedAt": "2026-04-29T19:05:48.778Z",
-  "updatedAt": "2026-06-23T18:21:08.404Z",
-  "checksum": "7caedde23f32f4d4",
+  "updatedAt": "2026-06-24T12:28:05.384Z",
+  "checksum": "31c66352e48b6b59",
   "frontendContract": {
     "window": {
       "id": "170",
@@ -634,22 +634,6 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
-          },
-          {
-            "name": "etblkpAccountingstatus",
-            "apiKey": "etblkpAccountingstatus",
-            "column": "EM_Etblkp_Accountingstatus",
-            "type": "enum",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
-            "name": "etblkpBulkposting",
-            "apiKey": "etblkpBulkposting",
-            "column": "EM_Etblkp_Bulkposting",
-            "type": "button",
-            "visibility": "discarded",
-            "required": true
           }
         ],
         "javaQualifier": "document-posting"
@@ -1003,14 +987,6 @@
         "field": "posted",
         "column": "Posted",
         "url": "/sws/neo/goods-movements/movement/{id}/action/posted"
-      },
-      {
-        "entity": "movement",
-        "field": "etblkpBulkposting",
-        "column": "EM_Etblkp_Bulkposting",
-        "url": "/sws/neo/goods-movements/movement/{id}/action/etblkpBulkposting",
-        "processId": "57496FB9CF9E4E8F847224017941570E",
-        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -1032,14 +1008,6 @@
   },
   "testManifest": {
     "tests": [
-      {
-        "id": "t-action-endpoint-movement-etblkpBulkposting",
-        "category": "action-endpoint",
-        "entity": "movement",
-        "field": "etblkpBulkposting",
-        "runner": "node",
-        "description": "Action endpoint for 'etblkpBulkposting' in movement should exist"
-      },
       {
         "id": "t-action-endpoint-movement-moveBetweenLocators",
         "category": "action-endpoint",
@@ -1659,22 +1627,6 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-system-field-movement-etblkpAccountingstatus",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "etblkpAccountingstatus",
-        "runner": "node",
-        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-system-field-movement-etblkpBulkposting",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "etblkpBulkposting",
-        "runner": "node",
-        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for movement"
-      },
-      {
         "id": "t-system-field-movement-id",
         "category": "system-field",
         "entity": "movement",
@@ -1906,9 +1858,9 @@
       }
     ],
     "summary": {
-      "total": 111,
+      "total": 108,
       "byCategory": {
-        "action-endpoint": 4,
+        "action-endpoint": 3,
         "crud-flags": 2,
         "default-value-type": 4,
         "displaylogic-evaluable": 1,
@@ -1920,11 +1872,11 @@
         "rule-declared": 12,
         "searchable-filters": 3,
         "selector-endpoint": 4,
-        "system-field": 36,
+        "system-field": 34,
         "visibility": 2
       },
       "byRunner": {
-        "node": 111,
+        "node": 108,
         "junit": 0
       }
     }

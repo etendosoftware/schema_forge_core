@@ -1,8 +1,8 @@
 {
-  "version": "0.13.0",
+  "version": "0.14.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-23T18:12:55.683Z",
-  "contractChecksum": "202a685d07d22ea8",
+  "updatedAt": "2026-06-24T12:28:05.461Z",
+  "contractChecksum": "2867f3ba2db38829",
   "apiPrediction": {
     "specName": "simple-g-l-journal",
     "baseUrl": "/sws/neo/simple-g-l-journal",
@@ -178,46 +178,6 @@
         ]
       },
       {
-        "name": "etblkpBulkposting",
-        "actionType": "documentAction",
-        "entity": "gLJournal",
-        "column": "EM_Etblkp_Bulkposting",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/simple-g-l-journal/gLJournal/{id}/action/etblkpBulkposting",
-        "parameters": [
-          {
-            "name": "docAction",
-            "type": "string",
-            "required": true,
-            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
-          }
-        ],
-        "preconditions": [
-          {
-            "field": "documentStatus",
-            "operator": "in",
-            "values": [
-              "DR",
-              "IP"
-            ],
-            "description": "Document must be in draft or in-progress state"
-          }
-        ],
-        "effects": [
-          "Updates document status",
-          "May trigger workflow transitions"
-        ],
-        "dryRunSupported": true,
-        "edgeCases": [
-          "Document is already completed or closed",
-          "Document has pending lines or missing required fields",
-          "User lacks permission to execute the action"
-        ],
-        "processId": "57496FB9CF9E4E8F847224017941570E",
-        "processType": "obuiapp"
-      },
-      {
         "name": "aPRMAddPayment",
         "actionType": "paymentAction",
         "entity": "gLJournalLine",
@@ -373,8 +333,7 @@
     "selectorContexts": [],
     "actions": [
       "documentAction",
-      "processNow",
-      "etblkpBulkposting"
+      "processNow"
     ],
     "workflow": [
       "Create draft header with required fields",
@@ -425,5 +384,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "f001a0c221f215e9"
+  "checksum": "fd688756285b3c35"
 }

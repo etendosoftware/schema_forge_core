@@ -906,5 +906,16 @@
     ],
     "author": "pipeline",
     "date": "2026-06-23"
+  },
+  {
+    "from": "0.17.0",
+    "to": "0.18.0",
+    "level": "breaking",
+    "reasons": [
+      "Field \"etblkpAccountingstatus\" removed from entity \"goodsReceipt\" in backend",
+      "Field \"etblkpBulkposting\" removed from entity \"goodsReceipt\" in backend"
+    ],
+    "author": "pipeline",
+    "date": "2026-06-24"
   }
 ]

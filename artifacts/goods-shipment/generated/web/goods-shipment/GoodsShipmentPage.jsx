@@ -20,8 +20,6 @@ const breadcrumb = 'Sales / Goods Shipment';
 // @sf-generated-start summary:goodsShipment
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'etblkpAccountingstatus', column: 'EM_Etblkp_Accountingstatus', type: 'status' },
-  { key: 'etblkpBulkposting', column: 'EM_Etblkp_Bulkposting', type: 'string' },
 ];
 
 const statusField = 'documentStatus';
@@ -35,8 +33,7 @@ const extraBadges = [
 
 // @sf-generated-start processes:goodsShipment
 const processes = [
-  { name: 'etblkpBulkposting', label: 'Bulk Posting', style: 'positive',
-    displayLogicRaw: "@Processed@='Y' & @#ShowAcct@='Y'" },
+
 ];
 // @sf-generated-end processes:goodsShipment
 
@@ -45,7 +42,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:goodsShipment
 
 // @sf-generated-start requiredHeaderFields:goodsShipment
-const requiredHeaderFields = ['documentNo', 'warehouse', 'businessPartner', 'partnerAddress', 'movementDate', 'etblkpAccountingstatus', 'etblkpBulkposting'];
+const requiredHeaderFields = ['documentNo', 'warehouse', 'businessPartner', 'partnerAddress', 'movementDate'];
 // @sf-generated-end requiredHeaderFields:goodsShipment
 
 // @sf-generated-start addLineFields:goodsShipmentLine
@@ -211,14 +208,6 @@ export const api = {
       "column": "RM_Shipment_Pickedit",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/sendMaterials",
       "processId": "4AD70293357245AB96E59C2CDB43A35D",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "goodsShipment",
-      "field": "etblkpBulkposting",
-      "column": "EM_Etblkp_Bulkposting",
-      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/etblkpBulkposting",
-      "processId": "57496FB9CF9E4E8F847224017941570E",
       "processType": "obuiapp"
     },
     {
