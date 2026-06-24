@@ -125,8 +125,8 @@ describe('LocationEditorModal', () => {
   it('renders all text input fields for address entry', () => {
     renderModal();
     const inputs = screen.getAllByRole('textbox');
-    // address, postalCode, city = 3 text inputs (address2 removed)
-    expect(inputs.length).toBeGreaterThanOrEqual(3);
+    // address, address2, postalCode, city = 4 text inputs
+    expect(inputs.length).toBeGreaterThanOrEqual(4);
   });
 
   it('renders checkboxes for shipping and invoicing', () => {
@@ -289,11 +289,11 @@ describe('LocationEditorModal', () => {
   it('allows typing in postal code and city fields', () => {
     renderModal();
     const inputs = screen.getAllByRole('textbox');
-    // address=inputs[0], postalCode=inputs[1], city=inputs[2]
-    fireEvent.change(inputs[1], { target: { value: '28001' } });
-    expect(inputs[1].value).toBe('28001');
-    fireEvent.change(inputs[2], { target: { value: 'Madrid' } });
-    expect(inputs[2].value).toBe('Madrid');
+    // address=inputs[0], address2=inputs[1], postalCode=inputs[2], city=inputs[3]
+    fireEvent.change(inputs[2], { target: { value: '28001' } });
+    expect(inputs[2].value).toBe('28001');
+    fireEvent.change(inputs[3], { target: { value: 'Madrid' } });
+    expect(inputs[3].value).toBe('Madrid');
   });
 
   it('calls onClose when backdrop overlay is clicked', () => {

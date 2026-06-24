@@ -765,6 +765,12 @@ export default function LocationEditorModal({
                                 <input autoFocus type="text" value={form.address} onChange={e => setField('address', e.target.value)} style={INPUT} />
                             </div>
 
+                            {/* Línea 2 */}
+                            <div>
+                                <div style={FIELD_LABEL}>{ui('addressLine2')}</div>
+                                <input type="text" value={form.address2} onChange={e => setField('address2', e.target.value)} style={INPUT} />
+                            </div>
+
                             {/* CP + Ciudad en grid */}
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
                                 <div>
