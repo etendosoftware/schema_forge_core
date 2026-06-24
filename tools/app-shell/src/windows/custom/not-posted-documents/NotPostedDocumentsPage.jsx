@@ -80,12 +80,7 @@ export default function NotPostedDocumentsPage({ token, apiBaseUrl }) {
       // Handler returns { response: { data: [{ rows: [...], total: N }] } } OR
       // { response: { data: rows[] } } depending on NEO wrapper. Handle both.
       const data = json?.response?.data;
-      let rowsData = [];
-      if (Array.isArray(data) && data[0]?.rows) {
-        rowsData = data[0].rows;
-      } else if (Array.isArray(data)) {
-        rowsData = data;
-      }
+      const rowsData = Array.isArray(data) ? (data[0]?.rows ?? data) : [];
       if (fetchAbortRef.current === ctrl) setRows(rowsData);
     } catch (e) {
       if (e.name !== 'AbortError' && fetchAbortRef.current === ctrl) setLoadError(e.message);
