@@ -315,6 +315,8 @@ function ConfirmReceiptInvoicedModal({ data, base, headers, recordId, onConfirme
   const [error, setError] = useState(null);
 
   const invoices = Array.isArray(data?.linkedInvoices) ? data.linkedInvoices : [];
+  const firstInvoice = invoices[0] || null;
+  const extraCount = invoices.length - 1;
   const docNo = data?.documentNo || '';
   const bpName = data?.['businessPartner$_identifier'] || '';
 
@@ -363,9 +365,9 @@ function ConfirmReceiptInvoicedModal({ data, base, headers, recordId, onConfirme
             {bpName && <><span style={{ color: '#9aa1aa', fontSize: 13 }}>·</span><span style={{ fontSize: 13, color: '#6b7480' }}>{bpName}</span></>}
           </div>
 
-          {/* Invoice cards — one per linked invoice */}
-          {invoices.map(inv => (
-            <div key={inv.id} style={{ border: '1px solid #e7e9ec', borderRadius: 11, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* First invoice card */}
+          {firstInvoice && (
+            <div style={{ border: '1px solid #e7e9ec', borderRadius: 11, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 38, height: 38, borderRadius: 9, background: '#f3f0ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c5cff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
@@ -376,20 +378,20 @@ function ConfirmReceiptInvoicedModal({ data, base, headers, recordId, onConfirme
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#1f2733' }}>{ui('goodsReceipt.confirmModal.invoiceRef')} {inv.documentNo}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#1f2733' }}>{ui('goodsReceipt.confirmModal.invoiceRef')} {firstInvoice.documentNo}</span>
                   <span style={{ fontSize: 11, fontWeight: 500, padding: '3px 9px', borderRadius: 6, background: '#e6f6ec', color: '#1f9d57', whiteSpace: 'nowrap' }}>
-                    {statusLabel[inv.documentStatus] || inv.documentStatus}
+                    {statusLabel[firstInvoice.documentStatus] || firstInvoice.documentStatus}
                   </span>
                 </div>
-                {inv.grandTotalAmount != null && (
+                {firstInvoice.grandTotalAmount != null && (
                   <div style={{ fontSize: 13, color: '#6b7480', marginTop: 2 }}>
-                    {fmtAmount(inv.grandTotalAmount, inv['currency$_identifier'])}
+                    {fmtAmount(firstInvoice.grandTotalAmount, firstInvoice['currency$_identifier'])}
                   </div>
                 )}
               </div>
               <button
                 type="button"
-                onClick={() => { onClose(); navigate(`/purchase-invoice/${inv.id}`); }}
+                onClick={() => { onClose(); navigate(`/purchase-invoice/${firstInvoice.id}`); }}
                 style={{ all: 'unset', fontSize: 13, fontWeight: 600, color: '#2f73d6', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
                 onMouseEnter={e => { e.currentTarget.style.color = '#2a67c2'; }}
                 onMouseLeave={e => { e.currentTarget.style.color = '#2f73d6'; }}
@@ -397,7 +399,15 @@ function ConfirmReceiptInvoicedModal({ data, base, headers, recordId, onConfirme
                 {ui('goodsReceipt.confirmModal.viewInvoice')}
               </button>
             </div>
-          ))}
+          )}
+
+          {/* +N more badge */}
+          {extraCount > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: '#f8f9fb', borderRadius: 9, border: '1px solid #e7e9ec' }}>
+              <span style={{ fontWeight: 700, fontSize: 12, color: '#2f73d6', background: '#eff5fe', borderRadius: 99, padding: '2px 9px', border: '1px solid #cadffb', flexShrink: 0 }}>+{extraCount}</span>
+              <span style={{ fontSize: 13, color: '#6b7480' }}>{ui('goodsReceipt.confirmModal.moreInvoices')}</span>
+            </div>
+          )}
 
           {/* Microcopy */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>

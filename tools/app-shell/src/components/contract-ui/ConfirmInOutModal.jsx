@@ -16,7 +16,6 @@ export default function ConfirmInOutModal({
   invoiceAction,
   defaultCreateInvoice = false,
   skipDocumentAction = false,
-  hideInvoiceToggle = false,
   title,
   docInfo,
   infoRowPre,
@@ -155,8 +154,8 @@ export default function ConfirmInOutModal({
             </div>
           )}
 
-          {/* Toggle card — hidden when only creating invoice (skipDocumentAction) or already invoiced (hideInvoiceToggle) */}
-          {!skipDocumentAction && !hideInvoiceToggle && <div
+          {/* Toggle card — hidden when only creating invoice (skipDocumentAction) */}
+          {!skipDocumentAction && <div
             role="switch"
             aria-checked={createInvoice}
             data-testid="confirm-modal-invoice-toggle"
