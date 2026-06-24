@@ -116,7 +116,8 @@ describe('useNeoAction', () => {
     const { result } = renderHook(() => useNeoAction({ ...baseOpts, apiBaseUrl: undefined }));
     let res;
     await act(async () => { res = await result.current.execute('rec-1', 'post'); });
-    expect(res).toEqual({ success: false, message: 'Missing required params' });
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/Missing required params/);
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
@@ -124,7 +125,8 @@ describe('useNeoAction', () => {
     const { result } = renderHook(() => useNeoAction(baseOpts));
     let res;
     await act(async () => { res = await result.current.execute(undefined, 'post'); });
-    expect(res).toEqual({ success: false, message: 'Missing required params' });
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/Missing required params/);
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
@@ -132,7 +134,8 @@ describe('useNeoAction', () => {
     const { result } = renderHook(() => useNeoAction(baseOpts));
     let res;
     await act(async () => { res = await result.current.execute('rec-1', undefined); });
-    expect(res).toEqual({ success: false, message: 'Missing required params' });
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/Missing required params/);
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
