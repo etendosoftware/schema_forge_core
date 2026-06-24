@@ -1945,6 +1945,15 @@ export function DetailView({
       }
     }
   }, [secondarySelectedRows, secondaryTabs]);
+  // Clear any pending close-animation timers on unmount so they don't fire after
+  // the component is gone (e.g. a leaked timer hitting `window` after jsdom teardown
+  // in tests, or setState on an unmounted component in the app).
+  useEffect(() => () => {
+    for (const id of Object.values(secondaryBarTimeoutRef.current)) {
+      clearTimeout(id);
+    }
+    secondaryBarTimeoutRef.current = {};
+  }, []);
   // Measure each visible secondary tab's add-line wrapper so its bar can be
   // portaled with `position: fixed`. Only the active tab actually mounts its
   // wrapper (inactive tabs unmount their content), so refs from other tabs
