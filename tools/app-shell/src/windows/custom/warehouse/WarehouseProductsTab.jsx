@@ -25,7 +25,7 @@ export default function WarehouseProductsTab({ parentId, token, apiBaseUrl, onCo
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__215b73" />
         {ui('warehouseLoadingStock')}
       </div>
     );

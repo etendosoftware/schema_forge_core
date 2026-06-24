@@ -15,7 +15,7 @@ function DocumentLink({ label, onClick }) {
       <span className="border-b border-[#828FA3] group-hover:border-[#121217] transition-colors leading-6">
         {label}
       </span>
-      <ArrowUpRight className="h-4 w-4 text-[#121217]" />
+      <ArrowUpRight className="h-4 w-4 text-[#121217]" data-testid="ArrowUpRight__4dd2db" />
     </button>
   );
 }
@@ -85,7 +85,7 @@ export default function WarehouseTransactionsTable({ parentId, token, apiBaseUrl
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__4dd2db" />
         {ui('warehouseLoadingTransactions')}
       </div>
     );
@@ -126,7 +126,7 @@ export default function WarehouseTransactionsTable({ parentId, token, apiBaseUrl
                   <DocumentLink
                     label={docLabel}
                     onClick={() => navigate(`/${tx.etgoDocWindow}/${tx.etgoDocHeaderId}`)}
-                  />
+                    data-testid="DocumentLink__4dd2db" />
                 ) : (
                   <span>{docLabel ?? '—'}</span>
                 )}

@@ -112,7 +112,14 @@ const columns = [
 const filters = ['searchKey', 'name'];
 
 const WarehouseCustomTable = forwardRef(function WarehouseCustomTable(props, ref) {
-  return <DataTable ref={ref} columns={columns} filters={filters} {...props} />;
+  return (
+    <DataTable
+      ref={ref}
+      columns={columns}
+      filters={filters}
+      {...props}
+      data-testid="DataTable__df578c" />
+  );
 });
 
 export default WarehouseCustomTable;
