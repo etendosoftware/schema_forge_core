@@ -83,6 +83,25 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
     return () => { cancelled = true; };
   }, [wizardOpen, recordId, base, headers, data?.businessPartner]);
 
+  const handleInvoiceButtonClick = async () => {
+    // Before showing the confirm modal, check if all lines are already covered by a draft.
+    // If so, navigate to the existing draft instead of offering to create a duplicate.
+    try {
+      const res = await fetch(
+        `${base}/goods-receipt/goodsReceipt/${recordId}/action/checkPurchaseInvoice`,
+        { headers },
+      );
+      if (res.ok) {
+        const checkData = (await res.json())?.response?.data;
+        if (checkData?.draftExists && !checkData?.pendingExists) {
+          navigate(`/purchase-invoice/${checkData.draftId}`);
+          return;
+        }
+      }
+    } catch { /* network error — proceed to modal and let backend validate */ }
+    setShowInvoiceConfirm(true);
+  };
+
   const handleCreateInvoice = async () => {
     if (creatingInvoice) return;
     setCreatingInvoice(true);
@@ -143,7 +162,7 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
       {isCompleted && !isFullyInvoiced && (
         <button
           type="button"
-          onClick={() => setShowInvoiceConfirm(true)}
+          onClick={handleInvoiceButtonClick}
           style={{ ...textBtn, border: '1px solid var(--color-border-info, #93c5fd)', background: 'var(--color-background-info, #eff6ff)', color: 'var(--color-text-info, #2563eb)' }}
           onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-background-info, #eff6ff)'; }}
