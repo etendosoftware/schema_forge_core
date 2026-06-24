@@ -14,6 +14,7 @@ export default function ImportLinesModal({
   searchPlaceholderKey,
   emptyMessageKey,
   noSearchResultsKey,
+  allImportedMessageKey,
   successMessageKey,
   fetchDocuments,
   fetchLines,
@@ -220,10 +221,16 @@ export default function ImportLinesModal({
               return <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>{ui('loading')}</p>;
             }
             if (filtered.length === 0) {
+              let msg;
+              if (documents.length === 0) {
+                msg = ui(emptyMessageKey);
+              } else if (!search.trim() && allImportedMessageKey) {
+                msg = ui(allImportedMessageKey);
+              } else {
+                msg = ui(noSearchResultsKey);
+              }
               return (
-                <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>
-                  {documents.length === 0 ? ui(emptyMessageKey) : ui(noSearchResultsKey)}
-                </p>
+                <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>{msg}</p>
               );
             }
             return filtered.map(doc => {

@@ -17045,6 +17045,7 @@
     "noCompletedSalesInvoicesForThisCustomer": "No hay facturas completadas para este cliente.",
     "linesImportedFromSalesInvoice": "Líneas importadas desde factura",
     "noInvoicesMatchYourSearch": "Ninguna factura coincide con la búsqueda.",
+    "allSalesInvoicesAlreadyImported": "Todas las facturas de este cliente ya fueron importadas.",
     "addLinesManuallyOrImportFromOrderOrInvoice": "Añade líneas manualmente o impórtalas desde un pedido o factura",
     "totalDiscountSaved": "Descuento total guardado",
     "noteSaved": "Nota guardada",

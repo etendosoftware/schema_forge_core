@@ -116,6 +116,7 @@ export default function ImportFromSalesInvoiceModal(props) {
       searchPlaceholderKey="searchSalesInvoice"
       emptyMessageKey="noCompletedSalesInvoicesForThisCustomer"
       noSearchResultsKey="noInvoicesMatchYourSearch"
+      allImportedMessageKey="allSalesInvoicesAlreadyImported"
       successMessageKey="linesImportedFromSalesInvoice"
       showPriceColumns={false}
       fetchDocuments={fetchDocuments}

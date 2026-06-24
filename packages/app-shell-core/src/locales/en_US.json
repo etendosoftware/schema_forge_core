@@ -16803,6 +16803,7 @@
     "noCompletedSalesInvoicesForThisCustomer": "No completed invoices for this customer.",
     "linesImportedFromSalesInvoice": "Lines imported from invoice",
     "noInvoicesMatchYourSearch": "No invoices match your search.",
+    "allSalesInvoicesAlreadyImported": "All invoices for this customer have already been imported.",
     "addLinesManuallyOrImportFromOrderOrInvoice": "Add lines manually or import from an order or invoice",
     "totalDiscountSaved": "Total discount saved",
     "noteSaved": "Note saved",
