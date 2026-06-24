@@ -11,6 +11,29 @@
     },
     "dateFilterKey": "movementDate",
     "linesLayout": "inlineEditable",
+    "noHeaderBorder": true,
+    "sendDocument": {
+      "enabled": false
+    },
+    "draftMode": {
+      "enabled": true,
+      "processField": "processNow",
+      "processValue": "Y",
+      "label": "processMovements",
+      "disableWhenEmpty": true,
+      "completedStatuses": ["true"]
+    },
+    "statusEnumLabels": {
+      "true": "statusProcessed",
+      "false": "statusDraft"
+    },
+    "lockedAlert": {
+      "title": "goodsMovementsLockedTitle",
+      "message": "goodsMovementsLockedMessage",
+      "actionLabel": "goodsMovementsLockedAction",
+      "navigateTo": "/physical-inventory/new"
+    },
+    "whiteFormBackground": true,
     "listbarPaddingX": "px-2",
     "tablePaddingX": "px-2",
     "hideLink": true,
@@ -20,10 +43,16 @@
     },
     "labelOverrides": {
       "en_US": {
-        "Processed": "Status"
+        "Processed": "Status",
+        "M_Locator_ID": "Source Warehouse",
+        "M_LocatorTo_ID": "Destination Warehouse",
+        "MovementQty": "Quantity"
       },
       "es_ES": {
-        "Processed": "Estado"
+        "Processed": "Estado",
+        "M_Locator_ID": "Almacén origen",
+        "M_LocatorTo_ID": "Almacén destino",
+        "MovementQty": "Cantidad"
       }
     },
     "customComponents": {
@@ -47,7 +76,7 @@
           "gridOrder": 2
         },
         "description": {
-          "section": "other",
+          "form": false,
           "readOnlyLogic": null
         },
         "moveBetweenLocators": {
@@ -69,11 +98,12 @@
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
+          "section": "principal",
           "readOnlyLogic": null,
           "gridOrder": 3
         },
         "processNow": {
-          "visibility": "editable"
+          "visibility": "discarded"
         },
         "project": {
           "visibility": "discarded",
@@ -109,34 +139,50 @@
       "name": "movementLine",
       "fields": {
         "lineNo": {
-          "grid": true,
+          "grid": false,
           "readOnlyLogic": null
         },
         "product": {
           "grid": true,
           "searchable": true,
           "lookup": true,
-          "readOnlyLogic": null
+          "lookupDrawer": "goods-movements-product",
+          "lookupTitle": "Product",
+          "onSelectMappings": [
+            {
+              "from": "_aux._LOC",
+              "to": "storageBin",
+              "labelFrom": ["storageBin", "storageBin$_identifier", "warehouse"]
+            }
+          ],
+          "readOnlyLogic": null,
+          "gridOrder": 1
         },
         "storageBin": {
           "grid": true,
           "readOnlyLogic": null,
-          "reason": "Source storage bin — key field for movement lines"
+          "reason": "Source storage bin — key field for movement lines",
+          "gridOrder": 3
         },
         "newStorageBin": {
           "grid": true,
           "readOnlyLogic": null,
-          "reason": "Destination storage bin — key field for movement lines"
+          "excludeValueOf": "storageBin",
+          "reason": "Destination storage bin — key field for movement lines; cannot equal the source bin",
+          "gridOrder": 4
         },
         "movementQuantity": {
           "grid": true,
           "readOnlyLogic": null,
-          "defaultValue": "1"
+          "defaultValue": "1",
+          "columnWidth": 160,
+          "gridOrder": 5
         },
         "uOM": {
           "visibility": "readOnly",
           "grid": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "gridOrder": 2
         },
         "description": {
           "readOnlyLogic": null,

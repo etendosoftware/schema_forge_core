@@ -311,6 +311,37 @@ describe('generateTableComponent', () => {
     assert.ok(!code.includes('useState'));
     assert.ok(!code.includes('filteredData'));
   });
+
+  it('emits excludeValueOf on the grid column when declared on a selector field', () => {
+    const contract = {
+      ...masterDetailContract,
+      frontendContract: {
+        ...masterDetailContract.frontendContract,
+        entities: {
+          ...masterDetailContract.frontendContract.entities,
+          orderLine: {
+            ...masterDetailContract.frontendContract.entities.orderLine,
+            fields: [
+              ...masterDetailContract.frontendContract.entities.orderLine.fields,
+              { name: 'newStorageBin', column: 'M_LocatorTo_ID', type: 'foreignKey', tsType: 'string',
+                visibility: 'editable', required: true, grid: true, form: true, reference: 'Locator',
+                inputMode: 'selector', excludeValueOf: 'storageBin' },
+            ],
+          },
+        },
+      },
+    };
+    const code = generateTableComponent('orderLine', contract);
+    assert.ok(
+      /key: 'newStorageBin'[^}]*excludeValueOf: 'storageBin'/.test(code),
+      `expected excludeValueOf on newStorageBin grid column, got:\n${code}`,
+    );
+  });
+
+  it('omits excludeValueOf on grid columns when not declared', () => {
+    const code = generateTableComponent('orderLine', masterDetailContract);
+    assert.ok(!code.includes('excludeValueOf'));
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -638,6 +669,39 @@ describe('generatePageComponent', () => {
   it('omits forceCalloutFields when not declared on entry field', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.ok(!code.includes('forceCalloutFields'));
+  });
+
+  it('emits excludeValueOf on the addLineFields entry when declared on a selector field', () => {
+    const contract = {
+      ...masterDetailContract,
+      frontendContract: {
+        ...masterDetailContract.frontendContract,
+        entities: {
+          ...masterDetailContract.frontendContract.entities,
+          orderLine: {
+            ...masterDetailContract.frontendContract.entities.orderLine,
+            fields: [
+              ...masterDetailContract.frontendContract.entities.orderLine.fields,
+              { name: 'newStorageBin', column: 'M_LocatorTo_ID', type: 'foreignKey', tsType: 'string',
+                visibility: 'editable', required: true, grid: true, form: true, reference: 'Locator',
+                inputMode: 'selector', excludeValueOf: 'storageBin' },
+            ],
+          },
+        },
+      },
+    };
+    const code = generatePageComponent('order', 'orderLine', contract);
+    const entryMatch = code.match(/entry: \[([\s\S]*?)\]/);
+    assert.ok(entryMatch, 'addLineFields entry array not found');
+    assert.ok(
+      /key: 'newStorageBin'[^}]*excludeValueOf: 'storageBin'/.test(entryMatch[1]),
+      `expected excludeValueOf on newStorageBin entry field, got:\n${entryMatch[1]}`,
+    );
+  });
+
+  it('omits excludeValueOf on the addLineFields entry when not declared', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('excludeValueOf'));
   });
 
   it('passes config props to MasterDetailPage', () => {

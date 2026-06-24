@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.12.0",
   "generatedAt": "2026-04-29T19:05:48.778Z",
-  "updatedAt": "2026-06-24T15:20:59.313Z",
-  "contractChecksum": "2e63b3a6886aa1a4",
+  "updatedAt": "2026-06-24T18:49:32.875Z",
+  "contractChecksum": "6bb9a6011014ffda",
   "apiPrediction": {
     "specName": "goods-movements",
     "baseUrl": "/sws/neo/goods-movements",
@@ -189,10 +189,16 @@
     },
     "labelOverrides": {
       "en_US": {
-        "Processed": "Status"
+        "Processed": "Status",
+        "M_Locator_ID": "Source Warehouse",
+        "M_LocatorTo_ID": "Destination Warehouse",
+        "MovementQty": "Quantity"
       },
       "es_ES": {
-        "Processed": "Estado"
+        "Processed": "Estado",
+        "M_Locator_ID": "Almacén origen",
+        "M_LocatorTo_ID": "Almacén destino",
+        "MovementQty": "Cantidad"
       }
     }
   },
@@ -210,7 +216,6 @@
             "defaultValue": "@#Date@"
           },
           "description": {},
-          "processNow": {},
           "documentNo": {
             "readOnly": true,
             "required": true,
@@ -333,5 +338,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "c0b0a32bc967d3c7"
+  "checksum": "f80dc98b3ce1527e"
 }

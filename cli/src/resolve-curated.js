@@ -197,6 +197,10 @@ const FIELD_DECISION_COPY_PROPS = [
   'noTrailing',
   'inline',
   'addLineFromSibling',
+  // Selector exclusion: filter out the option whose id equals the current value of
+  // another field on the same row (e.g. newStorageBin excludeValueOf storageBin —
+  // can't move stock to the same bin it came from).
+  'excludeValueOf',
   'agentPrompt',
   // Opt-in: render an FK `inputMode: "selector"` field as the searchable combobox
   // (CreatableSearchSelect) instead of the plain pick-only dropdown (SelectorInput).
@@ -654,6 +658,7 @@ const WINDOW_TRUTHY_PROPS = [
   'subsetFilters',
   'dateFilterKey',
   'statusEnumLabels',
+  'lockedAlert',
   'lineEntityConfig',
   'rowQuickActions',
   'sendDocument',
@@ -705,7 +710,7 @@ export const WINDOW_KEY_ORDER = [
   'labelOverrides', 'primaryTabs', 'othersLabel',
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
-  'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
+  'dateFilterKey', 'statusEnumLabels', 'lockedAlert', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
   'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
   'layoutType', 'linesLayout', 'balanceFooter',
