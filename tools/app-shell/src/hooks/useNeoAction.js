@@ -39,14 +39,17 @@ export function useNeoAction({ specName, entityName = 'header', apiBaseUrl, toke
     setLoading(true);
     try {
       const res = await fetch(
-        `${apiBaseUrl}/${entityName}/${recordId}/action/${actionName}`,
+        `${apiBaseUrl}/${entityName}/${encodeURIComponent(recordId)}/action/${encodeURIComponent(actionName)}`,
         { method: 'POST', headers, body: '{}' },
       );
       const body = await res.json().catch(() => null);
+      const nested = body?.response?.data?.[0];
+      const message = nested?.message ?? body?.response?.message ?? body?.message;
       if (!res.ok) {
-        return { success: false, message: body?.message || res.statusText };
+        return { success: false, message: message || res.statusText };
       }
-      return { success: body?.success ?? true, message: body?.message };
+      const success = nested?.success ?? body?.success ?? true;
+      return { success, message };
     } catch (err) {
       return { success: false, message: err?.message || 'Network error' };
     } finally {

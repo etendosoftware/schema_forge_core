@@ -74,7 +74,7 @@ export default function NotPostedDocumentsPage({ token, apiBaseUrl }) {
       });
       const json = await res.json().catch(() => null);
       if (!res.ok) {
-        setLoadError(json?.message || res.statusText);
+        if (fetchAbortRef.current === ctrl) setLoadError(json?.message || res.statusText);
         return;
       }
       // Handler returns { response: { data: [{ rows: [...], total: N }] } } OR
@@ -86,11 +86,11 @@ export default function NotPostedDocumentsPage({ token, apiBaseUrl }) {
       } else if (Array.isArray(data)) {
         rowsData = data;
       }
-      setRows(rowsData);
+      if (fetchAbortRef.current === ctrl) setRows(rowsData);
     } catch (e) {
-      if (e.name !== 'AbortError') setLoadError(e.message);
+      if (e.name !== 'AbortError' && fetchAbortRef.current === ctrl) setLoadError(e.message);
     } finally {
-      setLoading(false);
+      if (fetchAbortRef.current === ctrl) setLoading(false);
     }
   }, [neoUrl, token]);
 

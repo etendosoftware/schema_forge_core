@@ -2677,11 +2677,13 @@ export function DetailView({
                 if (val == null) return null;
                 const isTrue = val === true || val === 'Y' || val === 'true';
                 const label = isTrue ? ui(b.trueKey) : ui(b.falseKey);
+                const tone = isTrue ? 'success' : 'warning';
                 return (
                   <DocumentStatusPill
                     key={b.key}
-                    status={val}
+                    status={isTrue ? 'Y' : 'N'}
                     label={label}
+                    tone={tone}
                     data-testid={`DocumentStatusPill__${b.key}`} />
                 );
               }
