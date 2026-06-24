@@ -163,7 +163,7 @@ function CollapsibleSection({ title, children }) {
  */
 function detailContentPadding(linesLayout, hasSidebar, variant, compact = false, paddingXOverride = null) {
   const isInline = linesLayout === 'inlineEditable';
-  if (hasSidebar) return (isInline || compact) ? 'p-2' : 'pl-6 pr-2';
+  if (hasSidebar) return (isInline || compact) ? 'px-2 pb-2' : 'pl-6 pr-2';
   if (variant === 'panel') return isInline ? 'pr-6' : (paddingXOverride ?? 'px-6');
   return isInline ? '' : (paddingXOverride ?? 'px-6');
 }
@@ -257,29 +257,36 @@ export function applyCalloutFieldUpdates(updates, ctx) {
   }
 }
 
+function applyOneComboEntry(key, combo, ctx) {
+  const { data, userTouchedRef, appliedFields, hook } = ctx;
+  let selectedVal = combo.selected;
+  let selectedLabel = combo._identifier;
+  // Auto-select first entry if no explicit selection (e.g., BP address combo)
+  if (selectedVal == null && Array.isArray(combo.entries) && combo.entries.length > 0) {
+    selectedVal = combo.entries[0].id;
+    selectedLabel = combo.entries[0].identifier || combo.entries[0]._identifier;
+  }
+  if (selectedVal == null) return;
+  // Protect user-touched fields from collateral combo updates
+  const currentVal = data[key];
+  const userHasValue = currentVal !== '' && currentVal != null;
+  if (userTouchedRef.current.has(key) && userHasValue) return;
+  appliedFields.set(key, selectedVal);
+  hook.handleChange(key, selectedVal);
+  if (selectedLabel) {
+    hook.handleChange(key + '$_identifier', selectedLabel);
+  }
+}
+
 export function applyCalloutComboUpdates(combos, ctx) {
-  const { data, triggerField, userTouchedRef, appliedFields, hook } = ctx;
+  const { triggerField } = ctx;
   for (const [key, combo] of Object.entries(combos)) {
-    let selectedVal = combo.selected;
-    let selectedLabel = combo._identifier;
-    // Auto-select first entry if no explicit selection (e.g., BP address combo)
-    if (selectedVal == null && Array.isArray(combo.entries) && combo.entries.length > 0) {
-      selectedVal = combo.entries[0].id;
-      selectedLabel = combo.entries[0].identifier || combo.entries[0]._identifier;
-    }
-    if (selectedVal != null) {
-      // Protect user-touched fields from collateral combo updates
-      const currentVal = data[key];
-      const userHasValue = currentVal !== '' && currentVal != null;
-      if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
-        continue;
-      }
-      appliedFields.set(key, selectedVal);
-      hook.handleChange(key, selectedVal);
-      if (selectedLabel) {
-        hook.handleChange(key + '$_identifier', selectedLabel);
-      }
-    }
+    // Never override the field the user just changed via its own combo response.
+    // The callout may refresh the list of options for that field, but the user's
+    // explicit selection must always win — auto-selecting the first entry would
+    // silently revert their choice (e.g., NC → FAC on invoice doc type).
+    if (key === triggerField) continue;
+    applyOneComboEntry(key, combo, ctx);
   }
 }
 
@@ -605,6 +612,7 @@ export function SecondaryTableTab(props) {
               entity={props.st.key}
               token={props.token}
               apiBaseUrl={props.apiBaseUrl}
+              labelOverrides={props.labelOverrides}
               selectorContext={props.selectorContextByEntity[props.st.key]}
               linesLayout={props.linesLayout}
               onRowClick={resolveSecondaryRowClickHandler(props.st, {
@@ -1493,6 +1501,7 @@ export function DetailView({
   hideFormCard = false,
   tabsBarRightDivider = null,
   tabsBarRight = null,
+  tabsBarAfter = null,
   hideTopBar = false,
   CustomLines = null,
   customLinesLabel = 'Invoices',
@@ -2871,6 +2880,20 @@ export function DetailView({
                   <div className="absolute top-0 bottom-0 w-px bg-[#E8EAEF] pointer-events-none" style={{ left: `calc(100% - ${tabsBarRightDivider})` }} />
                 )}
                 {renderPrimaryTabButtons(primaryTabsVariant, primaryTabs, setActivePrimaryTab, activePrimaryTab, tMenu)}
+                {tabsBarAfter && (() => {
+                  const TabsBarAfterComponent = tabsBarAfter;
+                  return (
+                    <div className="ml-2 flex-shrink-0">
+                      <TabsBarAfterComponent
+                        data={data}
+                        recordId={data?.id || recordId}
+                        token={token}
+                        apiBaseUrl={apiBaseUrl}
+                        api={api}
+                        data-testid="TabsBarAfterComponent__fa3275" />
+                    </div>
+                  );
+                })()}
                 {tabsBarRight && (() => {
                   const TabsBarRightComponent = tabsBarRight;
                   return (

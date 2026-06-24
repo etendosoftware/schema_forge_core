@@ -586,23 +586,27 @@ export function ListView({
                 <span role="status" className="text-sm font-semibold" data-testid="selection-count">{ui('selected').replace('{count}', selectedRows.length)}</span>
               </div>
               <div className="flex items-center gap-2 h-10">
-                <Button
-                  variant="outline"
-                  size={selectionBarSize}
-                  className="gap-1.5"
-                  onClick={() => setShowDocPrint(true)}
-                  data-testid="Button__620cbc">
-                  <Eye className={iconSizeClass(selectionBarSize)} data-testid="Eye__620cbc" />
-                  {ui('preview')}
-                </Button>
-                <Button
-                  size={selectionBarSize}
-                  className="gap-1.5"
-                  onClick={() => printDocuments(windowName, selectedRows.map(r => r.id || r), token)}
-                  data-testid="Button__620cbc">
-                  <Printer className={iconSizeClass(selectionBarSize)} data-testid="Printer__620cbc" />
-                  {ui('print')} ({selectedRows.length})
-                </Button>
+                {!(listViewOptions?.hideEye ?? hideEyeCount) && (
+                  <Button
+                    variant="outline"
+                    size={selectionBarSize}
+                    className="gap-1.5"
+                    onClick={() => setShowDocPrint(true)}
+                    data-testid="Button__620cbc">
+                    <Eye className={iconSizeClass(selectionBarSize)} data-testid="Eye__620cbc" />
+                    {ui('preview')}
+                  </Button>
+                )}
+                {!(listViewOptions?.hidePrint ?? hidePrint) && (
+                  <Button
+                    size={selectionBarSize}
+                    className="gap-1.5"
+                    onClick={() => printDocuments(windowName, selectedRows.map(r => r.id || r), token)}
+                    data-testid="Button__620cbc">
+                    <Printer className={iconSizeClass(selectionBarSize)} data-testid="Printer__620cbc" />
+                    {ui('print')} ({selectedRows.length})
+                  </Button>
+                )}
                 {onCloneRow && (
                   <Button
                     variant="outline"
