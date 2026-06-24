@@ -62,7 +62,7 @@ private static class AccessibleDS extends NoPostedDocumentDS {
 
 ### `tableId` enrichment
 
-`NoPostedDocumentDS` returns a `documentType` string (e.g. `"Sales Invoice"`) but not the `AD_Table_ID`. The handler maintains a static `DOCUMENT_TYPE_TO_TABLE_ID` map populated from `NoPostedConstans` string constants and an AD_Table lookup:
+`NoPostedDocumentDS` returns a `documentType` string (e.g. `"Sales Invoice"`) but not the `AD_Table_ID`. The handler maintains a static `DOCUMENT_TYPE_TO_TABLE_ID` map populated from `NoPostedConstants` string constants and an AD_Table lookup:
 
 | Document type string | AD_Table_ID | Table |
 |---------------------|-------------|-------|

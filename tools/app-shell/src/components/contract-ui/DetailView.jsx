@@ -2682,7 +2682,7 @@ export function DetailView({
                     key={b.key}
                     status={val}
                     label={label}
-                    data-testid="DocumentStatusPill__fa3275" />
+                    data-testid={`DocumentStatusPill__${b.key}`} />
                 );
               }
               const when = b.when !== undefined ? b.when : true;

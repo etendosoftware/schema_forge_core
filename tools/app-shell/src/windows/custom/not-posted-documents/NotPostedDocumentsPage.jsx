@@ -23,7 +23,11 @@ export default function NotPostedDocumentsPage({ token, apiBaseUrl }) {
   const [filterOptions, setFilterOptions] = useState({ documentTypes: [], accountingStatuses: [] });
 
   useEffect(() => {
-    fetch(`${neoUrl}/header?_mode=filter-options`, { headers: buildHeaders(token) })
+    const ctrl = new AbortController();
+    fetch(`${neoUrl}/header?_mode=filter-options`, {
+      headers: buildHeaders(token),
+      signal: ctrl.signal,
+    })
       .then(r => r.ok ? r.json() : null)
       .then(j => {
         if (j?.response?.data?.[0]) {
@@ -35,6 +39,7 @@ export default function NotPostedDocumentsPage({ token, apiBaseUrl }) {
         }
       })
       .catch(() => {});
+    return () => ctrl.abort();
   }, [neoUrl, token]);
 
   // ── Filter state ─────────────────────────────────────────────────────────────

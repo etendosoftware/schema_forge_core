@@ -7,7 +7,7 @@ windows, introduce a Not Posted Documents cross-window aggregate view, and surfa
 an accounting status pill on all affected windows. This is a vertical feature slice
 that intentionally spans the generator, platform, multiple windows, and i18n.
 
-## Dominios Afectados / Domains Touched
+## Domains Touched
 
 | Domain | Files | Justification |
 |--------|-------|---------------|

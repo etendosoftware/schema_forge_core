@@ -33,6 +33,9 @@ export function useNeoAction({ specName, entityName = 'header', apiBaseUrl, toke
   }), [token]);
 
   const execute = useCallback(async (recordId, actionName) => {
+    if (!apiBaseUrl || !recordId || !actionName) {
+      return { success: false, message: 'Missing required params' };
+    }
     setLoading(true);
     try {
       const res = await fetch(
@@ -44,6 +47,8 @@ export function useNeoAction({ specName, entityName = 'header', apiBaseUrl, toke
         return { success: false, message: body?.message || res.statusText };
       }
       return { success: body?.success ?? true, message: body?.message };
+    } catch (err) {
+      return { success: false, message: err?.message || 'Network error' };
     } finally {
       setLoading(false);
     }
