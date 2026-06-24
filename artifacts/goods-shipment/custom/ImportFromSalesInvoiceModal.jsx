@@ -1,41 +1,48 @@
 import ImportLinesModal from '@/components/contract-ui/ImportLinesModal';
 
 async function fetchDraftInfoByOrderLine({ base, headers, bpId, currentShipmentId }) {
-  const res = await fetch(
-    `${base}/goods-shipment/goodsShipment?_startRow=0&_endRow=100&_sortBy=movementDate desc`,
-    { headers },
-  );
-  if (!res.ok) return {};
-
-  const all = (await res.json())?.response?.data || [];
-  // Include current shipment to detect partially-imported lines within the same draft.
-  // Other drafts show a "in draft shipment" warning; current shipment just reduces max qty.
-  const currentDraft = all.find(s => s.id === currentShipmentId && s.documentStatus === 'DR');
-  const otherDrafts = all.filter(s =>
-    s.documentStatus === 'DR' && s.businessPartner === bpId && s.id !== currentShipmentId,
-  );
-  const toFetch = [...otherDrafts, ...(currentDraft ? [currentDraft] : [])];
-  if (toFetch.length === 0) return {};
-
-  const lineResults = await Promise.all(
-    toFetch.map(s =>
-      fetch(`${base}/goods-shipment/goodsShipmentLine?parentId=${s.id}&_startRow=0&_endRow=200`, { headers })
-        .then(r => r.ok ? r.json().then(d => ({ shipmentId: s.id, docNo: s.documentNo, lines: d?.response?.data || [] })) : null),
-    ),
-  );
+  // Fetch current shipment lines directly (by parentId) + other draft shipments list in parallel.
+  // Avoids relying on the current shipment appearing in the paginated list.
+  const [currentLinesRes, shipmentsRes] = await Promise.all([
+    currentShipmentId
+      ? fetch(`${base}/goods-shipment/goodsShipmentLine?parentId=${currentShipmentId}&_startRow=0&_endRow=200`, { headers })
+      : Promise.resolve(null),
+    fetch(`${base}/goods-shipment/goodsShipment?_startRow=0&_endRow=100&_sortBy=movementDate desc`, { headers }),
+  ]);
 
   const draftInfo = {};
-  for (const result of lineResults) {
-    if (!result) continue;
-    const isCurrent = result.shipmentId === currentShipmentId;
-    result.lines.forEach(l => {
+
+  if (currentLinesRes?.ok) {
+    const currentLines = (await currentLinesRes.json())?.response?.data || [];
+    currentLines.forEach(l => {
       if (!l.salesOrderLine) return;
       if (!draftInfo[l.salesOrderLine]) draftInfo[l.salesOrderLine] = { qty: 0, docNos: new Set() };
       draftInfo[l.salesOrderLine].qty += Number(l.movementQuantity) || 0;
-      // Don't add current shipment to docNos — it's already visible to the user
-      if (!isCurrent) draftInfo[l.salesOrderLine].docNos.add(result.docNo);
     });
   }
+
+  if (shipmentsRes.ok) {
+    const all = (await shipmentsRes.json())?.response?.data || [];
+    const otherDrafts = all.filter(s =>
+      s.documentStatus === 'DR' && s.businessPartner === bpId && s.id !== currentShipmentId,
+    );
+    const lineResults = await Promise.all(
+      otherDrafts.map(s =>
+        fetch(`${base}/goods-shipment/goodsShipmentLine?parentId=${s.id}&_startRow=0&_endRow=200`, { headers })
+          .then(r => r.ok ? r.json().then(d => ({ docNo: s.documentNo, lines: d?.response?.data || [] })) : null),
+      ),
+    );
+    for (const result of lineResults) {
+      if (!result) continue;
+      result.lines.forEach(l => {
+        if (!l.salesOrderLine) return;
+        if (!draftInfo[l.salesOrderLine]) draftInfo[l.salesOrderLine] = { qty: 0, docNos: new Set() };
+        draftInfo[l.salesOrderLine].qty += Number(l.movementQuantity) || 0;
+        draftInfo[l.salesOrderLine].docNos.add(result.docNo);
+      });
+    }
+  }
+
   return draftInfo;
 }
 

@@ -1,38 +1,48 @@
 import ImportLinesModal from '@/components/contract-ui/ImportLinesModal';
 
 async function fetchDraftInfoByOrderLine({ base, headers, bpId, currentReceiptId }) {
-  const res = await fetch(
-    `${base}/goods-receipt/goodsReceipt?_startRow=0&_endRow=100&_sortBy=movementDate desc`,
-    { headers },
-  );
-  if (!res.ok) return {};
-
-  const all = (await res.json())?.response?.data || [];
-  const currentDraft = all.find(s => s.id === currentReceiptId && s.documentStatus === 'DR');
-  const otherDrafts = all.filter(s =>
-    s.documentStatus === 'DR' && s.businessPartner === bpId && s.id !== currentReceiptId,
-  );
-  const toFetch = [...otherDrafts, ...(currentDraft ? [currentDraft] : [])];
-  if (toFetch.length === 0) return {};
-
-  const lineResults = await Promise.all(
-    toFetch.map(s =>
-      fetch(`${base}/goods-receipt/goodsReceiptLine?parentId=${s.id}&_startRow=0&_endRow=200`, { headers })
-        .then(r => r.ok ? r.json().then(d => ({ receiptId: s.id, docNo: s.documentNo, lines: d?.response?.data || [] })) : null),
-    ),
-  );
+  // Fetch current receipt lines directly (by parentId) + other draft receipts list in parallel.
+  // Avoids relying on the current receipt appearing in the paginated list.
+  const [currentLinesRes, receiptsRes] = await Promise.all([
+    currentReceiptId
+      ? fetch(`${base}/goods-receipt/goodsReceiptLine?parentId=${currentReceiptId}&_startRow=0&_endRow=200`, { headers })
+      : Promise.resolve(null),
+    fetch(`${base}/goods-receipt/goodsReceipt?_startRow=0&_endRow=100&_sortBy=movementDate desc`, { headers }),
+  ]);
 
   const draftInfo = {};
-  for (const result of lineResults) {
-    if (!result) continue;
-    const isCurrent = result.receiptId === currentReceiptId;
-    result.lines.forEach(l => {
+
+  if (currentLinesRes?.ok) {
+    const currentLines = (await currentLinesRes.json())?.response?.data || [];
+    currentLines.forEach(l => {
       if (!l.salesOrderLine) return;
       if (!draftInfo[l.salesOrderLine]) draftInfo[l.salesOrderLine] = { qty: 0, docNos: new Set() };
       draftInfo[l.salesOrderLine].qty += Number(l.movementQuantity) || 0;
-      if (!isCurrent) draftInfo[l.salesOrderLine].docNos.add(result.docNo);
     });
   }
+
+  if (receiptsRes.ok) {
+    const all = (await receiptsRes.json())?.response?.data || [];
+    const otherDrafts = all.filter(s =>
+      s.documentStatus === 'DR' && s.businessPartner === bpId && s.id !== currentReceiptId,
+    );
+    const lineResults = await Promise.all(
+      otherDrafts.map(s =>
+        fetch(`${base}/goods-receipt/goodsReceiptLine?parentId=${s.id}&_startRow=0&_endRow=200`, { headers })
+          .then(r => r.ok ? r.json().then(d => ({ docNo: s.documentNo, lines: d?.response?.data || [] })) : null),
+      ),
+    );
+    for (const result of lineResults) {
+      if (!result) continue;
+      result.lines.forEach(l => {
+        if (!l.salesOrderLine) return;
+        if (!draftInfo[l.salesOrderLine]) draftInfo[l.salesOrderLine] = { qty: 0, docNos: new Set() };
+        draftInfo[l.salesOrderLine].qty += Number(l.movementQuantity) || 0;
+        draftInfo[l.salesOrderLine].docNos.add(result.docNo);
+      });
+    }
+  }
+
   return draftInfo;
 }
 
