@@ -22,7 +22,9 @@ const statusField = 'processed';
 // @sf-generated-end summary:inventory
 
 // @sf-generated-start extraBadges:inventory
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:inventory
 
 // @sf-generated-start processes:inventory

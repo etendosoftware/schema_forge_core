@@ -21,7 +21,9 @@ const statusField = null;
 // @sf-generated-end summary:assets
 
 // @sf-generated-start extraBadges:assets
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:assets
 
 // @sf-generated-start processes:assets

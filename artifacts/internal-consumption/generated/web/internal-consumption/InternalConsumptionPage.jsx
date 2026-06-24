@@ -22,7 +22,9 @@ const statusField = 'status';
 // @sf-generated-end summary:internalConsumption
 
 // @sf-generated-start extraBadges:internalConsumption
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:internalConsumption
 
 // @sf-generated-start processes:internalConsumption

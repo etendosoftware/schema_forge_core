@@ -24,7 +24,9 @@ const statusField = 'documentStatus';
 // @sf-generated-end summary:returnToVendorShipment
 
 // @sf-generated-start extraBadges:returnToVendorShipment
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:returnToVendorShipment
 
 // @sf-generated-start processes:returnToVendorShipment

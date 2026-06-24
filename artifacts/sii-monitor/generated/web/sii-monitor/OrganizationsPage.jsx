@@ -19,7 +19,9 @@ const statusField = null;
 // @sf-generated-end summary:organizations
 
 // @sf-generated-start extraBadges:organizations
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:organizations
 
 // @sf-generated-start processes:organizations

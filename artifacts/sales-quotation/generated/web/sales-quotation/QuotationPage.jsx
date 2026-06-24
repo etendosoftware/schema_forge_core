@@ -27,7 +27,9 @@ const statusField = 'documentStatus';
 // @sf-generated-end summary:quotation
 
 // @sf-generated-start extraBadges:quotation
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:quotation
 
 // @sf-generated-start processes:quotation

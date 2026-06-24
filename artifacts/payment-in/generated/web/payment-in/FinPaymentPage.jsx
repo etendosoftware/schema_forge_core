@@ -23,7 +23,9 @@ const statusField = 'status';
 // @sf-generated-end summary:finPayment
 
 // @sf-generated-start extraBadges:finPayment
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:finPayment
 
 // @sf-generated-start processes:finPayment
