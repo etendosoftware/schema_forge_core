@@ -52,11 +52,22 @@ export default function ImportLinesModal({
 
   const bpName = documents[0]?.['businessPartner$_identifier'] || '';
 
+  // Eagerly load lines for all documents so fully-imported ones can be filtered out
+  useEffect(() => {
+    if (loading || documents.length === 0) return;
+    documents.forEach(doc => loadLines(doc.id));
+  }, [loading, documents.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return documents;
+    const visible = documents.filter(d => {
+      const lines = docLines[d.id];
+      if (!lines || lines.length === 0) return true;
+      return lines.some(l => !l._alreadyImported);
+    });
+    if (!search.trim()) return visible;
     const q = search.toLowerCase();
-    return documents.filter(d => (d.documentNo || '').toLowerCase().includes(q));
-  }, [documents, search]);
+    return visible.filter(d => (d.documentNo || '').toLowerCase().includes(q));
+  }, [documents, docLines, search]);
 
   const loadLines = async (docId) => {
     if (docLines[docId] || loadingLines.has(docId)) return;

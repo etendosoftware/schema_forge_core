@@ -624,14 +624,12 @@
         "salesOrderLine": {
           "visibility": "system",
           "reference": null,
-          "inputMode": null,
-          "name": "cOrderlineId"
+          "inputMode": null
         },
         "goodsShipmentLine": {
           "visibility": "system",
           "reference": null,
-          "inputMode": null,
-          "name": "mInoutlineId"
+          "inputMode": null
         }
       }
     },
