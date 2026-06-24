@@ -190,6 +190,7 @@ const FIELD_DECISION_COPY_PROPS = [
   'tones',
   'gridLabelKey',
   'grow',
+  'columnWidth',
   'gridReadOnly',
   'inlineToggle',
   'inlineEdit',

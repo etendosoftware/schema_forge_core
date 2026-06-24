@@ -1259,7 +1259,7 @@ describe('DetailView helper functions', () => {
       expect(hook.handleChange).not.toHaveBeenCalled();
     });
 
-    it('applies combo when it IS the trigger field even if user-touched', () => {
+    it('skips combo for the trigger field to prevent callout reverting user selection', () => {
       const hook = { handleChange: vi.fn() };
       const ctx = {
         data: { bp: 'BP-OLD' },
@@ -1269,7 +1269,7 @@ describe('DetailView helper functions', () => {
         hook,
       };
       applyCalloutComboUpdates({ bp: { selected: 'BP-NEW', _identifier: 'Acme' } }, ctx);
-      expect(hook.handleChange).toHaveBeenCalledWith('bp', 'BP-NEW');
+      expect(hook.handleChange).not.toHaveBeenCalled();
     });
 
     it('does not set $_identifier when selectedLabel is falsy', () => {

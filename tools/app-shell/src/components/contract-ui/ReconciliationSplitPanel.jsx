@@ -15,6 +15,15 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { MoneyAmount } from '@/components/ui/money-amount';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getDateBounds, toDateParam } from '@/lib/dateRangeBounds';
 import { formatDate, formatSigned } from '@/lib/formatSigned';
@@ -22,6 +31,7 @@ import {
   usePendingStatementLines,
   useCandidateOperations,
   useReconcileGroup,
+  useReactivateReconciliation,
 } from '@/hooks/useReconciliation';
 
 // Amounts that differ by <= this absolute value are treated as balanced.
@@ -493,18 +503,22 @@ function ReconciliationActionBar({
   const ui = useUI();
   return (
     <div className="border-t border-[#E8EAEF] bg-white px-0 pt-2 pb-1">
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between px-3 text-sm leading-5">
-          <span className="font-medium text-[#121217]">{ui('financeReconcileBarSelected')}</span>
-          <span className="font-semibold text-[#1E874C]">{formatSigned(selectedSum, currency)}</span>
+      {/* Selection totals only make sense while building a new reconciliation; a reconciled
+          line is already balanced, so the "selected / remaining" rows would be misleading. */}
+      {!isReconciledLine && (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between px-3 text-sm leading-5">
+            <span className="font-medium text-[#121217]">{ui('financeReconcileBarSelected')}</span>
+            <span className="font-semibold text-[#1E874C]">{formatSigned(selectedSum, currency)}</span>
+          </div>
+          <div className="flex items-center justify-between px-3 text-sm leading-5">
+            <span className="font-medium text-[#121217]">{ui('financeReconcileBarRemaining')}</span>
+            <span className={cn('font-semibold', Math.abs(remaining) <= RECONCILE_TOLERANCE ? 'text-[#1E874C]' : 'text-[#D50B3E]')}>
+              {formatSigned(remaining, currency)}
+            </span>
+          </div>
         </div>
-        <div className="flex items-center justify-between px-3 text-sm leading-5">
-          <span className="font-medium text-[#121217]">{ui('financeReconcileBarRemaining')}</span>
-          <span className={cn('font-semibold', Math.abs(remaining) <= RECONCILE_TOLERANCE ? 'text-[#1E874C]' : 'text-[#D50B3E]')}>
-            {formatSigned(remaining, currency)}
-          </span>
-        </div>
-      </div>
+      )}
       <div className="flex items-center justify-between gap-2 px-3 py-2">
         <button
           type="button"
@@ -531,6 +545,48 @@ function ReconciliationActionBar({
         </button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Confirmation dialog for the destructive "Reactivar" (un-reconcile) action.
+ * Warns that the reconciliation will be undone and any auto-created payments
+ * deleted before handing control back to the caller's {@code onConfirm}.
+ */
+function ReactivateConfirmDialog({ open, busy, onConfirm, onClose }) {
+  const ui = useUI();
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => { if (!v) onClose(); }}
+      data-testid="Dialog__recon-reactivate">
+      <DialogContent className="max-w-md" data-testid="recon-reactivate-dialog">
+        <DialogHeader data-testid="DialogHeader__recon-reactivate">
+          <DialogTitle data-testid="DialogTitle__recon-reactivate">
+            {ui('financeReconcileConfirmReactivateTitle')}
+          </DialogTitle>
+          <DialogDescription data-testid="DialogDescription__recon-reactivate">
+            {ui('financeReconcileConfirmReactivateBody')}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter data-testid="DialogFooter__recon-reactivate">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={busy}
+            data-testid="recon-reactivate-cancel">
+            {ui('financeReconcileActionCancel')}
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={onConfirm}
+            disabled={busy}
+            data-testid="recon-reactivate-confirm">
+            {ui('financeReconcileActionReactivate')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -575,6 +631,8 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
     invoiceMode ? 'invoices' : null,
     toDateParam(rightBounds.from), toDateParam(rightBounds.to));
   const { reconcile, loading: reconciling } = useReconcileGroup();
+  const { reactivate, loading: reactivating } = useReactivateReconciliation();
+  const [reactivateOpen, setReactivateOpen] = useState(false);
 
   const selectLine = (line) => {
     setSelectedLine(line);
@@ -704,10 +762,29 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
     }
   };
 
-  // Reactivate (un-reconcile) is a follow-up task; the button is live but only signals "coming
-  // soon" for now so the surface is ready without performing the action yet.
+  // Reactivate (un-reconcile) is destructive — it undoes the reconciliation and deletes any
+  // auto-created payments — so it goes through a confirmation dialog before hitting the backend.
   const handleReactivate = () => {
-    toast(ui('financeReconcileToastComingSoon'));
+    if (!isReconciledLine || !selectedLine) return;
+    setReactivateOpen(true);
+  };
+
+  const confirmReactivate = async () => {
+    if (!selectedLine) return;
+    try {
+      await reactivate({
+        financialAccountId: accountId,
+        statementLineId: selectedLine.id,
+      });
+      setReactivateOpen(false);
+      toast.success(ui('financeReconcileToastReactivated'));
+      setSelectedLine(null);
+      setSelectedOpIds(new Set());
+      reloadLines();
+      onReconcileSuccess?.();
+    } catch (err) {
+      toast.error(err?.message || ui('financeReconcileToastError'));
+    }
   };
 
   return (
@@ -754,13 +831,19 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
               canReconcile={canReconcile}
               isReconciledLine={isReconciledLine}
               reconcileCount={selectedOpIds.size}
-              busy={reconciling}
+              busy={reconciling || reactivating}
               onCancel={cancelSelection}
               onReconcile={isReconciledLine ? handleReactivate : handleReconcile}
               data-testid="ReconciliationActionBar__d0f4d5" />
           ) : null}
           data-testid="CandidateOperationsPanel__d0f4d5" />
       </div>
+      <ReactivateConfirmDialog
+        open={reactivateOpen}
+        busy={reactivating}
+        onConfirm={confirmReactivate}
+        onClose={() => setReactivateOpen(false)}
+        data-testid="ReactivateConfirmDialog__d0f4d5" />
     </div>
   );
 }
