@@ -3,6 +3,17 @@
 const stableApiFetch = vi.fn(() => Promise.resolve({ ok: true, json: async () => ({ response: { data: [], totalRows: 0 } }) }));
 const stableSetSelectedIds = vi.fn();
 
+// isErrorStatus and useFmSelection are vi.fn() so tests can override them per-describe
+const mockIsErrorStatus = vi.fn(() => false);
+const mockUseFmSelection = vi.fn(() => ({
+  selectedIds: new Set(),
+  setSelectedIds: stableSetSelectedIds,
+  allSelected: false,
+  someSelected: false,
+  handleToggleAll: vi.fn(),
+  handleToggleRow: vi.fn(),
+}));
+
 vi.mock('@/i18n', () => ({ useUI: () => (key) => key }));
 vi.mock('@/auth/useApiFetch.js', () => ({ useApiFetch: () => stableApiFetch }));
 vi.mock('@/components/related-documents/helpers.js', () => ({ neoBase: (u) => u }));
@@ -11,20 +22,13 @@ vi.mock('@/components/ui/checkbox', () => ({
   Checkbox: ({ checked, onChange }) => <input type="checkbox" checked={!!checked} onChange={onChange ?? (() => {})} />,
 }));
 vi.mock('../FmPrimitives.jsx', () => ({
-  StatusPill: ({ estado }) => <span data-testid="status-pill">{estado}</span>,
+  StatusPill: ({ estado, onClick }) => <span data-testid="status-pill" onClick={onClick}>{estado}</span>,
   NumFactura: ({ n }) => <span>{n}</span>,
   ScrollSentinel: () => null,
-  isErrorStatus: () => false,
+  isErrorStatus: (...args) => mockIsErrorStatus(...args),
   PAGE_SIZE: 20,
   ExportIcon: () => <span>export</span>,
-  useFmSelection: () => ({
-    selectedIds: new Set(),
-    setSelectedIds: stableSetSelectedIds,
-    allSelected: false,
-    someSelected: false,
-    handleToggleAll: vi.fn(),
-    handleToggleRow: vi.fn(),
-  }),
+  useFmSelection: (...args) => mockUseFmSelection(...args),
 }));
 vi.mock('../useFiscalMonitor.js', () => ({
   VF_SPEC: 'monitor-verifactu',
@@ -34,7 +38,7 @@ vi.mock('../useFiscalMonitor.js', () => ({
   VF_INVALIDAS_ENTITY: 'facturasInvalidas',
 }));
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import VerifactuMonitorSection from '../VerifactuMonitorSection.jsx';
 
 const baseProps = {
@@ -44,7 +48,18 @@ const baseProps = {
 };
 
 describe('VerifactuMonitorSection', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockIsErrorStatus.mockReturnValue(false);
+    mockUseFmSelection.mockReturnValue({
+      selectedIds: new Set(),
+      setSelectedIds: stableSetSelectedIds,
+      allSelected: false,
+      someSelected: false,
+      handleToggleAll: vi.fn(),
+      handleToggleRow: vi.fn(),
+    });
+  });
 
   it('renders without crashing with mockRows', () => {
     render(<VerifactuMonitorSection {...baseProps} mockRows={[]} />);
@@ -137,5 +152,72 @@ describe('VerifactuMonitorSection', () => {
   it('does not show resolve button when no rows are selected', () => {
     render(<VerifactuMonitorSection {...baseProps} mockRows={[]} />);
     expect(screen.queryByText('vfSolveError.resolveBtn')).toBeNull();
+  });
+});
+
+describe('VerifactuMonitorSection — resolve button interactions', () => {
+  // Error rows for problems tab. Note: we use the API path (no mockRows) because with
+  // mockRows the synchronous data-load effect is overridden by the tab-reset effect in the
+  // same React batch. The async API path avoids this race condition.
+  const ERROR_ROW   = { id: 'err-1', verifactuSendingStatus: 'IN', 'invoice$documentNo': 'FV-001' };
+  const PARTIAL_ROW = { id: 'err-2', verifactuSendingStatus: 'AE', 'invoice$documentNo': 'FV-002' };
+
+  function setupFetch(rows = [ERROR_ROW]) {
+    // fetchProblems calls 3 endpoints (partial, rejected, invalid) in Promise.all
+    stableApiFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ response: { data: rows, totalRows: rows.length } }),
+    });
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockIsErrorStatus.mockImplementation((status) => status === 'invalid' || status === 'partiallyAccepted');
+    mockUseFmSelection.mockReturnValue({
+      selectedIds: new Set(['err-1']),
+      setSelectedIds: stableSetSelectedIds,
+      allSelected: false,
+      someSelected: true,
+      handleToggleAll: vi.fn(),
+      handleToggleRow: vi.fn(),
+    });
+    setupFetch();
+  });
+
+  it('shows resolve button when an error row is selected on the problems tab', async () => {
+    render(<VerifactuMonitorSection {...baseProps} initialTab="problems" />);
+    await waitFor(() => expect(screen.getByText(/vfSolveError\.resolveBtn/)).toBeInTheDocument());
+  });
+
+  it('calls onVfResolveClick with selected error rows when resolve button is clicked', async () => {
+    const onVfResolveClick = vi.fn();
+    render(<VerifactuMonitorSection {...baseProps} initialTab="problems" onVfResolveClick={onVfResolveClick} />);
+    const btn = await waitFor(() => screen.getByText(/vfSolveError\.resolveBtn/));
+    fireEvent.click(btn);
+    expect(onVfResolveClick).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ id: 'err-1' })]),
+    );
+  });
+
+  it('resolve button is enabled when all selected errors share the same type (IN)', async () => {
+    render(<VerifactuMonitorSection {...baseProps} initialTab="problems" />);
+    const btn = await waitFor(() => screen.getByText(/vfSolveError\.resolveBtn/).closest('button'));
+    expect(btn).not.toBeDisabled();
+  });
+
+  it('resolve button is disabled when mixed error types are selected', async () => {
+    // Both rows selected, both are errors but different types (IN vs AE) → mixed → disabled
+    mockUseFmSelection.mockReturnValue({
+      selectedIds: new Set(['err-1', 'err-2']),
+      setSelectedIds: stableSetSelectedIds,
+      allSelected: false,
+      someSelected: true,
+      handleToggleAll: vi.fn(),
+      handleToggleRow: vi.fn(),
+    });
+    setupFetch([ERROR_ROW, PARTIAL_ROW]);
+    render(<VerifactuMonitorSection {...baseProps} initialTab="problems" />);
+    const btn = await waitFor(() => screen.getByText(/vfSolveError\.resolveBtn/).closest('button'));
+    expect(btn).toBeDisabled();
   });
 });

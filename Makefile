@@ -97,11 +97,15 @@ domain-boundary-check: ## Check changed files against monorepo intent/domain bou
 	npx sf-domain-boundary-check $$ARGS
 # --- E2E Testing (Playwright) ---
 
-test-e2e: ## Run E2E tests with visible browser
-	cd e2e && npx playwright test --headed
+# Parallel workers for E2E runs. Override to go faster: `make test-e2e-headless WORKERS=8`.
+# Caveat: all workers share the single dev server on :3100 — too many may cause flaky timeouts.
+WORKERS ?= 5
 
-test-e2e-headless: ## Run E2E tests headless (CI mode)
-	cd e2e && CI=true npx playwright test
+test-e2e: ## Run E2E tests with visible browser (override parallelism with WORKERS=N)
+	cd e2e && npx playwright test --headed --workers=$(WORKERS)
+
+test-e2e-headless: ## Run E2E tests headless (CI mode; override parallelism with WORKERS=N)
+	cd e2e && CI=true npx playwright test --workers=$(WORKERS)
 
 test-e2e-debug: ## Run E2E tests in debug mode (step by step)
 	cd e2e && npx playwright test --debug
