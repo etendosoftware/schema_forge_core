@@ -101,6 +101,20 @@ describe('observability event catalog', () => {
     expect(getObservabilityEvent('time_to_create')).toBe(OBSERVABILITY_EVENTS.TIME_TO_CREATE);
   });
 
+  it('resolves event-like objects through the canonical catalog', () => {
+    expect(getObservabilityEvent({
+      name: 'time_to_create',
+      channels: ['custom-channel'],
+      properties: ['unsafeProperty'],
+    })).toBe(OBSERVABILITY_EVENTS.TIME_TO_CREATE);
+
+    expect(getObservabilityEvent({
+      name: 'uncataloged_event',
+      channels: ['mixpanel'],
+      properties: ['action'],
+    })).toBeUndefined();
+  });
+
   it('rejects malformed event definition objects', () => {
     expect(getObservabilityEvent({ name: 'time_to_create' })).toBeUndefined();
     expect(buildObservabilityEvent({ name: 'time_to_create' }, { durationMs: 10 })).toEqual({

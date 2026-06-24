@@ -1,5 +1,10 @@
 import { track } from '../observability.js';
-import { buildObservabilityEvent, getObservabilityEvent } from './events.js';
+import {
+  OBSERVABILITY_CHANNELS,
+  OBSERVABILITY_PROPERTY_KEYS,
+  buildObservabilityEvent,
+  getObservabilityEvent,
+} from './events.js';
 
 function getPerformanceNow() {
   if (typeof globalThis.performance?.now === 'function') {
@@ -17,6 +22,13 @@ function toDurationMs(startedAt, endedAt) {
   return Math.max(0, Math.round(endedAt - startedAt));
 }
 
+function isTimingEvent(eventDefinition) {
+  return Boolean(
+    eventDefinition?.channels?.includes(OBSERVABILITY_CHANNELS.TIMING) &&
+    eventDefinition?.properties?.includes(OBSERVABILITY_PROPERTY_KEYS.DURATION_MS)
+  );
+}
+
 export function startTiming(name, options = {}) {
   const eventDefinition = getObservabilityEvent(name);
   const startedAt = (options.now ?? getPerformanceNow)();
@@ -27,7 +39,7 @@ export function startTiming(name, options = {}) {
   return async function stop(extraProps = {}) {
     if (stopped) return undefined;
     stopped = true;
-    if (!eventDefinition) return undefined;
+    if (!isTimingEvent(eventDefinition)) return undefined;
 
     const durationMs = toDurationMs(startedAt, (options.now ?? getPerformanceNow)());
     if (durationMs == null) return undefined;

@@ -79,6 +79,16 @@ describe('startTiming', () => {
     await expect(stop({ durationMs: 20, rawUrl: '/private/123' })).resolves.toBeUndefined();
     expect(observabilityMock.track).not.toHaveBeenCalled();
   });
+
+  it('returns without tracking catalog events that are not timing events', async () => {
+    const now = vi.fn()
+      .mockReturnValueOnce(10)
+      .mockReturnValueOnce(40);
+    const stop = startTiming(OBSERVABILITY_EVENTS.APP_STARTED, { now });
+
+    await expect(stop({ category: 'startup' })).resolves.toBeUndefined();
+    expect(observabilityMock.track).not.toHaveBeenCalled();
+  });
 });
 
 describe('useTiming', () => {

@@ -28,6 +28,7 @@ export function buildBrowserObservabilityConfig({
     providers: [
       createSentryProvider({
         dsn: env.VITE_SENTRY_DSN,
+        env,
         hostname,
       }),
       createRumProvider({

@@ -7,7 +7,7 @@
 
 ## 1. Context & Problem
 
-The KPI document defines ~60 KPIs across 10 first-iteration modules plus 7 cross-cutting KPIs, organized in 6 dimensions: **Rendimiento** (performance), **Adopción** (adoption), **Precisión** (precision), **Integridad** (integrity), **UX**, **Negocio** (business). It also defines acceptance criteria (a module is validated at ≥80% of its KPIs; Integrity-100% KPIs are blocking) and a 3-phase measurement plan (Alpha weeks 1-2, Beta weeks 3-6, Post-launch months 1-2).
+The KPI document defines ~60 KPIs across 10 first-iteration modules plus 7 cross-cutting KPIs, organized in 6 dimensions: **Performance**, **Adoption**, **Precision**, **Integrity**, **UX**, and **Business**. It also defines acceptance criteria (a module is validated at ≥80% of its KPIs; Integrity-100% KPIs are blocking) and a 3-phase measurement plan (Alpha weeks 1-2, Beta weeks 3-6, Post-launch months 1-2).
 
 A privacy-conscious observability framework **already exists** in `tools/app-shell/src/lib/observability/`:
 
@@ -19,8 +19,8 @@ A privacy-conscious observability framework **already exists** in `tools/app-she
 **Gaps:**
 
 1. Actual product instrumentation is concentrated in onboarding. `OnboardingPage.jsx` already emits ~12 distinct events (`onboarding_auth_*`, `onboarding_setup_step_*`, `onboarding_run_*`, `onboarding_environment_enter_*`) plus `app_started`. These are the IT/environment-setup flow, **not** the 4-step business wizard (`windows/custom/fiscal-config/OnboardingWizard.jsx`). The 10 product modules are otherwise uninstrumented, and the existing onboarding events must be folded into the catalog (Section 4), not duplicated.
-2. `payload.js`'s `SAFE_EVENT_PROPERTY_KEYS` allows **no numeric metric keys** — yet nearly all Rendimiento/Precisión KPIs and UX timings need numeric measurements. Note: `sanitizeEventProperties` already accepts `typeof value === 'number'` at the value level (payload.js:132); numeric values are dropped only because their *key names* are absent from the allowlist. The fix is key-name additions, not value-type support.
-3. **Integridad 100%** KPIs are data-consistency invariants (stock = inventory, linked accounting entries, correct roles) — backend/data truth, not frontend telemetry.
+2. `payload.js`'s `SAFE_EVENT_PROPERTY_KEYS` allows **no numeric metric keys** — yet nearly all Performance/Precision KPIs and UX timings need numeric measurements. Note: `sanitizeEventProperties` already accepts `typeof value === 'number'` at the value level (payload.js:132); numeric values are dropped only because their *key names* are absent from the allowlist. The fix is key-name additions, not value-type support.
+3. **Integrity 100%** KPIs are data-consistency invariants (stock = inventory, linked accounting entries, correct roles) — backend/data truth, not frontend telemetry.
 4. `identify()` exists but is never called, so all retention/cohort KPIs cannot be computed (30-day retention, 3-day abandonment, "Accounting board ≥1/week", "Copilot weekly in month 1").
 5. No NPS mechanism for the two NPS KPIs.
 6. **RUM has no production config.** `rum.js` (`getRumConfigs`) only defines `go.staging.etendo.cloud` and `go.experimental.etendo.cloud`; on any other host `createRumProvider` returns `enabled: false` and silently no-ops. **Every Channel-1 (performance) KPI is currently blind in production.**
@@ -51,7 +51,7 @@ Three data origins, three consumption tools, one shared event taxonomy so a KPI 
 └─────────────────────────┘
 ```
 
-**Instrumentation strategy = Hybrid (Enfoque C):**
+**Instrumentation strategy = Hybrid (Approach C):**
 
 - **A) Generator-driven (generic, covers all 10 modules at once):** instrument once in the generator (`cli/src/generate-frontend.js`) and the shared `contract-ui/` components. Generated windows auto-emit the standard event set, reading category/draftMode/completion-flow from the contract. Lives in the generator/shared components — **never patched into `generated/`** (repo policy).
 - **B) Event catalog + hooks (specific flows):** a central `events.js` taxonomy plus hooks (`useTrackEvent`, `useTiming`) called explicitly in module-specific flows (OCR, onboarding wizard, Copilot, NPS).
@@ -68,18 +68,18 @@ Three data origins, three consumption tools, one shared event taxonomy so a KPI 
 
 ## 4. Event Taxonomy
 
-**Generic (Enfoque A — auto-emitted from generator / `contract-ui`):**
+**Generic (Approach A — auto-emitted from generator / `contract-ui`):**
 
 `window_opened` · `record_created` · `record_updated` · `record_deleted` · `document_completed` · `quick_action_used` · `search_performed` · `search_result_selected` · `time_to_create` (timing form-open → save)
 
-**Specific (Enfoque B — catalog + hooks):**
+**Specific (Approach B — catalog + hooks):**
 
 - Onboarding (4-step business wizard, `OnboardingWizard.jsx`): `onboarding_step_completed` (with `step`, `supportRequested`), `onboarding_finished`, `onboarding_bank_configured`, `time_to_first_invoice`. **Distinct from** the existing IT/environment events in `OnboardingPage.jsx` (`onboarding_auth_*`, `onboarding_setup_step_*`, `onboarding_run_*`) — those are migrated into the catalog as-is under their own namespace, not renamed.
 - Dashboard: `pending_tasks_interacted`
-- Contactos: `contact_autocomplete_attempted`, `contact_autocomplete_succeeded`
-- Compras: `ocr_invoice_uploaded`, `ocr_extraction_scored`, `email_invoice_ingested`
-- Copilot: `copilot_session_started`, `copilot_task_resolved`, `copilot_correction_needed`, `copilot_nps`. **Smart Scan** (OCR via Copilot) reuses the OCR events with `source: 'copilot'` so the OCR-accuracy KPI is captured on both the Compras and Copilot paths.
-- Ventas: `invoice_emailed`, `quote_created` (timing)
+- Contacts: `contact_autocomplete_attempted`, `contact_autocomplete_succeeded`
+- Purchasing: `ocr_invoice_uploaded`, `ocr_extraction_scored`, `email_invoice_ingested`
+- Copilot: `copilot_session_started`, `copilot_task_resolved`, `copilot_correction_needed`, `copilot_nps`. **Smart Scan** (OCR via Copilot) reuses the OCR events with `source: 'copilot'` so the OCR-accuracy KPI is captured on both the Purchasing and Copilot paths.
+- Sales: `invoice_emailed`, `quote_created` (timing)
 - Backend (server-side, mirrored names, `backend_` prefix): `accounting_entry_generated`, `ocr_field_accuracy`, `bank_match_attempted`, `asset_created`, `email_invoice_ingested`, `monthly_close_started` / `monthly_close_completed`
 
 ## 5. Measurement Channels
@@ -110,14 +110,14 @@ Channels: **1** RUM · **2** Sentry · **3** Mixpanel · **4** Timing · **5** N
 | % users interacting with Pending Tasks panel | >50% | 3 (`pending_tasks_interacted`) |
 | % sessions navigating Dashboard → document | >30% | 3 (page funnel) |
 
-### Ventas
+### Sales
 | KPI | Target | Channel |
 |---|---|---|
 | Avg time to create a quote | <3min | 4 (`quote_created`) |
 | % invoices emailed from system | >70% | 3 (`invoice_emailed` / total) |
 | ★ % collections correctly linked to invoice | 100% | 7 |
 
-### Compras
+### Purchasing
 | KPI | Target | Channel |
 |---|---|---|
 | % supplier invoices via OCR vs manual | >50% | 3 + 6 (`ocr_invoice_uploaded` vs manual `record_created`) |
@@ -128,7 +128,7 @@ Channels: **1** RUM · **2** Sentry · **3** Mixpanel · **4** Timing · **5** N
 | Avg manual invoice registration time | <5min | 4 |
 | ★ % creditor invoices processed without critical data error | 100% | 7 |
 
-### Inventario
+### Inventory
 | KPI | Target | Channel |
 |---|---|---|
 | Stock accuracy (system vs physical count) | >98% | 7 (+ count input) |
@@ -137,7 +137,7 @@ Channels: **1** RUM · **2** Sentry · **3** Mixpanel · **4** Timing · **5** N
 | ★ % purchase receipts correctly updating stock | 100% | 7 |
 | ★ % outbound delivery notes correctly reducing stock | 100% | 7 |
 
-### Contabilidad y Finanzas
+### Accounting and Finance
 | KPI | Target | Channel |
 |---|---|---|
 | % accounting entries generated automatically | >90% | 6 (`accounting_entry_generated`) |
@@ -147,16 +147,16 @@ Channels: **1** RUM · **2** Sentry · **3** Mixpanel · **4** Timing · **5** N
 | % users accessing Accounting board ≥1/week | >60% | 3 (`window_opened` cohort) |
 | Time to view aging reports | <3s | 1 |
 
-### Contactos
+### Contacts
 | KPI | Target | Channel |
 |---|---|---|
 | Autocomplete success rate (name/CIF) | >80% | 3 (`contact_autocomplete_attempted` + `contact_autocomplete_succeeded`) |
 | Avg time to create a contact | <2min | 4 (`time_to_create`) |
 | % contacts with minimum data (email+phone+address) | >75% | 7 (data-quality) |
 | % searches with correct result in top 3 | >90% | 3 (`search_result_selected` position) |
-| ★ % contacts available in Ventas & Compras | 100% | 7 |
+| ★ % contacts available in Sales & Purchasing | 100% | 7 |
 
-### Productos
+### Products
 | KPI | Target | Channel |
 |---|---|---|
 | Avg time to create a product | <2min | 4 |
@@ -165,7 +165,7 @@ Channels: **1** RUM · **2** Sentry · **3** Mixpanel · **4** Timing · **5** N
 | % products with sale & purchase price | >90% | 7 (data-quality) |
 | ★ % products whose card stock = Inventory stock | 100% | 7 |
 
-### Copilot IA
+### Copilot AI
 | KPI | Target | Channel |
 |---|---|---|
 | % users using Copilot in first 7d | >50% | 3 (`copilot_session_started` cohort) |
@@ -175,7 +175,7 @@ Channels: **1** RUM · **2** Sentry · **3** Mixpanel · **4** Timing · **5** N
 | Copilot NPS | >40 | 5 |
 | Agent response time for simple tasks | <5s | 4 |
 
-### Configuración y Administración (Onboarding)
+### Configuration and Administration (Onboarding)
 | KPI | Target | Channel |
 |---|---|---|
 | % users completing the 4-step wizard | >85% | 3 (funnel) |
@@ -185,7 +185,7 @@ Channels: **1** RUM · **2** Sentry · **3** Mixpanel · **4** Timing · **5** N
 | ★ % users with correctly assigned roles | >95% (100% critical) | 7 |
 | System abandonment rate in first 3 days | <20% | 3 (retention cohort) |
 
-### Activos Fijos
+### Fixed Assets
 | KPI | Target | Channel |
 |---|---|---|
 | Avg time to create an asset (manual) | <3min | 4 |
@@ -199,7 +199,7 @@ Channels: **1** RUM · **2** Sentry · **3** Mixpanel · **4** Timing · **5** N
 | ★ % assets correct in amortization schedule | 100% | 7 |
 | ★ % fully-amortized assets correct in report | 100% | 7 |
 
-### Cross-cutting (Transversales)
+### Cross-cutting
 | KPI | Target | Channel |
 |---|---|---|
 | Load time of any screen/report | <2s | 1 |
@@ -216,9 +216,9 @@ Channels: **1** RUM · **2** Sentry · **3** Mixpanel · **4** Timing · **5** N
 
 **SQL validation jobs (Integrity 100%)** — a set of invariant queries, one per critical KPI, run as a scheduled Etendo Process (or cron). Each returns `{kpi, total, violations, pass}` and writes to an `ETGO_KPI_CHECK` table (timestamp + result). **Note:** this is not a trivial DDL — it requires full Etendo AD registration (`AD_TABLE`, `AD_COLUMN`, `AD_ELEMENT`, dbprefix, `export.database`), budgeted in Sprint 0. UUIDs via `make uuid`, never hand-typed. Each `★` job enforces 0 violations (see Section 6 threshold note). Examples:
 
-- `stock_trazabilidad` — movements without reference document → must be 0
-- `stock_vs_inventario` — product-card stock ≠ inventory stock → must be 0
-- `amortizacion_vinculada` — amortization entries without source asset → must be 0
+- `stock_traceability` — movements without reference document → must be 0
+- `stock_vs_inventory` — product-card stock ≠ inventory stock → must be 0
+- `linked_amortization` — amortization entries without source asset → must be 0
 - `roles_onboarding` — post-onboarding users without correct role → must be 0
 
 `ETGO_KPI_CHECK` feeds the monthly consolidated report's green/red status.
@@ -228,7 +228,7 @@ Channels: **1** RUM · **2** Sentry · **3** Mixpanel · **4** Timing · **5** N
 - **Mixpanel** — Adoption / UX / Business: funnels, retention, cohorts, numeric-property charts.
 - **CloudWatch RUM** — Performance: load times, web vitals (mostly automatic + a few custom report timings).
 - **Sentry** — Stability: crash-free session rate.
-- **Monthly consolidated report** — a script that pulls from the three tools + `ETGO_KPI_CHECK` and produces a green/red vs-threshold table for month-1 and month-2 close (Fase 3 of the source doc). No new in-app UI.
+- **Monthly consolidated report** — a script that pulls from the three tools + `ETGO_KPI_CHECK` and produces a green/red vs-threshold table for month-1 and month-2 close (Phase 3 of the source doc). No new in-app UI.
 
 ## 9. Work Plan (Phasing)
 
@@ -238,14 +238,14 @@ Quick wins + foundations first, then aligned to the document's 3 phases.
   - *Config prerequisites (must land first):* add RUM **production** host config + env-driven `sessionSampleRate` (Gap 6); set Sentry `release` and resolve `sendDefaultPii` (Gap 7); register `ETGO_KPI_CHECK` in AD + store backend Mixpanel token in `AD_SysConfig`.
   - *Quick wins:* validate RUM + Sentry dashboards; wire `identify()` on login (opaque id); validate route taxonomy; migrate existing `OnboardingPage.jsx` events into the catalog.
   - *Foundations:* extend `payload.js` (numeric keys); timing helper + `useTiming`; NPS component (with i18n keys); `events.js` catalog + backend name-sync CI lint; generator auto-instrumentation scaffolding (pass spec name explicitly as a property — do not rely on route derivation).
-- **Fase 1 — Alpha (Integrity + Performance)**
+- **Phase 1 — Alpha (Integrity + Performance)**
   - Roll generic auto-instrumentation to all 10 windows (channel A).
   - SQL integrity jobs + `ETGO_KPI_CHECK` table.
   - Validate all Performance KPIs via RUM.
-- **Fase 2 — Beta (Adoption + UX, real users)**
-  - Module-specific instrumentation (Compras OCR, Onboarding funnel, Copilot, quick actions, searches).
+- **Phase 2 — Beta (Adoption + UX, real users)**
+  - Module-specific instrumentation (Purchasing OCR, Onboarding funnel, Copilot, quick actions, searches).
   - Copilot NPS. Mixpanel funnels and cohorts.
-- **Fase 3 — Post-launch (Business)**
+- **Phase 3 — Post-launch (Business)**
   - 30-day retention, 3-day abandonment, overall NPS.
   - Monthly consolidated report script (KPIs vs threshold, green/red) for month-1 and month-2 close.
   - Threshold review.

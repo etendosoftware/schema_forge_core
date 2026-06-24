@@ -19,7 +19,7 @@ The implementation must preserve the repository rules:
 
 Primary repository:
 
-- `schema-forge` at `/Users/sebastianbarrozo/Documents/work/epic/schema-forge`
+- `schema-forge` repository root
 - Branch observed during planning: `feature/ETP-4214`
 
 Likely secondary repository:

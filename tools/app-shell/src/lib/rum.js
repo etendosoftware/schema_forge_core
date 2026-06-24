@@ -6,6 +6,14 @@ export function resolveRumSessionSampleRate(
   value,
   fallback = DEFAULT_RUM_SESSION_SAMPLE_RATE
 ) {
+  if (value == null) {
+    return fallback;
+  }
+
+  if (typeof value === 'string' && value.trim().length === 0) {
+    return fallback;
+  }
+
   const parsed = Number(value);
 
   if (!Number.isFinite(parsed)) {

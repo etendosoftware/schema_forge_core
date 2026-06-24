@@ -496,7 +496,7 @@ export function getObservabilityEvent(nameOrEvent) {
   if (!nameOrEvent) return undefined;
 
   if (isEventDefinition(nameOrEvent)) {
-    return nameOrEvent;
+    return EVENT_MAP.get(nameOrEvent.name);
   }
 
   if (typeof nameOrEvent === 'string') {

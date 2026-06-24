@@ -213,6 +213,14 @@ describe('AWS RUM observability adapter', () => {
       resolveRumSessionSampleRate(undefined),
       DEFAULT_RUM_SESSION_SAMPLE_RATE
     );
+    assert.equal(
+      resolveRumSessionSampleRate(''),
+      DEFAULT_RUM_SESSION_SAMPLE_RATE
+    );
+    assert.equal(
+      resolveRumSessionSampleRate('   '),
+      DEFAULT_RUM_SESSION_SAMPLE_RATE
+    );
     assert.equal(resolveRumSessionSampleRate('0.5'), 0.5);
     assert.equal(resolveRumSessionSampleRate('2'), 1);
     assert.equal(resolveRumSessionSampleRate('-1'), 0);
