@@ -195,7 +195,7 @@ test.describe('Contacts Integration — Full journey', () => {
     await expect(page.getByText(/teléfono|phone/i).first()).toBeVisible({ timeout: 5_000 });
 
     // Toggle to Persona — Nombre and Apellidos fields should appear
-    const personaToggle = page.getByRole('button', { name: /^persona$/i });
+    const personaToggle = page.getByText(/^persona$/i).first();
     await personaToggle.click();
 
     const firstNameInput = page.getByRole('textbox', { name: /^nombre/i });
@@ -226,7 +226,7 @@ test.describe('Contacts Integration — Full journey', () => {
     await expect(reloadedLastName).toHaveValue(lastName, { timeout: 5_000 });
 
     // Toggle back to Empresa — Razon Social should reappear
-    const empresaToggle = page.getByRole('button', { name: /^empresa$/i });
+    const empresaToggle = page.getByText(/^empresa$/i).first();
     await empresaToggle.click();
     const razonSocialAfterToggle = page.getByRole('textbox', { name: /razón social/i });
     await expect(razonSocialAfterToggle).toBeVisible({ timeout: 5_000 });
