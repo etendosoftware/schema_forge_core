@@ -24,7 +24,7 @@ import { useCallback, useMemo, useState } from 'react';
  * @param {string}  opts.token      - bearer token
  * @returns {{ execute: (recordId: string, actionName: string) => Promise<{success: boolean, message?: string}>, loading: boolean }}
  */
-export function useNeoAction({ specName, entityName = 'header', apiBaseUrl, token } = {}) {
+export function useNeoAction({ specName: _specName, entityName = 'header', apiBaseUrl, token } = {}) {
   const [loading, setLoading] = useState(false);
 
   const headers = useMemo(() => ({
@@ -34,7 +34,7 @@ export function useNeoAction({ specName, entityName = 'header', apiBaseUrl, toke
 
   const execute = useCallback(async (recordId, actionName) => {
     if (!apiBaseUrl || !recordId || !actionName) {
-      return { success: false, message: 'Missing required params' };
+      return { success: false, message: `Missing required params: apiBaseUrl=${apiBaseUrl}, recordId=${recordId}, actionName=${actionName}` };
     }
     setLoading(true);
     try {

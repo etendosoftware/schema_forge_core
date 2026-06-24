@@ -145,7 +145,7 @@ export default function RowQuickActions({
   const stop = (e) => { e.stopPropagation(); };
 
   const resolvedMenuActions = typeof menuActions === 'function'
-    ? menuActions({ row, status: statusField ? row?.[statusField] : undefined })
+    ? menuActions({ row, data: row, status: statusField ? row?.[statusField] : undefined })
     : menuActions;
   const visibleMenuActions = (Array.isArray(resolvedMenuActions) ? resolvedMenuActions : [])
     .filter(a => a && a.visible !== false)
