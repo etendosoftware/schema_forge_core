@@ -70,17 +70,12 @@ export default function ImportLinesModal({
       if (cancelled) return;
       const newDocLines = {};
       const qtyDefaults = {};
-      const toSelect = new Set();
       results.forEach(({ docId, lines }) => {
         newDocLines[docId] = lines;
-        lines.forEach(l => {
-          qtyDefaults[l.id] = l._maxQty || 0;
-          if (!l._alreadyImported) toSelect.add(l.id);
-        });
+        lines.forEach(l => { qtyDefaults[l.id] = l._maxQty || 0; });
       });
       setDocLines(newDocLines);
       setLineQuantities(prev => ({ ...prev, ...qtyDefaults }));
-      setSelected(toSelect);
       setEagerLoadingLines(false);
     });
     return () => { cancelled = true; };
@@ -106,13 +101,8 @@ export default function ImportLinesModal({
       const enrichedLines = await fetchLines({ base, headers, docId, sharedContext });
       setDocLines(prev => ({ ...prev, [docId]: enrichedLines }));
       const qtyDefaults = {};
-      const newSelected = new Set();
-      enrichedLines.forEach(l => {
-        qtyDefaults[l.id] = l._maxQty || 0;
-        if (!l._alreadyImported) newSelected.add(l.id);
-      });
+      enrichedLines.forEach(l => { qtyDefaults[l.id] = l._maxQty || 0; });
       setLineQuantities(prev => ({ ...prev, ...qtyDefaults }));
-      setSelected(prev => { const n = new Set(prev); newSelected.forEach(id => n.add(id)); return n; });
     } catch { /* silent */ } finally { setLoadingLines(prev => { const n = new Set(prev); n.delete(docId); return n; }); }
   };
 
