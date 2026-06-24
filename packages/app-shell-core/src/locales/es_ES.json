@@ -17653,7 +17653,7 @@
     "financeAccountTransferAmountPlaceholder": "0,00",
     "financeAccountTransferFx": "Conversión de divisa",
     "financeAccountTransferRate": "Tasa de conversión",
-    "financeAccountTransferRatePlaceholder": "1,0850",
+    "financeAccountTransferRatePlaceholder": "1,00",
     "financeAccountTransferBankFee": "Aplicar comisión bancaria",
     "financeAccountTransferBankFeeFrom": "Comisión · origen",
     "financeAccountTransferBankFeeTo": "Comisión · destino",

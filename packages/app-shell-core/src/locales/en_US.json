@@ -17402,7 +17402,7 @@
     "financeAccountTransferAmountPlaceholder": "0.00",
     "financeAccountTransferFx": "Currency conversion",
     "financeAccountTransferRate": "Conversion rate",
-    "financeAccountTransferRatePlaceholder": "1.0850",
+    "financeAccountTransferRatePlaceholder": "1.00",
     "financeAccountTransferBankFee": "Apply bank fee",
     "financeAccountTransferBankFeeFrom": "Fee · source",
     "financeAccountTransferBankFeeTo": "Fee · destination",

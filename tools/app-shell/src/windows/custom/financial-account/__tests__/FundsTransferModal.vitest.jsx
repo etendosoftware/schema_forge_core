@@ -133,12 +133,13 @@ describe('FundsTransferModal', () => {
     expect(screen.getByTestId('transfer-rate')).toBeInTheDocument();
   });
 
-  it('blocks a transfer above the source available balance', () => {
+  it('allows a transfer above the source balance (Classic permits overdrawing)', () => {
     renderModal();
     selectDest('DST');
     fireEvent.change(screen.getByTestId('transfer-amount'), { target: { value: '5000' } });
-    expect(screen.getByTestId('transfer-balance-warning')).toBeInTheDocument();
-    expect(screen.getByTestId('transfer-confirm')).toBeDisabled();
+    selectGl();
+    expect(screen.queryByTestId('transfer-balance-warning')).not.toBeInTheDocument();
+    expect(screen.getByTestId('transfer-confirm')).not.toBeDisabled();
   });
 
   it('posts the expected payload and reports success on confirm', async () => {

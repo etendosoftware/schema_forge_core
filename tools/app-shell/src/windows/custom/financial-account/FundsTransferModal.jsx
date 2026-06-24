@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
-  ArrowLeftRight, ArrowRight, Landmark, ChevronDown, Globe, AlertTriangle,
+  ArrowLeftRight, ArrowRight, Landmark, ChevronDown, Globe,
 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -38,6 +38,11 @@ function parseAmount(raw) {
  */
 function normalizeRate(raw) {
   return String(raw ?? '').trim().replace(',', '.');
+}
+
+/** Keeps only digits and decimal/thousands separators so numeric fields reject letters/symbols. */
+function sanitizeNumeric(raw) {
+  return String(raw ?? '').replace(/[^\d.,]/g, '');
 }
 
 /** Field label — 12/16 semibold, optional red required asterisk. */
@@ -243,7 +248,7 @@ function AmountField({ value, onChange, currencyIso, testId }) {
         placeholder={ui('financeAccountTransferAmountPlaceholder')}
         inputMode="decimal"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(sanitizeNumeric(e.target.value))}
         data-testid={testId}
       />
       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] font-medium text-[#A9A9BC]">
@@ -291,13 +296,13 @@ export function FundsTransferModal({ sourceAccountId, onClose, onSuccess }) {
   const multiCurrency = !!(source && dest && dest.currencyIso !== source.currencyIso);
 
   const amountNum = parseAmount(amount);
+  // Available balance is shown for context only — Classic allows transferring more than the
+  // source balance (it never blocks on balance), so we deliberately do not gate on it.
   const available = Number(source?.currentBalance ?? 0);
-  const overBalance = Number.isFinite(amountNum) && amountNum > available;
   const rateNum = Number(normalizeRate(conversionRate));
   const canSubmit = !!destId
     && !!glItem
     && Number.isFinite(amountNum) && amountNum > 0
-    && !overBalance
     && (!multiCurrency || (Number.isFinite(rateNum) && rateNum > 0))
     && !transferring;
 
@@ -305,10 +310,6 @@ export function FundsTransferModal({ sourceAccountId, onClose, onSuccess }) {
     setError(null);
     if (destId === sourceAccountId) {
       setError(ui('financeAccountTransferErrorSameAccount'));
-      return;
-    }
-    if (overBalance) {
-      setError(ui('financeAccountTransferErrorBalance'));
       return;
     }
     const payload = {
@@ -412,13 +413,6 @@ export function FundsTransferModal({ sourceAccountId, onClose, onSuccess }) {
               data-testid="AmountField__7ff08b" />
           </div>
 
-          {overBalance ? (
-            <div className="flex items-center gap-2 rounded-md border border-[#F5C2CF] bg-[#FEF0F4] px-3 py-2.5 text-xs font-medium leading-4 text-[#D50B3E]" data-testid="transfer-balance-warning">
-              <AlertTriangle className="h-[15px] w-[15px] flex-none" data-testid="AlertTriangle__tf" />
-              {ui('financeAccountTransferErrorBalance')} ({formatCurrency(source?.currencyIso, available)})
-            </div>
-          ) : null}
-
           {/* Currency conversion (multi-currency only) */}
           {multiCurrency ? (
             <div className="flex flex-col gap-3 rounded-xl border border-[#D1D1DB] bg-[#F7F7F8] px-4 py-3.5" data-testid="transfer-fx-block">
@@ -436,11 +430,11 @@ export function FundsTransferModal({ sourceAccountId, onClose, onSuccess }) {
               <div className="flex flex-col gap-1.5">
                 <Label required data-testid="Label__7ff08b">{ui('financeAccountTransferRate')}</Label>
                 <input
-                  className="h-10 w-full rounded-md border border-[#D1D1DB] bg-white px-3 text-sm leading-5 text-[#121217] placeholder:text-[#A9A9BC] focus:outline-none focus:border-[#121217] focus:ring-[3px] focus:ring-black/[0.08]"
+                  className="h-10 w-full rounded-md border border-[#D1D1DB] bg-white px-3 text-right text-sm leading-5 tabular-nums text-[#121217] placeholder:text-[#A9A9BC] focus:outline-none focus:border-[#121217] focus:ring-[3px] focus:ring-black/[0.08]"
                   placeholder={ui('financeAccountTransferRatePlaceholder')}
                   inputMode="decimal"
                   value={conversionRate}
-                  onChange={(e) => setConversionRate(e.target.value)}
+                  onChange={(e) => setConversionRate(sanitizeNumeric(e.target.value))}
                   data-testid="transfer-rate" />
               </div>
             </div>
