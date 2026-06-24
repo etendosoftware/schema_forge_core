@@ -867,13 +867,15 @@ describe('generatePageComponent — sendDocument recipient policy (ETP-4226)', (
     assert.equal(matches.length, 2, 'policy should be emitted for ListView and DetailView');
   });
 
-  it('omits the sendDocument prop entirely when the feature is force-disabled', () => {
+  it('emits sendDocument={{"enabled":false}} when the feature is force-disabled', () => {
+    // Must emit the prop explicitly so ListView receives sendDocument != null and
+    // skips its documentNo auto-detection heuristic (which would re-enable the envelope).
     const code = generatePageComponent(
       'order',
       'orderLine',
       buildDocumentalContract({ enabled: false, editableRecipients: true }),
     );
-    assert.ok(!/sendDocument/.test(code), 'force-disabled window emits no sendDocument prop');
+    assert.ok(/sendDocument=\{.*"enabled":false/.test(code), 'force-disabled window emits sendDocument={{"enabled":false}}');
   });
 });
 
