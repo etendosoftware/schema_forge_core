@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.8.0",
   "generatedAt": "2026-05-04T17:02:25.021Z",
-  "updatedAt": "2026-06-16T14:53:08.146Z",
-  "checksum": "97118f413f09540d",
+  "updatedAt": "2026-06-23T17:06:30.914Z",
+  "checksum": "a037cf32f60ce3aa",
   "frontendContract": {
     "window": {
       "id": "F4675DAB02134762B66881DAE4672AD0",
@@ -432,7 +432,8 @@
           }
         ],
         "searchableFields": [],
-        "computedFields": []
+        "computedFields": [],
+        "javaQualifier": "mark-subsanation-handler"
       },
       "facturasAceptadas": {
         "tableName": "etvfac_inv_sent_status_v",
@@ -1220,7 +1221,8 @@
             "visibility": "system",
             "required": false
           }
-        ]
+        ],
+        "javaQualifier": "mark-subsanation-handler"
       },
       "facturasAceptadas": {
         "tableName": "etvfac_inv_sent_status_v",

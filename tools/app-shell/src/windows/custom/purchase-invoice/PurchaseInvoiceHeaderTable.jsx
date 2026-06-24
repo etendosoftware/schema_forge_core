@@ -94,7 +94,11 @@ export default function PurchaseInvoiceHeaderTable(props) {
         key: 'transactionDocument',
         column: 'C_DocTypeTarget_ID',
         type: 'custom',
-        label: t('docType'),
+        // `labels` (priority 1 in resolveColumnLabel) must be set so this header
+        // outranks the AD-dictionary fallback translate('C_DocTypeTarget_ID'),
+        // which otherwise resolves to "Documento transacción".
+        labels: { [locale]: t('documentType') },
+        label: t('documentType'),
         render: (row) => {
           const adName = row['transactionDocument$_identifier'];
           const cfg = DOC_TYPE_BADGE[adName];

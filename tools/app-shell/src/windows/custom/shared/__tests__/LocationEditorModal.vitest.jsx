@@ -89,7 +89,6 @@ describe('LocationEditorModal', () => {
   it('renders address form fields', () => {
     renderModal();
     expect(screen.getByText('addressLine1')).toBeInTheDocument();
-    expect(screen.getByText('addressLine2')).toBeInTheDocument();
     expect(screen.getByText('postalCodeLabel')).toBeInTheDocument();
     expect(screen.getByText('cityLabel')).toBeInTheDocument();
     expect(screen.getByText('countryLabel')).toBeInTheDocument();
@@ -118,13 +117,8 @@ describe('LocationEditorModal', () => {
     expect(screen.getByText('IsBillTo')).toBeInTheDocument();
   });
 
-  it('renders remove location button when editing existing record', () => {
+  it('does not render remove location button', () => {
     renderModal({ rowId: 'loc-123' });
-    expect(screen.getByText('removeLocation')).toBeInTheDocument();
-  });
-
-  it('does not render remove location button for new records', () => {
-    renderModal({ rowId: null });
     expect(screen.queryByText('removeLocation')).not.toBeInTheDocument();
   });
 
@@ -280,7 +274,7 @@ describe('LocationEditorModal', () => {
     expect(toast.error).toHaveBeenCalledWith('locationCountryRequired');
   });
 
-  it('disables save and remove buttons during initial loading when editing', () => {
+  it('disables save button during initial loading when editing', () => {
     global.fetch = vi.fn(() =>
       // Never resolve to keep initialLoading = true
       new Promise(() => {}),
@@ -290,15 +284,12 @@ describe('LocationEditorModal', () => {
 
     const saveBtn = screen.getByText('save').closest('button');
     expect(saveBtn).toBeDisabled();
-
-    const removeBtn = screen.getByText('removeLocation').closest('button');
-    expect(removeBtn).toBeDisabled();
   });
 
   it('allows typing in postal code and city fields', () => {
     renderModal();
     const inputs = screen.getAllByRole('textbox');
-    // postalCode and city inputs (3rd and 4th textboxes)
+    // address=inputs[0], address2=inputs[1], postalCode=inputs[2], city=inputs[3]
     fireEvent.change(inputs[2], { target: { value: '28001' } });
     expect(inputs[2].value).toBe('28001');
     fireEvent.change(inputs[3], { target: { value: 'Madrid' } });

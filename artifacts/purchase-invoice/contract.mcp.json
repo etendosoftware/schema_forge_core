@@ -1,8 +1,8 @@
 {
-  "version": "0.48.0",
+  "version": "0.50.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-06-16T19:18:45.167Z",
-  "contractChecksum": "44ee4aa0cd2d1f21",
+  "updatedAt": "2026-06-24T13:08:31.424Z",
+  "contractChecksum": "41ccb62cd8f92963",
   "apiPrediction": {
     "specName": "purchase-invoice",
     "baseUrl": "/sws/neo/purchase-invoice",
@@ -1284,14 +1284,14 @@
         "POReference": "Nº documento",
         "OutstandingAmt": "Pendiente de pago",
         "EM_Etgo_Due_Date": "Vencimiento",
-        "em_etgo_delivery_status": "Estado de entrega",
+        "em_etgo_delivery_status": "Estado de recepción",
         "C_DocTypeTarget_ID": "Tipo de documento"
       },
       "en_US": {
         "POReference": "Document No.",
         "OutstandingAmt": "Pending Payment",
         "EM_Etgo_Due_Date": "Due Date",
-        "em_etgo_delivery_status": "Delivery Status",
+        "em_etgo_delivery_status": "Reception Status",
         "C_DocTypeTarget_ID": "Document Type"
       }
     }
@@ -2087,5 +2087,5 @@
       "tbaiVoidxmlgenerator"
     ]
   },
-  "checksum": "c05057c4d1da1a75"
+  "checksum": "2bb608230f33e536"
 }

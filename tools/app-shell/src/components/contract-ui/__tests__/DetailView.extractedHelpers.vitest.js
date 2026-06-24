@@ -487,11 +487,11 @@ describe('renderExtraActionButtons', () => {
 });
 
 describe('getDetailContentContainerClassName', () => {
-  it('always starts with "flex-1 min-w-0 "', () => {
+  it('always starts with "flex-1 min-h-0 min-w-0 "', () => {
     const cls = getDetailContentContainerClassName({
       linesLayout: 'readOnly', activePrimaryTab: 'general',
     });
-    expect(cls.startsWith('flex-1 min-w-0 ')).toBe(true);
+    expect(cls.startsWith('flex-1 min-h-0 min-w-0 ')).toBe(true);
   });
 
   it('includes the inlineEditable layout classes when linesLayout is inlineEditable', () => {
