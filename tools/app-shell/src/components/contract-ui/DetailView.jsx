@@ -1951,6 +1951,18 @@ export function DetailView({
       }
     }
   }, [secondarySelectedRows, secondaryTabs]);
+  // Flush any pending secondary-bar close timeouts on unmount so they can't
+  // fire a setState after teardown (which throws "window is not defined" once
+  // the test/jsdom environment is gone).
+  useEffect(() => {
+    const timeouts = secondaryBarTimeoutRef.current;
+    return () => {
+      for (const key of Object.keys(timeouts)) {
+        clearTimeout(timeouts[key]);
+        delete timeouts[key];
+      }
+    };
+  }, []);
   // Measure each visible secondary tab's add-line wrapper so its bar can be
   // portaled with `position: fixed`. Only the active tab actually mounts its
   // wrapper (inactive tabs unmount their content), so refs from other tabs
