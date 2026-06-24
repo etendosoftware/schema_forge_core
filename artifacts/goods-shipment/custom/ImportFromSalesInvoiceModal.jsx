@@ -81,7 +81,11 @@ const fetchLines = async ({ base, headers, docId, sharedContext }) => {
     const delivered = orderLineId ? (deliveredByOrderLine[orderLineId] ?? 0) : 0;
     const draftEntry = orderLineId ? sharedContext.draftInfo?.[orderLineId] : undefined;
     const inOtherDrafts = draftEntry?.qty || 0;
-    const pending = alreadyLinked ? 0 : Math.max(0, qty - delivered - inOtherDrafts);
+    // For lines with an order: delivery tracking supports partial imports across multiple
+    // shipments. For direct invoice lines (no order): m_inoutline_id is the only signal.
+    const pending = orderLineId
+      ? Math.max(0, qty - delivered - inOtherDrafts)
+      : alreadyLinked ? 0 : Math.max(0, qty);
     return {
       ...l,
       _orderLineId: orderLineId,
