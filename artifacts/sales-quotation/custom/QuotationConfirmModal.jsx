@@ -221,7 +221,7 @@ export default function QuotationConfirmModal({
             </button>
             {createdDoc.id && (
               <button type="button" onClick={handleGoToDoc} style={btnPrimary}>
-                {goLabel}
+                {goLabel} →
               </button>
             )}
           </div>
