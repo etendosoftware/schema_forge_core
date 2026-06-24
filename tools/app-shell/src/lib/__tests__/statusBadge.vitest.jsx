@@ -238,4 +238,77 @@ describe('statusBadge', () => {
       expect(statusLabel('RDNC', {})).toBeTruthy();
     });
   });
+
+  describe('statusLabel — enumLabels param', () => {
+    const enumLabels = { true: 'statusProcessed', false: 'statusDraft' };
+
+    it('resolves boolean true via enumLabels → genericLabels', () => {
+      const dict = { genericLabels: { statusProcessed: 'Procesado', statusDraft: 'Borrador' } };
+      expect(statusLabel(true, dict, undefined, enumLabels)).toBe('Procesado');
+    });
+
+    it('resolves boolean false via enumLabels → genericLabels', () => {
+      const dict = { genericLabels: { statusProcessed: 'Procesado', statusDraft: 'Borrador' } };
+      expect(statusLabel(false, dict, undefined, enumLabels)).toBe('Borrador');
+    });
+
+    it('resolves enumLabels value via translate() when genericLabels is missing', () => {
+      const translate = (key) => (key === 'statusProcessed' ? 'Processed' : key === 'statusDraft' ? 'Draft' : key);
+      expect(statusLabel(true, {}, translate, enumLabels)).toBe('Processed');
+      expect(statusLabel(false, {}, translate, enumLabels)).toBe('Draft');
+    });
+
+    it('falls through (ignores literal enumLabels) when neither genericLabels nor translate resolve it', () => {
+      // translate returns the key unchanged → the literal does NOT resolve as an
+      // i18n key, so the enumLabels branch falls through. With an unknown raw code
+      // that has no dict/MAP entry, statusLabel returns the raw code itself.
+      const translate = (key) => key;
+      expect(statusLabel('UNKNOWN_CODE', {}, translate, { UNKNOWN_CODE: 'MyLiteralLabel' })).toBe('UNKNOWN_CODE');
+    });
+
+    it('falls through (ignores literal enumLabels) when translate is absent', () => {
+      // No translate, no genericLabels → the literal label does not resolve as a
+      // key, so the branch falls through to the dictionary/MAP/humanize path. For
+      // an unknown raw code with no MAP entry, the raw code is returned.
+      expect(statusLabel('UNKNOWN_CODE', {}, undefined, { UNKNOWN_CODE: 'LiteralLabel' })).toBe('UNKNOWN_CODE');
+    });
+
+    it('falls through to MAP result when literal enumLabels does not resolve as a key', () => {
+      // 'DR' has a MAP entry (statusDraft → humanized 'Draft'). A literal
+      // enumLabels value that is not an i18n key must NOT override that path.
+      expect(statusLabel('DR', {}, undefined, { DR: 'SomethingLiteral' })).toBe('Draft');
+    });
+
+    it('enumLabels literal does not override a code resolvable via dictionary.statuses', () => {
+      // Regression guard: windows with literal enumLabels (e.g. internal-consumption,
+      // sales-invoice) must keep the localized dictionary.statuses label. The literal
+      // 'Draft' must NOT win over the DB-sourced 'Borrador'.
+      const dict = { statuses: { DR: { label: 'Borrador' } } };
+      expect(statusLabel('DR', dict, undefined, { DR: 'Draft' })).toBe('Borrador');
+    });
+
+    it('enumLabels takes precedence over dictionary.statuses for the same key', () => {
+      const dict = {
+        statuses: { true: { label: 'OldLabel' } },
+        genericLabels: { statusProcessed: 'NewLabel' },
+      };
+      expect(statusLabel(true, dict, undefined, { true: 'statusProcessed' })).toBe('NewLabel');
+    });
+
+    it('falls back to normal behavior when enumLabels is undefined', () => {
+      // Without enumLabels, boolean 'true' (string) resolves via MAP
+      expect(statusLabel('true', {})).toBe('Processed');
+      expect(statusLabel('false', {})).toBe('Not  Processed');
+    });
+
+    it('falls back to normal behavior when enumLabels is null', () => {
+      expect(statusLabel('DR', {}, undefined, null)).toBe('Draft');
+    });
+
+    it('falls back to normal behavior when the key is not present in enumLabels', () => {
+      // enumLabels only maps 'true'; 'CO' should use normal MAP path
+      const dict = { genericLabels: { statusComplete: 'Complete' } };
+      expect(statusLabel('CO', dict, undefined, { true: 'statusProcessed' })).toBe('Complete');
+    });
+  });
 });

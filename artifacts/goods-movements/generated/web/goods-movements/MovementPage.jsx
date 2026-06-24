@@ -163,9 +163,19 @@ export const api = {
   },
   "window": {
     "category": "inventory"
+  },
+  "labelOverrides": {
+    "en_US": {
+      "Processed": "Status"
+    },
+    "es_ES": {
+      "Processed": "Estado"
+    }
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:MovementPage
 export default function MovementPage({ windowName, recordId, ...props }) {
   if (recordId) {
@@ -188,9 +198,11 @@ export default function MovementPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        hidePrint
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Movement", config: {} } }]}
         bottomSection={GoodsMovementsBottomPanel}
         requiredHeaderFields={requiredHeaderFields}
+        labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
         sendDocument
         {...props}
@@ -206,7 +218,13 @@ export default function MovementPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      listViewOptions={{"hideStatusFilter":true}}
       dateFilterKey="movementDate"
+      listbarPaddingX="px-2"
+      tablePaddingX="px-2"
+      hidePrint
+      hideLink
+      labelOverrides={labelOverrides}
       rowQuickActions={{}}
       sendDocument
       {...props}

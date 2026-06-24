@@ -11,6 +11,21 @@
     },
     "dateFilterKey": "movementDate",
     "linesLayout": "inlineEditable",
+    "listbarPaddingX": "px-2",
+    "tablePaddingX": "px-2",
+    "hideLink": true,
+    "hidePrint": true,
+    "listViewOptions": {
+      "hideStatusFilter": true
+    },
+    "labelOverrides": {
+      "en_US": {
+        "Processed": "Status"
+      },
+      "es_ES": {
+        "Processed": "Estado"
+      }
+    },
     "customComponents": {
       "bottomSection": "GoodsMovementsBottomPanel"
     }
@@ -28,6 +43,7 @@
           "grid": true,
           "searchable": true,
           "readOnlyLogic": null,
+          "dot": false,
           "gridOrder": 2
         },
         "description": {
@@ -44,6 +60,10 @@
           "grid": true,
           "form": false,
           "columnType": "status",
+          "enumValues": [
+            { "value": "true", "name": "statusProcessed" },
+            { "value": "false", "name": "statusDraft" }
+          ],
           "gridOrder": 4
         },
         "documentNo": {

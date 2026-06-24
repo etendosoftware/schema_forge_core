@@ -20312,7 +20312,7 @@
   },
   "menus": {
     "Goods Movement": {
-      "label": "Movimiento de mercancías"
+      "label": "Movimiento entre almacenes"
     },
     "Bank Reconciliation": {
       "label": "Conciliación bancaria"

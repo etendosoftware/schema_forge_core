@@ -93,7 +93,28 @@ export function getStatusGridPillClass(status) {
   return 'bg-gray-100 text-gray-600 border border-gray-300';
 }
 
-export function statusLabel(status, dictionary, translate) {
+export function statusLabel(status, dictionary, translate, enumLabels) {
+  // 0. Column-declared enumLabels win. Keyed by the raw cell value (e.g. boolean
+  //    true/false or a status code); the value may be an i18n key (resolved via
+  //    genericLabels / translate) or a literal label. This lets the same raw value
+  //    mean different things per window (e.g. false -> Draft vs false -> Incomplete)
+  //    without hardcoding semantics in this shared map.
+  if (enumLabels) {
+    const declared = enumLabels[status];
+    if (declared != null) {
+      // Resolve the declared value as an i18n key. If it does NOT resolve (it is a
+      // literal AD label, not a key), fall through to the dictionary/MAP logic
+      // below so columns whose enumLabels carry literal labels keep the localized
+      // badge text they had before enumLabels reached this renderer. Only i18n-key
+      // enumLabels (e.g. statusProcessed/statusDraft) short-circuit here.
+      if (dictionary?.genericLabels?.[declared]) return dictionary.genericLabels[declared];
+      if (translate) {
+        const translated = translate(declared);
+        if (translated && translated !== declared) return translated;
+      }
+    }
+  }
+
   // 1. DB-sourced translation from AD_Ref_List_Trl (via extract-labels.js)
   if (dictionary?.statuses?.[status]?.label) return dictionary.statuses[status].label;
 

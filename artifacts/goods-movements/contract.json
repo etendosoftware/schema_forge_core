@@ -1,14 +1,16 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "generatedAt": "2026-04-29T19:05:48.778Z",
-  "updatedAt": "2026-05-20T11:45:15.105Z",
-  "checksum": "c9c20297c85666a0",
+  "updatedAt": "2026-06-24T15:20:59.313Z",
+  "checksum": "2e63b3a6886aa1a4",
   "frontendContract": {
     "window": {
       "id": "170",
       "name": "Goods Movements",
       "primaryEntity": "movement",
       "category": "inventory",
+      "hidePrint": true,
+      "hideLink": true,
       "customComponents": {
         "bottomSection": "GoodsMovementsBottomPanel"
       },
@@ -18,7 +20,20 @@
         }
       },
       "statusField": "processed",
+      "labelOverrides": {
+        "en_US": {
+          "Processed": "Status"
+        },
+        "es_ES": {
+          "Processed": "Estado"
+        }
+      },
+      "listViewOptions": {
+        "hideStatusFilter": true
+      },
       "dateFilterKey": "movementDate",
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
       "layoutType": "default",
       "linesLayout": "inlineEditable"
     },
@@ -66,6 +81,7 @@
             },
             "defaultValue": "@#Date@",
             "gridOrder": 2,
+            "dot": false,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -145,6 +161,16 @@
               "source": "false"
             },
             "columnType": "status",
+            "enumValues": [
+              {
+                "value": "true",
+                "name": "statusProcessed"
+              },
+              {
+                "value": "false",
+                "name": "statusDraft"
+              }
+            ],
             "gridOrder": 4
           }
         ],
@@ -368,6 +394,8 @@
       "name": "Goods Movements",
       "primaryEntity": "movement",
       "category": "inventory",
+      "hidePrint": true,
+      "hideLink": true,
       "customComponents": {
         "bottomSection": "GoodsMovementsBottomPanel"
       },
@@ -377,7 +405,20 @@
         }
       },
       "statusField": "processed",
+      "labelOverrides": {
+        "en_US": {
+          "Processed": "Status"
+        },
+        "es_ES": {
+          "Processed": "Estado"
+        }
+      },
+      "listViewOptions": {
+        "hideStatusFilter": true
+      },
       "dateFilterKey": "movementDate",
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
       "linesLayout": "inlineEditable"
     },
     "entities": {
@@ -946,6 +987,14 @@
     },
     "window": {
       "category": "inventory"
+    },
+    "labelOverrides": {
+      "en_US": {
+        "Processed": "Status"
+      },
+      "es_ES": {
+        "Processed": "Estado"
+      }
     }
   },
   "testManifest": {

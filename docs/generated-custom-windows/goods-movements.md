@@ -17,11 +17,12 @@ Goods Movements should let an inventory user register a stock transfer from one 
 ## Interaction model
 
 - **Route:** `/goods-movements`, `/goods-movements/:recordId`
-- **Visibility:** visible from the Inventory menu as **Goods Movement**
-- **Implementation type:** custom window wrapper at `tools/app-shell/src/windows/custom/goods-movements/index.jsx`, registered in `customLoaders` in `tools/app-shell/src/windows/registry.js`. The wrapper supplies an explicit `COLUMNS` array to `MovementTable` and passes a `CustomMovementTable` to `GeneratedApp`.
+- **Visibility:** visible from the Inventory menu as **Goods Movement** (Spanish sidebar label: **Movimiento entre almacenes**)
+- **Implementation type:** custom window wrapper at `tools/app-shell/src/windows/custom/goods-movements/index.jsx`, registered in `customLoaders` in `tools/app-shell/src/windows/registry.js`. The wrapper passes `SortIconComponent` and `RefreshIconComponent` (custom SVG icons from `@/components/ui/custom-icons`) to `GeneratedApp`. All column definitions — including `movementDate.dot: false` and the `processed` status enumLabels — are driven entirely by `decisions.json` through the generated `MovementTable`; the wrapper contains no `COLUMNS` override.
 - **Window shape:** master-child. The list route shows movement headers; the record route shows one `movement` header with child `movementLine` rows.
 - Lines tab layout: this window uses `window.linesLayout = "inlineEditable"`. Rows render at 40 px with pencil and trash hover-action icons on the right; clicking pencil flips the row into inline edit; trash removes the row after confirmation. When the add-row form is open, existing rows stay in `InlineLinesPanel` so column widths remain stable; the form renders in a header-hidden `DataTable` below that handles callouts, selectors, and focus. Clicking "Añadir línea" while a form is already open saves the current line and opens a fresh form scrolled into view. See `docs/ui-customization.md` section 13 for the full reference.
-- **List behavior:** the list shows Name, Movement Date, Document No., and Status columns. Movement Date has `dot: false` so no red/green date dot appears on that column. Filters are available on Name and Movement Date.
+- **List behavior:** the list shows Name, Movement Date, Document No., and Status columns. Movement Date has `dot: false` so no red/green date dot appears on that column. Filters are available on Name and Movement Date. The toolbar uses custom sort and refresh SVG icons. The toolbar padding is reduced (`listbarPaddingX: "px-2"`, `tablePaddingX: "px-2"`). The link button, print button, and "All statuses" filter pill are all hidden (`hideLink: true`, `hidePrint: true`, `listViewOptions.hideStatusFilter: true`).
+- **Status column:** the `Processed` field is exposed as a status badge with the column label overridden to **Status** (EN) / **Estado** (ES) via `labelOverrides`. The badge resolves i18n keys through `enumLabels`: `false` maps to `statusDraft` → "Draft" / "Borrador"; `true` maps to `statusProcessed` → "Processed" / "Procesado". The conditional filter in the list uses the same enum keys, so the filter picker shows the localized labels rather than raw `true`/`false` values.
 - **Record behavior:** the header form exposes Name, Movement Date, Description, and read-only Document No. The detail area manages movement lines with Line No., Product, Movement Quantity, UOM, Storage Bin, and New Storage Bin.
 - An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 
@@ -55,10 +56,18 @@ Goods Movements should let an inventory user register a stock transfer from one 
 
 ## Automated evidence
 
-- `tools/app-shell/src/menu.json` places **Goods Movement** in the visible Inventory menu.
-- `tools/app-shell/src/windows/registry.js` registers `goods-movements` in `customLoaders` to `tools/app-shell/src/windows/custom/goods-movements/index.jsx`, which wraps `MovementTable` with a custom `COLUMNS` array (`dot: false` on `movementDate`) before forwarding to the generated `GeneratedApp`.
+- `tools/app-shell/src/menu.json` places **Goods Movement** in the visible Inventory menu (English label). The Spanish sidebar label **Movimiento entre almacenes** is resolved from `packages/app-shell-core/src/locales/es_ES.json` under `menus["Goods Movement"]`.
+- `tools/app-shell/src/windows/registry.js` registers `goods-movements` in `customLoaders` to `tools/app-shell/src/windows/custom/goods-movements/index.jsx`. The wrapper passes `SortIconComponent={SortIcon}` and `RefreshIconComponent={RefreshIcon}` (from `@/components/ui/custom-icons`) to `GeneratedApp`; it contains no `COLUMNS` override.
+- `artifacts/goods-movements/decisions.json` is the source of truth for all list view config: `listbarPaddingX`, `tablePaddingX`, `hideLink`, `hidePrint`, `listViewOptions.hideStatusFilter`, `labelOverrides` (renaming "Processed" to "Status"/"Estado"), `enumValues` for the status badge, and `movementDate.dot: false`.
+- `artifacts/goods-movements/generated/web/goods-movements/MovementTable.jsx` reflects all column decisions. The generated `columns` array is:
+  ```js
+  { key: 'name',         column: 'Name',         type: 'string', label: 'Name' }
+  { key: 'movementDate', column: 'MovementDate',  type: 'date',   label: 'Movement Date', dot: false }
+  { key: 'documentNo',   column: 'DocumentNo',    type: 'string', label: 'Document No.' }
+  { key: 'processed',    column: 'Processed',     type: 'status', label: 'Status', enumLabels: { 'true': 'statusProcessed', 'false': 'statusDraft' } }
+  ```
 - `artifacts/goods-movements/generated/web/goods-movements/index.jsx` defines the live generated route behavior: list/detail structure, `processed` status field, the `Process Movements` action, line-entry fields, and selector endpoints for Product, UOM, Storage Bin, and New Storage Bin.
-- `artifacts/goods-movements/generated/web/goods-movements/MovementForm.jsx`, `MovementLineForm.jsx`, and `MovementTable.jsx` show the current visible header, line, and list fields.
+- `artifacts/goods-movements/generated/web/goods-movements/MovementForm.jsx` and `MovementLineForm.jsx` show the current visible header and line fields.
 - `artifacts/goods-movements/contract.json` and `artifacts/goods-movements/decisions.json` provide supporting evidence for the required-lines processing rule, processed-state read-only logic, omitted classic callouts, and omitted `moveBetweenLocators` / `posted` actions.
 - No dedicated browser test or window-specific automated UI test was found for Goods Movements; shared route and generated-window loading evidence is documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - The generated `MovementPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_Movement` AD table.

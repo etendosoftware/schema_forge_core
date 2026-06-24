@@ -16,31 +16,31 @@ describe('GoodsMovementsWindow custom wrapper', () => {
     assert.match(src, /import GeneratedApp from '@generated\/goods-movements/);
   });
 
-  it('imports MovementTable from generated artifacts', () => {
-    assert.match(src, /import MovementTable from '@generated\/goods-movements/);
+  it('does not import MovementTable (removed — columns driven by decisions.json)', () => {
+    assert.doesNotMatch(src, /import MovementTable from/);
   });
 
-  it('renders GeneratedApp with custom Table', () => {
-    assert.match(src, /GeneratedApp/);
-    assert.match(src, /Table=\{CustomMovementTable\}/);
+  it('does not define a local COLUMNS array (column config moved to decisions.json)', () => {
+    assert.doesNotMatch(src, /const COLUMNS\s*=/);
   });
 
-  it('defines COLUMNS with expected fields', () => {
-    assert.match(src, /key:\s*'name'/);
-    assert.match(src, /key:\s*'movementDate'/);
-    assert.match(src, /key:\s*'documentNo'/);
-    assert.match(src, /key:\s*'processed'/);
+  it('does not reference CustomMovementTable (removed)', () => {
+    assert.doesNotMatch(src, /CustomMovementTable/);
   });
 
-  it('movementDate column has dot: false', () => {
-    assert.match(src, /movementDate.*dot:\s*false/s);
+  it('imports SortIcon and RefreshIcon from custom-icons', () => {
+    assert.match(src, /import.*SortIcon.*RefreshIcon.*from '@\/components\/ui\/custom-icons'/s);
   });
 
-  it('processed column has type status', () => {
-    assert.match(src, /key:\s*'processed'.*type:\s*'status'/s);
+  it('renders GeneratedApp with SortIconComponent prop', () => {
+    assert.match(src, /SortIconComponent=\{SortIcon\}/);
   });
 
-  it('passes props through to GeneratedApp', () => {
+  it('renders GeneratedApp with RefreshIconComponent prop', () => {
+    assert.match(src, /RefreshIconComponent=\{RefreshIcon\}/);
+  });
+
+  it('passes props through to GeneratedApp via spread', () => {
     assert.match(src, /\{\.\.\.props\}/);
   });
 });

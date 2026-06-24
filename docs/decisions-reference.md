@@ -548,6 +548,48 @@ Applied to fields with `grid: true` to control how the list cell renders.
 | `grow` | boolean | `false` | Let the column grow to fill available width. |
 | `cellType` | string | `null` | Selects a cell renderer from the registry (see below). Generic to any grid; the `list-modal` layout ships a styled set. |
 
+#### Status column rendering (`columnType` and `enumValues`)
+
+Two field-level props control how the grid column renders raw values as labeled badges — without touching the underlying Etendo AD column reference.
+
+| Property | Type | Default | Purpose |
+|----------|------|---------|---------|
+| `columnType` | string | Inferred | Forces the grid column renderer. `"status"` renders the cell as a status badge. When absent, the renderer is inferred from the field name/type via `mapFieldType` in `generate-frontend.js`. |
+| `enumValues` | array | `null` | Maps raw cell values to display labels. Each entry: `{ "value": "<raw>", "name": "<i18nKeyOrLabel>" }`. The generator emits these as `enumLabels: { '<raw>': '<name>' }` on the table column descriptor. |
+
+**How `enumValues` is resolved at runtime:**
+
+1. `statusLabel()` in `tools/app-shell/src/lib/statusBadge.js` looks up `name` in `dictionary.genericLabels[name]`, then via the active `translate` function, and falls back to rendering `name` literally.
+2. `DistinctEnumPicker` (in `AdvancedFilterBuilder.jsx`) reads `enumLabels` to populate the advanced/conditional filter value dropdown — so the filter shows translated labels instead of raw values.
+3. `ListFilterBar.jsx` uses the same `enumLabels` to drive the status quick-filter pills above the list.
+
+**Key rules:**
+
+- This is a **Schema Forge display mapping only** — the Etendo AD column reference is never modified.
+- The mapping is **per-window**: the same raw value (e.g. `false`) can map to `statusDraft` in one window and a different key (e.g. `statusIncomplete`) in another. The shared `statusLabel` function stays generic.
+- `name` should be an existing key in `genericLabels` (in `packages/app-shell-core/src/locales/{es_ES,en_US}.json`) so both locales resolve correctly. If you use a literal string it renders as-is in all locales.
+- If you introduce a **new** key, add it to **both** `en_US.json` and `es_ES.json` (per `docs/i18n-guide.md`).
+- If the raw schema already supplies `enumValues` (from an AD list reference), `decisions.json` `enumValues` **overrides** them.
+
+**Example — `goods-movements` `processed` field** (an Etendo `YesNo` boolean the API serializes as `true`/`false`):
+
+```json
+"processed": {
+  "visibility": "readOnly",
+  "label": "Status",
+  "grid": true,
+  "form": false,
+  "columnType": "status",
+  "enumValues": [
+    { "value": "true",  "name": "statusProcessed" },
+    { "value": "false", "name": "statusDraft" }
+  ],
+  "gridOrder": 4
+}
+```
+
+This renders the badge as "Processed"/"Draft" (EN) and "Procesado"/"Borrador" (ES), reusing the existing `statusProcessed`/`statusDraft` keys from `genericLabels`. The advanced filter and the status quick-filter pill also show these labels instead of raw `true`/`false`.
+
 #### `list-modal` cell renderers (`cellType`)
 
 The `list-modal` grid renders each cell through a registry keyed by `cellType`
