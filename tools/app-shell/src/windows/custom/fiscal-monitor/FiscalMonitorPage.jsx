@@ -16,6 +16,7 @@ import { MOCK_MONITOR_DATA, MOCK_SII_ROWS, MOCK_TBAI_ROWS, MOCK_VF_ROWS } from '
 import SiiMonitorSection from './SiiMonitorSection.jsx';
 import TbaiMonitorSection from './TbaiMonitorSection.jsx';
 import VerifactuMonitorSection from './VerifactuMonitorSection.jsx';
+import VfSolveErrorModal from './VfSolveErrorModal.jsx';
 import FiscalMonitorDebugPanel from './FiscalMonitorDebugPanel.jsx';
 import './fiscal-monitor.css';
 
@@ -137,6 +138,8 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
   const [previewInvoice,    setPreviewInvoice]    = useState(null);
   const [previewSpec,       setPreviewSpec]       = useState('sales-invoice');
   const [bpPopup,           setBpPopup]           = useState(null);
+  const [vfErrorRows,       setVfErrorRows]       = useState([]);
+  const [vfErrorModalOpen,  setVfErrorModalOpen]  = useState(false);
   const [systemTab,         setSystemTab]         = useState('sii');
   const contactsApiBase = `${neoBase(apiBaseUrl)}/contacts`;
   const apiFetch = useApiFetch(neoBase(apiBaseUrl));
@@ -172,6 +175,16 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
 
   async function handleInvoiceOpen(invoiceId, specHint = 'sales-invoice') {
     await resolveAndPreviewInvoice(apiFetch, invoiceId, specHint, setPreviewSpec, setPreviewInvoice);
+  }
+
+  function handleVfErrorClick(row) {
+    setVfErrorRows([row]);
+    setVfErrorModalOpen(true);
+  }
+
+  function handleVfResolveClick(rows) {
+    setVfErrorRows(rows);
+    setVfErrorModalOpen(true);
   }
 
   const DebugPanel = debugMode ? (
@@ -297,7 +310,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
                   onTabChange={setSiiInitialTab}
                   refreshKey={refreshKey}
                   onInvoiceOpen={handleInvoiceOpen}
-                  onBpClick={(bpId) => setBpPopup(bpId)}
+                  onBpClick={(bpId, invoiceId, invoiceSpec) => setBpPopup({ bpId, invoiceId, invoiceSpec })}
                   kpis={kpis}
                   data-testid="SiiMonitorSection__884f90" />
               )}
@@ -311,7 +324,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
                   onFilterChange={setTbaiInitialFilter}
                   refreshKey={refreshKey}
                   onInvoiceOpen={handleInvoiceOpen}
-                  onBpClick={(bpId) => setBpPopup(bpId)}
+                  onBpClick={(bpId) => setBpPopup({ bpId })}
                   kpis={kpis}
                   data-testid="TbaiMonitorSection__884f90" />
               )}
@@ -330,7 +343,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             onTabChange={setSiiInitialTab}
             refreshKey={refreshKey}
             onInvoiceOpen={handleInvoiceOpen}
-            onBpClick={(bpId) => setBpPopup(bpId)}
+            onBpClick={(bpId, invoiceId, invoiceSpec) => setBpPopup({ bpId, invoiceId, invoiceSpec })}
             kpis={kpis}
             data-testid="SiiMonitorSection__884f90" />
         )}
@@ -345,7 +358,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             onFilterChange={setTbaiInitialFilter}
             refreshKey={refreshKey}
             onInvoiceOpen={handleInvoiceOpen}
-            onBpClick={(bpId) => setBpPopup(bpId)}
+            onBpClick={(bpId) => setBpPopup({ bpId })}
             kpis={kpis}
             data-testid="TbaiMonitorSection__884f90" />
         )}
@@ -360,7 +373,9 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             onTabChange={setVeriInitialTab}
             refreshKey={refreshKey}
             onInvoiceOpen={handleInvoiceOpen}
-            onBpClick={(bpId) => setBpPopup(bpId)}
+            onBpClick={(bpId) => setBpPopup({ bpId })}
+            onVfErrorClick={handleVfErrorClick}
+            onVfResolveClick={handleVfResolveClick}
             kpis={kpis}
             data-testid="VerifactuMonitorSection__884f90" />
         )}
@@ -374,14 +389,24 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
           onClose={() => setPreviewInvoice(null)}
           data-testid="InvoicePreviewModal__884f90" />
       )}
-      {bpPopup && (
+      {bpPopup?.bpId && (
         <ContactDetailModal
-          open={!!bpPopup}
+          open={!!bpPopup.bpId}
           onClose={() => setBpPopup(null)}
-          bpId={bpPopup}
+          bpId={bpPopup.bpId}
           contactsApiBase={contactsApiBase}
+          invoiceId={bpPopup.invoiceId ?? null}
+          invoiceSpec={bpPopup.invoiceSpec ?? null}
+          neoApiBase={neoBase(apiBaseUrl)}
           data-testid="ContactDetailModal__884f90" />
       )}
+      <VfSolveErrorModal
+        open={vfErrorModalOpen}
+        onClose={() => setVfErrorModalOpen(false)}
+        rows={vfErrorRows}
+        neoApiBase={neoBase(apiBaseUrl)}
+        onResolved={() => setRefreshKey(k => k + 1)}
+        data-testid="VfSolveErrorModal__884f90" />
     </>
   );
 }

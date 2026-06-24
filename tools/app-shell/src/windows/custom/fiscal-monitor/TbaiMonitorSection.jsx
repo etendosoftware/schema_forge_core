@@ -57,7 +57,7 @@ function mapInitialFilter(initialFilter) {
 
 export default function TbaiMonitorSection({
   orgId, apiBaseUrl, initialFilter = 'all', mockRows, onFilterChange,
-  refreshKey = 0, onInvoiceOpen, onBpClick,
+  refreshKey = 0, onInvoiceOpen, onBpClick, onErrorClick,
   kpis,
   noWrap,
 }) {
@@ -195,8 +195,11 @@ export default function TbaiMonitorSection({
                 const inv = parseIdentifier(row);
                 const isSigned = row.estado === 'Recibido';
                 let pillClick;
-                if (isErrorStatus(row.estado) && row.businessPartner) {
-                  pillClick = () => onBpClick?.(row.businessPartner);
+                if (isErrorStatus(row.estado)) {
+                  // Always clickable on error — even if businessPartner is null
+                  pillClick = onErrorClick
+                    ? () => onErrorClick(row.businessPartner ?? null, null, row.estado)
+                    : () => onBpClick?.(row.businessPartner);
                 } else if (isPendingStatus(row.estado) && row.invoice) {
                   pillClick = () => onInvoiceOpen?.(row.invoice, 'sales-invoice');
                 }
