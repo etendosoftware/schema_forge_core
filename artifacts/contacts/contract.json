@@ -1,15 +1,14 @@
 {
-  "version": "0.10.1",
+  "version": "0.20.0",
   "generatedAt": "2026-05-06T15:52:09.982Z",
-  "updatedAt": "2026-06-18T15:19:07.025Z",
-  "checksum": "86f9f47797027775",
+  "updatedAt": "2026-06-23T16:22:36.094Z",
+  "checksum": "9de1badb62cf0a19",
   "frontendContract": {
     "window": {
       "id": "123",
       "name": "Contacts",
       "primaryEntity": "businessPartner",
       "category": "contact",
-      "sidebarLayout": true,
       "hidePrint": true,
       "hideMoreMenu": true,
       "breadcrumb": "Contact",
@@ -2916,6 +2915,11 @@
             ],
             "defaultValue": "GENERIC",
             "section": "principal",
+            "labels": {
+              "en_US": "Format",
+              "es_ES": "Formato"
+            },
+            "columnWidth": 320,
             "validationRule": {
               "code": "UPPER(Value)<>'SPANISH'",
               "contextParams": [],
@@ -2933,7 +2937,8 @@
             "required": false,
             "grid": true,
             "form": true,
-            "section": "principal"
+            "section": "principal",
+            "columnWidth": 360
           },
           {
             "name": "iBAN",
@@ -2946,7 +2951,8 @@
             "required": false,
             "grid": true,
             "form": true,
-            "section": "principal"
+            "section": "principal",
+            "columnWidth": 400
           },
           {
             "name": "swiftCode",
@@ -3380,7 +3386,8 @@
             "required": false,
             "grid": true,
             "form": true,
-            "section": "principal"
+            "section": "principal",
+            "columnWidth": 320
           },
           {
             "name": "phone",
@@ -3770,7 +3777,6 @@
       "name": "Contacts",
       "primaryEntity": "businessPartner",
       "category": "contact",
-      "sidebarLayout": true,
       "hidePrint": true,
       "hideMoreMenu": true,
       "breadcrumb": "Contact",
