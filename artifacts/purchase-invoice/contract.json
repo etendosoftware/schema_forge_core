@@ -1,8 +1,8 @@
 {
-  "version": "0.48.0",
+  "version": "0.50.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-06-18T18:30:07.340Z",
-  "checksum": "44ee4aa0cd2d1f21",
+  "updatedAt": "2026-06-24T13:08:31.424Z",
+  "checksum": "41ccb62cd8f92963",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -39,14 +39,14 @@
           "POReference": "Nº documento",
           "OutstandingAmt": "Pendiente de pago",
           "EM_Etgo_Due_Date": "Vencimiento",
-          "em_etgo_delivery_status": "Estado de entrega",
+          "em_etgo_delivery_status": "Estado de recepción",
           "C_DocTypeTarget_ID": "Tipo de documento"
         },
         "en_US": {
           "POReference": "Document No.",
           "OutstandingAmt": "Pending Payment",
           "EM_Etgo_Due_Date": "Due Date",
-          "em_etgo_delivery_status": "Delivery Status",
+          "em_etgo_delivery_status": "Reception Status",
           "C_DocTypeTarget_ID": "Document Type"
         }
       },
@@ -3863,14 +3863,14 @@
           "POReference": "Nº documento",
           "OutstandingAmt": "Pendiente de pago",
           "EM_Etgo_Due_Date": "Vencimiento",
-          "em_etgo_delivery_status": "Estado de entrega",
+          "em_etgo_delivery_status": "Estado de recepción",
           "C_DocTypeTarget_ID": "Tipo de documento"
         },
         "en_US": {
           "POReference": "Document No.",
           "OutstandingAmt": "Pending Payment",
           "EM_Etgo_Due_Date": "Due Date",
-          "em_etgo_delivery_status": "Delivery Status",
+          "em_etgo_delivery_status": "Reception Status",
           "C_DocTypeTarget_ID": "Document Type"
         }
       },
@@ -8892,14 +8892,14 @@
         "POReference": "Nº documento",
         "OutstandingAmt": "Pendiente de pago",
         "EM_Etgo_Due_Date": "Vencimiento",
-        "em_etgo_delivery_status": "Estado de entrega",
+        "em_etgo_delivery_status": "Estado de recepción",
         "C_DocTypeTarget_ID": "Tipo de documento"
       },
       "en_US": {
         "POReference": "Document No.",
         "OutstandingAmt": "Pending Payment",
         "EM_Etgo_Due_Date": "Due Date",
-        "em_etgo_delivery_status": "Delivery Status",
+        "em_etgo_delivery_status": "Reception Status",
         "C_DocTypeTarget_ID": "Document Type"
       }
     }
