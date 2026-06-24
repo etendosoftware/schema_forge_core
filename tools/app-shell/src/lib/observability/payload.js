@@ -1,3 +1,5 @@
+import { KPI_BOOLEAN_KEYS, KPI_NUMERIC_RANGES, isNumberInRange } from './propertyPolicy.js';
+
 const DENYLISTED_PROPERTY_KEYS = new Set([
   'authCode',
   'authorization',
@@ -64,19 +66,11 @@ const SAFE_EVENT_PROPERTY_KEYS = new Set([
 
 const NUMERIC_EVENT_PROPERTY_KEYS = new Map([
   ['accuracy', { min: 0, max: 100 }],
-  ['attempt', { min: 0, max: 1000 }],
-  ['correctCount', { min: 0, max: 1000000000 }],
-  ['count', { min: 0, max: 1000000000 }],
-  ['durationMs', { min: 0, max: 86400000 }],
-  ['position', { min: 0, max: 1000000 }],
-  ['score', { min: 0, max: 100 }],
-  ['step', { min: 0, max: 1000 }],
-  ['total', { min: 0, max: 1000000000 }],
-  ['value', { min: -1000000000, max: 1000000000 }],
+  ...KPI_NUMERIC_RANGES,
 ]);
 
 const BOOLEAN_EVENT_PROPERTY_KEYS = new Set([
-  'critical',
+  ...KPI_BOOLEAN_KEYS,
   'enabled',
   'mockMode',
   'supportRequested',
@@ -200,10 +194,7 @@ function sanitizeEventProperty(key, value) {
 }
 
 function isSafeNumberForKey(key, value) {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return false;
-
-  const range = NUMERIC_EVENT_PROPERTY_KEYS.get(key);
-  return value >= range.min && value <= range.max;
+  return isNumberInRange(value, NUMERIC_EVENT_PROPERTY_KEYS.get(key));
 }
 
 export function buildEventPayload({

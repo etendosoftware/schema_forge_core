@@ -66,6 +66,17 @@ describe('buildKpiProperties', () => {
     });
   });
 
+  it('requires boolean values for KPI flags', () => {
+    expect(buildKpiProperties({
+      critical: true,
+      channel: 'manual',
+    })).toEqual({
+      critical: true,
+      channel: 'manual',
+    });
+    expect(buildKpiProperties({ critical: 'true' })).toEqual({});
+  });
+
   it('keeps documented backend and system channels', () => {
     expect(buildKpiProperties({
       channel: 'system_email',
