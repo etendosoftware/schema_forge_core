@@ -125,16 +125,15 @@ Always returns HTTP 200; per-row `success` fields indicate individual outcomes.
 
 ## NEO spec / entity DB records
 
-Inserted by `cli/src/push-not-posted-documents.js` (idempotent — checks for existence before inserting):
+Pushed by the generic custom-window path in `push-to-neo.js` (idempotent — upserts by name):
 
-| Table | ID |
-|-------|----|
-| `ETGO_SF_SPEC` | `4B056F343EAE4ACCAEB67E1B653CACF3` |
-| `ETGO_SF_ENTITY` | `08E40F2DE08442FABAC3B540DB516036` |
+```bash
+node cli/src/push-to-neo.js not-posted-documents --type custom [--dry-run]
+```
 
 Spec name: `not-posted-documents` (kebab-case, matches `toSpecName()` convention).
-Entity name: `header`. Java_Qualifier: `not-posted-documents`.
-No backing AD window — `AD_Window_ID` is null.
+Entity name: `header`. Java_Qualifier: `not-posted-documents` (read from `decisions.json → entities.header.javaQualifier`).
+No backing AD window — `AD_Window_ID` is null. IDs are generated dynamically on first insert.
 
 ## Frontend component — `NotPostedDocumentsPage`
 
@@ -186,7 +185,7 @@ Props: `{ token, apiBaseUrl }` — `apiBaseUrl` is already spec-scoped (e.g. `..
 ## Automated evidence
 
 - `artifacts/not-posted-documents/decisions.json` — `layoutType: "custom"`, `javaQualifier: "not-posted-documents"`, Finance category.
-- `cli/src/push-not-posted-documents.js` — idempotent ETGO_SF_SPEC + ETGO_SF_ENTITY insert; `--dry-run` flag supported.
+- `cli/src/push-to-neo.js --type custom` — generic custom-window push; reads `javaQualifier` from `decisions.json`; queries `MODULE_ID` from DB; `--dry-run` flag supported.
 - `cli/src/validate-pipeline.js` — `not-posted-documents` listed in `CUSTOM_ONLY_ARTIFACTS`; pipeline contract validation skipped.
 - `tools/app-shell/src/windows/registry.js` — `not-posted-documents` in `customLoaders`.
 - `tools/app-shell/src/menu.json` — entry in the Finance group (after `amortization`).
