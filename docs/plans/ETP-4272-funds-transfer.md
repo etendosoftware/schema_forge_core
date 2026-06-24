@@ -63,7 +63,7 @@ Routing: in `handle()`, add `POST` + `action=transfer` → `handleTransfer(conte
 `handleTransfer(NeoContext)` (mirror the try / `OBContext.setAdminMode` / catch-`OBException`→400 /
 `Exception`→500-`rollbackAndClose` / finally pattern from `ReconciliationHandler.handleReactivate`):
 Body `{ sourceAccountId, destinationAccountId, amount, glItemId?, transferDate?, conversionRate?,
-bankFee?(bool), bankFeeAmount?, currencyToId?, description? }`.
+bankFee?(bool), bankFeeFrom?, bankFeeTo?, currencyToId?, description? }`.
 1. Validate: source/dest present; `amount > 0`; `sourceAccountId != destinationAccountId`
    (→ "Source and destination must differ"); load both accounts (404 if missing); destination
    belongs to source's org tree.
@@ -73,7 +73,8 @@ bankFee?(bool), bankFeeAmount?, currencyToId?, description? }`.
 3. Period guard: `createTransfer` / `doTransactionProcess` already enforce open period; surface its
    `OBException` as 400.
 4. Resolve `GLItem` (nullable), `manualConversionRate` (null when same currency → core uses 1; else
-   provided rate, or fall back to system rate), `bankFeeFrom = bankFee ? bankFeeAmount : 0`,
+   provided rate, or fall back to system rate), `bankFeeFrom`/`bankFeeTo` = the source/destination
+   fees when `bankFee` is checked (else 0),
    `bankFeeTo = 0`, `description` default `"Funds Transfer Transaction"`.
 5. Delegate: `FundsTransferActionHandler.createTransfer(date, from, to, glItem, amount,
    manualConversionRate, bankFeeFrom, bankFeeTo, description)` (the **9-arg** overload — the 8-arg one
@@ -110,7 +111,7 @@ generated artifact references the New-Movement button).
    - Amount: required; client guard amount ≤ available balance.
    - Currency From: read-only, from source.
    - Currency To: shown only when destination currency ≠ source; multi-currency rate field when applicable.
-   - Bank Fee: checkbox → reveals fee-amount field.
+   - Bank Fee: checkbox → reveals source + destination fee fields (mirrors Classic).
    - Description: default "Funds Transfer Transaction".
    - On confirm → POST `?action=transfer`; success → toast + refresh; error → inline.
 2. **Hook** `tools/app-shell/src/hooks/useFundsTransfer.js` (analogous to `useReconciliation`'s

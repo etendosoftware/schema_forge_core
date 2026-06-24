@@ -47,7 +47,7 @@ window doc, and the backend handler, all under the same ticket.
   button fires `onTransfer`.
 - Backend: `FinancialAccountTransactionsHandlerTest` (transfer delegates to Classic with the
   expected args; 400 same-account / non-positive / over-balance / different-org; 404 missing
-  account; multi-currency forwards the rate; bank fee → `bankFeeFrom`; error rolls back).
+  account; multi-currency forwards the rate; bank fees → `bankFeeFrom`/`bankFeeTo`; error rolls back).
 
 ## Rollback
 

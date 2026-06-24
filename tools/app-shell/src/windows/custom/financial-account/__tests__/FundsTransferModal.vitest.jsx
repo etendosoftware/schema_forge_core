@@ -22,47 +22,42 @@ vi.mock('@/hooks/useCreateMovement', () => ({
 }));
 
 vi.mock('@/hooks/useMovementLookups', () => ({
-  useGLItemLookup: () => ({ results: [], loading: false }),
+  useGLItemLookup: () => ({ results: [{ id: 'GL1', name: 'Internal transfers' }], loading: false }),
 }));
 
-// Render the dialog inline (no portal / pointer-events friction).
+// Render the dialog inline (no portal). Drop onOpenAutoFocus (Radix-only handler).
 vi.mock('@/components/ui/dialog', () => ({
   Dialog: ({ children }) => <div>{children}</div>,
-  DialogContent: ({ children, ...p }) => <div {...p}>{children}</div>,
-  DialogHeader: ({ children }) => <div>{children}</div>,
-  DialogTitle: ({ children }) => <h2>{children}</h2>,
-}));
-
-// Native field stand-ins so the form is drivable with fireEvent.
-vi.mock('@/components/forms/fields', () => ({
-  Field: ({ label, children }) => <label>{label}{children}</label>,
-  ReadOnly: ({ children }) => <span data-testid="readonly">{children}</span>,
-  Select: ({ value, onChange, options, name }) => (
-    <select data-testid={`field-select-${name}`} value={value ?? ''}
-      onChange={(e) => onChange(e.target.value)}>
-      <option value="" />
-      {(options || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
-  ),
-  AmountInput: ({ value, onChange, name }) => (
-    <input data-testid={`field-number-${name}`} value={value ?? ''} onChange={onChange} />
-  ),
-  TextInput: ({ value, onChange, name }) => (
-    <input data-testid={`field-text-${name}`} value={value ?? ''} onChange={onChange} />
-  ),
-  LookupPicker: () => <div data-testid="lookup-glitem" />,
+  DialogContent: ({ children, onOpenAutoFocus, ...p }) => <div {...p}>{children}</div>,
 }));
 
 import { FundsTransferModal } from '../FundsTransferModal.jsx';
 
-const SRC = { id: 'SRC', name: 'BBVA', currencyId: '102', currencyIso: 'EUR', currentBalance: 1000, active: true };
-const DST = { id: 'DST', name: 'Santander', currencyId: '102', currencyIso: 'EUR', currentBalance: 0, active: true };
-const USD = { id: 'USD', name: 'Chase', currencyId: '200', currencyIso: 'USD', currentBalance: 0, active: true };
+const SRC = { id: 'SRC', name: 'BBVA', iban: 'ES91', currencyIso: 'EUR', currentBalance: 1000, active: true };
+const DST = { id: 'DST', name: 'Santander', iban: 'ES80', currencyIso: 'EUR', currentBalance: 0, active: true };
+const USD = { id: 'USD', name: 'Chase', iban: 'US64', currencyIso: 'USD', currentBalance: 0, active: true };
 
 function renderModal(props = {}) {
   return render(
     <FundsTransferModal sourceAccountId="SRC" onClose={vi.fn()} onSuccess={vi.fn()} {...props} />,
   );
+}
+
+// Open the dropdown — focus the search input (shown until a value is chosen) or, once a value is
+// selected, click its chip to re-enter typing mode — then pick the option.
+function selectDest(id) {
+  const input = screen.queryByTestId('transfer-dest-search');
+  if (input) fireEvent.focus(input);
+  else fireEvent.click(screen.getByTestId('transfer-dest-chip'));
+  fireEvent.click(screen.getByTestId(`transfer-dest-option-${id}`));
+}
+
+// GL item is required; same open-then-pick flow.
+function selectGl() {
+  const input = screen.queryByTestId('transfer-gl-search');
+  if (input) fireEvent.focus(input);
+  else fireEvent.click(screen.getByTestId('transfer-gl-chip'));
+  fireEvent.click(screen.getByTestId('transfer-gl-option-GL1'));
 }
 
 describe('FundsTransferModal', () => {
@@ -75,43 +70,73 @@ describe('FundsTransferModal', () => {
     toastError.mockClear();
   });
 
-  it('prefills the source account (read-only) and lists other accounts as destinations', () => {
+  it('prefills the read-only source card with its available balance', () => {
     renderModal();
     expect(screen.getByTestId('funds-transfer-modal')).toBeInTheDocument();
     expect(screen.getByText('BBVA')).toBeInTheDocument();
-    const dest = screen.getByTestId('field-select-transfer-destination');
-    const values = Array.from(dest.querySelectorAll('option')).map((o) => o.value).filter(Boolean);
-    expect(values).toEqual(['DST', 'USD']); // source excluded
+    expect(screen.getByTestId('transfer-available')).toBeInTheDocument();
   });
 
-  it('keeps confirm disabled until a destination and a valid amount are set', () => {
+  it('does not auto-open the destination dropdown on mount', () => {
+    renderModal();
+    expect(screen.queryByTestId('transfer-dest-popover')).not.toBeInTheDocument();
+  });
+
+  it('offers the other org accounts as destinations (source excluded)', () => {
+    renderModal();
+    fireEvent.focus(screen.getByTestId('transfer-dest-search'));
+    expect(screen.getByTestId('transfer-dest-option-DST')).toBeInTheDocument();
+    expect(screen.getByTestId('transfer-dest-option-USD')).toBeInTheDocument();
+    expect(screen.queryByTestId('transfer-dest-option-SRC')).not.toBeInTheDocument();
+  });
+
+  it('filters the destination list via its search box', () => {
+    renderModal();
+    fireEvent.focus(screen.getByTestId('transfer-dest-search'));
+    fireEvent.change(screen.getByTestId('transfer-dest-search'), { target: { value: 'Chase' } });
+    expect(screen.getByTestId('transfer-dest-option-USD')).toBeInTheDocument();
+    expect(screen.queryByTestId('transfer-dest-option-DST')).not.toBeInTheDocument();
+  });
+
+  it('shows the selected destination as a clearable chip', () => {
+    renderModal();
+    selectDest('DST');
+    expect(screen.getByTestId('transfer-dest-chip')).toBeInTheDocument();
+  });
+
+  it('keeps confirm disabled until destination, amount and GL item are set', () => {
     renderModal();
     const confirm = screen.getByTestId('transfer-confirm');
     expect(confirm).toBeDisabled();
-    fireEvent.change(screen.getByTestId('field-select-transfer-destination'), { target: { value: 'DST' } });
-    fireEvent.change(screen.getByTestId('field-number-transfer-amount'), { target: { value: '100' } });
+    selectDest('DST');
+    fireEvent.change(screen.getByTestId('transfer-amount'), { target: { value: '100' } });
+    expect(confirm).toBeDisabled(); // GL item is required
+    selectGl();
     expect(confirm).not.toBeDisabled();
   });
 
-  it('reveals the fee-amount field only when Bank Fee is checked', () => {
+  it('reveals both bank-fee fields (source + destination) only when Bank Fee is checked', () => {
     renderModal();
-    expect(screen.queryByTestId('field-number-transfer-bankfee-amount')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('transfer-bankfee-from')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('transfer-bankfee-to')).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId('checkbox-transfer-bankfee'));
-    expect(screen.getByTestId('field-number-transfer-bankfee-amount')).toBeInTheDocument();
+    expect(screen.getByTestId('transfer-bankfee-from')).toBeInTheDocument();
+    expect(screen.getByTestId('transfer-bankfee-to')).toBeInTheDocument();
   });
 
-  it('shows the Currency To field only when the destination currency differs', () => {
+  it('shows the currency-conversion block only when the destination currency differs', () => {
     renderModal();
-    fireEvent.change(screen.getByTestId('field-select-transfer-destination'), { target: { value: 'DST' } });
-    expect(screen.queryByTestId('field-text-transfer-rate')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByTestId('field-select-transfer-destination'), { target: { value: 'USD' } });
-    expect(screen.getByTestId('field-text-transfer-rate')).toBeInTheDocument();
+    selectDest('DST');
+    expect(screen.queryByTestId('transfer-fx-block')).not.toBeInTheDocument();
+    selectDest('USD');
+    expect(screen.getByTestId('transfer-fx-block')).toBeInTheDocument();
+    expect(screen.getByTestId('transfer-rate')).toBeInTheDocument();
   });
 
   it('blocks a transfer above the source available balance', () => {
     renderModal();
-    fireEvent.change(screen.getByTestId('field-select-transfer-destination'), { target: { value: 'DST' } });
-    fireEvent.change(screen.getByTestId('field-number-transfer-amount'), { target: { value: '5000' } });
+    selectDest('DST');
+    fireEvent.change(screen.getByTestId('transfer-amount'), { target: { value: '5000' } });
     expect(screen.getByTestId('transfer-balance-warning')).toBeInTheDocument();
     expect(screen.getByTestId('transfer-confirm')).toBeDisabled();
   });
@@ -120,8 +145,9 @@ describe('FundsTransferModal', () => {
     const onClose = vi.fn();
     const onSuccess = vi.fn();
     renderModal({ onClose, onSuccess });
-    fireEvent.change(screen.getByTestId('field-select-transfer-destination'), { target: { value: 'DST' } });
-    fireEvent.change(screen.getByTestId('field-number-transfer-amount'), { target: { value: '100' } });
+    selectDest('DST');
+    fireEvent.change(screen.getByTestId('transfer-amount'), { target: { value: '100' } });
+    selectGl();
     fireEvent.click(screen.getByTestId('transfer-confirm'));
 
     await waitFor(() => expect(transfer).toHaveBeenCalledTimes(1));
@@ -131,6 +157,7 @@ describe('FundsTransferModal', () => {
       amount: '100',
       description: 'financeAccountTransferDescriptionDefault',
       bankFee: false,
+      glItemId: 'GL1',
     });
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
     expect(onClose).toHaveBeenCalled();
@@ -139,9 +166,10 @@ describe('FundsTransferModal', () => {
 
   it('forwards the conversion rate on a multi-currency transfer', async () => {
     renderModal();
-    fireEvent.change(screen.getByTestId('field-select-transfer-destination'), { target: { value: 'USD' } });
-    fireEvent.change(screen.getByTestId('field-number-transfer-amount'), { target: { value: '100' } });
-    fireEvent.change(screen.getByTestId('field-text-transfer-rate'), { target: { value: '1.1' } });
+    selectDest('USD');
+    fireEvent.change(screen.getByTestId('transfer-amount'), { target: { value: '100' } });
+    fireEvent.change(screen.getByTestId('transfer-rate'), { target: { value: '1.1' } });
+    selectGl();
     fireEvent.click(screen.getByTestId('transfer-confirm'));
 
     await waitFor(() => expect(transfer).toHaveBeenCalledTimes(1));
@@ -149,6 +177,24 @@ describe('FundsTransferModal', () => {
       destinationAccountId: 'USD',
       amount: '100',
       conversionRate: '1.1',
+    });
+  });
+
+  it('forwards both bank fees (source + destination) when Bank Fee is checked', async () => {
+    renderModal();
+    selectDest('DST');
+    fireEvent.change(screen.getByTestId('transfer-amount'), { target: { value: '100' } });
+    selectGl();
+    fireEvent.click(screen.getByTestId('checkbox-transfer-bankfee'));
+    fireEvent.change(screen.getByTestId('transfer-bankfee-from'), { target: { value: '5' } });
+    fireEvent.change(screen.getByTestId('transfer-bankfee-to'), { target: { value: '3' } });
+    fireEvent.click(screen.getByTestId('transfer-confirm'));
+
+    await waitFor(() => expect(transfer).toHaveBeenCalledTimes(1));
+    expect(transfer.mock.calls[0][0]).toMatchObject({
+      bankFee: true,
+      bankFeeFrom: '5',
+      bankFeeTo: '3',
     });
   });
 });

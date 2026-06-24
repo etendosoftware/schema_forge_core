@@ -87,7 +87,7 @@ export function useCreatePayment() {
  * POST /sws/neo/financial-account-transactions?action=transfer
  * body: {
  *   sourceAccountId, destinationAccountId, amount, glItemId?, transferDate?,
- *   conversionRate?, bankFee?, bankFeeAmount?, description?
+ *   conversionRate?, bankFee?, bankFeeFrom?, bankFeeTo?, description?
  * }
  *
  * The backend validates and delegates to Etendo Classic's funds-transfer flow,
