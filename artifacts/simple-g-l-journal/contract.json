@@ -1,8 +1,8 @@
 {
-  "version": "0.14.0",
+  "version": "0.15.0",
   "generatedAt": "2026-06-16T16:34:09.049Z",
-  "updatedAt": "2026-06-24T12:28:05.461Z",
-  "checksum": "2867f3ba2db38829",
+  "updatedAt": "2026-06-24T20:46:49.776Z",
+  "checksum": "202a685d07d22ea8",
   "frontendContract": {
     "window": {
       "id": "B917E8A7B0864ACEA9D941E3B7494E53",
@@ -974,6 +974,22 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "discarded",
+            "required": true
           }
         ],
         "javaQualifier": "glJournalHeaderHandler"
@@ -1507,6 +1523,14 @@
         "url": "/sws/neo/simple-g-l-journal/gLJournal/{id}/action/processNow"
       },
       {
+        "entity": "gLJournal",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/simple-g-l-journal/gLJournal/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "gLJournalLine",
         "field": "aPRMAddPayment",
         "column": "EM_Aprm_Addpayment",
@@ -1541,6 +1565,14 @@
         "field": "documentAction",
         "runner": "node",
         "description": "Action endpoint for 'documentAction' in gLJournal should exist"
+      },
+      {
+        "id": "t-action-endpoint-gLJournal-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "gLJournal",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in gLJournal should exist"
       },
       {
         "id": "t-action-endpoint-gLJournal-processNow",
@@ -2778,6 +2810,13 @@
         "description": "Rule 'GL_JournalLine-User2_ID-readOnlyLogic' (readOnlyLogic) should be declared"
       },
       {
+        "id": "t-rule-declared-Post",
+        "category": "rule-declared",
+        "rule": "Post",
+        "runner": "node",
+        "description": "Rule 'Post' (process) should be declared"
+      },
+      {
         "id": "t-rule-declared-Posted",
         "category": "rule-declared",
         "rule": "Posted",
@@ -2867,6 +2906,13 @@
         "rule": "simple-g-l-journal-Header-DocAction-displayLogic",
         "runner": "node",
         "description": "Rule 'simple-g-l-journal-Header-DocAction-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-simple-g-l-journal-Header-EM-Etblkp-Bulkposting-displayLogic",
+        "category": "rule-declared",
+        "rule": "simple-g-l-journal-Header-EM_Etblkp_Bulkposting-displayLogic",
+        "runner": "node",
+        "description": "Rule 'simple-g-l-journal-Header-EM_Etblkp_Bulkposting-displayLogic' (displayLogic) should be declared"
       },
       {
         "id": "t-rule-declared-simple-g-l-journal-Header-M-Product-ID-displayLogic",
@@ -3356,6 +3402,22 @@
         "description": "System field 'documentType' should exist in backend but not frontend for gLJournal"
       },
       {
+        "id": "t-system-field-gLJournal-etblkpAccountingstatus",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for gLJournal"
+      },
+      {
+        "id": "t-system-field-gLJournal-etblkpBulkposting",
+        "category": "system-field",
+        "entity": "gLJournal",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for gLJournal"
+      },
+      {
         "id": "t-system-field-gLJournal-gLCategory",
         "category": "system-field",
         "entity": "gLJournal",
@@ -3771,9 +3833,9 @@
       }
     ],
     "summary": {
-      "total": 295,
+      "total": 300,
       "byCategory": {
-        "action-endpoint": 3,
+        "action-endpoint": 4,
         "crud-flags": 2,
         "default-value-type": 10,
         "displaylogic-evaluable": 7,
@@ -3782,14 +3844,14 @@
         "field-type": 18,
         "readonlylogic-evaluable": 16,
         "readonlylogic-valid": 16,
-        "rule-declared": 121,
+        "rule-declared": 123,
         "searchable-filters": 1,
         "selector-endpoint": 8,
-        "system-field": 66,
+        "system-field": 68,
         "visibility": 2
       },
       "byRunner": {
-        "node": 295,
+        "node": 300,
         "junit": 0
       }
     }

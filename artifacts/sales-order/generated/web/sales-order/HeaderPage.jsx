@@ -362,6 +362,14 @@ export const api = {
       "processType": "obuiapp"
     },
     {
+      "entity": "header",
+      "field": "eTPRRemovePayment",
+      "column": "EM_Etpr_Remove_Payment",
+      "url": "/sws/neo/sales-order/header/{id}/action/eTPRRemovePayment",
+      "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+      "processType": "obuiapp"
+    },
+    {
       "entity": "lines",
       "field": "manageReservation",
       "column": "Manage_Reservation",

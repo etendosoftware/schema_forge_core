@@ -10,7 +10,9 @@ export const header = [
     "totalAmortization": 99.44,
     "currency": "USD",
     "processed": "Sample processed",
-    "posted": "Sample posted"
+    "posted": "Sample posted",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-header-002",
@@ -21,7 +23,9 @@ export const header = [
     "totalAmortization": 96.94,
     "currency": "EUR",
     "processed": "Sample processed",
-    "posted": "Sample posted"
+    "posted": "Sample posted",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-header-003",
@@ -32,7 +36,9 @@ export const header = [
     "totalAmortization": 12.48,
     "currency": "GBP",
     "processed": "Sample processed",
-    "posted": "Sample posted"
+    "posted": "Sample posted",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-header-004",
@@ -43,7 +49,9 @@ export const header = [
     "totalAmortization": 96.31,
     "currency": "USD",
     "processed": "Sample processed",
-    "posted": "Sample posted"
+    "posted": "Sample posted",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-header-005",
@@ -54,7 +62,9 @@ export const header = [
     "totalAmortization": 31.27,
     "currency": "EUR",
     "processed": "Sample processed",
-    "posted": "Sample posted"
+    "posted": "Sample posted",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-header-006",
@@ -65,7 +75,9 @@ export const header = [
     "totalAmortization": 76.52,
     "currency": "GBP",
     "processed": "Sample processed",
-    "posted": "Sample posted"
+    "posted": "Sample posted",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-header-007",
@@ -76,7 +88,9 @@ export const header = [
     "totalAmortization": 2.66,
     "currency": "USD",
     "processed": "Sample processed",
-    "posted": "Sample posted"
+    "posted": "Sample posted",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-header-008",
@@ -87,7 +101,9 @@ export const header = [
     "totalAmortization": 10.03,
     "currency": "EUR",
     "processed": "Sample processed",
-    "posted": "Sample posted"
+    "posted": "Sample posted",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-header-009",
@@ -98,7 +114,9 @@ export const header = [
     "totalAmortization": 93.97,
     "currency": "GBP",
     "processed": "Sample processed",
-    "posted": "Sample posted"
+    "posted": "Sample posted",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-header-010",
@@ -109,7 +127,9 @@ export const header = [
     "totalAmortization": 1.1,
     "currency": "USD",
     "processed": "Sample processed",
-    "posted": "Sample posted"
+    "posted": "Sample posted",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-header-011",
@@ -120,7 +140,9 @@ export const header = [
     "totalAmortization": 79.99,
     "currency": "EUR",
     "processed": "Sample processed",
-    "posted": "Sample posted"
+    "posted": "Sample posted",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-header-012",
@@ -131,7 +153,9 @@ export const header = [
     "totalAmortization": 53.61,
     "currency": "GBP",
     "processed": "Sample processed",
-    "posted": "Sample posted"
+    "posted": "Sample posted",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   }
 ];
 

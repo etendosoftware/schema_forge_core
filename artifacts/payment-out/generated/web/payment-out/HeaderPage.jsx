@@ -20,6 +20,8 @@ const breadcrumb = 'Finance / Payment Out';
 // @sf-generated-start summary:header
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'etblkpAccountingstatus', column: 'EM_Etblkp_Accountingstatus', type: 'status' },
+  { key: 'etblkpBulkposting', column: 'EM_Etblkp_Bulkposting', type: 'string' },
 ];
 
 const statusField = 'status';
@@ -35,6 +37,12 @@ const extraBadges = [
 const processes = [
   { name: 'psd2GenerateBankPayment', label: 'Generate Bank Payment', style: 'positive',
     displayLogicRaw: "@PSD2_HasPayments@=0 & @PSD2_UserHasApiKey@=1 & @Status@='PPM'  & @PSD2_HasFinTransaction@=0" },
+  { name: 'etblkpBulkposting', label: 'Bulk Posting', style: 'positive',
+    displayLogicRaw: "@Status@!'RPAE' & @Status@!'RPVOID' & @Processed@='Y' & @#ShowAcct@='Y'" },
+  { name: 'etprReactivatePayment', label: 'Advanced Reactivation', style: 'positive',
+    displayLogicRaw: "@Processed@='Y' & @Status@!'RPVOID'" },
+  { name: 'eTPRRemovePayment', label: 'Remove Payment', style: 'positive',
+    displayLogicRaw: "@Processed@='Y' & @Status@!'RPVOID'" },
 ];
 // @sf-generated-end processes:header
 
@@ -43,7 +51,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start requiredHeaderFields:header
-const requiredHeaderFields = ['documentNo', 'paymentMethod', 'account', 'currency'];
+const requiredHeaderFields = ['documentNo', 'paymentMethod', 'account', 'currency', 'etblkpAccountingstatus', 'etblkpBulkposting', 'etprReactivatePayment'];
 // @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
@@ -548,6 +556,30 @@ export const api = {
       "column": "EM_Psd2_Generate_Bank_Payment",
       "url": "/sws/neo/payment-out/header/{id}/action/psd2GenerateBankPayment",
       "processId": "0661406A983B4D8EA611F8596F114D52",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/payment-out/header/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "etprReactivatePayment",
+      "column": "EM_Etpr_Reactivate_Payment",
+      "url": "/sws/neo/payment-out/header/{id}/action/etprReactivatePayment",
+      "processId": "84628BC70CDB49B58054E80C20BCBFEE",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "eTPRRemovePayment",
+      "column": "em_etpr_remove_payment",
+      "url": "/sws/neo/payment-out/header/{id}/action/eTPRRemovePayment",
+      "processId": "FB79E902A5384754990AD145F6CAC9FB",
       "processType": "obuiapp"
     },
     {

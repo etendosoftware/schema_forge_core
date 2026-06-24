@@ -353,6 +353,14 @@ export const api = {
       "processType": "obuiapp"
     },
     {
+      "entity": "customerReturn",
+      "field": "eTPRRemovePayment",
+      "column": "EM_Etpr_Remove_Payment",
+      "url": "/sws/neo/returns/customerReturn/{id}/action/eTPRRemovePayment",
+      "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+      "processType": "obuiapp"
+    },
+    {
       "entity": "customerReturnLine",
       "field": "selectOrderLine",
       "column": "Relate_Orderline",

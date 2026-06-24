@@ -1,8 +1,8 @@
 {
-  "version": "0.17.0",
+  "version": "0.18.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "updatedAt": "2026-06-24T12:28:05.445Z",
-  "contractChecksum": "1d16391352330b79",
+  "updatedAt": "2026-06-24T20:46:47.428Z",
+  "contractChecksum": "7ba9442fee48c3df",
   "apiPrediction": {
     "specName": "goods-shipment",
     "baseUrl": "/sws/neo/goods-shipment",
@@ -301,6 +301,46 @@
         "processType": "obuiapp"
       },
       {
+        "name": "etblkpBulkposting",
+        "actionType": "documentAction",
+        "entity": "goodsShipment",
+        "column": "EM_Etblkp_Bulkposting",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/etblkpBulkposting",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
         "name": "explode",
         "actionType": "utilityAction",
         "entity": "goodsShipmentLine",
@@ -410,6 +450,16 @@
           "processed": {
             "readOnly": true,
             "required": true
+          },
+          "etblkpAccountingstatus": {
+            "readOnly": true,
+            "required": true,
+            "defaultValue": "N"
+          },
+          "etblkpBulkposting": {
+            "readOnly": true,
+            "required": true,
+            "defaultValue": "N"
           }
         }
       },
@@ -478,7 +528,8 @@
       "documentAction",
       "generateTo",
       "receiveMaterials",
-      "sendMaterials"
+      "sendMaterials",
+      "etblkpBulkposting"
     ],
     "workflow": [
       "Create draft header with required fields",
@@ -527,5 +578,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "082a97757cebb4a7"
+  "checksum": "126b26c4d7f9c2ba"
 }

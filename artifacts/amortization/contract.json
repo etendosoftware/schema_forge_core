@@ -1,8 +1,8 @@
 {
-  "version": "0.27.0",
+  "version": "0.28.0",
   "generatedAt": "2026-05-22T16:00:10.872Z",
-  "updatedAt": "2026-06-24T12:23:08.457Z",
-  "checksum": "21f3cba8916146e9",
+  "updatedAt": "2026-06-24T20:46:46.891Z",
+  "checksum": "ab49193b73a1aff1",
   "frontendContract": {
     "window": {
       "id": "800026",
@@ -294,6 +294,122 @@
               "reason": "session-preference",
               "js": null
             }
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "label": "Accounting Status",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "enumValues": [
+              {
+                "value": "NC",
+                "name": "Cost Not Calculated"
+              },
+              {
+                "value": "d",
+                "name": "Disabled For Background"
+              },
+              {
+                "value": "D",
+                "name": "Document Disabled"
+              },
+              {
+                "value": "L",
+                "name": "Document Locked"
+              },
+              {
+                "value": "E",
+                "name": "Error"
+              },
+              {
+                "value": "C",
+                "name": "Error, No cost"
+              },
+              {
+                "value": "i",
+                "name": "Invalid Account"
+              },
+              {
+                "value": "AD",
+                "name": "No Accounting Date"
+              },
+              {
+                "value": "DT",
+                "name": "No Document Type"
+              },
+              {
+                "value": "NO",
+                "name": "No Related PO"
+              },
+              {
+                "value": "b",
+                "name": "Not Balanced"
+              },
+              {
+                "value": "c",
+                "name": "Not Convertible (no rate)"
+              },
+              {
+                "value": "l",
+                "name": "Pending Refresh"
+              },
+              {
+                "value": "p",
+                "name": "Period Closed"
+              },
+              {
+                "value": "y",
+                "name": "Post Prepared"
+              },
+              {
+                "value": "Y",
+                "name": "Posted"
+              },
+              {
+                "value": "T",
+                "name": "Table Disabled"
+              },
+              {
+                "value": "N",
+                "name": "Unposted"
+              }
+            ],
+            "defaultValue": "N"
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "label": "Bulk Posting",
+            "type": "button",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "defaultValue": "N",
+            "displayLogic": {
+              "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
+              "evaluable": false,
+              "reason": "session-preference",
+              "js": null
+            }
           }
         ],
         "searchableFields": [
@@ -314,6 +430,20 @@
             "derivation": {
               "type": "computed",
               "source": "'N'"
+            }
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            }
+          },
+          {
+            "name": "etblkpBulkposting",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
             }
           }
         ],
@@ -872,6 +1002,22 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "readOnly",
+            "required": true
           }
         ],
         "javaQualifier": "amortizationHeaderHandler"
@@ -1265,6 +1411,14 @@
         "url": "/sws/neo/amortization/header/{id}/action/processed",
         "processId": "800134",
         "processType": "classic"
+      },
+      {
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/amortization/header/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -1329,6 +1483,14 @@
   "testManifest": {
     "tests": [
       {
+        "id": "t-action-endpoint-header-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in header should exist"
+      },
+      {
         "id": "t-action-endpoint-header-processed",
         "category": "action-endpoint",
         "entity": "header",
@@ -1351,6 +1513,22 @@
         "description": "CRUD flags for 'lines' should all be booleans"
       },
       {
+        "id": "t-default-value-type-header-etblkpAccountingstatus",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "Default value for 'etblkpAccountingstatus' in header should be a string"
+      },
+      {
+        "id": "t-default-value-type-header-etblkpBulkposting",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Default value for 'etblkpBulkposting' in header should be a string"
+      },
+      {
         "id": "t-default-value-type-header-posted",
         "category": "default-value-type",
         "entity": "header",
@@ -1367,6 +1545,14 @@
         "description": "Default value for 'processed' in header should be a string"
       },
       {
+        "id": "t-displaylogic-evaluable-header-etblkpBulkposting",
+        "category": "displaylogic-evaluable",
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Display logic for 'etblkpBulkposting' in header should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-header-posted",
         "category": "displaylogic-evaluable",
         "entity": "header",
@@ -1381,6 +1567,14 @@
         "field": "project",
         "runner": "node",
         "description": "Display logic for 'project' in lines should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-header-etblkpBulkposting",
+        "category": "displaylogic-valid",
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Display logic for 'etblkpBulkposting' in header should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-header-posted",
@@ -1421,6 +1615,22 @@
         "field": "description",
         "runner": "node",
         "description": "Field 'description' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-etblkpAccountingstatus",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "Field 'etblkpAccountingstatus' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-etblkpBulkposting",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Field 'etblkpBulkposting' should be present in header"
       },
       {
         "id": "t-field-presence-header-name",
@@ -1581,6 +1791,22 @@
         "field": "description",
         "runner": "node",
         "description": "Field 'description' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-etblkpAccountingstatus",
+        "category": "field-type",
+        "entity": "header",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "Field 'etblkpAccountingstatus' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-etblkpBulkposting",
+        "category": "field-type",
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Field 'etblkpBulkposting' should have type 'string' in header"
       },
       {
         "id": "t-field-type-header-name",
@@ -2783,15 +3009,15 @@
       }
     ],
     "summary": {
-      "total": 190,
+      "total": 199,
       "byCategory": {
-        "action-endpoint": 1,
+        "action-endpoint": 2,
         "crud-flags": 2,
-        "default-value-type": 2,
-        "displaylogic-evaluable": 2,
-        "displaylogic-valid": 2,
-        "field-presence": 20,
-        "field-type": 20,
+        "default-value-type": 4,
+        "displaylogic-evaluable": 3,
+        "displaylogic-valid": 3,
+        "field-presence": 22,
+        "field-type": 22,
         "readonlylogic-evaluable": 18,
         "readonlylogic-valid": 18,
         "rule-declared": 63,
@@ -2801,7 +3027,7 @@
         "visibility": 2
       },
       "byRunner": {
-        "node": 190,
+        "node": 199,
         "junit": 0
       }
     }

@@ -1,8 +1,8 @@
 {
-  "version": "0.18.0",
+  "version": "0.19.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-06-24T12:28:05.425Z",
-  "checksum": "6e48a605daa61c5c",
+  "updatedAt": "2026-06-24T20:46:47.331Z",
+  "checksum": "e8e740eaf69ef42b",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -1562,6 +1562,22 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "discarded",
+            "required": true
           }
         ],
         "javaQualifier": "goodsReceiptHeaderHandler"
@@ -2236,6 +2252,14 @@
         "processType": "obuiapp"
       },
       {
+        "entity": "goodsReceipt",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "goodsReceiptLine",
         "field": "managePrereservation",
         "column": "Manage_Prereservation",
@@ -2294,6 +2318,14 @@
         "field": "documentAction",
         "runner": "node",
         "description": "Action endpoint for 'documentAction' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-action-endpoint-goodsReceipt-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "goodsReceipt",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in goodsReceipt should exist"
       },
       {
         "id": "t-action-endpoint-goodsReceipt-generateTo",
@@ -4088,6 +4120,22 @@
         "description": "System field 'documentType' should exist in backend but not frontend for goodsReceipt"
       },
       {
+        "id": "t-system-field-goodsReceipt-etblkpAccountingstatus",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-etblkpBulkposting",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
         "id": "t-system-field-goodsReceipt-externalBusinessPartnerReference",
         "category": "system-field",
         "entity": "goodsReceipt",
@@ -4511,9 +4559,9 @@
       }
     ],
     "summary": {
-      "total": 285,
+      "total": 288,
       "byCategory": {
-        "action-endpoint": 11,
+        "action-endpoint": 12,
         "crud-flags": 2,
         "default-value-type": 8,
         "displaylogic-evaluable": 2,
@@ -4525,11 +4573,11 @@
         "rule-declared": 38,
         "searchable-filters": 5,
         "selector-endpoint": 20,
-        "system-field": 67,
+        "system-field": 69,
         "visibility": 2
       },
       "byRunner": {
-        "node": 285,
+        "node": 288,
         "junit": 0
       }
     }

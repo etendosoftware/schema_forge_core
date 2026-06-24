@@ -1,8 +1,8 @@
 {
-  "version": "0.18.0",
+  "version": "0.19.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-06-24T12:28:05.425Z",
-  "contractChecksum": "6e48a605daa61c5c",
+  "updatedAt": "2026-06-24T20:46:47.331Z",
+  "contractChecksum": "e8e740eaf69ef42b",
   "apiPrediction": {
     "specName": "goods-receipt",
     "baseUrl": "/sws/neo/goods-receipt",
@@ -462,6 +462,46 @@
         "processType": "obuiapp"
       },
       {
+        "name": "etblkpBulkposting",
+        "actionType": "documentAction",
+        "entity": "goodsReceipt",
+        "column": "EM_Etblkp_Bulkposting",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/etblkpBulkposting",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
         "name": "managePrereservation",
         "actionType": "utilityAction",
         "entity": "goodsReceiptLine",
@@ -756,7 +796,8 @@
       "generateTo",
       "documentAction",
       "receiveMaterials",
-      "sendMaterials"
+      "sendMaterials",
+      "etblkpBulkposting"
     ],
     "workflow": [
       "Create draft header with required fields",
@@ -807,5 +848,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "197b81ae3f1b4cc7"
+  "checksum": "fc78652a77337d78"
 }

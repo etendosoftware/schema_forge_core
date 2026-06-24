@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.5.0",
   "generatedAt": "2026-04-29T19:46:12.773Z",
-  "updatedAt": "2026-06-11T12:55:36.379Z",
-  "checksum": "79b899b3eb9a5f7e",
+  "updatedAt": "2026-06-24T20:46:48.861Z",
+  "checksum": "93bcb149dfb2076f",
   "frontendContract": {
     "window": {
       "id": "FF808081330213E60133021822E40007",
@@ -618,7 +618,7 @@
             "inputMode": "selector",
             "section": "principal",
             "validationRule": {
-              "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID=@AD_CLIENT_ID@ AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
+              "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID IN (@AD_CLIENT_ID@, '0') AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
               "contextParams": [],
               "cascadeParams": [
                 "DateInvoiced",
@@ -1541,6 +1541,14 @@
             "type": "button",
             "visibility": "system",
             "required": false
+          },
+          {
+            "name": "eTPRRemovePayment",
+            "apiKey": "eTPRRemovePayment",
+            "column": "EM_Etpr_Remove_Payment",
+            "type": "button",
+            "visibility": "system",
+            "required": true
           }
         ]
       },
@@ -2506,6 +2514,14 @@
         "processType": "obuiapp"
       },
       {
+        "entity": "customerReturn",
+        "field": "eTPRRemovePayment",
+        "column": "EM_Etpr_Remove_Payment",
+        "url": "/sws/neo/returns/customerReturn/{id}/action/eTPRRemovePayment",
+        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "customerReturnLine",
         "field": "selectOrderLine",
         "column": "Relate_Orderline",
@@ -2628,6 +2644,14 @@
         "field": "documentAction",
         "runner": "node",
         "description": "Action endpoint for 'documentAction' in customerReturn should exist"
+      },
+      {
+        "id": "t-action-endpoint-customerReturn-eTPRRemovePayment",
+        "category": "action-endpoint",
+        "entity": "customerReturn",
+        "field": "eTPRRemovePayment",
+        "runner": "node",
+        "description": "Action endpoint for 'eTPRRemovePayment' in customerReturn should exist"
       },
       {
         "id": "t-action-endpoint-customerReturn-generateTemplate",
@@ -3862,6 +3886,14 @@
         "description": "System field 'etgoTotalDiscount' should exist in backend but not frontend for customerReturn"
       },
       {
+        "id": "t-system-field-customerReturn-eTPRRemovePayment",
+        "category": "system-field",
+        "entity": "customerReturn",
+        "field": "eTPRRemovePayment",
+        "runner": "node",
+        "description": "System field 'eTPRRemovePayment' should exist in backend but not frontend for customerReturn"
+      },
+      {
         "id": "t-system-field-customerReturn-externalBusinessPartnerReference",
         "category": "system-field",
         "entity": "customerReturn",
@@ -4797,9 +4829,9 @@
       }
     ],
     "summary": {
-      "total": 281,
+      "total": 283,
       "byCategory": {
-        "action-endpoint": 22,
+        "action-endpoint": 23,
         "crud-flags": 2,
         "default-value-type": 5,
         "displaylogic-evaluable": 1,
@@ -4811,11 +4843,11 @@
         "rule-declared": 6,
         "searchable-filters": 5,
         "selector-endpoint": 11,
-        "system-field": 152,
+        "system-field": 153,
         "visibility": 2
       },
       "byRunner": {
-        "node": 281,
+        "node": 283,
         "junit": 0
       }
     }

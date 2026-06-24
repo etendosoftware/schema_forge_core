@@ -464,6 +464,22 @@ export const api = {
       "processType": "obuiapp"
     },
     {
+      "entity": "header",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "eTPRRemovePayment",
+      "column": "EM_Etpr_Remove_Payment",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/eTPRRemovePayment",
+      "processId": "745FCF75B6F14024B96CC14429D8E952",
+      "processType": "obuiapp"
+    },
+    {
       "entity": "lines",
       "field": "explode",
       "column": "Explode",

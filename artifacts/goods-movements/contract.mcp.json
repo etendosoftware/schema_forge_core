@@ -1,8 +1,8 @@
 {
-  "version": "0.5.0",
+  "version": "0.6.0",
   "generatedAt": "2026-04-29T19:05:48.778Z",
-  "updatedAt": "2026-06-24T12:28:05.384Z",
-  "contractChecksum": "31c66352e48b6b59",
+  "updatedAt": "2026-06-24T20:46:47.221Z",
+  "contractChecksum": "7caedde23f32f4d4",
   "apiPrediction": {
     "specName": "goods-movements",
     "baseUrl": "/sws/neo/goods-movements",
@@ -169,6 +169,46 @@
           "Document has pending lines or missing required fields",
           "User lacks permission to execute the action"
         ]
+      },
+      {
+        "name": "etblkpBulkposting",
+        "actionType": "documentAction",
+        "entity": "movement",
+        "column": "EM_Etblkp_Bulkposting",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/goods-movements/movement/{id}/action/etblkpBulkposting",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -276,7 +316,8 @@
     "selectorContexts": [],
     "actions": [
       "processNow",
-      "posted"
+      "posted",
+      "etblkpBulkposting"
     ],
     "workflow": [
       "Create draft header with required fields",
@@ -325,5 +366,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "16134e81b4871879"
+  "checksum": "e70cb0fb8837e260"
 }
