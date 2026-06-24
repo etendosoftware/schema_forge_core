@@ -1,5 +1,9 @@
 // --- Mocks (before imports) ---
 
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => vi.fn(),
+}));
+
 vi.mock('@/i18n', () => ({
   useUI: () => (key, params) => (params ? `${key}:${JSON.stringify(params)}` : key),
 }));
@@ -13,11 +17,12 @@ vi.mock('lucide-react', () => ({
   ArrowUpDown: (props) => <span data-testid="icon-sort" {...props} />,
   ArrowUp: (props) => <span data-testid="icon-up" {...props} />,
   ArrowDown: (props) => <span data-testid="icon-down" {...props} />,
+  ArrowUpRight: (props) => <span data-testid="icon-arrow-up-right" {...props} />,
 }));
 
 // --- Import under test ---
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import WarehouseTransactionsTable from '../WarehouseTransactionsTable.jsx';
 import { useWarehouseStock } from '../useWarehouseStock';
 
@@ -77,40 +82,6 @@ describe('WarehouseTransactionsTable', () => {
     useWarehouseStock.mockReturnValue({ loading: false, error: null, transactions: [{ id: 'tx-1', movementDate: '2025-01-15', movementQuantity: 5 }] });
     render(<WarehouseTransactionsTable {...defaultProps} />);
     expect(defaultProps.onCount).toHaveBeenCalledWith(1);
-  });
-
-  it('renders search input', () => {
-    useWarehouseStock.mockReturnValue({ loading: false, error: null, transactions: [] });
-    render(<WarehouseTransactionsTable {...defaultProps} />);
-    expect(screen.getByPlaceholderText('warehouseFilterPlaceholder')).toBeInTheDocument();
-  });
-
-  it('filters transactions by search', () => {
-    useWarehouseStock.mockReturnValue({
-      loading: false,
-      error: null,
-      transactions: [
-        { id: 'tx-1', movementDate: '2025-01-15', 'product$_identifier': 'Widget A', movementType: 'V+', movementQuantity: 10 },
-        { id: 'tx-2', movementDate: '2025-01-16', 'product$_identifier': 'Gadget B', movementType: 'C-', movementQuantity: -5 },
-      ],
-    });
-    render(<WarehouseTransactionsTable {...defaultProps} />);
-    fireEvent.change(screen.getByPlaceholderText('warehouseFilterPlaceholder'), { target: { value: 'Widget' } });
-    expect(screen.getByText('Widget A')).toBeInTheDocument();
-    expect(screen.queryByText('Gadget B')).not.toBeInTheDocument();
-  });
-
-  it('shows no filter results message', () => {
-    useWarehouseStock.mockReturnValue({
-      loading: false,
-      error: null,
-      transactions: [
-        { id: 'tx-1', movementDate: '2025-01-15', 'product$_identifier': 'Widget A', movementType: 'V+', movementQuantity: 10 },
-      ],
-    });
-    render(<WarehouseTransactionsTable {...defaultProps} />);
-    fireEvent.change(screen.getByPlaceholderText('warehouseFilterPlaceholder'), { target: { value: 'ZZZ' } });
-    expect(screen.getByText('warehouseNoFilterResults')).toBeInTheDocument();
   });
 
   it('renders column headers', () => {

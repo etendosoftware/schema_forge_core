@@ -192,10 +192,12 @@ export function ListView({
   newLabel = null,
   newActions = [],
   listbarPaddingX = 'px-6',
+  listbarPaddingY = 'py-3',
   SortIconComponent = null,
   RefreshIconComponent = null,
   iconButtonHover = 'hover:text-foreground',
   tablePaddingX = 'px-6',
+  tablePaddingBottom = 'pb-6',
   labelOverrides,
   onCloneRow = null,
   initialColumnFilters,
@@ -579,7 +581,7 @@ export function ListView({
         <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
           {/* Selection bar or filter bar */}
           {selectedRows.length > 0 ? (
-            <div className={`flex items-center justify-between ${listbarPaddingX} py-3 border-b border-border/30`}>
+            <div className={`flex items-center justify-between ${listbarPaddingX} ${listbarPaddingY} border-b border-border/30`}>
               <div className="flex items-center gap-3 h-10">
                 <span role="status" className="text-sm font-semibold" data-testid="selection-count">{ui('selected').replace('{count}', selectedRows.length)}</span>
               </div>
@@ -627,7 +629,7 @@ export function ListView({
               </div>
             </div>
           ) : (
-            <div className={`flex items-center justify-between ${listbarPaddingX} py-3`}>
+            <div className={`flex items-center justify-between ${listbarPaddingX} ${listbarPaddingY}`}>
               <div className="flex items-center gap-2">
                 {subsetFilters && (
                   <div role="group" aria-label="Filters" className="inline-flex items-center gap-1 rounded-xl bg-[#F5F7F9] p-1 h-10">
@@ -829,7 +831,7 @@ export function ListView({
           )}
 
           {/* Table */}
-          <div ref={scrollRef} onScroll={handleScroll} className={`flex-1 overflow-auto ${tablePaddingX} pb-6`}>
+          <div ref={scrollRef} onScroll={handleScroll} className={`flex-1 overflow-auto ${tablePaddingX} ${tablePaddingBottom}`}>
             {hook.loading && hook.items.length === 0 ? (
               <div className="space-y-3">
                 <Skeleton className="h-10 w-full" data-testid="Skeleton__620cbc" />

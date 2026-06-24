@@ -5,12 +5,13 @@ import { Badge } from '@/components/ui/badge.jsx';
 import { AddLineButton } from '@/components/ui/add-line-button.jsx';
 import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2, Shield } from 'lucide-react';
 import { AttachmentIcon } from '@/components/attachments/AttachmentIcon';
-import { PricingIcon } from '@/components/ui/custom-icons';
+import { PricingIcon, WarehouseProductsIcon } from '@/components/ui/custom-icons';
 
 const TAB_ICONS = {
   'custom:attachments': AttachmentIcon,
   'custom:sif': Shield,
   'custom:pricing': PricingIcon,
+  'products': WarehouseProductsIcon,
 };
 
 function TabStripButton({
@@ -1111,8 +1112,11 @@ export function getDetailContentContainerClassName({
   primaryTabs,
   activePrimaryTab,
   formScrollPaddingX = null,
+  contentOverflow = 'auto',
 } = {}) {
-  return `flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-2'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding, formScrollPaddingX)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`;
+  const defaultOverflowCls = contentOverflow === 'hidden' ? 'overflow-hidden pb-2' : 'overflow-auto pb-2';
+  const overflowCls = linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : defaultOverflowCls;
+  return `flex-1 min-h-0 min-w-0 ${overflowCls} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding, formScrollPaddingX)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`;
 }
 
 export function getLinesTabsSectionClassName(linesLayout) {
@@ -1533,12 +1537,14 @@ export function DetailView({
   toolbarPaddingX = 'px-6',
   tabsBarPaddingX = 'px-6',
   formScrollPaddingX = null,
+  contentOverflow = 'auto',
   formCardPadding = 'p-6',
   toolbarButtonSize = 'sm',
   primaryTabsVariant = 'default',
   refetchAfterSave = false,
   secondaryTabsPaddingY = 'py-2.5',
   secondaryTabsShowHoverLine = false,
+  tabsSeparator = false,
   hideAddLineChevron = false,
   addLineButtonPaddingX = '',
   formScrollPaddingB = 'pb-6',
@@ -2913,7 +2919,7 @@ export function DetailView({
                 </div>
               ) : null;
             })() : null}
-            <div className={getDetailContentContainerClassName({ linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab, formScrollPaddingX })}>
+            <div className={getDetailContentContainerClassName({ linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab, formScrollPaddingX, contentOverflow })}>
               {resolveHeaderContent(headerContent, data)}
               {(() => {
                 const slotProps = {
@@ -3027,7 +3033,7 @@ export function DetailView({
                     );
                     if (sidebarAboveTabsOnly && sidebarContent) {
                       return (
-                        <div className="flex items-start">
+                        <div className={`flex items-stretch${tabsSeparator ? ' border-b border-[#E8EAEF]' : ''}`}>
                           <div className="flex-1 min-w-0 space-y-2">{formSection}</div>
                           <div className={sidebarClassName}>{sidebarContent(data)}</div>
                         </div>
@@ -3562,7 +3568,10 @@ export function DetailView({
 
                         {/* Tab content: secondary child entity tabs (or form-only tabs) */}
                         {secondaryTabs.map((st, stIdx) => {
-                          if (tabs[activeTab]?.key !== st.key) return false;
+                          const isActiveTab = tabs[activeTab]?.key === st.key;
+                          // Panel tabs are always mounted so their onCount fires eagerly (counts appear without clicking).
+                          // Non-Panel tabs stay lazy to avoid unnecessary data fetches.
+                          if (!isActiveTab && !st.Panel) return false;
                           const secondaryLineHandlers = buildSecondaryLineHandlers({
                             st, stIdx, api, apiBaseUrl, token, secondaryHooks, ui,
                             extractErrorMessage, confirmDelete, secondaryInlineLinesRefs,
@@ -3572,7 +3581,7 @@ export function DetailView({
                             setSecondarySelectedRows,
                           });
                           return (
-                          <div key={st.key} className={getSecondaryTabContentClassName(secondaryTabContentPaddingT, embedded)}>
+                          <div key={st.key} style={!isActiveTab ? { display: 'none' } : undefined} className={getSecondaryTabContentClassName(secondaryTabContentPaddingT, embedded)}>
                             {(() => {
                               if (st.isFormTab) return (
                               <SecondaryFormTab data={data} hook={hook} onChange={(key, val, column) => {
