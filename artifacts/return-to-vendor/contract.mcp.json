@@ -1,7 +1,7 @@
 {
-  "version": "0.7.0",
+  "version": "0.9.0",
   "generatedAt": "2026-04-29T19:46:13.628Z",
-  "updatedAt": "2026-06-11T12:55:36.583Z",
+  "updatedAt": "2026-06-24T23:10:36.221Z",
   "contractChecksum": "f26c440427448f7b",
   "apiPrediction": {
     "specName": "return-to-vendor",

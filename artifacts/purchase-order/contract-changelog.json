@@ -1331,5 +1331,25 @@
     ],
     "author": "pipeline",
     "date": "2026-06-11"
+  },
+  {
+    "from": "0.21.0",
+    "to": "0.22.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"eTPRRemovePayment\" added to entity \"header\" in backend"
+    ],
+    "author": "pipeline",
+    "date": "2026-06-24"
+  },
+  {
+    "from": "0.22.0",
+    "to": "0.23.0",
+    "level": "breaking",
+    "reasons": [
+      "Field \"eTPRRemovePayment\" removed from entity \"header\" in backend"
+    ],
+    "author": "pipeline",
+    "date": "2026-06-24"
   }
 ]

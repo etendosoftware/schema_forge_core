@@ -125,7 +125,7 @@ export default function PurchaseOrderActions({
                 whiteSpace: 'nowrap',
               }}
             >
-              {ui('poViewInvoice')}
+              {ui('poViewInvoice')} →
             </button>
           </div>
         ), { duration: 10000 });
@@ -517,7 +517,7 @@ function ConfirmOrderModal({
             </button>
             {!isConfirmOnly && createdDoc.id && (
               <button type="button" onClick={handleGoToDoc} style={btnPrimary}>
-                {ui('soViewInvoice')}
+                {ui('soViewInvoice')} →
               </button>
             )}
           </div>

@@ -66,12 +66,12 @@ const LABEL_OVERRIDES = {
   es_ES: {
     POReference: 'Nº documento',
     OutstandingAmt: 'Pendiente de pago',
-    em_etgo_delivery_status: 'Estado de entrega',
+    em_etgo_delivery_status: 'Estado de recepción',
   },
   en_US: {
     POReference: 'Document No.',
     OutstandingAmt: 'Pending Payment',
-    em_etgo_delivery_status: 'Delivery Status',
+    em_etgo_delivery_status: 'Reception Status',
   },
 };
 

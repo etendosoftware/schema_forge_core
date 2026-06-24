@@ -1,7 +1,7 @@
 {
-  "version": "0.5.0",
+  "version": "0.7.0",
   "generatedAt": "2026-04-29T18:11:46.137Z",
-  "updatedAt": "2026-06-11T12:55:35.519Z",
+  "updatedAt": "2026-06-24T23:10:33.850Z",
   "contractChecksum": "3fd8073f5e06a7e9",
   "apiPrediction": {
     "specName": "payment-out",

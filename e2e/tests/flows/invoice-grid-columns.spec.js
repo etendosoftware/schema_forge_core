@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { login, navigateTo } from '../helpers/auth.js';
-import { INVOICE_GRID_COLUMNS } from '../helpers/selectors.js';
+import {
+  INVOICE_GRID_COLUMNS,
+  INVOICE_DELIVERY_STATUS_LABEL,
+  invoiceGridColumns,
+} from '../helpers/selectors.js';
 
 /**
  * Sales / Purchase Invoice — grid column tests.
@@ -39,8 +43,8 @@ function detectLocale(headers) {
   return en > es ? 'en_US' : 'es_ES';
 }
 
-function assertGridMatchesLocale(headers, locale) {
-  const expected = INVOICE_GRID_COLUMNS[locale];
+function assertGridMatchesLocale(headers, locale, window) {
+  const expected = invoiceGridColumns(window, locale);
   const projected = headers.filter(h => expected.includes(h));
   expect(projected, `column order in locale ${locale}`).toEqual(expected);
 }
@@ -55,7 +59,7 @@ for (const window of ['sales-invoice', 'purchase-invoice']) {
     test('renders the eight expected columns in order', async ({ page }) => {
       const headers = await readColumnHeaders(page);
       const locale = detectLocale(headers);
-      assertGridMatchesLocale(headers, locale);
+      assertGridMatchesLocale(headers, locale, window);
     });
 
     test('does not leak raw column keys (apiKey or AD column name)', async ({ page }) => {
@@ -66,10 +70,12 @@ for (const window of ['sales-invoice', 'purchase-invoice']) {
       }
     });
 
-    test('includes the delivery status column with a translated label', async ({ page }) => {
+    test('includes the logistics status column with a translated label', async ({ page }) => {
       const headers = await readColumnHeaders(page);
       const locale = detectLocale(headers);
-      const label = locale === 'es_ES' ? 'Estado de entrega' : 'Delivery Status';
+      // Sales invoices ship to the customer ("Delivery Status"); purchase invoices
+      // receive goods from the vendor ("Reception Status", ETP-4303).
+      const label = INVOICE_DELIVERY_STATUS_LABEL[window][locale];
       expect(headers).toContain(label);
     });
   });

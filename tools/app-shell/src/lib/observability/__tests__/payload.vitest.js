@@ -110,6 +110,28 @@ describe('sanitizeEventProperties', () => {
     expect(sanitizeEventProperties({ status: 200 })).toEqual({ status: 200 });
   });
 
+  it('keeps bounded KPI metric keys', () => {
+    expect(sanitizeEventProperties({
+      accuracy: 98.2,
+      attempt: 2,
+      count: 4,
+      durationMs: 1234,
+      position: 1,
+      score: 10,
+      step: 3,
+      value: 1,
+    })).toEqual({
+      accuracy: 98.2,
+      attempt: 2,
+      count: 4,
+      durationMs: 1234,
+      position: 1,
+      score: 10,
+      step: 3,
+      value: 1,
+    });
+  });
+
   it('keeps safe keys with boolean values', () => {
     expect(sanitizeEventProperties({ enabled: true })).toEqual({ enabled: true });
   });
@@ -132,6 +154,48 @@ describe('sanitizeEventProperties', () => {
 
   it('removes object values (not string/number/boolean)', () => {
     expect(sanitizeEventProperties({ action: { nested: true } })).toEqual({});
+  });
+
+  it('removes out-of-range KPI metric values', () => {
+    expect(sanitizeEventProperties({
+      accuracy: 101,
+      attempt: 101,
+      count: 100001,
+      durationMs: -1,
+      position: 101,
+      score: 11,
+      step: 1000,
+      value: 1000001,
+    })).toEqual({});
+  });
+
+  it('removes non-numeric values for KPI metric keys', () => {
+    expect(sanitizeEventProperties({
+      accuracy: '98',
+      attempt: true,
+      count: '4',
+      durationMs: '1234',
+      position: false,
+      score: '10',
+      step: '3',
+      value: '1',
+    })).toEqual({});
+  });
+
+  it('keeps low-cardinality metadata keys', () => {
+    expect(sanitizeEventProperties({
+      category: 'sales',
+      entity: 'sales_order',
+      operation: 'create',
+      specName: 'sales-order',
+      supportRequested: false,
+    })).toEqual({
+      category: 'sales',
+      entity: 'sales_order',
+      operation: 'create',
+      specName: 'sales-order',
+      supportRequested: false,
+    });
   });
 
   it('returns empty object for empty input', () => {

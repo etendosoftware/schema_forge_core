@@ -248,17 +248,17 @@ export default function OrderConfirmModal({
             {/* When both: show shipment as secondary, invoice as primary */}
             {both && shipment?.id && (
               <button type="button" onClick={handleGoToShipment} style={btnSecondary}>
-                {ui('soViewShipment')}
+                {ui('soViewShipment')} →
               </button>
             )}
             {invoice?.id && (
               <button type="button" onClick={handleGoToInvoice} style={btnPrimary}>
-                {ui('soViewInvoice')}
+                {ui('soViewInvoice')} →
               </button>
             )}
             {!invoice?.id && shipment?.id && (
               <button type="button" onClick={handleGoToShipment} style={btnPrimary}>
-                {ui('soViewShipment')}
+                {ui('soViewShipment')} →
               </button>
             )}
           </div>
