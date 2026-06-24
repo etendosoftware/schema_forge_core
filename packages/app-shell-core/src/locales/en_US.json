@@ -17118,6 +17118,7 @@
     "allTypes": "All types",
     "searchTypes": "Search type...",
     "docType": "Type",
+    "documentType": "Document Type",
     "allPayments": "All payments",
     "statusColumn": "Status",
     "creditNoteLabel": "Credit note",

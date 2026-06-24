@@ -91,7 +91,11 @@ export default function InvoiceHeaderTable(props) {
         key: 'transactionDocument',
         column: 'C_DocTypeTarget_ID',
         type: 'custom',
-        label: t('docType'),
+        // `labels` (priority 1 in resolveColumnLabel) must be set so this header
+        // outranks the AD-dictionary fallback translate('C_DocTypeTarget_ID'),
+        // which otherwise resolves to "Documento transacción".
+        labels: { [locale]: t('documentType') },
+        label: t('documentType'),
         render: (row) => {
           const sub = getArSubtype(row);
           const cfg = sub === 'NC'

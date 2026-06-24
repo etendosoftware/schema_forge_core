@@ -19,7 +19,7 @@ const LIST_COLUMNS = [
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
   { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent', label: 'Invoice Status' },
-  { key: 'deliveryStatusPurchase', column: 'DeliveryStatusPurchase', type: 'percent', label: 'Delivery Status' },
+  { key: 'deliveryStatusPurchase', column: 'DeliveryStatusPurchase', type: 'percent', label: 'Reception Status' },
 ];
 
 const draftModeWithModal = {
@@ -39,13 +39,13 @@ const LABEL_OVERRIDES = {
   es_ES: {
     C_BPartner_ID: 'Contacto',
     DatePromised: 'Fecha de entrega esperada',
-    DeliveryStatusPurchase: 'Estado de entrega',
+    DeliveryStatusPurchase: 'Estado de recepción',
     InvoiceStatus: 'Estado de facturación',
   },
   en_US: {
     C_BPartner_ID: 'Contact',
     DatePromised: 'Expected Delivery Date',
-    DeliveryStatusPurchase: 'Delivery Status',
+    DeliveryStatusPurchase: 'Reception Status',
     InvoiceStatus: 'Invoicing Status',
   },
 };
