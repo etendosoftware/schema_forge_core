@@ -1,8 +1,8 @@
 {
-  "version": "0.11.0",
+  "version": "0.12.0",
   "generatedAt": "2026-04-29T18:11:37.816Z",
-  "updatedAt": "2026-06-22T22:43:40.678Z",
-  "contractChecksum": "3c3e7b5b783bb3c9",
+  "updatedAt": "2026-06-23T23:06:22.668Z",
+  "contractChecksum": "a694a0ff450fec23",
   "apiPrediction": {
     "specName": "warehouse",
     "baseUrl": "/sws/neo/warehouse",
@@ -332,6 +332,9 @@
           },
           "referencedInventory": {
             "readOnly": true
+          },
+          "etgoValuation": {
+            "readOnly": true
           }
         }
       }
@@ -413,5 +416,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "d2f5a51a75b8023a"
+  "checksum": "efd6b72d23623ccb"
 }

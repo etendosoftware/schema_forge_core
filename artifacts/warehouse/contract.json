@@ -1,8 +1,8 @@
 {
-  "version": "0.11.0",
+  "version": "0.12.0",
   "generatedAt": "2026-04-29T18:11:37.816Z",
-  "updatedAt": "2026-06-22T23:54:54.222Z",
-  "checksum": "3c3e7b5b783bb3c9",
+  "updatedAt": "2026-06-23T23:47:22.026Z",
+  "checksum": "a694a0ff450fec23",
   "frontendContract": {
     "window": {
       "id": "139",
@@ -457,7 +457,8 @@
           }
         ],
         "searchableFields": [],
-        "computedFields": []
+        "computedFields": [],
+        "javaQualifier": "productTransactionsHandler"
       },
       "binContents": {
         "tableName": "M_Storage_Detail",
@@ -599,6 +600,18 @@
             "form": true,
             "reference": "RefInventory",
             "inputMode": "selector"
+          },
+          {
+            "name": "etgoValuation",
+            "apiKey": "etgoValuation",
+            "column": "EM_Etgo_Valuation",
+            "label": "Valuation",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": false
           }
         ],
         "searchableFields": [],
@@ -1252,7 +1265,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "productTransactionsHandler"
       },
       "binContents": {
         "tableName": "M_Storage_Detail",
@@ -1426,6 +1440,14 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "etgoValuation",
+            "apiKey": "etgoValuation",
+            "column": "EM_Etgo_Valuation",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": false
           }
         ]
       }
@@ -1869,6 +1891,14 @@
         "description": "Field 'attributeSetValue' should be present in binContents"
       },
       {
+        "id": "t-field-presence-binContents-etgoValuation",
+        "category": "field-presence",
+        "entity": "binContents",
+        "field": "etgoValuation",
+        "runner": "node",
+        "description": "Field 'etgoValuation' should be present in binContents"
+      },
+      {
         "id": "t-field-presence-binContents-lastInventoryCountDate",
         "category": "field-presence",
         "entity": "binContents",
@@ -2131,6 +2161,14 @@
         "field": "attributeSetValue",
         "runner": "node",
         "description": "Field 'attributeSetValue' should have type 'string' in binContents"
+      },
+      {
+        "id": "t-field-type-binContents-etgoValuation",
+        "category": "field-type",
+        "entity": "binContents",
+        "field": "etgoValuation",
+        "runner": "node",
+        "description": "Field 'etgoValuation' should have type 'number' in binContents"
       },
       {
         "id": "t-field-type-binContents-lastInventoryCountDate",
@@ -3119,15 +3157,15 @@
       }
     ],
     "summary": {
-      "total": 174,
+      "total": 176,
       "byCategory": {
         "action-endpoint": 2,
         "crud-flags": 4,
         "default-value-type": 3,
         "displaylogic-evaluable": 3,
         "displaylogic-valid": 3,
-        "field-presence": 33,
-        "field-type": 33,
+        "field-presence": 34,
+        "field-type": 34,
         "rule-declared": 11,
         "searchable-filters": 2,
         "selector-endpoint": 12,
@@ -3135,7 +3173,7 @@
         "visibility": 4
       },
       "byRunner": {
-        "node": 174,
+        "node": 176,
         "junit": 0
       }
     }

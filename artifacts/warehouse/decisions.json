@@ -72,10 +72,18 @@
       "name": "storageBin"
     },
     "productTransactions": {
-      "name": "productTransactions"
+      "name": "productTransactions",
+      "javaQualifier": "productTransactionsHandler"
     },
     "binContents": {
-      "name": "binContents"
+      "name": "binContents",
+      "fields": {
+        "etgoValuation": {
+          "grid": true,
+          "form": false,
+          "visibility": "readOnly"
+        }
+      }
     },
     "accounting": {
       "name": "accounting",
