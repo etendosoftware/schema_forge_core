@@ -34,8 +34,7 @@ const extraBadges = [
 // @sf-generated-start processes:returnMaterialReceipt
 const processes = [
   { name: 'etblkpBulkposting', label: 'Bulk Posting', style: 'positive',
-    displayLogicRaw: "@Processed@='Y' & @#ShowAcct@='Y'
-" },
+    displayLogicRaw: "@Processed@='Y' & @#ShowAcct@='Y'\n" },
 ];
 // @sf-generated-end processes:returnMaterialReceipt
 

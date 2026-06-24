@@ -1199,7 +1199,7 @@ function buildProcessesArray({ processes, buttonFields, processOverrides }) {
       const colPart = wrapIf(", columnName: '", p.columnName, "'");
       const paramsPart = p.params?.length ? `, params: ${JSON.stringify(p.params)}` : '';
       const dlRaw = ovr.displayLogicRaw
-        ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
+        ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"`
         : '';
       return `  { name: '${p.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${paramsPart}${dlRaw} },`;
     }).filter(Boolean),
@@ -1210,7 +1210,7 @@ function buildProcessesArray({ processes, buttonFields, processOverrides }) {
       const style = ovr.style || pick(isDestructive, 'destructive', 'positive');
       const label = ovr.label || f.label || toLabel(f.name);
       const dlRawVal = ovr.displayLogicRaw || f.displayLogic?.raw;
-      const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"')}"` : '';
+      const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"` : '';
       const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
       return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart} },`;
     }).filter(Boolean),
@@ -1222,7 +1222,7 @@ function buildProcessesArray({ processes, buttonFields, processOverrides }) {
         const label = ovr.label || toLabel(name);
         const colPart = wrapIf(", columnName: '", ovr.columnName, "'");
         const dlRaw = ovr.displayLogicRaw
-          ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
+          ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"`
           : '';
         const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
         const fieldMaxPart = ovr.requiresFieldMax
