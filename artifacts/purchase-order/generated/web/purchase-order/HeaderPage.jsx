@@ -770,6 +770,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
         sendDocument
+        selectorPriceCurrency="org"
         {...props}
       />
     );

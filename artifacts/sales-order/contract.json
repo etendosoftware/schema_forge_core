@@ -1,8 +1,8 @@
 {
-  "version": "0.5.0",
+  "version": "0.7.0",
   "generatedAt": "2026-05-12T16:47:39.614Z",
-  "updatedAt": "2026-06-18T14:46:38.018Z",
-  "checksum": "7f7b8fe7eb7f5b4d",
+  "updatedAt": "2026-06-22T15:25:51.908Z",
+  "checksum": "8db3296594a2d48a",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -47,7 +47,8 @@
       "dateFilterKey": "orderDate",
       "noHeaderBorder": true,
       "layoutType": "default",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "selectorPriceCurrency": "org"
     },
     "entities": {
       "header": {
@@ -483,6 +484,18 @@
               "type": "computed",
               "source": "false"
             }
+          },
+          {
+            "name": "eTGOCurrencyRate",
+            "apiKey": "eTGOCurrencyRate",
+            "column": "EM_ETGO_Currency_Rate",
+            "label": "EM_ETGO_Currency_Rate",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": false
           }
         ],
         "searchableFields": [
@@ -899,7 +912,8 @@
       },
       "dateFilterKey": "orderDate",
       "noHeaderBorder": true,
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "selectorPriceCurrency": "org"
     },
     "entities": {
       "header": {
@@ -1713,6 +1727,454 @@
             "column": "UpdatedBy",
             "type": "foreignKey",
             "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "psd2GenerateBankPayment",
+            "apiKey": "psd2GenerateBankPayment",
+            "column": "EM_Psd2_Generate_Bank_Payment",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "eTGOCurrencyRate",
+            "apiKey": "eTGOCurrencyRate",
+            "column": "EM_ETGO_Currency_Rate",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          }
+        ],
+        "javaQualifier": "salesOrderHeaderHandler"
+      },
+      "lines": {
+        "tableName": "C_OrderLine",
+        "tabId": "187",
+        "tabName": "Lines",
+        "fields": [
+          {
+            "name": "product",
+            "apiKey": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "apiKey": "description",
+            "column": "Description",
+            "type": "text",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "orderedQuantity",
+            "apiKey": "orderedQuantity",
+            "column": "QtyOrdered",
+            "type": "quantity",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "listPrice",
+            "apiKey": "listPrice",
+            "column": "PriceList",
+            "type": "price",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "discount",
+            "apiKey": "discount",
+            "column": "Discount",
+            "type": "decimal",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "tax",
+            "apiKey": "tax",
+            "column": "C_Tax_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "lineGrossAmount",
+            "apiKey": "lineGrossAmount",
+            "column": "Line_Gross_Amount",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "lineNo",
+            "apiKey": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "operativeQuantity",
+            "apiKey": "operativeQuantity",
+            "column": "Aumqty",
+            "type": "quantity",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "operativeUOM",
+            "apiKey": "operativeUOM",
+            "column": "C_Aum",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "goodsShipmentLine",
+            "apiKey": "goodsShipmentLine",
+            "column": "M_Inoutline_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "uOM",
+            "apiKey": "uOM",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "attributeSetValue",
+            "apiKey": "attributeSetValue",
+            "column": "M_AttributeSetInstance_ID",
+            "type": "productAttribute",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "cReturnReasonID",
+            "apiKey": "cReturnReasonID",
+            "column": "C_Return_Reason_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "unitPrice",
+            "apiKey": "unitPrice",
+            "column": "PriceActual",
+            "type": "price",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "grossUnitPrice",
+            "apiKey": "grossUnitPrice",
+            "column": "Gross_Unit_Price",
+            "type": "price",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "lineNetAmount",
+            "apiKey": "lineNetAmount",
+            "column": "LineNetAmt",
+            "type": "amount",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "grossListPrice",
+            "apiKey": "grossListPrice",
+            "column": "GrossPriceList",
+            "type": "decimal",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "warehouseRule",
+            "apiKey": "warehouseRule",
+            "column": "M_Warehouse_Rule_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "replacedorderline",
+            "apiKey": "replacedorderline",
+            "column": "Replacedorderline_id",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "stockReservation",
+            "apiKey": "stockReservation",
+            "column": "Create_Reservation",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "taxableAmount",
+            "apiKey": "taxableAmount",
+            "column": "Taxbaseamt",
+            "type": "amount",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "invoicedQuantity",
+            "apiKey": "invoicedQuantity",
+            "column": "QtyInvoiced",
+            "type": "quantity",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "deliveredQuantity",
+            "apiKey": "deliveredQuantity",
+            "column": "QtyDelivered",
+            "type": "quantity",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "orderDate",
+            "apiKey": "orderDate",
+            "column": "DateOrdered",
+            "type": "date",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "scheduledDeliveryDate",
+            "apiKey": "scheduledDeliveryDate",
+            "column": "DatePromised",
+            "type": "date",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "warehouse",
+            "apiKey": "warehouse",
+            "column": "M_Warehouse_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "reservedQuantity",
+            "apiKey": "reservedQuantity",
+            "column": "QtyReserved",
+            "type": "quantity",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "shippingCompany",
+            "apiKey": "shippingCompany",
+            "column": "M_Shipper_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "businessPartner",
+            "apiKey": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "directShipment",
+            "apiKey": "directShipment",
+            "column": "DirectShip",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "freightAmount",
+            "apiKey": "freightAmount",
+            "column": "FreightAmt",
+            "type": "amount",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "partnerAddress",
+            "apiKey": "partnerAddress",
+            "column": "C_BPartner_Location_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "cancelPriceAdjustment",
+            "apiKey": "cancelPriceAdjustment",
+            "column": "CANCELPRICEAD",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "orderUOM",
+            "apiKey": "orderUOM",
+            "column": "M_Product_Uom_Id",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "orderQuantity",
+            "apiKey": "orderQuantity",
+            "column": "QuantityOrder",
+            "type": "quantity",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "baseGrossUnitPrice",
+            "apiKey": "baseGrossUnitPrice",
+            "column": "grosspricestd",
+            "type": "price",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "standardPrice",
+            "apiKey": "standardPrice",
+            "column": "PriceStd",
+            "type": "price",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "editLineAmount",
+            "apiKey": "editLineAmount",
+            "column": "Iseditlinenetamt",
+            "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "quotationLine",
+            "apiKey": "quotationLine",
+            "column": "Quotationline_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "reservationStatus",
+            "apiKey": "reservationStatus",
+            "column": "SO_Res_Status",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "manageReservation",
+            "apiKey": "manageReservation",
+            "column": "Manage_Reservation",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "printDescription",
+            "apiKey": "printDescription",
+            "column": "Print_Description",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "overdueReturnDays",
+            "apiKey": "overdueReturnDays",
+            "column": "Overdue_Return_Days",
+            "type": "integer",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "project",
+            "apiKey": "project",
+            "column": "C_Project_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "costcenter",
+            "apiKey": "costcenter",
+            "column": "C_Costcenter_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "asset",
+            "apiKey": "asset",
+            "column": "A_Asset_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "stDimension",
+            "apiKey": "stDimension",
+            "column": "User1_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "ndDimension",
+            "apiKey": "ndDimension",
+            "column": "User2_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "explode",
+            "apiKey": "explode",
+            "column": "Explode",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "bOMParentID",
+            "apiKey": "bOMParentID",
+            "column": "BOM_Parent_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "selectOrderLine",
+            "apiKey": "selectOrderLine",
+            "column": "Relate_Orderline",
+            "type": "button",
+            "visibility": "discarded",
             "required": true
           },
           {
@@ -2687,6 +3149,14 @@
         "description": "Field 'documentStatus' should be present in header"
       },
       {
+        "id": "t-field-presence-header-eTGOCurrencyRate",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "eTGOCurrencyRate",
+        "runner": "node",
+        "description": "Field 'eTGOCurrencyRate' should be present in header"
+      },
+      {
         "id": "t-field-presence-header-etgoTotalDiscount",
         "category": "field-presence",
         "entity": "header",
@@ -2901,6 +3371,14 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-eTGOCurrencyRate",
+        "category": "field-type",
+        "entity": "header",
+        "field": "eTGOCurrencyRate",
+        "runner": "node",
+        "description": "Field 'eTGOCurrencyRate' should have type 'string' in header"
       },
       {
         "id": "t-field-type-header-etgoTotalDiscount",
@@ -6440,15 +6918,15 @@
       }
     ],
     "summary": {
-      "total": 545,
+      "total": 547,
       "byCategory": {
         "action-endpoint": 22,
         "crud-flags": 2,
         "default-value-type": 9,
         "displaylogic-evaluable": 3,
         "displaylogic-valid": 3,
-        "field-presence": 27,
-        "field-type": 27,
+        "field-presence": 28,
+        "field-type": 28,
         "readonlylogic-evaluable": 16,
         "readonlylogic-valid": 16,
         "rule-declared": 254,
@@ -6458,7 +6936,7 @@
         "visibility": 2
       },
       "byRunner": {
-        "node": 545,
+        "node": 547,
         "junit": 0
       }
     }

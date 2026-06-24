@@ -1,5 +1,5 @@
 {
-  "version": "0.22.1",
+  "version": "0.24.0",
   "generatedAt": "2026-04-30T15:42:46.497Z",
   "updatedAt": "2026-06-25T00:35:57.406Z",
   "checksum": "75d31ff181010004",
@@ -42,7 +42,8 @@
       "dateFilterKey": "orderDate",
       "noHeaderBorder": true,
       "layoutType": "default",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "selectorPriceCurrency": "org"
     },
     "entities": {
       "header": {
@@ -990,6 +991,18 @@
               "evaluable": true,
               "js": "record['processed'] === true"
             }
+          },
+          {
+            "name": "eTGOCurrencyRate",
+            "apiKey": "eTGOCurrencyRate",
+            "column": "EM_ETGO_Currency_Rate",
+            "label": "EM_ETGO_Currency_Rate",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": false
           }
         ],
         "searchableFields": [
@@ -2301,7 +2314,8 @@
       },
       "dateFilterKey": "orderDate",
       "noHeaderBorder": true,
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "selectorPriceCurrency": "org"
     },
     "entities": {
       "header": {
@@ -3114,6 +3128,406 @@
             "apiKey": "updatedBy",
             "column": "UpdatedBy",
             "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "psd2GenerateBankPayment",
+            "apiKey": "psd2GenerateBankPayment",
+            "column": "EM_Psd2_Generate_Bank_Payment",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "eTGOCurrencyRate",
+            "apiKey": "eTGOCurrencyRate",
+            "column": "EM_ETGO_Currency_Rate",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          }
+        ],
+        "javaQualifier": "purchaseOrderHeaderHandler"
+      },
+      "lines": {
+        "tableName": "C_OrderLine",
+        "tabId": "293",
+        "tabName": "Lines",
+        "fields": [
+          {
+            "name": "product",
+            "apiKey": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "apiKey": "description",
+            "column": "Description",
+            "type": "text",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "orderedQuantity",
+            "apiKey": "orderedQuantity",
+            "column": "QtyOrdered",
+            "type": "quantity",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "listPrice",
+            "apiKey": "listPrice",
+            "column": "PriceList",
+            "type": "price",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "discount",
+            "apiKey": "discount",
+            "column": "Discount",
+            "type": "decimal",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "tax",
+            "apiKey": "tax",
+            "column": "C_Tax_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "lineGrossAmount",
+            "apiKey": "lineGrossAmount",
+            "column": "Line_Gross_Amount",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "lineNo",
+            "apiKey": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "operativeQuantity",
+            "apiKey": "operativeQuantity",
+            "column": "Aumqty",
+            "type": "quantity",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "operativeUOM",
+            "apiKey": "operativeUOM",
+            "column": "C_Aum",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "uOM",
+            "apiKey": "uOM",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "goodsShipmentLine",
+            "apiKey": "goodsShipmentLine",
+            "column": "M_Inoutline_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "attributeSetValue",
+            "apiKey": "attributeSetValue",
+            "column": "M_AttributeSetInstance_ID",
+            "type": "productAttribute",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "cReturnReasonID",
+            "apiKey": "cReturnReasonID",
+            "column": "C_Return_Reason_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "unitPrice",
+            "apiKey": "unitPrice",
+            "column": "PriceActual",
+            "type": "price",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "grossUnitPrice",
+            "apiKey": "grossUnitPrice",
+            "column": "Gross_Unit_Price",
+            "type": "price",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "lineNetAmount",
+            "apiKey": "lineNetAmount",
+            "column": "LineNetAmt",
+            "type": "amount",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "grossListPrice",
+            "apiKey": "grossListPrice",
+            "column": "GrossPriceList",
+            "type": "decimal",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "taxableAmount",
+            "apiKey": "taxableAmount",
+            "column": "Taxbaseamt",
+            "type": "amount",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "editLineAmount",
+            "apiKey": "editLineAmount",
+            "column": "Iseditlinenetamt",
+            "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "cancelPriceAdjustment",
+            "apiKey": "cancelPriceAdjustment",
+            "column": "CANCELPRICEAD",
+            "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "baseGrossUnitPrice",
+            "apiKey": "baseGrossUnitPrice",
+            "column": "grosspricestd",
+            "type": "price",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "standardPrice",
+            "apiKey": "standardPrice",
+            "column": "PriceStd",
+            "type": "price",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "warehouse",
+            "apiKey": "warehouse",
+            "column": "M_Warehouse_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "reservedQuantity",
+            "apiKey": "reservedQuantity",
+            "column": "QtyReserved",
+            "type": "quantity",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "deliveredQuantity",
+            "apiKey": "deliveredQuantity",
+            "column": "QtyDelivered",
+            "type": "quantity",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "invoicedQuantity",
+            "apiKey": "invoicedQuantity",
+            "column": "QtyInvoiced",
+            "type": "quantity",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "shippingCompany",
+            "apiKey": "shippingCompany",
+            "column": "M_Shipper_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "orderDate",
+            "apiKey": "orderDate",
+            "column": "DateOrdered",
+            "type": "date",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "scheduledDeliveryDate",
+            "apiKey": "scheduledDeliveryDate",
+            "column": "DatePromised",
+            "type": "date",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "businessPartner",
+            "apiKey": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "freightAmount",
+            "apiKey": "freightAmount",
+            "column": "FreightAmt",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "charge",
+            "apiKey": "charge",
+            "column": "C_Charge_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "partnerAddress",
+            "apiKey": "partnerAddress",
+            "column": "C_BPartner_Location_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "orderQuantity",
+            "apiKey": "orderQuantity",
+            "column": "QuantityOrder",
+            "type": "quantity",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "orderUOM",
+            "apiKey": "orderUOM",
+            "column": "M_Product_Uom_Id",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "managePrereservation",
+            "apiKey": "managePrereservation",
+            "column": "Manage_Prereservation",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "quotationLine",
+            "apiKey": "quotationLine",
+            "column": "Quotationline_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "project",
+            "apiKey": "project",
+            "column": "C_Project_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "costcenter",
+            "apiKey": "costcenter",
+            "column": "C_Costcenter_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "asset",
+            "apiKey": "asset",
+            "column": "A_Asset_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "stDimension",
+            "apiKey": "stDimension",
+            "column": "User1_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "ndDimension",
+            "apiKey": "ndDimension",
+            "column": "User2_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "explode",
+            "apiKey": "explode",
+            "column": "Explode",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "bOMParentID",
+            "apiKey": "bOMParentID",
+            "column": "BOM_Parent_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "directShipment",
+            "apiKey": "directShipment",
+            "column": "DirectShip",
+            "type": "boolean",
             "visibility": "system",
             "required": true
           },
@@ -5302,6 +5716,14 @@
         "description": "Field 'documentStatus' should be present in header"
       },
       {
+        "id": "t-field-presence-header-eTGOCurrencyRate",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "eTGOCurrencyRate",
+        "runner": "node",
+        "description": "Field 'eTGOCurrencyRate' should be present in header"
+      },
+      {
         "id": "t-field-presence-header-etgoTotalDiscount",
         "category": "field-presence",
         "entity": "header",
@@ -6052,6 +6474,14 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-eTGOCurrencyRate",
+        "category": "field-type",
+        "entity": "header",
+        "field": "eTGOCurrencyRate",
+        "runner": "node",
+        "description": "Field 'eTGOCurrencyRate' should have type 'string' in header"
       },
       {
         "id": "t-field-type-header-etgoTotalDiscount",
@@ -8537,6 +8967,2073 @@
         "description": "Rule 'purchase-order-Header-EM_Psd2_Generate_Bank_Payment-displayLogic' (displayLogic) should be declared"
       },
       {
+        "id": "t-rule-declared-purchase-order-Header-User1-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Header-User1_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Header-User1_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Header-User2-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Header-User2_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Header-User2_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Intrastat-Conversion-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Intrastat-Conversion-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Intrastat-Conversion-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Intrastat-Intr-C-Uom-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Intrastat-Intr_C_Uom_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Intrastat-Intr_C_Uom_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Intrastat-Port-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Intrastat-Port-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Intrastat-Port-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-A-Asset-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-A_Asset_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-A_Asset_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-AD-Org-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-AD_Org_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-AD_Org_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-Aumqty-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-Aumqty-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-Aumqty-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-C-Aum-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-C_Aum-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-C_Aum-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-C-Costcenter-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-C_Costcenter_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-C_Costcenter_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-C-Project-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-C_Project_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-C_Project_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-ChargeAmt-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-ChargeAmt-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-ChargeAmt-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-DateOrdered-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-DateOrdered-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-DateOrdered-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-DatePromised-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-DatePromised-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-DatePromised-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-Explode-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-Explode-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-Explode-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-FreightAmt-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-FreightAmt-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-FreightAmt-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-Gross-Unit-Price-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-Gross_Unit_Price-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-Gross_Unit_Price-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-GrossPriceList-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-GrossPriceList-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-GrossPriceList-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-grosspricestd-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-grosspricestd-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-grosspricestd-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-Line-Gross-Amount-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-Line_Gross_Amount-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-Line_Gross_Amount-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-M-AttributeSetInstance-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-M_AttributeSetInstance_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-M_AttributeSetInstance_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-M-Product-Uom-Id-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-M_Product_Uom_Id-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-M_Product_Uom_Id-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-M-Shipper-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-M_Shipper_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-M_Shipper_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-M-Warehouse-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-M_Warehouse_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-M_Warehouse_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-Manage-Prereservation-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-Manage_Prereservation-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-Manage_Prereservation-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-PriceList-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-PriceList-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-PriceList-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-PriceStd-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-PriceStd-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-PriceStd-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-QtyDelivered-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-QtyDelivered-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-QtyDelivered-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-QtyInvoiced-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-QtyInvoiced-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-QtyInvoiced-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-QtyReserved-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-QtyReserved-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-QtyReserved-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-QuantityOrder-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-QuantityOrder-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-QuantityOrder-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-Taxbaseamt-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-Taxbaseamt-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-Taxbaseamt-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-User1-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-User1_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-User1_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Lines-User2-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Lines-User2_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Lines-User2_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Payment-Details-ExpectedConverted-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Payment Details-ExpectedConverted-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Payment Details-ExpectedConverted-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Payment-Details-Finacc-Txn-Convert-Rate-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Payment Details-Finacc_Txn_Convert_Rate-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Payment Details-Finacc_Txn_Convert_Rate-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-purchase-order-Payment-Details-PaidConverted-displayLogic",
+        "category": "rule-declared",
+        "rule": "purchase-order-Payment Details-PaidConverted-displayLogic",
+        "runner": "node",
+        "description": "Rule 'purchase-order-Payment Details-PaidConverted-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Return-reason-RFC-RTV",
+        "category": "rule-declared",
+        "rule": "Return reason RFC/RTV",
+        "runner": "node",
+        "description": "Rule 'Return reason RFC/RTV' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-RFC-RTV-HQL-Pick-and-Edit-Lines",
+        "category": "rule-declared",
+        "rule": "RFC/RTV HQL Pick and Edit Lines",
+        "runner": "node",
+        "description": "Rule 'RFC/RTV HQL Pick and Edit Lines' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-RM-ReceiveMaterials",
+        "category": "rule-declared",
+        "rule": "RM_ReceiveMaterials",
+        "runner": "node",
+        "description": "Rule 'RM_ReceiveMaterials' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SE-Order-BPartner-C-BPartner-ID",
+        "category": "rule-declared",
+        "rule": "SE_Order_BPartner_C_BPartner_ID",
+        "runner": "node",
+        "description": "Rule 'SE_Order_BPartner_C_BPartner_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SE-Order-BPartnerLocation-C-BPartner-Location-ID",
+        "category": "rule-declared",
+        "rule": "SE_Order_BPartnerLocation_C_BPartner_Location_ID",
+        "runner": "node",
+        "description": "Rule 'SE_Order_BPartnerLocation_C_BPartner_Location_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SE-Order-Organization-AD-Org-ID",
+        "category": "rule-declared",
+        "rule": "SE_Order_Organization_AD_Org_ID",
+        "runner": "node",
+        "description": "Rule 'SE_Order_Organization_AD_Org_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SE-Order-Project-C-Project-ID",
+        "category": "rule-declared",
+        "rule": "SE_Order_Project_C_Project_ID",
+        "runner": "node",
+        "description": "Rule 'SE_Order_Project_C_Project_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Service-Order-Line-Relation-Pick-and-Edit",
+        "category": "rule-declared",
+        "rule": "Service Order Line Relation Pick and Edit",
+        "runner": "node",
+        "description": "Rule 'Service Order Line Relation Pick and Edit' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Charge-C-Charge-ID",
+        "category": "rule-declared",
+        "rule": "SL_Charge_C_Charge_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Charge_C_Charge_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-Amt-C-Tax-ID",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_C_Tax_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_C_Tax_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-Amt-CANCELPRICEAD",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_CANCELPRICEAD",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_CANCELPRICEAD' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-Amt-Discount",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_Discount",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_Discount' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-Amt-Gross-Unit-Price",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_Gross_Unit_Price",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_Gross_Unit_Price' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-Amt-LineNetAmt",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_LineNetAmt",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_LineNetAmt' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-Amt-M-AttributeSetInstance-ID",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_M_AttributeSetInstance_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_M_AttributeSetInstance_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-Amt-PriceActual",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_PriceActual",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_PriceActual' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-Amt-PriceList",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_PriceList",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_PriceList' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-Amt-QtyOrdered",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_QtyOrdered",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_QtyOrdered' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-Charge-Tax-C-Charge-ID",
+        "category": "rule-declared",
+        "rule": "SL_Order_Charge_Tax_C_Charge_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Charge_Tax_C_Charge_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-Conversion-M-Product-Uom-Id",
+        "category": "rule-declared",
+        "rule": "SL_Order_Conversion_M_Product_Uom_Id",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Conversion_M_Product_Uom_Id' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-Conversion-QuantityOrder",
+        "category": "rule-declared",
+        "rule": "SL_Order_Conversion_QuantityOrder",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Conversion_QuantityOrder' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-DocType-C-DocTypeTarget-ID",
+        "category": "rule-declared",
+        "rule": "SL_Order_DocType_C_DocTypeTarget_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Order_DocType_C_DocTypeTarget_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-PriceList-M-PriceList-ID",
+        "category": "rule-declared",
+        "rule": "SL_Order_PriceList_M_PriceList_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Order_PriceList_M_PriceList_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-Product-M-Product-ID",
+        "category": "rule-declared",
+        "rule": "SL_Order_Product_M_Product_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Product_M_Product_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-Tax-C-BPartner-Location-ID",
+        "category": "rule-declared",
+        "rule": "SL_Order_Tax_C_BPartner_Location_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Tax_C_BPartner_Location_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-UpdateLinesDate-DateOrdered",
+        "category": "rule-declared",
+        "rule": "SL_Order_UpdateLinesDate_DateOrdered",
+        "runner": "node",
+        "description": "Rule 'SL_Order_UpdateLinesDate_DateOrdered' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Order-UpdateLinesDate-DatePromised",
+        "category": "rule-declared",
+        "rule": "SL_Order_UpdateLinesDate_DatePromised",
+        "runner": "node",
+        "description": "Rule 'SL_Order_UpdateLinesDate_DatePromised' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-UOM-Validation",
+        "category": "rule-declared",
+        "rule": "UOM Validation",
+        "runner": "node",
+        "description": "Rule 'UOM Validation' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Update-Payment-Plan",
+        "category": "rule-declared",
+        "rule": "Update Payment Plan",
+        "runner": "node",
+        "description": "Rule 'Update Payment Plan' (process) should be declared"
+      },
+      {
+        "id": "t-searchable-filters-header-businessPartner",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be a supported filter for header"
+      },
+      {
+        "id": "t-searchable-filters-header-documentNo",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be a supported filter for header"
+      },
+      {
+        "id": "t-searchable-filters-header-documentStatus",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "documentStatus",
+        "runner": "node",
+        "description": "Field 'documentStatus' should be a supported filter for header"
+      },
+      {
+        "id": "t-searchable-filters-header-orderDate",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "orderDate",
+        "runner": "node",
+        "description": "Field 'orderDate' should be a supported filter for header"
+      },
+      {
+        "id": "t-searchable-filters-header-orderReference",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "orderReference",
+        "runner": "node",
+        "description": "Field 'orderReference' should be a supported filter for header"
+      },
+      {
+        "id": "t-selector-endpoint-header-asset",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "asset",
+        "runner": "node",
+        "description": "Selector endpoint for 'asset' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-businessPartner",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Selector endpoint for 'businessPartner' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-charge",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "charge",
+        "runner": "node",
+        "description": "Selector endpoint for 'charge' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-companyAgent",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "companyAgent",
+        "runner": "node",
+        "description": "Selector endpoint for 'companyAgent' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-costcenter",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Selector endpoint for 'costcenter' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-currency",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "currency",
+        "runner": "node",
+        "description": "Selector endpoint for 'currency' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-incoterms",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "incoterms",
+        "runner": "node",
+        "description": "Selector endpoint for 'incoterms' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-invoiceFrom",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "invoiceFrom",
+        "runner": "node",
+        "description": "Selector endpoint for 'invoiceFrom' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-ndDimension",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Selector endpoint for 'ndDimension' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-partnerAddress",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Selector endpoint for 'partnerAddress' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-paymentMethod",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "paymentMethod",
+        "runner": "node",
+        "description": "Selector endpoint for 'paymentMethod' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-paymentTerms",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "paymentTerms",
+        "runner": "node",
+        "description": "Selector endpoint for 'paymentTerms' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-priceList",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "priceList",
+        "runner": "node",
+        "description": "Selector endpoint for 'priceList' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-project",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "project",
+        "runner": "node",
+        "description": "Selector endpoint for 'project' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-shippingCompany",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "shippingCompany",
+        "runner": "node",
+        "description": "Selector endpoint for 'shippingCompany' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-stDimension",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Selector endpoint for 'stDimension' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-transactionDocument",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "transactionDocument",
+        "runner": "node",
+        "description": "Selector endpoint for 'transactionDocument' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-header-warehouse",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Selector endpoint for 'warehouse' in header should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-asset",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "asset",
+        "runner": "node",
+        "description": "Selector endpoint for 'asset' in lines should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-costcenter",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Selector endpoint for 'costcenter' in lines should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-currency",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "currency",
+        "runner": "node",
+        "description": "Selector endpoint for 'currency' in lines should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-ndDimension",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Selector endpoint for 'ndDimension' in lines should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-operativeUOM",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "operativeUOM",
+        "runner": "node",
+        "description": "Selector endpoint for 'operativeUOM' in lines should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-partnerAddress",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Selector endpoint for 'partnerAddress' in lines should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-product",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "product",
+        "runner": "node",
+        "description": "Selector endpoint for 'product' in lines should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-project",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "project",
+        "runner": "node",
+        "description": "Selector endpoint for 'project' in lines should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-shippingCompany",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "shippingCompany",
+        "runner": "node",
+        "description": "Selector endpoint for 'shippingCompany' in lines should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-stDimension",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Selector endpoint for 'stDimension' in lines should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-tax",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "tax",
+        "runner": "node",
+        "description": "Selector endpoint for 'tax' in lines should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-uOM",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Selector endpoint for 'uOM' in lines should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lines-warehouse",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Selector endpoint for 'warehouse' in lines should exist"
+      },
+      {
+        "id": "t-selector-endpoint-lineTax-tax",
+        "category": "selector-endpoint",
+        "entity": "lineTax",
+        "field": "tax",
+        "runner": "node",
+        "description": "Selector endpoint for 'tax' in lineTax should exist"
+      },
+      {
+        "id": "t-selector-endpoint-paymentDetails-finFinancialAccountID",
+        "category": "selector-endpoint",
+        "entity": "paymentDetails",
+        "field": "finFinancialAccountID",
+        "runner": "node",
+        "description": "Selector endpoint for 'finFinancialAccountID' in paymentDetails should exist"
+      },
+      {
+        "id": "t-selector-endpoint-paymentDetails-payment",
+        "category": "selector-endpoint",
+        "entity": "paymentDetails",
+        "field": "payment",
+        "runner": "node",
+        "description": "Selector endpoint for 'payment' in paymentDetails should exist"
+      },
+      {
+        "id": "t-selector-endpoint-paymentDetails-paymentMethod",
+        "category": "selector-endpoint",
+        "entity": "paymentDetails",
+        "field": "paymentMethod",
+        "runner": "node",
+        "description": "Selector endpoint for 'paymentMethod' in paymentDetails should exist"
+      },
+      {
+        "id": "t-selector-endpoint-reservedStock-businessPartner",
+        "category": "selector-endpoint",
+        "entity": "reservedStock",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Selector endpoint for 'businessPartner' in reservedStock should exist"
+      },
+      {
+        "id": "t-selector-endpoint-reservedStock-reservation",
+        "category": "selector-endpoint",
+        "entity": "reservedStock",
+        "field": "reservation",
+        "runner": "node",
+        "description": "Selector endpoint for 'reservation' in reservedStock should exist"
+      },
+      {
+        "id": "t-selector-endpoint-reservedStock-storageBin",
+        "category": "selector-endpoint",
+        "entity": "reservedStock",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Selector endpoint for 'storageBin' in reservedStock should exist"
+      },
+      {
+        "id": "t-system-field-header-active",
+        "category": "system-field",
+        "entity": "header",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-activity",
+        "category": "system-field",
+        "entity": "header",
+        "field": "activity",
+        "runner": "node",
+        "description": "System field 'activity' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-aeatsiiDescripcionSii",
+        "category": "system-field",
+        "entity": "header",
+        "field": "aeatsiiDescripcionSii",
+        "runner": "node",
+        "description": "System field 'aeatsiiDescripcionSii' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-aeatsiiFechaOperacion",
+        "category": "system-field",
+        "entity": "header",
+        "field": "aeatsiiFechaOperacion",
+        "runner": "node",
+        "description": "System field 'aeatsiiFechaOperacion' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-aPRMAddPayment",
+        "category": "system-field",
+        "entity": "header",
+        "field": "aPRMAddPayment",
+        "runner": "node",
+        "description": "System field 'aPRMAddPayment' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-calculatePromotions",
+        "category": "system-field",
+        "entity": "header",
+        "field": "calculatePromotions",
+        "runner": "node",
+        "description": "System field 'calculatePromotions' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-cancelandreplace",
+        "category": "system-field",
+        "entity": "header",
+        "field": "cancelandreplace",
+        "runner": "node",
+        "description": "System field 'cancelandreplace' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-cancelledorder",
+        "category": "system-field",
+        "entity": "header",
+        "field": "cancelledorder",
+        "runner": "node",
+        "description": "System field 'cancelledorder' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-client",
+        "category": "system-field",
+        "entity": "header",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-confirmcancelandreplace",
+        "category": "system-field",
+        "entity": "header",
+        "field": "confirmcancelandreplace",
+        "runner": "node",
+        "description": "System field 'confirmcancelandreplace' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-copyFrom",
+        "category": "system-field",
+        "entity": "header",
+        "field": "copyFrom",
+        "runner": "node",
+        "description": "System field 'copyFrom' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-copyFromPO",
+        "category": "system-field",
+        "entity": "header",
+        "field": "copyFromPO",
+        "runner": "node",
+        "description": "System field 'copyFromPO' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-createdBy",
+        "category": "system-field",
+        "entity": "header",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-createOrder",
+        "category": "system-field",
+        "entity": "header",
+        "field": "createOrder",
+        "runner": "node",
+        "description": "System field 'createOrder' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-createPOLines",
+        "category": "system-field",
+        "entity": "header",
+        "field": "createPOLines",
+        "runner": "node",
+        "description": "System field 'createPOLines' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-creationDate",
+        "category": "system-field",
+        "entity": "header",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-cReturnReasonID",
+        "category": "system-field",
+        "entity": "header",
+        "field": "cReturnReasonID",
+        "runner": "node",
+        "description": "System field 'cReturnReasonID' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-datePrinted",
+        "category": "system-field",
+        "entity": "header",
+        "field": "datePrinted",
+        "runner": "node",
+        "description": "System field 'datePrinted' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-delivered",
+        "category": "system-field",
+        "entity": "header",
+        "field": "delivered",
+        "runner": "node",
+        "description": "System field 'delivered' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-deliveryLocation",
+        "category": "system-field",
+        "entity": "header",
+        "field": "deliveryLocation",
+        "runner": "node",
+        "description": "System field 'deliveryLocation' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-deliveryStatus",
+        "category": "system-field",
+        "entity": "header",
+        "field": "deliveryStatus",
+        "runner": "node",
+        "description": "System field 'deliveryStatus' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-documentAction",
+        "category": "system-field",
+        "entity": "header",
+        "field": "documentAction",
+        "runner": "node",
+        "description": "System field 'documentAction' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-documentType",
+        "category": "system-field",
+        "entity": "header",
+        "field": "documentType",
+        "runner": "node",
+        "description": "System field 'documentType' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-dropShipContact",
+        "category": "system-field",
+        "entity": "header",
+        "field": "dropShipContact",
+        "runner": "node",
+        "description": "System field 'dropShipContact' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-dropShipLocation",
+        "category": "system-field",
+        "entity": "header",
+        "field": "dropShipLocation",
+        "runner": "node",
+        "description": "System field 'dropShipLocation' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-dropShipPartner",
+        "category": "system-field",
+        "entity": "header",
+        "field": "dropShipPartner",
+        "runner": "node",
+        "description": "System field 'dropShipPartner' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-etvfacReversedInvoice",
+        "category": "system-field",
+        "entity": "header",
+        "field": "etvfacReversedInvoice",
+        "runner": "node",
+        "description": "System field 'etvfacReversedInvoice' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-externalBusinessPartnerReference",
+        "category": "system-field",
+        "entity": "header",
+        "field": "externalBusinessPartnerReference",
+        "runner": "node",
+        "description": "System field 'externalBusinessPartnerReference' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-fINPaymentPriorityID",
+        "category": "system-field",
+        "entity": "header",
+        "field": "fINPaymentPriorityID",
+        "runner": "node",
+        "description": "System field 'fINPaymentPriorityID' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-formOfPayment",
+        "category": "system-field",
+        "entity": "header",
+        "field": "formOfPayment",
+        "runner": "node",
+        "description": "System field 'formOfPayment' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-freightCostRule",
+        "category": "system-field",
+        "entity": "header",
+        "field": "freightCostRule",
+        "runner": "node",
+        "description": "System field 'freightCostRule' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-generateTemplate",
+        "category": "system-field",
+        "entity": "header",
+        "field": "generateTemplate",
+        "runner": "node",
+        "description": "System field 'generateTemplate' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-id",
+        "category": "system-field",
+        "entity": "header",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-invoiceTerms",
+        "category": "system-field",
+        "entity": "header",
+        "field": "invoiceTerms",
+        "runner": "node",
+        "description": "System field 'invoiceTerms' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-iscancelled",
+        "category": "system-field",
+        "entity": "header",
+        "field": "iscancelled",
+        "runner": "node",
+        "description": "System field 'iscancelled' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-organization",
+        "category": "system-field",
+        "entity": "header",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-paymentStatus",
+        "category": "system-field",
+        "entity": "header",
+        "field": "paymentStatus",
+        "runner": "node",
+        "description": "System field 'paymentStatus' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-posted",
+        "category": "system-field",
+        "entity": "header",
+        "field": "posted",
+        "runner": "node",
+        "description": "System field 'posted' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-print",
+        "category": "system-field",
+        "entity": "header",
+        "field": "print",
+        "runner": "node",
+        "description": "System field 'print' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-printDiscount",
+        "category": "system-field",
+        "entity": "header",
+        "field": "printDiscount",
+        "runner": "node",
+        "description": "System field 'printDiscount' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-processed",
+        "category": "system-field",
+        "entity": "header",
+        "field": "processed",
+        "runner": "node",
+        "description": "System field 'processed' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-processNow",
+        "category": "system-field",
+        "entity": "header",
+        "field": "processNow",
+        "runner": "node",
+        "description": "System field 'processNow' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-psd2GenerateBankPayment",
+        "category": "system-field",
+        "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "runner": "node",
+        "description": "System field 'psd2GenerateBankPayment' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-quotation",
+        "category": "system-field",
+        "entity": "header",
+        "field": "quotation",
+        "runner": "node",
+        "description": "System field 'quotation' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-reinvoice",
+        "category": "system-field",
+        "entity": "header",
+        "field": "reinvoice",
+        "runner": "node",
+        "description": "System field 'reinvoice' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-rejectReason",
+        "category": "system-field",
+        "entity": "header",
+        "field": "rejectReason",
+        "runner": "node",
+        "description": "System field 'rejectReason' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-replacedorder",
+        "category": "system-field",
+        "entity": "header",
+        "field": "replacedorder",
+        "runner": "node",
+        "description": "System field 'replacedorder' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-replacementorderID",
+        "category": "system-field",
+        "entity": "header",
+        "field": "replacementorderID",
+        "runner": "node",
+        "description": "System field 'replacementorderID' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-reservationStatus",
+        "category": "system-field",
+        "entity": "header",
+        "field": "reservationStatus",
+        "runner": "node",
+        "description": "System field 'reservationStatus' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-rMAddOrphanLine",
+        "category": "system-field",
+        "entity": "header",
+        "field": "rMAddOrphanLine",
+        "runner": "node",
+        "description": "System field 'rMAddOrphanLine' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-rMCreateInvoice",
+        "category": "system-field",
+        "entity": "header",
+        "field": "rMCreateInvoice",
+        "runner": "node",
+        "description": "System field 'rMCreateInvoice' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-rMPickfromreceipt",
+        "category": "system-field",
+        "entity": "header",
+        "field": "rMPickfromreceipt",
+        "runner": "node",
+        "description": "System field 'rMPickfromreceipt' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-rMPickFromShipment",
+        "category": "system-field",
+        "entity": "header",
+        "field": "rMPickFromShipment",
+        "runner": "node",
+        "description": "System field 'rMPickFromShipment' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-rMReceiveMaterials",
+        "category": "system-field",
+        "entity": "header",
+        "field": "rMReceiveMaterials",
+        "runner": "node",
+        "description": "System field 'rMReceiveMaterials' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-salesCampaign",
+        "category": "system-field",
+        "entity": "header",
+        "field": "salesCampaign",
+        "runner": "node",
+        "description": "System field 'salesCampaign' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-salesTransaction",
+        "category": "system-field",
+        "entity": "header",
+        "field": "salesTransaction",
+        "runner": "node",
+        "description": "System field 'salesTransaction' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-selected",
+        "category": "system-field",
+        "entity": "header",
+        "field": "selected",
+        "runner": "node",
+        "description": "System field 'selected' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-selfService",
+        "category": "system-field",
+        "entity": "header",
+        "field": "selfService",
+        "runner": "node",
+        "description": "System field 'selfService' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-trxOrganization",
+        "category": "system-field",
+        "entity": "header",
+        "field": "trxOrganization",
+        "runner": "node",
+        "description": "System field 'trxOrganization' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-updated",
+        "category": "system-field",
+        "entity": "header",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-updatedBy",
+        "category": "system-field",
+        "entity": "header",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-userContact",
+        "category": "system-field",
+        "entity": "header",
+        "field": "userContact",
+        "runner": "node",
+        "description": "System field 'userContact' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-validUntil",
+        "category": "system-field",
+        "entity": "header",
+        "field": "validUntil",
+        "runner": "node",
+        "description": "System field 'validUntil' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-lines-active",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-baseGrossUnitPrice",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "baseGrossUnitPrice",
+        "runner": "node",
+        "description": "System field 'baseGrossUnitPrice' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-bOMParentID",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "bOMParentID",
+        "runner": "node",
+        "description": "System field 'bOMParentID' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-businessPartner",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "System field 'businessPartner' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-cancelPriceAdjustment",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "cancelPriceAdjustment",
+        "runner": "node",
+        "description": "System field 'cancelPriceAdjustment' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-charge",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "charge",
+        "runner": "node",
+        "description": "System field 'charge' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-chargeAmount",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "chargeAmount",
+        "runner": "node",
+        "description": "System field 'chargeAmount' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-client",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-cOrderDiscountID",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "cOrderDiscountID",
+        "runner": "node",
+        "description": "System field 'cOrderDiscountID' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-createdBy",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-createReservation",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "createReservation",
+        "runner": "node",
+        "description": "System field 'createReservation' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-creationDate",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-cReturnReasonID",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "cReturnReasonID",
+        "runner": "node",
+        "description": "System field 'cReturnReasonID' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-dateDelivered",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "dateDelivered",
+        "runner": "node",
+        "description": "System field 'dateDelivered' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-descriptionOnly",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "descriptionOnly",
+        "runner": "node",
+        "description": "System field 'descriptionOnly' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-directShipment",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "directShipment",
+        "runner": "node",
+        "description": "System field 'directShipment' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-editLineAmount",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "editLineAmount",
+        "runner": "node",
+        "description": "System field 'editLineAmount' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-explode",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "explode",
+        "runner": "node",
+        "description": "System field 'explode' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-goodsShipmentLine",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "goodsShipmentLine",
+        "runner": "node",
+        "description": "System field 'goodsShipmentLine' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-id",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-invoiceDate",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "invoiceDate",
+        "runner": "node",
+        "description": "System field 'invoiceDate' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-lineNo",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "System field 'lineNo' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-managePrereservation",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "managePrereservation",
+        "runner": "node",
+        "description": "System field 'managePrereservation' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-manageReservation",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "manageReservation",
+        "runner": "node",
+        "description": "System field 'manageReservation' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-orderQuantity",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "orderQuantity",
+        "runner": "node",
+        "description": "System field 'orderQuantity' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-orderUOM",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "orderUOM",
+        "runner": "node",
+        "description": "System field 'orderUOM' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-organization",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-overdueReturnDays",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "overdueReturnDays",
+        "runner": "node",
+        "description": "System field 'overdueReturnDays' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-priceAdjustment",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "priceAdjustment",
+        "runner": "node",
+        "description": "System field 'priceAdjustment' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-priceLimit",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "priceLimit",
+        "runner": "node",
+        "description": "System field 'priceLimit' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-printDescription",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "printDescription",
+        "runner": "node",
+        "description": "System field 'printDescription' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-quotationLine",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "quotationLine",
+        "runner": "node",
+        "description": "System field 'quotationLine' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-replacedorderline",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "replacedorderline",
+        "runner": "node",
+        "description": "System field 'replacedorderline' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-reservationStatus",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "reservationStatus",
+        "runner": "node",
+        "description": "System field 'reservationStatus' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-resourceAssignment",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "resourceAssignment",
+        "runner": "node",
+        "description": "System field 'resourceAssignment' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-returnline",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "returnline",
+        "runner": "node",
+        "description": "System field 'returnline' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-salesOrder",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "System field 'salesOrder' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-selectOrderLine",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "selectOrderLine",
+        "runner": "node",
+        "description": "System field 'selectOrderLine' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-sOPOReference",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "sOPOReference",
+        "runner": "node",
+        "description": "System field 'sOPOReference' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-standardPrice",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "standardPrice",
+        "runner": "node",
+        "description": "System field 'standardPrice' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-updated",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-updatedBy",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lines-warehouseRule",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "warehouseRule",
+        "runner": "node",
+        "description": "System field 'warehouseRule' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-system-field-lineTax-active",
+        "category": "system-field",
+        "entity": "lineTax",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for lineTax"
+      },
+      {
+        "id": "t-system-field-lineTax-client",
+        "category": "system-field",
+        "entity": "lineTax",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for lineTax"
+      },
+      {
+        "id": "t-system-field-lineTax-cOrderlinetaxID",
+        "category": "system-field",
+        "entity": "lineTax",
+        "field": "cOrderlinetaxID",
+        "runner": "node",
+        "description": "System field 'cOrderlinetaxID' should exist in backend but not frontend for lineTax"
+      },
+      {
+        "id": "t-system-field-lineTax-createdBy",
+        "category": "system-field",
+        "entity": "lineTax",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for lineTax"
+      },
+      {
+        "id": "t-system-field-lineTax-creationDate",
+        "category": "system-field",
+        "entity": "lineTax",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for lineTax"
+      },
+      {
+        "id": "t-system-field-lineTax-organization",
+        "category": "system-field",
+        "entity": "lineTax",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for lineTax"
+      },
+      {
+        "id": "t-system-field-lineTax-salesOrder",
+        "category": "system-field",
+        "entity": "lineTax",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "System field 'salesOrder' should exist in backend but not frontend for lineTax"
+      },
+      {
+        "id": "t-system-field-lineTax-salesOrderLine",
+        "category": "system-field",
+        "entity": "lineTax",
+        "field": "salesOrderLine",
+        "runner": "node",
+        "description": "System field 'salesOrderLine' should exist in backend but not frontend for lineTax"
+      },
+      {
+        "id": "t-system-field-lineTax-updated",
+        "category": "system-field",
+        "entity": "lineTax",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for lineTax"
+      },
+      {
+        "id": "t-system-field-lineTax-updatedBy",
+        "category": "system-field",
+        "entity": "lineTax",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for lineTax"
+      },
+      {
+        "id": "t-system-field-paymentDetails-active",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-activity",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "activity",
+        "runner": "node",
+        "description": "System field 'activity' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-aPRMDisplayedAcc",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "aPRMDisplayedAcc",
+        "runner": "node",
+        "description": "System field 'aPRMDisplayedAcc' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-aPRMDisplayedPaymmeth",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "aPRMDisplayedPaymmeth",
+        "runner": "node",
+        "description": "System field 'aPRMDisplayedPaymmeth' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-businessPartner",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "System field 'businessPartner' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-businessPartnerdim",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "businessPartnerdim",
+        "runner": "node",
+        "description": "System field 'businessPartnerdim' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-client",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-createdBy",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-creationDate",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-currency",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "currency",
+        "runner": "node",
+        "description": "System field 'currency' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-finaccCurrencyID",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "finaccCurrencyID",
+        "runner": "node",
+        "description": "System field 'finaccCurrencyID' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-finPaymentDetailVID",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "finPaymentDetailVID",
+        "runner": "node",
+        "description": "System field 'finPaymentDetailVID' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-glitemname",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "glitemname",
+        "runner": "node",
+        "description": "System field 'glitemname' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-invoiceAmount",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "invoiceAmount",
+        "runner": "node",
+        "description": "System field 'invoiceAmount' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-invoiceno",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "invoiceno",
+        "runner": "node",
+        "description": "System field 'invoiceno' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-orderno",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "orderno",
+        "runner": "node",
+        "description": "System field 'orderno' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-orderPaymentPlan",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "orderPaymentPlan",
+        "runner": "node",
+        "description": "System field 'orderPaymentPlan' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-organization",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-paymentno",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "paymentno",
+        "runner": "node",
+        "description": "System field 'paymentno' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-paymentPlanInvoice",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "paymentPlanInvoice",
+        "runner": "node",
+        "description": "System field 'paymentPlanInvoice' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-paymentPlanOrder",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "paymentPlanOrder",
+        "runner": "node",
+        "description": "System field 'paymentPlanOrder' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-product",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "product",
+        "runner": "node",
+        "description": "System field 'product' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-project",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "project",
+        "runner": "node",
+        "description": "System field 'project' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-salesCampaign",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "salesCampaign",
+        "runner": "node",
+        "description": "System field 'salesCampaign' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-salesRegion",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "salesRegion",
+        "runner": "node",
+        "description": "System field 'salesRegion' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-updated",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-paymentDetails-updatedBy",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-system-field-reservedStock-active",
+        "category": "system-field",
+        "entity": "reservedStock",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for reservedStock"
+      },
+      {
+        "id": "t-system-field-reservedStock-client",
+        "category": "system-field",
+        "entity": "reservedStock",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for reservedStock"
+      },
+      {
+        "id": "t-system-field-reservedStock-createdBy",
+        "category": "system-field",
+        "entity": "reservedStock",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for reservedStock"
+      },
+      {
+        "id": "t-system-field-reservedStock-creationDate",
+        "category": "system-field",
+        "entity": "reservedStock",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for reservedStock"
+      },
+      {
+        "id": "t-system-field-reservedStock-id",
+        "category": "system-field",
+        "entity": "reservedStock",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for reservedStock"
+      },
+      {
+        "id": "t-system-field-reservedStock-organization",
+        "category": "system-field",
+        "entity": "reservedStock",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for reservedStock"
+      },
+      {
+        "id": "t-system-field-reservedStock-salesOrderLine",
+        "category": "system-field",
+        "entity": "reservedStock",
+        "field": "salesOrderLine",
+        "runner": "node",
+        "description": "System field 'salesOrderLine' should exist in backend but not frontend for reservedStock"
+      },
+      {
+        "id": "t-system-field-reservedStock-updated",
+        "category": "system-field",
+        "entity": "reservedStock",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for reservedStock"
+      },
+      {
+        "id": "t-system-field-reservedStock-updatedBy",
+        "category": "system-field",
+        "entity": "reservedStock",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for reservedStock"
+      },
+      {
+        "id": "t-visibility-header",
+        "category": "visibility",
+        "entity": "header",
+        "runner": "node",
+        "description": "Entity 'header' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-lines",
+        "category": "visibility",
+        "entity": "lines",
+        "runner": "node",
+        "description": "Entity 'lines' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-lineTax",
+        "category": "visibility",
+        "entity": "lineTax",
+        "runner": "node",
+        "description": "Entity 'lineTax' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-paymentDetails",
+        "category": "visibility",
+        "entity": "paymentDetails",
+        "runner": "node",
+        "description": "Entity 'paymentDetails' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-reservedStock",
+        "category": "visibility",
+        "entity": "reservedStock",
+        "runner": "node",
+        "description": "Entity 'reservedStock' should only expose visible fields in frontend"
+      }
+    ],
+    "summary": {
+      "total": 764,
+      "byCategory": {
+        "action-endpoint": 22,
+        "crud-flags": 5,
+        "default-value-type": 26,
+        "displaylogic-evaluable": 1,
+        "displaylogic-valid": 1,
+        "field-presence": 95,
+        "field-type": 95,
         "readonlylogic-evaluable": 44,
         "readonlylogic-valid": 44,
         "rule-declared": 231,
@@ -8546,7 +11043,7 @@
         "visibility": 5
       },
       "byRunner": {
-        "node": 762,
+        "node": 764,
         "junit": 0
       }
     }
