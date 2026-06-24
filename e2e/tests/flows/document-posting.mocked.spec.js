@@ -38,6 +38,8 @@ const ROW = {
   'documentStatus$_identifier': 'Completado',
   // Realistic Etendo value: 'N' (unposted). Y/N-aware gate → Post item visible.
   posted: 'N',
+  // Completed document: processed='Y' satisfies the second Post visibility gate.
+  processed: 'Y',
   // Minimal extra fields so the detail view renders cleanly.
   'businessPartner$_identifier': 'Test BP',
   grandTotalAmount: 100,
