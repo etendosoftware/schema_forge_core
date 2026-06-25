@@ -49,7 +49,7 @@ const draftMode = {
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start requiredHeaderFields:header
-const requiredHeaderFields = ['documentNo', 'orderDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'grandTotalAmount', 'summedLineAmount'];
+const requiredHeaderFields = ['documentNo', 'orderDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'grandTotalAmount', 'summedLineAmount', 'currency'];
 // @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
@@ -67,6 +67,7 @@ const addLineFields = {
   ],
   hidden: [
     { key: 'grossUnitPrice', value: '0' },
+    { key: 'currency', fromParent: 'currency' },
   ],
 };
 // @sf-generated-end addLineFields:lines
@@ -216,6 +217,14 @@ export const api = {
           }
         ]
       }
+    },
+    {
+      "entity": "lines",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/lines/selectors/currency"
     }
   ],
   "actions": [
@@ -473,6 +482,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
         sendDocument
+        selectorPriceCurrency="org"
         {...props}
       />
     );

@@ -93,7 +93,7 @@ export default function ProductSearchDrawer({
   const [imageMap, setImageMap] = useState({});
   const ui = useUI();
   const sessionCurrency = useCurrency();
-  const currency = selectorContext?.currency ?? sessionCurrency;
+  const currency = selectorContext?.priceCurrency ?? selectorContext?.currency ?? sessionCurrency;
   const resolvedTitle = title ?? ui('product');
 
   const neoBaseUrl = selectorUrl ? selectorUrl.replace(/\/[^/]+\/[^/]+\/selectors\/.*$/, '') : '';

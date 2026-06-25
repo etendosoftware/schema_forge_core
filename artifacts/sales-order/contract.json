@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.8.0",
   "generatedAt": "2026-05-12T16:47:39.614Z",
-  "updatedAt": "2026-06-24T20:46:49.558Z",
-  "checksum": "8f3339f835f92f4e",
+  "updatedAt": "2026-06-25T14:15:39.328Z",
+  "checksum": "2d746e9ded4108a7",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -47,7 +47,8 @@
       "dateFilterKey": "orderDate",
       "noHeaderBorder": true,
       "layoutType": "default",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "selectorPriceCurrency": "org"
     },
     "entities": {
       "header": {
@@ -395,19 +396,20 @@
             "label": "Currency",
             "type": "foreignKey",
             "tsType": "string",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": false,
+            "form": true,
             "sourceRequired": true,
-            "derivation": {
-              "type": "fromConfig",
-              "source": "context.cCurrencyId"
-            },
             "reference": "Currency",
             "inputMode": "selector",
             "defaultValue": "@C_Currency_ID@",
-            "section": "summary"
+            "section": "principal",
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "description",
@@ -482,6 +484,18 @@
               "type": "computed",
               "source": "false"
             }
+          },
+          {
+            "name": "eTGOCurrencyRate",
+            "apiKey": "eTGOCurrencyRate",
+            "column": "EM_ETGO_Currency_Rate",
+            "label": "EM_ETGO_Currency_Rate",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": false
           }
         ],
         "searchableFields": [
@@ -510,13 +524,6 @@
             "derivation": {
               "type": "computed",
               "source": "DR"
-            }
-          },
-          {
-            "name": "currency",
-            "derivation": {
-              "type": "fromConfig",
-              "source": "context.cCurrencyId"
             }
           },
           {
@@ -705,7 +712,7 @@
             "section": "principal",
             "gridOrder": 6,
             "validationRule": {
-              "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID IN (@AD_CLIENT_ID@, '0') AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
+              "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID=@AD_CLIENT_ID@ AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
               "contextParams": [],
               "cascadeParams": [
                 "DateInvoiced",
@@ -796,6 +803,26 @@
               "evaluable": true,
               "js": "record['processed'] === true || record['gROSSPRICE'] === 'N'"
             }
+          },
+          {
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "label": "Currency",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.cCurrencyId"
+            },
+            "reference": "Currency",
+            "inputMode": "selector",
+            "defaultValue": "@C_Currency_ID@"
           }
         ],
         "searchableFields": [
@@ -828,6 +855,13 @@
             "derivation": {
               "type": "computed",
               "source": "0"
+            }
+          },
+          {
+            "name": "currency",
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.cCurrencyId"
             }
           }
         ],
@@ -878,7 +912,8 @@
       },
       "dateFilterKey": "orderDate",
       "noHeaderBorder": true,
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "selectorPriceCurrency": "org"
     },
     "entities": {
       "header": {
@@ -1043,7 +1078,7 @@
             "apiKey": "currency",
             "column": "C_Currency_ID",
             "type": "foreignKey",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true
           },
           {
@@ -1703,6 +1738,14 @@
             "required": false
           },
           {
+            "name": "eTGOCurrencyRate",
+            "apiKey": "eTGOCurrencyRate",
+            "column": "EM_ETGO_Currency_Rate",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
             "name": "eTPRRemovePayment",
             "apiKey": "eTPRRemovePayment",
             "column": "EM_Etpr_Remove_Payment",
@@ -2195,7 +2238,7 @@
             "apiKey": "currency",
             "column": "C_Currency_ID",
             "type": "foreignKey",
-            "visibility": "system",
+            "visibility": "editable",
             "required": true
           },
           {
@@ -2530,6 +2573,14 @@
             }
           ]
         }
+      },
+      {
+        "entity": "lines",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/sales-order/lines/selectors/currency"
       }
     ],
     "actions": [
@@ -2978,6 +3029,14 @@
         "description": "Default value for 'orderDate' in header should be a string"
       },
       {
+        "id": "t-default-value-type-lines-currency",
+        "category": "default-value-type",
+        "entity": "lines",
+        "field": "currency",
+        "runner": "node",
+        "description": "Default value for 'currency' in lines should be a string"
+      },
+      {
         "id": "t-default-value-type-lines-discount",
         "category": "default-value-type",
         "entity": "lines",
@@ -3106,6 +3165,14 @@
         "description": "Field 'documentStatus' should be present in header"
       },
       {
+        "id": "t-field-presence-header-eTGOCurrencyRate",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "eTGOCurrencyRate",
+        "runner": "node",
+        "description": "Field 'eTGOCurrencyRate' should be present in header"
+      },
+      {
         "id": "t-field-presence-header-etgoTotalDiscount",
         "category": "field-presence",
         "entity": "header",
@@ -3192,6 +3259,14 @@
         "field": "warehouse",
         "runner": "node",
         "description": "Field 'warehouse' should be present in header"
+      },
+      {
+        "id": "t-field-presence-lines-currency",
+        "category": "field-presence",
+        "entity": "lines",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should be present in lines"
       },
       {
         "id": "t-field-presence-lines-description",
@@ -3314,6 +3389,14 @@
         "description": "Field 'documentStatus' should have type 'string' in header"
       },
       {
+        "id": "t-field-type-header-eTGOCurrencyRate",
+        "category": "field-type",
+        "entity": "header",
+        "field": "eTGOCurrencyRate",
+        "runner": "node",
+        "description": "Field 'eTGOCurrencyRate' should have type 'string' in header"
+      },
+      {
         "id": "t-field-type-header-etgoTotalDiscount",
         "category": "field-type",
         "entity": "header",
@@ -3402,6 +3485,14 @@
         "description": "Field 'warehouse' should have type 'string' in header"
       },
       {
+        "id": "t-field-type-lines-currency",
+        "category": "field-type",
+        "entity": "lines",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should have type 'string' in lines"
+      },
+      {
         "id": "t-field-type-lines-description",
         "category": "field-type",
         "entity": "lines",
@@ -3480,6 +3571,14 @@
         "field": "businessPartner",
         "runner": "node",
         "description": "Read-only logic for 'businessPartner' in header should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-header-currency",
+        "category": "readonlylogic-evaluable",
+        "entity": "header",
+        "field": "currency",
+        "runner": "node",
+        "description": "Read-only logic for 'currency' in header should have evaluable flag"
       },
       {
         "id": "t-readonlylogic-evaluable-header-documentNo",
@@ -3600,6 +3699,14 @@
         "field": "businessPartner",
         "runner": "node",
         "description": "Read-only logic for 'businessPartner' in header should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-header-currency",
+        "category": "readonlylogic-valid",
+        "entity": "header",
+        "field": "currency",
+        "runner": "node",
+        "description": "Read-only logic for 'currency' in header should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-header-documentNo",
@@ -5588,6 +5695,14 @@
         "description": "Selector endpoint for 'warehouse' in header should exist"
       },
       {
+        "id": "t-selector-endpoint-lines-currency",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "currency",
+        "runner": "node",
+        "description": "Selector endpoint for 'currency' in lines should exist"
+      },
+      {
         "id": "t-selector-endpoint-lines-product",
         "category": "selector-endpoint",
         "entity": "lines",
@@ -6412,14 +6527,6 @@
         "description": "System field 'cReturnReasonID' should exist in backend but not frontend for lines"
       },
       {
-        "id": "t-system-field-lines-currency",
-        "category": "system-field",
-        "entity": "lines",
-        "field": "currency",
-        "runner": "node",
-        "description": "System field 'currency' should exist in backend but not frontend for lines"
-      },
-      {
         "id": "t-system-field-lines-dateDelivered",
         "category": "system-field",
         "entity": "lines",
@@ -6827,25 +6934,25 @@
       }
     ],
     "summary": {
-      "total": 542,
+      "total": 549,
       "byCategory": {
         "action-endpoint": 23,
         "crud-flags": 2,
-        "default-value-type": 8,
+        "default-value-type": 9,
         "displaylogic-evaluable": 3,
         "displaylogic-valid": 3,
-        "field-presence": 26,
-        "field-type": 26,
-        "readonlylogic-evaluable": 15,
-        "readonlylogic-valid": 15,
+        "field-presence": 28,
+        "field-type": 28,
+        "readonlylogic-evaluable": 16,
+        "readonlylogic-valid": 16,
         "rule-declared": 254,
         "searchable-filters": 5,
-        "selector-endpoint": 9,
-        "system-field": 151,
+        "selector-endpoint": 10,
+        "system-field": 150,
         "visibility": 2
       },
       "byRunner": {
-        "node": 542,
+        "node": 549,
         "junit": 0
       }
     }

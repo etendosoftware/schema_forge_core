@@ -1,8 +1,8 @@
 {
-  "version": "0.5.0",
+  "version": "0.8.0",
   "generatedAt": "2026-04-29T19:46:12.773Z",
-  "updatedAt": "2026-06-24T20:46:48.861Z",
-  "checksum": "93bcb149dfb2076f",
+  "updatedAt": "2026-06-25T14:15:37.851Z",
+  "checksum": "d06f8029fa24ed7c",
   "frontendContract": {
     "window": {
       "id": "FF808081330213E60133021822E40007",
@@ -618,7 +618,7 @@
             "inputMode": "selector",
             "section": "principal",
             "validationRule": {
-              "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID IN (@AD_CLIENT_ID@, '0') AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
+              "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID=@AD_CLIENT_ID@ AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
               "contextParams": [],
               "cascadeParams": [
                 "DateInvoiced",
@@ -1549,6 +1549,14 @@
             "type": "button",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "eTGOCurrencyRate",
+            "apiKey": "eTGOCurrencyRate",
+            "column": "EM_ETGO_Currency_Rate",
+            "type": "string",
+            "visibility": "system",
+            "required": false
           }
         ]
       },
@@ -3878,6 +3886,14 @@
         "description": "System field 'dropShipPartner' should exist in backend but not frontend for customerReturn"
       },
       {
+        "id": "t-system-field-customerReturn-eTGOCurrencyRate",
+        "category": "system-field",
+        "entity": "customerReturn",
+        "field": "eTGOCurrencyRate",
+        "runner": "node",
+        "description": "System field 'eTGOCurrencyRate' should exist in backend but not frontend for customerReturn"
+      },
+      {
         "id": "t-system-field-customerReturn-etgoTotalDiscount",
         "category": "system-field",
         "entity": "customerReturn",
@@ -4829,7 +4845,7 @@
       }
     ],
     "summary": {
-      "total": 283,
+      "total": 284,
       "byCategory": {
         "action-endpoint": 23,
         "crud-flags": 2,
@@ -4843,11 +4859,11 @@
         "rule-declared": 6,
         "searchable-filters": 5,
         "selector-endpoint": 11,
-        "system-field": 153,
+        "system-field": 154,
         "visibility": 2
       },
       "byRunner": {
-        "node": 283,
+        "node": 284,
         "junit": 0
       }
     }

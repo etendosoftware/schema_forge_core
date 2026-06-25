@@ -1,8 +1,8 @@
 {
   "version": "0.54.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-06-24T18:32:01.987Z",
-  "contractChecksum": "cb8fc45faa8328e9",
+  "updatedAt": "2026-06-25T00:35:57.134Z",
+  "contractChecksum": "2f5ec9d5c27ce83e",
   "apiPrediction": {
     "specName": "purchase-invoice",
     "baseUrl": "/sws/neo/purchase-invoice",
@@ -678,6 +678,44 @@
         "processType": "obuiapp"
       },
       {
+        "name": "posted",
+        "actionType": "documentAction",
+        "entity": "header",
+        "column": "Posted",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/purchase-invoice/header/{id}/action/posted",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ]
+      },
+      {
         "name": "aPRMProcessinvoice",
         "actionType": "paymentAction",
         "entity": "header",
@@ -1112,46 +1150,6 @@
         "processType": "obuiapp"
       },
       {
-        "name": "etblkpBulkposting",
-        "actionType": "documentAction",
-        "entity": "header",
-        "column": "EM_Etblkp_Bulkposting",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/purchase-invoice/header/{id}/action/etblkpBulkposting",
-        "parameters": [
-          {
-            "name": "docAction",
-            "type": "string",
-            "required": true,
-            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
-          }
-        ],
-        "preconditions": [
-          {
-            "field": "documentStatus",
-            "operator": "in",
-            "values": [
-              "DR",
-              "IP"
-            ],
-            "description": "Document must be in draft or in-progress state"
-          }
-        ],
-        "effects": [
-          "Updates document status",
-          "May trigger workflow transitions"
-        ],
-        "dryRunSupported": true,
-        "edgeCases": [
-          "Document is already completed or closed",
-          "Document has pending lines or missing required fields",
-          "User lacks permission to execute the action"
-        ],
-        "processId": "57496FB9CF9E4E8F847224017941570E",
-        "processType": "obuiapp"
-      },
-      {
         "name": "eTPRRemovePayment",
         "actionType": "paymentAction",
         "entity": "header",
@@ -1416,11 +1414,6 @@
           "charge": {
             "readOnlyLogic": "@Processed@='Y'"
           },
-          "posted": {
-            "readOnly": true,
-            "required": true,
-            "defaultValue": "N"
-          },
           "project": {
             "readOnlyLogic": "@Posted@='Y'"
           },
@@ -1475,10 +1468,6 @@
           },
           "tbaiIssent": {
             "readOnly": true
-          },
-          "processed": {
-            "readOnly": true,
-            "required": true
           },
           "aeatsiiCauseExemption": {},
           "etvfacDateIssue": {
@@ -1884,9 +1873,7 @@
         }
       }
     },
-    "requiredSessionVariables": [
-      "#ShowAcct"
-    ],
+    "requiredSessionVariables": [],
     "evaluationMode": "runtime"
   },
   "agentProfile": {
@@ -2046,6 +2033,7 @@
     ],
     "actions": [
       "generateTo",
+      "posted",
       "documentAction",
       "createLinesFromOrder",
       "createLinesFromShipment",
@@ -2054,8 +2042,7 @@
       "processNow",
       "createLinesFrom",
       "etvfacRectCreate",
-      "tbaiVoidxmlgenerator",
-      "etblkpBulkposting"
+      "tbaiVoidxmlgenerator"
     ],
     "workflow": [
       "Create draft header with required fields",
@@ -2123,5 +2110,5 @@
       "tbaiVoidxmlgenerator"
     ]
   },
-  "checksum": "8873d61b651af64f"
+  "checksum": "b434efa8b46ecc14"
 }

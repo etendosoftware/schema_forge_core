@@ -601,6 +601,9 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
       const ok = await submitLine({ closeAfterSave });
       return ok !== false;
     },
+    setFieldValues: (updates) => {
+      setValues(prev => ({ ...prev, ...updates }));
+    },
   }), [onCancel, submitLine]);
 
   // Auto-commit when the user clicks outside the row (mirrors the green-check behavior).

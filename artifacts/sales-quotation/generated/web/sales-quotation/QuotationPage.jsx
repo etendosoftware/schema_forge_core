@@ -55,7 +55,7 @@ const draftMode = {
 // @sf-generated-end draftMode:quotation
 
 // @sf-generated-start requiredHeaderFields:quotation
-const requiredHeaderFields = ['documentNo', 'orderDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'grandTotalAmount', 'summedLineAmount'];
+const requiredHeaderFields = ['documentNo', 'orderDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'grandTotalAmount', 'summedLineAmount', 'currency'];
 // @sf-generated-end requiredHeaderFields:quotation
 
 // @sf-generated-start addLineFields:quotationLine
@@ -63,9 +63,9 @@ const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice","discount"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1, min: 0 },
-    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'Net List Price', min: 0 },
     { key: 'discount', column: 'Discount', type: 'number', label: 'Discount', defaultValue: 0, min: 0 },
+    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'Net List Price', min: 0 },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1, min: 0 },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineGrossAmount","grossUnitPrice","lineNetAmount"] },
   ],
   derived: [
@@ -290,6 +290,14 @@ export const api = {
     },
     {
       "entity": "quotation",
+      "field": "generateTemplate",
+      "column": "Generatetemplate",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
+      "processId": "800022",
+      "processType": "classic"
+    },
+    {
+      "entity": "quotation",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/processNow",
@@ -303,14 +311,6 @@ export const api = {
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/posted",
       "processId": "57496FB9CF9E4E8F847224017941570E",
       "processType": "obuiapp"
-    },
-    {
-      "entity": "quotation",
-      "field": "generateTemplate",
-      "column": "Generatetemplate",
-      "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
-      "processId": "800022",
-      "processType": "classic"
     },
     {
       "entity": "quotation",
@@ -480,6 +480,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
         sendDocument
+        selectorPriceCurrency="org"
         {...props}
       />
     );

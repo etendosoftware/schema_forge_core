@@ -1552,6 +1552,7 @@ export function DetailView({
   secondaryTabContentPaddingT = 'pt-3',
   transformRecord = null,
   lockedAlert = null,
+  selectorPriceCurrency = null,
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
   // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
@@ -1657,6 +1658,7 @@ export function DetailView({
     if (detailEntity) {
       const headerSnapshot = hook.selected ?? hook.editing;
       const currency = headerSnapshot?.['currency$_identifier'] ?? sessionCurrencyCode ?? null;
+      const priceCurrency = selectorPriceCurrency === 'org' ? sessionCurrencyCode : null;
       next[detailEntity] = {
         ...buildLineSelectorContext({
           windowCategory: category,
@@ -1667,6 +1669,7 @@ export function DetailView({
           },
         }),
         ...(currency ? { currency } : {}),
+        ...(priceCurrency ? { priceCurrency } : {}),
       };
     }
 
@@ -1674,7 +1677,7 @@ export function DetailView({
       next[key] = { parentId: parentRecordId };
     }
     return next;
-  }, [entity, detailEntity, parentRecordId, secondaryTabKeysStr, priceListId, api, hook.selected, hook.editing, sessionCurrencyCode]);
+  }, [entity, detailEntity, parentRecordId, secondaryTabKeysStr, priceListId, api, hook.selected, hook.editing, sessionCurrencyCode, selectorPriceCurrency]);
   const { catalogs, catalogsLoaded } = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
@@ -1746,6 +1749,17 @@ export function DetailView({
     }
     return true;
   }, [addingLine, addingSecondaryLine, linesLayout]);
+
+  // ── Ordered save helper ────────────────────────────────────────────────────
+  //
+  // Always flush any open add-row before saving the header so the parent record
+  // sees the committed line state. If flushPendingLines reports a failure
+  // (e.g. validation), the save is aborted and returns null.
+  const flushAndSave = useCallback(async (data) => {
+    if (!(await flushPendingLines())) return null;
+    return hook.handleSave(data);
+  }, [hook, flushPendingLines]);
+
   const [customModalState, setCustomModalState] = useState({ key: null, rowId: null });
   const [activeTab, setActiveTab] = useState(0);
 
@@ -2058,14 +2072,95 @@ export function DetailView({
   // Track fields whose values were set by a callout response, keyed by field with
   // the applied value, so we only skip the echo (same value) and not genuine edits.
   const calloutAppliedRef = useRef(new Map());
+  // Active conversion rate (org base currency → header currency) for the SAVED state of
+  // the order. Set by the sync effect below whenever the saved currency differs from
+  // the org base currency. Used by handleLineFieldChange to convert pricelist prices on
+  // newly added lines. Conversion only applies to lines added AFTER the order's currency
+  // has been saved — there is no longer real-time conversion of unsaved lines on currency
+  // change (ETP-4027 simplification).
+  const activeCurrencyConversionRef = useRef(null);
   // Track fields the user has manually changed in this record session — protected
   // from being overwritten by callouts triggered from other fields.
   const userTouchedRef = useRef(new Set());
-  // Reset both refs when the record context changes (new record / different existing record)
+  // Reset session-scoped refs when the record context changes (new record / different existing record).
   useEffect(() => {
     userTouchedRef.current = new Set();
     calloutAppliedRef.current = new Map();
+    activeCurrencyConversionRef.current = null;
   }, [recordId]);
+
+  // Sync activeCurrencyConversionRef with the SAVED state of the order: whenever
+  // hook.selected.currency changes (typically after a save), re-evaluate whether
+  // conversion is needed. Lines added afterwards inherit this rate via
+  // handleLineFieldChange. There is no real-time conversion on unsaved currency changes.
+  useEffect(() => {
+    if (recordId === 'new') return;
+    const docCurrencyId = hook.selected?.currency;
+    const orderDate = hook.selected?.orderDate;
+    if (!docCurrencyId || !orderDate || !apiBaseUrl || !token) {
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const neoBase = apiBaseUrl.replace(/\/[^/]+$/, '');
+        const sessionRes = await fetch(`${neoBase}/session`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!sessionRes.ok || cancelled) return;
+        const session = await sessionRes.json();
+        const orgCurrencyId = session?.currencyId;
+        if (!orgCurrencyId) return;
+        if (orgCurrencyId === docCurrencyId) {
+          // Saved currency matches org currency — no conversion needed.
+          activeCurrencyConversionRef.current = null;
+          return;
+        }
+
+        // If the order has a per-order rate override, use it directly without
+        // fetching validate-exchange-rate. This reflects the user's confirmed rate
+        // (set via CurrencyRatePicker) and avoids a redundant network call.
+        const overrideRate = hook.selected?.eTGOCurrencyRate != null
+          ? parseFloat(hook.selected.eTGOCurrencyRate)
+          : null;
+        if (overrideRate && overrideRate > 0) {
+          activeCurrencyConversionRef.current = {
+            baseCurrency: orgCurrencyId,
+            toCurrency: docCurrencyId,
+            rate: overrideRate,
+          };
+          return;
+        }
+
+        const rateRes = await fetch(
+          `${neoBase}/validate-exchange-rate?fromCurrency=${encodeURIComponent(orgCurrencyId)}&toCurrency=${encodeURIComponent(docCurrencyId)}&date=${encodeURIComponent(orderDate)}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!rateRes.ok || cancelled) {
+          activeCurrencyConversionRef.current = null;
+          return;
+        }
+        const rateData = await rateRes.json();
+        if (cancelled) return;
+        if (rateData?.hasRate && rateData.rate) {
+          activeCurrencyConversionRef.current = {
+            baseCurrency: orgCurrencyId,
+            toCurrency: docCurrencyId,
+            rate: rateData.rate,
+          };
+        } else {
+          // No rate available — clear stale ref. The dropdown-change validator
+          // normally blocks selecting a currency without a rate, but the saved
+          // state may still get here through other paths.
+          activeCurrencyConversionRef.current = null;
+        }
+      } catch {
+        activeCurrencyConversionRef.current = null;
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [recordId, hook.selected?.currency, hook.selected?.eTGOCurrencyRate, hook.selected?.orderDate, apiBaseUrl, token]);
   // Guard: fire default callouts only once per new-record session
   const defaultCalloutsTriggeredRef = useRef(false);
   // Cache for tax rates fetched from the selector (keyed by tax ID).
@@ -2341,10 +2436,20 @@ export function DetailView({
 
     // Mark these fields so the next onChange doesn't re-trigger callout
     calloutAppliedRef.current = appliedFields;
+
+    // Currency change validation is handled inside handleChangeWithCallout (synchronous
+    // dropdown-change path). The callout response handler intentionally no longer applies
+    // any conversion to pending lines — under the simplified ETP-4027 model, conversion
+    // only applies to lines added AFTER the saved currency change.
   }, [calloutResult]);
 
   // Wrapped onChange that triggers callout for user-initiated FK changes
   const handleChangeWithCallout = useCallback((field, value) => {
+    // Capture the previous currency BEFORE hook.handleChange updates state, so we can
+    // revert the dropdown if the rate check fails. The closure preserves the old
+    // hook.editing reference, but capturing explicitly keeps intent clear.
+    const previousCurrency = field === 'currency' ? hook.editing?.currency : null;
+
     hook.handleChange(field, value);
 
     // Skip companion/auxiliary fields — they don't have callouts
@@ -2369,9 +2474,49 @@ export function DetailView({
     if (!value || value === '') return;
     if (!/^[0-9A-Fa-f]{32}$/.test(value) && !/^-?\d+(\.\d+)?$/.test(value) && !/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
 
+    // Currency change validation (ETP-4027 simplified model): if no conversion rate
+    // exists between the org base currency and the newly selected currency for the
+    // order date, revert the dropdown to the previous value and surface an error.
+    // Skipped when the new currency equals the org currency (no rate needed) and when
+    // there is no previous currency yet (initial set, e.g. defaults).
+    if (field === 'currency' && previousCurrency && previousCurrency !== value && apiBaseUrl && token) {
+      const orderDate = hook.selected?.orderDate ?? hook.editing?.orderDate;
+      if (orderDate) {
+        const neoBase = apiBaseUrl.replace(/\/[^/]+$/, '');
+        (async () => {
+          const revert = () => {
+            toast.error(ui('noConversionRateError', { date: orderDate }));
+            hook.handleChange('currency', previousCurrency);
+          };
+          try {
+            const sessionRes = await fetch(`${neoBase}/session`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!sessionRes.ok) { revert(); return; }
+            const session = await sessionRes.json();
+            const orgCurrencyId = session?.currencyId;
+            // No rate needed when changing TO the org currency — that's just removing
+            // the conversion. Allow without validation.
+            if (!orgCurrencyId || orgCurrencyId === value) return;
+            const rateRes = await fetch(
+              `${neoBase}/validate-exchange-rate?fromCurrency=${encodeURIComponent(orgCurrencyId)}&toCurrency=${encodeURIComponent(value)}&date=${encodeURIComponent(orderDate)}`,
+              { headers: { Authorization: `Bearer ${token}` } },
+            );
+            if (!rateRes.ok) { revert(); return; }
+            const rateData = await rateRes.json();
+            if (!rateData?.hasRate || !rateData.rate) { revert(); return; }
+            // Rate exists — change stays. The sync effect on hook.selected.currency
+            // will pick it up after the user saves the header.
+          } catch {
+            revert();
+          }
+        })();
+      }
+    }
+
     // Trigger callout — the backend returns empty if no callout is registered
     executeCallout(field, value, hook.editing);
-  }, [hook.handleChange, hook.editing, executeCallout]);
+  }, [hook.handleChange, hook.editing, hook.selected, executeCallout, apiBaseUrl, token, ui]);
 
   // Execute callout for child entity (line-level) fields and apply results via callback.
   // Merges parent header data into formState so callouts have full context (e.g., priceList).
@@ -2413,19 +2558,7 @@ export function DetailView({
       const calloutData = await res.json();
       const result = normalizeCalloutResponse(calloutData, rowValues);
 
-      // Classic callouts (SL_Order_Product, SL_Invoice_Product) return the catalog price
-      // as standardPrice (PriceStd) and zero out listPrice (PriceList column).
-      // Use standardPrice as the list price when the callout zeroed listPrice.
-      // The selector enrichment in NeoSelectorService ensures standardPrice always comes
-      // from the document's price list for both order and invoice configs.
-      if (field === 'product' && result.standardPrice != null && (result.listPrice == null || Number(result.listPrice) === 0)) {
-        result.listPrice = result.standardPrice;
-      }
-
-      // Reset discount to 0 on product change so each product starts with no discount applied.
-      if (field === 'product' && lineConfig.discountField) {
-        result[lineConfig.discountField] = 0;
-      }
+      applyProductCalloutPriceAdjustments(field, result, lineConfig);
 
       // Resolve missing $_identifier from loaded catalogs for FK fields returned by callout
       // (e.g., callout sets uOM='100' but server omits the display name)
@@ -2451,6 +2584,14 @@ export function DetailView({
       const triggerFieldDef = (addLineFields?.entry ?? []).find(f => f.key === field);
       const forceFields = new Set(triggerFieldDef?.forceCalloutFields ?? []);
       if (field === 'product' && lineConfig.discountField) forceFields.add(lineConfig.discountField);
+      // Apply active currency conversion: converts prices added after a header currency
+      // change so each new line reflects the order header's currency, not the pricelist's.
+      applyProductCurrencyConversion(
+        field, result, rowValues, lineConfig,
+        activeCurrencyConversionRef.current,
+        hook.selected?.['currency$_identifier'] ?? hook.editing?.['currency$_identifier'],
+        computeLineGrossAmount,
+      );
       roundAmounts(result);
       applyUpdates?.(result, forceFields);
 
@@ -2998,8 +3139,7 @@ export function DetailView({
                   detailEntity,
                   onFieldChange: handleChangeWithCallout,
                   onSave: async () => {
-                    if (!(await flushPendingLines())) return null;
-                    const saved = await hook.handleSave(data);
+                    const saved = await flushAndSave(data);
                     if (saved?.id && isNew) {
                       hook.primeSaved?.(saved);
                     }
@@ -4143,6 +4283,38 @@ function handleEntryIdentifierChange(entry, hook, key, api, catalogs) {
         hook.handleChange(key + '$_identifier', match.label || match.name || match._identifier);
       }
     }
+  }
+}
+
+function applyProductCalloutPriceAdjustments(field, result, lineConfig) {
+  if (field !== 'product') return;
+  if (result.standardPrice != null && (result.listPrice == null || Number(result.listPrice) === 0)) {
+    result.listPrice = result.standardPrice;
+  }
+  if (lineConfig.discountField) {
+    result[lineConfig.discountField] = 0;
+  }
+}
+
+function applyProductCurrencyConversion(field, result, rowValues, lineConfig, activeCurrencyConversion, currencyIdentifier, computeLineGrossAmount) {
+  if (field !== 'product' || !activeCurrencyConversion) return;
+  const { rate, toCurrency } = activeCurrencyConversion;
+  result.currency = toCurrency;
+  if (currencyIdentifier) {
+    result['currency$_identifier'] = currencyIdentifier;
+  }
+  const rawPrice = parseFloat(String(result[lineConfig.priceField] ?? 0));
+  if (rawPrice > 0 && rate !== 1) {
+    const convertedPrice = parseFloat((rawPrice * rate).toFixed(2));
+    result[lineConfig.priceField] = convertedPrice;
+    if (result.standardPrice != null) result.standardPrice = convertedPrice;
+    if (result.unitPrice != null) result.unitPrice = convertedPrice;
+    if (result.listPrice != null) result.listPrice = convertedPrice;
+    computeLineGrossAmount(lineConfig.priceField, convertedPrice, result, {
+      ...rowValues,
+      ...result,
+      [lineConfig.priceField]: convertedPrice,
+    });
   }
 }
 
