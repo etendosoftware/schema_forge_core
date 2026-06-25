@@ -441,6 +441,39 @@ export function buildPatchPayload(editing, selected, entity) {
     return payload;
 }
 
+export function buildSavePayload({
+    isNew,
+    selected,
+    editing,
+    entity,
+    apiBaseUrl,
+    backendDefaultKeysRef,
+    userChangedKeysRef,
+    formFieldsRef,
+}) {
+    if (!isNew && selected) {
+        return buildPatchPayload(editing, selected, entity);
+    }
+
+    const payload = {};
+    const isContactsBusinessPartnerCreate = entity === 'businessPartner'
+        && /\/contacts$/i.test(apiBaseUrl || '');
+    const requiredFormKeys = new Set(
+        [...formFieldsRef.current.values()].flat().filter(f => f.required).map(f => f.key),
+    );
+
+    buildCreatePayload(
+        editing,
+        backendDefaultKeysRef,
+        userChangedKeysRef,
+        requiredFormKeys,
+        isContactsBusinessPartnerCreate,
+        payload,
+    );
+    applyContactsRequiredFields(entity, payload, editing);
+    return payload;
+}
+
 export async function handleSaveErrorResponse(res, ui, setFieldErrors, setSaveError) {
     // ETP-3894: parse a structured MISSING_REQUIRED_FIELDS 400 from the backend so
     // the UI can highlight the missing fields. Falls back to the regular error
@@ -495,6 +528,24 @@ export function reportMissingRequiredFields(missing, ui, setFieldErrors, setSave
 
 export function shouldRefetchAfterSave(saved, refetchAfterSave) {
     return saved?.id && refetchAfterSave;
+}
+
+export async function resolveSavedRecordAfterSave(saved, {
+    apiBaseUrl,
+    entity,
+    headers,
+    refetchAfterSave,
+}) {
+    if (!shouldRefetchAfterSave(saved, refetchAfterSave)) {
+        return saved;
+    }
+    try {
+        const refetchRes = await fetch(`${apiBaseUrl}/${entity}/${saved.id}`, { headers });
+        const refetchData = refetchRes.ok ? await refetchRes.json() : null;
+        return normalizeRecord(refetchData?.response?.data?.[0] ?? refetchData ?? saved, entity);
+    } catch {
+        return saved;
+    }
 }
 
 export function showSaveSuccessToast(silent, isNew, ui) {
@@ -829,27 +880,16 @@ export function useEntity(entity, childEntity, {
         const url = getUrl(isNew, apiBaseUrl, entity, editing);
         // Use PATCH for existing records (partial update), POST for new
         const method = getMethod(isNew);
-        // For PATCH, only send changed fields
-        let payload;
-        if (!isNew && selected) {
-            payload = buildPatchPayload(editing, selected, entity);
-        } else {
-            // For POST (create), strip empty strings — let backend injectMandatoryDefaults
-            // resolve proper values for fields not explicitly set by the user or callouts.
-            payload = {};
-            const isContactsBusinessPartnerCreate = entity === 'businessPartner'
-                && /\/contacts$/i.test(apiBaseUrl || '');
-
-            // Required form fields must always be included in the payload, even when their value
-            // came from backend defaults and was never explicitly changed by the user.
-            const requiredFormKeys = new Set(
-                [...formFieldsRef.current.values()].flat().filter(f => f.required).map(f => f.key),
-            );
-
-            buildCreatePayload(editing, backendDefaultKeysRef, userChangedKeysRef, requiredFormKeys, isContactsBusinessPartnerCreate, payload);
-
-            applyContactsRequiredFields(entity, payload, editing);
-        }
+        const payload = buildSavePayload({
+            isNew,
+            selected,
+            editing,
+            entity,
+            apiBaseUrl,
+            backendDefaultKeysRef,
+            userChangedKeysRef,
+            formFieldsRef,
+        });
         // NEO Headless expects flat field values — NeoServlet handles wrapping for JsonDataService
         const body = JSON.stringify(payload);
         try {
@@ -857,22 +897,14 @@ export function useEntity(entity, childEntity, {
             if (res.ok) {
                 const data = await res.json();
                 const saved = normalizeRecord(data?.response?.data?.[0] ?? data, entity);
-                if (shouldRefetchAfterSave(saved, refetchAfterSave)) {
-                    await fetch(`${apiBaseUrl}/${entity}/${saved.id}`, { headers })
-                        .then(refetchRes => (refetchRes.ok ? refetchRes.json() : null))
-                        .then(refetchData => {
-                            const fullSaved = normalizeRecord(refetchData?.response?.data?.[0] ?? refetchData ?? saved, entity);
-                            setSelected(fullSaved);
-                            setEditing({ ...fullSaved });
-                        })
-                        .catch(() => {
-                            setSelected(saved);
-                            setEditing({ ...saved });
-                        });
-                } else {
-                    setSelected(saved);
-                    setEditing({ ...saved });
-                }
+                const resolvedSaved = await resolveSavedRecordAfterSave(saved, {
+                    apiBaseUrl,
+                    entity,
+                    headers,
+                    refetchAfterSave,
+                });
+                setSelected(resolvedSaved);
+                setEditing({ ...resolvedSaved });
                 setSaveError(null);
                 setFieldErrors({});
                 showSaveSuccessToast(silent, isNew, ui);
