@@ -2237,7 +2237,7 @@ export function DetailView({
     }
     if (handledOpenImportRef.current) return;
     handledOpenImportRef.current = true;
-    setForceOpenImport(true);
+    setForceOpenImport(location.state.openImportModal);
     navigate(location.pathname, { replace: true, state: {} });
   }, [location.state?.openImportModal, isNew, hook.editing, navigate, location.pathname]);
 
@@ -2271,14 +2271,16 @@ export function DetailView({
   }, [isNew, hook, navigate, windowName, addingLine]);
 
   // Save header first (if new → navigate with flag; if existing → save in place), then open import modal.
-  const handleImportClick = useCallback(async () => {
+  // modalType ('order' | 'invoice') is forwarded in navigation state so the destination component
+  // knows which modal to auto-open via the forceOpen mechanism.
+  const handleImportClick = useCallback(async (modalType = 'order') => {
     if (isNew) {
       const saved = await hook.handleSave();
       if (!saved?.id) return false;
       hook.primeSaved?.(saved);
       navigate(`/${windowName}/${saved.id}`, {
         replace: true,
-        state: { openImportModal: true, justSaved: saved },
+        state: { openImportModal: modalType, justSaved: saved },
       });
       return false;
     }
