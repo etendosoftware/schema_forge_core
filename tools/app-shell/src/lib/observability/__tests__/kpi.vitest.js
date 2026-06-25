@@ -88,6 +88,14 @@ describe('buildKpiProperties', () => {
     expect(buildKpiProperties({ channel: 'automatic' })).toEqual({ channel: 'automatic' });
     expect(buildKpiProperties({ channel: 'purchase_invoice' })).toEqual({ channel: 'purchase_invoice' });
   });
+
+  it('returns an empty object for non-plain-object inputs', () => {
+    expect(buildKpiProperties(null)).toEqual({});
+    expect(buildKpiProperties(undefined)).toEqual({});
+    expect(buildKpiProperties([1, 2, 3])).toEqual({});
+    expect(buildKpiProperties('string')).toEqual({});
+    expect(buildKpiProperties(42)).toEqual({});
+  });
 });
 
 describe('trackKpiEvent', () => {
@@ -122,5 +130,11 @@ describe('trackKpiEvent', () => {
     });
 
     expect(track).not.toHaveBeenCalled();
+  });
+
+  it('returns undefined when trackFn is not a function', async () => {
+    expect(await trackKpiEvent(null, 'quick_action_used', { module: 'dashboard' })).toBeUndefined();
+    expect(await trackKpiEvent(undefined, 'quick_action_used')).toBeUndefined();
+    expect(await trackKpiEvent('not-a-fn', 'quick_action_used')).toBeUndefined();
   });
 });
