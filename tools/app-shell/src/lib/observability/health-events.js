@@ -39,9 +39,9 @@ export async function trackSessionStarted({ username, clientId, clientName } = {
   await flush();
 }
 
-export function trackDocumentCreated() {
-  const windowName = getWindowName();
-  const meta = HEALTH_EVENTS_MAP[windowName];
+export function trackDocumentCreated(windowName) {
+  const resolvedWindowName = windowName || getWindowName();
+  const meta = HEALTH_EVENTS_MAP[resolvedWindowName];
   if (!meta) return;
   void track('document_created', {
     document_type: meta.document_type,

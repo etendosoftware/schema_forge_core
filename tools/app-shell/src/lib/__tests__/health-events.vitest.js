@@ -117,6 +117,25 @@ describe('trackDocumentCreated', () => {
       functional_area: 'stock',
     }));
   });
+
+  it('uses explicit windowName arg instead of URL when provided', () => {
+    setPathname('/sales-order/123');
+
+    trackDocumentCreated('goods-shipment');
+
+    expect(track).toHaveBeenCalledWith('document_created', expect.objectContaining({
+      document_type: 'delivery_note',
+      functional_area: 'sales',
+    }));
+  });
+
+  it('is a no-op when explicit windowName arg is unmapped', () => {
+    setPathname('/sales-order/123');
+
+    trackDocumentCreated('nonexistent-window');
+
+    expect(track).not.toHaveBeenCalled();
+  });
 });
 
 // ── trackTransactionPosted ─────────────────────────────────────────────────────
