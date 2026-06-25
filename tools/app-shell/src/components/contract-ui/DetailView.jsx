@@ -3289,7 +3289,10 @@ export function DetailView({
 
                   {/* Tabs: child entities + Others */}
                   {tabs.length > 0 && (
-                    <div className={getLinesTabsSectionClassName(linesLayout)}>
+                    <div
+                      className={getLinesTabsSectionClassName(linesLayout)}
+                      onMouseDown={autoSaveOnBlur && linesLayout === 'inlineEditable' ? () => handleFieldBlurRef.current?.() : undefined}
+                    >
                       <div className={`flex items-center justify-between border-b border-border/50 ${(getInlineEditableShrinkClassName(linesLayout))}`}>
                         <div className="flex items-center gap-0">
                           {tabs.map((tab, idx) => {
