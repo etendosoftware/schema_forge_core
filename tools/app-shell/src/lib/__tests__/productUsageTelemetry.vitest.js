@@ -7,9 +7,12 @@ vi.mock('@/lib/observability.js', () => ({
 }));
 
 import {
+  isCompletionProcess,
   trackDocumentCompleted,
   trackRecordCreated,
+  trackRecordUpdated,
   trackSearchPerformed,
+  trackSearchResultSelected,
   trackWindowOpened,
 } from '../productUsageTelemetry.js';
 
@@ -48,6 +51,40 @@ describe('productUsageTelemetry', () => {
       specName: 'sales-order',
       type: 'filter',
     });
+  });
+
+  it('tracks search result selections with source and position metadata', () => {
+    trackSearchResultSelected({ entity: 'product', specName: 'product', position: 3 });
+
+    expect(observabilityMocks.track).toHaveBeenCalledWith('search_result_selected', {
+      category: 'product_usage',
+      entity: 'product',
+      position: 3,
+      source: 'table',
+      specName: 'product',
+      type: 'filter',
+    });
+  });
+
+  it('tracks record updates from the detail view', () => {
+    trackRecordUpdated({ entity: 'salesOrder', specName: 'sales-order' });
+
+    expect(observabilityMocks.track).toHaveBeenCalledWith('record_updated', {
+      category: 'product_usage',
+      entity: 'salesOrder',
+      operation: 'update',
+      source: 'detail_view',
+      specName: 'sales-order',
+      value: 1,
+    });
+  });
+
+  it('identifies completion processes by known token patterns', () => {
+    expect(isCompletionProcess({ columnName: 'DocAction' })).toBe(true);
+    expect(isCompletionProcess({ name: 'Complete Order' })).toBe(true);
+    expect(isCompletionProcess({ key: 'confirmPayment' })).toBe(true);
+    expect(isCompletionProcess({ label: 'Save Draft' })).toBe(false);
+    expect(isCompletionProcess({})).toBe(false);
   });
 
   it('tracks create and complete events with low-cardinality properties', () => {
