@@ -1224,7 +1224,8 @@ function buildProcessesArray({ processes, buttonFields, processOverrides }) {
       const dlRawVal = ovr.displayLogicRaw || f.displayLogic?.raw;
       const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"` : '';
       const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
-      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart} },`;
+      const paramsPart = ovr.params?.length ? `, params: ${JSON.stringify(ovr.params)}` : '';
+      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart}${paramsPart} },`;
     }).filter(Boolean),
     // Extra processes defined purely in decisions.json (not in backend contract)
     ...Object.entries(processOverrides)
@@ -1240,7 +1241,8 @@ function buildProcessesArray({ processes, buttonFields, processOverrides }) {
         const fieldMaxPart = ovr.requiresFieldMax
           ? `, requiresFieldMax: ${JSON.stringify(ovr.requiresFieldMax)}`
           : '';
-        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart}${fieldMaxPart} },`;
+        const addParamsPart = ovr.params?.length ? `, params: ${JSON.stringify(ovr.params)}` : '';
+        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart}${fieldMaxPart}${addParamsPart} },`;
       }),
   ].join('\n');
 }

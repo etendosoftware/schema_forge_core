@@ -16,6 +16,23 @@
       "P": "All Permanently Closed",
       "M": "Mixed"
     },
+    "processOverrides": {
+      "openClose": {
+        "params": [
+          {
+            "key": "openClose",
+            "type": "select",
+            "label": "Action",
+            "required": true,
+            "options": [
+              { "value": "O", "label": "Periodo abierto" },
+              { "value": "C", "label": "Periodo cerrado" },
+              { "value": "P", "label": "Periodo cerrado permanente" }
+            ]
+          }
+        ]
+      }
+    },
     "labelOverrides": {
       "es_ES": {
         "Name": "Período",
