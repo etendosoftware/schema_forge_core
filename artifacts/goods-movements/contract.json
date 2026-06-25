@@ -1,8 +1,8 @@
 {
-  "version": "0.14.0",
+  "version": "0.15.0",
   "generatedAt": "2026-04-29T19:05:48.778Z",
-  "updatedAt": "2026-06-25T14:16:22.752Z",
-  "checksum": "342cff388eec25f3",
+  "updatedAt": "2026-06-25T19:58:28.564Z",
+  "checksum": "a927cafbf30dd4ee",
   "frontendContract": {
     "window": {
       "id": "170",
@@ -14,6 +14,26 @@
       "customComponents": {
         "bottomSection": "GoodsMovementsBottomPanel"
       },
+      "menuActions": [
+        {
+          "key": "post",
+          "label": "Post",
+          "labelKey": "post",
+          "action": "post",
+          "visibleWhenFieldFalse": "posted",
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
+        },
+        {
+          "key": "unpost",
+          "label": "Unpost",
+          "labelKey": "unpost",
+          "action": "unpost",
+          "visibleWhenFieldTrue": "posted",
+          "successKey": "documentUnposted",
+          "destructive": true
+        }
+      ],
       "processOverrides": {
         "processNow": {
           "requiresLines": true
@@ -56,7 +76,15 @@
         "enabled": false
       },
       "layoutType": "default",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "movement": {
@@ -429,6 +457,26 @@
       "customComponents": {
         "bottomSection": "GoodsMovementsBottomPanel"
       },
+      "menuActions": [
+        {
+          "key": "post",
+          "label": "Post",
+          "labelKey": "post",
+          "action": "post",
+          "visibleWhenFieldFalse": "posted",
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
+        },
+        {
+          "key": "unpost",
+          "label": "Unpost",
+          "labelKey": "unpost",
+          "action": "unpost",
+          "visibleWhenFieldTrue": "posted",
+          "successKey": "documentUnposted",
+          "destructive": true
+        }
+      ],
       "processOverrides": {
         "processNow": {
           "requiresLines": true
@@ -470,7 +518,15 @@
       "sendDocument": {
         "enabled": false
       },
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "movement": {
@@ -668,6 +724,22 @@
             "column": "UpdatedBy",
             "type": "foreignKey",
             "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "discarded",
             "required": true
           }
         ],
@@ -1022,6 +1094,14 @@
         "field": "posted",
         "column": "Posted",
         "url": "/sws/neo/goods-movements/movement/{id}/action/posted"
+      },
+      {
+        "entity": "movement",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/goods-movements/movement/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -1057,6 +1137,14 @@
   },
   "testManifest": {
     "tests": [
+      {
+        "id": "t-action-endpoint-movement-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "movement",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in movement should exist"
+      },
       {
         "id": "t-action-endpoint-movement-moveBetweenLocators",
         "category": "action-endpoint",
@@ -1660,6 +1748,22 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for movement"
       },
       {
+        "id": "t-system-field-movement-etblkpAccountingstatus",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-etblkpBulkposting",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for movement"
+      },
+      {
         "id": "t-system-field-movement-id",
         "category": "system-field",
         "entity": "movement",
@@ -1899,9 +2003,9 @@
       }
     ],
     "summary": {
-      "total": 107,
+      "total": 110,
       "byCategory": {
-        "action-endpoint": 3,
+        "action-endpoint": 4,
         "crud-flags": 2,
         "default-value-type": 4,
         "field-presence": 12,
@@ -1911,11 +2015,11 @@
         "rule-declared": 12,
         "searchable-filters": 3,
         "selector-endpoint": 4,
-        "system-field": 35,
+        "system-field": 37,
         "visibility": 2
       },
       "byRunner": {
-        "node": 107,
+        "node": 110,
         "junit": 0
       }
     }

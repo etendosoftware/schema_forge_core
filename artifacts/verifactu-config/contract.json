@@ -1,8 +1,8 @@
 {
-  "version": "0.7.1",
+  "version": "0.8.0",
   "generatedAt": "2026-04-28T16:08:39.756Z",
-  "updatedAt": "2026-06-25T00:39:42.961Z",
-  "checksum": "98b4f6f68b033d87",
+  "updatedAt": "2026-06-25T19:58:32.797Z",
+  "checksum": "ef02ebc6d0e2dd28",
   "frontendContract": {
     "window": {
       "id": "27A453FA86974745977672F1A8DCCEFF",
@@ -329,14 +329,6 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
-          },
-          {
-            "name": "refreshData",
-            "apiKey": "refreshData",
-            "column": "Refresh_Data",
-            "type": "button",
-            "visibility": "discarded",
-            "required": false
           }
         ]
       }
@@ -400,14 +392,6 @@
         "url": "/sws/neo/verifactu-config/cabeceraDeConfiguraciónVerifactu/{id}/action/isReady",
         "processId": "D995FA46EEDB4DAF9F414E661FB13E43",
         "processType": "obuiapp"
-      },
-      {
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "refreshData",
-        "column": "Refresh_Data",
-        "url": "/sws/neo/verifactu-config/cabeceraDeConfiguraciónVerifactu/{id}/action/refreshData",
-        "processId": "E0D681117A1843C5B9D525701087D7DC",
-        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -436,14 +420,6 @@
         "field": "isReady",
         "runner": "node",
         "description": "Action endpoint for 'isReady' in cabeceraDeConfiguraciónVerifactu should exist"
-      },
-      {
-        "id": "t-action-endpoint-cabeceraDeConfiguraci-nVerifactu-refreshData",
-        "category": "action-endpoint",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "refreshData",
-        "runner": "node",
-        "description": "Action endpoint for 'refreshData' in cabeceraDeConfiguraciónVerifactu should exist"
       },
       {
         "id": "t-crud-flags-cabeceraDeConfiguraci-nVerifactu",
@@ -650,13 +626,6 @@
         "description": "Rule 'Marcar Como Listo' (process) should be declared"
       },
       {
-        "id": "t-rule-declared-Refrescar-monitor-Verifactu",
-        "category": "rule-declared",
-        "rule": "Refrescar monitor Verifactu",
-        "runner": "node",
-        "description": "Rule 'Refrescar monitor Verifactu' (process) should be declared"
-      },
-      {
         "id": "t-rule-declared-verifactu-config-Cabecera-de-Configuraci-n-Verifactu-IS-Ready-displayLogic",
         "category": "rule-declared",
         "rule": "verifactu-config-Cabecera de Configuración Verifactu-IS_Ready-displayLogic",
@@ -720,14 +689,6 @@
         "description": "System field 'organization' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
       },
       {
-        "id": "t-system-field-cabeceraDeConfiguraci-nVerifactu-refreshData",
-        "category": "system-field",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "refreshData",
-        "runner": "node",
-        "description": "System field 'refreshData' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
-      },
-      {
         "id": "t-system-field-cabeceraDeConfiguraci-nVerifactu-updated",
         "category": "system-field",
         "entity": "cabeceraDeConfiguraciónVerifactu",
@@ -760,9 +721,9 @@
       }
     ],
     "summary": {
-      "total": 42,
+      "total": 39,
       "byCategory": {
-        "action-endpoint": 2,
+        "action-endpoint": 1,
         "crud-flags": 1,
         "default-value-type": 2,
         "displaylogic-evaluable": 1,
@@ -771,12 +732,12 @@
         "field-type": 8,
         "readonlylogic-evaluable": 1,
         "readonlylogic-valid": 1,
-        "rule-declared": 5,
-        "system-field": 11,
+        "rule-declared": 4,
+        "system-field": 10,
         "visibility": 1
       },
       "byRunner": {
-        "node": 42,
+        "node": 39,
         "junit": 0
       }
     }

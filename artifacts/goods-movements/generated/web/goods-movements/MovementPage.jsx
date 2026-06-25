@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
 import MovementTable from './MovementTable';
 import MovementForm from './MovementForm';
 import MovementLineTable from './MovementLineTable';
@@ -21,7 +22,9 @@ const statusField = 'processed';
 // @sf-generated-end summary:movement
 
 // @sf-generated-start extraBadges:movement
-const extraBadges = [];
+const extraBadges = [
+  { key: 'posted', type: 'statusPill', trueKey: 'postedStatus', falseKey: 'notPostedStatus' },
+];
 // @sf-generated-end extraBadges:movement
 
 // @sf-generated-start processes:movement
@@ -154,6 +157,14 @@ export const api = {
       "field": "posted",
       "column": "Posted",
       "url": "/sws/neo/goods-movements/movement/{id}/action/posted"
+    },
+    {
+      "entity": "movement",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/goods-movements/movement/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
     }
   ],
   "queryParams": {
@@ -217,6 +228,10 @@ export default function MovementPage({ windowName, recordId, ...props }) {
         whiteFormBackground
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Movement", config: {} } }]}
         bottomSection={GoodsMovementsBottomPanel}
+        menuActions={({ data, status }) => [
+          { key: 'post', label: 'Post', visible: !(data?.posted === 'Y' || data?.posted === true) && (data?.processed === 'Y' || data?.processed === true), labelKey: 'post', successKey: 'documentPosted', neoAction: 'post',  },
+          { key: 'unpost', label: 'Unpost', destructive: true, visible: (data?.posted === 'Y' || data?.posted === true), labelKey: 'unpost', successKey: 'documentUnposted', neoAction: 'unpost',  }
+        ]}
         draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         statusEnumLabels={{"true":"statusProcessed","false":"statusDraft"}}

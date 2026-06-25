@@ -1,8 +1,8 @@
 {
-  "version": "0.34.0",
+  "version": "0.35.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-06-25T00:35:58.454Z",
-  "contractChecksum": "98b4685b0649e944",
+  "updatedAt": "2026-06-25T19:58:31.409Z",
+  "contractChecksum": "d741bfffa992820d",
   "apiPrediction": {
     "specName": "sales-invoice",
     "baseUrl": "/sws/neo/sales-invoice",
@@ -265,44 +265,6 @@
         ],
         "processId": "9BED7889E1034FE68BD85D5D16857320",
         "processType": "obuiapp"
-      },
-      {
-        "name": "posted",
-        "actionType": "documentAction",
-        "entity": "header",
-        "column": "Posted",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/sales-invoice/header/{id}/action/posted",
-        "parameters": [
-          {
-            "name": "docAction",
-            "type": "string",
-            "required": true,
-            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
-          }
-        ],
-        "preconditions": [
-          {
-            "field": "documentStatus",
-            "operator": "in",
-            "values": [
-              "DR",
-              "IP"
-            ],
-            "description": "Document must be in draft or in-progress state"
-          }
-        ],
-        "effects": [
-          "Updates document status",
-          "May trigger workflow transitions"
-        ],
-        "dryRunSupported": true,
-        "edgeCases": [
-          "Document is already completed or closed",
-          "Document has pending lines or missing required fields",
-          "User lacks permission to execute the action"
-        ]
       },
       {
         "name": "aPRMProcessinvoice",
@@ -782,6 +744,46 @@
           "Invoice is already fully paid"
         ],
         "processId": "745FCF75B6F14024B96CC14429D8E952",
+        "processType": "obuiapp"
+      },
+      {
+        "name": "etblkpBulkposting",
+        "actionType": "documentAction",
+        "entity": "header",
+        "column": "EM_Etblkp_Bulkposting",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/sales-invoice/header/{id}/action/etblkpBulkposting",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "processId": "57496FB9CF9E4E8F847224017941570E",
         "processType": "obuiapp"
       },
       {
@@ -1296,7 +1298,6 @@
       }
     ],
     "actions": [
-      "posted",
       "documentAction",
       "createLinesFromOrder",
       "createLinesFromShipment",
@@ -1306,7 +1307,8 @@
       "aeatsiiSend",
       "processNow",
       "generateTo",
-      "createLinesFrom"
+      "createLinesFrom",
+      "etblkpBulkposting"
     ],
     "workflow": [
       "Create draft header with required fields",
@@ -1356,7 +1358,7 @@
       {
         "operation": "completeDocument",
         "description": "Validate form state and run the document lifecycle action when the draft is complete.",
-        "action": "posted"
+        "action": "documentAction"
       }
     ],
     "warnings": [],
@@ -1365,5 +1367,5 @@
       "tbaiVoidxmlgenerator"
     ]
   },
-  "checksum": "893a00782d12ea2b"
+  "checksum": "74f348cd7aa147cf"
 }

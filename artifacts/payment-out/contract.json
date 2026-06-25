@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.7.0",
   "generatedAt": "2026-04-29T18:11:46.137Z",
-  "updatedAt": "2026-06-24T20:46:47.878Z",
-  "checksum": "62ee8faa9ae25975",
+  "updatedAt": "2026-06-25T19:58:29.654Z",
+  "checksum": "a77ebc90875e7211",
   "frontendContract": {
     "window": {
       "id": "6F8F913FA60F4CBD93DC1D3AA696E76E",
@@ -670,7 +670,7 @@
             "grid": false,
             "form": true,
             "displayLogic": {
-              "raw": "@PSD2_HasPayments@=0 & @PSD2_UserHasApiKey@=1 & @Status@='PPM'  & @PSD2_HasFinTransaction@=0",
+              "raw": "@PSD2_HasPayments@=0 & @PSD2_ClientHasApiKey@=1 & @Status@='PPM'  & @PSD2_HasFinTransaction@=0 & @PSD2_FAIsBank@=1 & @PSD2_PMIsBankTransfer@=1",
               "evaluable": true
             }
           },
@@ -7787,18 +7787,18 @@
         "description": "Rule 'Print payments process' (process) should be declared"
       },
       {
-        "id": "t-rule-declared-PSD2-Refresh-Payment-Status",
-        "category": "rule-declared",
-        "rule": "PSD2 Refresh Payment Status",
-        "runner": "node",
-        "description": "Rule 'PSD2 Refresh Payment Status' (process) should be declared"
-      },
-      {
         "id": "t-rule-declared-Reactivate-Payment",
         "category": "rule-declared",
         "rule": "Reactivate Payment",
         "runner": "node",
         "description": "Rule 'Reactivate Payment' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Refresh-Payment-Status",
+        "category": "rule-declared",
+        "rule": "Refresh Payment Status",
+        "runner": "node",
+        "description": "Rule 'Refresh Payment Status' (process) should be declared"
       },
       {
         "id": "t-rule-declared-Remove-Payment",

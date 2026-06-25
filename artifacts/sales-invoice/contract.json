@@ -1,8 +1,8 @@
 {
-  "version": "0.34.0",
+  "version": "0.35.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-06-25T14:15:39.077Z",
-  "checksum": "98b4685b0649e944",
+  "updatedAt": "2026-06-25T19:58:31.409Z",
+  "checksum": "d741bfffa992820d",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -25,7 +25,17 @@
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
           "documentAction": "RE",
-          "successKey": "reactivated"
+          "successKey": "reactivated",
+          "preUnpost": true
+        },
+        {
+          "key": "post",
+          "label": "Post",
+          "labelKey": "post",
+          "action": "post",
+          "visibleWhenFieldFalse": "posted",
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
         }
       ],
       "processOverrides": {},
@@ -90,7 +100,15 @@
         }
       ],
       "layoutType": "default",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "header": {
@@ -228,7 +246,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | (@Processed@='Y' & (@DocStatus@!'VO'))",
               "evaluable": true,
-              "js": "record['posted'] === 'Y' || (record['processed'] === true && (record['documentStatus'] !== 'VO'))"
+              "js": "record['posted'] === true || (record['processed'] === true && (record['documentStatus'] !== 'VO'))"
             }
           },
           {
@@ -497,11 +515,11 @@
             "apiKey": "posted",
             "column": "Posted",
             "label": "Posted",
-            "type": "button",
-            "tsType": "string",
+            "type": "boolean",
+            "tsType": "boolean",
             "visibility": "readOnly",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": false,
             "sourceRequired": true,
             "derivation": {
@@ -509,6 +527,22 @@
               "source": "'N'"
             },
             "defaultValue": "N",
+            "explicitType": true,
+            "badge": true,
+            "badgeLabels": {
+              "true": {
+                "en_US": "Posted",
+                "es_ES": "Contabilizado"
+              },
+              "false": {
+                "en_US": "Not posted",
+                "es_ES": "Sin contabilizar"
+              }
+            },
+            "badgeVariants": {
+              "true": "green",
+              "false": "orange"
+            },
             "displayLogic": {
               "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
               "evaluable": false,
@@ -1316,7 +1350,7 @@
             "section": "principal",
             "gridOrder": 6,
             "validationRule": {
-              "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID=@AD_CLIENT_ID@ AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
+              "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID IN (@AD_CLIENT_ID@, '0') AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
               "contextParams": [],
               "cascadeParams": [
                 "DateInvoiced",
@@ -1694,7 +1728,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           },
           {
@@ -1719,7 +1753,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           },
           {
@@ -1739,7 +1773,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           },
           {
@@ -1765,7 +1799,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           }
         ],
@@ -1805,7 +1839,17 @@
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
           "documentAction": "RE",
-          "successKey": "reactivated"
+          "successKey": "reactivated",
+          "preUnpost": true
+        },
+        {
+          "key": "post",
+          "label": "Post",
+          "labelKey": "post",
+          "action": "post",
+          "visibleWhenFieldFalse": "posted",
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
         }
       ],
       "processOverrides": {},
@@ -1869,7 +1913,15 @@
           "placement": "tab"
         }
       ],
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "header": {
@@ -2025,7 +2077,7 @@
             "name": "posted",
             "apiKey": "posted",
             "column": "Posted",
-            "type": "button",
+            "type": "boolean",
             "visibility": "readOnly",
             "required": true
           },
@@ -3161,6 +3213,22 @@
             "name": "eTPRRemovePayment",
             "apiKey": "eTPRRemovePayment",
             "column": "EM_Etpr_Remove_Payment",
+            "type": "button",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
             "type": "button",
             "visibility": "discarded",
             "required": true
@@ -4390,12 +4458,6 @@
       },
       {
         "entity": "header",
-        "field": "posted",
-        "column": "Posted",
-        "url": "/sws/neo/sales-invoice/header/{id}/action/posted"
-      },
-      {
-        "entity": "header",
         "field": "aPRMProcessinvoice",
         "column": "EM_APRM_Processinvoice",
         "url": "/sws/neo/sales-invoice/header/{id}/action/aPRMProcessinvoice",
@@ -4542,6 +4604,14 @@
         "column": "EM_Etpr_Remove_Payment",
         "url": "/sws/neo/sales-invoice/header/{id}/action/eTPRRemovePayment",
         "processId": "745FCF75B6F14024B96CC14429D8E952",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/sales-invoice/header/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
         "processType": "obuiapp"
       },
       {
@@ -4715,6 +4785,14 @@
         "description": "Action endpoint for 'documentAction' in header should exist"
       },
       {
+        "id": "t-action-endpoint-header-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in header should exist"
+      },
+      {
         "id": "t-action-endpoint-header-eTPRRemovePayment",
         "category": "action-endpoint",
         "entity": "header",
@@ -4737,14 +4815,6 @@
         "field": "generateTo",
         "runner": "node",
         "description": "Action endpoint for 'generateTo' in header should exist"
-      },
-      {
-        "id": "t-action-endpoint-header-posted",
-        "category": "action-endpoint",
-        "entity": "header",
-        "field": "posted",
-        "runner": "node",
-        "description": "Action endpoint for 'posted' in header should exist"
       },
       {
         "id": "t-action-endpoint-header-processNow",
@@ -6132,7 +6202,7 @@
         "entity": "header",
         "field": "posted",
         "runner": "node",
-        "description": "Field 'posted' should have type 'string' in header"
+        "description": "Field 'posted' should have type 'boolean' in header"
       },
       {
         "id": "t-field-type-header-priceList",
@@ -7535,6 +7605,22 @@
         "description": "System field 'dueAmount' should exist in backend but not frontend for header"
       },
       {
+        "id": "t-system-field-header-etblkpAccountingstatus",
+        "category": "system-field",
+        "entity": "header",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-etblkpBulkposting",
+        "category": "system-field",
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for header"
+      },
+      {
         "id": "t-system-field-header-etcopagCopilotFeedback",
         "category": "system-field",
         "entity": "header",
@@ -8700,7 +8786,7 @@
       }
     ],
     "summary": {
-      "total": 512,
+      "total": 514,
       "byCategory": {
         "action-endpoint": 26,
         "crud-flags": 4,
@@ -8714,11 +8800,11 @@
         "rule-declared": 8,
         "searchable-filters": 6,
         "selector-endpoint": 16,
-        "system-field": 201,
+        "system-field": 203,
         "visibility": 4
       },
       "byRunner": {
-        "node": 512,
+        "node": 514,
         "junit": 0
       }
     }
