@@ -170,6 +170,20 @@ describe('FmBoxes303 — editable cells', () => {
       expect(container.querySelector('.fm-aeat-cell__input')).toBeTruthy();
     }
   });
+
+  it('renders editable cell input as type="number" to prevent letter input', () => {
+    const { container } = render(
+      <FmBoxes303 {...BASE_PROPS} boxes={{}} sectionIds={['resultado_final']} />
+    );
+    const editBtns = container.querySelectorAll('.fm-aeat-cell__edit-btn');
+    if (editBtns.length > 0) {
+      fireEvent.click(editBtns[0]);
+      const input = container.querySelector('.fm-aeat-cell__input');
+      expect(input).toBeTruthy();
+      expect(input.getAttribute('type')).toBe('number');
+      expect(input.getAttribute('step')).toBe('any');
+    }
+  });
 });
 
 // ── i18n keys ────────────────────────────────────────────────────────────────

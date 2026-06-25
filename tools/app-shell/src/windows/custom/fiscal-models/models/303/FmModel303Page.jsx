@@ -23,10 +23,10 @@ const STEPPER_INDEX = {
 
 // Casillas tab — left sidebar nav + content area
 const CASILLAS_SECTIONS = [
-  { id: 'identificacion',  titleKey: 'fm.page.identificacion',  sections: ['identificacion'] },
+  { id: 'identificacion',  titleKey: 'fm.page.identificacion',  sections: ['identificacion', 'datos_bancarios'] },
   { id: 'liquidacion',     titleKey: 'fm.page.liquidacion',     sections: ['iva_devengado', 'iva_deducible', 'resultado'] },
   { id: 'info_adicional',  titleKey: 'fm.page.info_adicional',  sections: ['info_adicional'] },
-  { id: 'resultado_final', titleKey: 'fm.page.resultado_final', sections: ['resultado_final'] },
+  { id: 'resultado_final', titleKey: 'fm.page.resultado_final', sections: ['resultado_final', 'sin_actividad', 'rectificativa'] },
 ];
 
 function CasillasTab({ decl, orgIdent, identChecks, onIdentChange, liveBoxes, onBoxChange, t }) {
