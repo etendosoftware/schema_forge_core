@@ -154,7 +154,12 @@ export function NewAccountWizard({ open, onClose, onCreated, onConnectWithCreati
     setSubmitting(true);
     setFormError(null);
     try {
-      await createAccount(values);
+      // When the chosen bank is a real Salt Edge provider, remember it on the account so a later
+      // PSD2 connect preselects that bank. Static-catalog banks have no Salt Edge code → skipped.
+      const payload = selectedBank?.isProvider
+        ? { ...values, providerCode: selectedBank.id, providerName: selectedBank.name }
+        : values;
+      await createAccount(payload);
       toast.success(ui('financeAccountsNewCreateSuccess'));
       onCreated?.();
       onClose?.();

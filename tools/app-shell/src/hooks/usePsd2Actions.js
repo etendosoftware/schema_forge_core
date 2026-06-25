@@ -149,7 +149,12 @@ export function usePsd2Actions() {
   }, [token]);
 
   const connect = useCallback(
-    async () => (await call('POST', 'connect', { body: {} })).connectUrl,
+    // financialAccountId is optional: when connecting an existing account the bridge uses it to
+    // preselect the account's known bank (chosen at offline creation), skipping the bank picker.
+    async (financialAccountId) => {
+      const body = financialAccountId ? { financialAccountId } : {};
+      return (await call('POST', 'connect', { body })).connectUrl;
+    },
     [call],
   );
 

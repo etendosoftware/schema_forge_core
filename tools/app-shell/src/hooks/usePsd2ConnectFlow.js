@@ -56,7 +56,9 @@ export function usePsd2ConnectFlow({ onDone } = {}) {
     let connectionId;
     setConnecting(true);
     try {
-      connectionId = await launchSaltEdgePopup(() => connect());
+      // Existing account (case 1): pass its id so the bridge preselects the account's known bank.
+      const connectAccountId = ctx.mode === 'link' ? ctx.account.id : undefined;
+      connectionId = await launchSaltEdgePopup(() => connect(connectAccountId));
     } catch (err) {
       setConnecting(false);
       toast.error(connectErrorMessage(err, ui));
