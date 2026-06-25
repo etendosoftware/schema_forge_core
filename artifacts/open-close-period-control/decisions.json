@@ -9,6 +9,13 @@
     "hidePrint": true,
     "hideMoreMenu": true,
     "listSortBy": "periodNo asc",
+    "statusEnumLabels": {
+      "O": "All Opened",
+      "N": "All Never Opened",
+      "C": "All Closed",
+      "P": "All Permanently Closed",
+      "M": "Mixed"
+    },
     "labelOverrides": {
       "es_ES": {
         "Name": "Período",

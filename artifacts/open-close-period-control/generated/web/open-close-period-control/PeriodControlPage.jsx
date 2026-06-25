@@ -194,6 +194,7 @@ export default function PeriodControlPage({ windowName, recordId, ...props }) {
         hideMoreMenu
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Period", config: {} } }]}
         requiredHeaderFields={requiredHeaderFields}
+        statusEnumLabels={{"O":"All Opened","N":"All Never Opened","C":"All Closed","P":"All Permanently Closed","M":"Mixed"}}
         labelOverrides={labelOverrides}
         {...props}
       />
