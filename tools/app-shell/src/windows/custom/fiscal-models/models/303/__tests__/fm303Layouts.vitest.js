@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getLayout303, applyPatch, SUPPORTED_YEARS } from './fm303Layouts.js';
+import { getLayout303, applyPatch, SUPPORTED_YEARS } from '../fm303Layouts.js';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
