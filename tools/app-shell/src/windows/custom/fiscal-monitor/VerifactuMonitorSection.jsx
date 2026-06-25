@@ -1,4 +1,11 @@
 import { useState, useEffect } from 'react';
+
+function getSelectedErrorType(rows) {
+  if (!rows.length) return null;
+  if (rows.every(r => r.verifactuSendingStatus === 'IN')) return 'IN';
+  if (rows.every(r => r.verifactuSendingStatus === 'AE')) return 'AE';
+  return 'mixed';
+}
 import { useUI } from '@/i18n';
 import { useApiFetch } from '@/auth/useApiFetch.js';
 import { neoBase } from '@/components/related-documents/helpers.js';
@@ -84,7 +91,7 @@ async function fetchProblems(apiFetch, orgId) {
 
 export default function VerifactuMonitorSection({
   orgId, apiBaseUrl, initialTab = 'correct', mockRows, onTabChange,
-  refreshKey = 0, onInvoiceOpen, onBpClick,
+  refreshKey = 0, onInvoiceOpen, onBpClick, onVfErrorClick, onVfResolveClick,
   kpis,
   noWrap,
 }) {
@@ -162,6 +169,12 @@ export default function VerifactuMonitorSection({
     }
   }
 
+  const selectedErrorRows = rows.filter(r =>
+    selectedIds.has(r.id) && isErrorStatus(mapVfStatus(r.verifactuSendingStatus))
+  );
+  const selectedErrorType = getSelectedErrorType(selectedErrorRows);
+  const canResolve = selectedErrorRows.length > 0 && selectedErrorType !== 'mixed';
+
   const vfKpis         = kpis?.verifactu ?? {};
   const countCorrect   = vfKpis.accepted ?? 0;
   const countProblems  = (vfKpis.partiallyAccepted ?? 0) + (vfKpis.rejected ?? 0) + (vfKpis.invalid ?? 0);
@@ -186,9 +199,21 @@ export default function VerifactuMonitorSection({
             </button>
           ))}
         </div>
-        <button className="fm-export-btn" onClick={handleExport} disabled={loading || exporting}>
-          <ExportIcon data-testid="ExportIcon__8c1785" /> {ui('fiscalMonitor.export')}
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="fm-export-btn" onClick={handleExport} disabled={loading || exporting}>
+            <ExportIcon data-testid="ExportIcon__8c1785" /> {ui('fiscalMonitor.export')}
+          </button>
+          {selectedErrorRows.length > 0 && (
+            <button
+              className="fm-export-btn fm-export-btn--primary"
+              onClick={() => onVfResolveClick?.(selectedErrorRows)}
+              disabled={!canResolve}
+              title={!canResolve ? ui('vfSolveError.mixedTypes') : undefined}
+            >
+              {ui('vfSolveError.resolveBtn')}{selectedErrorRows.length > 1 ? ` (${selectedErrorRows.length})` : ''}
+            </button>
+          )}
+        </div>
       </div>
 
       {loading && page === 1 && (
@@ -244,8 +269,8 @@ export default function VerifactuMonitorSection({
                     <td>
                       <StatusPill
                         estado={mappedStatus}
-                        onClick={isErrorStatus(mappedStatus) && row.businessPartner
-                          ? () => onBpClick?.(row.businessPartner)
+                        onClick={isErrorStatus(mappedStatus)
+                          ? () => onVfErrorClick?.(row)
                           : undefined}
                         data-testid="StatusPill__8c1785" />
                     </td>

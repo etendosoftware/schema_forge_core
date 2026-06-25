@@ -45,6 +45,9 @@ describe('observability payload normalization', () => {
     assert.deepEqual(
       sanitizeEventProperties({
         action: 'open',
+        durationMs: 125,
+        specName: 'sales-order',
+        entity: 'sales_order',
         component: 'menu',
         documentId: 'secret-doc-id',
         label: 'Customer Name',
@@ -54,7 +57,89 @@ describe('observability payload normalization', () => {
       }),
       {
         action: 'open',
+        durationMs: 125,
+        specName: 'sales-order',
+        entity: 'sales_order',
         component: 'menu',
+      }
+    );
+  });
+
+  it('keeps bounded numeric metrics and low-cardinality metadata', () => {
+    assert.deepEqual(
+      sanitizeEventProperties({
+        accuracy: 98.4,
+        attempt: 2,
+        category: 'sales',
+        count: 3,
+        durationMs: 2500,
+        operation: 'create',
+        position: 1,
+        score: 9,
+        source: 'copilot',
+        specName: 'sales-order',
+        step: 4,
+        supportRequested: false,
+        value: 1,
+      }),
+      {
+        accuracy: 98.4,
+        attempt: 2,
+        category: 'sales',
+        count: 3,
+        durationMs: 2500,
+        operation: 'create',
+        position: 1,
+        score: 9,
+        source: 'copilot',
+        specName: 'sales-order',
+        step: 4,
+        supportRequested: false,
+        value: 1,
+      }
+    );
+  });
+
+  it('drops out-of-bounds numeric metrics even when the key is allowlisted', () => {
+    assert.deepEqual(
+      sanitizeEventProperties({
+        accuracy: 120,
+        durationMs: Number.POSITIVE_INFINITY,
+        position: -1,
+        score: 11,
+        step: 101,
+        value: 1000001,
+      }),
+      {}
+    );
+  });
+
+  it('drops non-numeric values for numeric metric keys', () => {
+    assert.deepEqual(
+      sanitizeEventProperties({
+        accuracy: '98',
+        attempt: true,
+        count: '3',
+        durationMs: '2500',
+        position: false,
+        score: '9',
+        step: '4',
+        value: '1',
+      }),
+      {}
+    );
+  });
+
+  it('gives the denylist priority over the allowlist', () => {
+    assert.deepEqual(
+      sanitizeEventProperties({
+        id: 42,
+        name: 'private',
+        rawUrl: '/sales-order/ABC123',
+        specName: 'sales-order',
+      }),
+      {
+        specName: 'sales-order',
       }
     );
   });

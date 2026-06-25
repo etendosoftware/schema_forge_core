@@ -22,23 +22,50 @@ const DENYLISTED_PROPERTY_KEYS = new Set([
 
 const SAFE_EVENT_PROPERTY_KEYS = new Set([
   'action',
+  'accuracy',
   'app',
+  'attempt',
+  'category',
   'component',
+  'count',
+  'durationMs',
   'enabled',
+  'entity',
   'environment',
   'event',
   'hostname',
   'locale',
   'mockMode',
+  'operation',
+  'position',
   'provider',
   'route',
   'routePattern',
+  'score',
+  'specName',
   'source',
   'status',
+  'step',
+  'supportRequested',
   'timestamp',
   'type',
+  'value',
   'windowName',
 ]);
+
+const NUMERIC_PROPERTY_BOUNDS = {
+  accuracy: { min: 0, max: 100 },
+  attempt: { min: 0, max: 100 },
+  count: { min: 0, max: 100000 },
+  durationMs: { min: 0, max: 86400000 },
+  position: { min: 0, max: 100 },
+  score: { min: 0, max: 10 },
+  step: { min: 0, max: 100 },
+  value: { min: 0, max: 1000000 },
+};
+
+const NUMERIC_PROPERTY_KEYS = new Set(Object.keys(NUMERIC_PROPERTY_BOUNDS));
+const SKIP_PROPERTY = Symbol('skip-property');
 
 function toPathname(value = '/') {
   const raw = String(value || '/');
@@ -127,14 +154,35 @@ export function sanitizeEventProperties(properties = {}) {
   const sanitized = {};
 
   for (const [key, value] of Object.entries(properties ?? {})) {
-    if (DENYLISTED_PROPERTY_KEYS.has(key) || !SAFE_EVENT_PROPERTY_KEYS.has(key)) continue;
-    if (value == null) continue;
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      sanitized[key] = value;
-    }
+    const safeValue = sanitizeEventProperty(key, value);
+    if (safeValue !== SKIP_PROPERTY) sanitized[key] = safeValue;
   }
 
   return sanitized;
+}
+
+function sanitizeEventProperty(key, value) {
+  if (DENYLISTED_PROPERTY_KEYS.has(key) || !SAFE_EVENT_PROPERTY_KEYS.has(key)) return SKIP_PROPERTY;
+  if (value == null) return SKIP_PROPERTY;
+
+  if (NUMERIC_PROPERTY_KEYS.has(key)) {
+    return isSafeNumber(key, value) ? value : SKIP_PROPERTY;
+  }
+
+  if (typeof value === 'number') {
+    return isSafeNumber(key, value) ? value : SKIP_PROPERTY;
+  }
+
+  return typeof value === 'string' || typeof value === 'boolean' ? value : SKIP_PROPERTY;
+}
+
+function isSafeNumber(key, value) {
+  if (!Number.isFinite(value)) return false;
+
+  const bounds = NUMERIC_PROPERTY_BOUNDS[key];
+  if (!bounds) return true;
+
+  return value >= bounds.min && value <= bounds.max;
 }
 
 export function buildEventPayload({
