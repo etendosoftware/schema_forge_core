@@ -228,6 +228,7 @@ export const DEFAULT_BOUNDARY_POLICY = {
         '^infra/',
         '^scripts/',
         '^Makefile$',
+        '^run-sonar\\.sh$',
         '^sonar-project\\.properties$',
         '^schema_forge\\.properties$',
         '^ETENDO_VERSION$',
