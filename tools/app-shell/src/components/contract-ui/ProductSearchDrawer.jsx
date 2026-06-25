@@ -4,7 +4,6 @@ import { formatCurrency } from '@/lib/formatCurrency.js';
 import { useCurrency } from '@/hooks/useCurrency.jsx';
 import { useUI } from '@/i18n';
 import {
-  COLORS,
   getColor,
   useProductSelectorFetch,
 } from './productSelectorDrawerShared.jsx';
