@@ -1598,6 +1598,88 @@ function buildEntryFieldLine(f, i, firstSearchIdx) {
   return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${skipDefaultPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart}${excludeValueOfPart} },`;
 }
 
+function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, detailEntity, headerColumnMap, headerBooleanFields) {
+  if (!secondaryTabsDecl) {
+    // Fallback: hardcoded known list + entity inference (backward compat)
+    const allEntityEntries = Object.entries(contract.frontendContract.entities);
+    const knownSecondaryTabDefs = [
+      { key: 'orderTax', label: 'Tax', TableName: 'OrderTaxTable', FormName: 'OrderTaxForm' },
+      { key: 'invoiceTax', label: 'Tax', TableName: 'InvoiceTaxTable', FormName: 'InvoiceTaxForm' },
+      { key: 'basicDiscounts', label: 'Basic Discounts', TableName: 'BasicDiscountsTable', FormName: 'BasicDiscountsForm' },
+      { key: 'paymentPlan', label: 'Payment Plan', TableName: 'PaymentPlanTable', FormName: 'PaymentPlanForm' },
+      { key: 'accounting', label: 'Accounting', TableName: 'AccountingTable', FormName: 'AccountingForm' },
+      { key: 'landedCost', label: 'Landed Cost', TableName: 'LandedCostTable', FormName: 'LandedCostForm' },
+      { key: 'reversedInvoices', label: 'Reversed Invoices', TableName: 'ReversedInvoicesTable', FormName: 'ReversedInvoicesForm' },
+    ].filter(t => allEntityEntries.some(([name]) => name === t.key));
+    const knownSecondaryKeys = new Set(knownSecondaryTabDefs.map(t => t.key));
+    const inferredSecondaryTabDefs = allEntityEntries
+      .filter(([name, entity]) => {
+        if (name === headerEntity || name === detailEntity) return false;
+        if (knownSecondaryKeys.has(name)) return false;
+        const editableFieldCount = (entity.fields || []).filter(f => f.visibility === 'editable').length;
+        return editableFieldCount === 0;
+      })
+      .map(([name, entity]) => ({
+        key: name,
+        label: entity.tabName || toLabel(name),
+        isFormTab: false,
+        TableName: `${toJsIdentifier(name)}Table`,
+        FormName: `${toJsIdentifier(name)}Form`,
+        addLineEntries: [],
+      }));
+    return [
+      ...knownSecondaryTabDefs.map(t => ({ ...t, isFormTab: false, addLineEntries: [] })),
+      ...inferredSecondaryTabDefs,
+    ].filter(t => t.key !== detailEntity).slice(0, 4);
+  }
+  // Declarative config from decisions.json — sorted by tabOrder
+  return Object.entries(secondaryTabsDecl)
+    .sort((a, b) => (a[1].tabOrder ?? 99) - (b[1].tabOrder ?? 99))
+    .map(([key, cfg]) => {
+      const isFormTab = cfg.tabMode === 'form-only';
+      const isPanelTab = !!cfg.customPanel;
+      const PanelName = cfg.customPanel ?? null;
+      const FormName = cfg.customForm ?? `${toJsIdentifier(key)}Form`;
+      const TableName = cfg.customTable ?? `${toJsIdentifier(key)}Table`;
+      const addLineFieldKeys = cfg.addLineFields ?? [];
+      const requireSavedRecord = cfg.requireSavedRecord === true;
+      const customAddModalName = cfg.customAddModal ?? null;
+      const entityFields = contract.frontendContract.entities[key]?.fields ?? [];
+      const addLineEntries = addLineFieldKeys.map(fk => {
+        const f = entityFields.find(ef => ef.name === fk);
+        if (!f) return null;
+        const type = mapFormFieldType(f);
+        const requiredPart = fragmentIf(f.required, ', required: true');
+        const labelPart = wrapIf(", label: '", f.label, "'");
+        const labelsDictPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
+        const clearsFieldPart = f.clearsField ? `, clearsField: '${String(f.clearsField).replace(/'/g, "\\'")}'` : '';
+        const referencePart = wrapIf(", reference: '", f.reference, "'");
+        const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
+        // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
+        const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
+        const defaultValuePart = (!skipCheckboxDefault && f.defaultValue) ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
+        const optionsPart = (type === 'select' && f.enumValues?.length)
+          ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
+          : '';
+        const lookupDrawerPart = f.lookupDrawer ? `, lookupDrawer: '${String(f.lookupDrawer).replace(/'/g, "\\'")}'` : '';
+        const lookupTitlePart = f.lookupTitle ? `, lookupTitle: '${String(f.lookupTitle).replace(/'/g, "\\'")}'` : '';
+        const onSelectMappingsPart = Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0
+          ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
+          : '';
+        const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
+        // Declarative selector exclusion declared in secondaryTabs.<tab>.addLineFieldExclusions.
+        const excludeValueOf = cfg.addLineFieldExclusions?.[fk];
+        const excludeValueOfPart = excludeValueOf ? `, excludeValueOf: '${String(excludeValueOf).replace(/'/g, "\\'")}'` : '';
+        return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${labelsDictPart}${clearsFieldPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${excludeValueOfPart} }`;
+      }).filter(Boolean);
+      // Tab-level readOnlyLogic compiled with the same translator as field-level readOnlyLogic.
+      const readOnlyLogicJs = cfg.readOnlyLogic
+        ? convertLogicToJs(cfg.readOnlyLogic, headerColumnMap, headerBooleanFields)
+        : null;
+      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs };
+    });
+}
+
 function buildDetailProcessesForPage(detailEntity, contract, processOverrides) {
   const detailButtonFields = detailEntity
     ? (contract.frontendContract.entities[detailEntity]?.fields ?? []).filter(f => f.type === 'button' && f.form)
@@ -1769,99 +1851,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // Detect secondary child entities for additional tabs
   const secondaryTabsDecl = windowConfig.secondaryTabs;
-  let secondaryTabDefs;
-
   // Column→property and boolean-field maps built from the header entity, used
   // to compile tab-level readOnlyLogic expressions the same way field-level
   // readOnlyLogic is compiled in generate-contract.js.
   const {headerColumnMap, headerBooleanFields} = buildHeaderLogicMaps(contract, headerEntity);
-
-  if (secondaryTabsDecl) {
-    // Declarative config from decisions.json — sorted by tabOrder
-    secondaryTabDefs = Object.entries(secondaryTabsDecl)
-      .sort((a, b) => (a[1].tabOrder ?? 99) - (b[1].tabOrder ?? 99))
-      .map(([key, cfg]) => {
-        const isFormTab = cfg.tabMode === 'form-only';
-        const isPanelTab = !!cfg.customPanel;
-        const PanelName = cfg.customPanel ?? null;
-        const FormName = cfg.customForm ?? `${toJsIdentifier(key)}Form`;
-        const TableName = cfg.customTable ?? `${toJsIdentifier(key)}Table`;
-        const addLineFieldKeys = cfg.addLineFields ?? [];
-        const requireSavedRecord = cfg.requireSavedRecord === true;
-        const customAddModalName = cfg.customAddModal ?? null;
-        const entityFields = contract.frontendContract.entities[key]?.fields ?? [];
-        const addLineEntries = addLineFieldKeys.map(fk => {
-          const f = entityFields.find(ef => ef.name === fk);
-          if (!f) return null;
-          const type = mapFormFieldType(f);
-          const requiredPart = fragmentIf(f.required, ', required: true');
-          const labelPart = wrapIf(", label: '", f.label, "'");
-          const labelsDictPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
-          const clearsFieldPart = f.clearsField ? `, clearsField: '${String(f.clearsField).replace(/'/g, "\\'")}'` : '';
-          const referencePart = wrapIf(", reference: '", f.reference, "'");
-          const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
-          // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
-          const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
-          const defaultValuePart = (!skipCheckboxDefault && f.defaultValue) ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
-          const optionsPart = (type === 'select' && f.enumValues?.length)
-            ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
-            : '';
-          const lookupDrawerPart = f.lookupDrawer ? `, lookupDrawer: '${String(f.lookupDrawer).replace(/'/g, "\\'")}'` : '';
-          const lookupTitlePart = f.lookupTitle ? `, lookupTitle: '${String(f.lookupTitle).replace(/'/g, "\\'")}'` : '';
-          const onSelectMappingsPart = Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0
-            ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
-            : '';
-          const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
-          // Declarative selector exclusion: this entry's options drop the live value
-          // of another field in the same add-row (e.g. toCurrency excludes the
-          // document currency). Declared in secondaryTabs.<tab>.addLineFieldExclusions.
-          const excludeValueOf = cfg.addLineFieldExclusions?.[fk];
-          const excludeValueOfPart = excludeValueOf ? `, excludeValueOf: '${String(excludeValueOf).replace(/'/g, "\\'")}'` : '';
-          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${labelsDictPart}${clearsFieldPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${excludeValueOfPart} }`;
-        }).filter(Boolean);
-        // Tab-level readOnlyLogic — when truthy at runtime the tab still
-        // renders existing rows but blocks add / edit / delete actions.
-        // Compiled using the same translator as field-level readOnlyLogic.
-        const readOnlyLogicJs = cfg.readOnlyLogic
-          ? convertLogicToJs(cfg.readOnlyLogic, headerColumnMap, headerBooleanFields)
-          : null;
-        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs };
-      });
-  } else {
-    // Fallback: hardcoded known list + entity inference (backward compat)
-    const allEntityEntries = Object.entries(contract.frontendContract.entities);
-    const knownSecondaryTabDefs = [
-      { key: 'orderTax', label: 'Tax', TableName: 'OrderTaxTable', FormName: 'OrderTaxForm' },
-      { key: 'invoiceTax', label: 'Tax', TableName: 'InvoiceTaxTable', FormName: 'InvoiceTaxForm' },
-      { key: 'basicDiscounts', label: 'Basic Discounts', TableName: 'BasicDiscountsTable', FormName: 'BasicDiscountsForm' },
-      { key: 'paymentPlan', label: 'Payment Plan', TableName: 'PaymentPlanTable', FormName: 'PaymentPlanForm' },
-      { key: 'accounting', label: 'Accounting', TableName: 'AccountingTable', FormName: 'AccountingForm' },
-      { key: 'landedCost', label: 'Landed Cost', TableName: 'LandedCostTable', FormName: 'LandedCostForm' },
-      { key: 'reversedInvoices', label: 'Reversed Invoices', TableName: 'ReversedInvoicesTable', FormName: 'ReversedInvoicesForm' },
-    ].filter(t => allEntityEntries.some(([name]) => name === t.key));
-
-    const knownSecondaryKeys = new Set(knownSecondaryTabDefs.map(t => t.key));
-    const inferredSecondaryTabDefs = allEntityEntries
-      .filter(([name, entity]) => {
-        if (name === headerEntity || name === detailEntity) return false;
-        if (knownSecondaryKeys.has(name)) return false;
-        const editableFieldCount = (entity.fields || []).filter(f => f.visibility === 'editable').length;
-        return editableFieldCount === 0;
-      })
-      .map(([name, entity]) => ({
-        key: name,
-        label: entity.tabName || toLabel(name),
-        isFormTab: false,
-        TableName: `${toJsIdentifier(name)}Table`,
-        FormName: `${toJsIdentifier(name)}Form`,
-        addLineEntries: [],
-      }));
-
-    secondaryTabDefs = [
-      ...knownSecondaryTabDefs.map(t => ({ ...t, isFormTab: false, addLineEntries: [] })),
-      ...inferredSecondaryTabDefs,
-    ].filter(t => t.key !== detailEntity).slice(0, 4);
-  }
+  const secondaryTabDefs = resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, detailEntity, headerColumnMap, headerBooleanFields);
 
   const specName = contract.apiPrediction?.specName;
   const secondaryTabsImports = secondaryTabDefs
