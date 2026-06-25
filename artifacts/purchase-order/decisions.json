@@ -3,6 +3,7 @@
   "window": {
     "category": "purchases",
     "name": "Purchase Order",
+    "selectorPriceCurrency": "org",
     "notesField": "description",
     "relatedDocuments": true,
     "hideDeleteWhenComplete": true,
@@ -16,7 +17,7 @@
     "customComponents": {
       "topbarRight": "PurchaseOrderActions",
       "topbarExtra": "PurchaseOrderDraftChips",
-"bottomSection": "PurchaseOrderBottomPanel"
+      "bottomSection": "PurchaseOrderBottomPanel"
     },
     "linesLayout": "inlineEditable",
     "labelOverrides": {
@@ -78,10 +79,13 @@
           "gridOrder": 4
         },
         "currency": {
-          "form": false,
-          "reference": null,
-          "inputMode": null,
-          "section": "other"
+          "visibility": "editable",
+          "grid": false,
+          "form": true,
+          "section": "principal",
+          "order": 10,
+          "readOnlyLogic": "@Processed@='Y'",
+          "derivation": null
         },
         "orderDate": {
           "grid": true,
@@ -135,7 +139,8 @@
         "priceList": {
           "grid": false,
           "section": "principal",
-          "form": true
+          "form": true,
+          "order": 11
         },
         "invoiceAddress": {
           "reference": "BusinessPartnerLocation",
@@ -306,6 +311,11 @@
         "etgoTotalDiscount": {
           "visibility": "editable",
           "form": false
+        },
+        "eTGOCurrencyRate": {
+          "visibility": "editable",
+          "form": false,
+          "grid": false
         }
       }
     },
@@ -460,7 +470,8 @@
           "displayLogic": null
         },
         "currency": {
-          "visibility": "readOnly",
+          "visibility": "editable",
+          "grid": false,
           "form": false,
           "reference": "Currency",
           "inputMode": null

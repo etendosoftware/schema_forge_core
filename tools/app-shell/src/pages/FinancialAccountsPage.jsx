@@ -12,6 +12,7 @@ import {
 import { NewAccountWizard } from '@/windows/custom/financial-account/NewAccountWizard.jsx';
 import { EditAccountModal } from '@/windows/custom/financial-account/EditAccountModal.jsx';
 import { ArchiveAccountDialog } from '@/windows/custom/financial-account/ArchiveAccountDialog.jsx';
+import { FundsTransferModal } from '@/windows/custom/financial-account/FundsTransferModal.jsx';
 
 function filterAccounts(accounts, typeFilter, search) {
   if (!Array.isArray(accounts)) return [];
@@ -43,6 +44,7 @@ export default function FinancialAccountsPage() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editAccount, setEditAccount] = useState(null);
   const [archiveTarget, setArchiveTarget] = useState(null);
+  const [transferSource, setTransferSource] = useState(null);
 
   // The header badge counts active accounts only (archived ones live behind the
   // dedicated "inactive" filter and shouldn't inflate the headline figure).
@@ -99,6 +101,7 @@ export default function FinancialAccountsPage() {
             onReconcile={handleReconcile}
             onEdit={setEditAccount}
             onArchive={setArchiveTarget}
+            onTransfer={setTransferSource}
             onRetry={reload}
             data-testid="AccountsTable__7c3fbc" />
         </div>
@@ -120,6 +123,13 @@ export default function FinancialAccountsPage() {
         onClose={() => setArchiveTarget(null)}
         onArchived={reload}
         data-testid="ArchiveAccountDialog__7c3fbc" />
+      {transferSource ? (
+        <FundsTransferModal
+          sourceAccountId={transferSource.id}
+          onClose={() => setTransferSource(null)}
+          onSuccess={reload}
+          data-testid="FundsTransferModal__7c3fbc" />
+      ) : null}
     </div>
   );
 }

@@ -26,7 +26,9 @@ const statusField = 'documentStatus';
 // @sf-generated-end summary:header
 
 // @sf-generated-start extraBadges:header
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:header
 
 // @sf-generated-start processes:header
@@ -45,7 +47,7 @@ const draftMode = {
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start requiredHeaderFields:header
-const requiredHeaderFields = ['businessPartner', 'documentNo', 'orderDate', 'partnerAddress', 'scheduledDeliveryDate', 'paymentTerms', 'priceList', 'grandTotalAmount', 'summedLineAmount'];
+const requiredHeaderFields = ['businessPartner', 'documentNo', 'orderDate', 'partnerAddress', 'scheduledDeliveryDate', 'paymentTerms', 'priceList', 'grandTotalAmount', 'summedLineAmount', 'currency'];
 // @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
@@ -232,6 +234,8 @@ export const api = {
       "entity": "header",
       "field": "currency",
       "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/header/selectors/currency"
     },
     {
@@ -658,6 +662,14 @@ export const api = {
       "processType": "obuiapp"
     },
     {
+      "entity": "header",
+      "field": "eTPRRemovePayment",
+      "column": "EM_Etpr_Remove_Payment",
+      "url": "/sws/neo/purchase-order/header/{id}/action/eTPRRemovePayment",
+      "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+      "processType": "obuiapp"
+    },
+    {
       "entity": "lines",
       "field": "managePrereservation",
       "column": "Manage_Prereservation",
@@ -760,6 +772,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
         sendDocument
+        selectorPriceCurrency="org"
         {...props}
       />
     );

@@ -1,8 +1,8 @@
 {
-  "version": "0.13.0",
+  "version": "0.19.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-06-03T14:04:33.662Z",
-  "checksum": "c2c8b32368e94888",
+  "updatedAt": "2026-06-24T20:46:47.331Z",
+  "checksum": "e8e740eaf69ef42b",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -17,13 +17,41 @@
         "bottomSection": "GoodsReceiptBottomPanel",
         "topbarExtra": "GoodsReceiptDraftChips"
       },
+      "menuActions": [
+        {
+          "key": "post",
+          "label": "Post",
+          "labelKey": "post",
+          "action": "post",
+          "visibleWhenFieldFalse": "posted",
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
+        },
+        {
+          "key": "unpost",
+          "label": "Unpost",
+          "labelKey": "unpost",
+          "action": "unpost",
+          "visibleWhenFieldTrue": "posted",
+          "successKey": "documentUnposted",
+          "destructive": true
+        }
+      ],
       "dateFilterKey": "movementDate",
       "noHeaderBorder": true,
       "sendDocument": {
         "allowEmail": true
       },
       "layoutType": "default",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "goodsReceipt": {
@@ -183,7 +211,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -299,6 +327,46 @@
             "defaultValue": "DR"
           },
           {
+            "name": "posted",
+            "apiKey": "posted",
+            "column": "Posted",
+            "label": "Posted",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
+            },
+            "defaultValue": "N",
+            "explicitType": true,
+            "badge": true,
+            "badgeLabels": {
+              "true": {
+                "en_US": "Posted",
+                "es_ES": "Contabilizado"
+              },
+              "false": {
+                "en_US": "Not posted",
+                "es_ES": "Sin contabilizar"
+              }
+            },
+            "badgeVariants": {
+              "true": "green",
+              "false": "orange"
+            },
+            "displayLogic": {
+              "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
+              "evaluable": false,
+              "reason": "session-preference",
+              "js": null
+            }
+          },
+          {
             "name": "project",
             "apiKey": "project",
             "column": "C_Project_ID",
@@ -323,7 +391,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -342,7 +410,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -361,7 +429,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -380,7 +448,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -399,7 +467,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -413,6 +481,19 @@
             "required": false,
             "grid": true,
             "form": false
+          },
+          {
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "label": "Processed",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": false,
+            "sourceRequired": true
           }
         ],
         "searchableFields": [
@@ -449,6 +530,13 @@
             "derivation": {
               "type": "computed",
               "source": "DR"
+            }
+          },
+          {
+            "name": "posted",
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
             }
           }
         ],
@@ -724,7 +812,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -743,7 +831,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -762,7 +850,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -781,7 +869,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -800,7 +888,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -819,7 +907,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -890,12 +978,40 @@
         "bottomSection": "GoodsReceiptBottomPanel",
         "topbarExtra": "GoodsReceiptDraftChips"
       },
+      "menuActions": [
+        {
+          "key": "post",
+          "label": "Post",
+          "labelKey": "post",
+          "action": "post",
+          "visibleWhenFieldFalse": "posted",
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
+        },
+        {
+          "key": "unpost",
+          "label": "Unpost",
+          "labelKey": "unpost",
+          "action": "unpost",
+          "visibleWhenFieldTrue": "posted",
+          "successKey": "documentUnposted",
+          "destructive": true
+        }
+      ],
       "dateFilterKey": "movementDate",
       "noHeaderBorder": true,
       "sendDocument": {
         "allowEmail": true
       },
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "goodsReceipt": {
@@ -1051,8 +1167,8 @@
             "name": "posted",
             "apiKey": "posted",
             "column": "Posted",
-            "type": "button",
-            "visibility": "system",
+            "type": "boolean",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -1324,7 +1440,7 @@
             "apiKey": "processed",
             "column": "Processed",
             "type": "boolean",
-            "visibility": "system",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -1445,6 +1561,22 @@
             "column": "UpdatedBy",
             "type": "foreignKey",
             "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "discarded",
             "required": true
           }
         ],
@@ -2081,12 +2213,6 @@
       },
       {
         "entity": "goodsReceipt",
-        "field": "posted",
-        "column": "Posted",
-        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/posted"
-      },
-      {
-        "entity": "goodsReceipt",
         "field": "calculateFreight",
         "column": "Calculate_Freight",
         "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/calculateFreight",
@@ -2123,6 +2249,14 @@
         "column": "Invoicefromshipment",
         "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/invoicefromshipment",
         "processId": "62250E8866EA4D96A66C309878DC039E",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "goodsReceipt",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
         "processType": "obuiapp"
       },
       {
@@ -2186,6 +2320,14 @@
         "description": "Action endpoint for 'documentAction' in goodsReceipt should exist"
       },
       {
+        "id": "t-action-endpoint-goodsReceipt-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "goodsReceipt",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in goodsReceipt should exist"
+      },
+      {
         "id": "t-action-endpoint-goodsReceipt-generateTo",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
@@ -2200,14 +2342,6 @@
         "field": "invoicefromshipment",
         "runner": "node",
         "description": "Action endpoint for 'invoicefromshipment' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-action-endpoint-goodsReceipt-posted",
-        "category": "action-endpoint",
-        "entity": "goodsReceipt",
-        "field": "posted",
-        "runner": "node",
-        "description": "Action endpoint for 'posted' in goodsReceipt should exist"
       },
       {
         "id": "t-action-endpoint-goodsReceipt-processGoodsJava",
@@ -2296,6 +2430,14 @@
         "description": "Default value for 'movementDate' in goodsReceipt should be a string"
       },
       {
+        "id": "t-default-value-type-goodsReceipt-posted",
+        "category": "default-value-type",
+        "entity": "goodsReceipt",
+        "field": "posted",
+        "runner": "node",
+        "description": "Default value for 'posted' in goodsReceipt should be a string"
+      },
+      {
         "id": "t-default-value-type-goodsReceiptLine-invoiceQuantity",
         "category": "default-value-type",
         "entity": "goodsReceiptLine",
@@ -2328,12 +2470,28 @@
         "description": "Default value for 'storageBin' in goodsReceiptLine should be a string"
       },
       {
+        "id": "t-displaylogic-evaluable-goodsReceipt-posted",
+        "category": "displaylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "posted",
+        "runner": "node",
+        "description": "Display logic for 'posted' in goodsReceipt should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-goodsReceiptLine-orderQuantity",
         "category": "displaylogic-evaluable",
         "entity": "goodsReceiptLine",
         "field": "orderQuantity",
         "runner": "node",
         "description": "Display logic for 'orderQuantity' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-goodsReceipt-posted",
+        "category": "displaylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "posted",
+        "runner": "node",
+        "description": "Display logic for 'posted' in goodsReceipt should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-goodsReceiptLine-orderQuantity",
@@ -2438,6 +2596,22 @@
         "field": "partnerAddress",
         "runner": "node",
         "description": "Field 'partnerAddress' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-posted",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "posted",
+        "runner": "node",
+        "description": "Field 'posted' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-processed",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "processed",
+        "runner": "node",
+        "description": "Field 'processed' should be present in goodsReceipt"
       },
       {
         "id": "t-field-presence-goodsReceipt-project",
@@ -2710,6 +2884,22 @@
         "field": "partnerAddress",
         "runner": "node",
         "description": "Field 'partnerAddress' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-posted",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "posted",
+        "runner": "node",
+        "description": "Field 'posted' should have type 'boolean' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-processed",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "processed",
+        "runner": "node",
+        "description": "Field 'processed' should have type 'boolean' in goodsReceipt"
       },
       {
         "id": "t-field-type-goodsReceipt-project",
@@ -3930,6 +4120,22 @@
         "description": "System field 'documentType' should exist in backend but not frontend for goodsReceipt"
       },
       {
+        "id": "t-system-field-goodsReceipt-etblkpAccountingstatus",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-etblkpBulkposting",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
         "id": "t-system-field-goodsReceipt-externalBusinessPartnerReference",
         "category": "system-field",
         "entity": "goodsReceipt",
@@ -4066,14 +4272,6 @@
         "description": "System field 'pickDate' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-system-field-goodsReceipt-posted",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "posted",
-        "runner": "node",
-        "description": "System field 'posted' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
         "id": "t-system-field-goodsReceipt-print",
         "category": "system-field",
         "entity": "goodsReceipt",
@@ -4088,14 +4286,6 @@
         "field": "priority",
         "runner": "node",
         "description": "System field 'priority' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-system-field-goodsReceipt-processed",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "processed",
-        "runner": "node",
-        "description": "System field 'processed' should exist in backend but not frontend for goodsReceipt"
       },
       {
         "id": "t-system-field-goodsReceipt-processGoodsJava",
@@ -4369,15 +4559,15 @@
       }
     ],
     "summary": {
-      "total": 281,
+      "total": 288,
       "byCategory": {
         "action-endpoint": 12,
         "crud-flags": 2,
-        "default-value-type": 7,
-        "displaylogic-evaluable": 1,
-        "displaylogic-valid": 1,
-        "field-presence": 34,
-        "field-type": 34,
+        "default-value-type": 8,
+        "displaylogic-evaluable": 2,
+        "displaylogic-valid": 2,
+        "field-presence": 36,
+        "field-type": 36,
         "readonlylogic-evaluable": 28,
         "readonlylogic-valid": 28,
         "rule-declared": 38,
@@ -4387,7 +4577,7 @@
         "visibility": 2
       },
       "byRunner": {
-        "node": 281,
+        "node": 288,
         "junit": 0
       }
     }

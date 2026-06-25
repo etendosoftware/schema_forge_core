@@ -136,9 +136,9 @@ export function renderEnumCell({ rawValue, tMenu, col }) {
   return <span>{label}</span>;
 }
 
-export function renderStatusCell({ row, col, dictionary }) {
+export function renderStatusCell({ row, col, dictionary, ui }) {
   const raw = row[col.key];
-  const label = statusLabel(raw, dictionary);
+  const label = statusLabel(raw, dictionary, ui, col.enumLabels);
   if (col.display === 'dot') {
     const dotColor = getStatusDotColor(raw);
     return (

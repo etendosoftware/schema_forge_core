@@ -166,7 +166,7 @@ export default function FirstStepsPage() {
                       {!step.done && !step.expanded && Boolean(step.time) && (
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="h-3.5 w-3.5" data-testid="Clock__45a28a" />
-                          {step.time} min
+                          {step.time} {ui('minutes')}
                         </span>
                       )}
                       {step.done ? (

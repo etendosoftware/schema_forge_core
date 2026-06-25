@@ -34,6 +34,9 @@ const SPECIAL_PAGES = new Set([
   // carries a contract.json for grid column config but has no generated page/mockData
   // (see GENERATED_OUTPUT_EXEMPT below).
   'financial-account',
+  // Fully custom window with no AD backing — React lives under
+  // tools/app-shell/src/windows/custom/not-posted-documents/; no generated mockData.
+  'not-posted-documents',
 ]);
 
 const entityWindows = allMenuItems.filter(name => !SPECIAL_PAGES.has(name));

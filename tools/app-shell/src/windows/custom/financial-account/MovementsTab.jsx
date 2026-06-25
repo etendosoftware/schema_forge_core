@@ -3,6 +3,7 @@ import { AccountSummaryStrip } from './AccountSummaryStrip';
 import { MovementsToolbar } from './MovementsToolbar/index';
 import { MovementsTable } from './MovementsTable';
 import { NewMovementWizard } from './NewMovementWizard/index.jsx';
+import { FundsTransferModal } from './FundsTransferModal.jsx';
 import { applyAdvancedFilter } from './movementAdvancedFilter';
 import { getDateBounds } from '@/lib/dateRangeBounds';
 
@@ -88,6 +89,7 @@ export const MovementsTab = forwardRef(function MovementsTab(
   const [advancedFilter, setAdvancedFilter] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [newMovementOpen, setNewMovementOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
 
   const handleFilterChange = (key) => (val) => {
     setFilters((prev) => ({ ...prev, [key]: val }));
@@ -148,7 +150,7 @@ export const MovementsTab = forwardRef(function MovementsTab(
         onFiltersChange={handleFilterChange}
         advancedFilter={advancedFilter}
         onAdvancedFilterChange={setAdvancedFilter}
-        onNewMovement={() => setNewMovementOpen(true)}
+        onTransfer={() => setTransferOpen(true)}
         rows={movements}
         data-testid="MovementsToolbar__c1f76a" />
       <AccountSummaryStrip
@@ -179,6 +181,13 @@ export const MovementsTab = forwardRef(function MovementsTab(
         onClose={() => setNewMovementOpen(false)}
         onSuccess={() => onReload?.()}
         data-testid="NewMovementWizard__c1f76a" />
+      {transferOpen ? (
+        <FundsTransferModal
+          sourceAccountId={account?.id}
+          onClose={() => setTransferOpen(false)}
+          onSuccess={() => onReload?.()}
+          data-testid="FundsTransferModal__c1f76a" />
+      ) : null}
     </div>
   );
 });

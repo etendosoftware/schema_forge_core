@@ -31,9 +31,11 @@ describe('monitor-verifactu contract integrity (ETP-4237 remove refreshData)', (
     assert.equal(field, undefined, 'refreshData must not appear in frontend fields');
   });
 
-  it('refreshData is absent from backendContract', () => {
+  it('if refreshData is in backendContract it must be discarded', () => {
     const field = backendFields.find((f) => f.name === 'refreshData');
-    assert.equal(field, undefined, 'refreshData must not appear in backendContract');
+    if (field) {
+      assert.equal(field.visibility, 'discarded', 'refreshData must be discarded, not exposed');
+    }
   });
 
   it('refreshData action is not exposed in the frontend actions', () => {

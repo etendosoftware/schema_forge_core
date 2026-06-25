@@ -427,7 +427,7 @@ function CandidateOperationsPanel({
         <div className="flex flex-col items-start gap-0.5">
           <div className="flex w-full items-center gap-1 overflow-hidden text-sm leading-5">
             <span className="shrink-0 font-normal text-[#121217]">
-              {cand.documentNo || '—'}
+              {cand.documentNo || cand.description || '—'}
             </span>
             {cand.partnerName ? (
               <span className="truncate text-xs font-medium leading-4 text-[#6C6C89]">{cand.partnerName}</span>
@@ -684,7 +684,7 @@ export function ReconciliationSplitPanel({ accountId, currency = 'EUR', onBack, 
     // Direction AND date range are applied server-side (so the type counts match the list);
     // here we only do the in-memory text search.
     const filtered = q
-      ? candidates.filter((c) => [c.documentNo, c.partnerName]
+      ? candidates.filter((c) => [c.documentNo, c.partnerName, c.description]
         .some((v) => (v || '').toLowerCase().includes(q)))
       : candidates;
     // Float SELECTED rows to the very top, then the standard-algorithm
