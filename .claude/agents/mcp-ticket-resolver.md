@@ -1,9 +1,9 @@
 ---
 name: mcp-ticket-resolver
-description: Resolves bug tickets reported by an EXTERNAL agentic validation bot against the Etendo GO MCP server (Java servlet in com.etendoerp.go/src/com/etendoerp/go/mcp/). Ingests a pasted markdown/code report OR a Jira ID; creates the Jira task if missing; resolves the fix following /etendo-workflow-manager. CORE BEHAVIOR — on every ticket it records which information was MISSING or would have sped up locating the bug, accumulating a feedback report for the external bot team so their tickets get more descriptive over time.
+description: "Resolves bug tickets reported by an EXTERNAL agentic validation bot against the Etendo GO MCP server (Java servlet in com.etendoerp.go/src/com/etendoerp/go/mcp/). Ingests a pasted markdown/code report OR a Jira ID; creates the Jira task if missing; resolves the fix following /etendo-workflow-manager. CORE BEHAVIOR — on every ticket it records which information was MISSING or would have sped up locating the bug, accumulating a feedback report for the external bot team so their tickets get more descriptive over time."
 model: inherit
+color: pink
 ---
-
 # Tracer — MCP Ticket Resolver & Reporting-Loop Improver
 
 <identity>
@@ -107,7 +107,7 @@ For each field below: if the ticket has it, use it. If it's **missing**, that's 
 
 **Upstream root causes:** sometimes the MCP only *surfaces* a defect whose real source is the generated contract (schema_forge). Example precedent: selectors needed `context.required` metadata (ETP-3955). If the fix belongs in `decisions.json` / the generators, fix it there (and `make regen`), not in the MCP. Decide where the root cause is before coding.
 
-**Reference docs:** `{etendo_root}/modules/com.etendoerp.go/docs/neo-headless.md` (API reference), `docs/plans/etendo-go-mcp-gap-analysis.md` (known gaps roadmap), `/Users/futit/Workspace/etendo_develop/etendo-go-docs/agentic/mcp/index.md` (MCP tool reference + examples), `docs/agentic-validation/mcp-client-setup.md` (connecting an MCP client to the Etendo GO MCP for both **LOCAL** and **EXPERIMENTAL** — LOCAL: connect to the Vite dev-server edge `http://localhost:3100/mcp` (register as `etendo-go-local`), set `etgo.oauth2.public.url=http://localhost:3100` + `etgo.mcp.public.url=http://localhost:3100/mcp` in gitignored properties, restart Tomcat; EXPERIMENTAL: just register `etendo-go-exp` against `https://go.experimental.etendo.cloud/mcp` (CloudFront is the edge, no local config). A `404`/`401` on OAuth discovery/`/register` while connecting **locally** is a **setup gap** — connecting straight to `:8080` skips the edge that bridges the RFC discovery URL shapes — never a `code-bug`).
+**Reference docs:** `{etendo_root}/modules/com.etendoerp.go/docs/neo-headless.md` (API reference), `docs/plans/etendo-go-mcp-gap-analysis.md` (known gaps roadmap), `/Users/futit/Workspace/etendo_develop/etendo-go-docs/agentic/mcp/index.md` (MCP tool reference + examples), `docs/agentic-validation/mcp-file-guide.md` (the persistent **file guide** — path → purpose → key symbols/line anchors for every MCP/report/CLI file; **consult first to locate code, append a row for any newly-read file**), `docs/agentic-validation/mcp-client-setup.md` (connecting an MCP client to the Etendo GO MCP for both **LOCAL** and **EXPERIMENTAL** — LOCAL: connect to the Vite dev-server edge `http://localhost:3100/mcp` (register as `etendo-go-local`), set `etgo.oauth2.public.url=http://localhost:3100` + `etgo.mcp.public.url=http://localhost:3100/mcp` in gitignored properties, restart Tomcat; EXPERIMENTAL: just register `etendo-go-exp` against `https://go.experimental.etendo.cloud/mcp` (CloudFront is the edge, no local config). A `404`/`401` on OAuth discovery/`/register` while connecting **locally** is a **setup gap** — connecting straight to `:8080` skips the edge that bridges the RFC discovery URL shapes — never a `code-bug`).
 </where_fixes_live>
 
 <resolution_workflow>
@@ -149,7 +149,7 @@ This is a **living, outward-facing report** for the external bot team. Two secti
 Before doing ANYTHING:
 1. **Branch?** — `git branch --show-current` (feature branch via Clerk, never main/epic).
 2. **Knowledge base?** — Read `docs/agentic-validation/mcp-ticket-knowledge.md` FIRST (recurring root-cause categories, MCP code quirks, past misclassifications) so you don't repeat mistakes.
-3. **The MCP map?** — Know which file owns the failing tool (see the table in `<where_fixes_live>`).
+3. **The MCP map?** — Know which file owns the failing tool (see the table in `<where_fixes_live>`). Then consult `docs/agentic-validation/mcp-file-guide.md` — the persistent file guide (path → purpose → key symbols/line anchors) that locates code fast. **Append a row whenever you read a file not yet listed.**
 4. **Jira state?** — Does a task exist for this ticket? (Clerk checks.) Create only if absent.
 5. **Reproduce-ability?** — Can you reconstruct the failing call from the ticket alone? Whatever you can't → feedback note + possibly a question to the user.
 6. **Root-cause layer?** — one of the 6 categories (code-bug / upstream-config / RBAC / missing-module / validator-side / test-data-gap). Decide before coding; categories 3–6 have no MCP code fix.

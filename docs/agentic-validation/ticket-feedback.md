@@ -37,7 +37,14 @@
 - Note to bot team: <concrete: "include X next time">
 -->
 
-_No tickets resolved yet._
+### 2026-06-24 — ETP-4255 — Remove runtime Jasper report generation; expose only NEO-callable reports
+- Tool/spec: `neo_discover` + `generate_<report>` MCP tools and NEO HTTP `/sws/neo/<report-spec>`; report specs (`SPEC_TYPE=R`), e.g. `aging-receivable`, `tax-report`, `inventory-stock-report` (callable) vs. all other R specs (non-callable).
+- Root-cause category: **code-bug** (category 1) — runtime Jasper execution (`ReportingUtils.exportJR`) was reachable from the live NEO/MCP request path; it had to be removed and replaced with a stable non-callable response.
+- Time-to-locate: **fast** — the ticket enumerated the violating behaviors and pointed at the report path; tracing confirmed Jasper sinks in `NeoReportService`, `NeoProcessReportEndpoint`, `NeoRequestRouter`, and (independently) `McpToolRouter`.
+- Missing rubric fields: **none** — ticket carried expected vs actual, the architectural rule (no Jasper at runtime), and concrete acceptance criteria.
+- Highest-value field that was missing: **n/a — exemplary ticket.**
+- Note to bot team: **This is the standard.** ETP-4255 stated the rule being violated, the expected end-state, and enumerated the specific behaviors to remove — which let us go straight to the code path without reconstruction. One subtlety the ticket got right and most don't: it scoped *out* what was NOT in scope (jsreport integration), which prevented scope-creep. Keep doing exactly this: rule + expected end-state + explicit out-of-scope.
+- Resolution note (for our records, not the bot): MCP report tooling was **not** a passthrough mirror of NEO — it carried its own independent Jasper logic — so the fix had to touch both layers, consolidated behind `NeoReportCallability`.
 
 ---
 
