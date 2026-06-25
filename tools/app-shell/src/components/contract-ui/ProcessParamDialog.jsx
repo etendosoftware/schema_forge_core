@@ -73,9 +73,9 @@ export function ProcessParamDialog({ open, onOpenChange, process, onConfirm }) {
                 <Select
                   value={values[param.key] ?? ''}
                   onValueChange={val => setValues(prev => ({ ...prev, [param.key]: val }))}
-                >
+                  data-testid="Select__755949">
                   <SelectTrigger id={`process-param-${param.key}`} data-testid={`process-param-select-${param.key}`}>
-                    <SelectValue />
+                    <SelectValue data-testid="SelectValue__755949" />
                   </SelectTrigger>
                   <SelectContent data-testid={`process-param-options-${param.key}`}>
                     {param.options?.map(opt => (

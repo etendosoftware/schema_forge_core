@@ -3161,7 +3161,7 @@ export function DetailView({
             hook.handleProcess?.(paramDialogProcess, paramValues);
             setParamDialogProcess(null);
           }}
-        />
+          data-testid="ProcessParamDialog__fa3275" />
 
         <ProcessParamDialog
           open={detailParamDialogProcess !== null}
@@ -3171,7 +3171,7 @@ export function DetailView({
             executeDetailProcess(detailParamDialogProcess, paramValues, detailParamDialogProcess?._rows);
             setDetailParamDialogProcess(null);
           }}
-        />
+          data-testid="ProcessParamDialog__fa3275" />
 
         {/* Scrollable content + optional sidebarContent (full-height independent column) */}
         <div className="flex-1 flex overflow-hidden">
