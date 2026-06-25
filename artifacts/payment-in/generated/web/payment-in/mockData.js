@@ -13,6 +13,8 @@ export const finPayment = [
     "account": "Sample account",
     "currency": "USD",
     "status": "DR",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
     "etprReactivatePayment": "Sample etprReactivatePayment",
     "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
@@ -28,6 +30,8 @@ export const finPayment = [
     "account": "Sample account",
     "currency": "EUR",
     "status": "CO",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
     "etprReactivatePayment": "Sample etprReactivatePayment",
     "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
@@ -43,6 +47,8 @@ export const finPayment = [
     "account": "Sample account",
     "currency": "GBP",
     "status": "VO",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
     "etprReactivatePayment": "Sample etprReactivatePayment",
     "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
@@ -58,6 +64,8 @@ export const finPayment = [
     "account": "Sample account",
     "currency": "USD",
     "status": "IP",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
     "etprReactivatePayment": "Sample etprReactivatePayment",
     "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
@@ -73,6 +81,8 @@ export const finPayment = [
     "account": "Sample account",
     "currency": "EUR",
     "status": "DR",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
     "etprReactivatePayment": "Sample etprReactivatePayment",
     "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
@@ -88,6 +98,8 @@ export const finPayment = [
     "account": "Sample account",
     "currency": "GBP",
     "status": "CO",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
     "etprReactivatePayment": "Sample etprReactivatePayment",
     "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
@@ -103,6 +115,8 @@ export const finPayment = [
     "account": "Sample account",
     "currency": "USD",
     "status": "VO",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
     "etprReactivatePayment": "Sample etprReactivatePayment",
     "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
@@ -118,6 +132,8 @@ export const finPayment = [
     "account": "Sample account",
     "currency": "EUR",
     "status": "IP",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
     "etprReactivatePayment": "Sample etprReactivatePayment",
     "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
@@ -133,6 +149,8 @@ export const finPayment = [
     "account": "Sample account",
     "currency": "GBP",
     "status": "DR",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
     "etprReactivatePayment": "Sample etprReactivatePayment",
     "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
@@ -148,6 +166,8 @@ export const finPayment = [
     "account": "Sample account",
     "currency": "USD",
     "status": "CO",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
     "etprReactivatePayment": "Sample etprReactivatePayment",
     "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
@@ -163,6 +183,8 @@ export const finPayment = [
     "account": "Sample account",
     "currency": "EUR",
     "status": "VO",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
     "etprReactivatePayment": "Sample etprReactivatePayment",
     "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
@@ -178,6 +200,8 @@ export const finPayment = [
     "account": "Sample account",
     "currency": "GBP",
     "status": "IP",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
     "etprReactivatePayment": "Sample etprReactivatePayment",
     "eTPRRemovePayment": "Sample eTPRRemovePayment"
   }

@@ -1,8 +1,8 @@
 {
   "version": "0.6.0",
   "generatedAt": "2026-05-12T16:47:39.614Z",
-  "updatedAt": "2026-06-25T00:35:58.671Z",
-  "checksum": "fa5627d6540b8c3b",
+  "updatedAt": "2026-06-24T20:46:49.558Z",
+  "checksum": "8f3339f835f92f4e",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -705,7 +705,7 @@
             "section": "principal",
             "gridOrder": 6,
             "validationRule": {
-              "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID=@AD_CLIENT_ID@ AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
+              "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID IN (@AD_CLIENT_ID@, '0') AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
               "contextParams": [],
               "cascadeParams": [
                 "DateInvoiced",

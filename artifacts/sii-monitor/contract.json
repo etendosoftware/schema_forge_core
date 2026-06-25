@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.4.0",
   "generatedAt": "2026-05-04T17:00:26.053Z",
-  "updatedAt": "2026-06-25T00:36:00.005Z",
-  "checksum": "31ca8f44536434e2",
+  "updatedAt": "2026-06-24T20:46:50.413Z",
+  "checksum": "943a3f6ff97e2bd7",
   "frontendContract": {
     "window": {
       "id": "FEF76C3E0F104F06A89AAD15A4A4A35C",
@@ -5681,6 +5681,22 @@
             "required": false
           },
           {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "eTPRRemovePayment",
             "apiKey": "eTPRRemovePayment",
             "column": "EM_Etpr_Remove_Payment",
@@ -7117,6 +7133,22 @@
             "type": "button",
             "visibility": "system",
             "required": false
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "system",
+            "required": true
           },
           {
             "name": "eTPRRemovePayment",
@@ -8875,6 +8907,22 @@
             "required": false
           },
           {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "eTPRRemovePayment",
             "apiKey": "eTPRRemovePayment",
             "column": "EM_Etpr_Remove_Payment",
@@ -10313,6 +10361,22 @@
             "required": false
           },
           {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "eTPRRemovePayment",
             "apiKey": "eTPRRemovePayment",
             "column": "EM_Etpr_Remove_Payment",
@@ -11375,6 +11439,14 @@
       },
       {
         "entity": "issuedInvoices",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/sii-monitor/issuedInvoices/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "issuedInvoices",
         "field": "eTPRRemovePayment",
         "column": "EM_Etpr_Remove_Payment",
         "url": "/sws/neo/sii-monitor/issuedInvoices/{id}/action/eTPRRemovePayment",
@@ -11535,6 +11607,14 @@
         "column": "EM_Psd2_Generate_Bank_Payment",
         "url": "/sws/neo/sii-monitor/receivedInvoices/{id}/action/psd2GenerateBankPayment",
         "processId": "0661406A983B4D8EA611F8596F114D52",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "receivedInvoices",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/sii-monitor/receivedInvoices/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
         "processType": "obuiapp"
       },
       {
@@ -11711,6 +11791,14 @@
       },
       {
         "entity": "issuedInvoices(previousPeriod)",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/sii-monitor/issuedInvoices(previousPeriod)/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "issuedInvoices(previousPeriod)",
         "field": "eTPRRemovePayment",
         "column": "EM_Etpr_Remove_Payment",
         "url": "/sws/neo/sii-monitor/issuedInvoices(previousPeriod)/{id}/action/eTPRRemovePayment",
@@ -11875,6 +11963,14 @@
       },
       {
         "entity": "receivedInvoices(previousPeriod)",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/sii-monitor/receivedInvoices(previousPeriod)/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "receivedInvoices(previousPeriod)",
         "field": "eTPRRemovePayment",
         "column": "EM_Etpr_Remove_Payment",
         "url": "/sws/neo/sii-monitor/receivedInvoices(previousPeriod)/{id}/action/eTPRRemovePayment",
@@ -12006,6 +12102,14 @@
         "description": "Action endpoint for 'documentAction' in issuedInvoices should exist"
       },
       {
+        "id": "t-action-endpoint-issuedInvoices-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "issuedInvoices",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in issuedInvoices should exist"
+      },
+      {
         "id": "t-action-endpoint-issuedInvoices-eTPRRemovePayment",
         "category": "action-endpoint",
         "entity": "issuedInvoices",
@@ -12132,6 +12236,14 @@
         "field": "documentAction",
         "runner": "node",
         "description": "Action endpoint for 'documentAction' in issuedInvoices(previousPeriod) should exist"
+      },
+      {
+        "id": "t-action-endpoint-issuedInvoices-previousPeriod-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "issuedInvoices(previousPeriod)",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in issuedInvoices(previousPeriod) should exist"
       },
       {
         "id": "t-action-endpoint-issuedInvoices-previousPeriod-eTPRRemovePayment",
@@ -12374,6 +12486,14 @@
         "description": "Action endpoint for 'documentAction' in receivedInvoices should exist"
       },
       {
+        "id": "t-action-endpoint-receivedInvoices-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "receivedInvoices",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in receivedInvoices should exist"
+      },
+      {
         "id": "t-action-endpoint-receivedInvoices-eTPRRemovePayment",
         "category": "action-endpoint",
         "entity": "receivedInvoices",
@@ -12500,6 +12620,14 @@
         "field": "documentAction",
         "runner": "node",
         "description": "Action endpoint for 'documentAction' in receivedInvoices(previousPeriod) should exist"
+      },
+      {
+        "id": "t-action-endpoint-receivedInvoices-previousPeriod-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "receivedInvoices(previousPeriod)",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in receivedInvoices(previousPeriod) should exist"
       },
       {
         "id": "t-action-endpoint-receivedInvoices-previousPeriod-eTPRRemovePayment",
@@ -17240,6 +17368,13 @@
         "description": "Rule 'Generate Receipt from Invoice' (process) should be declared"
       },
       {
+        "id": "t-rule-declared-Post",
+        "category": "rule-declared",
+        "rule": "Post",
+        "runner": "node",
+        "description": "Rule 'Post' (process) should be declared"
+      },
+      {
         "id": "t-rule-declared-Posted",
         "category": "rule-declared",
         "rule": "Posted",
@@ -18209,6 +18344,22 @@
         "description": "System field 'dueAmount' should exist in backend but not frontend for issuedInvoices"
       },
       {
+        "id": "t-system-field-issuedInvoices-etblkpAccountingstatus",
+        "category": "system-field",
+        "entity": "issuedInvoices",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for issuedInvoices"
+      },
+      {
+        "id": "t-system-field-issuedInvoices-etblkpBulkposting",
+        "category": "system-field",
+        "entity": "issuedInvoices",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for issuedInvoices"
+      },
+      {
         "id": "t-system-field-issuedInvoices-etcopagCopilotFeedback",
         "category": "system-field",
         "entity": "issuedInvoices",
@@ -19031,6 +19182,22 @@
         "field": "dueAmount",
         "runner": "node",
         "description": "System field 'dueAmount' should exist in backend but not frontend for issuedInvoices(previousPeriod)"
+      },
+      {
+        "id": "t-system-field-issuedInvoices-previousPeriod-etblkpAccountingstatus",
+        "category": "system-field",
+        "entity": "issuedInvoices(previousPeriod)",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for issuedInvoices(previousPeriod)"
+      },
+      {
+        "id": "t-system-field-issuedInvoices-previousPeriod-etblkpBulkposting",
+        "category": "system-field",
+        "entity": "issuedInvoices(previousPeriod)",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for issuedInvoices(previousPeriod)"
       },
       {
         "id": "t-system-field-issuedInvoices-previousPeriod-etcopagCopilotFeedback",
@@ -20841,6 +21008,22 @@
         "description": "System field 'dueAmount' should exist in backend but not frontend for receivedInvoices"
       },
       {
+        "id": "t-system-field-receivedInvoices-etblkpAccountingstatus",
+        "category": "system-field",
+        "entity": "receivedInvoices",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for receivedInvoices"
+      },
+      {
+        "id": "t-system-field-receivedInvoices-etblkpBulkposting",
+        "category": "system-field",
+        "entity": "receivedInvoices",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for receivedInvoices"
+      },
+      {
         "id": "t-system-field-receivedInvoices-etcopagCopilotFeedback",
         "category": "system-field",
         "entity": "receivedInvoices",
@@ -21655,6 +21838,22 @@
         "field": "dueAmount",
         "runner": "node",
         "description": "System field 'dueAmount' should exist in backend but not frontend for receivedInvoices(previousPeriod)"
+      },
+      {
+        "id": "t-system-field-receivedInvoices-previousPeriod-etblkpAccountingstatus",
+        "category": "system-field",
+        "entity": "receivedInvoices(previousPeriod)",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for receivedInvoices(previousPeriod)"
+      },
+      {
+        "id": "t-system-field-receivedInvoices-previousPeriod-etblkpBulkposting",
+        "category": "system-field",
+        "entity": "receivedInvoices(previousPeriod)",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for receivedInvoices(previousPeriod)"
       },
       {
         "id": "t-system-field-receivedInvoices-previousPeriod-etcopagCopilotFeedback",
@@ -22903,9 +23102,9 @@
       }
     ],
     "summary": {
-      "total": 1389,
+      "total": 1402,
       "byCategory": {
-        "action-endpoint": 89,
+        "action-endpoint": 93,
         "crud-flags": 11,
         "default-value-type": 61,
         "displaylogic-evaluable": 20,
@@ -22914,13 +23113,13 @@
         "field-type": 156,
         "readonlylogic-evaluable": 59,
         "readonlylogic-valid": 59,
-        "rule-declared": 90,
+        "rule-declared": 91,
         "selector-endpoint": 28,
-        "system-field": 629,
+        "system-field": 637,
         "visibility": 11
       },
       "byRunner": {
-        "node": 1389,
+        "node": 1402,
         "junit": 0
       }
     }

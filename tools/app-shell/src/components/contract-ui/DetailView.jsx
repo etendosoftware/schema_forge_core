@@ -56,6 +56,7 @@ import { useCallout } from '@/hooks/useCallout';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useLineGrossAmount, ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import { useDocumentAction } from '@/hooks/useDocumentAction';
+import { useNeoAction } from '@/hooks/useNeoAction';
 import { useMenuLabel, useUI } from '@/i18n';
 import { translateBackendError } from '@/lib/backendErrors.js';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
@@ -1677,6 +1678,7 @@ export function DetailView({
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
   const docAction = useDocumentAction({ apiBaseUrl, entity, token });
+  const neoAction = useNeoAction({ specName: windowName, entityName: entity, apiBaseUrl, token });
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -2668,6 +2670,23 @@ export function DetailView({
                 data-testid="DocumentStatusPill__fa3275" />
             )}
             {extraBadges.map(b => {
+              // type: 'statusPill' — renders as DocumentStatusPill, always visible,
+              // labels resolved from i18n keys trueKey / falseKey.
+              if (b.type === 'statusPill') {
+                const val = data[b.key];
+                if (val == null) return null;
+                const isTrue = val === true || val === 'Y' || val === 'true';
+                const label = isTrue ? ui(b.trueKey) : ui(b.falseKey);
+                const tone = isTrue ? 'success' : 'warning';
+                return (
+                  <DocumentStatusPill
+                    key={b.key}
+                    status={isTrue ? 'Y' : 'N'}
+                    label={label}
+                    tone={tone}
+                    data-testid={`DocumentStatusPill__${b.key}`} />
+                );
+              }
               const when = b.when !== undefined ? b.when : true;
               const show = when ? !!data[b.key] : !data[b.key];
               if (!show) return null;
@@ -2767,6 +2786,35 @@ export function DetailView({
                     : menuActions;
                   const visibleActions = resolvedActions.filter(a => a.visible !== false);
                   if (visibleActions.length === 0 && !customMenuContent) return null;
+                  const currentId = data?.id || recordId;
+                  const runDocumentAction = async (action) => {
+                    if (action.preUnpost && (data?.posted === 'Y' || data?.posted === true)) {
+                      const unpostResult = await neoAction.execute(currentId, 'unpost');
+                      if (!unpostResult.success) {
+                        toast.error(unpostResult.message || ui('actionFailed'));
+                        return false;
+                      }
+                    }
+                    try {
+                      await docAction.execute(currentId, action.documentAction);
+                      const msg = (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted');
+                      toast.success(msg);
+                      hook.fetchById?.(currentId);
+                    } catch (err) {
+                      toast.error(err.message);
+                    }
+                    return true;
+                  };
+                  const runNeoMenuAction = async (action) => {
+                    const result = await neoAction.execute(currentId, action.neoAction);
+                    const msg = (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted');
+                    if (result.success) {
+                      toast.success(msg);
+                      hook.fetchById?.(currentId);
+                    } else {
+                      toast.error(result.message || ui('actionFailed'));
+                    }
+                  };
                   return (
                     <div
                       className="absolute right-0 top-full mt-1 z-50 bg-white py-2 min-w-[148px]"
@@ -2782,20 +2830,24 @@ export function DetailView({
                           <button
                             key={action.key || i}
                             type="button"
-                            disabled={docAction.loading}
+                            data-testid={`menu-action-${action.key || i}`}
+                            disabled={docAction.loading || neoAction.loading}
                             onClick={async () => {
                               setShowMoreMenu(false);
                               if (action.documentAction) {
-                                const currentId = data?.id || recordId;
-                                try {
-                                  await docAction.execute(currentId, action.documentAction);
-                                  const msg = (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted');
-                                  toast.success(msg);
-                                  hook.fetchById?.(currentId);
-                                } catch (err) {
-                                  toast.error(err.message);
-                                }
+                                await runDocumentAction(action);
                                 return;
+                              }
+                              if (action.neoAction) {
+                                await runNeoMenuAction(action);
+                                return;
+                              }
+                              if (action.preUnpost && (data?.posted === 'Y' || data?.posted === true)) {
+                                const unpostResult = await neoAction.execute(currentId, 'unpost');
+                                if (!unpostResult.success) {
+                                  toast.error(unpostResult.message || ui('actionFailed'));
+                                  return;
+                                }
                               }
                               if (action.columnName) {
                                 hook.handleProcess?.({ columnName: action.columnName, name: action.key });
@@ -2806,7 +2858,7 @@ export function DetailView({
                             className={`w-full text-left px-2 py-1 text-sm leading-6 transition-colors flex items-center gap-2 ${action.destructive
                               ? 'text-red-600 hover:bg-red-50'
                               : 'text-foreground hover:bg-secondary'
-                              } ${docAction.loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              } ${docAction.loading || neoAction.loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400 }}
                           >
                             {ActionIcon && (

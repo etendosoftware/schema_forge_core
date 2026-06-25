@@ -20,7 +20,9 @@ const statusField = null;
 // @sf-generated-end summary:priceList
 
 // @sf-generated-start extraBadges:priceList
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:priceList
 
 // @sf-generated-start processes:priceList

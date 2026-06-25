@@ -23,11 +23,15 @@ const statusField = 'status';
 // @sf-generated-end summary:finPayment
 
 // @sf-generated-start extraBadges:finPayment
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:finPayment
 
 // @sf-generated-start processes:finPayment
 const processes = [
+  { name: 'etblkpBulkposting', label: 'Bulk Posting', style: 'positive',
+    displayLogicRaw: "@Status@!'RPAE' & @Status@!'RPVOID' & @Processed@='Y' & @#ShowAcct@='Y'" },
   { name: 'etprReactivatePayment', label: 'Advanced Reactivation', style: 'positive',
     displayLogicRaw: "@Processed@='Y' & @Status@!'RPVOID'" },
   { name: 'eTPRRemovePayment', label: 'Remove Payment', style: 'positive',
@@ -42,7 +46,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:finPayment
 
 // @sf-generated-start requiredHeaderFields:finPayment
-const requiredHeaderFields = ['etprReactivatePayment'];
+const requiredHeaderFields = ['etblkpAccountingstatus', 'etblkpBulkposting', 'etprReactivatePayment'];
 // @sf-generated-end requiredHeaderFields:finPayment
 
 
@@ -197,6 +201,14 @@ export const api = {
       "column": "EM_Psd2_Generate_Bank_Payment",
       "url": "/sws/neo/payment-in/finPayment/{id}/action/psd2GenerateBankPayment",
       "processId": "0661406A983B4D8EA611F8596F114D52",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "finPayment",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/payment-in/finPayment/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
       "processType": "obuiapp"
     },
     {

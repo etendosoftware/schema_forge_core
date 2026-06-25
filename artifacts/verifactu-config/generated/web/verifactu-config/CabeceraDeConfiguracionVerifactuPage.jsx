@@ -21,7 +21,9 @@ const statusField = null;
 // @sf-generated-end summary:cabeceraDeConfiguraciónVerifactu
 
 // @sf-generated-start extraBadges:cabeceraDeConfiguraciónVerifactu
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:cabeceraDeConfiguraciónVerifactu
 
 // @sf-generated-start processes:cabeceraDeConfiguraciónVerifactu

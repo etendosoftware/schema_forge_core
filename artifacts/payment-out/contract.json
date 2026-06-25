@@ -1,8 +1,8 @@
 {
-  "version": "0.8.0",
+  "version": "0.6.0",
   "generatedAt": "2026-04-29T18:11:46.137Z",
-  "updatedAt": "2026-06-25T00:35:55.902Z",
-  "checksum": "eb83c459289a30ac",
+  "updatedAt": "2026-06-24T20:46:47.878Z",
+  "checksum": "62ee8faa9ae25975",
   "frontendContract": {
     "window": {
       "id": "6F8F913FA60F4CBD93DC1D3AA696E76E",
@@ -670,8 +670,124 @@
             "grid": false,
             "form": true,
             "displayLogic": {
-              "raw": "@PSD2_HasPayments@=0 & @PSD2_ClientHasApiKey@=1 & @Status@='PPM'  & @PSD2_HasFinTransaction@=0 & @PSD2_FAIsBank@=1 & @PSD2_PMIsBankTransfer@=1",
+              "raw": "@PSD2_HasPayments@=0 & @PSD2_UserHasApiKey@=1 & @Status@='PPM'  & @PSD2_HasFinTransaction@=0",
               "evaluable": true
+            }
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "label": "Accounting Status",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "enumValues": [
+              {
+                "value": "NC",
+                "name": "Cost Not Calculated"
+              },
+              {
+                "value": "d",
+                "name": "Disabled For Background"
+              },
+              {
+                "value": "D",
+                "name": "Document Disabled"
+              },
+              {
+                "value": "L",
+                "name": "Document Locked"
+              },
+              {
+                "value": "E",
+                "name": "Error"
+              },
+              {
+                "value": "C",
+                "name": "Error, No cost"
+              },
+              {
+                "value": "i",
+                "name": "Invalid Account"
+              },
+              {
+                "value": "AD",
+                "name": "No Accounting Date"
+              },
+              {
+                "value": "DT",
+                "name": "No Document Type"
+              },
+              {
+                "value": "NO",
+                "name": "No Related PO"
+              },
+              {
+                "value": "b",
+                "name": "Not Balanced"
+              },
+              {
+                "value": "c",
+                "name": "Not Convertible (no rate)"
+              },
+              {
+                "value": "l",
+                "name": "Pending Refresh"
+              },
+              {
+                "value": "p",
+                "name": "Period Closed"
+              },
+              {
+                "value": "y",
+                "name": "Post Prepared"
+              },
+              {
+                "value": "Y",
+                "name": "Posted"
+              },
+              {
+                "value": "T",
+                "name": "Table Disabled"
+              },
+              {
+                "value": "N",
+                "name": "Unposted"
+              }
+            ],
+            "defaultValue": "N"
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "label": "Bulk Posting",
+            "type": "button",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "defaultValue": "N",
+            "displayLogic": {
+              "raw": "@Status@!'RPAE' & @Status@!'RPVOID' & @Processed@='Y' & @#ShowAcct@='Y'",
+              "evaluable": false,
+              "reason": "session-preference",
+              "js": null
             }
           },
           {
@@ -789,6 +905,20 @@
             "derivation": {
               "type": "computed",
               "source": "0"
+            }
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            }
+          },
+          {
+            "name": "etblkpBulkposting",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
             }
           },
           {
@@ -2368,6 +2498,22 @@
             "type": "button",
             "visibility": "editable",
             "required": false
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "readOnly",
+            "required": true
           },
           {
             "name": "etprReactivatePayment",
@@ -4501,6 +4647,14 @@
       },
       {
         "entity": "header",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/payment-out/header/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "header",
         "field": "etprReactivatePayment",
         "column": "EM_Etpr_Reactivate_Payment",
         "url": "/sws/neo/payment-out/header/{id}/action/etprReactivatePayment",
@@ -4598,6 +4752,14 @@
         "field": "aPRMReversePayment",
         "runner": "node",
         "description": "Action endpoint for 'aPRMReversePayment' in header should exist"
+      },
+      {
+        "id": "t-action-endpoint-header-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in header should exist"
       },
       {
         "id": "t-action-endpoint-header-etprReactivatePayment",
@@ -4737,6 +4899,22 @@
         "description": "Default value for 'documentType' in header should be a string"
       },
       {
+        "id": "t-default-value-type-header-etblkpAccountingstatus",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "Default value for 'etblkpAccountingstatus' in header should be a string"
+      },
+      {
+        "id": "t-default-value-type-header-etblkpBulkposting",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Default value for 'etblkpBulkposting' in header should be a string"
+      },
+      {
         "id": "t-default-value-type-header-etprReactivatePayment",
         "category": "default-value-type",
         "entity": "header",
@@ -4855,6 +5033,14 @@
         "field": "costCenter",
         "runner": "node",
         "description": "Display logic for 'costCenter' in header should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-header-etblkpBulkposting",
+        "category": "displaylogic-evaluable",
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Display logic for 'etblkpBulkposting' in header should have evaluable flag"
       },
       {
         "id": "t-displaylogic-evaluable-header-etprReactivatePayment",
@@ -5055,6 +5241,14 @@
         "field": "costCenter",
         "runner": "node",
         "description": "Display logic for 'costCenter' in header should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-header-etblkpBulkposting",
+        "category": "displaylogic-valid",
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Display logic for 'etblkpBulkposting' in header should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-header-etprReactivatePayment",
@@ -5607,6 +5801,22 @@
         "field": "documentType",
         "runner": "node",
         "description": "Field 'documentType' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-etblkpAccountingstatus",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "Field 'etblkpAccountingstatus' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-etblkpBulkposting",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Field 'etblkpBulkposting' should be present in header"
       },
       {
         "id": "t-field-presence-header-etprReactivatePayment",
@@ -6303,6 +6513,22 @@
         "field": "documentType",
         "runner": "node",
         "description": "Field 'documentType' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-etblkpAccountingstatus",
+        "category": "field-type",
+        "entity": "header",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "Field 'etblkpAccountingstatus' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-etblkpBulkposting",
+        "category": "field-type",
+        "entity": "header",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Field 'etblkpBulkposting' should have type 'string' in header"
       },
       {
         "id": "t-field-type-header-etprReactivatePayment",
@@ -7344,6 +7570,13 @@
         "description": "Rule 'payment-out-Header-EM_APRM_ReversePayment-displayLogic' (displayLogic) should be declared"
       },
       {
+        "id": "t-rule-declared-payment-out-Header-EM-Etblkp-Bulkposting-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-EM_Etblkp_Bulkposting-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-EM_Etblkp_Bulkposting-displayLogic' (displayLogic) should be declared"
+      },
+      {
         "id": "t-rule-declared-payment-out-Header-EM-Etpr-Reactivate-Payment-displayLogic",
         "category": "rule-declared",
         "rule": "payment-out-Header-EM_Etpr_Reactivate_Payment-displayLogic",
@@ -7533,6 +7766,13 @@
         "description": "Rule 'Payment Process' (process) should be declared"
       },
       {
+        "id": "t-rule-declared-Post",
+        "category": "rule-declared",
+        "rule": "Post",
+        "runner": "node",
+        "description": "Rule 'Post' (process) should be declared"
+      },
+      {
         "id": "t-rule-declared-Posted",
         "category": "rule-declared",
         "rule": "Posted",
@@ -7547,18 +7787,18 @@
         "description": "Rule 'Print payments process' (process) should be declared"
       },
       {
+        "id": "t-rule-declared-PSD2-Refresh-Payment-Status",
+        "category": "rule-declared",
+        "rule": "PSD2 Refresh Payment Status",
+        "runner": "node",
+        "description": "Rule 'PSD2 Refresh Payment Status' (process) should be declared"
+      },
+      {
         "id": "t-rule-declared-Reactivate-Payment",
         "category": "rule-declared",
         "rule": "Reactivate Payment",
         "runner": "node",
         "description": "Rule 'Reactivate Payment' (process) should be declared"
-      },
-      {
-        "id": "t-rule-declared-Refresh-Payment-Status",
-        "category": "rule-declared",
-        "rule": "Refresh Payment Status",
-        "runner": "node",
-        "description": "Rule 'Refresh Payment Status' (process) should be declared"
       },
       {
         "id": "t-rule-declared-Remove-Payment",
@@ -9116,25 +9356,25 @@
       }
     ],
     "summary": {
-      "total": 586,
+      "total": 597,
       "byCategory": {
-        "action-endpoint": 11,
+        "action-endpoint": 12,
         "crud-flags": 7,
-        "default-value-type": 17,
-        "displaylogic-evaluable": 25,
-        "displaylogic-valid": 25,
-        "field-presence": 87,
-        "field-type": 87,
+        "default-value-type": 19,
+        "displaylogic-evaluable": 26,
+        "displaylogic-valid": 26,
+        "field-presence": 89,
+        "field-type": 89,
         "readonlylogic-evaluable": 21,
         "readonlylogic-valid": 21,
-        "rule-declared": 103,
+        "rule-declared": 105,
         "searchable-filters": 5,
         "selector-endpoint": 40,
         "system-field": 130,
         "visibility": 7
       },
       "byRunner": {
-        "node": 586,
+        "node": 597,
         "junit": 0
       }
     }

@@ -19,7 +19,9 @@ const statusField = null;
 // @sf-generated-end summary:organizations
 
 // @sf-generated-start extraBadges:organizations
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:organizations
 
 // @sf-generated-start processes:organizations
@@ -639,6 +641,14 @@ export const api = {
     },
     {
       "entity": "issuedInvoices",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/sii-monitor/issuedInvoices/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "issuedInvoices",
       "field": "eTPRRemovePayment",
       "column": "EM_Etpr_Remove_Payment",
       "url": "/sws/neo/sii-monitor/issuedInvoices/{id}/action/eTPRRemovePayment",
@@ -799,6 +809,14 @@ export const api = {
       "column": "EM_Psd2_Generate_Bank_Payment",
       "url": "/sws/neo/sii-monitor/receivedInvoices/{id}/action/psd2GenerateBankPayment",
       "processId": "0661406A983B4D8EA611F8596F114D52",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "receivedInvoices",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/sii-monitor/receivedInvoices/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
       "processType": "obuiapp"
     },
     {
@@ -975,6 +993,14 @@ export const api = {
     },
     {
       "entity": "issuedInvoices(previousPeriod)",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/sii-monitor/issuedInvoices(previousPeriod)/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "issuedInvoices(previousPeriod)",
       "field": "eTPRRemovePayment",
       "column": "EM_Etpr_Remove_Payment",
       "url": "/sws/neo/sii-monitor/issuedInvoices(previousPeriod)/{id}/action/eTPRRemovePayment",
@@ -1135,6 +1161,14 @@ export const api = {
       "column": "EM_Psd2_Generate_Bank_Payment",
       "url": "/sws/neo/sii-monitor/receivedInvoices(previousPeriod)/{id}/action/psd2GenerateBankPayment",
       "processId": "0661406A983B4D8EA611F8596F114D52",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "receivedInvoices(previousPeriod)",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/sii-monitor/receivedInvoices(previousPeriod)/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
       "processType": "obuiapp"
     },
     {

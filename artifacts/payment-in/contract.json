@@ -1,8 +1,8 @@
 {
-  "version": "0.7.0",
+  "version": "0.5.0",
   "generatedAt": "2026-04-29T19:05:52.312Z",
-  "updatedAt": "2026-06-25T00:35:55.716Z",
-  "checksum": "128d1ed7ee2d4a8b",
+  "updatedAt": "2026-06-24T20:46:47.740Z",
+  "checksum": "a228dd7831d60882",
   "frontendContract": {
     "window": {
       "id": "E547CE89D4C04429B6340FFA44E70716",
@@ -358,6 +358,122 @@
             }
           },
           {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "label": "Accounting Status",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "enumValues": [
+              {
+                "value": "NC",
+                "name": "Cost Not Calculated"
+              },
+              {
+                "value": "d",
+                "name": "Disabled For Background"
+              },
+              {
+                "value": "D",
+                "name": "Document Disabled"
+              },
+              {
+                "value": "L",
+                "name": "Document Locked"
+              },
+              {
+                "value": "E",
+                "name": "Error"
+              },
+              {
+                "value": "C",
+                "name": "Error, No cost"
+              },
+              {
+                "value": "i",
+                "name": "Invalid Account"
+              },
+              {
+                "value": "AD",
+                "name": "No Accounting Date"
+              },
+              {
+                "value": "DT",
+                "name": "No Document Type"
+              },
+              {
+                "value": "NO",
+                "name": "No Related PO"
+              },
+              {
+                "value": "b",
+                "name": "Not Balanced"
+              },
+              {
+                "value": "c",
+                "name": "Not Convertible (no rate)"
+              },
+              {
+                "value": "l",
+                "name": "Pending Refresh"
+              },
+              {
+                "value": "p",
+                "name": "Period Closed"
+              },
+              {
+                "value": "y",
+                "name": "Post Prepared"
+              },
+              {
+                "value": "Y",
+                "name": "Posted"
+              },
+              {
+                "value": "T",
+                "name": "Table Disabled"
+              },
+              {
+                "value": "N",
+                "name": "Unposted"
+              }
+            ],
+            "defaultValue": "N"
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "label": "Bulk Posting",
+            "type": "button",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "defaultValue": "N",
+            "displayLogic": {
+              "raw": "@Status@!'RPAE' & @Status@!'RPVOID' & @Processed@='Y' & @#ShowAcct@='Y'",
+              "evaluable": false,
+              "reason": "session-preference",
+              "js": null
+            }
+          },
+          {
             "name": "etprReactivatePayment",
             "apiKey": "etprReactivatePayment",
             "column": "EM_Etpr_Reactivate_Payment",
@@ -428,6 +544,20 @@
             "derivation": {
               "type": "computed",
               "source": "RPAP"
+            }
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            }
+          },
+          {
+            "name": "etblkpBulkposting",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
             }
           },
           {
@@ -931,6 +1061,22 @@
             "type": "button",
             "visibility": "system",
             "required": false
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "readOnly",
+            "required": true
           },
           {
             "name": "etprReactivatePayment",
@@ -1452,6 +1598,14 @@
       },
       {
         "entity": "finPayment",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/payment-in/finPayment/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "finPayment",
         "field": "etprReactivatePayment",
         "column": "EM_Etpr_Reactivate_Payment",
         "url": "/sws/neo/payment-in/finPayment/{id}/action/etprReactivatePayment",
@@ -1535,6 +1689,14 @@
         "description": "Action endpoint for 'aPRMReversePayment' in finPayment should exist"
       },
       {
+        "id": "t-action-endpoint-finPayment-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "finPayment",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in finPayment should exist"
+      },
+      {
         "id": "t-action-endpoint-finPayment-etprReactivatePayment",
         "category": "action-endpoint",
         "entity": "finPayment",
@@ -1589,6 +1751,22 @@
         "description": "Default value for 'amount' in finPayment should be a string"
       },
       {
+        "id": "t-default-value-type-finPayment-etblkpAccountingstatus",
+        "category": "default-value-type",
+        "entity": "finPayment",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "Default value for 'etblkpAccountingstatus' in finPayment should be a string"
+      },
+      {
+        "id": "t-default-value-type-finPayment-etblkpBulkposting",
+        "category": "default-value-type",
+        "entity": "finPayment",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Default value for 'etblkpBulkposting' in finPayment should be a string"
+      },
+      {
         "id": "t-default-value-type-finPayment-etprReactivatePayment",
         "category": "default-value-type",
         "entity": "finPayment",
@@ -1629,6 +1807,14 @@
         "description": "Display logic for 'businessPartner' in finPayment should have evaluable flag"
       },
       {
+        "id": "t-displaylogic-evaluable-finPayment-etblkpBulkposting",
+        "category": "displaylogic-evaluable",
+        "entity": "finPayment",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Display logic for 'etblkpBulkposting' in finPayment should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-finPayment-etprReactivatePayment",
         "category": "displaylogic-evaluable",
         "entity": "finPayment",
@@ -1659,6 +1845,14 @@
         "field": "businessPartner",
         "runner": "node",
         "description": "Display logic for 'businessPartner' in finPayment should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-finPayment-etblkpBulkposting",
+        "category": "displaylogic-valid",
+        "entity": "finPayment",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Display logic for 'etblkpBulkposting' in finPayment should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-finPayment-etprReactivatePayment",
@@ -1731,6 +1925,22 @@
         "field": "documentNo",
         "runner": "node",
         "description": "Field 'documentNo' should be present in finPayment"
+      },
+      {
+        "id": "t-field-presence-finPayment-etblkpAccountingstatus",
+        "category": "field-presence",
+        "entity": "finPayment",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "Field 'etblkpAccountingstatus' should be present in finPayment"
+      },
+      {
+        "id": "t-field-presence-finPayment-etblkpBulkposting",
+        "category": "field-presence",
+        "entity": "finPayment",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Field 'etblkpBulkposting' should be present in finPayment"
       },
       {
         "id": "t-field-presence-finPayment-etprReactivatePayment",
@@ -1851,6 +2061,22 @@
         "field": "documentNo",
         "runner": "node",
         "description": "Field 'documentNo' should have type 'string' in finPayment"
+      },
+      {
+        "id": "t-field-type-finPayment-etblkpAccountingstatus",
+        "category": "field-type",
+        "entity": "finPayment",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "Field 'etblkpAccountingstatus' should have type 'string' in finPayment"
+      },
+      {
+        "id": "t-field-type-finPayment-etblkpBulkposting",
+        "category": "field-type",
+        "entity": "finPayment",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Field 'etblkpBulkposting' should have type 'string' in finPayment"
       },
       {
         "id": "t-field-type-finPayment-etprReactivatePayment",
@@ -2819,15 +3045,15 @@
       }
     ],
     "summary": {
-      "total": 170,
+      "total": 179,
       "byCategory": {
-        "action-endpoint": 10,
+        "action-endpoint": 11,
         "crud-flags": 2,
-        "default-value-type": 5,
-        "displaylogic-evaluable": 4,
-        "displaylogic-valid": 4,
-        "field-presence": 15,
-        "field-type": 15,
+        "default-value-type": 7,
+        "displaylogic-evaluable": 5,
+        "displaylogic-valid": 5,
+        "field-presence": 17,
+        "field-type": 17,
         "readonlylogic-evaluable": 7,
         "readonlylogic-valid": 7,
         "rule-declared": 25,
@@ -2837,7 +3063,7 @@
         "visibility": 2
       },
       "byRunner": {
-        "node": 170,
+        "node": 179,
         "junit": 0
       }
     }

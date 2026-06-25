@@ -1,8 +1,8 @@
 {
-  "version": "0.8.0",
+  "version": "0.9.0",
   "generatedAt": "2026-04-29T18:11:05.114Z",
-  "updatedAt": "2026-05-27T16:36:19.448Z",
-  "contractChecksum": "1cdb4ce7c3d3e5a8",
+  "updatedAt": "2026-06-24T20:46:48.951Z",
+  "contractChecksum": "ac4e32d11ef1725c",
   "apiPrediction": {
     "specName": "return-material-receipt",
     "baseUrl": "/sws/neo/return-material-receipt",
@@ -354,6 +354,46 @@
         "processType": "classic"
       },
       {
+        "name": "etblkpBulkposting",
+        "actionType": "documentAction",
+        "entity": "returnMaterialReceipt",
+        "column": "EM_Etblkp_Bulkposting",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/etblkpBulkposting",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
         "name": "explode",
         "actionType": "utilityAction",
         "entity": "returnMaterialReceiptLine",
@@ -462,6 +502,16 @@
           "trackingNo": {},
           "sourceShipmentDocNo": {
             "readOnly": true
+          },
+          "etblkpAccountingstatus": {
+            "readOnly": true,
+            "required": true,
+            "defaultValue": "N"
+          },
+          "etblkpBulkposting": {
+            "readOnly": true,
+            "required": true,
+            "defaultValue": "N"
           }
         }
       },
@@ -499,7 +549,9 @@
         }
       }
     },
-    "requiredSessionVariables": [],
+    "requiredSessionVariables": [
+      "#ShowAcct"
+    ],
     "evaluationMode": "runtime"
   },
   "agentProfile": {
@@ -539,7 +591,8 @@
       "documentAction",
       "posted",
       "sendMaterials",
-      "generateTo"
+      "generateTo",
+      "etblkpBulkposting"
     ],
     "workflow": [
       "Create draft header with required fields",
@@ -579,5 +632,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "f36f04d8136b3f0d"
+  "checksum": "f8437f68271ec56d"
 }

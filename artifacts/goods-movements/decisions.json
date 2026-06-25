@@ -3,6 +3,26 @@
   "window": {
     "category": "inventory",
     "name": "Goods Movements",
+    "menuActions": [
+      {
+        "key": "post",
+        "label": "Post",
+        "labelKey": "post",
+        "action": "post",
+        "visibleWhenFieldFalse": "posted",
+        "successKey": "documentPosted",
+        "visibleWhenFieldTrue": "processed"
+      },
+      {
+        "key": "unpost",
+        "label": "Unpost",
+        "labelKey": "unpost",
+        "action": "unpost",
+        "visibleWhenFieldTrue": "posted",
+        "successKey": "documentUnposted",
+        "destructive": true
+      }
+    ],
     "statusField": "processed",
     "processOverrides": {
       "processNow": {
@@ -13,10 +33,19 @@
     "linesLayout": "inlineEditable",
     "customComponents": {
       "bottomSection": "GoodsMovementsBottomPanel"
-    }
+    },
+    "statusPills": [
+      {
+        "field": "posted",
+        "trueKey": "postedStatus",
+        "falseKey": "notPostedStatus",
+        "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+      }
+    ]
   },
   "entities": {
     "header": {
+      "javaQualifier": "document-posting",
       "name": "movement",
       "fields": {
         "name": {

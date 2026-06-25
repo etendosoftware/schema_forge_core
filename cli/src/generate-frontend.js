@@ -572,10 +572,22 @@ function generateStatusBarComponent(headerEntity, statusBarConfig) {
 
   // Build cards array literal
   const cardsLiteral = cards.map(card => {
-    const valueExpr = card.display === 'identifier'
-      ? `(data['${card.field}$_identifier'] || data['${card.field}'] || '—')`
-      : `fmt(data.${card.field})`;
-    return `    { label: '${card.label}', value: ${valueExpr}, color: '${card.color}',  Icon: ${card.icon} },`;
+    // Value expression: identifier FK label | yesno conditional | numeric default
+    let valueExpr;
+    if (card.display === 'identifier') {
+      valueExpr = `(data['${card.field}$_identifier'] || data['${card.field}'] || '—')`;
+    } else if (card.display === 'yesno') {
+      valueExpr = `((data.${card.field} === true || data.${card.field} === 'Y') ? ui('${card.trueKey ?? 'postedStatus'}') : (data.${card.field} === false || data.${card.field} === 'N') ? ui('${card.falseKey ?? 'notPostedStatus'}') : '—')`;
+    } else {
+      valueExpr = `fmt(data.${card.field})`;
+    }
+    // Color expression: dynamic for yesno, static otherwise
+    const colorExpr = card.display === 'yesno'
+      ? `((data.${card.field} === true || data.${card.field} === 'Y') ? '${card.trueColor ?? 'green'}' : '${card.falseColor ?? 'orange'}')`
+      : `'${card.color}'`;
+    // Label expression: i18n key via ui() or static string
+    const labelExpr = card.labelKey ? `ui('${card.labelKey}')` : `'${card.label}'`;
+    return `    { label: ${labelExpr}, value: ${valueExpr}, color: ${colorExpr},  Icon: ${card.icon} },`;
   }).join('\n');
 
   // Build progress section
@@ -825,7 +837,7 @@ function getSuccessPart(a) {
   }
 }
 
-function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
+export function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
   let menuActionsProp;
   if (menuActionsConfig.length > 0) {
     menuActionsProp = `\n        menuActions={${menuActionsFnParams} => [\n${menuActionsConfig.map(a => {
@@ -839,23 +851,28 @@ function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
           ? `status === '${a.visibleWhenStatus}'`
           : '';
       }
-      const fieldVisFalse = a.visibleWhenFieldFalse ? `!data?.${a.visibleWhenFieldFalse}` : '';
+      const fieldVisFalse = a.visibleWhenFieldFalse ? `!(data?.${a.visibleWhenFieldFalse} === 'Y' || data?.${a.visibleWhenFieldFalse} === true)` : '';
       const fieldVisTrue = a.visibleWhenFieldTrue ? `(data?.${a.visibleWhenFieldTrue} === 'Y' || data?.${a.visibleWhenFieldTrue} === true)` : '';
       const visParts = [statusVis, fieldVisFalse, fieldVisTrue].filter(Boolean);
       const vis = getVis(visParts);
       const destr = fragmentIf(a.destructive, 'destructive: true, ');
-      // Handler precedence: documentAction (declarative DocAction) > columnName (AD process button) > onClick placeholder
+      // Handler precedence: documentAction (declarative DocAction) > columnName
+      // (AD process button) > action (declarative NEO action endpoint, ETP-4298)
+      // > onClick placeholder.
       let handler;
       if (a.documentAction) {
         handler = `documentAction: '${a.documentAction}', `;
       } else if (a.columnName) {
         handler = `columnName: '${a.columnName}', `;
+      } else if (a.action) {
+        handler = `neoAction: '${a.action}', `;
       } else {
         handler = `onClick: () => {},`;
       }
       const labelKeyPart = a.labelKey ? `labelKey: '${a.labelKey}', ` : '';
       const successPart = getSuccessPart(a);
-      return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${handler} }`;
+      const preUnpostPart = a.preUnpost ? `preUnpost: true, ` : '';
+      return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${preUnpostPart}${handler} }`;
     }).join(',\n')}\n        ]}`;
   } else {
     menuActionsProp = '';
@@ -1182,7 +1199,7 @@ function buildProcessesArray({ processes, buttonFields, processOverrides }) {
       const colPart = wrapIf(", columnName: '", p.columnName, "'");
       const paramsPart = p.params?.length ? `, params: ${JSON.stringify(p.params)}` : '';
       const dlRaw = ovr.displayLogicRaw
-        ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
+        ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"`
         : '';
       return `  { name: '${p.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${paramsPart}${dlRaw} },`;
     }).filter(Boolean),
@@ -1193,7 +1210,7 @@ function buildProcessesArray({ processes, buttonFields, processOverrides }) {
       const style = ovr.style || pick(isDestructive, 'destructive', 'positive');
       const label = ovr.label || f.label || toLabel(f.name);
       const dlRawVal = ovr.displayLogicRaw || f.displayLogic?.raw;
-      const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"')}"` : '';
+      const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"` : '';
       const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
       return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart} },`;
     }).filter(Boolean),
@@ -1205,7 +1222,7 @@ function buildProcessesArray({ processes, buttonFields, processOverrides }) {
         const label = ovr.label || toLabel(name);
         const colPart = wrapIf(", columnName: '", ovr.columnName, "'");
         const dlRaw = ovr.displayLogicRaw
-          ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
+          ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"`
           : '';
         const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
         const fieldMaxPart = ovr.requiresFieldMax
@@ -1683,6 +1700,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const menuActionsConfig = windowConfig.menuActions ?? [];
   const newActionsConfig = windowConfig.newActions ?? [];
   const statusBar = windowConfig.statusBar ?? null;
+  const statusPills = windowConfig.statusPills ?? [];
   const detailSortBy = windowConfig.detailSortBy ?? null;
   const titleField = windowConfig.titleField ?? null;
   const salesTheme = windowConfig.salesTheme ?? false;
@@ -2091,7 +2109,9 @@ const statusField = ${statusFieldLine};
 ${MARKERS.GENERATED_END(`summary:${headerEntity}`)}
 
 ${MARKERS.GENERATED_START(`extraBadges:${headerEntity}`)}
-const extraBadges = [];
+const extraBadges = [
+${statusPills.map(p => `  { key: '${p.field}', type: 'statusPill', trueKey: '${p.trueKey}', falseKey: '${p.falseKey}' },`).join('\n')}
+];
 ${MARKERS.GENERATED_END(`extraBadges:${headerEntity}`)}
 
 ${MARKERS.GENERATED_START(`processes:${headerEntity}`)}

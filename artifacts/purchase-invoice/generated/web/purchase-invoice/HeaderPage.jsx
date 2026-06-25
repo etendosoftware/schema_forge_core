@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
 import { INVOICE_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import HeaderTable from '../../../custom/InvoiceHeaderTable';
 import HeaderForm from './HeaderForm';
@@ -26,7 +27,9 @@ const statusField = 'documentStatus';
 // @sf-generated-end summary:header
 
 // @sf-generated-start extraBadges:header
-const extraBadges = [];
+const extraBadges = [
+  { key: 'posted', type: 'statusPill', trueKey: 'postedStatus', falseKey: 'notPostedStatus' },
+];
 // @sf-generated-end extraBadges:header
 
 // @sf-generated-start processes:header
@@ -713,12 +716,6 @@ export const api = {
     },
     {
       "entity": "header",
-      "field": "posted",
-      "column": "Posted",
-      "url": "/sws/neo/purchase-invoice/header/{id}/action/posted"
-    },
-    {
-      "entity": "header",
       "field": "aPRMProcessinvoice",
       "column": "EM_APRM_Processinvoice",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/aPRMProcessinvoice",
@@ -853,6 +850,14 @@ export const api = {
     },
     {
       "entity": "header",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
       "field": "eTPRRemovePayment",
       "column": "EM_Etpr_Remove_Payment",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/eTPRRemovePayment",
@@ -970,6 +975,10 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         notesField="description"
         customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Invoice", config: {} } }, { key: 'sif', labelKey: 'sifDataTabs.sectionTitle', Component: SifTab, placement: 'tab' }]}
         bottomSection={PurchaseInvoiceBottomPanel}
+        menuActions={({ data, status }) => [
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'reactivated', preUnpost: true, documentAction: 'RE',  },
+          { key: 'post', label: 'Post', visible: !(data?.posted === 'Y' || data?.posted === true) && (data?.processed === 'Y' || data?.processed === true), labelKey: 'post', successKey: 'documentPosted', neoAction: 'post',  }
+        ]}
         draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}

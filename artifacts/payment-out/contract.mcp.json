@@ -1,8 +1,8 @@
 {
-  "version": "0.8.0",
+  "version": "0.6.0",
   "generatedAt": "2026-04-29T18:11:46.137Z",
-  "updatedAt": "2026-06-25T00:35:55.902Z",
-  "contractChecksum": "eb83c459289a30ac",
+  "updatedAt": "2026-06-24T20:46:47.878Z",
+  "contractChecksum": "62ee8faa9ae25975",
   "apiPrediction": {
     "specName": "payment-out",
     "baseUrl": "/sws/neo/payment-out",
@@ -647,6 +647,46 @@
         "processType": "obuiapp"
       },
       {
+        "name": "etblkpBulkposting",
+        "actionType": "documentAction",
+        "entity": "header",
+        "column": "EM_Etblkp_Bulkposting",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/payment-out/header/{id}/action/etblkpBulkposting",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
         "name": "etprReactivatePayment",
         "actionType": "documentAction",
         "entity": "header",
@@ -838,6 +878,16 @@
             "readOnlyLogic": "@Posted@='Y'"
           },
           "psd2GenerateBankPayment": {},
+          "etblkpAccountingstatus": {
+            "readOnly": true,
+            "required": true,
+            "defaultValue": "N"
+          },
+          "etblkpBulkposting": {
+            "readOnly": true,
+            "required": true,
+            "defaultValue": "N"
+          },
           "etprReactivatePayment": {
             "required": true,
             "defaultValue": "N"
@@ -1038,7 +1088,9 @@
         }
       }
     },
-    "requiredSessionVariables": [],
+    "requiredSessionVariables": [
+      "#ShowAcct"
+    ],
     "evaluationMode": "runtime"
   },
   "agentProfile": {
@@ -1106,6 +1158,7 @@
       "posted",
       "aPRMReversePayment",
       "aeatsiiSend",
+      "etblkpBulkposting",
       "etprReactivatePayment"
     ],
     "workflow": [
@@ -1170,5 +1223,5 @@
       "etprReactivatePayment"
     ]
   },
-  "checksum": "af86220f44b07902"
+  "checksum": "6fb65ab26f846b7a"
 }
