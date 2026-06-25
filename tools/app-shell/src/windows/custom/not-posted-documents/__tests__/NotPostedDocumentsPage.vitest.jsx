@@ -418,4 +418,16 @@ describe('NotPostedDocumentsPage', () => {
       expect(screen.queryByTestId('npd-post-selected')).not.toBeInTheDocument();
     });
   });
+
+  it('shows postingFailed toast when all selected rows lack tableId', async () => {
+    const rowNoTableId = { documentId: 'doc-3', documentType: 'SI', description: 'X', accountingDate: '2024-01-01', organization: 'O' };
+    globalThis.fetch = mkFetch([rowNoTableId]);
+    render(<NotPostedDocumentsPage token={TOKEN} apiBaseUrl={BASE_URL} />);
+    await waitFor(() => screen.getByTestId('npd-row-checkbox-doc-3'));
+    fireEvent.click(screen.getByTestId('npd-row-checkbox-doc-3'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('npd-post-selected'));
+    });
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('postingFailed'));
+  });
 });
