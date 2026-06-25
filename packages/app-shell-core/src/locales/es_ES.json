@@ -14413,7 +14413,8 @@
       "label": "Histórico de Control de Periodos"
     },
     "Open/Close Period Control": {
-      "label": "Abrir/Cerrar periodos"
+      "label": "Abrir/Cerrar periodos",
+      "newLabel": "Nuevo período"
     },
     "Inventory Amount Update": {
       "label": "Ajuste de Valor del Inventario"
@@ -21569,7 +21570,8 @@
       "label": "Histórico de Control de Periodos"
     },
     "Open/Close Period Control": {
-      "label": "Abrir/Cerrar periodos"
+      "label": "Abrir/Cerrar periodos",
+      "newLabel": "Nuevo período"
     },
     "Inventory Amount Update": {
       "label": "Ajuste de Valor del Inventario"
