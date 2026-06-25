@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-06-25T12:12:33.694Z",
-  "updatedAt": "2026-06-25T13:59:13.646Z",
-  "checksum": "90f65b087c026fc2",
+  "updatedAt": "2026-06-25T15:04:43.066Z",
+  "checksum": "6f79dac0c64cddca",
   "frontendContract": {
     "window": {
       "id": "E66E701CCBA14B8BA480CBDE37C50D7A",
@@ -12,8 +12,12 @@
       "hidePrint": true,
       "hideCreate": true,
       "hideMoreMenu": true,
+      "hideDetailForm": true,
+      "hideDelete": true,
       "processOverrides": {
         "openClose": {
+          "label": "Open Close Period",
+          "detailLabel": "Open Close Document",
           "params": [
             {
               "key": "openClose",
@@ -286,7 +290,8 @@
               "source": "O"
             }
           }
-        ]
+        ],
+        "javaQualifier": "period-openclose"
       },
       "documents": {
         "tableName": "C_Year",
@@ -566,7 +571,8 @@
               "source": "O"
             }
           }
-        ]
+        ],
+        "javaQualifier": "period-control-doc-openclose"
       }
     }
   },
@@ -579,8 +585,12 @@
       "hidePrint": true,
       "hideCreate": true,
       "hideMoreMenu": true,
+      "hideDetailForm": true,
+      "hideDelete": true,
       "processOverrides": {
         "openClose": {
+          "label": "Open Close Period",
+          "detailLabel": "Open Close Document",
           "params": [
             {
               "key": "openClose",
@@ -809,7 +819,8 @@
             "visibility": "discarded",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "period-openclose"
       },
       "documents": {
         "tableName": "C_Year",
@@ -944,7 +955,8 @@
             "visibility": "discarded",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "period-control-doc-openclose"
       }
     },
     "endpoints": [
@@ -1021,7 +1033,7 @@
         "post": true,
         "put": true,
         "patch": true,
-        "delete": true,
+        "delete": false,
         "listUrl": "/sws/neo/open-close-period-control/periodControl",
         "detailUrl": "/sws/neo/open-close-period-control/periodControl/{id}",
         "supportedFilters": []
@@ -1032,7 +1044,7 @@
         "post": true,
         "put": true,
         "patch": true,
-        "delete": true,
+        "delete": false,
         "listUrl": "/sws/neo/open-close-period-control/documents",
         "detailUrl": "/sws/neo/open-close-period-control/documents/{id}",
         "supportedFilters": []

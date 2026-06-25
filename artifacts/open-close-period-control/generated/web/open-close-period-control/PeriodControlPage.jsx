@@ -31,9 +31,15 @@ const extraBadges = [];
 
 // @sf-generated-start processes:periodControl
 const processes = [
-  { name: 'openClose', label: 'Open Close', style: 'positive', params: [{"key":"openClose","type":"select","label":"Action","required":true,"options":[{"value":"O","label":"Periodo abierto"},{"value":"C","label":"Periodo cerrado"},{"value":"P","label":"Periodo cerrado permanente"}]}] },
+  { name: 'openClose', label: 'Open Close Period', style: 'positive', params: [{"key":"openClose","type":"select","label":"Action","required":true,"options":[{"value":"O","label":"Periodo abierto"},{"value":"C","label":"Periodo cerrado"},{"value":"P","label":"Periodo cerrado permanente"}]}] },
 ];
 // @sf-generated-end processes:periodControl
+
+// @sf-generated-start detailProcesses:documents
+const detailProcesses = [
+  { name: 'openClose', label: 'Open Close Document', style: 'positive', params: [{"key":"openClose","type":"select","label":"Action","required":true,"options":[{"value":"O","label":"Periodo abierto"},{"value":"C","label":"Periodo cerrado"},{"value":"P","label":"Periodo cerrado permanente"}]}] },
+];
+// @sf-generated-end detailProcesses:documents
 
 // @sf-generated-start draftMode:periodControl
 const draftMode = null;
@@ -67,7 +73,7 @@ export const api = {
       "post": true,
       "put": true,
       "patch": true,
-      "delete": true,
+      "delete": false,
       "listUrl": "/sws/neo/open-close-period-control/periodControl",
       "detailUrl": "/sws/neo/open-close-period-control/periodControl/{id}",
       "supportedFilters": []
@@ -78,7 +84,7 @@ export const api = {
       "post": true,
       "put": true,
       "patch": true,
-      "delete": true,
+      "delete": false,
       "listUrl": "/sws/neo/open-close-period-control/documents",
       "detailUrl": "/sws/neo/open-close-period-control/documents/{id}",
       "supportedFilters": []
@@ -177,11 +183,11 @@ export default function PeriodControlPage({ windowName, recordId, ...props }) {
         detailEntity="documents"
         Form={PeriodControlForm}
         DetailTable={DocumentsTable}
-        DetailForm={DocumentsForm}
         summary={summary}
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
+        detailProcesses={detailProcesses}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Period Control"
