@@ -1598,6 +1598,19 @@ function buildEntryFieldLine(f, i, firstSearchIdx) {
   return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${skipDefaultPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart}${excludeValueOfPart} },`;
 }
 
+function buildDetailProcessesForPage(detailEntity, contract, processOverrides) {
+  const detailButtonFields = detailEntity
+    ? (contract.frontendContract.entities[detailEntity]?.fields ?? []).filter(f => f.type === 'button' && f.form)
+    : [];
+  const detailProcessesEndpoints = detailEntity ? getProcessesForEntity(contract, detailEntity) : [];
+  const detailProcessOverrides = Object.fromEntries(
+    Object.entries(processOverrides).map(([k, v]) => [k, v.detailLabel ? { ...v, label: v.detailLabel } : v])
+  );
+  return detailButtonFields.length > 0 || detailProcessesEndpoints.length > 0
+    ? buildProcessesArray({ processes: detailProcessesEndpoints, buttonFields: detailButtonFields, processOverrides: detailProcessOverrides })
+    : '';
+}
+
 /**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
@@ -1654,16 +1667,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // Detail entity processes: button-type fields on the detail entity that have their own action endpoints.
   // When processOverrides has `detailLabel`, swap it into `label` for the detail version of the button.
-  const detailButtonFields = detailEntity
-    ? (contract.frontendContract.entities[detailEntity]?.fields ?? []).filter(f => f.type === 'button' && f.form)
-    : [];
-  const detailProcessesEndpoints = detailEntity ? getProcessesForEntity(contract, detailEntity) : [];
-  const detailProcessOverrides = Object.fromEntries(
-    Object.entries(processOverrides).map(([k, v]) => [k, v.detailLabel ? { ...v, label: v.detailLabel } : v])
-  );
-  const detailProcessesArray = detailButtonFields.length > 0 || detailProcessesEndpoints.length > 0
-    ? buildProcessesArray({ processes: detailProcessesEndpoints, buttonFields: detailButtonFields, processOverrides: detailProcessOverrides })
-    : '';
+  const detailProcessesArray = buildDetailProcessesForPage(detailEntity, contract, processOverrides);
 
   const { entryFields, derivedFields, hiddenDefaultFields } = splitDetailLineFields(detailEditableFields, detailFields);
 
@@ -2132,6 +2136,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const galleryComponentName = `${headerName}Gallery`;
   const sidebarComponentName = `${headerName}Sidebar`;
   const detailHeaderComponentName = `${headerName}DetailHeader`;
+  const detailFormProp = !hideDetailForm ? `\n        DetailForm={${detailName}Form}` : '';
+  const detailTableAndFormProps = (detailEntity && !customLinesComp)
+    ? `\n        DetailTable={${detailName}Table}${detailFormProp}` : '';
+  const detailProcessesProp = detailProcessesArray ? '\n        detailProcesses={detailProcesses}' : '';
   const useStateImport = fragmentIf(needsUseState, 'useState, ');
   return `import { ${useStateImport}useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
@@ -2201,14 +2209,11 @@ export default function ${compName}({ windowName, recordId, ...props }) {${fragm
       <>`)}
       <DetailView
         entity="${headerEntity}"${buildDetailEntityAttr(detailEntity)}
-        Form={${headerName}Form}${detailEntity && !customLinesComp ? `
-        DetailTable={${detailName}Table}${!hideDetailForm ? `
-        DetailForm={${detailName}Form}` : ''}` : ''}
+        Form={${headerName}Form}${detailTableAndFormProps}
         summary={summary}
         statusField={statusField}
         extraBadges={extraBadges}
-        processes={processes}${detailProcessesArray ? `
-        detailProcesses={detailProcesses}` : ''}${detailEntity && !customLinesComp ? `
+        processes={processes}${detailProcessesProp}${detailEntity && !customLinesComp ? `
         addLineFields={addLineFields}` : ''}
         catalogs={catalogs}
         entityLabel="${entityLabel}"${detailEntity ? `

@@ -158,6 +158,14 @@ function tableOpacityClass(hook) {
   return hook.loading ? 'opacity-70 transition-opacity duration-200' : 'transition-opacity duration-200';
 }
 
+function parseListSortBy(listSortBy) {
+  const parts = listSortBy ? listSortBy.trim().split(/\s+/) : [];
+  return {
+    initialSortColumn: parts[0] ?? 'creationDate',
+    initialSortDirection: parts[0] ? (parts[1] ?? 'asc') : 'desc',
+  };
+}
+
 function isDefaultSortActive(hook) {
   return hook.sortColumn === 'creationDate' && hook.sortDirection === 'desc';
 }
@@ -388,9 +396,7 @@ export function ListView({
 
   const didInitialFetchRef = useRef(false);
 
-  const parsedListSort = listSortBy ? listSortBy.trim().split(/\s+/) : [];
-  const initialSortColumn = parsedListSort[0] ?? 'creationDate';
-  const initialSortDirection = parsedListSort[0] ? (parsedListSort[1] ?? 'asc') : 'desc';
+  const { initialSortColumn, initialSortDirection } = parseListSortBy(listSortBy);
 
   const hook = useEntity(entity, null, {
     token,

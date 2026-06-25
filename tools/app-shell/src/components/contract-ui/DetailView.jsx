@@ -1441,6 +1441,11 @@ function renderSaveActions(params) {
   return renderExistingRecordSaveAction(params);
 }
 
+function resolveDetailRows(selectedChildRows, selectedLine) {
+  if (selectedChildRows.length > 0) return selectedChildRows;
+  return selectedLine ? [selectedLine] : [];
+}
+
 /**
  * Full-page detail view for a single entity record.
  * Two-zone layout: gray top bar + white content card with rounded corner.
@@ -2024,7 +2029,7 @@ export function DetailView({
   }, [activeTab]);
   const [deletingChildren, setDeletingChildren] = useState(false);
 
-  const executeDetailProcess = useCallback(async (process, paramValues = {}, explicitRows) => {
+  const executeDetailProcess = useCallback(async (process, paramValues = {}, explicitRows = undefined) => {
     const rows = explicitRows || selectedChildRows;
     if (rows.length === 0) return;
     const fieldValues = {};
@@ -3133,7 +3138,7 @@ export function DetailView({
                       className={`${btnClass} ${saveBtnCls}`.trim()}
                       disabled={executingDetailProcess}
                       onClick={() => {
-                        const rows = selectedChildRows.length > 0 ? selectedChildRows : (selectedLine ? [selectedLine] : []);
+                        const rows = resolveDetailRows(selectedChildRows, selectedLine);
                         if (rows.length === 0) return;
                         if (p.params?.some(param => !param.hidden)) {
                           setDetailParamDialogProcess({ ...p, _rows: rows });
