@@ -2031,7 +2031,6 @@ export function DetailView({
 
   const executeDetailProcess = useCallback(async (process, paramValues = {}, explicitRows = undefined) => {
     const rows = explicitRows || selectedChildRows;
-    if (rows.length === 0) return;
     const fieldValues = {};
     for (const p of (process.params ?? [])) {
       if (p.hidden) fieldValues[p.key] = p.value;
