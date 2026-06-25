@@ -46,41 +46,34 @@ const RUN_INTEGRATION = process.env.E2E_USE_MOCK === '0' && !!(process.env.E2E_P
 /** Wait for detail view fully loaded (spinner gone, data fetched). */
 async function waitForDetailReady(page) {
   await expect(page.getByTestId('detail-view')).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText(/cargando|loading/i)).toBeHidden({ timeout: 30_000 }).catch(() => {});
+  // Only wait for spinner to disappear if it's actually visible
+  const spinner = page.getByText(/cargando|loading/i);
+  if (await spinner.isVisible({ timeout: 500 }).catch(() => false)) {
+    await expect(spinner).toBeHidden({ timeout: 10_000 });
+  }
 }
 
-/** Wait for a save API response to complete. */
-async function waitForSaveResponse(page) {
-  await page.waitForResponse(
+/**
+ * Start listening for a save API response BEFORE triggering the action.
+ * Returns a promise — await it AFTER the action (click/Enter/Tab).
+ */
+function expectSaveResponse(page) {
+  return page.waitForResponse(
     (resp) => resp.url().includes('/sws/neo/') && ['POST', 'PUT', 'PATCH'].includes(resp.request().method()) && resp.status() < 500,
     { timeout: 15_000 },
   ).catch(() => {});
 }
 
-/** Wait for a DELETE API response to complete. */
-async function waitForDeleteResponse(page) {
-  await page.waitForResponse(
+/**
+ * Start listening for a DELETE API response BEFORE triggering the action.
+ */
+function expectDeleteResponse(page) {
+  return page.waitForResponse(
     (resp) => resp.url().includes('/sws/neo/') && resp.request().method() === 'DELETE' && resp.status() < 500,
     { timeout: 15_000 },
   ).catch(() => {});
 }
 
-/** Wait for list data to load after navigating or filtering. */
-async function waitForListData(page) {
-  await page.waitForResponse(
-    (resp) => resp.url().includes('/sws/neo/') && resp.request().method() === 'GET' && resp.status() === 200,
-    { timeout: 15_000 },
-  ).catch(() => {});
-}
-
-/** Wait briefly for any in-flight API request to settle after a tab click or navigation. */
-async function waitForSettled(page) {
-  // Returns as soon as the next /sws/ response arrives, or after 1s if nothing was triggered.
-  await page.waitForResponse(
-    (resp) => resp.url().includes('/sws/') && resp.status() < 500,
-    { timeout: 1_000 },
-  ).catch(() => {});
-}
 
 test.describe('Contacts Integration — Full journey', () => {
   test.skip(!RUN_INTEGRATION, 'Requires real Etendo backend (E2E_USE_MOCK=0 + E2E_PASSWORD)');
@@ -115,8 +108,9 @@ test.describe('Contacts Integration — Full journey', () => {
     // We do NOT fill any fields to avoid triggering auto-save on blur
     const saveBtnFirst = page.getByTestId('action-save')
       .or(page.getByRole('button', { name: /^guardar$|^save$/i }));
+    const saveP1 = expectSaveResponse(page);
     await saveBtnFirst.first().click();
-    await waitForSaveResponse(page);
+    await saveP1;
 
     // Should stay on /new or show an error toast (server-side validation)
     const stayedOnNew = /\/contacts\/new/.test(page.url());
@@ -212,8 +206,8 @@ test.describe('Contacts Integration — Full journey', () => {
     await lastNameInput.fill(lastName);
     await page.keyboard.press('Tab');
 
-    // Wait for the debounced auto-save to fire and complete
-    await waitForSaveResponse(page);
+    // Let the debounced auto-save fire — verified by reload below
+    await page.waitForTimeout(1_500);
 
     // Reload and verify persistence
     await page.goto(contactAUrl);
@@ -234,8 +228,9 @@ test.describe('Contacts Integration — Full journey', () => {
     // Restore the original Razon Social so we can find it in the list later
     await razonSocialAfterToggle.clear();
     await razonSocialAfterToggle.fill(CONTACT_A);
+    const saveToggle = expectSaveResponse(page);
     await page.keyboard.press('Tab');
-    await waitForSaveResponse(page);
+    await saveToggle;
 
     // ═══════════════════════════════════════════════════════════════════════
     // PART 4: Financial tab — credit limit edit, persistence on reload
@@ -253,8 +248,9 @@ test.describe('Contacts Integration — Full journey', () => {
       await creditInput.fill(String(newCreditValue));
 
       // Blur to trigger save
+      const saveCreditP = expectSaveResponse(page);
       await financialTab.click();
-      await waitForSaveResponse(page);
+      await saveCreditP;
 
       await expect(async () => {
         expect(Number(await creditInput.inputValue())).toBe(newCreditValue);
@@ -290,7 +286,6 @@ test.describe('Contacts Integration — Full journey', () => {
       .or(page.getByRole('button', { name: /cuenta.*banc|bank.*account/i }));
     await expect(bankTab.first()).toBeVisible({ timeout: 5_000 });
     await bankTab.first().click();
-    await waitForSettled(page);
 
     // Read the bank account count from the tab badge (e.g. "Cuenta Bancaria 1")
     const bankTabText = await bankTab.first().textContent();
@@ -325,6 +320,8 @@ test.describe('Contacts Integration — Full journey', () => {
         await expect(firstOption).toBeVisible({ timeout: 2_000 });
         await firstOption.click();
       }
+      // Ensure dropdown is closed before proceeding
+      await expect(page.locator('[role="option"]')).toBeHidden({ timeout: 3_000 }).catch(() => {});
     }
 
     // Fill account number if visible (optional — not all configs expose this field)
@@ -336,14 +333,14 @@ test.describe('Contacts Integration — Full journey', () => {
 
     // Submit the inline form
     // Submit — press Enter (UI says "Enter o clic fuera para guardar")
+    const saveBankP = expectSaveResponse(page);
     await page.keyboard.press('Enter');
-
-    await waitForSaveResponse(page);
+    await saveBankP;
 
     // Verify no error toast appeared
     const bankError = page.locator('[role="status"], [data-sonner-toast], [class*="toast"]')
       .filter({ hasText: /error/i });
-    const hadBankError = await bankError.first().isVisible({ timeout: 2_000 }).catch(() => false);
+    const hadBankError = await bankError.first().isVisible({ timeout: 500 }).catch(() => false);
 
     if (!hadBankError) {
       // Verify the bank row appeared (no reload — save response 200 confirms persistence)
@@ -363,10 +360,10 @@ test.describe('Contacts Integration — Full journey', () => {
       if (await deleteDialog.isVisible({ timeout: 3_000 }).catch(() => false)) {
         const deleteConfirm = page.getByTestId('confirm-delete-confirm')
           .or(deleteDialog.getByRole('button', { name: /delete|eliminar|confirm/i }));
+        const delBankP = expectDeleteResponse(page);
         await deleteConfirm.first().click();
+        await delBankP;
       }
-
-      await waitForDeleteResponse(page);
       await expect(page.getByText(`E2E Bank ${ts}`)).toHaveCount(0, { timeout: 5_000 });
     }
 
@@ -381,7 +378,6 @@ test.describe('Contacts Integration — Full journey', () => {
       .or(page.getByRole('button', { name: /direcci[oó]n|address/i }));
     await expect(addressTab.first()).toBeVisible({ timeout: 5_000 });
     await addressTab.first().click();
-    await waitForSettled(page);
 
     // Read the address count from the tab badge
     const addrTabText = await addressTab.first().textContent();
@@ -432,13 +428,13 @@ test.describe('Contacts Integration — Full journey', () => {
 
     // Click Guardar in the address modal
     const modalGuardar = page.getByRole('button', { name: /^guardar$/i }).last();
+    const saveAddrP = expectSaveResponse(page);
     await modalGuardar.click();
-
-    await waitForSaveResponse(page);
+    await saveAddrP;
 
     const addrError = page.locator('[role="status"], [data-sonner-toast], [class*="toast"]')
       .filter({ hasText: /error/i });
-    const hadAddrError = await addrError.first().isVisible({ timeout: 2_000 }).catch(() => false);
+    const hadAddrError = await addrError.first().isVisible({ timeout: 500 }).catch(() => false);
 
     // Address verification — no reload needed, save response confirms persistence
 
@@ -453,7 +449,6 @@ test.describe('Contacts Integration — Full journey', () => {
     const contactPersonTab = page.getByTestId('tab-contact');
     await expect(contactPersonTab.first()).toBeVisible({ timeout: 5_000 });
     await contactPersonTab.first().click();
-    await waitForSettled(page);
 
     // Read the contact person count from the tab badge
     const ctTabText = await contactPersonTab.first().textContent();
@@ -476,13 +471,13 @@ test.describe('Contacts Integration — Full journey', () => {
     await ctNameField.fill(`E2E Person ${ts}`);
 
     // Submit — press Enter (UI says "Enter o clic fuera para guardar")
+    const saveCtP = expectSaveResponse(page);
     await page.keyboard.press('Enter');
-
-    await waitForSaveResponse(page);
+    await saveCtP;
 
     const ctError = page.locator('[role="status"], [data-sonner-toast], [class*="toast"]')
       .filter({ hasText: /error/i });
-    const hadCtError = await ctError.first().isVisible({ timeout: 2_000 }).catch(() => false);
+    const hadCtError = await ctError.first().isVisible({ timeout: 500 }).catch(() => false);
 
     // Contact person verification — no reload needed, save response confirms persistence
 
@@ -547,18 +542,15 @@ test.describe('Contacts Integration — Full journey', () => {
 
     // Empresas filter — Contact B is Empresa, should be visible
     await empresasBtn.first().click();
-    await waitForListData(page);
-    await expect(rows.filter({ hasText: CONTACT_B }).first()).toBeVisible({ timeout: 5_000 });
+    await expect(rows.filter({ hasText: CONTACT_B }).first()).toBeVisible({ timeout: 10_000 });
 
     // Personas filter — Contact B (Empresa) should not appear
     await personasBtn.first().click();
-    await waitForListData(page);
-    await expect(rows.filter({ hasText: CONTACT_B })).toHaveCount(0, { timeout: 5_000 });
+    await expect(rows.filter({ hasText: CONTACT_B })).toHaveCount(0, { timeout: 10_000 });
 
     // Todos restores full list
     await todosBtn.first().click();
-    await waitForListData(page);
-    await expect(rows.filter({ hasText: CONTACT_B }).first()).toBeVisible({ timeout: 5_000 });
+    await expect(rows.filter({ hasText: CONTACT_B }).first()).toBeVisible({ timeout: 10_000 });
 
     // ═══════════════════════════════════════════════════════════════════════
     // PART 8: Bulk delete — select both created contacts, delete, verify
