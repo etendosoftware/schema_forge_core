@@ -757,8 +757,10 @@ function resolveSendDocumentConfig(windowConfig, allEntityFields) {
   const sdAllowEmail = sendDocumentOverride?.allowEmail !== false;
   // When explicitly disabled via decisions.json (sendDocument.enabled: false), emit
   // the object so ListView receives sendDocument != null and skips its documentNo
-  // auto-detection heuristic — otherwise the envelope button would re-appear.
-  if (!sdEnabled) return { enabled: false };
+  // auto-detection heuristic — otherwise the envelope button would re-appear on
+  // windows with a documentNo column. Non-documental windows (no override, no
+  // documentNo) return null so they stay transparent to the heuristic.
+  if (!sdEnabled) return sendDocumentOverride != null ? { enabled: false } : null;
   const sendDocument = { enabled: true, allowEmail: sdAllowEmail };
   // ETP-4226 — recipient-edit policy overrides pass through verbatim so
   // ListView can forward them to SendDocumentModal as `sendPolicy`.
@@ -1609,7 +1611,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // filled in `data`. Windows can still override with their own addLineGuard
   // prop for more complex business rules.
   const requiredHeaderFieldNames = allEntityFields
-    .filter(f => f.required && f.form && f.visibility !== 'discarded' && f.visibility !== 'system' && f.visibility !== 'readOnly')
+    .filter(f => f.required && f.form && f.visibility !== 'discarded' && f.visibility !== 'system')
     .map(f => f.name);
   // Built without a nested template literal (Sonar S4624): plain concat
   // around each name keeps the outer template flat.

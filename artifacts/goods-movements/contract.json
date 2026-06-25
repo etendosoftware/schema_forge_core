@@ -1,8 +1,8 @@
 {
-  "version": "0.13.0",
+  "version": "0.14.0",
   "generatedAt": "2026-04-29T19:05:48.778Z",
-  "updatedAt": "2026-06-25T11:50:43.361Z",
-  "checksum": "41015b8a33125f00",
+  "updatedAt": "2026-06-25T13:01:11.979Z",
+  "checksum": "200821b192ba1d88",
   "frontendContract": {
     "window": {
       "id": "170",
@@ -134,7 +134,7 @@
             "type": "string",
             "tsType": "string",
             "visibility": "readOnly",
-            "required": true,
+            "required": false,
             "grid": true,
             "form": true,
             "sourceRequired": true,
@@ -611,7 +611,7 @@
             "column": "DocumentNo",
             "type": "string",
             "visibility": "readOnly",
-            "required": true
+            "required": false
           },
           {
             "name": "processed",

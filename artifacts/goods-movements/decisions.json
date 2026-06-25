@@ -101,6 +101,8 @@
           "grid": true,
           "section": "principal",
           "readOnlyLogic": null,
+          "required": false,
+          "reason": "Sequence assigned at process time (empty in drafts) — excluded from the add-line gate so + Add line works before processing",
           "gridOrder": 3
         },
         "processNow": {
