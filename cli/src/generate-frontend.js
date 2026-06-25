@@ -1682,6 +1682,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
   const customTabsAfterBottom = windowConfig.customTabsAfterBottom ?? false;
   const hidePrint = windowConfig.hidePrint ?? false;
+  const hideCreate = windowConfig.hideCreate ?? false;
   const hideSaveStatuses = windowConfig.hideSaveStatuses ?? [];
   const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
   const hideMoreDetails = windowConfig.hideMoreDetails ?? false;
@@ -1968,6 +1969,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const lineConfigProp = wrapIf('\n        lineConfig={', lineConfigSymbol, '}');
   // ListView toolbar props
   const hidePrintListProp = fragmentIf(hidePrint, '\n      hidePrint');
+  const hideCreateProp = fragmentIf(hideCreate, '\n      hideCreate');
   const hideMoreMenuListProp = fragmentIf(hideMoreMenu, '\n      hideMoreMenu');
   const hideListFiltersProp = fragmentIf(hideListFilters, '\n      hideListFilters');
   const hideLinkProp = fragmentIf(hideLink, '\n      hideLink');
@@ -2214,7 +2216,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${fragm
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideCreateProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `
