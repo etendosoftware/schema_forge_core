@@ -23,9 +23,12 @@ test-all-coverage: ## Run ALL unit tests (Node + Vitest) with coverage reports
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/artifacts-lcov.info 'artifacts/**/__tests__/*.test.js'
 	@echo "=== Vitest (React components) ==="
 	cd tools/app-shell && npx vitest run --coverage && sed 's|^SF:src/|SF:tools/app-shell/src/|' coverage/vitest/lcov.info > ../../coverage/vitest-lcov.info
+	@echo "=== Merging LCOV reports ==="
+	npx lcov-result-merger 'coverage/*-lcov.info' coverage/merged-lcov.info
 	@echo ""
 	@echo "Coverage reports saved in coverage/"
-	@echo "  cli-lcov.info, appshell-lcov.info, appshell-test-lcov.info, artifacts-lcov.info, vitest-lcov.info"
+	@echo "  Individual: cli-lcov.info, appshell-lcov.info, appshell-test-lcov.info, artifacts-lcov.info, vitest-lcov.info"
+	@echo "  Merged:     merged-lcov.info (used by SonarQube)"
 
 test-ci: ## Run all unit tests and write JUnit XML reports (CI mode)
 	@mkdir -p test-results
@@ -73,6 +76,8 @@ test-ci-coverage: ## Run all unit tests with JUnit XML reports + LCOV coverage (
 	  --reporter=junit \
 	  --outputFile=../../test-results/vitest.xml \
 	  && cp coverage/vitest/lcov.info ../../coverage/vitest-lcov.info
+	@echo "=== Merging LCOV reports ==="
+	npx lcov-result-merger 'coverage/*-lcov.info' coverage/merged-lcov.info
 
 validate-pipeline: ## Validate pipeline completeness across all artifacts
 	node cli/src/validate-pipeline.js --format=text
