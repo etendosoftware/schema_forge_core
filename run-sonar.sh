@@ -248,6 +248,12 @@ rm -rf .scannerwork
 # ── Step 0.5: Run coverage if requested ────────────────────────────────────
 if [[ "$RUN_COVERAGE" == "true" ]]; then
   echo "==> Running unit tests with coverage..."
+  # Ensure Node 20 is active (coverage flags require Node >= 18.15; NVM default may be older).
+  if [ -s "${NVM_DIR:-$HOME/.nvm}/nvm.sh" ]; then
+    # shellcheck source=/dev/null
+    source "${NVM_DIR:-$HOME/.nvm}/nvm.sh"
+    nvm use 20 --silent 2>/dev/null || true
+  fi
   make test-all-coverage
 fi
 
