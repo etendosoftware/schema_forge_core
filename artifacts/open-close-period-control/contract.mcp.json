@@ -1,7 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-06-25T12:12:33.694Z",
-  "contractChecksum": "a65bdd3cba9efd07",
+  "updatedAt": "2026-06-25T13:40:18.031Z",
+  "contractChecksum": "1f3d3c99ecfa04a3",
   "apiPrediction": {
     "specName": "open-close-period-control",
     "baseUrl": "/sws/neo/open-close-period-control",
@@ -125,8 +126,8 @@
           "Document has pending lines or missing required fields",
           "User lacks permission to execute the action"
         ],
-        "processId": "A832A5DA28FB4BB391BDE883E928DFC5",
-        "processType": "obuiapp"
+        "processId": "167",
+        "processType": "classic"
       },
       {
         "name": "processNow",
@@ -205,8 +206,8 @@
           "Document has pending lines or missing required fields",
           "User lacks permission to execute the action"
         ],
-        "processId": "A832A5DA28FB4BB391BDE883E928DFC5",
-        "processType": "obuiapp"
+        "processId": "168",
+        "processType": "classic"
       }
     ],
     "queryParams": {
@@ -366,5 +367,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "bee45e5a664b9527"
+  "checksum": "72f6d44b9b98a796"
 }

@@ -89,7 +89,9 @@
         },
         "openClose": {
           "form": true,
-          "visibility": "editable"
+          "visibility": "editable",
+          "processId": "167",
+          "processType": "classic"
         },
         "active": {
           "visibility": "discarded"
@@ -156,7 +158,9 @@
         },
         "openClose": {
           "form": true,
-          "visibility": "editable"
+          "visibility": "editable",
+          "processId": "168",
+          "processType": "classic"
         },
         "calendar": {
           "visibility": "discarded"

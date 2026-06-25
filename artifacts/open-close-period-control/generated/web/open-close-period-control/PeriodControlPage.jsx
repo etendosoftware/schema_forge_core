@@ -116,8 +116,8 @@ export const api = {
       "field": "openClose",
       "column": "OpenClose",
       "url": "/sws/neo/open-close-period-control/periodControl/{id}/action/openClose",
-      "processId": "A832A5DA28FB4BB391BDE883E928DFC5",
-      "processType": "obuiapp"
+      "processId": "167",
+      "processType": "classic"
     },
     {
       "entity": "documents",
@@ -132,8 +132,8 @@ export const api = {
       "field": "openClose",
       "column": "OpenClose",
       "url": "/sws/neo/open-close-period-control/documents/{id}/action/openClose",
-      "processId": "A832A5DA28FB4BB391BDE883E928DFC5",
-      "processType": "obuiapp"
+      "processId": "168",
+      "processType": "classic"
     }
   ],
   "queryParams": {
