@@ -1659,7 +1659,7 @@ function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, deta
         const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
         const defaultValuePart = (!skipCheckboxDefault && f.defaultValue) ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
         const optionsPart = (type === 'select' && f.enumValues?.length)
-          ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
+          ? `, options: [${f.enumValues.map(buildEnumOptionStr).join(', ')}]`
           : '';
         const lookupDrawerPart = f.lookupDrawer ? `, lookupDrawer: '${String(f.lookupDrawer).replace(/'/g, "\\'")}'` : '';
         const lookupTitlePart = f.lookupTitle ? `, lookupTitle: '${String(f.lookupTitle).replace(/'/g, "\\'")}'` : '';
@@ -1678,6 +1678,49 @@ function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, deta
         : null;
       return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs };
     });
+}
+
+function buildEnumOptionStr(o) {
+  return `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`;
+}
+
+function buildSecondaryTabImport(t, specName) {
+  if (t.isPanelTab && specName) {
+    return `import ${t.PanelName} from ${resolveCustomImport(specName, t.PanelName)};`;
+  }
+  const formImportPath = (t.isCustomForm && specName)
+    ? resolveCustomImport(specName, t.FormName).replace(/'/g, '')
+    : `./${t.FormName}`;
+  const tableImportPath = (t.isCustomTable && specName)
+    ? resolveCustomImport(specName, t.TableName).replace(/'/g, '')
+    : `./${t.TableName}`;
+  const customModalImport = (t.isCustomAddModal && specName)
+    ? `\nimport ${t.CustomAddModalName} from ${resolveCustomImport(specName, t.CustomAddModalName)};`
+    : '';
+  if (t.isFormTab) {
+    return `import ${t.FormName} from '${formImportPath}';${customModalImport}`;
+  }
+  const formImport = (t.isCustomAddModal && !t.isCustomForm) ? '' : `\nimport ${t.FormName} from '${formImportPath}';`;
+  return `import ${t.TableName} from '${tableImportPath}';${formImport}${customModalImport}`;
+}
+
+function buildSecondaryTabPropEntry(t) {
+  const requireSavedPart = t.requireSavedRecord ? ', requireSavedRecord: true' : '';
+  const readOnlyLogicPart = t.readOnlyLogicJs
+    ? `, readOnlyLogic: (record) => ${t.readOnlyLogicJs}`
+    : '';
+  if (t.isFormTab) {
+    return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart} },`;
+  }
+  if (t.isPanelTab) {
+    return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart}${readOnlyLogicPart} },`;
+  }
+  const addLinePart = t.addLineEntries.length > 0
+    ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
+    : '';
+  const customAddModalPart = wrapIf(', customAddModal: ', t.CustomAddModalName);
+  const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
+  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart} },`;
 }
 
 function buildDetailProcessesForPage(detailEntity, contract, processOverrides) {
@@ -1858,46 +1901,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const secondaryTabDefs = resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, detailEntity, headerColumnMap, headerBooleanFields);
 
   const specName = contract.apiPrediction?.specName;
-  const secondaryTabsImports = secondaryTabDefs
-    .map(t => {
-      if (t.isPanelTab && specName) {
-        return `import ${t.PanelName} from ${resolveCustomImport(specName, t.PanelName)};`;
-      }
-      const formImportPath = (t.isCustomForm && specName)
-        ? resolveCustomImport(specName, t.FormName).replace(/'/g, '')
-        : `./${t.FormName}`;
-      const tableImportPath = (t.isCustomTable && specName)
-        ? resolveCustomImport(specName, t.TableName).replace(/'/g, '')
-        : `./${t.TableName}`;
-      const customModalImport = (t.isCustomAddModal && specName)
-        ? `\nimport ${t.CustomAddModalName} from ${resolveCustomImport(specName, t.CustomAddModalName)};`
-        : '';
-      if (t.isFormTab) {
-        return `import ${t.FormName} from '${formImportPath}';${customModalImport}`;
-      }
-      const formImport = (t.isCustomAddModal && !t.isCustomForm) ? '' : `\nimport ${t.FormName} from '${formImportPath}';`;
-      return `import ${t.TableName} from '${tableImportPath}';${formImport}${customModalImport}`;
-    })
-    .join('\n');
-
-  const secondaryTabsPropEntries = secondaryTabDefs.map(t => {
-    const requireSavedPart = t.requireSavedRecord ? ', requireSavedRecord: true' : '';
-    const readOnlyLogicPart = t.readOnlyLogicJs
-      ? `, readOnlyLogic: (record) => ${t.readOnlyLogicJs}`
-      : '';
-    if (t.isFormTab) {
-      return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart} },`;
-    }
-    if (t.isPanelTab) {
-      return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart}${readOnlyLogicPart} },`;
-    }
-    const addLinePart = t.addLineEntries.length > 0
-      ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
-      : '';
-    const customAddModalPart = wrapIf(', customAddModal: ', t.CustomAddModalName);
-    const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
-    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart} },`;
-  }).join('\n');
+  const secondaryTabsImports = secondaryTabDefs.map(t => buildSecondaryTabImport(t, specName)).join('\n');
+  const secondaryTabsPropEntries = secondaryTabDefs.map(t => buildSecondaryTabPropEntry(t)).join('\n');
 
   const secondaryTabsProp = wrapIf('\n        secondaryTabs={[\n', secondaryTabsPropEntries, '\n        ]}', secondaryTabDefs.length > 0);
 
