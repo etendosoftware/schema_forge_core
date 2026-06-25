@@ -39,6 +39,9 @@ const STEP = {
   FORM: 'form',
 };
 
+/** Stable keys for the bank-picker loading skeleton (avoids array-index keys, Sonar S6479). */
+const BANK_SKELETON_KEYS = Array.from({ length: 9 }, (_, i) => `bank-skeleton-${i}`);
+
 /** Curated country list for the bank picker dropdown (Salt Edge providers are fetched per country). */
 const BANK_COUNTRIES = [
   { code: 'ES', flag: '🇪🇸' },
@@ -417,9 +420,9 @@ function BankPicker({ ui, query, onQueryChange, onPick, onSkip }) {
             className="grid h-[424px] grid-cols-3 content-start gap-5"
             data-testid="new-account-bank-loading"
           >
-            {Array.from({ length: 9 }).map((_, i) => (
+            {BANK_SKELETON_KEYS.map((key) => (
               <div
-                key={i}
+                key={key}
                 className="flex h-[124px] flex-col items-start gap-3 rounded-xl border border-[#E8EAEF] bg-white p-4 shadow-[0_1px_2px_rgba(18,18,23,0.05)]"
               >
                 <Skeleton className="h-10 w-10 rounded-lg" data-testid="Skeleton__24760b" />
