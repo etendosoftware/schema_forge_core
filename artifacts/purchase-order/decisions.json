@@ -115,8 +115,7 @@
           }
         },
         "warehouse": {
-          "grid": false,
-          "form": false
+          "grid": false
         },
         "scheduledDeliveryDate": {
           "section": "principal",

@@ -1114,7 +1114,7 @@ export function getDetailContentContainerClassName({
   formScrollPaddingX = null,
   contentOverflow = 'auto',
 } = {}) {
-  const defaultOverflowCls = contentOverflow === 'hidden' ? 'overflow-hidden pb-2' : 'overflow-auto pb-2';
+  const defaultOverflowCls = contentOverflow === 'hidden' ? 'overflow-hidden' : 'overflow-auto pb-2';
   const overflowCls = linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : defaultOverflowCls;
   return `flex-1 min-h-0 min-w-0 ${overflowCls} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding, formScrollPaddingX)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`;
 }
