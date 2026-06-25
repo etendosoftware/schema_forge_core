@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Search, X, Loader2, Check, ChevronRight, ChevronDown, Warehouse } from 'lucide-react';
 import { useUI } from '@/i18n';
 import {
@@ -49,7 +49,7 @@ export default function InternalConsumptionProductSearchDrawer({
   const {
     query, setQuery,
     results,
-    loading, loadingMore, hasMore,
+    loading, loadingMore,
     inputRef, listRef, activeItemRef,
     doFetch, handleScroll,
   } = useProductSelectorFetch({
@@ -61,6 +61,8 @@ export default function InternalConsumptionProductSearchDrawer({
       setActiveIdx(-1);
       setExpandedProducts(new Set());
     },
+    onClose,
+    activeIdx,
   });
 
   // Reset drawer-specific state when the drawer opens.
@@ -137,19 +139,6 @@ export default function InternalConsumptionProductSearchDrawer({
       return next;
     });
   };
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e) => { if (e.key === 'Escape') { e.preventDefault(); onClose(); } };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [open, onClose]);
-
-  useEffect(() => {
-    if (activeIdx >= 0 && activeItemRef.current) {
-      activeItemRef.current.scrollIntoView({ block: 'nearest' });
-    }
-  }, [activeIdx, activeItemRef]);
 
   const handleSelect = (row) => {
     setSelectedKey(rowKey(row));

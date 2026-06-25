@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Search, X, Loader2, Check, ChevronRight, MapPin } from 'lucide-react';
 import { useUI } from '@/i18n';
 import {
@@ -66,7 +66,7 @@ export default function GoodsMovementsProductSearchDrawer({
   const {
     query, setQuery,
     results,
-    loading, loadingMore, hasMore,
+    loading, loadingMore,
     inputRef, listRef, activeItemRef,
     doFetch, handleScroll,
   } = useProductSelectorFetch({
@@ -75,6 +75,8 @@ export default function GoodsMovementsProductSearchDrawer({
     token,
     transform: filterStockRows,
     onFreshResults: () => setActiveIdx(-1),
+    onClose,
+    activeIdx,
   });
 
   // Reset drawer-specific state when the drawer opens.
@@ -83,19 +85,6 @@ export default function GoodsMovementsProductSearchDrawer({
     setSelectedKey(null);
     setActiveIdx(-1);
   }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e) => { if (e.key === 'Escape') { e.preventDefault(); onClose(); } };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [open, onClose]);
-
-  useEffect(() => {
-    if (activeIdx >= 0 && activeItemRef.current) {
-      activeItemRef.current.scrollIntoView({ block: 'nearest' });
-    }
-  }, [activeIdx, activeItemRef]);
 
   // Sort alphabetically by product name (locale-aware); rows of the same product stay
   // adjacent (Array.sort is stable, so generic + per-locator order within a product is kept).
