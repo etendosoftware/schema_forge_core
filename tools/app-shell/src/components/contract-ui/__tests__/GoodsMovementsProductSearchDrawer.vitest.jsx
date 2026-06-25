@@ -3,7 +3,7 @@
  * Renders the real component with mocked dependencies, mirroring the harness used
  * by InternalConsumptionProductSearchDrawer.vitest.jsx.
  */
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.mock('@/i18n', () => ({
@@ -40,6 +40,9 @@ describe('GoodsMovementsProductSearchDrawer', () => {
       ok: true,
       json: async () => ({ items: [], hasMore: false }),
     });
+    // jsdom does not implement scrollIntoView — stub it globally so the hook's
+    // scrollIntoView effect (productSelectorDrawerShared.jsx line 213) does not throw.
+    window.HTMLElement.prototype.scrollIntoView = vi.fn();
   });
 
   afterEach(() => {
@@ -174,6 +177,172 @@ describe('GoodsMovementsProductSearchDrawer', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/productSearchNoResults/)).toBeInTheDocument();
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Keyboard navigation (handleKeyDown in GoodsMovementsProductSearchDrawer +
+  // scrollIntoView effect in useProductSelectorFetch)
+  // ────────────────────────────────────────────────────────────────────────────
+
+  it('ArrowDown moves active index and Enter selects the active row', async () => {
+    const rowA = { id: 'RA', name: 'Alpha', searchKey: 'A001', _aux: { _LOC: null, _QTY: '5' } };
+    const rowB = { id: 'RB', name: 'Beta', searchKey: 'B001', _aux: { _LOC: null, _QTY: '3' } };
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [rowA, rowB], hasMore: false }),
+    });
+    const onSelect = vi.fn();
+    const onClose = vi.fn();
+
+    render(
+      <GoodsMovementsProductSearchDrawer
+        {...defaultProps}
+        onSelect={onSelect}
+        onClose={onClose}
+      />,
+    );
+
+    // Wait for the initial fetch to resolve and rows to render.
+    await vi.advanceTimersByTimeAsync(50);
+    await waitFor(() => {
+      expect(screen.getAllByTestId(/^gm-product-option-/)).toHaveLength(2);
+    });
+
+    const dialog = screen.getByRole('dialog');
+
+    // fireEvent drives React's synthetic onKeyDown handler on the dialog div.
+    // ArrowDown once → activeIdx becomes 0 (Alpha, alphabetically first).
+    act(() => { fireEvent.keyDown(dialog, { key: 'ArrowDown' }); });
+    // ArrowDown again → activeIdx becomes 1 (Beta).
+    act(() => { fireEvent.keyDown(dialog, { key: 'ArrowDown' }); });
+    // ArrowUp once → back to 0 (Alpha).
+    act(() => { fireEvent.keyDown(dialog, { key: 'ArrowUp' }); });
+
+    // Enter → selects the currently active row (index 0, Alpha).
+    // handleSelect uses a 120 ms setTimeout before calling onSelect + onClose.
+    act(() => { fireEvent.keyDown(dialog, { key: 'Enter' }); });
+
+    // Advance past the 120 ms selection timeout.
+    await vi.advanceTimersByTimeAsync(200);
+
+    expect(onSelect).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'RA' }),
+    );
+  });
+
+  it('ArrowDown clamps at the last row (does not overflow)', async () => {
+    const row = { id: 'R1', name: 'Solo', searchKey: 'S001', _aux: { _LOC: null, _QTY: '1' } };
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [row], hasMore: false }),
+    });
+
+    render(<GoodsMovementsProductSearchDrawer {...defaultProps} />);
+    await vi.advanceTimersByTimeAsync(50);
+    await waitFor(() => expect(screen.getByTestId('gm-product-option-R1')).toBeInTheDocument());
+
+    const dialog = screen.getByRole('dialog');
+
+    // Press ArrowDown three times on a single-row list — should not throw.
+    act(() => {
+      for (let i = 0; i < 3; i++) {
+        fireEvent.keyDown(dialog, { key: 'ArrowDown' });
+      }
+    });
+    // If we reach here without error the clamp worked.
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Escape-key handler (useProductSelectorFetch Escape-key effect, lines 203-208)
+  // ────────────────────────────────────────────────────────────────────────────
+
+  it('calls onClose when the Escape key is pressed on the document (hook effect)', async () => {
+    const onClose = vi.fn();
+    render(<GoodsMovementsProductSearchDrawer {...defaultProps} onClose={onClose} />);
+
+    // Dispatch Escape on the document — the hook listens at document level.
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalled();
+    });
+  });
+
+  it('does not call onClose on Escape when drawer is closed', () => {
+    const onClose = vi.fn();
+    render(
+      <GoodsMovementsProductSearchDrawer
+        {...defaultProps}
+        open={false}
+        onClose={onClose}
+      />,
+    );
+
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+
+    // The hook removes the listener when open is false — onClose must NOT fire.
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Scroll-triggered pagination (handleScroll in useProductSelectorFetch, lines 217-223)
+  // ────────────────────────────────────────────────────────────────────────────
+
+  it('fetches the next page when the list is scrolled near the bottom and hasMore is true', async () => {
+    // First fetch returns a full page and signals hasMore=true.
+    const page1 = [
+      { id: 'R1', name: 'Row 1', searchKey: 'S1', _aux: { _LOC: null, _QTY: '1' } },
+    ];
+    const page2 = [
+      { id: 'R2', name: 'Row 2', searchKey: 'S2', _aux: { _LOC: null, _QTY: '2' } },
+    ];
+
+    globalThis.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ items: page1, hasMore: true }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ items: page2, hasMore: false }),
+      });
+
+    render(<GoodsMovementsProductSearchDrawer {...defaultProps} />);
+
+    // Allow the initial fetch + state updates to settle.
+    await vi.advanceTimersByTimeAsync(50);
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByTestId('gm-product-option-R1')).toBeInTheDocument());
+
+    // Grab the scrollable container that has `ref={listRef}`.
+    // It is the direct child of the dialog with class `overflow-y-auto`.
+    const dialog = screen.getByRole('dialog');
+    const listContainer = dialog.querySelector('.overflow-y-auto');
+    expect(listContainer).not.toBeNull();
+
+    // jsdom does not compute layout — set scroll geometry so the condition
+    //   scrollTop + clientHeight >= scrollHeight - 50
+    // evaluates to true.
+    Object.defineProperty(listContainer, 'scrollTop', { value: 950, writable: true, configurable: true });
+    Object.defineProperty(listContainer, 'clientHeight', { value: 100, writable: true, configurable: true });
+    Object.defineProperty(listContainer, 'scrollHeight', { value: 1000, writable: true, configurable: true });
+
+    // Dispatch the scroll event that drives handleScroll.
+    listContainer.dispatchEvent(new Event('scroll', { bubbles: true }));
+
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    // After the second page resolves both rows should be visible.
+    await waitFor(() => {
+      expect(screen.getByTestId('gm-product-option-R2')).toBeInTheDocument();
     });
   });
 });

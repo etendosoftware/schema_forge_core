@@ -1,8 +1,8 @@
 {
-  "version": "0.12.0",
+  "version": "0.13.0",
   "generatedAt": "2026-04-29T19:05:48.778Z",
-  "updatedAt": "2026-06-24T23:25:54.776Z",
-  "checksum": "6bb9a6011014ffda",
+  "updatedAt": "2026-06-25T11:50:43.361Z",
+  "checksum": "41015b8a33125f00",
   "frontendContract": {
     "window": {
       "id": "170",
@@ -82,7 +82,12 @@
               "source": "@#Date@"
             },
             "defaultValue": "@#Date@",
-            "gridOrder": 1
+            "gridOrder": 1,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "movementDate",
@@ -1329,6 +1334,14 @@
         "description": "Read-only logic for 'movementDate' in movement should have evaluable flag"
       },
       {
+        "id": "t-readonlylogic-evaluable-movement-name",
+        "category": "readonlylogic-evaluable",
+        "entity": "movement",
+        "field": "name",
+        "runner": "node",
+        "description": "Read-only logic for 'name' in movement should have evaluable flag"
+      },
+      {
         "id": "t-readonlylogic-evaluable-movementLine-description",
         "category": "readonlylogic-evaluable",
         "entity": "movementLine",
@@ -1391,6 +1404,14 @@
         "field": "movementDate",
         "runner": "node",
         "description": "Read-only logic for 'movementDate' in movement should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-movement-name",
+        "category": "readonlylogic-valid",
+        "entity": "movement",
+        "field": "name",
+        "runner": "node",
+        "description": "Read-only logic for 'name' in movement should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-movementLine-description",
@@ -1876,15 +1897,15 @@
       }
     ],
     "summary": {
-      "total": 105,
+      "total": 107,
       "byCategory": {
         "action-endpoint": 3,
         "crud-flags": 2,
         "default-value-type": 4,
         "field-presence": 12,
         "field-type": 12,
-        "readonlylogic-evaluable": 8,
-        "readonlylogic-valid": 8,
+        "readonlylogic-evaluable": 9,
+        "readonlylogic-valid": 9,
         "rule-declared": 12,
         "searchable-filters": 3,
         "selector-endpoint": 4,
@@ -1892,7 +1913,7 @@
         "visibility": 2
       },
       "byRunner": {
-        "node": 105,
+        "node": 107,
         "junit": 0
       }
     }

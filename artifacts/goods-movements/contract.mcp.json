@@ -1,8 +1,8 @@
 {
-  "version": "0.12.0",
+  "version": "0.13.0",
   "generatedAt": "2026-04-29T19:05:48.778Z",
-  "updatedAt": "2026-06-24T18:49:32.875Z",
-  "contractChecksum": "6bb9a6011014ffda",
+  "updatedAt": "2026-06-25T11:50:43.361Z",
+  "contractChecksum": "41015b8a33125f00",
   "apiPrediction": {
     "specName": "goods-movements",
     "baseUrl": "/sws/neo/goods-movements",
@@ -208,6 +208,7 @@
         "fields": {
           "name": {
             "required": true,
+            "readOnlyLogic": "@Processed@='Y'",
             "defaultValue": "@#Date@"
           },
           "movementDate": {
@@ -338,5 +339,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "f80dc98b3ce1527e"
+  "checksum": "bbbddc989f520f20"
 }

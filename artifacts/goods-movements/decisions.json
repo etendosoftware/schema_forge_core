@@ -66,6 +66,7 @@
         "name": {
           "grid": true,
           "searchable": true,
+          "readOnlyLogic": "@Processed@='Y'",
           "gridOrder": 1
         },
         "movementDate": {
