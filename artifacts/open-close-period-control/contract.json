@@ -1,8 +1,8 @@
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "generatedAt": "2026-06-25T12:12:33.694Z",
-  "updatedAt": "2026-06-25T13:16:15.880Z",
-  "checksum": "1b464f48ffcf9ad0",
+  "updatedAt": "2026-06-25T13:23:07.406Z",
+  "checksum": "fc70abc5dcc7b39d",
   "frontendContract": {
     "window": {
       "id": "E66E701CCBA14B8BA480CBDE37C50D7A",
@@ -70,7 +70,7 @@
               }
             ],
             "badge": true,
-            "badgeVariants": {
+            "enumVariants": {
               "O": "green",
               "N": "neutral",
               "C": "neutral",
@@ -297,7 +297,7 @@
             ],
             "defaultValue": "N",
             "badge": true,
-            "badgeVariants": {
+            "enumVariants": {
               "O": "green",
               "N": "neutral",
               "C": "red",

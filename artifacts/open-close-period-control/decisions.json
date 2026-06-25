@@ -31,7 +31,7 @@
           "visibility": "readOnly",
           "badge": true,
           "columnType": "enum",
-          "badgeVariants": {
+          "enumVariants": {
             "O": "green",
             "N": "neutral",
             "C": "neutral",
@@ -139,7 +139,7 @@
           "visibility": "readOnly",
           "badge": true,
           "columnType": "enum",
-          "badgeVariants": {
+          "enumVariants": {
             "O": "green",
             "N": "neutral",
             "C": "red",
