@@ -287,13 +287,6 @@
           "windowId": "E66E701CCBA14B8BA480CBDE37C50D7A"
         },
         {
-          "name": "period-control-log",
-          "label": "Period Control Log",
-          "favname": "Period Control Log",
-          "windowId": "E56E701CCBA14B8BA480CBDE37C50D7A",
-          "hidden": true
-        },
-        {
           "name": "assets",
           "label": "Assets",
           "favname": "Assets",
