@@ -1,7 +1,8 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "generatedAt": "2026-06-25T12:12:33.694Z",
-  "checksum": "e65e74fca82c70cf",
+  "updatedAt": "2026-06-25T13:16:15.880Z",
+  "checksum": "1b464f48ffcf9ad0",
   "frontendContract": {
     "window": {
       "id": "E66E701CCBA14B8BA480CBDE37C50D7A",
@@ -12,6 +13,7 @@
       "hideCreate": true,
       "hideMoreMenu": true,
       "detailEntity": "documents",
+      "listSortBy": "periodNo asc",
       "labelOverrides": {
         "es_ES": {
           "Name": "Período",
@@ -44,6 +46,7 @@
             "required": false,
             "grid": true,
             "form": true,
+            "columnType": "enum",
             "enumValues": [
               {
                 "value": "C",
@@ -67,6 +70,13 @@
               }
             ],
             "badge": true,
+            "badgeVariants": {
+              "O": "green",
+              "N": "neutral",
+              "C": "neutral",
+              "P": "red",
+              "M": "orange"
+            },
             "gridOrder": 1
           },
           {
@@ -78,7 +88,7 @@
             "tsType": "string",
             "visibility": "readOnly",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": true,
             "sourceRequired": true,
             "reference": "Calendar",
@@ -266,6 +276,7 @@
               "type": "computed",
               "source": "N"
             },
+            "columnType": "enum",
             "enumValues": [
               {
                 "value": "C",
@@ -286,6 +297,12 @@
             ],
             "defaultValue": "N",
             "badge": true,
+            "badgeVariants": {
+              "O": "green",
+              "N": "neutral",
+              "C": "red",
+              "P": "red"
+            },
             "gridOrder": 2
           },
           {
@@ -530,6 +547,7 @@
       "hideCreate": true,
       "hideMoreMenu": true,
       "detailEntity": "documents",
+      "listSortBy": "periodNo asc",
       "labelOverrides": {
         "es_ES": {
           "Name": "Período",

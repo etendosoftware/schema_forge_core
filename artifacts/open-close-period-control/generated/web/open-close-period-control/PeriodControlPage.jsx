@@ -213,6 +213,7 @@ export default function PeriodControlPage({ windowName, recordId, ...props }) {
       hideMoreMenu
       labelOverrides={labelOverrides}
       rowQuickActions={{}}
+      listSortBy="periodNo asc"
       {...props}
     />
   );
