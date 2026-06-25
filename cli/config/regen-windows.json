@@ -39,6 +39,11 @@
       "menuName": "Monitor Verifactu"
     },
     {
+      "name": "open-close-period-control",
+      "windowId": "E66E701CCBA14B8BA480CBDE37C50D7A",
+      "menuName": "Open/Close Period Control"
+    },
+    {
       "name": "payment-in",
       "windowId": "E547CE89D4C04429B6340FFA44E70716"
     },
