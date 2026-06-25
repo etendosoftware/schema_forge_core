@@ -3139,7 +3139,6 @@ export function DetailView({
                       disabled={executingDetailProcess}
                       onClick={() => {
                         const rows = resolveDetailRows(selectedChildRows, selectedLine);
-                        if (rows.length === 0) return;
                         if (p.params?.some(param => !param.hidden)) {
                           setDetailParamDialogProcess({ ...p, _rows: rows });
                         } else {
