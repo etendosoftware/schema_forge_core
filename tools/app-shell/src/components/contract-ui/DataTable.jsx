@@ -26,6 +26,7 @@ import InternalConsumptionProductSearchDrawer from './InternalConsumptionProduct
 import { SelectorInput } from './SelectorInput.jsx';
 import { InlineSearchCombo } from './InlineSearchCombo.jsx';
 import RowQuickActions from './RowQuickActions.jsx';
+import { trackSearchResultSelected } from '@/lib/productUsageTelemetry.js';
 
 // Lookup drawer registry. Each entry is a drawer component keyed by the value
 // of a field's contract-level `lookupDrawer` property. Fields without that
@@ -1103,6 +1104,7 @@ function getRowClassName(onRowClick, onNavigate, isChecked, selectedRowBg, selec
  */
 export function DataTable({
   entity,
+  specName,
   columns = [],
   filters = [],
   data = [],
@@ -1322,6 +1324,21 @@ export function DataTable({
     });
   };
 
+  const handleRowActivation = useCallback((row, idx) => {
+    if (hasActiveFilter) {
+      trackSearchResultSelected({
+        entity,
+        specName,
+        source: hasColumnFilter ? 'table_filter' : 'table_search',
+        type: hasColumnFilter ? 'filter' : 'search',
+        position: idx + 1,
+      });
+    }
+    if (onRowClick) onRowClick(row);
+    else if (onNavigate) onNavigate(row);
+    else onRowSelect?.(row);
+  }, [entity, specName, hasActiveFilter, hasColumnFilter, onRowClick, onNavigate, onRowSelect]);
+
   const quickActionsEnabled = isQuickActionsEnabled(rowQuickActions);
   const legacyDeleteEnabled = !!onDeleteRow && (hoverRowActions || !quickActionsEnabled);
   const deleteCol = oneIfTrue(legacyDeleteEnabled);
@@ -1454,9 +1471,7 @@ export function DataTable({
                     data-row-status={row.documentStatus}
                     onClick={() => {
                       if (editingRowId === row.id) return;
-                      if (onRowClick) onRowClick(row);
-                      else if (onNavigate) onNavigate(row);
-                      else onRowSelect?.(row);
+                      handleRowActivation(row, idx);
                     }}
                     className={getRowClassName(onRowClick, onNavigate, isChecked, selectedRowBg, selectedId, row, isSelectedLine)}
                   >
@@ -1516,8 +1531,7 @@ export function DataTable({
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (onEditRow) { onEditRow(row); }
-                                else if (onNavigate) { onNavigate(row); }
-                                else { onRowClick?.(row); }
+                                else { handleRowActivation(row, idx); }
                               }}
                               className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 h-8 w-8 flex items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9] transition-all"
                               aria-label={ui('edit')}

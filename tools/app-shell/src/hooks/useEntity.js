@@ -4,6 +4,12 @@ import { translateBackendError } from '@/lib/backendErrors.js';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
+import {
+    isCompletionProcess,
+    trackDocumentCompleted,
+    trackRecordCreated,
+    trackRecordUpdated,
+} from '@/lib/productUsageTelemetry.js';
 
 function buildHeaders(token) {
     let locale = 'es_ES';
@@ -493,6 +499,7 @@ export function useEntity(entity, childEntity, {
     skipListFetch = false,
     trailingFilter = null,
     refetchAfterSave = false,
+    specName = null,
 }) {
     const { logout } = useAuth();
     const ui = useUI();
@@ -865,6 +872,11 @@ export function useEntity(entity, childEntity, {
                 setSaveError(null);
                 setFieldErrors({});
                 showSaveSuccessToast(silent, isNew, ui);
+                if (isNew) {
+                    trackRecordCreated({ entity, specName });
+                } else {
+                    trackRecordUpdated({ entity, specName });
+                }
                 return saved;
             } else {
                 await handleSaveErrorResponse(res, ui, setFieldErrors, setSaveError);
@@ -878,7 +890,7 @@ export function useEntity(entity, childEntity, {
         } finally {
             setIsSaving(false);
         }
-    }, [editing, selected, apiBaseUrl, entity, refetchAfterSave, token, ui]);
+    }, [editing, selected, apiBaseUrl, entity, specName, refetchAfterSave, token, ui]);
 
     const handleDelete = useCallback(async () => {
         if (!selected?.id) return;
@@ -980,6 +992,12 @@ export function useEntity(entity, childEntity, {
             return null;
         }
         toast.success(ui('recordProcessed'));
+        trackDocumentCompleted({
+            entity,
+            specName,
+            source: 'detail_view',
+            operation: 'complete',
+        });
         refresh();
         // Fetch updated record and update selected state so the detail view reflects the new status
         try {
@@ -993,7 +1011,7 @@ export function useEntity(entity, childEntity, {
         } catch { /* ignore, fall back to saved */
         }
         return saved;
-    }, [handleSave, apiBaseUrl, entity, token, refresh, ui]);
+    }, [handleSave, apiBaseUrl, entity, specName, token, refresh, ui]);
 
     const handleProcess = useCallback(async (process, paramValues = {}) => {
         if (!selected?.id) return;
@@ -1022,6 +1040,14 @@ export function useEntity(entity, childEntity, {
                         recordId: selected.id
                     }
                 }));
+                if (isCompletionProcess(process)) {
+                    trackDocumentCompleted({
+                        entity,
+                        specName,
+                        source: 'process_action',
+                        operation: 'complete',
+                    });
+                }
                 fetchById(selected.id);
                 refresh();
             } else {
@@ -1031,7 +1057,7 @@ export function useEntity(entity, childEntity, {
         } catch (err) {
             toast.error(err?.message || 'Network error');
         }
-    }, [selected, entity, apiBaseUrl, token, refresh, fetchById, ui]);
+    }, [selected, entity, specName, apiBaseUrl, token, refresh, fetchById, ui]);
 
     // Prime the hook state with a freshly-saved record so consumers (DetailView) can
     // navigate /new → /:id without triggering a redundant GET /<entity>/:id. The POST
