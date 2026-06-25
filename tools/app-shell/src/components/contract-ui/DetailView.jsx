@@ -1467,6 +1467,7 @@ export function DetailView({
   statusField,
   extraBadges = [],
   processes = [],
+  detailProcesses = [],
   addLineFields = { entry: [], derived: [] },
   catalogs: staticCatalogs,
   api,
@@ -2022,6 +2023,52 @@ export function DetailView({
     setSecondaryBarClosing({});
   }, [activeTab]);
   const [deletingChildren, setDeletingChildren] = useState(false);
+
+  const executeDetailProcess = useCallback(async (process, paramValues = {}, explicitRows) => {
+    const rows = explicitRows || selectedChildRows;
+    if (rows.length === 0) return;
+    const fieldValues = {};
+    for (const p of (process.params ?? [])) {
+      if (p.hidden) fieldValues[p.key] = p.value;
+    }
+    Object.assign(fieldValues, paramValues);
+    setExecutingDetailProcess(true);
+    try {
+      const results = await Promise.allSettled(
+        rows.map(row => {
+          const url = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
+            || `${apiBaseUrl}/${detailEntity}/${row.id}`;
+          return fetch(`${url}/action/${process.columnName ?? process.name}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ fieldValues }),
+          }).then(res => ({ res, row }));
+        })
+      );
+      let ok = 0;
+      for (const r of results) {
+        if (r.status === 'fulfilled' && r.value.res.ok) ok++;
+      }
+      setSelectedChildRows([]);
+      if (ok > 0) {
+        toast.success(ui('processCompletedCount', { count: ok }) !== 'processCompletedCount'
+          ? ui('processCompletedCount', { count: ok })
+          : `${process.label || process.name}: ${ok} record(s) processed`);
+        hook.fetchById?.(hook.selected?.id);
+        hook.refresh?.();
+      }
+      const failed = results.length - ok;
+      if (failed > 0) toast.error(`${failed} record(s) failed`);
+    } catch (err) {
+      toast.error(err?.message || 'Network error');
+    } finally {
+      setExecutingDetailProcess(false);
+    }
+  }, [selectedChildRows, api, detailEntity, apiBaseUrl, token, hook, ui]);
+
   const [lineEdits, setLineEdits] = useState(null);
   const [lineEditColumns, setLineEditColumns] = useState({});
 
@@ -2709,6 +2756,8 @@ export function DetailView({
   const [activePrimaryTab, setActivePrimaryTab] = useState(primaryTabs?.[0]?.key ?? 'general');
   const [notesFocused, setNotesFocused] = useState(false);
   const [paramDialogProcess, setParamDialogProcess] = useState(null);
+  const [detailParamDialogProcess, setDetailParamDialogProcess] = useState(null);
+  const [executingDetailProcess, setExecutingDetailProcess] = useState(false);
 
   const othersRef = useRef(null);
 
@@ -3071,6 +3120,33 @@ export function DetailView({
                   );
                 })}
 
+              {/* Detail entity process buttons — visible when child rows are selected or a single line is clicked */}
+              {!isNew && detailProcesses.length > 0 && (selectedChildRows.length > 0 || selectedLine) && detailProcesses
+                .map(p => {
+                  const isPrimary = p.style === 'positive';
+                  const btnClass = getButtonClass(salesTheme, p, isPrimary);
+                  return (
+                    <Button
+                      key={`detail-${p.name}`}
+                      variant="outline"
+                      size="default"
+                      className={`${btnClass} ${saveBtnCls}`.trim()}
+                      disabled={executingDetailProcess}
+                      onClick={() => {
+                        const rows = selectedChildRows.length > 0 ? selectedChildRows : (selectedLine ? [selectedLine] : []);
+                        if (rows.length === 0) return;
+                        if (p.params?.some(param => !param.hidden)) {
+                          setDetailParamDialogProcess({ ...p, _rows: rows });
+                        } else {
+                          executeDetailProcess(p, {}, rows);
+                        }
+                      }}
+                      data-testid="Button__detail-process">
+                      {tMenu(p.label) || p.label}
+                    </Button>
+                  );
+                })}
+
               {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted
                 && renderSaveActions(saveActionParams)}
             </div>
@@ -3084,6 +3160,16 @@ export function DetailView({
           onConfirm={paramValues => {
             hook.handleProcess?.(paramDialogProcess, paramValues);
             setParamDialogProcess(null);
+          }}
+        />
+
+        <ProcessParamDialog
+          open={detailParamDialogProcess !== null}
+          onOpenChange={open => { if (!open) setDetailParamDialogProcess(null); }}
+          process={detailParamDialogProcess}
+          onConfirm={paramValues => {
+            executeDetailProcess(detailParamDialogProcess, paramValues, detailParamDialogProcess?._rows);
+            setDetailParamDialogProcess(null);
           }}
         />
 
@@ -3370,13 +3456,31 @@ export function DetailView({
                             <div className={getLinesContainerClassName(linesLayout, embedded)}>
                               {/* Table + add button */}
                               <div className="flex-1 min-w-0">
-                                {/* Bulk delete bar (classic only) */}
-                                {isBulkDeleteBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows) && (
+                                {/* Bulk action bar: delete + detail processes (classic only) */}
+                                {(isBulkDeleteBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows)
+                                  || (detailProcesses.length > 0 && selectedChildRows.length > 0 && linesLayout !== 'inlineEditable')) && (
                                   <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-lg bg-muted/60 border border-border/40">
                                     <span className="text-sm font-medium text-foreground">
                                       {ui('selected', { count: selectedChildRows.length })}
                                     </span>
                                     <div className="flex items-center gap-2">
+                                      {detailProcesses.map(p => (
+                                        <button
+                                          key={p.name}
+                                          disabled={executingDetailProcess}
+                                          onClick={() => {
+                                            if (p.params?.some(param => !param.hidden)) {
+                                              setDetailParamDialogProcess({ ...p, _rows: [...selectedChildRows] });
+                                            } else {
+                                              executeDetailProcess(p);
+                                            }
+                                          }}
+                                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-primary text-primary hover:bg-primary/10 disabled:opacity-50 transition-colors"
+                                        >
+                                          {executingDetailProcess ? ui('loading') : (tMenu(p.label) || p.label)}
+                                        </button>
+                                      ))}
+                                      {isBulkDeleteBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows) && (
                                       <button
                                         disabled={deletingChildren}
                                         onClick={async () => {
@@ -3416,6 +3520,7 @@ export function DetailView({
                                         <Trash2 className="h-3.5 w-3.5" data-testid="Trash2__fa3275" />
                                         {getDeleteChildButtonLabel(deletingChildren, ui)}
                                       </button>
+                                      )}
                                     </div>
                                   </div>
                                 )}

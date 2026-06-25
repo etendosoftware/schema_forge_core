@@ -701,6 +701,8 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'hideFormCard',
   'sidebarAboveTabsOnly',
   'autoSaveOnBlur',
+  'hideDetailForm',
+  'hideDelete',
 ];
 
 // `attachments` is defined-only (not truthy) so an explicit `false` from
@@ -717,7 +719,7 @@ export const WINDOW_KEY_ORDER = [
   'sidebarLayout', 'templateConfig',
   'documentPreview', 'notesField', 'relatedDocuments',
   'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hideCreate', 'hideSaveStatuses',
-  'hideMoreMenu', 'hideMoreDetails', 'contentBg',
+  'hideMoreMenu', 'hideMoreDetails', 'hideDetailForm', 'hideDelete', 'contentBg',
   'hideListFilters', 'hideLink', 'hideEyeCount', 'breadcrumb',
   'customComponents', 'menuActions', 'processOverrides',
   'entityLabel', 'detailLabel', 'detailTabIndex', 'secondaryTabs',

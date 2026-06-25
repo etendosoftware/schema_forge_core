@@ -1652,6 +1652,19 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const buttonFields = allEntityFields.filter(f => f.type === 'button' && f.form);
   const processesArray = buildProcessesArray({ processes, buttonFields, processOverrides });
 
+  // Detail entity processes: button-type fields on the detail entity that have their own action endpoints.
+  // When processOverrides has `detailLabel`, swap it into `label` for the detail version of the button.
+  const detailButtonFields = detailEntity
+    ? (contract.frontendContract.entities[detailEntity]?.fields ?? []).filter(f => f.type === 'button' && f.form)
+    : [];
+  const detailProcessesEndpoints = detailEntity ? getProcessesForEntity(contract, detailEntity) : [];
+  const detailProcessOverrides = Object.fromEntries(
+    Object.entries(processOverrides).map(([k, v]) => [k, v.detailLabel ? { ...v, label: v.detailLabel } : v])
+  );
+  const detailProcessesArray = detailButtonFields.length > 0 || detailProcessesEndpoints.length > 0
+    ? buildProcessesArray({ processes: detailProcessesEndpoints, buttonFields: detailButtonFields, processOverrides: detailProcessOverrides })
+    : '';
+
   const { entryFields, derivedFields, hiddenDefaultFields } = splitDetailLineFields(detailEditableFields, detailFields);
 
   // The first search-type entry field (usually product) triggers a lookup modal
@@ -1681,6 +1694,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const documentPreview = windowConfig.documentPreview ?? null;
   const notesField = windowConfig.notesField ?? null;
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
+  const hideDetailForm = windowConfig.hideDetailForm ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
   const customTabsAfterBottom = windowConfig.customTabsAfterBottom ?? false;
   const hidePrint = windowConfig.hidePrint ?? false;
@@ -2148,7 +2162,13 @@ const processes = [
 ${processesArray}
 ];
 ${MARKERS.GENERATED_END(`processes:${headerEntity}`)}
-
+${detailProcessesArray ? `
+${MARKERS.GENERATED_START(`detailProcesses:${detailEntity}`)}
+const detailProcesses = [
+${detailProcessesArray}
+];
+${MARKERS.GENERATED_END(`detailProcesses:${detailEntity}`)}
+` : ''}
 ${MARKERS.GENERATED_START(`draftMode:${headerEntity}`)}
 const draftMode = ${draftModeValue};
 ${MARKERS.GENERATED_END(`draftMode:${headerEntity}`)}
@@ -2182,12 +2202,13 @@ export default function ${compName}({ windowName, recordId, ...props }) {${fragm
       <DetailView
         entity="${headerEntity}"${buildDetailEntityAttr(detailEntity)}
         Form={${headerName}Form}${detailEntity && !customLinesComp ? `
-        DetailTable={${detailName}Table}
-        DetailForm={${detailName}Form}` : ''}
+        DetailTable={${detailName}Table}${!hideDetailForm ? `
+        DetailForm={${detailName}Form}` : ''}` : ''}
         summary={summary}
         statusField={statusField}
         extraBadges={extraBadges}
-        processes={processes}${detailEntity && !customLinesComp ? `
+        processes={processes}${detailProcessesArray ? `
+        detailProcesses={detailProcesses}` : ''}${detailEntity && !customLinesComp ? `
         addLineFields={addLineFields}` : ''}
         catalogs={catalogs}
         entityLabel="${entityLabel}"${detailEntity ? `

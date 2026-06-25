@@ -1222,6 +1222,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
 
     // CRUD — NEO Headless enables all methods by default via PopulateSpec
     crud[entityName] = buildCrudPrediction(baseUrl, entityName, feEntity);
+    if (frontendContract.window?.hideDelete) crud[entityName].delete = false;
 
     // Selectors — FK fields that are visible (editable or readOnly)
     selectors.push(...collectSelectorPredictions(feEntity, entityName, baseUrl, windowCategory, schema, frontendContract));
