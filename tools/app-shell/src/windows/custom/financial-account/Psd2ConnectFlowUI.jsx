@@ -52,6 +52,8 @@ function Psd2AccountSelectModal({ selection, onConfirm, onCancel }) {
 
   const open = !!selection;
   const accounts = selection?.accounts ?? [];
+  const providerName = selection?.providerName;
+  const providerLogoUrl = selection?.providerLogoUrl;
 
   return (
     <Dialog
@@ -60,8 +62,19 @@ function Psd2AccountSelectModal({ selection, onConfirm, onCancel }) {
       data-testid="Dialog__psd2select">
       <DialogContent className="bg-white" data-testid="psd2-account-select-modal">
         <DialogHeader data-testid="DialogHeader__psd2select">
-          <DialogTitle data-testid="DialogTitle__psd2select">
-            {ui('financeAccountsPsd2SelectTitle')}
+          <DialogTitle className="flex items-center gap-2" data-testid="DialogTitle__psd2select">
+            {providerLogoUrl ? (
+              <img
+                src={providerLogoUrl}
+                alt=""
+                className="h-6 w-6 rounded border border-[#E8EAEF] bg-white object-contain p-0.5"
+              />
+            ) : null}
+            <span>
+              {providerName
+                ? ui('financeAccountsPsd2SelectTitleBank', { bank: providerName })
+                : ui('financeAccountsPsd2SelectTitle')}
+            </span>
           </DialogTitle>
         </DialogHeader>
         <p className="text-sm text-[#6C6C89]">{ui('financeAccountsPsd2SelectHint')}</p>
@@ -109,7 +122,7 @@ function Psd2AccountSelectModal({ selection, onConfirm, onCancel }) {
             disabled={!selected}
             onClick={() => onConfirm?.(selected)}
             data-testid="psd2-account-select-confirm"
-            className="rounded-lg bg-[#004ACA] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-lg bg-[#121217] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217] disabled:bg-[#D1D4DB] disabled:text-white disabled:hover:bg-[#D1D4DB] disabled:hover:text-white"
           >
             {ui('financeAccountsPsd2SelectConfirm')}
           </button>

@@ -70,16 +70,14 @@ export function usePsd2ConnectFlow({ onDone } = {}) {
     try {
       const type = ctx.mode === 'create' ? ctx.type : ctx.account.type;
       const accountId = ctx.mode === 'link' ? ctx.account.id : undefined;
-      const accounts = await fetchAccounts(connectionId, type, accountId);
+      const { accounts, providerName, providerLogoUrl } = await fetchAccounts(connectionId, type, accountId);
       if (accounts.length === 0) {
         toast.error(ui('financeAccountsPsd2NoAccounts'));
         return;
       }
-      if (accounts.length === 1) {
-        await applyLink(ctx, connectionId, accounts[0].saltEdgeAccountId);
-        return;
-      }
-      setSelection({ ...ctx, connectionId, accounts });
+      // Always show the selection modal — even with a single account — so the user explicitly
+      // confirms which account to link rather than it being linked silently.
+      setSelection({ ...ctx, connectionId, accounts, providerName, providerLogoUrl });
     } catch (err) {
       toast.error(err.message || ui('financeAccountsPsd2ConnectError'));
     } finally {

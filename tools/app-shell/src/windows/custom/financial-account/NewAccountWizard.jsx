@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useUI } from '@/i18n';
 import { useAccountMutations } from '@/hooks/useAccountMutations.js';
+import { usePsd2Actions } from '@/hooks/usePsd2Actions';
 import { AccountFormStep } from './AccountFormStep.jsx';
 import { searchBanks, institutionsFor } from './bankCatalog.js';
 
@@ -31,6 +32,20 @@ const STEP = {
   FORM: 'form',
 };
 
+/** Curated country list for the bank picker dropdown (Salt Edge providers are fetched per country). */
+const BANK_COUNTRIES = [
+  { code: 'ES', flag: '🇪🇸' },
+  { code: 'IT', flag: '🇮🇹' },
+  { code: 'FR', flag: '🇫🇷' },
+  { code: 'DE', flag: '🇩🇪' },
+  { code: 'PT', flag: '🇵🇹' },
+  { code: 'GB', flag: '🇬🇧' },
+  { code: 'NL', flag: '🇳🇱' },
+  { code: 'BE', flag: '🇧🇪' },
+  { code: 'IE', flag: '🇮🇪' },
+  { code: 'AT', flag: '🇦🇹' },
+];
+
 function resolveContentWidth(step) {
   if (step === STEP.TYPE) return 'max-w-[1016px]';
   if (step === STEP.CONNECTION) return 'max-w-2xl';
@@ -40,7 +55,8 @@ function resolveContentWidth(step) {
 
 function resolveFormBackStep(accountType, selectedBank) {
   if (accountType === 'C') return STEP.TYPE;
-  if (selectedBank) return STEP.INSTITUTION;
+  // Salt Edge providers are leaves (no institution sub-step), so they go back to the bank picker.
+  if (selectedBank && !selectedBank.isProvider) return STEP.INSTITUTION;
   return STEP.BANK;
 }
 
@@ -123,7 +139,8 @@ export function NewAccountWizard({ open, onClose, onCreated, onConnectWithCreati
 
   const pickBank = (bank) => {
     setSelectedBank(bank);
-    setStep(STEP.INSTITUTION);
+    // Salt Edge providers have no institution sub-list — go straight to the form.
+    setStep(bank.isProvider ? STEP.FORM : STEP.INSTITUTION);
   };
 
   const handleCreate = async (values) => {
@@ -307,17 +324,44 @@ function TypePicker({ ui, onPick }) {
 }
 
 function BankPicker({ ui, query, onQueryChange, onPick, onSkip }) {
-  const banks = searchBanks(query);
+  const { fetchProviders } = usePsd2Actions();
+  const [country, setCountry] = useState(BANK_COUNTRIES[0].code);
+  const [providers, setProviders] = useState([]);
+
+  // Fetch the Salt Edge bank catalog for the selected country (live). On error / no PSD2 API key
+  // the list stays empty and we fall back to the static catalog so offline creation still works.
+  useEffect(() => {
+    let cancelled = false;
+    fetchProviders(country)
+      .then((list) => { if (!cancelled) setProviders(list); })
+      .catch(() => { if (!cancelled) setProviders([]); });
+    return () => { cancelled = true; };
+  }, [country, fetchProviders]);
+
+  const needle = (query ?? '').trim().toLowerCase();
+  const banks = providers.length > 0
+    ? providers
+      .filter((p) => !needle || p.name.toLowerCase().includes(needle))
+      .map((p) => ({ id: p.code, name: p.name, logoUrl: p.logoUrl, isProvider: true }))
+    : searchBanks(query);
+
   return (
     <div className="flex flex-col gap-5">
-      {/* Banco field: flag area + search input */}
+      {/* Banco field: country selector + search input */}
       <div className="flex flex-col gap-2">
         <p className="text-sm font-medium leading-6 text-[#121217]">{ui('financeAccountsNewBankLabel')}</p>
         <div className="flex h-10 w-full overflow-hidden rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]">
-          <div className="flex h-full w-[60px] shrink-0 items-center justify-center gap-0.5 border-r border-[#E8EAEF]">
-            <Landmark className="h-4 w-4 text-[#828FA3]" data-testid="Landmark__24760b" />
-            <ChevronDown className="h-4 w-4 text-[#828FA3]" data-testid="ChevronDown__24760b" />
-          </div>
+          <select
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            data-testid="new-account-bank-country"
+            aria-label={ui('financeAccountsNewBankCountry')}
+            className="h-full shrink-0 border-r border-[#E8EAEF] bg-white pl-2 pr-1 text-sm focus:outline-none"
+          >
+            {BANK_COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
+            ))}
+          </select>
           <input
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
@@ -333,7 +377,7 @@ function BankPicker({ ui, query, onQueryChange, onPick, onSkip }) {
           <p className="text-sm font-medium leading-6 text-[#121217]">{ui('financeAccountsNewBankPopular')}</p>
           <p className="text-xs leading-4 text-[#6C6C89]">{ui('financeAccountsNewBankSubtitle')}</p>
         </div>
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid max-h-[320px] grid-cols-3 gap-5 overflow-y-auto">
           {banks.map((bank) => (
             <button
               key={bank.id}
@@ -342,10 +386,18 @@ function BankPicker({ ui, query, onQueryChange, onPick, onSkip }) {
               data-testid={`new-account-bank-${bank.id}`}
               className="flex flex-col items-start gap-3 rounded-xl border border-[#E8EAEF] bg-white p-4 shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:bg-[#F5F7F9]"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]">
-                <Landmark className="h-5 w-5 text-[#828FA3]" data-testid="Landmark__24760b" />
-              </span>
-              <span className="text-sm font-medium leading-5 text-[#121217]">{bank.name}</span>
+              {bank.logoUrl ? (
+                <img
+                  src={bank.logoUrl}
+                  alt=""
+                  className="h-10 w-10 rounded-lg border border-[#D1D4DB] bg-white object-contain p-1 shadow-[0_1px_2px_rgba(18,18,23,0.05)]"
+                />
+              ) : (
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]">
+                  <Landmark className="h-5 w-5 text-[#828FA3]" data-testid="Landmark__24760b" />
+                </span>
+              )}
+              <span className="line-clamp-2 text-sm font-medium leading-5 text-[#121217]">{bank.name}</span>
             </button>
           ))}
         </div>

@@ -156,7 +156,21 @@ export function usePsd2Actions() {
   const fetchAccounts = useCallback(
     async (connectionId, type, financialAccountId) => {
       const data = await call('GET', 'accounts', { query: { connectionId, type, financialAccountId } });
-      return Array.isArray(data.accounts) ? data.accounts : [];
+      return {
+        accounts: Array.isArray(data.accounts) ? data.accounts : [],
+        providerName: data.providerName || '',
+        providerLogoUrl: data.providerLogoUrl || '',
+      };
+    },
+    [call],
+  );
+
+  const fetchProviders = useCallback(
+    async (country, q) => {
+      // Short timeout so the bank picker falls back to its static catalog quickly when the
+      // Salt Edge middleware is slow/unreachable, instead of hanging the picker.
+      const data = await call('GET', 'providers', { query: { country, q }, timeoutMs: 15000 });
+      return Array.isArray(data.providers) ? data.providers : [];
     },
     [call],
   );
@@ -197,6 +211,7 @@ export function usePsd2Actions() {
   return {
     connect,
     fetchAccounts,
+    fetchProviders,
     link,
     createAndLink,
     reconnect,
