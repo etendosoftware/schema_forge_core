@@ -2,12 +2,12 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, ChevronDown, Check, X } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { MODAL_STYLES } from './modal-styles.js';
-import { LABEL_GAP, FIELD_HEIGHT } from '@/components/ui/formDensity';
+import { LABEL_GAP, FIELD_HEIGHT_IMPORTANT } from '@/components/ui/formDensity';
 
 const INPUT_CLS =
-  `w-full !${FIELD_HEIGHT} rounded-md border border-gray-300 bg-white px-3 !text-[14px] focus:outline-none focus:ring-2 focus:ring-primary`;
+  `w-full ${FIELD_HEIGHT_IMPORTANT} rounded-md border border-gray-300 bg-white px-3 !text-[14px] focus:outline-none focus:ring-2 focus:ring-primary`;
 const PICKER_BTN_CLS =
-  `w-full !${FIELD_HEIGHT} rounded-md border border-gray-300 bg-white px-3 !text-[14px] flex items-center justify-between gap-2 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary transition-colors`;
+  `w-full ${FIELD_HEIGHT_IMPORTANT} rounded-md border border-gray-300 bg-white px-3 !text-[14px] flex items-center justify-between gap-2 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary transition-colors`;
 
 function normalizeText(v) {
   return String(v ?? '')

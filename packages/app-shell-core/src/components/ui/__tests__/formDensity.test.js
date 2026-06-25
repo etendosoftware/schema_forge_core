@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { FIELD_HEIGHT, FIELD_PADDING, ROW_GAP_Y, LABEL_GAP } from '../formDensity.js';
+import { FIELD_HEIGHT, FIELD_HEIGHT_IMPORTANT, FIELD_PADDING, ROW_GAP_Y, LABEL_GAP } from '../formDensity.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const uiDir = join(__dirname, '..');
@@ -16,6 +16,13 @@ const uiDir = join(__dirname, '..');
 describe('formDensity tokens (ETP-4321)', () => {
   it('FIELD_HEIGHT is h-9 (36px)', () => {
     assert.equal(FIELD_HEIGHT, 'h-9');
+  });
+
+  // The important variant must be a LITERAL `!h-9` (not `!${FIELD_HEIGHT}` built
+  // at a call site) so Tailwind's JIT scanner can extract the important rule.
+  // EntityCreationModal/AddressSection interpolate this token directly.
+  it('FIELD_HEIGHT_IMPORTANT is the literal !h-9 (Tailwind JIT-extractable important variant)', () => {
+    assert.equal(FIELD_HEIGHT_IMPORTANT, '!h-9');
   });
 
   it('FIELD_PADDING is px-2 py-1.5', () => {
