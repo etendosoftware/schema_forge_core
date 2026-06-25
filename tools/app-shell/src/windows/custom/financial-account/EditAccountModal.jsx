@@ -398,6 +398,7 @@ function AccountFieldsGrid({ ui, account, isCash, psd2Connected, typeLabel, fiel
           label={ui('financeAccountsPsd2FieldIban')}
           value={account.iban}
           onCopy={account.iban ? () => copyIbanToClipboard(account, ui) : undefined}
+          copyLabel={ui('financeAccountsCopyIban')}
           data-testid="ReadField__73027d" />
       ) : null}
       {!isCash && !psd2Connected ? (
@@ -621,14 +622,14 @@ function EditField({ label, children }) {
   );
 }
 
-function ReadField({ label, value, onCopy }) {
+function ReadField({ label, value, onCopy, copyLabel }) {
   return (
     <div className="flex flex-col gap-2">
       <span className="text-sm font-medium leading-6 text-[#121217]">{label}</span>
       <div className="flex h-10 items-center gap-2 rounded-lg border border-[#D1D4DB] bg-white px-3 shadow-[0_1px_2px_rgba(18,18,23,0.05)]">
         <span className="min-w-0 flex-1 truncate text-sm text-[#121217]">{value || '—'}</span>
         {onCopy ? (
-          <button type="button" onClick={onCopy} aria-label="copy" className="text-[#828FA3] hover:text-[#121217]">
+          <button type="button" onClick={onCopy} aria-label={copyLabel} className="text-[#828FA3] hover:text-[#121217]">
             <Copy className="h-4 w-4" data-testid="Copy__73027d" />
           </button>
         ) : null}
