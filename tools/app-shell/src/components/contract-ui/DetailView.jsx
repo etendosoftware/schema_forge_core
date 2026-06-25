@@ -1441,6 +1441,11 @@ function renderSaveActions(params) {
   return renderExistingRecordSaveAction(params);
 }
 
+function isDetailBulkBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows, detailProcesses) {
+  return isBulkDeleteBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows)
+    || (detailProcesses.length > 0 && selectedChildRows.length > 0 && linesLayout !== 'inlineEditable');
+}
+
 function resolveDetailRows(selectedChildRows, selectedLine) {
   if (selectedChildRows.length > 0) return selectedChildRows;
   return selectedLine ? [selectedLine] : [];
@@ -3460,8 +3465,7 @@ export function DetailView({
                               {/* Table + add button */}
                               <div className="flex-1 min-w-0">
                                 {/* Bulk action bar: delete + detail processes (classic only) */}
-                                {(isBulkDeleteBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows)
-                                  || (detailProcesses.length > 0 && selectedChildRows.length > 0 && linesLayout !== 'inlineEditable')) && (
+                                {isDetailBulkBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows, detailProcesses) && (
                                   <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-lg bg-muted/60 border border-border/40">
                                     <span className="text-sm font-medium text-foreground">
                                       {ui('selected', { count: selectedChildRows.length })}
