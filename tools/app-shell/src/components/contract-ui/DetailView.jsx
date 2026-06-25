@@ -1621,13 +1621,19 @@ export function DetailView({
     primaryFetchChildDefaults?.(parentRecordId);
   }, [primaryHandlesDefaults, parentRecordId, primaryFetchChildDefaults]);
 
-  const handleFieldBlur = useCallback(() => {
+  // Ref updated on every render so the callback always reads the latest hook state,
+  // even when called from a setTimeout scheduled before the React re-render committed.
+  const handleFieldBlurRef = useRef(null);
+  handleFieldBlurRef.current = () => {
     if (!hook.editing || !hook.selected) return;
     const hasChanges = Object.entries(hook.editing).some(
       ([key, value]) => key !== 'id' && value !== hook.selected[key]
     );
     if (hasChanges) hook.handleSave();
-  }, [hook]);
+  };
+  const handleFieldBlur = useCallback(() => {
+    handleFieldBlurRef.current?.();
+  }, []);
   // Depend on the single scalar the memo reads from editing/selected, not the whole objects.
   // Keeps original semantics: prefer editing when present (even if priceList is null), else selected.
   const priceListId = (hook.editing || hook.selected)?.priceList ?? null;

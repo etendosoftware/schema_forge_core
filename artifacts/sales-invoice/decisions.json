@@ -322,7 +322,6 @@
           "form": false
         },
         "transactionDocument": {
-          "name": "cDocTypeTargetId",
           "visibility": "editable",
           "section": "principal",
           "form": true,
