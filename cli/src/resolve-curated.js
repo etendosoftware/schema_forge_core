@@ -370,6 +370,11 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
     delete field.derivation;
   }
 
+  // Decisions can override raw-copied process routing (e.g. swap obuiapp JS handler
+  // for a classic stored-procedure process that NEO can actually execute).
+  if (fieldDecision.processId) field.processId = fieldDecision.processId;
+  if (fieldDecision.processType) field.processType = fieldDecision.processType;
+
   return field;
 }
 
