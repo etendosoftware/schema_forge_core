@@ -16667,7 +16667,6 @@
     "configureMainSaleAndPurchasePrice": "Configure a main sale price and purchase price. If no pricing exists yet, a default price list row is created automatically.",
     "savePricing": "Save pricing",
     "editPricing": "Edit pricing",
-    "price": "Price",
     "editPrice": "Edit price",
     "setPrice": "Set price",
     "priceTabDesc": "A default price list row is created automatically if none exists.",
@@ -16774,7 +16773,6 @@
     "createShipmentDraft": "Create draft shipment",
     "skipShipment": "Not now",
     "shipmentCreated": "Shipment created",
-    "creating": "Creating...",
     "creditApplied": "Credit applied",
     "linesImportedFromGoodsReceipt": "Lines imported from goods receipt",
     "noPendingShipmentsForCustomer": "No pending shipments for this customer.",
@@ -17106,7 +17104,6 @@
     "statusRejected": "Closed - Rejected",
     "statusPaid": "Paid",
     "statusPending": "Pending",
-    "creditApplied": "Credit applied",
     "statusPartiallyExecuted": "Partially executed",
     "statusPartial": "Partial",
     "statusOverdue": "Overdue",
@@ -17774,11 +17771,10 @@
     "financeAccountStatementsManualAddLinesCtaDesc": "Enter the statement movements by hand",
     "financeAccountStatementsColDocumentNo": "Document No.",
     "financeAccountStatementsColName": "Name",
-    "financeAccountStatementsColFileName": "File name",
+    "financeAccountStatementsColFileName": "File Name",
     "financeAccountStatementsColNotes": "Notes",
     "financeAccountStatementsColImportDate": "Import Date",
     "financeAccountStatementsColTransactionDate": "Transaction Date",
-    "financeAccountStatementsColFileName": "File Name",
     "financeAccountStatementsColLines": "Lines",
     "financeAccountStatementsColTotalAmount": "Total amount",
     "financeAccountStatementsColOut": "Out",
@@ -20104,7 +20100,10 @@
     "matchRuleFilterAllStates": "All states",
     "matchRuleFilterActive": "Active",
     "matchRuleFilterInactive": "Inactive",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "ellipsis": "...",
+    "priceUnit": "€ /",
+    "amountPlaceholder": "0.00"
   },
   "menus": {
     "Currency": {
