@@ -165,6 +165,33 @@ function isValueBelowMin(col, value) {
 }
 
 /**
+ * Renders the InlineSearchCombo for selector/search FK fields that are NOT lookup/popup.
+ * Extracted from EditCell to keep its cognitive complexity within the Sonar threshold (≤15).
+ * The `excludeId` is derived here from `col.excludeValueOf` so the derivation + render stay
+ * co-located and EditCell does not carry the extra decision point.
+ */
+function renderInlineSearchCell({ col, row, value, displayLabel, selectorUrl, selectorContext, token, onCommit }) {
+  // Exclude the option whose id equals the current value of a sibling field on this
+  // row (e.g. newStorageBin can't be the same bin as storageBin).
+  const excludeId = col.excludeValueOf ? (row?.[col.excludeValueOf] ?? null) : null;
+  return (
+    <InlineSearchCombo
+      field={col}
+      value={value ?? ''}
+      displayLabel={displayLabel || ''}
+      options={[]}
+      onChange={(id, label) => onCommit(id, { identifier: label || '' })}
+      placeholder={col.label}
+      selectorUrl={selectorUrl}
+      selectorContext={selectorContext}
+      excludeId={excludeId}
+      token={token}
+      clearOnType={false}
+      data-testid="InlineSearchCombo__3b7ec2" />
+  );
+}
+
+/**
  * Edit-mode cell. Returns null for non-editable types so the caller falls back to read mode.
  */
 function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus, entity, token, apiBaseUrl, selectorContext, isInvalid }) {
@@ -206,24 +233,7 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
           data-testid="LookupTrigger__3b7ec2" />
       );
     }
-    // Exclude the option whose id equals the current value of a sibling field on this
-    // row (e.g. newStorageBin can't be the same bin as storageBin).
-    const excludeId = col.excludeValueOf ? (row?.[col.excludeValueOf] ?? null) : null;
-    return (
-      <InlineSearchCombo
-        field={col}
-        value={value ?? ''}
-        displayLabel={displayLabel || ''}
-        options={[]}
-        onChange={(id, label) => onCommit(id, { identifier: label || '' })}
-        placeholder={col.label}
-        selectorUrl={selectorUrl}
-        selectorContext={selectorContext}
-        excludeId={excludeId}
-        token={token}
-        clearOnType={false}
-        data-testid="InlineSearchCombo__3b7ec2" />
-    );
+    return renderInlineSearchCell({ col, row, value, displayLabel, selectorUrl, selectorContext, token, onCommit });
   }
 
   // Enum / list field — native <select> populated from the column's enumLabels

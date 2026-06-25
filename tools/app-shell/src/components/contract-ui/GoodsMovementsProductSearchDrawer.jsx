@@ -1,35 +1,11 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, X, Loader2, Check, ChevronRight, MapPin } from 'lucide-react';
-import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { useUI } from '@/i18n';
-
-const PAGE_SIZE = 30;
-
-const COLORS = [
-  'bg-blue-100 text-blue-700',
-  'bg-emerald-100 text-emerald-700',
-  'bg-amber-100 text-amber-700',
-  'bg-purple-100 text-purple-700',
-  'bg-rose-100 text-rose-700',
-  'bg-cyan-100 text-cyan-700',
-  'bg-orange-100 text-orange-700',
-  'bg-indigo-100 text-indigo-700',
-];
-
-function getColor(id) {
-  let hash = 0;
-  for (let i = 0; i < (id || '').length; i++) hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
-  return COLORS[Math.abs(hash) % COLORS.length];
-}
-
-function Avatar({ name, id }) {
-  const initial = (name || '?')[0].toUpperCase();
-  return (
-    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-semibold shrink-0 ${getColor(id)}`}>
-      {initial}
-    </div>
-  );
-}
+import {
+  Avatar,
+  formatQty,
+  useProductSelectorFetch,
+} from './productSelectorDrawerShared.jsx';
 
 /**
  * M_Product_Stock_V (AD reference 800011, "Product Complete") returns one "generic" row per
@@ -50,13 +26,6 @@ function filterStockRows(rows) {
   return result;
 }
 
-function formatQty(raw) {
-  if (raw == null || raw === '' || raw === 'null') return null;
-  const n = parseFloat(raw);
-  if (isNaN(n)) return null;
-  return n % 1 === 0 ? n.toLocaleString() : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
-}
-
 // Best-effort storage-bin label: the OBUISEL selector may expose the locator code directly
 // (storageBin / storageBin$_identifier); otherwise fall back to the warehouse name.
 function getBinLabel(row) {
@@ -65,6 +34,12 @@ function getBinLabel(row) {
     ?? row._aux?._LOC$_identifier
     ?? row.warehouse
     ?? null;
+}
+
+function rowStateClass(isSelected, isActive) {
+  if (isSelected) return 'bg-primary/10 text-foreground';
+  if (isActive) return 'bg-muted text-foreground';
+  return 'hover:bg-muted/50 text-foreground';
 }
 
 /**
@@ -83,91 +58,31 @@ export default function GoodsMovementsProductSearchDrawer({
 }) {
   const ui = useUI();
   const resolvedTitle = title ?? ui('product');
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
   const [selectedKey, setSelectedKey] = useState(null);
   const [activeIdx, setActiveIdx] = useState(-1);
-  const inputRef = useRef(null);
-  const listRef = useRef(null);
-  const activeItemRef = useRef(null);
-  const fetchTimer = useRef(null);
-  const abortRef = useRef(null);
-  const rawOffsetRef = useRef(0);
 
   const rowKey = (row) => `${row.id}::${row._aux?._LOC || ''}`;
 
-  // Sort alphabetically by product name (locale-aware); rows of the same product stay
-  // adjacent (Array.sort is stable, so generic + per-locator order within a product is kept).
-  const rows = useMemo(() => {
-    const productName = (row) => row.label || row.name || row._identifier || row.id || '';
-    return [...results].sort((a, b) =>
-      productName(a).localeCompare(productName(b), undefined, { sensitivity: 'base' }));
-  }, [results]);
+  const {
+    query, setQuery,
+    results,
+    loading, loadingMore, hasMore,
+    inputRef, listRef, activeItemRef,
+    doFetch, handleScroll,
+  } = useProductSelectorFetch({
+    open,
+    selectorUrl,
+    token,
+    transform: filterStockRows,
+    onFreshResults: () => setActiveIdx(-1),
+  });
 
-  const doFetch = useCallback((q, offset = 0, append = false) => {
-    if (!append) {
-      clearTimeout(fetchTimer.current);
-      if (abortRef.current) abortRef.current.abort();
-      rawOffsetRef.current = 0;
-    }
-    if (!selectorUrl || !token) { setResults([]); setLoading(false); return; }
-    if (append) setLoadingMore(true);
-    else setLoading(true);
-
-    const delay = q && !append ? 300 : 0;
-    fetchTimer.current = setTimeout(() => {
-      const controller = new AbortController();
-      if (!append) abortRef.current = controller;
-      const params = { limit: PAGE_SIZE, offset };
-      if (q) params.q = q.trim();
-      fetch(buildUrlWithParams(selectorUrl, params), {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        signal: controller.signal,
-      })
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          const raw = data?.items || [];
-          rawOffsetRef.current = offset + raw.length;
-          if (append) {
-            setResults(prev => filterStockRows([...prev, ...raw]));
-          } else {
-            setResults(filterStockRows(raw));
-            setActiveIdx(-1);
-          }
-          setHasMore(data?.hasMore ?? false);
-          setLoading(false);
-          setLoadingMore(false);
-        })
-        .catch(err => {
-          if (err.name !== 'AbortError') {
-            if (!append) setResults([]);
-            setLoading(false);
-            setLoadingMore(false);
-          }
-        });
-    }, delay);
-  }, [selectorUrl, token]);
-
+  // Reset drawer-specific state when the drawer opens.
   useEffect(() => {
     if (!open) return;
-    setQuery('');
-    setResults([]);
-    setLoading(false);
-    setLoadingMore(false);
-    setHasMore(false);
     setSelectedKey(null);
     setActiveIdx(-1);
-    setTimeout(() => inputRef.current?.focus(), 50);
-    doFetch('', 0);
-  }, [open, doFetch]);
-
-  useEffect(() => () => {
-    clearTimeout(fetchTimer.current);
-    if (abortRef.current) abortRef.current.abort();
-  }, []);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -180,15 +95,15 @@ export default function GoodsMovementsProductSearchDrawer({
     if (activeIdx >= 0 && activeItemRef.current) {
       activeItemRef.current.scrollIntoView({ block: 'nearest' });
     }
-  }, [activeIdx]);
+  }, [activeIdx, activeItemRef]);
 
-  const handleScroll = useCallback(() => {
-    const el = listRef.current;
-    if (!el || loadingMore || !hasMore) return;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) {
-      doFetch(query, rawOffsetRef.current, true);
-    }
-  }, [loadingMore, hasMore, query, doFetch]);
+  // Sort alphabetically by product name (locale-aware); rows of the same product stay
+  // adjacent (Array.sort is stable, so generic + per-locator order within a product is kept).
+  const rows = useMemo(() => {
+    const productName = (row) => row.label || row.name || row._identifier || row.id || '';
+    return [...results].sort((a, b) =>
+      productName(a).localeCompare(productName(b), undefined, { sensitivity: 'base' }));
+  }, [results]);
 
   const handleSelect = (row) => {
     setSelectedKey(rowKey(row));
@@ -277,13 +192,7 @@ export default function GoodsMovementsProductSearchDrawer({
                         type="button"
                         data-testid={`gm-product-option-${row.id}`}
                         onClick={() => handleSelect(row)}
-                        className={`w-full text-left flex items-center gap-3 px-4 py-2.5 transition-colors ${
-                          isSelected
-                            ? 'bg-primary/10 text-foreground'
-                            : isActive
-                            ? 'bg-muted text-foreground'
-                            : 'hover:bg-muted/50 text-foreground'
-                        }`}
+                        className={`w-full text-left flex items-center gap-3 px-4 py-2.5 transition-colors ${rowStateClass(isSelected, isActive)}`}
                       >
                         <Avatar name={name} id={row.id} data-testid="Avatar__gm5pd" />
                         <div className="flex-1 min-w-0">
