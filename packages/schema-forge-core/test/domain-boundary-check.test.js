@@ -338,6 +338,38 @@ describe('domain boundary classification', () => {
     assert.ok(report.warnings.some((warning) => warning.code === 'CROSS_DOMAIN_APPROVED'));
   });
 
+  it('passes merge-block PRs without a plan (aggregated cross-branch merge)', () => {
+    const report = analyzeBoundary({
+      knownWindows: WINDOWS,
+      labels: ['merge-block'],
+      changedFiles: [
+        'tools/app-shell/src/components/contract-ui/DetailView.jsx',
+        'cli/src/generate-frontend.js',
+        'packages/app-shell-core/src/locales/es_ES.json',
+        'artifacts/sales-order/contract.json',
+        'artifacts/purchase-order/contract.json',
+      ],
+    });
+
+    assert.equal(report.decision, 'pass');
+    assert.ok(report.warnings.some((warning) => warning.code === 'MERGE_BLOCK'));
+    assert.equal(report.blockers.length, 0);
+  });
+
+  it('does not require a cross-domain plan when merge-block is combined with cross-domain-approved', () => {
+    const report = analyzeBoundary({
+      knownWindows: WINDOWS,
+      labels: ['merge-block', 'cross-domain-approved'],
+      changedFiles: [
+        'tools/app-shell/src/components/contract-ui/DetailView.jsx',
+        'artifacts/sales-order/contract.json',
+      ],
+    });
+
+    assert.equal(report.decision, 'pass');
+    assert.ok(!report.blockers.some((blocker) => blocker.code === 'CROSS_DOMAIN_PLAN_MISSING'));
+  });
+
   it('does not treat root lockfiles as neutral when multiple domains are changed', () => {
     const report = analyzeBoundary({
       knownWindows: WINDOWS,
