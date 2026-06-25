@@ -96,7 +96,7 @@ export const DEFAULT_BOUNDARY_POLICY = {
   e2eFlowPattern: '^e2e/tests/flows/(.+)\\.(?:mocked\\.)?spec\\.js$',
   crossDomainPlanPattern: '^docs/plans/[^/]+-cross-domain\\.md$',
   repoDocPatterns: [
-    '^docs/(?:architecture|ops|diagrams|proposals|superpowers|plans)/',
+    '^docs/(?:architecture|ops|diagrams|proposals|superpowers|plans|agentic-validation|etendo-ad)/',
     '^docs/[^/]+\\.md$',
   ],
   patternGroups: [
@@ -113,6 +113,8 @@ export const DEFAULT_BOUNDARY_POLICY = {
         '^cli/src/run-[a-z0-9-]+-tests\\.js$',
         '^cli/src/regen-all\\.js$',
         '^cli/src/push-to-neo\\.js$',
+        '^cli/src/neo-writer\\.js$',
+        '^cli/src/lib/',
         '^cli/src/validate-',
         '^cli/src/migrate-',
         '^cli/src/migrations/',
@@ -222,6 +224,7 @@ export const DEFAULT_BOUNDARY_POLICY = {
       kind: 'repo-infra',
       scope: 'repo-infra',
       patterns: [
+        '^\\.claude/',
         '^\\.github/',
         '^\\.githooks/',
         '^pipelines/',
