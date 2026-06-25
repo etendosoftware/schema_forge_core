@@ -29,6 +29,9 @@ export const ImportedStatementsTab = forwardRef(function ImportedStatementsTab({
   const ui = useUI();
   const accountId = account?.id ?? null;
   const currency = account?.currencyIso ?? 'EUR';
+  // PSD2-synced accounts get their statements only from Salt Edge, so manual import / manual
+  // line creation are blocked: the button stays, but using it surfaces the notice instead.
+  const psd2Locked = account?.psd2Connected === true;
 
   const { statements, loading, reload } = useBankStatements(accountId);
   const { processStatement, reactivateStatement, deleteStatement, busy } = useStatementActions();
@@ -163,8 +166,14 @@ export const ImportedStatementsTab = forwardRef(function ImportedStatementsTab({
         advancedFilter={advancedFilter}
         onAdvancedFilterChange={setAdvancedFilter}
         rows={statements}
-        onImportClick={() => setImportOpen(true)}
-        onManualClick={() => setManualOpen(true)}
+        onImportClick={() => {
+          if (psd2Locked) { toast.info(ui('financeAccountStatementsPsd2Locked')); return; }
+          setImportOpen(true);
+        }}
+        onManualClick={() => {
+          if (psd2Locked) { toast.info(ui('financeAccountStatementsPsd2Locked')); return; }
+          setManualOpen(true);
+        }}
         data-testid="StatementsToolbar__6f147a" />
       <div className="flex-1 overflow-y-auto [&>div]:overflow-visible">
         <StatementsTable

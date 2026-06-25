@@ -67,7 +67,7 @@ function resolveFormMode(accountType) {
  *   - onClose(): called when the dialog should close
  *   - onCreated(): called after a successful create so the caller can reload the list
  */
-export function NewAccountWizard({ open, onClose, onCreated }) {
+export function NewAccountWizard({ open, onClose, onCreated, onConnectWithCreation }) {
   const ui = useUI();
   const { createAccount, fetchDefaults } = useAccountMutations();
 
@@ -212,6 +212,12 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
               description={ui(accountType === 'CA'
                 ? 'financeAccountsNewConnectionOnlineDescCard'
                 : 'financeAccountsNewConnectionOnlineDesc')}
+              onClick={() => {
+                // Case 2: no account exists yet. Launch Salt Edge (popup opens within this
+                // user gesture); the account is created from the chosen bank account afterwards.
+                onConnectWithCreation?.(accountType);
+                onClose?.();
+              }}
               testid="account-connection-online"
               data-testid="ConnectionCard__24760b" />
             <ConnectionCard

@@ -82,6 +82,7 @@ export function AccountsTable({
   onReconcile,
   onEdit,
   onArchive,
+  onPsd2Action,
   onRetry,
 }) {
   const ui = useUI();
@@ -111,6 +112,7 @@ export function AccountsTable({
         onReconcile={onReconcile}
         onEdit={onEdit}
         onArchive={onArchive}
+        onPsd2Action={onPsd2Action}
         data-testid="AccountRow__db8970" />
     ));
   };

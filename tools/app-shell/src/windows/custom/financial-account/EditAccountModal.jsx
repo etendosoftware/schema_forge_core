@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -88,23 +87,6 @@ export function EditAccountModal({ open, onClose, onSaved, account }) {
           error={error}
           onSubmit={handleSave}
           data-testid="AccountFormStep__73027d" />
-
-        {isBank ? (
-          <div
-            className="mt-2 rounded-lg border border-dashed border-[#D1D4DB] bg-[#F5F7F9] p-3 opacity-70"
-            data-testid="edit-account-connection-disabled"
-          >
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-sm font-medium text-[#6C6C89]">
-                <Link2 className="h-4 w-4" data-testid="Link2__73027d" />
-                {ui('financeAccountsEditConnectionSection')}
-              </span>
-              <span className="rounded-full bg-[#E8EAEF] px-2 py-0.5 text-xs font-normal text-[#6C6C89]">
-                {ui('financeAccountsEditConnectionSoon')}
-              </span>
-            </div>
-          </div>
-        ) : null}
       </DialogContent>
     </Dialog>
   );
