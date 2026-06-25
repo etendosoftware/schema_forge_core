@@ -54,7 +54,7 @@ function GoodsReceiptLinesEmptyState({ data, onAddLine, canAddLine = true, recor
             + {ui('addLines')}
           </button>
           {bpId && (
-            <button type="button" onClick={() => handleImportClick(setShowImportOrderModal, 'order')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
+            <button type="button" onClick={() => handleImportClick(setShowImportOrderModal, 'order')} onMouseDown={(e) => e.stopPropagation()} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
@@ -64,7 +64,7 @@ function GoodsReceiptLinesEmptyState({ data, onAddLine, canAddLine = true, recor
             </button>
           )}
           {bpId && (
-            <button type="button" onClick={() => handleImportClick(setShowImportInvoiceModal, 'invoice')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
+            <button type="button" onClick={() => handleImportClick(setShowImportInvoiceModal, 'invoice')} onMouseDown={(e) => e.stopPropagation()} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
@@ -150,6 +150,7 @@ const GoodsReceiptLineActions = forwardRef(function GoodsReceiptLineActions(
           <button
             type="button"
             onClick={openOrderModal}
+            onMouseDown={(e) => e.stopPropagation()}
             style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -162,6 +163,7 @@ const GoodsReceiptLineActions = forwardRef(function GoodsReceiptLineActions(
           <button
             type="button"
             onClick={openInvoiceModal}
+            onMouseDown={(e) => e.stopPropagation()}
             style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
