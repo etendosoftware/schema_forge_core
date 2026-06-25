@@ -1680,6 +1680,12 @@ function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, deta
     });
 }
 
+function buildDetailTableAndFormProps(detailEntity, customLinesComp, hideDetailForm, detailName) {
+  if (!detailEntity || customLinesComp) return '';
+  const formProp = hideDetailForm ? '' : `\n        DetailForm={${detailName}Form}`;
+  return `\n        DetailTable={${detailName}Table}${formProp}`;
+}
+
 function buildEnumOptionStr(o) {
   return `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`;
 }
@@ -2135,9 +2141,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const galleryComponentName = `${headerName}Gallery`;
   const sidebarComponentName = `${headerName}Sidebar`;
   const detailHeaderComponentName = `${headerName}DetailHeader`;
-  const detailFormProp = !hideDetailForm ? `\n        DetailForm={${detailName}Form}` : '';
-  const detailTableAndFormProps = (detailEntity && !customLinesComp)
-    ? `\n        DetailTable={${detailName}Table}${detailFormProp}` : '';
+  const detailTableAndFormProps = buildDetailTableAndFormProps(detailEntity, customLinesComp, hideDetailForm, detailName);
   const detailProcessesProp = detailProcessesArray ? '\n        detailProcesses={detailProcesses}' : '';
   const useStateImport = fragmentIf(needsUseState, 'useState, ');
   return `import { ${useStateImport}useEffect } from 'react';
@@ -2212,7 +2216,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${fragm
         summary={summary}
         statusField={statusField}
         extraBadges={extraBadges}
-        processes={processes}${detailProcessesProp}${detailEntity && !customLinesComp ? `
+        processes={processes}${detailProcessesProp}${detailTableAndFormProps ? `
         addLineFields={addLineFields}` : ''}
         catalogs={catalogs}
         entityLabel="${entityLabel}"${detailEntity ? `
