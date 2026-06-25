@@ -19,7 +19,7 @@ import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { InlineSearchCombo } from './InlineSearchCombo.jsx';
 import { SelectorInput } from './SelectorInput.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import ProductSearchDrawer from './ProductSearchDrawer.jsx';
+import { resolveLookupDrawer } from './lookupDrawers.js';
 import { columnFlex } from '@/lib/linesColumnWidth.js';
 
 // Figma tokens — extracted from /home/agustin/Desktop/newlines.css.
@@ -58,6 +58,7 @@ function isCellEditable(col) {
 function LookupTrigger({ field, displayLabel, selectorUrl, selectorContext, token, onCommit }) {
   const ui = useUI();
   const [open, setOpen] = useState(false);
+  const Drawer = resolveLookupDrawer(field.lookupDrawer);
   return (
     <>
       <button
@@ -73,7 +74,7 @@ function LookupTrigger({ field, displayLabel, selectorUrl, selectorContext, toke
           ? <span className="flex-1 truncate text-foreground">{displayLabel}</span>
           : <span className="flex-1 truncate text-muted-foreground">{field.label || ui('search')}</span>}
       </button>
-      <ProductSearchDrawer
+      <Drawer
         open={open}
         onClose={() => setOpen(false)}
         onSelect={(item) => {
@@ -89,7 +90,7 @@ function LookupTrigger({ field, displayLabel, selectorUrl, selectorContext, toke
         selectorUrl={selectorUrl}
         selectorContext={selectorContext}
         token={token}
-        title={field.label || ''}
+        title={field.lookupTitle || field.label || ''}
         data-testid={"ProductSearchDrawer__" + field.id} />
     </>
   );
@@ -164,6 +165,33 @@ function isValueBelowMin(col, value) {
 }
 
 /**
+ * Renders the InlineSearchCombo for selector/search FK fields that are NOT lookup/popup.
+ * Extracted from EditCell to keep its cognitive complexity within the Sonar threshold (≤15).
+ * The `excludeId` is derived here from `col.excludeValueOf` so the derivation + render stay
+ * co-located and EditCell does not carry the extra decision point.
+ */
+function renderInlineSearchCell({ col, row, value, displayLabel, selectorUrl, selectorContext, token, onCommit }) {
+  // Exclude the option whose id equals the current value of a sibling field on this
+  // row (e.g. newStorageBin can't be the same bin as storageBin).
+  const excludeId = col.excludeValueOf ? (row?.[col.excludeValueOf] ?? null) : null;
+  return (
+    <InlineSearchCombo
+      field={col}
+      value={value ?? ''}
+      displayLabel={displayLabel || ''}
+      options={[]}
+      onChange={(id, label) => onCommit(id, { identifier: label || '' })}
+      placeholder={col.label}
+      selectorUrl={selectorUrl}
+      selectorContext={selectorContext}
+      excludeId={excludeId}
+      token={token}
+      clearOnType={false}
+      data-testid="InlineSearchCombo__3b7ec2" />
+  );
+}
+
+/**
  * Edit-mode cell. Returns null for non-editable types so the caller falls back to read mode.
  */
 function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus, entity, token, apiBaseUrl, selectorContext, isInvalid }) {
@@ -205,20 +233,7 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
           data-testid="LookupTrigger__3b7ec2" />
       );
     }
-    return (
-      <InlineSearchCombo
-        field={col}
-        value={value ?? ''}
-        displayLabel={displayLabel || ''}
-        options={[]}
-        onChange={(id, label) => onCommit(id, { identifier: label || '' })}
-        placeholder={col.label}
-        selectorUrl={selectorUrl}
-        selectorContext={selectorContext}
-        token={token}
-        clearOnType={false}
-        data-testid="InlineSearchCombo__3b7ec2" />
-    );
+    return renderInlineSearchCell({ col, row, value, displayLabel, selectorUrl, selectorContext, token, onCommit });
   }
 
   // Enum / list field — native <select> populated from the column's enumLabels
@@ -328,9 +343,10 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
   // Optional: when provided, clicking anywhere on the row body fires this.
   // Pairs with `onEditRow` for modal-style flows.
   onRowClick,
+  labelOverrides,
 }, ref) {
   const ui = useUI();
-  const t = useLabel();
+  const t = useLabel(labelOverrides);
   // resolveColumnLabel + toLocaleDateString expect the locale STRING
   // (es_ES / en_US) — `useLocale()` would return the dictionary object due
   // to a backward-compat shim, hence `useLocaleSwitch` here.

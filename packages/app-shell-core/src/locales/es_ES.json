@@ -16808,6 +16808,10 @@
     "depositTo": "Depositar en",
     "statusCleared": "Conciliado",
     "statusDraft": "Borrador",
+    "processMovements": "Procesar",
+    "goodsMovementsLockedTitle": "Este documento está bloqueado.",
+    "goodsMovementsLockedMessage": "El stock ya fue ajustado. Para corregirlo, crea un nuevo inventario.",
+    "goodsMovementsLockedAction": "Crear nuevo inventario",
     "statusAwaiting": "Pendiente",
     "statusVoided": "Anulado",
     "statusNotCleared": "No conciliado",
@@ -20386,7 +20390,7 @@
   },
   "menus": {
     "Goods Movement": {
-      "label": "Movimiento de mercancías"
+      "label": "Movimiento entre almacenes"
     },
     "Bank Reconciliation": {
       "label": "Conciliación bancaria"

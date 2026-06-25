@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { AddLineButton } from '@/components/ui/add-line-button.jsx';
-import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2, Shield } from 'lucide-react';
+import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2, Shield, Lock } from 'lucide-react';
 import { AttachmentIcon } from '@/components/attachments/AttachmentIcon';
 import { PricingIcon, WarehouseProductsIcon } from '@/components/ui/custom-icons';
 
@@ -1551,6 +1551,7 @@ export function DetailView({
   formScrollPaddingB = 'pb-6',
   secondaryTabContentPaddingT = 'pt-3',
   transformRecord = null,
+  lockedAlert = null,
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
   // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
@@ -3041,6 +3042,40 @@ export function DetailView({
                         {/* Principal + collapsed fields wrapped in a card */}
                         <div className={`${hideFormCard ? 'hidden' : ''}${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${whiteFormBackground ? ' bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50' : ''}${embedded ? ' pointer-events-none' : ''}`}>
                           <div className={linesLayout === 'inlineEditable' ? 'p-2' : formCardPadding}>
+                            {lockedAlert && isProcessed && (
+                              <div
+                                className="flex flex-row items-center gap-1 rounded-lg mb-3"
+                                style={{ padding: '8px', background: '#F5F7F9' }}
+                                data-testid="locked-alert"
+                              >
+                                <span className="flex items-start pl-1 shrink-0">
+                                  <Lock className="h-6 w-6" style={{ color: '#828FA3' }} data-testid="Lock__fa3275" />
+                                </span>
+                                <div className="flex flex-1 flex-row items-center min-w-0">
+                                  <div className="flex flex-1 items-center gap-2 px-2 min-w-0">
+                                    <span className="text-sm font-medium leading-6 shrink-0" style={{ color: '#121217' }}>
+                                      {ui(lockedAlert.title)}
+                                    </span>
+                                    <span className="text-sm font-normal leading-6 truncate" style={{ color: '#6C6C89' }}>
+                                      {ui(lockedAlert.message)}
+                                    </span>
+                                  </div>
+                                  {lockedAlert.actionLabel && lockedAlert.navigateTo && (
+                                    <div className="flex justify-end items-center px-2 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => navigate(lockedAlert.navigateTo)}
+                                        className="text-sm font-medium leading-6 underline whitespace-nowrap"
+                                        style={{ color: '#121217' }}
+                                        data-testid="locked-alert-action"
+                                      >
+                                        {ui(lockedAlert.actionLabel)}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                             <Form
                               entity={entity}
                               data={data}
@@ -3236,6 +3271,7 @@ export function DetailView({
                                   token={token}
                                   apiBaseUrl={apiBaseUrl}
                                   linesLayout={linesLayout}
+                                  labelOverrides={labelOverrides}
                                   isDocumentReadOnly={isDocumentReadOnly}
                                   onRowClick={buildLineRowClickHandler(DetailForm, linesLayout, setSelectedLine)}
                                   selectedRowId={selectedLine?.id}

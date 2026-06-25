@@ -76,6 +76,7 @@ function ListFilterBarSection(props) {
           onSavePreset={props.windowName ? props.saveCurrentAsPreset : null}
           onDeletePreset={props.windowName ? props.deletePreset : null}
           labelOverrides={props.labelOverrides}
+          hideStatusFilter={props.hideStatusFilter}
           data-testid="ListFilterBar__620cbc" />
       )}
     </>
@@ -690,6 +691,7 @@ export function ListView({
                 <ListFilterBarSection
                   hideFilters={listViewOptions?.hideFilters}
                   hideListFilters={hideListFilters}
+                  hideStatusFilter={listViewOptions?.hideStatusFilter}
                   entity={entity}
                   apiBaseUrl={apiBaseUrl}
                   columns={tableColumns}

@@ -1,54 +1,62 @@
 {
-  "version": "0.6.0",
+  "version": "0.14.0",
   "generatedAt": "2026-04-29T19:05:48.778Z",
-  "updatedAt": "2026-06-24T20:46:47.221Z",
-  "checksum": "7caedde23f32f4d4",
+  "updatedAt": "2026-06-25T14:16:22.752Z",
+  "checksum": "342cff388eec25f3",
   "frontendContract": {
     "window": {
       "id": "170",
       "name": "Goods Movements",
       "primaryEntity": "movement",
       "category": "inventory",
+      "hidePrint": true,
+      "hideLink": true,
       "customComponents": {
         "bottomSection": "GoodsMovementsBottomPanel"
       },
-      "menuActions": [
-        {
-          "key": "post",
-          "label": "Post",
-          "labelKey": "post",
-          "action": "post",
-          "visibleWhenFieldFalse": "posted",
-          "successKey": "documentPosted",
-          "visibleWhenFieldTrue": "processed"
-        },
-        {
-          "key": "unpost",
-          "label": "Unpost",
-          "labelKey": "unpost",
-          "action": "unpost",
-          "visibleWhenFieldTrue": "posted",
-          "successKey": "documentUnposted",
-          "destructive": true
-        }
-      ],
       "processOverrides": {
         "processNow": {
           "requiresLines": true
         }
       },
       "statusField": "processed",
-      "dateFilterKey": "movementDate",
-      "layoutType": "default",
-      "linesLayout": "inlineEditable",
-      "statusPills": [
-        {
-          "field": "posted",
-          "trueKey": "postedStatus",
-          "falseKey": "notPostedStatus",
-          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+      "labelOverrides": {
+        "en_US": {
+          "Processed": "Status",
+          "M_Locator_ID": "Source Warehouse",
+          "M_LocatorTo_ID": "Destination Warehouse",
+          "MovementQty": "Quantity"
+        },
+        "es_ES": {
+          "Processed": "Estado",
+          "M_Locator_ID": "Almacén origen",
+          "M_LocatorTo_ID": "Almacén destino",
+          "MovementQty": "Cantidad"
         }
-      ]
+      },
+      "listViewOptions": {
+        "hideStatusFilter": true
+      },
+      "dateFilterKey": "movementDate",
+      "statusEnumLabels": {
+        "true": "statusProcessed",
+        "false": "statusDraft"
+      },
+      "lockedAlert": {
+        "title": "goodsMovementsLockedTitle",
+        "message": "goodsMovementsLockedMessage",
+        "actionLabel": "goodsMovementsLockedAction",
+        "navigateTo": "/physical-inventory/new"
+      },
+      "noHeaderBorder": true,
+      "whiteFormBackground": true,
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
+      "sendDocument": {
+        "enabled": false
+      },
+      "layoutType": "default",
+      "linesLayout": "inlineEditable"
     },
     "entities": {
       "movement": {
@@ -74,7 +82,12 @@
               "source": "@#Date@"
             },
             "defaultValue": "@#Date@",
-            "gridOrder": 1
+            "gridOrder": 1,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "movementDate",
@@ -94,6 +107,7 @@
             },
             "defaultValue": "@#Date@",
             "gridOrder": 2,
+            "dot": false,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -110,28 +124,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
-            "section": "other"
-          },
-          {
-            "name": "processNow",
-            "apiKey": "processNow",
-            "column": "Processing",
-            "label": "Process Movements",
-            "type": "button",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "derivation": {
-              "type": "computed",
-              "source": "false"
-            },
-            "displayLogic": {
-              "raw": "@Processed@='N'",
-              "evaluable": true
-            }
+            "form": false
           },
           {
             "name": "documentNo",
@@ -141,7 +134,7 @@
             "type": "string",
             "tsType": "string",
             "visibility": "readOnly",
-            "required": true,
+            "required": false,
             "grid": true,
             "form": true,
             "sourceRequired": true,
@@ -149,6 +142,7 @@
               "type": "sequence",
               "source": "documentType.sequence"
             },
+            "section": "principal",
             "gridOrder": 3,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
@@ -173,6 +167,16 @@
               "source": "false"
             },
             "columnType": "status",
+            "enumValues": [
+              {
+                "value": "true",
+                "name": "statusProcessed"
+              },
+              {
+                "value": "false",
+                "name": "statusDraft"
+              }
+            ],
             "gridOrder": 4
           }
         ],
@@ -196,13 +200,6 @@
             }
           },
           {
-            "name": "processNow",
-            "derivation": {
-              "type": "computed",
-              "source": "false"
-            }
-          },
-          {
             "name": "documentNo",
             "derivation": {
               "type": "sequence",
@@ -217,7 +214,17 @@
             }
           }
         ],
-        "javaQualifier": "document-posting"
+        "javaQualifier": "goodsMovementsHeaderHandler",
+        "draftMode": {
+          "enabled": true,
+          "processField": "processNow",
+          "processValue": "Y",
+          "label": "processMovements",
+          "completedStatuses": [
+            "true"
+          ],
+          "disableWhenEmpty": true
+        }
       },
       "movementLine": {
         "tableName": "M_MovementLine",
@@ -234,7 +241,7 @@
             "tsType": "number",
             "visibility": "editable",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": true,
             "sourceRequired": true,
             "derivation": {
@@ -263,6 +270,20 @@
             "reference": "Product",
             "inputMode": "search",
             "lookup": true,
+            "lookupDrawer": "goods-movements-product",
+            "lookupTitle": "Product",
+            "onSelectMappings": [
+              {
+                "from": "_aux._LOC",
+                "to": "storageBin",
+                "labelFrom": [
+                  "storageBin",
+                  "storageBin$_identifier",
+                  "warehouse"
+                ]
+              }
+            ],
+            "gridOrder": 1,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Movement_Product"
             },
@@ -307,6 +328,8 @@
               "source": "1"
             },
             "defaultValue": "1",
+            "gridOrder": 5,
+            "columnWidth": 160,
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @UomManagement@='Y'",
               "evaluable": true,
@@ -326,7 +349,8 @@
             "form": true,
             "sourceRequired": true,
             "reference": "UOM",
-            "inputMode": "selector"
+            "inputMode": "selector",
+            "gridOrder": 2
           },
           {
             "name": "storageBin",
@@ -342,6 +366,7 @@
             "sourceRequired": true,
             "reference": "Locator",
             "inputMode": "selector",
+            "gridOrder": 3,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -362,6 +387,8 @@
             "sourceRequired": true,
             "reference": "Locator",
             "inputMode": "selector",
+            "excludeValueOf": "storageBin",
+            "gridOrder": 4,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -397,45 +424,53 @@
       "name": "Goods Movements",
       "primaryEntity": "movement",
       "category": "inventory",
+      "hidePrint": true,
+      "hideLink": true,
       "customComponents": {
         "bottomSection": "GoodsMovementsBottomPanel"
       },
-      "menuActions": [
-        {
-          "key": "post",
-          "label": "Post",
-          "labelKey": "post",
-          "action": "post",
-          "visibleWhenFieldFalse": "posted",
-          "successKey": "documentPosted",
-          "visibleWhenFieldTrue": "processed"
-        },
-        {
-          "key": "unpost",
-          "label": "Unpost",
-          "labelKey": "unpost",
-          "action": "unpost",
-          "visibleWhenFieldTrue": "posted",
-          "successKey": "documentUnposted",
-          "destructive": true
-        }
-      ],
       "processOverrides": {
         "processNow": {
           "requiresLines": true
         }
       },
       "statusField": "processed",
-      "dateFilterKey": "movementDate",
-      "linesLayout": "inlineEditable",
-      "statusPills": [
-        {
-          "field": "posted",
-          "trueKey": "postedStatus",
-          "falseKey": "notPostedStatus",
-          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+      "labelOverrides": {
+        "en_US": {
+          "Processed": "Status",
+          "M_Locator_ID": "Source Warehouse",
+          "M_LocatorTo_ID": "Destination Warehouse",
+          "MovementQty": "Quantity"
+        },
+        "es_ES": {
+          "Processed": "Estado",
+          "M_Locator_ID": "Almacén origen",
+          "M_LocatorTo_ID": "Almacén destino",
+          "MovementQty": "Cantidad"
         }
-      ]
+      },
+      "listViewOptions": {
+        "hideStatusFilter": true
+      },
+      "dateFilterKey": "movementDate",
+      "statusEnumLabels": {
+        "true": "statusProcessed",
+        "false": "statusDraft"
+      },
+      "lockedAlert": {
+        "title": "goodsMovementsLockedTitle",
+        "message": "goodsMovementsLockedMessage",
+        "actionLabel": "goodsMovementsLockedAction",
+        "navigateTo": "/physical-inventory/new"
+      },
+      "noHeaderBorder": true,
+      "whiteFormBackground": true,
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
+      "sendDocument": {
+        "enabled": false
+      },
+      "linesLayout": "inlineEditable"
     },
     "entities": {
       "movement": {
@@ -488,7 +523,7 @@
             "apiKey": "processNow",
             "column": "Processing",
             "type": "button",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -577,7 +612,7 @@
             "column": "DocumentNo",
             "type": "string",
             "visibility": "readOnly",
-            "required": true
+            "required": false
           },
           {
             "name": "processed",
@@ -634,25 +669,9 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
-          },
-          {
-            "name": "etblkpAccountingstatus",
-            "apiKey": "etblkpAccountingstatus",
-            "column": "EM_Etblkp_Accountingstatus",
-            "type": "enum",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
-            "name": "etblkpBulkposting",
-            "apiKey": "etblkpBulkposting",
-            "column": "EM_Etblkp_Bulkposting",
-            "type": "button",
-            "visibility": "discarded",
-            "required": true
           }
         ],
-        "javaQualifier": "document-posting"
+        "javaQualifier": "goodsMovementsHeaderHandler"
       },
       "movementLine": {
         "tableName": "M_MovementLine",
@@ -1003,14 +1022,6 @@
         "field": "posted",
         "column": "Posted",
         "url": "/sws/neo/goods-movements/movement/{id}/action/posted"
-      },
-      {
-        "entity": "movement",
-        "field": "etblkpBulkposting",
-        "column": "EM_Etblkp_Bulkposting",
-        "url": "/sws/neo/goods-movements/movement/{id}/action/etblkpBulkposting",
-        "processId": "57496FB9CF9E4E8F847224017941570E",
-        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -1028,18 +1039,24 @@
     },
     "window": {
       "category": "inventory"
+    },
+    "labelOverrides": {
+      "en_US": {
+        "Processed": "Status",
+        "M_Locator_ID": "Source Warehouse",
+        "M_LocatorTo_ID": "Destination Warehouse",
+        "MovementQty": "Quantity"
+      },
+      "es_ES": {
+        "Processed": "Estado",
+        "M_Locator_ID": "Almacén origen",
+        "M_LocatorTo_ID": "Almacén destino",
+        "MovementQty": "Cantidad"
+      }
     }
   },
   "testManifest": {
     "tests": [
-      {
-        "id": "t-action-endpoint-movement-etblkpBulkposting",
-        "category": "action-endpoint",
-        "entity": "movement",
-        "field": "etblkpBulkposting",
-        "runner": "node",
-        "description": "Action endpoint for 'etblkpBulkposting' in movement should exist"
-      },
       {
         "id": "t-action-endpoint-movement-moveBetweenLocators",
         "category": "action-endpoint",
@@ -1111,22 +1128,6 @@
         "description": "Default value for 'movementQuantity' in movementLine should be a string"
       },
       {
-        "id": "t-displaylogic-evaluable-movement-processNow",
-        "category": "displaylogic-evaluable",
-        "entity": "movement",
-        "field": "processNow",
-        "runner": "node",
-        "description": "Display logic for 'processNow' in movement should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-valid-movement-processNow",
-        "category": "displaylogic-valid",
-        "entity": "movement",
-        "field": "processNow",
-        "runner": "node",
-        "description": "Display logic for 'processNow' in movement should be valid JS"
-      },
-      {
         "id": "t-field-presence-movement-description",
         "category": "field-presence",
         "entity": "movement",
@@ -1165,14 +1166,6 @@
         "field": "processed",
         "runner": "node",
         "description": "Field 'processed' should be present in movement"
-      },
-      {
-        "id": "t-field-presence-movement-processNow",
-        "category": "field-presence",
-        "entity": "movement",
-        "field": "processNow",
-        "runner": "node",
-        "description": "Field 'processNow' should be present in movement"
       },
       {
         "id": "t-field-presence-movementLine-description",
@@ -1271,14 +1264,6 @@
         "description": "Field 'processed' should have type 'boolean' in movement"
       },
       {
-        "id": "t-field-type-movement-processNow",
-        "category": "field-type",
-        "entity": "movement",
-        "field": "processNow",
-        "runner": "node",
-        "description": "Field 'processNow' should have type 'string' in movement"
-      },
-      {
         "id": "t-field-type-movementLine-description",
         "category": "field-type",
         "entity": "movementLine",
@@ -1351,6 +1336,14 @@
         "description": "Read-only logic for 'movementDate' in movement should have evaluable flag"
       },
       {
+        "id": "t-readonlylogic-evaluable-movement-name",
+        "category": "readonlylogic-evaluable",
+        "entity": "movement",
+        "field": "name",
+        "runner": "node",
+        "description": "Read-only logic for 'name' in movement should have evaluable flag"
+      },
+      {
         "id": "t-readonlylogic-evaluable-movementLine-description",
         "category": "readonlylogic-evaluable",
         "entity": "movementLine",
@@ -1413,6 +1406,14 @@
         "field": "movementDate",
         "runner": "node",
         "description": "Read-only logic for 'movementDate' in movement should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-movement-name",
+        "category": "readonlylogic-valid",
+        "entity": "movement",
+        "field": "name",
+        "runner": "node",
+        "description": "Read-only logic for 'name' in movement should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-movementLine-description",
@@ -1659,22 +1660,6 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-system-field-movement-etblkpAccountingstatus",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "etblkpAccountingstatus",
-        "runner": "node",
-        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-system-field-movement-etblkpBulkposting",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "etblkpBulkposting",
-        "runner": "node",
-        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for movement"
-      },
-      {
         "id": "t-system-field-movement-id",
         "category": "system-field",
         "entity": "movement",
@@ -1713,6 +1698,14 @@
         "field": "posted",
         "runner": "node",
         "description": "System field 'posted' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-processNow",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "processNow",
+        "runner": "node",
+        "description": "System field 'processNow' should exist in backend but not frontend for movement"
       },
       {
         "id": "t-system-field-movement-project",
@@ -1906,25 +1899,23 @@
       }
     ],
     "summary": {
-      "total": 111,
+      "total": 107,
       "byCategory": {
-        "action-endpoint": 4,
+        "action-endpoint": 3,
         "crud-flags": 2,
         "default-value-type": 4,
-        "displaylogic-evaluable": 1,
-        "displaylogic-valid": 1,
-        "field-presence": 13,
-        "field-type": 13,
-        "readonlylogic-evaluable": 8,
-        "readonlylogic-valid": 8,
+        "field-presence": 12,
+        "field-type": 12,
+        "readonlylogic-evaluable": 9,
+        "readonlylogic-valid": 9,
         "rule-declared": 12,
         "searchable-filters": 3,
         "selector-endpoint": 4,
-        "system-field": 36,
+        "system-field": 35,
         "visibility": 2
       },
       "byRunner": {
-        "node": 111,
+        "node": 107,
         "junit": 0
       }
     }

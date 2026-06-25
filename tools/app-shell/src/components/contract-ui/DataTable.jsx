@@ -21,21 +21,11 @@ function flexSpec(col, idx) {
   const [g, , b] = columnFlex(col, idx).split(' ');
   return { grow: parseInt(g, 10), basis: parseInt(b, 10) };
 }
-import ProductSearchDrawer from './ProductSearchDrawer.jsx';
-import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
 import { SelectorInput } from './SelectorInput.jsx';
 import { InlineSearchCombo } from './InlineSearchCombo.jsx';
 import RowQuickActions from './RowQuickActions.jsx';
 import { trackSearchResultSelected } from '@/lib/productUsageTelemetry.js';
-
-// Lookup drawer registry. Each entry is a drawer component keyed by the value
-// of a field's contract-level `lookupDrawer` property. Fields without that
-// property fall back to `default`. New drawers (asset, lot, etc.) plug in here
-// without touching the generic DataTable render path.
-const LOOKUP_DRAWERS = {
-  default: ProductSearchDrawer,
-  'internal-consumption-product': InternalConsumptionProductSearchDrawer,
-};
+import { LOOKUP_DRAWERS } from './lookupDrawers.js';
 
 /**
  * Resolve a value from an object using a dotted path (e.g. `_aux._LOC`).
@@ -288,8 +278,13 @@ function renderSelectorCell({
   handleChange, handleFieldChange, handleKeyDown, isFirst, firstInputRef,
   fieldLabel, selectorContext, token,
 }) {
-  const options = getCatalogOptions(catalogs, entity, field);
+  const allOptions = getCatalogOptions(catalogs, entity, field);
   const selectorUrl = buildSelectorUrl(apiBaseUrl, entity, field);
+  // Exclude the option equal to the current value of a sibling field on this add-line row
+  // (e.g. newStorageBin can't equal storageBin). Applies to both the URL-backed combo and
+  // the preloaded-catalog dropdown.
+  const excludeId = field.excludeValueOf ? (values[field.excludeValueOf] ?? null) : null;
+  const options = excludeId != null ? allOptions.filter(o => o.id !== excludeId) : allOptions;
 
   if (options.length === 0) {
     if (!selectorUrl) return (
@@ -315,6 +310,7 @@ function renderSelectorCell({
           placeholder={fieldLabel}
           selectorUrl={selectorUrl}
           selectorContext={selectorContext}
+          excludeId={excludeId}
           token={token}
           data-testid={"InlineSearchCombo__" + field.id} />
       </TableCell>
@@ -415,8 +411,8 @@ function renderInputCell({
 // make buildEmpty's effect re-run, wiping in-progress input. Share one frozen ref.
 const EMPTY_SEED = {};
 
-const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, seedValues = EMPTY_SEED, resolvedDefaults = EMPTY_SEED, ilpHasNoAmountCol = false, ilpTrailing = false }, ref) {
-  const t = useLabel();
+const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, seedValues = EMPTY_SEED, resolvedDefaults = EMPTY_SEED, ilpHasNoAmountCol = false, ilpTrailing = false, labelOverrides }, ref) {
+  const t = useLabel(labelOverrides);
   const ui = useUI();
   const { locale } = useLocaleSwitch();
   const fieldMap = useMemo(() => {
@@ -993,10 +989,11 @@ function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContex
 }
 
 /**
- * Small button that opens the ProductSearchDrawer for lookup-enabled fields.
+ * Small button that opens the default product lookup drawer for lookup-enabled fields.
  */
 function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) {
   const [open, setOpen] = useState(false);
+  const DefaultDrawer = LOOKUP_DRAWERS.default;
   return (
     <>
       <button
@@ -1007,7 +1004,7 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
       >
         <Search className="h-3.5 w-3.5" data-testid="Search__eb5261" />
       </button>
-      <ProductSearchDrawer
+      <DefaultDrawer
         open={open}
         onClose={() => setOpen(false)}
         onSelect={(item) => { onSelect(item); setOpen(false); }}
@@ -1697,6 +1694,7 @@ export function DataTable({
                 selectorContext={selectorContext}
                 ilpHasNoAmountCol={ilpHasNoAmountCol}
                 ilpTrailing={ilpTrailing}
+                labelOverrides={labelOverrides}
                 data-testid="InlineAddRow__eb5261" />
             )}
           </TableBody>

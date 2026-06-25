@@ -299,6 +299,13 @@ export function generateTableComponent(entityName, contract) {
     //  - lookup / popup → swap the dropdown for a ProductSearchDrawer modal.
     const requiredPart = fragmentIf(f.required, ', required: true');
     const lookupPart = fragmentIf(f.lookup, ', lookup: true');
+    // Inline-edit lookup drawer override (InlineLinesPanel resolves it via the
+    // shared LOOKUP_DRAWERS registry). Keeps the inline-edit picker consistent
+    // with the add-row picker for windows that declare a custom drawer.
+    const lookupDrawerColPart = f.lookupDrawer ? `, lookupDrawer: '${String(f.lookupDrawer).replace(/'/g, "\\'")}'` : '';
+    // Inline-edit selector exclusion (InlineLinesPanel reads col.excludeValueOf and
+    // filters out the row's value of that sibling field).
+    const excludeValueOfColPart = f.excludeValueOf ? `, excludeValueOf: '${String(f.excludeValueOf).replace(/'/g, "\\'")}'` : '';
     const popupPart = fragmentIf(f.popup, ', popup: true');
     const minColPart = optProp('min', f.min);
     const growPart = fragmentIf(f.grow, ', grow: true');
@@ -307,7 +314,7 @@ export function generateTableComponent(entityName, contract) {
     const filterOnlyPart = fragmentIf((f.filterOnly || f.filterable === false), ', filterable: false');
     const dotPart = fragmentIf(f.dot === false, ', dot: false');
     const gridReadOnlyPart = fragmentIf(f.gridReadOnly, ', readOnly: true');
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart}${minColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -760,7 +767,12 @@ function resolveSendDocumentConfig(windowConfig, allEntityFields) {
     ? !!sendDocumentOverride.enabled
     : isDocumentalWindow;
   const sdAllowEmail = sendDocumentOverride?.allowEmail !== false;
-  if (!sdEnabled) return null;
+  // When explicitly disabled via decisions.json (sendDocument.enabled: false), emit
+  // the object so ListView receives sendDocument != null and skips its documentNo
+  // auto-detection heuristic — otherwise the envelope button would re-appear on
+  // windows with a documentNo column. Non-documental windows (no override, no
+  // documentNo) return null so they stay transparent to the heuristic.
+  if (!sdEnabled) return sendDocumentOverride != null ? { enabled: false } : null;
   const sendDocument = { enabled: true, allowEmail: sdAllowEmail };
   // ETP-4226 — recipient-edit policy overrides pass through verbatim so
   // ListView can forward them to SendDocumentModal as `sendPolicy`.
@@ -1578,7 +1590,10 @@ function buildEntryFieldLine(f, i, firstSearchIdx) {
     : '';
   const { lookupDrawerPart, lookupTitlePart, onSelectMappingsPart, displayFromCatalogPart } = buildLookupEntryParts(f);
   const minEntryPart = optProp('min', f.min);
-  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${skipDefaultPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart} },`;
+  // Selector exclusion: hide the option equal to the current value of another field
+  // on the same add-line row (e.g. newStorageBin can't equal storageBin).
+  const excludeValueOfPart = f.excludeValueOf ? `, excludeValueOf: '${String(f.excludeValueOf).replace(/'/g, "\\'")}'` : '';
+  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${skipDefaultPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart}${excludeValueOfPart} },`;
 }
 
 /**
@@ -2046,6 +2061,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const statusEnumLabelsConfig = windowConfig.statusEnumLabels ?? null;
   const statusEnumLabelsProp = jsonWrapIf('\n        statusEnumLabels={', statusEnumLabelsConfig, '}');
 
+  // lockedAlert support — banner shown above the principal fields when the document is processed
+  const lockedAlertConfig = windowConfig.lockedAlert ?? null;
+  const lockedAlertProp = jsonWrapIf('\n        lockedAlert={', lockedAlertConfig, '}');
+
   // showDetailFooterTotals support
   const showDetailFooterTotalsValue = windowConfig.showDetailFooterTotals;
   const showDetailFooterTotalsProp = wrapIf('\n        showDetailFooterTotals={', showDetailFooterTotalsValue, '}', showDetailFooterTotalsValue !== undefined);
@@ -2165,7 +2184,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${fragm
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}
         {...props}${sidebarContentProp}
       />${confirmModalName ? `
       {showConfirmModal && (
