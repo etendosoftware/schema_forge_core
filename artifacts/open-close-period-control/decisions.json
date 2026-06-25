@@ -1,0 +1,182 @@
+{
+  "$schema": "decisions-v2",
+  "version": 2,
+  "window": {
+    "category": "finance",
+    "name": "Open/Close Period Control",
+    "detailEntity": "documents",
+    "hideCreate": true,
+    "hidePrint": true,
+    "hideMoreMenu": true,
+    "labelOverrides": {
+      "es_ES": {
+        "Name": "Período",
+        "PeriodNo": "N.º período",
+        "StartDate": "Fecha inicio",
+        "EndDate": "Fecha fin",
+        "PeriodType": "Tipo",
+        "Status": "Estado",
+        "DocumentCategory": "Tipo de documento",
+        "PeriodStatus": "Estado período"
+      }
+    }
+  },
+  "entities": {
+    "periodControl": {
+      "fields": {
+        "status": {
+          "grid": true,
+          "form": true,
+          "visibility": "readOnly",
+          "badge": true,
+          "gridOrder": 1
+        },
+        "calendar": {
+          "grid": true,
+          "form": true,
+          "visibility": "readOnly",
+          "gridOrder": 2
+        },
+        "year": {
+          "grid": true,
+          "form": true,
+          "visibility": "readOnly",
+          "gridOrder": 3
+        },
+        "name": {
+          "grid": true,
+          "form": true,
+          "visibility": "readOnly",
+          "gridOrder": 4
+        },
+        "periodNo": {
+          "grid": true,
+          "form": true,
+          "visibility": "readOnly",
+          "gridOrder": 5
+        },
+        "startingDate": {
+          "grid": true,
+          "form": true,
+          "visibility": "readOnly",
+          "gridOrder": 6
+        },
+        "endingDate": {
+          "grid": false,
+          "form": true,
+          "visibility": "readOnly"
+        },
+        "periodType": {
+          "grid": false,
+          "form": true,
+          "visibility": "readOnly"
+        },
+        "openClose": {
+          "form": true,
+          "visibility": "editable"
+        },
+        "active": {
+          "visibility": "discarded"
+        },
+        "organization": {
+          "visibility": "discarded"
+        },
+        "client": {
+          "visibility": "discarded"
+        },
+        "id": {
+          "visibility": "discarded"
+        },
+        "creationDate": {
+          "visibility": "discarded"
+        },
+        "createdBy": {
+          "visibility": "discarded"
+        },
+        "updated": {
+          "visibility": "discarded"
+        },
+        "updatedBy": {
+          "visibility": "discarded"
+        },
+        "processNow": {
+          "visibility": "discarded"
+        },
+        "closingFactAcctGroupID": {
+          "visibility": "discarded"
+        },
+        "regularizationFactAcctGroupID": {
+          "visibility": "discarded"
+        },
+        "divideupFactAcctGroupID": {
+          "visibility": "discarded"
+        },
+        "openFactAcctGroupID": {
+          "visibility": "discarded"
+        }
+      }
+    },
+    "documents": {
+      "fields": {
+        "documentCategory": {
+          "grid": true,
+          "form": true,
+          "visibility": "readOnly",
+          "gridOrder": 1
+        },
+        "periodStatus": {
+          "grid": true,
+          "form": true,
+          "visibility": "readOnly",
+          "badge": true,
+          "gridOrder": 2
+        },
+        "openClose": {
+          "form": true,
+          "visibility": "editable"
+        },
+        "calendar": {
+          "visibility": "discarded"
+        },
+        "period": {
+          "visibility": "discarded"
+        },
+        "periodControl": {
+          "visibility": "discarded"
+        },
+        "periodAction": {
+          "visibility": "discarded"
+        },
+        "processNow": {
+          "visibility": "discarded"
+        },
+        "id": {
+          "visibility": "discarded"
+        },
+        "active": {
+          "visibility": "discarded"
+        },
+        "organization": {
+          "visibility": "discarded"
+        },
+        "client": {
+          "visibility": "discarded"
+        },
+        "creationDate": {
+          "visibility": "discarded"
+        },
+        "createdBy": {
+          "visibility": "discarded"
+        },
+        "updated": {
+          "visibility": "discarded"
+        },
+        "updatedBy": {
+          "visibility": "discarded"
+        }
+      }
+    }
+  },
+  "rules": {},
+  "discardPatterns": ["EM_*"]
+}
