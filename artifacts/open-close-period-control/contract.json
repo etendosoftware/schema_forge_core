@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-06-25T12:12:33.694Z",
-  "updatedAt": "2026-06-25T13:40:18.031Z",
-  "checksum": "1f3d3c99ecfa04a3",
+  "updatedAt": "2026-06-25T13:59:13.646Z",
+  "checksum": "90f65b087c026fc2",
   "frontendContract": {
     "window": {
       "id": "E66E701CCBA14B8BA480CBDE37C50D7A",
@@ -12,6 +12,32 @@
       "hidePrint": true,
       "hideCreate": true,
       "hideMoreMenu": true,
+      "processOverrides": {
+        "openClose": {
+          "params": [
+            {
+              "key": "openClose",
+              "type": "select",
+              "label": "Action",
+              "required": true,
+              "options": [
+                {
+                  "value": "O",
+                  "label": "Periodo abierto"
+                },
+                {
+                  "value": "C",
+                  "label": "Periodo cerrado"
+                },
+                {
+                  "value": "P",
+                  "label": "Periodo cerrado permanente"
+                }
+              ]
+            }
+          ]
+        }
+      },
       "detailEntity": "documents",
       "listSortBy": "periodNo asc",
       "labelOverrides": {
@@ -553,6 +579,32 @@
       "hidePrint": true,
       "hideCreate": true,
       "hideMoreMenu": true,
+      "processOverrides": {
+        "openClose": {
+          "params": [
+            {
+              "key": "openClose",
+              "type": "select",
+              "label": "Action",
+              "required": true,
+              "options": [
+                {
+                  "value": "O",
+                  "label": "Periodo abierto"
+                },
+                {
+                  "value": "C",
+                  "label": "Periodo cerrado"
+                },
+                {
+                  "value": "P",
+                  "label": "Periodo cerrado permanente"
+                }
+              ]
+            }
+          ]
+        }
+      },
       "detailEntity": "documents",
       "listSortBy": "periodNo asc",
       "labelOverrides": {

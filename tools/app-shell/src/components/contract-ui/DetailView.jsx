@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
+import { ProcessParamDialog } from './ProcessParamDialog';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
@@ -2707,6 +2708,7 @@ export function DetailView({
   const [showOthers, setShowOthers] = useState(primaryTabs ? false : null);
   const [activePrimaryTab, setActivePrimaryTab] = useState(primaryTabs?.[0]?.key ?? 'general');
   const [notesFocused, setNotesFocused] = useState(false);
+  const [paramDialogProcess, setParamDialogProcess] = useState(null);
 
   const othersRef = useRef(null);
 
@@ -3057,7 +3059,11 @@ export function DetailView({
                             return;
                           }
                         }
-                        hook.handleProcess?.(p);
+                        if (p.params?.some(param => !param.hidden)) {
+                          setParamDialogProcess(p);
+                        } else {
+                          hook.handleProcess?.(p);
+                        }
                       }}
                       data-testid="Button__fa3275">
                       {tMenu(p.label)}
@@ -3071,6 +3077,15 @@ export function DetailView({
           </div>
         )}
 
+        <ProcessParamDialog
+          open={paramDialogProcess !== null}
+          onOpenChange={open => { if (!open) setParamDialogProcess(null); }}
+          process={paramDialogProcess}
+          onConfirm={paramValues => {
+            hook.handleProcess?.(paramDialogProcess, paramValues);
+            setParamDialogProcess(null);
+          }}
+        />
 
         {/* Scrollable content + optional sidebarContent (full-height independent column) */}
         <div className="flex-1 flex overflow-hidden">

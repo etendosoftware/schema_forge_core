@@ -31,7 +31,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:periodControl
 const processes = [
-  { name: 'openClose', label: 'Open Close', style: 'positive' },
+  { name: 'openClose', label: 'Open Close', style: 'positive', params: [{"key":"openClose","type":"select","label":"Action","required":true,"options":[{"value":"O","label":"Periodo abierto"},{"value":"C","label":"Periodo cerrado"},{"value":"P","label":"Periodo cerrado permanente"}]}] },
 ];
 // @sf-generated-end processes:periodControl
 

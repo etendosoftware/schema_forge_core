@@ -466,8 +466,39 @@ Each override entry supports the following properties:
 | `columnName` | string | Column name to include in the action POST payload (used with `add: true` when the process maps to a specific column). |
 | `requiresLines` | boolean | If `true`, the button is disabled until at least one line exists. |
 | `requiresFieldMax` | array | Validation rules checked before firing the action. Each entry: `{ field, max, conditionalOnField?, conditionalValue?, errorKey }`. |
+| `params` | array | Parameter definitions for a pre-process dialog. When at least one non-hidden param is present, clicking the button opens `ProcessParamDialog` first; the collected values are passed to `handleProcess` as `paramValues`. Each entry: `{ key, type, label, required?, hidden?, options? }`. Supported `type`: `"select"` (renders a dropdown using `options: [{ value, label }]`). The first option is pre-selected. See [Process Parameter Dialog](#process-parameter-dialog-params) below. |
 
 When `style` is not specified, the generator defaults to `"destructive"` for processes whose names contain destructive keywords (e.g., `void`, `cancel`, `reverse`) and `"positive"` for all others.
+
+#### Process Parameter Dialog (`params`)
+
+When a `processOverrides` entry contains a `params` array with at least one entry where `hidden !== true`, the detail toolbar button opens `ProcessParamDialog` before invoking the process. The dialog collects the user's choices and passes them as `paramValues` to `hook.handleProcess(process, paramValues)`, which merges them into the `fieldValues` POST body.
+
+**Example — Open/Close Period Control:**
+
+```json
+"processOverrides": {
+  "openClose": {
+    "params": [
+      {
+        "key": "openClose",
+        "type": "select",
+        "label": "Action",
+        "required": true,
+        "options": [
+          { "value": "O", "label": "Periodo abierto" },
+          { "value": "C", "label": "Periodo cerrado" },
+          { "value": "P", "label": "Periodo cerrado permanente" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The backend NeoHandler receives the chosen value via `context.getRequestBody().optJSONObject("fieldValues").optString("openClose", null)`.
+
+Hidden params (`hidden: true`) are excluded from the dialog but can be used in future for server-side context passing.
 
 ## Entity Properties (`entities.{entityName}.*`)
 
