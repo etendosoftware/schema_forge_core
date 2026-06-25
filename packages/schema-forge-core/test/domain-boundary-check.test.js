@@ -243,6 +243,13 @@ describe('domain boundary classification', () => {
     );
   });
 
+  it('classifies the Sonar wrapper script as repo infra', () => {
+    assert.deepEqual(
+      classifyPath('run-sonar.sh', { knownWindows: WINDOWS }),
+      { kind: 'repo-infra', scope: 'repo-infra' },
+    );
+  });
+
   it('classifies stack publishing packages as repo infra', () => {
     assert.deepEqual(
       classifyPath('packages/schema-forge-stack/src/index.js', { knownWindows: WINDOWS }),

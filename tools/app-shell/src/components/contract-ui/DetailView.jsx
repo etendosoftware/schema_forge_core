@@ -1557,7 +1557,7 @@ export function DetailView({
   // in memory from the other hook instance). On a direct URL hit `items` is empty anyway and
   // the effect falls through to fetchById. Skipping the list fetch unconditionally drops one
   // wasted GET per direct-URL navigation.
-  const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, skipListFetch: true, refetchAfterSave });
+  const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, skipListFetch: true, refetchAfterSave, specName: windowName });
   // Session-level currency fallback. NEO Headless doesn't return
   // `currency$_identifier` on every line endpoint (only on the header), so we
   // back-fill it generically here. Windows that already get it from the
@@ -1586,10 +1586,10 @@ export function DetailView({
   // Secondary hooks only consume child-level state (children, handleAddChild, handleDeleteChild,
   // handleSelect) — never the parent list. skipListFetch avoids refetching the parent entity
   // list once per hook (which would otherwise cause N+1 identical GETs on mount).
-  const secondaryHook0 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 0), { token, apiBaseUrl, skipListFetch: true });
-  const secondaryHook1 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 1), { token, apiBaseUrl, skipListFetch: true });
-  const secondaryHook2 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 2), { token, apiBaseUrl, skipListFetch: true });
-  const secondaryHook3 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 3), { token, apiBaseUrl, skipListFetch: true });
+  const secondaryHook0 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 0), { token, apiBaseUrl, skipListFetch: true, specName: windowName });
+  const secondaryHook1 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 1), { token, apiBaseUrl, skipListFetch: true, specName: windowName });
+  const secondaryHook2 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 2), { token, apiBaseUrl, skipListFetch: true, specName: windowName });
+  const secondaryHook3 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 3), { token, apiBaseUrl, skipListFetch: true, specName: windowName });
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
   // "From" currency for secondary-tab inline add-rows. The parent document's
@@ -4194,4 +4194,3 @@ function getButtonClass(salesTheme, p, isPrimary) {
     }
   }
 }
-

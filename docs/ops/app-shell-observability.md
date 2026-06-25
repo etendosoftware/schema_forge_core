@@ -85,6 +85,18 @@ backend checks, NPS, and timing events are catalogued for ETP-4214, but each
 caller still needs explicit instrumentation and tests before the event is
 considered emitted in production.
 
+KPI instrumentation also emits the first Dashboard events:
+
+| Event | When |
+|-------|------|
+| `quick_action_used` | A user opens a Dashboard quick action. |
+| `pending_task_opened` | A user opens a Dashboard pending-task item. |
+| `dashboard_document_opened` | A user navigates from Dashboard widgets to a document or catalog record. |
+
+Additional broad business events such as CRUD actions, filters, document
+processing, and menu clicks remain out of scope unless explicitly added and
+tested.
+
 ## Timing Metrics
 
 Use `startTiming()` or `useTiming()` from `tools/app-shell/src/lib/observability`
@@ -144,11 +156,16 @@ names, or UI copy.
 
 Business event payloads are allowlisted. Only these keys are emitted:
 
-`action`, `accuracy`, `app`, `attempt`, `category`, `component`, `count`,
-`durationMs`, `enabled`, `entity`, `environment`, `event`, `hostname`, `locale`,
-`mockMode`, `operation`, `position`, `provider`, `route`, `routePattern`,
-`score`, `source`, `specName`, `status`, `step`, `supportRequested`,
-`timestamp`, `type`, `value`, and `windowName`.
+`action`, `accuracy`, `app`, `attempt`, `category`, `channel`, `component`,
+`correctCount`, `count`, `critical`, `durationMs`, `enabled`, `entity`,
+`entityType`, `environment`, `errorClass`, `event`, `flow`, `hostname`,
+`kpiId`, `locale`, `mockMode`, `module`, `operation`, `position`, `provider`,
+`route`, `routePattern`, `score`, `source`, `specName`, `status`, `step`,
+`supportRequested`, `timestamp`, `total`, `type`, `value`, and `windowName`.
+
+KPI call sites should prefer `trackKpiEvent` or a domain-specific wrapper such
+as `trackDashboardKpi`. Numeric KPI fields must be finite and within the ranges
+enforced by `payload.js`; boolean flags such as `critical` must be booleans.
 
 Values must be stable, low-cardinality product metadata. Do not send PII,
 free-form text, raw URLs, OAuth values, tokens, record IDs, document IDs,

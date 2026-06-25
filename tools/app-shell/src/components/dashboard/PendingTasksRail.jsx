@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, FileText, Truck, DollarSign, CreditCard, ShoppingBag, Box, Circle } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
+import { DASHBOARD_KPI_IDS, trackDashboardKpi } from '@/lib/dashboardKpiTelemetry.js';
 
 const CATEGORY_MAP = {
   overdueInvoices:               { category: 'sales',       icon: FileText,    subjectKey: 'pendingSubjectSalesInvoices', stateKey: 'pendingStateOverdue'   },
@@ -110,6 +111,12 @@ export function PendingTasksRail({ tasks = [] }) {
                 <Link
                   key={i}
                   to={target}
+                  onClick={() => trackDashboardKpi('pending_task_opened', {
+                    kpiId: DASHBOARD_KPI_IDS.pendingTasks,
+                    action: 'open_pending_task',
+                    source: 'dashboard_pending_tasks',
+                    type: meta.category === 'stock' ? 'inventory' : meta.category,
+                  })}
                   className="flex-none flex flex-col rounded-lg border bg-white hover:bg-[#F5F7F9] hover:shadow-sm transition-colors transition-shadow"
                   style={{ minWidth: '185px', height: '154px', borderColor: '#E8EAEF' }}
                   data-testid="Link__7e1000">

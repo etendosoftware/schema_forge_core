@@ -1,6 +1,7 @@
 import { createObservability } from './observability/core.js';
 
 export { createObservability } from './observability/core.js';
+export { buildKpiProperties, trackKpiEvent } from './observability/kpi.js';
 
 const observability = createObservability();
 
