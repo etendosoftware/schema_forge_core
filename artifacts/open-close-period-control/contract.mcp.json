@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-06-25T12:12:33.694Z",
-  "updatedAt": "2026-06-25T13:40:18.031Z",
-  "contractChecksum": "90f65b087c026fc2",
+  "updatedAt": "2026-06-25T15:04:43.066Z",
+  "contractChecksum": "6f79dac0c64cddca",
   "apiPrediction": {
     "specName": "open-close-period-control",
     "baseUrl": "/sws/neo/open-close-period-control",
@@ -13,7 +13,7 @@
         "post": true,
         "put": true,
         "patch": true,
-        "delete": true,
+        "delete": false,
         "listUrl": "/sws/neo/open-close-period-control/periodControl",
         "detailUrl": "/sws/neo/open-close-period-control/periodControl/{id}",
         "supportedFilters": []
@@ -24,7 +24,7 @@
         "post": true,
         "put": true,
         "patch": true,
-        "delete": true,
+        "delete": false,
         "listUrl": "/sws/neo/open-close-period-control/documents",
         "detailUrl": "/sws/neo/open-close-period-control/documents/{id}",
         "supportedFilters": []
@@ -367,5 +367,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "72f6d44b9b98a796"
+  "checksum": "db151fa980647c0f"
 }

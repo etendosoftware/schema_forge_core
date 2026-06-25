@@ -6,6 +6,8 @@
     "name": "Open/Close Period Control",
     "detailEntity": "documents",
     "hideCreate": true,
+    "hideDetailForm": true,
+    "hideDelete": true,
     "hidePrint": true,
     "hideMoreMenu": true,
     "listSortBy": "periodNo asc",
@@ -18,6 +20,8 @@
     },
     "processOverrides": {
       "openClose": {
+        "label": "Open Close Period",
+        "detailLabel": "Open Close Document",
         "params": [
           {
             "key": "openClose",
@@ -48,6 +52,7 @@
   },
   "entities": {
     "periodControl": {
+      "javaQualifier": "period-openclose",
       "fields": {
         "status": {
           "grid": true,
@@ -152,6 +157,7 @@
       }
     },
     "documents": {
+      "javaQualifier": "period-control-doc-openclose",
       "fields": {
         "documentCategory": {
           "grid": true,
