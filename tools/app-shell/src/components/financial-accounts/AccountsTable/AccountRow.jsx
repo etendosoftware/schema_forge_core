@@ -8,7 +8,10 @@ import { ACCOUNT_COLUMNS, ACCOUNT_CELL_RENDERERS } from './accountColumns.jsx';
 
 export function AccountRow({ account, onOpen, onReconcile, onEdit, onArchive, onPsd2Action }) {
   const ui = useUI();
-  const cellCtx = { ui };
+  const cellCtx = {
+    ui,
+    onConnect: onPsd2Action ? (acc) => onPsd2Action('connect', acc) : undefined,
+  };
 
   return (
     <TableRow
