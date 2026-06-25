@@ -224,6 +224,7 @@ export function ListView({
   externalPreviewRow = null,
   onExternalPreviewClose = null,
   hiddenColumns = [],
+  listSortBy = null,
 }) {
   // Subset filters — radio-style, always one active, applied first.
   const [activeSubsetIndex, setActiveSubsetIndex] = useState(() => {
@@ -387,6 +388,10 @@ export function ListView({
 
   const didInitialFetchRef = useRef(false);
 
+  const parsedListSort = listSortBy ? listSortBy.trim().split(/\s+/) : [];
+  const initialSortColumn = parsedListSort[0] ?? 'creationDate';
+  const initialSortDirection = parsedListSort[0] ? (parsedListSort[1] ?? 'asc') : 'desc';
+
   const hook = useEntity(entity, null, {
     token,
     apiBaseUrl,
@@ -395,6 +400,8 @@ export function ListView({
     columnFilters,
     trailingFilter: advancedFilterPart,
     specName: windowName,
+    initialSortColumn,
+    initialSortDirection,
   });
 
   useEffect(() => {

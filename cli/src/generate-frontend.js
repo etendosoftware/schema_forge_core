@@ -1971,6 +1971,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hidePrintListProp = fragmentIf(hidePrint, '\n      hidePrint');
   const hideCreateProp = fragmentIf(hideCreate, '\n      hideCreate');
   const hideMoreMenuListProp = fragmentIf(hideMoreMenu, '\n      hideMoreMenu');
+  const listSortBy = windowConfig.listSortBy ?? null;
+  const listSortByProp = listSortBy ? `\n      listSortBy="${listSortBy}"` : '';
   const hideListFiltersProp = fragmentIf(hideListFilters, '\n      hideListFilters');
   const hideLinkProp = fragmentIf(hideLink, '\n      hideLink');
   const hideEyeCountProp = fragmentIf(hideEyeCount, '\n      hideEyeCount');
@@ -2216,7 +2218,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${fragm
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideCreateProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideCreateProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}${listSortByProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `

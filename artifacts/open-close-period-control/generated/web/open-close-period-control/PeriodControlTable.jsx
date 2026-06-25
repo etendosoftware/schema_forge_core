@@ -3,8 +3,7 @@ import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 
 // @sf-generated-start columns:periodControl
 const columns = [
-  { key: 'status', column: 'Status', type: 'status', label: 'Status', enumLabels: { 'C': 'All Closed', 'N': 'All Never Opened', 'O': 'All Opened', 'P': 'All Permanently Closed', 'M': 'Mixed' }, badge: true },
-  { key: 'calendar', column: 'C_Calendar_ID', type: 'selector', label: 'Calendar', required: true },
+  { key: 'status', column: 'Status', type: 'enum', label: 'Status', enumLabels: { 'C': 'All Closed', 'N': 'All Never Opened', 'O': 'All Opened', 'P': 'All Permanently Closed', 'M': 'Mixed' }, badge: true, badgeVariants: {"O":"green","N":"neutral","C":"neutral","P":"red","M":"orange"} },
   { key: 'year', column: 'C_Year_ID', type: 'selector', label: 'Year', required: true },
   { key: 'name', column: 'Name', type: 'string', label: 'Name', required: true },
   { key: 'periodNo', column: 'PeriodNo', type: 'number', label: 'Period No.', required: true },

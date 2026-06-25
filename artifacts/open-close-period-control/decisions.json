@@ -8,6 +8,7 @@
     "hideCreate": true,
     "hidePrint": true,
     "hideMoreMenu": true,
+    "listSortBy": "periodNo asc",
     "labelOverrides": {
       "es_ES": {
         "Name": "Período",
@@ -29,10 +30,18 @@
           "form": true,
           "visibility": "readOnly",
           "badge": true,
+          "columnType": "enum",
+          "badgeVariants": {
+            "O": "green",
+            "N": "neutral",
+            "C": "neutral",
+            "P": "red",
+            "M": "orange"
+          },
           "gridOrder": 1
         },
         "calendar": {
-          "grid": true,
+          "grid": false,
           "form": true,
           "visibility": "readOnly",
           "gridOrder": 2
@@ -129,6 +138,13 @@
           "form": true,
           "visibility": "readOnly",
           "badge": true,
+          "columnType": "enum",
+          "badgeVariants": {
+            "O": "green",
+            "N": "neutral",
+            "C": "red",
+            "P": "red"
+          },
           "gridOrder": 2
         },
         "openClose": {

@@ -563,6 +563,8 @@ export function useEntity(entity, childEntity, {
     trailingFilter = null,
     refetchAfterSave = false,
     specName = null,
+    initialSortColumn = 'creationDate',
+    initialSortDirection = 'desc',
 }) {
     const { logout } = useAuth();
     const ui = useUI();
@@ -581,8 +583,8 @@ export function useEntity(entity, childEntity, {
     // are empty (either client-side or via backend MISSING_REQUIRED_FIELDS) so EntityForm
     // can highlight each input. Cleared on successful save and on field change.
     const [fieldErrors, setFieldErrors] = useState({});
-    const [sortColumn, setSortColumn] = useState('creationDate');
-    const [sortDirection, setSortDirection] = useState('desc');
+    const [sortColumn, setSortColumn] = useState(initialSortColumn);
+    const [sortDirection, setSortDirection] = useState(initialSortDirection);
     const startRowRef = useRef(0);
     const sampleRowRef = useRef(null);
     // Keys returned by the backend /defaults endpoint for the current new-record session.
