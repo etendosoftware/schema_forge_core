@@ -1289,6 +1289,21 @@ export function DataTable({
     });
   };
 
+  const handleRowActivation = useCallback((row, idx) => {
+    if (hasActiveFilter) {
+      trackSearchResultSelected({
+        entity,
+        specName,
+        source: hasColumnFilter ? 'table_filter' : 'table_search',
+        type: hasColumnFilter ? 'filter' : 'search',
+        position: idx + 1,
+      });
+    }
+    if (onRowClick) onRowClick(row);
+    else if (onNavigate) onNavigate(row);
+    else onRowSelect?.(row);
+  }, [entity, specName, hasActiveFilter, hasColumnFilter, onRowClick, onNavigate, onRowSelect]);
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -1323,21 +1338,6 @@ export function DataTable({
       return next;
     });
   };
-
-  const handleRowActivation = useCallback((row, idx) => {
-    if (hasActiveFilter) {
-      trackSearchResultSelected({
-        entity,
-        specName,
-        source: hasColumnFilter ? 'table_filter' : 'table_search',
-        type: hasColumnFilter ? 'filter' : 'search',
-        position: idx + 1,
-      });
-    }
-    if (onRowClick) onRowClick(row);
-    else if (onNavigate) onNavigate(row);
-    else onRowSelect?.(row);
-  }, [entity, specName, hasActiveFilter, hasColumnFilter, onRowClick, onNavigate, onRowSelect]);
 
   const quickActionsEnabled = isQuickActionsEnabled(rowQuickActions);
   const legacyDeleteEnabled = !!onDeleteRow && (hoverRowActions || !quickActionsEnabled);

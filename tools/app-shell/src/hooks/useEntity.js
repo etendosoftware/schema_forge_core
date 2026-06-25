@@ -411,6 +411,18 @@ export function getVisible(editing) {
     };
 }
 
+export function getMissingRequiredFields(fields, editing) {
+    const isReadOnly = getReadOnly(editing);
+    const isVisible = getVisible(editing);
+    return fields
+        .filter(f => f.required && !isReadOnly(f) && isVisible(f) && f.type !== 'checkbox' && f.section !== 'summary')
+        .filter(f => {
+            const v = editing?.[f.key];
+            return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
+        })
+        .map(f => f.key);
+}
+
 export function getUrl(isNew, apiBaseUrl, entity, editing) {
     return isNew ? `${apiBaseUrl}/${entity}` : `${apiBaseUrl}/${entity}/${editing.id}`;
 }
@@ -808,15 +820,7 @@ export function useEntity(entity, childEntity, {
         // existing records, `editing` already includes server-resolved values.
         if (isNew) {
             const fields = [...formFieldsRef.current.values()].flat();
-            const isReadOnly = getReadOnly(editing);
-            const isVisible = getVisible(editing);
-            const missing = fields
-                .filter(f => f.required && !isReadOnly(f) && isVisible(f) && f.type !== 'checkbox' && f.section !== 'summary')
-                .filter(f => {
-                    const v = editing?.[f.key];
-                    return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
-                })
-                .map(f => f.key);
+            const missing = getMissingRequiredFields(fields, editing);
             if (missing.length > 0) {
                 return reportMissingRequiredFields(missing, ui, setFieldErrors, setSaveError, setIsSaving);
             }
