@@ -236,6 +236,31 @@ describe('domain boundary classification', () => {
     }
   });
 
+  it('classifies neo-writer and cli/src/lib helpers with the generator boundary', () => {
+    assert.deepEqual(
+      classifyPath('cli/src/neo-writer.js', { knownWindows: WINDOWS }),
+      { kind: 'generator-change', scope: 'generator-change' },
+    );
+    assert.deepEqual(
+      classifyPath('cli/src/lib/neo-delta.js', { knownWindows: WINDOWS }),
+      { kind: 'generator-change', scope: 'generator-change' },
+    );
+  });
+
+  it('classifies .claude agent/tooling config as repo infra', () => {
+    assert.equal(
+      classifyPath('.claude/agents/foo.md', { knownWindows: WINDOWS }).scope,
+      'repo-infra',
+    );
+  });
+
+  it('classifies agentic-validation docs as repo infra', () => {
+    assert.equal(
+      classifyPath('docs/agentic-validation/bar.md', { knownWindows: WINDOWS }).scope,
+      'repo-infra',
+    );
+  });
+
   it('classifies npm registry config as repo infra', () => {
     assert.deepEqual(
       classifyPath('.npmrc', { knownWindows: WINDOWS }),
