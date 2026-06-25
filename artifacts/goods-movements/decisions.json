@@ -62,6 +62,7 @@
   "entities": {
     "header": {
       "name": "movement",
+      "javaQualifier": "goodsMovementsHeaderHandler",
       "fields": {
         "name": {
           "grid": true,
