@@ -259,6 +259,16 @@ fi
 
 # ── Step 1: Run scanner ────────────────────────────────────────────
 echo "==> Running sonar-scanner..."
+# Resolve sonar-scanner: prefer global install, fall back to NVM node_modules.
+if ! command -v sonar-scanner &>/dev/null; then
+  NVM_ROOT="${NVM_DIR:-$HOME/.nvm}"
+  for _dir in "$NVM_ROOT"/versions/node/*/lib/node_modules/sonar-scanner/bin; do
+    if [ -x "$_dir/sonar-scanner" ]; then
+      export PATH="$_dir:$PATH"
+      break
+    fi
+  done
+fi
 sonar-scanner \
   -Dsonar.host.url="$SONAR_HOST_URL" \
   -Dsonar.token="$SONAR_TOKEN"
