@@ -14252,7 +14252,8 @@
       "label": "Period Control Log"
     },
     "Open/Close Period Control": {
-      "label": "Open/Close Period Control"
+      "label": "Open/Close Period Control",
+      "newLabel": "New Period"
     },
     "Inventory Amount Update": {
       "label": "Inventory Amount Update"
@@ -20868,7 +20869,8 @@
       "label": "Landed Cost Type"
     },
     "Open/Close Period Control": {
-      "label": "Open/Close Period Control"
+      "label": "Open/Close Period Control",
+      "newLabel": "New Period"
     },
     "Data Import Entry Archive": {
       "label": "Data Import Entry Archive"
