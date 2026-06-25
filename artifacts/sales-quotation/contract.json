@@ -1,8 +1,8 @@
 {
-  "version": "0.11.0",
+  "version": "0.12.0",
   "generatedAt": "2026-04-30T15:42:46.907Z",
-  "updatedAt": "2026-06-24T23:10:37.501Z",
-  "checksum": "74aa9c0b783dc07a",
+  "updatedAt": "2026-06-25T00:35:58.864Z",
+  "checksum": "e229c69a7a11903e",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -1732,6 +1732,14 @@
             "type": "button",
             "visibility": "system",
             "required": false
+          },
+          {
+            "name": "eTPRRemovePayment",
+            "apiKey": "eTPRRemovePayment",
+            "column": "EM_Etpr_Remove_Payment",
+            "type": "button",
+            "visibility": "system",
+            "required": true
           }
         ],
         "javaQualifier": "salesQuotationHeaderHandler"
@@ -2701,6 +2709,14 @@
         "processType": "obuiapp"
       },
       {
+        "entity": "quotation",
+        "field": "eTPRRemovePayment",
+        "column": "EM_Etpr_Remove_Payment",
+        "url": "/sws/neo/sales-quotation/quotation/{id}/action/eTPRRemovePayment",
+        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "quotationLine",
         "field": "explode",
         "column": "Explode",
@@ -2835,6 +2851,14 @@
         "field": "documentAction",
         "runner": "node",
         "description": "Action endpoint for 'documentAction' in quotation should exist"
+      },
+      {
+        "id": "t-action-endpoint-quotation-eTPRRemovePayment",
+        "category": "action-endpoint",
+        "entity": "quotation",
+        "field": "eTPRRemovePayment",
+        "runner": "node",
+        "description": "Action endpoint for 'eTPRRemovePayment' in quotation should exist"
       },
       {
         "id": "t-action-endpoint-quotation-generateTemplate",
@@ -4195,6 +4219,14 @@
         "description": "System field 'dropShipPartner' should exist in backend but not frontend for quotation"
       },
       {
+        "id": "t-system-field-quotation-eTPRRemovePayment",
+        "category": "system-field",
+        "entity": "quotation",
+        "field": "eTPRRemovePayment",
+        "runner": "node",
+        "description": "System field 'eTPRRemovePayment' should exist in backend but not frontend for quotation"
+      },
+      {
         "id": "t-system-field-quotation-etvfacReversedInvoice",
         "category": "system-field",
         "entity": "quotation",
@@ -5130,9 +5162,9 @@
       }
     ],
     "summary": {
-      "total": 297,
+      "total": 299,
       "byCategory": {
-        "action-endpoint": 22,
+        "action-endpoint": 23,
         "crud-flags": 2,
         "default-value-type": 7,
         "displaylogic-evaluable": 3,
@@ -5144,11 +5176,11 @@
         "rule-declared": 8,
         "searchable-filters": 6,
         "selector-endpoint": 9,
-        "system-field": 151,
+        "system-field": 152,
         "visibility": 2
       },
       "byRunner": {
-        "node": 297,
+        "node": 299,
         "junit": 0
       }
     }

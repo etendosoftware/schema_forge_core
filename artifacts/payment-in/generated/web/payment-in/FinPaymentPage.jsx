@@ -28,6 +28,10 @@ const extraBadges = [];
 
 // @sf-generated-start processes:finPayment
 const processes = [
+  { name: 'etprReactivatePayment', label: 'Advanced Reactivation', style: 'positive',
+    displayLogicRaw: "@Processed@='Y' & @Status@!'RPVOID'" },
+  { name: 'eTPRRemovePayment', label: 'Remove Payment', style: 'positive',
+    displayLogicRaw: "@Processed@='Y' & @Status@!'RPVOID'" },
   { name: 'aPRMProcessPayment', label: 'Process Payment', style: 'positive', columnName: 'aPRMProcessPayment',
     displayLogicRaw: "@status@='RPAP'" },
 ];
@@ -38,7 +42,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:finPayment
 
 // @sf-generated-start requiredHeaderFields:finPayment
-const requiredHeaderFields = [];
+const requiredHeaderFields = ['etprReactivatePayment'];
 // @sf-generated-end requiredHeaderFields:finPayment
 
 
@@ -194,6 +198,22 @@ export const api = {
       "url": "/sws/neo/payment-in/finPayment/{id}/action/psd2GenerateBankPayment",
       "processId": "0661406A983B4D8EA611F8596F114D52",
       "processType": "obuiapp"
+    },
+    {
+      "entity": "finPayment",
+      "field": "etprReactivatePayment",
+      "column": "EM_Etpr_Reactivate_Payment",
+      "url": "/sws/neo/payment-in/finPayment/{id}/action/etprReactivatePayment",
+      "processId": "84628BC70CDB49B58054E80C20BCBFEE",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "finPayment",
+      "field": "eTPRRemovePayment",
+      "column": "em_etpr_remove_payment",
+      "url": "/sws/neo/payment-in/finPayment/{id}/action/eTPRRemovePayment",
+      "processId": "FB79E902A5384754990AD145F6CAC9FB",
+      "processType": "obuiapp"
     }
   ],
   "queryParams": {
@@ -242,6 +262,7 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
         menuActions={({ status }) => [
           { key: 'reverse', label: 'Reverse Payment', destructive: true, visible: ["RPPC","RPR","RDNC"].includes(status), columnName: 'aPRMReversePayment',  }
         ]}
+        requiredHeaderFields={requiredHeaderFields}
         salesTheme
         sendDocument
         {...props}

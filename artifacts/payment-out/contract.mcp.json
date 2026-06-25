@@ -1,8 +1,8 @@
 {
-  "version": "0.7.0",
+  "version": "0.8.0",
   "generatedAt": "2026-04-29T18:11:46.137Z",
-  "updatedAt": "2026-06-24T23:10:33.850Z",
-  "contractChecksum": "3fd8073f5e06a7e9",
+  "updatedAt": "2026-06-25T00:35:55.902Z",
+  "contractChecksum": "eb83c459289a30ac",
   "apiPrediction": {
     "specName": "payment-out",
     "baseUrl": "/sws/neo/payment-out",
@@ -647,6 +647,69 @@
         "processType": "obuiapp"
       },
       {
+        "name": "etprReactivatePayment",
+        "actionType": "documentAction",
+        "entity": "header",
+        "column": "EM_Etpr_Reactivate_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/payment-out/header/{id}/action/etprReactivatePayment",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "processId": "84628BC70CDB49B58054E80C20BCBFEE",
+        "processType": "obuiapp"
+      },
+      {
+        "name": "eTPRRemovePayment",
+        "actionType": "paymentAction",
+        "entity": "header",
+        "column": "em_etpr_remove_payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/payment-out/header/{id}/action/eTPRRemovePayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "FB79E902A5384754990AD145F6CAC9FB",
+        "processType": "obuiapp"
+      },
+      {
         "name": "refreshPayment",
         "actionType": "paymentAction",
         "entity": "bankPayments",
@@ -774,7 +837,12 @@
           "ndDimension": {
             "readOnlyLogic": "@Posted@='Y'"
           },
-          "psd2GenerateBankPayment": {}
+          "psd2GenerateBankPayment": {},
+          "etprReactivatePayment": {
+            "required": true,
+            "defaultValue": "N"
+          },
+          "eTPRRemovePayment": {}
         }
       },
       "lines": {
@@ -985,7 +1053,8 @@
         "account",
         "currency",
         "financialTransactionAmount",
-        "financialTransactionConvertRate"
+        "financialTransactionConvertRate",
+        "etprReactivatePayment"
       ],
       "lineFields": [
         "amount",
@@ -1036,7 +1105,8 @@
     "actions": [
       "posted",
       "aPRMReversePayment",
-      "aeatsiiSend"
+      "aeatsiiSend",
+      "etprReactivatePayment"
     ],
     "workflow": [
       "Create draft header with required fields",
@@ -1066,7 +1136,8 @@
           "account",
           "currency",
           "financialTransactionAmount",
-          "financialTransactionConvertRate"
+          "financialTransactionConvertRate",
+          "etprReactivatePayment"
         ]
       },
       {
@@ -1095,8 +1166,9 @@
     "warnings": [],
     "knownLimitations": [],
     "dangerousOperations": [
-      "aPRMReversePayment"
+      "aPRMReversePayment",
+      "etprReactivatePayment"
     ]
   },
-  "checksum": "3271131bf435567d"
+  "checksum": "af86220f44b07902"
 }

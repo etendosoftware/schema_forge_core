@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.7.0",
   "generatedAt": "2026-04-29T19:46:12.773Z",
-  "updatedAt": "2026-06-24T23:10:35.879Z",
-  "contractChecksum": "79b899b3eb9a5f7e",
+  "updatedAt": "2026-06-25T00:35:57.588Z",
+  "contractChecksum": "9d731c158b74a2de",
   "apiPrediction": {
     "specName": "returns",
     "baseUrl": "/sws/neo/returns",
@@ -611,6 +611,29 @@
         "processType": "obuiapp"
       },
       {
+        "name": "eTPRRemovePayment",
+        "actionType": "paymentAction",
+        "entity": "customerReturn",
+        "column": "EM_Etpr_Remove_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/returns/customerReturn/{id}/action/eTPRRemovePayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+        "processType": "obuiapp"
+      },
+      {
         "name": "selectOrderLine",
         "actionType": "utilityAction",
         "entity": "customerReturnLine",
@@ -932,5 +955,5 @@
       "confirmcancelandreplace"
     ]
   },
-  "checksum": "402f347c240eb5b5"
+  "checksum": "7c9f85a054413dd8"
 }

@@ -1,8 +1,8 @@
 {
-  "version": "0.52.0",
+  "version": "0.53.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-06-24T23:10:35.128Z",
-  "contractChecksum": "41ccb62cd8f92963",
+  "updatedAt": "2026-06-25T00:35:57.134Z",
+  "contractChecksum": "bae6639495fd2548",
   "apiPrediction": {
     "specName": "purchase-invoice",
     "baseUrl": "/sws/neo/purchase-invoice",
@@ -1150,6 +1150,29 @@
         "processType": "obuiapp"
       },
       {
+        "name": "eTPRRemovePayment",
+        "actionType": "paymentAction",
+        "entity": "header",
+        "column": "EM_Etpr_Remove_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/purchase-invoice/header/{id}/action/eTPRRemovePayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "745FCF75B6F14024B96CC14429D8E952",
+        "processType": "obuiapp"
+      },
+      {
         "name": "explode",
         "actionType": "utilityAction",
         "entity": "lines",
@@ -2087,5 +2110,5 @@
       "tbaiVoidxmlgenerator"
     ]
   },
-  "checksum": "2bb608230f33e536"
+  "checksum": "b434efa8b46ecc14"
 }
