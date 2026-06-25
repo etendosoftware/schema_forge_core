@@ -336,14 +336,16 @@ test.describe('Contacts — Full mocked journey', () => {
 
     // KPI sidebar
     await expect(page.getByText(/ventas y compras|ingresos/i).first()).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText(/expandir/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/ver gr[aá]fico|view chart/i).first()).toBeVisible({ timeout: 5_000 });
 
     // ═══════════════════════════════════════════════════════════════════════
     // PART 4: TOGGLE Persona / Empresa
     // ═══════════════════════════════════════════════════════════════════════
 
-    const personaBtn = page.getByRole('button', { name: /^persona$/i });
-    const empresaBtn = page.getByRole('button', { name: /^empresa$/i });
+    // The Person/Company toggle renders an sr-only <input type="radio"> inside a clickable
+    // <label> (onClick handler lives on the label). Click the enclosing label, not the input.
+    const personaBtn = page.getByRole('radio', { name: /^persona$/i }).locator('xpath=ancestor::label[1]');
+    const empresaBtn = page.getByRole('radio', { name: /^empresa$/i }).locator('xpath=ancestor::label[1]');
 
     // Toggle to Persona
     await personaBtn.click();
@@ -418,8 +420,9 @@ test.describe('Contacts — Full mocked journey', () => {
     const bloqueoVisible = await page.getByText(/bloqueo/i).first().isVisible({ timeout: 3_000 }).catch(() => false);
     expect(bloqueoVisible).toBe(true);
 
-    // Enable vendor → vendor billing fields appear
-    const vendorCheckbox = page.getByRole('checkbox', { name: /proveedor|vendor/i });
+    // Enable vendor → vendor billing fields appear.
+    // The checkbox is an sr-only <input> inside a clickable <label>; target the label.
+    const vendorCheckbox = page.getByRole('checkbox', { name: /proveedor|vendor/i }).locator('xpath=ancestor::label[1]');
     let vendorChecked = false;
     if (await vendorCheckbox.isVisible({ timeout: 3_000 }).catch(() => false)) {
       await vendorCheckbox.click();
