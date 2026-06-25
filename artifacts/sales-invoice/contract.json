@@ -1,8 +1,8 @@
 {
-  "version": "0.33.0",
+  "version": "0.34.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-06-25T00:35:58.454Z",
-  "checksum": "f78015a11609bd69",
+  "updatedAt": "2026-06-25T14:15:39.077Z",
+  "checksum": "98b4685b0649e944",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -1287,10 +1287,6 @@
             "required": false,
             "grid": true,
             "form": true,
-            "derivation": {
-              "type": "computed",
-              "source": "0"
-            },
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 5,
@@ -1418,13 +1414,6 @@
             "derivation": {
               "type": "computed",
               "source": "1"
-            }
-          },
-          {
-            "name": "etgoDiscount",
-            "derivation": {
-              "type": "computed",
-              "source": "0"
             }
           },
           {

@@ -1377,5 +1377,15 @@
     ],
     "author": "pipeline",
     "date": "2026-06-19"
+  },
+  {
+    "from": "0.24.0",
+    "to": "0.25.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"eTPRRemovePayment\" added to entity \"header\" in backend"
+    ],
+    "author": "pipeline",
+    "date": "2026-06-25"
   }
 ]

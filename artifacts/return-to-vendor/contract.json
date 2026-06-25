@@ -1,8 +1,8 @@
 {
-  "version": "0.10.0",
+  "version": "0.11.0",
   "generatedAt": "2026-04-29T19:46:13.628Z",
-  "updatedAt": "2026-06-25T00:35:57.934Z",
-  "checksum": "cea9699c66738e0e",
+  "updatedAt": "2026-06-25T14:15:38.549Z",
+  "checksum": "4ae06ee655ff4dca",
   "frontendContract": {
     "window": {
       "id": "C50A8AEE6F044825B5EF54FAAE76826F",
@@ -2609,6 +2609,14 @@
             "type": "button",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "eTGOCurrencyRate",
+            "apiKey": "eTGOCurrencyRate",
+            "column": "EM_ETGO_Currency_Rate",
+            "type": "string",
+            "visibility": "system",
+            "required": false
           }
         ]
       },
@@ -9029,6 +9037,14 @@
         "description": "System field 'dropShipPartner' should exist in backend but not frontend for header"
       },
       {
+        "id": "t-system-field-header-eTGOCurrencyRate",
+        "category": "system-field",
+        "entity": "header",
+        "field": "eTGOCurrencyRate",
+        "runner": "node",
+        "description": "System field 'eTGOCurrencyRate' should exist in backend but not frontend for header"
+      },
+      {
         "id": "t-system-field-header-etgoTotalDiscount",
         "category": "system-field",
         "entity": "header",
@@ -10359,7 +10375,7 @@
       }
     ],
     "summary": {
-      "total": 711,
+      "total": 712,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 7,
@@ -10373,11 +10389,11 @@
         "rule-declared": 174,
         "searchable-filters": 1,
         "selector-endpoint": 30,
-        "system-field": 200,
+        "system-field": 201,
         "visibility": 7
       },
       "byRunner": {
-        "node": 711,
+        "node": 712,
         "junit": 0
       }
     }

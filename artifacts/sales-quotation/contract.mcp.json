@@ -1,8 +1,8 @@
 {
-  "version": "0.11.0",
+  "version": "0.12.0",
   "generatedAt": "2026-04-30T15:42:46.907Z",
-  "updatedAt": "2026-06-23T15:00:38.679Z",
-  "contractChecksum": "7cb0e41117ca9fc7",
+  "updatedAt": "2026-06-25T14:15:39.541Z",
+  "contractChecksum": "6034e9c4224b6869",
   "apiPrediction": {
     "specName": "sales-quotation",
     "baseUrl": "/sws/neo/sales-quotation",
@@ -612,6 +612,29 @@
         "processType": "obuiapp"
       },
       {
+        "name": "eTPRRemovePayment",
+        "actionType": "paymentAction",
+        "entity": "quotation",
+        "column": "EM_Etpr_Remove_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/sales-quotation/quotation/{id}/action/eTPRRemovePayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+        "processType": "obuiapp"
+      },
+      {
         "name": "explode",
         "actionType": "utilityAction",
         "entity": "quotationLine",
@@ -807,34 +830,34 @@
             "readOnlyLogic": "@Processed@='Y'"
           },
           "description": {},
-          "orderedQuantity": {
-            "required": true,
-            "readOnlyLogic": "@Processed@='Y' | (@IsSOTrx@='Y' & @ISLINKEDTOPRODUCT@='Y' & @PRODUCTTYPE@='S') | @UomManagement@='Y'",
-            "defaultValue": "1"
-          },
-          "listPrice": {
-            "required": true,
-            "readOnlyLogic": "@Processed@='Y'"
-          },
           "discount": {
             "readOnlyLogic": "@Processed@='Y'",
             "defaultValue": "0"
-          },
-          "tax": {
-            "required": true,
-            "readOnlyLogic": "@Processed@='Y'"
           },
           "lineGrossAmount": {
             "readOnly": true,
             "defaultValue": "0"
           },
-          "unitPrice": {
-            "required": true,
-            "readOnlyLogic": "@Processed@='Y' | @GROSSPRICE@='Y'"
-          },
           "lineNetAmount": {
             "required": true,
             "readOnlyLogic": "@Iseditlinenetamt@='N'|@GROSSPRICE@='Y'"
+          },
+          "listPrice": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y'"
+          },
+          "orderedQuantity": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y' | (@IsSOTrx@='Y' & @ISLINKEDTOPRODUCT@='Y' & @PRODUCTTYPE@='S') | @UomManagement@='Y'",
+            "defaultValue": "1"
+          },
+          "tax": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y'"
+          },
+          "unitPrice": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y' | @GROSSPRICE@='Y'"
           }
         }
       }
@@ -858,11 +881,11 @@
       ],
       "lineFields": [
         "product",
-        "orderedQuantity",
+        "lineNetAmount",
         "listPrice",
+        "orderedQuantity",
         "tax",
-        "unitPrice",
-        "lineNetAmount"
+        "unitPrice"
       ],
       "recommendedOrder": [
         "createHeader",
@@ -976,11 +999,11 @@
         "description": "Add a line after the header exists and parent context is available.",
         "fields": [
           "product",
-          "orderedQuantity",
+          "lineNetAmount",
           "listPrice",
+          "orderedQuantity",
           "tax",
-          "unitPrice",
-          "lineNetAmount"
+          "unitPrice"
         ]
       },
       {
@@ -996,5 +1019,5 @@
       "confirmcancelandreplace"
     ]
   },
-  "checksum": "bf9411d79a057ded"
+  "checksum": "4a7fd96fabd1e455"
 }

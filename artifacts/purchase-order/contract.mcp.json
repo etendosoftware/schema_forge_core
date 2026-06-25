@@ -1,8 +1,8 @@
 {
-  "version": "0.24.0",
+  "version": "0.25.0",
   "generatedAt": "2026-04-30T15:42:46.497Z",
-  "updatedAt": "2026-06-25T00:35:57.406Z",
-  "contractChecksum": "75d31ff181010004",
+  "updatedAt": "2026-06-25T14:15:37.499Z",
+  "contractChecksum": "801fdd2be9a45398",
   "apiPrediction": {
     "specName": "purchase-order",
     "baseUrl": "/sws/neo/purchase-order",
@@ -1660,5 +1660,5 @@
       "confirmcancelandreplace"
     ]
   },
-  "checksum": "cd9b0132915784b3"
+  "checksum": "ba86c482a3b6907e"
 }
