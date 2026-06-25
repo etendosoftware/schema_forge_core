@@ -52,21 +52,12 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
         );
       }
     } else {
-      // No linked sales order — still hit the invoice's own endpoint on refresh
-      // so the user sees a network request fire in DevTools. Refreshes the
-      // parent header reading from server in case `salesOrder` was filled
-      // outside the React state (e.g. by a background job).
-      promises.push(
-        fetchById('sales-invoice', 'header', recordId, token, apiBaseUrl)
-          .then((fresh) => {
-            if (fresh?.salesOrder && fresh.salesOrder !== orderId) {
-              // Bumping our internal key would re-run this effect with the new
-              // data via the parent's re-render; we don't mutate `data` here
-              // because the parent owns it.
-            }
-          })
-          .catch(() => {})
-      );
+      // No linked sales order — show shipments linked directly via invoice line → shipment line.
+      // The backend enriches linkedShipments on every detail GET from m_inoutline_id joins.
+      const linked = Array.isArray(data.linkedShipments) ? data.linkedShipments : [];
+      if (linked.length > 0) {
+        setShipments(linked);
+      }
     }
 
     if (promises.length === 0) { setLoading(false); return; }
