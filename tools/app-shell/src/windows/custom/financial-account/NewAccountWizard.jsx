@@ -282,6 +282,9 @@ export function NewAccountWizard({ open, onClose, onCreated, onConnectWithCreati
             bankName={selectedBank?.name}
             currencies={currencies}
             defaultCurrencyId={defaultCurrencyId}
+            // Pre-fill the account name with the chosen bank's name so the user only tweaks it
+            // (e.g. "Santander" → "Santander nóminas"). Empty when no bank was selected (skip / cash).
+            initialValues={{ name: selectedBank?.name ?? '' }}
             submitting={submitting}
             error={formError}
             onSubmit={handleCreate}

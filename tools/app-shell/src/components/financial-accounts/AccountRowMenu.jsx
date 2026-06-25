@@ -3,7 +3,6 @@ import {
   ExternalLink,
   Pencil,
   Archive,
-  Link2,
   RefreshCw,
   Unlink2,
   Plug,
@@ -23,13 +22,16 @@ import { ACCOUNT_TYPE } from './tokens';
  * the surface matches the Figma `3012:25602` mock end-to-end, even before the
  * downstream features ship. Items follow this order:
  *
- *   1. Abrir cuenta             (interactive in T1, navigates to the detail)
- *   2. Editar conexión PSD2     (disabled — wired by ETP-4097 / T3)
- *   3. Sincronizar ahora        (disabled — wired by ETP-4097 / T3)
+ *   1. Abrir cuenta             (navigates to the detail)
+ *   2. Editar cuenta            (opens the unified edit modal — includes the PSD2
+ *                                connection panel when connected, ETP-4097 / T3)
+ *   3. Sincronizar ahora        (connected only — runs the PSD2 statement fetch)
  *   ───
- *   4. Conectar PSD2            (disabled — wired by ETP-4097 / T3)
- *   5. Desconectar PSD2         (disabled — wired by ETP-4097 / T3)
+ *   4. Desconectar PSD2         (connected only)
+ *   4'. Conectar PSD2           (not connected)
  *
+ * The former standalone "Editar conexión PSD2" item was merged into "Editar
+ * cuenta": both surfaced the same account data, so editing is now unified.
  * Cash accounts (type=C) never expose the PSD2 group because the connection
  * does not apply to manual cash drawers.
  */
@@ -78,15 +80,6 @@ export function AccountRowMenu({ account, onOpen, onEdit, onArchive, onPsd2Actio
           <>
             {psd2Connected ? (
               <>
-                <DropdownMenuItem
-                  onClick={() => onPsd2Action?.('editPsd2', account)}
-                  data-testid={`account-row-menu-edit-psd2-${account.id}`}
-                >
-                  <Link2 className="h-5 w-5 text-[#828FA3]" data-testid="Link2__ffaf9f" />
-                  <span className="text-sm font-normal leading-6 text-[#121217]">
-                    {ui('financeAccountsMenuEditPsd2')}
-                  </span>
-                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => onPsd2Action?.('syncNow', account)}
                   data-testid={`account-row-menu-sync-${account.id}`}

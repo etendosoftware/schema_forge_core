@@ -14,7 +14,6 @@ import {
 } from '@/components/financial-accounts';
 import { NewAccountWizard } from '@/windows/custom/financial-account/NewAccountWizard.jsx';
 import { EditAccountModal } from '@/windows/custom/financial-account/EditAccountModal.jsx';
-import { EditPsd2ConnectionModal } from '@/windows/custom/financial-account/EditPsd2ConnectionModal.jsx';
 import { ArchiveAccountDialog } from '@/windows/custom/financial-account/ArchiveAccountDialog.jsx';
 import { Psd2ConnectFlowUI } from '@/windows/custom/financial-account/Psd2ConnectFlowUI.jsx';
 
@@ -47,7 +46,6 @@ export default function FinancialAccountsPage() {
   const [search, setSearch] = useState('');
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editAccount, setEditAccount] = useState(null);
-  const [psd2EditAccount, setPsd2EditAccount] = useState(null);
   const [archiveTarget, setArchiveTarget] = useState(null);
   const { sync, disconnect } = usePsd2Actions();
   const psd2Flow = usePsd2ConnectFlow({ onDone: reload });
@@ -57,15 +55,18 @@ export default function FinancialAccountsPage() {
       psd2Flow.startConnect(account);
       return;
     }
-    if (action === 'editPsd2') {
-      setPsd2EditAccount(account);
-      return;
-    }
     if (action === 'syncNow') {
       try {
-        await sync(account.id);
-        toast.success(ui('financeAccountsPsd2SyncDone'));
+        const res = await sync(account.id);
         reload();
+        const msg = res?.message;
+        if (res?.status === 'ERROR') {
+          toast.error(msg || ui('financeAccountsPsd2SyncError'));
+        } else if (res?.status === 'WARNING') {
+          toast.info(msg || ui('financeAccountsPsd2SyncDone'));
+        } else {
+          toast.success(msg || ui('financeAccountsPsd2SyncDone'));
+        }
       } catch (err) {
         toast.error(err.message || ui('financeAccountsPsd2SyncError'));
       }
@@ -155,14 +156,9 @@ export default function FinancialAccountsPage() {
         account={editAccount}
         onClose={() => setEditAccount(null)}
         onSaved={reload}
+        onArchive={(acc) => { setEditAccount(null); setArchiveTarget(acc); }}
+        onConnect={(acc) => { setEditAccount(null); handlePsd2Action('connect', acc); }}
         data-testid="EditAccountModal__7c3fbc" />
-      <EditPsd2ConnectionModal
-        open={!!psd2EditAccount}
-        account={psd2EditAccount}
-        onClose={() => setPsd2EditAccount(null)}
-        onSaved={reload}
-        onArchive={(acc) => { setPsd2EditAccount(null); setArchiveTarget(acc); }}
-        data-testid="EditPsd2ConnectionModal__7c3fbc" />
       <ArchiveAccountDialog
         open={!!archiveTarget}
         account={archiveTarget}
