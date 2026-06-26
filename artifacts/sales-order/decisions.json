@@ -383,7 +383,8 @@
           "section": "principal",
           "order": 5,
           "gridOrder": 5,
-          "min": 0
+          "min": 0,
+          "max": 100
         },
         "warehouseRule": {
           "visibility": "discarded"

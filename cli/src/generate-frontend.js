@@ -308,13 +308,14 @@ export function generateTableComponent(entityName, contract) {
     const excludeValueOfColPart = f.excludeValueOf ? `, excludeValueOf: '${String(f.excludeValueOf).replace(/'/g, "\\'")}'` : '';
     const popupPart = fragmentIf(f.popup, ', popup: true');
     const minColPart = optProp('min', f.min);
+    const maxColPart = optProp('max', f.max);
     const growPart = fragmentIf(f.grow, ', grow: true');
     const columnWidthPart = optProp('minWidth', f.columnWidth);
     const noTrailingPart = fragmentIf(f.noTrailing, ', noTrailing: true');
     const filterOnlyPart = fragmentIf((f.filterOnly || f.filterable === false), ', filterable: false');
     const dotPart = fragmentIf(f.dot === false, ', dot: false');
     const gridReadOnlyPart = fragmentIf(f.gridReadOnly, ', readOnly: true');
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -1592,10 +1593,11 @@ function buildEntryFieldLine(f, i, firstSearchIdx) {
     : '';
   const { lookupDrawerPart, lookupTitlePart, onSelectMappingsPart, displayFromCatalogPart } = buildLookupEntryParts(f);
   const minEntryPart = optProp('min', f.min);
+  const maxEntryPart = optProp('max', f.max);
   // Selector exclusion: hide the option equal to the current value of another field
   // on the same add-line row (e.g. newStorageBin can't equal storageBin).
   const excludeValueOfPart = f.excludeValueOf ? `, excludeValueOf: '${String(f.excludeValueOf).replace(/'/g, "\\'")}'` : '';
-  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${skipDefaultPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart}${excludeValueOfPart} },`;
+  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${skipDefaultPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart}${maxEntryPart}${excludeValueOfPart} },`;
 }
 
 function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, detailEntity, headerColumnMap, headerBooleanFields) {

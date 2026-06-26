@@ -300,6 +300,7 @@ function applyFieldUIHints(f, mapped) {
   if (f.filterable === false) mapped.filterable = false;
   if (f.dot === false) mapped.dot = false;
   if (f.min !== undefined) mapped.min = f.min;
+  if (f.max !== undefined) mapped.max = f.max;
 }
 
 /**
