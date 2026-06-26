@@ -69,7 +69,8 @@
           "readOnlyLogic": null
         },
         "name": {
-          "grid": true
+          "grid": true,
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "description": {
           "readOnlyLogic": null,

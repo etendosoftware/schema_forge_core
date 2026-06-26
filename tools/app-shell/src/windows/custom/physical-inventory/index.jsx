@@ -20,7 +20,7 @@ const COLUMNS = [
       );
     },
   },
-  { key: 'processed', column: 'Processed', type: 'status', label: 'Status', enumLabels: { 'true': 'statusProcessed', 'false': 'statusDraft' } },
+  { key: 'processed', column: 'Processed', type: 'status', enumLabels: { 'true': 'statusProcessed', 'false': 'statusDraft' } },
 ];
 
 function CustomInventoryTable(props) {
