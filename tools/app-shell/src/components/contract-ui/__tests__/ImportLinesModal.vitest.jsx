@@ -178,11 +178,12 @@ describe('ImportLinesModal', () => {
   it('expands a document row on click and loads lines', async () => {
     renderModal();
 
-    // Wait for the STABLE list state: INV-001 visible AND no loading spinner.
-    // The eager-load effect briefly shows a spinner (eagerLoadingLines=true) after
-    // the initial document list appears, so checking only for INV-001 can hit that
-    // transient window and fail on the subsequent click.
+    // Wait for the fully-settled list state: fetchLines already called (eager load
+    // started) AND no loading spinner (eager load finished) AND INV-001 visible.
+    // Checking only INV-001 catches the brief window between initial render and the
+    // eager-load spinner, which hides the list before stable state is reached.
     await waitFor(() => {
+      expect(defaultProps.fetchLines).toHaveBeenCalled();
       expect(screen.queryByText('loading')).not.toBeInTheDocument();
       expect(screen.getByText('INV-001')).toBeInTheDocument();
     }, { timeout: 10000 });
@@ -208,6 +209,7 @@ describe('ImportLinesModal', () => {
     renderModal();
 
     await waitFor(() => {
+      expect(defaultProps.fetchLines).toHaveBeenCalled();
       expect(screen.queryByText('loading')).not.toBeInTheDocument();
       expect(screen.getByText('INV-001')).toBeInTheDocument();
     }, { timeout: 10000 });
@@ -226,6 +228,7 @@ describe('ImportLinesModal', () => {
     renderModal({ showPriceColumns: false });
 
     await waitFor(() => {
+      expect(defaultProps.fetchLines).toHaveBeenCalled();
       expect(screen.queryByText('loading')).not.toBeInTheDocument();
       expect(screen.getByText('INV-001')).toBeInTheDocument();
     }, { timeout: 10000 });
@@ -246,6 +249,7 @@ describe('ImportLinesModal', () => {
     renderModal();
 
     await waitFor(() => {
+      expect(defaultProps.fetchLines).toHaveBeenCalled();
       expect(screen.queryByText('loading')).not.toBeInTheDocument();
       expect(screen.getByText('INV-001')).toBeInTheDocument();
     }, { timeout: 10000 });
@@ -261,6 +265,7 @@ describe('ImportLinesModal', () => {
     renderModal();
 
     await waitFor(() => {
+      expect(defaultProps.fetchLines).toHaveBeenCalled();
       expect(screen.queryByText('loading')).not.toBeInTheDocument();
       expect(screen.getByText('INV-001')).toBeInTheDocument();
     }, { timeout: 10000 });
