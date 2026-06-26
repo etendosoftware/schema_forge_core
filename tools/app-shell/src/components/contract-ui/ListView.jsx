@@ -178,7 +178,6 @@ export function ListView({
   hidePrint = false,
   hideMoreMenu = false,
   hideListFilters = false,
-  hideStatusFilter = false,
   hideLink = false,
   hideEyeCount = false,
   headerContent = null,
@@ -692,7 +691,7 @@ export function ListView({
                 <ListFilterBarSection
                   hideFilters={listViewOptions?.hideFilters}
                   hideListFilters={hideListFilters}
-                  hideStatusFilter={listViewOptions?.hideStatusFilter ?? hideStatusFilter}
+                  hideStatusFilter={listViewOptions?.hideStatusFilter}
                   entity={entity}
                   apiBaseUrl={apiBaseUrl}
                   columns={tableColumns}

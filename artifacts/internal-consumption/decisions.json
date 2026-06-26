@@ -13,7 +13,9 @@
     "linesLayout": "inlineEditable",
     "hidePrint": true,
     "hideLink": true,
-    "hideStatusFilter": true,
+    "listViewOptions": {
+      "hideStatusFilter": true
+    },
     "customListIcons": true,
     "noHeaderBorder": true
   },
