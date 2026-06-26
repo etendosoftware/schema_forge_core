@@ -908,6 +908,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     const optionTranslator = f.reference === 'DocumentType'
       ? (name) => {
           const lower = name.toLowerCase();
+          if (lower.includes('reversed')) return null;
           if (lower.includes('credit') || lower.includes('memo')) return ui('creditNotesTab');
           if (lower.includes('return') || lower.includes('devoluci')) return ui('returnsTab');
           return ui('invoicesTab');
