@@ -37,6 +37,25 @@
         ]
       }
     },
+    "actions": {
+      "openClose": {
+        "parameters": [
+          {
+            "name": "openClose",
+            "type": "string",
+            "required": true,
+            "description": "Period action: O=Open, C=Closed, P=Permanently closed"
+          }
+        ],
+        "preconditions": [],
+        "effects": ["Updates the period or document-type status"],
+        "edgeCases": [
+          "Period is permanently closed (P) — cannot be re-opened",
+          "No accounting entries exist yet — transition may be restricted",
+          "User lacks period-control permission for the organization"
+        ]
+      }
+    },
     "labelOverrides": {
       "es_ES": {
         "Name": "Período",

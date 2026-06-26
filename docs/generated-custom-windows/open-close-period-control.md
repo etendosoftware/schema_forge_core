@@ -15,7 +15,7 @@ Manage the open/close status of fiscal periods for each organization. Controls w
 - Route: `/open-close-period-control` for the period list and `/open-close-period-control/:recordId` for the period detail.
 - Visibility: visible from the Finance menu as **Periods** (label `Abrir/Cerrar periodos` in `es_ES`).
 - Implementation type: generated window route loaded from the app-shell window registry.
-- Window shape: master-detail — `periodControl` (header, table `C_Period`) with a `documents` child tab (lines, table `C_Year`).
+- Window shape: master-detail — `periodControl` (header, table `C_Period`) with a `documents` child tab (lines, table `C_PeriodControl`).
 - The **New**, **Print**, and **More menu** toolbar buttons are hidden (`hideCreate`, `hidePrint`, `hideMoreMenu` all set to `true`). Periods are defined in the Fiscal Calendar and provisioned by the onboarding process; they cannot be created or deleted from this window.
 
 ## Reactive behavior and dependencies
@@ -63,7 +63,7 @@ Manage the open/close status of fiscal periods for each organization. Controls w
 - No free-text search is configured in the contract (`searchableFields: []` on both entities). Users cannot search periods by name or date range from the list toolbar. If filtering is needed, it must be added as a dedicated filter field in `decisions.json`.
 - The `openClose` button is currently classified as an action button in the contract, but the NEO Headless spec ID (`EB6BD6D721284B77B299F618A62A1600`) and process route are confirmed pushed. Whether the process dialog renders correctly in the generated UI depends on app-shell support for `obuiapp`-type process buttons — this should be verified manually.
 - Status badge colors are not specified in the contract. The generator will use the default badge style; product may need a custom color mapping (e.g., red for Permanently Closed, green for Open) via `decisions.json → window.statusBar` or a custom component.
-- The `documents` lines entity maps to `C_Year` (the year/document-type control record), not `C_PeriodControl`. This is correct per the Etendo AD schema, but testers should be aware that the "Documents" tab shows document-type rows keyed by `C_Year_ID`, not individual accounting documents.
+- The `documents` lines entity maps to `C_PeriodControl` (PK `C_PeriodControl_ID`). The `C_Year_ID` field visible in the raw AD schema is a property field (navigation path `period.year`) and is not a physical column of `C_PeriodControl` — the extractor now correctly identifies this via `AD_Column.IsKey='Y'`.
 
 ## Manual verification
 1. Open `/open-close-period-control` from the Finance menu under **Periods** and confirm the period list loads through the generated window route.

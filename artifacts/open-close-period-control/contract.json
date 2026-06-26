@@ -1,8 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-06-25T12:12:33.694Z",
-  "updatedAt": "2026-06-26T01:19:19.104Z",
-  "checksum": "8dd034a8b74fea4f",
+  "updatedAt": "2026-06-26T11:11:25.752Z",
+  "checksum": "bc1ebd3d542cf806",
   "frontendContract": {
     "window": {
       "id": "E66E701CCBA14B8BA480CBDE37C50D7A",
@@ -63,7 +63,28 @@
         "P": "All Permanently Closed",
         "M": "Mixed"
       },
-      "layoutType": "default"
+      "layoutType": "default",
+      "actions": {
+        "openClose": {
+          "parameters": [
+            {
+              "name": "openClose",
+              "type": "string",
+              "required": true,
+              "description": "Period action: O=Open, C=Closed, P=Permanently closed"
+            }
+          ],
+          "preconditions": [],
+          "effects": [
+            "Updates the period or document-type status"
+          ],
+          "edgeCases": [
+            "Period is permanently closed (P) — cannot be re-opened",
+            "No accounting entries exist yet — transition may be restricted",
+            "User lacks period-control permission for the organization"
+          ]
+        }
+      }
     },
     "entities": {
       "periodControl": {
@@ -635,6 +656,27 @@
         "C": "All Closed",
         "P": "All Permanently Closed",
         "M": "Mixed"
+      },
+      "actions": {
+        "openClose": {
+          "parameters": [
+            {
+              "name": "openClose",
+              "type": "string",
+              "required": true,
+              "description": "Period action: O=Open, C=Closed, P=Permanently closed"
+            }
+          ],
+          "preconditions": [],
+          "effects": [
+            "Updates the period or document-type status"
+          ],
+          "edgeCases": [
+            "Period is permanently closed (P) — cannot be re-opened",
+            "No accounting entries exist yet — transition may be restricted",
+            "User lacks period-control permission for the organization"
+          ]
+        }
       }
     },
     "entities": {

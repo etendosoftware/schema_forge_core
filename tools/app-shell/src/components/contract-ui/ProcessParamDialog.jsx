@@ -47,6 +47,7 @@ export function ProcessParamDialog({ open, onOpenChange, process, onConfirm }) {
   }, [open, process]);
 
   const visibleParams = process?.params?.filter(p => !p.hidden) ?? [];
+  const canConfirm = visibleParams.every(p => !p.required || !!values[p.key]);
 
   const handleConfirm = () => {
     onConfirm(values);
@@ -101,6 +102,7 @@ export function ProcessParamDialog({ open, onOpenChange, process, onConfirm }) {
           <Button
             type="button"
             onClick={handleConfirm}
+            disabled={!canConfirm}
             data-testid="process-param-confirm">
             {ui('confirm')}
           </Button>

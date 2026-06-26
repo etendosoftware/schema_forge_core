@@ -674,6 +674,7 @@ const WINDOW_TRUTHY_PROPS = [
   'statusEnumLabels',
   'lockedAlert',
   'lineEntityConfig',
+  'actions',
   'rowQuickActions',
   'sendDocument',
   'linesLayout',
