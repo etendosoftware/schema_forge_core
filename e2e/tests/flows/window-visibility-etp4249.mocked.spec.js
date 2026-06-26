@@ -9,7 +9,7 @@ import { login } from '../helpers/auth.js';
  *
  * TC-33 — "Combinación de cuentas" absent from menu
  * TC-34 — "Categoría de Libro Mayor" absent from menu
- * TC-35 — Tax Category and Tax Range windows are accessible (partial)
+ * TC-35 — Tax Category window is accessible (partial)
  * TC-37 — Existing Tax Rate window unaffected by this PR
  *
  * All specs run in mock mode (no real Etendo backend required).
@@ -65,6 +65,7 @@ async function expandSidebar(page) {
 test.describe('TC-33 — Account Combination absent from menu', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
+    await expandSidebar(page);
   });
 
   test('no menu item for account-combination exists in the DOM', async ({ page }) => {
@@ -98,6 +99,7 @@ test.describe('TC-33 — Account Combination absent from menu', () => {
 test.describe('TC-34 — GL Category absent from menu', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
+    await expandSidebar(page);
   });
 
   test('no menu item for gl-category exists in the DOM', async ({ page }) => {

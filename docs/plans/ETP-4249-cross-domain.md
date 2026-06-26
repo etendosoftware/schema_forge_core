@@ -43,6 +43,12 @@ window; no unrelated intent is mixed in.
 - `e2e/tests/flows/window-visibility-etp4249.mocked.spec.js` — mocked E2E
   tests covering window visibility test cases TC-33–TC-35, TC-37.
 
+### `docs`
+
+- `docs/generated-custom-windows/tax-category.md` — functional window guide
+  (intent, interaction model, field list, manual verification steps).
+- `docs/generated-custom-windows/INDEX.md` — index entry for the new guide.
+
 ## Tests
 
 - `e2e/tests/flows/window-visibility-etp4249.mocked.spec.js` — Playwright
