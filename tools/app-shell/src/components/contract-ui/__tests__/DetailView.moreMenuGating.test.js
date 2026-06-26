@@ -179,11 +179,13 @@ describe('DetailView — "more actions" button gating (ETP-4097)', () => {
       );
     });
 
-    it('returns null (hides the button) when there are no visible actions and no customMenuContent — BEFORE the button', () => {
+    it('returns null (hides the button) when there are no visible actions and no custom content — BEFORE the button', () => {
       // The core invariant: this guard sits in the same IIFE, ahead of the button.
+      // Uses hasCustomContent (derived from customMenuContent && customMenuHasContent !== false)
+      // to also handle the case where customMenuContent renders nothing.
       assert.match(
         iife,
-        /if\s*\(visibleActions\.length\s*===\s*0\s*&&\s*!customMenuContent\)\s*return\s+null;/,
+        /if\s*\(visibleActions\.length\s*===\s*0\s*&&\s*!hasCustomContent\)\s*return\s+null;/,
       );
     });
 
@@ -192,7 +194,7 @@ describe('DetailView — "more actions" button gating (ETP-4097)', () => {
     });
 
     it('keeps the empty-state guard ahead of the visibleActions.map render path', () => {
-      const guardIdx = src.indexOf('if (visibleActions.length === 0 && !customMenuContent) return null;');
+      const guardIdx = src.indexOf('if (visibleActions.length === 0 && !hasCustomContent) return null;');
       const mapIdx = src.indexOf('visibleActions.map(');
       assert.ok(guardIdx !== -1, 'empty-state guard must exist');
       assert.ok(mapIdx !== -1, 'visibleActions.map render must exist');

@@ -12,7 +12,7 @@
  * Case B: customMenuContent returns null -> probe measures empty ->
  *         hasCustomContent false -> opening the more menu renders no popover.
  */
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { DetailView } from '../DetailView.jsx';
@@ -220,16 +220,15 @@ describe('DetailView — customMenuContent probe', () => {
     expect(screen.getAllByTestId('custom-action-btn').length).toBeGreaterThanOrEqual(2);
   });
 
-  it('Case B: renders no popover content when customMenuContent returns null', async () => {
-    const user = userEvent.setup();
+  it('Case B: hides the more-actions button when customMenuContent returns null (no menuActions)', async () => {
     const EmptyMenu = () => null;
     renderDetailView({ customMenuContent: EmptyMenu });
 
-    const moreBtn = screen.getByTestId('action-more');
-    await user.click(moreBtn);
-
-    // Probe measured empty -> hasCustomContent false and no menuActions ->
-    // the popover block returns null. Nothing custom is rendered.
-    expect(screen.queryByTestId('custom-action-btn')).toBeNull();
+    // The probe renders EmptyMenu → null → childElementCount 0 → hasCustomContent: false.
+    // Combined with no menuActions, the IIFE returns null before the button, hiding it.
+    // Wait for the probe effect to fire and state to settle.
+    await waitFor(() => {
+      expect(screen.queryByTestId('action-more')).toBeNull();
+    });
   });
 });
