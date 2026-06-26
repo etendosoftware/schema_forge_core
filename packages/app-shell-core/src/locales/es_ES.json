@@ -17962,7 +17962,7 @@
     "financeAccountStatementsSearch": "Buscar extractos...",
     "financeAccountStatementsImport": "Importar extracto",
     "financeAccountStatementsManualMore": "Más opciones de importación",
-    "financeAccountStatementsManualMenuItem": "Crear manualmente",
+    "financeAccountStatementsManualMenuItem": "Nuevo extracto",
     "financeAccountStatementsManualMenuItemDesc": "Introduce la cabecera y las líneas a mano",
     "financeAccountStatementsManualTitle": "Nuevo extracto bancario",
     "financeAccountStatementsManualSubtitle": "Completa los datos para generar y procesar el extracto.",

@@ -17712,7 +17712,7 @@
     "financeAccountStatementsSearch": "Search statements...",
     "financeAccountStatementsImport": "Import statement",
     "financeAccountStatementsManualMore": "More import options",
-    "financeAccountStatementsManualMenuItem": "Create manually",
+    "financeAccountStatementsManualMenuItem": "New statement",
     "financeAccountStatementsManualMenuItemDesc": "Enter the header and lines by hand",
     "financeAccountStatementsManualTitle": "New bank statement",
     "financeAccountStatementsManualSubtitle": "Fill in the details to generate and process the statement.",

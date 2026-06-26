@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ChevronDown, Pencil, Upload } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Plus, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUI } from '@/i18n';
 import { AdvancedFilterButton } from '@/components/contract-ui/AdvancedFilterButton.jsx';
@@ -55,25 +55,18 @@ function ImportSplitButton({ ui, onImportClick, onManualClick }) {
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 top-11 z-50 w-72 overflow-hidden rounded-lg border border-[#E8EAEF] bg-white shadow-lg"
+          className="absolute right-0 top-11 z-50 w-[229px] overflow-hidden rounded-lg border border-[#E8EAEF] bg-white py-2 shadow-lg"
         >
           <button
             type="button"
             role="menuitem"
             data-testid="statements-manual-create"
             onClick={() => { setOpen(false); onManualClick(); }}
-            className="flex w-full items-start gap-3 px-3 py-2.5 text-left hover:bg-[#F5F7F9]"
+            className="flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-[#F5F7F9]"
           >
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F0F2F5] text-[#121217]">
-              <Pencil className="h-4 w-4" data-testid="Pencil__8a428c" />
-            </span>
-            <span className="flex flex-col">
-              <span className="text-sm font-semibold text-[#121217]">
-                {ui('financeAccountStatementsManualMenuItem')}
-              </span>
-              <span className="text-xs text-[#6C6C89]">
-                {ui('financeAccountStatementsManualMenuItemDesc')}
-              </span>
+            <Plus className="h-6 w-6 shrink-0 text-[#828FA3]" data-testid="Plus__8a428c" />
+            <span className="text-sm text-[#121217]">
+              {ui('financeAccountStatementsManualMenuItem')}
             </span>
           </button>
         </div>
