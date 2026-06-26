@@ -80,6 +80,14 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
     return svw.in ? svw.in.includes(val) : val === svw.equals;
   };
 
+  // editableWhen: single condition object or array of conditions (all must match)
+  const resolveEditable = (item) => {
+    if (item.editable) return true;
+    if (!item.editableWhen) return false;
+    const conds = Array.isArray(item.editableWhen) ? item.editableWhen : [item.editableWhen];
+    return conds.every(c => matchesSvw(c));
+  };
+
   return (
     <div className="fm-aeat-table">
       {sections.map((section) => {
@@ -260,20 +268,21 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
                         {row.infoboxes.map(box => {
                           const boxNum = box.cells?.[0] ?? null;
                           const val = boxNum != null ? (valueMap[boxNum] ?? null) : null;
-                          const isCellEditing = box.editable && editingCell === boxNum;
+                          const isCellEditable = resolveEditable(box);
+                          const isCellEditing = isCellEditable && editingCell === boxNum;
                           return (
                             <div key={box.id} className="fm-aeat-infobox">
                               <p className="fm-aeat-infobox__text">{t(box.labelKey)}</p>
                               {boxNum != null && (
-                                <div className={`fm-aeat-cell${box.editable ? ' fm-aeat-cell--editable' : ''}`}>
+                                <div className={`fm-aeat-cell${isCellEditable ? ' fm-aeat-cell--editable' : ''}`}>
                                   <span className="fm-aeat-cell__num">{String(boxNum).padStart(2, '0')}</span>
                                   {isCellEditing ? (
                                     renderCellInput(boxNum, val)
                                   ) : (
                                     <>
                                       <span className="fm-aeat-cell__value">{val != null ? formatCell(val, 'amount') : ''}</span>
-                                      {!box.editable && <span className="fm-aeat-cell__unit fm-aeat-cell__unit--dark">{t('fm.unit.euros')}</span>}
-                                      {box.editable && (
+                                      {!isCellEditable && <span className="fm-aeat-cell__unit fm-aeat-cell__unit--dark">{t('fm.unit.euros')}</span>}
+                                      {isCellEditable && (
                                         <button className="fm-aeat-cell__edit-btn" onClick={() => setEditingCell(boxNum)}>
                                           <Pencil size={12} strokeWidth={1.5} data-testid="Pencil__49d327" />
                                         </button>
