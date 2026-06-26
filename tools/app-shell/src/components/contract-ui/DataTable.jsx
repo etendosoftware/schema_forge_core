@@ -942,21 +942,22 @@ function updateSnapshotWithSelectedItem(selectedItem, snapshot, handleChange, to
   }
 }
 
+function resolveNumericFieldValue(f, val) {
+  if (val === '' || val == null) {
+    if (f.defaultValue !== undefined) return f.defaultValue;
+    if (f.min !== undefined) return f.min;
+    return val;
+  }
+  const raw = String(val);
+  const parsed = f.type === 'integer' ? Number.parseInt(raw, 10) : Number.parseFloat(raw);
+  return Number.isNaN(parsed) ? val : parsed;
+}
+
 function coerceFieldValues(valuesRef, fields) {
   const coercedValues = { ...valuesRef.current };
   for (const f of fields) {
     if (!NUMERIC_FIELD_TYPES.has(f.type)) continue;
-    const val = coercedValues[f.key];
-    if (val === '' || val == null) {
-      // Empty numeric field: use defaultValue (or min) so handleAddChild never skips
-      // it and the backend does not apply an unexpected implicit default.
-      if (f.defaultValue !== undefined) coercedValues[f.key] = f.defaultValue;
-      else if (f.min !== undefined) coercedValues[f.key] = f.min;
-    } else {
-      const raw = String(val);
-      const parsed = f.type === 'integer' ? Number.parseInt(raw, 10) : Number.parseFloat(raw);
-      if (!Number.isNaN(parsed)) coercedValues[f.key] = parsed;
-    }
+    coercedValues[f.key] = resolveNumericFieldValue(f, coercedValues[f.key]);
   }
   return coercedValues;
 }
