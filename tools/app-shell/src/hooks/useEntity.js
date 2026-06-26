@@ -4,6 +4,7 @@ import { translateBackendError } from '@/lib/backendErrors.js';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
+import { trackDocumentCreated, trackTransactionPosted } from '@/lib/observability/health-events.js';
 import {
     isCompletionProcess,
     trackDocumentCompleted,
@@ -911,6 +912,7 @@ export function useEntity(entity, childEntity, {
                 setFieldErrors({});
                 showSaveSuccessToast(silent, isNew, ui);
                 if (isNew) {
+                    trackDocumentCreated();
                     trackRecordCreated({ entity, specName });
                 } else {
                     trackRecordUpdated({ entity, specName });
@@ -1033,6 +1035,7 @@ export function useEntity(entity, childEntity, {
             return null;
         }
         toast.success(ui('recordProcessed'));
+        trackTransactionPosted();
         trackDocumentCompleted({
             entity,
             specName,
