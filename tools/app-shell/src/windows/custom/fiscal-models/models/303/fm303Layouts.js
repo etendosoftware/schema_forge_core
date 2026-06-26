@@ -253,8 +253,9 @@ const _2024_COMPLEMENTARIA_OPS = [
   { op: 'patchSection', section: 'identificacion', patch: { fields: _2024_IDENTIFICACION_FIELDS } },
   { op: 'deleteRow', section: 'iva_devengado', row: '165' },
   { op: 'deleteRow', section: 'iva_devengado', row: '168' },
-  // Pre-Oct 2024: box 16/17/18 = 0.5% RE (in Oct 2024+ it becomes 1% RE)
-  { op: 'patchRow',  section: 'iva_devengado', row: 'recargo_equiv',  patch: { fixedValues: { 17: 0.50 } } },
+  // Pre-Oct 2024: box 17 (RE rate) comes from backend (dominant rate among 0%, 0.50%, 0.62%).
+  // Clear BASE's fixedValues so backend value shows through; defaultValues provides 0.50 until first compute.
+  { op: 'patchRow',  section: 'iva_devengado', row: 'recargo_equiv', patch: { fixedValues: {}, defaultValues: { 17: 0.50 } } },
   { op: 'patchRow',  section: 'iva_devengado', row: '153',            patch: { fixedValues: { 154: 5.00 } } },
   { op: 'patchRow',  section: 'iva_devengado', row: 'total_devengada', patch: { labelKey: 'fm.box.row.total_devengada_2023' } },
   // resultado_final — no otros_ajustes (108), no importe_devolucion, no rectificacion_importe (111)
