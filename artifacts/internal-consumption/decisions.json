@@ -32,7 +32,8 @@
       "fields": {
         "name": {
           "grid": true,
-          "searchable": true
+          "searchable": true,
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "movementDate": {
           "grid": true,

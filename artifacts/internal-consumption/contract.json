@@ -1,8 +1,8 @@
 {
-  "version": "0.9.0",
+  "version": "0.10.0",
   "generatedAt": "2026-06-26T00:48:58.290Z",
-  "updatedAt": "2026-06-26T01:18:52.876Z",
-  "checksum": "6733aed41ec66a56",
+  "updatedAt": "2026-06-26T02:39:48.121Z",
+  "checksum": "2d5682cdca00c35b",
   "frontendContract": {
     "window": {
       "id": "800076",
@@ -63,7 +63,12 @@
             "required": true,
             "grid": true,
             "form": true,
-            "sourceRequired": true
+            "sourceRequired": true,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "status",
@@ -999,12 +1004,28 @@
         "description": "Read-only logic for 'movementDate' in internalConsumption should have evaluable flag"
       },
       {
+        "id": "t-readonlylogic-evaluable-internalConsumption-name",
+        "category": "readonlylogic-evaluable",
+        "entity": "internalConsumption",
+        "field": "name",
+        "runner": "node",
+        "description": "Read-only logic for 'name' in internalConsumption should have evaluable flag"
+      },
+      {
         "id": "t-readonlylogic-valid-internalConsumption-movementDate",
         "category": "readonlylogic-valid",
         "entity": "internalConsumption",
         "field": "movementDate",
         "runner": "node",
         "description": "Read-only logic for 'movementDate' in internalConsumption should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-internalConsumption-name",
+        "category": "readonlylogic-valid",
+        "entity": "internalConsumption",
+        "field": "name",
+        "runner": "node",
+        "description": "Read-only logic for 'name' in internalConsumption should be valid JS"
       },
       {
         "id": "t-rule-declared-DISPLAY-AccountingDimensions",
@@ -1433,15 +1454,15 @@
       }
     ],
     "summary": {
-      "total": 81,
+      "total": 83,
       "byCategory": {
         "action-endpoint": 3,
         "crud-flags": 2,
         "default-value-type": 3,
         "field-presence": 8,
         "field-type": 8,
-        "readonlylogic-evaluable": 1,
-        "readonlylogic-valid": 1,
+        "readonlylogic-evaluable": 2,
+        "readonlylogic-valid": 2,
         "rule-declared": 13,
         "searchable-filters": 2,
         "selector-endpoint": 3,
@@ -1449,7 +1470,7 @@
         "visibility": 2
       },
       "byRunner": {
-        "node": 81,
+        "node": 83,
         "junit": 0
       }
     }

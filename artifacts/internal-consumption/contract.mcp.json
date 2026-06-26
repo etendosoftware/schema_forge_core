@@ -1,8 +1,8 @@
 {
   "version": "0.9.0",
   "generatedAt": "2026-06-26T00:48:58.290Z",
-  "updatedAt": "2026-06-26T01:18:52.876Z",
-  "contractChecksum": "6733aed41ec66a56",
+  "updatedAt": "2026-06-26T02:39:48.121Z",
+  "contractChecksum": "2d5682cdca00c35b",
   "apiPrediction": {
     "specName": "internal-consumption",
     "baseUrl": "/sws/neo/internal-consumption",
@@ -206,7 +206,8 @@
             "readOnlyLogic": "@Processed@='Y'"
           },
           "name": {
-            "required": true
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y'"
           },
           "status": {
             "required": true,
@@ -308,5 +309,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "297e226ca913864f"
+  "checksum": "ae10ac2d3dabfd92"
 }
