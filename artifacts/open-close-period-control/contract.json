@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "generatedAt": "2026-06-25T12:12:33.694Z",
-  "updatedAt": "2026-06-26T00:59:44.895Z",
-  "checksum": "c5a507b85ae67615",
+  "updatedAt": "2026-06-26T01:19:19.104Z",
+  "checksum": "8dd034a8b74fea4f",
   "frontendContract": {
     "window": {
       "id": "E66E701CCBA14B8BA480CBDE37C50D7A",
@@ -294,7 +294,7 @@
         "javaQualifier": "period-openclose"
       },
       "documents": {
-        "tableName": "C_Year",
+        "tableName": "C_PeriodControl",
         "tabId": "4AAC9E63C3B84B74AC4F35B5A1F8B54C",
         "tabName": "Documents",
         "uiPattern": "STD",
@@ -823,7 +823,7 @@
         "javaQualifier": "period-openclose"
       },
       "documents": {
-        "tableName": "C_Year",
+        "tableName": "C_PeriodControl",
         "tabId": "4AAC9E63C3B84B74AC4F35B5A1F8B54C",
         "tabName": "Documents",
         "fields": [
@@ -862,8 +862,8 @@
           {
             "name": "id",
             "apiKey": "id",
-            "column": "C_Year_ID",
-            "type": "foreignKey",
+            "column": "C_PeriodControl_ID",
+            "type": "id",
             "visibility": "discarded",
             "required": true
           },
@@ -908,14 +908,6 @@
             "required": true
           },
           {
-            "name": "periodControl",
-            "apiKey": "periodControl",
-            "column": "C_PeriodControl_ID",
-            "type": "id",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
             "name": "client",
             "apiKey": "client",
             "column": "AD_Client_ID",
@@ -953,6 +945,14 @@
             "column": "UpdatedBy",
             "type": "foreignKey",
             "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "year",
+            "apiKey": "year",
+            "column": "C_Year_ID",
+            "type": "foreignKey",
+            "visibility": "system",
             "required": true
           }
         ],
@@ -1626,14 +1626,6 @@
         "description": "System field 'periodAction' should exist in backend but not frontend for documents"
       },
       {
-        "id": "t-system-field-documents-periodControl",
-        "category": "system-field",
-        "entity": "documents",
-        "field": "periodControl",
-        "runner": "node",
-        "description": "System field 'periodControl' should exist in backend but not frontend for documents"
-      },
-      {
         "id": "t-system-field-documents-processNow",
         "category": "system-field",
         "entity": "documents",
@@ -1656,6 +1648,14 @@
         "field": "updatedBy",
         "runner": "node",
         "description": "System field 'updatedBy' should exist in backend but not frontend for documents"
+      },
+      {
+        "id": "t-system-field-documents-year",
+        "category": "system-field",
+        "entity": "documents",
+        "field": "year",
+        "runner": "node",
+        "description": "System field 'year' should exist in backend but not frontend for documents"
       },
       {
         "id": "t-system-field-periodControl-active",
