@@ -178,11 +178,12 @@ describe('ImportLinesModal', () => {
   it('expands a document row on click and loads lines', async () => {
     renderModal();
 
-    // Generous timeout: the modal eagerly loads all lines on mount. Under the full
-    // parallel suite the worker is CPU-contended and that async flush can exceed
-    // waitFor's 1s default, leaving the modal stuck on "loading" when the assertion
-    // runs. Passes comfortably within this window even under load.
+    // Wait for the STABLE list state: INV-001 visible AND no loading spinner.
+    // The eager-load effect briefly shows a spinner (eagerLoadingLines=true) after
+    // the initial document list appears, so checking only for INV-001 can hit that
+    // transient window and fail on the subsequent click.
     await waitFor(() => {
+      expect(screen.queryByText('loading')).not.toBeInTheDocument();
       expect(screen.getByText('INV-001')).toBeInTheDocument();
     }, { timeout: 10000 });
 
@@ -207,6 +208,7 @@ describe('ImportLinesModal', () => {
     renderModal();
 
     await waitFor(() => {
+      expect(screen.queryByText('loading')).not.toBeInTheDocument();
       expect(screen.getByText('INV-001')).toBeInTheDocument();
     }, { timeout: 10000 });
 
@@ -224,6 +226,7 @@ describe('ImportLinesModal', () => {
     renderModal({ showPriceColumns: false });
 
     await waitFor(() => {
+      expect(screen.queryByText('loading')).not.toBeInTheDocument();
       expect(screen.getByText('INV-001')).toBeInTheDocument();
     }, { timeout: 10000 });
 
@@ -243,6 +246,7 @@ describe('ImportLinesModal', () => {
     renderModal();
 
     await waitFor(() => {
+      expect(screen.queryByText('loading')).not.toBeInTheDocument();
       expect(screen.getByText('INV-001')).toBeInTheDocument();
     }, { timeout: 10000 });
 
@@ -257,6 +261,7 @@ describe('ImportLinesModal', () => {
     renderModal();
 
     await waitFor(() => {
+      expect(screen.queryByText('loading')).not.toBeInTheDocument();
       expect(screen.getByText('INV-001')).toBeInTheDocument();
     }, { timeout: 10000 });
 
