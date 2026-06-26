@@ -80,6 +80,8 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 | `breadcrumb` | string | `"{category} / {name}"` | Any string | Overrides the auto-generated breadcrumb path shown in the topbar. Useful when the default category/name combination is too verbose (e.g., `"Product"` instead of `"Reference / Product"`). |
 | `hidePrint` | boolean | `false` | — | Hides the print button in the detail view action bar. |
 | `hideMoreMenu` | boolean | `false` | — | Hides the triple-dot "more" menu in the detail view action bar. |
+| `hideStatusFilter` | boolean | `false` | — | Hides the status-filter dropdown ("All statuses") in the list toolbar, even when a `status`-typed column exists. The rest of the filter bar (date filter, Filters) is unaffected. |
+| `customListIcons` | boolean | `false` | — | Swaps the list toolbar sort/refresh icons for the shared `SortIcon` / `RefreshIcon` set (`@/components/ui/custom-icons`), matching Contacts/Warehouse. Emits `SortIconComponent` / `RefreshIconComponent` on `ListView`. |
 | `contentBg` | string | `"bg-white"` | Any Tailwind bg class | Background color of the main content card in the detail view (e.g., `"bg-slate-50"` for a light gray tone). |
 | `formCardPadding` | string | `null` | Any Tailwind padding class | Override the Tailwind padding class applied to the form card div in the detail view. When `null`, `DetailView` falls back to `p-6`. Use `"px-2 pb-2"` for tighter (8px horizontal) padding, for example on windows with dense form layouts. |
 | `hideDeleteWhenComplete` | boolean | `false` | — | Hides the delete button in the detail view when the document status is not Draft. Prevents accidental deletion of completed/processed records. |
@@ -501,9 +503,11 @@ Enables a two-button save workflow: "Save Draft" (save only) + "Save & {label}" 
 | Property | Type | Default | Purpose |
 |----------|------|---------|---------|
 | `enabled` | boolean | `false` | Activate draft mode for this entity. |
-| `processField` | string | `"documentAction"` | Field name that controls the process (sent in action POST). |
+| `processField` | string | `"documentAction"` | Field name that controls the process. Used both as the action endpoint name (`/action/{processField}`) and as the key inside `fieldValues`. |
 | `processValue` | string | `"CO"` | Value to submit for processing (e.g., `"CO"` = Complete). |
 | `label` | string | `"Process"` | Button label suffix: "Save & {label}". |
+| `extraParams` | object | `null` | Extra params merged at the **top level** of the action POST body (not inside `fieldValues`). Required when the AD process validates a mandatory parameter against the request root rather than `fieldValues` — e.g. `M_Internal_Consumption_Post` needs `{ "action": "CO" }`. Example: `"extraParams": { "action": "CO" }`. |
+| `completedStatuses` | string[] | _(falls back to `processed`/`documentStatus==='CO'`)_ | When set, only these `documentStatus` values hide the Save/Confirm pair. Omit to let the generic `processed === 'Y'` flag drive button hiding. |
 
 **When disabled** (default): single "Save" button.
 **When enabled**: "Save draft" + "Save & {label}" buttons, plus process buttons from `processEndpoints`.

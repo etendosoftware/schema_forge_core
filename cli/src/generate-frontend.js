@@ -1677,8 +1677,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const contentBg = windowConfig.contentBg ?? null;
   const formCardPadding = windowConfig.formCardPadding ?? null;
   const hideListFilters = windowConfig.hideListFilters ?? false;
+  const hideStatusFilter = windowConfig.hideStatusFilter ?? false;
   const hideLink = windowConfig.hideLink ?? false;
   const hideEyeCount = windowConfig.hideEyeCount ?? false;
+  const customListIcons = windowConfig.customListIcons ?? false;
   const customComponents = windowConfig.customComponents ?? {};
   const menuActionsConfig = windowConfig.menuActions ?? [];
   const newActionsConfig = windowConfig.newActions ?? [];
@@ -1936,8 +1938,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hidePrintListProp = fragmentIf(hidePrint, '\n      hidePrint');
   const hideMoreMenuListProp = fragmentIf(hideMoreMenu, '\n      hideMoreMenu');
   const hideListFiltersProp = fragmentIf(hideListFilters, '\n      hideListFilters');
+  const hideStatusFilterProp = fragmentIf(hideStatusFilter, '\n      hideStatusFilter');
   const hideLinkProp = fragmentIf(hideLink, '\n      hideLink');
   const hideEyeCountProp = fragmentIf(hideEyeCount, '\n      hideEyeCount');
+  const customListIconsProp = customListIcons ? `\n      SortIconComponent={SortIcon}\n      RefreshIconComponent={RefreshIcon}` : '';
 
   // Custom component props (bottomSection, topbarRight)
   const {
@@ -2073,7 +2077,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const detailHeaderComponentName = `${headerName}DetailHeader`;
   const useStateImport = fragmentIf(needsUseState, 'useState, ');
   return `import { ${useStateImport}useEffect } from 'react';
-import { ListView, DetailView } from '@/components/contract-ui';${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
+import { ListView, DetailView } from '@/components/contract-ui';${fragmentIf(customListIcons, `\nimport { SortIcon, RefreshIcon } from '@/components/ui/custom-icons';`)}${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${(buildDetailImports(detailEntity, detailName, customLinesComp))}
 ${fragmentIf(secondaryTabDefs.length > 0, `${secondaryTabsImports}\n`)}${formFooterImport}${customLinesImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
@@ -2171,7 +2175,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${fragm
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideStatusFilterProp}${hideLinkProp}${hideEyeCountProp}${customListIconsProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `

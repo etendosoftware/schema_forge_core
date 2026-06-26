@@ -521,6 +521,9 @@ function buildDraftMode(draftModeDecision, enabled) {
   if (draftModeDecision.disableWhenEmpty) {
     draftMode.disableWhenEmpty = true;
   }
+  if (draftModeDecision.extraParams && typeof draftModeDecision.extraParams === 'object') {
+    draftMode.extraParams = draftModeDecision.extraParams;
+  }
   return draftMode;
 }
 
@@ -670,8 +673,10 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'hideMoreMenu',
   'hideMoreDetails',
   'hideListFilters',
+  'hideStatusFilter',
   'hideLink',
   'hideEyeCount',
+  'customListIcons',
   'disableProcessedLock',
   'noHeaderBorder',
   'toolbarBorderBottom',
@@ -697,7 +702,7 @@ export const WINDOW_KEY_ORDER = [
   'documentPreview', 'notesField', 'relatedDocuments',
   'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hideSaveStatuses',
   'hideMoreMenu', 'hideMoreDetails', 'contentBg',
-  'hideListFilters', 'hideLink', 'hideEyeCount', 'breadcrumb',
+  'hideListFilters', 'hideStatusFilter', 'hideLink', 'hideEyeCount', 'customListIcons', 'breadcrumb',
   'customComponents', 'menuActions', 'processOverrides',
   'entityLabel', 'detailLabel', 'detailTabIndex', 'secondaryTabs',
   'detailEntity', 'statusBar', 'statusField', 'summaryFields',

@@ -1785,6 +1785,13 @@ export function DetailView({
   );
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const moreMenuRef = useRef(null);
+  // Probe to detect whether customMenuContent actually renders anything for the
+  // current record. A custom kebab component may return null based on status
+  // (e.g. an action only valid in a given document state); without this the
+  // popover would open as an empty box. Mirrors Sales Order's menuActions
+  // behavior where the kebab opens nothing when no action applies.
+  const moreMenuProbeRef = useRef(null);
+  const [customMenuHasContent, setCustomMenuHasContent] = useState(customMenuContent ? null : false);
   const handledOpenAddLineRef = useRef(false);
   const handledOpenSecondaryLineRef = useRef(false);
 
@@ -1798,6 +1805,14 @@ export function DetailView({
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showMoreMenu]);
+  // Keep customMenuHasContent in sync with what the hidden probe renders. Runs
+  // every render (status/data can change over the record's lifecycle) but only
+  // updates state when the value actually flips, so it never loops.
+  useEffect(() => {
+    if (!customMenuContent) return;
+    const has = !!(moreMenuProbeRef.current && moreMenuProbeRef.current.childElementCount > 0);
+    setCustomMenuHasContent(prev => (prev === has ? prev : has));
+  });
   const [directFetched, setDirectFetched] = useState(false);
   const [selectedLine, setSelectedLine] = useState(null);
   const [selectedChildRows, setSelectedChildRows] = useState([]);
@@ -2761,12 +2776,27 @@ export function DetailView({
                 >
                   <MoreVertical className="h-[15px] w-[15px]" data-testid="MoreVertical__fa3275" />
                 </button>
+                {customMenuContent && (() => {
+                  const ProbeContent = customMenuContent;
+                  return (
+                    <div ref={moreMenuProbeRef} aria-hidden="true" style={{ display: 'none' }}>
+                      <ProbeContent
+                        data={data}
+                        recordId={data?.id || recordId}
+                        token={token}
+                        apiBaseUrl={apiBaseUrl}
+                        onClose={() => {}}
+                        onRefresh={() => {}} />
+                    </div>
+                  );
+                })()}
                 {showMoreMenu && (() => {
                   const resolvedActions = typeof menuActions === 'function'
                     ? menuActions({ data, status: data?.[statusField] })
                     : menuActions;
                   const visibleActions = resolvedActions.filter(a => a.visible !== false);
-                  if (visibleActions.length === 0 && !customMenuContent) return null;
+                  const hasCustomContent = customMenuContent && customMenuHasContent !== false;
+                  if (visibleActions.length === 0 && !hasCustomContent) return null;
                   return (
                     <div
                       className="absolute right-0 top-full mt-1 z-50 bg-white py-2 min-w-[148px]"

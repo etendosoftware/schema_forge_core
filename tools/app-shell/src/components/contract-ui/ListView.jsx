@@ -75,6 +75,7 @@ function ListFilterBarSection(props) {
           onSavePreset={props.windowName ? props.saveCurrentAsPreset : null}
           onDeletePreset={props.windowName ? props.deletePreset : null}
           labelOverrides={props.labelOverrides}
+          hideStatusFilter={props.hideStatusFilter}
           data-testid="ListFilterBar__620cbc" />
       )}
     </>
@@ -176,6 +177,7 @@ export function ListView({
   hidePrint = false,
   hideMoreMenu = false,
   hideListFilters = false,
+  hideStatusFilter = false,
   hideLink = false,
   hideEyeCount = false,
   headerContent = null,
@@ -191,12 +193,12 @@ export function ListView({
   onNew = null,
   newLabel = null,
   newActions = [],
-  listbarPaddingX = 'px-6',
+  listbarPaddingX = 'px-2',
   listbarPaddingY = 'py-3',
   SortIconComponent = null,
   RefreshIconComponent = null,
   iconButtonHover = 'hover:text-foreground',
-  tablePaddingX = 'px-6',
+  tablePaddingX = 'px-2',
   tablePaddingBottom = 'pb-6',
   labelOverrides,
   onCloneRow = null,
@@ -672,6 +674,7 @@ export function ListView({
                 <ListFilterBarSection
                   hideFilters={listViewOptions?.hideFilters}
                   hideListFilters={hideListFilters}
+                  hideStatusFilter={hideStatusFilter}
                   entity={entity}
                   apiBaseUrl={apiBaseUrl}
                   columns={tableColumns}

@@ -1,14 +1,18 @@
 {
-  "version": "0.4.0",
+  "version": "0.8.0",
   "generatedAt": "2026-04-29T19:05:49.589Z",
-  "updatedAt": "2026-05-20T11:45:15.163Z",
-  "checksum": "b2a99362d3bce3c7",
+  "updatedAt": "2026-06-25T23:34:32.328Z",
+  "checksum": "e36a3099bf287bfe",
   "frontendContract": {
     "window": {
       "id": "800076",
       "name": "Internal Consumption",
       "primaryEntity": "internalConsumption",
       "category": "inventory",
+      "hidePrint": true,
+      "hideStatusFilter": true,
+      "hideLink": true,
+      "customListIcons": true,
       "breadcrumb": "Inventory / Internal Consumption",
       "customComponents": {
         "moreMenuContent": "InternalConsumptionActions",
@@ -16,6 +20,7 @@
       },
       "statusField": "status",
       "dateFilterKey": "movementDate",
+      "noHeaderBorder": true,
       "layoutType": "default",
       "linesLayout": "inlineEditable"
     },
@@ -38,6 +43,7 @@
             "grid": true,
             "form": true,
             "sourceRequired": true,
+            "dot": false,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -56,19 +62,6 @@
             "grid": true,
             "form": true,
             "sourceRequired": true
-          },
-          {
-            "name": "description",
-            "apiKey": "description",
-            "column": "Description",
-            "label": "Description",
-            "type": "text",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "section": "other"
           },
           {
             "name": "status",
@@ -115,7 +108,16 @@
               "source": "DR"
             }
           }
-        ]
+        ],
+        "draftMode": {
+          "enabled": true,
+          "processField": "processNow",
+          "processValue": "CO",
+          "label": "internalConsumptionProcess",
+          "extraParams": {
+            "action": "CO"
+          }
+        }
       },
       "internalConsumptionLine": {
         "tableName": "M_Internal_ConsumptionLine",
@@ -132,7 +134,7 @@
             "tsType": "number",
             "visibility": "editable",
             "required": false,
-            "grid": true,
+            "grid": false,
             "form": true,
             "derivation": {
               "type": "lookup",
@@ -188,7 +190,8 @@
               "type": "computed",
               "source": "0"
             },
-            "defaultValue": "0"
+            "defaultValue": "0",
+            "columnWidth": 160
           },
           {
             "name": "uOM",
@@ -250,6 +253,10 @@
       "name": "Internal Consumption",
       "primaryEntity": "internalConsumption",
       "category": "inventory",
+      "hidePrint": true,
+      "hideStatusFilter": true,
+      "hideLink": true,
+      "customListIcons": true,
       "breadcrumb": "Inventory / Internal Consumption",
       "customComponents": {
         "moreMenuContent": "InternalConsumptionActions",
@@ -257,6 +264,7 @@
       },
       "statusField": "status",
       "dateFilterKey": "movementDate",
+      "noHeaderBorder": true,
       "linesLayout": "inlineEditable"
     },
     "entities": {
@@ -374,7 +382,7 @@
             "apiKey": "description",
             "column": "Description",
             "type": "text",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -819,14 +827,6 @@
         "description": "Default value for 'movementQuantity' in internalConsumptionLine should be a string"
       },
       {
-        "id": "t-field-presence-internalConsumption-description",
-        "category": "field-presence",
-        "entity": "internalConsumption",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in internalConsumption"
-      },
-      {
         "id": "t-field-presence-internalConsumption-movementDate",
         "category": "field-presence",
         "entity": "internalConsumption",
@@ -889,14 +889,6 @@
         "field": "uOM",
         "runner": "node",
         "description": "Field 'uOM' should be present in internalConsumptionLine"
-      },
-      {
-        "id": "t-field-type-internalConsumption-description",
-        "category": "field-type",
-        "entity": "internalConsumption",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in internalConsumption"
       },
       {
         "id": "t-field-type-internalConsumption-movementDate",
@@ -1158,6 +1150,14 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for internalConsumption"
       },
       {
+        "id": "t-system-field-internalConsumption-description",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "description",
+        "runner": "node",
+        "description": "System field 'description' should exist in backend but not frontend for internalConsumption"
+      },
+      {
         "id": "t-system-field-internalConsumption-id",
         "category": "system-field",
         "entity": "internalConsumption",
@@ -1381,23 +1381,23 @@
       }
     ],
     "summary": {
-      "total": 79,
+      "total": 78,
       "byCategory": {
         "action-endpoint": 2,
         "crud-flags": 2,
         "default-value-type": 3,
-        "field-presence": 9,
-        "field-type": 9,
+        "field-presence": 8,
+        "field-type": 8,
         "readonlylogic-evaluable": 1,
         "readonlylogic-valid": 1,
         "rule-declared": 13,
         "searchable-filters": 2,
         "selector-endpoint": 3,
-        "system-field": 32,
+        "system-field": 33,
         "visibility": 2
       },
       "byRunner": {
-        "node": 79,
+        "node": 78,
         "junit": 0
       }
     }
