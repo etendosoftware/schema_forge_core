@@ -17757,6 +17757,7 @@
     "financeAccountStatementsManualAddLine": "Add line",
     "financeAccountStatementsManualLineHintSave": "Enter or click outside to save",
     "financeAccountStatementsManualLineHintCancel": "to cancel",
+    "financeAccountStatementsManualKeyEsc": "ESC",
     "financeAccountStatementsManualRemoveLine": "Remove line",
     "financeAccountStatementsManualEditLine": "Edit line",
     "financeAccountStatementsManualTotalLines": "Lines",

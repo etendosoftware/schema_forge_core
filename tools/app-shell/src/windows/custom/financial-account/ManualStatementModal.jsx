@@ -342,7 +342,9 @@ function LineEditHint({ ui }) {
         {ui('financeAccountStatementsManualLineHintSave')}
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <kbd className="rounded border border-[#D1D4DB] bg-[#F5F7F9] px-1.5 py-0.5 text-[11px] leading-none text-[#3F3F50]">ESC</kbd>
+        <kbd className="rounded border border-[#D1D4DB] bg-[#F5F7F9] px-1.5 py-0.5 text-[11px] leading-none text-[#3F3F50]">
+          {ui('financeAccountStatementsManualKeyEsc')}
+        </kbd>
         {ui('financeAccountStatementsManualLineHintCancel')}
       </span>
     </div>

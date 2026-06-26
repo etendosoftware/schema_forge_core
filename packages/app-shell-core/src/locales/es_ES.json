@@ -18007,6 +18007,7 @@
     "financeAccountStatementsManualAddLine": "Añadir línea",
     "financeAccountStatementsManualLineHintSave": "Enter o clic fuera para guardar",
     "financeAccountStatementsManualLineHintCancel": "para cancelar",
+    "financeAccountStatementsManualKeyEsc": "ESC",
     "financeAccountStatementsManualRemoveLine": "Eliminar línea",
     "financeAccountStatementsManualEditLine": "Editar línea",
     "financeAccountStatementsManualTotalLines": "Líneas",
