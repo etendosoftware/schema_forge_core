@@ -14252,7 +14252,8 @@
       "label": "Period Control Log"
     },
     "Open/Close Period Control": {
-      "label": "Open/Close Period Control"
+      "label": "Open/Close Period Control",
+      "newLabel": "New Period"
     },
     "Inventory Amount Update": {
       "label": "Inventory Amount Update"
@@ -16369,6 +16370,21 @@
     "unbalanced": "Unbalanced",
     "taxScopeSales": "Sales",
     "taxScopePurchase": "Purchase",
+    "Periods": "Periods",
+    "Open Close Period": "Open Close Period",
+    "Open Close Document": "Open Close Document",
+    "All Opened": "All Opened",
+    "All Never Opened": "All Never Opened",
+    "All Closed": "All Closed",
+    "All Permanently Closed": "All Permanently Closed",
+    "Mixed": "Mixed",
+    "Open": "Open",
+    "Closed": "Closed",
+    "Never opened": "Never opened",
+    "Permanently closed": "Permanently closed",
+    "Standard Calendar Period": "Standard Calendar Period",
+    "Adjustment Period": "Adjustment Period",
+    "Action": "Action",
     "save": "Save",
     "saveDraft": "Save draft",
     "saveAndProcess": "Save & {action}",
@@ -17706,7 +17722,8 @@
     "financeAccountMovementsRowUnreconcile": "Unreconcile",
     "financeAccountMovementsRowUnreconcileTooltip": "Available in T8 (ETP-4102)",
     "financeAccountMovementsRowPost": "Post",
-    "financeAccountMovementsRowPostTooltip": "Available in T8 (ETP-4102)",
+    "financeAccountMovementsRowPosting": "Posting…",
+    "financeAccountMovementsRowPostError": "Failed to post transaction",
     "financeAccountStatementsEmpty": "No imported statements yet",
     "financeAccountStatementsEmptyHint": "Import a bank statement file to start reconciling this account.",
     "financeAccountStatementsSearch": "Search statements...",
@@ -20872,7 +20889,8 @@
       "label": "Landed Cost Type"
     },
     "Open/Close Period Control": {
-      "label": "Open/Close Period Control"
+      "label": "Open/Close Period Control",
+      "newLabel": "New Period"
     },
     "Data Import Entry Archive": {
       "label": "Data Import Entry Archive"

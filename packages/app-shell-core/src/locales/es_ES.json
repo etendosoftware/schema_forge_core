@@ -14413,7 +14413,8 @@
       "label": "Histórico de Control de Periodos"
     },
     "Open/Close Period Control": {
-      "label": "Abrir/Cerrar periodos"
+      "label": "Abrir/Cerrar periodos",
+      "newLabel": "Nuevo período"
     },
     "Inventory Amount Update": {
       "label": "Ajuste de Valor del Inventario"
@@ -16611,6 +16612,21 @@
     "unbalanced": "Descuadrado",
     "taxScopeSales": "Ventas",
     "taxScopePurchase": "Compras",
+    "Periods": "Períodos",
+    "Open Close Period": "Abrir/Cerrar período",
+    "Open Close Document": "Abrir/Cerrar documento",
+    "Action": "Acción",
+    "All Opened": "Todos abiertos",
+    "All Never Opened": "Ninguno abierto",
+    "All Closed": "Todos cerrados",
+    "All Permanently Closed": "Todos permanentemente cerrados",
+    "Mixed": "Mixto",
+    "Open": "Abierto",
+    "Closed": "Cerrado",
+    "Never opened": "Nunca abierto",
+    "Permanently closed": "Cerrado permanente",
+    "Standard Calendar Period": "Período estándar",
+    "Adjustment Period": "Período de ajuste",
     "save": "Guardar",
     "saveDraft": "Guardar borrador",
     "saveAndProcess": "Guardar y {action}",
@@ -17956,7 +17972,8 @@
     "financeAccountMovementsRowUnreconcile": "Desreconciliar",
     "financeAccountMovementsRowUnreconcileTooltip": "Disponible en T8 (ETP-4102)",
     "financeAccountMovementsRowPost": "Contabilizar",
-    "financeAccountMovementsRowPostTooltip": "Disponible en T8 (ETP-4102)",
+    "financeAccountMovementsRowPosting": "Contabilizando…",
+    "financeAccountMovementsRowPostError": "Error al contabilizar la transacción",
     "financeAccountStatementsEmpty": "Aún no hay extractos importados",
     "financeAccountStatementsEmptyHint": "Importá un fichero de extracto bancario para empezar a conciliar esta cuenta.",
     "financeAccountStatementsSearch": "Buscar extractos...",
@@ -21573,7 +21590,8 @@
       "label": "Histórico de Control de Periodos"
     },
     "Open/Close Period Control": {
-      "label": "Abrir/Cerrar periodos"
+      "label": "Abrir/Cerrar periodos",
+      "newLabel": "Nuevo período"
     },
     "Inventory Amount Update": {
       "label": "Ajuste de Valor del Inventario"

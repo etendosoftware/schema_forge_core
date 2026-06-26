@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
+import { ProcessParamDialog } from './ProcessParamDialog';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
@@ -1440,6 +1441,98 @@ function renderSaveActions(params) {
   return renderExistingRecordSaveAction(params);
 }
 
+function renderTotalsBlock({ balanceFooter, children, pendingLine, editingLine, lineConfig, formatAmount, currency, summary, isDocumentReadOnly, totalDiscountPct, onTotalDiscountChange }) {
+  if (balanceFooter) {
+    return (
+      <BalanceFooterPanel
+        lines={children}
+        pendingLine={pendingLine}
+        editingLine={editingLine}
+        config={balanceFooter}
+        formatAmount={formatAmount}
+        currency={currency}
+        data-testid="BalanceFooterPanel__fa3275" />
+    );
+  }
+  const subtotalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
+  const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
+  if (!subtotalField && !totalField) return null;
+  return (
+    <DocumentTotalsPanel
+      lines={children}
+      pendingLine={pendingLine}
+      editingLine={editingLine}
+      lineConfig={lineConfig}
+      formatAmount={formatAmount}
+      currency={currency}
+      readOnly={isDocumentReadOnly}
+      totalDiscountPct={totalDiscountPct}
+      onTotalDiscountChange={onTotalDiscountChange}
+      data-testid="DocumentTotalsPanel__fa3275" />
+  );
+}
+
+function isDetailBulkBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows, detailProcesses) {
+  return isBulkDeleteBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows)
+    || (detailProcesses.length > 0 && selectedChildRows.length > 0 && linesLayout !== 'inlineEditable');
+}
+
+function resolveDetailRows(selectedChildRows, selectedLine) {
+  if (selectedChildRows.length > 0) return selectedChildRows;
+  return selectedLine ? [selectedLine] : [];
+}
+
+function makeCloseDialogHandler(setter) {
+  return open => { if (!open) setter(null); };
+}
+
+async function executeDetailProcessImpl(process, paramValues, explicitRows, {
+  selectedChildRows, api, detailEntity, apiBaseUrl, token, hook, ui,
+  setSelectedChildRows, setExecutingDetailProcess,
+}) {
+  const rows = explicitRows || selectedChildRows;
+  const fieldValues = {};
+  for (const p of (process.params ?? [])) {
+    if (p.hidden) fieldValues[p.key] = p.value;
+  }
+  Object.assign(fieldValues, paramValues);
+  setExecutingDetailProcess(true);
+  try {
+    const results = await Promise.allSettled(
+      rows.map(row => {
+        const url = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
+          || `${apiBaseUrl}/${detailEntity}/${row.id}`;
+        return fetch(`${url}/action/${process.columnName ?? process.name}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ fieldValues }),
+        }).then(res => ({ res, row }));
+      })
+    );
+    let ok = 0;
+    for (const r of results) {
+      if (r.status === 'fulfilled' && r.value.res.ok) ok++;
+    }
+    setSelectedChildRows([]);
+    if (ok > 0) {
+      toast.success(ui('processCompletedCount', { count: ok }) !== 'processCompletedCount'
+        ? ui('processCompletedCount', { count: ok })
+        : `${process.label || process.name}: ${ok} record(s) processed`);
+      hook.fetchById?.(hook.selected?.id);
+      hook.refresh?.();
+    }
+    const failed = results.length - ok;
+    if (failed > 0) toast.error(`${failed} record(s) failed`);
+  } catch (err) {
+    toast.error(err?.message || 'Network error');
+  } finally {
+    setExecutingDetailProcess(false);
+  }
+}
+
 /**
  * Full-page detail view for a single entity record.
  * Two-zone layout: gray top bar + white content card with rounded corner.
@@ -1466,6 +1559,7 @@ export function DetailView({
   statusField,
   extraBadges = [],
   processes = [],
+  detailProcesses = [],
   addLineFields = { entry: [], derived: [] },
   catalogs: staticCatalogs,
   api,
@@ -2036,6 +2130,7 @@ export function DetailView({
     setSecondaryBarClosing({});
   }, [activeTab]);
   const [deletingChildren, setDeletingChildren] = useState(false);
+
   const [lineEdits, setLineEdits] = useState(null);
   const [lineEditColumns, setLineEditColumns] = useState({});
 
@@ -2722,6 +2817,10 @@ export function DetailView({
   const [showOthers, setShowOthers] = useState(primaryTabs ? false : null);
   const [activePrimaryTab, setActivePrimaryTab] = useState(primaryTabs?.[0]?.key ?? 'general');
   const [notesFocused, setNotesFocused] = useState(false);
+  const [paramDialogProcess, setParamDialogProcess] = useState(null);
+  const [detailParamDialogProcess, setDetailParamDialogProcess] = useState(null);
+  const [executingDetailProcess, setExecutingDetailProcess] = useState(false);
+  const detailProcessDeps = { selectedChildRows, api, detailEntity, apiBaseUrl, token, hook, ui, setSelectedChildRows, setExecutingDetailProcess };
 
   const othersRef = useRef(null);
 
@@ -3088,10 +3187,38 @@ export function DetailView({
                             return;
                           }
                         }
-                        hook.handleProcess?.(p);
+                        if (p.params?.some(param => !param.hidden)) {
+                          setParamDialogProcess(p);
+                        } else {
+                          hook.handleProcess?.(p);
+                        }
                       }}
                       data-testid="Button__fa3275">
                       {tMenu(p.label)}
+                    </Button>
+                  );
+                })}
+
+              {/* Detail entity process buttons — visible when child rows are selected or a single line is clicked */}
+              {!isNew && detailProcesses.length > 0 && (selectedChildRows.length > 0 || selectedLine) && detailProcesses
+                .map(p => {
+                  const isPrimary = p.style === 'positive';
+                  const btnClass = getButtonClass(salesTheme, p, isPrimary);
+                  return (
+                    <Button
+                      key={`detail-${p.name}`}
+                      variant="outline"
+                      size="default"
+                      className={`${btnClass} ${saveBtnCls}`.trim()}
+                      disabled={executingDetailProcess}
+                      onClick={() => {
+                        const rows = resolveDetailRows(selectedChildRows, selectedLine);
+                        p.params?.some(param => !param.hidden)
+                          ? setDetailParamDialogProcess({ ...p, _rows: rows })
+                          : executeDetailProcessImpl(p, {}, rows, detailProcessDeps);
+                      }}
+                      data-testid="Button__detail-process">
+                      {tMenu(p.label) || p.label}
                     </Button>
                   );
                 })}
@@ -3102,6 +3229,25 @@ export function DetailView({
           </div>
         )}
 
+        <ProcessParamDialog
+          open={paramDialogProcess !== null}
+          onOpenChange={makeCloseDialogHandler(setParamDialogProcess)}
+          process={paramDialogProcess}
+          onConfirm={paramValues => {
+            hook.handleProcess?.(paramDialogProcess, paramValues);
+            setParamDialogProcess(null);
+          }}
+          data-testid="ProcessParamDialog__fa3275" />
+
+        <ProcessParamDialog
+          open={detailParamDialogProcess !== null}
+          onOpenChange={makeCloseDialogHandler(setDetailParamDialogProcess)}
+          process={detailParamDialogProcess}
+          onConfirm={paramValues => {
+            executeDetailProcessImpl(detailParamDialogProcess, paramValues, detailParamDialogProcess?._rows, detailProcessDeps);
+            setDetailParamDialogProcess(null);
+          }}
+          data-testid="ProcessParamDialog__fa3275" />
 
         {/* Scrollable content + optional sidebarContent (full-height independent column) */}
         <div className="flex-1 flex overflow-hidden">
@@ -3386,13 +3532,30 @@ export function DetailView({
                             <div className={getLinesContainerClassName(linesLayout, embedded)}>
                               {/* Table + add button */}
                               <div className="flex-1 min-w-0">
-                                {/* Bulk delete bar (classic only) */}
-                                {isBulkDeleteBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows) && (
+                                {/* Bulk action bar: delete + detail processes (classic only) */}
+                                {isDetailBulkBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows, detailProcesses) && (
                                   <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-lg bg-muted/60 border border-border/40">
                                     <span className="text-sm font-medium text-foreground">
                                       {ui('selected', { count: selectedChildRows.length })}
                                     </span>
                                     <div className="flex items-center gap-2">
+                                      {detailProcesses.map(p => (
+                                        <button
+                                          key={p.name}
+                                          disabled={executingDetailProcess}
+                                          onClick={() => {
+                                            if (p.params?.some(param => !param.hidden)) {
+                                              setDetailParamDialogProcess({ ...p, _rows: [...selectedChildRows] });
+                                            } else {
+                                              executeDetailProcessImpl(p, {}, undefined, detailProcessDeps);
+                                            }
+                                          }}
+                                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-primary text-primary hover:bg-primary/10 disabled:opacity-50 transition-colors"
+                                        >
+                                          {executingDetailProcess ? ui('loading') : (tMenu(p.label) || p.label)}
+                                        </button>
+                                      ))}
+                                      {isBulkDeleteBarVisible(linesLayout, api, detailEntity, isDocumentReadOnly, selectedChildRows) && (
                                       <button
                                         disabled={deletingChildren}
                                         onClick={async () => {
@@ -3432,6 +3595,7 @@ export function DetailView({
                                         <Trash2 className="h-3.5 w-3.5" data-testid="Trash2__fa3275" />
                                         {getDeleteChildButtonLabel(deletingChildren, ui)}
                                       </button>
+                                      )}
                                     </div>
                                   </div>
                                 )}
@@ -4030,34 +4194,19 @@ export function DetailView({
                     })() : (
                       <>
                         {/* Totals block: BalanceFooterPanel for double-entry windows, else DocumentTotalsPanel */}
-                        {balanceFooter ? (
-                          <BalanceFooterPanel
-                            lines={hook.children}
-                            pendingLine={pendingLineValues}
-                            editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
-                            config={balanceFooter}
-                            formatAmount={formatAmount}
-                            currency={data['currency$_identifier']}
-                            data-testid="BalanceFooterPanel__fa3275" />
-                        ) : (() => {
-                          const subtotalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
-                          const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
-                          if (!subtotalField && !totalField) return null;
-                          const currency = data['currency$_identifier'];
-                          return (
-                            <DocumentTotalsPanel
-                              lines={hook.children}
-                              pendingLine={pendingLineValues}
-                              editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
-                              lineConfig={lineConfig}
-                              formatAmount={formatAmount}
-                              currency={currency}
-                              readOnly={isDocumentReadOnly}
-                              totalDiscountPct={resolveTotalDiscountPct(data, hook.children)}
-                              onTotalDiscountChange={handleTotalDiscountChange}
-                              data-testid="DocumentTotalsPanel__fa3275" />
-                          );
-                        })()}
+                        {renderTotalsBlock({
+                          balanceFooter,
+                          children: hook.children,
+                          pendingLine: pendingLineValues,
+                          editingLine: lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine,
+                          lineConfig,
+                          formatAmount,
+                          currency: data['currency$_identifier'],
+                          summary,
+                          isDocumentReadOnly,
+                          totalDiscountPct: resolveTotalDiscountPct(data, hook.children),
+                          onTotalDiscountChange: handleTotalDiscountChange,
+                        })}
 
                         {/* After-totals slot (e.g. payment footer) */}
                         {afterTotals && (() => {

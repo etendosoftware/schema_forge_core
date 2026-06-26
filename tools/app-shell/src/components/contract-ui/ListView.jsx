@@ -158,8 +158,16 @@ function tableOpacityClass(hook) {
   return hook.loading ? 'opacity-70 transition-opacity duration-200' : 'transition-opacity duration-200';
 }
 
-function isDefaultSortActive(hook) {
-  return hook.sortColumn === 'creationDate' && hook.sortDirection === 'desc';
+function parseListSortBy(listSortBy) {
+  const parts = listSortBy ? listSortBy.trim().split(/\s+/) : [];
+  return {
+    initialSortColumn: parts[0] || 'creationDate',
+    initialSortDirection: parts[0] ? (parts[1] ?? 'asc') : 'desc',
+  };
+}
+
+function isDefaultSortActive(hook, defaultColumn, defaultDirection) {
+  return hook.sortColumn === defaultColumn && hook.sortDirection === defaultDirection;
 }
 
 /**
@@ -224,6 +232,7 @@ export function ListView({
   externalPreviewRow = null,
   onExternalPreviewClose = null,
   hiddenColumns = [],
+  listSortBy = null,
 }) {
   // Subset filters — radio-style, always one active, applied first.
   const [activeSubsetIndex, setActiveSubsetIndex] = useState(() => {
@@ -387,6 +396,8 @@ export function ListView({
 
   const didInitialFetchRef = useRef(false);
 
+  const { initialSortColumn, initialSortDirection } = parseListSortBy(listSortBy);
+
   const hook = useEntity(entity, null, {
     token,
     apiBaseUrl,
@@ -395,6 +406,8 @@ export function ListView({
     columnFilters,
     trailingFilter: advancedFilterPart,
     specName: windowName,
+    initialSortColumn,
+    initialSortDirection,
   });
 
   useEffect(() => {
@@ -541,7 +554,7 @@ export function ListView({
   const sortBtnRef = useRef(null);
   const scrollRef = useRef(null);
 
-  const isDefaultSort = isDefaultSortActive(hook);
+  const isDefaultSort = isDefaultSortActive(hook, initialSortColumn, initialSortDirection);
 
   // Close sort popover on outside click
   useEffect(() => {

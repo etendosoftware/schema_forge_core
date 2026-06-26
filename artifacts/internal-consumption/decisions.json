@@ -60,8 +60,8 @@
           "reason": "Action endpoint must be active (system); button rendered via moreMenuContent with flat { action: 'CO' } body"
         },
         "posted": {
-          "visibility": "discarded",
-          "reason": "Accounting post action — not applicable to simplified UI"
+          "visibility": "system",
+          "reason": "Internal Consumption does not support posting to accounting"
         },
         "trxOrganization": {
           "visibility": "discarded",
@@ -194,7 +194,7 @@
       "type": "displayLogic",
       "entity": "internalConsumption",
       "decision": "Omit",
-      "description": "Posted field display logic — Posted field is discarded."
+      "description": "Posted field display logic — not needed; badge always visible in grid."
     },
     "DISPLAY_AccountingDimensions": {
       "type": "displayLogic",
@@ -237,7 +237,7 @@
       "type": "process",
       "entity": "internalConsumption",
       "decision": "Omit",
-      "description": "Posted hardcoded button — accounting posting handled through backend."
+      "description": "Internal Consumption does not support posting to accounting — post action removed."
     }
   },
   "discardPatterns": [
