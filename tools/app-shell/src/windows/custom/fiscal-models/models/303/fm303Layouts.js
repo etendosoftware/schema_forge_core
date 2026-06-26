@@ -102,7 +102,7 @@ const BASE = {
         { id: 'mod_bases',       labelKey: 'fm.box.row.mod_bases',        cells: [14,   null, 15  ] },
         { id: '156',             cells: [156, 157, 158], fixedValues: { 157: 1.75 }, group: true },
         { id: '168',             cells: [168, 169, 170], fixedValues: { 169: 0.50 }, group: true },
-        { id: 'recargo_equiv',   labelKey: 'fm.box.row.recargo_equiv',    cells: [16,   17,   18  ], group: true },
+        { id: 'recargo_equiv',   labelKey: 'fm.box.row.recargo_equiv',    cells: [16,   17,   18  ], fixedValues: { 17: 1.00 }, group: true },
         { id: '19',              cells: [19,  20,  21 ], fixedValues: { 20: 1.40 }, group: true },
         { id: '22',              cells: [22,  23,  24 ], fixedValues: { 23: 5.20 }, group: true },
         { id: 'mod_recargo',     labelKey: 'fm.box.row.mod_recargo',      cells: [25,   null, 26  ] },
@@ -253,6 +253,8 @@ const _2024_COMPLEMENTARIA_OPS = [
   { op: 'patchSection', section: 'identificacion', patch: { fields: _2024_IDENTIFICACION_FIELDS } },
   { op: 'deleteRow', section: 'iva_devengado', row: '165' },
   { op: 'deleteRow', section: 'iva_devengado', row: '168' },
+  // Pre-Oct 2024: box 16/17/18 = 0.5% RE (in Oct 2024+ it becomes 1% RE)
+  { op: 'patchRow',  section: 'iva_devengado', row: 'recargo_equiv',  patch: { fixedValues: { 17: 0.50 } } },
   { op: 'patchRow',  section: 'iva_devengado', row: '153',            patch: { fixedValues: { 154: 5.00 } } },
   { op: 'patchRow',  section: 'iva_devengado', row: 'total_devengada', patch: { labelKey: 'fm.box.row.total_devengada_2023' } },
   // resultado_final — no otros_ajustes (108), no importe_devolucion, no rectificacion_importe (111)
