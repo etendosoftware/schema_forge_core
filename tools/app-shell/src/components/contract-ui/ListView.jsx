@@ -161,7 +161,7 @@ function tableOpacityClass(hook) {
 function parseListSortBy(listSortBy) {
   const parts = listSortBy ? listSortBy.trim().split(/\s+/) : [];
   return {
-    initialSortColumn: parts[0] ?? 'creationDate',
+    initialSortColumn: parts[0] || 'creationDate',
     initialSortDirection: parts[0] ? (parts[1] ?? 'asc') : 'desc',
   };
 }
