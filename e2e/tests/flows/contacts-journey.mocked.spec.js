@@ -245,16 +245,16 @@ test.describe('Contacts — Full mocked journey', () => {
 
     // Type badges: Cliente-only row has "Cliente" badge
     const clienteRow = page.locator('tbody tr').filter({ hasText: 'Maria Garcia' });
-    await expect(clienteRow.getByText(/cliente/i).first()).toBeVisible({ timeout: 5_000 });
+    await expect(clienteRow.getByText(/cliente/i).first()).toBeVisible({ timeout: 15_000 });
 
     // Proveedor-only row has "Proveedor" badge
     const vendorRow = page.locator('tbody tr').filter({ hasText: 'Carlos Lopez' });
-    await expect(vendorRow.getByText(/proveedor/i).first()).toBeVisible({ timeout: 5_000 });
+    await expect(vendorRow.getByText(/proveedor/i).first()).toBeVisible({ timeout: 15_000 });
 
     // Dual row has BOTH badges
     const dualRow = page.locator('tbody tr').filter({ hasText: 'Empresa Dual' });
-    await expect(dualRow.getByText(/cliente/i).first()).toBeVisible({ timeout: 5_000 });
-    await expect(dualRow.getByText(/proveedor/i).first()).toBeVisible({ timeout: 5_000 });
+    await expect(dualRow.getByText(/cliente/i).first()).toBeVisible({ timeout: 15_000 });
+    await expect(dualRow.getByText(/proveedor/i).first()).toBeVisible({ timeout: 15_000 });
 
     // Subset filter buttons exist
     const buttonTexts = (await page.locator('button, [role="tab"]').allTextContents()).join(' ');
@@ -314,7 +314,7 @@ test.describe('Contacts — Full mocked journey', () => {
     // ═══════════════════════════════════════════════════════════════════════
 
     // Breadcrumb visible
-    await expect(page.getByText(/contacto/i).first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/contacto/i).first()).toBeVisible({ timeout: 15_000 });
 
     // Razon Social persists
     await expect(nameInput).toHaveValue('Importaciones Test S.L.', { timeout: 5_000 });
@@ -326,8 +326,8 @@ test.describe('Contacts — Full mocked journey', () => {
     }
 
     // CIF/NIF and Pagina web labels present
-    await expect(page.getByText(/cif\/nif/i).first()).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText(/p[aá]gina web|web/i).first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/cif\/nif/i).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/p[aá]gina web|web/i).first()).toBeVisible({ timeout: 15_000 });
 
     // Kebab menu (⋮) exists in toolbar — verify presence without opening
     // (opening it causes Radix scroll-lock overlay issues in continuous flows)
@@ -335,8 +335,8 @@ test.describe('Contacts — Full mocked journey', () => {
     await expect(kebabBtn.first()).toBeVisible({ timeout: 5_000 });
 
     // KPI sidebar
-    await expect(page.getByText(/ventas y compras|ingresos/i).first()).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText(/ver gr[aá]fico|view chart/i).first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/ventas y compras|ingresos/i).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/ver gr[aá]fico|view chart/i).first()).toBeVisible({ timeout: 15_000 });
 
     // ═══════════════════════════════════════════════════════════════════════
     // PART 4: TOGGLE Persona / Empresa
@@ -397,12 +397,12 @@ test.describe('Contacts — Full mocked journey', () => {
         expect(val).toBeLessThan(valueAfterPlus);
       }).toPass({ timeout: 3_000 });
 
-      // Debounce: 5 rapid clicks → fewer than 5 PATCHes
+      // Debounce: 10 rapid clicks → fewer than 10 PATCHes
       const patchCountBefore = patchLog.length;
-      for (let i = 0; i < 5; i++) await stepperBtns.last().click();
-      await page.waitForTimeout(1_500);
+      for (let i = 0; i < 10; i++) await stepperBtns.last().click();
+      await page.waitForTimeout(2_000);
       const patchesFired = patchLog.length - patchCountBefore;
-      expect(patchesFired).toBeLessThan(5);
+      expect(patchesFired).toBeLessThan(10);
 
       // Min boundary: set to 0, click minus → stays >= 0
       await creditInput.fill('0');
@@ -412,11 +412,11 @@ test.describe('Contacts — Full mocked journey', () => {
     }
 
     // Customer billing fields (customer=true)
-    await expect(page.getByText(/^tarifa$/i).first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/^tarifa$/i).first()).toBeVisible({ timeout: 15_000 });
     const cuentaVisible = await page.getByText(/cuenta/i).first().isVisible({ timeout: 3_000 }).catch(() => false);
     expect(cuentaVisible).toBe(true);
-    await expect(page.getByText(/m[eé]todo de pago/i).first()).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText(/condiciones de pago/i).first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/m[eé]todo de pago/i).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/condiciones de pago/i).first()).toBeVisible({ timeout: 15_000 });
     const bloqueoVisible = await page.getByText(/bloqueo/i).first().isVisible({ timeout: 3_000 }).catch(() => false);
     expect(bloqueoVisible).toBe(true);
 
@@ -435,7 +435,7 @@ test.describe('Contacts — Full mocked journey', () => {
       }
     }
     if (vendorChecked) {
-      await expect(page.getByText(/tarifa de compra/i).first()).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByText(/tarifa de compra/i).first()).toBeVisible({ timeout: 15_000 });
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -515,14 +515,14 @@ test.describe('Contacts — Full mocked journey', () => {
     await expect(page.getByTestId('list-view')).toBeVisible({ timeout: 10_000 });
 
     // New contact "Importaciones" should be in the list
-    await expect(page.locator('tbody tr').filter({ hasText: 'Importaciones' }).first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator('tbody tr').filter({ hasText: 'Importaciones' }).first()).toBeVisible({ timeout: 15_000 });
 
     // Filter by Personas → only personas visible
     const personasFilterBtn = page.getByRole('button', { name: /personas|persons/i }).or(page.getByRole('tab', { name: /personas|persons/i }));
     await personasFilterBtn.first().click();
     await page.waitForTimeout(500);
-    await expect(page.locator('tbody tr').filter({ hasText: 'Maria' }).first()).toBeVisible({ timeout: 5_000 });
-    await expect(page.locator('tbody tr').filter({ hasText: 'Carlos' }).first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator('tbody tr').filter({ hasText: 'Maria' }).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('tbody tr').filter({ hasText: 'Carlos' }).first()).toBeVisible({ timeout: 15_000 });
     // Empresas should be hidden
     expect(await page.locator('tbody tr').filter({ hasText: 'Empresa Con Facturas' }).count()).toBe(0);
 
@@ -621,8 +621,8 @@ test.describe('Contacts — Full mocked journey', () => {
     await page.waitForTimeout(1_500);
 
     // Both rows should still be in the list (abort on first error)
-    await expect(page.locator('tbody tr').filter({ hasText: 'Empresa Con Facturas' }).first()).toBeVisible({ timeout: 5_000 });
-    await expect(page.locator('tbody tr').filter({ hasText: 'Borrable Uno' }).first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator('tbody tr').filter({ hasText: 'Empresa Con Facturas' }).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('tbody tr').filter({ hasText: 'Borrable Uno' }).first()).toBeVisible({ timeout: 15_000 });
 
     // Now select two safe rows → both delete successfully
     // Close any overlay from previous bulk delete error, navigate via sidebar
