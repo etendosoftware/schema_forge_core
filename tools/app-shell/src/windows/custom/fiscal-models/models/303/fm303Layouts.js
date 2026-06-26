@@ -163,9 +163,8 @@ const BASE = {
         { id: 'cuotas_compensar_post',   labelKey: 'fm.box.row.cuotas_compensar_post',   cells: [87] },
         { id: 'bicolumn_resultado', type: 'bicolumn',
           infoboxes: [
-            { id: 'reg_anual',            labelKey: 'fm.box.row.reg_anual',            cells: [68],  editable: true },
-            { id: 'otros_ajustes',        labelKey: 'fm.box.row.otros_ajustes',        cells: [108], editableWhen: [{ field: 'rectificativa', equals: true }, { field: 'motivo_rectificacion', equals: 'D' }] },
-            { id: 'pago_cuenta_gasolinas', labelKey: 'fm.box.row.pago_cuenta_gasolinas', cells: [112], editable: true },
+            { id: 'reg_anual',     labelKey: 'fm.box.row.reg_anual',     cells: [68],  editable: true },
+            { id: 'otros_ajustes', labelKey: 'fm.box.row.otros_ajustes', cells: [108], editableWhen: [{ field: 'rectificativa', equals: true }, { field: 'motivo_rectificacion', equals: 'D' }] },
           ],
           rows: [
             { id: 'resultado_69',          labelKey: 'fm.box.row.resultado_69',          cells: [69],  total: true },
@@ -238,8 +237,7 @@ const _COMPLEMENTARIA_RECTIF_OP = { op: 'patchSection', section: 'rectificativa'
 // Pre-2023 bicolumn resultado (2021–2022): no otros_ajustes/devoluciones_at, has importe_devolucion.
 const _PRE2023_BICOLUMN_OP = { op: 'patchRow', section: 'resultado_final', row: 'bicolumn_resultado', patch: {
   infoboxes: [
-    { id: 'reg_anual',             labelKey: 'fm.box.row.reg_anual',             cells: [68],  editable: true },
-    { id: 'pago_cuenta_gasolinas', labelKey: 'fm.box.row.pago_cuenta_gasolinas', cells: [112], editable: true },
+    { id: 'reg_anual', labelKey: 'fm.box.row.reg_anual', cells: [68], editable: true },
   ],
   rows: [
     { id: 'resultado_69',          labelKey: 'fm.box.row.resultado_69_pre2023',          cells: [69],  total: true },
@@ -262,8 +260,7 @@ const _2024_COMPLEMENTARIA_OPS = [
   // resultado_final — no otros_ajustes (108), no importe_devolucion, no rectificacion_importe (111)
   { op: 'patchRow', section: 'resultado_final', row: 'bicolumn_resultado', patch: {
     infoboxes: [
-      { id: 'reg_anual',             labelKey: 'fm.box.row.reg_anual',             cells: [68],  editable: true },
-      { id: 'pago_cuenta_gasolinas', labelKey: 'fm.box.row.pago_cuenta_gasolinas', cells: [112], editable: true },
+      { id: 'reg_anual', labelKey: 'fm.box.row.reg_anual', cells: [68], editable: true },
     ],
     rows: [
       { id: 'resultado_69',          labelKey: 'fm.box.row.resultado_69_pre2023', cells: [69],  total: true },
@@ -333,9 +330,8 @@ const PATCHES = {
     { op: 'patchSection', section: 'identificacion', patch: { fields: _2024_IDENTIFICACION_FIELDS } },
     { op: 'patchRow', section: 'resultado_final', row: 'bicolumn_resultado', patch: {
       infoboxes: [
-        { id: 'reg_anual',             labelKey: 'fm.box.row.reg_anual',             cells: [68],  editable: true },
-        { id: 'otros_ajustes',         labelKey: 'fm.box.row.otros_ajustes',         cells: [108], editable: true },
-        { id: 'pago_cuenta_gasolinas', labelKey: 'fm.box.row.pago_cuenta_gasolinas', cells: [112], editable: true },
+        { id: 'reg_anual',     labelKey: 'fm.box.row.reg_anual',     cells: [68],  editable: true },
+        { id: 'otros_ajustes', labelKey: 'fm.box.row.otros_ajustes', cells: [108], editable: true },
       ],
       rows: [
         { id: 'resultado_69',          labelKey: 'fm.box.row.resultado_69',          cells: [69],  total: true },
