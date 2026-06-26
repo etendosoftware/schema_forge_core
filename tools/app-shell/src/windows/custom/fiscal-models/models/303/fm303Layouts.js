@@ -331,7 +331,7 @@ const PATCHES = {
     { op: 'patchRow', section: 'resultado_final', row: 'bicolumn_resultado', patch: {
       infoboxes: [
         { id: 'reg_anual',     labelKey: 'fm.box.row.reg_anual',     cells: [68],  editable: true },
-        { id: 'otros_ajustes', labelKey: 'fm.box.row.otros_ajustes', cells: [108], editable: true },
+        { id: 'otros_ajustes', labelKey: 'fm.box.row.otros_ajustes', cells: [108], editableWhen: [{ field: 'rectificativa', equals: true }, { field: 'motivo_rectificacion', equals: 'D' }] },
       ],
       rows: [
         { id: 'resultado_69',          labelKey: 'fm.box.row.resultado_69',          cells: [69],  total: true },
