@@ -289,6 +289,7 @@ const PATCHES = {
     { op: 'deleteRow', section: 'iva_devengado', row: '153' },
     { op: 'deleteRow', section: 'iva_devengado', row: '156' },
     { op: 'deleteRow', section: 'iva_devengado', row: '168' },
+    { op: 'patchRow',  section: 'iva_devengado', row: 'recargo_equiv', patch: { fixedValues: { 17: 0.50 } } },
     // info_adicional: replace 120/122/123/124 with box 61
     { op: 'deleteRow', section: 'info_adicional', row: 'op_no_sujetas_loc' },
     { op: 'deleteRow', section: 'info_adicional', row: 'op_sujetas_inv' },
@@ -313,6 +314,7 @@ const PATCHES = {
     { op: 'deleteRow', section: 'iva_devengado', row: '153' },
     { op: 'deleteRow', section: 'iva_devengado', row: '156' },
     { op: 'deleteRow', section: 'iva_devengado', row: '168' },
+    { op: 'patchRow',  section: 'iva_devengado', row: 'recargo_equiv', patch: { fixedValues: { 17: 0.50 } } },
     _PRE2023_BICOLUMN_OP,
     { op: 'patchRow', section: 'iva_devengado', row: 'total_devengada', patch: { labelKey: 'fm.box.row.total_devengada_pre2023' } },
     _COMPLEMENTARIA_RECTIF_OP,
