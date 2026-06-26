@@ -2,7 +2,11 @@
   "$schema": "decisions-v2",
   "window": {
     "category": "accounting",
-    "name": "Chart of Accounts"
+    "name": "Chart of Accounts",
+    "layoutType": "custom",
+    "menuActions": [
+      { "key": "newSubAccount", "label": "New Sub-account", "labelKey": "newSubAccount" }
+    ]
   },
   "entities": {
     "element": {
@@ -10,6 +14,7 @@
     },
     "elementValue": {
       "javaQualifier": "chart-of-accounts",
+      "orderBy": [{ "field": "searchKey", "direction": "ASC" }],
       "fields": {
         "searchKey":             { "visibility": "editable",  "grid": true,  "form": true, "customRenderer": "AccountCodeField" },
         "name":                  { "visibility": "editable",  "grid": true,  "form": true },
