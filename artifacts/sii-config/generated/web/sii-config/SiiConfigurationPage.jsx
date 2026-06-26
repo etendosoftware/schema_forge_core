@@ -24,7 +24,9 @@ const statusField = null;
 // @sf-generated-end summary:siiConfiguration
 
 // @sf-generated-start extraBadges:siiConfiguration
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:siiConfiguration
 
 // @sf-generated-start processes:siiConfiguration

@@ -1,3 +1,5 @@
+import { KPI_BOOLEAN_KEYS, KPI_NUMERIC_RANGES, isNumberInRange } from './propertyPolicy.js';
+
 const DENYLISTED_PROPERTY_KEYS = new Set([
   'authCode',
   'authorization',
@@ -26,15 +28,23 @@ const SAFE_EVENT_PROPERTY_KEYS = new Set([
   'app',
   'attempt',
   'category',
+  'channel',
   'component',
+  'correctCount',
   'count',
+  'critical',
   'durationMs',
   'enabled',
   'entity',
+  'entityType',
   'environment',
+  'errorClass',
   'event',
+  'flow',
   'hostname',
+  'kpiId',
   'locale',
+  'module',
   'mockMode',
   'operation',
   'position',
@@ -48,23 +58,24 @@ const SAFE_EVENT_PROPERTY_KEYS = new Set([
   'step',
   'supportRequested',
   'timestamp',
+  'total',
   'type',
   'value',
   'windowName',
 ]);
 
-const NUMERIC_PROPERTY_BOUNDS = {
-  accuracy: { min: 0, max: 100 },
-  attempt: { min: 0, max: 100 },
-  count: { min: 0, max: 100000 },
-  durationMs: { min: 0, max: 86400000 },
-  position: { min: 0, max: 100 },
-  score: { min: 0, max: 10 },
-  step: { min: 0, max: 100 },
-  value: { min: 0, max: 1000000 },
-};
+const NUMERIC_EVENT_PROPERTY_KEYS = new Map([
+  ['accuracy', { min: 0, max: 100 }],
+  ...KPI_NUMERIC_RANGES,
+]);
 
-const NUMERIC_PROPERTY_KEYS = new Set(Object.keys(NUMERIC_PROPERTY_BOUNDS));
+const BOOLEAN_EVENT_PROPERTY_KEYS = new Set([
+  ...KPI_BOOLEAN_KEYS,
+  'enabled',
+  'mockMode',
+  'supportRequested',
+]);
+
 const SKIP_PROPERTY = Symbol('skip-property');
 
 function toPathname(value = '/') {
@@ -162,27 +173,28 @@ export function sanitizeEventProperties(properties = {}) {
 }
 
 function sanitizeEventProperty(key, value) {
-  if (DENYLISTED_PROPERTY_KEYS.has(key) || !SAFE_EVENT_PROPERTY_KEYS.has(key)) return SKIP_PROPERTY;
+  if (DENYLISTED_PROPERTY_KEYS.has(key) || !SAFE_EVENT_PROPERTY_KEYS.has(key)) {
+    return SKIP_PROPERTY;
+  }
   if (value == null) return SKIP_PROPERTY;
 
-  if (NUMERIC_PROPERTY_KEYS.has(key)) {
-    return isSafeNumber(key, value) ? value : SKIP_PROPERTY;
+  if (NUMERIC_EVENT_PROPERTY_KEYS.has(key)) {
+    return isSafeNumberForKey(key, value) ? value : SKIP_PROPERTY;
+  }
+
+  if (BOOLEAN_EVENT_PROPERTY_KEYS.has(key)) {
+    return typeof value === 'boolean' ? value : SKIP_PROPERTY;
   }
 
   if (typeof value === 'number') {
-    return isSafeNumber(key, value) ? value : SKIP_PROPERTY;
+    return Number.isFinite(value) ? value : SKIP_PROPERTY;
   }
 
   return typeof value === 'string' || typeof value === 'boolean' ? value : SKIP_PROPERTY;
 }
 
-function isSafeNumber(key, value) {
-  if (!Number.isFinite(value)) return false;
-
-  const bounds = NUMERIC_PROPERTY_BOUNDS[key];
-  if (!bounds) return true;
-
-  return value >= bounds.min && value <= bounds.max;
+function isSafeNumberForKey(key, value) {
+  return isNumberInRange(value, NUMERIC_EVENT_PROPERTY_KEYS.get(key));
 }
 
 export function buildEventPayload({

@@ -3,7 +3,7 @@
 **Parent epic:** [ETP-3504](https://etendo.atlassian.net/browse/ETP-3504) (Etendo Go)
 **Parent plan:** [`2026-05-21-bank-reconciliation-module.md`](./2026-05-21-bank-reconciliation-module.md)
 **Source spec:** `~/Downloads/Definicion_Funcional_Conciliacion_Bancaria.docx.pdf` (v1.0 Borrador, May 2026)
-**Total tasks:** 10
+**Total tasks:** 11
 **Conventions:** Etendo Git Police — `feature/ETP-XXXX` branches, `Feature ETP-XXXX: …` commits (≤80 chars first line), no `Co-Authored-By`.
 
 > 🇪🇸 Cuando se creen las stories en Jira, cada una recibe su `ETP-XXXX` real bajo el epic **ETP-3504**. Los IDs `T1…T8` debajo son placeholders. PSD2 / Salt Edge ya está implementado en su propio módulo — la integración (T3) es solo cableado de UI. **T2 entrega el flujo sin conexión primero; T3 añade PSD2 después** para que el equipo de PSD2 pueda avanzar en paralelo.
@@ -30,6 +30,7 @@ These 8 tasks **retire that placeholder** and add a new menu entry **"Cuentas"**
 | T8 | Add deferred accounting and reactivate reconciliation flow | T6 | ◐ | ✅ | ~1.5 w |
 | T9 | Build Imported Bank Statements view with file import flow | T4 | ✅ | ✅ | ~1.5 w |
 | T10 | Make financial accounts agentic via a NEO Headless write spec | T2 | ✅ | ✅ | ~1 w |
+| T11 | Transfer funds between financial accounts | T1, T4 | ✅ | ✅ | ~1 w |
 
 ---
 
@@ -872,9 +873,72 @@ These 8 tasks **retire that placeholder** and add a new menu entry **"Cuentas"**
 
 ---
 
+## Task 11 — Transfer funds between financial accounts
+
+**Title (Jira):** Transfer funds between financial accounts
+**Type:** Story
+**Parent epic:** ETP-3504
+**Jira:** ETP-4272
+**Depends on:** T1, T4
+**Branch:** `feature/ETP-4272`
+**Commit prefix:** `Feature ETP-4272:`
+**Labels:** `cross-domain-approved` (touches schema_forge + com.etendoerp.go)
+
+### Issue Description
+
+* Add a **"Transfer funds"** action that moves money between two financial accounts of the organization, reachable from two entry points: the **row kebab (⋮)** of each account in the Accounts list, and a **button in the action bar** of the account detail. In both cases the **source account is pre-filled (read-only)** with the account the action started from. This action takes the place of the (currently hidden) "New movement" button.
+* **Form fields:** Source account (pre-filled, read-only); Destination account / *Deposit To* (required — other financial accounts of the org); GL Item (optional — charge the transfer to a chart-of-accounts item); Amount / *Deposit Amount* (required); Currency From (read-only, from the source account); Currency To (visible only when it differs — multi-currency transfers); Bank Fee (checkbox → enables a fee-amount field); Description (default "Funds Transfer Transaction").
+* On confirm the system creates **two simultaneous, atomic transactions**: a withdrawal in the source account and a deposit in the destination account for the same amount. If Bank Fee is set, an additional expense transaction in the source account for the fee. Both transactions stay **Pending** until reconciled.
+* **Guards:** cannot transfer to the same source account; cannot transfer an amount greater than the source account's available balance.
+
+### Solution Design
+
+**Backend (com.etendoerp.go):**
+* Add a `transfer` action (POST) to `FinancialAccountTransactionsHandler` (`@Named("financial-account-transactions")`). It validates inputs (source ≠ destination, amount > 0, destination within the source's org tree, amount ≤ available balance) and **delegates to the Classic `FundsTransferActionHandler.createTransfer(...)`** (`modules_core/org.openbravo.advpaymentmngt`) — reuses the existing flow (source `BPW` + optional `BF` + target `BPD`, conversion-rate docs, processing → `PWNC`/`RDNC`, post-hooks) instead of reimplementing it. Multi-currency via `manualConversionRate` (system rate when not provided); GL Item optional (`null`); single bank fee → `bankFeeFrom`.
+
+**Frontend (Schema Forge):**
+* New single-step modal `FundsTransferModal.jsx` (reuses `@/components/ui/dialog` + `@/components/forms/fields`) and hook `useFundsTransfer.js` (POST `?action=transfer`).
+* Entry points: add the action to `components/financial-accounts/AccountRowMenu.jsx` (list kebab) and replace the hidden New-Movement button in `windows/custom/financial-account/MovementsToolbar/index.jsx` (detail action bar).
+
+**i18n:** new `financeAccountTransfer*` keys in both `en_US.json` and `es_ES.json`.
+
+**Out of scope:** posting/accounting of the transfer beyond what Classic already does; bulk / multi-line transfers; a standalone transfers list.
+
+### Test Cases
+
+**Given** a financial account in the Accounts list
+**When** the user opens its ⋮ menu
+**Then** a "Transfer funds" option is present and opens the modal with that account pre-filled as the source (read-only).
+
+**Given** the account detail
+**When** the user looks at the action bar
+**Then** a "Transfer funds" button is present.
+
+**Given** the transfer modal
+**When** the destination account has a different currency than the source
+**Then** the Currency To field becomes visible (multi-currency); otherwise it stays hidden.
+
+**Given** the Bank Fee checkbox
+**When** it is checked
+**Then** a fee-amount field appears and the fee is recorded as an extra expense transaction in the source account.
+
+**Given** a valid transfer
+**When** the user confirms
+**Then** two transactions are created (withdrawal in source, deposit in destination) for the same amount, both Pending until reconciled.
+
+**Given** the same account is chosen as source and destination
+**When** the user tries to confirm
+**Then** the transfer is rejected.
+
+**Given** an amount greater than the source available balance
+**When** the user tries to confirm
+**Then** the transfer is rejected.
+
+---
+
 ## PR conventions for every task (recap)
 
-Each PR produced for any of T1–T10 must comply with the Etendo Git Police and the project policy:
+Each PR produced for any of T1–T11 must comply with the Etendo Git Police and the project policy:
 
 * **Branch:** `feature/ETP-XXXX` (one branch per task, off `develop`).
 * **Commit prefix:** `Feature ETP-XXXX: <description>` — first line ≤80 chars, English, imperative.
@@ -890,7 +954,7 @@ Each PR produced for any of T1–T10 must comply with the Etendo Git Police and 
   * Crisol (code review): APPROVED.
   * Unitas (unit tests): PASSED.
   * Vigia (security review): PASSED — critical on T2 (account creation), T3 (PSD2 credentials), T6, T7, T8 (money-mutating surfaces).
-  * Argos (E2E): PASSED on user-facing tickets (T1, T2, T3, T4, T5, T6, T7, T8, T9 — i.e. every ticket in this plan).
+  * Argos (E2E): PASSED on user-facing tickets (T1, T2, T3, T4, T5, T6, T7, T8, T9, T11 — i.e. every user-facing ticket in this plan).
   * `make validate-pipeline` reports 0 violations for any ticket touching `artifacts/`.
 * **i18n:** every new user-facing string must land in both `en_US.json` and `es_ES.json` before review.
 * **Documentation:** `docs/generated-custom-windows/financial-account.md` and/or `match-rule.md` updated within the same PR when the ticket touches the corresponding window.

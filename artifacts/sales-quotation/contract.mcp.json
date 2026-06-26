@@ -1,8 +1,8 @@
 {
-  "version": "0.9.0",
+  "version": "0.13.0",
   "generatedAt": "2026-04-30T15:42:46.907Z",
-  "updatedAt": "2026-06-11T12:55:37.110Z",
-  "contractChecksum": "74aa9c0b783dc07a",
+  "updatedAt": "2026-06-25T14:15:39.541Z",
+  "contractChecksum": "4875a1bc517479a5",
   "apiPrediction": {
     "specName": "sales-quotation",
     "baseUrl": "/sws/neo/sales-quotation",
@@ -351,6 +351,29 @@
         "processType": "classic"
       },
       {
+        "name": "generateTemplate",
+        "actionType": "createFrom",
+        "entity": "quotation",
+        "column": "Generatetemplate",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates child or related records",
+          "May copy data from source document"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Source document has no valid lines to copy",
+          "Target entity already has linked records",
+          "Required reference data is missing (price list, warehouse, etc.)"
+        ],
+        "processId": "800022",
+        "processType": "classic"
+      },
+      {
         "name": "processNow",
         "actionType": "documentAction",
         "entity": "quotation",
@@ -429,29 +452,6 @@
         ],
         "processId": "57496FB9CF9E4E8F847224017941570E",
         "processType": "obuiapp"
-      },
-      {
-        "name": "generateTemplate",
-        "actionType": "createFrom",
-        "entity": "quotation",
-        "column": "Generatetemplate",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
-        "parameters": [],
-        "preconditions": [],
-        "effects": [
-          "Creates child or related records",
-          "May copy data from source document"
-        ],
-        "dryRunSupported": false,
-        "edgeCases": [
-          "Source document has no valid lines to copy",
-          "Target entity already has linked records",
-          "Required reference data is missing (price list, warehouse, etc.)"
-        ],
-        "processId": "800022",
-        "processType": "classic"
       },
       {
         "name": "cancelandreplace",
@@ -609,6 +609,29 @@
           "Invoice is already fully paid"
         ],
         "processId": "0661406A983B4D8EA611F8596F114D52",
+        "processType": "obuiapp"
+      },
+      {
+        "name": "eTPRRemovePayment",
+        "actionType": "paymentAction",
+        "entity": "quotation",
+        "column": "EM_Etpr_Remove_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/sales-quotation/quotation/{id}/action/eTPRRemovePayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
         "processType": "obuiapp"
       },
       {
@@ -783,8 +806,8 @@
             "required": true
           },
           "currency": {
-            "readOnly": true,
             "required": true,
+            "readOnlyLogic": "@Processed@='Y'",
             "defaultValue": "@C_Currency_ID@"
           },
           "description": {
@@ -796,7 +819,8 @@
           "processed": {
             "readOnly": true,
             "required": true
-          }
+          },
+          "eTGOCurrencyRate": {}
         }
       },
       "quotationLine": {
@@ -806,34 +830,34 @@
             "readOnlyLogic": "@Processed@='Y'"
           },
           "description": {},
-          "orderedQuantity": {
-            "required": true,
-            "readOnlyLogic": "@Processed@='Y' | (@IsSOTrx@='Y' & @ISLINKEDTOPRODUCT@='Y' & @PRODUCTTYPE@='S') | @UomManagement@='Y'",
-            "defaultValue": "1"
-          },
-          "listPrice": {
-            "required": true,
-            "readOnlyLogic": "@Processed@='Y'"
-          },
           "discount": {
             "readOnlyLogic": "@Processed@='Y'",
             "defaultValue": "0"
-          },
-          "tax": {
-            "required": true,
-            "readOnlyLogic": "@Processed@='Y'"
           },
           "lineGrossAmount": {
             "readOnly": true,
             "defaultValue": "0"
           },
-          "unitPrice": {
-            "required": true,
-            "readOnlyLogic": "@Processed@='Y' | @GROSSPRICE@='Y'"
-          },
           "lineNetAmount": {
             "required": true,
             "readOnlyLogic": "@Iseditlinenetamt@='N'|@GROSSPRICE@='Y'"
+          },
+          "listPrice": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y'"
+          },
+          "orderedQuantity": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y' | (@IsSOTrx@='Y' & @ISLINKEDTOPRODUCT@='Y' & @PRODUCTTYPE@='S') | @UomManagement@='Y'",
+            "defaultValue": "1"
+          },
+          "tax": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y'"
+          },
+          "unitPrice": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y' | @GROSSPRICE@='Y'"
           }
         }
       }
@@ -852,15 +876,16 @@
         "businessPartner",
         "partnerAddress",
         "priceList",
-        "paymentTerms"
+        "paymentTerms",
+        "currency"
       ],
       "lineFields": [
         "product",
-        "orderedQuantity",
+        "lineNetAmount",
         "listPrice",
+        "orderedQuantity",
         "tax",
-        "unitPrice",
-        "lineNetAmount"
+        "unitPrice"
       ],
       "recommendedOrder": [
         "createHeader",
@@ -932,9 +957,9 @@
       "copyFromPO",
       "documentAction",
       "createOrder",
+      "generateTemplate",
       "processNow",
       "posted",
-      "generateTemplate",
       "createPOLines",
       "rMPickfromreceipt"
     ],
@@ -965,7 +990,8 @@
           "businessPartner",
           "partnerAddress",
           "priceList",
-          "paymentTerms"
+          "paymentTerms",
+          "currency"
         ]
       },
       {
@@ -973,11 +999,11 @@
         "description": "Add a line after the header exists and parent context is available.",
         "fields": [
           "product",
-          "orderedQuantity",
+          "lineNetAmount",
           "listPrice",
+          "orderedQuantity",
           "tax",
-          "unitPrice",
-          "lineNetAmount"
+          "unitPrice"
         ]
       },
       {
@@ -993,5 +1019,5 @@
       "confirmcancelandreplace"
     ]
   },
-  "checksum": "4a24418beaf0827d"
+  "checksum": "4a7fd96fabd1e455"
 }

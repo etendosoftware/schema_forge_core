@@ -53,6 +53,11 @@ function stripStringLiterals(line) {
 }
 
 function stripComments(line) {
+  // JSDoc / block-comment continuation lines (e.g. ` *   - E2E_PASSWORD=<password>`)
+  // carry no code: the opening `/*` is on a previous line, so the `/* */` handling
+  // below cannot see it. Treat any line whose first non-space char is `*` as a comment.
+  if (/^\s*\*/.test(line)) return '';
+
   const lineCommentStart = line.indexOf('//');
   let cleaned = lineCommentStart === -1 ? line : line.slice(0, lineCommentStart);
 
@@ -261,6 +266,7 @@ function analyzeSecrets(changedFiles, fileContents, addedLineContents) {
   const secretMatches = [];
   for (const path of changedFiles) {
     const hasSecretMatch = getRelevantLines(path, addedLineContents, fileContents)
+      .map((line) => stripComments(line))
       .map((line) => stripStringLiterals(line))
       .some((line) => secretPattern.test(line));
 

@@ -5,7 +5,7 @@ vi.mock('@/i18n', () => ({
   },
 }));
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ConfirmResultModal } from '../ConfirmResultModal.jsx';
 
@@ -28,9 +28,9 @@ function renderModal(overrides = {}) {
 describe('ConfirmResultModal', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('renders the title', () => {
+  it('renders the title', async () => {
     renderModal();
-    expect(screen.getByText('Operation complete')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Operation complete')).toBeInTheDocument());
   });
 
   it('renders the type label for each doc', () => {

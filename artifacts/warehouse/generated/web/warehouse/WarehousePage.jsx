@@ -19,7 +19,9 @@ const statusField = null;
 // @sf-generated-end summary:warehouse
 
 // @sf-generated-start extraBadges:warehouse
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:warehouse
 
 // @sf-generated-start processes:warehouse
