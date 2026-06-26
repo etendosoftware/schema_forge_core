@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-06-25T12:12:33.694Z",
-  "updatedAt": "2026-06-25T15:04:43.066Z",
-  "checksum": "6f79dac0c64cddca",
+  "updatedAt": "2026-06-26T00:59:44.895Z",
+  "checksum": "c5a507b85ae67615",
   "frontendContract": {
     "window": {
       "id": "E66E701CCBA14B8BA480CBDE37C50D7A",
@@ -27,15 +27,15 @@
               "options": [
                 {
                   "value": "O",
-                  "label": "Periodo abierto"
+                  "label": "Open"
                 },
                 {
                   "value": "C",
-                  "label": "Periodo cerrado"
+                  "label": "Closed"
                 },
                 {
                   "value": "P",
-                  "label": "Periodo cerrado permanente"
+                  "label": "Permanently closed"
                 }
               ]
             }
@@ -600,15 +600,15 @@
               "options": [
                 {
                   "value": "O",
-                  "label": "Periodo abierto"
+                  "label": "Open"
                 },
                 {
                   "value": "C",
-                  "label": "Periodo cerrado"
+                  "label": "Closed"
                 },
                 {
                   "value": "P",
-                  "label": "Periodo cerrado permanente"
+                  "label": "Permanently closed"
                 }
               ]
             }

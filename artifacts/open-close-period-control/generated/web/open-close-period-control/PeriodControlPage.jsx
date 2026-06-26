@@ -26,18 +26,20 @@ const statusField = 'status';
 // @sf-generated-end summary:periodControl
 
 // @sf-generated-start extraBadges:periodControl
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:periodControl
 
 // @sf-generated-start processes:periodControl
 const processes = [
-  { name: 'openClose', label: 'Open Close Period', style: 'positive', params: [{"key":"openClose","type":"select","label":"Action","required":true,"options":[{"value":"O","label":"Periodo abierto"},{"value":"C","label":"Periodo cerrado"},{"value":"P","label":"Periodo cerrado permanente"}]}] },
+  { name: 'openClose', label: 'Open Close Period', style: 'positive', params: [{"key":"openClose","type":"select","label":"Action","required":true,"options":[{"value":"O","label":"Open"},{"value":"C","label":"Closed"},{"value":"P","label":"Permanently closed"}]}] },
 ];
 // @sf-generated-end processes:periodControl
 
 // @sf-generated-start detailProcesses:documents
 const detailProcesses = [
-  { name: 'openClose', label: 'Open Close Document', style: 'positive', params: [{"key":"openClose","type":"select","label":"Action","required":true,"options":[{"value":"O","label":"Periodo abierto"},{"value":"C","label":"Periodo cerrado"},{"value":"P","label":"Periodo cerrado permanente"}]}] },
+  { name: 'openClose', label: 'Open Close Document', style: 'positive', params: [{"key":"openClose","type":"select","label":"Action","required":true,"options":[{"value":"O","label":"Open"},{"value":"C","label":"Closed"},{"value":"P","label":"Permanently closed"}]}] },
 ];
 // @sf-generated-end detailProcesses:documents
 

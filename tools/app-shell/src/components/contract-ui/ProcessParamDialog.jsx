@@ -59,7 +59,7 @@ export function ProcessParamDialog({ open, onOpenChange, process, onConfirm }) {
       <DialogContent className="sm:max-w-sm" data-testid="process-param-dialog-content">
         <DialogHeader data-testid="process-param-dialog-header">
           <DialogTitle data-testid="process-param-dialog-title">
-            {process?.label ?? ''}
+            {ui(process?.label ?? '')}
           </DialogTitle>
         </DialogHeader>
 
@@ -67,7 +67,7 @@ export function ProcessParamDialog({ open, onOpenChange, process, onConfirm }) {
           {visibleParams.map(param => (
             <div key={param.key} className="space-y-2">
               <Label htmlFor={`process-param-${param.key}`} data-testid={`process-param-label-${param.key}`}>
-                {param.label}
+                {ui(param.label)}
               </Label>
               {param.type === 'select' && (
                 <Select
@@ -80,7 +80,7 @@ export function ProcessParamDialog({ open, onOpenChange, process, onConfirm }) {
                   <SelectContent data-testid={`process-param-options-${param.key}`}>
                     {param.options?.map(opt => (
                       <SelectItem key={opt.value} value={opt.value} data-testid={`process-param-option-${param.key}-${opt.value}`}>
-                        {opt.label}
+                        {ui(opt.label)}
                       </SelectItem>
                     ))}
                   </SelectContent>

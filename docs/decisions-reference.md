@@ -486,9 +486,9 @@ When a `processOverrides` entry contains a `params` array with at least one entr
         "label": "Action",
         "required": true,
         "options": [
-          { "value": "O", "label": "Periodo abierto" },
-          { "value": "C", "label": "Periodo cerrado" },
-          { "value": "P", "label": "Periodo cerrado permanente" }
+          { "value": "O", "label": "Open" },
+          { "value": "C", "label": "Closed" },
+          { "value": "P", "label": "Permanently closed" }
         ]
       }
     ]

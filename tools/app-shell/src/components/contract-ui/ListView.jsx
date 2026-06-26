@@ -166,8 +166,8 @@ function parseListSortBy(listSortBy) {
   };
 }
 
-function isDefaultSortActive(hook) {
-  return hook.sortColumn === 'creationDate' && hook.sortDirection === 'desc';
+function isDefaultSortActive(hook, defaultColumn, defaultDirection) {
+  return hook.sortColumn === defaultColumn && hook.sortDirection === defaultDirection;
 }
 
 /**
@@ -554,7 +554,7 @@ export function ListView({
   const sortBtnRef = useRef(null);
   const scrollRef = useRef(null);
 
-  const isDefaultSort = isDefaultSortActive(hook);
+  const isDefaultSort = isDefaultSortActive(hook, initialSortColumn, initialSortDirection);
 
   // Close sort popover on outside click
   useEffect(() => {

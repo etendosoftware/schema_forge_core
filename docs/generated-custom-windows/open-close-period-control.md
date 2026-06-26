@@ -22,9 +22,9 @@ Manage the open/close status of fiscal periods for each organization. Controls w
 - Period status on the header (`status`) is an aggregate read-only enum derived by the backend. Valid values: `N` (All Never Opened), `O` (All Opened), `C` (All Closed), `P` (All Permanently Closed), `M` (Mixed).
 - Period status on each documents row (`periodStatus`) is a per-document-type enum: `N` (Never opened), `O` (Open), `C` (Closed), `P` (Permanently closed).
 - Status transitions follow Classic Etendo period-control logic: Never Opened → Open → Closed → Permanently Closed. Reverse transitions may be blocked depending on whether accounting entries exist.
-- The `openClose` action button on both entities invokes process `A832A5DA28FB4BB391BDE883E928DFC5` (type `obuiapp`):
-  - Header endpoint: `POST /sws/neo/open-close-period-control/periodControl/{id}/action/openClose`
-  - Lines endpoint: `POST /sws/neo/open-close-period-control/documents/{id}/action/openClose`
+- The `openClose` action button is routed to classic stored procedures via `processId`/`processType` overrides in `decisions.json`:
+  - `periodControl` entity: calls AD Process 167 (`C_Period_Process`) via `PeriodOpenCloseHandler` (`JAVA_QUALIFIER = 'period-openclose'`). Endpoint: `POST /sws/neo/open-close-period-control/periodControl/{id}/action/openClose`
+  - `documents` entity: calls AD Process 168 (`C_PeriodControl_Process`) via `PeriodControlDocOpenCloseHandler` (`JAVA_QUALIFIER = 'period-control-doc-openclose'`). Endpoint: `POST /sws/neo/open-close-period-control/documents/{id}/action/openClose`
 - A validation rule (`Allowed PeriodActions`) guards which transitions are permitted on the `openClose` button; the contract validation code is `Value<>'N'`.
 - Several fields on the header (`periodNo`, `startingDate`, `endingDate`, `periodType`) carry a read-only logic guard (`@C_Period_Not_Editable@='Y'`), evaluated as JS: `record['c_Period_Not_Editable'] === 'Y'`. Since all these fields are already classified as `readOnly` in the contract, this guard adds no additional editable surface — all period metadata is read-only by design.
 - No new-record defaulting applies because period creation is disabled (`hideCreate: true`).
