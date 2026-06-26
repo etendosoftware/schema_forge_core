@@ -409,4 +409,28 @@ describe('analyzeChangedFiles string-literal safety', () => {
     assert.ok(!findings.some((finding) => finding.code === 'COMMONJS_USAGE'));
     assert.ok(!findings.some((finding) => finding.code === 'POTENTIAL_SECRET'));
   });
+
+  it('does not block secret markers inside a multi-line JSDoc comment block', () => {
+    const docBlock = [
+      '/**',
+      ' * Requires:',
+      ' *   - E2E_USE_MOCK=0 E2E_PASSWORD=<password>',
+      ' */',
+      "export const run = () => {};",
+    ];
+    const findings = analyzeChangedFiles({
+      changedFiles: ['e2e/tests/flows/contacts-integration.spec.js'],
+      newSourceFiles: [],
+      newTestFiles: ['e2e/tests/flows/contacts-integration.spec.js'],
+      fileContents: {
+        'e2e/tests/flows/contacts-integration.spec.js': `${docBlock.join('\n')}\n`,
+      },
+      packageJsonChanges: [],
+      addedLineContents: {
+        'e2e/tests/flows/contacts-integration.spec.js': docBlock,
+      },
+    });
+
+    assert.ok(!findings.some((finding) => finding.code === 'POTENTIAL_SECRET'));
+  });
 });

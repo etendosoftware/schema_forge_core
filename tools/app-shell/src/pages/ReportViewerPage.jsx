@@ -501,7 +501,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
             ))}
             {hiddenCount > 0 && (
               <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-[10px] font-medium">
-                +{hiddenCount} more
+                {ui('andNMore', { n: hiddenCount })}
               </span>
             )}
             <button
@@ -562,7 +562,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
               )}
             </div>
             <div className="flex items-center justify-between px-4 py-3 border-t border-border/30 bg-muted/20">
-              <span className="text-xs text-muted-foreground">{pending.length} selected</span>
+              <span className="text-xs text-muted-foreground">{ui('selected', { count: pending.length })}</span>
               <div className="flex gap-2">
                 <button onClick={() => setOpen(false)} className="h-8 px-3 text-xs rounded-md border border-border hover:bg-muted/50">{ui('cancel')}</button>
                 <button onClick={confirm} className="h-8 px-3 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90">OK</button>
@@ -1329,7 +1329,7 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
           {invoicePopup && (
             <iframe
               src={`${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '')}/purchase-invoice/${invoicePopup.id}?embedded=1`}
-              title="Invoice"
+              title={ui('invoice')}
               className="w-full h-full border-0"
             />
           )}

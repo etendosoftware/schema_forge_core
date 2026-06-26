@@ -11,7 +11,9 @@ export const returnToVendorShipment = [
     "description": "Standard order for Q1 delivery",
     "documentStatus": "DR",
     "trackingNo": "RE-00001",
-    "sourceReceiptDocNo": "RE-00001"
+    "sourceReceiptDocNo": "RE-00001",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-returnToVendorShipment-002",
@@ -23,7 +25,9 @@ export const returnToVendorShipment = [
     "description": "Rush order - priority shipping required",
     "documentStatus": "CO",
     "trackingNo": "RE-00002",
-    "sourceReceiptDocNo": "RE-00002"
+    "sourceReceiptDocNo": "RE-00002",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-returnToVendorShipment-003",
@@ -35,7 +39,9 @@ export const returnToVendorShipment = [
     "description": "Bulk purchase for warehouse restocking",
     "documentStatus": "VO",
     "trackingNo": "RE-00003",
-    "sourceReceiptDocNo": "RE-00003"
+    "sourceReceiptDocNo": "RE-00003",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-returnToVendorShipment-004",
@@ -47,7 +53,9 @@ export const returnToVendorShipment = [
     "description": "Sample order for client evaluation",
     "documentStatus": "IP",
     "trackingNo": "RE-00004",
-    "sourceReceiptDocNo": "RE-00004"
+    "sourceReceiptDocNo": "RE-00004",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-returnToVendorShipment-005",
@@ -59,7 +67,9 @@ export const returnToVendorShipment = [
     "description": "Recurring monthly supply order",
     "documentStatus": "DR",
     "trackingNo": "RE-00005",
-    "sourceReceiptDocNo": "RE-00005"
+    "sourceReceiptDocNo": "RE-00005",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-returnToVendorShipment-006",
@@ -71,7 +81,9 @@ export const returnToVendorShipment = [
     "description": "Special pricing agreement applies",
     "documentStatus": "CO",
     "trackingNo": "RE-00006",
-    "sourceReceiptDocNo": "RE-00006"
+    "sourceReceiptDocNo": "RE-00006",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-returnToVendorShipment-007",
@@ -83,7 +95,9 @@ export const returnToVendorShipment = [
     "description": "Consolidated order from multiple requests",
     "documentStatus": "VO",
     "trackingNo": "RE-00007",
-    "sourceReceiptDocNo": "RE-00007"
+    "sourceReceiptDocNo": "RE-00007",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-returnToVendorShipment-008",
@@ -95,7 +109,9 @@ export const returnToVendorShipment = [
     "description": "Trial order for new product line",
     "documentStatus": "IP",
     "trackingNo": "RE-00008",
-    "sourceReceiptDocNo": "RE-00008"
+    "sourceReceiptDocNo": "RE-00008",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-returnToVendorShipment-009",
@@ -107,7 +123,9 @@ export const returnToVendorShipment = [
     "description": "Replacement for damaged goods",
     "documentStatus": "DR",
     "trackingNo": "RE-00009",
-    "sourceReceiptDocNo": "RE-00009"
+    "sourceReceiptDocNo": "RE-00009",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-returnToVendorShipment-010",
@@ -119,7 +137,9 @@ export const returnToVendorShipment = [
     "description": "Pre-season inventory build-up",
     "documentStatus": "CO",
     "trackingNo": "RE-00010",
-    "sourceReceiptDocNo": "RE-00010"
+    "sourceReceiptDocNo": "RE-00010",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-returnToVendorShipment-011",
@@ -131,7 +151,9 @@ export const returnToVendorShipment = [
     "description": "Customer-specific configuration",
     "documentStatus": "VO",
     "trackingNo": "RE-00011",
-    "sourceReceiptDocNo": "RE-00011"
+    "sourceReceiptDocNo": "RE-00011",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   },
   {
     "id": "mock-returnToVendorShipment-012",
@@ -143,7 +165,9 @@ export const returnToVendorShipment = [
     "description": "Government contract fulfillment",
     "documentStatus": "IP",
     "trackingNo": "RE-00012",
-    "sourceReceiptDocNo": "RE-00012"
+    "sourceReceiptDocNo": "RE-00012",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting"
   }
 ];
 

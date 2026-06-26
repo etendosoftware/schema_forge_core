@@ -5,11 +5,13 @@ import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import GenericPreviewModal from './GenericPreviewModal.jsx';
 import { useOrderPdf } from './useOrderPdf.js';
 import { usePurchaseOrderPdf } from './usePurchaseOrderPdf.js';
+import { useDocumentCurrency } from './useDocumentCurrency.js';
 import PreviewActionButtons, { PreviewEmptyPanel, PreviewPdfPanel } from './PreviewActionButtons.jsx';
 import SummaryCard from './preview-cards/SummaryCard.jsx';
 import EmailsCard from './preview-cards/EmailsCard.jsx';
 import RelatedDocumentsCard from './preview-cards/RelatedDocumentsCard.jsx';
 import { fetchByCriteria, fetchChild, fetchById } from '@/components/related-documents';
+import { useCurrencyPrecision } from '@/hooks/useCurrencyPrecision.js';
 
 // ── SO related-documents helpers ─────────────────────────────────────────────
 
@@ -37,7 +39,7 @@ async function fetchPaymentsIn(orderId, token, apiBaseUrl) {
 
 // ── General tab content ───────────────────────────────────────────────────────
 
-function OrderGeneralTab({ order, specName, token, apiBaseUrl }) {
+function OrderGeneralTab({ order, specName, token, apiBaseUrl, orgCurrencyCode, exchangeRate, orgGrandTotal, ratePrecision }) {
   const ui = useUI();
   const isSalesOrder = specName === 'sales-order';
 
@@ -63,6 +65,10 @@ function OrderGeneralTab({ order, specName, token, apiBaseUrl }) {
         statusLabel={statusLabel}
         invoicePercent={invoicePercent}
         deliveryPercent={deliveryPercent != null ? deliveryPercent : undefined}
+        orgCurrencyCode={orgCurrencyCode}
+        exchangeRate={exchangeRate}
+        orgGrandTotal={orgGrandTotal}
+        ratePrecision={ratePrecision}
         data-testid="SummaryCard__90f59a" />
       <EmailsCard onSend={undefined} data-testid="EmailsCard__90f59a" />
       {isSalesOrder && (
@@ -89,9 +95,35 @@ export default function OrderPreview({ order, token, apiBaseUrl, windowName, spe
 
   const isSalesOrder = specName === 'sales-order';
   const isDraft = order?.documentStatus === 'DR';
+  const ratePrecision = useCurrencyPrecision();
 
-  const soResult = useOrderPdf(isSalesOrder ? order?.id : null, apiBaseUrl, token);
-  const poResult = usePurchaseOrderPdf(!isSalesOrder ? order?.id : null, apiBaseUrl, token);
+  // Dual-currency: fetch exchange rate when doc currency differs from org currency.
+  // When the order has a per-order custom rate (eTGOCurrencyRate = org→doc multiplyRate,
+  // e.g. 1.20 means 1 EUR = 1.20 USD), use 1/eTGOCurrencyRate as the doc→org rate
+  // instead of the system C_Conversion_Rate. This ensures the PDF and sidebar show the
+  // rate the user actually set on the order, not the system default.
+  const { orgCurrencyCode, isSameCurrency, exchangeRate: systemExchangeRate } = useDocumentCurrency({
+    docCurrencyCode: order?.['currency$_identifier'],
+    orderDate: order?.orderDate,
+    apiBaseUrl,
+    token,
+  });
+  const etgoRate = (!isSameCurrency && order?.eTGOCurrencyRate)
+    ? parseFloat(order.eTGOCurrencyRate)
+    : null;
+  // eTGOCurrencyRate = org→doc multiplyRate (e.g. 1.20 = "1 EUR = 1.20 USD").
+  // Use it directly as exchangeRate so (1.20) is displayed, not the inverse (0.8333).
+  // orgGrandTotal = docTotal / eTGOCurrencyRate converts doc→org correctly.
+  const exchangeRate = (etgoRate && etgoRate !== 0 && etgoRate !== 1)
+    ? etgoRate
+    : systemExchangeRate;
+  const orgGrandTotal = (!isSameCurrency && exchangeRate && order?.grandTotalAmount != null)
+    ? Number(order.grandTotalAmount) / exchangeRate
+    : null;
+  const currencyData = { orgCurrencyCode, exchangeRate };
+
+  const soResult = useOrderPdf(isSalesOrder ? order?.id : null, apiBaseUrl, token, currencyData);
+  const poResult = usePurchaseOrderPdf(!isSalesOrder ? order?.id : null, apiBaseUrl, token, currencyData);
   const { pdfUrl, pdfBlob, loading: pdfLoading, error: pdfError } = isSalesOrder ? soResult : poResult;
 
   if (!order) return null;
@@ -128,6 +160,10 @@ export default function OrderPreview({ order, token, apiBaseUrl, windowName, spe
         specName={specName}
         token={token}
         apiBaseUrl={apiBaseUrl}
+        orgCurrencyCode={orgCurrencyCode}
+        exchangeRate={exchangeRate}
+        orgGrandTotal={orgGrandTotal}
+        ratePrecision={ratePrecision}
         data-testid="OrderGeneralTab__90f59a" />,
     },
     {

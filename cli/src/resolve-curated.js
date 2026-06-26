@@ -197,6 +197,10 @@ const FIELD_DECISION_COPY_PROPS = [
   'noTrailing',
   'inline',
   'addLineFromSibling',
+  // Selector exclusion: filter out the option whose id equals the current value of
+  // another field on the same row (e.g. newStorageBin excludeValueOf storageBin —
+  // can't move stock to the same bin it came from).
+  'excludeValueOf',
   'agentPrompt',
   // Opt-in: render an FK `inputMode: "selector"` field as the searchable combobox
   // (CreatableSearchSelect) instead of the plain pick-only dropdown (SelectorInput).
@@ -358,6 +362,13 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
 
   if (isVisible) applyVisibleFieldProps(field, rawField, fieldDecision);
   copyRawProps(field, rawField, FIELD_RAW_COPY_PROPS);
+
+  // Allow decisions to explicitly suppress a raw derivation by setting derivation: null.
+  // This is needed when a field transitions from system/readOnly (auto-derived) to editable
+  // (user-provided), so NEO does not override the user's value on save.
+  if (Object.prototype.hasOwnProperty.call(fieldDecision, 'derivation') && fieldDecision.derivation === null) {
+    delete field.derivation;
+  }
 
   return field;
 }
@@ -643,6 +654,7 @@ const WINDOW_TRUTHY_PROPS = [
   'detailLabel',
   'secondaryTabs',
   'statusBar',
+  'statusPills',
   'statusField',
   'detailSortBy',
   'listKpiCards',
@@ -657,6 +669,7 @@ const WINDOW_TRUTHY_PROPS = [
   'subsetFilters',
   'dateFilterKey',
   'statusEnumLabels',
+  'lockedAlert',
   'lineEntityConfig',
   'rowQuickActions',
   'sendDocument',
@@ -664,6 +677,7 @@ const WINDOW_TRUTHY_PROPS = [
   'balanceFooter',
   'extraTabs',
   'customPanelTabs',
+  'selectorPriceCurrency',
 ];
 
 const WINDOW_BOOLEAN_TRUE_PROPS = [
@@ -710,10 +724,10 @@ export const WINDOW_KEY_ORDER = [
   'labelOverrides', 'primaryTabs', 'othersLabel',
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
-  'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
+  'dateFilterKey', 'statusEnumLabels', 'lockedAlert', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
   'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
-  'layoutType', 'linesLayout', 'balanceFooter',
+  'layoutType', 'linesLayout', 'balanceFooter', 'selectorPriceCurrency',
 ];
 
 // Generic helper: returns a new object with keys in `canonicalOrder` first

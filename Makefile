@@ -1,4 +1,4 @@
-.PHONY: test test-all-coverage test-ci test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate domain-boundary-check sonar sonar-coverage sonar-file-coverage menu-cache uuid test-xml-regeneration-check test-python xml-regeneration-check dump-delta regen-check regen-check-help regen-check-clean regen-help data-fixes data-fixes-help
+.PHONY: test test-all-coverage test-ci test-ci-coverage test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate domain-boundary-check sonar sonar-coverage sonar-file-coverage menu-cache uuid test-xml-regeneration-check test-python xml-regeneration-check dump-delta regen-check regen-check-help regen-check-clean regen-help data-fixes data-fixes-help
 
 # --- Testing ---
 
@@ -23,9 +23,12 @@ test-all-coverage: ## Run ALL unit tests (Node + Vitest) with coverage reports
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/artifacts-lcov.info 'artifacts/**/__tests__/*.test.js'
 	@echo "=== Vitest (React components) ==="
 	cd tools/app-shell && npx vitest run --coverage && sed 's|^SF:src/|SF:tools/app-shell/src/|' coverage/vitest/lcov.info > ../../coverage/vitest-lcov.info
+	@echo "=== Merging LCOV reports ==="
+	npx lcov-result-merger 'coverage/*-lcov.info' coverage/merged-lcov.info
 	@echo ""
 	@echo "Coverage reports saved in coverage/"
-	@echo "  cli-lcov.info, appshell-lcov.info, appshell-test-lcov.info, artifacts-lcov.info, vitest-lcov.info"
+	@echo "  Individual: cli-lcov.info, appshell-lcov.info, appshell-test-lcov.info, artifacts-lcov.info, vitest-lcov.info"
+	@echo "  Merged:     merged-lcov.info (used by SonarQube)"
 
 test-ci: ## Run all unit tests and write JUnit XML reports (CI mode)
 	@mkdir -p test-results
@@ -50,6 +53,31 @@ test-ci: ## Run all unit tests and write JUnit XML reports (CI mode)
 	cd tools/app-shell && npx vitest run \
 	  --reporter=junit \
 	  --outputFile=../../test-results/vitest.xml
+
+test-ci-coverage: ## Run all unit tests with JUnit XML reports + LCOV coverage (CI mode, single pass)
+	@mkdir -p test-results coverage
+	node --test --experimental-test-coverage \
+	  --test-reporter=spec --test-reporter-destination=stdout \
+	  --test-reporter=junit --test-reporter-destination=test-results/cli.xml \
+	  --test-reporter=lcov --test-reporter-destination=coverage/cli-lcov.info \
+	  'cli/test/*.test.js'
+	node --test --experimental-test-coverage \
+	  --test-reporter=spec --test-reporter-destination=stdout \
+	  --test-reporter=junit --test-reporter-destination=test-results/appshell-node.xml \
+	  --test-reporter=lcov --test-reporter-destination=coverage/appshell-lcov.info \
+	  'tools/app-shell/src/**/__tests__/*.test.js' \
+	  'tools/app-shell/test/*.test.js'
+	node --test --experimental-test-coverage \
+	  --test-reporter=spec --test-reporter-destination=stdout \
+	  --test-reporter=junit --test-reporter-destination=test-results/artifacts.xml \
+	  --test-reporter=lcov --test-reporter-destination=coverage/artifacts-lcov.info \
+	  'artifacts/**/__tests__/*.test.js'
+	cd tools/app-shell && npx vitest run --coverage \
+	  --reporter=junit \
+	  --outputFile=../../test-results/vitest.xml \
+	  && cp coverage/vitest/lcov.info ../../coverage/vitest-lcov.info
+	@echo "=== Merging LCOV reports ==="
+	npx lcov-result-merger 'coverage/*-lcov.info' coverage/merged-lcov.info
 
 validate-pipeline: ## Validate pipeline completeness across all artifacts
 	node cli/src/validate-pipeline.js --format=text

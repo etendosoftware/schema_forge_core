@@ -15,6 +15,7 @@ import SendDocumentModal from './SendDocumentModal.jsx';
 import { ListFilterBar } from './ListFilterBar.jsx';
 import { buildAdvancedFilterCriteria } from '@/lib/gridQuery';
 import { useWindowFilterPresets } from '@/hooks/useWindowFilterPresets';
+import { trackSearchPerformed, trackWindowOpened } from '@/lib/productUsageTelemetry.js';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -333,7 +334,14 @@ export function ListView({
       else delete next[key];
       return next;
     });
-  }, []);
+    trackSearchPerformed({
+      entity,
+      specName: windowName,
+      source: 'list_filter',
+      type: parsed ? 'filter_apply' : 'filter_clear',
+      count: parsed ? 1 : 0,
+    });
+  }, [entity, windowName]);
 
   const handleClearAllFilters = useCallback(() => {
     setColumnFilters({});
@@ -387,7 +395,17 @@ export function ListView({
     columnDefs,
     columnFilters,
     trailingFilter: advancedFilterPart,
+    specName: windowName,
   });
+
+  useEffect(() => {
+    if (!entity && !windowName) return;
+    trackWindowOpened({
+      entity,
+      specName: windowName,
+      source: 'list_view',
+    });
+  }, [entity, windowName]);
 
   const refreshRef = useRef(hook.refresh);
   refreshRef.current = hook.refresh;
@@ -674,7 +692,7 @@ export function ListView({
                 <ListFilterBarSection
                   hideFilters={listViewOptions?.hideFilters}
                   hideListFilters={hideListFilters}
-                  hideStatusFilter={hideStatusFilter}
+                  hideStatusFilter={listViewOptions?.hideStatusFilter ?? hideStatusFilter}
                   entity={entity}
                   apiBaseUrl={apiBaseUrl}
                   columns={tableColumns}
@@ -849,6 +867,7 @@ export function ListView({
                   : (
                     <Table
                       entity={entity}
+                      specName={windowName}
                       data={hook.items}
                       onNavigate={buildRowNavigateHandler(renderPreview, setPreviewRow, navigate, windowName)}
                       onSelectionChange={setSelectedRows}

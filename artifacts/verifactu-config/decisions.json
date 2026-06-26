@@ -72,6 +72,9 @@
         "updatedBy": {
           "visibility": "system",
           "derivation": "fromConfig"
+        },
+        "refreshData": {
+          "visibility": "discarded"
         }
       }
     }

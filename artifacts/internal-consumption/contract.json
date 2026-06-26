@@ -1,8 +1,7 @@
 {
   "version": "0.8.0",
-  "generatedAt": "2026-04-29T19:05:49.589Z",
-  "updatedAt": "2026-06-25T23:34:32.328Z",
-  "checksum": "e36a3099bf287bfe",
+  "generatedAt": "2026-06-26T00:48:58.290Z",
+  "checksum": "22b218af4fdaa894",
   "frontendContract": {
     "window": {
       "id": "800076",
@@ -362,46 +361,6 @@
             "required": false
           },
           {
-            "name": "processed",
-            "apiKey": "processed",
-            "column": "Processed",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "posted",
-            "apiKey": "posted",
-            "column": "Posted",
-            "type": "button",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
-            "name": "description",
-            "apiKey": "description",
-            "column": "Description",
-            "type": "text",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
-            "name": "active",
-            "apiKey": "active",
-            "column": "IsActive",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "status",
-            "apiKey": "status",
-            "column": "Status",
-            "type": "enum",
-            "visibility": "editable",
-            "required": true
-          },
-          {
             "name": "id",
             "apiKey": "id",
             "column": "M_Internal_Consumption_ID",
@@ -415,6 +374,46 @@
             "column": "AD_Client_ID",
             "type": "foreignKey",
             "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "description",
+            "apiKey": "description",
+            "column": "Description",
+            "type": "text",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "posted",
+            "apiKey": "posted",
+            "column": "Posted",
+            "type": "button",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "status",
+            "apiKey": "status",
+            "column": "Status",
+            "type": "enum",
+            "visibility": "editable",
             "required": true
           },
           {
@@ -489,19 +488,19 @@
             "required": true
           },
           {
-            "name": "uOM",
-            "apiKey": "uOM",
-            "column": "C_UOM_ID",
-            "type": "foreignKey",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
             "name": "description",
             "apiKey": "description",
             "column": "Description",
             "type": "text",
             "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "uOM",
+            "apiKey": "uOM",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
             "required": false
           },
           {
@@ -537,10 +536,10 @@
             "required": false
           },
           {
-            "name": "organization",
-            "apiKey": "organization",
-            "column": "AD_Org_ID",
-            "type": "foreignKey",
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
             "visibility": "system",
             "required": true
           },
@@ -569,10 +568,10 @@
             "required": true
           },
           {
-            "name": "active",
-            "apiKey": "active",
-            "column": "IsActive",
-            "type": "boolean",
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
