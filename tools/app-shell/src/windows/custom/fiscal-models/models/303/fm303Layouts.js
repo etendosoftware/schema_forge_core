@@ -265,7 +265,7 @@ const _2024_COMPLEMENTARIA_OPS = [
     rows: [
       { id: 'resultado_69',          labelKey: 'fm.box.row.resultado_69_pre2023', cells: [69],  total: true },
       { id: 'a_deducir',             labelKey: 'fm.box.row.a_deducir',            cells: [70],  editable: true },
-      { id: 'devoluciones_at',       labelKey: 'fm.box.row.devoluciones_at',      cells: [109] },
+      { id: 'devoluciones_at',       labelKey: 'fm.box.row.devoluciones_at',      cells: [109], editable: true },
       { id: 'resultado_declaracion', labelKey: 'fm.box.row.resultado_declaracion', cells: [71], total: true },
     ],
   }},
@@ -330,13 +330,13 @@ const PATCHES = {
     { op: 'patchSection', section: 'identificacion', patch: { fields: _2024_IDENTIFICACION_FIELDS } },
     { op: 'patchRow', section: 'resultado_final', row: 'bicolumn_resultado', patch: {
       infoboxes: [
-        { id: 'reg_anual',     labelKey: 'fm.box.row.reg_anual',     cells: [68], editable: true },
-        { id: 'otros_ajustes', labelKey: 'fm.box.row.otros_ajustes', cells: [108] },
+        { id: 'reg_anual',     labelKey: 'fm.box.row.reg_anual',     cells: [68],  editable: true },
+        { id: 'otros_ajustes', labelKey: 'fm.box.row.otros_ajustes', cells: [108], editable: true },
       ],
       rows: [
         { id: 'resultado_69',          labelKey: 'fm.box.row.resultado_69',          cells: [69],  total: true },
         { id: 'a_deducir',             labelKey: 'fm.box.row.a_deducir',             cells: [70],  editable: true },
-        { id: 'devoluciones_at',       labelKey: 'fm.box.row.devoluciones_at',       cells: [109] },
+        { id: 'devoluciones_at',       labelKey: 'fm.box.row.devoluciones_at',       cells: [109], editable: true },
         { id: 'resultado_declaracion', labelKey: 'fm.box.row.resultado_declaracion', cells: [71],  total: true },
       ],
     }},
