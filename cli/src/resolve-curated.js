@@ -275,6 +275,7 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.businessCritical) field.businessCritical = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
   if (fieldDecision.min !== undefined) field.min = fieldDecision.min;
+  if (fieldDecision.max !== undefined) field.max = fieldDecision.max;
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
 }
 

@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.5.0",
   "generatedAt": "2026-05-12T16:47:39.614Z",
-  "updatedAt": "2026-06-11T12:55:37.001Z",
-  "checksum": "3fda0494d3c6a437",
+  "updatedAt": "2026-06-25T19:31:34.196Z",
+  "checksum": "63e339cc0086d8eb",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -674,6 +674,7 @@
             "section": "principal",
             "gridOrder": 5,
             "min": 0,
+            "max": 100,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -1701,6 +1702,14 @@
             "type": "button",
             "visibility": "discarded",
             "required": false
+          },
+          {
+            "name": "eTPRRemovePayment",
+            "apiKey": "eTPRRemovePayment",
+            "column": "EM_Etpr_Remove_Payment",
+            "type": "button",
+            "visibility": "discarded",
+            "required": true
           }
         ],
         "javaQualifier": "salesOrderHeaderHandler"
@@ -2668,6 +2677,14 @@
         "processType": "obuiapp"
       },
       {
+        "entity": "header",
+        "field": "eTPRRemovePayment",
+        "column": "EM_Etpr_Remove_Payment",
+        "url": "/sws/neo/sales-order/header/{id}/action/eTPRRemovePayment",
+        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "lines",
         "field": "manageReservation",
         "column": "Manage_Reservation",
@@ -2802,6 +2819,14 @@
         "field": "documentAction",
         "runner": "node",
         "description": "Action endpoint for 'documentAction' in header should exist"
+      },
+      {
+        "id": "t-action-endpoint-header-eTPRRemovePayment",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "eTPRRemovePayment",
+        "runner": "node",
+        "description": "Action endpoint for 'eTPRRemovePayment' in header should exist"
       },
       {
         "id": "t-action-endpoint-header-generateTemplate",
@@ -5860,6 +5885,14 @@
         "description": "System field 'dropShipPartner' should exist in backend but not frontend for header"
       },
       {
+        "id": "t-system-field-header-eTPRRemovePayment",
+        "category": "system-field",
+        "entity": "header",
+        "field": "eTPRRemovePayment",
+        "runner": "node",
+        "description": "System field 'eTPRRemovePayment' should exist in backend but not frontend for header"
+      },
+      {
         "id": "t-system-field-header-etvfacReversedInvoice",
         "category": "system-field",
         "entity": "header",
@@ -6795,9 +6828,9 @@
       }
     ],
     "summary": {
-      "total": 540,
+      "total": 542,
       "byCategory": {
-        "action-endpoint": 22,
+        "action-endpoint": 23,
         "crud-flags": 2,
         "default-value-type": 8,
         "displaylogic-evaluable": 3,
@@ -6809,11 +6842,11 @@
         "rule-declared": 254,
         "searchable-filters": 5,
         "selector-endpoint": 9,
-        "system-field": 150,
+        "system-field": 151,
         "visibility": 2
       },
       "byRunner": {
-        "node": 540,
+        "node": 542,
         "junit": 0
       }
     }

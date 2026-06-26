@@ -3216,6 +3216,24 @@ export function DetailView({
                                       // Derive unitPrice = listPrice × (1-discount/100) before POST.
                                       // For invoice config (priceField='unitPrice') this is a no-op.
                                       prepareLineForPost(lineData);
+                                      // Recompute gross from the discount field before POST.
+                                      // Needed when the user clears the discount field to '' and
+                                      // presses Enter without blurring: the early-return guard in
+                                      // handleLineFieldChange skips the CLIENT_SIDE_FIELDS block,
+                                      // leaving a stale grossAmount in valuesRef. This guarantees
+                                      // the POST body always reflects the normalized discount (0).
+                                      // Return-order lines have discountField:null — skip for them.
+                                      if (lineConfig.discountField) {
+                                        const grossRecompute = {};
+                                        computeLineGrossAmount(
+                                          lineConfig.discountField,
+                                          lineData[lineConfig.discountField] ?? 0,
+                                          grossRecompute,
+                                          lineData,
+                                        );
+                                        if (grossRecompute.grossAmount != null) lineData.grossAmount = grossRecompute.grossAmount;
+                                        if (grossRecompute[lineConfig.grossField] != null) lineData[lineConfig.grossField] = grossRecompute[lineConfig.grossField];
+                                      }
                                       setPendingLineValues(null);
                                       return hook.handleAddChild?.(lineData);
                                     },

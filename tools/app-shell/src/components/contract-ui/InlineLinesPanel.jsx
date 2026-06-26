@@ -163,6 +163,20 @@ function isValueBelowMin(col, value) {
   return !isNaN(num) && num < col.min;
 }
 
+function clampToMax(col, value) {
+  if (!NUMERIC_TYPES.has(col.type)) return value;
+  if (value === '' || value == null) {
+    // Empty numeric field: use defaultValue or min so the PATCH body never sends
+    // '' for a BigDecimal column (which can cause the backend to apply a wrong default).
+    if (col.defaultValue !== undefined) return String(col.defaultValue);
+    if (col.min !== undefined) return String(col.min);
+    return value;
+  }
+  if (col.max === undefined) return value;
+  const num = parseFloat(value);
+  return !isNaN(num) && num > col.max ? String(col.max) : value;
+}
+
 /**
  * Edit-mode cell. Returns null for non-editable types so the caller falls back to read mode.
  */
@@ -458,9 +472,10 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
       toast.error(ui('fieldMinValueError'));
       return;
     }
+    const effectiveValue = clampToMax(col, value);
     pendingEditRef.current = { rowId: row.id, key: col.key };
     try {
-      await onUpdateRow?.(row, col.key, value, {
+      await onUpdateRow?.(row, col.key, effectiveValue, {
         column: col.column,
         // For selectors, the FK label travels alongside the id so DetailView can refresh
         // the local row identifier without a full re-fetch.
