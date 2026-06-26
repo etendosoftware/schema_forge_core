@@ -89,6 +89,19 @@ SET c_elementvalue_id = '<EV_ID_90030>'
 WHERE c_acctschema_id = '<SCHEMA_ID>' AND elementtype = 'AC';
 ```
 
+**8-digit account code requirement (ETP-4247):** The Chart of Accounts feature requires all
+numeric posting account codes (`issummary='N'`, purely numeric `value`) to be exactly 8 digits,
+right-padded with zeros (e.g. `10000` → `10000000`).
+
+- **Corrective fix (existing tenants):** `cli/src/data-fixes/sql/20260626T120000Z__R8-account-codes-8digits.sql`
+  pads the 1312 posting-account rows for GOClient. Group accounts (`issummary='Y'`, 3 and 4 digits)
+  are intentionally excluded: naive right-padding would create UNIQUE(c_element_id, value) collisions
+  (1140 collision groups verified), because `100`, `1000`, and `10000` share the same prefix.
+- **Preventive requirement:** when gap A1's onboarding step is built (chart-of-accounts seeding for
+  new tenants), it **must** insert `c_elementvalue` rows already using 8-digit numeric codes so that
+  new tenants are born without this gap. The source data in GOOrg must also carry 8-digit codes, or
+  the clone SQL must apply `RPAD(value, 8, '0')` on the `issummary='N'` rows during the INSERT.
+
 ---
 
 ### A2 — Missing accounting mapping tables (`*_acct`)
