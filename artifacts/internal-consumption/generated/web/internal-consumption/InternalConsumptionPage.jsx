@@ -138,6 +138,14 @@ export const api = {
       "field": "posted",
       "column": "Posted",
       "url": "/sws/neo/internal-consumption/internalConsumption/{id}/action/posted"
+    },
+    {
+      "entity": "internalConsumption",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/internal-consumption/internalConsumption/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
     }
   ],
   "queryParams": {

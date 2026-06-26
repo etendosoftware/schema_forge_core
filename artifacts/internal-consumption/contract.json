@@ -1,8 +1,8 @@
 {
-  "version": "0.8.0",
+  "version": "0.9.0",
   "generatedAt": "2026-06-26T00:48:58.290Z",
-  "updatedAt": "2026-06-26T00:57:36.165Z",
-  "checksum": "a33bffe5d7619be1",
+  "updatedAt": "2026-06-26T01:18:52.876Z",
+  "checksum": "6733aed41ec66a56",
   "frontendContract": {
     "window": {
       "id": "800076",
@@ -452,6 +452,22 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "discarded",
+            "required": true
           }
         ]
       },
@@ -755,6 +771,14 @@
         "field": "posted",
         "column": "Posted",
         "url": "/sws/neo/internal-consumption/internalConsumption/{id}/action/posted"
+      },
+      {
+        "entity": "internalConsumption",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/internal-consumption/internalConsumption/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -776,6 +800,14 @@
   },
   "testManifest": {
     "tests": [
+      {
+        "id": "t-action-endpoint-internalConsumption-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "internalConsumption",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in internalConsumption should exist"
+      },
       {
         "id": "t-action-endpoint-internalConsumption-posted",
         "category": "action-endpoint",
@@ -1162,6 +1194,22 @@
         "description": "System field 'description' should exist in backend but not frontend for internalConsumption"
       },
       {
+        "id": "t-system-field-internalConsumption-etblkpAccountingstatus",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-system-field-internalConsumption-etblkpBulkposting",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for internalConsumption"
+      },
+      {
         "id": "t-system-field-internalConsumption-id",
         "category": "system-field",
         "entity": "internalConsumption",
@@ -1385,9 +1433,9 @@
       }
     ],
     "summary": {
-      "total": 78,
+      "total": 81,
       "byCategory": {
-        "action-endpoint": 2,
+        "action-endpoint": 3,
         "crud-flags": 2,
         "default-value-type": 3,
         "field-presence": 8,
@@ -1397,11 +1445,11 @@
         "rule-declared": 13,
         "searchable-filters": 2,
         "selector-endpoint": 3,
-        "system-field": 33,
+        "system-field": 35,
         "visibility": 2
       },
       "byRunner": {
-        "node": 78,
+        "node": 81,
         "junit": 0
       }
     }
