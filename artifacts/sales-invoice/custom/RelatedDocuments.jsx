@@ -11,6 +11,7 @@ import {
   fetchById,
   fetchByCriteria,
 } from '@/components/related-documents';
+import { getArSubtype } from './invoiceSubtype';
 
 export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) {
   const [order, setOrder] = useState(null);
@@ -25,6 +26,7 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     if (!recordId || !data) { setLoading(false); return; }
     setLoading(true);
     const orderId = data.salesOrder;
+    const isDevInvoice = getArSubtype(data) === 'DEV';
     const promises = [];
 
     if (orderId) {
@@ -38,10 +40,14 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
         })()
       );
 
-      promises.push(
-        fetchByCriteria('goods-shipment', 'goodsShipment', 'salesOrder', orderId, token, apiBaseUrl)
-          .then(d => setShipments(d))
-      );
+      // For DEV invoices, salesOrder points to the original order whose shipments are
+      // outgoing deliveries — not returns. Skip to avoid a misleading "envío" chip.
+      if (!isDevInvoice) {
+        promises.push(
+          fetchByCriteria('goods-shipment', 'goodsShipment', 'salesOrder', orderId, token, apiBaseUrl)
+            .then(d => setShipments(d))
+        );
+      }
 
       // If this is a credit note, fetch original invoices from the same order
       const isCreditNote = data['transactionDocument$_identifier']?.toLowerCase().includes('credit');
@@ -84,16 +90,24 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   }
 
   for (const s of shipments) {
-    chips.push(
-      <DocChip
-        key={`ship-${s.id}`}
-        icon={CHIP_ICONS.shipment}
-        iconColor={CHIP_COLORS.shipment}
-        title={ui('shipmentDoc', { number: s.documentNo })}
-        status={s.documentStatus}
-        statusLabel={ui(STATUS_KEYS[s.documentStatus] || s.documentStatus)}
-        onClick={() => navigate(`/goods-shipment/${s.id}`)}
-      />
+    const isReturn = s.movementType === 'C+';
+    chips.push(isReturn
+      ? (
+        <DocChip
+          key={`ship-${s.id}`}
+          {...docChipProps({ type: 'return-material-receipt', doc: s, ui, navigate })}
+        />
+      ) : (
+        <DocChip
+          key={`ship-${s.id}`}
+          icon={CHIP_ICONS.shipment}
+          iconColor={CHIP_COLORS.shipment}
+          title={ui('shipmentDoc', { number: s.documentNo })}
+          status={s.documentStatus}
+          statusLabel={ui(STATUS_KEYS[s.documentStatus] || s.documentStatus)}
+          onClick={() => navigate(`/goods-shipment/${s.id}`)}
+        />
+      )
     );
   }
 
