@@ -597,9 +597,9 @@ SELECT
   c.IsIdentifier, c.IsSelectionColumn, c.AllowFiltering AS IsFilterable,
   NULL AS Precision, c.IsTranslated,
   c.Help AS help_text, NULL AS field_group_name,
-  NULL AS property,
+  NULL AS property,  -- orphan columns have no AD_Field, so Property is always null
   c.IsKey,
-  tbl.TableName AS tab_tablename
+  tbl.TableName AS tab_tablename  -- tbl joins via t.AD_Table_ID so already canonical
 FROM AD_Tab t
 JOIN AD_Window w ON t.AD_Window_ID = w.AD_Window_ID
 JOIN AD_Table tbl ON t.AD_Table_ID = tbl.AD_Table_ID
