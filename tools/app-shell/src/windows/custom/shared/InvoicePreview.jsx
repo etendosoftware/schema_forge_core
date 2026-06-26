@@ -36,35 +36,32 @@ function InvoiceActionButtons({ triggerEdit, onEmail, canSendToSif, onOpenSif, c
           size="sm"
           className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-[#121217] hover:bg-[#2a2a30] text-white [&_svg]:size-5"
           onClick={onEmail}
-        >
-          <Mail />
+          data-testid="Button__cf88e6">
+          <Mail data-testid="Mail__cf88e6" />
           {ui('invoicePreviewSend')}
         </Button>
       )}
-
       {canSendToSif && (
         <Button
           size="sm"
           variant="outline"
           className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
           onClick={onOpenSif}
-        >
-          <FileText className="text-[#828FA3]" />
+          data-testid="Button__cf88e6">
+          <FileText className="text-[#828FA3]" data-testid="FileText__cf88e6" />
           {ui('sendToSif')}
         </Button>
       )}
-
       <Button
         size="sm"
         variant="outline"
         className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] disabled:opacity-40 disabled:cursor-not-allowed [&_svg]:size-5"
         disabled={!canAddPayment}
         onClick={canAddPayment ? onAddPayment : undefined}
-      >
-        <Wallet className="text-[#828FA3]" />
+        data-testid="Button__cf88e6">
+        <Wallet className="text-[#828FA3]" data-testid="Wallet__cf88e6" />
         {ui('invoicePreviewAddPayment')}
       </Button>
-
       {isSalesInvoice && (
         <Button
           size="sm"
@@ -72,27 +69,25 @@ function InvoiceActionButtons({ triggerEdit, onEmail, canSendToSif, onOpenSif, c
           className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
           onClick={onDownloadPdf}
           disabled={!hasPdf}
-        >
-          <Download className="text-[#828FA3]" />
+          data-testid="Button__cf88e6">
+          <Download className="text-[#828FA3]" data-testid="Download__cf88e6" />
           {ui('invoicePreviewDownloadPdf')}
         </Button>
       )}
-
       <Button
         size="sm"
         variant="outline"
         className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
         onClick={triggerEdit}
-      >
-        <Edit2 className="text-[#828FA3]" />
+        data-testid="Button__cf88e6">
+        <Edit2 className="text-[#828FA3]" data-testid="Edit2__cf88e6" />
         {ui('invoicePreviewEdit')}
       </Button>
-
       <button
         type="button"
         className="w-8 h-8 flex items-center justify-center bg-white border border-[#D1D4DB] shadow-sm rounded-lg hover:bg-gray-50 transition-colors"
       >
-        <MoreVertical size={20} className="text-[#828FA3]" />
+        <MoreVertical size={20} className="text-[#828FA3]" data-testid="MoreVertical__cf88e6" />
       </button>
     </>
   );
@@ -129,30 +124,35 @@ function InvoiceGeneralTab({ invoice, partnerName, badgeProps, statusLabel, inst
         dueDate={latestDueDate ?? null}
         statusCode={invoice?.documentStatus}
         statusLabel={statusLabel}
-      >
+        data-testid="SummaryCard__cf88e6">
         {fiscalTargets.showSii && (
-          <InfoRow label={ui('invoicePreview.fiscalStatus.sii')}>
+          <InfoRow
+            label={ui('invoicePreview.fiscalStatus.sii')}
+            data-testid="InfoRow__cf88e6">
             {fiscalLoading
               ? <span className="h-5 w-16 bg-gray-100 rounded animate-pulse inline-block" />
-              : <StatusPill estado={siiStatus ?? 'PE'} />}
+              : <StatusPill estado={siiStatus ?? 'PE'} data-testid="StatusPill__cf88e6" />}
           </InfoRow>
         )}
         {fiscalTargets.showTbai && (
-          <InfoRow label={ui('invoicePreview.fiscalStatus.tbai')}>
+          <InfoRow
+            label={ui('invoicePreview.fiscalStatus.tbai')}
+            data-testid="InfoRow__cf88e6">
             {fiscalLoading
               ? <span className="h-5 w-16 bg-gray-100 rounded animate-pulse inline-block" />
-              : <StatusPill estado={tbaiStatus ?? 'Pendiente'} />}
+              : <StatusPill estado={tbaiStatus ?? 'Pendiente'} data-testid="StatusPill__cf88e6" />}
           </InfoRow>
         )}
         {fiscalTargets.showVerifactu && (
-          <InfoRow label={ui('invoicePreview.fiscalStatus.verifactu')}>
+          <InfoRow
+            label={ui('invoicePreview.fiscalStatus.verifactu')}
+            data-testid="InfoRow__cf88e6">
             {fiscalLoading
               ? <span className="h-5 w-16 bg-gray-100 rounded animate-pulse inline-block" />
-              : <StatusPill estado={vfStatus ?? 'PE'} />}
+              : <StatusPill estado={vfStatus ?? 'PE'} data-testid="StatusPill__cf88e6" />}
           </InfoRow>
         )}
       </SummaryCard>
-
       <PaymentsCard
         payments={payments}
         currencyCode={currencyCode}
@@ -161,16 +161,14 @@ function InvoiceGeneralTab({ invoice, partnerName, badgeProps, statusLabel, inst
         isFullyPaid={isFullyPaid}
         loading={loadingPayments}
         onAddPayment={onAddPayment}
-      />
-
-      {specName !== 'purchase-invoice' && <EmailsCard onSend={onSend} />}
-
+        data-testid="PaymentsCard__cf88e6" />
+      {specName !== 'purchase-invoice' && <EmailsCard onSend={onSend} data-testid="EmailsCard__cf88e6" />}
       <RelatedDocumentsCard
         documentId={invoice?.id}
         token={token}
         apiBaseUrl={apiBaseUrl}
         specs={invoiceRelatedSpecs}
-      />
+        data-testid="RelatedDocumentsCard__cf88e6" />
     </div>
   );
 }
@@ -200,18 +198,18 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
     <div className="flex flex-col h-full min-h-0 w-full overflow-hidden">
       {p.pdfLoading && (
         <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
+          <Loader2 className="h-5 w-5 animate-spin" data-testid="Loader2__cf88e6" />
           <span className="text-sm">{ui('invoicePdfGenerating')}</span>
         </div>
       )}
       {p.pdfError && !p.pdfLoading && (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <AlertCircle className="h-8 w-8 text-amber-400" />
+          <AlertCircle className="h-8 w-8 text-amber-400" data-testid="AlertCircle__cf88e6" />
           <p className="text-sm text-muted-foreground">{ui('invoicePdfError')}</p>
           <p className="text-xs text-muted-foreground/60">{p.pdfError}</p>
         </div>
       )}
-      {p.pdfUrl && !p.pdfLoading && <PdfViewer url={p.pdfUrl} />}
+      {p.pdfUrl && !p.pdfLoading && <PdfViewer url={p.pdfUrl} data-testid="PdfViewer__cf88e6" />}
     </div>
   ) : null;
 
@@ -261,18 +259,24 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
           profile={p.profile}
           onAddPayment={() => p.setShowPaymentModal(true)}
           onSend={p.openEmailModal}
-        />
+          data-testid="InvoiceGeneralTab__cf88e6" />
       ),
     },
     {
       key: 'messages',
       label: ui('invoicePreviewMessages'),
-      content: <EmptyPanel icon="💬" text={ui('invoicePreviewNoMessagesYet')} />,
+      content: <EmptyPanel
+        icon="💬"
+        text={ui('invoicePreviewNoMessagesYet')}
+        data-testid="EmptyPanel__cf88e6" />,
     },
     {
       key: 'history',
       label: ui('invoicePreviewHistory'),
-      content: <EmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />,
+      content: <EmptyPanel
+        icon="🕐"
+        text={ui('invoicePreviewNoActivityRecorded')}
+        data-testid="EmptyPanel__cf88e6" />,
     },
   ];
 
@@ -291,7 +295,7 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
       isSalesInvoice={p.isSalesInvoice}
       onDownloadPdf={p.handleDownloadPdf}
       hasPdf={!!p.pdfUrl}
-    />
+      data-testid="InvoiceActionButtons__cf88e6" />
   );
 
   return (
@@ -306,8 +310,7 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
         onEdit={() => onEdit?.(p.displayInvoice?.id)}
         tabs={tabs}
         actionButtons={actionButtons}
-      />
-
+        data-testid="GenericPreviewModal__cf88e6" />
       {p.showPaymentModal && (
         <InvoicePaymentModal
           invoiceId={p.displayInvoice?.id}
@@ -318,9 +321,8 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
             p.setShowPaymentModal(false);
             p.fetchPayments();
           }}
-        />
+          data-testid="InvoicePaymentModal__cf88e6" />
       )}
-
       {p.showSifModal && (
         <SifSendingModal
           pendingTargets={p.pendingTargets}
@@ -337,9 +339,8 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
           }}
           zIndex={70}
           titleId="sif-modal-title"
-        />
+          data-testid="SifSendingModal__cf88e6" />
       )}
-
       {p.showSendModal && (
         <SendDocumentModal
           documentType={windowLabel}
@@ -353,7 +354,7 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
           pdfBlobUrl={p.pdfUrl}
           isClosing={p.sendModalClosing}
           onClose={p.closeEmailModal}
-        />
+          data-testid="SendDocumentModal__cf88e6" />
       )}
     </>
   );

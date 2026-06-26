@@ -282,7 +282,81 @@ check_base_conflicts() {
   fi
 }
 
+# ----------------------------------------------------------------------------
+# Optional: Playwright E2E tests (opt-in — declining NEVER blocks the push)
+# ----------------------------------------------------------------------------
+# Runs only AFTER the mandatory checks have passed. Prompt answers:
+#     <empty> / n / N / <60s timeout> -> skip, push proceeds
+#     y / Y                            -> run headless with the default 5 workers
+#     1..10                            -> run headless with that many workers (capped at 10)
+# Prompted ONLY on an interactive terminal — a scripted/CI push skips silently
+# (pre-push stdin holds git's ref list, so input is read from /dev/tty).
+# If you opt IN and the tests fail, the push IS blocked (you asked to gate on them).
+run_optional_playwright() {
+  if [ "$IS_TTY" != "1" ] || [ ! -e /dev/tty ]; then
+    return 0
+  fi
+
+  echo ""
+  printf "❓ Run Playwright E2E tests now? [N / y / 1-10 workers] (default N, 60s timeout): "
+  local answer=""
+  read -r -t 60 answer < /dev/tty || answer=""
+  echo ""
+
+  case "$answer" in
+    ""|n|N|no|NO)
+      echo "==> Skipping Playwright E2E tests."
+      return 0
+      ;;
+  esac
+
+  local workers=5
+  if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
+    workers=5
+  elif [[ "$answer" =~ ^[0-9]+$ ]]; then
+    workers="$answer"
+    if [ "$workers" -lt 1 ]; then
+      echo "==> Invalid worker count '$answer'; skipping Playwright E2E tests."
+      return 0
+    fi
+    if [ "$workers" -gt 10 ]; then
+      workers=10
+      echo "==> Capping workers at 10."
+    fi
+  else
+    echo "==> Unrecognized answer '$answer'; skipping Playwright E2E tests."
+    return 0
+  fi
+
+  # The mocked specs need the dev server on :3100. If it's down, skip gracefully
+  # (warn, don't block) — declining-to-be-able-to-run must not break the push.
+  if ! curl -sf -o /dev/null --max-time 5 http://localhost:3100 2>/dev/null; then
+    echo "⚠️  Dev server not reachable on http://localhost:3100 — skipping E2E."
+    echo "    Start it with 'make dev-mock' and re-push if you want to run them."
+    return 0
+  fi
+
+  echo "==> Running Playwright E2E tests headless with ${workers} worker(s)..."
+  set +e
+  ( cd "$REPO_DIR" && make test-e2e-headless WORKERS="$workers" )
+  local st=$?
+  set -e
+
+  if [ "$st" -eq 0 ]; then
+    echo "==> Playwright E2E tests... SUCCESS ✅"
+    return 0
+  fi
+
+  echo "==> Playwright E2E tests... FAILED ❌ (exit $st)"
+  echo "👉 You opted to run them, so the push is blocked. Re-push and decline (N),"
+  echo "   or bypass with 'git push --no-verify'."
+  exit 1
+}
+
 check_base_conflicts
+
+# 0. Run data-testid check (fast, runs before expensive checks)
+run_step "0" "Running data-testid check" "$REPO_DIR" "tmp/pre-push/data-testid-check.log" "npm run check:data-testid"
 
 # Run Step 1
 run_domain_boundary_check
@@ -290,10 +364,13 @@ run_domain_boundary_check
 # 2. Run unit tests and SonarQube analysis
 # --fail-on-gate makes run-sonar.sh exit non-zero when the Quality Gate is in
 # ERROR, so this step (and the push) is blocked exactly when CI's gate would fail.
+# --compare-coverage additionally blocks when this branch's OVERALL coverage drops
+# below the base branch's — mirroring Jenkins' "Compare Coverage Results" stage,
+# which the new-code-only Quality Gate does not cover.
 if [ -n "$BASE_REF" ]; then
-  SONAR_CMD="./run-sonar.sh --base-ref \"$BASE_REF\" --coverage --fail-on-gate"
+  SONAR_CMD="./run-sonar.sh --base-ref \"$BASE_REF\" --coverage --fail-on-gate --compare-coverage"
 else
-  SONAR_CMD="./run-sonar.sh --all-issues --coverage --fail-on-gate"
+  SONAR_CMD="./run-sonar.sh --all-issues --coverage --fail-on-gate --compare-coverage"
 fi
 run_step "2" "Running unit tests and SonarQube analysis" "$REPO_DIR" "tmp/pre-push/sonar-and-tests.log" "$SONAR_CMD"
 
@@ -304,6 +381,9 @@ if [ -d "etendo_core/modules/com.etendoerp.go/src-db/database/sourcedata" ]; the
 else
   echo "==> [3/3] Running offline regeneration check... SKIPPED ⚠️ (com.etendoerp.go sourcedata not found)"
 fi
+
+# Mandatory checks passed — offer the optional Playwright E2E run before the banner.
+run_optional_playwright
 
 echo ""
 echo "=========================================="

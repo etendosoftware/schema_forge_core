@@ -21,7 +21,9 @@ const statusField = null;
 // @sf-generated-end summary:sincronización
 
 // @sf-generated-start extraBadges:sincronización
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:sincronización
 
 // @sf-generated-start processes:sincronización

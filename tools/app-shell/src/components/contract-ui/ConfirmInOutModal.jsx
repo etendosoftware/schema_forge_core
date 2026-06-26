@@ -189,7 +189,7 @@ export default function ConfirmInOutModal({
                 {cardDesc}
               </div>
             </div>
-            <ToggleSwitch on={createInvoice} />
+            <ToggleSwitch on={createInvoice} data-testid="ToggleSwitch__3b3aca" />
           </div>}
 
           {error && (
@@ -223,7 +223,7 @@ export default function ConfirmInOutModal({
           >
             {loading ? (
               <>
-                <Spinner />
+                <Spinner data-testid="Spinner__3b3aca" />
                 {processingLabel || primaryLabel}
               </>
             ) : (

@@ -13,6 +13,6 @@ export default function ProductCategoryApp({ windowName, recordId, ...props }) {
       SortIconComponent={SortIcon}
       RefreshIconComponent={RefreshIcon}
       {...props}
-    />
+      data-testid="ProductCategoryPage__162116" />
   );
 }

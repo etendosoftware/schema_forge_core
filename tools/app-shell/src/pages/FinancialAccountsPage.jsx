@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useUI } from '@/i18n';
 import { useFinancialAccounts } from '@/hooks/useFinancialAccounts.js';
@@ -10,10 +9,10 @@ import {
   AccountsTable,
   AccountTypeFilter,
 } from '@/components/financial-accounts';
-import { applyAccountAdvancedFilter } from '@/components/financial-accounts/accountAdvancedFilter.js';
 import { NewAccountWizard } from '@/windows/custom/financial-account/NewAccountWizard.jsx';
 import { EditAccountModal } from '@/windows/custom/financial-account/EditAccountModal.jsx';
 import { ArchiveAccountDialog } from '@/windows/custom/financial-account/ArchiveAccountDialog.jsx';
+import { FundsTransferModal } from '@/windows/custom/financial-account/FundsTransferModal.jsx';
 
 function filterAccounts(accounts, typeFilter, search) {
   if (!Array.isArray(accounts)) return [];
@@ -42,10 +41,10 @@ export default function FinancialAccountsPage() {
   const { accounts, summary, loading, error, reload } = useFinancialAccounts();
   const [typeFilter, setTypeFilter] = useState(null);
   const [search, setSearch] = useState('');
-  const [advancedFilter, setAdvancedFilter] = useState(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editAccount, setEditAccount] = useState(null);
   const [archiveTarget, setArchiveTarget] = useState(null);
+  const [transferSource, setTransferSource] = useState(null);
 
   // The header badge counts active accounts only (archived ones live behind the
   // dedicated "inactive" filter and shouldn't inflate the headline figure).
@@ -61,16 +60,16 @@ export default function FinancialAccountsPage() {
   }, [activeCount]);
 
   const visibleAccounts = useMemo(
-    () => applyAccountAdvancedFilter(filterAccounts(accounts, typeFilter, search), advancedFilter),
-    [accounts, typeFilter, search, advancedFilter],
+    () => filterAccounts(accounts, typeFilter, search),
+    [accounts, typeFilter, search],
   );
 
   const handleOpenAccount = (account) => {
     navigate(`/financial-account/${account.id}`);
   };
 
-  const handleReconcile = () => {
-    toast(ui('financeAccountsReconcileToast'));
+  const handleReconcile = (account) => {
+    navigate(`/financial-account/${account.id}?tab=reconciliation&autoMatch=true`);
   };
 
   return (
@@ -82,17 +81,14 @@ export default function FinancialAccountsPage() {
           search={search}
           onSearchChange={setSearch}
           onNewAccount={() => setWizardOpen(true)}
-          advancedFilter={advancedFilter}
-          onAdvancedFilterChange={setAdvancedFilter}
-          rows={accounts}
-        />
+          onMatchingRules={() => navigate('/match-rule')}
+          data-testid="AccountsToolbar__7c3fbc" />
       </div>
-
       <div
         className="flex flex-1 overflow-hidden"
         data-testid="cuentas-card"
       >
-        <AccountsSidebar summary={summary} loading={loading} />
+        <AccountsSidebar summary={summary} loading={loading} data-testid="AccountsSidebar__7c3fbc" />
 
         <div className="w-px self-stretch bg-[#E8EAEF]" aria-hidden="true" />
 
@@ -105,28 +101,35 @@ export default function FinancialAccountsPage() {
             onReconcile={handleReconcile}
             onEdit={setEditAccount}
             onArchive={setArchiveTarget}
+            onTransfer={setTransferSource}
             onRetry={reload}
-          />
+            data-testid="AccountsTable__7c3fbc" />
         </div>
       </div>
-
       <NewAccountWizard
         open={wizardOpen}
         onClose={() => setWizardOpen(false)}
         onCreated={reload}
-      />
+        data-testid="NewAccountWizard__7c3fbc" />
       <EditAccountModal
         open={!!editAccount}
         account={editAccount}
         onClose={() => setEditAccount(null)}
         onSaved={reload}
-      />
+        data-testid="EditAccountModal__7c3fbc" />
       <ArchiveAccountDialog
         open={!!archiveTarget}
         account={archiveTarget}
         onClose={() => setArchiveTarget(null)}
         onArchived={reload}
-      />
+        data-testid="ArchiveAccountDialog__7c3fbc" />
+      {transferSource ? (
+        <FundsTransferModal
+          sourceAccountId={transferSource.id}
+          onClose={() => setTransferSource(null)}
+          onSuccess={reload}
+          data-testid="FundsTransferModal__7c3fbc" />
+      ) : null}
     </div>
   );
 }

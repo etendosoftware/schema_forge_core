@@ -11,6 +11,8 @@ import {
   fetchAccount,
   fetchEnvironments,
   loginEnvironment,
+  fetchOnboardingDraft,
+  saveOnboardingDraft,
   runOnboardingStream,
 } from '../onboardingApi.js';
 
@@ -263,6 +265,96 @@ describe('onboardingApi', () => {
     assert.equal(calls[0].options.headers.Authorization, 'Bearer platform-token');
   });
 
+  it('fetchOnboardingDraft gets the draft with the platform token', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, options });
+      return jsonResponse({ draft: { step: 2, form: { clientName: 'QA Company' } } });
+    };
+
+    const draft = await fetchOnboardingDraft(fetchImpl, '/etendo', 'platform-token');
+
+    assert.deepEqual(draft, { step: 2, form: { clientName: 'QA Company' } });
+    assert.equal(calls[0].url, '/etendo/sws/go/onboarding/draft');
+    assert.equal(calls[0].options.method, undefined);
+    assert.equal(calls[0].options.headers.Authorization, 'Bearer platform-token');
+  });
+
+  it('fetchOnboardingDraft returns null when the backend has no draft', async () => {
+    const fetchImpl = async () => jsonResponse({});
+
+    const draft = await fetchOnboardingDraft(fetchImpl, '', 'platform-token');
+
+    assert.equal(draft, null);
+
+    const draftFromNull = await fetchOnboardingDraft(
+      async () => jsonResponse({ draft: null }),
+      '',
+      'platform-token',
+    );
+    assert.equal(draftFromNull, null);
+  });
+
+  it('fetchOnboardingDraft throws onboardingInvalidSession on non-ok response', async () => {
+    const fetchImpl = async () => jsonResponse({ error: { message: 'expired' } }, { ok: false, status: 401 });
+
+    await assert.rejects(
+      () => fetchOnboardingDraft(fetchImpl, '', 'stale-token'),
+      (error) => {
+        assert.equal(error.code, 'onboardingInvalidSession');
+        assert.equal(error.userMessage, 'expired');
+        return true;
+      },
+    );
+  });
+
+  it('saveOnboardingDraft posts the draft with auth headers', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, options });
+      return jsonResponse({ success: true });
+    };
+
+    const result = await saveOnboardingDraft(fetchImpl, '/etendo', 'platform-token', {
+      step: 3,
+      form: { currency: 'EUR' },
+    });
+
+    assert.equal(result.success, true);
+    assert.equal(calls[0].url, '/etendo/sws/go/onboarding/draft');
+    assert.equal(calls[0].options.method, 'POST');
+    assert.equal(calls[0].options.headers['Content-Type'], 'application/json');
+    assert.equal(calls[0].options.headers.Authorization, 'Bearer platform-token');
+    assert.equal(calls[0].options.body, JSON.stringify({
+      draft: { step: 3, form: { currency: 'EUR' } },
+    }));
+  });
+
+  it('saveOnboardingDraft sends draft null when clearing the draft', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, options });
+      return jsonResponse({ success: true });
+    };
+
+    await saveOnboardingDraft(fetchImpl, '', 'platform-token', null);
+
+    assert.equal(calls[0].options.body, JSON.stringify({ draft: null }));
+  });
+
+  it('saveOnboardingDraft throws onboardingInvalidSession on non-ok response', async () => {
+    const fetchImpl = async () => jsonResponse({ message: 'session lost' }, { ok: false, status: 401 });
+
+    await assert.rejects(
+      () => saveOnboardingDraft(fetchImpl, '', 'stale-token', { step: 1 }),
+      (error) => {
+        assert.equal(error.code, 'onboardingInvalidSession');
+        assert.equal(error.userMessage, 'session lost');
+        return true;
+      },
+    );
+  });
+
   it('runOnboardingStream posts payload and emits every NDJSON message', async () => {
     const calls = [];
     const messages = [];
@@ -294,5 +386,61 @@ describe('onboardingApi', () => {
       countryCode: 'ES',
     }));
     assert.equal(messages.length, 3);
+  });
+
+  it('runOnboardingStream omits the address key when address is empty', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, options });
+      return streamResponse([{ type: 'result', success: true }]);
+    };
+
+    await runOnboardingStream(fetchImpl, '', 'platform-token', {
+      clientName: 'QA Company',
+      currency: 'EUR',
+      language: 'es_ES',
+      countryCode: 'ES',
+      address: '',
+    }, () => {});
+
+    const body = JSON.parse(calls[0].options.body);
+    assert.equal('address' in body, false);
+  });
+
+  it('runOnboardingStream omits the address key when address is absent', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, options });
+      return streamResponse([{ type: 'result', success: true }]);
+    };
+
+    await runOnboardingStream(fetchImpl, '', 'platform-token', {
+      clientName: 'QA Company',
+      currency: 'EUR',
+      language: 'es_ES',
+      countryCode: 'ES',
+    }, () => {});
+
+    const body = JSON.parse(calls[0].options.body);
+    assert.equal('address' in body, false);
+  });
+
+  it('runOnboardingStream includes the address key when address is provided', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, options });
+      return streamResponse([{ type: 'result', success: true }]);
+    };
+
+    await runOnboardingStream(fetchImpl, '', 'platform-token', {
+      clientName: 'QA Company',
+      currency: 'EUR',
+      language: 'es_ES',
+      countryCode: 'ES',
+      address: 'QA Street 123',
+    }, () => {});
+
+    const body = JSON.parse(calls[0].options.body);
+    assert.equal(body.address, 'QA Street 123');
   });
 });

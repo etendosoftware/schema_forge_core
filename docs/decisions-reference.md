@@ -69,8 +69,9 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 |----------|------|---------|--------|---------|
 | `category` | string | Inferred | `"sales"`, `"purchases"`, `"inventory"`, `"finance"`, `"accounting"`, `"master"`, `"project"`, `"general"` | UI routing and navigation grouping. |
 | `name` | string | From AD | — | Display name for breadcrumbs and titles. |
-| `layoutType` | string | `"default"` | `"default"`, `"kanban"`, `"calendar"`, `"custom"` | Frontend rendering mode. See `docs/window-templates.md`. |
-| `templateConfig` | object | `null` | Layout-specific | Extra config for non-default layouts (e.g., `groupBy`, `dateField`). |
+| `agentPrompt` | string | `null` | Free text | Spec-level guidance for AI agents that consume the NEO Headless MCP server. Surfaced in `agentProfile.agentPrompt` (contract) and persisted to `ETGO_SF_SPEC.AGENT_PROMPT`, from where `neo_discover` returns it per spec. Empty or whitespace-only values clear the persisted prompt and are omitted from the MCP response. |
+| `layoutType` | string | `"default"` | `"default"`, `"kanban"`, `"calendar"`, `"list-modal"`, `"custom"` | Frontend rendering mode. See `docs/window-templates.md`. |
+| `templateConfig` | object | `null` | Layout-specific | Extra config for non-default layouts. `kanban`/`calendar`: `groupBy`, `dateField`, etc. `list-modal`: `titleKey`, `editTitleKey`, `bannerKey`, `searchPlaceholderKey`, `newLabelKey`, `autoPriorityField`, `autoPriorityStep`, `sections` (ordered `[{ key, label }]`), `backLabelKey` (toolbar back-button i18n key; default `cancel`), `backTo` (route to navigate to on back; defaults to history `-1`), `toolbarFilters` (declarative dropdown filters `[{ key, field, allLabelKey, options: [{ value, labelKey }] }]`, applied client-side over the loaded rows). All strings are i18n keys. See the `list-modal` section in `docs/window-templates.md`. |
 | `detailEntity` | string \| null | Auto-inferred | Entity name or `null` | Explicitly sets which entity is the detail/lines tab. When omitted, the generator picks the first non-primary entity automatically. Set to `null` to create a header-only page (no detail tab). Set to a specific entity name to override the auto-inference. |
 | `relatedDocuments` | boolean | `false` | — | Enables the Related Documents footer in the detail view. Requires a hand-written `RelatedDocuments.jsx` in `artifacts/{window}/custom/`. The generator emits the import and `customTabs` prop automatically. |
 | `attachments` | boolean \| object | `true` | See below | Adds an "Attachments" tab to the detail view. Auto-enabled on every window with `layoutType: "default"`. Set to `false` to opt out; pass an object to tune client-side limits. See the Attachments subsection below. |
@@ -91,7 +92,35 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 | `subsetFilters` | array | `null` | See below | Segmented, radio-style filter above the list. One is always active, mutually exclusive, applied before any other filter. Ideal for "which universe am I looking at" selectors (e.g., All / Customers / Vendors). |
 | `quickFilters` | array | `null` | See below | Independent toggle pills above the list. Each can be on/off; multiple can be active simultaneously. Combined with the active subset and column filters using AND. Ideal for "refinements" (e.g., only overdue, only pending delivery). |
 | `rowQuickActions` | object | _absent_ (feature ON with canonical defaults) | See below | Hover-revealed action overlay on each grid row. The feature is ON by default for every window with canonical actions (Edit / Duplicate / Email / Delete) plus a kebab containing everything from `menuActions` — **no contract block is emitted in that case**. Declare the section only to disable the feature (`enabled: false`), override an action's visibility (`actions.<key>.show: false` / `visibleWhen`), or promote a process to a fixed button (`show: "fixed"`). |
+| `sendDocument` | object | _absent_ (auto-enabled on documental windows) | See below | Send/Download envelope config forwarded to the generic `SendDocumentModal`. Auto-enabled when the header exposes `documentNo`; declare it only to disable (`enabled: false`), drop the email panel (`allowEmail: false`), or tune the recipient-edit policy (see the Send Document subsection below). |
+| `balanceFooter` | object | `null` | `{ debitField, creditField }` | Renders a debit/credit balance footer (Σ debit, Σ credit, difference, balanced ✓/✗ badge) for double-entry windows (e.g. manual journals). Both fields must be amount-typed fields on the lines entity. When set, the generator emits `BalanceFooterPanel` instead of `DocumentTotalsPanel` and disables the Save button (with a tooltip) only when the entry is unbalanced (Σ debit ≠ Σ credit). An empty/zero entry is treated as balanced and is savable as a draft; the ✓/✗ badge is hidden until the lines carry amounts. Validator F17 enforces field existence. Example: `"balanceFooter": { "debitField": "amtSourceDr", "creditField": "amtSourceCr" }`. |
 | `linesLayout` | string | `"classic"` | `"classic"`, `"inlineEditable"` | Lines tab rendering mode. `"classic"` keeps the side-panel edit flow (current behavior). `"inlineEditable"` switches the table to `InlineLinesPanel`: pencil + trash hover-action icons on the right, single-row inline edit triggered by the pencil, autosave on blur. All column types (string, number, amount, percent, date, selector, search) are inline-editable; selector/search columns use `InlineSearchCombo` (text input with server-side search) so FK fields with many options are filterable by typing. The add-line button, related-documents panel, notes panel and totals panel are unchanged. Validator F12 enforces the enum. |
+
+### Send Document (`window.sendDocument`)
+
+Recipient-edit policy overrides (ETP-4226). The generator copies these keys
+verbatim into the generated `sendDocument` prop; ListView forwards the object
+to `SendDocumentModal` as `sendPolicy`. Absence of a key means the shared
+default applies — editable To/CC chips are the platform default, so **no
+window needs this section at launch**.
+
+| Key | Type | Default | Purpose |
+|-----|------|---------|---------|
+| `editableRecipients` | boolean | `true` | Set to `false` to restore the read-only To input (recipients locked to the server-resolved contact). |
+| `cc` | boolean | `true` | Set to `false` to hide the "Add CC" affordance (no CC channel). |
+| `maxRecipients` | number | `10` | Maximum recipients across To and CC. Must not exceed the backend contract limit. |
+
+```json
+{
+  "window": {
+    "sendDocument": {
+      "editableRecipients": false,
+      "cc": false,
+      "maxRecipients": 5
+    }
+  }
+}
+```
 
 ### Status Bar (`window.statusBar`)
 
@@ -369,7 +398,8 @@ Additional actions shown in the detail view's "more" menu (triple dot icon). Eac
     { "key": "duplicate", "label": "Duplicate" },
     { "key": "cancel", "labelKey": "cancel", "destructive": true, "visibleWhenStatus": "CO" },
     { "key": "reactivate", "labelKey": "reactivate", "visibleWhenStatus": "CO", "visibleWhenFieldFalse": "hasLinkedDocuments", "documentAction": "RE", "successKey": "actionCompleted" },
-    { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR"], "columnName": "aPRMReversePayment" }
+    { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR"], "columnName": "aPRMReversePayment" },
+    { "key": "post", "label": "Post", "labelKey": "post", "action": "post", "successKey": "documentPosted" }
   ]
 }
 ```
@@ -381,9 +411,11 @@ Additional actions shown in the detail view's "more" menu (triple dot icon). Eac
 | `labelKey` | string | i18n key for the label (alternative to `label`). |
 | `destructive` | boolean | If `true`, renders in red as a destructive action. |
 | `visibleWhenStatus` | string or string[] | Only show the action when document status matches. Omit to always show. |
-| `visibleWhenFieldFalse` | string | Hide the action when the named field in the record `data` is truthy. Combines with `visibleWhenStatus` using AND. Requires the backend to expose the field (e.g. via a NeoHandler `afterHandle`). When used, the generator emits `({ data, status }) =>` instead of `({ status }) =>`. |
+| `visibleWhenFieldTrue` | string | Show the action only when the named field in the record `data` **is** truthy. Etendo `'Y'`/`'N'`-aware: the field is treated as true when it equals the string `'Y'` or boolean `true`. Combines with `visibleWhenStatus` using AND. Requires the backend to expose the field (e.g. via a NeoHandler `afterHandle`). When used, the generator emits `({ data, status }) =>` instead of `({ status }) =>`. Emitted as `(data?.<field> === 'Y' || data?.<field> === true)`. |
+| `visibleWhenFieldFalse` | string | Show the action only when the named field in the record `data` is **not** true — the exact logical complement of `visibleWhenFieldTrue`. Etendo `'Y'`/`'N'`-aware: a field of `'N'` (which is a truthy JS string!) correctly counts as "false", so an unposted (`posted='N'`) document still shows the action. Combines with `visibleWhenStatus` using AND. Requires the backend to expose the field. When used, the generator emits `({ data, status }) =>` instead of `({ status }) =>`. Emitted as `!(data?.<field> === 'Y' || data?.<field> === true)`. |
 | `documentAction` | string | Invokes the standard DocAction endpoint with this value (`"RE"`, `"CO"`, `"VO"`, etc.). The record refreshes automatically on success. |
-| `columnName` | string | If set, triggers the named process column via `hook.handleProcess`. If omitted, generates an empty `onClick` placeholder. |
+| `columnName` | string | If set, triggers the named process column via `hook.handleProcess`. If omitted (and no `action`), generates an empty `onClick` placeholder. |
+| `action` | string | Invokes a generic NEO action endpoint (`POST {apiBaseUrl}/{entity}/{recordId}/action/{action}`) via the `useNeoAction` hook — e.g. `"post"` / `"unpost"`. The backend must handle the named action server-side. Emitted as `neoAction: '<value>'` in the contract. **Handler precedence:** `documentAction` > `columnName` > `action` > empty `onClick`. |
 | `successMessage` | string | Text shown in the success banner after `documentAction` resolves. |
 | `successKey` | string | i18n key for the success banner message (alternative to `successMessage`). |
 
@@ -431,6 +463,9 @@ Each override entry supports the following properties:
 | `displayLogicRaw` | string | JavaScript expression controlling button visibility (e.g., `"data.status === 'DR'"`). |
 | `exclude` | boolean | If `true`, hides this process button entirely. |
 | `add` | boolean | If `true`, defines a new process button not present in the backend contract. |
+| `columnName` | string | Column name to include in the action POST payload (used with `add: true` when the process maps to a specific column). |
+| `requiresLines` | boolean | If `true`, the button is disabled until at least one line exists. |
+| `requiresFieldMax` | array | Validation rules checked before firing the action. Each entry: `{ field, max, conditionalOnField?, conditionalValue?, errorKey }`. |
 
 When `style` is not specified, the generator defaults to `"destructive"` for processes whose names contain destructive keywords (e.g., `void`, `cancel`, `reverse`) and `"positive"` for all others.
 
@@ -445,6 +480,11 @@ Entity keys use **camelCase from tabName** (e.g., `"header"`, `"lines"`, `"basic
 | `fields` | object | `{}` | Field-level decisions. |
 | `draftMode` | object | `null` | Draft/Processed workflow config. |
 | `javaQualifier` | string | `null` | CDI qualifier for custom NeoHandler. |
+| `handlesDefaults` | boolean | `true` | **HandleDefaults.** When `true` (default), a new detail line's add-row fetches `GET /{detailEntity}/defaults?parentId=…` on open and pre-fills empty editable fields from the backend-resolved defaults (reusing the header-defaults normalization). Set `false` to opt this detail entity out — the add-row keeps literal-only seeding and no `/defaults` request is made. Emitted to the contract / runtime `api.crud` only when `false`. |
+
+### Line HandleDefaults (`entities.{name}.handlesDefaults`)
+
+When a user opens a new detail line, `DetailView` calls `useEntity.fetchChildDefaults(parentId)` → `GET /{detailEntity}/defaults?parentId=…`, normalizes the response with the same `normalizeDefaultValue` the header uses, and passes it to the add-row as `resolvedDefaults`. `DataTable.buildEmpty` then fills **empty** editable fields (fill-empties-only: literal defaults, the client `lineNo`, parent-derived display seeds, and `skipDefault` fields are never overridden). This is how a line field whose AD default is a macro — e.g. a journal line `Description` defaulting to `@DESCRIPTION1@` (the parent journal's description, resolved by NEO's auxiliary-input pipeline) — gets pre-filled. On by default; opt out per entity (`handlesDefaults: false`) or per field (`skipDefault: true`). Covers the inline add-row of the primary lines tab and secondary detail tabs.
 
 ### Draft Mode (`entities.{name}.draftMode`)
 
@@ -485,6 +525,8 @@ Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"order
 | `searchable` | boolean | `false` | `true`/`false` | Enable as filter parameter in list API. |
 | `section` | string | `null` | `"principal"`, `"other"`, custom | Group fields into form sections. |
 | `inline` | boolean | `false` | `true`/`false` | When `true`, keeps the field in the normal form grid flow even if the generator would otherwise pull it out. Currently relevant for image-type fields: an image field with `inline: true` renders inside the form grid using `row-span-2`, spanning two rows for visual balance instead of being extracted to a separate slot. |
+| `skipDefault` | boolean | `false` | `true`/`false` | **HandleDefaults opt-out (per field).** When `true`, the line add-row never applies a backend-resolved default to this field (it stays empty / keeps its literal seed) even when the entity's `handlesDefaults` is on. Emitted to the contract / add-row literal only when `true`. |
+| `clearsField` | string | `null` | Sibling field key | **Mutual exclusion.** Names a sibling field that is cleared (set to `0`/empty) whenever this field gets a non-zero value — e.g. a journal line where entering a Debit clears the Credit, and vice versa. The two fields form a "one-of" group: in the inline add-row's required-field check, an empty member is **not** flagged as missing while its partner carries a value (so a debit-only line submits). A required boolean/checkbox is likewise never treated as missing (unchecked is valid). |
 
 **Visibility defaults** (when not overridden):
 
@@ -495,12 +537,90 @@ Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"order
 | `system` | false | false | false |
 | `discarded` | false | false | false |
 
+### Grid cell flags
+
+Applied to fields with `grid: true` to control how the list cell renders.
+
+| Property | Type | Default | Purpose |
+|----------|------|---------|---------|
+| `gridOrder` | integer | `null` | 1-based insertion position of the column in the grid. Only tagged fields move; untagged fields keep their relative order. |
+| `badge` | boolean | `false` | Render an enum/list value as a badge/chip. |
+| `inlineToggle` | boolean | `false` | Render a boolean column as an inline `Switch` that `PATCH`es `{entity}/{id}` with `{ [field]: checked }` on change (used by `list-modal` and inline-line layouts). |
+| `inlineEdit` | boolean | `false` | Mark a column as inline-editable (carried into the contract as `inlineEdit: true`). Consumed by `list-modal`; editing is also available via the modal. |
+| `gridReadOnly` | boolean | `false` | Make an otherwise-editable column read-only in the grid. |
+| `grow` | boolean | `false` | Let the column grow to fill available width. |
+| `cellType` | string | `null` | Selects a cell renderer from the registry (see below). Generic to any grid; the `list-modal` layout ships a styled set. |
+
+#### Status column rendering (`columnType` and `enumValues`)
+
+Two field-level props control how the grid column renders raw values as labeled badges — without touching the underlying Etendo AD column reference.
+
+| Property | Type | Default | Purpose |
+|----------|------|---------|---------|
+| `columnType` | string | Inferred | Forces the grid column renderer. `"status"` renders the cell as a status badge. When absent, the renderer is inferred from the field name/type via `mapFieldType` in `generate-frontend.js`. |
+| `enumValues` | array | `null` | Maps raw cell values to display labels. Each entry: `{ "value": "<raw>", "name": "<i18nKeyOrLabel>" }`. The generator emits these as `enumLabels: { '<raw>': '<name>' }` on the table column descriptor. |
+
+**How `enumValues` is resolved at runtime:**
+
+1. `statusLabel()` in `tools/app-shell/src/lib/statusBadge.js` looks up `name` in `dictionary.genericLabels[name]`, then via the active `translate` function, and falls back to rendering `name` literally.
+2. `DistinctEnumPicker` (in `AdvancedFilterBuilder.jsx`) reads `enumLabels` to populate the advanced/conditional filter value dropdown — so the filter shows translated labels instead of raw values.
+3. `ListFilterBar.jsx` uses the same `enumLabels` to drive the status quick-filter pills above the list.
+
+**Key rules:**
+
+- This is a **Schema Forge display mapping only** — the Etendo AD column reference is never modified.
+- The mapping is **per-window**: the same raw value (e.g. `false`) can map to `statusDraft` in one window and a different key (e.g. `statusIncomplete`) in another. The shared `statusLabel` function stays generic.
+- `name` should be an existing key in `genericLabels` (in `packages/app-shell-core/src/locales/{es_ES,en_US}.json`) so both locales resolve correctly. If you use a literal string it renders as-is in all locales.
+- If you introduce a **new** key, add it to **both** `en_US.json` and `es_ES.json` (per `docs/i18n-guide.md`).
+- If the raw schema already supplies `enumValues` (from an AD list reference), `decisions.json` `enumValues` **overrides** them.
+
+**Example — `goods-movements` `processed` field** (an Etendo `YesNo` boolean the API serializes as `true`/`false`):
+
+```json
+"processed": {
+  "visibility": "readOnly",
+  "label": "Status",
+  "grid": true,
+  "form": false,
+  "columnType": "status",
+  "enumValues": [
+    { "value": "true",  "name": "statusProcessed" },
+    { "value": "false", "name": "statusDraft" }
+  ],
+  "gridOrder": 4
+}
+```
+
+This renders the badge as "Processed"/"Draft" (EN) and "Procesado"/"Borrador" (ES), reusing the existing `statusProcessed`/`statusDraft` keys from `genericLabels`. The advanced filter and the status quick-filter pill also show these labels instead of raw `true`/`false`.
+
+#### `list-modal` cell renderers (`cellType`)
+
+The `list-modal` grid renders each cell through a registry keyed by `cellType`
+(`tools/app-shell/src/components/contract-ui/listModalCells.jsx`). The renderers
+are generic and backend-agnostic — every cell reads only from the row payload and
+the column descriptor. Set them per grid field in `decisions.json`; the generator
+emits them into the contract column descriptors and the page consumes them. When
+no `cellType` is set, the cell falls back to a plain value (with enum-label / FK
+identifier resolution).
+
+| `cellType` | Extra keys | Renders |
+|------------|-----------|---------|
+| `priorityPill` | — | A bordered neutral pill with the numeric value. |
+| `nameWithSubline` | `subField` (field name whose `$_identifier` feeds the sub-line), `subPrefix` (default `"→ "`) | Bold name plus a muted sub-line sourced from another field. |
+| `conditionChip` | `kindField` (discriminator field, e.g. `C`/`S`/`R`), `patternField` (literal-text field), `kindLabels` (map of kind value → i18n key) | A chip with derived text `<kindLabel>: "<pattern>"`. |
+| `typePill` | `tones` (map of enum value → tone: `neutral`/`blue`/`green`/`amber`/`red`) | A rounded-full pill showing the enum label, optionally toned. |
+| `percent` | — | The numeric value rendered as `N%`. |
+| `boldText` | — | The value in semibold (e.g. a count column). |
+| `toggle` | — | An inline `Switch` that `PATCH`es `{entity}/{id}` with `{ [field]: checked }`. Equivalent to `inlineToggle`. |
+
 ### Reference & Input Mode (FK fields)
 
 | Property | Type | Default | Purpose |
 |----------|------|---------|---------|
 | `reference` | string \| null | Auto from targetTable | Catalog name for FK lookup (e.g., `"BusinessPartner"`). Set `null` to omit. |
 | `inputMode` | string \| null | Auto from reference type | `"selector"` (dropdown), `"search"` (searchable), `"dependent"` (cascading). Set `null` to omit. |
+| `searchSelect` | boolean | `false` | Opt-in: render an `inputMode: "selector"` FK field as the **searchable combobox** (`CreatableSearchSelect`) — text search + select — instead of the plain pick-only dropdown (`SelectorInput`). When absent/false the dropdown rendering is unchanged. Preserves `required`, the empty/null choice (`emptyOptionLabelKey`), and the same selector URL/context. **Not** the same as `searchable` (which enables a field as a list-API filter parameter). |
+| `allowCreate` | boolean | `false` | Opt-in (future): on a `searchSelect` field, surface the inline "+ create" action in the combobox. Currently OFF for all windows — the flag flows through the pipeline so a field can wire `createLabel`/`onCreateRequest` later without a generator change. |
 | `dependsOn` | object \| null | `null` | Parent field dependency for cascading selectors. |
 
 **dependsOn format:**
@@ -521,6 +641,8 @@ Setting `dependsOn` automatically sets `inputMode` to `"dependent"`.
 | `required` | boolean | From AD mandatory | Force field as required. |
 | `readOnlyLogic` | string \| null | `null` | Expression for conditional read-only. Set `null` to omit. |
 | `displayLogic` | string \| null | `null` | Expression for conditional visibility. Set `null` to omit. |
+| `businessCritical` | boolean | `false` | Advisory-only metadata flag. When `true`, marks the field as business-critical data. This flag does **not** change any functional behavior (validation, read-only logic, visibility, etc.). It travels through the pipeline (`decisions.json` → `resolve-curated` → `contract.json` → `push-to-neo` → `ETGO_SF_FIELD.ISBUSINESSCRITICAL`) so that downstream consumers (e.g., AI agents reading `neo_schema`) know they must confirm with the user before creating or updating records that include this field. |
+| `agentPrompt` | string | `null` | Per-field guidance for AI agents. Carried into the curated field and persisted to `ETGO_SF_FIELD.AGENT_PROMPT`, from where `neo_schema` returns it inside each field object. Empty or whitespace-only values clear the persisted prompt and are omitted from the MCP response. |
 
 ### Explicit null
 

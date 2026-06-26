@@ -14,7 +14,7 @@ export default function ProductApp({ windowName, recordId, ...props }) {
         SortIconComponent={SortIcon}
         RefreshIconComponent={RefreshIcon}
         {...props}
-      />
+        data-testid="ProductPage__2c94d0" />
     </div>
   );
 }

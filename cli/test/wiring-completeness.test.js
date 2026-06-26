@@ -34,6 +34,9 @@ const SPECIAL_PAGES = new Set([
   // carries a contract.json for grid column config but has no generated page/mockData
   // (see GENERATED_OUTPUT_EXEMPT below).
   'financial-account',
+  // Fully custom window with no AD backing — React lives under
+  // tools/app-shell/src/windows/custom/not-posted-documents/; no generated mockData.
+  'not-posted-documents',
 ]);
 
 const entityWindows = allMenuItems.filter(name => !SPECIAL_PAGES.has(name));
@@ -47,12 +50,28 @@ const entityArtifacts = artifactDirs.filter(d =>
   !d.includes('__test') && !d.startsWith('.') && existsSync(resolve(ARTIFACTS, d, 'contract.json'))
 );
 
-// Custom hand-written windows that carry a contract.json ONLY to drive config
-// (financial-account: the contract feeds grid column metadata for the bespoke UI),
-// but whose React lives under tools/app-shell/src/windows/custom/. They have no
-// generated page / mockData / Form.jsx, so they are exempt from the generated-output
-// checks below (the contract is still validated by the contract test suite).
-const GENERATED_OUTPUT_EXEMPT = new Set(['financial-account']);
+// list-modal windows render via the generic <ListModalWindow>, which fetches real
+// NEO data and is self-contained (the generator emits only the Page + index +
+// mockCatalogs, no mockData / Table / Form). They need no mockData.js, mirroring
+// hand-written custom windows like financial-account.
+function getLayoutType(entity) {
+  try {
+    const contract = JSON.parse(readText(resolve(ARTIFACTS, entity, 'contract.json')));
+    return contract.frontendContract?.window?.layoutType ?? 'default';
+  } catch {
+    return 'default';
+  }
+}
+const listModalArtifacts = new Set(entityArtifacts.filter(e => getLayoutType(e) === 'list-modal'));
+
+// Artifacts that carry a contract.json but emit no generated frontend, so they are
+// exempt from the generated-output checks below (their contract is still validated by
+// the contract test suite):
+//   - financial-account: a custom hand-written window whose React lives under
+//     tools/app-shell/src/windows/custom/; the contract only feeds grid column metadata.
+//   - transaction-type: a backend-only lookup (W spec for selector + inline create,
+//     no AD menu, no route, no React) — see BACKEND_ONLY_ARTIFACTS in validate-pipeline.
+const GENERATED_OUTPUT_EXEMPT = new Set(['financial-account', 'transaction-type']);
 const generatedEntityArtifacts = entityArtifacts.filter(e => !GENERATED_OUTPUT_EXEMPT.has(e));
 
 const aggregateArtifacts = artifactDirs.filter(d =>
@@ -86,6 +105,7 @@ describe('Wiring completeness', () => {
 
   describe('Every entity artifact has mockData.js', () => {
     for (const entity of generatedEntityArtifacts) {
+      if (listModalArtifacts.has(entity)) continue; // list-modal windows are self-contained (no mockData)
       it(`${entity} should have mockData.js`, () => {
         const generatedPath = resolve(ARTIFACTS, entity, 'generated', 'web', entity, 'mockData.js');
         const customPath = resolve(ARTIFACTS, entity, 'custom', 'mockData.js');
@@ -123,6 +143,7 @@ describe('Wiring completeness', () => {
 
   describe('Every entity window in menu.json has mockData in App.jsx loadAllMockData', () => {
     for (const win of entityWindows) {
+      if (listModalArtifacts.has(win)) continue; // list-modal windows fetch real NEO data — no generated mockData
       it(`${win} mockData should be imported in App.jsx`, () => {
         const pattern = `/${win}/`;
         assert.ok(

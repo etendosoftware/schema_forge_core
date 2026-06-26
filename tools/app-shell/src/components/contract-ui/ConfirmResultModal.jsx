@@ -4,10 +4,10 @@ import { useUI } from '@/i18n';
 // ── Type config ───────────────────────────────────────────────────────────────
 
 const TYPE_CONFIG = {
-  facturaCompra: { iconBg: '#f3f0ff', iconColor: '#7c5cff', labelKey: 'confirmResultModal.docType.facturaCompra', Icon: InvoiceIcon },
-  facturaVenta:  { iconBg: '#f3f0ff', iconColor: '#7c5cff', labelKey: 'confirmResultModal.docType.facturaVenta',  Icon: InvoiceIcon },
-  salida:        { iconBg: '#eef5fe', iconColor: '#2f73d6', labelKey: 'confirmResultModal.docType.salida',        Icon: SalidaIcon  },
-  entrada:       { iconBg: '#e9f7ee', iconColor: '#157a43', labelKey: 'confirmResultModal.docType.entrada',       Icon: EntradaIcon },
+  facturaCompra: { iconBg: '#f3f0ff', iconColor: '#7c5cff', labelKey: 'confirmResultModal.docType.facturaCompra', viewKey: 'poViewInvoice',   Icon: InvoiceIcon },
+  facturaVenta:  { iconBg: '#f3f0ff', iconColor: '#7c5cff', labelKey: 'confirmResultModal.docType.facturaVenta',  viewKey: 'soViewInvoice',   Icon: InvoiceIcon },
+  salida:        { iconBg: '#eef5fe', iconColor: '#2f73d6', labelKey: 'confirmResultModal.docType.salida',        viewKey: 'soViewShipment',  Icon: SalidaIcon  },
+  entrada:       { iconBg: '#e9f7ee', iconColor: '#157a43', labelKey: 'confirmResultModal.docType.entrada',       viewKey: 'poViewReceipt',   Icon: EntradaIcon },
 };
 
 const fmtAmount = (v, cur) => {
@@ -44,9 +44,8 @@ function DocCard({ doc, currency, ui, navigate, onClose }) {
       }}
     >
       <div style={{ width: 38, height: 38, borderRadius: 9, background: cfg.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <Icon color={cfg.iconColor} />
+        <Icon color={cfg.iconColor} data-testid="Icon__a46cc0" />
       </div>
-
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 10, fontWeight: 600, color: '#9aa1aa', textTransform: 'uppercase', letterSpacing: '.06em', lineHeight: 1 }}>
           {ui(cfg.labelKey)}
@@ -61,7 +60,6 @@ function DocCard({ doc, currency, ui, navigate, onClose }) {
           </span>
         </div>
       </div>
-
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={hovered ? '#2f73d6' : '#d0d4da'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transition: 'stroke .15s' }}>
         <path d="M9 18l6-6-6-6" />
       </svg>
@@ -73,6 +71,13 @@ function DocCard({ doc, currency, ui, navigate, onClose }) {
 
 export function ConfirmResultModal({ title, docs = [], primary, navigate, currency = '', onClose }) {
   const ui = useUI();
+
+  // Single-doc action label: use the explicit `primary` override if given,
+  // otherwise derive it from the doc type so it matches the actual document
+  // (e.g. "Ver albarán" for a shipment, not a hardcoded "Ver factura").
+  const singleDoc = docs.length === 1 ? docs[0] : null;
+  const singleViewKey = singleDoc ? TYPE_CONFIG[singleDoc.type]?.viewKey : null;
+  const primaryLabel = primary ?? (singleViewKey ? ui(singleViewKey) : null);
 
   let subtitle = null;
   if (docs.length === 1) subtitle = ui('confirmResultModal.subtitleOne');
@@ -101,7 +106,14 @@ export function ConfirmResultModal({ title, docs = [], primary, navigate, curren
         {docs.length > 0 && (
           <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
             {docs.map((doc) => (
-              <DocCard key={doc.type + '-' + doc.num} doc={doc} currency={currency} ui={ui} navigate={navigate} onClose={onClose} />
+              <DocCard
+                key={doc.type + '-' + doc.num}
+                doc={doc}
+                currency={currency}
+                ui={ui}
+                navigate={navigate}
+                onClose={onClose}
+                data-testid="DocCard__a46cc0" />
             ))}
           </div>
         )}
@@ -118,15 +130,15 @@ export function ConfirmResultModal({ title, docs = [], primary, navigate, curren
             {ui('soClose')}
           </button>
 
-          {docs.length === 1 && primary && (
+          {singleDoc && primaryLabel && (
             <button
               type="button"
-              onClick={() => { onClose(); navigate(docs[0].route); }}
+              onClick={() => { onClose(); navigate(singleDoc.route); }}
               style={{ fontSize: 13, fontWeight: 600, padding: '8px 16px', borderRadius: 8, border: 'none', background: '#2f73d6', color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
               onMouseEnter={e => { e.currentTarget.style.background = '#2a67c2'; }}
               onMouseLeave={e => { e.currentTarget.style.background = '#2f73d6'; }}
             >
-              {primary}
+              {primaryLabel}
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>

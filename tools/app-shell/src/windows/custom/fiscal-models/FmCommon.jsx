@@ -95,11 +95,15 @@ export function StatusPillMenu({ status, onStatusChange }) {
   return (
     <div className="fm-status-pill-menu">
       <button className="fm-status-pill-menu__trigger" onClick={() => setOpen(o => !o)} aria-haspopup="listbox">
-        <StatusPill status={status} />
+        <StatusPill status={status} data-testid="StatusPill__1775af" />
         <span className="fm-status-pill-menu__caret" aria-hidden="true">▾</span>
       </button>
       {open && (
-        <StatusMenu current={status} onSelect={onStatusChange} onClose={() => setOpen(false)} />
+        <StatusMenu
+          current={status}
+          onSelect={onStatusChange}
+          onClose={() => setOpen(false)}
+          data-testid="StatusMenu__1775af" />
       )}
     </div>
   );

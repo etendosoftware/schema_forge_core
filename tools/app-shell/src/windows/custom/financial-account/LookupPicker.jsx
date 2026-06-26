@@ -71,7 +71,9 @@ export function LookupPicker({ value, onSelect, onClear, placeholder, useLookup,
   return (
     <div ref={wrapRef} className="relative">
       {search ? (
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a8aa3]" />
+        <Search
+          className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a8aa3]"
+          data-testid="Search__12d6c3" />
       ) : null}
       <input
         type="text"

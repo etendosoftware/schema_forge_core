@@ -27,7 +27,11 @@ export const header = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
+    "etprReactivatePayment": "Sample etprReactivatePayment",
+    "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
   {
     "id": "mock-header-002",
@@ -55,7 +59,11 @@ export const header = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
+    "etprReactivatePayment": "Sample etprReactivatePayment",
+    "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
   {
     "id": "mock-header-003",
@@ -83,7 +91,11 @@ export const header = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
+    "etprReactivatePayment": "Sample etprReactivatePayment",
+    "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
   {
     "id": "mock-header-004",
@@ -111,7 +123,11 @@ export const header = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
+    "etprReactivatePayment": "Sample etprReactivatePayment",
+    "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
   {
     "id": "mock-header-005",
@@ -139,7 +155,11 @@ export const header = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
+    "etprReactivatePayment": "Sample etprReactivatePayment",
+    "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
   {
     "id": "mock-header-006",
@@ -167,7 +187,11 @@ export const header = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
+    "etprReactivatePayment": "Sample etprReactivatePayment",
+    "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
   {
     "id": "mock-header-007",
@@ -195,7 +219,11 @@ export const header = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
+    "etprReactivatePayment": "Sample etprReactivatePayment",
+    "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
   {
     "id": "mock-header-008",
@@ -223,7 +251,11 @@ export const header = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
+    "etprReactivatePayment": "Sample etprReactivatePayment",
+    "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
   {
     "id": "mock-header-009",
@@ -251,7 +283,11 @@ export const header = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment",
+    "etblkpAccountingstatus": "DR",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
+    "etprReactivatePayment": "Sample etprReactivatePayment",
+    "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
   {
     "id": "mock-header-010",
@@ -279,7 +315,11 @@ export const header = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment",
+    "etblkpAccountingstatus": "CO",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
+    "etprReactivatePayment": "Sample etprReactivatePayment",
+    "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
   {
     "id": "mock-header-011",
@@ -307,7 +347,11 @@ export const header = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment",
+    "etblkpAccountingstatus": "VO",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
+    "etprReactivatePayment": "Sample etprReactivatePayment",
+    "eTPRRemovePayment": "Sample eTPRRemovePayment"
   },
   {
     "id": "mock-header-012",
@@ -335,7 +379,11 @@ export const header = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment"
+    "psd2GenerateBankPayment": "Sample psd2GenerateBankPayment",
+    "etblkpAccountingstatus": "IP",
+    "etblkpBulkposting": "Sample etblkpBulkposting",
+    "etprReactivatePayment": "Sample etprReactivatePayment",
+    "eTPRRemovePayment": "Sample eTPRRemovePayment"
   }
 ];
 

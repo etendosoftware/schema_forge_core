@@ -149,7 +149,7 @@ export function PaymentRegisterForm({
             value={date}
             onChange={(v) => { setDate(v); if (invalidField === 'date') setInvalidField(null); }}
             className={invalidField === 'date' ? 'border-red-500 focus-within:ring-red-500' : ''}
-          />
+            data-testid="DateField__284351" />
         </div>
         <div>
           <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('paymentAmount')} ({currency})</label>
@@ -167,12 +167,19 @@ export function PaymentRegisterForm({
         {loadingAccounts ? (
           <div style={{ fontSize: 12, color: '#9ca3af', padding: '6px 10px' }}>{ui('loading')}</div>
         ) : (
-          <Select value={accountId} onValueChange={setAccountId} required>
-            <SelectTrigger className="focus:ring-2 focus:ring-primary" style={{ height: 32, fontSize: 13 }}>
-              <SelectValue placeholder={ui('selectAccount')} />
+          <Select
+            value={accountId}
+            onValueChange={setAccountId}
+            required
+            data-testid="Select__284351">
+            <SelectTrigger
+              className="focus:ring-2 focus:ring-primary"
+              style={{ height: 32, fontSize: 13 }}
+              data-testid="SelectTrigger__284351">
+              <SelectValue placeholder={ui('selectAccount')} data-testid="SelectValue__284351" />
             </SelectTrigger>
-            <SelectContent>
-              {accounts.map(acc => (<SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>))}
+            <SelectContent data-testid="SelectContent__284351">
+              {accounts.map(acc => (<SelectItem key={acc.id} value={acc.id} data-testid="SelectItem__284351">{acc.name}</SelectItem>))}
             </SelectContent>
           </Select>
         )}
@@ -382,7 +389,6 @@ export default function InvoicePaymentModal({
                         </span>
                       </div>
                     </div>
-
                     {/* Card body */}
                     <div style={{ borderTop: '0.5px solid #d1d5db', background: '#fff' }}>
                       {/* Payments for this installment */}
@@ -446,7 +452,7 @@ export default function InvoicePaymentModal({
                             apiFetch={apiFetch}
                             onCancel={() => setActiveFormScheduleId(null)}
                             onSuccess={(pd, an) => handlePaymentSuccess(pd, an, scheduleId)}
-                          />
+                            data-testid="PaymentRegisterForm__284351" />
                         </div>
                       )}
 

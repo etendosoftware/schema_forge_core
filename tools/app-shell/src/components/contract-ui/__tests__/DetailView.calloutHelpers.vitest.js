@@ -332,7 +332,7 @@ describe('applyCalloutComboUpdates', () => {
     expect(a.hook.handleChange).not.toHaveBeenCalled();
   });
 
-  it('lets the trigger combo win even when it is user-touched', () => {
+  it('skips combo for the trigger field to prevent callout reverting user selection', () => {
     const a = makeArgs({
       triggerField: 'address',
       data: { address: 'USER' },
@@ -342,7 +342,8 @@ describe('applyCalloutComboUpdates', () => {
       { address: { selected: 'A1', _identifier: 'Street 1' } },
       a,
     );
-    expect(a.appliedFields.get('address')).toBe('A1');
+    expect(a.appliedFields.has('address')).toBe(false);
+    expect(a.hook.handleChange).not.toHaveBeenCalled();
   });
 });
 

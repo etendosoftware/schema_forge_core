@@ -5,6 +5,12 @@ import { toast } from 'sonner';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
 import { trackDocumentCreated, trackTransactionPosted } from '@/lib/observability/health-events.js';
+import {
+    isCompletionProcess,
+    trackDocumentCompleted,
+    trackRecordCreated,
+    trackRecordUpdated,
+} from '@/lib/productUsageTelemetry.js';
 
 function buildHeaders(token) {
     let locale = 'es_ES';
@@ -406,6 +412,18 @@ export function getVisible(editing) {
     };
 }
 
+export function getMissingRequiredFields(fields, editing) {
+    const isReadOnly = getReadOnly(editing);
+    const isVisible = getVisible(editing);
+    return fields
+        .filter(f => f.required && !isReadOnly(f) && isVisible(f) && f.type !== 'checkbox' && f.section !== 'summary')
+        .filter(f => {
+            const v = editing?.[f.key];
+            return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
+        })
+        .map(f => f.key);
+}
+
 export function getUrl(isNew, apiBaseUrl, entity, editing) {
     return isNew ? `${apiBaseUrl}/${entity}` : `${apiBaseUrl}/${entity}/${editing.id}`;
 }
@@ -420,6 +438,39 @@ export function buildPatchPayload(editing, selected, entity) {
         if (key === 'id') continue;
         if (value !== selected[key]) payload[key] = value;
     }
+    applyContactsRequiredFields(entity, payload, editing);
+    return payload;
+}
+
+export function buildSavePayload({
+    isNew,
+    selected,
+    editing,
+    entity,
+    apiBaseUrl,
+    backendDefaultKeysRef,
+    userChangedKeysRef,
+    formFieldsRef,
+}) {
+    if (!isNew && selected) {
+        return buildPatchPayload(editing, selected, entity);
+    }
+
+    const payload = {};
+    const isContactsBusinessPartnerCreate = entity === 'businessPartner'
+        && /\/contacts$/i.test(apiBaseUrl || '');
+    const requiredFormKeys = new Set(
+        [...formFieldsRef.current.values()].flat().filter(f => f.required).map(f => f.key),
+    );
+
+    buildCreatePayload(
+        editing,
+        backendDefaultKeysRef,
+        userChangedKeysRef,
+        requiredFormKeys,
+        isContactsBusinessPartnerCreate,
+        payload,
+    );
     applyContactsRequiredFields(entity, payload, editing);
     return payload;
 }
@@ -480,6 +531,24 @@ export function shouldRefetchAfterSave(saved, refetchAfterSave) {
     return saved?.id && refetchAfterSave;
 }
 
+export async function resolveSavedRecordAfterSave(saved, {
+    apiBaseUrl,
+    entity,
+    headers,
+    refetchAfterSave,
+}) {
+    if (!shouldRefetchAfterSave(saved, refetchAfterSave)) {
+        return saved;
+    }
+    try {
+        const refetchRes = await fetch(`${apiBaseUrl}/${entity}/${saved.id}`, { headers });
+        const refetchData = refetchRes.ok ? await refetchRes.json() : null;
+        return normalizeRecord(refetchData?.response?.data?.[0] ?? refetchData ?? saved, entity);
+    } catch {
+        return saved;
+    }
+}
+
 export function showSaveSuccessToast(silent, isNew, ui) {
     if (!silent) toast.success(getSaveSuccessMessage(isNew, ui));
 }
@@ -494,6 +563,7 @@ export function useEntity(entity, childEntity, {
     skipListFetch = false,
     trailingFilter = null,
     refetchAfterSave = false,
+    specName = null,
 }) {
     const { logout } = useAuth();
     const ui = useUI();
@@ -501,6 +571,7 @@ export function useEntity(entity, childEntity, {
     const [selected, setSelected] = useState(null);
     const [editing, setEditing] = useState(null);
     const [children, setChildren] = useState([]);
+    const [childDefaults, setChildDefaults] = useState({});
     const [childrenLoading, setChildrenLoading] = useState(false);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -649,6 +720,39 @@ export function useEntity(entity, childEntity, {
             .finally(() => setChildrenLoading(false));
     }, [apiBaseUrl, childEntity, token, childSortBy]);
 
+    // HandleDefaults: fetch backend-resolved defaults for a NEW child line under the
+    // given parent and normalize them (dates, booleans, enum ints) exactly as
+    // handleNew does for the header. Returns a {key: value} map (also stored in
+    // childDefaults). Best-effort: {} when childEntity/parentId is missing or on error.
+    const fetchChildDefaults = useCallback(async (parentId) => {
+        if (!childEntity || !parentId) {
+            setChildDefaults({});
+            return {};
+        }
+        try {
+            const res = await fetch(`${apiBaseUrl}/${childEntity}/defaults?parentId=${parentId}`, { headers });
+            if (!res.ok) throw new Error(`${res.status}`);
+            const data = await res.json();
+            // Copy the resolved defaults and drop the backend id (never seeded into
+            // the add-row); normalize the remaining values in place.
+            const normalized = { ...(data?.defaults ?? {}) };
+            delete normalized.id;
+            for (const [key, val] of Object.entries(normalized)) {
+                normalizeDefaultValue(val, normalized, key);
+            }
+            setChildDefaults(normalized);
+            return normalized;
+        } catch {
+            setChildDefaults({});
+            return {};
+        }
+        // NOTE: `headers` is intentionally omitted — buildHeaders(token) returns a
+        // fresh object every render, so depending on it would make this callback
+        // unstable and re-fire DetailView's fetch effect every render (infinite
+        // loop / network never idles). token covers the only header that changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [apiBaseUrl, childEntity, token]);
+
     const fetchById = useCallback((id) => {
         if (!id) return;
         setLoading(true);
@@ -787,15 +891,7 @@ export function useEntity(entity, childEntity, {
         // existing records, `editing` already includes server-resolved values.
         if (isNew) {
             const fields = [...formFieldsRef.current.values()].flat();
-            const isReadOnly = getReadOnly(editing);
-            const isVisible = getVisible(editing);
-            const missing = fields
-                .filter(f => f.required && !isReadOnly(f) && isVisible(f) && f.type !== 'checkbox' && f.section !== 'summary')
-                .filter(f => {
-                    const v = editing?.[f.key];
-                    return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
-                })
-                .map(f => f.key);
+            const missing = getMissingRequiredFields(fields, editing);
             if (missing.length > 0) {
                 return reportMissingRequiredFields(missing, ui, setFieldErrors, setSaveError, setIsSaving);
             }
@@ -804,27 +900,16 @@ export function useEntity(entity, childEntity, {
         const url = getUrl(isNew, apiBaseUrl, entity, editing);
         // Use PATCH for existing records (partial update), POST for new
         const method = getMethod(isNew);
-        // For PATCH, only send changed fields
-        let payload;
-        if (!isNew && selected) {
-            payload = buildPatchPayload(editing, selected, entity);
-        } else {
-            // For POST (create), strip empty strings — let backend injectMandatoryDefaults
-            // resolve proper values for fields not explicitly set by the user or callouts.
-            payload = {};
-            const isContactsBusinessPartnerCreate = entity === 'businessPartner'
-                && /\/contacts$/i.test(apiBaseUrl || '');
-
-            // Required form fields must always be included in the payload, even when their value
-            // came from backend defaults and was never explicitly changed by the user.
-            const requiredFormKeys = new Set(
-                [...formFieldsRef.current.values()].flat().filter(f => f.required).map(f => f.key),
-            );
-
-            buildCreatePayload(editing, backendDefaultKeysRef, userChangedKeysRef, requiredFormKeys, isContactsBusinessPartnerCreate, payload);
-
-            applyContactsRequiredFields(entity, payload, editing);
-        }
+        const payload = buildSavePayload({
+            isNew,
+            selected,
+            editing,
+            entity,
+            apiBaseUrl,
+            backendDefaultKeysRef,
+            userChangedKeysRef,
+            formFieldsRef,
+        });
         // NEO Headless expects flat field values — NeoServlet handles wrapping for JsonDataService
         const body = JSON.stringify(payload);
         try {
@@ -832,11 +917,23 @@ export function useEntity(entity, childEntity, {
             if (res.ok) {
                 const data = await res.json();
                 const saved = normalizeRecord(data?.response?.data?.[0] ?? data, entity);
-                await applyRefetchOrSave(saved, `${apiBaseUrl}/${entity}/${saved.id}`, headers, entity, setSelected, setEditing);
+                const resolvedSaved = await resolveSavedRecordAfterSave(saved, {
+                    apiBaseUrl,
+                    entity,
+                    headers,
+                    refetchAfterSave,
+                });
+                setSelected(resolvedSaved);
+                setEditing({ ...resolvedSaved });
                 setSaveError(null);
                 setFieldErrors({});
                 showSaveSuccessToast(silent, isNew, ui);
-                if (isNew) trackDocumentCreated();
+                if (isNew) {
+                    trackDocumentCreated();
+                    trackRecordCreated({ entity, specName });
+                } else {
+                    trackRecordUpdated({ entity, specName });
+                }
                 return saved;
             } else {
                 await handleSaveErrorResponse(res, ui, setFieldErrors, setSaveError);
@@ -850,7 +947,7 @@ export function useEntity(entity, childEntity, {
         } finally {
             setIsSaving(false);
         }
-    }, [editing, selected, apiBaseUrl, entity, refetchAfterSave, token, ui]);
+    }, [editing, selected, apiBaseUrl, entity, specName, refetchAfterSave, token, ui]);
 
     const handleDelete = useCallback(async () => {
         if (!selected?.id) return;
@@ -953,6 +1050,12 @@ export function useEntity(entity, childEntity, {
         }
         toast.success(ui('recordProcessed'));
         trackTransactionPosted();
+        trackDocumentCompleted({
+            entity,
+            specName,
+            source: 'detail_view',
+            operation: 'complete',
+        });
         refresh();
         // Fetch updated record and update selected state so the detail view reflects the new status
         try {
@@ -966,7 +1069,7 @@ export function useEntity(entity, childEntity, {
         } catch { /* ignore, fall back to saved */
         }
         return saved;
-    }, [handleSave, apiBaseUrl, entity, token, refresh, ui]);
+    }, [handleSave, apiBaseUrl, entity, specName, token, refresh, ui]);
 
     const handleProcess = useCallback(async (process, paramValues = {}) => {
         if (!selected?.id) return;
@@ -995,6 +1098,14 @@ export function useEntity(entity, childEntity, {
                         recordId: selected.id
                     }
                 }));
+                if (isCompletionProcess(process)) {
+                    trackDocumentCompleted({
+                        entity,
+                        specName,
+                        source: 'process_action',
+                        operation: 'complete',
+                    });
+                }
                 fetchById(selected.id);
                 refresh();
             } else {
@@ -1004,7 +1115,7 @@ export function useEntity(entity, childEntity, {
         } catch (err) {
             toast.error(err?.message || 'Network error');
         }
-    }, [selected, entity, apiBaseUrl, token, refresh, fetchById, ui]);
+    }, [selected, entity, specName, apiBaseUrl, token, refresh, fetchById, ui]);
 
     // Prime the hook state with a freshly-saved record so consumers (DetailView) can
     // navigate /new → /:id without triggering a redundant GET /<entity>/:id. The POST
@@ -1018,12 +1129,12 @@ export function useEntity(entity, childEntity, {
     }, []);
 
     return {
-        items, selected, editing, children, childrenLoading, loading, loadingMore, hasMore, saveError, isSaving,
+        items, selected, editing, children, childDefaults, childrenLoading, loading, loadingMore, hasMore, saveError, isSaving,
         isDirtyHeader,
         fieldErrors, registerFields,
         handleSelect, handleNew, handleChange, handleSave, handleSaveAndProcess, handleDelete, handleProcess,
         handleAddChild, handleUpdateChild, handleDeleteChild, primeSaved,
-        refresh, fetchById, fetchChildren, loadMore,
+        refresh, fetchById, fetchChildren, fetchChildDefaults, loadMore,
         sortColumn, sortDirection, setSortColumn, setSortDirection,
     };
 }

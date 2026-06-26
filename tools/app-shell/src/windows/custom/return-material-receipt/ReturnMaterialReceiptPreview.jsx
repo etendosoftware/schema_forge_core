@@ -44,7 +44,7 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
       pdfUrl={pdfUrl}
       generatingText={ui('returnReceiptPdfGenerating')}
       errorText={ui('returnReceiptPdfError')}
-    />
+      data-testid="PreviewPdfPanel__178845" />
   );
 
   const { actionButtons, tabs } = buildReturnPreviewContent({
@@ -63,7 +63,7 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
         onEdit={() => onEdit?.(receipt.id)}
         tabs={tabs}
         actionButtons={actionButtons}
-      />
+        data-testid="GenericPreviewModal__178845" />
       <ReceiptSendModal
         sendModal={sendModal}
         documentType={windowLabel}
@@ -73,7 +73,7 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
         token={token}
         windowName="return-material-receipt"
         pdfBlobUrl={pdfUrl}
-      />
+        data-testid="ReceiptSendModal__178845" />
     </>
   );
 }

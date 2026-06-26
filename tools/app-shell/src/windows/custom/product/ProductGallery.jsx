@@ -21,11 +21,10 @@ function ProductCard({ row, onNavigate, token, apiBaseUrl }) {
           <img src={imgSrc} alt={row.name} className="w-full h-full object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <BoxIcon size={64} color="#828FA3" />
+            <BoxIcon size={64} color="#828FA3" data-testid="BoxIcon__a29533" />
           </div>
         )}
       </div>
-
       {/* Text area */}
       <div className="flex flex-col p-3 gap-1">
         <span className="text-sm font-semibold text-[#121217] leading-5 truncate">{row.name}</span>
@@ -47,7 +46,7 @@ export default function ProductGallery({ data, onNavigate, token, apiBaseUrl }) 
   if (!data || data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-        <BoxIcon size={48} color="#828FA3" />
+        <BoxIcon size={48} color="#828FA3" data-testid="BoxIcon__a29533" />
         <p className="text-sm mt-3">{ui('noProductsFound')}</p>
       </div>
     );
@@ -62,7 +61,7 @@ export default function ProductGallery({ data, onNavigate, token, apiBaseUrl }) 
           onNavigate={onNavigate}
           token={token}
           apiBaseUrl={apiBaseUrl}
-        />
+          data-testid="ProductCard__a29533" />
       ))}
     </div>
   );

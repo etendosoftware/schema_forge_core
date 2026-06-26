@@ -19,12 +19,14 @@ const statusField = null;
 // @sf-generated-end summary:cabeceraDeEmisor
 
 // @sf-generated-start extraBadges:cabeceraDeEmisor
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:cabeceraDeEmisor
 
 // @sf-generated-start processes:cabeceraDeEmisor
 const processes = [
-  { name: 'refreshData', label: 'Refrescar Datos', style: 'positive' },
+
 ];
 // @sf-generated-end processes:cabeceraDeEmisor
 
@@ -153,14 +155,6 @@ export const api = {
     }
   ],
   "actions": [
-    {
-      "entity": "cabeceraDeEmisor",
-      "field": "refreshData",
-      "column": "Refresh_Data",
-      "url": "/sws/neo/monitor-verifactu/cabeceraDeEmisor/{id}/action/refreshData",
-      "processId": "E0D681117A1843C5B9D525701087D7DC",
-      "processType": "obuiapp"
-    },
     {
       "entity": "cabeceraDeEmisor",
       "field": "isReady",

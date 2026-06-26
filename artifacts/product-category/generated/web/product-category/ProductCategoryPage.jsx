@@ -20,7 +20,9 @@ const statusField = null;
 // @sf-generated-end summary:productCategory
 
 // @sf-generated-start extraBadges:productCategory
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:productCategory
 
 // @sf-generated-start processes:productCategory

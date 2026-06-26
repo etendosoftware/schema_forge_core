@@ -27,7 +27,7 @@ const newLine = () => {
     id: `l${lineSeq}`,
     // Pre-fill the line date with today; it is excluded from the blank-line check
     // so a row with only the default date still counts as empty.
-    date: toLocalIso(new Date()), reference: '', contactName: '', contact: null, glItem: null,
+    date: toLocalIso(new Date()), reference: '', description: '', contactName: '', contact: null, glItem: null,
     // Empty so the amount fields show "0,00" as a placeholder (not a real value
     // the user must clear). parseAmount('') → 0; a line needs at least one amount.
     out: '', in: '',
@@ -64,6 +64,7 @@ function lineToRow(l) {
     id: `e${lineSeq}`,
     date: isoToLocal(l.date) || toLocalIso(new Date()),
     reference: l.reference && l.reference !== '**' ? l.reference : '',
+    description: l.description || '',
     contactName: l.bpartnerName || '',
     contact: l.bpartnerId ? { id: l.bpartnerId, name: l.bpartnerFkName || l.bpartnerName || '' } : null,
     glItem: l.glItemId ? { id: l.glItemId, name: l.glItemName || '' } : null,
@@ -99,7 +100,7 @@ function parseAmount(v) {
 
 function isBlankLine(r) {
   // The auto-filled date is ignored: a row with only the default date is empty.
-  return !r.reference.trim() && !r.contactName.trim() && !r.contact && !r.glItem
+  return !r.reference.trim() && !r.description.trim() && !r.contactName.trim() && !r.contact && !r.glItem
     && parseAmount(r.in) === 0 && parseAmount(r.out) === 0;
 }
 
@@ -149,7 +150,10 @@ function HeaderFields({ form, setForm, ui }) {
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="col-span-2">
-        <FieldRow label={ui('financeAccountStatementsManualName')} required>
+        <FieldRow
+          label={ui('financeAccountStatementsManualName')}
+          required
+          data-testid="FieldRow__6b4086">
           <input
             type="text" value={form.name} onChange={set('name')}
             placeholder={ui('financeAccountStatementsManualNamePlaceholder')}
@@ -157,26 +161,36 @@ function HeaderFields({ form, setForm, ui }) {
           />
         </FieldRow>
       </div>
-      <FieldRow label={ui('financeAccountStatementsManualTrxDate')} required>
+      <FieldRow
+        label={ui('financeAccountStatementsManualTrxDate')}
+        required
+        data-testid="FieldRow__6b4086">
         <DateField
           value={form.transactionDate}
           onChange={(iso) => setForm((f) => ({ ...f, transactionDate: iso }))}
           data-testid="manual-statement-trxdate"
         />
       </FieldRow>
-      <FieldRow label={ui('financeAccountStatementsManualImportDate')} required>
+      <FieldRow
+        label={ui('financeAccountStatementsManualImportDate')}
+        required
+        data-testid="FieldRow__6b4086">
         <DateField
           value={form.importDate}
           onChange={(iso) => setForm((f) => ({ ...f, importDate: iso }))}
           data-testid="manual-statement-importdate"
         />
       </FieldRow>
-      <FieldRow label={ui('financeAccountStatementsManualFileName')}>
+      <FieldRow
+        label={ui('financeAccountStatementsManualFileName')}
+        data-testid="FieldRow__6b4086">
         <input type="text" value={form.fileName} onChange={set('fileName')}
           placeholder={ui('financeAccountStatementsManualFileNamePlaceholder')}
           data-testid="manual-statement-filename" className={inputClass} />
       </FieldRow>
-      <FieldRow label={ui('financeAccountStatementsManualNotes')}>
+      <FieldRow
+        label={ui('financeAccountStatementsManualNotes')}
+        data-testid="FieldRow__6b4086">
         <input type="text" value={form.notes} onChange={set('notes')}
           placeholder={ui('financeAccountStatementsManualNotesPlaceholder')}
           data-testid="manual-statement-notes" className={inputClass} />
@@ -193,7 +207,7 @@ function HeaderFields({ form, setForm, ui }) {
 // the editable row so every column lines up. `fr` units let the row fill the
 // modal width without a horizontal scrollbar (which would clip lookup dropdowns).
 const LINES_GRID =
-  'grid grid-cols-[130px_minmax(110px,0.8fr)_minmax(140px,1.1fr)_minmax(150px,1.2fr)_minmax(150px,1.2fr)_110px_110px_72px] gap-2';
+  'grid grid-cols-[130px_minmax(110px,0.8fr)_minmax(180px,1.6fr)_minmax(140px,1.1fr)_minmax(150px,1.2fr)_minmax(150px,1.2fr)_110px_110px_72px] gap-2';
 
 const cellInput = cn(inputClass, 'w-full');
 const cellAmount = cn(inputClass, 'w-full tabular-nums');
@@ -227,13 +241,34 @@ function ColHead({ label, required }) {
 function LinesHeader({ ui }) {
   return (
     <div className={cn(LINES_GRID, 'items-center rounded-t-xl border-b border-[#E8EAEF] bg-white px-3 py-2.5 text-xs font-semibold tracking-normal text-[#121217]')}>
-      <ColHead label={ui('financeAccountStatementsManualColDate')} required />
-      <ColHead label={ui('financeAccountStatementsManualColReference')} required />
-      <ColHead label={ui('financeAccountStatementsManualColContactName')} />
-      <ColHead label={ui('financeAccountStatementsManualColContact')} />
-      <ColHead label={ui('financeAccountStatementsManualColGlItem')} />
-      <ColHead label={ui('financeAccountStatementsManualColOut')} required />
-      <ColHead label={ui('financeAccountStatementsManualColIn')} required />
+      <ColHead
+        label={ui('financeAccountStatementsManualColDate')}
+        required
+        data-testid="ColHead__6b4086" />
+      <ColHead
+        label={ui('financeAccountStatementsManualColReference')}
+        required
+        data-testid="ColHead__6b4086" />
+      <ColHead
+        label={ui('financeAccountStatementsManualColDesc')}
+        data-testid="ColHead__6b4086" />
+      <ColHead
+        label={ui('financeAccountStatementsManualColContactName')}
+        data-testid="ColHead__6b4086" />
+      <ColHead
+        label={ui('financeAccountStatementsManualColContact')}
+        data-testid="ColHead__6b4086" />
+      <ColHead
+        label={ui('financeAccountStatementsManualColGlItem')}
+        data-testid="ColHead__6b4086" />
+      <ColHead
+        label={ui('financeAccountStatementsManualColOut')}
+        required
+        data-testid="ColHead__6b4086" />
+      <ColHead
+        label={ui('financeAccountStatementsManualColIn')}
+        required
+        data-testid="ColHead__6b4086" />
       <span />
     </div>
   );
@@ -248,6 +283,7 @@ function DisplayRow({ row, money, bcpLocale, onEdit, onRemove, ui }) {
       data-testid="manual-line-row">
       <span className="truncate">{formatDisplayDate(row.date, bcpLocale)}</span>
       <span className={cn('truncate', !row.reference && MUTED)}>{row.reference || '—'}</span>
+      <span className={cn('truncate', !row.description && MUTED)} title={row.description || ''}>{row.description || '—'}</span>
       <span className={cn('truncate', !row.contactName && MUTED)}>{row.contactName || '—'}</span>
       <span className={cn('truncate', !row.contact && MUTED)}>{row.contact?.name || '—'}</span>
       <span className={cn('truncate', !row.glItem && MUTED)}>{row.glItem?.name || '—'}</span>
@@ -261,12 +297,12 @@ function DisplayRow({ row, money, bcpLocale, onEdit, onRemove, ui }) {
         <button type="button" onClick={() => onEdit(row.id)}
           aria-label={ui('financeAccountStatementsManualEditLine')} data-testid="manual-line-edit"
           className="flex h-7 w-7 items-center justify-center rounded-full text-[#6C6C89] hover:bg-[#F0F2F5] hover:text-[#121217]">
-          <Pencil className="h-4 w-4" />
+          <Pencil className="h-4 w-4" data-testid="Pencil__6b4086" />
         </button>
         <button type="button" onClick={() => onRemove(row.id)}
           aria-label={ui('financeAccountStatementsManualRemoveLine')} data-testid="manual-line-remove"
           className="flex h-7 w-7 items-center justify-center rounded-full text-[#D50B3E] hover:bg-[#FEF0F4]">
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4" data-testid="Trash2__6b4086" />
         </button>
       </span>
     </div>
@@ -281,15 +317,32 @@ function EditRow({ row, onChange, onRemove, ui, rowRef }) {
     <div ref={rowRef} className={cn(LINES_GRID, 'items-center bg-white px-3 py-2.5')} data-testid="manual-line-editrow">
       <DateField value={row.date} onChange={setVal('date')} data-testid="manual-line-date" className="w-full" />
       <input type="text" value={row.reference} onChange={set('reference')} className={cellInput} data-testid="manual-line-ref" />
+      <input type="text" value={row.description} onChange={set('description')}
+        placeholder={ui('financeAccountStatementsManualDescPlaceholder')}
+        className={cellInput} data-testid="manual-line-description" />
       <input type="text" value={row.contactName} onChange={set('contactName')}
         placeholder={ui('financeAccountStatementsManualCounterpartyPlaceholder')}
         className={cellInput} data-testid="manual-line-contactname" />
-      <LookupPicker value={row.contact} onSelect={(it) => setVal('contact')(it)} onClear={() => setVal('contact')(null)}
-        placeholder={ui('financeAccountStatementsManualContactPlaceholder')} useLookup={useBPartnerLookup}
-        dataTestId="manual-line-contact" className={cellInput} search />
-      <LookupPicker value={row.glItem} onSelect={(it) => setVal('glItem')(it)} onClear={() => setVal('glItem')(null)}
-        placeholder={ui('financeAccountStatementsManualGlItemPlaceholder')} useLookup={useGLItemLookup}
-        dataTestId="manual-line-glitem" className={cellInput} search />
+      <LookupPicker
+        value={row.contact}
+        onSelect={(it) => setVal('contact')(it)}
+        onClear={() => setVal('contact')(null)}
+        placeholder={ui('financeAccountStatementsManualContactPlaceholder')}
+        useLookup={useBPartnerLookup}
+        dataTestId="manual-line-contact"
+        className={cellInput}
+        search
+        data-testid="LookupPicker__6b4086" />
+      <LookupPicker
+        value={row.glItem}
+        onSelect={(it) => setVal('glItem')(it)}
+        onClear={() => setVal('glItem')(null)}
+        placeholder={ui('financeAccountStatementsManualGlItemPlaceholder')}
+        useLookup={useGLItemLookup}
+        dataTestId="manual-line-glitem"
+        className={cellInput}
+        search
+        data-testid="LookupPicker__6b4086" />
       <input type="text" inputMode="decimal" value={row.out} onChange={set('out')} placeholder={ui('financeAccountAmountPlaceholder')}
         className={cellAmount} data-testid="manual-line-out" />
       <input type="text" inputMode="decimal" value={row.in} onChange={set('in')} placeholder={ui('financeAccountAmountPlaceholder')}
@@ -298,7 +351,7 @@ function EditRow({ row, onChange, onRemove, ui, rowRef }) {
         <button type="button" onClick={() => onRemove(row.id)}
           aria-label={ui('financeAccountStatementsManualRemoveLine')} data-testid="manual-line-remove"
           className="flex h-9 w-8 items-center justify-center rounded-full text-[#D50B3E] hover:bg-[#FEF0F4]">
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4" data-testid="Trash2__6b4086" />
         </button>
       </span>
     </div>
@@ -341,6 +394,9 @@ function EditableLines({ rows, setRows, money, bcpLocale, ui }) {
       const t = e.target;
       if (editRowRef.current?.contains(t)) return;
       if (t?.closest?.('[data-lookup-dropdown]')) return;
+      // The date-field calendar (and any other popover) is portalled out of the row via a Radix
+      // popper; clicking inside it is still editing the row, so it must NOT commit/discard it.
+      if (t?.closest?.('[data-radix-popper-content-wrapper]')) return;
       commitDraft();
     };
     document.addEventListener('mousedown', onDown);
@@ -384,7 +440,7 @@ function EditableLines({ rows, setRows, money, bcpLocale, ui }) {
         className="flex w-full items-center gap-3 rounded-xl border border-dashed border-[#D1D4DB] bg-[#F5F7F9] px-4 py-3.5 text-left hover:border-[#A9A9BC]"
       >
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-[#121217] text-white">
-          <Plus className="h-[18px] w-[18px]" />
+          <Plus className="h-[18px] w-[18px]" data-testid="Plus__6b4086" />
         </span>
         <span className="flex flex-col gap-px">
           <span className="text-sm font-semibold text-[#121217]">
@@ -401,17 +457,36 @@ function EditableLines({ rows, setRows, money, bcpLocale, ui }) {
   return (
     <div className="flex flex-col gap-2">
       <div className="overflow-hidden rounded-xl border border-[#E8EAEF]">
-        <LinesHeader ui={ui} />
+        <LinesHeader ui={ui} data-testid="LinesHeader__6b4086" />
         <div className="divide-y divide-[#F0F2F5]">
           {rows.map((r) => (
             r.id === editingId
-              ? <EditRow key={r.id} row={r} onChange={change} onRemove={remove} ui={ui} rowRef={editRowRef} />
-              : <DisplayRow key={r.id} row={r} money={money} bcpLocale={bcpLocale} onEdit={edit} onRemove={remove} ui={ui} />
+              ? <EditRow
+              key={r.id}
+              row={r}
+              onChange={change}
+              onRemove={remove}
+              ui={ui}
+              rowRef={editRowRef}
+              data-testid="EditRow__6b4086" />
+              : <DisplayRow
+              key={r.id}
+              row={r}
+              money={money}
+              bcpLocale={bcpLocale}
+              onEdit={edit}
+              onRemove={remove}
+              ui={ui}
+              data-testid="DisplayRow__6b4086" />
           ))}
         </div>
       </div>
       <div className="w-fit">
-        <AddLineButton onClick={add} label={ui('financeAccountStatementsManualAddLine')} hideChevron />
+        <AddLineButton
+          onClick={add}
+          label={ui('financeAccountStatementsManualAddLine')}
+          hideChevron
+          data-testid="AddLineButton__6b4086" />
       </div>
     </div>
   );
@@ -425,10 +500,25 @@ function TotalsBar({ rows, money, ui }) {
   const t = computeTotals(rows);
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
-      <Total label={ui('financeAccountStatementsManualTotalLines')} value={t.n} />
-      <Total label={ui('financeAccountStatementsManualTotalIn')} value={`+${money(t.tin)}`} valueClass="text-green-700" />
-      <Total label={ui('financeAccountStatementsManualTotalOut')} value={`−${money(t.tout)}`} valueClass="text-red-700" />
-      <Total label={ui('financeAccountStatementsManualTotalBalance')} value={money(t.bal)} valueClass="text-[#121217]" />
+      <Total
+        label={ui('financeAccountStatementsManualTotalLines')}
+        value={t.n}
+        data-testid="Total__6b4086" />
+      <Total
+        label={ui('financeAccountStatementsManualTotalIn')}
+        value={`+${money(t.tin)}`}
+        valueClass="text-green-700"
+        data-testid="Total__6b4086" />
+      <Total
+        label={ui('financeAccountStatementsManualTotalOut')}
+        value={`−${money(t.tout)}`}
+        valueClass="text-red-700"
+        data-testid="Total__6b4086" />
+      <Total
+        label={ui('financeAccountStatementsManualTotalBalance')}
+        value={money(t.bal)}
+        valueClass="text-[#121217]"
+        data-testid="Total__6b4086" />
     </div>
   );
 }
@@ -505,7 +595,7 @@ function SaveSplitButton({ creating, onProcess, onDraft, ui }) {
         data-testid="manual-statement-save"
         className={cn(btnBase, 'gap-1.5 rounded-l-lg px-3 text-sm font-medium')}
       >
-        <Check className="h-4 w-4" />
+        <Check className="h-4 w-4" data-testid="Check__6b4086" />
         {creating ? ui('financeAccountStatementsManualSaving') : ui('financeAccountStatementsManualSaveProcess')}
       </button>
       <button
@@ -518,7 +608,9 @@ function SaveSplitButton({ creating, onProcess, onDraft, ui }) {
         data-testid="manual-statement-save-split"
         className={cn(btnBase, 'w-9 justify-center rounded-r-lg border-l border-white/20')}
       >
-        <ChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} />
+        <ChevronDown
+          className={cn('h-4 w-4 transition-transform', open && 'rotate-180')}
+          data-testid="ChevronDown__6b4086" />
       </button>
       {open && pos ? createPortal(
         <div
@@ -535,7 +627,7 @@ function SaveSplitButton({ creating, onProcess, onDraft, ui }) {
             className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-[#F5F7F9]"
           >
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F0F2F5] text-[#121217]">
-              <FileText className="h-4 w-4" />
+              <FileText className="h-4 w-4" data-testid="FileText__6b4086" />
             </span>
             <span className="text-sm font-semibold text-[#121217]">
               {ui('financeAccountStatementsManualSaveDraft')}
@@ -652,6 +744,7 @@ export function ManualStatementModal({
     const payloadLines = usable.map((r) => ({
       date: toIsoUtc(r.date),
       reference: r.reference.trim(),
+      description: r.description.trim(),
       bpartnerName: r.contactName.trim(),
       bpartnerId: r.contact?.id ?? null,
       glItemId: r.glItem?.id ?? null,
@@ -691,86 +784,101 @@ export function ManualStatementModal({
 
   return (
     <>
-    <Dialog open={open} onOpenChange={(v) => { if (!v) requestClose(); }}>
-      <DialogContent
-        className="w-[96vw] max-w-[1440px] overflow-hidden p-0"
-        style={{ background: 'var(--surface-overlay, #FFFFFF)' }}
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => { e.preventDefault(); requestClose(); }}
-      >
-        <div className="bg-white px-6 pt-6">
-          <h2 className="text-lg font-semibold leading-6 text-[#121217]">
-            {ui(editing ? 'financeAccountStatementsManualEditTitle' : 'financeAccountStatementsManualTitle')}
-          </h2>
-          <p className="mt-1 text-[13px] leading-[19px] text-[#6C6C89]">
-            {ui(editing ? 'financeAccountStatementsManualEditSubtitle' : 'financeAccountStatementsManualSubtitle')}
-          </p>
-        </div>
-
-        <div className="max-h-[62vh] overflow-y-auto bg-white px-6 py-4">
-          <HeaderFields form={form} setForm={setFormDirty} ui={ui} />
-
-          <div className="mt-6">
-            <SectionLabel count={computeTotals(rows).n}>
-              {ui('financeAccountStatementsManualSectionLines')}
-            </SectionLabel>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => { if (!v) requestClose(); }}
+        data-testid="Dialog__6b4086">
+        <DialogContent
+          className="w-[96vw] max-w-[1680px] overflow-hidden p-0"
+          style={{ background: 'var(--surface-overlay, #FFFFFF)' }}
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => { e.preventDefault(); requestClose(); }}
+          data-testid="DialogContent__6b4086">
+          <div className="bg-white px-6 pt-6">
+            <h2 className="text-lg font-semibold leading-6 text-[#121217]">
+              {ui(editing ? 'financeAccountStatementsManualEditTitle' : 'financeAccountStatementsManualTitle')}
+            </h2>
+            <p className="mt-1 text-[13px] leading-[19px] text-[#6C6C89]">
+              {ui(editing ? 'financeAccountStatementsManualEditSubtitle' : 'financeAccountStatementsManualSubtitle')}
+            </p>
           </div>
-          <EditableLines rows={rows} setRows={setRowsDirty} money={money} bcpLocale={bcpLocale} ui={ui} />
-        </div>
 
-        <div className="flex items-center justify-between gap-4 border-t border-[#E8EAEF] bg-white px-6 py-4">
-          <TotalsBar rows={rows} money={money} ui={ui} />
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={requestClose}
-              data-testid="manual-statement-cancel"
-              className="inline-flex h-10 items-center rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium text-[#121217] hover:bg-[#F5F7F9]"
-            >
-              {ui('financeAccountStatementsManualCancel')}
-            </button>
-            <SaveSplitButton
-              creating={saving}
-              onProcess={() => handleSave(true)}
-              onDraft={() => handleSave(false)}
+          <div className="max-h-[62vh] overflow-y-auto bg-white px-6 py-4">
+            <HeaderFields
+              form={form}
+              setForm={setFormDirty}
               ui={ui}
-            />
-          </div>
-        </div>
+              data-testid="HeaderFields__6b4086" />
 
-      </DialogContent>
-    </Dialog>
-
-    <Dialog open={confirmClose} onOpenChange={(v) => { if (!v) setConfirmClose(false); }}>
-      <DialogContent className="max-w-sm bg-white">
-        <div data-testid="manual-discard-overlay">
-          <h3 className="text-base font-semibold text-[#121217]">
-            {ui('financeAccountStatementsManualDiscardTitle')}
-          </h3>
-          <p className="mt-1 text-sm text-[#6C6C89]">
-            {ui('financeAccountStatementsManualDiscardBody')}
-          </p>
-          <div className="mt-5 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setConfirmClose(false)}
-              data-testid="manual-discard-keep"
-              className="inline-flex h-10 items-center rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium text-[#121217] hover:bg-[#F5F7F9]"
-            >
-              {ui('financeAccountStatementsManualDiscardKeep')}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setConfirmClose(false); onClose(); }}
-              data-testid="manual-discard-confirm"
-              className="inline-flex h-10 items-center rounded-lg bg-[#D50B3E] px-3 text-sm font-medium text-white hover:bg-[#B50934]"
-            >
-              {ui('financeAccountStatementsManualDiscardConfirm')}
-            </button>
+            <div className="mt-6">
+              <SectionLabel count={computeTotals(rows).n} data-testid="SectionLabel__6b4086">
+                {ui('financeAccountStatementsManualSectionLines')}
+              </SectionLabel>
+            </div>
+            <EditableLines
+              rows={rows}
+              setRows={setRowsDirty}
+              money={money}
+              bcpLocale={bcpLocale}
+              ui={ui}
+              data-testid="EditableLines__6b4086" />
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+
+          <div className="flex items-center justify-between gap-4 border-t border-[#E8EAEF] bg-white px-6 py-4">
+            <TotalsBar rows={rows} money={money} ui={ui} data-testid="TotalsBar__6b4086" />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={requestClose}
+                data-testid="manual-statement-cancel"
+                className="inline-flex h-10 items-center rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium text-[#121217] hover:bg-[#F5F7F9]"
+              >
+                {ui('financeAccountStatementsManualCancel')}
+              </button>
+              <SaveSplitButton
+                creating={saving}
+                onProcess={() => handleSave(true)}
+                onDraft={() => handleSave(false)}
+                ui={ui}
+                data-testid="SaveSplitButton__6b4086" />
+            </div>
+          </div>
+
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={confirmClose}
+        onOpenChange={(v) => { if (!v) setConfirmClose(false); }}
+        data-testid="Dialog__6b4086">
+        <DialogContent className="max-w-sm bg-white" data-testid="DialogContent__6b4086">
+          <div data-testid="manual-discard-overlay">
+            <h3 className="text-base font-semibold text-[#121217]">
+              {ui('financeAccountStatementsManualDiscardTitle')}
+            </h3>
+            <p className="mt-1 text-sm text-[#6C6C89]">
+              {ui('financeAccountStatementsManualDiscardBody')}
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmClose(false)}
+                data-testid="manual-discard-keep"
+                className="inline-flex h-10 items-center rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium text-[#121217] hover:bg-[#F5F7F9]"
+              >
+                {ui('financeAccountStatementsManualDiscardKeep')}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setConfirmClose(false); onClose(); }}
+                data-testid="manual-discard-confirm"
+                className="inline-flex h-10 items-center rounded-lg bg-[#D50B3E] px-3 text-sm font-medium text-white hover:bg-[#B50934]"
+              >
+                {ui('financeAccountStatementsManualDiscardConfirm')}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -40,9 +40,11 @@ describe('getContractGridColumns', () => {
     const cols = getContractGridColumns('bankStatementLines').map((c) => c.name);
     expect(cols).toEqual([
       'transactionDate',
+      'description',
       'bpartnername',
       'businessPartner',
       'gLItem',
+      'referenceNo',
       'dramount',
       'cramount',
     ]);

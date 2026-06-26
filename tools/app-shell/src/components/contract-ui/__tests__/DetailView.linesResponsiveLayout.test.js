@@ -15,7 +15,7 @@ describe('DetailView — lines layout responsive flow (inline-editable)', () => 
     // left no way to reach Documentos / Notas / Resumen.
     assert.match(
       src,
-      /linesLayout === 'inlineEditable' \? 'flex flex-col overflow-y-auto'/,
+      /linesLayout === 'inlineEditable'[\s\S]*?'flex flex-col overflow-y-auto'/s,
       'inline-editable outer column must opt into overflow-y-auto',
     );
     assert.doesNotMatch(

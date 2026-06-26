@@ -129,6 +129,29 @@ import {
   isInitialChildrenLoading,
   canShowAddLineArea,
   shouldShowInlineDeleteSelectionBar,
+  getSaveButtonLabel,
+  getChildSaveButtonLabel,
+  getDeleteChildButtonLabel,
+  getAddLineWrapperClassName,
+  getAddLineWrapperStyle,
+  resolveCanAddLines,
+  getDocumentIds,
+  resolveSidebarContent,
+  renderSidePanel,
+  getNotesRowClassName,
+  getDocsRowClassName,
+  getInlineEditableShrinkClassName,
+  getOthersTabClassName,
+  getCustomLinesTabClassName,
+  getWindowTitle,
+  getRecordTitle,
+  getFullBreadcrumb,
+  getOnAddToFavorites,
+  getLinesContainerClassName,
+  getSelectedLinesTotalLabel,
+  parseBackendErrorMessage,
+  getAddLineMenuActions,
+  buildLineRowClickHandler,
 } from '../DetailView.jsx';
 
 describe('mergeSelectorContextFields', () => {
@@ -464,11 +487,11 @@ describe('renderExtraActionButtons', () => {
 });
 
 describe('getDetailContentContainerClassName', () => {
-  it('always starts with "flex-1 min-w-0 "', () => {
+  it('always starts with "flex-1 min-h-0 min-w-0 "', () => {
     const cls = getDetailContentContainerClassName({
       linesLayout: 'readOnly', activePrimaryTab: 'general',
     });
-    expect(cls.startsWith('flex-1 min-w-0 ')).toBe(true);
+    expect(cls.startsWith('flex-1 min-h-0 min-w-0 ')).toBe(true);
   });
 
   it('includes the inlineEditable layout classes when linesLayout is inlineEditable', () => {
@@ -1156,5 +1179,246 @@ describe('shouldShowInlineDeleteSelectionBar', () => {
   it('is falsy when delete is explicitly disabled', () => {
     const api = { crud: { lines: { delete: false } } };
     expect(shouldShowInlineDeleteSelectionBar('inlineEditable', api, 'lines')).toBeFalsy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Save / label helpers
+// ---------------------------------------------------------------------------
+
+const ui = (k) => k;
+
+describe('getSaveButtonLabel', () => {
+  it('returns loading key while saving', () => {
+    expect(getSaveButtonLabel(true, ui)).toBe('loading');
+  });
+  it('returns save key when idle', () => {
+    expect(getSaveButtonLabel(false, ui)).toBe('save');
+  });
+});
+
+describe('getChildSaveButtonLabel', () => {
+  it('returns loading key while saving a child', () => {
+    expect(getChildSaveButtonLabel(true, ui)).toBe('loading');
+  });
+  it('returns save key when idle', () => {
+    expect(getChildSaveButtonLabel(false, ui)).toBe('save');
+  });
+});
+
+describe('getDeleteChildButtonLabel', () => {
+  it('returns loading key while deleting', () => {
+    expect(getDeleteChildButtonLabel(true, ui)).toBe('loading');
+  });
+  it('returns delete key when idle', () => {
+    expect(getDeleteChildButtonLabel(false, ui)).toBe('delete');
+  });
+});
+
+describe('getSelectedLinesTotalLabel', () => {
+  const lineConfig = { grossField: 'lineGrossAmount' };
+  it('returns null when showLineTotals is explicitly false', () => {
+    expect(getSelectedLinesTotalLabel({ showLineTotals: false }, [], lineConfig, {})).toBeNull();
+  });
+  it('sums gross amounts and formats with currency', () => {
+    const rows = [{ lineGrossAmount: '100' }, { lineGrossAmount: '50.5' }];
+    const label = getSelectedLinesTotalLabel({}, rows, lineConfig, { 'currency$_identifier': 'EUR' });
+    expect(label).toContain('EUR');
+    // Locale-agnostic: 150 + two fraction digits (separator may be , or .)
+    expect(label).toMatch(/150[.,]50/);
+  });
+  it('formats without currency when none present', () => {
+    const label = getSelectedLinesTotalLabel(undefined, [{ lineGrossAmount: '10' }], lineConfig, {});
+    expect(label).toMatch(/^10[.,]00$/);
+  });
+  it('ignores non-finite values in the sum', () => {
+    const label = getSelectedLinesTotalLabel({}, [{ lineGrossAmount: 'abc' }], lineConfig, {});
+    expect(label).toMatch(/^0[.,]00$/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Class-name / style helpers
+// ---------------------------------------------------------------------------
+
+describe('add-line wrapper helpers', () => {
+  it('getAddLineWrapperClassName returns sticky for inlineEditable', () => {
+    expect(getAddLineWrapperClassName('inlineEditable')).toContain('sticky');
+    expect(getAddLineWrapperClassName('sidePanel')).toBe('relative');
+  });
+  it('getAddLineWrapperStyle uses tighter padding for inlineEditable', () => {
+    expect(getAddLineWrapperStyle('inlineEditable').padding).toBe(8);
+    expect(getAddLineWrapperStyle('sidePanel').padding).toBe('10px 16px');
+  });
+  it('getInlineEditableShrinkClassName only shrinks for inlineEditable', () => {
+    expect(getInlineEditableShrinkClassName('inlineEditable')).toBe('shrink-0');
+    expect(getInlineEditableShrinkClassName('sidePanel')).toBe('');
+  });
+  it('getLinesContainerClassName toggles padding and embedded guard', () => {
+    expect(getLinesContainerClassName('inlineEditable', false)).not.toContain('pt-3');
+    const cls = getLinesContainerClassName('sidePanel', true);
+    expect(cls).toContain('pt-3');
+    expect(cls).toContain('pointer-events-none');
+  });
+});
+
+describe('embedded row class helpers', () => {
+  it('getNotesRowClassName adds pointer guard when embedded', () => {
+    expect(getNotesRowClassName(true)).toContain('pointer-events-none');
+    expect(getNotesRowClassName(false)).not.toContain('pointer-events-none');
+  });
+  it('getDocsRowClassName adds border and pointer guard', () => {
+    expect(getDocsRowClassName(true)).toContain('pointer-events-none');
+    expect(getDocsRowClassName(false)).toContain('border-b');
+  });
+  it('getOthersTabClassName adds pointer guard when embedded', () => {
+    expect(getOthersTabClassName(true)).toContain('pointer-events-none');
+    expect(getOthersTabClassName(false)).toBe('pt-5');
+  });
+  it('getCustomLinesTabClassName adds pointer guard when embedded', () => {
+    expect(getCustomLinesTabClassName(true)).toContain('pointer-events-none');
+    expect(getCustomLinesTabClassName(false)).toBe('pt-3');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// canAddLines / id / sidebar / title helpers
+// ---------------------------------------------------------------------------
+
+describe('resolveCanAddLines', () => {
+  it('delegates to addLineGuard when provided', () => {
+    const guard = vi.fn(() => false);
+    expect(resolveCanAddLines(guard, { a: 1 }, null, [])).toBe(false);
+    expect(guard).toHaveBeenCalledWith({ a: 1 }, []);
+  });
+  it('requires all required header fields to be filled', () => {
+    expect(resolveCanAddLines(null, { bp: 'x', wh: 'y' }, ['bp', 'wh'])).toBe(true);
+    expect(resolveCanAddLines(null, { bp: 'x', wh: '' }, ['bp', 'wh'])).toBe(false);
+    expect(resolveCanAddLines(null, { bp: 'x', wh: '  ' }, ['bp', 'wh'])).toBe(false);
+  });
+  it('returns true when there are no required fields', () => {
+    expect(resolveCanAddLines(null, {}, [])).toBe(true);
+    expect(resolveCanAddLines(null, {}, undefined)).toBe(true);
+  });
+});
+
+describe('getDocumentIds', () => {
+  it('wraps a record id in an array', () => {
+    expect(getDocumentIds('rec-1')).toEqual(['rec-1']);
+  });
+  it('returns an empty array when no id', () => {
+    expect(getDocumentIds(null)).toEqual([]);
+  });
+});
+
+describe('resolveSidebarContent', () => {
+  it('calls a function content with data', () => {
+    const fn = vi.fn(() => 'panel');
+    expect(resolveSidebarContent(fn, { id: '1' })).toBe('panel');
+    expect(fn).toHaveBeenCalledWith({ id: '1' });
+  });
+  it('passes through a static value', () => {
+    expect(resolveSidebarContent('static', {})).toBe('static');
+  });
+});
+
+describe('renderSidePanel', () => {
+  it('passes through a non-function panel value', () => {
+    expect(renderSidePanel('node', {}, 'r1', 't', '/api', {}, false)).toBe('node');
+  });
+  it('creates an element when the panel is a component', () => {
+    const Panel = () => null;
+    const el = renderSidePanel(Panel, { id: 'd1' }, 'r1', 't', '/api', {}, true);
+    expect(el.type).toBe(Panel);
+    expect(el.props.recordId).toBe('d1');
+    expect(el.props.isNew).toBe(true);
+  });
+});
+
+describe('title / breadcrumb helpers', () => {
+  const tMenu = (k) => k;
+  it('getWindowTitle uses last breadcrumb segment when present', () => {
+    expect(getWindowTitle('Sales / Orders', tMenu, 'orders')).toBe('Orders');
+  });
+  it('getWindowTitle falls back to windowName', () => {
+    expect(getWindowTitle(null, tMenu, 'orders')).toBe('orders');
+  });
+  it('getRecordTitle returns the newRecord label when new', () => {
+    expect(getRecordTitle(true, ui, {}, 'documentNo')).toBe('newRecord');
+  });
+  it('getRecordTitle resolves the title field for existing records', () => {
+    expect(getRecordTitle(false, ui, { documentNo: 'SO-1' }, 'documentNo')).toBe('SO-1');
+  });
+  it('getFullBreadcrumb joins translated segments and appends the title', () => {
+    expect(getFullBreadcrumb('Sales / Orders', tMenu, 'SO-1', 'win')).toBe('Sales / Orders / SO-1');
+  });
+  it('getFullBreadcrumb falls back to the window title without a breadcrumb', () => {
+    expect(getFullBreadcrumb(null, tMenu, 'SO-1', 'Window Title')).toBe('Window Title');
+  });
+});
+
+describe('getOnAddToFavorites', () => {
+  it('returns undefined without a favKey', () => {
+    expect(getOnAddToFavorites(null, vi.fn(), 'L', 'b', 'w')).toBeUndefined();
+  });
+  it('returns a handler that toggles the favorite with the entity label', () => {
+    const toggle = vi.fn();
+    const handler = getOnAddToFavorites('fav-1', toggle, 'Orders', 'Sales / Orders', 'orders');
+    handler();
+    expect(toggle).toHaveBeenCalledWith('fav-1', 'Orders');
+  });
+});
+
+describe('parseBackendErrorMessage', () => {
+  it('reads the NEO Headless top-level error message', async () => {
+    const res = { json: async () => ({ error: { message: 'neo boom' } }) };
+    expect(await parseBackendErrorMessage(res)).toBe('neo boom');
+  });
+  it('reads the Etendo JsonDataService nested error message', async () => {
+    const res = { json: async () => ({ response: { error: { message: 'svc boom' } } }) };
+    expect(await parseBackendErrorMessage(res)).toBe('svc boom');
+  });
+  it('reads a string error under response', async () => {
+    const res = { json: async () => ({ response: { error: 'str boom' } }) };
+    expect(await parseBackendErrorMessage(res)).toBe('str boom');
+  });
+  it('falls back to a top-level message', async () => {
+    const res = { json: async () => ({ message: 'top boom' }) };
+    expect(await parseBackendErrorMessage(res)).toBe('top boom');
+  });
+  it('returns undefined for a non-JSON body', async () => {
+    const res = { json: async () => { throw new Error('not json'); } };
+    expect(await parseBackendErrorMessage(res)).toBeUndefined();
+  });
+});
+
+describe('getAddLineMenuActions', () => {
+  it('returns undefined without a getLineMenuActions provider', () => {
+    expect(getAddLineMenuActions(null, {}, { current: null }, ui)).toBeUndefined();
+  });
+  it('maps provider actions and translates string labels', () => {
+    const provider = vi.fn(() => [{ label: 'importLines', onClick: () => {} }]);
+    const actions = getAddLineMenuActions(provider, { id: '1' }, { current: 1 }, ui);
+    expect(actions[0].label).toBe('importLines');
+    expect(provider).toHaveBeenCalled();
+  });
+});
+
+describe('buildLineRowClickHandler', () => {
+  it('returns undefined for inlineEditable layout', () => {
+    expect(buildLineRowClickHandler(() => null, 'inlineEditable', vi.fn())).toBeUndefined();
+  });
+  it('returns undefined without a DetailForm', () => {
+    expect(buildLineRowClickHandler(null, 'sidePanel', vi.fn())).toBeUndefined();
+  });
+  it('selects a copy of the clicked row otherwise', () => {
+    const setSelectedLine = vi.fn();
+    const handler = buildLineRowClickHandler(() => null, 'sidePanel', setSelectedLine);
+    const row = { id: 'l1', qty: 2 };
+    handler(row);
+    expect(setSelectedLine).toHaveBeenCalledTimes(1);
+    const arg = setSelectedLine.mock.calls[0][0];
+    expect(arg).toEqual(expect.objectContaining({ id: 'l1' }));
+    expect(arg).not.toBe(row);
   });
 });
