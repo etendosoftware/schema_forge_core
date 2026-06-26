@@ -354,12 +354,12 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
         ...classification,
       };
 
-      // Property fields navigate through associations (AD_Field.Property != null).
-      // Their column does not exist on the tab's primary table — mark and force system.
+      // Property fields navigate through DAL associations (AD_Field.Property != null).
+      // Their column may not exist on the tab's primary table; tag for diagnostic use only.
+      // Do NOT override visibility — the column is often a valid user-visible field.
+      // PK correctness is guaranteed by IsKey='Y', not by this tag.
       if (row.property != null) {
         fieldDef.propertyField = true;
-        fieldDef.visibility = 'system';
-        fieldDef.systemCategory = 'internal';
       }
 
       // Add derivation from inferDerivation if not already set by classification
