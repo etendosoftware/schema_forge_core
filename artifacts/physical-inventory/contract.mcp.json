@@ -1,8 +1,8 @@
 {
-  "version": "0.18.0",
+  "version": "0.19.0",
   "generatedAt": "2026-04-29T19:05:48.442Z",
-  "updatedAt": "2026-06-24T20:46:48.053Z",
-  "contractChecksum": "c565f111166398bd",
+  "updatedAt": "2026-06-26T12:47:00.539Z",
+  "contractChecksum": "5839fd374fe91a18",
   "apiPrediction": {
     "specName": "physical-inventory",
     "baseUrl": "/sws/neo/physical-inventory",
@@ -18,8 +18,7 @@
         "detailUrl": "/sws/neo/physical-inventory/inventory/{id}",
         "supportedFilters": [
           "movementDate",
-          "warehouse",
-          "inventoryType"
+          "warehouse"
         ]
       },
       "inventoryLine": {
@@ -265,6 +264,14 @@
     },
     "window": {
       "category": "inventory"
+    },
+    "labelOverrides": {
+      "en_US": {
+        "Processed": "Status"
+      },
+      "es_ES": {
+        "Processed": "Estado"
+      }
     }
   },
   "formState": {
@@ -432,5 +439,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "962d8d5462437ce0"
+  "checksum": "61e8d0c5218175c6"
 }

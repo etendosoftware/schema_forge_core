@@ -1,14 +1,16 @@
 {
-  "version": "0.18.0",
+  "version": "0.19.0",
   "generatedAt": "2026-04-29T19:05:48.442Z",
-  "updatedAt": "2026-06-24T20:46:48.053Z",
-  "checksum": "c565f111166398bd",
+  "updatedAt": "2026-06-26T12:47:00.539Z",
+  "checksum": "5839fd374fe91a18",
   "frontendContract": {
     "window": {
       "id": "168",
       "name": "Physical Inventory",
       "primaryEntity": "inventory",
       "category": "inventory",
+      "hidePrint": true,
+      "hideLink": true,
       "customComponents": {
         "moreMenuContent": "InventoryMenuContent",
         "bottomSection": "PhysicalInventoryBottomPanel"
@@ -19,7 +21,23 @@
         }
       },
       "statusField": "processed",
+      "summaryFields": [],
+      "labelOverrides": {
+        "en_US": {
+          "Processed": "Status"
+        },
+        "es_ES": {
+          "Processed": "Estado"
+        }
+      },
+      "listViewOptions": {
+        "hideStatusFilter": true
+      },
       "dateFilterKey": "movementDate",
+      "statusEnumLabels": {
+        "true": "statusProcessed",
+        "false": "statusDraft"
+      },
       "layoutType": "default",
       "linesLayout": "inlineEditable"
     },
@@ -133,7 +151,7 @@
             "tsType": "string",
             "visibility": "readOnly",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": true,
             "sourceRequired": true,
             "derivation": {
@@ -198,13 +216,22 @@
               "type": "computed",
               "source": "false"
             },
-            "columnType": "status"
+            "columnType": "status",
+            "enumValues": [
+              {
+                "value": "true",
+                "name": "statusProcessed"
+              },
+              {
+                "value": "false",
+                "name": "statusDraft"
+              }
+            ]
           }
         ],
         "searchableFields": [
           "movementDate",
-          "warehouse",
-          "inventoryType"
+          "warehouse"
         ],
         "computedFields": [
           {
@@ -471,6 +498,8 @@
       "name": "Physical Inventory",
       "primaryEntity": "inventory",
       "category": "inventory",
+      "hidePrint": true,
+      "hideLink": true,
       "customComponents": {
         "moreMenuContent": "InventoryMenuContent",
         "bottomSection": "PhysicalInventoryBottomPanel"
@@ -481,7 +510,23 @@
         }
       },
       "statusField": "processed",
+      "summaryFields": [],
+      "labelOverrides": {
+        "en_US": {
+          "Processed": "Status"
+        },
+        "es_ES": {
+          "Processed": "Estado"
+        }
+      },
+      "listViewOptions": {
+        "hideStatusFilter": true
+      },
       "dateFilterKey": "movementDate",
+      "statusEnumLabels": {
+        "true": "statusProcessed",
+        "false": "statusDraft"
+      },
       "linesLayout": "inlineEditable"
     },
     "entities": {
@@ -908,8 +953,7 @@
         "entity": "inventory",
         "supportedFilters": [
           "movementDate",
-          "warehouse",
-          "inventoryType"
+          "warehouse"
         ]
       },
       {
@@ -984,8 +1028,7 @@
         "detailUrl": "/sws/neo/physical-inventory/inventory/{id}",
         "supportedFilters": [
           "movementDate",
-          "warehouse",
-          "inventoryType"
+          "warehouse"
         ]
       },
       "inventoryLine": {
@@ -1106,6 +1149,14 @@
     },
     "window": {
       "category": "inventory"
+    },
+    "labelOverrides": {
+      "en_US": {
+        "Processed": "Status"
+      },
+      "es_ES": {
+        "Processed": "Estado"
+      }
     }
   },
   "testManifest": {
@@ -1754,14 +1805,6 @@
         "description": "Rule 'SL_Inventory_Product' (undefined) should be declared"
       },
       {
-        "id": "t-searchable-filters-inventory-inventoryType",
-        "category": "searchable-filters",
-        "entity": "inventory",
-        "field": "inventoryType",
-        "runner": "node",
-        "description": "Field 'inventoryType' should be a supported filter for inventory"
-      },
-      {
         "id": "t-searchable-filters-inventory-movementDate",
         "category": "searchable-filters",
         "entity": "inventory",
@@ -2097,7 +2140,7 @@
       }
     ],
     "summary": {
-      "total": 125,
+      "total": 124,
       "byCategory": {
         "action-endpoint": 5,
         "crud-flags": 2,
@@ -2109,13 +2152,13 @@
         "readonlylogic-evaluable": 9,
         "readonlylogic-valid": 9,
         "rule-declared": 11,
-        "searchable-filters": 3,
+        "searchable-filters": 2,
         "selector-endpoint": 5,
         "system-field": 33,
         "visibility": 2
       },
       "byRunner": {
-        "node": 125,
+        "node": 124,
         "junit": 0
       }
     }

@@ -14,7 +14,25 @@
       "bottomSection": "PhysicalInventoryBottomPanel"
     },
     "dateFilterKey": "movementDate",
-    "linesLayout": "inlineEditable"
+    "linesLayout": "inlineEditable",
+    "hidePrint": true,
+    "hideLink": true,
+    "listViewOptions": {
+      "hideStatusFilter": true
+    },
+    "statusEnumLabels": {
+      "true": "statusProcessed",
+      "false": "statusDraft"
+    },
+    "summaryFields": [],
+    "labelOverrides": {
+      "en_US": {
+        "Processed": "Status"
+      },
+      "es_ES": {
+        "Processed": "Estado"
+      }
+    }
   },
   "entities": {
     "header": {
@@ -31,8 +49,8 @@
           "readOnlyLogic": null
         },
         "inventoryType": {
-          "grid": true,
-          "searchable": true,
+          "grid": false,
+          "searchable": false,
           "readOnlyLogic": null
         },
         "name": {
@@ -47,7 +65,11 @@
           "label": "Status",
           "grid": true,
           "form": false,
-          "columnType": "status"
+          "columnType": "status",
+          "enumValues": [
+            { "value": "true", "name": "statusProcessed" },
+            { "value": "false", "name": "statusDraft" }
+          ]
         },
         "project": {
           "section": "other"

@@ -15,7 +15,7 @@ const breadcrumb = 'Inventory / Physical Inventory';
 
 // @sf-generated-start summary:inventory
 const summary = [
-  { key: 'inventoryType', column: 'Inventory_Type', type: 'enum' },
+
 ];
 
 const statusField = 'processed';
@@ -74,8 +74,7 @@ export const api = {
       "detailUrl": "/sws/neo/physical-inventory/inventory/{id}",
       "supportedFilters": [
         "movementDate",
-        "warehouse",
-        "inventoryType"
+        "warehouse"
       ]
     },
     "inventoryLine": {
@@ -196,9 +195,19 @@ export const api = {
   },
   "window": {
     "category": "inventory"
+  },
+  "labelOverrides": {
+    "en_US": {
+      "Processed": "Status"
+    },
+    "es_ES": {
+      "Processed": "Estado"
+    }
   }
 };
 
+
+const labelOverrides = api.labelOverrides;
 // @sf-generated-start component:InventoryPage
 export default function InventoryPage({ windowName, recordId, ...props }) {
   if (recordId) {
@@ -221,10 +230,13 @@ export default function InventoryPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        hidePrint
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Inventory", config: {} } }]}
         bottomSection={PhysicalInventoryBottomPanel}
         customMenuContent={InventoryMenuContent}
         requiredHeaderFields={requiredHeaderFields}
+        statusEnumLabels={{"true":"statusProcessed","false":"statusDraft"}}
+        labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
         {...props}
       />
@@ -239,7 +251,11 @@ export default function InventoryPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      listViewOptions={{"hideStatusFilter":true}}
       dateFilterKey="movementDate"
+      hidePrint
+      hideLink
+      labelOverrides={labelOverrides}
       rowQuickActions={{}}
       {...props}
     />
