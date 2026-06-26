@@ -391,12 +391,8 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
       }
 
       // Add reference metadata for foreign key fields
-      if (schemaType === 'foreignKey') {
-        const reference = buildReference(row);
-        if (reference) {
-          fieldDef.reference = reference;
-        }
-      }
+      const reference = schemaType === 'foreignKey' ? buildReference(row) : null;
+      if (reference) fieldDef.reference = reference;
 
       // Add processId for button-type fields (AD_Reference_ID = 28)
       // Priority: OBUIAPP (modern) > Classic > Hardcoded (no ID)
