@@ -862,25 +862,6 @@ export function useEntity(entity, childEntity, {
         }
     }, []);
 
-    async function applyRefetchOrSave(saved, refetchUrl, headers, entity, setSelected, setEditing) {
-        if (!shouldRefetchAfterSave(saved, refetchAfterSave)) {
-            setSelected(saved);
-            setEditing({ ...saved });
-            return;
-        }
-        await fetch(refetchUrl, { headers })
-            .then(r => (r.ok ? r.json() : null))
-            .then(data => {
-                const fullSaved = normalizeRecord(data?.response?.data?.[0] ?? data ?? saved, entity);
-                setSelected(fullSaved);
-                setEditing({ ...fullSaved });
-            })
-            .catch(() => {
-                setSelected(saved);
-                setEditing({ ...saved });
-            });
-    }
-
     const handleSave = useCallback(async ({ silent = false } = {}) => {
         if (!editing) return;
         setIsSaving(true);
