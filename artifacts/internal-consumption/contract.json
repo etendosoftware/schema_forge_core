@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.8.0",
   "generatedAt": "2026-04-29T19:05:49.589Z",
-  "updatedAt": "2026-06-26T12:27:56.036Z",
-  "checksum": "10a156eae06011a6",
+  "updatedAt": "2026-06-26T15:01:30.632Z",
+  "checksum": "ed64460e469e8d93",
   "frontendContract": {
     "window": {
       "id": "800076",
@@ -366,7 +366,7 @@
             "apiKey": "posted",
             "column": "Posted",
             "type": "button",
-            "visibility": "discarded",
+            "visibility": "system",
             "required": true
           },
           {
