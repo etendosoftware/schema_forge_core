@@ -1,8 +1,8 @@
 {
-  "version": "0.19.0",
+  "version": "0.26.0",
   "generatedAt": "2026-04-29T19:05:48.442Z",
-  "updatedAt": "2026-06-26T12:47:00.539Z",
-  "contractChecksum": "5839fd374fe91a18",
+  "updatedAt": "2026-06-26T16:55:42.514Z",
+  "contractChecksum": "f5e9d6067a479f08",
   "apiPrediction": {
     "specName": "physical-inventory",
     "baseUrl": "/sws/neo/physical-inventory",
@@ -292,7 +292,6 @@
             "readOnlyLogic": "@Processed@='Y'"
           },
           "description": {},
-          "processNow": {},
           "inventoryType": {
             "readOnly": true,
             "required": true,
@@ -439,5 +438,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "61e8d0c5218175c6"
+  "checksum": "dc1ca8131fd88f59"
 }

@@ -1,8 +1,8 @@
 {
-  "version": "0.19.0",
+  "version": "0.26.0",
   "generatedAt": "2026-04-29T19:05:48.442Z",
-  "updatedAt": "2026-06-26T12:47:00.539Z",
-  "checksum": "5839fd374fe91a18",
+  "updatedAt": "2026-06-26T17:09:09.406Z",
+  "checksum": "f5e9d6067a479f08",
   "frontendContract": {
     "window": {
       "id": "168",
@@ -38,6 +38,13 @@
         "true": "statusProcessed",
         "false": "statusDraft"
       },
+      "lockedAlert": {
+        "title": "goodsMovementsLockedTitle",
+        "message": "goodsMovementsLockedMessage",
+        "actionLabel": "goodsMovementsLockedAction",
+        "navigateTo": "/physical-inventory/new"
+      },
+      "noHeaderBorder": true,
       "layoutType": "default",
       "linesLayout": "inlineEditable"
     },
@@ -119,28 +126,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
-            "section": "other"
-          },
-          {
-            "name": "processNow",
-            "apiKey": "processNow",
-            "column": "Processing",
-            "label": "Process Inventory Count",
-            "type": "button",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "derivation": {
-              "type": "computed",
-              "source": "false"
-            },
-            "displayLogic": {
-              "raw": "@Processed@='N'",
-              "evaluable": true
-            }
+            "form": false
           },
           {
             "name": "inventoryType",
@@ -152,7 +138,7 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "sourceRequired": true,
             "derivation": {
               "type": "computed",
@@ -184,10 +170,9 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Project",
             "inputMode": "search",
-            "section": "other",
             "displayLogic": {
               "raw": "@ACCT_DIMENSION_DISPLAY@",
               "evaluable": false,
@@ -249,13 +234,6 @@
             }
           },
           {
-            "name": "processNow",
-            "derivation": {
-              "type": "computed",
-              "source": "false"
-            }
-          },
-          {
             "name": "inventoryType",
             "derivation": {
               "type": "computed",
@@ -269,7 +247,14 @@
               "source": "false"
             }
           }
-        ]
+        ],
+        "draftMode": {
+          "enabled": true,
+          "processField": "processNow",
+          "processValue": "Y",
+          "label": "confirm",
+          "disableWhenEmpty": true
+        }
       },
       "inventoryLine": {
         "tableName": "M_InventoryLine",
@@ -286,7 +271,7 @@
             "tsType": "number",
             "visibility": "editable",
             "required": false,
-            "grid": true,
+            "grid": false,
             "form": true,
             "derivation": {
               "type": "lookup",
@@ -318,6 +303,8 @@
               "quantityCount",
               "bookQuantity"
             ],
+            "gridOrder": 1,
+            "grow": true,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Inventory_Product"
             },
@@ -412,6 +399,9 @@
             "grid": true,
             "form": true,
             "sourceRequired": true,
+            "gridOrder": 4,
+            "grow": true,
+            "columnWidth": 192,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -431,7 +421,10 @@
             "form": true,
             "sourceRequired": true,
             "reference": "UOM",
-            "inputMode": "selector"
+            "inputMode": "selector",
+            "gridOrder": 2,
+            "grow": true,
+            "gridReadOnly": true
           },
           {
             "name": "bookQuantity",
@@ -444,7 +437,10 @@
             "required": true,
             "grid": true,
             "form": true,
-            "sourceRequired": true
+            "sourceRequired": true,
+            "gridOrder": 3,
+            "grow": true,
+            "columnWidth": 192
           },
           {
             "name": "cost",
@@ -527,6 +523,13 @@
         "true": "statusProcessed",
         "false": "statusDraft"
       },
+      "lockedAlert": {
+        "title": "goodsMovementsLockedTitle",
+        "message": "goodsMovementsLockedMessage",
+        "actionLabel": "goodsMovementsLockedAction",
+        "navigateTo": "/physical-inventory/new"
+      },
+      "noHeaderBorder": true,
       "linesLayout": "inlineEditable"
     },
     "entities": {
@@ -596,7 +599,7 @@
             "apiKey": "processNow",
             "column": "Processing",
             "type": "button",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1264,14 +1267,6 @@
         "description": "Default value for 'storageBin' in inventoryLine should be a string"
       },
       {
-        "id": "t-displaylogic-evaluable-inventory-processNow",
-        "category": "displaylogic-evaluable",
-        "entity": "inventory",
-        "field": "processNow",
-        "runner": "node",
-        "description": "Display logic for 'processNow' in inventory should have evaluable flag"
-      },
-      {
         "id": "t-displaylogic-evaluable-inventory-project",
         "category": "displaylogic-evaluable",
         "entity": "inventory",
@@ -1286,14 +1281,6 @@
         "field": "quantityOrderBook",
         "runner": "node",
         "description": "Display logic for 'quantityOrderBook' in inventoryLine should have evaluable flag"
-      },
-      {
-        "id": "t-displaylogic-valid-inventory-processNow",
-        "category": "displaylogic-valid",
-        "entity": "inventory",
-        "field": "processNow",
-        "runner": "node",
-        "description": "Display logic for 'processNow' in inventory should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-inventory-project",
@@ -1350,14 +1337,6 @@
         "field": "processed",
         "runner": "node",
         "description": "Field 'processed' should be present in inventory"
-      },
-      {
-        "id": "t-field-presence-inventory-processNow",
-        "category": "field-presence",
-        "entity": "inventory",
-        "field": "processNow",
-        "runner": "node",
-        "description": "Field 'processNow' should be present in inventory"
       },
       {
         "id": "t-field-presence-inventory-project",
@@ -1486,14 +1465,6 @@
         "field": "processed",
         "runner": "node",
         "description": "Field 'processed' should have type 'boolean' in inventory"
-      },
-      {
-        "id": "t-field-type-inventory-processNow",
-        "category": "field-type",
-        "entity": "inventory",
-        "field": "processNow",
-        "runner": "node",
-        "description": "Field 'processNow' should have type 'string' in inventory"
       },
       {
         "id": "t-field-type-inventory-project",
@@ -1973,6 +1944,14 @@
         "description": "System field 'posted' should exist in backend but not frontend for inventory"
       },
       {
+        "id": "t-system-field-inventory-processNow",
+        "category": "system-field",
+        "entity": "inventory",
+        "field": "processNow",
+        "runner": "node",
+        "description": "System field 'processNow' should exist in backend but not frontend for inventory"
+      },
+      {
         "id": "t-system-field-inventory-salesCampaign",
         "category": "system-field",
         "entity": "inventory",
@@ -2140,25 +2119,25 @@
       }
     ],
     "summary": {
-      "total": 124,
+      "total": 121,
       "byCategory": {
         "action-endpoint": 5,
         "crud-flags": 2,
         "default-value-type": 6,
-        "displaylogic-evaluable": 3,
-        "displaylogic-valid": 3,
-        "field-presence": 17,
-        "field-type": 17,
+        "displaylogic-evaluable": 2,
+        "displaylogic-valid": 2,
+        "field-presence": 16,
+        "field-type": 16,
         "readonlylogic-evaluable": 9,
         "readonlylogic-valid": 9,
         "rule-declared": 11,
         "searchable-filters": 2,
         "selector-endpoint": 5,
-        "system-field": 33,
+        "system-field": 34,
         "visibility": 2
       },
       "byRunner": {
-        "node": 124,
+        "node": 121,
         "junit": 0
       }
     }

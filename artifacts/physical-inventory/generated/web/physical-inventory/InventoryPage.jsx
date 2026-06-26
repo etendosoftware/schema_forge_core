@@ -29,17 +29,22 @@ const extraBadges = [
 
 // @sf-generated-start processes:inventory
 const processes = [
-  { name: 'processNow', label: 'Process Inventory Count', style: 'positive',
-    displayLogicRaw: "@Processed@='N'", requiresLines: true },
+
 ];
 // @sf-generated-end processes:inventory
 
 // @sf-generated-start draftMode:inventory
-const draftMode = null;
+const draftMode = {
+  "enabled": true,
+  "processField": "processNow",
+  "processValue": "Y",
+  "label": "confirm",
+  "disableWhenEmpty": true
+};
 // @sf-generated-end draftMode:inventory
 
 // @sf-generated-start requiredHeaderFields:inventory
-const requiredHeaderFields = ['movementDate', 'name', 'warehouse', 'inventoryType'];
+const requiredHeaderFields = ['movementDate', 'name', 'warehouse'];
 // @sf-generated-end requiredHeaderFields:inventory
 
 // @sf-generated-start addLineFields:inventoryLine
@@ -231,11 +236,14 @@ export default function InventoryPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         hidePrint
+        noHeaderBorder
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Inventory", config: {} } }]}
         bottomSection={PhysicalInventoryBottomPanel}
         customMenuContent={InventoryMenuContent}
+        draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         statusEnumLabels={{"true":"statusProcessed","false":"statusDraft"}}
+        lockedAlert={{"title":"goodsMovementsLockedTitle","message":"goodsMovementsLockedMessage","actionLabel":"goodsMovementsLockedAction","navigateTo":"/physical-inventory/new"}}
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
         {...props}
