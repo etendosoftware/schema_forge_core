@@ -1,23 +1,19 @@
 import { forwardRef } from 'react';
 import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 
-// @sf-generated-start columns:account
+// @sf-generated-start columns:elementValue
 const columns = [
-  { key: 'code', column: 'Code', type: 'string', required: true },
-  { key: 'name', column: 'Name', type: 'string', required: true },
-  { key: 'accountType', column: 'AccountType', type: 'string', required: true },
-  { key: 'parentAccount', column: 'Parent_ID', type: 'selector' },
-  { key: 'debit', column: 'Debit', type: 'amount', required: true },
-  { key: 'credit', column: 'Credit', type: 'amount', required: true },
-  { key: 'balance', column: 'Balance', type: 'amount', required: true },
-  { key: 'isActive', column: 'IsActive', type: 'boolean', required: true },
+  { key: 'searchKey', column: 'Value', type: 'string', label: 'Search Key', required: true },
+  { key: 'name', column: 'Name', type: 'string', label: 'Name', required: true },
+  { key: 'accountType', column: 'AccountType', type: 'enum', label: 'Account Type', enumLabels: { 'A': 'Asset', 'E': 'Expense', 'L': 'Liability', 'M': 'Memo', 'O': 'Owner\'s Equity', 'R': 'Revenue' }, required: true },
+  { key: 'active', column: 'IsActive', type: 'boolean', label: 'Active', required: true },
 ];
-// @sf-generated-end columns:account
+// @sf-generated-end columns:elementValue
 
-const filters = ['code', 'name', 'accountType'];
+const filters = [];
 
-// @sf-generated-start component:AccountTable
-const AccountTable = forwardRef(function AccountTable(props, ref) {
+// @sf-generated-start component:ElementValueTable
+const ElementValueTable = forwardRef(function ElementValueTable(props, ref) {
   // Inline-editable layout always uses InlineLinesPanel for existing rows so column
   // widths (flex layout) never shift when the add-row form opens. When addRow is
   // active we render a header-hidden, data-hidden DataTable below for just the
@@ -38,5 +34,5 @@ const AccountTable = forwardRef(function AccountTable(props, ref) {
   return <DataTable columns={columns} filters={filters} {...props} />;
 });
 
-export default AccountTable;
-// @sf-generated-end component:AccountTable
+export default ElementValueTable;
+// @sf-generated-end component:ElementValueTable

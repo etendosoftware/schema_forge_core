@@ -668,6 +668,36 @@ identifier resolution).
 
 Setting `dependsOn` automatically sets `inputMode` to `"dependent"`.
 
+### Custom Renderer (`customRenderer`)
+
+Swap in a custom React component as the input widget for a single field inside `EntityForm`.
+The component receives `{ value, onChange, record, readOnly }` and is responsible for its
+own internal layout. `onChange` must be called with the new **full** value string (e.g. an
+8-char account code, not just the suffix).
+
+```json
+"searchKey": {
+  "visibility": "editable",
+  "form": true,
+  "customRenderer": "AccountCodeField"
+}
+```
+
+The generator emits an import statement for the named component (resolved by
+`resolveCustomImport`, which checks `artifacts/{window}/custom/` first, then
+`tools/app-shell/src/windows/custom/{window}/`), and adds `customRenderer: AccountCodeField`
+to the field descriptor in the fields array. `EntityForm` renders the component
+instead of the default input when it detects this property.
+
+**Rules:**
+- The component file must exist in `artifacts/{window}/custom/<ComponentName>.jsx` or in
+  the app-shell custom-windows directory.
+- Component must accept `{ value, onChange, record, readOnly }` props.
+- `onChange(newValue)` must always fire with the full field value (no partial writes).
+- If the component needs i18n, use `useUI()` from `@/i18n` and add keys to **both**
+  `en_US.json` and `es_ES.json` under `genericLabels`.
+- This is a form-only feature: the grid column always uses the standard cell renderer.
+
 ### Logic & Behavior
 
 | Property | Type | Default | Purpose |

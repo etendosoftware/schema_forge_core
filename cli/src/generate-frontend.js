@@ -467,6 +467,7 @@ export function generateFormComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
   const formCols = entity.formCols ?? null;
   const colsProp = formCols != null ? ` cols={${formCols}}` : '';
+  const specName = contract.apiPrediction?.specName;
   // Sort by seq override if present (stable sort: fields without seq keep natural DB order)
   const formFields = entity.fields
     .filter(f => f.form && f.type !== 'button' && f.visibility !== 'discarded')
@@ -532,7 +533,8 @@ export function generateFormComponent(entityName, contract) {
     const spanPart = (f.span && f.span > 1) ? `, span: ${f.span}` : '';
     const rowsPart = f.rows != null ? `, rows: ${f.rows}` : '';
     const clearablePart = f.clearable === false ? ', clearable: false' : '';
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart} },`;
+    const customRendererPart = f.customRenderer ? `, customRenderer: ${f.customRenderer}` : '';
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -542,7 +544,15 @@ export function generateFormComponent(entityName, contract) {
     ? `// Field groups: ${uniqueGroups.join(', ')}\n`
     : '';
 
-  return `import { EntityForm } from '@/components/contract-ui';
+  // Collect unique customRenderer component names and emit imports.
+  // Append after the EntityForm import when present; otherwise omit the block entirely
+  // so no extra blank line appears in windows that don't use customRenderer.
+  const customRenderers = [...new Set(formFields.map(f => f.customRenderer).filter(Boolean))];
+  const rendererImportLines = customRenderers.length > 0 && specName
+    ? '\n' + customRenderers.map(comp => `import ${comp} from ${resolveCustomImport(specName, comp)};`).join('\n')
+    : '';
+
+  return `import { EntityForm } from '@/components/contract-ui';${rendererImportLines}
 
 ${MARKERS.GENERATED_START(`fields:${entityName}`)}
 ${fieldGroupsComment}const fields = [

@@ -20207,7 +20207,8 @@
     "dismiss": "Dismiss",
     "ellipsis": "...",
     "priceUnit": "€ /",
-    "amountPlaceholder": "0.00"
+    "amountPlaceholder": "0.00",
+    "codeExact8Digits": "The account code must be exactly 8 digits"
   },
   "menus": {
     "Currency": {

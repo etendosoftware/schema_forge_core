@@ -20473,7 +20473,8 @@
     "dismiss": "Descartar",
     "ellipsis": "...",
     "priceUnit": "€ /",
-    "amountPlaceholder": "0.00"
+    "amountPlaceholder": "0.00",
+    "codeExact8Digits": "El código de cuenta debe tener exactamente 8 dígitos"
   },
   "menus": {
     "Goods Movement": {
