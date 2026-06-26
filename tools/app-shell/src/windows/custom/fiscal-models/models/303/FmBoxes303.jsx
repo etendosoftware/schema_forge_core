@@ -350,8 +350,10 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
                         if (row.derivedValue) {
                           const dv = row.derivedValue;
                           const raw = valueMap[dv.box] ?? null;
-                          const display = raw != null ? (dv.abs ? Math.abs(raw) : raw) : null;
-                          return <div key={ci} className="fm-aeat-cell"><span className="fm-aeat-cell__value">{display != null ? formatCell(display, 'amount') : ''}</span></div>;
+                          let display = raw != null ? (dv.abs ? Math.abs(raw) : raw) : null;
+                          if (display != null && dv.subtractBox != null) display = display - (valueMap[dv.subtractBox] ?? 0);
+                          if (display != null && dv.clampMin != null) display = Math.max(dv.clampMin, display);
+                          return <div key={ci} className="fm-aeat-cell"><span className="fm-aeat-cell__value">{display != null && display !== 0 ? formatCell(display, 'amount') : ''}</span></div>;
                         }
                         return row.total ? null : <div key={ci} className="fm-aeat-cell fm-aeat-cell--empty" />;
                       }

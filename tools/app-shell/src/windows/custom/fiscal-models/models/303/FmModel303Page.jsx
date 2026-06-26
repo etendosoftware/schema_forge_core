@@ -189,7 +189,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
     const box64 = r2(box46 + get(58) + get(76));
     const box66 = r2(box64 * box65 / 100);
     const box69 = r2(box66 + get(77) - get(78) + get(68) + get(108));
-    const box71 = r2(box69 - get(70) + get(109));
+    const box71 = r2(box69 - get(70) + get(109) - get(112));
     const derived = { 45: box45, 46: box46, 64: box64, 66: box66, 69: box69, 71: box71 };
     return [
       ...boxArr.filter(b => !(b.num in derived)),
