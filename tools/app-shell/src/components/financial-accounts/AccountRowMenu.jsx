@@ -6,6 +6,7 @@ import {
   RefreshCw,
   Unlink2,
   Plug,
+  ArrowLeftRight,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -35,7 +36,7 @@ import { ACCOUNT_TYPE } from './tokens';
  * Cash accounts (type=C) never expose the PSD2 group because the connection
  * does not apply to manual cash drawers.
  */
-export function AccountRowMenu({ account, onOpen, onEdit, onArchive, onPsd2Action }) {
+export function AccountRowMenu({ account, onOpen, onEdit, onArchive, onPsd2Action, onTransfer }) {
   const ui = useUI();
   const isCash = account.type === ACCOUNT_TYPE.CASH;
   const psd2Connected = account.psd2Connected === true;
@@ -73,6 +74,16 @@ export function AccountRowMenu({ account, onOpen, onEdit, onArchive, onPsd2Actio
           <Pencil className="h-5 w-5 text-[#828FA3]" data-testid="Pencil__ffaf9f" />
           <span className="text-sm font-normal leading-6 text-[#121217]">
             {ui('financeAccountsMenuEdit')}
+          </span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => onTransfer?.(account)}
+          data-testid={`account-row-menu-transfer-${account.id}`}
+        >
+          <ArrowLeftRight className="h-5 w-5 text-[#828FA3]" data-testid="ArrowLeftRight__ffaf9f" />
+          <span className="text-sm font-normal leading-6 text-[#121217]">
+            {ui('financeAccountTransferAction')}
           </span>
         </DropdownMenuItem>
 

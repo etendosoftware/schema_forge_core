@@ -83,6 +83,7 @@ export function AccountsTable({
   onEdit,
   onArchive,
   onPsd2Action,
+  onTransfer,
   onRetry,
 }) {
   const ui = useUI();
@@ -113,6 +114,7 @@ export function AccountsTable({
         onEdit={onEdit}
         onArchive={onArchive}
         onPsd2Action={onPsd2Action}
+        onTransfer={onTransfer}
         data-testid="AccountRow__db8970" />
     ));
   };

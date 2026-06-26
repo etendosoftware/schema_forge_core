@@ -18,7 +18,9 @@ const statusField = null;
 // @sf-generated-end summary:tax
 
 // @sf-generated-start extraBadges:tax
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:tax
 
 // @sf-generated-start processes:tax

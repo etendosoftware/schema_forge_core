@@ -1,16 +1,11 @@
 import { useMemo } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowLeftRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUI } from '@/i18n';
 import { AdvancedFilterButton } from '@/components/contract-ui/AdvancedFilterButton.jsx';
 import { DateRangeFilter } from './DateRangeFilter';
 import { TypeFilter } from './TypeFilter';
 import { buildMovementFilterColumns } from '../movementAdvancedFilter';
-
-// Feature flag: manual movement creation is not part of this first release, so
-// the "New movement" button stays hidden. The wizard and all its wiring are
-// kept intact — flip this to `true` to re-enable the button in a future version.
-const SHOW_NEW_MOVEMENT = false;
 
 /**
  * Toolbar for the movements tab.
@@ -32,7 +27,7 @@ export function MovementsToolbar({
   onFiltersChange,
   advancedFilter,
   onAdvancedFilterChange,
-  onNewMovement,
+  onTransfer,
   rows = [],
 }) {
   const ui = useUI();
@@ -81,17 +76,16 @@ export function MovementsToolbar({
           className="h-10 w-48 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm text-[#121217] placeholder:text-[#8a8aa3] shadow-[0_1px_2px_rgba(18,18,23,0.05)] focus:outline-none focus:ring-2 focus:ring-[#121217] focus:ring-offset-1"
         />
       </div>
-      {/* New movement — hidden in this release (see SHOW_NEW_MOVEMENT). */}
-      {SHOW_NEW_MOVEMENT ? (
-        <button
-          type="button"
-          data-testid="new-movement-button"
-          onClick={onNewMovement}
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#121217] px-3 text-sm font-medium text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217]"
-        >
-          {ui('financeAccountMovementsNew')}
-        </button>
-      ) : null}
+      {/* Transfer funds — occupies the slot of the former "New movement" button. */}
+      <button
+        type="button"
+        data-testid="transfer-funds-button"
+        onClick={onTransfer}
+        className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#121217] px-3 text-sm font-medium text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217]"
+      >
+        <ArrowLeftRight className="h-4 w-4" data-testid="ArrowLeftRight__f863ac" />
+        {ui('financeAccountTransferAction')}
+      </button>
     </div>
   );
 }

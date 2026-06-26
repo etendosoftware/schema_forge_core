@@ -16,6 +16,7 @@ import { NewAccountWizard } from '@/windows/custom/financial-account/NewAccountW
 import { EditAccountModal } from '@/windows/custom/financial-account/EditAccountModal.jsx';
 import { ArchiveAccountDialog } from '@/windows/custom/financial-account/ArchiveAccountDialog.jsx';
 import { Psd2ConnectFlowUI } from '@/windows/custom/financial-account/Psd2ConnectFlowUI.jsx';
+import { FundsTransferModal } from '@/windows/custom/financial-account/FundsTransferModal.jsx';
 
 function filterAccounts(accounts, typeFilter, search) {
   if (!Array.isArray(accounts)) return [];
@@ -47,6 +48,7 @@ export default function FinancialAccountsPage() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editAccount, setEditAccount] = useState(null);
   const [archiveTarget, setArchiveTarget] = useState(null);
+  const [transferSource, setTransferSource] = useState(null);
   const { sync, disconnect } = usePsd2Actions();
   const psd2Flow = usePsd2ConnectFlow({ onDone: reload });
 
@@ -141,6 +143,7 @@ export default function FinancialAccountsPage() {
             onEdit={setEditAccount}
             onArchive={setArchiveTarget}
             onPsd2Action={handlePsd2Action}
+            onTransfer={setTransferSource}
             onRetry={reload}
             data-testid="AccountsTable__7c3fbc" />
         </div>
@@ -166,6 +169,13 @@ export default function FinancialAccountsPage() {
         onArchived={reload}
         data-testid="ArchiveAccountDialog__7c3fbc" />
       <Psd2ConnectFlowUI flow={psd2Flow} data-testid="Psd2ConnectFlowUI__7c3fbc" />
+      {transferSource ? (
+        <FundsTransferModal
+          sourceAccountId={transferSource.id}
+          onClose={() => setTransferSource(null)}
+          onSuccess={reload}
+          data-testid="FundsTransferModal__7c3fbc" />
+      ) : null}
     </div>
   );
 }

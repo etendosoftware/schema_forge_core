@@ -18,18 +18,23 @@ const breadcrumb = 'Sales / Return Material Receipt';
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'sourceShipmentDocNo', column: 'sourceShipmentDocNo', type: 'string' },
+  { key: 'etblkpAccountingstatus', column: 'EM_Etblkp_Accountingstatus', type: 'status' },
+  { key: 'etblkpBulkposting', column: 'EM_Etblkp_Bulkposting', type: 'string' },
 ];
 
 const statusField = 'documentStatus';
 // @sf-generated-end summary:returnMaterialReceipt
 
 // @sf-generated-start extraBadges:returnMaterialReceipt
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:returnMaterialReceipt
 
 // @sf-generated-start processes:returnMaterialReceipt
 const processes = [
-
+  { name: 'etblkpBulkposting', label: 'Bulk Posting', style: 'positive',
+    displayLogicRaw: "@Processed@='Y' & @#ShowAcct@='Y'\n" },
 ];
 // @sf-generated-end processes:returnMaterialReceipt
 
@@ -38,7 +43,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:returnMaterialReceipt
 
 // @sf-generated-start requiredHeaderFields:returnMaterialReceipt
-const requiredHeaderFields = ['documentNo', 'movementDate', 'businessPartner', 'warehouse', 'partnerAddress'];
+const requiredHeaderFields = ['documentNo', 'movementDate', 'businessPartner', 'warehouse', 'partnerAddress', 'etblkpAccountingstatus', 'etblkpBulkposting'];
 // @sf-generated-end requiredHeaderFields:returnMaterialReceipt
 
 // @sf-generated-start addLineFields:returnMaterialReceiptLine
@@ -224,6 +229,14 @@ export const api = {
       "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/processGoodsJava",
       "processId": "49DEE812BF0545269781FCEBF2235924",
       "processType": "classic"
+    },
+    {
+      "entity": "returnMaterialReceipt",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
     },
     {
       "entity": "returnMaterialReceiptLine",

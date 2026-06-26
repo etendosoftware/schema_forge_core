@@ -168,6 +168,7 @@ All keys added to both `en_US.json` and `es_ES.json`.
 | `financeAccountsEdit*` | Edit modal sections, save button, success/error toasts |
 | `financeAccountsArchive*` | Confirmation dialog copy, button labels, success/error toasts including the 409 open-reconciliation message |
 | `financeAccountsMenu*` | Row kebab actions (`financeAccountsMenuEdit`, `financeAccountsMenuArchive`) |
+| `financeAccountTransfer*` | Funds transfer modal (ETP-4272): action/title, source/destination, amount, currency-from/to, conversion rate, bank fee, description, confirm/cancel, success + validation errors |
 
 Key reference (English):
 
@@ -230,7 +231,7 @@ Display the full detail of a financial account: a summary strip with KPIs, and t
   - **Imported Statements tab, no statement selected** → exports the filtered statement **headers** (`GET /sws/neo/bank-statements?...&export=csv&ids=<filtered ids>`).
   - **Imported Statements tab, statement(s) selected** → exports the **lines** of the selected statement(s) (`...&action=lines&statementIds=<ids>`), mirroring Classic's line export.
   - Column labels/order and `ids`/`statementIds` are passed as query params; the statements tab exposes the current selection + filtered headers to the window via a ref (`getSelectedStatementIds` / `getFilteredStatements`), the movements tab via `getFilteredMovements`.
-- Movements toolbar: back arrow `←`, type filter (BPD/BPW, search-enabled), date range filter (preset list + dual calendar, same picker as grid views), advanced "by conditions" filter (`AdvancedFilterButton`, applied client-side), search input. The `+ Nuevo movimiento` button is **hidden in this release** behind the `SHOW_NEW_MOVEMENT` feature flag in `MovementsToolbar/index.jsx` — the wizard and all its wiring stay in place; flip the flag to `true` to re-enable it.
+- Movements toolbar: back arrow `←`, type filter (BPD/BPW, search-enabled), date range filter (preset list + dual calendar, same picker as grid views), advanced "by conditions" filter (`AdvancedFilterButton`, applied client-side), search input, and the **`Transferir fondos`** button (ETP-4272). The Transfer-funds button occupies the slot of the former, feature-flagged `+ Nuevo movimiento` button (the New-movement wizard stays wired but dormant); it opens `FundsTransferModal.jsx` with the current account pre-filled as the source. See "Funds transfer (T11)" below.
 - Movements table: Expand chevron | Checkbox | Date | Payment | Contact | Description | Status (`MovementStatusBadge` — **two states only**: Conciliado / Sin conciliar) | Type (with `PostingStatusDot` sub-label) | G/L Item | Amount | Balance | kebab.
 - **Payment column** (`Pago`): when the movement has a related payment, the document number renders as an underlined link (with an `ArrowUpRight` icon) that navigates to `/payment-in/:id` (received payments, `paymentIsReceipt === 'Y'`) or `/payment-out/:id` (made payments). Movements with no payment show plain text.
 - **Expandable "more info" panel**: the leading circular chevron (or a click anywhere on the row) toggles an inline panel showing a **fixed set of three accounting dimensions — Proyecto, Centro de costes, Producto** (`DISPLAYED_DIMENSIONS = ['project', 'costcenter', 'product']` in `MovementsTable.jsx`). This is intentionally independent of the chart-of-accounts `enabledDimensions`: Organización and the other dimensions are never shown, and the business partner is excluded (it already has its own Contacto column). Each of the three fields renders read-only as label + value (empty when the transaction has no value), in a responsive grid. The header row and panel form one elevated card (shadow at the bottom only, no seam line — the header row sits at `z-20` over the panel's `z-10` to hide the shadow bleed).
@@ -238,7 +239,16 @@ Display the full detail of a financial account: a summary strip with KPIs, and t
 - Individual row checkbox + select-all (indeterminate when partial).
 - Row hover: subtle shadow elevation + kebab appears (Unreconcile / Post disabled with tooltip).
 - Back arrow in the toolbar runs `navigate(-1)`.
-- The `+ Nuevo movimiento` button is hidden in this release (feature-flagged off — see the toolbar bullet above).
+- The action bar's primary button is **`Transferir fondos`** (ETP-4272), which replaced the dormant `+ Nuevo movimiento` button — see "Funds transfer (T11)" below.
+
+### Funds transfer (T11 · ETP-4272)
+
+"Transfer funds" moves money between two financial accounts of the organization. Two entry points:
+
+- **Accounts list** → the row kebab (⋮) gains a **Transferir fondos** item (`AccountRowMenu.jsx`), opening the modal with that row's account as the (read-only) source.
+- **Account detail** → the **Transferir fondos** button in the Movements toolbar action bar, with the current account as source.
+
+Both render `windows/custom/financial-account/FundsTransferModal.jsx` — a single-step modal (shared `@/components/ui/dialog`, with inline searchable dropdowns so wheel/touchpad scrolling works inside the modal). Fields: source account (pre-filled, read-only, with available balance), destination account (searchable; other org accounts), **accounting item / GL (required, searchable)**, amount (currency symbol via the shared `formatCurrency`), currency-conversion block (shown only when the destination currency differs — multi-currency, with the conversion rate), Bank Fee checkbox (reveals two fee fields — source and destination — mirroring Classic), description (default "Funds Transfer Transaction"). Client guards: destination + accounting item required, amount > 0, amount ≤ source balance; the backend re-validates and rejects same-account / over-balance / cross-org transfers. On confirm it calls `useFundsTransfer()` → `POST …financial-account-transactions?action=transfer`; the backend delegates to Etendo Classic's `FundsTransferActionHandler.createTransfer(...)`, creating the paired withdrawal (source) + deposit (destination) — plus optional bank-fee expenses on the source and/or destination — left **Pending** (`PWNC` / `RDNC`) until reconciled.
 
 ### Reconciliation tab (T6)
 
@@ -262,7 +272,7 @@ The Reconciliation surface gained the automatic matching engine (backend `MatchR
 
 ## Not implemented yet
 
-- `+ Nuevo movimiento` — hidden behind the `SHOW_NEW_MOVEMENT` flag in this release; the wizard stays wired for a future version.
+- `+ Nuevo movimiento` — no longer surfaced; ETP-4272 repurposed its toolbar slot for `Transferir fondos`. The New-movement wizard (`NewMovementWizard`) stays wired but dormant (no trigger) for a future version.
 - `Reactivar` is implemented for reconciled lines created from the ETGO reconciliation flow; it undoes the reconciliation and restores split 1:N groups back to a single pending line. Non-ETGO / Classic-only edge cases still rely on the runtime guards described above.
 - `Transferir` / `Nuevo documento` real actions — render but show a "próximamente" toast.
 - Unreconcile / Post row actions — visible but disabled, with tooltip.
@@ -282,7 +292,8 @@ index.jsx                          — receives { recordId }, sets page meta, mo
   DetailTabs.jsx + Tabs primitives — 3 tabs with icon + label + badge
     Header action button (inline)  — right of tab strip; Export for Movements/Statements, disabled Automatch for Reconciliation
     MovimientosTab.jsx             — toolbar + summary strip + table; runs applyFilters client-side
-      MovementsToolbar/index.jsx   — back ←, type filter, date range, advanced "by conditions" filter, search (+ Nuevo movimiento hidden via SHOW_NEW_MOVEMENT flag)
+      MovementsToolbar/index.jsx   — back ←, type filter, date range, advanced "by conditions" filter, search, Transferir fondos button (ETP-4272)
+      FundsTransferModal.jsx       — funds transfer modal (ETP-4272): source (RO) → destination, amount, GL item, multi-currency, bank fee
         TypeFilter.jsx             — wraps DistinctValuesFilter (BPD, BPW)
         DateRangeFilter.jsx        — wraps DateRangePopover
         AdvancedFilterButton       — generic "Filtro por condicionales" (status filter now lives here: 2 options — Conciliado / Sin conciliar)
@@ -338,9 +349,14 @@ index.jsx                          — receives { recordId }, sets page meta, mo
 ### Movements
 
 ```
-GET /sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}
-GET /sws/neo/financial-account-transactions?...&export=csv&columns=...&ids=...   → CSV download (generic, see neo-headless.md §4.3)
+GET  /sws/neo/financial-account-transactions?FIN_Financial_Account_ID={id}
+GET  /sws/neo/financial-account-transactions?...&export=csv&columns=...&ids=...  → CSV download (generic, see neo-headless.md §4.3)
+POST /sws/neo/financial-account-transactions?action=create                       → create one FIN_Finacc_Transaction
+POST /sws/neo/financial-account-transactions?action=create-payment               → register a payment (Classic "Add Payment")
+POST /sws/neo/financial-account-transactions?action=transfer                     → funds transfer between accounts (ETP-4272)
 ```
+
+**`action=transfer`** (ETP-4272) — body `{ sourceAccountId, destinationAccountId, amount, glItemId?, transferDate?, conversionRate?, bankFee?, bankFeeFrom?, bankFeeTo?, description? }`. Validates (source ≠ destination, amount > 0, destination in the source's org tree, amount ≤ source `currentBalance`) and **delegates to Etendo Classic `FundsTransferActionHandler.createTransfer(...)`** (`org.openbravo.advpaymentmngt`) — it never reimplements the transfer. That creates the source withdrawal (`BPW`) + destination deposit (`BPD`), optional bank-fee (`BF`) transactions on the source and/or destination, conversion-rate docs (multi-currency), processes them (→ `PWNC` / `RDNC`, Pending until reconciled) and runs the module's post-hooks. The handler exposes `loadAccount` / `availableBalance` / `sameOrgScope` / `doTransfer` as package-private test seams.
 
 Implemented by `com.etendoerp.go.schemaforge.FinancialAccountTransactionsHandler` (CDI bean registered via `@Named("financial-account-transactions")`). The handler:
 

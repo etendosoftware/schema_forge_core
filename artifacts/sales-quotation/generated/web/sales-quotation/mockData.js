@@ -18,7 +18,8 @@ export const quotation = [
     "currency": "USD",
     "description": "Standard order for Q1 delivery",
     "etgoTotalDiscount": 99.44,
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "eTGOCurrencyRate": "USD"
   },
   {
     "id": "mock-quotation-002",
@@ -37,7 +38,8 @@ export const quotation = [
     "currency": "EUR",
     "description": "Rush order - priority shipping required",
     "etgoTotalDiscount": 96.94,
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "eTGOCurrencyRate": "EUR"
   },
   {
     "id": "mock-quotation-003",
@@ -56,7 +58,8 @@ export const quotation = [
     "currency": "GBP",
     "description": "Bulk purchase for warehouse restocking",
     "etgoTotalDiscount": 12.48,
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "eTGOCurrencyRate": "GBP"
   },
   {
     "id": "mock-quotation-004",
@@ -75,7 +78,8 @@ export const quotation = [
     "currency": "USD",
     "description": "Sample order for client evaluation",
     "etgoTotalDiscount": 96.31,
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "eTGOCurrencyRate": "USD"
   },
   {
     "id": "mock-quotation-005",
@@ -94,7 +98,8 @@ export const quotation = [
     "currency": "EUR",
     "description": "Recurring monthly supply order",
     "etgoTotalDiscount": 31.27,
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "eTGOCurrencyRate": "EUR"
   },
   {
     "id": "mock-quotation-006",
@@ -113,7 +118,8 @@ export const quotation = [
     "currency": "GBP",
     "description": "Special pricing agreement applies",
     "etgoTotalDiscount": 76.52,
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "eTGOCurrencyRate": "GBP"
   },
   {
     "id": "mock-quotation-007",
@@ -132,7 +138,8 @@ export const quotation = [
     "currency": "USD",
     "description": "Consolidated order from multiple requests",
     "etgoTotalDiscount": 2.66,
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "eTGOCurrencyRate": "USD"
   },
   {
     "id": "mock-quotation-008",
@@ -151,7 +158,8 @@ export const quotation = [
     "currency": "EUR",
     "description": "Trial order for new product line",
     "etgoTotalDiscount": 10.03,
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "eTGOCurrencyRate": "EUR"
   },
   {
     "id": "mock-quotation-009",
@@ -170,7 +178,8 @@ export const quotation = [
     "currency": "GBP",
     "description": "Replacement for damaged goods",
     "etgoTotalDiscount": 93.97,
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "eTGOCurrencyRate": "GBP"
   },
   {
     "id": "mock-quotation-010",
@@ -189,7 +198,8 @@ export const quotation = [
     "currency": "USD",
     "description": "Pre-season inventory build-up",
     "etgoTotalDiscount": 1.1,
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "eTGOCurrencyRate": "USD"
   },
   {
     "id": "mock-quotation-011",
@@ -208,7 +218,8 @@ export const quotation = [
     "currency": "EUR",
     "description": "Customer-specific configuration",
     "etgoTotalDiscount": 79.99,
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "eTGOCurrencyRate": "EUR"
   },
   {
     "id": "mock-quotation-012",
@@ -227,7 +238,8 @@ export const quotation = [
     "currency": "GBP",
     "description": "Government contract fulfillment",
     "etgoTotalDiscount": 53.61,
-    "processed": "Sample processed"
+    "processed": "Sample processed",
+    "eTGOCurrencyRate": "GBP"
   }
 ];
 
@@ -236,156 +248,156 @@ export const quotationLine = [
     "id": "mock-quotationLine-001",
     "product": "Laptop Pro 15",
     "description": "Standard order for Q1 delivery",
-    "orderedQuantity": 402,
-    "listPrice": "Sample listPrice",
     "discount": 6,
-    "tax": "VAT 21%",
     "lineGrossAmount": 38907,
-    "unitPrice": "Sample unitPrice",
     "lineNetAmount": 38907,
+    "listPrice": "Sample listPrice",
+    "orderedQuantity": 402,
+    "tax": "VAT 21%",
+    "unitPrice": "Sample unitPrice",
     "quotationId": "mock-quotation-001"
   },
   {
     "id": "mock-quotationLine-002",
     "product": "USB-C Cable",
     "description": "Rush order - priority shipping required",
-    "orderedQuantity": 54,
-    "listPrice": "Sample listPrice",
     "discount": 21,
-    "tax": "VAT 10%",
     "lineGrossAmount": 9306,
-    "unitPrice": "Sample unitPrice",
     "lineNetAmount": 9306,
+    "listPrice": "Sample listPrice",
+    "orderedQuantity": 54,
+    "tax": "VAT 10%",
+    "unitPrice": "Sample unitPrice",
     "quotationId": "mock-quotation-002"
   },
   {
     "id": "mock-quotationLine-003",
     "product": "Wireless Mouse",
     "description": "Bulk purchase for warehouse restocking",
-    "orderedQuantity": 150,
-    "listPrice": "Sample listPrice",
     "discount": 0,
-    "tax": "VAT 0%",
     "lineGrossAmount": 11544,
-    "unitPrice": "Sample unitPrice",
     "lineNetAmount": 11544,
+    "listPrice": "Sample listPrice",
+    "orderedQuantity": 150,
+    "tax": "VAT 0%",
+    "unitPrice": "Sample unitPrice",
     "quotationId": "mock-quotation-003"
   },
   {
     "id": "mock-quotationLine-004",
     "product": "Mechanical Keyboard",
     "description": "Sample order for client evaluation",
-    "orderedQuantity": 97,
-    "listPrice": "Sample listPrice",
     "discount": 6,
-    "tax": "Sales Tax 8.5%",
     "lineGrossAmount": 11872,
-    "unitPrice": "Sample unitPrice",
     "lineNetAmount": 11872,
+    "listPrice": "Sample listPrice",
+    "orderedQuantity": 97,
+    "tax": "Sales Tax 8.5%",
+    "unitPrice": "Sample unitPrice",
     "quotationId": "mock-quotation-004"
   },
   {
     "id": "mock-quotationLine-005",
     "product": "Monitor 27\"",
     "description": "Recurring monthly supply order",
-    "orderedQuantity": 311,
-    "listPrice": "Sample listPrice",
     "discount": 14,
-    "tax": "Exempt",
     "lineGrossAmount": 48460,
-    "unitPrice": "Sample unitPrice",
     "lineNetAmount": 48460,
+    "listPrice": "Sample listPrice",
+    "orderedQuantity": 311,
+    "tax": "Exempt",
+    "unitPrice": "Sample unitPrice",
     "quotationId": "mock-quotation-005"
   },
   {
     "id": "mock-quotationLine-006",
     "product": "Webcam HD",
     "description": "Special pricing agreement applies",
-    "orderedQuantity": 451,
-    "listPrice": "Sample listPrice",
     "discount": 4,
-    "tax": "Reduced Rate 5%",
     "lineGrossAmount": 45418,
-    "unitPrice": "Sample unitPrice",
     "lineNetAmount": 45418,
+    "listPrice": "Sample listPrice",
+    "orderedQuantity": 451,
+    "tax": "Reduced Rate 5%",
+    "unitPrice": "Sample unitPrice",
     "quotationId": "mock-quotation-006"
   },
   {
     "id": "mock-quotationLine-007",
     "product": "Headset Pro",
     "description": "Consolidated order from multiple requests",
-    "orderedQuantity": 496,
-    "listPrice": "Sample listPrice",
     "discount": 6,
-    "tax": "Standard Rate 20%",
     "lineGrossAmount": 33840,
-    "unitPrice": "Sample unitPrice",
     "lineNetAmount": 33840,
+    "listPrice": "Sample listPrice",
+    "orderedQuantity": 496,
+    "tax": "Standard Rate 20%",
+    "unitPrice": "Sample unitPrice",
     "quotationId": "mock-quotation-007"
   },
   {
     "id": "mock-quotationLine-008",
     "product": "Docking Station",
     "description": "Trial order for new product line",
-    "orderedQuantity": 284,
-    "listPrice": "Sample listPrice",
     "discount": 10,
-    "tax": "VAT 21%",
     "lineGrossAmount": 25716,
-    "unitPrice": "Sample unitPrice",
     "lineNetAmount": 25716,
+    "listPrice": "Sample listPrice",
+    "orderedQuantity": 284,
+    "tax": "VAT 21%",
+    "unitPrice": "Sample unitPrice",
     "quotationId": "mock-quotation-008"
   },
   {
     "id": "mock-quotationLine-009",
     "product": "SSD 1TB",
     "description": "Replacement for damaged goods",
-    "orderedQuantity": 225,
-    "listPrice": "Sample listPrice",
     "discount": 17,
-    "tax": "VAT 10%",
     "lineGrossAmount": 44780,
-    "unitPrice": "Sample unitPrice",
     "lineNetAmount": 44780,
+    "listPrice": "Sample listPrice",
+    "orderedQuantity": 225,
+    "tax": "VAT 10%",
+    "unitPrice": "Sample unitPrice",
     "quotationId": "mock-quotation-009"
   },
   {
     "id": "mock-quotationLine-010",
     "product": "RAM 16GB",
     "description": "Pre-season inventory build-up",
-    "orderedQuantity": 479,
-    "listPrice": "Sample listPrice",
     "discount": 14,
-    "tax": "VAT 0%",
     "lineGrossAmount": 12483,
-    "unitPrice": "Sample unitPrice",
     "lineNetAmount": 12483,
+    "listPrice": "Sample listPrice",
+    "orderedQuantity": 479,
+    "tax": "VAT 0%",
+    "unitPrice": "Sample unitPrice",
     "quotationId": "mock-quotation-010"
   },
   {
     "id": "mock-quotationLine-011",
     "product": "Power Supply 750W",
     "description": "Customer-specific configuration",
-    "orderedQuantity": 123,
-    "listPrice": "Sample listPrice",
     "discount": 19,
-    "tax": "Sales Tax 8.5%",
     "lineGrossAmount": 46022,
-    "unitPrice": "Sample unitPrice",
     "lineNetAmount": 46022,
+    "listPrice": "Sample listPrice",
+    "orderedQuantity": 123,
+    "tax": "Sales Tax 8.5%",
+    "unitPrice": "Sample unitPrice",
     "quotationId": "mock-quotation-011"
   },
   {
     "id": "mock-quotationLine-012",
     "product": "Network Switch",
     "description": "Government contract fulfillment",
-    "orderedQuantity": 337,
-    "listPrice": "Sample listPrice",
     "discount": 12,
-    "tax": "Exempt",
     "lineGrossAmount": 38634,
-    "unitPrice": "Sample unitPrice",
     "lineNetAmount": 38634,
+    "listPrice": "Sample listPrice",
+    "orderedQuantity": 337,
+    "tax": "Exempt",
+    "unitPrice": "Sample unitPrice",
     "quotationId": "mock-quotation-012"
   }
 ];

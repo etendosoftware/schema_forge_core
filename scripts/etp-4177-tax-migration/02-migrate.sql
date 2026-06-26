@@ -185,6 +185,19 @@ DELETE FROM c_taxcategory cc
 SELECT ad_enable_triggers();
 
 -- ===========================================================================
+-- PHASE G — Post-cleanup flag fix
+--           'Entregas IVA 21%' at system level must be the default tax for
+--           standard Spanish VAT flows. The flag was not preserved when the
+--           GOClient tax was promoted; set it explicitly here.
+-- ===========================================================================
+UPDATE c_tax
+   SET isdefault = 'Y'
+ WHERE ad_client_id = '0'
+   AND name = 'Entregas IVA 21%'
+   AND isdefault = 'N';
+\echo 'Phase G: isdefault set on system Entregas IVA 21%'
+
+-- ===========================================================================
 -- Final report
 -- ===========================================================================
 \echo ''

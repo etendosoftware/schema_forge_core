@@ -18,18 +18,23 @@ const breadcrumb = 'Purchases / Return to Vendor Shipment';
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'sourceReceiptDocNo', column: 'sourceReceiptDocNo', type: 'string' },
+  { key: 'etblkpAccountingstatus', column: 'EM_Etblkp_Accountingstatus', type: 'status' },
+  { key: 'etblkpBulkposting', column: 'EM_Etblkp_Bulkposting', type: 'string' },
 ];
 
 const statusField = 'documentStatus';
 // @sf-generated-end summary:returnToVendorShipment
 
 // @sf-generated-start extraBadges:returnToVendorShipment
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:returnToVendorShipment
 
 // @sf-generated-start processes:returnToVendorShipment
 const processes = [
-
+  { name: 'etblkpBulkposting', label: 'Bulk Posting', style: 'positive',
+    displayLogicRaw: "@Processed@='Y' & @#ShowAcct@='Y'" },
 ];
 // @sf-generated-end processes:returnToVendorShipment
 
@@ -38,7 +43,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:returnToVendorShipment
 
 // @sf-generated-start requiredHeaderFields:returnToVendorShipment
-const requiredHeaderFields = ['documentNo', 'businessPartner', 'partnerAddress', 'movementDate', 'warehouse'];
+const requiredHeaderFields = ['documentNo', 'businessPartner', 'partnerAddress', 'movementDate', 'warehouse', 'etblkpAccountingstatus', 'etblkpBulkposting'];
 // @sf-generated-end requiredHeaderFields:returnToVendorShipment
 
 // @sf-generated-start addLineFields:returnToVendorShipmentLine
@@ -217,6 +222,14 @@ export const api = {
       "url": "/sws/neo/return-to-vendor-shipment/returnToVendorShipment/{id}/action/processGoodsJava",
       "processId": "49DEE812BF0545269781FCEBF2235924",
       "processType": "classic"
+    },
+    {
+      "entity": "returnToVendorShipment",
+      "field": "etblkpBulkposting",
+      "column": "EM_Etblkp_Bulkposting",
+      "url": "/sws/neo/return-to-vendor-shipment/returnToVendorShipment/{id}/action/etblkpBulkposting",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
     },
     {
       "entity": "returnToVendorShipmentLine",

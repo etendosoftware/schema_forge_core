@@ -1,8 +1,8 @@
 {
-  "version": "0.17.0",
+  "version": "0.18.0",
   "generatedAt": "2026-04-29T19:05:48.442Z",
-  "updatedAt": "2026-05-20T11:45:15.260Z",
-  "checksum": "43be58d0a53e1c42",
+  "updatedAt": "2026-06-24T20:46:48.053Z",
+  "checksum": "c565f111166398bd",
   "frontendContract": {
     "window": {
       "id": "168",
@@ -697,6 +697,22 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "discarded",
+            "required": true
           }
         ]
       },
@@ -1065,6 +1081,14 @@
         "field": "posted",
         "column": "Posted",
         "url": "/sws/neo/physical-inventory/inventory/{id}/action/posted"
+      },
+      {
+        "entity": "inventory",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/physical-inventory/inventory/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -1086,6 +1110,14 @@
   },
   "testManifest": {
     "tests": [
+      {
+        "id": "t-action-endpoint-inventory-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "inventory",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in inventory should exist"
+      },
       {
         "id": "t-action-endpoint-inventory-generateList",
         "category": "action-endpoint",
@@ -1842,6 +1874,22 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for inventory"
       },
       {
+        "id": "t-system-field-inventory-etblkpAccountingstatus",
+        "category": "system-field",
+        "entity": "inventory",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "System field 'etblkpAccountingstatus' should exist in backend but not frontend for inventory"
+      },
+      {
+        "id": "t-system-field-inventory-etblkpBulkposting",
+        "category": "system-field",
+        "entity": "inventory",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "System field 'etblkpBulkposting' should exist in backend but not frontend for inventory"
+      },
+      {
         "id": "t-system-field-inventory-generateList",
         "category": "system-field",
         "entity": "inventory",
@@ -2049,9 +2097,9 @@
       }
     ],
     "summary": {
-      "total": 122,
+      "total": 125,
       "byCategory": {
-        "action-endpoint": 4,
+        "action-endpoint": 5,
         "crud-flags": 2,
         "default-value-type": 6,
         "displaylogic-evaluable": 3,
@@ -2063,11 +2111,11 @@
         "rule-declared": 11,
         "searchable-filters": 3,
         "selector-endpoint": 5,
-        "system-field": 31,
+        "system-field": 33,
         "visibility": 2
       },
       "byRunner": {
-        "node": 122,
+        "node": 125,
         "junit": 0
       }
     }

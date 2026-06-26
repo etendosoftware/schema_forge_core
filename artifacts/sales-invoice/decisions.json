@@ -32,7 +32,17 @@
         "labelKey": "reactivate",
         "visibleWhenStatus": "CO",
         "documentAction": "RE",
-        "successKey": "reactivated"
+        "successKey": "reactivated",
+        "preUnpost": true
+      },
+      {
+        "key": "post",
+        "label": "Post",
+        "labelKey": "post",
+        "action": "post",
+        "visibleWhenFieldFalse": "posted",
+        "successKey": "documentPosted",
+        "visibleWhenFieldTrue": "processed"
       }
     ],
     "secondaryTabs": {
@@ -86,6 +96,14 @@
       {
         "label": "returnsTab",
         "filter": "criteria=%5B%7B%22fieldName%22%3A%22transactionDocument%24documentCategory%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3A%22ARI_RM%22%7D%5D"
+      }
+    ],
+    "statusPills": [
+      {
+        "field": "posted",
+        "trueKey": "postedStatus",
+        "falseKey": "notPostedStatus",
+        "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
       }
     ]
   },
@@ -204,7 +222,23 @@
         "posted": {
           "visibility": "readOnly",
           "form": false,
-          "grid": false
+          "grid": true,
+          "badge": true,
+          "badgeLabels": {
+            "true": {
+              "en_US": "Posted",
+              "es_ES": "Contabilizado"
+            },
+            "false": {
+              "en_US": "Not posted",
+              "es_ES": "Sin contabilizar"
+            }
+          },
+          "badgeVariants": {
+            "true": "green",
+            "false": "orange"
+          },
+          "type": "boolean"
         },
         "grandTotalAmount": {
           "visibility": "readOnly",
@@ -374,7 +408,8 @@
         },
         "etvfacInvoiceStatus": {
           "visibility": "readOnly",
-          "form": false
+          "form": false,
+          "grid": true
         },
         "etsgDateOperation": {
           "visibility": "editable",
@@ -399,11 +434,6 @@
         "tbaiInvoiceseq": {
           "visibility": "readOnly",
           "form": false
-        },
-        "etvfacInvoiceStatus": {
-          "visibility": "readOnly",
-          "form": false,
-          "grid": true
         }
       }
     },
@@ -651,7 +681,7 @@
     "ticketbai": {
       "exclude": true
     },
-    "resultadoValidaci\u00f3n": {
+    "resultadoValidación": {
       "exclude": true
     },
     "cashVat": {

@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.9.0",
   "generatedAt": "2026-05-12T16:47:39.614Z",
-  "updatedAt": "2026-06-11T12:55:37.001Z",
-  "contractChecksum": "3fda0494d3c6a437",
+  "updatedAt": "2026-06-25T14:15:39.328Z",
+  "contractChecksum": "2a08ff0395e6cb73",
   "apiPrediction": {
     "specName": "sales-order",
     "baseUrl": "/sws/neo/sales-order",
@@ -148,6 +148,14 @@
             }
           ]
         }
+      },
+      {
+        "entity": "lines",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/sales-order/lines/selectors/currency"
       }
     ],
     "actions": [
@@ -611,6 +619,29 @@
         "processType": "obuiapp"
       },
       {
+        "name": "eTPRRemovePayment",
+        "actionType": "paymentAction",
+        "entity": "header",
+        "column": "EM_Etpr_Remove_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/sales-order/header/{id}/action/eTPRRemovePayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+        "processType": "obuiapp"
+      },
+      {
         "name": "manageReservation",
         "actionType": "utilityAction",
         "entity": "lines",
@@ -779,8 +810,8 @@
             "required": true
           },
           "currency": {
-            "readOnly": true,
             "required": true,
+            "readOnlyLogic": "@Processed@='Y'",
             "defaultValue": "@C_Currency_ID@"
           },
           "description": {},
@@ -796,7 +827,8 @@
           "processed": {
             "readOnly": true,
             "required": true
-          }
+          },
+          "eTGOCurrencyRate": {}
         }
       },
       "lines": {
@@ -834,6 +866,10 @@
           "grossUnitPrice": {
             "readOnlyLogic": "@Processed@='Y' | @GROSSPRICE@='N'",
             "defaultValue": "0"
+          },
+          "currency": {
+            "required": true,
+            "defaultValue": "@C_Currency_ID@"
           }
         }
       }
@@ -853,14 +889,16 @@
         "partnerAddress",
         "priceList",
         "paymentTerms",
-        "warehouse"
+        "warehouse",
+        "currency"
       ],
       "lineFields": [
         "product",
         "orderedQuantity",
         "listPrice",
         "tax",
-        "unitPrice"
+        "unitPrice",
+        "currency"
       ],
       "recommendedOrder": [
         "createHeader",
@@ -966,7 +1004,8 @@
           "partnerAddress",
           "priceList",
           "paymentTerms",
-          "warehouse"
+          "warehouse",
+          "currency"
         ]
       },
       {
@@ -977,7 +1016,8 @@
           "orderedQuantity",
           "listPrice",
           "tax",
-          "unitPrice"
+          "unitPrice",
+          "currency"
         ]
       },
       {
@@ -993,5 +1033,5 @@
       "confirmCancelAndReplace"
     ]
   },
-  "checksum": "515c9487bd8d2f7d"
+  "checksum": "407d688588ba6a97"
 }

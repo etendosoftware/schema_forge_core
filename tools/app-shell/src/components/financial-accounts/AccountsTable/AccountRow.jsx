@@ -12,7 +12,7 @@ import { ReconcilePill } from '../ReconcilePill.jsx';
 import { AccountRowMenu } from '../AccountRowMenu.jsx';
 import { ACCOUNT_COLUMNS, ACCOUNT_CELL_RENDERERS } from './accountColumns.jsx';
 
-export function AccountRow({ account, onOpen, onReconcile, onEdit, onArchive, onPsd2Action }) {
+export function AccountRow({ account, onOpen, onReconcile, onEdit, onArchive, onPsd2Action, onTransfer }) {
   const ui = useUI();
   const cellCtx = {
     ui,
@@ -92,6 +92,7 @@ export function AccountRow({ account, onOpen, onReconcile, onEdit, onArchive, on
               onEdit={onEdit}
               onArchive={onArchive}
               onPsd2Action={onPsd2Action}
+              onTransfer={onTransfer}
               data-testid="AccountRowMenu__90174f" />
           </div>
         </TooltipProvider>
