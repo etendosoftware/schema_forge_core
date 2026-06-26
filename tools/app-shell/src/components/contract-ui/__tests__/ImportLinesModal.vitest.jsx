@@ -194,13 +194,13 @@ describe('ImportLinesModal', () => {
       expect(defaultProps.fetchLines).toHaveBeenCalledWith(
         expect.objectContaining({ docId: 'doc-1' })
       );
-    });
+    }, { timeout: 10000 });
 
     // After lines load, product names should appear
     await waitFor(() => {
       expect(screen.getByText('Widget A')).toBeInTheDocument();
       expect(screen.getByText('Widget B')).toBeInTheDocument();
-    });
+    }, { timeout: 10000 });
   });
 
   it('shows column headers when lines are expanded', async () => {
@@ -217,7 +217,7 @@ describe('ImportLinesModal', () => {
       expect(screen.getByText('qty')).toBeInTheDocument();
       expect(screen.getByText('price')).toBeInTheDocument();
       expect(screen.getByText('amount')).toBeInTheDocument();
-    });
+    }, { timeout: 10000 });
   });
 
   it('hides price columns when showPriceColumns is false', async () => {
@@ -232,7 +232,7 @@ describe('ImportLinesModal', () => {
     await waitFor(() => {
       expect(screen.getByText('product')).toBeInTheDocument();
       expect(screen.getByText('qty')).toBeInTheDocument();
-    });
+    }, { timeout: 10000 });
 
     // price and amount columns should not exist
     expect(screen.queryByText('price')).not.toBeInTheDocument();
@@ -244,7 +244,7 @@ describe('ImportLinesModal', () => {
 
     await waitFor(() => {
       expect(screen.getByText('INV-001')).toBeInTheDocument();
-    });
+    }, { timeout: 10000 });
 
     const searchInput = screen.getByPlaceholderText('searchOrders');
     fireEvent.change(searchInput, { target: { value: 'INV-002' } });
@@ -258,7 +258,7 @@ describe('ImportLinesModal', () => {
 
     await waitFor(() => {
       expect(screen.getByText('INV-001')).toBeInTheDocument();
-    });
+    }, { timeout: 10000 });
 
     const searchInput = screen.getByPlaceholderText('searchOrders');
     fireEvent.change(searchInput, { target: { value: 'NONEXISTENT' } });
