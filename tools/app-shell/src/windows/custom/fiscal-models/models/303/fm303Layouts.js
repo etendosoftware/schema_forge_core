@@ -171,7 +171,7 @@ const BASE = {
             { id: 'a_deducir',             labelKey: 'fm.box.row.a_deducir',             cells: [70], editable: true },
             { id: 'devoluciones_at',       labelKey: 'fm.box.row.devoluciones_at',       cells: [109], editable: true },
             { id: 'resultado_declaracion', labelKey: 'fm.box.row.resultado_declaracion', cells: [71],  total: true },
-            { id: 'importe_devolucion',    labelKey: 'fm.box.row.importe_devolucion',    cells: [] },
+            { id: 'importe_devolucion',    labelKey: 'fm.box.row.importe_devolucion',    cells: [null], rowVisibleWhen: { field: 'tipo_declaracion', in: ['D', 'V', 'X', 'C'] }, derivedValue: { box: 71, abs: true } },
             { id: 'rectificacion_importe', labelKey: 'fm.box.row.rectificacion_importe', cells: [111] },
           ],
         },
@@ -243,7 +243,7 @@ const _PRE2023_BICOLUMN_OP = { op: 'patchRow', section: 'resultado_final', row: 
     { id: 'resultado_69',          labelKey: 'fm.box.row.resultado_69_pre2023',          cells: [69],  total: true },
     { id: 'a_deducir',             labelKey: 'fm.box.row.a_deducir',                      cells: [70], editable: true },
     { id: 'resultado_declaracion', labelKey: 'fm.box.row.resultado_declaracion_pre2023',  cells: [71],  total: true },
-    { id: 'importe_devolucion',    labelKey: 'fm.box.row.importe_devolucion',              cells: [] },
+    { id: 'importe_devolucion',    labelKey: 'fm.box.row.importe_devolucion',              cells: [null], rowVisibleWhen: { field: 'tipo_declaracion', in: ['D', 'V', 'X', 'C'] }, derivedValue: { box: 71, abs: true } },
   ],
 }};
 

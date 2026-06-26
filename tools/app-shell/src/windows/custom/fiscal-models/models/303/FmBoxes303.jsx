@@ -253,6 +253,7 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
               });
 
               const renderRow = (row, i) => {
+                if (row.rowVisibleWhen && !matchesSvw(row.rowVisibleWhen)) return null;
                 if (row.type === 'heading') {
                   return (
                     <div key={row.id ?? `heading-${i}`} className={`fm-aeat-subheading${row.separator ? ' fm-aeat-subheading--sep' : ''}`}>
@@ -345,7 +346,15 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
                     </span>
                     {Array.from({ length: rowCols }, (_, ci) => {
                       const boxNum = row.cells?.[ci] ?? null;
-                      if (boxNum === null) return row.total ? null : <div key={ci} className="fm-aeat-cell fm-aeat-cell--empty" />;
+                      if (boxNum === null) {
+                        if (row.derivedValue) {
+                          const dv = row.derivedValue;
+                          const raw = valueMap[dv.box] ?? null;
+                          const display = raw != null ? (dv.abs ? Math.abs(raw) : raw) : null;
+                          return <div key={ci} className="fm-aeat-cell"><span className="fm-aeat-cell__value">{display != null ? formatCell(display, 'amount') : ''}</span></div>;
+                        }
+                        return row.total ? null : <div key={ci} className="fm-aeat-cell fm-aeat-cell--empty" />;
+                      }
                       const isCellEditable = row.editable || row.editableCells?.includes(boxNum);
                       const isFixed = !isCellEditable && row.fixedValues != null &&
                         Object.prototype.hasOwnProperty.call(row.fixedValues, boxNum);
