@@ -151,7 +151,17 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
   const [showCompare, setShowCompare] = useState(false);
   const [orgIdent, setOrgIdent] = useState({ nif: '', nombre: '' });
   const [identChecks, setIdentChecks] = useState(decl.identification ?? {});
-  const handleIdentChange = (id, value) => setIdentChecks(prev => ({ ...prev, [id]: value }));
+  const handleIdentChange = (id, value) => {
+    setIdentChecks(prev => ({ ...prev, [id]: value }));
+    if (id === 'motivo_rectificacion' && value !== 'D') {
+      setManualOverrides(prev => { const n = { ...prev }; delete n[108]; return n; });
+      setLiveBoxes(prev => {
+        if (prev == null) return prev;
+        const arr = toBoxArray(prev).filter(b => b.num !== 108);
+        return recomputeDerivedBoxes(arr);
+      });
+    }
+  };
   const [liveBoxes,      setLiveBoxes]      = useState(decl._precomputed?.boxes   ?? null);
   const [manualOverrides, setManualOverrides] = useState({});
 
