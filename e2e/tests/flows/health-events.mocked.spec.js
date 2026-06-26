@@ -94,6 +94,8 @@ async function installMixpanelCapture(page) {
 // backend is mocked so FK resolution is irrelevant here.
 const DEFAULTS = {
   invoiceDate: new Date().toISOString().slice(0, 10),
+  cDocTypeTargetId: 'dt-e2e-001',
+  'cDocTypeTargetId$_identifier': 'Standard Invoice',
   businessPartner: 'bp-e2e-001',
   'businessPartner$_identifier': 'Test BP',
   partnerAddress: 'addr-e2e-001',

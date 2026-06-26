@@ -28,9 +28,19 @@ const DRAFT_ORDER = {
   documentStatus: 'DR',
   'documentStatus$_identifier': 'Borrador',
   orderDate: '2026-06-25',
+  businessPartner: 'bp-e2e-001',
   'businessPartner$_identifier': 'Test Client',
+  partnerAddress: 'addr-e2e-001',
+  'partnerAddress$_identifier': 'Test Address',
+  priceList: 'pl-e2e-001',
+  'priceList$_identifier': 'EUR Price List',
+  paymentTerms: 'pt-e2e-001',
+  'paymentTerms$_identifier': '30 days',
+  warehouse: 'wh-e2e-001',
+  'warehouse$_identifier': 'Main Warehouse',
   grandTotalAmount: 0,
   summedLineAmount: 0,
+  currency: 'eur-e2e-001',
   'currency$_identifier': 'EUR',
 };
 
@@ -40,6 +50,19 @@ async function installSalesOrderMocks(page) {
     const req = route.request();
     const url = req.url();
     if (req.method() !== 'GET') return route.fallback();
+    // Selector for partnerAddress (C_BPartner_Location_ID) — return format that
+    // CreatableSearchSelect expects so the field value is not cleared from editing state.
+    if (url.includes('/selectors/')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: [
+            { id: 'addr-e2e-001', label: 'Test Address', _identifier: 'Test Address' },
+          ],
+        }),
+      });
+    }
     const detailMatch = url.match(/\/header\/([^/?]+)/);
     if (detailMatch) {
       return route.fulfill({
@@ -74,7 +97,10 @@ async function openAddRowDiscountField(page) {
   await page.goto(`/sales-order/${ORDER_ID}`);
   await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
-  const addLineBtn = page.getByTestId('action-add-line');
+  // When there are no lines the LinesEmptyState renders (early return in DetailView),
+  // which means the main AddLineButton (action-add-line) is not yet in the DOM.
+  // Clicking the empty-state button triggers handleAddLineClick → opens the inline-add row.
+  const addLineBtn = page.getByTestId('action-add-lines-empty-state');
   await expect(addLineBtn).toBeVisible({ timeout: 8_000 });
   await addLineBtn.click();
 
