@@ -18,6 +18,11 @@
       "windowId": "123"
     },
     {
+      "name": "financial-account",
+      "windowId": "94EAA455D2644E04AB25D93BE5157B6D",
+      "menuName": "Financial Account"
+    },
+    {
       "name": "goods-movements",
       "windowId": "170"
     },
