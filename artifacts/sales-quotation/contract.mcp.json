@@ -1,7 +1,8 @@
 {
-  "version": "0.1.0",
+  "version": "0.12.0",
   "generatedAt": "2026-06-26T16:40:04.731Z",
-  "contractChecksum": "0ddff2c90df28052",
+  "updatedAt": "2026-06-26T17:15:16.334Z",
+  "contractChecksum": "b9ab12757582dc11",
   "apiPrediction": {
     "specName": "sales-quotation",
     "baseUrl": "/sws/neo/sales-quotation",
@@ -818,7 +819,8 @@
           "processed": {
             "readOnly": true,
             "required": true
-          }
+          },
+          "eTGOCurrencyRate": {}
         }
       },
       "quotationLine": {
@@ -1017,5 +1019,5 @@
       "confirmcancelandreplace"
     ]
   },
-  "checksum": "f87e90db1fa3b0bd"
+  "checksum": "609d5c5455dfa503"
 }
