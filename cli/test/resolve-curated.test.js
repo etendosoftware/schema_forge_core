@@ -298,6 +298,54 @@ describe('resolveCurated — agentPrompt passthrough (ETP-4252)', () => {
   });
 });
 
+describe('resolveCurated — excludeValueOf passthrough', () => {
+  const schemaRaw = {
+    window: { id: '900', name: 'Goods Movements' },
+    entities: [{
+      name: 'movementLine',
+      tableName: 'M_MovementLine',
+      tabId: '10',
+      tabName: 'Lines',
+      fields: [
+        { name: 'storageBin', columnName: 'M_Locator_ID', label: 'Origin Bin', type: 'foreignKey',
+          visibility: 'editable', reference: { type: 'Search', targetTable: 'M_Locator' } },
+        { name: 'newStorageBin', columnName: 'M_LocatorTo_ID', label: 'Destination Bin', type: 'foreignKey',
+          visibility: 'editable', reference: { type: 'Search', targetTable: 'M_Locator' } },
+        { name: 'plain', columnName: 'PlainCol', label: 'Plain', type: 'string', visibility: 'editable' },
+      ],
+    }],
+  };
+
+  const decisions = {
+    version: 2,
+    window: { name: 'Goods Movements' },
+    entities: {
+      movementLine: {
+        name: 'movementLine',
+        fields: {
+          newStorageBin: { excludeValueOf: 'storageBin' },
+          plain: {},
+        },
+      },
+    },
+    rules: {},
+  };
+
+  it('copies field excludeValueOf into the curated field', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const newBin = schema.entities[0].fields.find(f => f.name === 'newStorageBin');
+    assert.equal(newBin.excludeValueOf, 'storageBin');
+  });
+
+  it('omits excludeValueOf when a field does not declare one', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const plain = schema.entities[0].fields.find(f => f.name === 'plain');
+    assert.equal(plain.excludeValueOf, undefined);
+    const originBin = schema.entities[0].fields.find(f => f.name === 'storageBin');
+    assert.equal(originBin.excludeValueOf, undefined);
+  });
+});
+
 // ─── virtualFields — appendVirtualFields exercised via resolveCurated ───
 describe('resolveCurated — virtualFields', () => {
   const baseSchema = {

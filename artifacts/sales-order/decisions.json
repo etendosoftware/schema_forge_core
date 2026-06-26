@@ -3,6 +3,7 @@
   "window": {
     "category": "sales",
     "name": "Sales Order",
+    "selectorPriceCurrency": "org",
     "salesTheme": true,
     "notesField": "description",
     "relatedDocuments": true,
@@ -128,7 +129,8 @@
           "section": "principal"
         },
         "priceList": {
-          "section": "principal"
+          "section": "principal",
+          "order": 11
         },
         "paymentMethod": {
           "reference": "PaymentMethod",
@@ -257,10 +259,13 @@
           "columnType": "percent"
         },
         "currency": {
-          "visibility": "readOnly",
+          "visibility": "editable",
           "grid": false,
-          "form": false,
-          "section": "summary"
+          "form": true,
+          "section": "principal",
+          "order": 10,
+          "readOnlyLogic": "@Processed@='Y'",
+          "derivation": null
         },
         "deliveryLocation": {
           "visibility": "discarded"
@@ -271,6 +276,11 @@
         "etgoTotalDiscount": {
           "visibility": "editable",
           "form": false
+        },
+        "eTGOCurrencyRate": {
+          "visibility": "editable",
+          "form": false,
+          "grid": false
         }
       }
     },
@@ -465,6 +475,11 @@
         },
         "reservationStatus": {
           "visibility": "discarded"
+        },
+        "currency": {
+          "visibility": "editable",
+          "grid": false,
+          "form": false
         }
       }
     },

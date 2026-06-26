@@ -1,8 +1,7 @@
 {
-  "version": "0.22.0",
-  "generatedAt": "2026-04-30T15:42:46.497Z",
-  "updatedAt": "2026-06-25T19:29:58.168Z",
-  "contractChecksum": "fefe928328dc1da6",
+  "version": "0.1.0",
+  "generatedAt": "2026-06-26T16:40:04.421Z",
+  "contractChecksum": "a4eaeeda84df8e48",
   "apiPrediction": {
     "specName": "purchase-order",
     "baseUrl": "/sws/neo/purchase-order",
@@ -97,6 +96,30 @@
       },
       {
         "entity": "header",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/header/selectors/currency"
+      },
+      {
+        "entity": "header",
+        "field": "priceList",
+        "column": "M_PriceList_ID",
+        "reference": "PriceList",
+        "inputMode": "selector",
+        "url": "/sws/neo/purchase-order/header/selectors/priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
         "field": "transactionDocument",
         "column": "C_DocTypeTarget_ID",
         "reference": "DocumentType",
@@ -141,28 +164,6 @@
         "reference": "PaymentTerm",
         "inputMode": "selector",
         "url": "/sws/neo/purchase-order/header/selectors/paymentTerms"
-      },
-      {
-        "entity": "header",
-        "field": "priceList",
-        "column": "M_PriceList_ID",
-        "reference": "PriceList",
-        "inputMode": "selector",
-        "url": "/sws/neo/purchase-order/header/selectors/priceList",
-        "context": {
-          "required": [
-            {
-              "param": "isSOTrx",
-              "source": "windowCategory"
-            }
-          ]
-        }
-      },
-      {
-        "entity": "header",
-        "field": "currency",
-        "column": "C_Currency_ID",
-        "url": "/sws/neo/purchase-order/header/selectors/currency"
       },
       {
         "entity": "header",
@@ -712,6 +713,29 @@
         "processType": "classic"
       },
       {
+        "name": "psd2GenerateBankPayment",
+        "actionType": "paymentAction",
+        "entity": "header",
+        "column": "EM_Psd2_Generate_Bank_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/purchase-order/header/{id}/action/psd2GenerateBankPayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "0661406A983B4D8EA611F8596F114D52",
+        "processType": "obuiapp"
+      },
+      {
         "name": "createPOLines",
         "actionType": "createFrom",
         "entity": "header",
@@ -732,6 +756,29 @@
           "Required reference data is missing (price list, warehouse, etc.)"
         ],
         "processId": "6995A4C2592D434A9E16B71E1694CBCA",
+        "processType": "obuiapp"
+      },
+      {
+        "name": "eTPRRemovePayment",
+        "actionType": "paymentAction",
+        "entity": "header",
+        "column": "EM_Etpr_Remove_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/purchase-order/header/{id}/action/eTPRRemovePayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
         "processType": "obuiapp"
       },
       {
@@ -882,52 +929,6 @@
         "processType": "obuiapp"
       },
       {
-        "name": "psd2GenerateBankPayment",
-        "actionType": "paymentAction",
-        "entity": "header",
-        "column": "EM_Psd2_Generate_Bank_Payment",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/purchase-order/header/{id}/action/psd2GenerateBankPayment",
-        "parameters": [],
-        "preconditions": [],
-        "effects": [
-          "Creates or processes payment records",
-          "May update invoice/order payment status"
-        ],
-        "dryRunSupported": false,
-        "edgeCases": [
-          "Payment amount exceeds remaining balance",
-          "Payment method is not configured for the business partner",
-          "Invoice is already fully paid"
-        ],
-        "processId": "0661406A983B4D8EA611F8596F114D52",
-        "processType": "obuiapp"
-      },
-      {
-        "name": "eTPRRemovePayment",
-        "actionType": "paymentAction",
-        "entity": "header",
-        "column": "EM_Etpr_Remove_Payment",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/purchase-order/header/{id}/action/eTPRRemovePayment",
-        "parameters": [],
-        "preconditions": [],
-        "effects": [
-          "Creates or processes payment records",
-          "May update invoice/order payment status"
-        ],
-        "dryRunSupported": false,
-        "edgeCases": [
-          "Payment amount exceeds remaining balance",
-          "Payment method is not configured for the business partner",
-          "Invoice is already fully paid"
-        ],
-        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
-        "processType": "obuiapp"
-      },
-      {
         "name": "managePrereservation",
         "actionType": "utilityAction",
         "entity": "lines",
@@ -1074,6 +1075,15 @@
             "readOnlyLogic": "@Processed@='Y'",
             "defaultValue": "@#Date@"
           },
+          "currency": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y'",
+            "defaultValue": "@C_Currency_ID@"
+          },
+          "priceList": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'"
+          },
           "transactionDocument": {
             "required": true,
             "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'"
@@ -1089,10 +1099,6 @@
             "required": true,
             "readOnlyLogic": "@Processed@='Y'"
           },
-          "priceList": {
-            "required": true,
-            "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'"
-          },
           "documentStatus": {
             "readOnly": true,
             "required": true,
@@ -1105,11 +1111,6 @@
           "summedLineAmount": {
             "readOnly": true,
             "required": true
-          },
-          "currency": {
-            "readOnly": true,
-            "required": true,
-            "defaultValue": "@C_Currency_ID@"
           },
           "deliveryNotes": {},
           "description": {},
@@ -1305,7 +1306,6 @@
             "readOnlyLogic": "@Posted@='Y'"
           },
           "currency": {
-            "readOnly": true,
             "required": true,
             "defaultValue": "@C_Currency_ID@"
           }
@@ -1425,10 +1425,11 @@
         "orderDate",
         "partnerAddress",
         "scheduledDeliveryDate",
+        "currency",
+        "priceList",
         "transactionDocument",
         "warehouse",
         "paymentTerms",
-        "priceList",
         "cashVAT",
         "invoiceFrom",
         "deliveryMethod",
@@ -1441,7 +1442,8 @@
         "listPrice",
         "tax",
         "unitPrice",
-        "lineNetAmount"
+        "lineNetAmount",
+        "currency"
       ],
       "recommendedOrder": [
         "createHeader",
@@ -1458,6 +1460,18 @@
               "param": "C_BPartner_ID",
               "source": "field",
               "field": "businessPartner"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
             }
           ]
         }
@@ -1481,18 +1495,6 @@
           "required": [
             {
               "param": "IsSOTrx",
-              "source": "windowCategory"
-            }
-          ]
-        }
-      },
-      {
-        "entity": "header",
-        "field": "priceList",
-        "context": {
-          "required": [
-            {
-              "param": "isSOTrx",
               "source": "windowCategory"
             }
           ]
@@ -1618,10 +1620,11 @@
           "orderDate",
           "partnerAddress",
           "scheduledDeliveryDate",
+          "currency",
+          "priceList",
           "transactionDocument",
           "warehouse",
           "paymentTerms",
-          "priceList",
           "cashVAT",
           "invoiceFrom",
           "deliveryMethod",
@@ -1638,7 +1641,8 @@
           "listPrice",
           "tax",
           "unitPrice",
-          "lineNetAmount"
+          "lineNetAmount",
+          "currency"
         ]
       },
       {
@@ -1654,5 +1658,5 @@
       "confirmcancelandreplace"
     ]
   },
-  "checksum": "cd9b0132915784b3"
+  "checksum": "8b1d692e48b6ae22"
 }

@@ -1,8 +1,7 @@
 {
   "version": "0.11.0",
-  "generatedAt": "2026-04-30T15:42:46.907Z",
-  "updatedAt": "2026-06-25T19:31:34.251Z",
-  "checksum": "defdd56f893c1b29",
+  "generatedAt": "2026-06-26T16:40:04.731Z",
+  "checksum": "0ddff2c90df28052",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -68,7 +67,8 @@
       "dateFilterKey": "orderDate",
       "noHeaderBorder": true,
       "layoutType": "default",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "selectorPriceCurrency": "org"
     },
     "entities": {
       "quotation": {
@@ -77,6 +77,59 @@
         "tabName": "Header",
         "uiPattern": "STD",
         "fields": [
+          {
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "label": "Currency",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "reference": "Currency",
+            "inputMode": "selector",
+            "defaultValue": "@C_Currency_ID@",
+            "section": "principal",
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
+          },
+          {
+            "name": "priceList",
+            "apiKey": "priceList",
+            "column": "M_PriceList_ID",
+            "label": "Price List",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "reference": "PriceList",
+            "inputMode": "selector",
+            "section": "principal",
+            "validationRule": {
+              "code": "M_PriceList.issopricelist = @isSOTrx@",
+              "contextParams": [],
+              "cascadeParams": [
+                "isSOTrx"
+              ]
+            },
+            "callout": {
+              "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_PriceList"
+            },
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y' | @DocStatus@='TMP'",
+              "evaluable": true,
+              "js": "record['processed'] === true || record['documentStatus'] === 'TMP'"
+            }
+          },
           {
             "name": "documentNo",
             "apiKey": "documentNo",
@@ -185,37 +238,6 @@
             },
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartnerLocation"
-            },
-            "readOnlyLogic": {
-              "raw": "@Processed@='Y' | @DocStatus@='TMP'",
-              "evaluable": true,
-              "js": "record['processed'] === true || record['documentStatus'] === 'TMP'"
-            }
-          },
-          {
-            "name": "priceList",
-            "apiKey": "priceList",
-            "column": "M_PriceList_ID",
-            "label": "Price List",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": true,
-            "grid": false,
-            "form": true,
-            "sourceRequired": true,
-            "reference": "PriceList",
-            "inputMode": "selector",
-            "section": "principal",
-            "validationRule": {
-              "code": "M_PriceList.issopricelist = @isSOTrx@",
-              "contextParams": [],
-              "cascadeParams": [
-                "isSOTrx"
-              ]
-            },
-            "callout": {
-              "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_PriceList"
             },
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @DocStatus@='TMP'",
@@ -434,27 +456,6 @@
             "section": "summary"
           },
           {
-            "name": "currency",
-            "apiKey": "currency",
-            "column": "C_Currency_ID",
-            "label": "Currency",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": true,
-            "grid": false,
-            "form": false,
-            "sourceRequired": true,
-            "derivation": {
-              "type": "fromConfig",
-              "source": "context.cCurrencyId"
-            },
-            "reference": "Currency",
-            "inputMode": "selector",
-            "defaultValue": "@C_Currency_ID@",
-            "section": "summary"
-          },
-          {
             "name": "description",
             "apiKey": "description",
             "column": "Description",
@@ -534,13 +535,6 @@
             "derivation": {
               "type": "computed",
               "source": "DR"
-            }
-          },
-          {
-            "name": "currency",
-            "derivation": {
-              "type": "fromConfig",
-              "source": "context.cCurrencyId"
             }
           },
           {
@@ -910,7 +904,8 @@
       },
       "dateFilterKey": "orderDate",
       "noHeaderBorder": true,
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "selectorPriceCurrency": "org"
     },
     "entities": {
       "quotation": {
@@ -918,6 +913,22 @@
         "tabId": "F87F1EB7EB404F1F916EBAFAD1A0A334",
         "tabName": "Header",
         "fields": [
+          {
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "priceList",
+            "apiKey": "priceList",
+            "column": "M_PriceList_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
           {
             "name": "organization",
             "apiKey": "organization",
@@ -978,14 +989,6 @@
             "name": "partnerAddress",
             "apiKey": "partnerAddress",
             "column": "C_BPartner_Location_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "priceList",
-            "apiKey": "priceList",
-            "column": "M_PriceList_ID",
             "type": "foreignKey",
             "visibility": "editable",
             "required": true
@@ -1083,14 +1086,6 @@
             "apiKey": "summedLineAmount",
             "column": "TotalLines",
             "type": "amount",
-            "visibility": "readOnly",
-            "required": true
-          },
-          {
-            "name": "currency",
-            "apiKey": "currency",
-            "column": "C_Currency_ID",
-            "type": "foreignKey",
             "visibility": "readOnly",
             "required": true
           },
@@ -1527,6 +1522,14 @@
             "required": false
           },
           {
+            "name": "costcenter",
+            "apiKey": "costcenter",
+            "column": "C_Costcenter_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
             "name": "cancelandreplace",
             "apiKey": "cancelandreplace",
             "column": "Cancelandreplace",
@@ -1543,17 +1546,17 @@
             "required": false
           },
           {
-            "name": "costcenter",
-            "apiKey": "costcenter",
-            "column": "C_Costcenter_ID",
-            "type": "foreignKey",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "confirmcancelandreplace",
             "apiKey": "confirmcancelandreplace",
             "column": "Confirmcancelandreplace",
+            "type": "button",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "createPOLines",
+            "apiKey": "createPOLines",
+            "column": "Create_POLines",
             "type": "button",
             "visibility": "system",
             "required": false
@@ -1573,14 +1576,6 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
-          },
-          {
-            "name": "createPOLines",
-            "apiKey": "createPOLines",
-            "column": "Create_POLines",
-            "type": "button",
-            "visibility": "system",
-            "required": false
           },
           {
             "name": "deliveryStatus",
@@ -1623,10 +1618,26 @@
             "required": false
           },
           {
+            "name": "eTPRRemovePayment",
+            "apiKey": "eTPRRemovePayment",
+            "column": "EM_Etpr_Remove_Payment",
+            "type": "button",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "etvfacReversedInvoice",
             "apiKey": "etvfacReversedInvoice",
             "column": "EM_Etvfac_Reversed_Invoice",
             "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "psd2GenerateBankPayment",
+            "apiKey": "psd2GenerateBankPayment",
+            "column": "EM_Psd2_Generate_Bank_Payment",
+            "type": "button",
             "visibility": "system",
             "required": false
           },
@@ -1723,22 +1734,6 @@
             "apiKey": "updatedBy",
             "column": "UpdatedBy",
             "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "psd2GenerateBankPayment",
-            "apiKey": "psd2GenerateBankPayment",
-            "column": "EM_Psd2_Generate_Bank_Payment",
-            "type": "button",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "eTPRRemovePayment",
-            "apiKey": "eTPRRemovePayment",
-            "column": "EM_Etpr_Remove_Payment",
-            "type": "button",
             "visibility": "system",
             "required": true
           }
@@ -2215,6 +2210,14 @@
             "required": false
           },
           {
+            "name": "createReservation",
+            "apiKey": "createReservation",
+            "column": "Create_Reservation",
+            "type": "enum",
+            "visibility": "system",
+            "required": false
+          },
+          {
             "name": "creationDate",
             "apiKey": "creationDate",
             "column": "Created",
@@ -2231,19 +2234,19 @@
             "required": true
           },
           {
-            "name": "createReservation",
-            "apiKey": "createReservation",
-            "column": "Create_Reservation",
-            "type": "enum",
-            "visibility": "system",
-            "required": false
-          },
-          {
             "name": "explode",
             "apiKey": "explode",
             "column": "Explode",
             "type": "button",
             "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "warehouseRule",
+            "apiKey": "warehouseRule",
+            "column": "M_Warehouse_Rule_ID",
+            "type": "foreignKey",
+            "visibility": "system",
             "required": false
           },
           {
@@ -2259,14 +2262,6 @@
             "apiKey": "manageReservation",
             "column": "Manage_Reservation",
             "type": "button",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "warehouseRule",
-            "apiKey": "warehouseRule",
-            "column": "M_Warehouse_Rule_ID",
-            "type": "foreignKey",
             "visibility": "system",
             "required": false
           },
@@ -2456,6 +2451,30 @@
     "selectors": [
       {
         "entity": "quotation",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/sales-quotation/quotation/selectors/currency"
+      },
+      {
+        "entity": "quotation",
+        "field": "priceList",
+        "column": "M_PriceList_ID",
+        "reference": "PriceList",
+        "inputMode": "selector",
+        "url": "/sws/neo/sales-quotation/quotation/selectors/priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "quotation",
         "field": "businessPartner",
         "column": "C_BPartner_ID",
         "reference": "BusinessPartner",
@@ -2475,22 +2494,6 @@
               "param": "C_BPartner_ID",
               "source": "field",
               "field": "businessPartner"
-            }
-          ]
-        }
-      },
-      {
-        "entity": "quotation",
-        "field": "priceList",
-        "column": "M_PriceList_ID",
-        "reference": "PriceList",
-        "inputMode": "selector",
-        "url": "/sws/neo/sales-quotation/quotation/selectors/priceList",
-        "context": {
-          "required": [
-            {
-              "param": "isSOTrx",
-              "source": "windowCategory"
             }
           ]
         }
@@ -2526,14 +2529,6 @@
         "reference": "Reject_Reason",
         "inputMode": "selector",
         "url": "/sws/neo/sales-quotation/quotation/selectors/rejectReason"
-      },
-      {
-        "entity": "quotation",
-        "field": "currency",
-        "column": "C_Currency_ID",
-        "reference": "Currency",
-        "inputMode": "selector",
-        "url": "/sws/neo/sales-quotation/quotation/selectors/currency"
       },
       {
         "entity": "quotationLine",
@@ -2687,18 +2682,10 @@
       },
       {
         "entity": "quotation",
-        "field": "rMAddOrphanLine",
-        "column": "RM_AddOrphanLine",
-        "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMAddOrphanLine",
-        "processId": "23D1B163EC0B41F790CE39BF01DA320E",
-        "processType": "classic"
-      },
-      {
-        "entity": "quotation",
-        "field": "rMPickfromreceipt",
-        "column": "RM_Pickfromreceipt",
-        "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMPickfromreceipt",
-        "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+        "field": "eTPRRemovePayment",
+        "column": "EM_Etpr_Remove_Payment",
+        "url": "/sws/neo/sales-quotation/quotation/{id}/action/eTPRRemovePayment",
+        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
         "processType": "obuiapp"
       },
       {
@@ -2711,10 +2698,18 @@
       },
       {
         "entity": "quotation",
-        "field": "eTPRRemovePayment",
-        "column": "EM_Etpr_Remove_Payment",
-        "url": "/sws/neo/sales-quotation/quotation/{id}/action/eTPRRemovePayment",
-        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+        "field": "rMAddOrphanLine",
+        "column": "RM_AddOrphanLine",
+        "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMAddOrphanLine",
+        "processId": "23D1B163EC0B41F790CE39BF01DA320E",
+        "processType": "classic"
+      },
+      {
+        "entity": "quotation",
+        "field": "rMPickfromreceipt",
+        "column": "RM_Pickfromreceipt",
+        "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMPickfromreceipt",
+        "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
         "processType": "obuiapp"
       },
       {
@@ -3492,6 +3487,14 @@
         "description": "Read-only logic for 'businessPartner' in quotation should have evaluable flag"
       },
       {
+        "id": "t-readonlylogic-evaluable-quotation-currency",
+        "category": "readonlylogic-evaluable",
+        "entity": "quotation",
+        "field": "currency",
+        "runner": "node",
+        "description": "Read-only logic for 'currency' in quotation should have evaluable flag"
+      },
+      {
         "id": "t-readonlylogic-evaluable-quotation-description",
         "category": "readonlylogic-evaluable",
         "entity": "quotation",
@@ -3626,6 +3629,14 @@
         "field": "businessPartner",
         "runner": "node",
         "description": "Read-only logic for 'businessPartner' in quotation should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-quotation-currency",
+        "category": "readonlylogic-valid",
+        "entity": "quotation",
+        "field": "currency",
+        "runner": "node",
+        "description": "Read-only logic for 'currency' in quotation should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-quotation-description",
@@ -5163,7 +5174,7 @@
       }
     ],
     "summary": {
-      "total": 299,
+      "total": 301,
       "byCategory": {
         "action-endpoint": 23,
         "crud-flags": 2,
@@ -5172,8 +5183,8 @@
         "displaylogic-valid": 3,
         "field-presence": 25,
         "field-type": 25,
-        "readonlylogic-evaluable": 17,
-        "readonlylogic-valid": 17,
+        "readonlylogic-evaluable": 18,
+        "readonlylogic-valid": 18,
         "rule-declared": 8,
         "searchable-filters": 6,
         "selector-endpoint": 9,
@@ -5181,7 +5192,7 @@
         "visibility": 2
       },
       "byRunner": {
-        "node": 299,
+        "node": 301,
         "junit": 0
       }
     }

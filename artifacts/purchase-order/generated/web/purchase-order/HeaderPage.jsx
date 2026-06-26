@@ -26,7 +26,9 @@ const statusField = 'documentStatus';
 // @sf-generated-end summary:header
 
 // @sf-generated-start extraBadges:header
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:header
 
 // @sf-generated-start processes:header
@@ -45,7 +47,7 @@ const draftMode = {
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start requiredHeaderFields:header
-const requiredHeaderFields = ['businessPartner', 'documentNo', 'orderDate', 'partnerAddress', 'scheduledDeliveryDate', 'paymentTerms', 'priceList', 'grandTotalAmount', 'summedLineAmount'];
+const requiredHeaderFields = ['businessPartner', 'documentNo', 'orderDate', 'partnerAddress', 'scheduledDeliveryDate', 'currency', 'priceList', 'paymentTerms', 'grandTotalAmount', 'summedLineAmount'];
 // @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
@@ -167,6 +169,30 @@ export const api = {
     },
     {
       "entity": "header",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-order/header/selectors/currency"
+    },
+    {
+      "entity": "header",
+      "field": "priceList",
+      "column": "M_PriceList_ID",
+      "reference": "PriceList",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-order/header/selectors/priceList",
+      "context": {
+        "required": [
+          {
+            "param": "isSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
+    },
+    {
+      "entity": "header",
       "field": "transactionDocument",
       "column": "C_DocTypeTarget_ID",
       "reference": "DocumentType",
@@ -211,28 +237,6 @@ export const api = {
       "reference": "PaymentTerm",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-order/header/selectors/paymentTerms"
-    },
-    {
-      "entity": "header",
-      "field": "priceList",
-      "column": "M_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-order/header/selectors/priceList",
-      "context": {
-        "required": [
-          {
-            "param": "isSOTrx",
-            "source": "windowCategory"
-          }
-        ]
-      }
-    },
-    {
-      "entity": "header",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "url": "/sws/neo/purchase-order/header/selectors/currency"
     },
     {
       "entity": "header",
@@ -603,10 +607,26 @@ export const api = {
     },
     {
       "entity": "header",
+      "field": "psd2GenerateBankPayment",
+      "column": "EM_Psd2_Generate_Bank_Payment",
+      "url": "/sws/neo/purchase-order/header/{id}/action/psd2GenerateBankPayment",
+      "processId": "0661406A983B4D8EA611F8596F114D52",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
       "field": "createPOLines",
       "column": "Create_POLines",
       "url": "/sws/neo/purchase-order/header/{id}/action/createPOLines",
       "processId": "6995A4C2592D434A9E16B71E1694CBCA",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "eTPRRemovePayment",
+      "column": "EM_Etpr_Remove_Payment",
+      "url": "/sws/neo/purchase-order/header/{id}/action/eTPRRemovePayment",
+      "processId": "D2923463223C4F1EADE335D22B9D8FE8",
       "processType": "obuiapp"
     },
     {
@@ -647,22 +667,6 @@ export const api = {
       "column": "RM_Pickfromreceipt",
       "url": "/sws/neo/purchase-order/header/{id}/action/rMPickfromreceipt",
       "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
-      "field": "psd2GenerateBankPayment",
-      "column": "EM_Psd2_Generate_Bank_Payment",
-      "url": "/sws/neo/purchase-order/header/{id}/action/psd2GenerateBankPayment",
-      "processId": "0661406A983B4D8EA611F8596F114D52",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
-      "field": "eTPRRemovePayment",
-      "column": "EM_Etpr_Remove_Payment",
-      "url": "/sws/neo/purchase-order/header/{id}/action/eTPRRemovePayment",
-      "processId": "D2923463223C4F1EADE335D22B9D8FE8",
       "processType": "obuiapp"
     },
     {
@@ -768,6 +772,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
         sendDocument
+        selectorPriceCurrency="org"
         {...props}
       />
     );

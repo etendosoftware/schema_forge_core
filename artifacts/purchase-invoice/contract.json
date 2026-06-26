@@ -1,8 +1,7 @@
 {
-  "version": "0.52.0",
-  "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-06-25T19:31:33.945Z",
-  "checksum": "b5a17a37a78135ed",
+  "version": "0.1.0",
+  "generatedAt": "2026-06-26T16:40:04.328Z",
+  "checksum": "f5bc45a74eabbc17",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -16,7 +15,26 @@
         "headerTable": "InvoiceHeaderTable",
         "bottomSection": "PurchaseInvoiceBottomPanel"
       },
-      "menuActions": [],
+      "menuActions": [
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "reactivated",
+          "preUnpost": true
+        },
+        {
+          "key": "post",
+          "label": "Post",
+          "labelKey": "post",
+          "action": "post",
+          "visibleWhenFieldFalse": "posted",
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
+        }
+      ],
       "processOverrides": {},
       "secondaryTabs": {
         "exchangeRates": {
@@ -79,7 +97,15 @@
         "allowEmail": false
       },
       "layoutType": "default",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "header": {
@@ -177,7 +203,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y' | (@Processed@='Y' & (@DocStatus@!'VO'))",
               "evaluable": true,
-              "js": "record['posted'] === 'Y' || (record['processed'] === true && (record['documentStatus'] !== 'VO'))"
+              "js": "record['posted'] === true || (record['processed'] === true && (record['documentStatus'] !== 'VO'))"
             }
           },
           {
@@ -298,7 +324,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -672,6 +698,46 @@
             }
           },
           {
+            "name": "posted",
+            "apiKey": "posted",
+            "column": "Posted",
+            "label": "Posted",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
+            },
+            "defaultValue": "N",
+            "explicitType": true,
+            "badge": true,
+            "badgeLabels": {
+              "true": {
+                "en_US": "Posted",
+                "es_ES": "Contabilizado"
+              },
+              "false": {
+                "en_US": "Not posted",
+                "es_ES": "Sin contabilizar"
+              }
+            },
+            "badgeVariants": {
+              "true": "green",
+              "false": "orange"
+            },
+            "displayLogic": {
+              "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
+              "evaluable": false,
+              "reason": "session-preference",
+              "js": null
+            }
+          },
+          {
             "name": "project",
             "apiKey": "project",
             "column": "C_Project_ID",
@@ -700,7 +766,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -1037,6 +1103,35 @@
             "form": false
           },
           {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "label": "Total Discount %",
+            "type": "decimal",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": false
+          },
+          {
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "label": "Processed",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "false"
+            }
+          },
+          {
             "name": "aeatsiiCauseExemption",
             "apiKey": "aeatsiiCauseExemption",
             "column": "EM_Aeatsii_Cause_Exemption_ID",
@@ -1049,6 +1144,32 @@
             "form": false,
             "reference": "aeatsii_cause_exemption",
             "inputMode": "selector"
+          },
+          {
+            "name": "eTGODeliveryStatus",
+            "apiKey": "eTGODeliveryStatus",
+            "column": "em_etgo_delivery_status",
+            "label": "em_etgo_delivery_status",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": false,
+            "gridOrder": 8
+          },
+          {
+            "name": "eTGODueDate",
+            "apiKey": "eTGODueDate",
+            "column": "em_etgo_due_date",
+            "label": "em_etgo_due_date",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": false,
+            "gridOrder": 7
           },
           {
             "name": "etvfacDateIssue",
@@ -1169,44 +1290,6 @@
               "source": "N"
             },
             "defaultValue": "N"
-          },
-          {
-            "name": "etgoTotalDiscount",
-            "apiKey": "etgoTotalDiscount",
-            "column": "EM_Etgo_Total_Discount",
-            "label": "Total Discount %",
-            "type": "decimal",
-            "tsType": "number",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": false
-          },
-          {
-            "name": "eTGODueDate",
-            "apiKey": "eTGODueDate",
-            "column": "em_etgo_due_date",
-            "label": "em_etgo_due_date",
-            "type": "date",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": true,
-            "form": false,
-            "gridOrder": 7
-          },
-          {
-            "name": "eTGODeliveryStatus",
-            "apiKey": "eTGODeliveryStatus",
-            "column": "em_etgo_delivery_status",
-            "label": "em_etgo_delivery_status",
-            "type": "integer",
-            "tsType": "number",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": true,
-            "form": false,
-            "gridOrder": 8
           }
         ],
         "searchableFields": [
@@ -1289,6 +1372,13 @@
             }
           },
           {
+            "name": "posted",
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
+            }
+          },
+          {
             "name": "prepaymentAmount",
             "derivation": {
               "type": "computed",
@@ -1349,6 +1439,13 @@
             "derivation": {
               "type": "computed",
               "source": "N"
+            }
+          },
+          {
+            "name": "processed",
+            "derivation": {
+              "type": "computed",
+              "source": "false"
             }
           },
           {
@@ -1485,10 +1582,6 @@
             "required": false,
             "grid": true,
             "form": true,
-            "derivation": {
-              "type": "computed",
-              "source": "0"
-            },
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 5,
@@ -1732,7 +1825,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -1751,7 +1844,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -1770,7 +1863,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -1789,7 +1882,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -1808,7 +1901,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           }
         ],
@@ -1819,13 +1912,6 @@
             "derivation": {
               "type": "computed",
               "source": "1"
-            }
-          },
-          {
-            "name": "etgoDiscount",
-            "derivation": {
-              "type": "computed",
-              "source": "0"
             }
           },
           {
@@ -3236,7 +3322,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           },
           {
@@ -3261,7 +3347,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           },
           {
@@ -3281,7 +3367,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           },
           {
@@ -3307,7 +3393,7 @@
             "readOnlyLogic": {
               "raw": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
               "evaluable": true,
-              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === 'Y'"
+              "js": "record['hASREVERSEDINVOICESO'] === 'Y' || record['hASREVERSEDINVOICEPO'] === 'Y' || record['posted'] === true"
             }
           }
         ],
@@ -3841,7 +3927,26 @@
         "headerTable": "InvoiceHeaderTable",
         "bottomSection": "PurchaseInvoiceBottomPanel"
       },
-      "menuActions": [],
+      "menuActions": [
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "reactivated",
+          "preUnpost": true
+        },
+        {
+          "key": "post",
+          "label": "Post",
+          "labelKey": "post",
+          "action": "post",
+          "visibleWhenFieldFalse": "posted",
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
+        }
+      ],
       "processOverrides": {},
       "secondaryTabs": {
         "exchangeRates": {
@@ -3903,7 +4008,15 @@
       "sendDocument": {
         "allowEmail": false
       },
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "statusPills": [
+        {
+          "field": "posted",
+          "trueKey": "postedStatus",
+          "falseKey": "notPostedStatus",
+          "_note": "Accounting status pill — visible to financial+admin roles only (permissions enforcement pending)"
+        }
+      ]
     },
     "entities": {
       "header": {
@@ -4096,14 +4209,6 @@
             "required": true
           },
           {
-            "name": "orderDate",
-            "apiKey": "orderDate",
-            "column": "DateOrdered",
-            "type": "date",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "dueAmount",
             "apiKey": "dueAmount",
             "column": "DueAmt",
@@ -4112,12 +4217,12 @@
             "required": true
           },
           {
-            "name": "daysTillDue",
-            "apiKey": "daysTillDue",
-            "column": "DaysTillDue",
-            "type": "integer",
+            "name": "orderDate",
+            "apiKey": "orderDate",
+            "column": "DateOrdered",
+            "type": "date",
             "visibility": "discarded",
-            "required": true
+            "required": false
           },
           {
             "name": "salesRepresentative",
@@ -4126,6 +4231,14 @@
             "type": "foreignKey",
             "visibility": "editable",
             "required": false
+          },
+          {
+            "name": "daysTillDue",
+            "apiKey": "daysTillDue",
+            "column": "DaysTillDue",
+            "type": "integer",
+            "visibility": "discarded",
+            "required": true
           },
           {
             "name": "printDiscount",
@@ -4243,8 +4356,8 @@
             "name": "posted",
             "apiKey": "posted",
             "column": "Posted",
-            "type": "button",
-            "visibility": "discarded",
+            "type": "boolean",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -4360,6 +4473,14 @@
             "required": false
           },
           {
+            "name": "psd2GenerateBankPayment",
+            "apiKey": "psd2GenerateBankPayment",
+            "column": "EM_Psd2_Generate_Bank_Payment",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
             "name": "prepaymentAmount",
             "apiKey": "prepaymentAmount",
             "column": "Prepaymentamt",
@@ -4430,6 +4551,14 @@
             "type": "foreignKey",
             "visibility": "editable",
             "required": false
+          },
+          {
+            "name": "eTPRRemovePayment",
+            "apiKey": "eTPRRemovePayment",
+            "column": "EM_Etpr_Remove_Payment",
+            "type": "button",
+            "visibility": "discarded",
+            "required": true
           },
           {
             "name": "aeatsiiDescripcionSii",
@@ -4544,6 +4673,22 @@
             "required": false
           },
           {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "type": "decimal",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "client",
             "apiKey": "client",
             "column": "AD_Client_ID",
@@ -4564,8 +4709,16 @@
             "apiKey": "processed",
             "column": "Processed",
             "type": "boolean",
-            "visibility": "system",
+            "visibility": "readOnly",
             "required": true
+          },
+          {
+            "name": "processNow",
+            "apiKey": "processNow",
+            "column": "Processing",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
           },
           {
             "name": "datePrinted",
@@ -4584,34 +4737,10 @@
             "required": true
           },
           {
-            "name": "processNow",
-            "apiKey": "processNow",
-            "column": "Processing",
-            "type": "button",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
-            "name": "selfService",
-            "apiKey": "selfService",
-            "column": "IsSelfService",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "print",
             "apiKey": "print",
             "column": "IsPrinted",
             "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "creationDate",
-            "apiKey": "creationDate",
-            "column": "Created",
-            "type": "dateTime",
             "visibility": "system",
             "required": true
           },
@@ -4622,6 +4751,14 @@
             "type": "boolean",
             "visibility": "discarded",
             "required": false
+          },
+          {
+            "name": "selfService",
+            "apiKey": "selfService",
+            "column": "IsSelfService",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
           },
           {
             "name": "externalBusinessPartnerReference",
@@ -4760,6 +4897,22 @@
             "required": true
           },
           {
+            "name": "eTGODeliveryStatus",
+            "apiKey": "eTGODeliveryStatus",
+            "column": "em_etgo_delivery_status",
+            "type": "integer",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "eTGODueDate",
+            "apiKey": "eTGODueDate",
+            "column": "em_etgo_due_date",
+            "type": "date",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
             "name": "etsgIsF3",
             "apiKey": "etsgIsF3",
             "column": "EM_Etsg_Is_F3",
@@ -4864,6 +5017,14 @@
             "required": false
           },
           {
+            "name": "etvfacInvType",
+            "apiKey": "etvfacInvType",
+            "column": "EM_Etvfac_Inv_Type",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
             "name": "etvfacInvNoIDArt61d",
             "apiKey": "etvfacInvNoIDArt61d",
             "column": "EM_Etvfac_Invnoidart61d",
@@ -4877,14 +5038,6 @@
             "column": "EM_Etvfac_Invoice_Status",
             "type": "enum",
             "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "etvfacInvType",
-            "apiKey": "etvfacInvType",
-            "column": "EM_Etvfac_Inv_Type",
-            "type": "enum",
-            "visibility": "discarded",
             "required": false
           },
           {
@@ -5157,46 +5310,6 @@
             "column": "UpdatedBy",
             "type": "foreignKey",
             "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "etgoTotalDiscount",
-            "apiKey": "etgoTotalDiscount",
-            "column": "EM_Etgo_Total_Discount",
-            "type": "decimal",
-            "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "eTGODueDate",
-            "apiKey": "eTGODueDate",
-            "column": "em_etgo_due_date",
-            "type": "date",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "eTGODeliveryStatus",
-            "apiKey": "eTGODeliveryStatus",
-            "column": "em_etgo_delivery_status",
-            "type": "integer",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "psd2GenerateBankPayment",
-            "apiKey": "psd2GenerateBankPayment",
-            "column": "EM_Psd2_Generate_Bank_Payment",
-            "type": "button",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
-            "name": "eTPRRemovePayment",
-            "apiKey": "eTPRRemovePayment",
-            "column": "EM_Etpr_Remove_Payment",
-            "type": "button",
-            "visibility": "discarded",
             "required": true
           }
         ],
@@ -5544,10 +5657,10 @@
             "required": false
           },
           {
-            "name": "id",
-            "apiKey": "id",
-            "column": "C_InvoiceLine_ID",
-            "type": "id",
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
             "visibility": "system",
             "required": true
           },
@@ -5556,6 +5669,14 @@
             "apiKey": "client",
             "column": "AD_Client_ID",
             "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_InvoiceLine_ID",
+            "type": "id",
             "visibility": "system",
             "required": true
           },
@@ -5600,14 +5721,6 @@
             "required": false
           },
           {
-            "name": "descriptionOnly",
-            "apiKey": "descriptionOnly",
-            "column": "IsDescription",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "invoiceDiscount",
             "apiKey": "invoiceDiscount",
             "column": "C_Invoice_Discount_ID",
@@ -5632,10 +5745,10 @@
             "required": false
           },
           {
-            "name": "creationDate",
-            "apiKey": "creationDate",
-            "column": "Created",
-            "type": "dateTime",
+            "name": "descriptionOnly",
+            "apiKey": "descriptionOnly",
+            "column": "IsDescription",
+            "type": "boolean",
             "visibility": "system",
             "required": true
           },
@@ -5919,18 +6032,10 @@
             "required": false
           },
           {
-            "name": "active",
-            "apiKey": "active",
-            "column": "IsActive",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "id",
-            "apiKey": "id",
-            "column": "C_InvoiceTax_ID",
-            "type": "id",
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
@@ -5943,10 +6048,10 @@
             "required": true
           },
           {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
             "visibility": "system",
             "required": true
           },
@@ -5955,6 +6060,14 @@
             "apiKey": "invoice",
             "column": "C_Invoice_ID",
             "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_InvoiceTax_ID",
+            "type": "id",
             "visibility": "system",
             "required": true
           },
@@ -6038,22 +6151,6 @@
             "required": true
           },
           {
-            "name": "organization",
-            "apiKey": "organization",
-            "column": "AD_Org_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "invoice",
-            "apiKey": "invoice",
-            "column": "C_Invoice_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "id",
             "apiKey": "id",
             "column": "C_Invoice_Discount_ID",
@@ -6065,6 +6162,22 @@
             "name": "client",
             "apiKey": "client",
             "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "invoice",
+            "apiKey": "invoice",
+            "column": "C_Invoice_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
@@ -6285,6 +6398,14 @@
             "required": false
           },
           {
+            "name": "tax",
+            "apiKey": "tax",
+            "column": "C_Tax_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
             "name": "creationDate",
             "apiKey": "creationDate",
             "column": "Created",
@@ -6296,14 +6417,6 @@
             "name": "createdBy",
             "apiKey": "createdBy",
             "column": "Createdby",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "tax",
-            "apiKey": "tax",
-            "column": "C_Tax_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": false
@@ -6364,20 +6477,20 @@
             "required": true
           },
           {
-            "name": "dueDate",
-            "apiKey": "dueDate",
-            "column": "Duedate",
-            "type": "date",
-            "visibility": "readOnly",
-            "required": true
-          },
-          {
             "name": "origDueDate",
             "apiKey": "origDueDate",
             "column": "OrigDueDate",
             "type": "date",
             "visibility": "system",
             "required": false
+          },
+          {
+            "name": "dueDate",
+            "apiKey": "dueDate",
+            "column": "Duedate",
+            "type": "date",
+            "visibility": "readOnly",
+            "required": true
           },
           {
             "name": "expectedDate",
@@ -7091,19 +7204,19 @@
             "required": true
           },
           {
-            "name": "sequenceNumber",
-            "apiKey": "sequenceNumber",
-            "column": "SeqNo",
-            "type": "integer",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "account",
             "apiKey": "account",
             "column": "Account_ID",
             "type": "foreignKey",
             "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "sequenceNumber",
+            "apiKey": "sequenceNumber",
+            "column": "SeqNo",
+            "type": "integer",
+            "visibility": "system",
             "required": true
           },
           {
@@ -7203,12 +7316,68 @@
             "required": false
           },
           {
-            "name": "transactionDate",
-            "apiKey": "transactionDate",
-            "column": "DateTrx",
-            "type": "date",
+            "name": "salesCampaign",
+            "apiKey": "salesCampaign",
+            "column": "C_Campaign_ID",
+            "type": "foreignKey",
             "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "tax",
+            "apiKey": "tax",
+            "column": "C_Tax_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "withholding",
+            "apiKey": "withholding",
+            "column": "C_Withholding_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "postingType",
+            "apiKey": "postingType",
+            "column": "PostingType",
+            "type": "enum",
+            "visibility": "readOnly",
             "required": true
+          },
+          {
+            "name": "uOM",
+            "apiKey": "uOM",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "storageBin",
+            "apiKey": "storageBin",
+            "column": "M_Locator_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "lineID",
+            "apiKey": "lineID",
+            "column": "Line_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "salesRegion",
+            "apiKey": "salesRegion",
+            "column": "C_SalesRegion_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
           },
           {
             "name": "quantity",
@@ -7227,100 +7396,12 @@
             "required": false
           },
           {
-            "name": "foreignCurrencyDebit",
-            "apiKey": "foreignCurrencyDebit",
-            "column": "AmtSourceDr",
-            "type": "amount",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "type",
-            "apiKey": "type",
-            "column": "FactAcctType",
-            "type": "enum",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "recordID2",
-            "apiKey": "recordID2",
-            "column": "Record_ID2",
-            "type": "string",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "activity",
-            "apiKey": "activity",
-            "column": "C_Activity_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "salesRegion",
-            "apiKey": "salesRegion",
-            "column": "C_SalesRegion_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "lineID",
-            "apiKey": "lineID",
-            "column": "Line_ID",
+            "name": "id",
+            "apiKey": "id",
+            "column": "Fact_Acct_ID",
             "type": "id",
             "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "storageBin",
-            "apiKey": "storageBin",
-            "column": "M_Locator_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "uOM",
-            "apiKey": "uOM",
-            "column": "C_UOM_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "postingType",
-            "apiKey": "postingType",
-            "column": "PostingType",
-            "type": "enum",
-            "visibility": "readOnly",
             "required": true
-          },
-          {
-            "name": "withholding",
-            "apiKey": "withholding",
-            "column": "C_Withholding_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "tax",
-            "apiKey": "tax",
-            "column": "C_Tax_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "salesCampaign",
-            "apiKey": "salesCampaign",
-            "column": "C_Campaign_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
           },
           {
             "name": "locationFromAddress",
@@ -7331,9 +7412,49 @@
             "required": false
           },
           {
-            "name": "documentType",
-            "apiKey": "documentType",
-            "column": "C_Doctype_ID",
+            "name": "transactionDate",
+            "apiKey": "transactionDate",
+            "column": "DateTrx",
+            "type": "date",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "documentCategory",
+            "apiKey": "documentCategory",
+            "column": "DocBaseType",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "gLCategory",
+            "apiKey": "gLCategory",
+            "column": "GL_Category_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adTable",
+            "apiKey": "adTable",
+            "column": "AD_Table_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "groupID",
+            "apiKey": "groupID",
+            "column": "Fact_Acct_Group_ID",
+            "type": "string",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "locationToAddress",
+            "apiKey": "locationToAddress",
+            "column": "C_LocTo_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": false
@@ -7347,50 +7468,42 @@
             "required": true
           },
           {
-            "name": "locationToAddress",
-            "apiKey": "locationToAddress",
-            "column": "C_LocTo_ID",
+            "name": "documentType",
+            "apiKey": "documentType",
+            "column": "C_Doctype_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": false
           },
           {
-            "name": "groupID",
-            "apiKey": "groupID",
-            "column": "Fact_Acct_Group_ID",
-            "type": "string",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "adTable",
-            "apiKey": "adTable",
-            "column": "AD_Table_ID",
+            "name": "activity",
+            "apiKey": "activity",
+            "column": "C_Activity_ID",
             "type": "foreignKey",
             "visibility": "system",
-            "required": true
+            "required": false
           },
           {
-            "name": "gLCategory",
-            "apiKey": "gLCategory",
-            "column": "GL_Category_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "documentCategory",
-            "apiKey": "documentCategory",
-            "column": "DocBaseType",
+            "name": "recordID2",
+            "apiKey": "recordID2",
+            "column": "Record_ID2",
             "type": "string",
             "visibility": "system",
             "required": false
           },
           {
-            "name": "id",
-            "apiKey": "id",
-            "column": "Fact_Acct_ID",
-            "type": "id",
+            "name": "type",
+            "apiKey": "type",
+            "column": "FactAcctType",
+            "type": "enum",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "foreignCurrencyDebit",
+            "apiKey": "foreignCurrencyDebit",
+            "column": "AmtSourceDr",
+            "type": "amount",
             "visibility": "system",
             "required": true
           },
@@ -7634,18 +7747,18 @@
             "required": true
           },
           {
-            "name": "tbaiSyncinvoiceID",
-            "apiKey": "tbaiSyncinvoiceID",
-            "column": "Tbai_Syncinvoice_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "client",
             "apiKey": "client",
             "column": "AD_Client_ID",
             "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "tbaiSyncinvoiceID",
+            "apiKey": "tbaiSyncinvoiceID",
+            "column": "Tbai_Syncinvoice_ID",
+            "type": "id",
             "visibility": "system",
             "required": true
           },
@@ -8701,12 +8814,6 @@
       },
       {
         "entity": "header",
-        "field": "posted",
-        "column": "Posted",
-        "url": "/sws/neo/purchase-invoice/header/{id}/action/posted"
-      },
-      {
-        "entity": "header",
         "field": "aPRMProcessinvoice",
         "column": "EM_APRM_Processinvoice",
         "url": "/sws/neo/purchase-invoice/header/{id}/action/aPRMProcessinvoice",
@@ -8755,6 +8862,14 @@
       },
       {
         "entity": "header",
+        "field": "psd2GenerateBankPayment",
+        "column": "EM_Psd2_Generate_Bank_Payment",
+        "url": "/sws/neo/purchase-invoice/header/{id}/action/psd2GenerateBankPayment",
+        "processId": "0661406A983B4D8EA611F8596F114D52",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "header",
         "field": "aeatsiiSend",
         "column": "EM_Aeatsii_Send",
         "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiSend",
@@ -8767,6 +8882,14 @@
         "column": "EM_Aeatsii_Modif",
         "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiModif",
         "processId": "BAAECFDF9FF144E8A610E9F1EF3E5FBE",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "header",
+        "field": "eTPRRemovePayment",
+        "column": "EM_Etpr_Remove_Payment",
+        "url": "/sws/neo/purchase-invoice/header/{id}/action/eTPRRemovePayment",
+        "processId": "745FCF75B6F14024B96CC14429D8E952",
         "processType": "obuiapp"
       },
       {
@@ -8829,22 +8952,6 @@
         "column": "EM_Tbai_Voidxmlgenerator",
         "url": "/sws/neo/purchase-invoice/header/{id}/action/tbaiVoidxmlgenerator",
         "processId": "535A8BAE44A34759A7C8FF40D62A5070",
-        "processType": "obuiapp"
-      },
-      {
-        "entity": "header",
-        "field": "psd2GenerateBankPayment",
-        "column": "EM_Psd2_Generate_Bank_Payment",
-        "url": "/sws/neo/purchase-invoice/header/{id}/action/psd2GenerateBankPayment",
-        "processId": "0661406A983B4D8EA611F8596F114D52",
-        "processType": "obuiapp"
-      },
-      {
-        "entity": "header",
-        "field": "eTPRRemovePayment",
-        "column": "EM_Etpr_Remove_Payment",
-        "url": "/sws/neo/purchase-invoice/header/{id}/action/eTPRRemovePayment",
-        "processId": "745FCF75B6F14024B96CC14429D8E952",
         "processType": "obuiapp"
       },
       {
@@ -9042,14 +9149,6 @@
         "field": "generateTo",
         "runner": "node",
         "description": "Action endpoint for 'generateTo' in header should exist"
-      },
-      {
-        "id": "t-action-endpoint-header-posted",
-        "category": "action-endpoint",
-        "entity": "header",
-        "field": "posted",
-        "runner": "node",
-        "description": "Action endpoint for 'posted' in header should exist"
       },
       {
         "id": "t-action-endpoint-header-processNow",
@@ -9384,6 +9483,14 @@
         "description": "Default value for 'paymentComplete' in header should be a string"
       },
       {
+        "id": "t-default-value-type-header-posted",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "posted",
+        "runner": "node",
+        "description": "Default value for 'posted' in header should be a string"
+      },
+      {
         "id": "t-default-value-type-header-prepaymentAmount",
         "category": "default-value-type",
         "entity": "header",
@@ -9592,6 +9699,14 @@
         "description": "Display logic for 'outstandingAmount' in header should have evaluable flag"
       },
       {
+        "id": "t-displaylogic-evaluable-header-posted",
+        "category": "displaylogic-evaluable",
+        "entity": "header",
+        "field": "posted",
+        "runner": "node",
+        "description": "Display logic for 'posted' in header should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-intrastat-conversionRate",
         "category": "displaylogic-evaluable",
         "entity": "intrastat",
@@ -9718,6 +9833,14 @@
         "field": "outstandingAmount",
         "runner": "node",
         "description": "Display logic for 'outstandingAmount' in header should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-header-posted",
+        "category": "displaylogic-valid",
+        "entity": "header",
+        "field": "posted",
+        "runner": "node",
+        "description": "Display logic for 'posted' in header should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-intrastat-conversionRate",
@@ -10352,6 +10475,14 @@
         "description": "Field 'paymentTerms' should be present in header"
       },
       {
+        "id": "t-field-presence-header-posted",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "posted",
+        "runner": "node",
+        "description": "Field 'posted' should be present in header"
+      },
+      {
         "id": "t-field-presence-header-prepaymentAmount",
         "category": "field-presence",
         "entity": "header",
@@ -10366,6 +10497,14 @@
         "field": "priceList",
         "runner": "node",
         "description": "Field 'priceList' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-processed",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "processed",
+        "runner": "node",
+        "description": "Field 'processed' should be present in header"
       },
       {
         "id": "t-field-presence-header-project",
@@ -11520,6 +11659,14 @@
         "description": "Field 'paymentTerms' should have type 'string' in header"
       },
       {
+        "id": "t-field-type-header-posted",
+        "category": "field-type",
+        "entity": "header",
+        "field": "posted",
+        "runner": "node",
+        "description": "Field 'posted' should have type 'boolean' in header"
+      },
+      {
         "id": "t-field-type-header-prepaymentAmount",
         "category": "field-type",
         "entity": "header",
@@ -11534,6 +11681,14 @@
         "field": "priceList",
         "runner": "node",
         "description": "Field 'priceList' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-processed",
+        "category": "field-type",
+        "entity": "header",
+        "field": "processed",
+        "runner": "node",
+        "description": "Field 'processed' should have type 'boolean' in header"
       },
       {
         "id": "t-field-type-header-project",
@@ -15051,14 +15206,6 @@
         "description": "System field 'percentageOverdue' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-system-field-header-posted",
-        "category": "system-field",
-        "entity": "header",
-        "field": "posted",
-        "runner": "node",
-        "description": "System field 'posted' should exist in backend but not frontend for header"
-      },
-      {
         "id": "t-system-field-header-priceIncludesTax",
         "category": "system-field",
         "entity": "header",
@@ -15081,14 +15228,6 @@
         "field": "printDiscount",
         "runner": "node",
         "description": "System field 'printDiscount' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-system-field-header-processed",
-        "category": "system-field",
-        "entity": "header",
-        "field": "processed",
-        "runner": "node",
-        "description": "System field 'processed' should exist in backend but not frontend for header"
       },
       {
         "id": "t-system-field-header-processNow",
@@ -16312,25 +16451,25 @@
       }
     ],
     "summary": {
-      "total": 929,
+      "total": 933,
       "byCategory": {
-        "action-endpoint": 26,
+        "action-endpoint": 25,
         "crud-flags": 12,
-        "default-value-type": 37,
-        "displaylogic-evaluable": 16,
-        "displaylogic-valid": 16,
-        "field-presence": 146,
-        "field-type": 146,
+        "default-value-type": 38,
+        "displaylogic-evaluable": 17,
+        "displaylogic-valid": 17,
+        "field-presence": 148,
+        "field-type": 148,
         "readonlylogic-evaluable": 63,
         "readonlylogic-valid": 63,
         "rule-declared": 21,
         "searchable-filters": 6,
         "selector-endpoint": 50,
-        "system-field": 315,
+        "system-field": 313,
         "visibility": 12
       },
       "byRunner": {
-        "node": 929,
+        "node": 933,
         "junit": 0
       }
     }

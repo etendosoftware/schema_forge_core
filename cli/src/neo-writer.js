@@ -364,9 +364,22 @@ export async function populateSpec(client, params) {
 
   if (spec.spec_type === 'W') {
     return populateWindowSpec(client, { specId, windowId: spec.ad_window_id, moduleId, excludeSystemColumns, includeAllMethods, audit });
-  } else if (spec.spec_type === 'P' || spec.spec_type === 'R') {
-    // Reports use the same AD_Process_Para structure as processes
+  } else if (spec.spec_type === 'P') {
     return populateProcessSpec(client, { specId, processId: spec.ad_process_id, moduleId, audit });
+  } else if (spec.spec_type === 'R') {
+    // Report specs (ETP-4255) are NEO-native callable metadata only; they are NOT backed
+    // by AD_Process/Jasper. Report callability comes from a NEO report handler
+    // (ETGO_SF_ENTITY.Java_Qualifier), not from AD_Process_Para. Do not derive
+    // process-style entities/fields here. Jasper/JRXML is offline migration provenance only.
+    return {
+      entityCount: 0,
+      fieldCount: 0,
+      entities: [],
+      changes: {
+        entities: { created: 0, updated: 0, deleted: 0 },
+        fields: { created: 0, updated: 0, deleted: 0 },
+      },
+    };
   }
 
   throw new Error(`Unknown spec type: ${spec.spec_type}`);

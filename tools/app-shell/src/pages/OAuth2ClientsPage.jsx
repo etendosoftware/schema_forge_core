@@ -235,7 +235,7 @@ export default function OAuth2ClientsPage() {
                         className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors"
                         title={ui("oauthClickToCopy")}
                       >
-                        {client.clientId?.slice(0, 12)}...
+                        {client.clientId?.slice(0, 12)}{ui('ellipsis')}
                         <Copy className="h-3 w-3" data-testid="Copy__82406d" />
                       </button>
                     </TableCell>

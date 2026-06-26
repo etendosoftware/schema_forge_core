@@ -33,11 +33,11 @@ const LABEL_STYLE = { padding: '0 4px' };
 
 export default function DocumentStatusPill({ status, label, enumLabels, tone: toneProp }) {
   const dictionary = useLocale();
-  if (!status) return null;
+  if (status == null) return null;
 
   const tone = toneProp ?? getStatusTone(status);
   const Icon = TONE_ICON[tone];
-  const text = label ?? enumLabels?.[status] ?? statusLabel(status, dictionary);
+  const text = label ?? statusLabel(status, dictionary, null, enumLabels);
   const palette = TONE_STYLES[tone] ?? TONE_STYLES.neutral;
 
   return (

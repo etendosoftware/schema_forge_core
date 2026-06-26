@@ -20,6 +20,7 @@ Use this window to register stock consumed inside the organization rather than s
 - **Window shape:** master-child. The header entity is `internalConsumption` and the line entity is `internalConsumptionLine`. The list route opens headers; the record route opens a detail page with child lines.
 - An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 - Lines tab layout: this window uses `window.linesLayout = "inlineEditable"`. Rows render at 40 px with pencil and trash hover-action icons on the right; clicking pencil flips the row into inline edit; trash removes the row after confirmation. When the add-row form is open, existing rows stay in `InlineLinesPanel` so column widths remain stable; the form renders in a header-hidden `DataTable` below that handles callouts, selectors, and focus. Clicking "Añadir línea" while a form is already open saves the current line and opens a fresh form scrolled into view. See `docs/ui-customization.md` section 13 for the full reference.
+- **Product picker:** the Product column on lines uses a custom lookup drawer (`InternalConsumptionProductSearchDrawer`), registered as `internal-consumption-product` in `lookupDrawers.js`. The drawer shows available stock per storage bin for the selected product and auto-fills the Storage Bin field on selection.
 
 ## Reactive behavior and dependencies
 

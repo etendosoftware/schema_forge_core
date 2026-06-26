@@ -27,7 +27,9 @@ const statusField = 'documentStatus';
 // @sf-generated-end summary:quotation
 
 // @sf-generated-start extraBadges:quotation
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:quotation
 
 // @sf-generated-start processes:quotation
@@ -53,7 +55,7 @@ const draftMode = {
 // @sf-generated-end draftMode:quotation
 
 // @sf-generated-start requiredHeaderFields:quotation
-const requiredHeaderFields = ['documentNo', 'orderDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'grandTotalAmount', 'summedLineAmount'];
+const requiredHeaderFields = ['currency', 'priceList', 'documentNo', 'orderDate', 'businessPartner', 'partnerAddress', 'paymentTerms', 'grandTotalAmount', 'summedLineAmount'];
 // @sf-generated-end requiredHeaderFields:quotation
 
 // @sf-generated-start addLineFields:quotationLine
@@ -113,6 +115,30 @@ export const api = {
   "selectors": [
     {
       "entity": "quotation",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/currency"
+    },
+    {
+      "entity": "quotation",
+      "field": "priceList",
+      "column": "M_PriceList_ID",
+      "reference": "PriceList",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/priceList",
+      "context": {
+        "required": [
+          {
+            "param": "isSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
+    },
+    {
+      "entity": "quotation",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
@@ -132,22 +158,6 @@ export const api = {
             "param": "C_BPartner_ID",
             "source": "field",
             "field": "businessPartner"
-          }
-        ]
-      }
-    },
-    {
-      "entity": "quotation",
-      "field": "priceList",
-      "column": "M_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/priceList",
-      "context": {
-        "required": [
-          {
-            "param": "isSOTrx",
-            "source": "windowCategory"
           }
         ]
       }
@@ -183,14 +193,6 @@ export const api = {
       "reference": "Reject_Reason",
       "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotation/selectors/rejectReason"
-    },
-    {
-      "entity": "quotation",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/currency"
     },
     {
       "entity": "quotationLine",
@@ -344,18 +346,10 @@ export const api = {
     },
     {
       "entity": "quotation",
-      "field": "rMAddOrphanLine",
-      "column": "RM_AddOrphanLine",
-      "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMAddOrphanLine",
-      "processId": "23D1B163EC0B41F790CE39BF01DA320E",
-      "processType": "classic"
-    },
-    {
-      "entity": "quotation",
-      "field": "rMPickfromreceipt",
-      "column": "RM_Pickfromreceipt",
-      "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMPickfromreceipt",
-      "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+      "field": "eTPRRemovePayment",
+      "column": "EM_Etpr_Remove_Payment",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/eTPRRemovePayment",
+      "processId": "D2923463223C4F1EADE335D22B9D8FE8",
       "processType": "obuiapp"
     },
     {
@@ -368,10 +362,18 @@ export const api = {
     },
     {
       "entity": "quotation",
-      "field": "eTPRRemovePayment",
-      "column": "EM_Etpr_Remove_Payment",
-      "url": "/sws/neo/sales-quotation/quotation/{id}/action/eTPRRemovePayment",
-      "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+      "field": "rMAddOrphanLine",
+      "column": "RM_AddOrphanLine",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMAddOrphanLine",
+      "processId": "23D1B163EC0B41F790CE39BF01DA320E",
+      "processType": "classic"
+    },
+    {
+      "entity": "quotation",
+      "field": "rMPickfromreceipt",
+      "column": "RM_Pickfromreceipt",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMPickfromreceipt",
+      "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
       "processType": "obuiapp"
     },
     {
@@ -478,6 +480,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
         sendDocument
+        selectorPriceCurrency="org"
         {...props}
       />
     );

@@ -82,6 +82,7 @@ export function AccountsTable({
   onReconcile,
   onEdit,
   onArchive,
+  onTransfer,
   onRetry,
 }) {
   const ui = useUI();
@@ -111,6 +112,7 @@ export function AccountsTable({
         onReconcile={onReconcile}
         onEdit={onEdit}
         onArchive={onArchive}
+        onTransfer={onTransfer}
         data-testid="AccountRow__db8970" />
     ));
   };

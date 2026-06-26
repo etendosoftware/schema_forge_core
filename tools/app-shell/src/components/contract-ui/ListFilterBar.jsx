@@ -36,6 +36,7 @@ export function ListFilterBar({
   onSavePreset = null,
   onDeletePreset = null,
   labelOverrides = null,
+  hideStatusFilter = false,
 }) {
   const ui = useUI();
   const dictionary = useLocale();
@@ -323,7 +324,7 @@ export function ListFilterBar({
 
   return (
     <div className="flex items-center gap-2">
-      {statusCol && (
+      {statusCol && !hideStatusFilter && (
         <Popover
           open={statusMenuOpen}
           onOpenChange={setStatusMenuOpen}

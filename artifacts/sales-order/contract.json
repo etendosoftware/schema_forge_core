@@ -1,8 +1,7 @@
 {
   "version": "0.5.0",
-  "generatedAt": "2026-05-12T16:47:39.614Z",
-  "updatedAt": "2026-06-25T19:31:34.196Z",
-  "checksum": "63e339cc0086d8eb",
+  "generatedAt": "2026-06-26T16:40:04.645Z",
+  "checksum": "65edc1a73043d39e",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -47,7 +46,8 @@
       "dateFilterKey": "orderDate",
       "noHeaderBorder": true,
       "layoutType": "default",
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "selectorPriceCurrency": "org"
     },
     "entities": {
       "header": {
@@ -56,6 +56,59 @@
         "tabName": "Header",
         "uiPattern": "STD",
         "fields": [
+          {
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "label": "Currency",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "reference": "Currency",
+            "inputMode": "selector",
+            "defaultValue": "@C_Currency_ID@",
+            "section": "principal",
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
+          },
+          {
+            "name": "priceList",
+            "apiKey": "priceList",
+            "column": "M_PriceList_ID",
+            "label": "Price List",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "reference": "PriceList",
+            "inputMode": "selector",
+            "section": "principal",
+            "validationRule": {
+              "code": "M_PriceList.issopricelist = @isSOTrx@",
+              "contextParams": [],
+              "cascadeParams": [
+                "isSOTrx"
+              ]
+            },
+            "callout": {
+              "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_PriceList"
+            },
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y' | @DocStatus@='TMP'",
+              "evaluable": true,
+              "js": "record['processed'] === true || record['documentStatus'] === 'TMP'"
+            }
+          },
           {
             "name": "documentNo",
             "apiKey": "documentNo",
@@ -164,37 +217,6 @@
             },
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartnerLocation"
-            },
-            "readOnlyLogic": {
-              "raw": "@Processed@='Y' | @DocStatus@='TMP'",
-              "evaluable": true,
-              "js": "record['processed'] === true || record['documentStatus'] === 'TMP'"
-            }
-          },
-          {
-            "name": "priceList",
-            "apiKey": "priceList",
-            "column": "M_PriceList_ID",
-            "label": "Price List",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": true,
-            "grid": false,
-            "form": true,
-            "sourceRequired": true,
-            "reference": "PriceList",
-            "inputMode": "selector",
-            "section": "principal",
-            "validationRule": {
-              "code": "M_PriceList.issopricelist = @isSOTrx@",
-              "contextParams": [],
-              "cascadeParams": [
-                "isSOTrx"
-              ]
-            },
-            "callout": {
-              "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_PriceList"
             },
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @DocStatus@='TMP'",
@@ -389,27 +411,6 @@
             "section": "summary"
           },
           {
-            "name": "currency",
-            "apiKey": "currency",
-            "column": "C_Currency_ID",
-            "label": "Currency",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": true,
-            "grid": false,
-            "form": false,
-            "sourceRequired": true,
-            "derivation": {
-              "type": "fromConfig",
-              "source": "context.cCurrencyId"
-            },
-            "reference": "Currency",
-            "inputMode": "selector",
-            "defaultValue": "@C_Currency_ID@",
-            "section": "summary"
-          },
-          {
             "name": "description",
             "apiKey": "description",
             "column": "Description",
@@ -510,13 +511,6 @@
             "derivation": {
               "type": "computed",
               "source": "DR"
-            }
-          },
-          {
-            "name": "currency",
-            "derivation": {
-              "type": "fromConfig",
-              "source": "context.cCurrencyId"
             }
           },
           {
@@ -797,6 +791,26 @@
               "evaluable": true,
               "js": "record['processed'] === true || record['gROSSPRICE'] === 'N'"
             }
+          },
+          {
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "label": "Currency",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.cCurrencyId"
+            },
+            "reference": "Currency",
+            "inputMode": "selector",
+            "defaultValue": "@C_Currency_ID@"
           }
         ],
         "searchableFields": [
@@ -829,6 +843,13 @@
             "derivation": {
               "type": "computed",
               "source": "0"
+            }
+          },
+          {
+            "name": "currency",
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.cCurrencyId"
             }
           }
         ],
@@ -879,7 +900,8 @@
       },
       "dateFilterKey": "orderDate",
       "noHeaderBorder": true,
-      "linesLayout": "inlineEditable"
+      "linesLayout": "inlineEditable",
+      "selectorPriceCurrency": "org"
     },
     "entities": {
       "header": {
@@ -887,6 +909,22 @@
         "tabId": "186",
         "tabName": "Header",
         "fields": [
+          {
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "priceList",
+            "apiKey": "priceList",
+            "column": "M_PriceList_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
           {
             "name": "organization",
             "apiKey": "organization",
@@ -950,14 +988,6 @@
             "type": "button",
             "visibility": "discarded",
             "required": false
-          },
-          {
-            "name": "priceList",
-            "apiKey": "priceList",
-            "column": "M_PriceList_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": true
           },
           {
             "name": "scheduledDeliveryDate",
@@ -1036,14 +1066,6 @@
             "apiKey": "summedLineAmount",
             "column": "TotalLines",
             "type": "amount",
-            "visibility": "readOnly",
-            "required": true
-          },
-          {
-            "name": "currency",
-            "apiKey": "currency",
-            "column": "C_Currency_ID",
-            "type": "foreignKey",
             "visibility": "readOnly",
             "required": true
           },
@@ -1432,6 +1454,14 @@
             "required": false
           },
           {
+            "name": "eTPRRemovePayment",
+            "apiKey": "eTPRRemovePayment",
+            "column": "EM_Etpr_Remove_Payment",
+            "type": "button",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
             "name": "etvfacReversedInvoice",
             "apiKey": "etvfacReversedInvoice",
             "column": "EM_Etvfac_Reversed_Invoice",
@@ -1664,6 +1694,14 @@
             "required": false
           },
           {
+            "name": "psd2GenerateBankPayment",
+            "apiKey": "psd2GenerateBankPayment",
+            "column": "EM_Psd2_Generate_Bank_Payment",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
             "name": "fINPaymentPriorityID",
             "apiKey": "fINPaymentPriorityID",
             "column": "FIN_Payment_Priority_ID",
@@ -1693,22 +1731,6 @@
             "column": "UpdatedBy",
             "type": "foreignKey",
             "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "psd2GenerateBankPayment",
-            "apiKey": "psd2GenerateBankPayment",
-            "column": "EM_Psd2_Generate_Bank_Payment",
-            "type": "button",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
-            "name": "eTPRRemovePayment",
-            "apiKey": "eTPRRemovePayment",
-            "column": "EM_Etpr_Remove_Payment",
-            "type": "button",
-            "visibility": "discarded",
             "required": true
           }
         ],
@@ -2196,7 +2218,7 @@
             "apiKey": "currency",
             "column": "C_Currency_ID",
             "type": "foreignKey",
-            "visibility": "system",
+            "visibility": "editable",
             "required": true
           },
           {
@@ -2423,6 +2445,30 @@
     "selectors": [
       {
         "entity": "header",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/sales-order/header/selectors/currency"
+      },
+      {
+        "entity": "header",
+        "field": "priceList",
+        "column": "M_PriceList_ID",
+        "reference": "PriceList",
+        "inputMode": "selector",
+        "url": "/sws/neo/sales-order/header/selectors/priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
         "field": "businessPartner",
         "column": "C_BPartner_ID",
         "reference": "BusinessPartner",
@@ -2442,22 +2488,6 @@
               "param": "C_BPartner_ID",
               "source": "field",
               "field": "businessPartner"
-            }
-          ]
-        }
-      },
-      {
-        "entity": "header",
-        "field": "priceList",
-        "column": "M_PriceList_ID",
-        "reference": "PriceList",
-        "inputMode": "selector",
-        "url": "/sws/neo/sales-order/header/selectors/priceList",
-        "context": {
-          "required": [
-            {
-              "param": "isSOTrx",
-              "source": "windowCategory"
             }
           ]
         }
@@ -2495,14 +2525,6 @@
         "url": "/sws/neo/sales-order/header/selectors/warehouse"
       },
       {
-        "entity": "header",
-        "field": "currency",
-        "column": "C_Currency_ID",
-        "reference": "Currency",
-        "inputMode": "selector",
-        "url": "/sws/neo/sales-order/header/selectors/currency"
-      },
-      {
         "entity": "lines",
         "field": "product",
         "column": "M_Product_ID",
@@ -2531,6 +2553,14 @@
             }
           ]
         }
+      },
+      {
+        "entity": "lines",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/sales-order/lines/selectors/currency"
       }
     ],
     "actions": [
@@ -2630,6 +2660,14 @@
       },
       {
         "entity": "header",
+        "field": "eTPRRemovePayment",
+        "column": "EM_Etpr_Remove_Payment",
+        "url": "/sws/neo/sales-order/header/{id}/action/eTPRRemovePayment",
+        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "header",
         "field": "processNow",
         "column": "Processing",
         "url": "/sws/neo/sales-order/header/{id}/action/processNow",
@@ -2662,14 +2700,6 @@
       },
       {
         "entity": "header",
-        "field": "rMPickfromreceipt",
-        "column": "RM_Pickfromreceipt",
-        "url": "/sws/neo/sales-order/header/{id}/action/rMPickfromreceipt",
-        "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
-        "processType": "obuiapp"
-      },
-      {
-        "entity": "header",
         "field": "psd2GenerateBankPayment",
         "column": "EM_Psd2_Generate_Bank_Payment",
         "url": "/sws/neo/sales-order/header/{id}/action/psd2GenerateBankPayment",
@@ -2678,10 +2708,10 @@
       },
       {
         "entity": "header",
-        "field": "eTPRRemovePayment",
-        "column": "EM_Etpr_Remove_Payment",
-        "url": "/sws/neo/sales-order/header/{id}/action/eTPRRemovePayment",
-        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+        "field": "rMPickfromreceipt",
+        "column": "RM_Pickfromreceipt",
+        "url": "/sws/neo/sales-order/header/{id}/action/rMPickfromreceipt",
+        "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
         "processType": "obuiapp"
       },
       {
@@ -2979,6 +3009,14 @@
         "description": "Default value for 'orderDate' in header should be a string"
       },
       {
+        "id": "t-default-value-type-lines-currency",
+        "category": "default-value-type",
+        "entity": "lines",
+        "field": "currency",
+        "runner": "node",
+        "description": "Default value for 'currency' in lines should be a string"
+      },
+      {
         "id": "t-default-value-type-lines-discount",
         "category": "default-value-type",
         "entity": "lines",
@@ -3195,6 +3233,14 @@
         "description": "Field 'warehouse' should be present in header"
       },
       {
+        "id": "t-field-presence-lines-currency",
+        "category": "field-presence",
+        "entity": "lines",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should be present in lines"
+      },
+      {
         "id": "t-field-presence-lines-description",
         "category": "field-presence",
         "entity": "lines",
@@ -3403,6 +3449,14 @@
         "description": "Field 'warehouse' should have type 'string' in header"
       },
       {
+        "id": "t-field-type-lines-currency",
+        "category": "field-type",
+        "entity": "lines",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should have type 'string' in lines"
+      },
+      {
         "id": "t-field-type-lines-description",
         "category": "field-type",
         "entity": "lines",
@@ -3481,6 +3535,14 @@
         "field": "businessPartner",
         "runner": "node",
         "description": "Read-only logic for 'businessPartner' in header should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-header-currency",
+        "category": "readonlylogic-evaluable",
+        "entity": "header",
+        "field": "currency",
+        "runner": "node",
+        "description": "Read-only logic for 'currency' in header should have evaluable flag"
       },
       {
         "id": "t-readonlylogic-evaluable-header-documentNo",
@@ -3601,6 +3663,14 @@
         "field": "businessPartner",
         "runner": "node",
         "description": "Read-only logic for 'businessPartner' in header should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-header-currency",
+        "category": "readonlylogic-valid",
+        "entity": "header",
+        "field": "currency",
+        "runner": "node",
+        "description": "Read-only logic for 'currency' in header should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-header-documentNo",
@@ -5589,6 +5659,14 @@
         "description": "Selector endpoint for 'warehouse' in header should exist"
       },
       {
+        "id": "t-selector-endpoint-lines-currency",
+        "category": "selector-endpoint",
+        "entity": "lines",
+        "field": "currency",
+        "runner": "node",
+        "description": "Selector endpoint for 'currency' in lines should exist"
+      },
+      {
         "id": "t-selector-endpoint-lines-product",
         "category": "selector-endpoint",
         "entity": "lines",
@@ -6413,14 +6491,6 @@
         "description": "System field 'cReturnReasonID' should exist in backend but not frontend for lines"
       },
       {
-        "id": "t-system-field-lines-currency",
-        "category": "system-field",
-        "entity": "lines",
-        "field": "currency",
-        "runner": "node",
-        "description": "System field 'currency' should exist in backend but not frontend for lines"
-      },
-      {
         "id": "t-system-field-lines-dateDelivered",
         "category": "system-field",
         "entity": "lines",
@@ -6828,25 +6898,25 @@
       }
     ],
     "summary": {
-      "total": 542,
+      "total": 547,
       "byCategory": {
         "action-endpoint": 23,
         "crud-flags": 2,
-        "default-value-type": 8,
+        "default-value-type": 9,
         "displaylogic-evaluable": 3,
         "displaylogic-valid": 3,
-        "field-presence": 26,
-        "field-type": 26,
-        "readonlylogic-evaluable": 15,
-        "readonlylogic-valid": 15,
+        "field-presence": 27,
+        "field-type": 27,
+        "readonlylogic-evaluable": 16,
+        "readonlylogic-valid": 16,
         "rule-declared": 254,
         "searchable-filters": 5,
-        "selector-endpoint": 9,
-        "system-field": 151,
+        "selector-endpoint": 10,
+        "system-field": 150,
         "visibility": 2
       },
       "byRunner": {
-        "node": 542,
+        "node": 547,
         "junit": 0
       }
     }

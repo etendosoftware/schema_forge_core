@@ -41,7 +41,7 @@ function EditablePrice({ price, originalPrice, uom, onChange }) {
           className="w-16 rounded border border-primary/40 bg-primary/5 px-1.5 py-0.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
           autoFocus
         />
-        <span className="text-muted-foreground">&euro; / {uom}</span>
+        <span className="text-muted-foreground">{ui('priceUnit')} {uom}</span>
       </div>
     );
   }
@@ -56,7 +56,7 @@ function EditablePrice({ price, originalPrice, uom, onChange }) {
         <span className="line-through text-muted-foreground/50">{originalPrice.toFixed(2)}</span>
       )}
       <span className={changed ? 'text-primary font-medium' : ''}>{price.toFixed(2)}</span>
-      <span>&euro; / {uom}</span>
+      <span>{ui('priceUnit')} {uom}</span>
       <Pencil
         className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 transition-opacity"
         data-testid="Pencil__4008af" />

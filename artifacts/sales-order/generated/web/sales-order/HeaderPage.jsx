@@ -28,7 +28,9 @@ const statusField = 'documentStatus';
 // @sf-generated-end summary:header
 
 // @sf-generated-start extraBadges:header
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:header
 
 // @sf-generated-start processes:header
@@ -47,7 +49,7 @@ const draftMode = {
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start requiredHeaderFields:header
-const requiredHeaderFields = ['documentNo', 'orderDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'grandTotalAmount', 'summedLineAmount'];
+const requiredHeaderFields = ['currency', 'priceList', 'documentNo', 'orderDate', 'businessPartner', 'partnerAddress', 'paymentTerms', 'grandTotalAmount', 'summedLineAmount'];
 // @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
@@ -65,6 +67,7 @@ const addLineFields = {
   ],
   hidden: [
     { key: 'grossUnitPrice', value: '0' },
+    { key: 'currency', fromParent: 'currency' },
   ],
 };
 // @sf-generated-end addLineFields:lines
@@ -106,6 +109,30 @@ export const api = {
   "selectors": [
     {
       "entity": "header",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/header/selectors/currency"
+    },
+    {
+      "entity": "header",
+      "field": "priceList",
+      "column": "M_PriceList_ID",
+      "reference": "PriceList",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/header/selectors/priceList",
+      "context": {
+        "required": [
+          {
+            "param": "isSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
+    },
+    {
+      "entity": "header",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
@@ -125,22 +152,6 @@ export const api = {
             "param": "C_BPartner_ID",
             "source": "field",
             "field": "businessPartner"
-          }
-        ]
-      }
-    },
-    {
-      "entity": "header",
-      "field": "priceList",
-      "column": "M_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/header/selectors/priceList",
-      "context": {
-        "required": [
-          {
-            "param": "isSOTrx",
-            "source": "windowCategory"
           }
         ]
       }
@@ -178,14 +189,6 @@ export const api = {
       "url": "/sws/neo/sales-order/header/selectors/warehouse"
     },
     {
-      "entity": "header",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/header/selectors/currency"
-    },
-    {
       "entity": "lines",
       "field": "product",
       "column": "M_Product_ID",
@@ -214,6 +217,14 @@ export const api = {
           }
         ]
       }
+    },
+    {
+      "entity": "lines",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/lines/selectors/currency"
     }
   ],
   "actions": [
@@ -313,6 +324,14 @@ export const api = {
     },
     {
       "entity": "header",
+      "field": "eTPRRemovePayment",
+      "column": "EM_Etpr_Remove_Payment",
+      "url": "/sws/neo/sales-order/header/{id}/action/eTPRRemovePayment",
+      "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/sales-order/header/{id}/action/processNow",
@@ -345,14 +364,6 @@ export const api = {
     },
     {
       "entity": "header",
-      "field": "rMPickfromreceipt",
-      "column": "RM_Pickfromreceipt",
-      "url": "/sws/neo/sales-order/header/{id}/action/rMPickfromreceipt",
-      "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
       "field": "psd2GenerateBankPayment",
       "column": "EM_Psd2_Generate_Bank_Payment",
       "url": "/sws/neo/sales-order/header/{id}/action/psd2GenerateBankPayment",
@@ -361,10 +372,10 @@ export const api = {
     },
     {
       "entity": "header",
-      "field": "eTPRRemovePayment",
-      "column": "EM_Etpr_Remove_Payment",
-      "url": "/sws/neo/sales-order/header/{id}/action/eTPRRemovePayment",
-      "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+      "field": "rMPickfromreceipt",
+      "column": "RM_Pickfromreceipt",
+      "url": "/sws/neo/sales-order/header/{id}/action/rMPickfromreceipt",
+      "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
       "processType": "obuiapp"
     },
     {
@@ -463,7 +474,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         topbarRight={OrderCreateInvoice}
         topbarExtra={OrderDraftChips}
         menuActions={({ data, status }) => [
-          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO' && !data?.hasLinkedDocuments, labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO' && !(data?.hasLinkedDocuments === 'Y' || data?.hasLinkedDocuments === true), labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
@@ -471,6 +482,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
         sendDocument
+        selectorPriceCurrency="org"
         {...props}
       />
     );

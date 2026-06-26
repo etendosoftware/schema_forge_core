@@ -1,8 +1,7 @@
 {
-  "version": "0.4.0",
-  "generatedAt": "2026-05-12T16:47:39.614Z",
-  "updatedAt": "2026-06-25T19:29:58.335Z",
-  "contractChecksum": "63e339cc0086d8eb",
+  "version": "0.1.0",
+  "generatedAt": "2026-06-26T16:40:04.645Z",
+  "contractChecksum": "65edc1a73043d39e",
   "apiPrediction": {
     "specName": "sales-order",
     "baseUrl": "/sws/neo/sales-order",
@@ -40,6 +39,30 @@
     "selectors": [
       {
         "entity": "header",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/sales-order/header/selectors/currency"
+      },
+      {
+        "entity": "header",
+        "field": "priceList",
+        "column": "M_PriceList_ID",
+        "reference": "PriceList",
+        "inputMode": "selector",
+        "url": "/sws/neo/sales-order/header/selectors/priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
         "field": "businessPartner",
         "column": "C_BPartner_ID",
         "reference": "BusinessPartner",
@@ -59,22 +82,6 @@
               "param": "C_BPartner_ID",
               "source": "field",
               "field": "businessPartner"
-            }
-          ]
-        }
-      },
-      {
-        "entity": "header",
-        "field": "priceList",
-        "column": "M_PriceList_ID",
-        "reference": "PriceList",
-        "inputMode": "selector",
-        "url": "/sws/neo/sales-order/header/selectors/priceList",
-        "context": {
-          "required": [
-            {
-              "param": "isSOTrx",
-              "source": "windowCategory"
             }
           ]
         }
@@ -112,14 +119,6 @@
         "url": "/sws/neo/sales-order/header/selectors/warehouse"
       },
       {
-        "entity": "header",
-        "field": "currency",
-        "column": "C_Currency_ID",
-        "reference": "Currency",
-        "inputMode": "selector",
-        "url": "/sws/neo/sales-order/header/selectors/currency"
-      },
-      {
         "entity": "lines",
         "field": "product",
         "column": "M_Product_ID",
@@ -148,6 +147,14 @@
             }
           ]
         }
+      },
+      {
+        "entity": "lines",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/sales-order/lines/selectors/currency"
       }
     ],
     "actions": [
@@ -439,6 +446,29 @@
         "processType": "obuiapp"
       },
       {
+        "name": "eTPRRemovePayment",
+        "actionType": "paymentAction",
+        "entity": "header",
+        "column": "EM_Etpr_Remove_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/sales-order/header/{id}/action/eTPRRemovePayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+        "processType": "obuiapp"
+      },
+      {
         "name": "processNow",
         "actionType": "documentAction",
         "entity": "header",
@@ -565,29 +595,6 @@
         "processType": "obuiapp"
       },
       {
-        "name": "rMPickfromreceipt",
-        "actionType": "createFrom",
-        "entity": "header",
-        "column": "RM_Pickfromreceipt",
-        "requiresRecord": true,
-        "method": "POST",
-        "url": "/sws/neo/sales-order/header/{id}/action/rMPickfromreceipt",
-        "parameters": [],
-        "preconditions": [],
-        "effects": [
-          "Creates child or related records",
-          "May copy data from source document"
-        ],
-        "dryRunSupported": false,
-        "edgeCases": [
-          "Source document has no valid lines to copy",
-          "Target entity already has linked records",
-          "Required reference data is missing (price list, warehouse, etc.)"
-        ],
-        "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
-        "processType": "obuiapp"
-      },
-      {
         "name": "psd2GenerateBankPayment",
         "actionType": "paymentAction",
         "entity": "header",
@@ -611,26 +618,26 @@
         "processType": "obuiapp"
       },
       {
-        "name": "eTPRRemovePayment",
-        "actionType": "paymentAction",
+        "name": "rMPickfromreceipt",
+        "actionType": "createFrom",
         "entity": "header",
-        "column": "EM_Etpr_Remove_Payment",
+        "column": "RM_Pickfromreceipt",
         "requiresRecord": true,
         "method": "POST",
-        "url": "/sws/neo/sales-order/header/{id}/action/eTPRRemovePayment",
+        "url": "/sws/neo/sales-order/header/{id}/action/rMPickfromreceipt",
         "parameters": [],
         "preconditions": [],
         "effects": [
-          "Creates or processes payment records",
-          "May update invoice/order payment status"
+          "Creates child or related records",
+          "May copy data from source document"
         ],
         "dryRunSupported": false,
         "edgeCases": [
-          "Payment amount exceeds remaining balance",
-          "Payment method is not configured for the business partner",
-          "Invoice is already fully paid"
+          "Source document has no valid lines to copy",
+          "Target entity already has linked records",
+          "Required reference data is missing (price list, warehouse, etc.)"
         ],
-        "processId": "D2923463223C4F1EADE335D22B9D8FE8",
+        "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
         "processType": "obuiapp"
       },
       {
@@ -755,6 +762,15 @@
     "entities": {
       "header": {
         "fields": {
+          "currency": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y'",
+            "defaultValue": "@C_Currency_ID@"
+          },
+          "priceList": {
+            "required": true,
+            "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'"
+          },
           "documentNo": {
             "readOnly": true,
             "required": true,
@@ -770,10 +786,6 @@
             "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'"
           },
           "partnerAddress": {
-            "required": true,
-            "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'"
-          },
-          "priceList": {
             "required": true,
             "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'"
           },
@@ -800,11 +812,6 @@
           "summedLineAmount": {
             "readOnly": true,
             "required": true
-          },
-          "currency": {
-            "readOnly": true,
-            "required": true,
-            "defaultValue": "@C_Currency_ID@"
           },
           "description": {},
           "deliveryStatus": {
@@ -857,6 +864,10 @@
           "grossUnitPrice": {
             "readOnlyLogic": "@Processed@='Y' | @GROSSPRICE@='N'",
             "defaultValue": "0"
+          },
+          "currency": {
+            "required": true,
+            "defaultValue": "@C_Currency_ID@"
           }
         }
       }
@@ -871,10 +882,11 @@
     ],
     "minimumCreate": {
       "headerFields": [
+        "currency",
+        "priceList",
         "orderDate",
         "businessPartner",
         "partnerAddress",
-        "priceList",
         "paymentTerms",
         "warehouse"
       ],
@@ -883,7 +895,8 @@
         "orderedQuantity",
         "listPrice",
         "tax",
-        "unitPrice"
+        "unitPrice",
+        "currency"
       ],
       "recommendedOrder": [
         "createHeader",
@@ -893,6 +906,18 @@
     "selectorContexts": [
       {
         "entity": "header",
+        "field": "priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
         "field": "partnerAddress",
         "context": {
           "required": [
@@ -900,18 +925,6 @@
               "param": "C_BPartner_ID",
               "source": "field",
               "field": "businessPartner"
-            }
-          ]
-        }
-      },
-      {
-        "entity": "header",
-        "field": "priceList",
-        "context": {
-          "required": [
-            {
-              "param": "isSOTrx",
-              "source": "windowCategory"
             }
           ]
         }
@@ -984,10 +997,11 @@
         "operation": "createHeader",
         "description": "Create a draft header with the minimum required editable fields.",
         "fields": [
+          "currency",
+          "priceList",
           "orderDate",
           "businessPartner",
           "partnerAddress",
-          "priceList",
           "paymentTerms",
           "warehouse"
         ]
@@ -1000,7 +1014,8 @@
           "orderedQuantity",
           "listPrice",
           "tax",
-          "unitPrice"
+          "unitPrice",
+          "currency"
         ]
       },
       {
@@ -1016,5 +1031,5 @@
       "confirmCancelAndReplace"
     ]
   },
-  "checksum": "6be7e3a3fdfd2080"
+  "checksum": "2cfd137a42b56f77"
 }

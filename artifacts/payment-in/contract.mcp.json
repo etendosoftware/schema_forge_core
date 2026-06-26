@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.5.0",
   "generatedAt": "2026-04-29T19:05:52.312Z",
-  "updatedAt": "2026-06-11T12:55:35.419Z",
-  "contractChecksum": "5fe25c6bcca2f094",
+  "updatedAt": "2026-06-24T20:46:47.740Z",
+  "contractChecksum": "a228dd7831d60882",
   "apiPrediction": {
     "specName": "payment-in",
     "baseUrl": "/sws/neo/payment-in",
@@ -308,6 +308,109 @@
         ],
         "processId": "0661406A983B4D8EA611F8596F114D52",
         "processType": "obuiapp"
+      },
+      {
+        "name": "etblkpBulkposting",
+        "actionType": "documentAction",
+        "entity": "finPayment",
+        "column": "EM_Etblkp_Bulkposting",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/payment-in/finPayment/{id}/action/etblkpBulkposting",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
+        "name": "etprReactivatePayment",
+        "actionType": "documentAction",
+        "entity": "finPayment",
+        "column": "EM_Etpr_Reactivate_Payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/payment-in/finPayment/{id}/action/etprReactivatePayment",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "processId": "84628BC70CDB49B58054E80C20BCBFEE",
+        "processType": "obuiapp"
+      },
+      {
+        "name": "eTPRRemovePayment",
+        "actionType": "paymentAction",
+        "entity": "finPayment",
+        "column": "em_etpr_remove_payment",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/payment-in/finPayment/{id}/action/eTPRRemovePayment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates or processes payment records",
+          "May update invoice/order payment status"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Payment amount exceeds remaining balance",
+          "Payment method is not configured for the business partner",
+          "Invoice is already fully paid"
+        ],
+        "processId": "FB79E902A5384754990AD145F6CAC9FB",
+        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -374,7 +477,22 @@
             "readOnly": true,
             "required": true,
             "defaultValue": "RPAP"
-          }
+          },
+          "etblkpAccountingstatus": {
+            "readOnly": true,
+            "required": true,
+            "defaultValue": "N"
+          },
+          "etblkpBulkposting": {
+            "readOnly": true,
+            "required": true,
+            "defaultValue": "N"
+          },
+          "etprReactivatePayment": {
+            "required": true,
+            "defaultValue": "N"
+          },
+          "eTPRRemovePayment": {}
         }
       },
       "finPaymentScheduleDetail": {
@@ -390,7 +508,9 @@
         }
       }
     },
-    "requiredSessionVariables": [],
+    "requiredSessionVariables": [
+      "#ShowAcct"
+    ],
     "evaluationMode": "runtime"
   },
   "agentProfile": {
@@ -399,10 +519,14 @@
       "Use for payment in management."
     ],
     "minimumCreate": {
+      "headerFields": [
+        "etprReactivatePayment"
+      ],
       "lineFields": [
         "amount"
       ],
       "recommendedOrder": [
+        "createHeader",
         "createLines"
       ]
     },
@@ -437,9 +561,12 @@
     "actions": [
       "posted",
       "aPRMReversePayment",
-      "aeatsiiSend"
+      "aeatsiiSend",
+      "etblkpBulkposting",
+      "etprReactivatePayment"
     ],
     "workflow": [
+      "Create draft header with required fields",
       "Add at least one valid line",
       "Validate form state",
       "Complete the document"
@@ -458,6 +585,13 @@
     ],
     "examples": [
       {
+        "operation": "createHeader",
+        "description": "Create a draft header with the minimum required editable fields.",
+        "fields": [
+          "etprReactivatePayment"
+        ]
+      },
+      {
         "operation": "createLine",
         "description": "Add a line after the header exists and parent context is available.",
         "fields": [
@@ -473,8 +607,9 @@
     "warnings": [],
     "knownLimitations": [],
     "dangerousOperations": [
-      "aPRMReversePayment"
+      "aPRMReversePayment",
+      "etprReactivatePayment"
     ]
   },
-  "checksum": "74434a30aaaa9a2c"
+  "checksum": "57b4be6cfea89acb"
 }

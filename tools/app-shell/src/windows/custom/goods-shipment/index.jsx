@@ -93,7 +93,7 @@ export default function GoodsShipmentWindow({ windowName, recordId, apiBaseUrl, 
           Table={CustomGoodsShipmentTable}
           processes={[]}
           draftMode={{ enabled: true, label: 'Confirm', style: 'positive', onConfirm: () => window.dispatchEvent(new CustomEvent('goods-shipment:open-confirm-modal')) }}
-          hideMoreMenu={true}
+          hideMoreMenu={({ data }) => data?.documentStatus !== 'CO'}
           {...rest}
           data-testid="GoodsShipmentPage__9851c7" />
         {contactPortal}
