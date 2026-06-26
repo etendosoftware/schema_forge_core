@@ -27,6 +27,8 @@ import { useAppStoreUnlock, attachKeySequenceWatcher } from './hooks/useAppStore
 import { CurrencyProvider } from './hooks/useCurrency.jsx';
 import { buildOnboardingReturnTo } from './lib/oauthReturnTo.js';
 import { ObservabilityRouteTracker } from './lib/observability/RouteTracker.jsx';
+import { SurveyModal } from './components/survey/SurveyModal.jsx';
+import { useSurveyEngine } from './hooks/useSurveyEngine.js';
 
 import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
 
@@ -327,6 +329,19 @@ function ServiceWorkerManager() {
   return null;
 }
 
+function SurveyManager() {
+  const { activeSurvey, handleRespond, handleClose, handleDismiss } = useSurveyEngine();
+  return (
+    <SurveyModal
+      survey={activeSurvey}
+      open={!!activeSurvey}
+      onRespond={handleRespond}
+      onClose={handleClose}
+      onDismiss={handleDismiss}
+    />
+  );
+}
+
 export default function App() {
   const installedApps = useInstalledApps();
   const appStoreUnlocked = useAppStoreUnlock();
@@ -361,6 +376,7 @@ export default function App() {
         setLocale={setLocale}
         data-testid="LocaleProvider__ecaf3f">
         <AuthProvider data-testid="AuthProvider__ecaf3f">
+          <SurveyManager data-testid="SurveyManager__ecaf3f" />
           <CurrencyProvider data-testid="CurrencyProvider__ecaf3f">
             <AppRoutes
               menuGroups={menuGroups}

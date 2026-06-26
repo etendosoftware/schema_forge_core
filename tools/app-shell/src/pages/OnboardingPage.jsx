@@ -33,6 +33,7 @@ import { useLocaleSwitch, useUI } from '../i18n/index.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../lib/oauthReturnTo.js';
 import { track } from '../lib/observability.js';
 import { OBSERVABILITY_EVENTS, buildObservabilityEvent } from '../lib/observability/events.js';
+import { markOnboardingCompleted } from '../lib/surveys/survey-state.js';
 import {
   applyProgressMessage,
   buildEnvironmentSessionStorage,
@@ -1018,6 +1019,7 @@ export default function OnboardingPage() { // NOSONAR: route component coordinat
               action: 'create_environment',
               status: 'success',
             });
+            markOnboardingCompleted();
             succeeded = true;
           } else {
             trackOnboarding(OBSERVABILITY_EVENTS.ONBOARDING_RUN_FAILED, {

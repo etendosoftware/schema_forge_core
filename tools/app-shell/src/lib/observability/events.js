@@ -476,6 +476,28 @@ export const OBSERVABILITY_EVENTS = Object.freeze({
       OBSERVABILITY_PROPERTY_KEYS.TYPE,
     ],
   }),
+  SURVEY_SHOWN: defineEvent('survey_shown', {
+    channels: [OBSERVABILITY_CHANNELS.MIXPANEL, OBSERVABILITY_CHANNELS.NPS],
+    properties: [
+      OBSERVABILITY_PROPERTY_KEYS.SOURCE,
+      OBSERVABILITY_PROPERTY_KEYS.TYPE,
+    ],
+  }),
+  SURVEY_RESPONDED: defineEvent('survey_responded', {
+    channels: [OBSERVABILITY_CHANNELS.MIXPANEL, OBSERVABILITY_CHANNELS.NPS],
+    properties: [
+      OBSERVABILITY_PROPERTY_KEYS.SCORE,
+      OBSERVABILITY_PROPERTY_KEYS.SOURCE,
+      OBSERVABILITY_PROPERTY_KEYS.TYPE,
+    ],
+  }),
+  SURVEY_DISMISSED: defineEvent('survey_dismissed', {
+    channels: [OBSERVABILITY_CHANNELS.MIXPANEL],
+    properties: [
+      OBSERVABILITY_PROPERTY_KEYS.SOURCE,
+      OBSERVABILITY_PROPERTY_KEYS.TYPE,
+    ],
+  }),
 });
 
 export const OBSERVABILITY_EVENT_LIST = Object.freeze(Object.values(OBSERVABILITY_EVENTS));
