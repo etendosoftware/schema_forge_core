@@ -59,7 +59,9 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
 
   const renderIdentSelectField = (f, compact = false) => (
     <div key={f.id} className="fm-aeat-ident-inline-field">
-      <span className="fm-aeat-ident-inline-field__label">{t(f.labelKey)}</span>
+      <span className="fm-aeat-ident-inline-field__label">
+        {t(f.labelKey)}{f.required && <span className="fm-aeat-required-mark" aria-hidden="true">*</span>}
+      </span>
       <select
         className={`fm-aeat-ident-inline-field__select${compact ? ' fm-aeat-ident-inline-field__select--compact' : ''}`}
         value={identification?.[f.id] ?? ''}
@@ -125,7 +127,9 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
                     if (f.type === 'select') return renderIdentSelectField(f, true);
                     return (
                       <div key={f.id} className="fm-aeat-ident-inline-field">
-                        <span className="fm-aeat-ident-inline-field__label">{t(f.labelKey)}</span>
+                        <span className="fm-aeat-ident-inline-field__label">
+                          {t(f.labelKey)}{f.required && <span className="fm-aeat-required-mark" aria-hidden="true">*</span>}
+                        </span>
                         <input
                           type={f.type === 'date' ? 'date' : 'text'}
                           className="fm-aeat-ident-inline-field__input"
@@ -184,7 +188,9 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
                   if (f.type === 'select') return renderIdentSelectField(f);
                   return (
                     <div key={f.id} className="fm-aeat-ident-inline-field">
-                      <span className="fm-aeat-ident-inline-field__label">{t(f.labelKey)}</span>
+                      <span className="fm-aeat-ident-inline-field__label">
+                        {t(f.labelKey)}{f.required && <span className="fm-aeat-required-mark" aria-hidden="true">*</span>}
+                      </span>
                       <input
                         type={f.type === 'date' ? 'date' : 'text'}
                         className="fm-aeat-ident-inline-field__input"

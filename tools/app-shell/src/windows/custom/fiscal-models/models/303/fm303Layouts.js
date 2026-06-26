@@ -29,7 +29,7 @@ const IVA_DED_COLS = [
 const _BANK_DVX_VW = { field: 'tipo_declaracion', in: ['D', 'V', 'X'] };
 
 const TIPO_DECLARACION_FIELD = {
-  id: 'tipo_declaracion', labelKey: 'fm.ident.tipo_declaracion', type: 'select', readOnly: false,
+  id: 'tipo_declaracion', labelKey: 'fm.ident.tipo_declaracion', type: 'select', readOnly: false, required: true,
   options: [
     { value: 'C', labelKey: 'fm.ident.decl.compensacion' },
     { value: 'D', labelKey: 'fm.ident.decl.devolucion' },
@@ -76,7 +76,7 @@ const BASE = {
       fieldLayout: 'aligned',
       colHeaderKeys: [],
       fields: [
-        { id: 'bank_iban',      labelKey: 'fm.ident.bank.iban',      type: 'text', readOnly: false },
+        { id: 'bank_iban',      labelKey: 'fm.ident.bank.iban',      type: 'text', readOnly: false, required: true },
         { id: 'bank_swift_bic', labelKey: 'fm.ident.bank.swift_bic', type: 'text', readOnly: false, visibleWhen: _BANK_DVX_VW },
         { id: 'bank_nombre',    labelKey: 'fm.ident.bank.nombre',    type: 'text', readOnly: false, visibleWhen: _BANK_DVX_VW },
         { id: 'bank_direccion', labelKey: 'fm.ident.bank.direccion', type: 'text', readOnly: false, visibleWhen: _BANK_DVX_VW },
