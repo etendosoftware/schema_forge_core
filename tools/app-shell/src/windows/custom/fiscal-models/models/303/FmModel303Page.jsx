@@ -171,6 +171,21 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
     return result;
   }
 
+  // When box 65 (% attributable to State) differs from 100, recompute boxes 66/69/71.
+  // box66 = box46 × pct65 / 100; boxes 69 and 71 cascade from 66 (no other adjustments assumed).
+  function applyStatePctCascade(boxArr) {
+    const box65 = boxArr.find(b => b.num === 65)?.value ?? 100;
+    if (box65 === 100) return boxArr;
+    const box46 = boxArr.find(b => b.num === 46)?.value ?? 0;
+    const box66 = Math.round(box46 * box65) / 100;
+    return [
+      ...boxArr.filter(b => ![66, 69, 71].includes(b.num)),
+      { num: 66, value: box66 },
+      { num: 69, value: box66 },
+      { num: 71, value: box66 },
+    ];
+  }
+
   function handleBoxChange(boxNum, rawValue) {
     const numVal = parseFloat(String(rawValue ?? '').replace(',', '.'));
     const value = isNaN(numVal) ? null : numVal;
@@ -178,7 +193,8 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
     setLiveBoxes(prev => {
       const base = prev != null ? toBoxArray(prev) : toBoxArray(decl._precomputed?.boxes ?? decl.boxes);
       const filtered = base.filter(b => b.num !== boxNum);
-      return value != null ? [...filtered, { num: boxNum, value }] : filtered;
+      const updated = value != null ? [...filtered, { num: boxNum, value }] : filtered;
+      return boxNum === 65 ? applyStatePctCascade(updated) : updated;
     });
   }
 
@@ -192,7 +208,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
     try {
       const res = await computeBoxes303(decl, { token, apiBaseUrl });
       if (res) {
-        setLiveBoxes(applyOverrides(res.boxes, manualOverrides));
+        setLiveBoxes(applyStatePctCascade(applyOverrides(res.boxes, manualOverrides)));
         setLiveSummary(res.summary);
         if (res.sources) setLiveSources(res.sources);
       }
