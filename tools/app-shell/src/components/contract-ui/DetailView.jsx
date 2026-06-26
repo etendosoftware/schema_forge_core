@@ -2798,6 +2798,7 @@ export function DetailView({
     ui, tMenu, onAfterCreate, onAfterSave, token, apiBaseUrl, saveBtnCls,
     isDocumentReadOnly, isProcessed, draftMode, blockSaveForBalance, blockCompleteForBalance,
   };
+  const balanceFooterEditingLine = lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="detail-view" data-doc-status={_headerData?.documentStatus}>
@@ -4015,7 +4016,7 @@ export function DetailView({
                           <BalanceFooterPanel
                             lines={hook.children}
                             pendingLine={pendingLineValues}
-                            editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
+                            editingLine={balanceFooterEditingLine}
                             config={balanceFooter}
                             formatAmount={formatAmount}
                             currency={data['currency$_identifier']}
@@ -4029,7 +4030,7 @@ export function DetailView({
                             <DocumentTotalsPanel
                               lines={hook.children}
                               pendingLine={pendingLineValues}
-                              editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
+                              editingLine={balanceFooterEditingLine}
                               lineConfig={lineConfig}
                               formatAmount={formatAmount}
                               currency={currency}
