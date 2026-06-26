@@ -1975,7 +1975,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideStatusFilterProp = fragmentIf(hideStatusFilter, '\n      hideStatusFilter');
   const hideLinkProp = fragmentIf(hideLink, '\n      hideLink');
   const hideEyeCountProp = fragmentIf(hideEyeCount, '\n      hideEyeCount');
-  const customListIconsProp = customListIcons ? `\n      SortIconComponent={SortIcon}\n      RefreshIconComponent={RefreshIcon}` : '';
+  const customListIconsProp = fragmentIf(customListIcons, `\n      SortIconComponent={SortIcon}\n      RefreshIconComponent={RefreshIcon}`);
 
   // Custom component props (bottomSection, topbarRight)
   const {
