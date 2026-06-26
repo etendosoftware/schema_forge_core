@@ -1456,6 +1456,11 @@ function renderSaveActions(params) {
  * In both cases the component receives `{ recordId, data, token, apiBaseUrl, api }`
  * plus any keys declared in the optional `props` object.
  */
+function hasUnsavedEdits(editing, selected) {
+  if (!editing || !selected) return false;
+  return Object.entries(editing).some(([k, v]) => k !== 'id' && v !== selected[k]);
+}
+
 export function DetailView({
   entity,
   detailEntity,
@@ -1625,11 +1630,7 @@ export function DetailView({
   // even when called from a setTimeout scheduled before the React re-render committed.
   const handleFieldBlurRef = useRef(null);
   handleFieldBlurRef.current = () => {
-    if (!hook.editing || !hook.selected) return;
-    const hasChanges = Object.entries(hook.editing).some(
-      ([key, value]) => key !== 'id' && value !== hook.selected[key]
-    );
-    if (hasChanges) hook.handleSave();
+    if (hasUnsavedEdits(hook.editing, hook.selected)) hook.handleSave();
   };
   const handleFieldBlur = useCallback(() => {
     handleFieldBlurRef.current?.();
