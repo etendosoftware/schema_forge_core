@@ -41,8 +41,13 @@ vi.mock('@/lib/linesColumnWidth.js', () => ({
 
 // Stub the heavy sub-components that need their own providers
 vi.mock('../InlineSearchCombo.jsx', () => ({
-  InlineSearchCombo: ({ field, displayLabel }) => (
-    <span data-testid={`inline-combo-${field.key}`}>{displayLabel}</span>
+  InlineSearchCombo: ({ field, displayLabel, excludeId }) => (
+    <span
+      data-testid={`inline-combo-${field.key}`}
+      data-exclude-id={excludeId == null ? '' : String(excludeId)}
+    >
+      {displayLabel}
+    </span>
   ),
 }));
 vi.mock('../SelectorInput.jsx', () => ({
@@ -1177,7 +1182,7 @@ describe('InlineLinesPanel', () => {
     expect(screen.getByText('Third')).toBeInTheDocument();
   });
 
-  it('renders amount column with currency identifier', () => {
+  it('renders amount column formatted without currency identifier (currency shown at header level)', () => {
     const columns = [{ key: 'lineNetAmount', label: 'Net', type: 'amount' }];
     const rows = [{ id: 'AC1', lineNetAmount: 250, 'currency$_identifier': 'USD' }];
     const ref = React.createRef();
@@ -1186,7 +1191,7 @@ describe('InlineLinesPanel', () => {
         token="test" apiBaseUrl="/api" selectorContext={{}}
         onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
     );
-    expect(screen.getByText('250.00 USD')).toBeInTheDocument();
+    expect(screen.getByText('250.00')).toBeInTheDocument();
   });
 
   it('renders string column with identifier fallback', () => {
@@ -1199,5 +1204,60 @@ describe('InlineLinesPanel', () => {
         onSelectionChange={vi.fn()} onUpdateRow={vi.fn().mockResolvedValue()} onDeleteRow={vi.fn().mockResolvedValue()} />,
     );
     expect(screen.getByText('Acme Corp')).toBeInTheDocument();
+  });
+
+  describe('EditCell — excludeValueOf passes excludeId to InlineSearchCombo', () => {
+    // A selector/search column with `column` set so EditCell builds a selectorUrl
+    // and renders the InlineSearchCombo (mocked to expose excludeId).
+    async function enterEditAndGetCombo(columns, rows, comboKey) {
+      const ref = React.createRef();
+      render(
+        <InlineLinesPanel
+          ref={ref}
+          columns={columns}
+          data={rows}
+          entity="movementLine"
+          token="test"
+          apiBaseUrl="/api"
+          selectorContext={{}}
+          onSelectionChange={vi.fn()}
+          onUpdateRow={vi.fn().mockResolvedValue()}
+          onDeleteRow={vi.fn().mockResolvedValue()}
+        />,
+      );
+      const row = screen.getByTestId(`line-row-${rows[0].id}`);
+      await act(async () => { await userEvent.hover(row); });
+      const actions = within(row).getByTestId('line-actions');
+      const editBtn = within(actions).getAllByRole('button')[0]; // pencil
+      await act(async () => { await userEvent.click(editBtn); });
+      return within(row).getByTestId(`inline-combo-${comboKey}`);
+    }
+
+    const COLS = [
+      { key: 'storageBin', label: 'Origin Bin', type: 'selector', column: 'M_Locator_ID' },
+      { key: 'newStorageBin', label: 'Destination Bin', type: 'selector', column: 'M_LocatorTo_ID', excludeValueOf: 'storageBin' },
+    ];
+
+    it('passes excludeId = row[excludeValueOf] to the InlineSearchCombo', async () => {
+      const rows = [{ id: 'L1', storageBin: 'LOC-AG', 'storageBin$_identifier': 'Aisle G', newStorageBin: '', 'newStorageBin$_identifier': '' }];
+      const combo = await enterEditAndGetCombo(COLS, rows, 'newStorageBin');
+      expect(combo).toHaveAttribute('data-exclude-id', 'LOC-AG');
+    });
+
+    it('passes excludeId = "" (null) when the sibling field has no value', async () => {
+      const rows = [{ id: 'L1', storageBin: '', 'storageBin$_identifier': '', newStorageBin: '', 'newStorageBin$_identifier': '' }];
+      const combo = await enterEditAndGetCombo(COLS, rows, 'newStorageBin');
+      expect(combo).toHaveAttribute('data-exclude-id', '');
+    });
+
+    it('opt-in no-op: a selector column WITHOUT excludeValueOf gets excludeId null', async () => {
+      const cols = [
+        { key: 'storageBin', label: 'Origin Bin', type: 'selector', column: 'M_Locator_ID' },
+        { key: 'newStorageBin', label: 'Destination Bin', type: 'selector', column: 'M_LocatorTo_ID' },
+      ];
+      const rows = [{ id: 'L1', storageBin: 'LOC-AG', 'storageBin$_identifier': 'Aisle G', newStorageBin: '', 'newStorageBin$_identifier': '' }];
+      const combo = await enterEditAndGetCombo(cols, rows, 'newStorageBin');
+      expect(combo).toHaveAttribute('data-exclude-id', '');
+    });
   });
 });

@@ -135,6 +135,55 @@ See [Shared validation & UX changes — ETP-4005](app-shell-functional-flows.md#
 - `tools/app-shell/src/components/contract-ui/__tests__/DetailView.dirtyState.test.js` guards the `isDirty` composite expression, the `additionalDirtyState` extension prop, and the save-button disabled conditions (new record always active, existing record gated by `!isDirty`, Confirm button never gated by dirty state).
 - The generated `HeaderPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `C_Order` AD table.
 - `tools/app-shell/src/windows/custom/shared/usePurchaseOrderPdf.js` proves the purchase-order PDF hook that fetches header and lines from the PO NEO API endpoints and renders the shared `documentPdf.js` template with discount breakdown support.
+
+## Dual-currency display — ETP-4027
+
+Purchase orders use the same `OrderPreview` component as sales orders (with `specName='purchase-order'`), so the dual-currency display and currency field lock described below apply identically to both windows.
+
+### Overview
+
+When a purchase order is denominated in a currency different from the organization's functional currency, the preview panel `SummaryCard` renders both amounts side-by-side (Holded-style). When both currencies are the same, rendering is unchanged.
+
+### How it works
+
+`OrderPreview.jsx` calls the shared `useDocumentCurrency` hook (at `tools/app-shell/src/windows/custom/shared/useDocumentCurrency.js`) with the order's `currency$_identifier`, `orderDate`, `apiBaseUrl`, and `token`. The hook:
+
+1. Fetches `GET /sws/neo/session` to read the org's functional currency code.
+2. If the document currency differs, fetches `GET /sws/neo/validate-exchange-rate?fromCurrency={docCurrency}&toCurrency={orgCurrency}&date={orderDate}`.
+3. Returns `{ orgCurrencyCode, exchangeRate, convertAmount }`. `convertAmount(amount)` applies Etendo's `multiplyrate` convention (`to = from × rate`).
+
+`OrderPreview` pre-computes `orgGrandTotal = convertAmount(order.grandTotalAmount)` and threads `orgCurrencyCode`, `exchangeRate`, and `orgGrandTotal` through `OrderGeneralTab` into `SummaryCard`.
+
+`SummaryCard` shows the dual-currency block when `orgCurrencyCode` is present and differs from `currencyCode`:
+- **Primary row**: org-currency amount + document-currency badge, e.g. `8,500.00 €  [USD]`.
+- **Secondary row**: exchange rate + document-currency amount, e.g. `(1.1647) $9,900.00`.
+
+### Exchange rate endpoint
+
+`GET /sws/neo/validate-exchange-rate` is implemented in `NeoExchangeRateService.java`. It queries `C_Conversion_Rate` for the most recent active row valid on the document date. Both ISO 4217 codes and internal DB IDs are accepted. If the direct `FROM→TO` row is absent, the endpoint tries the inverse direction and returns `1/rate`, so configuring only one direction in Etendo is sufficient. Full parameter reference: see the Sales Order dual-currency section above.
+
+### Currency change handling (ETP-4027 functional model)
+
+The `currency` field on the header form is **always editable on draft purchase orders**, including those with saved lines. The DB trigger `C_ORDER_CHK_RESTRINCTIONS_TRG` no longer blocks the change (the `C_Currency_ID` clause was removed in ETP-4027 Phase 0). The frontend enforces a rate-availability validation at the dropdown change moment, and the per-line conversion runs only on lines added AFTER a save.
+
+The behavior is identical to Sales Order — see the full description in `docs/generated-custom-windows/sales-order.md` under "Currency change handling (ETP-4027 functional model)". Briefly:
+
+1. **Dropdown validation:** when the user picks a currency, the frontend fetches `validate-exchange-rate` for `org → new` on `orderDate`. If no rate exists, the dropdown reverts to the previous value and shows a toast (`noConversionRateError`).
+2. **Sync effect:** `activeCurrencyConversionRef` is set/cleared by a `useEffect` based on `hook.selected.currency` (the saved currency) vs the org currency.
+3. **Line conversion:** when a product is selected on a new line, `handleLineFieldChange` mutates `result` in place — converts the price AND sets `result.currency` to the order header's currency.
+4. **lines.currency writable:** `artifacts/purchase-order/decisions.json` declares `lines.currency` as `editable, grid: false, form: false` so NEO's `NeoFieldFilter` accepts the conversion-time currency override on PATCH bodies.
+
+Real-time conversion of pending unsaved lines on currency change is no longer supported (simplified model — analyst confirmed 2026-06-18).
+
+### Automated evidence
+
+- `tools/app-shell/src/windows/custom/shared/useDocumentCurrency.js` — shared hook for preview.
+- `tools/app-shell/src/windows/custom/shared/preview-cards/SummaryCard.jsx` — dual-currency preview rendering.
+- `tools/app-shell/src/windows/custom/shared/OrderPreview.jsx` — computes `orgGrandTotal`, threads to `SummaryCard`.
+- `tools/app-shell/src/components/contract-ui/DetailView.jsx` — sync effect for `activeCurrencyConversionRef`, dropdown rate validation, in-place conversion block.
+- `modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/NeoExchangeRateService.java` — exchange rate endpoint.
+- `modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/NeoSessionService.java` — `/session` endpoint returning `currencyCode` and `currencyId`.
+- `etendo_core_pg/src-db/database/model/triggers/C_ORDER_CHK_RESTRINCTIONS_TRG.xml` — trigger with `C_Currency_ID` clause removed (Phase 0 / ETP-4027).
 - `tools/app-shell/src/components/contract-ui/RowQuickActions.jsx` provides the shared row hover-overlay component (Edit / Duplicate / Email / Delete / kebab). `tools/app-shell/src/components/contract-ui/quickActionsStyle.js` and `tools/app-shell/src/components/contract-ui/__tests__/RowQuickActions.vitest.jsx` cover styling and behavior. Visibility logic is shared with `DetailView.jsx` via `isDeleteVisibleForRecord` and `evalRowVisibleWhen`. The `rowQuickActions={{}}` prop on the generated `HeaderPage.jsx` `ListView` activates the overlay with the schema default action set declared in `window.rowQuickActions`.
 - `artifacts/purchase-order/custom/PurchaseOrderActions.jsx` exports `ManageDocsLauncher`, the purchase-order-specific kebab item mounted from the row quick actions: it fetches receipts, invoices, and order lines, derives pending quantity and amount, and reuses `CreateDocsModal` to surface the same create-receipt/create-invoice flow available from the detail topbar.
 - **ETP-3995 — Related Documents tab i18n**: The generated page file now uses `labelKey: 'relatedDocuments'` in the `customTabs` prop instead of a hardcoded `label: 'Related Documents'` string, so the tab title renders via the active UI language (e.g. "Documentos relacionados" in Spanish) regardless of the browser locale.

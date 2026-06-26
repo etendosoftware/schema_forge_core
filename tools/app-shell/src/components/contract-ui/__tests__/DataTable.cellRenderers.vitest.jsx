@@ -1,9 +1,14 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
+const statusLabelMock = vi.fn((raw, _dict, _translate, enumLabels) => {
+  if (enumLabels?.[raw] != null) return `enum:${enumLabels[raw]}`;
+  return `status-label-${raw}`;
+});
+
 vi.mock('@/lib/statusBadge.js', () => ({
   getStatusDotColor: (raw) => `dot-${raw ?? 'none'}`,
-  statusLabel: (raw) => `status-label-${raw}`,
+  statusLabel: (...args) => statusLabelMock(...args),
 }));
 
 vi.mock('@/components/ui/status-tag', () => ({
@@ -107,6 +112,32 @@ describe('renderStatusCell', () => {
     const tag = screen.getByTestId('status-tag');
     expect(tag).toHaveAttribute('data-status', 'CO');
     expect(tag).toHaveTextContent('status-label-CO');
+  });
+
+  it('passes col.enumLabels to statusLabel and renders the resolved label', () => {
+    // statusLabelMock (defined at module scope) is wired into the vi.mock factory.
+    // When col.enumLabels is provided, the mock returns `enum:<value>` so we can
+    // assert both the call signature and the rendered output.
+    statusLabelMock.mockClear();
+    const enumLabels = { true: 'statusProcessed', false: 'statusDraft' };
+
+    renderCell(renderStatusCell({
+      ...baseContext,
+      row: { id: '1', processed: true },
+      col: { key: 'processed', type: 'status', enumLabels },
+    }));
+
+    // Verify statusLabel was invoked with the enumLabels map as 4th argument
+    expect(statusLabelMock).toHaveBeenCalledWith(
+      true,
+      expect.anything(),
+      expect.anything(),
+      enumLabels,
+    );
+
+    // The label returned by the mock (enum:statusProcessed) must appear in the tag
+    const tag = screen.getByTestId('status-tag');
+    expect(tag).toHaveTextContent('enum:statusProcessed');
   });
 });
 

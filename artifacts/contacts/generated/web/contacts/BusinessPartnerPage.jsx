@@ -26,7 +26,9 @@ const statusField = null;
 // @sf-generated-end summary:businessPartner
 
 // @sf-generated-start extraBadges:businessPartner
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:businessPartner
 
 // @sf-generated-start processes:businessPartner

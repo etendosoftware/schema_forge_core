@@ -398,7 +398,8 @@ Additional actions shown in the detail view's "more" menu (triple dot icon). Eac
     { "key": "duplicate", "label": "Duplicate" },
     { "key": "cancel", "labelKey": "cancel", "destructive": true, "visibleWhenStatus": "CO" },
     { "key": "reactivate", "labelKey": "reactivate", "visibleWhenStatus": "CO", "visibleWhenFieldFalse": "hasLinkedDocuments", "documentAction": "RE", "successKey": "actionCompleted" },
-    { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR"], "columnName": "aPRMReversePayment" }
+    { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR"], "columnName": "aPRMReversePayment" },
+    { "key": "post", "label": "Post", "labelKey": "post", "action": "post", "successKey": "documentPosted" }
   ]
 }
 ```
@@ -410,9 +411,11 @@ Additional actions shown in the detail view's "more" menu (triple dot icon). Eac
 | `labelKey` | string | i18n key for the label (alternative to `label`). |
 | `destructive` | boolean | If `true`, renders in red as a destructive action. |
 | `visibleWhenStatus` | string or string[] | Only show the action when document status matches. Omit to always show. |
-| `visibleWhenFieldFalse` | string | Hide the action when the named field in the record `data` is truthy. Combines with `visibleWhenStatus` using AND. Requires the backend to expose the field (e.g. via a NeoHandler `afterHandle`). When used, the generator emits `({ data, status }) =>` instead of `({ status }) =>`. |
+| `visibleWhenFieldTrue` | string | Show the action only when the named field in the record `data` **is** truthy. Etendo `'Y'`/`'N'`-aware: the field is treated as true when it equals the string `'Y'` or boolean `true`. Combines with `visibleWhenStatus` using AND. Requires the backend to expose the field (e.g. via a NeoHandler `afterHandle`). When used, the generator emits `({ data, status }) =>` instead of `({ status }) =>`. Emitted as `(data?.<field> === 'Y' || data?.<field> === true)`. |
+| `visibleWhenFieldFalse` | string | Show the action only when the named field in the record `data` is **not** true — the exact logical complement of `visibleWhenFieldTrue`. Etendo `'Y'`/`'N'`-aware: a field of `'N'` (which is a truthy JS string!) correctly counts as "false", so an unposted (`posted='N'`) document still shows the action. Combines with `visibleWhenStatus` using AND. Requires the backend to expose the field. When used, the generator emits `({ data, status }) =>` instead of `({ status }) =>`. Emitted as `!(data?.<field> === 'Y' || data?.<field> === true)`. |
 | `documentAction` | string | Invokes the standard DocAction endpoint with this value (`"RE"`, `"CO"`, `"VO"`, etc.). The record refreshes automatically on success. |
-| `columnName` | string | If set, triggers the named process column via `hook.handleProcess`. If omitted, generates an empty `onClick` placeholder. |
+| `columnName` | string | If set, triggers the named process column via `hook.handleProcess`. If omitted (and no `action`), generates an empty `onClick` placeholder. |
+| `action` | string | Invokes a generic NEO action endpoint (`POST {apiBaseUrl}/{entity}/{recordId}/action/{action}`) via the `useNeoAction` hook — e.g. `"post"` / `"unpost"`. The backend must handle the named action server-side. Emitted as `neoAction: '<value>'` in the contract. **Handler precedence:** `documentAction` > `columnName` > `action` > empty `onClick`. |
 | `successMessage` | string | Text shown in the success banner after `documentAction` resolves. |
 | `successKey` | string | i18n key for the success banner message (alternative to `successMessage`). |
 
@@ -547,6 +550,48 @@ Applied to fields with `grid: true` to control how the list cell renders.
 | `gridReadOnly` | boolean | `false` | Make an otherwise-editable column read-only in the grid. |
 | `grow` | boolean | `false` | Let the column grow to fill available width. |
 | `cellType` | string | `null` | Selects a cell renderer from the registry (see below). Generic to any grid; the `list-modal` layout ships a styled set. |
+
+#### Status column rendering (`columnType` and `enumValues`)
+
+Two field-level props control how the grid column renders raw values as labeled badges — without touching the underlying Etendo AD column reference.
+
+| Property | Type | Default | Purpose |
+|----------|------|---------|---------|
+| `columnType` | string | Inferred | Forces the grid column renderer. `"status"` renders the cell as a status badge. When absent, the renderer is inferred from the field name/type via `mapFieldType` in `generate-frontend.js`. |
+| `enumValues` | array | `null` | Maps raw cell values to display labels. Each entry: `{ "value": "<raw>", "name": "<i18nKeyOrLabel>" }`. The generator emits these as `enumLabels: { '<raw>': '<name>' }` on the table column descriptor. |
+
+**How `enumValues` is resolved at runtime:**
+
+1. `statusLabel()` in `tools/app-shell/src/lib/statusBadge.js` looks up `name` in `dictionary.genericLabels[name]`, then via the active `translate` function, and falls back to rendering `name` literally.
+2. `DistinctEnumPicker` (in `AdvancedFilterBuilder.jsx`) reads `enumLabels` to populate the advanced/conditional filter value dropdown — so the filter shows translated labels instead of raw values.
+3. `ListFilterBar.jsx` uses the same `enumLabels` to drive the status quick-filter pills above the list.
+
+**Key rules:**
+
+- This is a **Schema Forge display mapping only** — the Etendo AD column reference is never modified.
+- The mapping is **per-window**: the same raw value (e.g. `false`) can map to `statusDraft` in one window and a different key (e.g. `statusIncomplete`) in another. The shared `statusLabel` function stays generic.
+- `name` should be an existing key in `genericLabels` (in `packages/app-shell-core/src/locales/{es_ES,en_US}.json`) so both locales resolve correctly. If you use a literal string it renders as-is in all locales.
+- If you introduce a **new** key, add it to **both** `en_US.json` and `es_ES.json` (per `docs/i18n-guide.md`).
+- If the raw schema already supplies `enumValues` (from an AD list reference), `decisions.json` `enumValues` **overrides** them.
+
+**Example — `goods-movements` `processed` field** (an Etendo `YesNo` boolean the API serializes as `true`/`false`):
+
+```json
+"processed": {
+  "visibility": "readOnly",
+  "label": "Status",
+  "grid": true,
+  "form": false,
+  "columnType": "status",
+  "enumValues": [
+    { "value": "true",  "name": "statusProcessed" },
+    { "value": "false", "name": "statusDraft" }
+  ],
+  "gridOrder": 4
+}
+```
+
+This renders the badge as "Processed"/"Draft" (EN) and "Procesado"/"Borrador" (ES), reusing the existing `statusProcessed`/`statusDraft` keys from `genericLabels`. The advanced filter and the status quick-filter pill also show these labels instead of raw `true`/`false`.
 
 #### `list-modal` cell renderers (`cellType`)
 

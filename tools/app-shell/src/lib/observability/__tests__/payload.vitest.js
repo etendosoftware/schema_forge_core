@@ -132,6 +132,55 @@ describe('sanitizeEventProperties', () => {
     });
   });
 
+  it('keeps documented KPI properties with safe values', () => {
+    expect(sanitizeEventProperties({
+      kpiId: 'kpi_adoption_dashboard_quick_actions_7d',
+      module: 'dashboard',
+      flow: 'quick_actions',
+      entityType: 'sales_invoice',
+      channel: 'manual',
+      durationMs: 1200,
+      count: 3,
+      total: 10,
+      correctCount: 9,
+      score: 95,
+      critical: true,
+      errorClass: 'validation_failed',
+    })).toEqual({
+      kpiId: 'kpi_adoption_dashboard_quick_actions_7d',
+      module: 'dashboard',
+      flow: 'quick_actions',
+      entityType: 'sales_invoice',
+      channel: 'manual',
+      durationMs: 1200,
+      count: 3,
+      total: 10,
+      correctCount: 9,
+      score: 95,
+      critical: true,
+      errorClass: 'validation_failed',
+    });
+  });
+
+  it('drops invalid KPI numeric values', () => {
+    expect(sanitizeEventProperties({
+      durationMs: Infinity,
+      score: 101,
+      count: -1,
+      total: '10',
+      correctCount: Number.NaN,
+      action: 'measure',
+    })).toEqual({ action: 'measure' });
+  });
+
+  it('requires boolean values for boolean KPI flags', () => {
+    expect(sanitizeEventProperties({
+      critical: 'true',
+      enabled: 1,
+      mockMode: false,
+    })).toEqual({ mockMode: false });
+  });
+
   it('keeps safe keys with boolean values', () => {
     expect(sanitizeEventProperties({ enabled: true })).toEqual({ enabled: true });
   });
@@ -159,13 +208,14 @@ describe('sanitizeEventProperties', () => {
   it('removes out-of-range KPI metric values', () => {
     expect(sanitizeEventProperties({
       accuracy: 101,
-      attempt: 101,
-      count: 100001,
+      attempt: 1001,
+      count: 1000000001,
       durationMs: -1,
-      position: 101,
-      score: 11,
-      step: 1000,
-      value: 1000001,
+      position: 1000001,
+      score: 101,
+      step: 1001,
+      total: 1000000001,
+      value: 1000000001,
     })).toEqual({});
   });
 

@@ -5,6 +5,7 @@ import { useLocaleSwitch } from '@/i18n';
 import { useCopilot } from '@/components/CopilotContext';
 import { formatDashboardAmount, localeFromUi } from '@/lib/dashboardNumberFormat.js';
 import { resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
+import { DASHBOARD_KPI_IDS, trackDashboardKpi } from '@/lib/dashboardKpiTelemetry.js';
 import { DashboardCard, DashboardEmptyState, DashboardRowChevron } from './_shared';
 
 const UUID_RE = /^[0-9A-F]{32}$/i;
@@ -55,6 +56,11 @@ export function RecentSalesList({ invoices = [], currencyLabel = '' }) {
                   key={inv.id || i}
                   data-testid={`recent-sales-item-${inv.id || i}`}
                   to={target}
+                  onClick={() => trackDashboardKpi('dashboard_document_opened', {
+                    kpiId: DASHBOARD_KPI_IDS.dashboardToDocument,
+                    entityType: 'sales_invoice',
+                    source: 'dashboard_recent_sales',
+                  })}
                   className="hover:bg-[#F5F7F9] transition-colors"
                   style={{
                     display: 'flex',

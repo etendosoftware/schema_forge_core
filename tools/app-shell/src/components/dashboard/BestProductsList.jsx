@@ -5,6 +5,7 @@ import { useUI } from '@/i18n';
 import { useLocaleSwitch } from '@/i18n';
 import { useCopilot } from '@/components/CopilotContext';
 import { formatDashboardAmount, formatDashboardNumber, localeFromUi } from '@/lib/dashboardNumberFormat.js';
+import { DASHBOARD_KPI_IDS, trackDashboardKpi } from '@/lib/dashboardKpiTelemetry.js';
 import { DashboardCard, DashboardEmptyState, DashboardRowChevron } from './_shared';
 
 function TrendPill({ pct }) {
@@ -150,7 +151,15 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
             return (
               <div
                 key={`${viewMode}-${row.name}-${i}`}
-                onClick={() => row.id && navigate(`/product/${row.id}`)}
+                onClick={() => {
+                  if (!row.id) return;
+                  trackDashboardKpi('dashboard_document_opened', {
+                    kpiId: DASHBOARD_KPI_IDS.dashboardToDocument,
+                    entityType: 'product',
+                    source: 'dashboard_best_products',
+                  });
+                  navigate(`/product/${row.id}`);
+                }}
                 style={{
                   display: 'flex',
                   flexDirection: 'row',
