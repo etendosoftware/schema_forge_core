@@ -362,10 +362,13 @@ run_domain_boundary_check
 # 2. Run unit tests and SonarQube analysis
 # --fail-on-gate makes run-sonar.sh exit non-zero when the Quality Gate is in
 # ERROR, so this step (and the push) is blocked exactly when CI's gate would fail.
+# --compare-coverage additionally blocks when this branch's OVERALL coverage drops
+# below the base branch's — mirroring Jenkins' "Compare Coverage Results" stage,
+# which the new-code-only Quality Gate does not cover.
 if [ -n "$BASE_REF" ]; then
-  SONAR_CMD="./run-sonar.sh --base-ref \"$BASE_REF\" --coverage --fail-on-gate"
+  SONAR_CMD="./run-sonar.sh --base-ref \"$BASE_REF\" --coverage --fail-on-gate --compare-coverage"
 else
-  SONAR_CMD="./run-sonar.sh --all-issues --coverage --fail-on-gate"
+  SONAR_CMD="./run-sonar.sh --all-issues --coverage --fail-on-gate --compare-coverage"
 fi
 run_step "2" "Running unit tests and SonarQube analysis" "$REPO_DIR" "tmp/pre-push/sonar-and-tests.log" "$SONAR_CMD"
 

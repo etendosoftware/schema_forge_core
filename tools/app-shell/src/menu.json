@@ -293,6 +293,11 @@
           "windowId": "800026"
         },
         {
+          "name": "not-posted-documents",
+          "label": "Not Posted Documents",
+          "favname": "Not Posted Documents"
+        },
+        {
           "name": "simple-g-l-journal",
           "label": "Manual Journals",
           "favname": "Manual Journals",

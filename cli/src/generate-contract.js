@@ -498,6 +498,7 @@ const FIELD_ATTR_SPECS = [
   ['onSelectMappings', 'array'],
   ['displayFromCatalog', 'verbatim'],
   ['forceCalloutFields', 'array'],
+  ['excludeValueOf', 'verbatim'],
 ];
 
 function mapFieldAttributes(f, mapped) {

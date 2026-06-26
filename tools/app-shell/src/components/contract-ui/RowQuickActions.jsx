@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Pencil, Copy, Mail, MoreVertical, Trash2, Loader2 } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { useDocumentAction } from '@/hooks/useDocumentAction';
+import { useNeoAction } from '@/hooks/useNeoAction';
 import { isDeleteVisibleForRecord, evalRowVisibleWhen } from '@/utils/recordActions.js';
 import { QUICK_ACTIONS_PILL_CLASS } from './quickActionsStyle.js';
 
@@ -73,6 +74,9 @@ export default function RowQuickActions({
   const moreRef = useRef(null);
   const menuRef = useRef(null);
   const docAction = useDocumentAction({ apiBaseUrl, entity, token });
+  // ETP-4298 — declarative NEO action endpoint (e.g. post/unpost). `apiBaseUrl`
+  // is already scoped to the spec; entity segment mirrors useDocumentAction.
+  const neoAction = useNeoAction({ specName: windowName, entityName: entity, apiBaseUrl, token });
 
   // visibleWhen lookup for a given action key. Falls back to `true` when no expression set.
   const passesVisibleWhen = useCallback((key) => {
@@ -141,7 +145,7 @@ export default function RowQuickActions({
   const stop = (e) => { e.stopPropagation(); };
 
   const resolvedMenuActions = typeof menuActions === 'function'
-    ? menuActions({ row, status: statusField ? row?.[statusField] : undefined })
+    ? menuActions({ row, data: row, status: statusField ? row?.[statusField] : undefined })
     : menuActions;
   const visibleMenuActions = (Array.isArray(resolvedMenuActions) ? resolvedMenuActions : [])
     .filter(a => a && a.visible !== false)
@@ -170,6 +174,11 @@ export default function RowQuickActions({
         onMenuActionExecuted?.(action, result);
         return;
       }
+      if (action.neoAction) {
+        const result = await neoAction.execute(row?.id, action.neoAction);
+        onMenuActionExecuted?.(action, result);
+        return;
+      }
       if (action.onClick) {
         const result = await action.onClick({ row, windowName, apiBaseUrl, token });
         onMenuActionExecuted?.(action, result);
@@ -189,7 +198,7 @@ export default function RowQuickActions({
         return next;
       });
     }
-  }, [docAction, row, windowName, apiBaseUrl, token, onMenuActionExecuted, inFlight]);
+  }, [docAction, neoAction, row, windowName, apiBaseUrl, token, onMenuActionExecuted, inFlight]);
 
   return (
     <div
@@ -282,6 +291,7 @@ export default function RowQuickActions({
                   <button
                     key={action.key || i}
                     type="button"
+                    data-testid={`menu-action-${action.key ?? i}`}
                     disabled={pending || docAction.loading}
                     onClick={(e) => { stop(e); handleMenuActionClick(action); }}
                     className={[

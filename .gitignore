@@ -32,6 +32,7 @@ e2e/test-results/
 e2e/playwright-report/
 e2e/recordings/
 e2e/auth.json
+e2e/.auth-credentials.json
 .fyso/
 tmp/
 sonar-results.md

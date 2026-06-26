@@ -887,7 +887,13 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
 
   // The column's own enumLabels (labelMap) win over the global status dictionary
   // so a code colliding with an unrelated global status keeps the column's label.
-  const labelFor = (code) => labelMap[code] || dictionary?.statuses?.[code]?.label || code;
+  // enumLabels values may be i18n keys, so run them through ui() (literal labels
+  // pass through unchanged), mirroring ListFilterBar's labelForStatus.
+  const labelFor = (code) => {
+    const declared = labelMap[code];
+    if (declared != null) return (ui && ui(declared)) || declared;
+    return dictionary?.statuses?.[code]?.label || code;
+  };
 
   const inMemoryCodes = useMemo(() => {
     const seen = new Set();
@@ -906,19 +912,28 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
   const mergedCodes = useMemo(() => {
     const seen = new Set();
     const out = [];
-    for (const entry of distinct.values) {
-      const c = entry?.id;
-      if (c == null || c === '') continue;
-      if (!seen.has(c)) { seen.add(c); out.push(c); }
-    }
-    const q = distinct.search.trim().toLowerCase();
-    for (const c of inMemoryCodes) {
-      if (seen.has(c)) continue;
-      if (q && !labelFor(c).toLowerCase().includes(q) && !String(c).toLowerCase().includes(q)) continue;
+    // Boolean-valued columns surface the same value in two shapes: the distinct
+    // endpoint returns the string "true"/"false" while in-memory rows hold the
+    // boolean true/false. Normalize to a single canonical string so they collapse
+    // to one option instead of rendering duplicate labels (the enumLabels keys are
+    // strings too, so labelFor still resolves the canonical form).
+    const canon = (c) => (typeof c === 'boolean' ? String(c) : c);
+    const add = (code) => {
+      if (code == null || code === '') return;
+      const c = canon(code);
+      if (seen.has(c)) return;
       seen.add(c);
       out.push(c);
+    };
+    for (const entry of distinct.values) add(entry?.id);
+    const q = distinct.search.trim().toLowerCase();
+    for (const c of inMemoryCodes) {
+      const cc = canon(c);
+      if (seen.has(cc)) continue;
+      if (q && !labelFor(cc).toLowerCase().includes(q) && !String(cc).toLowerCase().includes(q)) continue;
+      add(c);
     }
-    if (value && !seen.has(value)) { seen.add(value); out.push(value); }
+    if (value != null && value !== '') add(value);
     // Fallback: for virtual columns with static enumLabels and no dynamic data, use the
     // enumLabels keys directly so the picker is not empty.
     fillFallbackCodes(out, labelMap, seen);

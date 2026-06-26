@@ -126,18 +126,23 @@ describe('MovementsToolbar', () => {
     expect(lastCall[0]).toBe('c');
   });
 
-  it('keeps the new-movement button hidden while the feature is disabled', () => {
-    const onNewMovement = vi.fn();
+  it('renders the Transfer funds button (in the former New-movement slot) and fires onTransfer', async () => {
+    const user = userEvent.setup();
+    const onTransfer = vi.fn();
     render(
       <MovementsToolbar
         filters={defaultFilters}
         onFiltersChange={() => () => {}}
-        onNewMovement={onNewMovement}
+        onTransfer={onTransfer}
       />,
     );
 
+    // The feature-flagged "New movement" button is gone; its slot now holds Transfer funds.
     expect(screen.queryByTestId('new-movement-button')).not.toBeInTheDocument();
-    expect(onNewMovement).not.toHaveBeenCalled();
+    const btn = screen.getByTestId('transfer-funds-button');
+    expect(btn).toBeInTheDocument();
+    await user.click(btn);
+    expect(onTransfer).toHaveBeenCalledTimes(1);
   });
 
   it('passes the active filter values to child filter components', () => {

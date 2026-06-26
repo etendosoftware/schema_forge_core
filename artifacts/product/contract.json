@@ -1,8 +1,8 @@
 {
-  "version": "0.12.0",
+  "version": "0.13.0",
   "generatedAt": "2026-04-29T18:11:24.842Z",
-  "updatedAt": "2026-06-12T12:26:05.174Z",
-  "checksum": "695d69a8fa0a06d2",
+  "updatedAt": "2026-06-24T20:46:48.245Z",
+  "checksum": "01a7ff0044f106df",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -4073,6 +4073,14 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "etgoValuation",
+            "apiKey": "etgoValuation",
+            "column": "EM_Etgo_Valuation",
+            "type": "amount",
+            "visibility": "system",
+            "required": false
           }
         ],
         "javaQualifier": "productStockWarehouseHandler"
@@ -9422,6 +9430,14 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for stock"
       },
       {
+        "id": "t-system-field-stock-etgoValuation",
+        "category": "system-field",
+        "entity": "stock",
+        "field": "etgoValuation",
+        "runner": "node",
+        "description": "System field 'etgoValuation' should exist in backend but not frontend for stock"
+      },
+      {
         "id": "t-system-field-stock-id",
         "category": "system-field",
         "entity": "stock",
@@ -9892,7 +9908,7 @@
       }
     ],
     "summary": {
-      "total": 622,
+      "total": 623,
       "byCategory": {
         "action-endpoint": 9,
         "crud-flags": 11,
@@ -9906,11 +9922,11 @@
         "rule-declared": 141,
         "searchable-filters": 5,
         "selector-endpoint": 23,
-        "system-field": 232,
+        "system-field": 233,
         "visibility": 11
       },
       "byRunner": {
-        "node": 622,
+        "node": 623,
         "junit": 0
       }
     }

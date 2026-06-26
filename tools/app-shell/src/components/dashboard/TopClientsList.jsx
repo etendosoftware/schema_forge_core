@@ -5,6 +5,7 @@ import { useLocaleSwitch } from '@/i18n';
 import { useCopilot } from '@/components/CopilotContext';
 import { formatDashboardAmount, localeFromUi } from '@/lib/dashboardNumberFormat.js';
 import { resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
+import { DASHBOARD_KPI_IDS, trackDashboardKpi } from '@/lib/dashboardKpiTelemetry.js';
 
 async function resolveClientRoute({ client, token, apiBaseUrl }) {
   const directRoute = resolveDashboardNavigation(client?.navigation);
@@ -42,6 +43,11 @@ export function TopClientsList({ clients = [], currencyLabel = '', token = '', a
   const { open: openCopilot } = useCopilot();
 
   const handleClick = async (client) => {
+    trackDashboardKpi('dashboard_document_opened', {
+      kpiId: DASHBOARD_KPI_IDS.dashboardToDocument,
+      entityType: 'business_partner',
+      source: 'dashboard_top_clients',
+    });
     const route = await resolveClientRoute({ client, token, apiBaseUrl });
     navigate(route);
   };

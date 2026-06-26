@@ -311,6 +311,37 @@ describe('generateTableComponent', () => {
     assert.ok(!code.includes('useState'));
     assert.ok(!code.includes('filteredData'));
   });
+
+  it('emits excludeValueOf on the grid column when declared on a selector field', () => {
+    const contract = {
+      ...masterDetailContract,
+      frontendContract: {
+        ...masterDetailContract.frontendContract,
+        entities: {
+          ...masterDetailContract.frontendContract.entities,
+          orderLine: {
+            ...masterDetailContract.frontendContract.entities.orderLine,
+            fields: [
+              ...masterDetailContract.frontendContract.entities.orderLine.fields,
+              { name: 'newStorageBin', column: 'M_LocatorTo_ID', type: 'foreignKey', tsType: 'string',
+                visibility: 'editable', required: true, grid: true, form: true, reference: 'Locator',
+                inputMode: 'selector', excludeValueOf: 'storageBin' },
+            ],
+          },
+        },
+      },
+    };
+    const code = generateTableComponent('orderLine', contract);
+    assert.ok(
+      /key: 'newStorageBin'[^}]*excludeValueOf: 'storageBin'/.test(code),
+      `expected excludeValueOf on newStorageBin grid column, got:\n${code}`,
+    );
+  });
+
+  it('omits excludeValueOf on grid columns when not declared', () => {
+    const code = generateTableComponent('orderLine', masterDetailContract);
+    assert.ok(!code.includes('excludeValueOf'));
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -640,6 +671,39 @@ describe('generatePageComponent', () => {
     assert.ok(!code.includes('forceCalloutFields'));
   });
 
+  it('emits excludeValueOf on the addLineFields entry when declared on a selector field', () => {
+    const contract = {
+      ...masterDetailContract,
+      frontendContract: {
+        ...masterDetailContract.frontendContract,
+        entities: {
+          ...masterDetailContract.frontendContract.entities,
+          orderLine: {
+            ...masterDetailContract.frontendContract.entities.orderLine,
+            fields: [
+              ...masterDetailContract.frontendContract.entities.orderLine.fields,
+              { name: 'newStorageBin', column: 'M_LocatorTo_ID', type: 'foreignKey', tsType: 'string',
+                visibility: 'editable', required: true, grid: true, form: true, reference: 'Locator',
+                inputMode: 'selector', excludeValueOf: 'storageBin' },
+            ],
+          },
+        },
+      },
+    };
+    const code = generatePageComponent('order', 'orderLine', contract);
+    const entryMatch = code.match(/entry: \[([\s\S]*?)\]/);
+    assert.ok(entryMatch, 'addLineFields entry array not found');
+    assert.ok(
+      /key: 'newStorageBin'[^}]*excludeValueOf: 'storageBin'/.test(entryMatch[1]),
+      `expected excludeValueOf on newStorageBin entry field, got:\n${entryMatch[1]}`,
+    );
+  });
+
+  it('omits excludeValueOf on the addLineFields entry when not declared', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('excludeValueOf'));
+  });
+
   it('passes config props to MasterDetailPage', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.ok(code.includes('entity="order"'));
@@ -803,13 +867,15 @@ describe('generatePageComponent — sendDocument recipient policy (ETP-4226)', (
     assert.equal(matches.length, 2, 'policy should be emitted for ListView and DetailView');
   });
 
-  it('omits the sendDocument prop entirely when the feature is force-disabled', () => {
+  it('emits sendDocument={{"enabled":false}} when the feature is force-disabled', () => {
+    // Must emit the prop explicitly so ListView receives sendDocument != null and
+    // skips its documentNo auto-detection heuristic (which would re-enable the envelope).
     const code = generatePageComponent(
       'order',
       'orderLine',
       buildDocumentalContract({ enabled: false, editableRecipients: true }),
     );
-    assert.ok(!/sendDocument/.test(code), 'force-disabled window emits no sendDocument prop');
+    assert.ok(/sendDocument=\{.*"enabled":false/.test(code), 'force-disabled window emits sendDocument={{"enabled":false}}');
   });
 });
 
@@ -1599,8 +1665,8 @@ describe('generatePageComponent — menuActions visibleWhenFieldFalse', () => {
     ]);
     const code = generatePageComponent('header', null, contract);
     assert.ok(
-      code.includes("visible: status === 'CO' && !data?.hasLinkedDocuments"),
-      'should combine status check and field check with &&',
+      code.includes("visible: status === 'CO' && !(data?.hasLinkedDocuments === 'Y' || data?.hasLinkedDocuments === true)"),
+      'should combine status check and Y/N-aware field check with &&',
     );
   });
 
@@ -1609,7 +1675,10 @@ describe('generatePageComponent — menuActions visibleWhenFieldFalse', () => {
       { key: 'duplicate', label: 'Duplicate', visibleWhenFieldFalse: 'isDraft' },
     ]);
     const code = generatePageComponent('header', null, contract);
-    assert.ok(code.includes('visible: !data?.isDraft'), 'should emit only field condition when no status filter');
+    assert.ok(
+      code.includes("visible: !(data?.isDraft === 'Y' || data?.isDraft === true)"),
+      'should emit only the Y/N-aware field condition when no status filter',
+    );
     assert.ok(!code.includes('status ==='), 'should not include status check when visibleWhenStatus is absent');
   });
 
@@ -1620,7 +1689,7 @@ describe('generatePageComponent — menuActions visibleWhenFieldFalse', () => {
     ]);
     const code = generatePageComponent('header', null, contract);
     assert.ok(
-      code.includes("visible: status === 'CO' && !data?.hasLinkedDocuments"),
+      code.includes("visible: status === 'CO' && !(data?.hasLinkedDocuments === 'Y' || data?.hasLinkedDocuments === true)"),
       'reactivate should have compound condition',
     );
     assert.ok(

@@ -19,7 +19,9 @@ const statusField = null;
 // @sf-generated-end summary:cabeceraDeEmisor
 
 // @sf-generated-start extraBadges:cabeceraDeEmisor
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:cabeceraDeEmisor
 
 // @sf-generated-start processes:cabeceraDeEmisor

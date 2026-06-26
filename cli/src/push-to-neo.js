@@ -952,6 +952,142 @@ export async function pushReportToNeo(reportName, options = {}) {
 }
 
 // ---------------------------------------------------------------------------
+// Custom window push (no AD backing, NeoHandler-driven)
+// ---------------------------------------------------------------------------
+
+/**
+ * Push a custom window (no AD_Window backing) to NEO Headless.
+ *
+ * Reads `decisions.json` from the artifact directory. The entity's
+ * `javaQualifier` field drives NeoHandler routing in NEO Headless.
+ * No ETGO_SF_FIELD rows are written — the handler owns the data layer.
+ *
+ * Usage:
+ *   node cli/src/push-to-neo.js <windowName> --type custom [--dry-run]
+ *
+ * @param {string} windowName - Artifact folder name (kebab-case spec name)
+ * @param {object} [options]
+ * @param {boolean} [options.dryRun]
+ * @param {string}  [options.projectRoot]
+ * @param {object}  [options.dbConfig]
+ * @param {object}  [options.audit]
+ */
+export async function pushCustomWindowToNeo(windowName, options = {}) {
+  const projectRoot = options.projectRoot || ROOT;
+  const artifactsDir = join(projectRoot, 'artifacts', windowName);
+
+  let decisions;
+  try {
+    decisions = JSON.parse(await readFile(join(artifactsDir, 'decisions.json'), 'utf-8'));
+  } catch (err) {
+    throw new Error(`Cannot read decisions.json for '${windowName}': ${err.message}`);
+  }
+
+  const specName = windowName;
+  const entityName = 'header';
+  const javaQualifier = decisions.entities?.[entityName]?.javaQualifier;
+
+  if (!javaQualifier) {
+    throw new Error(
+      `decisions.json for '${windowName}' is missing entities.header.javaQualifier`,
+    );
+  }
+
+  if (options.dryRun) {
+    console.log(`[DRY RUN] Push custom window to NEO: ${specName}`);
+    console.log(`  Spec name:  ${specName}`);
+    console.log(`  Spec type:  W (window)`);
+    console.log(`  Qualifier:  ${javaQualifier}`);
+    console.log(`\n  Step 1: upsertSpec (specType=W)`);
+    console.log(`  Step 2: upsert entity '${entityName}' with java_qualifier='${javaQualifier}'`);
+    return { dryRun: true, specName, javaQualifier };
+  }
+
+  const auditOpts = options.audit || {};
+  const pool = createDbPool(options.dbConfig);
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    await setGoModuleInDevelopment(client);
+
+    // Resolve module ID from DB — never hardcode
+    const modRes = await client.query(
+      `SELECT ad_module_id FROM ad_module WHERE javapackage = 'com.etendoerp.go'`,
+    );
+    if (modRes.rows.length === 0) {
+      throw new Error("Module 'com.etendoerp.go' not found in ad_module");
+    }
+    const moduleId = modRes.rows[0].ad_module_id;
+
+    // Step 1 — upsert spec
+    console.log(`[1/2] Upserting spec '${specName}' (type=W)...`);
+    const existingSpec = await client.query(
+      'SELECT etgo_sf_spec_id FROM etgo_sf_spec WHERE name = $1',
+      [specName],
+    );
+    const existingSpecId = existingSpec.rows.length > 0
+      ? existingSpec.rows[0].etgo_sf_spec_id
+      : null;
+    const specResult = await writerUpsertSpec(client, {
+      name: specName,
+      moduleId,
+      specType: 'W',
+      specId: existingSpecId,
+      audit: auditOpts,
+    });
+    const specId = specResult.specId;
+    console.log(`       Spec ID: ${specId} (${specResult.created ? 'created' : 'updated'})`);
+
+    // Step 2 — upsert entity
+    console.log(`[2/2] Upserting entity '${entityName}' (qualifier='${javaQualifier}')...`);
+    const existingEntity = await client.query(
+      `SELECT etgo_sf_entity_id FROM etgo_sf_entity
+       WHERE etgo_sf_spec_id = $1 AND name = $2`,
+      [specId, entityName],
+    );
+
+    if (existingEntity.rows.length > 0) {
+      const entityId = existingEntity.rows[0].etgo_sf_entity_id;
+      await client.query(
+        `UPDATE etgo_sf_entity
+         SET java_qualifier = $1, updated = now()
+         WHERE etgo_sf_entity_id = $2`,
+        [javaQualifier, entityId],
+      );
+      console.log(`       Updated entity ${entityId}`);
+    } else {
+      const { generateId } = await import('./neo-writer.js');
+      const entityId = generateId();
+      const adClientId = auditOpts.ad_client_id || '0';
+      const adOrgId    = auditOpts.ad_org_id    || '0';
+      const createdBy  = auditOpts.createdby     || '0';
+      await client.query(
+        `INSERT INTO etgo_sf_entity
+         (etgo_sf_entity_id, etgo_sf_spec_id, name, ad_module_id, java_qualifier,
+          isget, ispost, isput, ispatch, isdelete, seqno,
+          ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby)
+         VALUES ($1,$2,$3,$4,$5,'Y','Y','N','N','N',10,$6,$7,'Y',NOW(),$8,NOW(),$8)`,
+        [entityId, specId, entityName, moduleId, javaQualifier,
+         adClientId, adOrgId, createdBy],
+      );
+      console.log(`       Created entity ${entityId}`);
+    }
+
+    await client.query('COMMIT');
+    console.log(`\nDone. Custom window '${specName}' configured in NEO.`);
+    console.log('Remember to run ./gradlew export.database in the Etendo root.');
+    return { dryRun: false, specName, specId, javaQualifier };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+    await closePool(pool);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // --dump-delta — emit the writes push-to-neo WOULD make, without writing
 // ---------------------------------------------------------------------------
 
@@ -1096,7 +1232,10 @@ function readFlagValue(args, flagName) {
 async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
-  const isReport = args.includes('--type') && args[args.indexOf('--type') + 1] === 'report';
+  const typeIdx = args.indexOf('--type');
+  const typeVal = typeIdx >= 0 ? args[typeIdx + 1] : null;
+  const isReport = typeVal === 'report';
+  const isCustom = typeVal === 'custom';
   const overrideWindowArg = args.find(a => a.startsWith('--override-window='));
   const overrideWindow = overrideWindowArg ? overrideWindowArg.split('=')[1] : null;
   const dumpDeltaPath = readFlagValue(args, '--dump-delta');
@@ -1112,17 +1251,19 @@ async function main() {
       consumed.add(idx + 1);
     }
   }
-  const name = args.find((a, i) => !a.startsWith('--') && a !== 'report' && !consumed.has(i));
+  const name = args.find((a, i) => !a.startsWith('--') && a !== 'report' && a !== 'custom' && !consumed.has(i));
 
   if (!name) {
     console.error('Usage:');
     console.error('  node cli/src/push-to-neo.js <windowName> [--dry-run] [--override-window=123]');
     console.error('  node cli/src/push-to-neo.js <reportName> --type report [--dry-run]');
+    console.error('  node cli/src/push-to-neo.js <windowName> --type custom [--dry-run]');
     console.error('  node cli/src/push-to-neo.js <windowName> --dump-delta <path> [--prev-xml-dir <dir>]');
     console.error('');
     console.error('Examples:');
     console.error('  node cli/src/push-to-neo.js sales-order');
     console.error('  node cli/src/push-to-neo.js aging-receivable --type report');
+    console.error('  node cli/src/push-to-neo.js not-posted-documents --type custom');
     console.error('  node cli/src/push-to-neo.js sales-order --dump-delta artifacts/sales-order/neo-delta.json');
     process.exit(1);
   }
@@ -1145,6 +1286,8 @@ async function main() {
     let result;
     if (isReport) {
       result = await pushReportToNeo(name, { dryRun });
+    } else if (isCustom) {
+      result = await pushCustomWindowToNeo(name, { dryRun });
     } else {
       result = await pushToNeo(name, { dryRun, overrideWindow });
     }
