@@ -1,11 +1,10 @@
-import { MoreVertical, Pencil, PlayCircle, RotateCcw, Trash2 } from 'lucide-react';
+import { MoreVertical, PlayCircle, RotateCcw } from 'lucide-react';
 import { useUI } from '@/i18n';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   Tooltip,
@@ -15,55 +14,51 @@ import {
 } from '@/components/ui/tooltip';
 
 /**
- * Per-row kebab menu for an imported-statement row. Edit / Process / Delete are
- * only enabled for drafts (unprocessed statements); a processed statement instead
- * offers "Reactivate" (back to draft) and disables the draft-only actions with an
+ * Per-row kebab menu for an imported-statement row. Holds the state-transition
+ * actions: "Procesar" (enabled only for drafts) and "Reactivar" (enabled only
+ * for processed statements). The non-applicable one renders disabled with an
  * explanatory tooltip.
+ *
+ * Edit and Delete are NOT here — they live as inline hover quick-actions on the
+ * row (see {@link StatementsTable}), mirroring the sales-order grid.
  *
  * @param {{
  *   statement: object,
- *   onEdit: (s: object) => void,
  *   onProcess: (s: object) => void,
  *   onReactivate: (s: object) => void,
- *   onDelete: (s: object) => void,
  * }} props
  */
-export function StatementRowKebab({ statement: s, onEdit, onProcess, onReactivate, onDelete }) {
+export function StatementRowKebab({ statement: s, onProcess, onReactivate }) {
   const ui = useUI();
   const isDraft = s.status === 'DRAFT' || s.processed === 'N';
   const lockedTip = ui('financeAccountStatementsRowProcessedTooltip');
   const reactivateTip = ui('financeAccountStatementsRowReactivateTooltip');
 
   // A menu item active only when `enabled`, otherwise disabled with a tooltip.
-  const gatedItem = ({ icon: Icon, label, onClick, testid, danger, enabled, tip }) => {
+  const gatedItem = ({ icon: Icon, label, onClick, testid, enabled, tip }) => {
     const item = (
       <DropdownMenuItem
         disabled={!enabled}
         data-testid={testid}
         onClick={enabled ? () => onClick(s) : undefined}
       >
-        <Icon className={`h-5 w-5 ${danger ? 'text-[#D50B3E]' : 'text-[#828FA3]'}`} />
-        <span className={`text-sm font-normal leading-6 ${danger ? 'text-[#D50B3E]' : 'text-[#121217]'}`}>
-          {label}
-        </span>
+        <Icon className="h-5 w-5 text-[#828FA3]" data-testid="Icon__b97a5b" />
+        <span className="text-sm font-normal leading-6 text-[#121217]">{label}</span>
       </DropdownMenuItem>
     );
     if (enabled) return item;
     return (
-      <Tooltip>
-        <TooltipTrigger asChild><span>{item}</span></TooltipTrigger>
-        <TooltipContent>{tip}</TooltipContent>
+      <Tooltip data-testid="Tooltip__b97a5b">
+        <TooltipTrigger asChild data-testid="TooltipTrigger__b97a5b"><span>{item}</span></TooltipTrigger>
+        <TooltipContent data-testid="TooltipContent__b97a5b">{tip}</TooltipContent>
       </Tooltip>
     );
   };
 
-  // Active for drafts, disabled (with the "processed" tooltip) otherwise.
-  const draftItem = (cfg) => gatedItem({ ...cfg, enabled: isDraft, tip: lockedTip });
-
   return (
-    <TooltipProvider>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+    <TooltipProvider data-testid="TooltipProvider__b97a5b">
+      <DropdownMenu data-testid="DropdownMenu__b97a5b">
+        <DropdownMenuTrigger asChild data-testid="DropdownMenuTrigger__b97a5b">
           <button
             type="button"
             aria-label={ui('financeAccountStatementsRowActions')}
@@ -71,21 +66,21 @@ export function StatementRowKebab({ statement: s, onEdit, onProcess, onReactivat
             onClick={(e) => e.stopPropagation()}
             className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#828FA3] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[#E8EAEF]"
           >
-            <MoreVertical className="h-5 w-5" />
+            <MoreVertical className="h-5 w-5" data-testid="MoreVertical__b97a5b" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[220px]" onClick={(e) => e.stopPropagation()}>
-          {draftItem({
-            icon: Pencil,
-            label: ui('financeAccountStatementsRowEdit'),
-            onClick: onEdit,
-            testid: 'statement-row-edit',
-          })}
-          {draftItem({
+        <DropdownMenuContent
+          align="end"
+          className="w-[220px]"
+          onClick={(e) => e.stopPropagation()}
+          data-testid="DropdownMenuContent__b97a5b">
+          {gatedItem({
             icon: PlayCircle,
             label: ui('financeAccountStatementsRowProcess'),
             onClick: onProcess,
             testid: 'statement-row-process',
+            enabled: isDraft,
+            tip: lockedTip,
           })}
           {gatedItem({
             icon: RotateCcw,
@@ -94,14 +89,6 @@ export function StatementRowKebab({ statement: s, onEdit, onProcess, onReactivat
             testid: 'statement-row-reactivate',
             enabled: !isDraft,
             tip: reactivateTip,
-          })}
-          <DropdownMenuSeparator />
-          {draftItem({
-            icon: Trash2,
-            label: ui('financeAccountStatementsRowDelete'),
-            onClick: onDelete,
-            testid: 'statement-row-delete',
-            danger: true,
           })}
         </DropdownMenuContent>
       </DropdownMenu>

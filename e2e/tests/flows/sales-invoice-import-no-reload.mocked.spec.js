@@ -27,6 +27,10 @@ const INVOICE_HEADER = {
   documentNo: 'INV-MOCK-001',
   documentStatus: 'DR',
   'documentStatus$_identifier': 'Borrador',
+  // Document type is a required header field (added in ETP-4035); the
+  // add-lines / import buttons stay hidden until it is set.
+  cDocTypeTargetId: 'doctype-mock-001',
+  'cDocTypeTargetId$_identifier': 'AR Invoice',
   businessPartner: BP_ID,
   'businessPartner$_identifier': 'Test Client',
   partnerAddress: 'addr-mock-001',

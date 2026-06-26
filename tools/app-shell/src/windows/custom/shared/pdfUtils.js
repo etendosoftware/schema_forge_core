@@ -82,7 +82,24 @@ function fmtDate(v) {
   return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
 }
 function ifEq(a, b, opts) { return a === b ? opts.fn(this) : opts.inverse(this); }
+function fmtRate(v, maybeDecimals) {
+  if (v == null || v === '') return '';
+  var n = Number(v);
+  if (isNaN(n)) return '';
+  var d = (typeof maybeDecimals === 'number' && maybeDecimals >= 0) ? maybeDecimals : 4;
+  return new Intl.NumberFormat('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+}
 `;
+
+// Return-doc helpers: adds fmt() (3-decimal number formatter) to the common set
+export const RETURN_DOC_HELPERS = `
+function fmt(v) {
+  if (v == null || v === '') return '0';
+  var n = Number(v);
+  if (isNaN(n)) return String(v);
+  return new Intl.NumberFormat('es', { minimumFractionDigits: 0, maximumFractionDigits: 3 }).format(n);
+}
+` + COMMON_HANDLEBARS_HELPERS;
 
 // ---------------------------------------------------------------------------
 // Shared fetch helpers
@@ -107,6 +124,15 @@ export async function fetchAll(url, token) {
 
 export async function fetchOptionalJson(url, token) {
   try { return await fetchJson(url, token); } catch { return null; }
+}
+
+export async function fetchExchangeRate(fromCurrencyId, toCurrencyId, date, base, token) {
+  if (!fromCurrencyId || !toCurrencyId || !date) return null;
+  if (fromCurrencyId === toCurrencyId) return null;
+  return fetchOptionalJson(
+    `${base}/validate-exchange-rate?fromCurrency=${encodeURIComponent(fromCurrencyId)}&toCurrency=${encodeURIComponent(toCurrencyId)}&date=${encodeURIComponent(date)}`,
+    token,
+  );
 }
 
 export async function fetchLocationAddress(locationId, base, token) {
@@ -136,6 +162,17 @@ export async function fetchImageDataUrl(imageId, base, token) {
     if (!res.ok) return null;
     return await blobToDataUrl(await res.blob());
   } catch { return null; }
+}
+
+export function downloadBlobAsFile(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ---------------------------------------------------------------------------
@@ -291,4 +328,24 @@ export function usePdfGenerator(recordId, apiBaseUrl, token, buildBlobFn) {
   }, [recordId, apiBaseUrl, token]);
 
   return { pdfUrl, pdfBlob, loading, error };
+}
+
+export function buildReturnDocCommonFields(header, companyLogoDataUrl) {
+  const org = header.issuerOrg ?? {};
+  return {
+    companyName: org.name || header['organization$_identifier'] || 'Empresa',
+    companyAddress1: org.address1 || null,
+    companyAddress2: org.address2 || null,
+    companyCityLine: org.cityLine || null,
+    companyTaxId: org.taxId || null,
+    companyLogoDataUrl,
+    documentNo: header.documentNo || '',
+    movementDate: header.movementDate || '',
+  };
+}
+
+export function sortLinesByLineNo(lines) {
+  return [...lines].sort(
+    (a, b) => (Number(a.lineNo) || 0) - (Number(b.lineNo) || 0),
+  );
 }

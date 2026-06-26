@@ -1,8 +1,8 @@
 {
-  "version": "0.8.0",
+  "version": "0.9.0",
   "generatedAt": "2026-04-29T18:11:05.114Z",
-  "updatedAt": "2026-05-27T17:00:43.774Z",
-  "checksum": "1cdb4ce7c3d3e5a8",
+  "updatedAt": "2026-06-24T20:46:48.951Z",
+  "checksum": "ac4e32d11ef1725c",
   "frontendContract": {
     "window": {
       "id": "123271B9AD60469BAE8A924841456B63",
@@ -289,6 +289,122 @@
             "form": true,
             "section": "principal",
             "gridOrder": 6
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "label": "Accounting Status",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "enumValues": [
+              {
+                "value": "NC",
+                "name": "Cost Not Calculated"
+              },
+              {
+                "value": "d",
+                "name": "Disabled For Background"
+              },
+              {
+                "value": "D",
+                "name": "Document Disabled"
+              },
+              {
+                "value": "L",
+                "name": "Document Locked"
+              },
+              {
+                "value": "E",
+                "name": "Error"
+              },
+              {
+                "value": "C",
+                "name": "Error, No cost"
+              },
+              {
+                "value": "i",
+                "name": "Invalid Account"
+              },
+              {
+                "value": "AD",
+                "name": "No Accounting Date"
+              },
+              {
+                "value": "DT",
+                "name": "No Document Type"
+              },
+              {
+                "value": "NO",
+                "name": "No Related PO"
+              },
+              {
+                "value": "b",
+                "name": "Not Balanced"
+              },
+              {
+                "value": "c",
+                "name": "Not Convertible (no rate)"
+              },
+              {
+                "value": "l",
+                "name": "Pending Refresh"
+              },
+              {
+                "value": "p",
+                "name": "Period Closed"
+              },
+              {
+                "value": "y",
+                "name": "Post Prepared"
+              },
+              {
+                "value": "Y",
+                "name": "Posted"
+              },
+              {
+                "value": "T",
+                "name": "Table Disabled"
+              },
+              {
+                "value": "N",
+                "name": "Unposted"
+              }
+            ],
+            "defaultValue": "N"
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "label": "Bulk Posting",
+            "type": "button",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "defaultValue": "N",
+            "displayLogic": {
+              "raw": "@Processed@='Y' & @#ShowAcct@='Y'\n",
+              "evaluable": false,
+              "reason": "session-preference",
+              "js": null
+            }
           }
         ],
         "searchableFields": [
@@ -317,6 +433,20 @@
             "derivation": {
               "type": "computed",
               "source": "DR"
+            }
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            }
+          },
+          {
+            "name": "etblkpBulkposting",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
             }
           }
         ],
@@ -1091,6 +1221,22 @@
             "type": "string",
             "visibility": "readOnly",
             "required": false
+          },
+          {
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "readOnly",
+            "required": true
           }
         ],
         "javaQualifier": "returnMaterialReceiptHeaderHandler"
@@ -1637,6 +1783,14 @@
         "processType": "classic"
       },
       {
+        "entity": "returnMaterialReceipt",
+        "field": "etblkpBulkposting",
+        "column": "EM_Etblkp_Bulkposting",
+        "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/etblkpBulkposting",
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
         "entity": "returnMaterialReceiptLine",
         "field": "explode",
         "column": "Explode",
@@ -1707,6 +1861,14 @@
         "field": "documentAction",
         "runner": "node",
         "description": "Action endpoint for 'documentAction' in returnMaterialReceipt should exist"
+      },
+      {
+        "id": "t-action-endpoint-returnMaterialReceipt-etblkpBulkposting",
+        "category": "action-endpoint",
+        "entity": "returnMaterialReceipt",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Action endpoint for 'etblkpBulkposting' in returnMaterialReceipt should exist"
       },
       {
         "id": "t-action-endpoint-returnMaterialReceipt-generateTo",
@@ -1803,6 +1965,22 @@
         "description": "Default value for 'documentStatus' in returnMaterialReceipt should be a string"
       },
       {
+        "id": "t-default-value-type-returnMaterialReceipt-etblkpAccountingstatus",
+        "category": "default-value-type",
+        "entity": "returnMaterialReceipt",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "Default value for 'etblkpAccountingstatus' in returnMaterialReceipt should be a string"
+      },
+      {
+        "id": "t-default-value-type-returnMaterialReceipt-etblkpBulkposting",
+        "category": "default-value-type",
+        "entity": "returnMaterialReceipt",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Default value for 'etblkpBulkposting' in returnMaterialReceipt should be a string"
+      },
+      {
         "id": "t-default-value-type-returnMaterialReceipt-movementDate",
         "category": "default-value-type",
         "entity": "returnMaterialReceipt",
@@ -1827,6 +2005,14 @@
         "description": "Default value for 'movementQuantity' in returnMaterialReceiptLine should be a string"
       },
       {
+        "id": "t-displaylogic-evaluable-returnMaterialReceipt-etblkpBulkposting",
+        "category": "displaylogic-evaluable",
+        "entity": "returnMaterialReceipt",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Display logic for 'etblkpBulkposting' in returnMaterialReceipt should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-returnMaterialReceipt-trackingNo",
         "category": "displaylogic-evaluable",
         "entity": "returnMaterialReceipt",
@@ -1841,6 +2027,14 @@
         "field": "orderQuantity",
         "runner": "node",
         "description": "Display logic for 'orderQuantity' in returnMaterialReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-returnMaterialReceipt-etblkpBulkposting",
+        "category": "displaylogic-valid",
+        "entity": "returnMaterialReceipt",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Display logic for 'etblkpBulkposting' in returnMaterialReceipt should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-returnMaterialReceipt-trackingNo",
@@ -1889,6 +2083,22 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should be present in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceipt-etblkpAccountingstatus",
+        "category": "field-presence",
+        "entity": "returnMaterialReceipt",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "Field 'etblkpAccountingstatus' should be present in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceipt-etblkpBulkposting",
+        "category": "field-presence",
+        "entity": "returnMaterialReceipt",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Field 'etblkpBulkposting' should be present in returnMaterialReceipt"
       },
       {
         "id": "t-field-presence-returnMaterialReceipt-movementDate",
@@ -2017,6 +2227,22 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should have type 'string' in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceipt-etblkpAccountingstatus",
+        "category": "field-type",
+        "entity": "returnMaterialReceipt",
+        "field": "etblkpAccountingstatus",
+        "runner": "node",
+        "description": "Field 'etblkpAccountingstatus' should have type 'string' in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceipt-etblkpBulkposting",
+        "category": "field-type",
+        "entity": "returnMaterialReceipt",
+        "field": "etblkpBulkposting",
+        "runner": "node",
+        "description": "Field 'etblkpBulkposting' should have type 'string' in returnMaterialReceipt"
       },
       {
         "id": "t-field-type-returnMaterialReceipt-movementDate",
@@ -3126,15 +3352,15 @@
       }
     ],
     "summary": {
-      "total": 181,
+      "total": 190,
       "byCategory": {
-        "action-endpoint": 12,
+        "action-endpoint": 13,
         "crud-flags": 2,
-        "default-value-type": 4,
-        "displaylogic-evaluable": 2,
-        "displaylogic-valid": 2,
-        "field-presence": 16,
-        "field-type": 16,
+        "default-value-type": 6,
+        "displaylogic-evaluable": 3,
+        "displaylogic-valid": 3,
+        "field-presence": 18,
+        "field-type": 18,
         "process-failure": 1,
         "process-happy": 1,
         "readonlylogic-evaluable": 10,
@@ -3146,7 +3372,7 @@
         "visibility": 2
       },
       "byRunner": {
-        "node": 179,
+        "node": 188,
         "junit": 2
       }
     }

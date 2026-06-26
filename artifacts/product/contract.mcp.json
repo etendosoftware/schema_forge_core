@@ -1,8 +1,8 @@
 {
-  "version": "0.7.0",
+  "version": "0.13.0",
   "generatedAt": "2026-04-29T18:11:24.842Z",
-  "updatedAt": "2026-06-08T14:26:10.825Z",
-  "contractChecksum": "1e66257cee774540",
+  "updatedAt": "2026-06-11T11:56:34.940Z",
+  "contractChecksum": "01a7ff0044f106df",
   "apiPrediction": {
     "specName": "product",
     "baseUrl": "/sws/neo/product",
@@ -141,7 +141,7 @@
         "field": "uOM",
         "column": "C_UOM_ID",
         "reference": "UOM",
-        "inputMode": "selector",
+        "inputMode": "search",
         "url": "/sws/neo/product/product/selectors/uOM"
       },
       {
@@ -1000,5 +1000,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "04bb22413675ca81"
+  "checksum": "9562aacc2480ec2b"
 }

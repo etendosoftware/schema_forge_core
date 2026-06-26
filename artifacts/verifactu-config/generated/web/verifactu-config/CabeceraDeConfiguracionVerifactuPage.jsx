@@ -21,7 +21,9 @@ const statusField = null;
 // @sf-generated-end summary:cabeceraDeConfiguraciónVerifactu
 
 // @sf-generated-start extraBadges:cabeceraDeConfiguraciónVerifactu
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:cabeceraDeConfiguraciónVerifactu
 
 // @sf-generated-start processes:cabeceraDeConfiguraciónVerifactu
@@ -65,14 +67,6 @@ export const api = {
       "column": "IS_Ready",
       "url": "/sws/neo/verifactu-config/cabeceraDeConfiguraciónVerifactu/{id}/action/isReady",
       "processId": "D995FA46EEDB4DAF9F414E661FB13E43",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "cabeceraDeConfiguraciónVerifactu",
-      "field": "refreshData",
-      "column": "Refresh_Data",
-      "url": "/sws/neo/verifactu-config/cabeceraDeConfiguraciónVerifactu/{id}/action/refreshData",
-      "processId": "E0D681117A1843C5B9D525701087D7DC",
       "processType": "obuiapp"
     }
   ],

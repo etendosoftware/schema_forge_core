@@ -22,7 +22,9 @@ const statusField = null;
 // @sf-generated-end summary:user
 
 // @sf-generated-start extraBadges:user
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:user
 
 // @sf-generated-start processes:user

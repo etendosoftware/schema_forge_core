@@ -21,7 +21,9 @@ const statusField = null;
 // @sf-generated-end summary:product
 
 // @sf-generated-start extraBadges:product
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:product
 
 // @sf-generated-start processes:product
@@ -178,7 +180,7 @@ export const api = {
       "field": "uOM",
       "column": "C_UOM_ID",
       "reference": "UOM",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/product/product/selectors/uOM"
     },
     {
@@ -490,12 +492,13 @@ export default function ProductPage({ windowName, recordId, ...props }) {
         toolbarBorderBottom
         compactSidebarPadding
         whiteFormBackground
+        autoSaveOnBlur
         sidebarClassName="w-[30%] shrink-0 overflow-y-auto pt-2 pl-0 pr-4 pb-5 border-l border-[#E8EAEF]"
         tabsBarPaddingX="px-2"
         primaryTabsVariant="pill"
         toolbarPaddingX="px-2"
         contentBg="bg-white"
-        formCardPadding="px-2 pb-2"
+        formCardPadding="px-2"
         customTabs={[{ key: 'pricing', labelKey: 'price', Component: ProductPriceBar, placement: 'tab' }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Product", config: {} } }]}
         requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}

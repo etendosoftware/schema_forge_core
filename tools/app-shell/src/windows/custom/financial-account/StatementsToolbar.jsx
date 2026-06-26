@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ChevronDown, Filter, Pencil, Upload } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Pencil, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUI } from '@/i18n';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { AdvancedFilterBuilder } from '@/components/contract-ui/AdvancedFilterBuilder.jsx';
+import { AdvancedFilterButton } from '@/components/contract-ui/AdvancedFilterButton.jsx';
 import { DateRangePopover } from '@/components/ui/date-range-popover';
 import { StatementStatusFilter } from './StatementStatusFilter';
 import { buildStatementFilterColumns } from './statementAdvancedFilter';
@@ -37,7 +36,7 @@ function ImportSplitButton({ ui, onImportClick, onManualClick }) {
         onClick={onImportClick}
         className="inline-flex h-10 items-center gap-2 rounded-l-lg bg-[#121217] px-3 text-sm font-medium text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217]"
       >
-        <Upload className="h-4 w-4" />
+        <Upload className="h-4 w-4" data-testid="Upload__8a428c" />
         {ui('financeAccountStatementsImport')}
       </button>
       <button
@@ -49,7 +48,9 @@ function ImportSplitButton({ ui, onImportClick, onManualClick }) {
         onClick={() => setOpen((o) => !o)}
         className="inline-flex h-10 w-9 items-center justify-center rounded-r-lg border-l border-white/20 bg-[#121217] text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217]"
       >
-        <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}
+          data-testid="ChevronDown__8a428c" />
       </button>
       {open ? (
         <div
@@ -64,7 +65,7 @@ function ImportSplitButton({ ui, onImportClick, onManualClick }) {
             className="flex w-full items-start gap-3 px-3 py-2.5 text-left hover:bg-[#F5F7F9]"
           >
             <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F0F2F5] text-[#121217]">
-              <Pencil className="h-4 w-4" />
+              <Pencil className="h-4 w-4" data-testid="Pencil__8a428c" />
             </span>
             <span className="flex flex-col">
               <span className="text-sm font-semibold text-[#121217]">
@@ -113,9 +114,7 @@ export function StatementsToolbar({
 }) {
   const ui = useUI();
   const navigate = useNavigate();
-  const [advancedOpen, setAdvancedOpen] = useState(false);
   const columns = useMemo(() => buildStatementFilterColumns(ui), [ui]);
-  const activeConditions = advancedFilter?.conditions?.length ?? 0;
 
   return (
     <div className="flex h-auto min-h-[52px] flex-wrap items-center gap-2 px-4 py-2">
@@ -125,55 +124,31 @@ export function StatementsToolbar({
         aria-label={ui('financeAccountDetailBack')}
         data-testid="statements-toolbar-back"
         onClick={() => navigate(-1)}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white text-[#6c6c89] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9] hover:text-[#121217]"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-colors hover:bg-[#F5F7F9] hover:text-foreground"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="h-4 w-4" data-testid="ArrowLeft__8a428c" />
       </button>
-
+      {/* Status filter — first, mirroring the standard list toolbar (e.g. Sales Order). */}
+      <StatementStatusFilter
+        value={status}
+        onChange={onStatusChange}
+        data-testid="StatementStatusFilter__8a428c" />
       {/* Date range filter */}
       <DateRangePopover
         value={dateRange}
         onChange={onDateRangeChange}
         placeholder={ui('dateRangeAnyTime')}
-      />
-
-      {/* Status filter */}
-      <StatementStatusFilter value={status} onChange={onStatusChange} />
-
+        data-testid="DateRangePopover__8a428c" />
       {/* Advanced "by conditions" filter */}
-      {onAdvancedFilterChange ? (
-        <Popover open={advancedOpen} onOpenChange={setAdvancedOpen}>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              data-testid="statements-advanced-filter"
-              title={ui('advancedFilterTitle')}
-              className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white text-[#6c6c89] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9] hover:text-[#121217]"
-            >
-              <Filter className="h-4 w-4" />
-              {activeConditions > 0 ? (
-                <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#121217] px-1 text-[10px] font-semibold leading-none text-white">
-                  {activeConditions}
-                </span>
-              ) : null}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-auto p-4">
-            <AdvancedFilterBuilder
-              columns={columns}
-              rows={rows}
-              value={advancedFilter}
-              onApply={(next) => onAdvancedFilterChange(next)}
-              onClear={() => onAdvancedFilterChange(null)}
-              onClose={() => setAdvancedOpen(false)}
-            />
-          </PopoverContent>
-        </Popover>
-      ) : null}
-
+      <AdvancedFilterButton
+        columns={columns}
+        rows={rows}
+        value={advancedFilter}
+        onChange={onAdvancedFilterChange}
+        testId="statements-advanced-filter"
+        data-testid="AdvancedFilterButton__8a428c" />
       {/* Spacer */}
       <div className="flex-1" />
-
       {/* Search */}
       <div className="relative flex items-center">
         <input
@@ -185,9 +160,12 @@ export function StatementsToolbar({
           className="h-10 w-48 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm text-[#121217] placeholder:text-[#8a8aa3] shadow-[0_1px_2px_rgba(18,18,23,0.05)] focus:outline-none focus:ring-2 focus:ring-[#121217] focus:ring-offset-1"
         />
       </div>
-
       {/* Import (split-button: import file ▾ create manually) */}
-      <ImportSplitButton ui={ui} onImportClick={onImportClick} onManualClick={onManualClick} />
+      <ImportSplitButton
+        ui={ui}
+        onImportClick={onImportClick}
+        onManualClick={onManualClick}
+        data-testid="ImportSplitButton__8a428c" />
     </div>
   );
 }

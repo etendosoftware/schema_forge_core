@@ -14,12 +14,15 @@ The browser initializer registers these providers:
 | AWS RUM | Hostname has matching RUM IDs | Browser performance, error, and HTTP telemetry |
 | Mixpanel | `VITE_MIXPANEL_ENABLED=true` and `VITE_MIXPANEL_TOKEN` is set | Product analytics events |
 
-Sentry keeps the existing compatibility setting `sendDefaultPii: true`. Treat
-that as an explicit legacy decision; do not add product-event PII to
-observability payloads.
+Sentry defaults to `sendDefaultPii: false`. Only enable it with an explicit
+environment override after reviewing the privacy and legal impact. Release is
+set from `VITE_SENTRY_RELEASE` when present, otherwise from available build
+metadata such as `SENTRY_RELEASE.id` injected at build time.
 
-AWS RUM keeps the current hostname-gated configuration for staging and
-experimental environments. Missing config is a no-op.
+AWS RUM uses hostname-gated configuration for staging, experimental, and
+production (`go.etendo.cloud`). `VITE_RUM_SESSION_SAMPLE_RATE` is parsed as a
+bounded number from `0` to `1`; invalid or missing values fall back to the
+conservative default `0.1`. Missing host config is still a no-op.
 
 Mixpanel is opt-in. If `VITE_MIXPANEL_ENABLED=true` is set without
 `VITE_MIXPANEL_TOKEN`, the provider logs a warning and remains disabled. The SDK
@@ -30,10 +33,15 @@ is lazy-loaded only when the provider is enabled and used.
 | Variable | Description |
 |----------|-------------|
 | `VITE_SENTRY_DSN` | Enables Sentry. |
+| `VITE_SENTRY_RELEASE` | Optional explicit Sentry release. If unset, the app falls back to available build metadata. |
+| `VITE_SENTRY_SEND_DEFAULT_PII` | Optional explicit Sentry PII gate. Defaults to `false`; set to `true` only with approved privacy review. |
 | `VITE_RUM_APP_MONITOR_ID_STAGING` | CloudWatch RUM app monitor for `go.staging.etendo.cloud`. |
 | `VITE_RUM_IDENTITY_POOL_ID_STAGING` | CloudWatch RUM identity pool for staging. |
 | `VITE_RUM_APP_MONITOR_ID_EXPERIMENTAL` | CloudWatch RUM app monitor for `go.experimental.etendo.cloud`. |
 | `VITE_RUM_IDENTITY_POOL_ID_EXPERIMENTAL` | CloudWatch RUM identity pool for experimental. |
+| `VITE_RUM_APP_MONITOR_ID_PROD` | CloudWatch RUM app monitor for `go.etendo.cloud`. |
+| `VITE_RUM_IDENTITY_POOL_ID_PROD` | CloudWatch RUM identity pool for `go.etendo.cloud`. |
+| `VITE_RUM_SESSION_SAMPLE_RATE` | Optional RUM session sample rate. Values are clamped to `0..1`; invalid values fall back to `0.1`. |
 | `VITE_MIXPANEL_ENABLED` | Set to `true` to enable Mixpanel. |
 | `VITE_MIXPANEL_TOKEN` | Mixpanel project token. Required when Mixpanel is enabled. |
 | `VITE_MIXPANEL_DEBUG` | Optional Mixpanel debug flag. |
@@ -41,7 +49,12 @@ is lazy-loaded only when the provider is enabled and used.
 
 ## Events
 
-V1 emits these base lifecycle events:
+Event definitions live in
+`tools/app-shell/src/lib/observability/events.js`. Add new product events there
+first, then use `buildObservabilityEvent()` at call sites so only the
+catalog-approved properties are passed to `track`.
+
+The app currently emits these base lifecycle events:
 
 | Event | When |
 |-------|------|
@@ -50,7 +63,7 @@ V1 emits these base lifecycle events:
 
 Route tracking ignores query-string and hash-only changes.
 
-V1 also includes onboarding product events as the first business-event example:
+The app also emits onboarding product events:
 
 | Event | When |
 |-------|------|
@@ -67,8 +80,44 @@ V1 also includes onboarding product events as the first business-event example:
 | `onboarding_environment_enter_succeeded` | Environment entry succeeds. |
 | `onboarding_environment_enter_failed` | Environment entry fails. |
 
-Broad business events such as CRUD actions, filters, document processing, and
-menu clicks are still out of scope for v1 unless explicitly added and tested.
+Broader business KPI events such as CRUD actions, filters, document processing,
+backend checks, NPS, and timing events are catalogued for ETP-4214, but each
+caller still needs explicit instrumentation and tests before the event is
+considered emitted in production.
+
+KPI instrumentation also emits the first Dashboard events:
+
+| Event | When |
+|-------|------|
+| `quick_action_used` | A user opens a Dashboard quick action. |
+| `pending_task_opened` | A user opens a Dashboard pending-task item. |
+| `dashboard_document_opened` | A user navigates from Dashboard widgets to a document or catalog record. |
+
+Additional broad business events such as CRUD actions, filters, document
+processing, and menu clicks remain out of scope unless explicitly added and
+tested.
+
+## Timing Metrics
+
+Use `startTiming()` or `useTiming()` from `tools/app-shell/src/lib/observability`
+for same-session duration metrics. Timing helpers only emit catalog-backed
+events and add a rounded, non-negative `durationMs` value.
+
+```js
+import { OBSERVABILITY_EVENTS } from '../lib/observability/events.js';
+import { startTiming } from '../lib/observability/timing.js';
+
+const stop = startTiming(OBSERVABILITY_EVENTS.TIME_TO_CREATE, {
+  properties: {
+    category: 'sales',
+    entity: 'sales_order',
+    operation: 'create',
+    specName: 'sales-order',
+  },
+});
+
+await stop({ status: 'success' });
+```
 
 ## Privacy Rules
 
@@ -76,6 +125,12 @@ Payloads are normalized before providers receive them:
 
 - Allowed common fields: `app`, `environment`, `hostname`, `mockMode`, `route`,
   `routePattern`, `timestamp`, and `windowName`.
+- Allowed KPI numeric fields: `accuracy`, `attempt`, `count`, `durationMs`,
+  `position`, `score`, `step`, and `value`. These must be finite numbers within
+  their configured bounds; strings and booleans are dropped for numeric keys.
+- Allowed low-cardinality metadata fields include `action`, `category`,
+  `component`, `enabled`, `entity`, `event`, `locale`, `operation`, `provider`,
+  `source`, `specName`, `status`, `supportRequested`, and `type`.
 - Query strings, hashes, raw URLs, OAuth `code`/`state`, tokens, record IDs,
   document IDs, document numbers, labels, and names are stripped.
 - Record-detail paths such as `/sales-order/ABC123` are emitted as
@@ -101,9 +156,16 @@ names, or UI copy.
 
 Business event payloads are allowlisted. Only these keys are emitted:
 
-`action`, `app`, `component`, `enabled`, `environment`, `event`, `hostname`,
-`locale`, `mockMode`, `provider`, `route`, `routePattern`, `source`, `status`,
-`timestamp`, `type`, and `windowName`.
+`action`, `accuracy`, `app`, `attempt`, `category`, `channel`, `component`,
+`correctCount`, `count`, `critical`, `durationMs`, `enabled`, `entity`,
+`entityType`, `environment`, `errorClass`, `event`, `flow`, `hostname`,
+`kpiId`, `locale`, `mockMode`, `module`, `operation`, `position`, `provider`,
+`route`, `routePattern`, `score`, `source`, `specName`, `status`, `step`,
+`supportRequested`, `timestamp`, `total`, `type`, `value`, and `windowName`.
+
+KPI call sites should prefer `trackKpiEvent` or a domain-specific wrapper such
+as `trackDashboardKpi`. Numeric KPI fields must be finite and within the ranges
+enforced by `payload.js`; boolean flags such as `critical` must be booleans.
 
 Values must be stable, low-cardinality product metadata. Do not send PII,
 free-form text, raw URLs, OAuth values, tokens, record IDs, document IDs,
@@ -156,5 +218,5 @@ app startup, rendering, routing, or other providers.
 - Observability is scoped to `tools/app-shell`.
 - `packages/apps-sdk` does not receive observability context yet.
 - Broad business-event instrumentation is not included.
-- Sentry PII behavior is preserved for compatibility, but product analytics
-  payloads remain allowlisted and redacted.
+- Product analytics payloads remain allowlisted and redacted even when Sentry is
+  enabled.

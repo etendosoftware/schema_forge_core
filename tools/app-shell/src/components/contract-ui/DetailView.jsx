@@ -3,12 +3,15 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { AddLineButton } from '@/components/ui/add-line-button.jsx';
-import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2, Shield } from 'lucide-react';
+import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2, Shield, Lock } from 'lucide-react';
 import { AttachmentIcon } from '@/components/attachments/AttachmentIcon';
+import { PricingIcon, WarehouseProductsIcon } from '@/components/ui/custom-icons';
 
 const TAB_ICONS = {
   'custom:attachments': AttachmentIcon,
   'custom:sif': Shield,
+  'custom:pricing': PricingIcon,
+  'products': WarehouseProductsIcon,
 };
 
 function TabStripButton({
@@ -53,13 +56,16 @@ import { useCallout } from '@/hooks/useCallout';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useLineGrossAmount, ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import { useDocumentAction } from '@/hooks/useDocumentAction';
+import { useNeoAction } from '@/hooks/useNeoAction';
 import { useMenuLabel, useUI } from '@/i18n';
 import { translateBackendError } from '@/lib/backendErrors.js';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
 import { SummaryBar } from './SummaryBar.jsx';
 import DocumentTotalsPanel from './DocumentTotalsPanel.jsx';
+import BalanceFooterPanel from './BalanceFooterPanel.jsx';
 import { resolveTotalDiscountPct } from '@/lib/documentTotals';
+import { computeBalance } from '@/lib/balanceTotals';
 import LinesSelectionBar from './LinesSelectionBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import {
@@ -158,7 +164,7 @@ function CollapsibleSection({ title, children }) {
  */
 function detailContentPadding(linesLayout, hasSidebar, variant, compact = false, paddingXOverride = null) {
   const isInline = linesLayout === 'inlineEditable';
-  if (hasSidebar) return (isInline || compact) ? 'p-2' : 'pl-6 pr-2';
+  if (hasSidebar) return (isInline || compact) ? 'px-2 pb-2' : 'pl-6 pr-2';
   if (variant === 'panel') return isInline ? 'pr-6' : (paddingXOverride ?? 'px-6');
   return isInline ? '' : (paddingXOverride ?? 'px-6');
 }
@@ -252,29 +258,36 @@ export function applyCalloutFieldUpdates(updates, ctx) {
   }
 }
 
+function applyOneComboEntry(key, combo, ctx) {
+  const { data, userTouchedRef, appliedFields, hook } = ctx;
+  let selectedVal = combo.selected;
+  let selectedLabel = combo._identifier;
+  // Auto-select first entry if no explicit selection (e.g., BP address combo)
+  if (selectedVal == null && Array.isArray(combo.entries) && combo.entries.length > 0) {
+    selectedVal = combo.entries[0].id;
+    selectedLabel = combo.entries[0].identifier || combo.entries[0]._identifier;
+  }
+  if (selectedVal == null) return;
+  // Protect user-touched fields from collateral combo updates
+  const currentVal = data[key];
+  const userHasValue = currentVal !== '' && currentVal != null;
+  if (userTouchedRef.current.has(key) && userHasValue) return;
+  appliedFields.set(key, selectedVal);
+  hook.handleChange(key, selectedVal);
+  if (selectedLabel) {
+    hook.handleChange(key + '$_identifier', selectedLabel);
+  }
+}
+
 export function applyCalloutComboUpdates(combos, ctx) {
-  const { data, triggerField, userTouchedRef, appliedFields, hook } = ctx;
+  const { triggerField } = ctx;
   for (const [key, combo] of Object.entries(combos)) {
-    let selectedVal = combo.selected;
-    let selectedLabel = combo._identifier;
-    // Auto-select first entry if no explicit selection (e.g., BP address combo)
-    if (selectedVal == null && Array.isArray(combo.entries) && combo.entries.length > 0) {
-      selectedVal = combo.entries[0].id;
-      selectedLabel = combo.entries[0].identifier || combo.entries[0]._identifier;
-    }
-    if (selectedVal != null) {
-      // Protect user-touched fields from collateral combo updates
-      const currentVal = data[key];
-      const userHasValue = currentVal !== '' && currentVal != null;
-      if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
-        continue;
-      }
-      appliedFields.set(key, selectedVal);
-      hook.handleChange(key, selectedVal);
-      if (selectedLabel) {
-        hook.handleChange(key + '$_identifier', selectedLabel);
-      }
-    }
+    // Never override the field the user just changed via its own combo response.
+    // The callout may refresh the list of options for that field, but the user's
+    // explicit selection must always win — auto-selecting the first entry would
+    // silently revert their choice (e.g., NC → FAC on invoice doc type).
+    if (key === triggerField) continue;
+    applyOneComboEntry(key, combo, ctx);
   }
 }
 
@@ -590,124 +603,127 @@ export function SecondaryPanelTab(props) {
 }
 
 export function SecondaryTableTab(props) {
-  return <>
-    <div className="flex items-start gap-4">
-      <div className="flex-1 min-w-0">
-        <props.st.Table
-            ref={getSecondaryLinesTableRef(props.linesLayout, props.secondaryInlineLinesRef, props.st)}
-            data={props.secondaryHooks[props.stIdx]?.children ?? []}
-            entity={props.st.key}
-            token={props.token}
-            apiBaseUrl={props.apiBaseUrl}
-            selectorContext={props.selectorContextByEntity[props.st.key]}
-            linesLayout={props.linesLayout}
-            onRowClick={resolveSecondaryRowClickHandler(props.st, {
-              openCustomModal: props.openCustomModal,
-              openSecondaryLine: props.openSecondaryLine,
-              linesLayout: props.linesLayout,
-            })}
-            // Pencil action for customAddModal tabs (Dirección) opens
-            // the popup editor — rows are not editable in place.
-            onEditRow={getSecondaryEditRowHandler(props.st, props.setCustomModalState)}
-            selectedRowId={props.selectedSecondaryLine?._tabKey === props.st.key ? props.selectedSecondaryLine?.id : undefined}
-            onSelectionChange={getSecondarySelectionChangeHandler(props.linesLayout, props.setSecondarySelectedRows, props.st)}
-            onDeleteRow={(props.enableSecondaryRowDelete || (props.linesLayout === 'inlineEditable' && !props.st.customAddModal)) && (props.crud?.[props.st.key]?.delete ?? true) ? props.onDeleteRow : undefined}
-            // Inline edit save for secondary-tab rows. Fires when a
-            // cell loses focus while in edit mode. Optimistic flow:
-            // we update the local cache FIRST so the Radix Select
-            // (and read-mode label) reflect the new pick instantly,
-            // then PATCH the server and roll back if it rejects.
-            onUpdateRow={getSecondaryRowUpdateHandler(props.st, props.linesLayout, {
-              api: props.api,
-              apiBaseUrl: props.apiBaseUrl,
-              secondaryHooks: props.secondaryHooks,
-              stIdx: props.stIdx,
-              token: props.token,
-              ui: props.ui,
-              extractErrorMessage: props.extractErrorMessage,
-            })}
-            addRow={props.st.addLineFields?.entry?.length > 0 ? {
-              ref: props.secondaryAddRowRef,
-              active: props.addingSecondaryLine[props.st.key] ?? false,
-              fields: props.st.addLineFields.entry,
-              onAdd: props.onAdd,
-              onCancel: props.onCancel,
-              catalogs: props.catalogs,
-              seedValues: props.secondaryAddRowSeed,
-            } : undefined}
-        />
-      </div>
-      {props.st.Form && !props.st.Panel && (props.selectedSecondaryLine?._tabKey === props.st.key || props.closingSecondaryLine) && (
-          <div
-              className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${props.closingSecondaryLine ? "sidebar-slide-out" : "sidebar-slide-in"}`}>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-foreground">{props.detailPanelTitle}</span>
-              <button
-                  onClick={props.onCloseDetailPanel}
-                  className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="h-3.5 w-3.5"/>
-              </button>
-            </div>
-            <props.st.Form
-                data={props.secondaryLineEdits ?? props.selectedSecondaryLine}
-                readOnly={!props.hook.editing}
-                onChange={props.onChange}
-                entity={props.st.key}
-                catalogs={props.catalogs}
-                token={props.token}
-                apiBaseUrl={props.apiBaseUrl}
-                selectorContext={props.selectorContextByEntity[props.st.key]}
-                excludeFields={props.st.key === "contact" ? ["active"] : []}
-                labelOverrides={props.labelOverrides}
-            />
-            {props.hook.editing && (props.secondaryLineEdits || props.selectedSecondaryLine?.id) && (
-                <div className="flex gap-2 mt-4">
-                  {props.secondaryLineEdits && (
-                      <>
+  return (
+    <>
+      <div className="flex items-start gap-4">
+        <div className="flex-1 min-w-0">
+          <props.st.Table
+              ref={getSecondaryLinesTableRef(props.linesLayout, props.secondaryInlineLinesRef, props.st)}
+              data={props.secondaryHooks[props.stIdx]?.children ?? []}
+              entity={props.st.key}
+              token={props.token}
+              apiBaseUrl={props.apiBaseUrl}
+              labelOverrides={props.labelOverrides}
+              selectorContext={props.selectorContextByEntity[props.st.key]}
+              linesLayout={props.linesLayout}
+              onRowClick={resolveSecondaryRowClickHandler(props.st, {
+                openCustomModal: props.openCustomModal,
+                openSecondaryLine: props.openSecondaryLine,
+                linesLayout: props.linesLayout,
+              })}
+              // Pencil action for customAddModal tabs (Dirección) opens
+              // the popup editor — rows are not editable in place.
+              onEditRow={getSecondaryEditRowHandler(props.st, props.setCustomModalState)}
+              selectedRowId={props.selectedSecondaryLine?._tabKey === props.st.key ? props.selectedSecondaryLine?.id : undefined}
+              onSelectionChange={getSecondarySelectionChangeHandler(props.linesLayout, props.setSecondarySelectedRows, props.st)}
+              onDeleteRow={(props.enableSecondaryRowDelete || (props.linesLayout === 'inlineEditable' && !props.st.customAddModal)) && (props.crud?.[props.st.key]?.delete ?? true) ? props.onDeleteRow : undefined}
+              // Inline edit save for secondary-tab rows. Fires when a
+              // cell loses focus while in edit mode. Optimistic flow:
+              // we update the local cache FIRST so the Radix Select
+              // (and read-mode label) reflect the new pick instantly,
+              // then PATCH the server and roll back if it rejects.
+              onUpdateRow={getSecondaryRowUpdateHandler(props.st, props.linesLayout, {
+                api: props.api,
+                apiBaseUrl: props.apiBaseUrl,
+                secondaryHooks: props.secondaryHooks,
+                stIdx: props.stIdx,
+                token: props.token,
+                ui: props.ui,
+                extractErrorMessage: props.extractErrorMessage,
+              })}
+              addRow={props.st.addLineFields?.entry?.length > 0 ? {
+                ref: props.secondaryAddRowRef,
+                active: props.addingSecondaryLine[props.st.key] ?? false,
+                fields: props.st.addLineFields.entry,
+                onAdd: props.onAdd,
+                onCancel: props.onCancel,
+                catalogs: props.catalogs,
+                seedValues: props.secondaryAddRowSeed,
+                resolvedDefaults: props.secondaryChildDefaults,
+              } : undefined}
+          />
+        </div>
+        {props.st.Form && !props.st.Panel && (props.selectedSecondaryLine?._tabKey === props.st.key || props.closingSecondaryLine) && (
+            <div
+                className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${props.closingSecondaryLine ? "sidebar-slide-out" : "sidebar-slide-in"}`}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-foreground">{props.detailPanelTitle}</span>
+                <button
+                    onClick={props.onCloseDetailPanel}
+                    className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-3.5 w-3.5" data-testid="X__fa3275" />
+                </button>
+              </div>
+              <props.st.Form
+                  data={props.secondaryLineEdits ?? props.selectedSecondaryLine}
+                  readOnly={!props.hook.editing}
+                  onChange={props.onChange}
+                  entity={props.st.key}
+                  catalogs={props.catalogs}
+                  token={props.token}
+                  apiBaseUrl={props.apiBaseUrl}
+                  selectorContext={props.selectorContextByEntity[props.st.key]}
+                  excludeFields={props.st.key === "contact" ? ["active"] : []}
+                  labelOverrides={props.labelOverrides}
+              />
+              {props.hook.editing && (props.secondaryLineEdits || props.selectedSecondaryLine?.id) && (
+                  <div className="flex gap-2 mt-4">
+                    {props.secondaryLineEdits && (
+                        <>
+                          <button
+                              disabled={props.savingLine}
+                              onClick={props.onSaveLine}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                          >
+                            {props.savingLine ? props.loadingLabel : props.saveLabel}
+                          </button>
+                          <button
+                              onClick={props.onDiscardLine}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
+                          >
+                            {props.discardLabel}
+                          </button>
+                        </>
+                    )}
+                    {(props.crud?.[props.st.key]?.delete ?? true) && props.selectedSecondaryLine?.id && (
                         <button
                             disabled={props.savingLine}
-                            onClick={props.onSaveLine}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                            onClick={props.onDeleteLine}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
                         >
-                          {props.savingLine ? props.loadingLabel : props.saveLabel}
+                          <Trash2 className="h-4 w-4" data-testid="Trash2__fa3275" />
+                          {props.deleteLabel}
                         </button>
-                        <button
-                            onClick={props.onDiscardLine}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
-                        >
-                          {props.discardLabel}
-                        </button>
-                      </>
-                  )}
-                  {(props.crud?.[props.st.key]?.delete ?? true) && props.selectedSecondaryLine?.id && (
-                      <button
-                          disabled={props.savingLine}
-                          onClick={props.onDeleteLine}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
-                      >
-                        <Trash2 className="h-4 w-4"/>
-                        {props.deleteLabel}
-                      </button>
-                  )}
-                </div>
-            )}
-          </div>
-      )}
-    </div>
-    {(props.st.addLineFields?.entry?.length > 0 || props.st.customAddModal) && props.hook.editing && (
-        // Wrapper measured by the secondary selection bar — its
-        // `position: fixed` portal overlays exactly this region.
-        <div ref={props.secondaryAddLineWrapperRef} className="relative">
-          <span data-inline-add-portal="true">
-            <AddLineButton
+                    )}
+                  </div>
+              )}
+            </div>
+        )}
+      </div>
+      {(props.st.addLineFields?.entry?.length > 0 || props.st.customAddModal) && props.hook.editing && (
+          // Wrapper measured by the secondary selection bar — its
+          // `position: fixed` portal overlays exactly this region.
+          (<div ref={props.secondaryAddLineWrapperRef} className="relative">
+            <span data-inline-add-portal="true">
+              <AddLineButton
                 onClick={props.onAddLineClick}
                 label={props.addLineLabel}
                 hideChevron={props.hideChevron}
-            />
-          </span>
-          {props.linesLayout === "inlineEditable" && (props.crud?.[props.st.key]?.delete ?? true) && (
-              <LinesSelectionBar
+                data-testid="AddLineButton__fa3275" />
+            </span>
+            {props.linesLayout === "inlineEditable" && (props.crud?.[props.st.key]?.delete ?? true) && (
+                <LinesSelectionBar
                   visible={props.secondaryBarVisible[props.st.key] ?? false}
                   closing={props.secondaryBarClosing[props.st.key] ?? false}
                   barRect={props.secondaryBarRects[props.st.key]}
@@ -720,11 +736,12 @@ export function SecondaryTableTab(props) {
                   compact
                   onDelete={props.onDelete}
                   onClose={props.onClose}
-              />
-          )}
-        </div>
-    )}
-  </>;
+                  data-testid="LinesSelectionBar__fa3275" />
+            )}
+          </div>)
+      )}
+    </>
+  );
 }
 
 export function getSaveButtonLabel(savingLine, ui) {
@@ -841,7 +858,7 @@ function getSidebarSlideClassName(isClosingLine) {
 }
 
 function getLinesToolbarClassName(linesLayout, toolbarPaddingX, toolbarBorderBottom) {
-  return `flex items-center justify-between ${linesLayout === 'inlineEditable' ? 'p-2' : toolbarPaddingX + ' py-3'}${toolbarBorderBottom || linesLayout === 'inlineEditable' ? ' border-b border-[#E8EAEF]' : ''}`;
+  return `flex items-center justify-between ${linesLayout === 'inlineEditable' ? 'p-2' : toolbarPaddingX + ' py-2'}${toolbarBorderBottom || linesLayout === 'inlineEditable' ? ' border-b border-[#E8EAEF]' : ''}`;
 }
 
 function getLineMenuActionsRef(getLineMenuActions, extraActionsRef) {
@@ -1035,6 +1052,39 @@ export function insertLinesTab(detailLabel, detailEntity, hook, detailTabIndex, 
   }
 }
 
+function customTabKey(ct) {
+  return `custom:${ct.key}`;
+}
+
+/**
+ * Builds the initial tab list (secondary tabs + lines/customLines + inline custom tabs).
+ * Extracted from DetailView so its branch logic does not count toward the component's
+ * cognitive complexity. `Others` is appended later via pushOthers.
+ */
+function buildInitialTabs(p) {
+  const tabs = [];
+  p.secondaryTabs.forEach((st, i) => {
+    const secondaryChildCount = !st.isFormTab ? (p.secondaryHooks[i]?.children?.length ?? null) : null;
+    const childCount = st.Panel ? (p.panelCounts[st.key] ?? null) : secondaryChildCount;
+    tabs.push({ key: st.key, label: st.label, count: childCount });
+  });
+  if (p.DetailTable) {
+    insertLinesTab(p.detailLabel, p.detailEntity, p.hook, p.detailTabIndex, tabs);
+  } else if (p.CustomLines) {
+    tabs.unshift({ key: 'customLines', label: p.customLinesLabel, count: p.customLinesCount ?? null });
+  }
+  // Append 'tab' placement custom items after lines/secondary tabs but before Others.
+  // Items may pass `labelKey` to resolve a generic i18n label via useUI() instead of a
+  // hardcoded string in `label`.
+  if (!p.customTabsAfterBottom) {
+    p.tabCustomTabs.forEach(ct => {
+      const resolvedLabel = ct.labelKey ? p.ui(ct.labelKey) : ct.label;
+      tabs.push({ key: customTabKey(ct), label: resolvedLabel, count: p.customTabCounts[ct.key] ?? null });
+    });
+  }
+  return tabs;
+}
+
 export function renderExtraActionButtons(extraActions, data, hook, saveBtnCls) {
   return (typeof extraActions === 'function' ? extraActions({
     data,
@@ -1042,12 +1092,12 @@ export function renderExtraActionButtons(extraActions, data, hook, saveBtnCls) {
   }) : extraActions).map((action, i) => (
       action.visible !== false && (
           <Button
-              key={action.key || i}
-              variant="outline"
-              size="default"
-              className={`${action.className || ''} ${saveBtnCls}`.trim()}
-              onClick={action.onClick}
-          >
+            key={action.key || i}
+            variant="outline"
+            size="default"
+            className={`${action.className || ''} ${saveBtnCls}`.trim()}
+            onClick={action.onClick}
+            data-testid="Button__fa3275">
             {action.label}
           </Button>
       )
@@ -1063,12 +1113,15 @@ export function getDetailContentContainerClassName({
   primaryTabs,
   activePrimaryTab,
   formScrollPaddingX = null,
+  contentOverflow = 'auto',
 } = {}) {
-  return `flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding, formScrollPaddingX)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`;
+  const defaultOverflowCls = contentOverflow === 'hidden' ? 'overflow-hidden pb-2' : 'overflow-auto pb-2';
+  const overflowCls = linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : defaultOverflowCls;
+  return `flex-1 min-h-0 min-w-0 ${overflowCls} ${detailContentPadding(linesLayout, !!(sidePanel || (sidebarContent && !sidebarAboveTabsOnly)), 'content', compactSidebarPadding, formScrollPaddingX)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`;
 }
 
 export function getLinesTabsSectionClassName(linesLayout) {
-  return linesLayout === 'inlineEditable' ? 'mt-1 flex flex-col relative' : 'mt-6';
+  return linesLayout === 'inlineEditable' ? 'mt-1 flex flex-col relative' : 'mt-2';
 }
 
 export function getSecondaryTabEntityKey(secondaryTabs, index) {
@@ -1133,9 +1186,9 @@ export function renderEmbeddedStatusPill(statusField, data, statusEnumLabels) {
   return statusField && data[statusField] ? (
       <div className="flex items-center gap-3 px-6 py-3 border-b border-border/30">
         <DocumentStatusPill
-            status={data[statusField]}
-            enumLabels={statusEnumLabels}
-        />
+          status={data[statusField]}
+          enumLabels={statusEnumLabels}
+          data-testid="DocumentStatusPill__fa3275" />
       </div>
   ) : null;
 }
@@ -1241,6 +1294,153 @@ export function shouldShowInlineDeleteSelectionBar(linesLayout, api, detailEntit
 }
 
 /**
+ * Balance gate for double-entry windows (decisions.json window.balanceFooter).
+ * Computes the live balance and the two block flags used to disable Save / Confirm.
+ * Extracted from the DetailView body to keep its cognitive complexity low.
+ * - blockSaveForBalance: Save stays disabled until Σ debit === Σ credit.
+ * - blockCompleteForBalance: Completion is stricter — must balance AND carry a
+ *   non-zero amount (a 0=0 draft is "balanced" but must not be completable).
+ */
+export function computeBalanceGate({ balanceFooter, children, pendingLineValues, lineEdits, selectedLine }) {
+  const balanceEditingLine = lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine;
+  const balanceState = balanceFooter
+    ? computeBalance(children, pendingLineValues, balanceEditingLine, balanceFooter)
+    : null;
+  const blockSaveForBalance = !!balanceFooter && balanceState != null && !balanceState.isBalanced;
+  const blockCompleteForBalance = !!balanceFooter && balanceState != null
+    && (!balanceState.isBalanced || !balanceState.hasAmounts);
+  return { balanceState, blockSaveForBalance, blockCompleteForBalance };
+}
+
+/**
+ * Save / Confirm toolbar buttons for draftMode windows (Save Draft + Confirm).
+ * Extracted from the DetailView footer IIFE to keep cognitive complexity low.
+ * All identifiers are destructured with the SAME names used inside the component
+ * so closure-equivalent logic and the dirty-state regression substrings stay intact.
+ */
+function renderDraftModeSaveActions({
+  hook, isDirty, flushPendingLines, data, isNew, navigate, windowName,
+  ui, onAfterCreate, onAfterSave, token, apiBaseUrl, saveBtnCls,
+  draftMode, blockSaveForBalance, blockCompleteForBalance,
+}) {
+  return (
+    <>
+      <Button variant="outline" size="default" className={`${saveBtnCls} bg-white border-[#D1D4DB] text-[#121217]`} data-testid="action-save-draft" disabled={hook.isSaving || !isDirty || blockSaveForBalance} title={blockSaveForBalance ? ui('journalUnbalancedSaveBlocked') : undefined} onClick={async () => {
+        if (!(await flushPendingLines())) return;
+        const saved = await hook.handleSave(data);
+        if (saved?.id && isNew) {
+          hook.primeSaved?.(saved);
+          navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+        }
+      }}>
+        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__fa3275" /> : <Save className="h-3.5 w-3.5" color="#64748B" data-testid="Save__fa3275" />}
+        {ui('save')}
+      </Button>
+      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving || blockCompleteForBalance || (draftMode.disableWhenEmpty === true && !hook.childrenLoading && hook.children.length === 0)} title={blockCompleteForBalance ? ui('journalUnbalancedCompleteBlocked') : undefined} onClick={async () => {
+        if (!(await flushPendingLines())) return;
+        if (typeof draftMode.onConfirm === 'function') { draftMode.onConfirm(); return; }
+        const saved = await hook.handleSaveAndProcess(draftMode);
+        if (saved) {
+          if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
+          if (onAfterSave) {
+            navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
+          } else if (saved.id && isNew) {
+            hook.primeSaved?.(saved);
+            navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+          } else if (saved.id) {
+            hook.fetchById?.(saved.id);
+          }
+        }
+      }}>
+        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__fa3275" /> : <Check className="h-3.5 w-3.5" data-testid="Check__fa3275" />}
+        {ui(draftMode.label) || draftMode.label || ui('process')}
+      </Button>
+    </>
+  );
+}
+
+export async function handlePostSaveNavigation(saved, { isNew, onAfterCreate, onAfterSave, navigate, windowName, token, apiBaseUrl, hook }) {
+  if (!saved) return;
+  if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
+  if (onAfterSave) {
+    navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
+  } else if (saved.id && isNew) {
+    hook.primeSaved?.(saved);
+    navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+  }
+}
+
+/**
+ * Save (+ optional Confirm) toolbar buttons for a brand-new (unsaved) record.
+ * Extracted from the DetailView footer IIFE. New-record Save is never gated by
+ * !isDirty — only by isDocumentReadOnly, isSaving and blockSaveForBalance.
+ */
+function renderNewRecordSaveActions({
+  hook, flushPendingLines, data, isNew, navigate, windowName,
+  ui, tMenu, onAfterCreate, onAfterSave, token, apiBaseUrl, saveBtnCls,
+  isDocumentReadOnly, isProcessed, draftMode, blockSaveForBalance, blockCompleteForBalance,
+}) {
+  return (
+    <>
+      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || blockSaveForBalance} title={blockSaveForBalance ? ui('journalUnbalancedSaveBlocked') : undefined} onClick={async () => {
+        if (!(await flushPendingLines())) return;
+        const saved = await hook.handleSave(data);
+        if (saved?.id && isNew) {
+          hook.primeSaved?.(saved);
+          navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+        }
+      }}>
+        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__fa3275" /> : <Save className="h-3.5 w-3.5" data-testid="Save__fa3275" />}
+        {ui('save')}
+      </Button>
+      {!isProcessed && hook.children.length > 0 && (
+        <Button size="default" className={saveBtnCls} data-testid="action-complete" disabled={hook.isSaving || blockCompleteForBalance} title={blockCompleteForBalance ? ui('journalUnbalancedCompleteBlocked') : undefined} onClick={async () => {
+          if (!(await flushPendingLines())) return;
+          const saved = await hook.handleSaveAndProcess(draftMode);
+          await handlePostSaveNavigation(saved, { isNew, onAfterCreate, onAfterSave, navigate, windowName, token, apiBaseUrl, hook });
+        }}>
+          {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__fa3275" /> : <Check className="h-3.5 w-3.5" data-testid="Check__fa3275" />}
+          {ui(draftMode.label) || tMenu(draftMode.label) || ui('process')}
+        </Button>
+      )}
+    </>
+  );
+}
+
+/**
+ * Single Save toolbar button for an existing (already-persisted) record.
+ * Extracted from the DetailView footer IIFE. Gated by isDocumentReadOnly,
+ * isSaving, !isDirty and blockSaveForBalance.
+ */
+function renderExistingRecordSaveAction({
+  hook, isDirty, flushPendingLines, data, isNew, navigate, windowName,
+  ui, onAfterCreate, onAfterSave, token, apiBaseUrl, saveBtnCls,
+  isDocumentReadOnly, blockSaveForBalance,
+}) {
+  return (
+    <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || !isDirty || blockSaveForBalance} title={blockSaveForBalance ? ui('journalUnbalancedSaveBlocked') : undefined} onClick={async () => {
+      if (!(await flushPendingLines())) return;
+      const saved = await hook.handleSave(data);
+      await handlePostSaveNavigation(saved, { isNew, onAfterCreate, onAfterSave, navigate, windowName, token, apiBaseUrl, hook });
+    }}>
+      {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__fa3275" /> : <Check className="h-3.5 w-3.5" data-testid="Check__fa3275" />}
+      {ui('save')}
+    </Button>
+  );
+}
+
+/**
+ * Dispatches the footer Save/Confirm action block by record state. Extracted to
+ * module level so the branch logic does not count toward DetailView's cognitive
+ * complexity. All values arrive via the `params` object built in DetailView.
+ */
+function renderSaveActions(params) {
+  if (params.draftMode?.enabled) return renderDraftModeSaveActions(params);
+  if (params.isNew) return renderNewRecordSaveActions(params);
+  return renderExistingRecordSaveAction(params);
+}
+
+/**
  * Full-page detail view for a single entity record.
  * Two-zone layout: gray top bar + white content card with rounded corner.
  *
@@ -1302,6 +1502,7 @@ export function DetailView({
   hideFormCard = false,
   tabsBarRightDivider = null,
   tabsBarRight = null,
+  tabsBarAfter = null,
   hideTopBar = false,
   CustomLines = null,
   customLinesLabel = 'Invoices',
@@ -1310,6 +1511,7 @@ export function DetailView({
   sidebarAboveTabsOnly = false,
   afterTotals = null,
   bottomSection = null,
+  balanceFooter = null,
   linesEmptyState = null,
   topbarExtra = null,
   topbarRight = null,
@@ -1336,23 +1538,28 @@ export function DetailView({
   toolbarPaddingX = 'px-6',
   tabsBarPaddingX = 'px-6',
   formScrollPaddingX = null,
+  contentOverflow = 'auto',
   formCardPadding = 'p-6',
   toolbarButtonSize = 'sm',
   primaryTabsVariant = 'default',
   refetchAfterSave = false,
   secondaryTabsPaddingY = 'py-2.5',
   secondaryTabsShowHoverLine = false,
+  tabsSeparator = false,
   hideAddLineChevron = false,
   addLineButtonPaddingX = '',
   formScrollPaddingB = 'pb-6',
   secondaryTabContentPaddingT = 'pt-3',
+  transformRecord = null,
+  lockedAlert = null,
+  selectorPriceCurrency = null,
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
   // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
   // in memory from the other hook instance). On a direct URL hit `items` is empty anyway and
   // the effect falls through to fetchById. Skipping the list fetch unconditionally drops one
   // wasted GET per direct-URL navigation.
-  const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, skipListFetch: true, refetchAfterSave });
+  const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, skipListFetch: true, refetchAfterSave, specName: windowName });
   // Session-level currency fallback. NEO Headless doesn't return
   // `currency$_identifier` on every line endpoint (only on the header), so we
   // back-fill it generically here. Windows that already get it from the
@@ -1381,10 +1588,10 @@ export function DetailView({
   // Secondary hooks only consume child-level state (children, handleAddChild, handleDeleteChild,
   // handleSelect) — never the parent list. skipListFetch avoids refetching the parent entity
   // list once per hook (which would otherwise cause N+1 identical GETs on mount).
-  const secondaryHook0 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 0), { token, apiBaseUrl, skipListFetch: true });
-  const secondaryHook1 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 1), { token, apiBaseUrl, skipListFetch: true });
-  const secondaryHook2 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 2), { token, apiBaseUrl, skipListFetch: true });
-  const secondaryHook3 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 3), { token, apiBaseUrl, skipListFetch: true });
+  const secondaryHook0 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 0), { token, apiBaseUrl, skipListFetch: true, specName: windowName });
+  const secondaryHook1 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 1), { token, apiBaseUrl, skipListFetch: true, specName: windowName });
+  const secondaryHook2 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 2), { token, apiBaseUrl, skipListFetch: true, specName: windowName });
+  const secondaryHook3 = useEntity(entity, getSecondaryTabEntityKey(secondaryTabs, 3), { token, apiBaseUrl, skipListFetch: true, specName: windowName });
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
   // "From" currency for secondary-tab inline add-rows. The parent document's
@@ -1403,6 +1610,17 @@ export function DetailView({
     return seed;
   }, [headerCurrencyId, headerCurrencyLabel]);
 
+  // HandleDefaults: once the parent record is known, fetch backend-resolved
+  // defaults for NEW lines so the add-row can pre-fill editable fields (e.g. a
+  // line description defaulting to the parent's via @DESCRIPTION1@). An entity can
+  // opt out via decisions.json `handlesDefaults: false` (surfaced on api.crud).
+  const primaryHandlesDefaults = api?.crud?.[detailEntity]?.handlesDefaults !== false;
+  const primaryFetchChildDefaults = hook.fetchChildDefaults;
+  useEffect(() => {
+    if (!primaryHandlesDefaults || !parentRecordId) return;
+    primaryFetchChildDefaults?.(parentRecordId);
+  }, [primaryHandlesDefaults, parentRecordId, primaryFetchChildDefaults]);
+
   const handleFieldBlur = useCallback(() => {
     if (!hook.editing || !hook.selected) return;
     const hasChanges = Object.entries(hook.editing).some(
@@ -1417,6 +1635,16 @@ export function DetailView({
   // recreating a new array reference on every render.
   const secondaryTabKeysStr = secondaryTabs.map(t => t?.key ?? '').join('|');
 
+  // HandleDefaults for secondary detail tabs: same as the primary, per-tab entity.
+  useEffect(() => {
+    if (!parentRecordId) return;
+    secondaryTabKeysStr.split('|').forEach((key, i) => {
+      if (!key || api?.crud?.[key]?.handlesDefaults === false) return;
+      secondaryHooks[i]?.fetchChildDefaults?.(parentRecordId);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parentRecordId, secondaryTabKeysStr]);
+
   const selectorContextByEntity = useMemo(() => {
     const category = api?.window?.category;
     const next = {};
@@ -1430,6 +1658,7 @@ export function DetailView({
     if (detailEntity) {
       const headerSnapshot = hook.selected ?? hook.editing;
       const currency = headerSnapshot?.['currency$_identifier'] ?? sessionCurrencyCode ?? null;
+      const priceCurrency = selectorPriceCurrency === 'org' ? sessionCurrencyCode : null;
       next[detailEntity] = {
         ...buildLineSelectorContext({
           windowCategory: category,
@@ -1440,6 +1669,7 @@ export function DetailView({
           },
         }),
         ...(currency ? { currency } : {}),
+        ...(priceCurrency ? { priceCurrency } : {}),
       };
     }
 
@@ -1447,11 +1677,12 @@ export function DetailView({
       next[key] = { parentId: parentRecordId };
     }
     return next;
-  }, [entity, detailEntity, parentRecordId, secondaryTabKeysStr, priceListId, api, hook.selected, hook.editing, sessionCurrencyCode]);
+  }, [entity, detailEntity, parentRecordId, secondaryTabKeysStr, priceListId, api, hook.selected, hook.editing, sessionCurrencyCode, selectorPriceCurrency]);
   const { catalogs, catalogsLoaded } = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
   const docAction = useDocumentAction({ apiBaseUrl, entity, token });
+  const neoAction = useNeoAction({ specName: windowName, entityName: entity, apiBaseUrl, token });
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -1518,6 +1749,17 @@ export function DetailView({
     }
     return true;
   }, [addingLine, addingSecondaryLine, linesLayout]);
+
+  // ── Ordered save helper ────────────────────────────────────────────────────
+  //
+  // Always flush any open add-row before saving the header so the parent record
+  // sees the committed line state. If flushPendingLines reports a failure
+  // (e.g. validation), the save is aborted and returns null.
+  const flushAndSave = useCallback(async (data) => {
+    if (!(await flushPendingLines())) return null;
+    return hook.handleSave(data);
+  }, [hook, flushPendingLines]);
+
   const [customModalState, setCustomModalState] = useState({ key: null, rowId: null });
   const [activeTab, setActiveTab] = useState(0);
 
@@ -1726,6 +1968,18 @@ export function DetailView({
       }
     }
   }, [secondarySelectedRows, secondaryTabs]);
+  // Flush any pending secondary-bar close timeouts on unmount so they can't
+  // fire a setState after teardown (which throws "window is not defined" once
+  // the test/jsdom environment is gone).
+  useEffect(() => {
+    const timeouts = secondaryBarTimeoutRef.current;
+    return () => {
+      for (const key of Object.keys(timeouts)) {
+        clearTimeout(timeouts[key]);
+        delete timeouts[key];
+      }
+    };
+  }, []);
   // Measure each visible secondary tab's add-line wrapper so its bar can be
   // portaled with `position: fixed`. Only the active tab actually mounts its
   // wrapper (inactive tabs unmount their content), so refs from other tabs
@@ -1818,19 +2072,109 @@ export function DetailView({
   // Track fields whose values were set by a callout response, keyed by field with
   // the applied value, so we only skip the echo (same value) and not genuine edits.
   const calloutAppliedRef = useRef(new Map());
+  // Active conversion rate (org base currency → header currency) for the SAVED state of
+  // the order. Set by the sync effect below whenever the saved currency differs from
+  // the org base currency. Used by handleLineFieldChange to convert pricelist prices on
+  // newly added lines. Conversion only applies to lines added AFTER the order's currency
+  // has been saved — there is no longer real-time conversion of unsaved lines on currency
+  // change (ETP-4027 simplification).
+  const activeCurrencyConversionRef = useRef(null);
   // Track fields the user has manually changed in this record session — protected
   // from being overwritten by callouts triggered from other fields.
   const userTouchedRef = useRef(new Set());
-  // Reset both refs when the record context changes (new record / different existing record)
+  // Reset session-scoped refs when the record context changes (new record / different existing record).
   useEffect(() => {
     userTouchedRef.current = new Set();
     calloutAppliedRef.current = new Map();
+    activeCurrencyConversionRef.current = null;
   }, [recordId]);
+
+  // Sync activeCurrencyConversionRef with the SAVED state of the order: whenever
+  // hook.selected.currency changes (typically after a save), re-evaluate whether
+  // conversion is needed. Lines added afterwards inherit this rate via
+  // handleLineFieldChange. There is no real-time conversion on unsaved currency changes.
+  useEffect(() => {
+    if (recordId === 'new') return;
+    const docCurrencyId = hook.selected?.currency;
+    const orderDate = hook.selected?.orderDate;
+    if (!docCurrencyId || !orderDate || !apiBaseUrl || !token) {
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const neoBase = apiBaseUrl.replace(/\/[^/]+$/, '');
+        const sessionRes = await fetch(`${neoBase}/session`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!sessionRes.ok || cancelled) return;
+        const session = await sessionRes.json();
+        const orgCurrencyId = session?.currencyId;
+        if (!orgCurrencyId) return;
+        if (orgCurrencyId === docCurrencyId) {
+          // Saved currency matches org currency — no conversion needed.
+          activeCurrencyConversionRef.current = null;
+          return;
+        }
+
+        // If the order has a per-order rate override, use it directly without
+        // fetching validate-exchange-rate. This reflects the user's confirmed rate
+        // (set via CurrencyRatePicker) and avoids a redundant network call.
+        const overrideRate = hook.selected?.eTGOCurrencyRate != null
+          ? parseFloat(hook.selected.eTGOCurrencyRate)
+          : null;
+        if (overrideRate && overrideRate > 0) {
+          activeCurrencyConversionRef.current = {
+            baseCurrency: orgCurrencyId,
+            toCurrency: docCurrencyId,
+            rate: overrideRate,
+          };
+          return;
+        }
+
+        const rateRes = await fetch(
+          `${neoBase}/validate-exchange-rate?fromCurrency=${encodeURIComponent(orgCurrencyId)}&toCurrency=${encodeURIComponent(docCurrencyId)}&date=${encodeURIComponent(orderDate)}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!rateRes.ok || cancelled) {
+          activeCurrencyConversionRef.current = null;
+          return;
+        }
+        const rateData = await rateRes.json();
+        if (cancelled) return;
+        if (rateData?.hasRate && rateData.rate) {
+          activeCurrencyConversionRef.current = {
+            baseCurrency: orgCurrencyId,
+            toCurrency: docCurrencyId,
+            rate: rateData.rate,
+          };
+        } else {
+          // No rate available — clear stale ref. The dropdown-change validator
+          // normally blocks selecting a currency without a rate, but the saved
+          // state may still get here through other paths.
+          activeCurrencyConversionRef.current = null;
+        }
+      } catch {
+        activeCurrencyConversionRef.current = null;
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [recordId, hook.selected?.currency, hook.selected?.eTGOCurrencyRate, hook.selected?.orderDate, apiBaseUrl, token]);
   // Guard: fire default callouts only once per new-record session
   const defaultCalloutsTriggeredRef = useRef(false);
   // Cache for tax rates fetched from the selector (keyed by tax ID).
   // Avoids repeated API calls when the same tax appears on multiple lines.
   const taxRateCacheRef = useRef({});
+  // Balance state for double-entry windows (decisions.json window.balanceFooter).
+  // blockSaveForBalance disables the save action until Σ debit === Σ credit.
+  const { blockSaveForBalance, blockCompleteForBalance } = computeBalanceGate({
+    balanceFooter,
+    children: hook.children,
+    pendingLineValues,
+    lineEdits,
+    selectedLine,
+  });
   const { computeLineGrossAmount, resolveTaxFactor, prepareLineForPost } = useLineGrossAmount(taxRateCacheRef, hook.children, lineConfig);
   // Batching refs for the sidebar onChange: product selector fires multiple synchronous
   // onChange calls (product, product$_identifier, unitPrice/grossUnitPrice). Without
@@ -2092,10 +2436,20 @@ export function DetailView({
 
     // Mark these fields so the next onChange doesn't re-trigger callout
     calloutAppliedRef.current = appliedFields;
+
+    // Currency change validation is handled inside handleChangeWithCallout (synchronous
+    // dropdown-change path). The callout response handler intentionally no longer applies
+    // any conversion to pending lines — under the simplified ETP-4027 model, conversion
+    // only applies to lines added AFTER the saved currency change.
   }, [calloutResult]);
 
   // Wrapped onChange that triggers callout for user-initiated FK changes
   const handleChangeWithCallout = useCallback((field, value) => {
+    // Capture the previous currency BEFORE hook.handleChange updates state, so we can
+    // revert the dropdown if the rate check fails. The closure preserves the old
+    // hook.editing reference, but capturing explicitly keeps intent clear.
+    const previousCurrency = field === 'currency' ? hook.editing?.currency : null;
+
     hook.handleChange(field, value);
 
     // Skip companion/auxiliary fields — they don't have callouts
@@ -2120,9 +2474,49 @@ export function DetailView({
     if (!value || value === '') return;
     if (!/^[0-9A-Fa-f]{32}$/.test(value) && !/^-?\d+(\.\d+)?$/.test(value) && !/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
 
+    // Currency change validation (ETP-4027 simplified model): if no conversion rate
+    // exists between the org base currency and the newly selected currency for the
+    // order date, revert the dropdown to the previous value and surface an error.
+    // Skipped when the new currency equals the org currency (no rate needed) and when
+    // there is no previous currency yet (initial set, e.g. defaults).
+    if (field === 'currency' && previousCurrency && previousCurrency !== value && apiBaseUrl && token) {
+      const orderDate = hook.selected?.orderDate ?? hook.editing?.orderDate;
+      if (orderDate) {
+        const neoBase = apiBaseUrl.replace(/\/[^/]+$/, '');
+        (async () => {
+          const revert = () => {
+            toast.error(ui('noConversionRateError', { date: orderDate }));
+            hook.handleChange('currency', previousCurrency);
+          };
+          try {
+            const sessionRes = await fetch(`${neoBase}/session`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!sessionRes.ok) { revert(); return; }
+            const session = await sessionRes.json();
+            const orgCurrencyId = session?.currencyId;
+            // No rate needed when changing TO the org currency — that's just removing
+            // the conversion. Allow without validation.
+            if (!orgCurrencyId || orgCurrencyId === value) return;
+            const rateRes = await fetch(
+              `${neoBase}/validate-exchange-rate?fromCurrency=${encodeURIComponent(orgCurrencyId)}&toCurrency=${encodeURIComponent(value)}&date=${encodeURIComponent(orderDate)}`,
+              { headers: { Authorization: `Bearer ${token}` } },
+            );
+            if (!rateRes.ok) { revert(); return; }
+            const rateData = await rateRes.json();
+            if (!rateData?.hasRate || !rateData.rate) { revert(); return; }
+            // Rate exists — change stays. The sync effect on hook.selected.currency
+            // will pick it up after the user saves the header.
+          } catch {
+            revert();
+          }
+        })();
+      }
+    }
+
     // Trigger callout — the backend returns empty if no callout is registered
     executeCallout(field, value, hook.editing);
-  }, [hook.handleChange, hook.editing, executeCallout]);
+  }, [hook.handleChange, hook.editing, hook.selected, executeCallout, apiBaseUrl, token, ui]);
 
   // Execute callout for child entity (line-level) fields and apply results via callback.
   // Merges parent header data into formState so callouts have full context (e.g., priceList).
@@ -2164,19 +2558,7 @@ export function DetailView({
       const calloutData = await res.json();
       const result = normalizeCalloutResponse(calloutData, rowValues);
 
-      // Classic callouts (SL_Order_Product, SL_Invoice_Product) return the catalog price
-      // as standardPrice (PriceStd) and zero out listPrice (PriceList column).
-      // Use standardPrice as the list price when the callout zeroed listPrice.
-      // The selector enrichment in NeoSelectorService ensures standardPrice always comes
-      // from the document's price list for both order and invoice configs.
-      if (field === 'product' && result.standardPrice != null && (result.listPrice == null || Number(result.listPrice) === 0)) {
-        result.listPrice = result.standardPrice;
-      }
-
-      // Reset discount to 0 on product change so each product starts with no discount applied.
-      if (field === 'product' && lineConfig.discountField) {
-        result[lineConfig.discountField] = 0;
-      }
+      applyProductCalloutPriceAdjustments(field, result, lineConfig);
 
       // Resolve missing $_identifier from loaded catalogs for FK fields returned by callout
       // (e.g., callout sets uOM='100' but server omits the display name)
@@ -2202,6 +2584,14 @@ export function DetailView({
       const triggerFieldDef = (addLineFields?.entry ?? []).find(f => f.key === field);
       const forceFields = new Set(triggerFieldDef?.forceCalloutFields ?? []);
       if (field === 'product' && lineConfig.discountField) forceFields.add(lineConfig.discountField);
+      // Apply active currency conversion: converts prices added after a header currency
+      // change so each new line reflects the order header's currency, not the pricelist's.
+      applyProductCurrencyConversion(
+        field, result, rowValues, lineConfig,
+        activeCurrencyConversionRef.current,
+        hook.selected?.['currency$_identifier'] ?? hook.editing?.['currency$_identifier'],
+        computeLineGrossAmount,
+      );
       roundAmounts(result);
       applyUpdates?.(result, forceFields);
 
@@ -2211,7 +2601,9 @@ export function DetailView({
     }
   }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected, catalogs, api, addLineFields, computeLineGrossAmount, resolveTaxFactor]);
 
-  const data = hook.editing || currentItem || {};
+  const data = transformRecord
+    ? transformRecord(hook.editing || currentItem || {})
+    : (hook.editing || currentItem || {});
 
   // Send total-discount percentage to the backend on blur. Also mirror the
   // saved value into the editing state so subsequent form saves don't overwrite
@@ -2303,29 +2695,13 @@ export function DetailView({
   const [activeCustomBelowTab, setActiveCustomBelowTab] = useState(0);
   // Reuse the secondaryTabs/lines/others activeTab state for custom tabs by prefixing
   // their keys with `custom:` so they cannot collide with secondaryTabs/lines/others/customLines.
-  const customTabKey = (ct) => `custom:${ct.key}`;
 
   // Build tabs: child entity lines + secondary tabs + custom 'tab' placement + "Others"
-  const tabs = [];
-  secondaryTabs.forEach((st, i) => {
-    const secondaryChildCount = !st.isFormTab ? (secondaryHooks[i]?.children?.length ?? null) : null;
-    const childCount = st.Panel ? (panelCounts[st.key] ?? null) : secondaryChildCount;
-    tabs.push({ key: st.key, label: st.label, count: childCount });
+  const tabs = buildInitialTabs({
+    secondaryTabs, secondaryHooks, panelCounts, DetailTable, detailLabel, detailEntity,
+    hook, detailTabIndex, CustomLines, customLinesLabel, customLinesCount,
+    customTabsAfterBottom, tabCustomTabs, ui, customTabCounts,
   });
-  if (DetailTable) {
-    insertLinesTab(detailLabel, detailEntity, hook, detailTabIndex, tabs);
-  } else if (CustomLines) {
-    tabs.unshift({ key: 'customLines', label: customLinesLabel, count: customLinesCount ?? null });
-  }
-  // Append 'tab' placement custom items after lines/secondary tabs but before Others.
-  // Items may pass `labelKey` to resolve a generic i18n label via useUI() instead of a
-  // hardcoded string in `label`.
-  if (!customTabsAfterBottom) {
-    tabCustomTabs.forEach(ct => {
-      const resolvedLabel = ct.labelKey ? ui(ct.labelKey) : ct.label;
-      tabs.push({ key: customTabKey(ct), label: resolvedLabel, count: customTabCounts[ct.key] ?? null });
-    });
-  }
 
   // When primaryTabs is in use, skip auto-adding Others (handled by a primary tab)
   const [showOthers, setShowOthers] = useState(primaryTabs ? false : null);
@@ -2367,7 +2743,7 @@ export function DetailView({
           isActive={isActive}
           onCountChange={updateCustomTabCount}
           {...(ct.props || {})}
-        />
+          data-testid="TabComponent__fa3275" />
       </div>
     );
   });
@@ -2408,8 +2784,14 @@ export function DetailView({
     );
   }
 
+  const saveActionParams = {
+    hook, isDirty, flushPendingLines, data, isNew, navigate, windowName,
+    ui, tMenu, onAfterCreate, onAfterSave, token, apiBaseUrl, saveBtnCls,
+    isDocumentReadOnly, isProcessed, draftMode, blockSaveForBalance, blockCompleteForBalance,
+  };
+
   return (
-    <div className="flex-1 min-h-0 flex flex-col" data-testid="detail-view">
+    <div className="flex-1 min-h-0 flex flex-col" data-testid="detail-view" data-doc-status={_headerData?.documentStatus}>
       {/* Content card with rounded top-left corner */}
       <div className={`flex-1 flex flex-col ${contentBg} rounded-tl-2xl overflow-hidden min-h-0`}>
         {/* Action bar: Cancel + status | actions + save */}
@@ -2427,9 +2809,26 @@ export function DetailView({
               <DocumentStatusPill
                 status={data[statusField]}
                 enumLabels={statusEnumLabels}
-              />
+                data-testid="DocumentStatusPill__fa3275" />
             )}
             {extraBadges.map(b => {
+              // type: 'statusPill' — renders as DocumentStatusPill, always visible,
+              // labels resolved from i18n keys trueKey / falseKey.
+              if (b.type === 'statusPill') {
+                const val = data[b.key];
+                if (val == null) return null;
+                const isTrue = val === true || val === 'Y' || val === 'true';
+                const label = isTrue ? ui(b.trueKey) : ui(b.falseKey);
+                const tone = isTrue ? 'success' : 'warning';
+                return (
+                  <DocumentStatusPill
+                    key={b.key}
+                    status={isTrue ? 'Y' : 'N'}
+                    label={label}
+                    tone={tone}
+                    data-testid={`DocumentStatusPill__${b.key}`} />
+                );
+              }
               const when = b.when !== undefined ? b.when : true;
               const show = when ? !!data[b.key] : !data[b.key];
               if (!show) return null;
@@ -2439,14 +2838,28 @@ export function DetailView({
                 : 'ml-1 bg-blue-600 hover:bg-blue-700 border-transparent text-white';
               const variant = b.style === 'warning' ? 'outline' : 'default';
               return (
-                <Badge key={`${b.key}-${when}`} variant={variant} className={cls}>
+                <Badge
+                  key={`${b.key}-${when}`}
+                  variant={variant}
+                  className={cls}
+                  data-testid="Badge__fa3275">
                   {b.label}
                 </Badge>
               );
             })}
             {topbarExtra && (() => {
               const TopbarExtraComponent = topbarExtra;
-              return <TopbarExtraComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} onRefresh={() => hook.fetchById?.(data?.id || recordId)} />;
+              return (
+                <TopbarExtraComponent
+                  data={data}
+                  recordId={data?.id || recordId}
+                  token={token}
+                  apiBaseUrl={apiBaseUrl}
+                  api={api}
+                  onProcess={hook.handleProcess}
+                  onRefresh={() => hook.fetchById?.(data?.id || recordId)}
+                  data-testid="TopbarExtraComponent__fa3275" />
+              );
             })()}
           </div>
 
@@ -2454,7 +2867,17 @@ export function DetailView({
               {/* Topbar right slot (e.g. payment status badge) */}
               {topbarRight && (() => {
                 const TopbarRightComponent = topbarRight;
-                return <TopbarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} onRefresh={() => hook.fetchById?.(data?.id || recordId)} />;
+                return (
+                  <TopbarRightComponent
+                    data={data}
+                    recordId={data?.id || recordId}
+                    token={token}
+                    apiBaseUrl={apiBaseUrl}
+                    api={api}
+                    onProcess={hook.handleProcess}
+                    onRefresh={() => hook.fetchById?.(data?.id || recordId)}
+                    data-testid="TopbarRightComponent__fa3275" />
+                );
               })()}
               {/* Send / Print document — uses DocumentPrintDrawer.
                   Icon unified with RowQuickActions (envelope/Mail) so the same
@@ -2466,7 +2889,7 @@ export function DetailView({
                   title={ui('sendPreview')}
                   data-testid="action-document-preview"
                 >
-                  <Mail className="h-[15px] w-[15px]" />
+                  <Mail className="h-[15px] w-[15px]" data-testid="Mail__fa3275" />
                 </button>
               )}
               {/* Print document — shown when documentPreview is not provided */}
@@ -2476,7 +2899,7 @@ export function DetailView({
                   className={`${sqBtnSize} flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors`}
                   title={ui('print')}
                 >
-                  <Printer className="h-4 w-4" />
+                  <Printer className="h-4 w-4" data-testid="Printer__fa3275" />
                 </button>
               )}
               {/* Delete record — hidden when hideDeleteWhenComplete and status matches or record is processed */}
@@ -2487,7 +2910,7 @@ export function DetailView({
                   title={ui('delete')}
                   data-testid="action-delete"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" data-testid="Trash2__fa3275" />
                 </button>
               )}
               {/* More actions */}
@@ -2497,7 +2920,7 @@ export function DetailView({
                   onClick={() => setShowMoreMenu(v => !v)}
                   className={`${sqBtnSize} flex items-center justify-center rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors`}
                 >
-                  <MoreVertical className="h-[15px] w-[15px]" />
+                  <MoreVertical className="h-[15px] w-[15px]" data-testid="MoreVertical__fa3275" />
                 </button>
                 {showMoreMenu && (() => {
                   const resolvedActions = typeof menuActions === 'function'
@@ -2505,6 +2928,35 @@ export function DetailView({
                     : menuActions;
                   const visibleActions = resolvedActions.filter(a => a.visible !== false);
                   if (visibleActions.length === 0 && !customMenuContent) return null;
+                  const currentId = data?.id || recordId;
+                  const runDocumentAction = async (action) => {
+                    if (action.preUnpost && (data?.posted === 'Y' || data?.posted === true)) {
+                      const unpostResult = await neoAction.execute(currentId, 'unpost');
+                      if (!unpostResult.success) {
+                        toast.error(unpostResult.message || ui('actionFailed'));
+                        return false;
+                      }
+                    }
+                    try {
+                      await docAction.execute(currentId, action.documentAction);
+                      const msg = (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted');
+                      toast.success(msg);
+                      hook.fetchById?.(currentId);
+                    } catch (err) {
+                      toast.error(err.message);
+                    }
+                    return true;
+                  };
+                  const runNeoMenuAction = async (action) => {
+                    const result = await neoAction.execute(currentId, action.neoAction);
+                    const msg = (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted');
+                    if (result.success) {
+                      toast.success(msg);
+                      hook.fetchById?.(currentId);
+                    } else {
+                      toast.error(result.message || ui('actionFailed'));
+                    }
+                  };
                   return (
                     <div
                       className="absolute right-0 top-full mt-1 z-50 bg-white py-2 min-w-[148px]"
@@ -2520,20 +2972,24 @@ export function DetailView({
                           <button
                             key={action.key || i}
                             type="button"
-                            disabled={docAction.loading}
+                            data-testid={`menu-action-${action.key || i}`}
+                            disabled={docAction.loading || neoAction.loading}
                             onClick={async () => {
                               setShowMoreMenu(false);
                               if (action.documentAction) {
-                                const currentId = data?.id || recordId;
-                                try {
-                                  await docAction.execute(currentId, action.documentAction);
-                                  const msg = (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted');
-                                  toast.success(msg);
-                                  hook.fetchById?.(currentId);
-                                } catch (err) {
-                                  toast.error(err.message);
-                                }
+                                await runDocumentAction(action);
                                 return;
+                              }
+                              if (action.neoAction) {
+                                await runNeoMenuAction(action);
+                                return;
+                              }
+                              if (action.preUnpost && (data?.posted === 'Y' || data?.posted === true)) {
+                                const unpostResult = await neoAction.execute(currentId, 'unpost');
+                                if (!unpostResult.success) {
+                                  toast.error(unpostResult.message || ui('actionFailed'));
+                                  return;
+                                }
                               }
                               if (action.columnName) {
                                 hook.handleProcess?.({ columnName: action.columnName, name: action.key });
@@ -2544,14 +3000,14 @@ export function DetailView({
                             className={`w-full text-left px-2 py-1 text-sm leading-6 transition-colors flex items-center gap-2 ${action.destructive
                               ? 'text-red-600 hover:bg-red-50'
                               : 'text-foreground hover:bg-secondary'
-                              } ${docAction.loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              } ${docAction.loading || neoAction.loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400 }}
                           >
                             {ActionIcon && (
                               <ActionIcon
                                 className="h-4 w-4 flex-shrink-0 ml-1"
                                 style={{ color: action.destructive ? undefined : '#828FA3' }}
-                              />
+                                data-testid="ActionIcon__fa3275" />
                             )}
                             <span className={ActionIcon ? 'pl-1' : ''}>
                               {action.labelKey ? ui(action.labelKey) : action.label}
@@ -2561,14 +3017,16 @@ export function DetailView({
                       })}
                       {customMenuContent && (() => {
                         const CustomMenuContent = customMenuContent;
-                        return <CustomMenuContent
-                          data={data}
-                          recordId={data?.id || recordId}
-                          token={token}
-                          apiBaseUrl={apiBaseUrl}
-                          onClose={() => setShowMoreMenu(false)}
-                          onRefresh={() => hook.fetchById?.(data?.id || recordId)}
-                        />;
+                        return (
+                          <CustomMenuContent
+                            data={data}
+                            recordId={data?.id || recordId}
+                            token={token}
+                            apiBaseUrl={apiBaseUrl}
+                            onClose={() => setShowMoreMenu(false)}
+                            onRefresh={() => hook.fetchById?.(data?.id || recordId)}
+                            data-testid="CustomMenuContent__fa3275" />
+                        );
                       })()}
                     </div>
                   );
@@ -2601,103 +3059,14 @@ export function DetailView({
                         }
                         hook.handleProcess?.(p);
                       }}
-                    >
+                      data-testid="Button__fa3275">
                       {tMenu(p.label)}
                     </Button>
                   );
                 })}
 
-              {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted && (() => {
-                if (draftMode?.enabled) {
-                  return (
-                    <>
-                      <Button variant="outline" size="default" className={`${saveBtnCls} bg-white border-[#D1D4DB] text-[#121217]`} data-testid="action-save-draft" disabled={hook.isSaving || !isDirty} onClick={async () => {
-                        if (!(await flushPendingLines())) return;
-                        const saved = await hook.handleSave(data);
-                        if (saved?.id && isNew) {
-                          hook.primeSaved?.(saved);
-                          navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-                        }
-                      }}>
-                        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" color="#64748B" />}
-                        {ui('save')}
-                      </Button>
-                      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving || (draftMode.disableWhenEmpty === true && !hook.childrenLoading && hook.children.length === 0)} onClick={async () => {
-                        if (!(await flushPendingLines())) return;
-                        if (typeof draftMode.onConfirm === 'function') { draftMode.onConfirm(); return; }
-                        const saved = await hook.handleSaveAndProcess(draftMode);
-                        if (saved) {
-                          if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
-                          if (onAfterSave) {
-                            navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
-                          } else if (saved.id && isNew) {
-                            hook.primeSaved?.(saved);
-                            navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-                          } else if (saved.id) {
-                            hook.fetchById?.(saved.id);
-                          }
-                        }
-                      }}>
-                        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                        {ui(draftMode.label) || draftMode.label || ui('process')}
-                      </Button>
-                    </>
-                  );
-                }
-                if (isNew) {
-                  return (
-                    <>
-                      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving} onClick={async () => {
-                        if (!(await flushPendingLines())) return;
-                        const saved = await hook.handleSave(data);
-                        if (saved?.id && isNew) {
-                          hook.primeSaved?.(saved);
-                          navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-                        }
-                      }}>
-                        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                        {ui('save')}
-                      </Button>
-                      {!isProcessed && hook.children.length > 0 && (
-                        <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
-                          if (!(await flushPendingLines())) return;
-                          const saved = await hook.handleSaveAndProcess(draftMode);
-                          if (saved) {
-                            if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
-                            if (onAfterSave) {
-                              navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
-                            } else if (saved.id && isNew) {
-                              hook.primeSaved?.(saved);
-                              navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-                            }
-                          }
-                        }}>
-                          {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                          {ui(draftMode.label) || tMenu(draftMode.label) || ui('process')}
-                        </Button>
-                      )}
-                    </>
-                  );
-                }
-                return (
-                  <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || !isDirty} onClick={async () => {
-                    if (!(await flushPendingLines())) return;
-                    const saved = await hook.handleSave(data);
-                    if (saved) {
-                      if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
-                      if (onAfterSave) {
-                        navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
-                      } else if (saved.id && isNew) {
-                        hook.primeSaved?.(saved);
-                        navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-                      }
-                    }
-                  }}>
-                    {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                    {ui('save')}
-                  </Button>
-                );
-              })()}
+              {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted
+                && renderSaveActions(saveActionParams)}
             </div>
           </div>
         )}
@@ -2717,11 +3086,31 @@ export function DetailView({
                   <div className="absolute top-0 bottom-0 w-px bg-[#E8EAEF] pointer-events-none" style={{ left: `calc(100% - ${tabsBarRightDivider})` }} />
                 )}
                 {renderPrimaryTabButtons(primaryTabsVariant, primaryTabs, setActivePrimaryTab, activePrimaryTab, tMenu)}
+                {tabsBarAfter && (() => {
+                  const TabsBarAfterComponent = tabsBarAfter;
+                  return (
+                    <div className="ml-2 flex-shrink-0">
+                      <TabsBarAfterComponent
+                        data={data}
+                        recordId={data?.id || recordId}
+                        token={token}
+                        apiBaseUrl={apiBaseUrl}
+                        api={api}
+                        data-testid="TabsBarAfterComponent__fa3275" />
+                    </div>
+                  );
+                })()}
                 {tabsBarRight && (() => {
                   const TabsBarRightComponent = tabsBarRight;
                   return (
                     <div className="ml-auto flex-shrink-0">
-                      <TabsBarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} />
+                      <TabsBarRightComponent
+                        data={data}
+                        recordId={data?.id || recordId}
+                        token={token}
+                        apiBaseUrl={apiBaseUrl}
+                        api={api}
+                        data-testid="TabsBarRightComponent__fa3275" />
                     </div>
                   );
                 })()}
@@ -2736,7 +3125,7 @@ export function DetailView({
                 </div>
               ) : null;
             })() : null}
-            <div className={getDetailContentContainerClassName({ linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab, formScrollPaddingX })}>
+            <div className={getDetailContentContainerClassName({ linesLayout, sidePanel, sidebarContent, sidebarAboveTabsOnly, compactSidebarPadding, primaryTabs, activePrimaryTab, formScrollPaddingX, contentOverflow })}>
               {resolveHeaderContent(headerContent, data)}
               {(() => {
                 const slotProps = {
@@ -2750,8 +3139,7 @@ export function DetailView({
                   detailEntity,
                   onFieldChange: handleChangeWithCallout,
                   onSave: async () => {
-                    if (!(await flushPendingLines())) return null;
-                    const saved = await hook.handleSave(data);
+                    const saved = await flushAndSave(data);
                     if (saved?.id && isNew) {
                       hook.primeSaved?.(saved);
                     }
@@ -2774,8 +3162,11 @@ export function DetailView({
                         : headerExtra
                     )}
                     {!headerExtra && !sidePanel && ocrDocType && (
-                      <Suspense fallback={null}>
-                        <LazyOcrInlineUploader {...slotProps} docTypeId={ocrDocType.id} />
+                      <Suspense fallback={null} data-testid="Suspense__fa3275">
+                        <LazyOcrInlineUploader
+                          {...slotProps}
+                          docTypeId={ocrDocType.id}
+                          data-testid="LazyOcrInlineUploader__fa3275" />
                       </Suspense>
                     )}
                   </>
@@ -2791,6 +3182,40 @@ export function DetailView({
                         {/* Principal + collapsed fields wrapped in a card */}
                         <div className={`${hideFormCard ? 'hidden' : ''}${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${whiteFormBackground ? ' bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50' : ''}${embedded ? ' pointer-events-none' : ''}`}>
                           <div className={linesLayout === 'inlineEditable' ? 'p-2' : formCardPadding}>
+                            {lockedAlert && isProcessed && (
+                              <div
+                                className="flex flex-row items-center gap-1 rounded-lg mb-3"
+                                style={{ padding: '8px', background: '#F5F7F9' }}
+                                data-testid="locked-alert"
+                              >
+                                <span className="flex items-start pl-1 shrink-0">
+                                  <Lock className="h-6 w-6" style={{ color: '#828FA3' }} data-testid="Lock__fa3275" />
+                                </span>
+                                <div className="flex flex-1 flex-row items-center min-w-0">
+                                  <div className="flex flex-1 items-center gap-2 px-2 min-w-0">
+                                    <span className="text-sm font-medium leading-6 shrink-0" style={{ color: '#121217' }}>
+                                      {ui(lockedAlert.title)}
+                                    </span>
+                                    <span className="text-sm font-normal leading-6 truncate" style={{ color: '#6C6C89' }}>
+                                      {ui(lockedAlert.message)}
+                                    </span>
+                                  </div>
+                                  {lockedAlert.actionLabel && lockedAlert.navigateTo && (
+                                    <div className="flex justify-end items-center px-2 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => navigate(lockedAlert.navigateTo)}
+                                        className="text-sm font-medium leading-6 underline whitespace-nowrap"
+                                        style={{ color: '#121217' }}
+                                        data-testid="locked-alert-action"
+                                      >
+                                        {ui(lockedAlert.actionLabel)}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                             <Form
                               entity={entity}
                               data={data}
@@ -2807,12 +3232,12 @@ export function DetailView({
                               registerFields={hook.registerFields}
                               fieldErrors={hook.fieldErrors}
                               onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
-                            />
+                              data-testid="Form__fa3275" />
                           </div>
 
                           {/* Collapsible secondary header fields (hidden if no collapsed fields or sidebarContent) */}
                           {!hideMoreDetails && !sidebarContent && (
-                            <CollapsibleSection title={ui('moreDetails')}>
+                            <CollapsibleSection title={ui('moreDetails')} data-testid="CollapsibleSection__fa3275">
                               <div className={`px-6 pb-6${embedded ? ' pointer-events-none' : ''}`}>
                                 <Form
                                   entity={entity}
@@ -2831,7 +3256,7 @@ export function DetailView({
                                   registerFields={hook.registerFields}
                                   fieldErrors={hook.fieldErrors}
                                   onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
-                                />
+                                  data-testid="Form__fa3275" />
                               </div>
                             </CollapsibleSection>
                           )}
@@ -2847,7 +3272,7 @@ export function DetailView({
                     );
                     if (sidebarAboveTabsOnly && sidebarContent) {
                       return (
-                        <div className="flex items-start">
+                        <div className={`flex items-stretch${tabsSeparator ? ' border-b border-[#E8EAEF]' : ''}`}>
                           <div className="flex-1 min-w-0 space-y-2">{formSection}</div>
                           <div className={sidebarClassName}>{sidebarContent(data)}</div>
                         </div>
@@ -2878,7 +3303,7 @@ export function DetailView({
                                 indicatorCls={tabIndicatorCls}
                                 tMenu={tMenu}
                                 testId={`tab-${tab.key}`}
-                              />
+                                data-testid="TabStripButton__fa3275" />
                             );
                           })}
                         </div>
@@ -2909,21 +3334,21 @@ export function DetailView({
                           }
                           if (shouldShowLinesEmptyState(hook, addingLine, LinesEmptyState, isDocumentReadOnly)) {
                             return (
-                            <LinesEmptyState
-                              data={data}
-                              onAddLine={handleAddLineClick}
-                              canAddLine={canAddLines}
-                              recordId={data?.id || recordId}
-                              token={token}
-                              apiBaseUrl={apiBaseUrl}
-                              onRefresh={() => {
-                                hook.fetchChildren?.(data?.id || recordId);
-                                hook.fetchById?.(data?.id || recordId);
-                              }}
-                              onSave={handleImportClick}
-                              forceOpen={forceOpenImport}
-                              onForceOpenHandled={() => setForceOpenImport(false)}
-                            />
+                              <LinesEmptyState
+                                data={data}
+                                onAddLine={handleAddLineClick}
+                                canAddLine={canAddLines}
+                                recordId={data?.id || recordId}
+                                token={token}
+                                apiBaseUrl={apiBaseUrl}
+                                onRefresh={() => {
+                                  hook.fetchChildren?.(data?.id || recordId);
+                                  hook.fetchById?.(data?.id || recordId);
+                                }}
+                                onSave={handleImportClick}
+                                forceOpen={forceOpenImport}
+                                onForceOpenHandled={() => setForceOpenImport(false)}
+                                data-testid="LinesEmptyState__fa3275" />
                             );
                           }
                           return (
@@ -2973,7 +3398,7 @@ export function DetailView({
                                         }}
                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 transition-colors"
                                       >
-                                        <Trash2 className="h-3.5 w-3.5" />
+                                        <Trash2 className="h-3.5 w-3.5" data-testid="Trash2__fa3275" />
                                         {getDeleteChildButtonLabel(deletingChildren, ui)}
                                       </button>
                                     </div>
@@ -2986,6 +3411,7 @@ export function DetailView({
                                   token={token}
                                   apiBaseUrl={apiBaseUrl}
                                   linesLayout={linesLayout}
+                                  labelOverrides={labelOverrides}
                                   isDocumentReadOnly={isDocumentReadOnly}
                                   onRowClick={buildLineRowClickHandler(DetailForm, linesLayout, setSelectedLine)}
                                   selectedRowId={selectedLine?.id}
@@ -2999,6 +3425,7 @@ export function DetailView({
                                     ref: primaryAddRowRef,
                                     active: addingLine,
                                     fields: allEntryFields,
+                                    resolvedDefaults: hook.childDefaults,
                                     onAdd: async (lineData) => {
                                       // Send all values: entry fields + callout-derived values (tax, prices, uOM, etc.).
                                       // handleAddChild filters out internal keys (_identifier, _aux, CURSOR_FIELD, etc.)
@@ -3025,7 +3452,7 @@ export function DetailView({
                                     onFieldChange: handleLineFieldChange,
                                     onValuesChange: setPendingLineValues,
                                   }}
-                                />
+                                  data-testid="DetailTable__fa3275" />
 
                                 {/* Inline edit form for selected child row (when no DetailForm) */}
                                 {!DetailForm && editingChild && editableChildFields.length > 0 && (
@@ -3110,13 +3537,13 @@ export function DetailView({
                                       // alignSelf:flex-start keeps this span from being stretched by
                                       // the flex-column parent — otherwise data-inline-add-portal would
                                       // cover the whole 1840px bar and the outside-click save would never fire.
-                                      <span data-inline-add-portal="true" style={{ alignSelf: 'flex-start' }}>
+                                      (<span data-inline-add-portal="true" style={{ alignSelf: 'flex-start' }}>
                                         <AddLineButton
                                           onClick={handleAddLineClick}
                                           label={ui('addLine')}
                                           menuActions={getAddLineMenuActions(getLineMenuActions, data, extraActionsRef, ui)}
-                                        />
-                                      </span>
+                                          data-testid="AddLineButton__fa3275" />
+                                      </span>)
                                     )}
                                     {DetailExtraActions && (
                                       <DetailExtraActions
@@ -3133,7 +3560,7 @@ export function DetailView({
                                         onSave={handleImportClick}
                                         forceOpen={forceOpenImport}
                                         onForceOpenHandled={() => setForceOpenImport(false)}
-                                      />
+                                        data-testid="DetailExtraActions__fa3275" />
                                     )}
                                     {/* Selection toolbar — portaled to document.body so the
                               downward shadow renders OUTSIDE the linesScrollRef's
@@ -3188,12 +3615,11 @@ export function DetailView({
                                           inlineLinesRef.current?.clearSelection?.();
                                           setSelectedChildRows([]);
                                         }}
-                                      />
+                                        data-testid="LinesSelectionBar__fa3275" />
                                     )}
                                   </div>
                                 )}
                               </div>
-
                               {/* Right sidebar: line detail form. Suppressed in inlineEditable mode —
                         edit happens inside the row via InlineLinesPanel. */}
                               {shouldShowDetailFormSidebar(linesLayout, DetailForm, selectedLine, isClosingLine) && (
@@ -3204,7 +3630,7 @@ export function DetailView({
                                       onClick={closeLine}
                                       className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
                                     >
-                                      <X className="h-3.5 w-3.5" />
+                                      <X className="h-3.5 w-3.5" data-testid="X__fa3275" />
                                     </button>
                                   </div>
                                   <DetailForm
@@ -3245,7 +3671,7 @@ export function DetailView({
                                     apiBaseUrl={apiBaseUrl}
                                     selectorContext={selectorContextByEntity[detailEntity]}
                                     labelOverrides={labelOverrides}
-                                  />
+                                    data-testid="DetailForm__fa3275" />
                                   {shouldShowLineActionButtons(hook, lineEdits, selectedLine) && (
                                     <div className="flex gap-2 mt-4">
                                       {lineEdits && !isDocumentReadOnly && (
@@ -3340,7 +3766,7 @@ export function DetailView({
                                           }}
                                           className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
                                         >
-                                          <Trash2 className="h-4 w-4" />
+                                          <Trash2 className="h-4 w-4" data-testid="Trash2__fa3275" />
                                           {ui('delete')}
                                         </button>
                                       )}
@@ -3376,13 +3802,16 @@ export function DetailView({
                                 }
                                 return saved;
                               }}
-                            />
+                              data-testid="CustomLines__fa3275" />
                           </div>
                         )}
 
                         {/* Tab content: secondary child entity tabs (or form-only tabs) */}
                         {secondaryTabs.map((st, stIdx) => {
-                          if (tabs[activeTab]?.key !== st.key) return false;
+                          const isActiveTab = tabs[activeTab]?.key === st.key;
+                          // Panel tabs are always mounted so their onCount fires eagerly (counts appear without clicking).
+                          // Non-Panel tabs stay lazy to avoid unnecessary data fetches.
+                          if (!isActiveTab && !st.Panel) return false;
                           const secondaryLineHandlers = buildSecondaryLineHandlers({
                             st, stIdx, api, apiBaseUrl, token, secondaryHooks, ui,
                             extractErrorMessage, confirmDelete, secondaryInlineLinesRefs,
@@ -3392,18 +3821,23 @@ export function DetailView({
                             setSecondarySelectedRows,
                           });
                           return (
-                          <div key={st.key} className={getSecondaryTabContentClassName(secondaryTabContentPaddingT, embedded)}>
-                            {st.isFormTab ? (
+                          <div key={st.key} style={!isActiveTab ? { display: 'none' } : undefined} className={getSecondaryTabContentClassName(secondaryTabContentPaddingT, embedded)}>
+                            {(() => {
+                              if (st.isFormTab) return (
                               <SecondaryFormTab data={data} hook={hook} onChange={(key, val, column) => {
                                 setSecondaryLineEdits(prev => ({...(prev ?? {}), [key]: val}));
                                 if (column) setSecondaryLineEditColumns(prev => ({...prev, [key]: column}));
                               }} st={st} catalogs={catalogs} token={token} apiBaseUrl={apiBaseUrl}
                                                 selectorContextByEntity={selectorContextByEntity}
-                                                labelOverrides={labelOverrides}/>
-                            ) : st.Panel ? (
+                                                labelOverrides={labelOverrides}
+                                                data-testid="SecondaryFormTab__fa3275" />
+                            );
+                              if (st.Panel) return (
                               <SecondaryPanelTab st={st} data={data} token={token} apiBaseUrl={apiBaseUrl}
-                                                 onCount={(n) => setPanelCounts(prev => ({...prev, [st.key]: n}))}/>
-                            ) : (
+                                                 onCount={(n) => setPanelCounts(prev => ({...prev, [st.key]: n}))}
+                                                 data-testid="SecondaryPanelTab__fa3275" />
+                            );
+                              return (
                               <SecondaryTableTab
                                 st={st}
                                 stIdx={stIdx}
@@ -3428,6 +3862,7 @@ export function DetailView({
                                 savingLine={savingSecondaryLine}
                                 secondaryAddRowRef={getSecondaryAddRowRef(st.key)}
                                 secondaryAddRowSeed={secondaryAddRowSeed}
+                                secondaryChildDefaults={secondaryHooks[stIdx]?.childDefaults}
                                 secondaryAddLineWrapperRef={getSecondaryAddLineWrapperRef(st.key)}
                                 hideChevron={hideAddLineChevron}
                                 secondaryBarVisible={secondaryBarVisible}
@@ -3470,8 +3905,9 @@ export function DetailView({
                                   secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
                                   setSecondarySelectedRows(prev => ({...prev, [st.key]: []}));
                                 }}
-                              />
-                            )}
+                                data-testid="SecondaryTableTab__fa3275" />
+                            );
+                            })()}
                           </div>
                           );
                         })}
@@ -3493,7 +3929,7 @@ export function DetailView({
                               selectorContext={selectorContextByEntity[entity]}
                               labelOverrides={labelOverrides}
                               fieldErrors={hook.fieldErrors}
-                            />
+                              data-testid="Form__fa3275" />
                           </div>
                         )}
 
@@ -3518,7 +3954,7 @@ export function DetailView({
                         onChange={() => { }}
                         catalogs={catalogs}
                         section="other"
-                      />
+                        data-testid="Form__fa3275" />
                     </div>
                   )}
 
@@ -3527,7 +3963,7 @@ export function DetailView({
                     <>
                       {summary.length > 0 && (
                         <div className="mt-1">
-                          <SummaryBar fields={summary} data={data} />
+                          <SummaryBar fields={summary} data={data} data-testid="SummaryBar__fa3275" />
                         </div>
                       )}
                     </>
@@ -3558,12 +3994,21 @@ export function DetailView({
                           totalDiscountPct={Number(data?.etgoTotalDiscount ?? 0)}
                           onTotalDiscountChange={handleTotalDiscountChange}
                           onNotesSave={handleNotesSave}
-                        />
+                          data-testid="BottomComponent__fa3275" />
                       );
                     })() : (
                       <>
-                        {/* Totals block: DocumentTotalsPanel with optional discount expansion */}
-                        {(() => {
+                        {/* Totals block: BalanceFooterPanel for double-entry windows, else DocumentTotalsPanel */}
+                        {balanceFooter ? (
+                          <BalanceFooterPanel
+                            lines={hook.children}
+                            pendingLine={pendingLineValues}
+                            editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
+                            config={balanceFooter}
+                            formatAmount={formatAmount}
+                            currency={data['currency$_identifier']}
+                            data-testid="BalanceFooterPanel__fa3275" />
+                        ) : (() => {
                           const subtotalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
                           const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
                           if (!subtotalField && !totalField) return null;
@@ -3579,14 +4024,22 @@ export function DetailView({
                               readOnly={isDocumentReadOnly}
                               totalDiscountPct={resolveTotalDiscountPct(data, hook.children)}
                               onTotalDiscountChange={handleTotalDiscountChange}
-                            />
+                              data-testid="DocumentTotalsPanel__fa3275" />
                           );
                         })()}
 
                         {/* After-totals slot (e.g. payment footer) */}
                         {afterTotals && (() => {
                           const AfterTotalsComponent = afterTotals;
-                          return <AfterTotalsComponent recordId={data?.id || recordId} data={data} token={token} apiBaseUrl={apiBaseUrl} api={api} />;
+                          return (
+                            <AfterTotalsComponent
+                              recordId={data?.id || recordId}
+                              data={data}
+                              token={token}
+                              apiBaseUrl={apiBaseUrl}
+                              api={api}
+                              data-testid="AfterTotalsComponent__fa3275" />
+                          );
                         })()}
 
                         {/* Footer: Related Docs + Notes */}
@@ -3608,7 +4061,7 @@ export function DetailView({
                                         api={api}
                                         layout="chips"
                                         {...(ct.props || {})}
-                                      />
+                                        data-testid="TabComponent__fa3275" />
                                     );
                                   })}
                                 </div>
@@ -3629,7 +4082,7 @@ export function DetailView({
 
                     {/* customTabsAfterBottom: custom tabs rendered below the bottomSection */}
                     {customTabsAfterBottom && tabCustomTabs.length > 0 && (
-                      <div className="mt-6">
+                      <div className="mt-2">
                         <div className="flex items-center border-b border-border/50">
                           {tabCustomTabs.map((ct, idx) => {
                             const isActive = activeCustomBelowTab === idx;
@@ -3643,7 +4096,7 @@ export function DetailView({
                                 onClick={() => setActiveCustomBelowTab(idx)}
                                 tMenu={tMenu}
                                 testId={`tab-${customTabKey(ct)}`}
-                              />
+                                data-testid="TabStripButton__fa3275" />
                             );
                           })}
                         </div>
@@ -3678,18 +4131,21 @@ export function DetailView({
         windowName={windowName}
         documentIds={getDocumentIds(recordId)}
         token={token}
-      />
-      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{ui('deleteConfirmTitle')}</DialogTitle>
-            <DialogDescription>
+        data-testid="DocumentPrintDrawer__fa3275" />
+      <Dialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        data-testid="Dialog__fa3275">
+        <DialogContent className="max-w-sm" data-testid="DialogContent__fa3275">
+          <DialogHeader data-testid="DialogHeader__fa3275">
+            <DialogTitle data-testid="DialogTitle__fa3275">{ui('deleteConfirmTitle')}</DialogTitle>
+            <DialogDescription data-testid="DialogDescription__fa3275">
               {ui('deleteConfirmMessage')}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" size="sm">{ui('cancel')}</Button>
+          <DialogFooter data-testid="DialogFooter__fa3275">
+            <DialogClose asChild data-testid="DialogClose__fa3275">
+              <Button variant="outline" size="sm" data-testid="Button__fa3275">{ui('cancel')}</Button>
             </DialogClose>
             <Button
               variant="destructive"
@@ -3706,17 +4162,20 @@ export function DetailView({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog open={Boolean(secondaryDeleteConfirm)} onOpenChange={(open) => { if (!open) setSecondaryDeleteConfirm(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{ui('deleteConfirmTitle')}</DialogTitle>
-            <DialogDescription>
+      <Dialog
+        open={Boolean(secondaryDeleteConfirm)}
+        onOpenChange={(open) => { if (!open) setSecondaryDeleteConfirm(null); }}
+        data-testid="Dialog__fa3275">
+        <DialogContent className="max-w-sm" data-testid="DialogContent__fa3275">
+          <DialogHeader data-testid="DialogHeader__fa3275">
+            <DialogTitle data-testid="DialogTitle__fa3275">{ui('deleteConfirmTitle')}</DialogTitle>
+            <DialogDescription data-testid="DialogDescription__fa3275">
               {ui('deleteConfirmMessage')}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" size="sm">{ui('cancel')}</Button>
+          <DialogFooter data-testid="DialogFooter__fa3275">
+            <DialogClose asChild data-testid="DialogClose__fa3275">
+              <Button variant="outline" size="sm" data-testid="Button__fa3275">{ui('cancel')}</Button>
             </DialogClose>
             <Button
               variant="destructive"
@@ -3744,7 +4203,7 @@ export function DetailView({
                   setSavingSecondaryLine(false);
                 }
               }}
-            >
+              data-testid="Button__fa3275">
               {ui('delete')}
             </Button>
           </DialogFooter>
@@ -3758,13 +4217,13 @@ export function DetailView({
             setPendingDeleteConfirm(null);
           }
         }}
-      >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{ui('deleteConfirmTitle')}</DialogTitle>
-            <DialogDescription>{ui('deleteConfirmMessage')}</DialogDescription>
+        data-testid="Dialog__fa3275">
+        <DialogContent className="max-w-sm" data-testid="DialogContent__fa3275">
+          <DialogHeader data-testid="DialogHeader__fa3275">
+            <DialogTitle data-testid="DialogTitle__fa3275">{ui('deleteConfirmTitle')}</DialogTitle>
+            <DialogDescription data-testid="DialogDescription__fa3275">{ui('deleteConfirmMessage')}</DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter data-testid="DialogFooter__fa3275">
             <Button
               variant="outline"
               size="sm"
@@ -3772,7 +4231,7 @@ export function DetailView({
                 pendingDeleteConfirm?.resolve(false);
                 setPendingDeleteConfirm(null);
               }}
-            >
+              data-testid="Button__fa3275">
               {ui('cancel')}
             </Button>
             <Button
@@ -3782,7 +4241,7 @@ export function DetailView({
                 pendingDeleteConfirm?.resolve(true);
                 setPendingDeleteConfirm(null);
               }}
-            >
+              data-testid="Button__fa3275">
               {ui('delete')}
             </Button>
           </DialogFooter>
@@ -3805,7 +4264,7 @@ export function DetailView({
             apiBase={apiBaseUrl}
             token={token}
             selectorContext={selectorContextByEntity[st.key] ?? {}}
-          />
+            data-testid="CustomModal__fa3275" />
         );
       })}
     </div>
@@ -3824,6 +4283,38 @@ function handleEntryIdentifierChange(entry, hook, key, api, catalogs) {
         hook.handleChange(key + '$_identifier', match.label || match.name || match._identifier);
       }
     }
+  }
+}
+
+function applyProductCalloutPriceAdjustments(field, result, lineConfig) {
+  if (field !== 'product') return;
+  if (result.standardPrice != null && (result.listPrice == null || Number(result.listPrice) === 0)) {
+    result.listPrice = result.standardPrice;
+  }
+  if (lineConfig.discountField) {
+    result[lineConfig.discountField] = 0;
+  }
+}
+
+function applyProductCurrencyConversion(field, result, rowValues, lineConfig, activeCurrencyConversion, currencyIdentifier, computeLineGrossAmount) {
+  if (field !== 'product' || !activeCurrencyConversion) return;
+  const { rate, toCurrency } = activeCurrencyConversion;
+  result.currency = toCurrency;
+  if (currencyIdentifier) {
+    result['currency$_identifier'] = currencyIdentifier;
+  }
+  const rawPrice = parseFloat(String(result[lineConfig.priceField] ?? 0));
+  if (rawPrice > 0 && rate !== 1) {
+    const convertedPrice = parseFloat((rawPrice * rate).toFixed(2));
+    result[lineConfig.priceField] = convertedPrice;
+    if (result.standardPrice != null) result.standardPrice = convertedPrice;
+    if (result.unitPrice != null) result.unitPrice = convertedPrice;
+    if (result.listPrice != null) result.listPrice = convertedPrice;
+    computeLineGrossAmount(lineConfig.priceField, convertedPrice, result, {
+      ...rowValues,
+      ...result,
+      [lineConfig.priceField]: convertedPrice,
+    });
   }
 }
 
@@ -3911,4 +4402,3 @@ function getButtonClass(salesTheme, p, isPrimary) {
     }
   }
 }
-

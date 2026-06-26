@@ -44,11 +44,23 @@ const LABEL_OVERRIDES = {
 };
 
 function CustomHeaderTable(props) {
-  return <GoodsReceiptTable columns={HEADER_COLUMNS} {...props} />;
+  return (
+    <GoodsReceiptTable
+      columns={HEADER_COLUMNS}
+      {...props}
+      data-testid="GoodsReceiptTable__bf4f23" />
+  );
 }
 
 function GoodsReceiptBulkAction(props) {
-  return <BulkDocumentAction {...props} entity="goodsReceipt" buildActions={buildInOutActions} labelKey="confirmBulk" />;
+  return (
+    <BulkDocumentAction
+      {...props}
+      entity="goodsReceipt"
+      buildActions={buildInOutActions}
+      labelKey="confirmBulk"
+      data-testid="BulkDocumentAction__bf4f23" />
+  );
 }
 
 export default function GoodsReceiptWindow(props) {
@@ -88,14 +100,17 @@ export default function GoodsReceiptWindow(props) {
     { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: 'M_InOut', config: {} } },
   ]), [ui]);
 
-  const menuActionsForForm = useCallback(({ status }) => {
+  const menuActionsForForm = useCallback(({ status, data }) => {
     if (status !== 'CO') return [];
+    const isPosted = data?.posted === 'Y' || data?.posted === true;
     return [
       {
         key: 'downloadPdf',
         label: ui('downloadPdf'),
         onClick: () => window.dispatchEvent(new CustomEvent('goods-receipt:download-pdf')),
       },
+      ...(!isPosted ? [{ key: 'post', labelKey: 'post', neoAction: 'post', successKey: 'documentPosted' }] : []),
+      ...(isPosted ? [{ key: 'unpost', labelKey: 'unpost', neoAction: 'unpost', successKey: 'documentUnposted', destructive: true }] : []),
     ];
   }, [ui]);
 
@@ -148,9 +163,9 @@ export default function GoodsReceiptWindow(props) {
             windowName={windowName}
             onClose={onClose}
             onEdit={onEdit}
-          />
+            data-testid="GoodsReceiptPreview__bf4f23" />
         )}
-      />
+        data-testid="GeneratedApp__bf4f23" />
       {deleteDialog}
       {emailRow && createPortal(
         <SendDocumentModal
@@ -165,7 +180,7 @@ export default function GoodsReceiptWindow(props) {
           pdfBlobUrl={emailPreviewAttachment.storedFile?.objectUrl}
           pdfBlobLoading={emailPreviewAttachment.isBusy}
           onClose={() => setEmailRow(null)}
-        />,
+          data-testid="SendDocumentModal__bf4f23" />,
         document.body,
       )}
       {cloneTargets && createPortal(
@@ -178,7 +193,7 @@ export default function GoodsReceiptWindow(props) {
           errorKey="cloneReceiptError"
           onClose={() => setCloneTargets(null)}
           onCloned={() => { setCloneTargets(null); setRefreshKey(k => k + 1); }}
-        />,
+          data-testid="CloneOrderModal__bf4f23" />,
         document.body,
       )}
     </>

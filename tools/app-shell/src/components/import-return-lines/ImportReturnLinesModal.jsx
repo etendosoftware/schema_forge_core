@@ -202,7 +202,11 @@ export default function ImportReturnLinesModal({ targetId, bpId, base, headers, 
   return createPortal(
     <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
       <div onClick={(e) => e.stopPropagation()} style={{ width: 600, maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB' }}>
-        <ImportModalHeader title={ui(titleKey)} bpName={bpName} onClose={onClose} />
+        <ImportModalHeader
+          title={ui(titleKey)}
+          bpName={bpName}
+          onClose={onClose}
+          data-testid="ImportModalHeader__2d7a44" />
 
         <div style={{ padding: '10px 16px 0' }}>
           <input
@@ -333,7 +337,7 @@ export default function ImportReturnLinesModal({ targetId, bpId, base, headers, 
           onClose={onClose}
           onImport={handleImport}
           ui={ui}
-        />
+          data-testid="ImportModalFooter__2d7a44" />
       </div>
     </div>,
     document.body,

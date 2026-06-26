@@ -24,7 +24,9 @@ const statusField = 'documentStatus';
 // @sf-generated-end summary:customerReturn
 
 // @sf-generated-start extraBadges:customerReturn
-const extraBadges = [];
+const extraBadges = [
+
+];
 // @sf-generated-end extraBadges:customerReturn
 
 // @sf-generated-start processes:customerReturn
@@ -340,6 +342,22 @@ export const api = {
       "column": "RM_Pickfromreceipt",
       "url": "/sws/neo/returns/customerReturn/{id}/action/rMPickfromreceipt",
       "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "customerReturn",
+      "field": "psd2GenerateBankPayment",
+      "column": "EM_Psd2_Generate_Bank_Payment",
+      "url": "/sws/neo/returns/customerReturn/{id}/action/psd2GenerateBankPayment",
+      "processId": "0661406A983B4D8EA611F8596F114D52",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "customerReturn",
+      "field": "eTPRRemovePayment",
+      "column": "EM_Etpr_Remove_Payment",
+      "url": "/sws/neo/returns/customerReturn/{id}/action/eTPRRemovePayment",
+      "processId": "D2923463223C4F1EADE335D22B9D8FE8",
       "processType": "obuiapp"
     },
     {

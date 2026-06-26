@@ -159,12 +159,15 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
   const contentWidth = resolveContentWidth(step);
 
   return (
-    <Dialog open={open} onOpenChange={(value) => { if (!value) onClose?.(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => { if (!value) onClose?.(); }}
+      data-testid="Dialog__24760b">
       <DialogContent
         className={cn('bg-white', contentWidth)}
         data-testid="new-account-wizard"
       >
-        <DialogHeader>
+        <DialogHeader data-testid="DialogHeader__24760b">
           <div className="flex items-center gap-2">
             {step !== STEP.TYPE ? (
               <button
@@ -174,10 +177,10 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
                 data-testid="new-account-back"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#D1D4DB] text-[#121217] hover:bg-[#F5F7F9]"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="h-4 w-4" data-testid="ArrowLeft__24760b" />
               </button>
             ) : null}
-            <DialogTitle className="text-xl leading-7">{titles[step]}</DialogTitle>
+            <DialogTitle className="text-xl leading-7" data-testid="DialogTitle__24760b">{titles[step]}</DialogTitle>
             {showBadge ? (
               <span className="rounded-full bg-[#F5F7F9] px-2 py-0.5 text-xs font-normal text-[#6C6C89]">
                 {ui('financeAccountsNewOfflineBadge')}
@@ -185,14 +188,16 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
             ) : null}
           </div>
           {step === STEP.TYPE ? (
-            <DialogDescription className="text-xs leading-4 text-[#555B6D]">
+            <DialogDescription
+              className="text-xs leading-4 text-[#555B6D]"
+              data-testid="DialogDescription__24760b">
               {ui('financeAccountsNewSubtitle')}
             </DialogDescription>
           ) : null}
         </DialogHeader>
 
         {step === STEP.TYPE ? (
-          <TypePicker ui={ui} onPick={pickType} />
+          <TypePicker ui={ui} onPick={pickType} data-testid="TypePicker__24760b" />
         ) : null}
 
         {step === STEP.CONNECTION ? (
@@ -208,7 +213,7 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
                 ? 'financeAccountsNewConnectionOnlineDescCard'
                 : 'financeAccountsNewConnectionOnlineDesc')}
               testid="account-connection-online"
-            />
+              data-testid="ConnectionCard__24760b" />
             <ConnectionCard
               icon={PencilLine}
               iconTone="neutral"
@@ -218,7 +223,7 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
                 : 'financeAccountsNewConnectionOfflineDesc')}
               onClick={() => setStep(STEP.BANK)}
               testid="account-connection-offline"
-            />
+              data-testid="ConnectionCard__24760b" />
           </div>
         ) : null}
 
@@ -229,11 +234,15 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
             onQueryChange={setBankQuery}
             onPick={pickBank}
             onSkip={() => { setSelectedBank(null); setStep(STEP.FORM); }}
-          />
+            data-testid="BankPicker__24760b" />
         ) : null}
 
         {step === STEP.INSTITUTION ? (
-          <InstitutionList ui={ui} bank={selectedBank} onPick={() => setStep(STEP.FORM)} />
+          <InstitutionList
+            ui={ui}
+            bank={selectedBank}
+            onPick={() => setStep(STEP.FORM)}
+            data-testid="InstitutionList__24760b" />
         ) : null}
 
         {step === STEP.FORM ? (
@@ -246,7 +255,7 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
             submitting={submitting}
             error={formError}
             onSubmit={handleCreate}
-          />
+            data-testid="AccountFormStep__24760b" />
         ) : null}
       </DialogContent>
     </Dialog>
@@ -279,7 +288,7 @@ function TypePicker({ ui, onPick }) {
           <div className="flex flex-col gap-1 p-3">
             <div className="flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white text-[#828FA3] shadow-[0_1px_3px_rgba(18,18,23,0.1),0_1px_2px_rgba(18,18,23,0.06)]">
-                <Icon className="h-5 w-5" />
+                <Icon className="h-5 w-5" data-testid="Icon__24760b" />
               </span>
               <span className="text-base font-medium leading-6 text-[#121217]">{ui(titleKey)}</span>
             </div>
@@ -300,8 +309,8 @@ function BankPicker({ ui, query, onQueryChange, onPick, onSkip }) {
         <p className="text-sm font-medium leading-6 text-[#121217]">{ui('financeAccountsNewBankLabel')}</p>
         <div className="flex h-10 w-full overflow-hidden rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]">
           <div className="flex h-full w-[60px] shrink-0 items-center justify-center gap-0.5 border-r border-[#E8EAEF]">
-            <Landmark className="h-4 w-4 text-[#828FA3]" />
-            <ChevronDown className="h-4 w-4 text-[#828FA3]" />
+            <Landmark className="h-4 w-4 text-[#828FA3]" data-testid="Landmark__24760b" />
+            <ChevronDown className="h-4 w-4 text-[#828FA3]" data-testid="ChevronDown__24760b" />
           </div>
           <input
             value={query}
@@ -312,7 +321,6 @@ function BankPicker({ ui, query, onQueryChange, onPick, onSkip }) {
           />
         </div>
       </div>
-
       {/* Populares section */}
       <div className="flex flex-col gap-3">
         <div>
@@ -329,14 +337,13 @@ function BankPicker({ ui, query, onQueryChange, onPick, onSkip }) {
               className="flex flex-col items-start gap-3 rounded-xl border border-[#E8EAEF] bg-white p-4 shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:bg-[#F5F7F9]"
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]">
-                <Landmark className="h-5 w-5 text-[#828FA3]" />
+                <Landmark className="h-5 w-5 text-[#828FA3]" data-testid="Landmark__24760b" />
               </span>
               <span className="text-sm font-medium leading-5 text-[#121217]">{bank.name}</span>
             </button>
           ))}
         </div>
       </div>
-
       <button
         type="button"
         onClick={onSkip}
@@ -358,13 +365,12 @@ function InstitutionList({ ui, bank, onPick }) {
         <p className="text-sm font-medium leading-6 text-[#121217]">{ui('financeAccountsNewBankLabel')}</p>
         <div className="flex h-10 w-full items-center overflow-hidden rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]">
           <div className="flex h-full w-[60px] shrink-0 items-center justify-center gap-0.5 border-r border-[#E8EAEF] px-2">
-            <Landmark className="h-4 w-4 text-[#828FA3]" />
-            <ChevronDown className="h-4 w-4 text-[#828FA3]" />
+            <Landmark className="h-4 w-4 text-[#828FA3]" data-testid="Landmark__24760b" />
+            <ChevronDown className="h-4 w-4 text-[#828FA3]" data-testid="ChevronDown__24760b" />
           </div>
           <span className="flex-1 px-3 text-sm leading-6 text-[#121217]">{bank?.name ?? ''}</span>
         </div>
       </div>
-
       {/* Institutions section */}
       <div className="flex flex-col gap-2">
         <p className="text-sm font-medium leading-6 text-[#121217]">{ui('financeAccountsNewInstitutions')}</p>
@@ -379,12 +385,12 @@ function InstitutionList({ ui, bank, onPick }) {
             >
               <span className="flex flex-1 items-center gap-2">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#E8EAEF] text-[#828FA3]">
-                  <Landmark className="h-3.5 w-3.5" />
+                  <Landmark className="h-3.5 w-3.5" data-testid="Landmark__24760b" />
                 </span>
                 <span className="text-sm leading-6 text-[#121217]">{inst.name}</span>
               </span>
               <span className="flex shrink-0 items-center pr-1">
-                <ChevronRight className="h-4 w-4 text-[#828FA3]" />
+                <ChevronRight className="h-4 w-4 text-[#828FA3]" data-testid="ChevronRight__24760b" />
               </span>
             </button>
           ))}
@@ -421,7 +427,7 @@ function ConnectionCard({ icon: Icon, iconTone = 'neutral', title, description, 
           toneClasses,
         )}
       >
-        <Icon className="h-[22px] w-[22px]" />
+        <Icon className="h-[22px] w-[22px]" data-testid="Icon__24760b" />
       </span>
       <h3 className="m-0 text-base font-semibold leading-5 text-[#121217]">{title}</h3>
       <p className="mt-1 text-[13px] font-normal leading-[18px] text-[#6C6C89]">{description}</p>

@@ -2,47 +2,10 @@ import { useRef } from 'react';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
-import PreviewActionButtons, { PreviewPdfPanel, usePreviewSendModal, makeStaticPreviewTabs, ReceiptSendModal } from '../shared/PreviewActionButtons.jsx';
+import { PreviewPdfPanel, usePreviewSendModal, ReceiptSendModal } from '../shared/PreviewActionButtons.jsx';
 import { useReturnReceiptPdf } from './useReturnReceiptPdf.js';
-import RelatedDocumentsCard from '../shared/preview-cards/RelatedDocumentsCard.jsx';
-import { STATUS_BADGE, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
-import { MovementSummaryCard } from '../shared/preview-cards/SummaryCard.jsx';
-
-function ReturnReceiptStatsPanel({ receipt, partnerName, movementDate, token, apiBaseUrl, ui }) {
-  const docStatus = receipt.documentStatus;
-  const statusLabel = ui(STATUS_KEYS[docStatus]) || receipt['documentStatus$_identifier'] || docStatus || '—';
-  const statusBadgeClass = STATUS_BADGE[docStatus] || 'bg-gray-50 text-gray-600 border-gray-200';
-
-  const specs = [
-    { key: 'sourceShipments', type: 'shipment', fetch: async () => receipt?.sourceShipments ?? [] },
-    { key: 'returnInvoices', type: 'sales-invoice', fetch: async () => receipt?.returnInvoices ?? [] },
-  ];
-
-  const rows = [
-    { label: ui('shipmentPreviewDocNo'), value: receipt.documentNo || '—' },
-    { label: ui('shipmentPreviewContact'), value: partnerName },
-    { label: ui('shipmentPreviewWarehouse'), value: receipt['warehouse$_identifier'] || '—' },
-    { label: ui('shipmentPreviewDate'), value: movementDate },
-  ];
-
-  return (
-    <div className="pb-4">
-      <MovementSummaryCard
-        title={ui('shipmentPreviewStatus')}
-        rows={rows}
-        statusRowLabel={ui('shipmentPreviewStatus')}
-        statusLabel={statusLabel}
-        statusBadgeClass={statusBadgeClass}
-      />
-      <RelatedDocumentsCard
-        documentId={receipt.id}
-        token={token}
-        apiBaseUrl={apiBaseUrl}
-        specs={specs}
-      />
-    </div>
-  );
-}
+import { downloadBlobAsFile } from '../shared/pdfUtils.js';
+import { buildReturnPreviewContent } from '../shared/preview-cards/buildReturnPreviewContent.jsx';
 
 export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUrl, windowName, onClose, onEdit }) {
   const ui = useUI();
@@ -60,6 +23,20 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
 
   if (!receipt) return null;
 
+  const partnerName = receipt['businessPartner$_identifier'] || '—';
+  const movementDate = receipt.movementDate ? formatCalendarDate(receipt.movementDate, locale) : '—';
+  const windowLabel = tMenu('Return Material Receipt');
+
+  const handleDownload = () => {
+    if (!pdfBlob) return;
+    downloadBlobAsFile(pdfBlob, `dev-${receipt.documentNo || 'devolucion'}.pdf`);
+  };
+
+  const specs = [
+    { key: 'sourceShipments', type: 'shipment', fetch: async () => receipt?.sourceShipments ?? [] },
+    { key: 'returnInvoices', type: 'sales-invoice', fetch: async () => receipt?.returnInvoices ?? [] },
+  ];
+
   const leftPanel = (
     <PreviewPdfPanel
       pdfLoading={pdfLoading}
@@ -67,56 +44,13 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
       pdfUrl={pdfUrl}
       generatingText={ui('returnReceiptPdfGenerating')}
       errorText={ui('returnReceiptPdfError')}
-    />
+      data-testid="PreviewPdfPanel__178845" />
   );
 
-  const partnerName = receipt['businessPartner$_identifier'] || '—';
-  const movementDate = receipt.movementDate
-    ? formatCalendarDate(receipt.movementDate, locale)
-    : '—';
-  const windowLabel = tMenu('Return Material Receipt');
-
-  const handleDownload = () => {
-    if (!pdfBlob) return;
-    const a = document.createElement('a');
-    const url = URL.createObjectURL(pdfBlob);
-    a.href = url;
-    a.download = `dev-${receipt.documentNo || 'devolucion'}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const actionButtons = (
-    <PreviewActionButtons
-      onEmail={sendModal.openEmailModal}
-      onDownloadPdf={handleDownload}
-      hasPdf={!!pdfBlob}
-      triggerEdit={() => modalRef.current?.triggerEdit?.()}
-      sendLabel={ui('invoicePreviewSend')}
-      downloadLabel={ui('invoicePreviewDownloadPdf')}
-      editLabel={ui('invoicePreviewEdit')}
-    />
-  );
-
-  const tabs = [
-    {
-      key: 'general',
-      label: ui('invoicePreviewGeneral'),
-      content: (
-        <ReturnReceiptStatsPanel
-          receipt={receipt}
-          partnerName={partnerName}
-          movementDate={movementDate}
-          token={token}
-          apiBaseUrl={apiBaseUrl}
-          ui={ui}
-        />
-      ),
-    },
-    ...makeStaticPreviewTabs(ui),
-  ];
+  const { actionButtons, tabs } = buildReturnPreviewContent({
+    doc: receipt, openEmailModal: sendModal.openEmailModal, pdfBlob, handleDownload, modalRef,
+    specs, partnerName, movementDate, token, apiBaseUrl, ui,
+  });
 
   return (
     <>
@@ -129,7 +63,7 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
         onEdit={() => onEdit?.(receipt.id)}
         tabs={tabs}
         actionButtons={actionButtons}
-      />
+        data-testid="GenericPreviewModal__178845" />
       <ReceiptSendModal
         sendModal={sendModal}
         documentType={windowLabel}
@@ -139,7 +73,7 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
         token={token}
         windowName="return-material-receipt"
         pdfBlobUrl={pdfUrl}
-      />
+        data-testid="ReceiptSendModal__178845" />
     </>
   );
 }
