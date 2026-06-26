@@ -514,6 +514,9 @@ test.describe('Contacts — Full mocked journey', () => {
     await cancelBtn.first().click();
     await expect(page.getByTestId('list-view')).toBeVisible({ timeout: 10_000 });
 
+    // Wait for table rows to render before asserting specific content
+    await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 15_000 });
+
     // New contact "Importaciones" should be in the list
     await expect(page.locator('tbody tr').filter({ hasText: 'Importaciones' }).first()).toBeVisible({ timeout: 15_000 });
 
