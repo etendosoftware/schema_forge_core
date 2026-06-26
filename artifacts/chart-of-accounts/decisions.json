@@ -3,7 +3,9 @@
   "window": {
     "category": "accounting",
     "name": "Chart of Accounts",
-    "layoutType": "custom",
+    "customComponents": {
+      "headerTable": "AccountTreeView"
+    },
     "menuActions": [
       { "key": "newSubAccount", "label": "New Sub-account", "labelKey": "newSubAccount" }
     ]

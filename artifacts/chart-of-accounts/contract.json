@@ -1,14 +1,17 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-03-09T10:00:00.000Z",
-  "updatedAt": "2026-06-26T23:00:44.541Z",
-  "checksum": "bcbe49c2810ce74e",
+  "updatedAt": "2026-06-26T23:05:39.529Z",
+  "checksum": "aa5a6bfb93cfc4a1",
   "frontendContract": {
     "window": {
       "id": "118",
       "name": "Chart of Accounts",
       "primaryEntity": "elementValue",
       "category": "accounting",
+      "customComponents": {
+        "headerTable": "AccountTreeView"
+      },
       "menuActions": [
         {
           "key": "newSubAccount",
@@ -16,7 +19,7 @@
           "labelKey": "newSubAccount"
         }
       ],
-      "layoutType": "custom"
+      "layoutType": "default"
     },
     "entities": {
       "elementValue": {
@@ -161,14 +164,16 @@
       "name": "Chart of Accounts",
       "primaryEntity": "elementValue",
       "category": "accounting",
+      "customComponents": {
+        "headerTable": "AccountTreeView"
+      },
       "menuActions": [
         {
           "key": "newSubAccount",
           "label": "New Sub-account",
           "labelKey": "newSubAccount"
         }
-      ],
-      "layoutType": "custom"
+      ]
     },
     "entities": {
       "elementValue": {

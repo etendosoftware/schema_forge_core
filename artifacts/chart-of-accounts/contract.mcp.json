@@ -2,7 +2,7 @@
   "version": "0.3.0",
   "generatedAt": "2026-03-09T10:00:00.000Z",
   "updatedAt": "2026-06-26T18:51:38.603Z",
-  "contractChecksum": "bcbe49c2810ce74e",
+  "contractChecksum": "aa5a6bfb93cfc4a1",
   "apiPrediction": {
     "specName": "chart-of-accounts",
     "baseUrl": "/sws/neo/chart-of-accounts",

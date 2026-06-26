@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
-import ElementValueTable from './ElementValueTable';
+import ElementValueTable from '../../../custom/AccountTreeView';
 import ElementValueForm from './ElementValueForm';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
@@ -92,6 +93,7 @@ export default function ElementValuePage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_ElementValue", config: {} } }]}
         menuActions={({ status }) => [
           { key: 'newSubAccount', label: 'New Sub-account', labelKey: 'newSubAccount', onClick: () => {}, }
         ]}
