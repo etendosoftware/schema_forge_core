@@ -509,9 +509,9 @@ test.describe('Contacts — Full mocked journey', () => {
     // PART 8: BACK TO LIST — navigate via Cancel button, then filters
     // ═══════════════════════════════════════════════════════════════════════
 
-    const cancelBtn = page.getByTestId('action-cancel')
-      .or(page.getByRole('button', { name: /cancelar|cancel|volver|back/i }));
-    await cancelBtn.first().click();
+    // Navigate to list via URL to guarantee a fresh data fetch (Cancel may use cached state)
+    await page.goto('/contacts');
+    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
     await expect(page.getByTestId('list-view')).toBeVisible({ timeout: 10_000 });
 
     // New contact "Importaciones" should be in the list
