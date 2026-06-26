@@ -2913,23 +2913,18 @@ export function DetailView({
                   <Trash2 className="h-4 w-4" data-testid="Trash2__fa3275" />
                 </button>
               )}
-              {/* More actions */}
-              {!resolveHideMoreMenu(hideMoreMenu, data) && <div className="relative" ref={moreMenuRef}>
-                <button
-                  data-testid="action-more"
-                  onClick={() => setShowMoreMenu(v => !v)}
-                  className={`${sqBtnSize} flex items-center justify-center rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors`}
-                >
-                  <MoreVertical className="h-[15px] w-[15px]" data-testid="MoreVertical__fa3275" />
-                </button>
-                {showMoreMenu && (() => {
-                  const resolvedActions = typeof menuActions === 'function'
-                    ? menuActions({ data, status: data?.[statusField] })
-                    : menuActions;
-                  const visibleActions = resolvedActions.filter(a => a.visible !== false);
-                  if (visibleActions.length === 0 && !customMenuContent) return null;
-                  const currentId = data?.id || recordId;
-                  const runDocumentAction = async (action) => {
+              {/* More actions — only render the button when there is something to show */}
+              {(() => {
+                if (resolveHideMoreMenu(hideMoreMenu, data)) return null;
+                const resolvedActions = typeof menuActions === 'function'
+                  ? menuActions({ data, status: data?.[statusField] })
+                  : menuActions;
+                const visibleActions = (Array.isArray(resolvedActions) ? resolvedActions : [])
+                  .filter(a => a.visible !== false);
+                // No menu actions for the current state and no custom content → hide the button entirely.
+                if (visibleActions.length === 0 && !customMenuContent) return null;
+                const currentId = data?.id || recordId;
+                const runDocumentAction = async (action) => {
                     if (action.preUnpost && (data?.posted === 'Y' || data?.posted === true)) {
                       const unpostResult = await neoAction.execute(currentId, 'unpost');
                       if (!unpostResult.success) {
@@ -2958,6 +2953,15 @@ export function DetailView({
                     }
                   };
                   return (
+                    <div className="relative" ref={moreMenuRef}>
+                    <button
+                      data-testid="action-more"
+                      onClick={() => setShowMoreMenu(v => !v)}
+                      className={`${sqBtnSize} flex items-center justify-center rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors`}
+                    >
+                      <MoreVertical className="h-[15px] w-[15px]" data-testid="MoreVertical__fa3275" />
+                    </button>
+                    {showMoreMenu && (
                     <div
                       className="absolute right-0 top-full mt-1 z-50 bg-white py-2 min-w-[148px]"
                       style={{
@@ -3029,9 +3033,10 @@ export function DetailView({
                         );
                       })()}
                     </div>
+                    )}
+                  </div>
                   );
                 })()}
-              </div>}
               {/* Extra action buttons from page */}
               {renderExtraActionButtons(extraActions, data, hook, saveBtnCls)}
               {/* Process buttons — only shown for existing records, evaluated locally or by server visibility */}
