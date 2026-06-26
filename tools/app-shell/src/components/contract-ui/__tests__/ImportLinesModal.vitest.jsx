@@ -70,6 +70,14 @@ function renderModal(overrides = {}) {
 describe('ImportLinesModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Re-establish the resolved values every test. The full suite restores mocks
+    // between files, which wipes the module-level mockResolvedValue implementations
+    // and would otherwise leave fetchLines returning undefined (modal stuck on
+    // "loading"). Setting them here keeps the test deterministic in isolation and
+    // under the full parallel run.
+    defaultProps.fetchDocuments.mockResolvedValue({ documents: DOC_ROWS, sharedContext: {} });
+    defaultProps.fetchLines.mockResolvedValue(LINE_ROWS);
+    defaultProps.buildLineBody.mockResolvedValue({ product: 'p1', quantity: 1 });
     globalThis.fetch = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) }));
   });
 
@@ -170,9 +178,13 @@ describe('ImportLinesModal', () => {
   it('expands a document row on click and loads lines', async () => {
     renderModal();
 
+    // Generous timeout: the modal eagerly loads all lines on mount. Under the full
+    // parallel suite the worker is CPU-contended and that async flush can exceed
+    // waitFor's 1s default, leaving the modal stuck on "loading" when the assertion
+    // runs. Passes comfortably within this window even under load.
     await waitFor(() => {
       expect(screen.getByText('INV-001')).toBeInTheDocument();
-    });
+    }, { timeout: 10000 });
 
     // Click on the first document row to expand it
     const docRow = screen.getByText('INV-001');
@@ -196,7 +208,7 @@ describe('ImportLinesModal', () => {
 
     await waitFor(() => {
       expect(screen.getByText('INV-001')).toBeInTheDocument();
-    });
+    }, { timeout: 10000 });
 
     fireEvent.click(screen.getByText('INV-001').closest('div[style]'));
 
@@ -213,7 +225,7 @@ describe('ImportLinesModal', () => {
 
     await waitFor(() => {
       expect(screen.getByText('INV-001')).toBeInTheDocument();
-    });
+    }, { timeout: 10000 });
 
     fireEvent.click(screen.getByText('INV-001').closest('div[style]'));
 

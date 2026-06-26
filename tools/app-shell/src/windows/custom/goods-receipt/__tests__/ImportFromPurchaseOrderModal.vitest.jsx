@@ -156,10 +156,13 @@ describe('ImportFromPurchaseOrderModal — buildLineBody', () => {
       parentId: 'receipt-1',
       product: 'p1',
       movementQuantity: 4,
-      orderQuantity: 10,
       uOM: 'u1',
       salesOrderLine: 'l1',
       lineNo: 10,
     });
+    // orderQuantity is intentionally NOT sent: it maps to M_InOutLine.QuantityOrder
+    // (secondary-UOM order qty), which the m_inoutline check constraint requires to be
+    // NULL unless M_Product_UOM_ID is set. Sending it broke single-UOM products (HTTP 500).
+    expect(body).not.toHaveProperty('orderQuantity');
   });
 });
