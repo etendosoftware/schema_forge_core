@@ -1,8 +1,8 @@
 {
-  "version": "0.12.0",
+  "version": "0.13.0",
   "generatedAt": "2026-04-29T18:11:17.025Z",
-  "updatedAt": "2026-06-24T20:46:49.172Z",
-  "checksum": "639e342d1e4d7b93",
+  "updatedAt": "2026-06-26T13:41:03.393Z",
+  "checksum": "56075970943e204c",
   "frontendContract": {
     "window": {
       "id": "273673D2ED914C399A6C51DB758BE0F9",
@@ -150,6 +150,7 @@
             "section": "principal",
             "seq": 3,
             "gridOrder": 1,
+            "dot": false,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_AccountingDate"
             },
