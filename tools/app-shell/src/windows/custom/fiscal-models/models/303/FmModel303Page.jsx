@@ -175,7 +175,6 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
   // box66 = box46 × pct65 / 100; boxes 69 and 71 cascade from 66 (no other adjustments assumed).
   function applyStatePctCascade(boxArr) {
     const box65 = boxArr.find(b => b.num === 65)?.value ?? 100;
-    if (box65 === 100) return boxArr;
     const box46 = boxArr.find(b => b.num === 46)?.value ?? 0;
     const box66 = Math.round(box46 * box65) / 100;
     return [
