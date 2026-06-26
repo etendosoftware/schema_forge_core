@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import GoodsReceiptTable from '@generated/goods-receipt/generated/web/goods-receipt/GoodsReceiptTable';
 import GeneratedApp from '@generated/goods-receipt/generated/web/goods-receipt/index.jsx';
-import GoodsReceiptBottomPanel from './GoodsReceiptBottomPanel.jsx';
+import GoodsReceiptBottomPanel from '@generated/goods-receipt/custom/GoodsReceiptBottomPanel';
 import GoodsReceiptPreview from './GoodsReceiptPreview.jsx';
 import RelatedDocuments from './RelatedDocuments.jsx';
 import { AttachmentsTab } from '@/components/attachments';
