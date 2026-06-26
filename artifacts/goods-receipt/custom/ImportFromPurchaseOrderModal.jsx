@@ -98,7 +98,10 @@ const buildLineBody = async ({ line, qty, invoiceId: receiptId, lineNo }) => ({
   parentId: receiptId,
   product: line.product,
   movementQuantity: qty,
-  orderQuantity: Number(line.orderedQuantity) || qty,
+  // NOTE: do NOT send orderQuantity here. It maps to M_InOutLine.QuantityOrder,
+  // the *secondary-UOM* order quantity, which the m_inoutline check constraint
+  // requires to be NULL unless M_Product_UOM_ID is set. Single-UOM products have
+  // no secondary UOM, so sending it caused a constraint violation (HTTP 500).
   uOM: line.uOM || null,
   salesOrderLine: line.id,
   lineNo,
