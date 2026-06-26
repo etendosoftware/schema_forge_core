@@ -2947,7 +2947,8 @@ export function DetailView({
                         token={token}
                         apiBaseUrl={apiBaseUrl}
                         onClose={() => {}}
-                        onRefresh={() => {}} />
+                        onRefresh={() => {}}
+                        data-testid="ProbeContent__fa3275" />
                     </div>
                   );
                 })()}
