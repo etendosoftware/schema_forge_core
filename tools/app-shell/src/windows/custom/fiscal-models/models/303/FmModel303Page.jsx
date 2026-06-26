@@ -171,17 +171,29 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
     return result;
   }
 
-  // When box 65 (% attributable to State) differs from 100, recompute boxes 66/69/71.
-  // box66 = box46 × pct65 / 100; boxes 69 and 71 cascade from 66 (no other adjustments assumed).
-  function applyStatePctCascade(boxArr) {
-    const box65 = boxArr.find(b => b.num === 65)?.value ?? 100;
-    const box46 = boxArr.find(b => b.num === 46)?.value ?? 0;
-    const box66 = Math.round(box46 * box65) / 100;
+  // Recompute all derived resultado_final boxes from the current merged box array.
+  // Formulas follow the official AEAT 303 labels:
+  //   45 = 29+31+33+35+37+39+41+42+43+44
+  //   46 = 27 − 45
+  //   64 = 46 + 58 + 76   (suma resultados)
+  //   66 = 64 × 65 / 100  (atribuible Estado)
+  //   69 = 66 + 77 − 78 + 68 + 108
+  //   71 = 69 − 70 + 109
+  function recomputeDerivedBoxes(boxArr) {
+    const r2 = v => Math.round(v * 100) / 100;
+    const get = num => { const e = boxArr.find(b => b.num === num); return e != null ? (e.value ?? 0) : 0; };
+    const box65entry = boxArr.find(b => b.num === 65);
+    const box65 = box65entry != null ? (box65entry.value ?? 100) : 100;
+    const box45 = r2([29,31,33,35,37,39,41,42,43,44].reduce((s, n) => s + get(n), 0));
+    const box46 = r2(get(27) - box45);
+    const box64 = r2(box46 + get(58) + get(76));
+    const box66 = r2(box64 * box65 / 100);
+    const box69 = r2(box66 + get(77) - get(78) + get(68) + get(108));
+    const box71 = r2(box69 - get(70) + get(109));
+    const derived = { 45: box45, 46: box46, 64: box64, 66: box66, 69: box69, 71: box71 };
     return [
-      ...boxArr.filter(b => ![66, 69, 71].includes(b.num)),
-      { num: 66, value: box66 },
-      { num: 69, value: box66 },
-      { num: 71, value: box66 },
+      ...boxArr.filter(b => !(b.num in derived)),
+      ...Object.entries(derived).map(([num, value]) => ({ num: Number(num), value })),
     ];
   }
 
@@ -193,7 +205,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
       const base = prev != null ? toBoxArray(prev) : toBoxArray(decl._precomputed?.boxes ?? decl.boxes);
       const filtered = base.filter(b => b.num !== boxNum);
       const updated = value != null ? [...filtered, { num: boxNum, value }] : filtered;
-      return boxNum === 65 ? applyStatePctCascade(updated) : updated;
+      return recomputeDerivedBoxes(updated);
     });
   }
 
@@ -207,7 +219,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
     try {
       const res = await computeBoxes303(decl, { token, apiBaseUrl });
       if (res) {
-        setLiveBoxes(applyStatePctCascade(applyOverrides(res.boxes, manualOverrides)));
+        setLiveBoxes(recomputeDerivedBoxes(applyOverrides(res.boxes, manualOverrides)));
         setLiveSummary(res.summary);
         if (res.sources) setLiveSources(res.sources);
       }
