@@ -1,7 +1,8 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-06-26T16:40:04.328Z",
-  "contractChecksum": "f5bc45a74eabbc17",
+  "updatedAt": "2026-06-26T17:30:37.460Z",
+  "contractChecksum": "64d3dd97dcee7a15",
   "apiPrediction": {
     "specName": "purchase-invoice",
     "baseUrl": "/sws/neo/purchase-invoice",
@@ -1134,6 +1135,46 @@
         "processType": "obuiapp"
       },
       {
+        "name": "etblkpBulkposting",
+        "actionType": "documentAction",
+        "entity": "header",
+        "column": "EM_Etblkp_Bulkposting",
+        "requiresRecord": true,
+        "method": "POST",
+        "url": "/sws/neo/purchase-invoice/header/{id}/action/etblkpBulkposting",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "processId": "57496FB9CF9E4E8F847224017941570E",
+        "processType": "obuiapp"
+      },
+      {
         "name": "explode",
         "actionType": "utilityAction",
         "entity": "lines",
@@ -2013,7 +2054,8 @@
       "processNow",
       "createLinesFrom",
       "etvfacRectCreate",
-      "tbaiVoidxmlgenerator"
+      "tbaiVoidxmlgenerator",
+      "etblkpBulkposting"
     ],
     "workflow": [
       "Create draft header with required fields",
@@ -2081,5 +2123,5 @@
       "tbaiVoidxmlgenerator"
     ]
   },
-  "checksum": "c1da1f51890d4e1a"
+  "checksum": "ca794cfa86304e5b"
 }

@@ -1351,5 +1351,17 @@
     ],
     "author": "pipeline",
     "date": "2026-06-25"
+  },
+  {
+    "from": "0.1.0",
+    "to": "0.2.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"eTGOCurrencyRate\" added to entity \"header\" in frontend",
+      "Field \"tax\" property \"validationRule\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"eTGOCurrencyRate\" added to entity \"header\" in backend"
+    ],
+    "author": "pipeline",
+    "date": "2026-06-26"
   }
 ]

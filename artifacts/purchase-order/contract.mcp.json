@@ -1,7 +1,8 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-06-26T16:40:04.421Z",
-  "contractChecksum": "a4eaeeda84df8e48",
+  "updatedAt": "2026-06-26T17:30:37.515Z",
+  "contractChecksum": "8065d1e7a4689979",
   "apiPrediction": {
     "specName": "purchase-order",
     "baseUrl": "/sws/neo/purchase-order",
@@ -1189,7 +1190,8 @@
             "required": true,
             "readOnlyLogic": "@Processed@='Y'",
             "defaultValue": "A"
-          }
+          },
+          "eTGOCurrencyRate": {}
         }
       },
       "lines": {
@@ -1658,5 +1660,5 @@
       "confirmcancelandreplace"
     ]
   },
-  "checksum": "8b1d692e48b6ae22"
+  "checksum": "271b9c62c478f9a6"
 }

@@ -1,7 +1,8 @@
 {
-  "version": "0.1.0",
+  "version": "0.5.0",
   "generatedAt": "2026-06-26T16:40:04.645Z",
-  "contractChecksum": "65edc1a73043d39e",
+  "updatedAt": "2026-06-26T17:30:37.577Z",
+  "contractChecksum": "14b065e323281585",
   "apiPrediction": {
     "specName": "sales-order",
     "baseUrl": "/sws/neo/sales-order",
@@ -826,7 +827,8 @@
           "processed": {
             "readOnly": true,
             "required": true
-          }
+          },
+          "eTGOCurrencyRate": {}
         }
       },
       "lines": {
@@ -1031,5 +1033,5 @@
       "confirmCancelAndReplace"
     ]
   },
-  "checksum": "2cfd137a42b56f77"
+  "checksum": "b58dcd72a2e7a3c7"
 }
