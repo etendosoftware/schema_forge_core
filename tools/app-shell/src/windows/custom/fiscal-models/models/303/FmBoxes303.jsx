@@ -281,7 +281,6 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
                                   ) : (
                                     <>
                                       <span className="fm-aeat-cell__value">{val != null ? formatCell(val, 'amount') : ''}</span>
-                                      {!isCellEditable && <span className="fm-aeat-cell__unit fm-aeat-cell__unit--dark">{t('fm.unit.euros')}</span>}
                                       {isCellEditable && (
                                         <button className="fm-aeat-cell__edit-btn" onClick={() => setEditingCell(boxNum)}>
                                           <Pencil size={12} strokeWidth={1.5} data-testid="Pencil__49d327" />
