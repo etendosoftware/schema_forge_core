@@ -89,6 +89,15 @@ const CONTROL_KEYWORDS = new Set([
   'else', 'do', 'try', 'finally', 'super', 'this', 'assert', 'throw', 'yield',
 ]);
 
+// Single-character classifiers. Deliberately quantifier-free so the scanners below
+// run in linear time with no regex backtracking (avoids the super-linear / ReDoS
+// risk of repetition-bearing patterns flagged by Sonar S5852).
+const isIdStart = (ch) => ch !== undefined && /[a-zA-Z_$]/.test(ch);
+const isIdPart = (ch) => ch !== undefined && /[\w$]/.test(ch);
+const isSpace = (ch) => ch !== undefined && /\s/.test(ch);
+// Chars allowed inside a Java `throws` clause: identifiers, generics, arrays, separators.
+const isThrowsChar = (ch) => ch !== undefined && /[\w$<>[\],.&]/.test(ch);
+
 /** Index of the matching close paren for an open paren at `open`, or -1. */
 function matchParen(s, open) {
   let depth = 0;
@@ -114,6 +123,44 @@ function matchParen(s, open) {
  *     (abstract / interface methods); otherwise it is a call statement, not a method.
  * Control-flow keywords (`if`, `for`, ...) and `new X(...)` are excluded.
  */
+/** First index >= `from` in `s` that is not whitespace. */
+function nextNonSpace(s, from) {
+  let k = from;
+  while (k < s.length && isSpace(s[k])) k += 1;
+  return k;
+}
+
+/**
+ * The identifier ending at `endIdx` (inclusive), walking back over its run and
+ * trimming any leading digits so it starts on a valid identifier char. Mirrors the
+ * trailing match of `[a-zA-Z_$][\w$]*$`; returns '' when there is no such word.
+ */
+function precedingWord(clean, endIdx) {
+  let ws = endIdx;
+  while (ws >= 0 && isIdPart(clean[ws])) ws -= 1;
+  ws += 1;
+  while (ws <= endIdx && !isIdStart(clean[ws])) ws += 1;
+  return ws <= endIdx ? clean.slice(ws, endIdx + 1) : '';
+}
+
+/**
+ * The terminator (`{` or `;`) that follows a parameter list, given `after` (the text
+ * after the closing paren). Skips whitespace and an optional `throws ...` clause via a
+ * linear forward scan (no backtracking regex). Returns null when none follows.
+ */
+function terminatorAfterParams(after) {
+  let k = nextNonSpace(after, 0);
+  if (after.startsWith('throws', k)) {
+    let t = k + 'throws'.length;
+    while (t < after.length && (isSpace(after[t]) || isThrowsChar(after[t]))) t += 1;
+    // The clause must consume at least one char; otherwise this is not a `throws` clause.
+    if (t === k + 'throws'.length) return null;
+    k = t;
+  }
+  const ch = after[nextNonSpace(after, k)];
+  return ch === '{' || ch === ';' ? ch : null;
+}
+
 /**
  * Decide whether a regex match of `identifier(` (capture group 1 = name) is a
  * method/constructor declaration rather than a call, control-flow keyword, or
@@ -126,21 +173,17 @@ function isMethodDeclaration(clean, m) {
 
   // What precedes the name (skipping whitespace)? `.` => method call; `new` => ctor call.
   let p = m.index - 1;
-  while (p >= 0 && /\s/.test(clean[p])) p -= 1;
+  while (p >= 0 && isSpace(clean[p])) p -= 1;
   if (clean[p] === '.') return false;
-  const prevWordMatch = clean.slice(0, p + 1).match(/([a-zA-Z_$][\w$]*)$/);
-  const prevWord = prevWordMatch ? prevWordMatch[1] : '';
+  const prevWord = precedingWord(clean, p);
   if (prevWord === 'new') return false;
 
   const open = m.index + m[0].length - 1;
   const close = matchParen(clean, open);
   if (close === -1) return false;
 
-  // Skip whitespace + optional `throws ...` clause after the param list.
-  const after = clean.slice(close + 1);
-  const tail = after.match(/^\s*(?:throws[\s\w$<>\[\],.&]+?)?\s*([{;])/);
-  if (!tail) return false;
-  const terminator = tail[1];
+  const terminator = terminatorAfterParams(clean.slice(close + 1));
+  if (terminator === null) return false;
 
   // `{` => declaration with a body (a call can never be followed by `{`).
   // `;` => abstract/interface method ONLY when preceded by a type token (prevWord);
@@ -151,11 +194,23 @@ function isMethodDeclaration(clean, m) {
 
 export function countMethods(source) {
   const clean = stripCommentsAndLiterals(source);
-  const idParenRe = /([a-zA-Z_$][\w$]*)\s*\(/g;
+  const n = clean.length;
   let count = 0;
-  let m;
-  while ((m = idParenRe.exec(clean)) !== null) {
-    if (isMethodDeclaration(clean, m)) count += 1;
+  let i = 0;
+  // Linear scan for `identifier (` groups — equivalent to /([a-zA-Z_$][\w$]*)\s*\(/g
+  // but without a repetition-bearing regex (no S5852 backtracking risk).
+  while (i < n) {
+    if (!isIdStart(clean[i])) { i += 1; continue; }
+    const start = i;
+    i += 1;
+    while (i < n && isIdPart(clean[i])) i += 1;
+    const nameEnd = i;
+    const parenIdx = nextNonSpace(clean, nameEnd);
+    if (clean[parenIdx] === '(') {
+      const m = { 1: clean.slice(start, nameEnd), index: start, 0: clean.slice(start, parenIdx + 1) };
+      if (isMethodDeclaration(clean, m)) count += 1;
+      i = parenIdx + 1;
+    }
   }
   return count;
 }
