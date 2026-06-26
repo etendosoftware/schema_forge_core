@@ -20474,7 +20474,18 @@
     "ellipsis": "...",
     "priceUnit": "€ /",
     "amountPlaceholder": "0.00",
-    "codeExact8Digits": "El código de cuenta debe tener exactamente 8 dígitos"
+    "codeExact8Digits": "El código de cuenta debe tener exactamente 8 dígitos",
+    "accountTreeCode": "Código",
+    "accountTreeDebit": "Débito",
+    "accountTreeCredit": "Crédito",
+    "accountTreeBalance": "Saldo",
+    "accountTreeNoAccounts": "No hay cuentas para mostrar",
+    "newSubAccount": "Nueva subcuenta",
+    "parentAccount": "Cuenta padre",
+    "accountCode": "Código de cuenta",
+    "selectParentAccount": "Seleccione una cuenta padre...",
+    "newSubAccountSuccess": "Subcuenta creada correctamente",
+    "newSubAccountError": "No se pudo crear la subcuenta"
   },
   "menus": {
     "Goods Movement": {

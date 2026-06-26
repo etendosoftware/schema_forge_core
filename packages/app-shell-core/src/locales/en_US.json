@@ -20208,7 +20208,18 @@
     "ellipsis": "...",
     "priceUnit": "€ /",
     "amountPlaceholder": "0.00",
-    "codeExact8Digits": "The account code must be exactly 8 digits"
+    "codeExact8Digits": "The account code must be exactly 8 digits",
+    "accountTreeCode": "Code",
+    "accountTreeDebit": "Debit",
+    "accountTreeCredit": "Credit",
+    "accountTreeBalance": "Balance",
+    "accountTreeNoAccounts": "No accounts to display",
+    "newSubAccount": "New Sub-account",
+    "parentAccount": "Parent Account",
+    "accountCode": "Account Code",
+    "selectParentAccount": "Select a parent account...",
+    "newSubAccountSuccess": "Sub-account created successfully",
+    "newSubAccountError": "Could not create sub-account"
   },
   "menus": {
     "Currency": {
