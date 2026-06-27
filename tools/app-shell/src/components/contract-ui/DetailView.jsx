@@ -2799,6 +2799,7 @@ export function DetailView({
     isDocumentReadOnly, isProcessed, draftMode, blockSaveForBalance, blockCompleteForBalance,
   };
   const balanceFooterEditingLine = lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine;
+  const onLinesMouseDown = autoSaveOnBlur && linesLayout === 'inlineEditable' ? () => handleFieldBlurRef.current?.() : undefined;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="detail-view" data-doc-status={_headerData?.documentStatus}>
@@ -3295,7 +3296,7 @@ export function DetailView({
                   {tabs.length > 0 && (
                     <div
                       className={getLinesTabsSectionClassName(linesLayout)}
-                      onMouseDown={autoSaveOnBlur && linesLayout === 'inlineEditable' ? () => handleFieldBlurRef.current?.() : undefined}
+                      onMouseDown={onLinesMouseDown}
                     >
                       <div className={`flex items-center justify-between border-b border-border/50 ${(getInlineEditableShrinkClassName(linesLayout))}`}>
                         <div className="flex items-center gap-0">
