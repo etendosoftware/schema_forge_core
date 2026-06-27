@@ -4002,7 +4002,7 @@ export function DetailView({
                           setNotesFocused={setNotesFocused}
                           lines={hook.children}
                           pendingLine={pendingLineValues}
-                          editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
+                          editingLine={balanceFooterEditingLine}
                           lineConfig={lineConfig}
                           totalDiscountPct={Number(data?.etgoTotalDiscount ?? 0)}
                           onTotalDiscountChange={handleTotalDiscountChange}
