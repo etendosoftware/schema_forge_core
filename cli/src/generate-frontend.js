@@ -2015,7 +2015,6 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const lineConfigSymbol = getLineConfigSymbol(lineEntityConfig, LINE_CONFIG_SYMBOLS);
   const lineConfigProp = wrapIf('\n        lineConfig={', lineConfigSymbol, '}');
   // ListView toolbar props
-  const hideCreateListProp = fragmentIf(hideCreate, '\n      hideCreate');
   const hidePrintListProp = fragmentIf(hidePrint, '\n      hidePrint');
   const hideCreateProp = fragmentIf(hideCreate, '\n      hideCreate');
   const hideMoreMenuListProp = fragmentIf(hideMoreMenu, '\n      hideMoreMenu');
