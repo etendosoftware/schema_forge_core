@@ -255,6 +255,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
       — matching the SelectorInput inspector experience.
     */
     <div
+      data-testid={`field-${field.key}-wrapper`}
       className={`relative flex ${FIELD_HEIGHT} w-full items-center rounded-lg border border-[#D1D4DB] bg-transparent shadow-[0px_1px_2px_rgba(18,18,23,0.05)] pl-2 pr-2 gap-1 focus-within:ring-2 focus-within:ring-primary`}
       onClick={showChip ? handleChipClick : undefined}
     >
@@ -1256,7 +1257,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             onChange={(v) => onChange?.(f.key, v, f.column)}
             record={data}
             readOnly={isReadOnly}
-          />
+            data-testid="Renderer__a8d626" />
         </div>
       );
     }
