@@ -1461,6 +1461,10 @@ function hasUnsavedEdits(editing, selected) {
   return Object.entries(editing).some(([k, v]) => k !== 'id' && v !== selected[k]);
 }
 
+function mergeLineEdits(lineEdits, selectedLine) {
+  return lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine;
+}
+
 export function DetailView({
   entity,
   detailEntity,
@@ -2798,7 +2802,7 @@ export function DetailView({
     ui, tMenu, onAfterCreate, onAfterSave, token, apiBaseUrl, saveBtnCls,
     isDocumentReadOnly, isProcessed, draftMode, blockSaveForBalance, blockCompleteForBalance,
   };
-  const balanceFooterEditingLine = lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine;
+  const balanceFooterEditingLine = mergeLineEdits(lineEdits, selectedLine);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="detail-view" data-doc-status={_headerData?.documentStatus}>
