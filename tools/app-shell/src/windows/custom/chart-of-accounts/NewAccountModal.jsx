@@ -218,13 +218,18 @@ export default function NewAccountModal({
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={handleOpenChange}
+      data-testid="Dialog__2c756f">
       <DialogContent
         className="max-w-md"
         data-testid="new-account-modal"
       >
-        <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-[#121217]">
+        <DialogHeader data-testid="DialogHeader__2c756f">
+          <DialogTitle
+            className="text-lg font-semibold text-[#121217]"
+            data-testid="DialogTitle__2c756f">
             {ui('newSubAccount')}
           </DialogTitle>
         </DialogHeader>
@@ -292,6 +297,7 @@ export default function NewAccountModal({
                 onChange={handleCodeChange}
                 record={accountCodeRecord}
                 readOnly={false}
+                data-testid="AccountCodeField__2c756f"
               />
             </div>
             {errors.searchKey && (
@@ -302,7 +308,7 @@ export default function NewAccountModal({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 pt-2">
+        <DialogFooter className="gap-2 pt-2" data-testid="DialogFooter__2c756f">
           <button
             type="button"
             data-testid="new-account-modal-cancel"

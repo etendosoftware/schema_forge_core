@@ -200,7 +200,7 @@ function AccountTreeRow({ item, isExpanded, isSelected, onToggle, onRowClick }) 
             aria-expanded={isExpanded}
             aria-label={isExpanded ? 'Contraer' : 'Expandir'}
           >
-            {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+            {isExpanded ? <ChevronDown size={13} data-testid="ChevronDown__acc34a" /> : <ChevronRight size={13} data-testid="ChevronRight__acc34a" />}
           </button>
         ) : (
           <span className="w-4" />
@@ -419,6 +419,7 @@ export default function AccountTreeView({
                 isSelected={item.id === selectedId}
                 onToggle={handleToggle}
                 onRowClick={handleRowClick}
+                data-testid="AccountTreeRow__acc34a"
               />
             ))}
           </div>
@@ -434,6 +435,7 @@ export default function AccountTreeView({
         allAccounts={data}
         apiBaseUrl={apiBaseUrl}
         token={token}
+        data-testid="NewAccountModal__acc34a"
       />
     </div>
   );
