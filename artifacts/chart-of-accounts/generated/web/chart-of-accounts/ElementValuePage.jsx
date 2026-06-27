@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import ElementValueTable from '../../../custom/AccountTreeView';
 import ElementValueForm from './ElementValueForm';
 import { AttachmentsTab } from '@/components/attachments';
-import NewAccountModal from '@/windows/custom/chart-of-accounts/NewAccountModal';
+import NewAccountModal from '../../../custom/NewAccountModal';
 import catalogs from './mockCatalogs';
 
 

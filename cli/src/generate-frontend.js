@@ -1863,7 +1863,6 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const whiteFormBackground = windowConfig.whiteFormBackground ?? false;
   const autoSaveOnBlur = windowConfig.autoSaveOnBlur ?? false;
   const hideFormCard = windowConfig.hideFormCard ?? false;
-  const hideCreate = windowConfig.hideCreate ?? false;
   const sidebarAboveTabsOnly = windowConfig.sidebarAboveTabsOnly ?? false;
   const sidebarClassName = windowConfig.sidebarClassName ?? null;
   const tabsBarPaddingX = windowConfig.tabsBarPaddingX ?? null;
