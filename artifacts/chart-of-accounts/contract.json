@@ -1,14 +1,15 @@
 {
-  "version": "0.3.0",
+  "version": "0.6.0",
   "generatedAt": "2026-03-09T10:00:00.000Z",
-  "updatedAt": "2026-06-26T23:05:39.529Z",
-  "checksum": "aa5a6bfb93cfc4a1",
+  "updatedAt": "2026-06-27T02:03:57.118Z",
+  "checksum": "f12409479fa1b599",
   "frontendContract": {
     "window": {
       "id": "118",
       "name": "Chart of Accounts",
       "primaryEntity": "elementValue",
       "category": "accounting",
+      "hideCreate": true,
       "customComponents": {
         "headerTable": "AccountTreeView"
       },
@@ -19,6 +20,7 @@
           "labelKey": "newSubAccount"
         }
       ],
+      "titleField": "searchKey",
       "layoutType": "default"
     },
     "entities": {
@@ -40,7 +42,12 @@
             "grid": true,
             "form": true,
             "sourceRequired": true,
-            "customRenderer": "AccountCodeField"
+            "customRenderer": "AccountCodeField",
+            "readOnlyLogic": {
+              "raw": "@ProtectedParentLikeSubaccount@='Y'",
+              "evaluable": true,
+              "js": "record['protectedParentLikeSubaccount'] === 'Y'"
+            }
           },
           {
             "name": "name",
@@ -53,7 +60,12 @@
             "required": true,
             "grid": true,
             "form": true,
-            "sourceRequired": true
+            "sourceRequired": true,
+            "readOnlyLogic": {
+              "raw": "@ProtectedParentLikeSubaccount@='Y'",
+              "evaluable": true,
+              "js": "record['protectedParentLikeSubaccount'] === 'Y'"
+            }
           },
           {
             "name": "description",
@@ -65,7 +77,12 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": true,
+            "readOnlyLogic": {
+              "raw": "@ProtectedParentLikeSubaccount@='Y'",
+              "evaluable": true,
+              "js": "record['protectedParentLikeSubaccount'] === 'Y'"
+            }
           },
           {
             "name": "accountType",
@@ -86,27 +103,45 @@
             "enumValues": [
               {
                 "value": "A",
-                "name": "Asset"
+                "name": "Asset",
+                "labels": {
+                  "es_ES": "Activo"
+                }
               },
               {
                 "value": "E",
-                "name": "Expense"
+                "name": "Expense",
+                "labels": {
+                  "es_ES": "Gasto"
+                }
               },
               {
                 "value": "L",
-                "name": "Liability"
+                "name": "Liability",
+                "labels": {
+                  "es_ES": "Pasivo"
+                }
               },
               {
                 "value": "M",
-                "name": "Memo"
+                "name": "Memo",
+                "labels": {
+                  "es_ES": "Memorandum"
+                }
               },
               {
                 "value": "O",
-                "name": "Owner's Equity"
+                "name": "Owner's Equity",
+                "labels": {
+                  "es_ES": "Sindicato propietarios"
+                }
               },
               {
                 "value": "R",
-                "name": "Revenue"
+                "name": "Revenue",
+                "labels": {
+                  "es_ES": "Ingreso"
+                }
               }
             ],
             "defaultValue": "E",
@@ -116,6 +151,11 @@
             "displayLogic": {
               "raw": "@ElementType@='A'",
               "evaluable": true
+            },
+            "readOnlyLogic": {
+              "raw": "@ProtectedParentLikeSubaccount@='Y'",
+              "evaluable": true,
+              "js": "record['protectedParentLikeSubaccount'] === 'Y'"
             }
           },
           {
@@ -164,6 +204,7 @@
       "name": "Chart of Accounts",
       "primaryEntity": "elementValue",
       "category": "accounting",
+      "hideCreate": true,
       "customComponents": {
         "headerTable": "AccountTreeView"
       },
@@ -173,7 +214,8 @@
           "label": "New Sub-account",
           "labelKey": "newSubAccount"
         }
-      ]
+      ],
+      "titleField": "searchKey"
     },
     "entities": {
       "elementValue": {
@@ -624,6 +666,70 @@
         "description": "Field 'searchKey' should have type 'string' in elementValue"
       },
       {
+        "id": "t-readonlylogic-evaluable-elementValue-accountType",
+        "category": "readonlylogic-evaluable",
+        "entity": "elementValue",
+        "field": "accountType",
+        "runner": "node",
+        "description": "Read-only logic for 'accountType' in elementValue should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-elementValue-description",
+        "category": "readonlylogic-evaluable",
+        "entity": "elementValue",
+        "field": "description",
+        "runner": "node",
+        "description": "Read-only logic for 'description' in elementValue should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-elementValue-name",
+        "category": "readonlylogic-evaluable",
+        "entity": "elementValue",
+        "field": "name",
+        "runner": "node",
+        "description": "Read-only logic for 'name' in elementValue should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-elementValue-searchKey",
+        "category": "readonlylogic-evaluable",
+        "entity": "elementValue",
+        "field": "searchKey",
+        "runner": "node",
+        "description": "Read-only logic for 'searchKey' in elementValue should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-valid-elementValue-accountType",
+        "category": "readonlylogic-valid",
+        "entity": "elementValue",
+        "field": "accountType",
+        "runner": "node",
+        "description": "Read-only logic for 'accountType' in elementValue should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-elementValue-description",
+        "category": "readonlylogic-valid",
+        "entity": "elementValue",
+        "field": "description",
+        "runner": "node",
+        "description": "Read-only logic for 'description' in elementValue should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-elementValue-name",
+        "category": "readonlylogic-valid",
+        "entity": "elementValue",
+        "field": "name",
+        "runner": "node",
+        "description": "Read-only logic for 'name' in elementValue should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-elementValue-searchKey",
+        "category": "readonlylogic-valid",
+        "entity": "elementValue",
+        "field": "searchKey",
+        "runner": "node",
+        "description": "Read-only logic for 'searchKey' in elementValue should be valid JS"
+      },
+      {
         "id": "t-rule-declared-AD-Tree-Element-Value",
         "category": "rule-declared",
         "rule": "AD_Tree Element Value",
@@ -966,7 +1072,7 @@
       }
     ],
     "summary": {
-      "total": 60,
+      "total": 68,
       "byCategory": {
         "crud-flags": 1,
         "default-value-type": 2,
@@ -974,12 +1080,14 @@
         "displaylogic-valid": 1,
         "field-presence": 5,
         "field-type": 5,
+        "readonlylogic-evaluable": 4,
+        "readonlylogic-valid": 4,
         "rule-declared": 18,
         "system-field": 26,
         "visibility": 1
       },
       "byRunner": {
-        "node": 60,
+        "node": 68,
         "junit": 0
       }
     }

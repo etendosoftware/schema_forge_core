@@ -696,6 +696,7 @@ const WINDOW_TRUTHY_PROPS = [
 const WINDOW_BOOLEAN_TRUE_PROPS = [
   'hideDeleteWhenComplete',
   'customTabsAfterBottom',
+  'hideCreate',
   'hidePrint',
   'hideCreate',
   'hideMoreMenu',

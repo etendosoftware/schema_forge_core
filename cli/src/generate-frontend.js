@@ -447,7 +447,8 @@ function buildReadOnlyLogicPart(f) {
 }
 
 function getS(o) {
-  return `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`;
+  const labelsPart = o.labels ? `, labels: ${JSON.stringify(o.labels)}` : '';
+  return `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}'${labelsPart} }`;
 }
 
 function getOptionsPart(type, f) {
@@ -1855,6 +1856,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const whiteFormBackground = windowConfig.whiteFormBackground ?? false;
   const autoSaveOnBlur = windowConfig.autoSaveOnBlur ?? false;
   const hideFormCard = windowConfig.hideFormCard ?? false;
+  const hideCreate = windowConfig.hideCreate ?? false;
   const sidebarAboveTabsOnly = windowConfig.sidebarAboveTabsOnly ?? false;
   const sidebarClassName = windowConfig.sidebarClassName ?? null;
   const tabsBarPaddingX = windowConfig.tabsBarPaddingX ?? null;
@@ -2007,6 +2009,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const lineConfigSymbol = getLineConfigSymbol(lineEntityConfig, LINE_CONFIG_SYMBOLS);
   const lineConfigProp = wrapIf('\n        lineConfig={', lineConfigSymbol, '}');
   // ListView toolbar props
+  const hideCreateListProp = fragmentIf(hideCreate, '\n      hideCreate');
   const hidePrintListProp = fragmentIf(hidePrint, '\n      hidePrint');
   const hideCreateProp = fragmentIf(hideCreate, '\n      hideCreate');
   const hideMoreMenuListProp = fragmentIf(hideMoreMenu, '\n      hideMoreMenu');
@@ -2265,6 +2268,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${fragm
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
+<<<<<<< HEAD
       galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideCreateProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideStatusFilterProp}${hideLinkProp}${hideEyeCountProp}${customListIconsProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}${listSortByProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}

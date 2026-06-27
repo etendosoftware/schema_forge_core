@@ -3,6 +3,8 @@
   "window": {
     "category": "accounting",
     "name": "Chart of Accounts",
+    "hideCreate": true,
+    "titleField": "searchKey",
     "customComponents": {
       "headerTable": "AccountTreeView"
     },
@@ -18,10 +20,10 @@
       "javaQualifier": "chart-of-accounts",
       "orderBy": [{ "field": "searchKey", "direction": "ASC" }],
       "fields": {
-        "searchKey":             { "visibility": "editable",  "grid": true,  "form": true, "customRenderer": "AccountCodeField" },
-        "name":                  { "visibility": "editable",  "grid": true,  "form": true },
-        "description":           { "visibility": "editable",  "grid": false, "form": true },
-        "accountType":           { "visibility": "editable",  "grid": true,  "form": true },
+        "searchKey":             { "visibility": "editable",  "grid": true,  "form": true, "customRenderer": "AccountCodeField", "readOnlyLogic": "@ProtectedParentLikeSubaccount@='Y'" },
+        "name":                  { "visibility": "editable",  "grid": true,  "form": true, "readOnlyLogic": "@ProtectedParentLikeSubaccount@='Y'" },
+        "description":           { "visibility": "editable",  "grid": false, "form": true, "readOnlyLogic": "@ProtectedParentLikeSubaccount@='Y'" },
+        "accountType":           { "visibility": "editable",  "grid": true,  "form": true, "readOnlyLogic": "@ProtectedParentLikeSubaccount@='Y'" },
         "summaryLevel":          { "visibility": "system" },
         "active":                { "visibility": "readOnly",  "grid": true,  "form": true },
         "organization":          { "visibility": "system" },

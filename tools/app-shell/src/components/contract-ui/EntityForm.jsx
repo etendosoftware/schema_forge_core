@@ -536,7 +536,8 @@ function applyLookupAuxData(auxData, isGross, onChange, f) {
 }
 
 function renderSelectField(f, data, label, isReadOnly, onChange, ctx) {
-  const { ui, tMenu, optionalSuffix = false } = ctx;
+  const { ui, tMenu, optionalSuffix = false, locale = 'es_ES' } = ctx;
+  const optionLabel = (opt) => opt.labels?.[locale] ?? tMenu(opt.label);
   let selectValue;
   if (f.valueType === 'boolean') {
     if (data?.[f.key] === true || data?.[f.key] === 'Y' || data?.[f.key] === 'true') {
@@ -579,7 +580,7 @@ function renderSelectField(f, data, label, isReadOnly, onChange, ctx) {
         <SelectContent data-testid="SelectContent__a8d626">
           {!f.required && <SelectItem value="__empty__" data-testid="SelectItem__a8d626">&nbsp;</SelectItem>}
           {f.options.map(opt => (
-              <SelectItem key={opt.value} value={opt.value} data-testid="SelectItem__a8d626">{tMenu(opt.label)}</SelectItem>
+              <SelectItem key={opt.value} value={opt.value} data-testid="SelectItem__a8d626">{optionLabel(opt)}</SelectItem>
           ))}
         </SelectContent>
       </Select>
@@ -1301,7 +1302,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       return renderStaticCreatableSelect(f, label, isReadOnly);
     }
     if (isSelectFieldWithOptions(f)) {
-      return renderSelectField(f, data, label, isReadOnly, onChange, { ui, tMenu, optionalSuffix });
+      return renderSelectField(f, data, label, isReadOnly, onChange, { ui, tMenu, optionalSuffix, locale });
     }
     if (f.type === 'textarea') {
       return renderTextareaField(f, label, isReadOnly, displayValue);

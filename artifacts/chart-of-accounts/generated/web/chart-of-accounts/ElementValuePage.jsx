@@ -98,6 +98,7 @@ export default function ElementValuePage({ windowName, recordId, ...props }) {
           { key: 'newSubAccount', label: 'New Sub-account', labelKey: 'newSubAccount', onClick: () => {}, }
         ]}
         requiredHeaderFields={requiredHeaderFields}
+        titleField="searchKey"
         {...props}
       />
     );
@@ -111,6 +112,7 @@ export default function ElementValuePage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      hideCreate
       rowQuickActions={{}}
       {...props}
     />

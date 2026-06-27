@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.6.0",
   "generatedAt": "2026-03-09T10:00:00.000Z",
-  "updatedAt": "2026-06-26T18:51:38.603Z",
-  "contractChecksum": "aa5a6bfb93cfc4a1",
+  "updatedAt": "2026-06-27T02:03:57.118Z",
+  "contractChecksum": "f12409479fa1b599",
   "apiPrediction": {
     "specName": "chart-of-accounts",
     "baseUrl": "/sws/neo/chart-of-accounts",
@@ -43,14 +43,19 @@
       "elementValue": {
         "fields": {
           "searchKey": {
-            "required": true
+            "required": true,
+            "readOnlyLogic": "@ProtectedParentLikeSubaccount@='Y'"
           },
           "name": {
-            "required": true
+            "required": true,
+            "readOnlyLogic": "@ProtectedParentLikeSubaccount@='Y'"
           },
-          "description": {},
+          "description": {
+            "readOnlyLogic": "@ProtectedParentLikeSubaccount@='Y'"
+          },
           "accountType": {
             "required": true,
+            "readOnlyLogic": "@ProtectedParentLikeSubaccount@='Y'",
             "defaultValue": "E"
           },
           "active": {
@@ -98,5 +103,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "143d7b0e462d0c8d"
+  "checksum": "747de3c379702005"
 }

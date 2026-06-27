@@ -248,7 +248,9 @@ export default function AccountTreeView({
   const handleRowClick = useCallback(
     (item) => {
       setSelectedId(item.id);
-      onNavigate?.(item.id);
+      if (!item.isVirtual) {
+        onNavigate?.(item);
+      }
     },
     [onNavigate],
   );
