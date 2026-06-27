@@ -24,6 +24,12 @@ const LEAF_ACCOUNT = {
   accountType: 'A',
   summaryLevel: 'N',
   active: 'Y',
+  parentCode4: '4300',
+  parentCode4Name: 'Clientes',
+  ytdDebit: 0,
+  ytdCredit: 0,
+  ytdBalance: 0,
+  isLeaf: true,
 };
 
 const SUMMARY_ACCOUNT = {
@@ -34,6 +40,12 @@ const SUMMARY_ACCOUNT = {
   accountType: 'A',
   summaryLevel: 'Y',
   active: 'Y',
+  parentCode4: '4300',
+  parentCode4Name: 'Clientes',
+  ytdDebit: 0,
+  ytdCredit: 0,
+  ytdBalance: 0,
+  isLeaf: false,
 };
 
 const ACCOUNTS = [LEAF_ACCOUNT, SUMMARY_ACCOUNT];
@@ -208,18 +220,21 @@ test.describe('Chart of Accounts — account code lock (ETP-4247)', () => {
     await page.goto('/chart-of-accounts');
     await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
-    // Both mocked rows must be visible and show their 8-digit codes
-    const leafRow = page.locator('tbody tr').filter({ hasText: 'Cliente Pérez S.L.' }).first();
-    await expect(leafRow).toBeVisible();
+    // The tree view renders account rows as data-testid="account-tree-row-<id>".
+    // Leaf accounts (issummary='N') appear as individual rows.
+    const leafRow = page.getByTestId('account-tree-row-leaf-001');
+    await expect(leafRow).toBeVisible({ timeout: 5_000 });
     await expect(leafRow).toContainText('43000001');
+    await expect(leafRow).toContainText('Cliente Pérez S.L.');
 
-    const summaryRow = page.locator('tbody tr').filter({ hasText: 'Clientes' }).first();
-    await expect(summaryRow).toBeVisible();
-    await expect(summaryRow).toContainText('43000000');
+    // Virtual group headers carry the 4-digit parent code ('4300'), NOT the 8-digit
+    // summary account code. Verify the group header is visible under the tree.
+    const groupRow = page.getByTestId('account-tree-row-group-4300');
+    await expect(groupRow).toBeVisible({ timeout: 5_000 });
+    await expect(groupRow).toContainText('4300');
 
-    // Confirm each code is exactly 8 characters (not truncated or padded)
+    // Confirm the leaf code is exactly 8 characters (not truncated or padded)
     expect('43000001'.length).toBe(8);
-    expect('43000000'.length).toBe(8);
   });
 
   // -----------------------------------------------------------------------
