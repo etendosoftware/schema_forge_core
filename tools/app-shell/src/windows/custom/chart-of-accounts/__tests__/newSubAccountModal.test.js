@@ -21,6 +21,26 @@ describe('ChartOfAccounts new sub-account modal source wiring', () => {
     assert.doesNotMatch(treeSrc, /indexById\.get\(selectedId\)/);
   });
 
+  it('defines stable tree columns and forwards them through onColumnsReady', () => {
+    assert.match(treeSrc, /function\s+buildTreeColumns\(ui\)/);
+    assert.match(treeSrc, /const\s+treeColumns\s*=\s*useMemo\s*\(\s*\(\)\s*=>\s*buildTreeColumns\(ui\)/s);
+    assert.match(treeSrc, /onColumnsReady\?\.\(treeColumns\)/);
+    assert.doesNotMatch(treeSrc, /onColumnsReady:\s*_onColumnsReady/);
+    assert.doesNotMatch(treeSrc, /\bonColumnsReady\s*:\s*_/);
+    assert.doesNotMatch(treeSrc, /\bonColumnsReady\s*\(\s*_/);
+  });
+
+  it('limits advanced-filter columns to supported code-first CoA fields and localized labels', () => {
+    assert.match(treeSrc, /column:\s*'accountTreeFilterCode'/);
+    assert.match(treeSrc, /column:\s*'accountTreeFilterName'/);
+    assert.match(treeSrc, /column:\s*'accountTreeFilterType'/);
+    assert.match(treeSrc, /column:\s*'accountTreeFilterActive'/);
+    assert.match(treeSrc, /filterable:\s*false/);
+    assert.match(treeSrc, /backendSortKey:\s*'searchKey'/);
+    assert.match(treeSrc, /enumLabels:\s*\{/);
+    assert.match(treeSrc, /badgeLabels:\s*\{/);
+  });
+
   it('adds 4-digit virtual summary rows to the modal parent options', () => {
     assert.match(modalSrc, /const\s+virtualParentOptions\s*=\s*useMemo\s*\(/);
     assert.match(modalSrc, /parentCode4/);

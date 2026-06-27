@@ -3,6 +3,73 @@ import { ChevronRight, ChevronDown } from 'lucide-react';
 import { useUI } from '@/i18n';
 import NewAccountModal from './NewAccountModal';
 
+function buildTreeColumns(ui) {
+  return [
+    {
+      key: 'searchKey',
+      column: 'accountTreeFilterCode',
+      type: 'string',
+      label: ui('accountTreeFilterCode'),
+      required: true,
+      backendSortKey: 'searchKey',
+    },
+    {
+      key: 'name',
+      column: 'accountTreeFilterName',
+      type: 'string',
+      label: ui('accountTreeFilterName'),
+      required: true,
+    },
+    {
+      key: 'accountType',
+      column: 'accountTreeFilterType',
+      type: 'enum',
+      label: ui('accountTreeFilterType'),
+      required: true,
+      enumLabels: {
+        A: ui('accountTypeAsset'),
+        E: ui('accountTypeExpense'),
+        L: ui('accountTypeLiability'),
+        M: ui('accountTypeMemo'),
+        O: ui('accountTypeOwnersEquity'),
+        R: ui('accountTypeRevenue'),
+      },
+    },
+    {
+      key: 'active',
+      column: 'accountTreeFilterActive',
+      type: 'boolean',
+      label: ui('accountTreeFilterActive'),
+      required: true,
+      badgeLabels: {
+        true: ui('yes'),
+        false: ui('no'),
+      },
+    },
+    {
+      key: 'ytdDebit',
+      column: 'accountTreeDebit',
+      type: 'amount',
+      label: ui('accountTreeDebit'),
+      filterable: false,
+    },
+    {
+      key: 'ytdCredit',
+      column: 'accountTreeCredit',
+      type: 'amount',
+      label: ui('accountTreeCredit'),
+      filterable: false,
+    },
+    {
+      key: 'ytdBalance',
+      column: 'accountTreeBalance',
+      type: 'amount',
+      label: ui('accountTreeBalance'),
+      filterable: false,
+    },
+  ];
+}
+
 /**
  * AccountTreeView — collapsible/expandable tree for the Chart of Accounts.
  *
@@ -200,7 +267,7 @@ export default function AccountTreeView({
   sortColumn: _sortColumn,
   sortDirection: _sortDirection,
   onSort: _onSort,
-  onColumnsReady: _onColumnsReady,
+  onColumnsReady,
   api: _api,
   labelOverrides: _labelOverrides,
   onFilterChange: _onFilterChange,
@@ -215,6 +282,7 @@ export default function AccountTreeView({
   ...rest
 }) {
   const ui = useUI();
+  const treeColumns = useMemo(() => buildTreeColumns(ui), [ui]);
 
   const { tree } = useMemo(() => buildGroupedTree(data), [data]);
 
@@ -232,6 +300,10 @@ export default function AccountTreeView({
       });
     }
   }, [tree]);
+
+  useEffect(() => {
+    onColumnsReady?.(treeColumns);
+  }, [onColumnsReady, treeColumns]);
 
   const [selectedId, setSelectedId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
