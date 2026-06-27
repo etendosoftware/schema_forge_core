@@ -1630,7 +1630,7 @@ export function DetailView({
   // even when called from a setTimeout scheduled before the React re-render committed.
   const handleFieldBlurRef = useRef(null);
   handleFieldBlurRef.current = () => {
-    if (hasUnsavedEdits(hook.editing, hook.selected)) hook.handleSave();
+    hasUnsavedEdits(hook.editing, hook.selected) && hook.handleSave();
   };
   const handleFieldBlur = useCallback(() => {
     handleFieldBlurRef.current?.();
@@ -2799,7 +2799,6 @@ export function DetailView({
     isDocumentReadOnly, isProcessed, draftMode, blockSaveForBalance, blockCompleteForBalance,
   };
   const balanceFooterEditingLine = lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine;
-  const onLinesMouseDown = autoSaveOnBlur && linesLayout === 'inlineEditable' ? () => handleFieldBlurRef.current?.() : undefined;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="detail-view" data-doc-status={_headerData?.documentStatus}>
@@ -3296,7 +3295,7 @@ export function DetailView({
                   {tabs.length > 0 && (
                     <div
                       className={getLinesTabsSectionClassName(linesLayout)}
-                      onMouseDown={onLinesMouseDown}
+                      onMouseDown={autoSaveOnBlur && linesLayout === 'inlineEditable' ? () => handleFieldBlurRef.current?.() : undefined}
                     >
                       <div className={`flex items-center justify-between border-b border-border/50 ${(getInlineEditableShrinkClassName(linesLayout))}`}>
                         <div className="flex items-center gap-0">
