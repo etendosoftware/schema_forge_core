@@ -748,6 +748,12 @@ function getInputType(f) {
   return f.type === 'number' ? 'number' : 'text';
 }
 
+function isCurrencyRateSelectorField(entity, apiBaseUrl, f) {
+  return f.column === 'C_Currency_ID'
+    && (entity === 'header' || entity === 'quotation')
+    && /\/(sales-order|purchase-order|sales-quotation)(\/|$)/.test(apiBaseUrl || '');
+}
+
 
 function getFieldValue(isReadOnly, displayValue, data, f) {
   return isReadOnly ? displayValue : (data?.[f.key] ?? '');
@@ -1272,11 +1278,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     }
     if (f.type === 'selector') {
       // Currency selector on order header: use CurrencyRatePicker for searchable rate display
-      if (
-        f.column === 'C_Currency_ID' &&
-        (entity === 'header' || entity === 'quotation') &&
-        /\/(sales-order|purchase-order|sales-quotation)(\/|$)/.test(apiBaseUrl || '')
-      ) {
+      if (isCurrencyRateSelectorField(entity, apiBaseUrl, f)) {
         const isRateReadOnly = formReadOnly || f.readOnly || displayLogic?.readOnly?.[f.key] === true || evalReadOnlyLogic(f, data);
         return (
           <CurrencyRatePicker
