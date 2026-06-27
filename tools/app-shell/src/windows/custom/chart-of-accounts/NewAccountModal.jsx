@@ -27,7 +27,7 @@ import AccountCodeField from '@generated/chart-of-accounts/custom/AccountCodeFie
  * Parent auto-selection:
  *   - If `currentRecord.summaryLevel === 'Y'` and its code is 4 digits → use it as parent.
  *   - Otherwise, look at `currentRecord.searchKey.substring(0, 4)` and find the matching
- *     4-digit summary account in `allAccounts`.
+ *     4-digit summary account in the available parent options.
  *   - Falls back to empty selection if nothing matches.
  *
  * POST body: { searchKey: <8-digit code>, name, accountType: "E" }
@@ -46,7 +46,7 @@ const ERROR_CLS = 'mt-1 text-xs text-red-500';
  * Derive the nearest 4-digit summary-account parent from the selected record.
  * Returns the parent account id string, or '' if none found.
  */
-function deriveDefaultParentId(currentRecord, allAccounts) {
+function deriveDefaultParentId(currentRecord, parentOptions) {
   if (!currentRecord) return '';
   const code = currentRecord.searchKey ?? '';
 
@@ -58,7 +58,7 @@ function deriveDefaultParentId(currentRecord, allAccounts) {
   // Look for a 4-digit summary account whose code matches the first 4 chars
   const prefix4 = code.substring(0, 4);
   if (!prefix4) return '';
-  const match = allAccounts.find(
+  const match = parentOptions.find(
     (a) => a.summaryLevel === 'Y' && a.searchKey === prefix4,
   );
   return match ? match.id : '';
@@ -76,30 +76,66 @@ export default function NewAccountModal({
   token,
 }) {
   const ui = useUI();
+  const [loadedAccounts, setLoadedAccounts] = useState([]);
+  const accountRows = allAccounts.length > 0 ? allAccounts : loadedAccounts;
 
-  // Derive 4-digit summary accounts for the parent selector
-  const parentOptions = useMemo(
+  useEffect(() => {
+    if (!isOpen || allAccounts.length > 0 || loadedAccounts.length > 0 || !apiBaseUrl) return;
+    fetch(`${apiBaseUrl}/elementValue?_startRow=0&_endRow=9999`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setLoadedAccounts(data?.response?.data ?? []))
+      .catch(() => setLoadedAccounts([]));
+  }, [isOpen, allAccounts.length, loadedAccounts.length, apiBaseUrl, token]);
+
+  const virtualParentOptions = useMemo(() => {
+    const byCode = new Map();
+    for (const account of accountRows) {
+      const code = String(account.parentCode4 ?? '');
+      if (code.length !== 4 || byCode.has(code)) continue;
+      byCode.set(code, {
+        id: `group-${code}`,
+        searchKey: code,
+        name: account.parentCode4Name ?? code,
+        summaryLevel: 'Y',
+        isVirtual: true,
+      });
+    }
+    return [...byCode.values()].sort((a, b) => String(a.searchKey).localeCompare(String(b.searchKey)));
+  }, [accountRows]);
+
+  const summaryParentOptions = useMemo(
     () =>
-      allAccounts
+      accountRows
         .filter((a) => a.summaryLevel === 'Y' && String(a.searchKey ?? '').length === 4)
         .sort((a, b) => String(a.searchKey).localeCompare(String(b.searchKey))),
-    [allAccounts],
+    [accountRows],
   );
+
+  // Derive 4-digit summary accounts for the parent selector. The API list contains
+  // posting accounts only, so virtual group rows provide the visible parent options.
+  const parentOptions = useMemo(() => [...summaryParentOptions, ...virtualParentOptions], [summaryParentOptions, virtualParentOptions]);
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
+  const selectedParentCodePrefix = useMemo(() => {
+    const parent = parentOptions.find((p) => p.id === form.parentAccountId);
+    return parent ? String(parent.searchKey) : '';
+  }, [form.parentAccountId, parentOptions]);
+
   // Re-initialise when modal opens or currentRecord changes
   useEffect(() => {
     if (!isOpen) return;
-    const defaultParentId = deriveDefaultParentId(currentRecord, allAccounts);
+    const defaultParentId = deriveDefaultParentId(currentRecord, parentOptions);
     const defaultParent = parentOptions.find((p) => p.id === defaultParentId);
     const prefix = defaultParent ? String(defaultParent.searchKey) : '';
     setForm({ parentAccountId: defaultParentId, name: '', searchKey: prefix });
     setErrors({});
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, currentRecord]);
+  }, [isOpen, currentRecord, parentOptions]);
 
   // When parent changes, update the code prefix in the searchKey field
   const handleParentChange = useCallback(
@@ -125,12 +161,11 @@ export default function NewAccountModal({
 
   // Derive the record passed to AccountCodeField
   const accountCodeRecord = useMemo(() => {
-    const parent = parentOptions.find((p) => p.id === form.parentAccountId);
     return {
       summaryLevel: 'N', // always leaf for a new account
-      codePrefix: parent ? String(parent.searchKey) : '',
+      codePrefix: selectedParentCodePrefix,
     };
-  }, [form.parentAccountId, parentOptions]);
+  }, [selectedParentCodePrefix]);
 
   const validate = useCallback(() => {
     const next = {};

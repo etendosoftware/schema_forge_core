@@ -1,8 +1,8 @@
 {
   "version": "0.6.0",
   "generatedAt": "2026-03-09T10:00:00.000Z",
-  "updatedAt": "2026-06-27T02:03:57.118Z",
-  "checksum": "f12409479fa1b599",
+  "updatedAt": "2026-06-27T02:25:26.268Z",
+  "checksum": "4c677836ec6f4c52",
   "frontendContract": {
     "window": {
       "id": "118",
@@ -17,7 +17,8 @@
         {
           "key": "newSubAccount",
           "label": "New Sub-account",
-          "labelKey": "newSubAccount"
+          "labelKey": "newSubAccount",
+          "component": "NewAccountModal"
         }
       ],
       "titleField": "searchKey",
@@ -212,7 +213,8 @@
         {
           "key": "newSubAccount",
           "label": "New Sub-account",
-          "labelKey": "newSubAccount"
+          "labelKey": "newSubAccount",
+          "component": "NewAccountModal"
         }
       ],
       "titleField": "searchKey"

@@ -24,7 +24,7 @@ Maintain the account master used by finance users and provide a quick, read-only
 - `Parent Account` is the only cross-record dependency in the form. It is rendered as a search-based foreign-key field, so users can link an account to another account, but no catalog preload, hierarchy browser, or auto-filtering behavior is visible in the current generated assets.
 - Debit, credit, and balance appear only in the table and are read-only in the contract, so the current surface behaves as account setup plus financial review rather than as a balance-editing screen.
 - No dependent selectors, status-driven actions, totals, discounts, tax reactions, or line-level recalculations are visible in the current evidence.
-- New subaccount creation is handled by the custom modal. It requires a selected real account row and requests backend defaults using that parent account.
+- New subaccount creation is handled by the custom modal. The action is always available; when a branch or account row is selected, the modal defaults the parent selector from that row, and otherwise it opens with no parent selected.
 - Account Type values are rendered from AD list translations extracted from `AD_REF_LIST_TRL`, so raw AD values (`A`, `E`, `L`, `M`, `O`, `R`) display consistently in English and Spanish.
 - Parent-like posting subaccounts with an 8-digit code ending in `0000` are protected. The form renders Code, Name, Description, and Account Type as read-only for existing protected records, and the backend rejects creating or modifying those codes.
 

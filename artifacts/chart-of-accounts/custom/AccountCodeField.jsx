@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
 
+const PGC_PREFIX_LENGTH = 4;
+const ACCOUNT_CODE_LENGTH = 8;
+
 /**
  * AccountCodeField — split prefix + suffix editor for 8-digit chart-of-accounts codes.
  *
@@ -25,23 +28,21 @@ export default function AccountCodeField({ value = '', onChange, record, readOnl
   const isSummary = record?.summaryLevel === 'Y';
   const isReadOnlyDisplay = isSummary || readOnly;
 
-  // Derive prefix and suffix from value or record.codePrefix
-  const derivedPrefix = value?.length >= 4
-    ? value.slice(0, 4)
-    : (record?.codePrefix ?? '');
-  const derivedSuffix = value?.length >= 8 ? value.slice(4, 8) : '';
+  // Derive prefix and suffix from value or record.codePrefix. New-account modals
+  // pass partial codes while the user types, so preserve partial suffixes too.
+  const codePrefix = record?.codePrefix ?? '';
+  const derivedPrefix = codePrefix || (value?.length >= 4 ? value.slice(0, 4) : '');
+  const derivedSuffix = value?.startsWith(derivedPrefix)
+    ? value.slice(derivedPrefix.length, ACCOUNT_CODE_LENGTH)
+    : (value?.length > PGC_PREFIX_LENGTH ? value.slice(PGC_PREFIX_LENGTH, ACCOUNT_CODE_LENGTH) : '');
 
   const [suffix, setSuffix] = useState(derivedSuffix);
   const [error, setError] = useState('');
 
   // Sync suffix when the value prop changes externally (e.g. record load)
   useEffect(() => {
-    if (value?.length >= 8) {
-      setSuffix(value.slice(4, 8));
-    } else {
-      setSuffix('');
-    }
-  }, [value]);
+    setSuffix(derivedSuffix);
+  }, [derivedSuffix]);
 
   if (isReadOnlyDisplay) {
     return (

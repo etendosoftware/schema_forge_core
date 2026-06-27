@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
 import ElementValueTable from '../../../custom/AccountTreeView';
 import ElementValueForm from './ElementValueForm';
 import { AttachmentsTab } from '@/components/attachments';
+import NewAccountModal from '@/windows/custom/chart-of-accounts/NewAccountModal';
 import catalogs from './mockCatalogs';
 
 
@@ -78,8 +79,11 @@ export const api = {
 
 // @sf-generated-start component:ElementValuePage
 export default function ElementValuePage({ windowName, recordId, ...props }) {
+  const [showNewSubAccountMenuModal, setNewSubAccountMenuModal] = useState(false);
+  const [newSubAccountMenuContext, setNewSubAccountMenuContext] = useState(null);
   if (recordId) {
     return (
+      <>
       <DetailView
         entity="elementValue"
         Form={ElementValueForm}
@@ -94,13 +98,14 @@ export default function ElementValuePage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_ElementValue", config: {} } }]}
-        menuActions={({ status }) => [
-          { key: 'newSubAccount', label: 'New Sub-account', labelKey: 'newSubAccount', onClick: () => {}, }
+        menuActions={({ data, status }) => [
+          { key: 'newSubAccount', label: 'New Sub-account', labelKey: 'newSubAccount', onClick: () => { setNewSubAccountMenuContext(data ?? null); setNewSubAccountMenuModal(true); }, }
         ]}
         requiredHeaderFields={requiredHeaderFields}
         titleField="searchKey"
         {...props}
       />
+      {showNewSubAccountMenuModal && <NewAccountModal token={props.token} apiBaseUrl={api.baseUrl} currentRecord={newSubAccountMenuContext} onClose={() => setNewSubAccountMenuModal(false)} onSaved={() => { setNewSubAccountMenuModal(false); window.location.reload(); }} />}      </>
     );
   }
 

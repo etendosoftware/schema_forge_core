@@ -16,8 +16,8 @@ import NewAccountModal from './NewAccountModal';
  *
  * Defaults: levels 0 and 1 expanded, deeper nodes collapsed.
  *
- * "New Sub-account" button is enabled only when a row is selected. It opens
- * NewAccountModal, which auto-populates the parent from the selected row.
+ * "New Sub-account" is always available. If a row is selected, NewAccountModal
+ * auto-populates the parent from that row; otherwise the selector starts empty.
  */
 
 const FMT = new Intl.NumberFormat('es', {
@@ -216,7 +216,7 @@ export default function AccountTreeView({
 }) {
   const ui = useUI();
 
-  const { tree, indexById } = useMemo(() => buildGroupedTree(data), [data]);
+  const { tree } = useMemo(() => buildGroupedTree(data), [data]);
 
   const [expanded, setExpanded] = useState(() => new Set());
 
@@ -261,8 +261,8 @@ export default function AccountTreeView({
   );
 
   const selectedRecord = useMemo(
-    () => (selectedId ? indexById.get(selectedId) : null),
-    [indexById, selectedId],
+    () => (selectedId ? visibleRows.find((row) => row.id === selectedId) : null),
+    [visibleRows, selectedId],
   );
 
   const expandAll = useCallback(
@@ -301,8 +301,7 @@ export default function AccountTreeView({
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          disabled={!selectedId}
-          className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 bg-[#121217] text-white rounded-full disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#28282F] transition-colors"
+          className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 bg-[#121217] text-white rounded-full hover:bg-[#28282F] transition-colors"
         >
           + {ui('newSubAccount')}
         </button>

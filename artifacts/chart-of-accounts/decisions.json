@@ -9,7 +9,7 @@
       "headerTable": "AccountTreeView"
     },
     "menuActions": [
-      { "key": "newSubAccount", "label": "New Sub-account", "labelKey": "newSubAccount" }
+      { "key": "newSubAccount", "label": "New Sub-account", "labelKey": "newSubAccount", "component": "NewAccountModal" }
     ]
   },
   "entities": {
