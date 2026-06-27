@@ -105,7 +105,7 @@ export default function ElementValuePage({ windowName, recordId, ...props }) {
         titleField="searchKey"
         {...props}
       />
-      {showNewSubAccountMenuModal && <NewAccountModal token={props.token} apiBaseUrl={api.baseUrl} currentRecord={newSubAccountMenuContext} onClose={() => setNewSubAccountMenuModal(false)} onSaved={() => { setNewSubAccountMenuModal(false); window.location.reload(); }} />}      </>
+      {showNewSubAccountMenuModal && <NewAccountModal isOpen={showNewSubAccountMenuModal} token={props.token} apiBaseUrl={api.baseUrl} currentRecord={newSubAccountMenuContext} onClose={() => setNewSubAccountMenuModal(false)} onSaved={() => { setNewSubAccountMenuModal(false); window.location.reload(); }} />}      </>
     );
   }
 

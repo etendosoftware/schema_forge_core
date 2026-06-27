@@ -54,7 +54,7 @@ describe('ChartOfAccounts new sub-account modal source wiring', () => {
     assert.match(generatorSrc, /const \[show\$\{name\}MenuModal, set\$\{name\}MenuModal\] = useState\(false\);/);
     assert.match(generatorSrc, /const \[\$\{a\.key\}MenuContext, set\$\{name\}MenuContext\] = useState\(null\);/);
     assert.match(generatorSrc, /onClick: \(\) => \{ \$\{contextSetter\}\(data \?\? null\); \$\{stateSetter\}\(true\); \},/);
-    assert.match(generatorSrc, /\{show\$\{name\}MenuModal && <\$\{a\.component\} token=\{props\.token\} apiBaseUrl=\{api\.baseUrl\} currentRecord=\{\$\{a\.key\}MenuContext\}/);
+    assert.match(generatorSrc, /\{show\$\{name\}MenuModal && <\$\{a\.component\} isOpen=\{show\$\{name\}MenuModal\} token=\{props\.token\} apiBaseUrl=\{api\.baseUrl\} currentRecord=\{\$\{a\.key\}MenuContext\}/);
   });
 
   it('fetches elementValue rows when opened without preloaded accounts', () => {

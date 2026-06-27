@@ -2168,7 +2168,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   }).join('\n');
   const menuActionModals = menuActionsWithComponents.map(a => {
     const name = capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()));
-    return `      {show${name}MenuModal && <${a.component} token={props.token} apiBaseUrl={api.baseUrl} currentRecord={${a.key}MenuContext} onClose={() => set${name}MenuModal(false)} onSaved={() => { set${name}MenuModal(false); window.location.reload(); }} />}`;
+    return `      {show${name}MenuModal && <${a.component} isOpen={show${name}MenuModal} token={props.token} apiBaseUrl={api.baseUrl} currentRecord={${a.key}MenuContext} onClose={() => set${name}MenuModal(false)} onSaved={() => { set${name}MenuModal(false); window.location.reload(); }} />}`;
   }).join('\n');
 
   const needsUseState = customComponents.newRecordComponent || newActionsWithComponents.length > 0 || menuActionsWithComponents.length > 0 || !!confirmModalName;
