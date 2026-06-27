@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { useUI } from '@/i18n';
 import NewAccountModal from './NewAccountModal';
@@ -32,28 +32,54 @@ function fmtNum(n) {
 }
 
 /**
- * Converts the flat API list into a parent → children tree.
- * Returns { tree: rootNodes[], indexById: Map<id, node> }.
- * Each node has a `children` array added.
+ * Groups the flat list of subaccounts by parentCode4, creating virtual group header
+ * nodes for each 4-digit parent. All API records are leaves (issummary='N'); the
+ * hierarchy comes from parentCode4 / parentCode4Name injected by the NeoHandler.
+ *
+ * Returns { tree: groupNodes[], indexById: Map<id, node> } where indexById only
+ * contains real account nodes (not virtual group headers).
  */
-function buildTree(items) {
+function buildGroupedTree(items) {
   const indexById = new Map();
-  const roots = [];
+  const groupMap = new Map(); // parentCode4 → groupNode
 
   for (const item of items) {
-    indexById.set(item.id, { ...item, children: [] });
-  }
+    indexById.set(item.id, item);
 
-  for (const item of items) {
-    const node = indexById.get(item.id);
-    if (item.parentId && indexById.has(item.parentId)) {
-      indexById.get(item.parentId).children.push(node);
-    } else {
-      roots.push(node);
+    const code = item.parentCode4;
+    if (code) {
+      if (!groupMap.has(code)) {
+        groupMap.set(code, {
+          id: `group-${code}`,
+          searchKey: code,
+          name: item.parentCode4Name ?? code,
+          summaryLevel: 'Y',
+          isVirtual: true,
+          depth: 0,
+          hasChildren: true,
+          ytdDebit: 0,
+          ytdCredit: 0,
+          ytdBalance: 0,
+          children: [],
+        });
+      }
+      const group = groupMap.get(code);
+      group.ytdDebit += Number(item.ytdDebit ?? 0);
+      group.ytdCredit += Number(item.ytdCredit ?? 0);
+      group.ytdBalance += Number(item.ytdBalance ?? 0);
+      group.children.push({ ...item, depth: 1 });
     }
   }
 
-  return { tree: roots, indexById };
+  // Sort groups by code; sort children within each group by searchKey
+  const tree = [...groupMap.values()].sort((a, b) =>
+    a.searchKey.localeCompare(b.searchKey),
+  );
+  for (const group of tree) {
+    group.children.sort((a, b) => a.searchKey.localeCompare(b.searchKey));
+  }
+
+  return { tree, indexById };
 }
 
 /**
@@ -64,7 +90,7 @@ function flattenVisible(nodes, expanded) {
   function walk(list) {
     for (const node of list) {
       result.push(node);
-      if (node.hasChildren && expanded.has(node.id) && node.children.length) {
+      if (node.hasChildren && expanded.has(node.id) && node.children?.length) {
         walk(node.children);
       }
     }
@@ -190,16 +216,22 @@ export default function AccountTreeView({
 }) {
   const ui = useUI();
 
-  const { tree, indexById } = useMemo(() => buildTree(data), [data]);
+  const { tree, indexById } = useMemo(() => buildGroupedTree(data), [data]);
 
-  // Default: expand depths 0 and 1 on first render
-  const [expanded, setExpanded] = useState(() => {
-    const s = new Set();
-    for (const item of data) {
-      if ((item.depth ?? 0) <= 1) s.add(item.id);
+  const [expanded, setExpanded] = useState(() => new Set());
+
+  // Expand all group headers whenever the tree is first populated (async data load)
+  useEffect(() => {
+    if (tree.length > 0) {
+      setExpanded((prev) => {
+        const next = new Set(prev);
+        for (const node of tree) {
+          if (node.isVirtual) next.add(node.id);
+        }
+        return next;
+      });
     }
-    return s;
-  });
+  }, [tree]);
 
   const [selectedId, setSelectedId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -231,7 +263,10 @@ export default function AccountTreeView({
     [indexById, selectedId],
   );
 
-  const expandAll = useCallback(() => setExpanded(new Set(data.map((r) => r.id))), [data]);
+  const expandAll = useCallback(
+    () => setExpanded(new Set(tree.filter((n) => n.isVirtual).map((n) => n.id))),
+    [tree],
+  );
   const collapseAll = useCallback(() => setExpanded(new Set()), []);
 
   const handleSaved = useCallback(() => {
