@@ -7,6 +7,7 @@ These are field-validation findings from creating a new client/org (`TaxesOrg`) 
 | ID | Area | Symptom (short) | Where it should be fixed | Ticket |
 |----|------|-----------------|--------------------------|--------|
 | A1 | Accounting | Posting fails — chart of accounts missing | *Initial Organization Setup* / SQL clone | — |
+| A1b | Accounting | Posting account codes are < 8 digits; ETP-4247 feature fails | Onboarding sampledata XML (`C_ELEMENTVALUE.xml`) — pad codes to 8 digits | ETP-4247 |
 | A2 | Accounting | "Account Not Defined" even with ledger present | *Initial Organization Setup* — auto-populate `*_acct` tables | — |
 | B1 | Organization hierarchy | "Lines org does not depend on header org" on same-org invoice | *Set Organization as Ready* — populate `AD_ORG_TREE` | — |
 | C1 | Period control | *Open/Close Period Control* is empty; posting fails (no open periods) | Set `isperiodcontrolallowed` and calendar fields before creating periods | — |
@@ -89,18 +90,41 @@ SET c_elementvalue_id = '<EV_ID_90030>'
 WHERE c_acctschema_id = '<SCHEMA_ID>' AND elementtype = 'AC';
 ```
 
-**8-digit account code requirement (ETP-4247):** The Chart of Accounts feature requires all
-numeric posting account codes (`issummary='N'`, purely numeric `value`) to be exactly 8 digits,
-right-padded with zeros (e.g. `10000` → `10000000`).
+See also: **§A1b** for the related 8-digit account-code padding requirement (ETP-4247) — a separate gap closed on both fronts.
 
-- **Corrective fix (existing tenants):** `cli/src/data-fixes/sql/20260626T120000Z__R8-account-codes-8digits.sql`
-  pads the 1312 posting-account rows for GOClient. Group accounts (`issummary='Y'`, 3 and 4 digits)
-  are intentionally excluded: naive right-padding would create UNIQUE(c_element_id, value) collisions
-  (1140 collision groups verified), because `100`, `1000`, and `10000` share the same prefix.
-- **Preventive requirement:** when gap A1's onboarding step is built (chart-of-accounts seeding for
-  new tenants), it **must** insert `c_elementvalue` rows already using 8-digit numeric codes so that
-  new tenants are born without this gap. The source data in GOOrg must also carry 8-digit codes, or
-  the clone SQL must apply `RPAD(value, 8, '0')` on the `issummary='N'` rows during the INSERT.
+---
+
+### A1b — Posting account codes shorter than 8 digits (ETP-4247)
+
+**Symptom:** The Chart of Accounts feature (ETP-4247) requires all numeric posting account codes to be exactly 8 digits. On tenants onboarded before 2026-06-26 the codes are 5 digits (e.g. `10000`), causing the feature to reject or mis-display them.
+
+**Root cause:** The GOClient sampledata (`C_ELEMENTVALUE.xml`) shipped posting account codes (`issummary='N'`, purely numeric `value`) at 5 digits. Group accounts (`issummary='Y'`, 3 and 4 digits) are structural hierarchy nodes and are intentionally left at their natural length — padding them would cause UNIQUE(c_element_id, value) constraint violations (1,140 collision groups confirmed: `100`, `1000`, and `10000` all pad to `10000000` under the same element).
+
+**Both fronts closed (2026-06-26):**
+
+| Front | Deliverable |
+|---|---|
+| **Corrective** | `cli/src/data-fixes/sql/20260626T120000Z__R8-account-codes-8digits.sql` — pads 1312 posting-account rows for existing tenants |
+| **Preventive** | `referencedata/sampledata/GOClient/C_ELEMENTVALUE.xml` updated — 1312 rows padded to 8 digits; `ONBOARDING_PROVISIONED_THROUGH` bumped to `2026-06-26T12:00:00Z` in `OnboardingBaselineService.java` |
+
+**SQL fix (corrective guard — idempotent):**
+```sql
+-- @check
+SELECT 1 FROM c_elementvalue
+WHERE ad_client_id = :client_id
+  AND issummary = 'N'
+  AND value ~ '^[0-9]+$'
+  AND LENGTH(value) < 8
+LIMIT 1;
+
+-- @apply
+UPDATE c_elementvalue
+SET    value = RPAD(value, 8, '0')
+WHERE  ad_client_id = :client_id
+  AND  issummary = 'N'
+  AND  value ~ '^[0-9]+$'
+  AND  LENGTH(value) < 8;
+```
 
 ---
 
