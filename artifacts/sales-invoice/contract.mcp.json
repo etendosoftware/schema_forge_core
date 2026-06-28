@@ -1,5 +1,5 @@
 {
-  "version": "0.35.0",
+  "version": "0.38.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
   "updatedAt": "2026-06-26T13:36:31.135Z",
   "contractChecksum": "3d8437f61b71537e",
@@ -1160,10 +1160,6 @@
           "totalDebtAmount": {
             "readOnly": true,
             "defaultValue": "0"
-          },
-          "finPaymentScheduleID": {
-            "readOnly": true,
-            "required": true
           }
         }
       },
