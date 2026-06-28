@@ -1,8 +1,8 @@
 {
   "version": "0.38.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-06-26T13:36:31.135Z",
-  "contractChecksum": "3d8437f61b71537e",
+  "updatedAt": "2026-06-28T15:29:27.060Z",
+  "contractChecksum": "3b88877111456cb9",
   "apiPrediction": {
     "specName": "sales-invoice",
     "baseUrl": "/sws/neo/sales-invoice",
@@ -1363,5 +1363,5 @@
       "tbaiVoidxmlgenerator"
     ]
   },
-  "checksum": "fd75f32db385de22"
+  "checksum": "110db16466b71954"
 }
