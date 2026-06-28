@@ -104,7 +104,7 @@ function CreditRow({ l, currency, ui, onToggle, onStep, step, showTag = true }) 
       data-testid={`cp-credit-row-${l.id}`}
       style={{ display: 'grid', gridTemplateColumns: '30px 1fr 120px 150px', gap: 12, alignItems: 'center', padding: '11px 16px', borderTop: `1px solid ${BORDER1}`, background: l.sel ? tc.tagBg + '55' : 'transparent', cursor: 'pointer' }}
     >
-      <Check checked={l.sel} />
+      <Check checked={l.sel} data-testid="Check__7727b3" />
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
         {kindGlyph(l.kind, 15, tc.ink)}
         <div style={{ minWidth: 0 }}>
@@ -149,8 +149,16 @@ function CreditGroup({ kind, title, hint, rows, currency, ui, balance }) {
         {used > 0 && <span style={{ font: '600 12px/16px Inter', color: tc.ink, fontVariantNumeric: 'tabular-nums' }}>− {fmtCur(used, currency)}</span>}
       </div>
       {rows.map(l => (
-        <CreditRow key={l.id} l={l} currency={currency} ui={ui} step={balance.STEP} showTag={false}
-          onToggle={() => balance.toggleLine(l.id)} onStep={(d) => balance.stepLine(l.id, d)} />
+        <CreditRow
+          key={l.id}
+          l={l}
+          currency={currency}
+          ui={ui}
+          step={balance.STEP}
+          showTag={false}
+          onToggle={() => balance.toggleLine(l.id)}
+          onStep={(d) => balance.stepLine(l.id, d)}
+          data-testid="CreditRow__7727b3" />
       ))}
     </div>
   );
@@ -319,7 +327,7 @@ export default function NewPaymentEntryModal({
       >
         {/* header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', padding: '18px 24px 16px', gap: 12, borderBottom: `1px solid ${BORDER1}`, flexShrink: 0 }}>
-          <DirBadge dir={dir} size={36} />
+          <DirBadge dir={dir} size={36} data-testid="DirBadge__7727b3" />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <h2 style={{ margin: 0, font: '700 18px/23px Inter', color: INK, letterSpacing: '-0.01em' }}>{title}</h2>
@@ -340,7 +348,9 @@ export default function NewPaymentEntryModal({
         <div style={{ padding: '18px 24px', display: 'flex', flexDirection: 'column', gap: 16, background: '#fff', flex: 1, minHeight: 0, overflow: 'auto' }}>
           {/* 4 compact fields */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 14 }}>
-            <Field label={`${ui('cpAmount')} (${curSuffix(currency)})`}>
+            <Field
+              label={`${ui('cpAmount')} (${curSuffix(currency)})`}
+              data-testid="Field__7727b3">
               <div style={{ display: 'flex', alignItems: 'center', height: 42, padding: '0 12px', border: `1px solid ${INK}`, borderRadius: 8, background: '#fff', minWidth: 0 }}>
                 <input
                   type="text" inputMode="decimal" value={balance.amountStr}
@@ -352,22 +362,25 @@ export default function NewPaymentEntryModal({
                 <span style={{ font: '400 13px/1 Inter', color: FG3, marginLeft: 5 }}>{curSuffix(currency)}</span>
               </div>
             </Field>
-            <Field label={ui('date')}>
-              <DateField value={date} onChange={setDate} />
+            <Field label={ui('date')} data-testid="Field__7727b3">
+              <DateField value={date} onChange={setDate} data-testid="DateField__7727b3" />
             </Field>
-            <Field label={ui('cpPaymentMethod')}>
-              <Select value={methodId} onValueChange={setMethodId}>
-                <SelectTrigger style={{ height: 42, fontSize: 14 }}><SelectValue placeholder={ui('cpSelectMethod')} /></SelectTrigger>
-                <SelectContent style={{ zIndex: 70 }}>
-                  {methods.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+            <Field label={ui('cpPaymentMethod')} data-testid="Field__7727b3">
+              <Select value={methodId} onValueChange={setMethodId} data-testid="Select__7727b3">
+                <SelectTrigger style={{ height: 42, fontSize: 14 }} data-testid="SelectTrigger__7727b3"><SelectValue placeholder={ui('cpSelectMethod')} data-testid="SelectValue__7727b3" /></SelectTrigger>
+                <SelectContent style={{ zIndex: 70 }} data-testid="SelectContent__7727b3">
+                  {methods.map(m => <SelectItem key={m.id} value={m.id} data-testid="SelectItem__7727b3">{m.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </Field>
-            <Field label={ui('account')}>
-              <Select value={accountId} onValueChange={setAccountId}>
-                <SelectTrigger style={{ height: 42, fontSize: 14 }}><SelectValue placeholder={ui('cpSelectAccount')} /></SelectTrigger>
-                <SelectContent style={{ zIndex: 70 }}>
-                  {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+            <Field label={ui('account')} data-testid="Field__7727b3">
+              <Select
+                value={accountId}
+                onValueChange={setAccountId}
+                data-testid="Select__7727b3">
+                <SelectTrigger style={{ height: 42, fontSize: 14 }} data-testid="SelectTrigger__7727b3"><SelectValue placeholder={ui('cpSelectAccount')} data-testid="SelectValue__7727b3" /></SelectTrigger>
+                <SelectContent style={{ zIndex: 70 }} data-testid="SelectContent__7727b3">
+                  {accounts.map(a => <SelectItem key={a.id} value={a.id} data-testid="SelectItem__7727b3">{a.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </Field>
@@ -377,13 +390,23 @@ export default function NewPaymentEntryModal({
           {balance.lines.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <CreditGroup
-                kind="credit" title={ui('cpCreditGroupTitle')} hint={ui('cpCreditGroupHint')}
+                kind="credit"
+                title={ui('cpCreditGroupTitle')}
+                hint={ui('cpCreditGroupHint')}
                 rows={balance.lines.filter(l => l.kind === 'credit')}
-                currency={currency} ui={ui} balance={balance} />
+                currency={currency}
+                ui={ui}
+                balance={balance}
+                data-testid="CreditGroup__7727b3" />
               <CreditGroup
-                kind="abono" title={ui('cpFavorGroupTitle')} hint={ui('cpFavorGroupHint')}
+                kind="abono"
+                title={ui('cpFavorGroupTitle')}
+                hint={ui('cpFavorGroupHint')}
                 rows={balance.lines.filter(l => l.kind === 'abono')}
-                currency={currency} ui={ui} balance={balance} />
+                currency={currency}
+                ui={ui}
+                balance={balance}
+                data-testid="CreditGroup__7727b3" />
             </div>
           )}
 
@@ -411,11 +434,11 @@ export default function NewPaymentEntryModal({
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button type="button" data-testid="cp-excess-credit" onClick={() => balance.setExcessMode('credit')} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', borderRadius: 9, border: `1px solid ${balance.excessMode === 'credit' ? GREEN_FG : BORDER2}`, background: balance.excessMode === 'credit' ? GREEN_BG : '#fff', cursor: 'pointer', textAlign: 'left' }}>
-                  <Radio checked={balance.excessMode === 'credit'} />
+                  <Radio checked={balance.excessMode === 'credit'} data-testid="Radio__7727b3" />
                   <div><div style={{ font: '600 13px/17px Inter', color: INK }}>{ui('cpLeaveCredit')}</div><div style={{ font: '400 11px/15px Inter', color: FG3 }}>{ui('cpLeaveCreditHint', { amount: fmtCur(balance.excessAmount, currency) })}</div></div>
                 </button>
                 <button type="button" data-testid="cp-excess-refund" onClick={() => balance.setExcessMode('refund')} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', borderRadius: 9, border: `1px solid ${balance.excessMode === 'refund' ? GREEN_FG : BORDER2}`, background: balance.excessMode === 'refund' ? GREEN_BG : '#fff', cursor: 'pointer', textAlign: 'left' }}>
-                  <Radio checked={balance.excessMode === 'refund'} />
+                  <Radio checked={balance.excessMode === 'refund'} data-testid="Radio__7727b3" />
                   <div><div style={{ font: '600 13px/17px Inter', color: INK }}>{ui('cpGiveChange')}</div><div style={{ font: '400 11px/15px Inter', color: FG3 }}>{ui('cpGiveChangeHint', { amount: fmtCur(balance.excessAmount, currency) })}</div></div>
                 </button>
               </div>

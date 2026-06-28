@@ -342,100 +342,99 @@ export default function InvoicePaymentModal({
 
   return (
     <>
-    {!showNew && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(16,20,28,.46)', padding: 24 }} onClick={onClose}>
-      <div
-        className="bg-white flex flex-col overflow-hidden"
-        style={{ width: 520, maxWidth: '100%', maxHeight: '85vh', borderRadius: 14, boxShadow: '0 20px 50px rgba(16,20,28,.18), 0 0 0 1px rgba(16,20,28,.06)' }}
-        data-testid="cp-history-modal"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '18px 22px 16px', borderBottom: '1px solid #E8E8ED' }}>
-          <HistoryDirBadge dir={dir} size={36} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 style={{ margin: 0, font: '700 17px/22px Inter', color: INK, letterSpacing: '-0.01em' }}>{title}</h2>
-            <div style={{ font: '400 12px/16px Inter', color: '#6C6C89', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {party}{party && docNo ? ' · ' : ''}<span style={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 600, color: '#3F3F50' }}>{docNo}</span>
-            </div>
-          </div>
-          <button type="button" onClick={onClose} aria-label={ui('close')}
-            style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
-        </div>
-
-        {/* Stats */}
-        <div style={{ display: 'flex', gap: 32, padding: '14px 22px', borderBottom: '1px solid #E8E8ED', background: '#FCFCFD' }}>
-          <div>
-            <div style={{ font: '400 11px/14px Inter', color: '#6C6C89' }}>{ui('cpTotalAmount')}</div>
-            <div className="tabular-nums" style={{ font: '700 19px/24px Inter', color: INK }}>{fmt(totalAmount, currency)}</div>
-          </div>
-          <div style={{ paddingLeft: 32, borderLeft: '1px solid #E8E8ED' }}>
-            <div style={{ font: '400 11px/14px Inter', color: '#6C6C89' }}>{ui('pendingBalanceLabel')}</div>
-            <div className="tabular-nums" style={{ font: '700 19px/24px Inter', color: outstanding > 0 ? AMBER : GREEN_FG }}>{fmt(outstanding, currency)}</div>
-          </div>
-        </div>
-
-        {/* Body — movements list / empty state */}
-        <div className="flex-1 overflow-y-auto" style={{ padding: '14px 22px' }}>
-          {isLoading ? (
-            <div style={{ font: '400 13px/18px Inter', color: '#9ca3af', textAlign: 'center', padding: '32px 0' }}>{ui('loading')}</div>
-          ) : count === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '36px 0' }}>
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: '#F1F2F4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="13" y2="17" /></svg>
+      {!showNew && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(16,20,28,.46)', padding: 24 }} onClick={onClose}>
+        <div
+          className="bg-white flex flex-col overflow-hidden"
+          style={{ width: 520, maxWidth: '100%', maxHeight: '85vh', borderRadius: 14, boxShadow: '0 20px 50px rgba(16,20,28,.18), 0 0 0 1px rgba(16,20,28,.06)' }}
+          data-testid="cp-history-modal"
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '18px 22px 16px', borderBottom: '1px solid #E8E8ED' }}>
+            <HistoryDirBadge dir={dir} size={36} data-testid="HistoryDirBadge__284351" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{ margin: 0, font: '700 17px/22px Inter', color: INK, letterSpacing: '-0.01em' }}>{title}</h2>
+              <div style={{ font: '400 12px/16px Inter', color: '#6C6C89', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {party}{party && docNo ? ' · ' : ''}<span style={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 600, color: '#3F3F50' }}>{docNo}</span>
               </div>
-              <div style={{ font: '400 13px/18px Inter', color: '#6C6C89', textAlign: 'center' }}>{emptyLabel}</div>
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {payments.map(p => {
-                const deposited = isDeposited(p);
-                const badge = deposited
-                  ? { bg: GREEN_BG, fg: GREEN_FG, label: ui('cpStatusDeposited') }
-                  : { bg: '#F1F2F4', fg: '#55556D', label: ui('cpStatusDraft') };
-                const method = p.paymentMethod || p['paymentMethod$_identifier'] || '';
-                return (
-                  <div key={p.id} data-testid={`cp-movement-${p.id}`} style={{ border: '1px solid #E8E8ED', borderRadius: 10, padding: '10px 14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                        <span className="tabular-nums" style={{ font: '600 14px/18px Inter', color: INK }}>{fmt(p.amount, currency)}</span>
-                        <span style={{ font: '500 10px/14px Inter', padding: '1px 8px', borderRadius: 9999, background: badge.bg, color: badge.fg }}>{badge.label}</span>
-                      </div>
-                      <button type="button" onClick={() => navToPayment(p.id)}
-                        style={{ font: '500 11px/1 Inter', color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                        {ui('viewArrow')}
-                      </button>
-                    </div>
-                    <div style={{ font: '400 11px/15px Inter', color: '#9ca3af', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      #{p.documentNo || p.id}{method ? ` · ${method}` : ''} · {fmtDate(p.paymentDate)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+            <button type="button" onClick={onClose} aria-label={ui('close')}
+              style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
+          </div>
 
-        {/* Footer */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '12px 22px', borderTop: '1px solid #E8E8ED', background: '#fff' }}>
-          <span style={{ font: '400 12px/16px Inter', color: '#9ca3af' }}>{countLabel}</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button type="button" onClick={onClose}
-              style={{ font: '500 13px/1 Inter', padding: '8px 16px', borderRadius: 8, border: '1px solid #D1D1DB', background: '#fff', color: '#3F3F50', cursor: 'pointer' }}>
-              {ui('close')}
-            </button>
-            {canAdd && (
-              <button type="button" data-testid="cp-add-payment" onClick={() => setShowNew(true)}
-                style={{ font: '600 13px/1 Inter', padding: '8px 16px', borderRadius: 8, border: 'none', background: INK, color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 15, lineHeight: 1 }}>+</span>{addLabel}
-              </button>
+          {/* Stats */}
+          <div style={{ display: 'flex', gap: 32, padding: '14px 22px', borderBottom: '1px solid #E8E8ED', background: '#FCFCFD' }}>
+            <div>
+              <div style={{ font: '400 11px/14px Inter', color: '#6C6C89' }}>{ui('cpTotalAmount')}</div>
+              <div className="tabular-nums" style={{ font: '700 19px/24px Inter', color: INK }}>{fmt(totalAmount, currency)}</div>
+            </div>
+            <div style={{ paddingLeft: 32, borderLeft: '1px solid #E8E8ED' }}>
+              <div style={{ font: '400 11px/14px Inter', color: '#6C6C89' }}>{ui('pendingBalanceLabel')}</div>
+              <div className="tabular-nums" style={{ font: '700 19px/24px Inter', color: outstanding > 0 ? AMBER : GREEN_FG }}>{fmt(outstanding, currency)}</div>
+            </div>
+          </div>
+
+          {/* Body — movements list / empty state */}
+          <div className="flex-1 overflow-y-auto" style={{ padding: '14px 22px' }}>
+            {isLoading ? (
+              <div style={{ font: '400 13px/18px Inter', color: '#9ca3af', textAlign: 'center', padding: '32px 0' }}>{ui('loading')}</div>
+            ) : count === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '36px 0' }}>
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: '#F1F2F4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="13" y2="17" /></svg>
+                </div>
+                <div style={{ font: '400 13px/18px Inter', color: '#6C6C89', textAlign: 'center' }}>{emptyLabel}</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {payments.map(p => {
+                  const deposited = isDeposited(p);
+                  const badge = deposited
+                    ? { bg: GREEN_BG, fg: GREEN_FG, label: ui('cpStatusDeposited') }
+                    : { bg: '#F1F2F4', fg: '#55556D', label: ui('cpStatusDraft') };
+                  const method = p.paymentMethod || p['paymentMethod$_identifier'] || '';
+                  return (
+                    <div key={p.id} data-testid={`cp-movement-${p.id}`} style={{ border: '1px solid #E8E8ED', borderRadius: 10, padding: '10px 14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                          <span className="tabular-nums" style={{ font: '600 14px/18px Inter', color: INK }}>{fmt(p.amount, currency)}</span>
+                          <span style={{ font: '500 10px/14px Inter', padding: '1px 8px', borderRadius: 9999, background: badge.bg, color: badge.fg }}>{badge.label}</span>
+                        </div>
+                        <button type="button" onClick={() => navToPayment(p.id)}
+                          style={{ font: '500 11px/1 Inter', color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                          {ui('viewArrow')}
+                        </button>
+                      </div>
+                      <div style={{ font: '400 11px/15px Inter', color: '#9ca3af', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        #{p.documentNo || p.id}{method ? ` · ${method}` : ''} · {fmtDate(p.paymentDate)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
+          </div>
+
+          {/* Footer */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '12px 22px', borderTop: '1px solid #E8E8ED', background: '#fff' }}>
+            <span style={{ font: '400 12px/16px Inter', color: '#9ca3af' }}>{countLabel}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button type="button" onClick={onClose}
+                style={{ font: '500 13px/1 Inter', padding: '8px 16px', borderRadius: 8, border: '1px solid #D1D1DB', background: '#fff', color: '#3F3F50', cursor: 'pointer' }}>
+                {ui('close')}
+              </button>
+              {canAdd && (
+                <button type="button" data-testid="cp-add-payment" onClick={() => setShowNew(true)}
+                  style={{ font: '600 13px/1 Inter', padding: '8px 16px', borderRadius: 8, border: 'none', background: INK, color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 15, lineHeight: 1 }}>+</span>{addLabel}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    )}
-
+      )}
       {showNew && (
         <NewPaymentEntryModal
           dir={dir}
@@ -447,7 +446,7 @@ export default function InvoicePaymentModal({
           apiBaseUrl={apiBaseUrl}
           onClose={() => setShowNew(false)}
           onSaved={handleSaved}
-        />
+          data-testid="NewPaymentEntryModal__284351" />
       )}
     </>
   );
