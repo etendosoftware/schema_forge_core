@@ -116,64 +116,96 @@ describe('usePaymentBalance', () => {
   });
 
   describe('toggleLine auto-consume', () => {
-    it('consumes only what is still missing, capped to availability', () => {
-      const { result } = setup({ total: 1000, dir: 'in', sources: [ABONO] });
-      act(() => result.current.onAmountChange('700')); // missing 300
-      act(() => result.current.toggleLine('a1'));
-      const line = result.current.lines.find(l => l.id === 'a1');
-      expect(line.sel).toBe(true);
-      expect(line.use).toBe(300); // min(avail 500, needed 300)
-      expect(result.current.usedCredit).toBe(300);
-      expect(result.current.funds).toBe(1000);
-      expect(result.current.isExact).toBe(true);
-    });
-
-    it('caps consumption at availability when more is needed', () => {
-      const { result } = setup({ total: 1000, dir: 'in', sources: [CREDIT] });
-      act(() => result.current.onAmountChange('0')); // missing 1000
-      act(() => result.current.toggleLine('c1'));
-      const line = result.current.lines.find(l => l.id === 'c1');
-      expect(line.use).toBe(200); // capped at avail
-      expect(result.current.usedCredit).toBe(200);
-      expect(result.current.isPartial).toBe(true);
-    });
-
-    it('consumes the full available amount when nothing is missing', () => {
-      const { result } = setup({ total: 1000, dir: 'in', sources: [CREDIT] });
-      // amount already covers the invoice → needed 0 → consume full avail
-      act(() => result.current.toggleLine('c1'));
-      const line = result.current.lines.find(l => l.id === 'c1');
-      expect(line.use).toBe(200);
-    });
-
-    it('deselecting a line zeroes its usage', () => {
+    // Selecting a line consumes min(avail, applied - usedByOtherSelected) — it
+    // caps at the FULL invoice need (not the remaining cash), then drops cash so
+    // credit + cash == applied (diff stays 0, no artificial excess).
+    it('caps use at need and drops cash so the balance stays exact', () => {
+      // applied 1000, abono avail 500 < need 1000 → use full 500, cash → 500.
       const { result } = setup({ total: 1000, dir: 'in', sources: [ABONO] });
       act(() => result.current.onAmountChange('700'));
       act(() => result.current.toggleLine('a1'));
-      expect(result.current.usedCredit).toBe(300);
+      const line = result.current.lines.find(l => l.id === 'a1');
+      expect(line.sel).toBe(true);
+      expect(line.use).toBe(500);          // min(avail 500, need 1000)
+      expect(result.current.amount).toBe(500); // cash = applied - use
+      expect(result.current.usedCredit).toBe(500);
+      expect(result.current.funds).toBe(1000);
+      expect(result.current.diff).toBe(0);
+      expect(result.current.isExact).toBe(true);
+    });
+
+    it('uses only `applied` and zeroes cash when the line exceeds the invoice total', () => {
+      // abono avail 1500 > need 1000 → use capped at 1000, cash → 0.
+      const big = { ...ABONO, avail: 1500 };
+      const { result } = setup({ total: 1000, dir: 'in', sources: [big] });
       act(() => result.current.toggleLine('a1'));
+      const line = result.current.lines.find(l => l.id === 'a1');
+      expect(line.use).toBe(1000);         // min(avail 1500, need 1000)
+      expect(result.current.amount).toBe(0); // cash → 0, no excess
+      expect(result.current.usedCredit).toBe(1000);
+      expect(result.current.diff).toBe(0);
+      expect(result.current.isExact).toBe(true);
+    });
+
+    it('caps consumption at availability when the line is smaller than the need', () => {
+      // credit avail 200 < need 1000 → use 200, cash → 800 (still exact).
+      const { result } = setup({ total: 1000, dir: 'in', sources: [CREDIT] });
+      act(() => result.current.toggleLine('c1'));
+      const line = result.current.lines.find(l => l.id === 'c1');
+      expect(line.use).toBe(200);          // capped at avail
+      expect(result.current.amount).toBe(800);
+      expect(result.current.usedCredit).toBe(200);
+      expect(result.current.diff).toBe(0);
+      expect(result.current.isExact).toBe(true);
+    });
+
+    it('deselecting a line zeroes its usage and returns the freed amount to cash', () => {
+      const { result } = setup({ total: 1000, dir: 'in', sources: [ABONO] });
+      act(() => result.current.toggleLine('a1')); // use 500, cash 500
+      expect(result.current.usedCredit).toBe(500);
+      expect(result.current.amount).toBe(500);
+      act(() => result.current.toggleLine('a1')); // deselect
       const line = result.current.lines.find(l => l.id === 'a1');
       expect(line.sel).toBe(false);
       expect(line.use).toBe(0);
       expect(result.current.usedCredit).toBe(0);
+      expect(result.current.amount).toBe(1000); // freed credit returns to cash
+      expect(result.current.diff).toBe(0);
+    });
+
+    it('a second credit line caps at the remaining need after the first', () => {
+      // credit 200 used first (cash 800). Then abono 500 → need now 800,
+      // use min(500, 800) = 500, cash drops to 300. credit total 700, exact.
+      const { result } = setup({ total: 1000, dir: 'in', sources: [CREDIT, ABONO] });
+      act(() => result.current.toggleLine('c1')); // use 200, cash 800
+      act(() => result.current.toggleLine('a1')); // need 800, use 500, cash 300
+      const c = result.current.lines.find(l => l.id === 'c1');
+      const a = result.current.lines.find(l => l.id === 'a1');
+      expect(c.use).toBe(200);
+      expect(a.use).toBe(500);
+      expect(result.current.usedCredit).toBe(700);
+      expect(result.current.amount).toBe(300);
+      expect(result.current.diff).toBe(0);
+      expect(result.current.isExact).toBe(true);
     });
   });
 
   describe('stepLine clamping', () => {
-    it('clamps to [0, avail]', () => {
+    // stepLine adjusts use within [0, avail] and does NOT touch cash.
+    it('clamps to avail and leaves cash untouched', () => {
       const { result } = setup({ total: 1000, dir: 'in', sources: [CREDIT] });
-      act(() => result.current.onAmountChange('900')); // missing 100
-      act(() => result.current.toggleLine('c1')); // use 100
-      act(() => result.current.stepLine('c1', 100)); // 200 (== avail)
-      expect(result.current.lines.find(l => l.id === 'c1').use).toBe(200);
+      act(() => result.current.toggleLine('c1')); // use 200 (== avail), cash 800
+      const cashAfterToggle = result.current.amount;
       act(() => result.current.stepLine('c1', 100)); // clamp at avail 200
       expect(result.current.lines.find(l => l.id === 'c1').use).toBe(200);
+      expect(result.current.amount).toBe(cashAfterToggle); // cash unchanged
     });
 
     it('never drops below 0', () => {
       const { result } = setup({ total: 1000, dir: 'in', sources: [CREDIT] });
-      act(() => result.current.onAmountChange('900'));
-      act(() => result.current.toggleLine('c1')); // use 100
+      act(() => result.current.toggleLine('c1')); // use 200
+      act(() => result.current.stepLine('c1', -100)); // 100
+      expect(result.current.lines.find(l => l.id === 'c1').use).toBe(100);
       act(() => result.current.stepLine('c1', -100)); // 0
       act(() => result.current.stepLine('c1', -100)); // clamp at 0
       expect(result.current.lines.find(l => l.id === 'c1').use).toBe(0);
@@ -223,6 +255,29 @@ describe('usePaymentBalance', () => {
     it('is empty when no line is selected', () => {
       const { result } = setup({ total: 1000, dir: 'in', sources: [CREDIT] });
       expect(result.current.consumedSources).toEqual([]);
+    });
+  });
+
+  describe('async source re-seed', () => {
+    it('re-seeds the credit lines when sources arrive after mount', () => {
+      // Credit/abono sources are fetched asynchronously: the hook starts with an
+      // empty list and a useEffect re-seeds `lines` once `sources` changes.
+      const { result, rerender } = setup({ total: 1000, dir: 'in', sources: [] });
+      expect(result.current.lines).toHaveLength(0);
+
+      rerender({ total: 1000, dir: 'in', sources: [CREDIT, ABONO] });
+      expect(result.current.lines).toHaveLength(2);
+      // Re-seeded lines start unselected with zero usage.
+      expect(result.current.lines.every(l => l.sel === false && l.use === 0)).toBe(true);
+      expect(result.current.lines.map(l => l.id)).toEqual(['c1', 'a1']);
+    });
+
+    it('the re-seeded lines are immediately selectable', () => {
+      const { result, rerender } = setup({ total: 1000, dir: 'in', sources: [] });
+      rerender({ total: 1000, dir: 'in', sources: [CREDIT] });
+      act(() => result.current.toggleLine('c1'));
+      expect(result.current.lines.find(l => l.id === 'c1').use).toBe(200);
+      expect(result.current.usedCredit).toBe(200);
     });
   });
 
