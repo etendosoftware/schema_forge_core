@@ -288,6 +288,7 @@ export default function NewPaymentEntryModal({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [dateInvalid, setDateInvalid] = useState(false);
 
   const balance = usePaymentBalance({ total, dir, sources });
 
@@ -327,8 +328,10 @@ export default function NewPaymentEntryModal({
 
   // ── save / confirm ────────────────────────────────────────────────────────
   const submit = useCallback(async (process) => {
+    if (!date) { setDateInvalid(true); setError(ui('paymentDateRequired')); return; }
     if (!scheduleId) { setError(ui('paymentRequestFailed')); return; }
     if (!accountId) { setError(ui('paymentAccountRequired')); return; }
+    setDateInvalid(false);
     setSaving(true);
     setError(null);
     try {
@@ -361,7 +364,7 @@ export default function NewPaymentEntryModal({
   const typeBadge = isReceipt ? ui('cpBadgeCollection') : ui('cpBadgePayment');
   const deltaLabel = deltaLabelFor(balance, ui);
   const deltaColor = balance.isPartial ? RED_FG : GREEN_FG;
-  const confirmDisabled = saving || !balance.canConfirm;
+  const confirmDisabled = saving || !date || !balance.canConfirm;
 
   return (
     <div
@@ -411,7 +414,11 @@ export default function NewPaymentEntryModal({
               </div>
             </Field>
             <Field label={ui('date')} data-testid="Field__7727b3">
-              <DateField value={date} onChange={setDate} data-testid="DateField__7727b3" />
+              <DateField
+                value={date}
+                onChange={(v) => { setDate(v); if (dateInvalid) setDateInvalid(false); }}
+                className={dateInvalid ? 'border-red-500 focus-within:ring-red-500' : ''}
+                data-testid="DateField__7727b3" />
             </Field>
             <Field label={ui('cpPaymentMethod')} data-testid="Field__7727b3">
               <Select value={methodId} onValueChange={setMethodId} data-testid="Select__7727b3">

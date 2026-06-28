@@ -243,4 +243,41 @@ describe('NewPaymentEntryModal', () => {
       expect(props.onClose).toHaveBeenCalled();
     });
   });
+
+  // ETP-4005 "date required" validation, ported into NewPaymentEntryModal.
+  describe('date validation', () => {
+    it('disables Confirmar when the date field is cleared', async () => {
+      renderModal();
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      const confirm = screen.getByTestId('cp-confirm');
+      // Prefilled with today on mount → enabled (exact balance).
+      await waitFor(() => expect(confirm).not.toBeDisabled());
+
+      fireEvent.change(screen.getByTestId('date-field'), { target: { value: '' } });
+      expect(confirm).toBeDisabled();
+    });
+
+    it('shows the paymentDateRequired error when saving a draft with an empty date', async () => {
+      renderModal();
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      fireEvent.change(screen.getByTestId('date-field'), { target: { value: '' } });
+
+      fireEvent.click(screen.getByTestId('cp-save-draft'));
+
+      // The useUI mock returns the key as-is, so assert the i18n key.
+      expect(await screen.findByText('paymentDateRequired')).toBeInTheDocument();
+    });
+
+    it('does not POST registerPayment when saving with an empty date', async () => {
+      renderModal();
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      fireEvent.change(screen.getByTestId('date-field'), { target: { value: '' } });
+
+      fireEvent.click(screen.getByTestId('cp-save-draft'));
+
+      await waitFor(() => expect(screen.getByText('paymentDateRequired')).toBeInTheDocument());
+      const registerCall = mockApiFetch.mock.calls.find(c => c[0].includes('registerPayment'));
+      expect(registerCall).toBeFalsy();
+    });
+  });
 });
