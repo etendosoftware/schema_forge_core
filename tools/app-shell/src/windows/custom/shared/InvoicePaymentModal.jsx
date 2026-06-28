@@ -41,6 +41,12 @@ function isDeposited(p) {
   return DEPOSITED_STATUSES.includes(p.status || '');
 }
 
+/** Toast message after a save: draft saved, or deposited (by direction). */
+function savedToastMessage(state, isReceipt, ui) {
+  if (state !== 'deposited') return ui('cpDraftSaved');
+  return isReceipt ? ui('cpCollectionDeposited') : ui('cpPaymentDeposited');
+}
+
 // ─── PAYMENT REGISTER FORM ──────────────────────────────────────────────────
 // Retained for backward compatibility and standalone use (and its validation
 // test). The two-step Cobros/Pagos flow uses NewPaymentEntryModal instead.
@@ -353,9 +359,7 @@ export default function InvoicePaymentModal({
     fetchPayments();
     fetchInstallments();
     onPaymentAdded?.();
-    const msg = state === 'deposited'
-      ? (isReceipt ? ui('cpCollectionDeposited') : ui('cpPaymentDeposited'))
-      : ui('cpDraftSaved');
+    const msg = savedToastMessage(state, isReceipt, ui);
     window.dispatchEvent(new CustomEvent('neo:toast', { detail: { type: 'success', message: msg } }));
   };
 
