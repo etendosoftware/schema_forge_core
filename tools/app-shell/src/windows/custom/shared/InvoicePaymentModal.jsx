@@ -5,6 +5,7 @@ import { useApiFetch } from '@/auth/useApiFetch.js';
 import { useUI } from '@/i18n';
 import { formatCurrency } from '@/lib/formatCurrency';
 import NewPaymentEntryModal from './NewPaymentEntryModal.jsx';
+import { trackDocumentCreated } from '@/lib/observability/health-events.js';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -318,6 +319,7 @@ export default function InvoicePaymentModal({
 
   const handleSaved = (result, state) => {
     setShowNew(false);
+    trackDocumentCreated(specName === 'purchase-invoice' ? 'payment-out' : 'payment-in');
     setLoadingPayments(true);
     fetchPayments();
     fetchInstallments();
