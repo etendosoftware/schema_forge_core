@@ -11,7 +11,8 @@ import { CURRENCY_OPTIONS } from './mockCatalogs.js';
  * figma-spec.md:
  *  - editable: name, accrual (Devengo/Caja), description, currency
  *  - automaticPeriodControl toggle bound INVERTED (toggle ON ⇒ AutoPeriodControl=N)
- *  - read-only from AD_OrgInfo: fiscal calendar, organization (Phase 3 sources them)
+ *  - read-only org-scoped: fiscal calendar, organization (sourced live by the
+ *    aggregate handler from the org's calendar + name; mock seed is the fallback)
  *  - 4 non-functional placeholders: conversion type, cost precision (selects) +
  *    auto-reconciliation, journal numbering (toggles)
  */

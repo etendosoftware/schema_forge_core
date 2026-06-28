@@ -12,9 +12,10 @@ import {
  * Dimensions (list of {active, mandatory} per row). Documents is read-only and
  * not tracked here.
  *
- * Data is seeded from mockCatalogs while the NEO backend is greenfield. The save
- * handler collects the dirty fields per entity and is wired to a real
- * multi-entity persist in Phase 3 (see TODO at `save()`).
+ * At runtime the aggregate is loaded via GET and `save()` POSTs the dirty fields
+ * per entity; both are handled transactionally by GeneralLedgerConfigurationHandler
+ * in com.etendoerp.go. The mockCatalogs seed is the offline fallback used when NEO
+ * is unreachable.
  */
 export function useGeneralLedgerConfig(apiBaseUrl) {
   const { selectedOrg } = useAuth();

@@ -87,9 +87,10 @@ export const GENERAL_SEED = {
   automaticPeriodControl: true, // AutoPeriodControl=Y ⇒ posting in closed periods OFF
 };
 
-// Read-only values that Phase 3 will source from AD_OrgInfo, not C_AcctSchema.
-// TODO(Phase 3): replace with a cross-entity read of AD_OrgInfo (C_Calendar_ID +
-// schema→org scope). Rendered read-only for now.
+// Offline fallback for the read-only org-scoped values (fiscal calendar +
+// organization label). At runtime these are sourced by the aggregate handler
+// (GeneralLedgerConfigurationHandler.buildOrgInfo — the org's calendar + name);
+// this seed is only used when NEO is unreachable. Always rendered read-only.
 export const ORG_INFO_SEED = {
   fiscalCalendar: 'Ejercicio 2026 · Ene–Dic',
   organization: '* — Todas las organizaciones',
