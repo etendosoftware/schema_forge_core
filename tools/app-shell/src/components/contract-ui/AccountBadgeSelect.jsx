@@ -58,7 +58,7 @@ export function AccountBadgeSelect({
 
   const triggerInner = selected ? (
     <span className="flex items-center gap-2 min-w-0">
-      <AccountBadge code={selected.code} />
+      <AccountBadge code={selected.code} data-testid="AccountBadge__2082a8" />
       <span className="truncate text-[#121217]">{selected.name}</span>
     </span>
   ) : (
@@ -88,21 +88,29 @@ export function AccountBadgeSelect({
   return (
     <div data-testid={dataTestId}>
       {labelRow}
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+      <Popover open={open} onOpenChange={setOpen} data-testid="Popover__2082a8">
+        <PopoverTrigger asChild data-testid="PopoverTrigger__2082a8">
           <button
             type="button"
             className={`flex w-full items-center justify-between gap-2 h-9 px-3 rounded-lg border ${borderClass} bg-white text-sm hover:border-[#C4C7D0] focus:outline-none focus:ring-2 focus:ring-primary transition-colors`}
           >
             <span className="flex items-center gap-2 min-w-0">{triggerInner}</span>
-            <ChevronDown size={16} className="shrink-0 text-[#9A9DA8]" />
+            <ChevronDown
+              size={16}
+              className="shrink-0 text-[#9A9DA8]"
+              data-testid="ChevronDown__2082a8" />
           </button>
         </PopoverTrigger>
-        <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)] min-w-[260px]" align="start">
-          <Command>
-            <CommandInput placeholder={searchPlaceholder ?? ui('search')} />
-            <CommandList>
-              <CommandEmpty>{ui('noResultsFound')}</CommandEmpty>
+        <PopoverContent
+          className="p-0 w-[var(--radix-popover-trigger-width)] min-w-[260px]"
+          align="start"
+          data-testid="PopoverContent__2082a8">
+          <Command data-testid="Command__2082a8">
+            <CommandInput
+              placeholder={searchPlaceholder ?? ui('search')}
+              data-testid="CommandInput__2082a8" />
+            <CommandList data-testid="CommandList__2082a8">
+              <CommandEmpty data-testid="CommandEmpty__2082a8">{ui('noResultsFound')}</CommandEmpty>
               {options.map((opt) => (
                 <CommandItem
                   key={opt.id}
@@ -112,10 +120,10 @@ export function AccountBadgeSelect({
                     setOpen(false);
                   }}
                   className="gap-2"
-                >
-                  <AccountBadge code={opt.code} />
+                  data-testid="CommandItem__2082a8">
+                  <AccountBadge code={opt.code} data-testid="AccountBadge__2082a8" />
                   <span className="truncate flex-1">{opt.name}</span>
-                  {opt.id === value && <Check size={16} className="text-primary" />}
+                  {opt.id === value && <Check size={16} className="text-primary" data-testid="Check__2082a8" />}
                 </CommandItem>
               ))}
             </CommandList>

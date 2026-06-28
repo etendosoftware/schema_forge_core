@@ -22,14 +22,14 @@ export default function UnbackedHint({ withText = false }) {
   const ui = useUI();
   return (
     <span className="inline-flex items-center gap-1 text-[#B7791F]" data-testid="glc-unbacked-hint">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
+      <TooltipProvider data-testid="TooltipProvider__4308b0">
+        <Tooltip data-testid="Tooltip__4308b0">
+          <TooltipTrigger asChild data-testid="TooltipTrigger__4308b0">
             <span className="inline-flex items-center" tabIndex={0} aria-label={ui('glc.unbacked.tooltip')}>
-              <Info size={13} className="text-[#B7791F]" />
+              <Info size={13} className="text-[#B7791F]" data-testid="Info__4308b0" />
             </span>
           </TooltipTrigger>
-          <TooltipContent className="max-w-[220px] text-xs">{ui('glc.unbacked.tooltip')}</TooltipContent>
+          <TooltipContent className="max-w-[220px] text-xs" data-testid="TooltipContent__4308b0">{ui('glc.unbacked.tooltip')}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
       {withText && <span className="text-[11px] font-normal">{ui('glc.unbacked.label')}</span>}

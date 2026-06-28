@@ -70,7 +70,6 @@ export default function GeneralTab({ general, orgInfo, currencyOptions = CURRENC
           </div>
         </div>
       </SectionShell>
-
       {/* Calendario y moneda */}
       <SectionShell title={ui('glc.section.calendar.title')} data-testid="glc-section-calendar">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -106,7 +105,6 @@ export default function GeneralTab({ general, orgInfo, currencyOptions = CURRENC
           />
         </div>
       </SectionShell>
-
       {/* Políticas contables */}
       <SectionShell
         title={ui('glc.section.policies.title')}
@@ -124,7 +122,7 @@ export default function GeneralTab({ general, orgInfo, currencyOptions = CURRENC
             label={ui('glc.toggle.autoReconciliation')}
             checked
             disabled
-            hint={<UnbackedHint withText />}
+            hint={<UnbackedHint withText data-testid="UnbackedHint__b7a57d" />}
             data-testid="glc-toggle-auto-reconciliation"
           />
           <ToggleRow
@@ -132,7 +130,7 @@ export default function GeneralTab({ general, orgInfo, currencyOptions = CURRENC
             caption={ui('glc.toggle.journalNumbering.caption')}
             checked
             disabled
-            hint={<UnbackedHint withText />}
+            hint={<UnbackedHint withText data-testid="UnbackedHint__b7a57d" />}
             data-testid="glc-toggle-journal-numbering"
           />
         </div>

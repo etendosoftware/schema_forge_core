@@ -87,18 +87,21 @@ export default function GeneralLedgerConfigPage({ apiBaseUrl }) {
     <div className="relative h-full flex flex-col overflow-hidden">
       {/* Tab row: tabs left, dirty-state save button right */}
       <div className="flex-shrink-0 flex items-center justify-between border-b border-[#E8EAEF] pr-6">
-        <TabBar tabs={tabs} active={activeTab} onChange={setActiveTab} />
+        <TabBar
+          tabs={tabs}
+          active={activeTab}
+          onChange={setActiveTab}
+          data-testid="TabBar__79cd86" />
         <Button
           onClick={handleSave}
           disabled={!selectedOrg?.id || !isDirty || saving || loading}
           className={savedOk ? 'bg-green-600 hover:bg-green-700 border-green-600' : ''}
           data-testid="glc-save"
         >
-          <Check size={14} className="mr-1.5" />
+          <Check size={14} className="mr-1.5" data-testid="Check__79cd86" />
           {ui('saveChanges')}
         </Button>
       </div>
-
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-[1100px] mx-auto px-6 py-2">
           {!selectedOrg?.id && (
@@ -113,7 +116,7 @@ export default function GeneralLedgerConfigPage({ apiBaseUrl }) {
               currencyOptions={catalogs.currencies}
               setGeneralField={setGeneralField}
               errors={generalErrors}
-            />
+              data-testid="GeneralTab__79cd86" />
           )}
           {activeTab === 1 && (
             <DefaultsTab
@@ -121,17 +124,20 @@ export default function GeneralLedgerConfigPage({ apiBaseUrl }) {
               accountOptions={catalogs.accounts}
               setDefaultField={setDefaultField}
               errors={defaultsErrors}
-            />
+              data-testid="DefaultsTab__79cd86" />
           )}
           {activeTab === 2 && (
-            <DimensionsTab dimensions={dimensions} setDimensionField={setDimensionField} />
+            <DimensionsTab
+              dimensions={dimensions}
+              setDimensionField={setDimensionField}
+              data-testid="DimensionsTab__79cd86" />
           )}
           {activeTab === 3 && (
             <DocumentsTab
               documents={documents}
               documentsBacked={Boolean(meta.documentsBacked)}
               documentsNote={meta.documentsNote}
-            />
+              data-testid="DocumentsTab__79cd86" />
           )}
         </div>
       </div>

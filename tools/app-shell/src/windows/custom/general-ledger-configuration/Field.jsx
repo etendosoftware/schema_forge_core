@@ -45,7 +45,7 @@ export default function Field({
   if (readOnly) {
     return (
       <div data-testid={dataTestId}>
-        <FieldLabel label={label} required={required} />
+        <FieldLabel label={label} required={required} data-testid="FieldLabel__39edc8" />
         <div className="flex items-center h-9 px-3 rounded-lg border border-[#E8EAEF] bg-[#F8F9FB] text-sm text-[#121217]">
           {value || '—'}
         </div>
@@ -61,10 +61,10 @@ export default function Field({
   if (unbacked) {
     return (
       <div data-testid={dataTestId}>
-        <FieldLabel label={label} required={required} />
+        <FieldLabel label={label} required={required} data-testid="FieldLabel__39edc8" />
         <div className="flex items-center justify-between gap-2 h-9 px-3 rounded-lg border border-dashed border-[#E8D6A8] bg-[#FFFCF5] text-sm text-[#7A7E8A] cursor-not-allowed">
           <span className="truncate">{value || placeholder || '—'}</span>
-          <UnbackedHint />
+          <UnbackedHint data-testid="UnbackedHint__39edc8" />
         </div>
         <p className="mt-1 text-xs text-[#9A9DA8]">{ui('glc.unbacked.label')}</p>
       </div>
@@ -74,14 +74,19 @@ export default function Field({
   if (type === 'select') {
     return (
       <div data-testid={dataTestId}>
-        <FieldLabel label={label} required={required} />
-        <Select value={value ?? undefined} onValueChange={onChange}>
-          <SelectTrigger className={`h-9 bg-white ${borderClass} focus:ring-2 focus:ring-primary`}>
-            <SelectValue placeholder={placeholder} />
+        <FieldLabel label={label} required={required} data-testid="FieldLabel__39edc8" />
+        <Select
+          value={value ?? undefined}
+          onValueChange={onChange}
+          data-testid="Select__39edc8">
+          <SelectTrigger
+            className={`h-9 bg-white ${borderClass} focus:ring-2 focus:ring-primary`}
+            data-testid="SelectTrigger__39edc8">
+            <SelectValue placeholder={placeholder} data-testid="SelectValue__39edc8" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent data-testid="SelectContent__39edc8">
             {options.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>{opt.name}</SelectItem>
+              <SelectItem key={opt.value} value={opt.value} data-testid="SelectItem__39edc8">{opt.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -92,13 +97,13 @@ export default function Field({
 
   return (
     <div data-testid={dataTestId}>
-      <FieldLabel label={label} required={required} />
+      <FieldLabel label={label} required={required} data-testid="FieldLabel__39edc8" />
       <Input
         value={value ?? ''}
         onChange={(e) => onChange?.(e.target.value)}
         placeholder={placeholder}
         className={`h-9 bg-white ${borderClass} focus:ring-2 focus:ring-primary`}
-      />
+        data-testid="Input__39edc8" />
       {error && <p className="mt-1 text-xs text-[#D7373F]">{error}</p>}
     </div>
   );

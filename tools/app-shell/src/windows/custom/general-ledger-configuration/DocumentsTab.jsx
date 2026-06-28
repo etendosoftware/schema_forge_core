@@ -42,7 +42,7 @@ export default function DocumentsTab({ documents = DOCUMENTS_SEED, documentsBack
                   <td className="px-4 py-3">
                     {(accountCode || accountName) ? (
                       <span className="inline-flex items-center gap-2 min-w-0">
-                        <AccountBadge code={accountCode} />
+                        <AccountBadge code={accountCode} data-testid="AccountBadge__b64449" />
                         <span className="truncate text-[#121217]">{accountName ?? '—'}</span>
                       </span>
                     ) : (
@@ -50,7 +50,10 @@ export default function DocumentsTab({ documents = DOCUMENTS_SEED, documentsBack
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <StatusTag tone="success" label={ui('glc.status.mapped')} />
+                    <StatusTag
+                      tone="success"
+                      label={ui('glc.status.mapped')}
+                      data-testid="StatusTag__b64449" />
                   </td>
                 </tr>
               );
