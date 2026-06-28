@@ -149,7 +149,8 @@ describe('NewPaymentEntryModal', () => {
       renderModal();
       await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
       const confirm = screen.getByText('cpConfirm').closest('button');
-      expect(confirm).not.toBeDisabled();
+      // Confirm is gated on `loading`; wait until the catalog fetch settles.
+      await waitFor(() => expect(confirm).not.toBeDisabled());
     });
 
     it('disables Confirmar on unresolved excess (dir "in")', async () => {
@@ -167,7 +168,7 @@ describe('NewPaymentEntryModal', () => {
       // The credit/refund radios appear in the excess band.
       fireEvent.click(screen.getByText('cpLeaveCredit').closest('button'));
       const confirm = screen.getByText('cpConfirm').closest('button');
-      expect(confirm).not.toBeDisabled();
+      await waitFor(() => expect(confirm).not.toBeDisabled());
     });
 
     it('disables Confirmar on any excess (dir "out") with an inline error', async () => {
