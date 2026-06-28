@@ -12,13 +12,24 @@ export function round2(n) {
   return Math.round((Number(n) || 0) * 100) / 100;
 }
 
+/** Inserts es-ES thousands separators without regex backtracking (ReDoS-safe). */
+function groupThousands(intStr) {
+  let out = '';
+  for (let i = 0; i < intStr.length; i += 1) {
+    if (i > 0 && (intStr.length - i) % 3 === 0) {
+      out += '.';
+    }
+    out += intStr[i];
+  }
+  return out;
+}
+
 /** Formats a number as a plain es-ES amount: "6.420,00" (no symbol). */
 export function formatPlain(n) {
   const value = Number.isFinite(n) ? n : 0;
   const neg = value < 0;
   const [intPart, decPart] = Math.abs(value).toFixed(2).split('.');
-  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  return `${neg ? '-' : ''}${grouped},${decPart}`;
+  return `${neg ? '-' : ''}${groupThousands(intPart)},${decPart}`;
 }
 
 /** Parses an es-ES amount string ("6.420,00") into a number, or null if blank/invalid. */

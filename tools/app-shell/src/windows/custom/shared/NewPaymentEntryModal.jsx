@@ -3,8 +3,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DateField } from '@/components/ui/date-field';
 import { useApiFetch } from '@/auth/useApiFetch.js';
 import { useUI } from '@/i18n';
-import { formatCurrency } from '@/lib/formatCurrency';
 import { usePaymentBalance, formatPlain } from './usePaymentBalance.js';
+import { DirBadge } from './paymentModalUi.jsx';
 
 // ─── design tokens (Etendo Design System — from the cobros/pagos handoff) ─────
 const INK = '#121217';
@@ -33,22 +33,67 @@ function fmtCur(n, currency) {
   return `${formatPlain(n)} ${curSuffix(currency)}`.trim();
 }
 
-// ─── direction badge (arrow down = receipt in, arrow up = payment out) ────────
-function DirBadge({ dir, size = 36 }) {
-  const isIn = dir === 'in';
-  const s = Math.round(size * 0.5);
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: 8, flexShrink: 0,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: isIn ? GREEN_BG : RED_BG, color: isIn ? GREEN_FG : RED_FG,
-    }}>
-      <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-        {isIn ? <><path d="M12 5v14" /><polyline points="19 12 12 19 5 12" /></>
-              : <><path d="M12 19V5" /><polyline points="5 12 12 5 19 12" /></>}
-      </svg>
-    </div>
-  );
+/** Label for the balance delta (excess / missing / exact). */
+function deltaLabelFor(balance, ui) {
+  if (balance.isExcess) return ui('cpExcess');
+  if (balance.isPartial) return ui('cpMissing');
+  return ui('cpDifference');
+}
+
+/** Over-payment action sent to the backend (only relevant when there is excess). */
+function overpaymentActionFor(balance) {
+  if (!balance.isExcess) return undefined;
+  return balance.excessMode === 'refund' ? 'refund' : 'leave-credit';
+}
+
+/** Reads a fetch response body as JSON, or null when the response failed. */
+async function readJson(res) {
+  return res?.ok ? res.json() : null;
+}
+
+function mapAccounts(json) {
+  return (json?.items || []).map(a => ({
+    id: a.id, name: a.label || a.name, defaultMethod: a.defaultPaymentMethod,
+  }));
+}
+
+function mapMethods(json) {
+  const items = json?.items || json?.response?.data || [];
+  return items.map(m => ({ id: m.id, name: m.label || m._identifier || m.name }));
+}
+
+function mapSources(json) {
+  const items = json?.items || json?.response?.data || [];
+  return items.map(s => ({
+    id: s.id, kind: s.kind === 'abono' ? 'abono' : 'credit',
+    doc: s.doc || s.documentNo || s.id, date: s.date || '', note: s.note || '',
+    avail: Number(s.avail ?? s.available ?? 0), psdId: s.psdId, paymentId: s.paymentId,
+  }));
+}
+
+/** Default method id: the first account's default (by name) if present, else the first method. */
+function pickMethodId(accList, methList) {
+  const def = accList[0]?.defaultMethod;
+  const match = def ? methList.find(m => m.name === def) : null;
+  return (match || methList[0])?.id || '';
+}
+
+/** Resolves the first pending installment's schedule id from the payment plan. */
+async function fetchPendingSchedule(apiFetch, specName, invoiceId) {
+  const res = await apiFetch(
+    `/${specName}/paymentPlan?parentId=${invoiceId}&_startRow=0&_endRow=50`).catch(() => null);
+  if (!res?.ok) return '';
+  const plan = (await res.json())?.response?.data || [];
+  const pending = plan.find(p => parseFloat(p.outstandingAmount) > 0) || plan[0];
+  return pending ? (pending.finPaymentScheduleID || pending.id || '') : '';
+}
+
+/** Extracts a user-facing error message from a failed register response. */
+function extractSaveError(json, ui) {
+  return json?.response?.error?.message
+    || json?.response?.message?.text
+    || json?.response?.message
+    || ui('cpSaveFailed');
 }
 
 function Check({ checked, size = 17 }) {
@@ -164,6 +209,38 @@ function CreditGroup({ kind, title, hint, rows, currency, ui, balance }) {
   );
 }
 
+// ─── excess band — receipts offer credit/refund; payments block with inline error ─
+function ExcessBand({ balance, currency, ui, isReceipt }) {
+  if (!balance.isExcess) {
+    return null;
+  }
+  const amount = fmtCur(balance.excessAmount, currency);
+  if (!isReceipt) {
+    return (
+      <div style={{ padding: '10px 14px', background: RED_BG, border: `1px solid ${RED_FG}33`, borderRadius: 10, font: '600 13px/18px Inter', color: RED_FG }}>
+        {ui('cpExcessInline', { amount })}
+      </div>
+    );
+  }
+  return (
+    <div style={{ padding: '12px 14px', background: '#E9F8EF', border: '1px solid #BEE6CF', borderRadius: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 10 }}>
+        <span style={{ font: '600 13px/18px Inter', color: GREEN_FG }}>{ui('cpExcessQuestion', { amount })}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button type="button" data-testid="cp-excess-credit" onClick={() => balance.setExcessMode('credit')} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', borderRadius: 9, border: `1px solid ${balance.excessMode === 'credit' ? GREEN_FG : BORDER2}`, background: balance.excessMode === 'credit' ? GREEN_BG : '#fff', cursor: 'pointer', textAlign: 'left' }}>
+          <Radio checked={balance.excessMode === 'credit'} data-testid="Radio__7727b3" />
+          <div><div style={{ font: '600 13px/17px Inter', color: INK }}>{ui('cpLeaveCredit')}</div><div style={{ font: '400 11px/15px Inter', color: FG3 }}>{ui('cpLeaveCreditHint', { amount })}</div></div>
+        </button>
+        <button type="button" data-testid="cp-excess-refund" onClick={() => balance.setExcessMode('refund')} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', borderRadius: 9, border: `1px solid ${balance.excessMode === 'refund' ? GREEN_FG : BORDER2}`, background: balance.excessMode === 'refund' ? GREEN_BG : '#fff', cursor: 'pointer', textAlign: 'left' }}>
+          <Radio checked={balance.excessMode === 'refund'} data-testid="Radio__7727b3" />
+          <div><div style={{ font: '600 13px/17px Inter', color: INK }}>{ui('cpGiveChange')}</div><div style={{ font: '400 11px/15px Inter', color: FG3 }}>{ui('cpGiveChangeHint', { amount })}</div></div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /**
  * NewPaymentEntryModal — step 2 of the two-step Cobros/Pagos flow.
  * Opens from the invoice payment-history popup ("+ Añadir cobro/pago").
@@ -219,61 +296,34 @@ export default function NewPaymentEntryModal({
     let cancelled = false;
     (async () => {
       try {
-        const post = (action) => apiFetch(`/${specName}/header/${invoiceId}/action/${action}`, { method: 'POST', body: '{}' });
-
+        const post = (action) => apiFetch(`/${specName}/header/${invoiceId}/action/${action}`,
+          { method: 'POST', body: '{}' }).catch(() => null);
         const [accRes, methRes, srcRes] = await Promise.all([
-          post('invoiceAccounts').catch(() => null),
-          post('invoicePaymentMethods').catch(() => null),
-          post('invoiceCreditSources').catch(() => null),
+          post('invoiceAccounts'), post('invoicePaymentMethods'), post('invoiceCreditSources'),
         ]);
-
         if (cancelled) return;
 
-        let accList = [];
-        if (accRes?.ok) {
-          const json = await accRes.json();
-          accList = (json.items || []).map(a => ({ id: a.id, name: a.label || a.name, defaultMethod: a.defaultPaymentMethod }));
-          setAccounts(accList);
-          if (accList.length) setAccountId(accList[0].id);
-        }
-
-        let methList = [];
-        if (methRes?.ok) {
-          const json = await methRes.json();
-          const items = json.items || json?.response?.data || [];
-          methList = items.map(m => ({ id: m.id, name: m.label || m._identifier || m.name }));
-          setMethods(methList);
-        }
-        // default method = first account's default (by name), else first method
-        const def = accList[0]?.defaultMethod;
-        const match = def ? methList.find(m => m.name === def) : null;
-        if (match) setMethodId(match.id);
-        else if (methList.length) setMethodId(methList[0].id);
-
-        if (srcRes?.ok) {
-          const json = await srcRes.json();
-          const items = json.items || json?.response?.data || [];
-          setSources(items.map(s => ({
-            id: s.id, kind: s.kind === 'abono' ? 'abono' : 'credit',
-            doc: s.doc || s.documentNo || s.id, date: s.date || '', note: s.note || '',
-            avail: Number(s.avail ?? s.available ?? 0), psdId: s.psdId, paymentId: s.paymentId,
-          })));
-        }
+        const accList = mapAccounts(await readJson(accRes));
+        const methList = mapMethods(await readJson(methRes));
+        setAccounts(accList);
+        setMethods(methList);
+        setSources(mapSources(await readJson(srcRes)));
+        if (accList.length) setAccountId(accList[0].id);
+        setMethodId(pickMethodId(accList, methList));
 
         if (!scheduleIdProp) {
-          const planRes = await apiFetch(`/${specName}/paymentPlan?parentId=${invoiceId}&_startRow=0&_endRow=50`).catch(() => null);
-          if (planRes?.ok && !cancelled) {
-            const plan = (await planRes.json())?.response?.data || [];
-            const pending = plan.find(p => parseFloat(p.outstandingAmount) > 0) || plan[0];
-            if (pending) setScheduleId(pending.finPaymentScheduleID || pending.id || '');
-          }
+          const sched = await fetchPendingSchedule(apiFetch, specName, invoiceId);
+          if (sched && !cancelled) setScheduleId(sched);
         }
       } catch { /* silent — fields degrade gracefully */ }
       finally { if (!cancelled) setLoading(false); }
     })();
     return () => { cancelled = true; };
+    // apiFetch is intentionally excluded: it is re-created per render by some
+    // callers (and by the test mock), which would re-run this effect on every
+    // render and loop. Re-fetch only when the target invoice changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiFetch, specName, invoiceId]);
+  }, [specName, invoiceId]);
 
   // ── save / confirm ────────────────────────────────────────────────────────
   const submit = useCallback(async (process) => {
@@ -290,16 +340,14 @@ export default function NewPaymentEntryModal({
         fin_paymentmethod_id: methodId || undefined,
         process, // 'draft' | 'confirm'
         creditSources: balance.consumedSources,
-        overpaymentAction: balance.isExcess
-          ? (balance.excessMode === 'refund' ? 'refund' : 'leave-credit')
-          : undefined,
+        overpaymentAction: overpaymentActionFor(balance),
       };
       const res = await apiFetch(`/${specName}/header/${invoiceId}/action/registerPayment`, {
         method: 'POST', body: JSON.stringify(body),
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || json?.response?.error || json?.response?.status === -1) {
-        throw new Error(json?.response?.error?.message || json?.response?.message?.text || json?.response?.message || ui('cpSaveFailed'));
+        throw new Error(extractSaveError(json, ui));
       }
       onSaved?.(json?.response?.data || {}, process === 'confirm' ? 'deposited' : 'draft');
     } catch (err) {
@@ -311,7 +359,7 @@ export default function NewPaymentEntryModal({
 
   const title = isReceipt ? ui('cpNewCollection') : ui('cpNewPayment');
   const typeBadge = isReceipt ? ui('cpBadgeCollection') : ui('cpBadgePayment');
-  const deltaLabel = balance.isExcess ? ui('cpExcess') : balance.isPartial ? ui('cpMissing') : ui('cpDifference');
+  const deltaLabel = deltaLabelFor(balance, ui);
   const deltaColor = balance.isPartial ? RED_FG : GREEN_FG;
   const confirmDisabled = saving || !balance.canConfirm;
 
@@ -426,29 +474,12 @@ export default function NewPaymentEntryModal({
             <button type="button" data-testid="cp-equalize" onClick={balance.equalize} style={{ height: 34, padding: '0 12px', borderRadius: 8, border: `1px solid ${BORDER2}`, background: '#fff', cursor: 'pointer', color: FG2, font: '500 12px/1 Inter' }}>{ui('cpEqualize')}</button>
           </div>
 
-          {/* excess — receipts offer credit/refund; payments block with inline error */}
-          {balance.isExcess && isReceipt && (
-            <div style={{ padding: '12px 14px', background: '#E9F8EF', border: '1px solid #BEE6CF', borderRadius: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 10 }}>
-                <span style={{ font: '600 13px/18px Inter', color: GREEN_FG }}>{ui('cpExcessQuestion', { amount: fmtCur(balance.excessAmount, currency) })}</span>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button type="button" data-testid="cp-excess-credit" onClick={() => balance.setExcessMode('credit')} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', borderRadius: 9, border: `1px solid ${balance.excessMode === 'credit' ? GREEN_FG : BORDER2}`, background: balance.excessMode === 'credit' ? GREEN_BG : '#fff', cursor: 'pointer', textAlign: 'left' }}>
-                  <Radio checked={balance.excessMode === 'credit'} data-testid="Radio__7727b3" />
-                  <div><div style={{ font: '600 13px/17px Inter', color: INK }}>{ui('cpLeaveCredit')}</div><div style={{ font: '400 11px/15px Inter', color: FG3 }}>{ui('cpLeaveCreditHint', { amount: fmtCur(balance.excessAmount, currency) })}</div></div>
-                </button>
-                <button type="button" data-testid="cp-excess-refund" onClick={() => balance.setExcessMode('refund')} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', borderRadius: 9, border: `1px solid ${balance.excessMode === 'refund' ? GREEN_FG : BORDER2}`, background: balance.excessMode === 'refund' ? GREEN_BG : '#fff', cursor: 'pointer', textAlign: 'left' }}>
-                  <Radio checked={balance.excessMode === 'refund'} data-testid="Radio__7727b3" />
-                  <div><div style={{ font: '600 13px/17px Inter', color: INK }}>{ui('cpGiveChange')}</div><div style={{ font: '400 11px/15px Inter', color: FG3 }}>{ui('cpGiveChangeHint', { amount: fmtCur(balance.excessAmount, currency) })}</div></div>
-                </button>
-              </div>
-            </div>
-          )}
-          {balance.isExcess && !isReceipt && (
-            <div style={{ padding: '10px 14px', background: RED_BG, border: `1px solid ${RED_FG}33`, borderRadius: 10, font: '600 13px/18px Inter', color: RED_FG }}>
-              {ui('cpExcessInline', { amount: fmtCur(balance.excessAmount, currency) })}
-            </div>
-          )}
+          <ExcessBand
+            balance={balance}
+            currency={currency}
+            ui={ui}
+            isReceipt={isReceipt}
+            data-testid="ExcessBand__7727b3" />
 
           {error && <div style={{ font: '500 12px/16px Inter', color: RED_FG }}>{error}</div>}
         </div>

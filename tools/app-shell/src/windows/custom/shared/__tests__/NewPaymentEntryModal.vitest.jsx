@@ -139,7 +139,8 @@ describe('NewPaymentEntryModal', () => {
         sources: [{ id: 's1', kind: 'credit', doc: 'AB-1', date: '2024-01-01', avail: 200 }],
       });
       renderModal();
-      expect(await screen.findByText('cpCreditSectionTitle')).toBeInTheDocument();
+      // Split-adaptive design: a "credit" source renders the credit group title.
+      expect(await screen.findByText('cpCreditGroupTitle')).toBeInTheDocument();
     });
   });
 

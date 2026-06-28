@@ -5,6 +5,7 @@ import { useApiFetch } from '@/auth/useApiFetch.js';
 import { useUI } from '@/i18n';
 import { formatCurrency } from '@/lib/formatCurrency';
 import NewPaymentEntryModal from './NewPaymentEntryModal.jsx';
+import { DirBadge } from './paymentModalUi.jsx';
 import { trackDocumentCreated } from '@/lib/observability/health-events.js';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
@@ -204,23 +205,51 @@ export function PaymentRegisterForm({
 const INK = '#121217';
 const GREEN_FG = '#17663A';
 const GREEN_BG = '#E2F7EA';
-const RED_FG = '#C5234A';
-const RED_BG = '#FDE2E9';
 const AMBER = '#A37700';
 
-function HistoryDirBadge({ dir, size = 36 }) {
-  const isIn = dir === 'in';
-  const s = Math.round(size * 0.5);
+/** Renders the history body: loading, empty state, or the movements list. */
+function MovementsBody({ isLoading, payments, emptyLabel, currency, ui, onView }) {
+  if (isLoading) {
+    return (
+      <div style={{ font: '400 13px/18px Inter', color: '#9ca3af', textAlign: 'center', padding: '32px 0' }}>{ui('loading')}</div>
+    );
+  }
+  if (payments.length === 0) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '36px 0' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 10, background: '#F1F2F4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="13" y2="17" /></svg>
+        </div>
+        <div style={{ font: '400 13px/18px Inter', color: '#6C6C89', textAlign: 'center' }}>{emptyLabel}</div>
+      </div>
+    );
+  }
   return (
-    <div style={{
-      width: size, height: size, borderRadius: 8, flexShrink: 0,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: isIn ? GREEN_BG : RED_BG, color: isIn ? GREEN_FG : RED_FG,
-    }}>
-      <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-        {isIn ? <><path d="M12 5v14" /><polyline points="19 12 12 19 5 12" /></>
-              : <><path d="M12 19V5" /><polyline points="5 12 12 5 19 12" /></>}
-      </svg>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {payments.map(p => {
+        const deposited = isDeposited(p);
+        const badge = deposited
+          ? { bg: GREEN_BG, fg: GREEN_FG, label: ui('cpStatusDeposited') }
+          : { bg: '#F1F2F4', fg: '#55556D', label: ui('cpStatusDraft') };
+        const method = p.paymentMethod || p['paymentMethod$_identifier'] || '';
+        return (
+          <div key={p.id} data-testid={`cp-movement-${p.id}`} style={{ border: '1px solid #E8E8ED', borderRadius: 10, padding: '10px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                <span className="tabular-nums" style={{ font: '600 14px/18px Inter', color: INK }}>{fmt(p.amount, currency)}</span>
+                <span style={{ font: '500 10px/14px Inter', padding: '1px 8px', borderRadius: 9999, background: badge.bg, color: badge.fg }}>{badge.label}</span>
+              </div>
+              <button type="button" onClick={() => onView(p.id)}
+                style={{ font: '500 11px/1 Inter', color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                {ui('viewArrow')}
+              </button>
+            </div>
+            <div style={{ font: '400 11px/15px Inter', color: '#9ca3af', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              #{p.documentNo || p.id}{method ? ` · ${method}` : ''} · {fmtDate(p.paymentDate)}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -352,7 +381,7 @@ export default function InvoicePaymentModal({
         >
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '18px 22px 16px', borderBottom: '1px solid #E8E8ED' }}>
-            <HistoryDirBadge dir={dir} size={36} data-testid="HistoryDirBadge__284351" />
+            <DirBadge dir={dir} size={36} data-testid="DirBadge__284351" />
             <div style={{ flex: 1, minWidth: 0 }}>
               <h2 style={{ margin: 0, font: '700 17px/22px Inter', color: INK, letterSpacing: '-0.01em' }}>{title}</h2>
               <div style={{ font: '400 12px/16px Inter', color: '#6C6C89', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -377,43 +406,14 @@ export default function InvoicePaymentModal({
 
           {/* Body — movements list / empty state */}
           <div className="flex-1 overflow-y-auto" style={{ padding: '14px 22px' }}>
-            {isLoading ? (
-              <div style={{ font: '400 13px/18px Inter', color: '#9ca3af', textAlign: 'center', padding: '32px 0' }}>{ui('loading')}</div>
-            ) : count === 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '36px 0' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 10, background: '#F1F2F4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="13" y2="17" /></svg>
-                </div>
-                <div style={{ font: '400 13px/18px Inter', color: '#6C6C89', textAlign: 'center' }}>{emptyLabel}</div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {payments.map(p => {
-                  const deposited = isDeposited(p);
-                  const badge = deposited
-                    ? { bg: GREEN_BG, fg: GREEN_FG, label: ui('cpStatusDeposited') }
-                    : { bg: '#F1F2F4', fg: '#55556D', label: ui('cpStatusDraft') };
-                  const method = p.paymentMethod || p['paymentMethod$_identifier'] || '';
-                  return (
-                    <div key={p.id} data-testid={`cp-movement-${p.id}`} style={{ border: '1px solid #E8E8ED', borderRadius: 10, padding: '10px 14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                          <span className="tabular-nums" style={{ font: '600 14px/18px Inter', color: INK }}>{fmt(p.amount, currency)}</span>
-                          <span style={{ font: '500 10px/14px Inter', padding: '1px 8px', borderRadius: 9999, background: badge.bg, color: badge.fg }}>{badge.label}</span>
-                        </div>
-                        <button type="button" onClick={() => navToPayment(p.id)}
-                          style={{ font: '500 11px/1 Inter', color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                          {ui('viewArrow')}
-                        </button>
-                      </div>
-                      <div style={{ font: '400 11px/15px Inter', color: '#9ca3af', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        #{p.documentNo || p.id}{method ? ` · ${method}` : ''} · {fmtDate(p.paymentDate)}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <MovementsBody
+              isLoading={isLoading}
+              payments={payments}
+              emptyLabel={emptyLabel}
+              currency={currency}
+              ui={ui}
+              onView={navToPayment}
+              data-testid="MovementsBody__284351" />
           </div>
 
           {/* Footer */}

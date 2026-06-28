@@ -55,7 +55,8 @@ describe('InvoicePaymentModal (step 1 — Cobros/Pagos de la factura)', () => {
   });
 
   it('renders a direction badge', () => {
-    assert.match(src, /HistoryDirBadge/);
+    assert.match(src, /import \{ DirBadge \} from '\.\/paymentModalUi\.jsx'/);
+    assert.match(src, /<DirBadge /);
   });
 
   it('classifies a listed payment as deposited via the processed flag', () => {
