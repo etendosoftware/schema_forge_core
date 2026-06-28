@@ -101,6 +101,7 @@ function CreditRow({ l, currency, ui, onToggle, onStep, step, showTag = true }) 
   return (
     <div
       onClick={onToggle}
+      data-testid={`cp-credit-row-${l.id}`}
       style={{ display: 'grid', gridTemplateColumns: '30px 1fr 120px 150px', gap: 12, alignItems: 'center', padding: '11px 16px', borderTop: `1px solid ${BORDER1}`, background: l.sel ? tc.tagBg + '55' : 'transparent', cursor: 'pointer' }}
     >
       <Check checked={l.sel} />
@@ -313,6 +314,7 @@ export default function NewPaymentEntryModal({
     >
       <div
         style={{ width: 760, maxWidth: '100%', maxHeight: '100%', background: '#fff', borderRadius: 14, boxShadow: '0 20px 50px rgba(16,20,28,.18), 0 0 0 1px rgba(16,20,28,.06)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+        data-testid="cp-new-payment-modal"
         onClick={e => e.stopPropagation()}
       >
         {/* header */}
@@ -398,7 +400,7 @@ export default function NewPaymentEntryModal({
             <div><div style={{ font: '400 11px/14px Inter', color: FG3 }}>{ui('cpApplied')}</div><div style={{ font: '700 15px/20px Inter', color: INK, fontVariantNumeric: 'tabular-nums' }}>{fmtCur(balance.funds, currency)}</div></div>
             <div style={{ flex: 1 }} />
             <div style={{ textAlign: 'right' }}><div style={{ font: '400 11px/14px Inter', color: FG3 }}>{deltaLabel}</div><div style={{ font: '700 16px/20px Inter', color: deltaColor, fontVariantNumeric: 'tabular-nums' }}>{fmtCur(Math.abs(balance.diff), currency)}</div></div>
-            <button type="button" onClick={balance.equalize} style={{ height: 34, padding: '0 12px', borderRadius: 8, border: `1px solid ${BORDER2}`, background: '#fff', cursor: 'pointer', color: FG2, font: '500 12px/1 Inter' }}>{ui('cpEqualize')}</button>
+            <button type="button" data-testid="cp-equalize" onClick={balance.equalize} style={{ height: 34, padding: '0 12px', borderRadius: 8, border: `1px solid ${BORDER2}`, background: '#fff', cursor: 'pointer', color: FG2, font: '500 12px/1 Inter' }}>{ui('cpEqualize')}</button>
           </div>
 
           {/* excess — receipts offer credit/refund; payments block with inline error */}
@@ -408,11 +410,11 @@ export default function NewPaymentEntryModal({
                 <span style={{ font: '600 13px/18px Inter', color: GREEN_FG }}>{ui('cpExcessQuestion', { amount: fmtCur(balance.excessAmount, currency) })}</span>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button type="button" onClick={() => balance.setExcessMode('credit')} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', borderRadius: 9, border: `1px solid ${balance.excessMode === 'credit' ? GREEN_FG : BORDER2}`, background: balance.excessMode === 'credit' ? GREEN_BG : '#fff', cursor: 'pointer', textAlign: 'left' }}>
+                <button type="button" data-testid="cp-excess-credit" onClick={() => balance.setExcessMode('credit')} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', borderRadius: 9, border: `1px solid ${balance.excessMode === 'credit' ? GREEN_FG : BORDER2}`, background: balance.excessMode === 'credit' ? GREEN_BG : '#fff', cursor: 'pointer', textAlign: 'left' }}>
                   <Radio checked={balance.excessMode === 'credit'} />
                   <div><div style={{ font: '600 13px/17px Inter', color: INK }}>{ui('cpLeaveCredit')}</div><div style={{ font: '400 11px/15px Inter', color: FG3 }}>{ui('cpLeaveCreditHint', { amount: fmtCur(balance.excessAmount, currency) })}</div></div>
                 </button>
-                <button type="button" onClick={() => balance.setExcessMode('refund')} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', borderRadius: 9, border: `1px solid ${balance.excessMode === 'refund' ? GREEN_FG : BORDER2}`, background: balance.excessMode === 'refund' ? GREEN_BG : '#fff', cursor: 'pointer', textAlign: 'left' }}>
+                <button type="button" data-testid="cp-excess-refund" onClick={() => balance.setExcessMode('refund')} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', borderRadius: 9, border: `1px solid ${balance.excessMode === 'refund' ? GREEN_FG : BORDER2}`, background: balance.excessMode === 'refund' ? GREEN_BG : '#fff', cursor: 'pointer', textAlign: 'left' }}>
                   <Radio checked={balance.excessMode === 'refund'} />
                   <div><div style={{ font: '600 13px/17px Inter', color: INK }}>{ui('cpGiveChange')}</div><div style={{ font: '400 11px/15px Inter', color: FG3 }}>{ui('cpGiveChangeHint', { amount: fmtCur(balance.excessAmount, currency) })}</div></div>
                 </button>
@@ -431,9 +433,9 @@ export default function NewPaymentEntryModal({
         {/* footer */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 24px', borderTop: `1px solid ${BORDER1}`, background: '#fff', flexShrink: 0 }}>
           <div style={{ flex: 1 }} />
-          <button type="button" onClick={onClose} disabled={saving} style={{ height: 38, padding: '0 16px', borderRadius: 8, border: 'none', background: 'transparent', color: FG2, font: '500 13px/1 Inter', cursor: 'pointer' }}>{ui('cancel')}</button>
-          <button type="button" onClick={() => submit('draft')} disabled={saving || loading} style={{ height: 38, padding: '0 16px', borderRadius: 8, border: `1px solid ${BORDER2}`, background: '#fff', color: INK, font: '500 13px/1 Inter', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.5 : 1 }}>{ui('save')}</button>
-          <button type="button" onClick={() => submit('confirm')} disabled={confirmDisabled || loading} style={{ height: 38, padding: '0 16px', borderRadius: 8, border: 'none', background: INK, color: '#fff', font: '600 13px/1 Inter', display: 'inline-flex', alignItems: 'center', gap: 6, cursor: confirmDisabled ? 'not-allowed' : 'pointer', opacity: confirmDisabled ? 0.45 : 1 }}>
+          <button type="button" data-testid="cp-cancel" onClick={onClose} disabled={saving} style={{ height: 38, padding: '0 16px', borderRadius: 8, border: 'none', background: 'transparent', color: FG2, font: '500 13px/1 Inter', cursor: 'pointer' }}>{ui('cancel')}</button>
+          <button type="button" data-testid="cp-save-draft" onClick={() => submit('draft')} disabled={saving || loading} style={{ height: 38, padding: '0 16px', borderRadius: 8, border: `1px solid ${BORDER2}`, background: '#fff', color: INK, font: '500 13px/1 Inter', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.5 : 1 }}>{ui('save')}</button>
+          <button type="button" data-testid="cp-confirm" onClick={() => submit('confirm')} disabled={confirmDisabled || loading} style={{ height: 38, padding: '0 16px', borderRadius: 8, border: 'none', background: INK, color: '#fff', font: '600 13px/1 Inter', display: 'inline-flex', alignItems: 'center', gap: 6, cursor: confirmDisabled ? 'not-allowed' : 'pointer', opacity: confirmDisabled ? 0.45 : 1 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
             {ui('cpConfirm')}
           </button>

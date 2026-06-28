@@ -345,6 +345,7 @@ export default function InvoicePaymentModal({
       <div
         className="bg-white flex flex-col overflow-hidden"
         style={{ width: 520, maxWidth: '100%', maxHeight: '85vh', borderRadius: 14, boxShadow: '0 20px 50px rgba(16,20,28,.18), 0 0 0 1px rgba(16,20,28,.06)' }}
+        data-testid="cp-history-modal"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -392,7 +393,7 @@ export default function InvoicePaymentModal({
                   : { bg: '#F1F2F4', fg: '#55556D', label: ui('cpStatusDraft') };
                 const method = p.paymentMethod || p['paymentMethod$_identifier'] || '';
                 return (
-                  <div key={p.id} style={{ border: '1px solid #E8E8ED', borderRadius: 10, padding: '10px 14px' }}>
+                  <div key={p.id} data-testid={`cp-movement-${p.id}`} style={{ border: '1px solid #E8E8ED', borderRadius: 10, padding: '10px 14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                         <span className="tabular-nums" style={{ font: '600 14px/18px Inter', color: INK }}>{fmt(p.amount, currency)}</span>
@@ -422,7 +423,7 @@ export default function InvoicePaymentModal({
               {ui('close')}
             </button>
             {canAdd && (
-              <button type="button" onClick={() => setShowNew(true)}
+              <button type="button" data-testid="cp-add-payment" onClick={() => setShowNew(true)}
                 style={{ font: '600 13px/1 Inter', padding: '8px 16px', borderRadius: 8, border: 'none', background: INK, color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ fontSize: 15, lineHeight: 1 }}>+</span>{addLabel}
               </button>
