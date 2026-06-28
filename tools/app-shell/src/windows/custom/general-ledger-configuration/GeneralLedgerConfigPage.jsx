@@ -12,7 +12,7 @@ import DocumentsTab from './DocumentsTab.jsx';
 import { useGeneralLedgerConfig } from './useGeneralLedgerConfig.js';
 import { DEFAULTS_GROUPS } from './mockCatalogs.js';
 
-const REQUIRED_GENERAL = ['name', 'gAAP', 'currency'];
+const REQUIRED_GENERAL = ['name', 'currency'];
 const REQUIRED_DEFAULTS = DEFAULTS_GROUPS.flatMap((g) => g.fields.filter((f) => f.required).map((f) => f.key));
 
 /**

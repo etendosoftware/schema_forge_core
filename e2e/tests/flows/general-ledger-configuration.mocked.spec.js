@@ -62,3 +62,189 @@ test.describe('General Ledger Configuration — visual capture (mocked)', () => 
     });
   }
 });
+
+/**
+ * General Ledger Configuration — behavioral suite (mocked).
+ *
+ * Builds on the capture seed: drives the real dirty-state → aggregate-save flow,
+ * the inverted period toggle, dimension toggles, the unbacked placeholders, and
+ * the read-only surfaces. The `Guardar cambios` button is gated on a selected
+ * organization (`useGeneralLedgerConfig` only POSTs when `selectedOrg.id` is set),
+ * so we seed `sf_auth_selected_org` in localStorage before React boots and install
+ * a window-specific route for the aggregate endpoint after login() (LIFO wins over
+ * the generic /sws/** stub).
+ */
+
+const SEED_ORG = { id: 'ES-NORTE', name: 'F&B España - Región Norte' };
+
+/**
+ * Intercept the aggregate endpoint. GET (mount load) returns an empty envelope so
+ * the hook renders the local seed; POST records the dirty payload and echoes an
+ * empty saved record. `sink.last` holds the most recent POST body.
+ */
+async function installAggregateMock(page, sink) {
+  // Scope to the NEO endpoint only. A loose glob would also swallow Vite's source
+  // module fetches (GeneralTab.jsx, GeneralLedgerConfigPage.jsx) and break the
+  // dynamic import of the window. The endpoint always lives under /sws/neo/.
+  await page.route(/\/sws\/neo\/general-ledger-configuration\/General(\?|$)/, async (route) => {
+    const req = route.request();
+    if (req.method() === 'POST') {
+      try {
+        sink.last = JSON.parse(req.postData() || '{}');
+      } catch {
+        sink.last = null;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ response: { data: [] } }),
+      });
+      return;
+    }
+    // Mount GET → empty so the hook falls back to its mock seed.
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ response: { data: [] } }),
+    });
+  });
+}
+
+test.describe('General Ledger Configuration — behavioral (mocked)', () => {
+  /** @type {{ last: any }} */
+  let post;
+
+  test.beforeEach(async ({ page }) => {
+    post = { last: null };
+    await login(page);
+    // Seed a selected org before boot so the save boundary is reachable.
+    await page.addInitScript((org) => {
+      localStorage.setItem('sf_auth_selected_org', JSON.stringify(org));
+    }, SEED_ORG);
+    await installAggregateMock(page, post);
+    await page.goto('/general-ledger-configuration');
+    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+    await expect(page.getByTestId('glc-tab-0')).toBeVisible({ timeout: 15_000 });
+  });
+
+  test('renders the 4 tabs in order with the documents count badge and a disabled save', async ({ page }) => {
+    for (let i = 0; i < 4; i++) {
+      await expect(page.getByTestId(`glc-tab-${i}`)).toBeVisible();
+    }
+    // Pristine form → save disabled.
+    await expect(page.getByTestId('glc-save')).toBeDisabled();
+    // Documentos badge shows the seed count (8).
+    await expect(page.getByTestId('glc-tab-3')).toContainText('8');
+  });
+
+  test('navigates across all 4 tabs', async ({ page }) => {
+    await page.getByTestId('glc-tab-0').click();
+    await expect(page.getByTestId('glc-section-identity')).toBeVisible();
+
+    await page.getByTestId('glc-tab-1').click();
+    await expect(page.locator('[data-testid^="glc-defaults-group-"]').first()).toBeVisible();
+
+    await page.getByTestId('glc-tab-2').click();
+    await expect(page.getByTestId('glc-section-dimensions')).toBeVisible();
+
+    await page.getByTestId('glc-tab-3').click();
+    await expect(page.locator('[data-testid^="glc-doc-"]').first()).toBeVisible();
+  });
+
+  test('editing a General field flips dirty state, enables save, and POSTs the dirty payload', async ({ page }) => {
+    const save = page.getByTestId('glc-save');
+    await expect(save).toBeDisabled();
+
+    const nameInput = page.getByTestId('glc-field-name').getByRole('textbox');
+    await nameInput.fill('Contabilidad España — Norte');
+
+    await expect(save).toBeEnabled();
+    await save.click();
+
+    await expect.poll(() => post.last).not.toBeNull();
+    expect(post.last).toMatchObject({
+      general: { name: 'Contabilidad España — Norte' },
+      defaults: {},
+      dimensions: [],
+      selectedOrgId: SEED_ORG.id,
+    });
+    // Unbacked placeholders never leak into the payload.
+    expect(post.last.general).not.toHaveProperty('conversionType');
+    expect(post.last.general).not.toHaveProperty('costPrecision');
+    expect(post.last.general).not.toHaveProperty('autoReconciliation');
+    expect(post.last.general).not.toHaveProperty('journalNumbering');
+  });
+
+  test('inverted period toggle: turning "closed periods" ON maps to automaticPeriodControl=false', async ({ page }) => {
+    const toggle = page.getByTestId('glc-toggle-closed-periods-switch');
+    // Seed automaticPeriodControl=true ⇒ "closed periods" starts OFF.
+    await expect(toggle).not.toBeChecked();
+    await toggle.click();
+    await expect(toggle).toBeChecked();
+
+    await page.getByTestId('glc-save').click();
+
+    await expect.poll(() => post.last).not.toBeNull();
+    expect(post.last.general).toMatchObject({ automaticPeriodControl: false });
+  });
+
+  test('dimensions: toggling an optional row marks dirty and POSTs the dimension change', async ({ page }) => {
+    await page.getByTestId('glc-tab-2').click();
+    await expect(page.getByTestId('glc-section-dimensions')).toBeVisible();
+
+    // dim-pr (Producto) is active + optional in the seed → deactivate it.
+    const producto = page.getByTestId('glc-dim-dim-pr-switch');
+    await expect(producto).toBeEnabled();
+    await expect(producto).toBeChecked();
+    await producto.click();
+    await expect(producto).not.toBeChecked();
+
+    await page.getByTestId('glc-save').click();
+
+    await expect.poll(() => post.last).not.toBeNull();
+    expect(post.last.dimensions).toContainEqual({ id: 'dim-pr', active: false, mandatory: false });
+  });
+
+  test('dimensions: a mandatory row cannot be deactivated', async ({ page }) => {
+    await page.getByTestId('glc-tab-2').click();
+    // dim-cc (Centro de coste) is mandatory → switch is disabled.
+    const mandatory = page.getByTestId('glc-dim-dim-cc-switch');
+    await expect(mandatory).toBeDisabled();
+    await expect(mandatory).toBeChecked();
+  });
+
+  test('the 4 unbacked placeholders render their marker and stay non-persistent', async ({ page }) => {
+    // Two selects on the General tab.
+    await expect(page.getByTestId('glc-field-conversion-type').getByTestId('glc-unbacked-hint')).toBeVisible();
+    await expect(page.getByTestId('glc-field-cost-precision').getByTestId('glc-unbacked-hint')).toBeVisible();
+    // Two toggles in Políticas contables — disabled + marked.
+    await expect(page.getByTestId('glc-toggle-auto-reconciliation').getByTestId('glc-unbacked-hint')).toBeVisible();
+    await expect(page.getByTestId('glc-toggle-journal-numbering').getByTestId('glc-unbacked-hint')).toBeVisible();
+    await expect(page.getByTestId('glc-toggle-auto-reconciliation-switch')).toBeDisabled();
+    await expect(page.getByTestId('glc-toggle-journal-numbering-switch')).toBeDisabled();
+  });
+
+  test('read-only: Calendario fiscal and Organización are not editable inputs', async ({ page }) => {
+    const org = page.getByTestId('glc-field-organization');
+    await expect(org).toBeVisible();
+    await expect(org.getByRole('textbox')).toHaveCount(0);
+
+    const calendar = page.getByTestId('glc-field-calendar');
+    await expect(calendar).toBeVisible();
+    await expect(calendar.getByRole('textbox')).toHaveCount(0);
+  });
+
+  test('Documentos tab is read-only with "Mapeado" chips and no edit controls', async ({ page }) => {
+    await page.getByTestId('glc-tab-3').click();
+    const rows = page.locator('[data-testid^="glc-doc-"]');
+    await expect(rows.first()).toBeVisible();
+    await expect(rows).toHaveCount(8);
+
+    // Every row shows a green "Mapeado" status chip.
+    await expect(page.getByText(/mapeado/i).first()).toBeVisible();
+    // No switches, inputs or comboboxes in the read-only table.
+    const panel = page.getByTestId('DocumentsTab__79cd86');
+    await expect(panel.getByRole('switch')).toHaveCount(0);
+    await expect(panel.getByRole('textbox')).toHaveCount(0);
+  });
+});

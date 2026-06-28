@@ -44,15 +44,15 @@ Hidden-but-kept backend field:
 
 - `Esquema contable` / `gAAP` stays persisted in the ledger but is not user-editable in this custom surface.
 
-Read-only fields sourced from `AD_OrgInfo` in the target design:
+Read-only fields sourced from the organization-level backend relation in the delivered implementation:
 
 - `Organización`
 - `Calendario fiscal`
 
-Current frontend state:
+Current delivered state:
 
-- both read-only values come from `mockCatalogs.js`
-- Phase 3 must replace them with real `AD_OrgInfo` reads
+- both read-only values are loaded from the organization-backed aggregate endpoint
+- in the current local dataset that relation resolves from `AD_Org` / `AD_Org_AcctSchema`
 
 Unbacked placeholders, intentionally visible but non-persistent:
 
