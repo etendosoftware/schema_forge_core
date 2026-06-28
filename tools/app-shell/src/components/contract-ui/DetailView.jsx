@@ -1549,12 +1549,12 @@ async function executeDetailProcessImpl(process, paramValues, explicitRows, {
  * In both cases the component receives `{ recordId, data, token, apiBaseUrl, api }`
  * plus any keys declared in the optional `props` object.
  */
-function hasUnsavedEdits(editing, selected) {
+export function hasUnsavedEdits(editing, selected) {
   if (!editing || !selected) return false;
   return Object.entries(editing).some(([k, v]) => k !== 'id' && v !== selected[k]);
 }
 
-function mergeLineEdits(lineEdits, selectedLine) {
+export function mergeLineEdits(lineEdits, selectedLine) {
   return lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine;
 }
 
