@@ -75,6 +75,29 @@ export default function InvoiceHeaderTable(props) {
 
     return [
       { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', dot: false },
+      {
+        key: 'transactionDocument',
+        column: 'C_DocTypeTarget_ID',
+        type: 'custom',
+        labels: { [locale]: t('documentType') },
+        label: t('documentType'),
+        render: (row) => {
+          const sub = getArSubtype(row);
+          const cfg = sub === 'NC'
+            ? { color: '#6d28d9', bg: '#f5f3ff', label: t('creditNotesTab') }
+            : sub === 'DEV'
+              ? { color: '#9a3412', bg: '#fff7ed', label: t('returnsTab') }
+              : { color: '#1d4ed8', bg: '#eff6ff', label: t('invoicesTab') };
+          return (
+            <span
+              className="inline-block rounded-full px-2 py-0.5 text-xs font-medium"
+              style={{ color: cfg.color, backgroundColor: cfg.bg }}
+            >
+              {cfg.label}
+            </span>
+          );
+        },
+      },
       { key: 'documentNo', column: 'DocumentNo', type: 'string', label: gl['documentNo'] || 'Document No.' },
       {
         key: 'eTGODueDate', column: 'EM_Etgo_Due_Date', type: 'custom', label: t('dueDate'),
@@ -148,29 +171,6 @@ export default function InvoiceHeaderTable(props) {
         },
       },
       { key: 'eTGODeliveryStatus', column: 'em_etgo_delivery_status', type: 'percent' },
-      {
-        key: 'transactionDocument',
-        column: 'C_DocTypeTarget_ID',
-        type: 'custom',
-        labels: { [locale]: t('documentType') },
-        label: t('documentType'),
-        render: (row) => {
-          const sub = getArSubtype(row);
-          const cfg = sub === 'NC'
-            ? { color: '#6d28d9', bg: '#f5f3ff', label: t('creditNotesTab') }
-            : sub === 'DEV'
-              ? { color: '#9a3412', bg: '#fff7ed', label: t('returnsTab') }
-              : { color: '#1d4ed8', bg: '#eff6ff', label: t('invoicesTab') };
-          return (
-            <span
-              className="inline-block rounded-full px-2 py-0.5 text-xs font-medium"
-              style={{ color: cfg.color, backgroundColor: cfg.bg }}
-            >
-              {cfg.label}
-            </span>
-          );
-        },
-      },
     ];
   }, [gl, locale, targets, siiColLabel, tbaiColLabel, vfColLabel]);
 

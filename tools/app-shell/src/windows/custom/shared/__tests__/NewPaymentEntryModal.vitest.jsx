@@ -1,32 +1,25 @@
 // Mocks must be hoisted before imports (Vitest hoisting)
 vi.mock('@/i18n', () => ({
-  useUI: () => (key, vars) => (vars ? `${key}(${JSON.stringify(vars)})` : key),
+  useUI: () => (key) => key,
 }));
 
-vi.mock('@/auth/useApiFetch.js', () => ({
-  useApiFetch: vi.fn(),
+vi.mock('@/lib/formatCurrency', () => ({
+  formatCurrency: (_curr, val) => `$${Number(val || 0).toFixed(2)}`,
 }));
 
 vi.mock('@/components/ui/select', () => ({
-  Select: ({ value, onValueChange, children }) => (
-    <div data-value={value}>{children}</div>
+  Select: ({ children, value, onValueChange }) => (
+    <div data-testid="select" data-value={value || ''} data-onchange={typeof onValueChange}>{children}</div>
   ),
-  SelectTrigger: ({ children }) => <div>{children}</div>,
-  SelectValue: ({ placeholder }) => <span>{placeholder}</span>,
   SelectContent: ({ children }) => <div>{children}</div>,
-  SelectItem: ({ value, children }) => (
-    <option data-testid="select-item" value={value}>{children}</option>
-  ),
+  SelectItem: ({ children, value }) => <div data-testid={`option-${value}`}>{children}</div>,
+  SelectTrigger: ({ children }) => <button type="button">{children}</button>,
+  SelectValue: ({ placeholder }) => <span>{placeholder}</span>,
 }));
 
 vi.mock('@/components/ui/date-field', () => ({
   DateField: ({ value, onChange }) => (
-    <input
-      type="date"
-      data-testid="date-field"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
+    <input type="date" value={value || ''} onChange={(e) => onChange?.(e.target.value)} data-testid="date-field" />
   ),
 }));
 
@@ -34,170 +27,256 @@ vi.mock('../paymentModalUi.jsx', () => ({
   DirBadge: ({ dir }) => <div data-testid={`dir-badge-${dir}`} />,
 }));
 
+// apiFetch is provided per-test via a module-level mock fn so each test can
+// shape the catalog + submit responses independently.
+let mockApiFetch;
+vi.mock('@/auth/useApiFetch.js', () => ({
+  useApiFetch: () => (...args) => mockApiFetch(...args),
+}));
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useApiFetch } from '@/auth/useApiFetch.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import NewPaymentEntryModal from '../NewPaymentEntryModal.jsx';
 
-const INVOICE_DATA = {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const INVOICE = {
   documentNo: 'INV-001',
-  'businessPartner$_identifier': 'ACME Corp',
   'currency$_identifier': 'EUR',
+  'businessPartner$_identifier': 'ACME',
 };
 
-function makeApiFetch(overrides = {}) {
-  return vi.fn().mockImplementation((url) => {
-    if (url.includes('invoiceAccounts')) {
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ items: overrides.accounts ?? [{ id: 'acc1', label: 'Main Account', defaultPaymentMethod: null }] }),
-      });
-    }
-    if (url.includes('invoicePaymentMethods')) {
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ items: overrides.methods ?? [{ id: 'mth1', label: 'Transferencia' }] }),
-      });
-    }
-    if (url.includes('invoiceCreditSources')) {
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ items: overrides.sources ?? [] }),
-      });
-    }
-    if (url.includes('paymentPlan')) {
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ response: { data: overrides.paymentPlan ?? [{ id: 'sch1', outstandingAmount: '500' }] } }),
-      });
-    }
-    if (url.includes('registerPayment')) {
-      return Promise.resolve({
-        ok: overrides.saveOk ?? true,
-        json: () => Promise.resolve(overrides.saveResult ?? { response: { data: {} } }),
-      });
-    }
-    return Promise.resolve({ ok: false, json: () => Promise.resolve(null) });
+function jsonRes(body, ok = true) {
+  return Promise.resolve({ ok, json: async () => body });
+}
+
+/**
+ * Build an apiFetch mock keyed by URL fragment.
+ * @param {object} cfg { accounts, methods, sources, plan, register }
+ */
+function buildApiFetch(cfg = {}) {
+  const {
+    accounts = [{ id: 'acc-1', label: 'Main Account', defaultPaymentMethod: 'Transfer' }],
+    methods = [{ id: 'm-1', label: 'Transfer' }, { id: 'm-2', label: 'Cash' }],
+    sources = [],
+    plan = [{ finPaymentScheduleID: 'sched-1', outstandingAmount: '1000' }],
+    register = { response: { data: { id: 'pay-1' } } },
+    registerOk = true,
+  } = cfg;
+
+  return vi.fn(async (path) => {
+    if (path.includes('invoiceAccounts')) return jsonRes({ items: accounts });
+    if (path.includes('invoicePaymentMethods')) return jsonRes({ items: methods });
+    if (path.includes('invoiceCreditSources')) return jsonRes({ items: sources });
+    if (path.includes('paymentPlan')) return jsonRes({ response: { data: plan } });
+    if (path.includes('registerPayment')) return jsonRes(register, registerOk);
+    return jsonRes({});
   });
 }
 
-const DEFAULT_PROPS = {
+const defaults = {
   dir: 'in',
   specName: 'sales-invoice',
-  invoiceId: '42',
-  invoiceData: INVOICE_DATA,
-  outstanding: 500,
+  invoiceId: 'inv-1',
+  invoiceData: INVOICE,
+  scheduleId: 'sched-1',
+  outstanding: 1000,
   apiBaseUrl: 'http://host/sws/neo/sales-invoice',
   onClose: vi.fn(),
   onSaved: vi.fn(),
 };
 
+function renderModal(overrides = {}) {
+  const props = { ...defaults, onClose: vi.fn(), onSaved: vi.fn(), ...overrides };
+  return { ...render(<NewPaymentEntryModal {...props} />), props };
+}
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
+
 describe('NewPaymentEntryModal', () => {
   beforeEach(() => {
+    mockApiFetch = buildApiFetch();
+  });
+
+  afterEach(() => {
     vi.clearAllMocks();
-    useApiFetch.mockReturnValue(makeApiFetch());
   });
 
-  it('renders the modal container', () => {
-    render(<NewPaymentEntryModal {...DEFAULT_PROPS} />);
-    expect(screen.getByTestId('cp-new-payment-modal')).toBeInTheDocument();
+  describe('header / title', () => {
+    it('shows the collection title for dir "in"', () => {
+      renderModal({ dir: 'in' });
+      expect(screen.getByText('cpNewCollection')).toBeInTheDocument();
+      expect(screen.getByText('cpBadgeCollection')).toBeInTheDocument();
+    });
+
+    it('shows the payment title for dir "out"', () => {
+      mockApiFetch = buildApiFetch();
+      renderModal({ dir: 'out' });
+      expect(screen.getByText('cpNewPayment')).toBeInTheDocument();
+      expect(screen.getByText('cpBadgePayment')).toBeInTheDocument();
+    });
+
+    it('renders the invoice document number', () => {
+      renderModal();
+      expect(screen.getByText('INV-001')).toBeInTheDocument();
+    });
   });
 
-  it('shows the direction badge for receipts', () => {
-    render(<NewPaymentEntryModal {...DEFAULT_PROPS} dir="in" />);
-    expect(screen.getByTestId('dir-badge-in')).toBeInTheDocument();
+  describe('amount field', () => {
+    it('prefills the amount input with the outstanding total (es-ES)', () => {
+      renderModal({ outstanding: 6420 });
+      expect(screen.getByTestId('cp-amount-input')).toHaveValue('6.420,00');
+    });
   });
 
-  it('shows the direction badge for payments', () => {
-    render(<NewPaymentEntryModal {...DEFAULT_PROPS} dir="out" />);
-    expect(screen.getByTestId('dir-badge-out')).toBeInTheDocument();
+  describe('credit section visibility', () => {
+    it('hides the credit section when there are no sources', async () => {
+      mockApiFetch = buildApiFetch({ sources: [] });
+      renderModal();
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      expect(screen.queryByText('cpCreditSectionTitle')).not.toBeInTheDocument();
+    });
+
+    it('shows the credit section when sources are present', async () => {
+      mockApiFetch = buildApiFetch({
+        sources: [{ id: 's1', kind: 'credit', doc: 'AB-1', date: '2024-01-01', avail: 200 }],
+      });
+      renderModal();
+      expect(await screen.findByText('cpCreditGroupTitle')).toBeInTheDocument();
+    });
   });
 
-  it('renders the amount input pre-filled with the outstanding amount', () => {
-    render(<NewPaymentEntryModal {...DEFAULT_PROPS} outstanding={500} />);
-    const input = screen.getByTestId('cp-amount-input');
-    expect(input.value).toBe('500,00');
+  describe('confirm enablement', () => {
+    it('enables Confirmar on an exact balance', async () => {
+      renderModal();
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      const confirm = screen.getByText('cpConfirm').closest('button');
+      await waitFor(() => expect(confirm).not.toBeDisabled());
+    });
+
+    it('disables Confirmar on unresolved excess (dir "in")', async () => {
+      renderModal({ dir: 'in', outstanding: 1000 });
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      fireEvent.change(screen.getByTestId('cp-amount-input'), { target: { value: '1200' } });
+      const confirm = screen.getByText('cpConfirm').closest('button');
+      expect(confirm).toBeDisabled();
+    });
+
+    it('re-enables Confirmar after choosing an excess resolution (dir "in")', async () => {
+      renderModal({ dir: 'in', outstanding: 1000 });
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      fireEvent.change(screen.getByTestId('cp-amount-input'), { target: { value: '1200' } });
+      fireEvent.click(screen.getByText('cpLeaveCredit').closest('button'));
+      const confirm = screen.getByText('cpConfirm').closest('button');
+      await waitFor(() => expect(confirm).not.toBeDisabled());
+    });
+
+    it('disables Confirmar on any excess (dir "out") with an inline error', async () => {
+      mockApiFetch = buildApiFetch();
+      renderModal({ dir: 'out', specName: 'purchase-invoice', outstanding: 1000 });
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      fireEvent.change(screen.getByTestId('cp-amount-input'), { target: { value: '1200' } });
+      const confirm = screen.getByText('cpConfirm').closest('button');
+      expect(confirm).toBeDisabled();
+      expect(screen.getByText('cpExcessInline')).toBeInTheDocument();
+    });
   });
 
-  it('renders cancel button that calls onClose', () => {
-    const onClose = vi.fn();
-    render(<NewPaymentEntryModal {...DEFAULT_PROPS} onClose={onClose} />);
-    fireEvent.click(screen.getByTestId('cp-cancel'));
-    expect(onClose).toHaveBeenCalledOnce();
+  describe('submit', () => {
+    it('Guardar posts registerPayment with process "draft"', async () => {
+      renderModal();
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      fireEvent.click(screen.getByText('save').closest('button'));
+
+      await waitFor(() => {
+        const call = mockApiFetch.mock.calls.find(c => c[0].includes('registerPayment'));
+        expect(call).toBeTruthy();
+        const body = JSON.parse(call[1].body);
+        expect(body.process).toBe('draft');
+        expect(body.scheduleId).toBe('sched-1');
+        expect(body.actual_payment).toBe('1000');
+        expect(body.fin_financial_account_id).toBe('acc-1');
+      });
+    });
+
+    it('Confirmar posts registerPayment with process "confirm"', async () => {
+      renderModal();
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      const confirm = screen.getByText('cpConfirm').closest('button');
+      await waitFor(() => expect(confirm).not.toBeDisabled());
+      fireEvent.click(confirm);
+
+      await waitFor(() => {
+        const call = mockApiFetch.mock.calls.find(c => c[0].includes('registerPayment'));
+        expect(call).toBeTruthy();
+        expect(JSON.parse(call[1].body).process).toBe('confirm');
+      });
+    });
+
+    it('invokes onSaved with the deposited state on a successful confirm', async () => {
+      const { props } = renderModal();
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      const confirm = screen.getByText('cpConfirm').closest('button');
+      await waitFor(() => expect(confirm).not.toBeDisabled());
+      fireEvent.click(confirm);
+      await waitFor(() => {
+        expect(props.onSaved).toHaveBeenCalledWith(expect.any(Object), 'deposited');
+      });
+    });
+
+    it('surfaces an error and does not call onSaved when the API fails', async () => {
+      mockApiFetch = buildApiFetch({ register: {}, registerOk: false });
+      const { props } = renderModal();
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      fireEvent.click(screen.getByText('save').closest('button'));
+      await waitFor(() => {
+        expect(screen.getByText('cpSaveFailed')).toBeInTheDocument();
+      });
+      expect(props.onSaved).not.toHaveBeenCalled();
+    });
   });
 
-  it('renders the close × button that calls onClose', () => {
-    const onClose = vi.fn();
-    render(<NewPaymentEntryModal {...DEFAULT_PROPS} onClose={onClose} />);
-    const closeBtn = screen.getByRole('button', { name: 'close' });
-    fireEvent.click(closeBtn);
-    expect(onClose).toHaveBeenCalledOnce();
+  describe('close', () => {
+    it('calls onClose from the footer Cancelar button', async () => {
+      const { props } = renderModal();
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      fireEvent.click(screen.getByText('cancel').closest('button'));
+      expect(props.onClose).toHaveBeenCalled();
+    });
   });
 
-  it('renders save-draft and confirm buttons', () => {
-    render(<NewPaymentEntryModal {...DEFAULT_PROPS} />);
-    expect(screen.getByTestId('cp-save-draft')).toBeInTheDocument();
-    expect(screen.getByTestId('cp-confirm')).toBeInTheDocument();
-  });
+  // ETP-4005 "date required" validation, ported into NewPaymentEntryModal.
+  describe('date validation', () => {
+    it('disables Confirmar when the date field is cleared', async () => {
+      renderModal();
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      const confirm = screen.getByTestId('cp-confirm');
+      await waitFor(() => expect(confirm).not.toBeDisabled());
 
-  it('clicking equalize button does not crash', async () => {
-    render(<NewPaymentEntryModal {...DEFAULT_PROPS} />);
-    const eq = screen.getByTestId('cp-equalize');
-    fireEvent.click(eq);
-    // No error thrown; modal still visible
-    expect(screen.getByTestId('cp-new-payment-modal')).toBeInTheDocument();
-  });
+      fireEvent.change(screen.getByTestId('date-field'), { target: { value: '' } });
+      expect(confirm).toBeDisabled();
+    });
 
-  it('shows invoice docNo and partner in the header', () => {
-    render(<NewPaymentEntryModal {...DEFAULT_PROPS} />);
-    expect(screen.getByText('INV-001')).toBeInTheDocument();
-    expect(screen.getByText(/ACME Corp/)).toBeInTheDocument();
-  });
+    it('shows the paymentDateRequired error when saving a draft with an empty date', async () => {
+      renderModal();
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      fireEvent.change(screen.getByTestId('date-field'), { target: { value: '' } });
 
-  it('saves a draft and calls onSaved', async () => {
-    const onSaved = vi.fn();
-    useApiFetch.mockReturnValue(makeApiFetch());
-    render(<NewPaymentEntryModal {...DEFAULT_PROPS} scheduleId="sch1" onSaved={onSaved} />);
+      fireEvent.click(screen.getByTestId('cp-save-draft'));
 
-    await waitFor(() =>
-      expect(screen.getByTestId('cp-save-draft')).not.toBeDisabled(),
-    );
+      expect(await screen.findByText('paymentDateRequired')).toBeInTheDocument();
+    });
 
-    fireEvent.click(screen.getByTestId('cp-save-draft'));
+    it('does not POST registerPayment when saving with an empty date', async () => {
+      renderModal();
+      await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+      fireEvent.change(screen.getByTestId('date-field'), { target: { value: '' } });
 
-    await waitFor(() => expect(onSaved).toHaveBeenCalled());
-    expect(onSaved.mock.calls[0][1]).toBe('draft');
-  });
+      fireEvent.click(screen.getByTestId('cp-save-draft'));
 
-  it('saves a confirmed payment and calls onSaved with "deposited"', async () => {
-    const onSaved = vi.fn();
-    useApiFetch.mockReturnValue(makeApiFetch());
-    render(<NewPaymentEntryModal {...DEFAULT_PROPS} scheduleId="sch1" onSaved={onSaved} />);
-
-    await waitFor(() =>
-      expect(screen.getByTestId('cp-confirm')).not.toBeDisabled(),
-    );
-
-    fireEvent.click(screen.getByTestId('cp-confirm'));
-
-    await waitFor(() => expect(onSaved).toHaveBeenCalled());
-    expect(onSaved.mock.calls[0][1]).toBe('deposited');
-  });
-
-  it('shows an error when save fails', async () => {
-    useApiFetch.mockReturnValue(
-      makeApiFetch({ saveOk: false, saveResult: { response: { error: { message: 'Server error' } } } }),
-    );
-    render(<NewPaymentEntryModal {...DEFAULT_PROPS} scheduleId="sch1" />);
-
-    await waitFor(() =>
-      expect(screen.getByTestId('cp-save-draft')).not.toBeDisabled(),
-    );
-
-    fireEvent.click(screen.getByTestId('cp-save-draft'));
-
-    await waitFor(() =>
-      expect(screen.getByText('Server error')).toBeInTheDocument(),
-    );
+      await waitFor(() => expect(screen.getByText('paymentDateRequired')).toBeInTheDocument());
+      const registerCall = mockApiFetch.mock.calls.find(c => c[0].includes('registerPayment'));
+      expect(registerCall).toBeFalsy();
+    });
   });
 });
