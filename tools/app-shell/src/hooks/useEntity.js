@@ -907,7 +907,20 @@ export function useEntity(entity, childEntity, {
                 setEditing({ ...resolvedSaved });
                 setSaveError(null);
                 setFieldErrors({});
-                showSaveSuccessToast(silent, isNew, ui);
+                const backendMessages = data?.messages ?? [];
+                if (backendMessages.length > 0) {
+                    for (const msg of backendMessages) {
+                        const type = (msg.type || '').toLowerCase();
+                        const title = msg.title || '';
+                        const description = msg.text || undefined;
+                        if (type === 'success') toast.success(title, { description });
+                        else if (type === 'error') toast.error(title, { description });
+                        else if (type === 'warning') toast.warning(title, { description });
+                        else if (title) toast.info(title, { description });
+                    }
+                } else {
+                    showSaveSuccessToast(silent, isNew, ui);
+                }
                 if (isNew) {
                     trackRecordCreated({ entity, specName });
                 } else {
