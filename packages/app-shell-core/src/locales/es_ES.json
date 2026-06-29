@@ -17404,6 +17404,7 @@
     "invoicePaymentsTitle": "Pagos de la factura",
     "noCobroYet": "Aún no hay cobros registrados para esta factura",
     "noPagoYet": "Aún no hay pagos registrados para esta factura",
+    "noApplicationsRegistered": "Sin aplicaciones registradas",
     "addCobro": "Añadir cobro",
     "addPago": "Añadir pago",
     "cobroRegistrado": "cobro registrado",

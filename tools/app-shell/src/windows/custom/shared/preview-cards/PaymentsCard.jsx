@@ -58,20 +58,20 @@ function resolveMethodKey(name) {
   return 'transfer';
 }
 
-function StateTag({ status, isIn }) {
+function StateTag({ status, ui }) {
   const isDeposited = PAID_STATUSES.has(status);
   if (isDeposited) {
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '1px 7px', borderRadius: 5, background: '#E2F7EA', color: '#17663A', fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap' }}>
         <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#2DCA72', flexShrink: 0 }} />
-        {isIn ? 'Depositado' : 'Depositado'}
+        {ui('statusDeposited')}
       </span>
     );
   }
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '1px 7px', borderRadius: 5, background: '#F1F2F4', color: '#55556D', fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap' }}>
       <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#A9A9BC', flexShrink: 0 }} />
-      Borrador
+      {ui('statusDraft')}
     </span>
   );
 }
@@ -110,7 +110,7 @@ export default function PaymentsCard({
     titleRight = (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500, padding: '1px 8px', borderRadius: 5, background: '#EDE9FE', color: '#5B21B6' }}>
         <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#7C3AED', flexShrink: 0 }} />
-        Saldo a favor
+        {ui('creditBalance')}
       </span>
     );
   } else if (canAddPayment) {
@@ -126,7 +126,7 @@ export default function PaymentsCard({
     titleRight = (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500, color: '#17663A' }}>
         <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        {isIn ? 'Cobrada' : 'Pagada'}
+        {isIn ? ui('cobrada') : ui('pagada')}
       </span>
     );
   }
@@ -139,7 +139,7 @@ export default function PaymentsCard({
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 16px', gap: 8 }}>
         <DirBadge isIn={isIn} size={36} data-testid="DirBadge__c6fe34" />
         <p style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'center', margin: 0 }}>
-          {isCreditNote ? 'Sin aplicaciones registradas' : (isIn ? ui('noCobroYet') : ui('noPagoYet'))}
+          {isCreditNote ? ui('noApplicationsRegistered') : (isIn ? ui('noCobroYet') : ui('noPagoYet'))}
         </p>
       </div>
     );
@@ -184,7 +184,7 @@ export default function PaymentsCard({
                 <span className="tabular-nums" style={{ font: '600 13px/17px Inter', color: amtColor, whiteSpace: 'nowrap' }}>
                   {amtSign}{fmt(p.amount)} {currency}
                 </span>
-                <StateTag status={p.status || ''} isIn={isIn} data-testid="StateTag__c6fe34" />
+                <StateTag status={p.status || ''} ui={ui} data-testid="StateTag__c6fe34" />
               </div>
             </div>
           );

@@ -17163,6 +17163,7 @@
     "invoicePaymentsTitle": "Invoice Payments",
     "noCobroYet": "No payments recorded for this invoice yet",
     "noPagoYet": "No payments recorded for this invoice yet",
+    "noApplicationsRegistered": "No applications recorded",
     "addCobro": "Add payment",
     "addPago": "Add payment",
     "cobroRegistrado": "payment recorded",
