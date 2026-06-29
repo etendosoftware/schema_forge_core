@@ -6,11 +6,19 @@ import { useUI } from '@/i18n';
 import { useApiFetch } from '@/auth/useApiFetch.js';
 import NewPaymentEntryModal from './NewPaymentEntryModal.jsx';
 
+function addThousandDots(s) {
+  let out = '';
+  for (let i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 === 0) out += '.';
+    out += s[i];
+  }
+  return out;
+}
+
 function fmt(val, curr) {
   const n = typeof val === 'string' ? parseFloat(val) : (val ?? 0);
   const abs = Math.abs(n).toFixed(2).split('.');
-  abs[0] = abs[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  return (n < 0 ? '-' : '') + abs[0] + ',' + abs[1] + ' ' + (curr || 'EUR');
+  return (n < 0 ? '-' : '') + addThousandDots(abs[0]) + ',' + abs[1] + ' ' + (curr || 'EUR');
 }
 
 function fmtDate(raw) {
