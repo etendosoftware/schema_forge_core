@@ -213,7 +213,7 @@ export default function FinancialAccountWindow({ recordId }) {
   useSetPageMeta(
     {
       title: accountName,
-      titleExtra: account ? <SyncStatusInline account={account} /> : null,
+      titleExtra: account ? <SyncStatusInline account={account} data-testid="SyncStatusInline__f7dbb3" /> : null,
       breadcrumb: `${ui('financeMenuLabel')} / ${ui('financeAccountsPageTitle')} / ${accountName}`,
     },
     [accountName, account?.type, account?.psd2Connected, account?.psd2Pending],

@@ -275,7 +275,9 @@ function ReconciliationSettingsSection({ ui, recon }) {
         {ui('financeAccountsReconciliationSection')}
       </p>
       <div className="grid grid-cols-2 gap-4">
-        <Field label={ui('financeAccountsReconciliationDateTolerance')}>
+        <Field
+          label={ui('financeAccountsReconciliationDateTolerance')}
+          data-testid="Field__73027d">
           <Input
             type="number"
             min={0}
@@ -286,7 +288,9 @@ function ReconciliationSettingsSection({ ui, recon }) {
             data-testid="recon-date-tolerance-input"
           />
         </Field>
-        <Field label={ui('financeAccountsReconciliationAmountTolerance')}>
+        <Field
+          label={ui('financeAccountsReconciliationAmountTolerance')}
+          data-testid="Field__73027d">
           <Input
             type="number"
             min={0}
