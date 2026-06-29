@@ -88,6 +88,56 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
     return conds.every(c => matchesSvw(c));
   };
 
+  const renderDerivedCell = (dv, ci) => {
+    const raw = valueMap[dv.box] ?? null;
+    const absRaw = dv.abs ? Math.abs(raw) : raw;
+    let display = raw != null ? absRaw : null;
+    if (display != null && dv.subtractBox != null) display = display - (valueMap[dv.subtractBox] ?? 0);
+    if (display != null && dv.clampMin != null) display = Math.max(dv.clampMin, display);
+    return (
+      <div key={ci} className="fm-aeat-cell">
+        <span className="fm-aeat-cell__value">{display != null && display !== 0 ? formatCell(display, 'amount') : ''}</span>
+      </div>
+    );
+  };
+
+  const renderBoxCell = (row, section, ci, boxNum) => {
+    const isCellEditable = row.editable || row.editableCells?.includes(boxNum);
+    const isFixed = !isCellEditable && row.fixedValues != null &&
+      Object.prototype.hasOwnProperty.call(row.fixedValues, boxNum);
+    const val = isFixed
+      ? row.fixedValues[boxNum]
+      : (valueMap[boxNum] ?? row.defaultValues?.[boxNum] ?? null);
+    const colType = row.cellTypes?.[ci] ?? section.colTypes?.[ci] ?? 'amount';
+    const unit = row.cellUnits?.[ci];
+    const isCellEditing = isCellEditable && editingCell === boxNum;
+    return (
+      <div key={ci} className={`fm-aeat-cell${isFixed ? ' fm-aeat-cell--fixed' : ''}${isCellEditable ? ' fm-aeat-cell--editable' : ''}`}>
+        <span className="fm-aeat-cell__num">{String(boxNum).padStart(2, '0')}</span>
+        {isCellEditing ? renderCellInput(boxNum, val) : (
+          <>
+            <span className="fm-aeat-cell__value">{val != null ? formatCell(val, colType) : ''}</span>
+            {unit && <span className="fm-aeat-cell__unit">{unit}</span>}
+            {isCellEditable && (
+              <button className="fm-aeat-cell__edit-btn" onClick={() => setEditingCell(boxNum)}>
+                <Pencil size={12} strokeWidth={1.5} data-testid="Pencil__49d327" />
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const renderRowCell = (row, section, ci) => {
+    const boxNum = row.cells?.[ci] ?? null;
+    if (boxNum === null) {
+      if (row.derivedValue) return renderDerivedCell(row.derivedValue, ci);
+      return row.total ? null : <div key={ci} className="fm-aeat-cell fm-aeat-cell--empty" />;
+    }
+    return renderBoxCell(row, section, ci, boxNum);
+  };
+
   return (
     <div className="fm-aeat-table">
       {sections.map((section) => {
@@ -344,47 +394,7 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
                       {row.labelKey ? t(row.labelKey) : ''}
                       {row.formula && <span className="fm-aeat-row__formula">{row.formula}</span>}
                     </span>
-                    {Array.from({ length: rowCols }, (_, ci) => {
-                      const boxNum = row.cells?.[ci] ?? null;
-                      if (boxNum === null) {
-                        if (row.derivedValue) {
-                          const dv = row.derivedValue;
-                          const raw = valueMap[dv.box] ?? null;
-                          let display = raw != null ? (dv.abs ? Math.abs(raw) : raw) : null;
-                          if (display != null && dv.subtractBox != null) display = display - (valueMap[dv.subtractBox] ?? 0);
-                          if (display != null && dv.clampMin != null) display = Math.max(dv.clampMin, display);
-                          return <div key={ci} className="fm-aeat-cell"><span className="fm-aeat-cell__value">{display != null && display !== 0 ? formatCell(display, 'amount') : ''}</span></div>;
-                        }
-                        return row.total ? null : <div key={ci} className="fm-aeat-cell fm-aeat-cell--empty" />;
-                      }
-                      const isCellEditable = row.editable || row.editableCells?.includes(boxNum);
-                      const isFixed = !isCellEditable && row.fixedValues != null &&
-                        Object.prototype.hasOwnProperty.call(row.fixedValues, boxNum);
-                      const val = isFixed
-                        ? row.fixedValues[boxNum]
-                        : (valueMap[boxNum] ?? row.defaultValues?.[boxNum] ?? null);
-                      const colType = row.cellTypes?.[ci] ?? section.colTypes?.[ci] ?? 'amount';
-                      const unit = row.cellUnits?.[ci];
-                      const isCellEditing = isCellEditable && editingCell === boxNum;
-                      return (
-                        <div key={ci} className={`fm-aeat-cell${isFixed ? ' fm-aeat-cell--fixed' : ''}${isCellEditable ? ' fm-aeat-cell--editable' : ''}`}>
-                          <span className="fm-aeat-cell__num">{String(boxNum).padStart(2, '0')}</span>
-                          {isCellEditing ? (
-                            renderCellInput(boxNum, val)
-                          ) : (
-                            <>
-                              <span className="fm-aeat-cell__value">{val != null ? formatCell(val, colType) : ''}</span>
-                              {unit && <span className="fm-aeat-cell__unit">{unit}</span>}
-                              {isCellEditable && (
-                                <button className="fm-aeat-cell__edit-btn" onClick={() => setEditingCell(boxNum)}>
-                                  <Pencil size={12} strokeWidth={1.5} data-testid="Pencil__49d327" />
-                                </button>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      );
-                    })}
+                    {Array.from({ length: rowCols }, (_, ci) => renderRowCell(row, section, ci))}
                   </>
                 );
 
