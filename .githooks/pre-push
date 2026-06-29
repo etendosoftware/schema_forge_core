@@ -10,12 +10,12 @@ echo "==> Running pre-push checks..."
 
 cd "$REPO_DIR"
 
-# Load nvm so the hook uses the Node version declared in .nvmrc (not the shell default).
-export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
-# shellcheck source=/dev/null
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use
-if [ -f ".nvmrc" ]; then
-  nvm use --silent 2>/dev/null || true
+# Require Node 22+ (vitest coverage uses --experimental-require-module, Node 22 only).
+NODE_MAJOR=$(node -e "process.stdout.write(process.versions.node.split('.')[0])" 2>/dev/null || echo "0")
+if [ "$NODE_MAJOR" -lt 22 ]; then
+  echo "❌ ERROR: pre-push requires Node.js >= 22 (found v$(node --version 2>/dev/null || echo '?'))."
+  echo "   Switch to Node 22 before pushing (e.g. nvm use 22, volta install node@22, etc.)."
+  exit 1
 fi
 
 # Path where run-sonar.sh writes a copy-pasteable handoff prompt when the
