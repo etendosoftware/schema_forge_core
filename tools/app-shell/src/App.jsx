@@ -112,6 +112,8 @@ async function loadAllMockData() {
     import('@generated/conversion-rate-downloader-log/generated/web/conversion-rate-downloader-log/mockData.js'),
     import('@generated/open-close-period-control/generated/web/open-close-period-control/mockData.js'),
     import('@generated/asset-group/generated/web/asset-group/mockData.js'),
+    import('@generated/general-ledger-configuration/generated/web/general-ledger-configuration/mockData.js'),
+    import('@generated/tax-category/generated/web/tax-category/mockData.js'),
   ]);
 
   const merged = {};
