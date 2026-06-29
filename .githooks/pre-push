@@ -10,6 +10,14 @@ echo "==> Running pre-push checks..."
 
 cd "$REPO_DIR"
 
+# Load nvm so the hook uses the Node version declared in .nvmrc (not the shell default).
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+# shellcheck source=/dev/null
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use
+if [ -f ".nvmrc" ]; then
+  nvm use --silent 2>/dev/null || true
+fi
+
 # Path where run-sonar.sh writes a copy-pasteable handoff prompt when the
 # Quality Gate fails. Cleared up-front so a stale file is never shown.
 HANDOFF_FILE="$REPO_DIR/sonar-reports/sonar-handoff-prompt.md"
