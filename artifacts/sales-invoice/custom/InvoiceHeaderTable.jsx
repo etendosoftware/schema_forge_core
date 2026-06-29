@@ -109,6 +109,7 @@ export default function InvoiceHeaderTable(props) {
       },
       { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
       { key: 'documentStatus', column: 'DocStatus', type: 'status', label: t('statusColumn') },
+      { key: 'posted', column: 'Posted', type: 'boolean', badge: true, badgeLabels: { true: { en_US: 'Posted', es_ES: 'Contabilizado' }, false: { en_US: 'Not posted', es_ES: 'Sin contabilizar' } }, badgeVariants: { true: 'green', false: 'orange' } },
       ...fiscalCols,
       { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
       { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
