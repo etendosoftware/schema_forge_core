@@ -1,8 +1,8 @@
 {
-  "version": "0.38.0",
+  "version": "0.39.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
   "updatedAt": "2026-06-26T12:27:57.064Z",
-  "contractChecksum": "545d430f65c51cb0",
+  "contractChecksum": "711c984813c38ecb",
   "apiPrediction": {
     "specName": "sales-invoice",
     "baseUrl": "/sws/neo/sales-invoice",

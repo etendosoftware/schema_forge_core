@@ -198,6 +198,7 @@ export const api = {
 export default function InventoryPage({ windowName, recordId, ...props }) {
   if (recordId) {
     return (
+      <>
       <DetailView
         entity="inventory"
         detailEntity="inventoryLine"
@@ -226,6 +227,7 @@ export default function InventoryPage({ windowName, recordId, ...props }) {
         linesLayout="inlineEditable"
         {...props}
       />
+      </>
     );
   }
 

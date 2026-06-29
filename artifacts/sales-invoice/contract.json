@@ -1,8 +1,8 @@
 {
-  "version": "0.38.0",
+  "version": "0.39.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-06-26T23:07:09.003Z",
-  "checksum": "545d430f65c51cb0",
+  "updatedAt": "2026-06-29T12:09:17.395Z",
+  "checksum": "711c984813c38ecb",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -396,43 +396,73 @@
             "enumValues": [
               {
                 "value": "CL",
-                "name": "Closed"
+                "name": "Closed",
+                "labels": {
+                  "es_ES": "Cerrado"
+                }
               },
               {
                 "value": "CO",
-                "name": "Completed"
+                "name": "Completed",
+                "labels": {
+                  "es_ES": "Completado"
+                }
               },
               {
                 "value": "DR",
-                "name": "Draft"
+                "name": "Draft",
+                "labels": {
+                  "es_ES": "Borrador"
+                }
               },
               {
                 "value": "NA",
-                "name": "Not Accepted"
+                "name": "Not Accepted",
+                "labels": {
+                  "es_ES": "No aprobado"
+                }
               },
               {
                 "value": "WP",
-                "name": "Not Paid"
+                "name": "Not Paid",
+                "labels": {
+                  "es_ES": "Pendiente de Pago"
+                }
               },
               {
                 "value": "RE",
-                "name": "Re-Opened"
+                "name": "Re-Opened",
+                "labels": {
+                  "es_ES": "Reabierto"
+                }
               },
               {
                 "value": "TEMP",
-                "name": "Temporal"
+                "name": "Temporal",
+                "labels": {
+                  "es_ES": "Temporal"
+                }
               },
               {
                 "value": "IP",
-                "name": "Under Way"
+                "name": "Under Way",
+                "labels": {
+                  "es_ES": "En curso"
+                }
               },
               {
                 "value": "??",
-                "name": "Unknown"
+                "name": "Unknown",
+                "labels": {
+                  "es_ES": "Desconocido"
+                }
               },
               {
                 "value": "VO",
-                "name": "Voided"
+                "name": "Voided",
+                "labels": {
+                  "es_ES": "Anulado"
+                }
               }
             ],
             "defaultValue": "DR",
@@ -783,19 +813,31 @@
             "enumValues": [
               {
                 "value": "R",
-                "name": "Corrective invoice"
+                "name": "Corrective invoice",
+                "labels": {
+                  "es_ES": "Factura rectificativa"
+                }
               },
               {
                 "value": "F1",
-                "name": "Invoice"
+                "name": "Invoice",
+                "labels": {
+                  "es_ES": "Factura"
+                }
               },
               {
                 "value": "F2",
-                "name": "Simplified invoice"
+                "name": "Simplified invoice",
+                "labels": {
+                  "es_ES": "Factura simplificada"
+                }
               },
               {
                 "value": "F4",
-                "name": "Simplified invoices summary"
+                "name": "Simplified invoices summary",
+                "labels": {
+                  "es_ES": "Asiento resumen facturas simplificadas"
+                }
               }
             ],
             "defaultValue": "@SQL=SELECT CASE WHEN ((SELECT c.insiisystem FROM aeatsii_config c WHERE c.ad_org_id = (SELECT ad_get_org_le_bu(@AD_Org_ID@,'LE') FROM dual))='Y') THEN 'F1' ELSE null END FROM dual",
@@ -884,35 +926,59 @@
             "enumValues": [
               {
                 "value": "AE",
-                "name": "Accepted with errors"
+                "name": "Accepted with errors",
+                "labels": {
+                  "es_ES": "Aceptado con errores"
+                }
               },
               {
                 "value": "AN",
-                "name": "Annulled"
+                "name": "Annulled",
+                "labels": {
+                  "es_ES": "Anulado"
+                }
               },
               {
                 "value": "IN",
-                "name": "Incorrect"
+                "name": "Incorrect",
+                "labels": {
+                  "es_ES": "Incorrecto"
+                }
               },
               {
                 "value": "NR",
-                "name": "Not Registrable to SII"
+                "name": "Not Registrable to SII",
+                "labels": {
+                  "es_ES": "No Declarable en SII"
+                }
               },
               {
                 "value": "PE",
-                "name": "Pending to send to SII"
+                "name": "Pending to send to SII",
+                "labels": {
+                  "es_ES": "Pendiente de enviar a SII"
+                }
               },
               {
                 "value": "CO",
-                "name": "Right"
+                "name": "Right",
+                "labels": {
+                  "es_ES": "Correcto"
+                }
               },
               {
                 "value": "EE",
-                "name": "Sending error"
+                "name": "Sending error",
+                "labels": {
+                  "es_ES": "Error al enviar"
+                }
               },
               {
                 "value": "BA",
-                "name": "Unsubscribed"
+                "name": "Unsubscribed",
+                "labels": {
+                  "es_ES": "Baja"
+                }
               }
             ],
             "defaultValue": "@SQL=SELECT CASE WHEN ((SELECT c.insiisystem FROM aeatsii_config c WHERE c.ad_org_id = (SELECT ad_get_org_le_bu(@AD_Org_ID@,'LE') FROM dual))='Y') THEN 'PE' ELSE null END FROM dual",

@@ -20209,6 +20209,7 @@
     "priceUnit": "€ /",
     "amountPlaceholder": "0.00",
     "codeExact8Digits": "The account code must be exactly 8 digits",
+    "codeSuffixPlaceholder": "0000",
     "accountTreeCode": "Code",
     "accountTreeFilterCode": "Code",
     "accountTreeFilterName": "Name",

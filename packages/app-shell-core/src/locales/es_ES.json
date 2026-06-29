@@ -20475,6 +20475,7 @@
     "priceUnit": "€ /",
     "amountPlaceholder": "0.00",
     "codeExact8Digits": "El código de cuenta debe tener exactamente 8 dígitos",
+    "codeSuffixPlaceholder": "0000",
     "accountTreeCode": "Código",
     "accountTreeFilterCode": "Código",
     "accountTreeFilterName": "Nombre",

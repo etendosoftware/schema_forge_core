@@ -98,7 +98,7 @@ export default function AccountCodeField({ value = '', onChange, record, readOnl
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           maxLength={4}
-          placeholder="0000"
+          placeholder={ui('codeSuffixPlaceholder')}
           className="h-10 flex-1 rounded-r-lg border border-[#D1D4DB] bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
