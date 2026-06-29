@@ -3,7 +3,7 @@
   "version": 2,
   "window": {
     "category": "accounting",
-    "name": "Configuración contable",
+    "name": "General Ledger Configuration",
     "layoutType": "custom"
   },
   "discardPatterns": ["EM_*"],
