@@ -28,7 +28,13 @@ export function summarizeResults({ scenario, workers, results }) {
       const ctx = r.ctx;
 
       // 1. PDF Cache Failure detection
-      if (ctx.previewCacheError || (ctx.previewCacheStatus && ctx.previewCacheStatus !== 200)) {
+      const previewStatusFailed = ctx.previewCacheAttempted
+        && ctx.previewCacheOk === undefined
+        && ctx.previewCacheStatus
+        && (ctx.previewCacheStatus < 200 || ctx.previewCacheStatus >= 300);
+      if (ctx.previewCacheError
+        || (ctx.previewCacheAttempted && ctx.previewCacheOk === false)
+        || previewStatusFailed) {
         pdfCacheFails++;
       }
 
@@ -73,7 +79,12 @@ export function summarizeResults({ scenario, workers, results }) {
     const acceptedPct = Math.round((accepted / workers) * 100) || 0;
     const dedupPct = Math.round((deduplicated / workers) * 100) || 0;
 
-    const isPass = accepted === 1 && errors === 0 && pdfCacheFails === 0 && throttled === 0;
+    const isPass = accepted === 1
+      && deduplicated === workers - 1
+      && sentCount === workers
+      && errors === 0
+      && pdfCacheFails === 0
+      && throttled === 0;
 
     const resultMsg = isPass 
       ? 'PASS — idempotency dedup working correctly'

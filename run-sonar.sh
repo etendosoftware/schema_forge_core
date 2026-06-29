@@ -276,6 +276,12 @@ if [[ "$RUN_COVERAGE" == "true" ]]; then
     source "${NVM_DIR:-$HOME/.nvm}/nvm.sh"
     nvm use 22 --silent 2>/dev/null || true
   fi
+  NODE_MAJOR=$(node -e "process.stdout.write(process.versions.node.split('.')[0])" 2>/dev/null || echo "0")
+  if [[ "$NODE_MAJOR" -lt 22 ]]; then
+    echo "ERROR: coverage requires Node.js >= 22 (found $(node --version 2>/dev/null || echo '?'))."
+    echo "Install or activate Node 22 before running coverage."
+    exit 1
+  fi
   make test-all-coverage
 fi
 

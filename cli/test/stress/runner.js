@@ -123,6 +123,7 @@ global.fetch = async (url, options) => {
       const urlStr = String(url);
       if (urlStr.includes('/preview-file')) {
         ctx.previewCacheStatus = res.status;
+        ctx.previewCacheOk = res.ok;
       } else if (urlStr.includes('/email-contracts/')) {
         ctx.sendEmailStatus = res.status;
         const clonedRes = res.clone();

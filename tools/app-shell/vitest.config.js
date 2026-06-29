@@ -14,9 +14,9 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
       '@generated': resolve(__dirname, '../../artifacts'),
     },
-    // @exodus/bytes ≥1.14 ships pure ESM; html-encoding-sniffer (jsdom dep) does require() on it.
-    // Node 22 flag lets CJS require() synchronous ESM so the coverage forks pool can load jsdom.
-    execArgv: ['--experimental-require-module'],
+    // threads pool: workers run as ESM workers, so @exodus/bytes (pure ESM) is importable natively —
+    // no --experimental-require-module needed. Much faster than forks (one thread vs one process per file).
+    pool: 'threads',
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'json-summary'],

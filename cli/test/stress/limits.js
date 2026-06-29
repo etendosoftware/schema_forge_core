@@ -6,6 +6,7 @@ import { run as runDoubleSend } from './scenarios/double-send.js';
 import { run as runConcurrentLoad } from './scenarios/concurrent-load.js';
 import { summarizeResults } from './report.js';
 import { resetEmailSafetyBeforeRun } from './safety-reset.js';
+import { writeLimitHtmlReport } from './html-report.js';
 
 const workerContext = new AsyncLocalStorage();
 
@@ -37,6 +38,8 @@ const delayMs = parseInt(params['delay-ms'] || process.env.STRESS_DELAY_MS || '0
 const timeoutMs = parseInt(params['timeout-ms'] || process.env.STRESS_TIMEOUT_MS || '10000', 10);
 const pdfBlobPath = params['pdf-blob'] || process.env.STRESS_PDF_BLOB;
 const resetSafety = params['reset-safety'] === true || process.env.STRESS_RESET_SAFETY === '1';
+const htmlReportPath = params['html-report'] || process.env.STRESS_HTML_REPORT;
+const htmlReportTitle = params['html-report-title'] || process.env.STRESS_HTML_REPORT_TITLE;
 
 if (scenario !== 'double-send' && scenario !== 'concurrent-load') {
   console.error('Error: --scenario must be either "double-send" or "concurrent-load"');
@@ -111,6 +114,7 @@ global.fetch = async (url, options) => {
       const urlStr = String(url);
       if (urlStr.includes('/preview-file')) {
         ctx.previewCacheStatus = res.status;
+        ctx.previewCacheOk = res.ok;
       } else if (urlStr.includes('/email-contracts/')) {
         ctx.sendEmailStatus = res.status;
         try {
@@ -136,37 +140,66 @@ global.fetch = async (url, options) => {
 };
 
 const summaries = [];
+let fatalError = null;
 
-for (const workers of workerSteps) {
-  const documentIds = resolveDocumentIds({ workers, documentIdsStr });
-  if (resetSafety) {
-    await resetEmailSafetyBeforeRun({
-      params,
-      scenario,
-      token,
-      windowName,
-      documentId,
-      documentIds,
-    });
+try {
+  for (const workers of workerSteps) {
+    const documentIds = resolveDocumentIds({ workers, documentIdsStr });
+    if (resetSafety) {
+      await resetEmailSafetyBeforeRun({
+        params,
+        scenario,
+        token,
+        windowName,
+        documentId,
+        documentIds,
+      });
+    }
+
+    const startedAt = Date.now();
+    const results = scenario === 'double-send'
+      ? await runDoubleSend({ workers, documentId, windowName, baseUrl, token, pdfBlob, timeoutMs, workerContext })
+      : await runConcurrentLoad({ workers, documentIds, windowName, baseUrl, token, pdfBlob, delayMs, timeoutMs, workerContext });
+    const summary = summarizeResults({ scenario, workers, results });
+    summary.durationMs = Date.now() - startedAt;
+    summaries.push(summary);
+    printStepSummary(summary);
   }
-
-  const startedAt = Date.now();
-  const results = scenario === 'double-send'
-    ? await runDoubleSend({ workers, documentId, windowName, baseUrl, token, pdfBlob, timeoutMs, workerContext })
-    : await runConcurrentLoad({ workers, documentIds, windowName, baseUrl, token, pdfBlob, delayMs, timeoutMs, workerContext });
-  const summary = summarizeResults({ scenario, workers, results });
-  summary.durationMs = Date.now() - startedAt;
-  summaries.push(summary);
-  printStepSummary(summary);
+} catch (err) {
+  fatalError = err;
+  console.error(`[${scenario}] aborted: ${err.message}`);
 }
 
-printLimitSummary({ scenario, workerSteps, summaries, resetSafety });
+if (summaries.length > 0) {
+  printLimitSummary({ scenario, workerSteps, summaries, resetSafety });
+} else {
+  console.error(`[${scenario}] no completed worker steps to summarize`);
+}
+
+if (htmlReportPath) {
+  const writtenPath = writeLimitHtmlReport({
+    path: htmlReportPath,
+    scenario,
+    summaries,
+    resetSafety,
+    metadata: {
+      title: htmlReportTitle,
+      baseUrl,
+      windowName,
+      documentId,
+      documentIds: documentIdsStr,
+      command: buildReportCommand(),
+      fatalError: fatalError ? fatalError.message : null,
+    },
+  });
+  console.log(`Email stress HTML report written to ${writtenPath}`);
+}
 
 const hasUnexpectedErrors = summaries.some(s => s.errors > 0 || s.pdfCacheFails > 0);
 const hasDoubleSendViolation = scenario === 'double-send'
   && summaries.some(s => s.accepted !== 1 || s.deduplicated !== s.workers - 1 || s.throttled !== 0);
 
-process.exit(hasUnexpectedErrors || hasDoubleSendViolation ? 1 : 0);
+process.exit(fatalError || hasUnexpectedErrors || hasDoubleSendViolation ? 1 : 0);
 
 function parseWorkerSteps(raw) {
   const steps = String(raw)
@@ -236,4 +269,52 @@ function printLimitSummary({ scenario, summaries, resetSafety }) {
 
 function pad(value, length) {
   return String(value).padStart(length, ' ');
+}
+
+function buildReportCommand() {
+  const target = htmlReportPath ? 'email-stress-limits-report' : 'email-stress-limits';
+  const parts = [
+    'make',
+    target,
+    `SCENARIO=${shellValue(scenario)}`,
+    `WINDOW_NAME=${shellValue(windowName)}`,
+    `BASE_URL=${shellValue(baseUrl)}`,
+    `WORKER_STEPS=${shellValue(workerSteps.join(','))}`,
+    'TOKEN=<redacted>',
+  ];
+
+  if (scenario === 'double-send') {
+    parts.push(`DOC_ID=${shellValue(maskIdentifier(documentId))}`);
+  } else if (documentIdsStr) {
+    parts.push(`DOC_IDS=${shellValue(maskIdentifierList(documentIdsStr))}`);
+  }
+
+  if (htmlReportPath) {
+    parts.push(`EMAIL_STRESS_REPORT=${shellValue(htmlReportPath)}`);
+  }
+
+  if (resetSafety !== true) {
+    parts.push(`RESET_SAFETY=${resetSafety ? '1' : '0'}`);
+  }
+
+  return parts.join(' ');
+}
+
+function shellValue(value) {
+  const str = String(value ?? '');
+  return /^[A-Za-z0-9_./:,-]+$/.test(str) ? str : `'${str.replaceAll("'", "'\\''")}'`;
+}
+
+function maskIdentifierList(value) {
+  return String(value || '')
+    .split(',')
+    .map(item => maskIdentifier(item.trim()))
+    .filter(Boolean)
+    .join(',');
+}
+
+function maskIdentifier(value) {
+  const str = String(value || '');
+  if (str.length <= 10) return str;
+  return `...${str.slice(-10)}`;
 }

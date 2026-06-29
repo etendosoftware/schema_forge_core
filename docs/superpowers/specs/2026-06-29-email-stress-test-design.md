@@ -190,6 +190,19 @@ make email-stress-limits \
   WORKER_STEPS=5,10,25,50
 ```
 
+Generate a Jest/JUnit-style HTML report during the same run:
+
+```bash
+make email-stress-limits-report \
+  TOKEN="$JWT" \
+  DOC_ID=E2F7A13B \
+  WORKER_STEPS=1,2,5,10,20,50,75,90,95,96,97 \
+  EMAIL_STRESS_REPORT=docs/reports/email-stress-limit-report.html
+```
+
+The report target writes the HTML file even when the probe exits with a failure because a limit was
+found. Tokens are redacted from the command block in the generated report.
+
 The limit runner executes every worker step, prints per-step progress, then prints a final table:
 
 ```
@@ -204,9 +217,10 @@ Email Stress Limit Probe — double-send
        20 |       20 |     0 |         0 |      0 |        0 |   2843 |   2973 |   2985 | dedup-broken
 ```
 
-For double-send, the important limit signal is the first worker count where `accepted > 1` or
-`dedup != workers - 1`. For concurrent-load, the important signal is the first step with throttling
-and the `first_429` worker index.
+For double-send, the important limit signal is the first worker count where `accepted > 1`,
+`dedup != workers - 1`, `errors > 0`, or `pdf_fail > 0`. `accepted/dedup` isolates email idempotency,
+while `errors/pdf_fail` captures the complete document-email flow. For concurrent-load, the important
+signal is the first step with throttling and the `first_429` worker index.
 
 ---
 

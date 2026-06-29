@@ -60,9 +60,10 @@ export async function resetEmailSafetyBeforeRun({
       delete from etgo_email_safety
       where record_type = 'THROTTLE'
         and isactive = 'Y'
+        and contract_name = $1
         and scope = 'RECORD'
-        and bucket_key = any($1::text[])
-    `, [resetDocumentIds]);
+        and bucket_key = any($2::text[])
+    `, [contractName, resetDocumentIds]);
 
     let auditDeleted = 0;
     if (resetDocumentIds.length > 0) {
@@ -77,7 +78,10 @@ export async function resetEmailSafetyBeforeRun({
           )
       `, [
         contractName,
-        resetDocumentIds.map(id => `${contractName}:%:${id}:%`),
+        resetDocumentIds.flatMap(id => [
+          `${contractName}:%:${id}:%`,
+          `${contractName}:${id}:%`,
+        ]),
         resetDocumentIds.map(id => `%"recordId":"${id}"%`),
       ]);
       auditDeleted = auditResult.rowCount || 0;
