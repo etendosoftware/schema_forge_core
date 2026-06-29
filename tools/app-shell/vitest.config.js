@@ -14,13 +14,9 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
       '@generated': resolve(__dirname, '../../artifacts'),
     },
-    poolOptions: {
-      forks: {
-        // @exodus/bytes ≥1.14 ships pure ESM; html-encoding-sniffer (jsdom dep) does require() on it.
-        // Node 22 flag lets CJS require() synchronous ESM so the coverage forks pool can load jsdom.
-        execArgv: ['--experimental-require-module'],
-      },
-    },
+    // @exodus/bytes ≥1.14 ships pure ESM; html-encoding-sniffer (jsdom dep) does require() on it.
+    // Node 22 flag lets CJS require() synchronous ESM so the coverage forks pool can load jsdom.
+    execArgv: ['--experimental-require-module'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'json-summary'],
