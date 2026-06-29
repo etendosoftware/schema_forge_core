@@ -1,42 +1,28 @@
-import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
-import HeaderTable from './HeaderTable';
+import HeaderTable from '../../../custom/PaymentHeaderTable';
 import HeaderForm from './HeaderForm';
-import LinesTable from './LinesTable';
-import LinesForm from './LinesForm';
-import AccountingTable from './AccountingTable';
-import AccountingForm from './AccountingForm';
-import ExecutionHistoryTable from './ExecutionHistoryTable';
-import ExecutionHistoryForm from './ExecutionHistoryForm';
-import RelatedDocuments from '../../../custom/RelatedDocuments';
-import { AttachmentsTab } from '@/components/attachments';
-import PaymentOutBottomPanel from '../../../custom/PaymentOutBottomPanel';
+import PaymentActivityToggle from '../../../custom/PaymentActivityToggle';
+import PaymentDetailSidebar from '../../../custom/PaymentDetailSidebar';
 import catalogs from './mockCatalogs';
 
 
-const breadcrumb = 'Finance / Payment Out';
+const breadcrumb = 'Finanzas / Pago';
 
 
 // @sf-generated-start summary:header
-const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'etblkpAccountingstatus', column: 'EM_Etblkp_Accountingstatus', type: 'status' },
-  { key: 'etblkpBulkposting', column: 'EM_Etblkp_Bulkposting', type: 'string' },
-];
+const summary = [];
 
 const statusField = 'status';
 // @sf-generated-end summary:header
 
 // @sf-generated-start extraBadges:header
 const extraBadges = [
-
+  { key: 'conciliado', labelKey: 'conciliado', field: 'reconciled', condition: (data) => data?.reconciled === 'Y', style: 'info' },
 ];
 // @sf-generated-end extraBadges:header
 
 // @sf-generated-start processes:header
 const processes = [
-  { name: 'psd2GenerateBankPayment', label: 'Generate Bank Payment', style: 'positive',
-    displayLogicRaw: "@PSD2_HasPayments@=0 & @PSD2_UserHasApiKey@=1 & @Status@='PPM'  & @PSD2_HasFinTransaction@=0" },
   { name: 'etblkpBulkposting', label: 'Bulk Posting', style: 'positive',
     displayLogicRaw: "@Status@!'RPAE' & @Status@!'RPVOID' & @Processed@='Y' & @#ShowAcct@='Y'" },
   { name: 'etprReactivatePayment', label: 'Advanced Reactivation', style: 'positive',
@@ -51,7 +37,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start requiredHeaderFields:header
-const requiredHeaderFields = ['documentNo', 'paymentMethod', 'account', 'currency', 'etblkpAccountingstatus', 'etblkpBulkposting', 'etprReactivatePayment'];
+const requiredHeaderFields = [];
 // @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
@@ -144,17 +130,6 @@ export const api = {
       "listUrl": "/sws/neo/payment-out/accounting",
       "detailUrl": "/sws/neo/payment-out/accounting/{id}",
       "supportedFilters": []
-    },
-    "bankPayments": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/payment-out/bankPayments",
-      "detailUrl": "/sws/neo/payment-out/bankPayments/{id}",
-      "supportedFilters": []
     }
   },
   "selectors": [
@@ -205,16 +180,7 @@ export const api = {
       "column": "C_Currency_ID",
       "reference": "Currency",
       "inputMode": "selector",
-      "url": "/sws/neo/payment-out/header/selectors/currency",
-      "context": {
-        "required": [
-          {
-            "param": "FIN_Financial_Account_ID",
-            "source": "parentField",
-            "field": "financialAccount"
-          }
-        ]
-      }
+      "url": "/sws/neo/payment-out/header/selectors/currency"
     },
     {
       "entity": "header",
@@ -479,22 +445,6 @@ export const api = {
       "reference": "User2",
       "inputMode": "selector",
       "url": "/sws/neo/payment-out/accounting/selectors/ndDimension"
-    },
-    {
-      "entity": "bankPayments",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "inputMode": "selector",
-      "url": "/sws/neo/payment-out/bankPayments/selectors/currency"
-    },
-    {
-      "entity": "bankPayments",
-      "field": "financialAccount",
-      "column": "FIN_Financial_Account_ID",
-      "reference": "Financial_Account",
-      "inputMode": "selector",
-      "url": "/sws/neo/payment-out/bankPayments/selectors/financialAccount"
     }
   ],
   "actions": [
@@ -552,14 +502,6 @@ export const api = {
     },
     {
       "entity": "header",
-      "field": "psd2GenerateBankPayment",
-      "column": "EM_Psd2_Generate_Bank_Payment",
-      "url": "/sws/neo/payment-out/header/{id}/action/psd2GenerateBankPayment",
-      "processId": "0661406A983B4D8EA611F8596F114D52",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
       "field": "etblkpBulkposting",
       "column": "EM_Etblkp_Bulkposting",
       "url": "/sws/neo/payment-out/header/{id}/action/etblkpBulkposting",
@@ -581,14 +523,6 @@ export const api = {
       "url": "/sws/neo/payment-out/header/{id}/action/eTPRRemovePayment",
       "processId": "FB79E902A5384754990AD145F6CAC9FB",
       "processType": "obuiapp"
-    },
-    {
-      "entity": "bankPayments",
-      "field": "refreshPayment",
-      "column": "Refresh_Payment",
-      "url": "/sws/neo/payment-out/bankPayments/{id}/action/refreshPayment",
-      "processId": "3894F258A80D4FAB8A5131B5172145AF",
-      "processType": "obuiapp"
     }
   ],
   "queryParams": {
@@ -609,37 +543,42 @@ export const api = {
   }
 };
 
+function DirBadge({ data }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 7, background: '#FDECEA', flexShrink: 0 }}>
+        <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#B91C1C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 19V5M5 12l7-7 7 7"/>
+        </svg>
+      </span>
+      <span style={{ font: '700 15px/20px Inter', color: '#19191D' }}>{data?.documentNo}</span>
+    </span>
+  );
+}
+
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
   if (recordId) {
     return (
       <DetailView
         entity="header"
-        detailEntity="lines"
         Form={HeaderForm}
-        DetailTable={LinesTable}
-        DetailForm={LinesForm}
         summary={summary}
         statusField={statusField}
         extraBadges={extraBadges}
-        processes={processes}
-        addLineFields={addLineFields}
+        processes={[]}
         catalogs={catalogs}
         entityLabel="Header"
-        detailLabel="Lines"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
-      api={api}
-        secondaryTabs={[
-          { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
-          { key: 'executionHistory', label: 'Execution History', Table: ExecutionHistoryTable, Form: ExecutionHistoryForm },
-        ]}
-        notesField="description"
-        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "FIN_Payment", config: {} } }]}
-        bottomSection={PaymentOutBottomPanel}
+        api={api}
+        noHeaderBorder
+        formCardPadding="p-0"
+        topbarExtra={DirBadge}
+        topbarRight={PaymentActivityToggle}
+        sidePanel={PaymentDetailSidebar}
         requiredHeaderFields={requiredHeaderFields}
-        linesLayout="inlineEditable"
         sendDocument
         {...props}
       />

@@ -1,17 +1,12 @@
-import { useState, useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
-import { toast } from 'sonner';
-import FinPaymentTable from './FinPaymentTable';
+import FinPaymentTable from '../../../custom/PaymentHeaderTable';
 import FinPaymentForm from './FinPaymentForm';
-import RelatedDocuments from '../../../custom/RelatedDocuments';
-import { AttachmentsTab } from '@/components/attachments';
-import PaymentBottomPanel from '../../../custom/PaymentBottomPanel';
 import PaymentActivityToggle from '../../../custom/PaymentActivityToggle';
-import NewPaymentModal from '../../../custom/NewPaymentModal';
+import PaymentDetailSidebar from '../../../custom/PaymentDetailSidebar';
 import catalogs from './mockCatalogs';
 
 
-const breadcrumb = 'Finance / Payment In';
+const breadcrumb = 'Finanzas / Cobro';
 
 
 // @sf-generated-start summary:finPayment
@@ -24,7 +19,7 @@ const statusField = 'status';
 
 // @sf-generated-start extraBadges:finPayment
 const extraBadges = [
-
+  { key: 'conciliado', labelKey: 'conciliado', field: 'reconciled', condition: (data) => data?.reconciled === 'Y', style: 'info' },
 ];
 // @sf-generated-end extraBadges:finPayment
 
@@ -46,7 +41,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:finPayment
 
 // @sf-generated-start requiredHeaderFields:finPayment
-const requiredHeaderFields = ['etblkpAccountingstatus', 'etblkpBulkposting', 'etprReactivatePayment'];
+const requiredHeaderFields = [];
 // @sf-generated-end requiredHeaderFields:finPayment
 
 
@@ -197,14 +192,6 @@ export const api = {
     },
     {
       "entity": "finPayment",
-      "field": "psd2GenerateBankPayment",
-      "column": "EM_Psd2_Generate_Bank_Payment",
-      "url": "/sws/neo/payment-in/finPayment/{id}/action/psd2GenerateBankPayment",
-      "processId": "0661406A983B4D8EA611F8596F114D52",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "finPayment",
       "field": "etblkpBulkposting",
       "column": "EM_Etblkp_Bulkposting",
       "url": "/sws/neo/payment-in/finPayment/{id}/action/etblkpBulkposting",
@@ -246,9 +233,21 @@ export const api = {
   }
 };
 
+function DirBadge({ data }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 7, background: '#DDFAEB', flexShrink: 0 }}>
+        <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#17663A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 5v14M5 12l7 7 7-7"/>
+        </svg>
+      </span>
+      <span style={{ font: '700 15px/20px Inter', color: '#19191D' }}>{data?.documentNo}</span>
+    </span>
+  );
+}
+
 // @sf-generated-start component:FinPaymentPage
 export default function FinPaymentPage({ windowName, recordId, ...props }) {
-  const [showNewModal, setShowNewModal] = useState(false);
   if (recordId) {
     return (
       <DetailView
@@ -257,25 +256,23 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
         summary={summary}
         statusField={statusField}
         extraBadges={extraBadges}
-        processes={processes}
+        processes={[]}
         catalogs={catalogs}
         entityLabel="Fin Payment"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
-      api={api}
-        documentPreview={{ titlePrefix: 'Payment', pdfUrl: null }}
+        api={api}
         hideDeleteWhenComplete
-        customTabsAfterBottom
-        notesField="description"
-        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "FIN_Payment", config: {} } }]}
-        bottomSection={PaymentBottomPanel}
+        noHeaderBorder
+        formCardPadding="p-0"
+        topbarExtra={DirBadge}
         topbarRight={PaymentActivityToggle}
+        sidePanel={PaymentDetailSidebar}
         menuActions={({ status }) => [
-          { key: 'reverse', label: 'Reverse Payment', destructive: true, visible: ["RPPC","RPR","RDNC"].includes(status), columnName: 'aPRMReversePayment',  }
+          { key: 'reverse', label: 'Reverse Payment', destructive: true, visible: ["RPPC","RPR","RDNC"].includes(status), columnName: 'aPRMReversePayment' }
         ]}
         requiredHeaderFields={requiredHeaderFields}
-        salesTheme
         sendDocument
         {...props}
       />
@@ -283,7 +280,6 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
   }
 
   return (
-    <>
     <ListView
       entity="finPayment"
       Table={FinPaymentTable}
@@ -295,10 +291,7 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
       rowQuickActions={{}}
       sendDocument
       {...props}
-      onNew={() => setShowNewModal(true)}
     />
-    {showNewModal && <NewPaymentModal token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => setShowNewModal(false)} />}
-    </>
   );
 }
 // @sf-generated-end component:FinPaymentPage
