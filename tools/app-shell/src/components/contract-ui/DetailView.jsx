@@ -1549,6 +1549,15 @@ async function executeDetailProcessImpl(process, paramValues, explicitRows, {
  * In both cases the component receives `{ recordId, data, token, apiBaseUrl, api }`
  * plus any keys declared in the optional `props` object.
  */
+export function hasUnsavedEdits(editing, selected) {
+  if (!editing || !selected) return false;
+  return Object.entries(editing).some(([k, v]) => k !== 'id' && v !== selected[k]);
+}
+
+export function mergeLineEdits(lineEdits, selectedLine) {
+  return lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine;
+}
+
 export function DetailView({
   entity,
   detailEntity,
@@ -1715,13 +1724,15 @@ export function DetailView({
     primaryFetchChildDefaults?.(parentRecordId);
   }, [primaryHandlesDefaults, parentRecordId, primaryFetchChildDefaults]);
 
+  // Ref updated on every render so the callback always reads the latest hook state,
+  // even when called from a setTimeout scheduled before the React re-render committed.
+  const handleFieldBlurRef = useRef(null);
+  handleFieldBlurRef.current = () => {
+    hasUnsavedEdits(hook.editing, hook.selected) && hook.handleSave();
+  };
   const handleFieldBlur = useCallback(() => {
-    if (!hook.editing || !hook.selected) return;
-    const hasChanges = Object.entries(hook.editing).some(
-      ([key, value]) => key !== 'id' && value !== hook.selected[key]
-    );
-    if (hasChanges) hook.handleSave();
-  }, [hook]);
+    handleFieldBlurRef.current?.();
+  }, []);
   // Depend on the single scalar the memo reads from editing/selected, not the whole objects.
   // Keeps original semantics: prefer editing when present (even if priceList is null), else selected.
   const priceListId = (hook.editing || hook.selected)?.priceList ?? null;
@@ -2341,7 +2352,7 @@ export function DetailView({
     }
     if (handledOpenImportRef.current) return;
     handledOpenImportRef.current = true;
-    setForceOpenImport(true);
+    setForceOpenImport(location.state.openImportModal);
     navigate(location.pathname, { replace: true, state: {} });
   }, [location.state?.openImportModal, isNew, hook.editing, navigate, location.pathname]);
 
@@ -2375,14 +2386,16 @@ export function DetailView({
   }, [isNew, hook, navigate, windowName, addingLine]);
 
   // Save header first (if new → navigate with flag; if existing → save in place), then open import modal.
-  const handleImportClick = useCallback(async () => {
+  // modalType ('order' | 'invoice') is forwarded in navigation state so the destination component
+  // knows which modal to auto-open via the forceOpen mechanism.
+  const handleImportClick = useCallback(async (modalType = 'order') => {
     if (isNew) {
       const saved = await hook.handleSave();
       if (!saved?.id) return false;
       hook.primeSaved?.(saved);
       navigate(`/${windowName}/${saved.id}`, {
         replace: true,
-        state: { openImportModal: true, justSaved: saved },
+        state: { openImportModal: modalType, justSaved: saved },
       });
       return false;
     }
@@ -2903,6 +2916,7 @@ export function DetailView({
     ui, tMenu, onAfterCreate, onAfterSave, token, apiBaseUrl, saveBtnCls,
     isDocumentReadOnly, isProcessed, draftMode, blockSaveForBalance, blockCompleteForBalance,
   };
+  const balanceFooterEditingLine = mergeLineEdits(lineEdits, selectedLine);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="detail-view" data-doc-status={_headerData?.documentStatus}>
@@ -3464,7 +3478,10 @@ export function DetailView({
 
                   {/* Tabs: child entities + Others */}
                   {tabs.length > 0 && (
-                    <div className={getLinesTabsSectionClassName(linesLayout)}>
+                    <div
+                      className={getLinesTabsSectionClassName(linesLayout)}
+                      onMouseDown={autoSaveOnBlur && linesLayout === 'inlineEditable' ? () => handleFieldBlurRef.current?.() : undefined}
+                    >
                       <div className={`flex items-center justify-between border-b border-border/50 ${(getInlineEditableShrinkClassName(linesLayout))}`}>
                         <div className="flex items-center gap-0">
                           {tabs.map((tab, idx) => {
@@ -4206,7 +4223,7 @@ export function DetailView({
                           setNotesFocused={setNotesFocused}
                           lines={hook.children}
                           pendingLine={pendingLineValues}
-                          editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
+                          editingLine={balanceFooterEditingLine}
                           lineConfig={lineConfig}
                           totalDiscountPct={Number(data?.etgoTotalDiscount ?? 0)}
                           onTotalDiscountChange={handleTotalDiscountChange}
@@ -4220,7 +4237,7 @@ export function DetailView({
                           balanceFooter,
                           children: hook.children,
                           pendingLine: pendingLineValues,
-                          editingLine: lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine,
+                          editingLine: balanceFooterEditingLine,
                           lineConfig,
                           formatAmount,
                           currency: data['currency$_identifier'],

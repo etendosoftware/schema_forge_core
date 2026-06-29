@@ -906,6 +906,15 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     if (f.searchSelect) {
       return renderSearchSelectField(f, label, selectorOnChange, selectorUrl);
     }
+    const optionTranslator = f.reference === 'DocumentType'
+      ? (name) => {
+          const lower = name.toLowerCase();
+          if (lower.includes('reversed')) return null;
+          if (lower.includes('credit') || lower.includes('memo')) return ui('creditNotesTab');
+          if (lower.includes('return') || lower.includes('devoluci')) return ui('returnsTab');
+          return ui('invoicesTab');
+        }
+      : undefined;
     return (
       <div key={f.key} className={LABEL_GAP}>
         <Label
@@ -925,6 +934,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
           selectorUrl={selectorUrl}
           selectorContext={effectiveSelectorContext}
           token={token}
+          optionTranslator={optionTranslator}
           data-testid="SelectorInput__a8d626" />
       </div>
     );

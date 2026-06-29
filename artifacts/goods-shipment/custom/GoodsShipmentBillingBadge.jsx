@@ -5,10 +5,8 @@ import { TONE_STYLES } from '@/components/ui/status-tag-tokens.js';
 export default function GoodsShipmentBillingBadge({ data }) {
   const ui = useUI();
 
-  const isCompleted = data?.documentStatus === 'CO';
-  if (!isCompleted) return null;
-
   const rawPct = data?.invoiceStatus != null ? Number(data.invoiceStatus) : 0;
+  if (rawPct <= 0) return null;
   const pct = Math.max(0, Math.min(100, rawPct)) / 100;
   const tone = getProgressTone(pct);
   const palette = TONE_STYLES[tone];
