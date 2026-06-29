@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useUI, useMenuLabel } from '@/i18n';
-import InvoicePaymentHistoryModal from '@/windows/custom/shared/InvoicePaymentHistoryModal.jsx';
+import InvoicePaymentModal from '@/windows/custom/shared/InvoicePaymentModal.jsx';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 import SendToSifButton from './SendToSifButton';
 import { getArSubtype } from './invoiceSubtype';
@@ -319,12 +319,13 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
 
       <SendDocumentButton onClick={() => setShowSendModal(true)} />
 
-      {/* View payments modal — same popup as list view */}
+      {/* View payments modal — installment breakdown */}
       {showPaymentsModal && (
-        <InvoicePaymentHistoryModal
+        <InvoicePaymentModal
           invoiceId={recordId}
           invoiceData={data}
           specName="sales-invoice"
+          token={token}
           apiBaseUrl={apiBaseUrl}
           onClose={() => setShowPaymentsModal(false)}
           onPaymentAdded={fetchInstallments}
