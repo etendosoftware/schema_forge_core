@@ -120,11 +120,11 @@ After the backend wiring lands, remember the Etendo step:
 
 1. Start the app and open `/general-ledger-configuration`.
 2. Confirm the tab order and labels match the Figma: `General`, `Valores por defecto`, `Dimensiones`, `Documentos`.
-3. On **General**, verify the first row renders as 4 columns on wide screens: name, organization, accounting criteria, with `gAAP` hidden from the custom form.
+3. On **General**, verify the first row renders as 4 columns on wide screens: name, organization, accounting criteria. `gAAP` (Esquema contable) is intentionally not shown — it is set at schema creation time and is not editable from this form.
 4. Confirm `Organización` and `Calendario fiscal` are read-only and show the muted `AD_OrgInfo` origin hint.
 5. Confirm the 4 unbacked controls are visibly marked but not styled like blocking errors.
 6. Edit `Nombre del esquema` and confirm `Guardar cambios` enables.
-7. Clear a required field (`Nombre del esquema`, `Esquema contable`, `Moneda principal`) and confirm inline required validation appears on save.
+7. Clear a required field (`Nombre del esquema` or `Moneda principal`) and confirm inline required validation appears on save.
 8. On **Valores por defecto**, confirm the 4 groups render and required account selectors show the required marker.
 9. On **Dimensiones**, confirm optional rows can be toggled and mandatory rows stay enabled/read-only (cannot be turned off).
 10. On **Documentos**, confirm there are no editable controls and every row shows `Mapeado`.

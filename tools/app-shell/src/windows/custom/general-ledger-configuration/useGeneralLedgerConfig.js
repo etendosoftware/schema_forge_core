@@ -176,7 +176,8 @@ export function useGeneralLedgerConfig(apiBaseUrl) {
       throw new Error(`HTTP ${res.status}`);
     }
     const json = await res.json();
-    const saved = mapPayload(json?.response?.data?.[0]);
+    if (!json?.response?.data?.[0]) throw new Error('save: server acknowledged but returned no payload');
+    const saved = mapPayload(json.response.data[0]);
 
     setGeneral(saved.general);
     setDefaults(saved.defaults);

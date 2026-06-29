@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
+import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { login } from '../helpers/auth.js';
 
@@ -57,6 +58,7 @@ test.describe('General Ledger Configuration — visual capture (mocked)', () => 
       await expect(page.getByTestId('glc-save')).toBeVisible();
 
       // Let fonts/transitions settle, then capture the full page for human review.
+      mkdirSync(OUT_DIR, { recursive: true });
       await page.waitForTimeout(300);
       await page.screenshot({ path: path.join(OUT_DIR, tab.file), fullPage: true });
     });

@@ -26,7 +26,7 @@ export default function DimensionsTab({ dimensions, setDimensionField }) {
           {dimensions.map((row) => (
             <ToggleRow
               key={row.id}
-              label={row.label}
+              label={row.labelKey ? ui(row.labelKey) : row.label}
               caption={caption(row)}
               checked={row.active}
               disabled={Boolean(row.mandatory)}

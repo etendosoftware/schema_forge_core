@@ -82,7 +82,7 @@ export const GENERAL_SEED = {
   name: 'Contabilidad España — EUR',
   gAAP: 'SA',
   accrual: true, // IsAccrual=true ⇒ Devengo
-  description: 'Esquema contable PGC 2007 para operaciones nacionales en España.',
+  description: '',
   currency: 'EUR',
   automaticPeriodControl: true, // AutoPeriodControl=Y ⇒ posting in closed periods OFF
 };
@@ -212,12 +212,12 @@ export const DEFAULTS_GROUPS = [
 // `active` = IsActive toggle; `mandatory` = IsMandatory; `scope` = i18n key for
 // the sub-caption.
 export const DIMENSIONS_SEED = [
-  { id: 'dim-cc', label: 'Centro de coste', active: true, mandatory: true, caption: 'Obligatorio · Facturas y asientos' },
-  { id: 'dim-pr', label: 'Producto', active: true, mandatory: false, caption: 'Opcional · Ventas y compras' },
-  { id: 'dim-pj', label: 'Proyecto', active: true, mandatory: false, caption: 'Opcional · Todos los documentos' },
-  { id: 'dim-mc', label: 'Campaña', active: false, mandatory: false, caption: 'Opcional · Ventas y compras' },
-  { id: 'dim-as', label: 'Activo fijo', active: false, mandatory: false, caption: 'Opcional · Todos los documentos' },
-  { id: 'dim-sr', label: 'Región de ventas', active: false, mandatory: false, caption: 'Opcional · Ventas y compras' },
+  { id: 'dim-cc', labelKey: 'glc.dim.costCenter', active: true, mandatory: true, caption: 'Obligatorio · Facturas y asientos' },
+  { id: 'dim-pr', labelKey: 'glc.dim.product', active: true, mandatory: false, caption: 'Opcional · Ventas y compras' },
+  { id: 'dim-pj', labelKey: 'glc.dim.project', active: true, mandatory: false, caption: 'Opcional · Todos los documentos' },
+  { id: 'dim-mc', labelKey: 'glc.dim.campaign', active: false, mandatory: false, caption: 'Opcional · Ventas y compras' },
+  { id: 'dim-as', labelKey: 'glc.dim.fixedAsset', active: false, mandatory: false, caption: 'Opcional · Todos los documentos' },
+  { id: 'dim-sr', labelKey: 'glc.dim.salesRegion', active: false, mandatory: false, caption: 'Opcional · Ventas y compras' },
 ];
 
 // ── Seed records: Documentos (C_AcctSchema_Table_DocType, read-only) ─────────

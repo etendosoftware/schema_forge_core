@@ -91,7 +91,7 @@ The General tab mixes backed, read-only-from-elsewhere, and unbacked fields. Bin
 | Field | Treatment |
 |---|---|
 | Nombre del esquema | **editable** → `name` (required) |
-| Esquema contable | **editable select** → `gAAP` (required; note: normally set-once) |
+| Esquema contable | **intentionally hidden** — `gAAP` is set at schema-creation time; not editable from this window. Field present in contract but omitted from the custom form. |
 | Criterio contable | **editable select** → `accrual` (`IsAccrual` bool → Devengo/Caja) |
 | Descripción | **editable** → `description` |
 | Moneda principal | **editable select** → `currency` (required) |
