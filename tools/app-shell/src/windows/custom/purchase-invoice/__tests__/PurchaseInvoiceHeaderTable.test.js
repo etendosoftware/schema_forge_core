@@ -20,6 +20,7 @@ const expectedKeysInOrder = [
   'eTGODueDate',
   'businessPartner',
   'documentStatus',
+  'posted',
   'grandTotalAmount',
   'outstandingAmount',
   'eTGODeliveryStatus',
@@ -34,7 +35,7 @@ describe('PurchaseInvoiceHeaderTable — columns', () => {
     assert.ok(columnsBlock, 'expected `const columns = useMemo(() => [...], [])` block');
   });
 
-  it('renders the nine expected columns in order (transactionDocument is visible badge + type filter)', () => {
+  it('renders the ten expected columns in order (transactionDocument is visible badge + type filter)', () => {
     const block = columnsBlock[1];
     const keys = [...block.matchAll(/key:\s*'([^']+)'/g)].map(m => m[1]);
     assert.deepEqual(keys, expectedKeysInOrder);
