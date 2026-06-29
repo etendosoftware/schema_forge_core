@@ -67,6 +67,12 @@ describe('PaymentsCard', () => {
     expect(screen.getByText('pay-42')).toBeInTheDocument();
   });
 
+  it('formats amounts > 999 with thousand dots', () => {
+    const payments = [{ id: '1', amount: 1500, paymentDate: '2026-01-01', documentNo: 'INV-1500' }];
+    render(<PaymentsCard payments={payments} currencyCode="EUR" specName="purchase-invoice" />);
+    expect(screen.getByText(/1\.500,00/)).toBeInTheDocument();
+  });
+
   it('shows outstanding row when totalOutstanding > 0', () => {
     const payments = [{ id: '1', amount: 100, paymentDate: '2026-01-01', documentNo: 'INV-1' }];
     render(<PaymentsCard payments={payments} currencyCode="EUR" totalOutstanding={50} specName="purchase-invoice" />);

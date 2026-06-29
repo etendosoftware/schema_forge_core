@@ -241,6 +241,37 @@ describe('InvoicePaymentHistoryModal', () => {
     expect(screen.getByTestId('new-payment-entry-modal')).toBeInTheDocument();
   });
 
+  it('formats amounts > 999 with thousand dots in payment rows', async () => {
+    useApiFetch.mockReturnValue(makeApiFetch([
+      { id: 'p1', documentNo: 'PAY-999', paymentDate: '2026-03-01', amount: '1500.50', status: 'DR' },
+    ]));
+    render(
+      <InvoicePaymentHistoryModal
+        invoiceId="42"
+        invoiceData={INVOICE_DATA}
+        specName="purchase-invoice"
+        apiBaseUrl="http://host/sws/neo/purchase-invoice"
+        onClose={vi.fn()}
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByText(/1\.500,50/)).toBeInTheDocument(),
+    );
+  });
+
+  it('formats the grand total header with thousand dots', async () => {
+    render(
+      <InvoicePaymentHistoryModal
+        invoiceId="42"
+        invoiceData={{ ...INVOICE_DATA, grandTotalAmount: '2345.00' }}
+        specName="purchase-invoice"
+        apiBaseUrl="http://host/sws/neo/purchase-invoice"
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/2\.345,00/)).toBeInTheDocument();
+  });
+
   it('calls onPaymentAdded when payment is saved and modal is closed', async () => {
     const onClose = vi.fn();
     const onPaymentAdded = vi.fn();
