@@ -15,7 +15,7 @@ vi.mock('@/auth/useApiFetch.js', () => ({
 }));
 
 import { useGeneralLedgerConfig } from '../useGeneralLedgerConfig.js';
-import { GENERAL_SEED, DEFAULTS_SEED, DIMENSIONS_SEED } from '../mockCatalogs.js';
+import { GENERAL_SEED, DEFAULTS_SEED, DIMENSIONS_SEED, GLC_SEED_PAYLOAD } from '../mockCatalogs.js';
 
 function okJson(payload) {
   return { ok: true, json: async () => ({ response: { data: [payload] } }) };
@@ -123,6 +123,8 @@ describe('useGeneralLedgerConfig — save() payload', () => {
     act(() => result.current.setGeneralField('name', 'Updated name'));
     act(() => result.current.setDimensionField('dim-pr', 'active', false));
 
+    // POST must echo back a valid aggregate so the guard in save() doesn't throw.
+    mockApiFetch.mockResolvedValueOnce(okJson(GLC_SEED_PAYLOAD));
     await act(async () => {
       await result.current.save();
     });
