@@ -114,7 +114,7 @@
           "form": false
         },
         "processNow": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "generateList": {
           "visibility": "system"
