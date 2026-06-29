@@ -255,6 +255,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
       — matching the SelectorInput inspector experience.
     */
     <div
+      data-testid={`field-${field.key}-wrapper`}
       className={`relative flex ${FIELD_HEIGHT} w-full items-center rounded-lg border border-[#D1D4DB] bg-transparent shadow-[0px_1px_2px_rgba(18,18,23,0.05)] pl-2 pr-2 gap-1 focus-within:ring-2 focus-within:ring-primary`}
       onClick={showChip ? handleChipClick : undefined}
     >
@@ -536,7 +537,8 @@ function applyLookupAuxData(auxData, isGross, onChange, f) {
 }
 
 function renderSelectField(f, data, label, isReadOnly, onChange, ctx) {
-  const { ui, tMenu, optionalSuffix = false } = ctx;
+  const { ui, tMenu, optionalSuffix = false, locale = 'es_ES' } = ctx;
+  const optionLabel = (opt) => opt.labels?.[locale] ?? tMenu(opt.label);
   let selectValue;
   if (f.valueType === 'boolean') {
     if (data?.[f.key] === true || data?.[f.key] === 'Y' || data?.[f.key] === 'true') {
@@ -579,7 +581,7 @@ function renderSelectField(f, data, label, isReadOnly, onChange, ctx) {
         <SelectContent data-testid="SelectContent__a8d626">
           {!f.required && <SelectItem value="__empty__" data-testid="SelectItem__a8d626">&nbsp;</SelectItem>}
           {f.options.map(opt => (
-              <SelectItem key={opt.value} value={opt.value} data-testid="SelectItem__a8d626">{tMenu(opt.label)}</SelectItem>
+              <SelectItem key={opt.value} value={opt.value} data-testid="SelectItem__a8d626">{optionLabel(opt)}</SelectItem>
           ))}
         </SelectContent>
       </Select>
@@ -744,6 +746,12 @@ function isSelectFieldWithOptions(f) {
 
 function getInputType(f) {
   return f.type === 'number' ? 'number' : 'text';
+}
+
+function isCurrencyRateSelectorField(entity, apiBaseUrl, f) {
+  return f.column === 'C_Currency_ID'
+    && (entity === 'header' || entity === 'quotation')
+    && /\/(sales-order|purchase-order|sales-quotation)(\/|$)/.test(apiBaseUrl || '');
 }
 
 
@@ -1245,6 +1253,30 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     // Strip floating-point noise (e.g. 243.20999999999998 → 243.21) for read-only number fields.
     // toFixed(10) preserves up to 10 significant decimal places while eliminating IEEE 754 drift.
     const displayValue = formatReadOnlyDisplayValue(f, isReadOnly, rawDisplayValue);
+    // Custom field renderer: when a field declares `customRenderer` (a React component reference),
+    // delegate rendering entirely to that component. This is an escape hatch for fields that
+    // require specialized input UIs that cannot be expressed through the standard field types
+    // (e.g. a split prefix+suffix input for account codes).
+    // The component receives: value, onChange(newValue), record (full form data), readOnly.
+    if (f.customRenderer) {
+      const Renderer = f.customRenderer;
+      return (
+        <div key={f.key} className="space-y-1.5">
+          <Label
+            htmlFor={f.key}
+            className="text-sm text-foreground font-medium"
+            data-testid="Label__a8d626">
+            {label}{labelMarker(f, isReadOnly, optionalSuffix, ui)}
+          </Label>
+          <Renderer
+            value={data?.[f.key] ?? ''}
+            onChange={(v) => onChange?.(f.key, v, f.column)}
+            record={data}
+            readOnly={isReadOnly}
+            data-testid="Renderer__a8d626" />
+        </div>
+      );
+    }
     if (f.type === 'checkbox' && f.toggle) {
       return renderToggleField(f, label, isReadOnly);
     }
@@ -1256,11 +1288,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     }
     if (f.type === 'selector') {
       // Currency selector on order header: use CurrencyRatePicker for searchable rate display
-      if (
-        f.column === 'C_Currency_ID' &&
-        (entity === 'header' || entity === 'quotation') &&
-        /\/(sales-order|purchase-order|sales-quotation)(\/|$)/.test(apiBaseUrl || '')
-      ) {
+      if (isCurrencyRateSelectorField(entity, apiBaseUrl, f)) {
         const isRateReadOnly = formReadOnly || f.readOnly || displayLogic?.readOnly?.[f.key] === true || evalReadOnlyLogic(f, data);
         return (
           <CurrencyRatePicker
@@ -1287,7 +1315,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       return renderStaticCreatableSelect(f, label, isReadOnly);
     }
     if (isSelectFieldWithOptions(f)) {
-      return renderSelectField(f, data, label, isReadOnly, onChange, { ui, tMenu, optionalSuffix });
+      return renderSelectField(f, data, label, isReadOnly, onChange, { ui, tMenu, optionalSuffix, locale });
     }
     if (f.type === 'textarea') {
       return renderTextareaField(f, label, isReadOnly, displayValue);
