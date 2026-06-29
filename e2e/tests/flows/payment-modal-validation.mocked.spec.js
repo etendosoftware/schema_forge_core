@@ -11,6 +11,11 @@ import { login } from '../helpers/auth.js';
  *
  * Runs in mock mode — no Etendo backend required.
  *
+ * Flow (updated for the two-step payment UI):
+ *   1. Badge click → opens InvoicePaymentHistoryModal (step 1).
+ *   2. "+ Añadir pago" button → opens NewPaymentEntryModal (step 2).
+ *   3. Date field interactions and confirm button validations happen inside step 2.
+ *
  * Locale note: the app loads real locale files in mock mode and defaults to
  * es_ES for anonymous sessions. All text assertions use /English|Español/i
  * regex to be locale-agnostic.
@@ -87,25 +92,27 @@ async function openPaymentModal(page) {
   const badge = page.locator('[style*="cursor: pointer"]').filter({ hasText: /500/ }).first();
   await expect(badge).toBeVisible({ timeout: 5_000 });
   await badge.click();
-  await page.waitForTimeout(300);
+  // Step 1 of the two-step payment flow: InvoicePaymentHistoryModal opens.
   await expect(
-    page.locator('div').filter({ hasText: /Factura #PINV|Invoice #PINV/i }).first()
+    page.getByTestId('InvoicePaymentHistoryModal__panel')
   ).toBeVisible({ timeout: 5_000 });
 }
 
 async function openRegisterForm(page) {
-  const registerBtn = page.locator('[style*="dashed"]')
-    .filter({ hasText: /Register|Registrar/i })
-    .first();
-  await expect(registerBtn).toBeVisible({ timeout: 8_000 });
-  await registerBtn.click();
+  // Step 2: click "Añadir pago" in the history modal to open NewPaymentEntryModal.
+  const addPaymentBtn = page.getByTestId('InvoicePaymentHistoryModal__add-btn');
+  await expect(addPaymentBtn).toBeVisible({ timeout: 8_000 });
+  await addPaymentBtn.click();
+  // Wait for NewPaymentEntryModal to be visible (rendered via portal into body).
   await expect(
-    page.locator('input[type="text"][inputmode="numeric"]').first()
+    page.locator('[data-testid="cp-new-payment-modal"]')
   ).toBeVisible({ timeout: 3_000 });
 }
 
 async function clearDateField(page) {
-  const dateInput = page.locator('input[type="text"][inputmode="numeric"]').first();
+  // Scope to cp-new-payment-modal to avoid matching the detail-view header fields.
+  const modal = page.locator('[data-testid="cp-new-payment-modal"]');
+  const dateInput = modal.locator('input[type="text"][inputmode="numeric"]').first();
   await dateInput.click({ clickCount: 3 });
   await page.keyboard.press('Delete');
   await page.keyboard.press('Tab');
@@ -114,8 +121,9 @@ async function clearDateField(page) {
 
 // React 18 suppresses onClick on disabled buttons even for programmatic events.
 // Invoke the React onClick handler directly via fiber introspection.
+// The confirm button in NewPaymentEntryModal has data-testid="cp-confirm".
 async function clickDisabledConfirm(page) {
-  const confirmBtn = page.getByRole('button', { name: /Confirm payment|Confirmar pago/i });
+  const confirmBtn = page.locator('[data-testid="cp-confirm"]');
   await confirmBtn.evaluate((btn) => {
     const fiberKey = Object.keys(btn).find(
       (k) => k.startsWith('__reactFiber') || k.startsWith('__reactInternalInstance'),
@@ -148,8 +156,9 @@ test.describe('Payment modal date validation (mocked)', () => {
 
   test('clicking the payment badge opens the payments modal', async ({ page }) => {
     await openPaymentModal(page);
+    // openPaymentModal already asserts the panel is visible; confirm docNo is shown.
     await expect(
-      page.locator('div').filter({ hasText: /Factura #PINV|Invoice #PINV/i }).first()
+      page.getByTestId('InvoicePaymentHistoryModal__panel')
     ).toBeVisible({ timeout: 3_000 });
   });
 
@@ -157,7 +166,7 @@ test.describe('Payment modal date validation (mocked)', () => {
     await openPaymentModal(page);
     await openRegisterForm(page);
     await clearDateField(page);
-    const confirmBtn = page.getByRole('button', { name: /Confirm payment|Confirmar pago/i });
+    const confirmBtn = page.locator('[data-testid="cp-confirm"]');
     await expect(confirmBtn).toBeDisabled({ timeout: 3_000 });
   });
 
