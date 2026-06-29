@@ -1,7 +1,8 @@
 {
-  "version": "0.27.0",
+  "version": "0.28.0",
   "generatedAt": "2026-06-29T12:25:17.116Z",
-  "checksum": "ae20647a26896001",
+  "updatedAt": "2026-06-29T17:06:06.204Z",
+  "checksum": "df22c8e80ad8cb12",
   "frontendContract": {
     "window": {
       "id": "168",
@@ -202,15 +203,24 @@
             "enumValues": [
               {
                 "value": "C",
-                "name": "Closing Inventory"
+                "name": "Closing Inventory",
+                "labels": {
+                  "es_ES": "Inventario de Cierre"
+                }
               },
               {
                 "value": "N",
-                "name": "Normal"
+                "name": "Normal",
+                "labels": {
+                  "es_ES": "Normal"
+                }
               },
               {
                 "value": "O",
-                "name": "Opening Inventory"
+                "name": "Opening Inventory",
+                "labels": {
+                  "es_ES": "Inventario de Apertura"
+                }
               }
             ],
             "defaultValue": "N"
