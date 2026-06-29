@@ -14,6 +14,7 @@ export default function GoodsShipmentBillingBadge({ data }) {
 
   return (
     <span
+      data-testid="billing-badge"
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 5,
         padding: '4px 12px', borderRadius: 6,

@@ -197,6 +197,7 @@ export default function ImportLinesModal({
 
         <div style={{ padding: '10px 16px 0' }}>
           <input
+            data-testid="import-lines-search"
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
