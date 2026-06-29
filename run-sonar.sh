@@ -269,11 +269,12 @@ rm -rf .scannerwork
 # ── Step 0.5: Run coverage if requested ────────────────────────────────────
 if [[ "$RUN_COVERAGE" == "true" ]]; then
   echo "==> Running unit tests with coverage..."
-  # Ensure Node 20 is active (coverage flags require Node >= 18.15; NVM default may be older).
+  # Require Node 22+: vitest coverage uses the threads pool which relies on Node 22 ESM
+  # worker behaviour. nvm use 22 keeps us on the right version if nvm is present.
   if [ -s "${NVM_DIR:-$HOME/.nvm}/nvm.sh" ]; then
     # shellcheck source=/dev/null
     source "${NVM_DIR:-$HOME/.nvm}/nvm.sh"
-    nvm use 20 --silent 2>/dev/null || true
+    nvm use 22 --silent 2>/dev/null || true
   fi
   make test-all-coverage
 fi

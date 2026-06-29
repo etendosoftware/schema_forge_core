@@ -5,6 +5,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { run as runDoubleSend } from './scenarios/double-send.js';
 import { run as runConcurrentLoad } from './scenarios/concurrent-load.js';
 import { generateReport } from './report.js';
+import { resetEmailSafetyBeforeRun } from './safety-reset.js';
 
 // Setup AsyncLocalStorage to coordinate worker metadata across async calls
 const workerContext = new AsyncLocalStorage();
@@ -39,6 +40,7 @@ const token = params['token'] || process.env.ETENDO_TOKEN;
 const delayMs = parseInt(params['delay-ms'] || process.env.STRESS_DELAY_MS || '0', 10);
 const timeoutMs = parseInt(params['timeout-ms'] || process.env.STRESS_TIMEOUT_MS || '10000', 10);
 const pdfBlobPath = params['pdf-blob'] || process.env.STRESS_PDF_BLOB;
+const resetSafety = params['reset-safety'] === true || process.env.STRESS_RESET_SAFETY === '1';
 
 // Validation
 if (!scenario || (scenario !== 'double-send' && scenario !== 'concurrent-load')) {
@@ -148,6 +150,29 @@ global.fetch = async (url, options) => {
 
 // Scenario execution
 let results;
+let documentIds = [];
+if (scenario === 'concurrent-load') {
+  if (documentIdsStr) {
+    documentIds = documentIdsStr.split(',').map(s => s.trim()).filter(Boolean);
+  } else {
+    const idCount = count || workers;
+    for (let i = 1; i <= idCount; i++) {
+      documentIds.push(`SYNTHETIC-DOC-${String(i).padStart(4, '0')}`);
+    }
+  }
+}
+
+if (resetSafety) {
+  await resetEmailSafetyBeforeRun({
+    params,
+    scenario,
+    token,
+    windowName,
+    documentId,
+    documentIds,
+  });
+}
+
 if (scenario === 'double-send') {
   results = await runDoubleSend({
     workers,
@@ -160,17 +185,6 @@ if (scenario === 'double-send') {
     workerContext,
   });
 } else {
-  // For concurrent-load, resolve the list of document IDs
-  let documentIds = [];
-  if (documentIdsStr) {
-    documentIds = documentIdsStr.split(',').map(s => s.trim()).filter(Boolean);
-  } else {
-    const idCount = count || workers;
-    for (let i = 1; i <= idCount; i++) {
-      documentIds.push(`SYNTHETIC-DOC-${String(i).padStart(4, '0')}`);
-    }
-  }
-
   results = await runConcurrentLoad({
     workers,
     documentIds,

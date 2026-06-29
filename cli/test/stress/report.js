@@ -8,7 +8,7 @@ function getPercentile(arr, p) {
   return sorted[index];
 }
 
-export function generateReport({ scenario, workers, results }) {
+export function summarizeResults({ scenario, workers, results }) {
   // Extract latencies for successful/attempted operations
   const latencies = results.map(r => r.latency).filter(l => typeof l === 'number');
   const minLatency = latencies.length ? Math.min(...latencies) : 0;
@@ -47,7 +47,10 @@ export function generateReport({ scenario, workers, results }) {
           body?.deduplicate === true || 
           body?.dedup === true || 
           body?.isDuplicate === true || 
+          body?.status === 'DUPLICATE' ||
           body?.response?.data?.deduplicated === true || 
+          body?.response?.data?.status === 'DUPLICATE' ||
+          body?.data?.status === 'DUPLICATE' ||
           body?.data?.deduplicated === true;
 
         if (isDedup) {
@@ -70,29 +73,30 @@ export function generateReport({ scenario, workers, results }) {
     const acceptedPct = Math.round((accepted / workers) * 100) || 0;
     const dedupPct = Math.round((deduplicated / workers) * 100) || 0;
 
-    // Expected outcome (passing): exactly 1 accepted, workers-1 deduplicated, 0 errors
     const isPass = accepted === 1 && errors === 0 && pdfCacheFails === 0 && throttled === 0;
 
     const resultMsg = isPass 
       ? 'PASS — idempotency dedup working correctly'
       : `FAIL — expected exactly 1 accepted, N-1 deduplicated, 0 errors, 0 PDF cache fails. Got: ${accepted} accepted, ${deduplicated} deduplicated, ${errors} errors, ${pdfCacheFails} PDF cache failures`;
 
-    console.log(`\nEmail Stress Test — double-send (${workers} workers)`);
-    console.log('────────────────────────────────────────────');
-    console.log(`  Sent count:    ${sentCount}`);
-    console.log(`  Accepted:      ${accepted}   (${acceptedPct}%)`);
-    console.log(`  Deduplicated:  ${deduplicated}  (${dedupPct}%)`);
-    console.log(`  Throttled:     ${throttled}`);
-    console.log(`  Errors:        ${errors}`);
-    console.log(`  PDF cache fails: ${pdfCacheFails}`);
-    console.log('');
-    console.log(`  Latency (ms):  min=${minLatency}  p50=${p50}  p95=${p95}  max=${maxLatency}`);
-    console.log('');
-    console.log(`  Result: ${resultMsg}`);
-    console.log('────────────────────────────────────────────\n');
-
-    return isPass ? 0 : 1;
-
+    return {
+      scenario,
+      workers,
+      sentCount,
+      accepted,
+      acceptedPct,
+      deduplicated,
+      dedupPct,
+      throttled,
+      errors,
+      pdfCacheFails,
+      minLatency,
+      p50,
+      p95,
+      maxLatency,
+      isPass,
+      resultMsg,
+    };
   } else if (scenario === 'concurrent-load') {
     let totalRequests = workers;
     let accepted = 0;
@@ -121,12 +125,86 @@ export function generateReport({ scenario, workers, results }) {
 
     const acceptedPct = Math.round((accepted / workers) * 100) || 0;
     const throttlePct = Math.round((throttled / workers) * 100) || 0;
-
-    // Passing condition: zero unexpected errors (throttling is expected, not a test failure)
     const isPass = errors === 0;
     const resultMsg = isPass
       ? 'PASS — concurrent load test finished successfully'
       : `FAIL — unexpected errors occurred during concurrent load test (${errors} errors)`;
+
+    return {
+      scenario,
+      workers,
+      totalRequests,
+      accepted,
+      acceptedPct,
+      throttled,
+      throttlePct,
+      errors,
+      firstThrottleAt,
+      minLatency,
+      p50,
+      p95,
+      maxLatency,
+      isPass,
+      resultMsg,
+    };
+  }
+
+  throw new Error(`Unsupported stress scenario: ${scenario}`);
+}
+
+export function generateReport({ scenario, workers, results }) {
+  const summary = summarizeResults({ scenario, workers, results });
+
+  if (scenario === 'double-send') {
+    const {
+      sentCount,
+      accepted,
+      acceptedPct,
+      deduplicated,
+      dedupPct,
+      throttled,
+      errors,
+      pdfCacheFails,
+      minLatency,
+      p50,
+      p95,
+      maxLatency,
+      isPass,
+      resultMsg,
+    } = summary;
+
+    console.log(`\nEmail Stress Test — double-send (${workers} workers)`);
+    console.log('────────────────────────────────────────────');
+    console.log(`  Sent count:    ${sentCount}`);
+    console.log(`  Accepted:      ${accepted}   (${acceptedPct}%)`);
+    console.log(`  Deduplicated:  ${deduplicated}  (${dedupPct}%)`);
+    console.log(`  Throttled:     ${throttled}`);
+    console.log(`  Errors:        ${errors}`);
+    console.log(`  PDF cache fails: ${pdfCacheFails}`);
+    console.log('');
+    console.log(`  Latency (ms):  min=${minLatency}  p50=${p50}  p95=${p95}  max=${maxLatency}`);
+    console.log('');
+    console.log(`  Result: ${resultMsg}`);
+    console.log('────────────────────────────────────────────\n');
+
+    return isPass ? 0 : 1;
+
+  } else if (scenario === 'concurrent-load') {
+    const {
+      totalRequests,
+      accepted,
+      acceptedPct,
+      throttled,
+      throttlePct,
+      errors,
+      firstThrottleAt,
+      minLatency,
+      p50,
+      p95,
+      maxLatency,
+      isPass,
+      resultMsg,
+    } = summary;
 
     console.log(`\nEmail Stress Test — concurrent-load (${workers} workers)`);
     console.log('────────────────────────────────────────────');

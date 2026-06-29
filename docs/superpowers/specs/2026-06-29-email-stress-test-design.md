@@ -136,6 +136,15 @@ node cli/test/stress/runner.js \
 | `--delay-ms` | `STRESS_DELAY_MS` | `0` | Stagger between worker launches (ms) |
 | `--timeout-ms` | `STRESS_TIMEOUT_MS` | `10000` | Per-request timeout |
 | `--pdf-blob` | `STRESS_PDF_BLOB` | synthetic 1KB blob | Path to a real PDF for preview cache |
+| `--reset-safety` | `STRESS_RESET_SAFETY=1` | off | Delete pre-existing `ETGO_EMAIL_SAFETY` record-throttle rows and matching audit rows before the run |
+| `--db-gradle-properties` | `STRESS_DB_GRADLE_PROPERTIES` | `etendo_core/gradle.properties` when present | Gradle properties file used to connect to the Etendo DB for `--reset-safety` |
+
+`--reset-safety` is intended for repeatable local/staging limit discovery. It clears stale
+`THROTTLE` rows only for `scope=RECORD` and the target document IDs before the workers launch, so
+the run measures the current burst instead of a previous per-record throttle window. It also removes
+matching `AUDIT` rows for the target contract/document IDs so idempotency starts clean. It does not
+remove tenant/global/template/recipient/domain throttle rows, `KILL_SWITCH`, or `SUPPRESSION` rows;
+those validations remain part of the real contract behavior.
 
 ---
 
@@ -159,6 +168,45 @@ Email Stress Test — double-send (20 workers)
 ```
 
 Exit code: `0` = all assertions pass, `1` = unexpected errors or dedup failures.
+
+## Limit probe runner
+
+Use Make for repeatable local/staging runs that discover limits across multiple worker counts:
+
+```bash
+make email-stress-limits \
+  TOKEN="$JWT" \
+  DOC_ID=E2F7A13B \
+  WORKER_STEPS=1,2,5,10,20,50
+```
+
+Equivalent concurrent-load probe:
+
+```bash
+make email-stress-limits \
+  SCENARIO=concurrent-load \
+  TOKEN="$JWT" \
+  DOC_IDS=id1,id2,id3,id4,id5 \
+  WORKER_STEPS=5,10,25,50
+```
+
+The limit runner executes every worker step, prints per-step progress, then prints a final table:
+
+```
+Email Stress Limit Probe — double-send
+────────────────────────────────────────────────────────────────────────────────────────────
+  reset-safety: yes
+
+  workers | accepted | dedup | throttled | errors | pdf_fail | p50_ms | p95_ms | max_ms | verdict
+  --------+----------+-------+-----------+--------+----------+--------+--------+--------+---------
+        1 |        1 |     0 |         0 |      0 |        0 |    120 |    120 |    120 | dedup-ok
+        2 |        1 |     1 |         0 |      0 |        0 |    180 |    220 |    220 | dedup-ok
+       20 |       20 |     0 |         0 |      0 |        0 |   2843 |   2973 |   2985 | dedup-broken
+```
+
+For double-send, the important limit signal is the first worker count where `accepted > 1` or
+`dedup != workers - 1`. For concurrent-load, the important signal is the first step with throttling
+and the `first_429` worker index.
 
 ---
 
