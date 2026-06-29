@@ -92,8 +92,8 @@ describe('InvoiceTopbarExtra', () => {
 
   // ── Payment modal ──────────────────────────────────────────────────────────
 
-  it('renders InvoicePaymentModal for the payments modal', () => {
-    assert.match(src, /InvoicePaymentModal/);
+  it('renders InvoicePaymentHistoryModal for the payments modal', () => {
+    assert.match(src, /InvoicePaymentHistoryModal/);
   });
 
   it('passes specName="sales-invoice" to InvoicePaymentModal', () => {

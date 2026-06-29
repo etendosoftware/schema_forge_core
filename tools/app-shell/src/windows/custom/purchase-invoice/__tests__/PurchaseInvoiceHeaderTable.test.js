@@ -47,7 +47,7 @@ describe('PurchaseInvoiceHeaderTable — columns', () => {
     assert.match(src, /key: 'businessPartner', column: 'C_BPartner_ID'/);
     assert.match(src, /key: 'documentStatus', column: 'DocStatus'/);
     assert.match(src, /key: 'grandTotalAmount', column: 'GrandTotal'/);
-    assert.match(src, /key: 'outstandingAmount', column: 'OutstandingAmt'/);
+    assert.match(src, /key: 'outstandingAmount',\s+column: 'OutstandingAmt'/);
     assert.match(src, /key: 'eTGODeliveryStatus', column: 'em_etgo_delivery_status'/);
   });
 
