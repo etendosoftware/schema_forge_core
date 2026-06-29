@@ -83,6 +83,13 @@ function MethodIcon({ method }) {
   return <span style={{ display: 'inline-flex', color: '#9CA3AF' }}>{icon}</span>;
 }
 
+function getCountLabel(isSales, count, ui) {
+  if (isSales) {
+    return count === 1 ? ui('cobroRegistrado') : ui('cobrosRegistrados');
+  }
+  return count === 1 ? ui('pagoRegistrado') : ui('pagosRegistrados');
+}
+
 /**
  * InvoicePaymentHistoryModal — intermediate popup opened from the "Pendiente de pago" badge
  * in the invoice list (Step 1 of the two-step payment flow).
@@ -162,6 +169,85 @@ export default function InvoicePaymentHistoryModal({
   }, [onClose, onPaymentAdded, paymentWasAdded]);
 
   const title = isSales ? ui('invoiceReceipts') : ui('invoicePaymentsTitle');
+  const canAddPayment = outstandingAmt > 0 && isCompleted;
+
+  let historyBody;
+  if (loading) {
+    historyBody = (
+      <div style={{ textAlign: 'center', padding: '36px 0', color: '#9CA3AF', fontSize: 13 }}>
+        {ui('loading')}
+      </div>
+    );
+  } else if (payments.length === 0) {
+    historyBody = (
+      <div
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '36px 20px', gap: 10 }}
+        data-testid="InvoicePaymentHistoryModal__empty"
+      >
+        <RowDirBadge isIn={isSales} size={48} data-testid="RowDirBadge__b82d4f" />
+        <p style={{ fontSize: 13, color: '#6B7280', textAlign: 'center', margin: 0 }}>
+          {isSales ? ui('noCobroYet') : ui('noPagoYet')}
+        </p>
+      </div>
+    );
+  } else {
+    historyBody = (
+      <div>
+        {/* Column headers */}
+        <div style={{ display: 'grid', gridTemplateColumns: '26px 1fr 80px 95px 115px 118px 14px', gap: 8, padding: '10px 24px 8px', borderBottom: '0.5px solid #E3E7EC' }}>
+          <div />
+          {[ui('documentNo'), ui('date'), ui('paymentMethodCol'), ui('amount'), ui('statusLabel')].map((h) => (
+            <div key={h} style={{ fontSize: 11, fontWeight: 500, color: '#9CA3AF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h}</div>
+          ))}
+          <div />
+        </div>
+        {/* Rows */}
+        <div style={{ display: 'flex', flexDirection: 'column' }} data-testid="InvoicePaymentHistoryModal__list">
+          {payments.map((p) => {
+            const methodRaw = p['paymentMethod$_identifier'] || p.paymentMethod || '';
+            const methodKey = methodRaw.toLowerCase().replace(/transferencia|transfer/,'transfer').replace(/tarjeta|card/,'card').replace(/efectivo|cash/,'cash').replace(/domiciliaci[oó]n|direct/,'direct');
+            const amtSign = isSales ? '+ ' : '− ';
+            return (
+              <div
+                key={p.id}
+                onClick={() => handleRowClick(p)}
+                className="hover-row"
+                style={{ display: 'grid', gridTemplateColumns: '26px 1fr 80px 95px 115px 118px 14px', gap: 8, padding: '13px 24px', borderBottom: '0.5px solid #F3F4F6', alignItems: 'center', cursor: 'pointer' }}
+                data-testid="InvoicePaymentHistoryModal__row"
+              >
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <RowDirBadge isIn={isSales} size={26} data-testid="RowDirBadge__b82d4f" />
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', fontFamily: 'JetBrains Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {p.documentNo || p.id}
+                </div>
+                <div className="tabular-nums" style={{ fontSize: 12, color: '#6B7280' }}>
+                  {fmtDate(p.paymentDate)}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#6B7280', overflow: 'hidden' }}>
+                  <MethodIcon method={methodKey} data-testid="MethodIcon__b82d4f" />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{methodRaw || '—'}</span>
+                </div>
+                <div className="tabular-nums" style={{ fontSize: 13, fontWeight: 600, color: isSales ? '#17663A' : '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {amtSign}{fmt(p.amount, currency)}
+                </div>
+                <div>
+                  <PaymentStateTag
+                    status={p.status || ''}
+                    isSales={isSales}
+                    ui={ui}
+                    data-testid="PaymentStateTag__b82d4f" />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', color: '#9CA3AF' }}>
+                  <ChevronRight size={14} data-testid="ChevronRight__b82d4f" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -220,84 +306,13 @@ export default function InvoicePaymentHistoryModal({
 
         {/* Payment history table */}
         <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '36px 0', color: '#9CA3AF', fontSize: 13 }}>
-              {ui('loading')}
-            </div>
-          ) : payments.length === 0 ? (
-            <div
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '36px 20px', gap: 10 }}
-              data-testid="InvoicePaymentHistoryModal__empty"
-            >
-              <RowDirBadge isIn={isSales} size={48} data-testid="RowDirBadge__b82d4f" />
-              <p style={{ fontSize: 13, color: '#6B7280', textAlign: 'center', margin: 0 }}>
-                {isSales ? ui('noCobroYet') : ui('noPagoYet')}
-              </p>
-            </div>
-          ) : (
-            <div>
-              {/* Column headers */}
-              <div style={{ display: 'grid', gridTemplateColumns: '26px 1fr 80px 95px 115px 118px 14px', gap: 8, padding: '10px 24px 8px', borderBottom: '0.5px solid #E3E7EC' }}>
-                <div />
-                {[ui('documentNo'), ui('date'), ui('paymentMethodCol'), ui('amount'), ui('statusLabel')].map((h) => (
-                  <div key={h} style={{ fontSize: 11, fontWeight: 500, color: '#9CA3AF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h}</div>
-                ))}
-                <div />
-              </div>
-              {/* Rows */}
-              <div style={{ display: 'flex', flexDirection: 'column' }} data-testid="InvoicePaymentHistoryModal__list">
-                {payments.map((p) => {
-                  const methodRaw = p['paymentMethod$_identifier'] || p.paymentMethod || '';
-                  const methodKey = methodRaw.toLowerCase().replace(/transferencia|transfer/,'transfer').replace(/tarjeta|card/,'card').replace(/efectivo|cash/,'cash').replace(/domiciliaci[oó]n|direct/,'direct');
-                  const amtSign = isSales ? '+ ' : '− ';
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => handleRowClick(p)}
-                      className="hover-row"
-                      style={{ display: 'grid', gridTemplateColumns: '26px 1fr 80px 95px 115px 118px 14px', gap: 8, padding: '13px 24px', borderBottom: '0.5px solid #F3F4F6', alignItems: 'center', cursor: 'pointer' }}
-                      data-testid="InvoicePaymentHistoryModal__row"
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <RowDirBadge isIn={isSales} size={26} data-testid="RowDirBadge__b82d4f" />
-                      </div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', fontFamily: 'JetBrains Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {p.documentNo || p.id}
-                      </div>
-                      <div className="tabular-nums" style={{ fontSize: 12, color: '#6B7280' }}>
-                        {fmtDate(p.paymentDate)}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#6B7280', overflow: 'hidden' }}>
-                        <MethodIcon method={methodKey} data-testid="MethodIcon__b82d4f" />
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{methodRaw || '—'}</span>
-                      </div>
-                      <div className="tabular-nums" style={{ fontSize: 13, fontWeight: 600, color: isSales ? '#17663A' : '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {amtSign}{fmt(p.amount, currency)}
-                      </div>
-                      <div>
-                        <PaymentStateTag
-                          status={p.status || ''}
-                          isSales={isSales}
-                          ui={ui}
-                          data-testid="PaymentStateTag__b82d4f" />
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', color: '#9CA3AF' }}>
-                        <ChevronRight size={14} data-testid="ChevronRight__b82d4f" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {historyBody}
         </div>
 
         {/* Footer */}
         <div style={{ padding: '14px 24px', borderTop: '0.5px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <span style={{ fontSize: 12, color: '#6B7280' }}>
-            {payments.length} {isSales
-              ? (payments.length === 1 ? ui('cobroRegistrado') : ui('cobrosRegistrados'))
-              : (payments.length === 1 ? ui('pagoRegistrado') : ui('pagosRegistrados'))}
+            {payments.length} {getCountLabel(isSales, payments.length, ui)}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
@@ -308,7 +323,7 @@ export default function InvoicePaymentHistoryModal({
             >
               {ui('close') || 'Cerrar'}
             </button>
-            {outstandingAmt > 0 && isCompleted && (
+            {canAddPayment && (
               <button
                 type="button"
                 onClick={() => setShowPaymentModal(true)}

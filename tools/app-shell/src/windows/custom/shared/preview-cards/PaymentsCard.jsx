@@ -135,11 +135,19 @@ export default function PaymentsCard({
   if (loading) {
     content = <p className="text-xs text-gray-400 py-4 text-center">{ui('loading')}</p>;
   } else if (payments.length === 0) {
+    let emptyLabel;
+    if (isCreditNote) {
+      emptyLabel = ui('noApplicationsRegistered');
+    } else if (isIn) {
+      emptyLabel = ui('noCobroYet');
+    } else {
+      emptyLabel = ui('noPagoYet');
+    }
     content = (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 16px', gap: 8 }}>
         <DirBadge isIn={isIn} size={36} data-testid="DirBadge__c6fe34" />
         <p style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'center', margin: 0 }}>
-          {isCreditNote ? ui('noApplicationsRegistered') : (isIn ? ui('noCobroYet') : ui('noPagoYet'))}
+          {emptyLabel}
         </p>
       </div>
     );
