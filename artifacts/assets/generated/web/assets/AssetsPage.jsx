@@ -274,6 +274,7 @@ const labelOverrides = api.labelOverrides;
 export default function AssetsPage({ windowName, recordId, ...props }) {
   if (recordId) {
     return (
+      <>
       <DetailView
         entity="assets"
         Form={AssetsForm}
@@ -317,6 +318,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
           />
         )}
       />
+      </>
     );
   }
 
