@@ -56,7 +56,7 @@ export default function AccountCodeField({ value = '', onChange, record, readOnl
   }
 
   const handleSuffixChange = (e) => {
-    const v = e.target.value;
+    const v = e.target.value.replace(/\D/g, '');
     setSuffix(v);
     setError('');
     onChange?.(derivedPrefix + v);
@@ -74,7 +74,7 @@ export default function AccountCodeField({ value = '', onChange, record, readOnl
 
   const handleBlur = () => {
     const full = derivedPrefix + suffix;
-    if (full.length !== 8) {
+    if (full.length !== 8 || !/^\d+$/.test(full)) {
       setError(ui('codeExact8Digits'));
     } else {
       setError('');

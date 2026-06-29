@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI, useLocaleSwitch } from '@/i18n';
 import NewAccountModal from './NewAccountModal';
 
 function buildTreeColumns(ui) {
@@ -87,15 +87,13 @@ function buildTreeColumns(ui) {
  * auto-populates the parent from that row; otherwise the selector starts empty.
  */
 
-const FMT = new Intl.NumberFormat('es', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-  useGrouping: true,
-});
-
-function fmtNum(n) {
-  if (n == null) return '—';
-  return FMT.format(Number(n));
+function makeFmtNum(locale) {
+  const fmt = new Intl.NumberFormat(locale.replace('_', '-'), {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: true,
+  });
+  return (n) => (n == null ? '—' : fmt.format(Number(n)));
 }
 
 /**
@@ -103,16 +101,12 @@ function fmtNum(n) {
  * nodes for each 4-digit parent. All API records are leaves (issummary='N'); the
  * hierarchy comes from parentCode4 / parentCode4Name injected by the NeoHandler.
  *
- * Returns { tree: groupNodes[], indexById: Map<id, node> } where indexById only
- * contains real account nodes (not virtual group headers).
+ * Returns { tree: groupNodes[] }.
  */
 function buildGroupedTree(items) {
-  const indexById = new Map();
   const groupMap = new Map(); // parentCode4 → groupNode
 
   for (const item of items) {
-    indexById.set(item.id, item);
-
     const code = item.parentCode4;
     if (code) {
       if (!groupMap.has(code)) {
@@ -146,7 +140,7 @@ function buildGroupedTree(items) {
     group.children.sort((a, b) => a.searchKey.localeCompare(b.searchKey));
   }
 
-  return { tree, indexById };
+  return { tree };
 }
 
 /**
@@ -166,7 +160,8 @@ function flattenVisible(nodes, expanded) {
   return result;
 }
 
-function AccountTreeRow({ item, isExpanded, isSelected, onToggle, onRowClick }) {
+function AccountTreeRow({ item, isExpanded, isSelected, onToggle, onRowClick, fmtNum }) {
+  const ui = useUI();
   const isSummary = item.summaryLevel === 'Y';
   const indent = (item.depth ?? 0) * 16;
   const balance = Number(item.ytdBalance ?? 0);
@@ -198,7 +193,7 @@ function AccountTreeRow({ item, isExpanded, isSelected, onToggle, onRowClick }) 
             }}
             className="flex items-center justify-center w-4 h-4 text-[#6C6C89] hover:text-[#121217] transition-colors"
             aria-expanded={isExpanded}
-            aria-label={isExpanded ? 'Contraer' : 'Expandir'}
+            aria-label={isExpanded ? ui('collapse') : ui('expand')}
           >
             {isExpanded ? <ChevronDown size={13} data-testid="ChevronDown__acc34a" /> : <ChevronRight size={13} data-testid="ChevronRight__acc34a" />}
           </button>
@@ -243,7 +238,7 @@ function AccountTreeRow({ item, isExpanded, isSelected, onToggle, onRowClick }) 
  *
  * Props it uses:
  *   data          — flat list of account records from NEO (with tree fields)
- *   onNavigate    — (id) => void — called when a row is clicked
+ *   onNavigate    — (item) => void — called when a non-virtual row is clicked (receives the full row object)
  *   onDataMutated — () => void  — called after a new sub-account is saved
  *   token         — JWT for API calls (forwarded to NewAccountModal)
  *   apiBaseUrl    — NEO base URL (forwarded to NewAccountModal)
@@ -282,6 +277,8 @@ export default function AccountTreeView({
   ...rest
 }) {
   const ui = useUI();
+  const { locale } = useLocaleSwitch();
+  const fmtNum = useMemo(() => makeFmtNum(locale), [locale]);
   const treeColumns = useMemo(() => buildTreeColumns(ui), [ui]);
 
   const { tree } = useMemo(() => buildGroupedTree(data), [data]);
@@ -419,6 +416,7 @@ export default function AccountTreeView({
                 isSelected={item.id === selectedId}
                 onToggle={handleToggle}
                 onRowClick={handleRowClick}
+                fmtNum={fmtNum}
                 data-testid="AccountTreeRow__acc34a"
               />
             ))}

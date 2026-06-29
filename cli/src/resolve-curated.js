@@ -698,7 +698,6 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'customTabsAfterBottom',
   'hideCreate',
   'hidePrint',
-  'hideCreate',
   'hideMoreMenu',
   'hideMoreDetails',
   'hideListFilters',

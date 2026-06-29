@@ -2162,11 +2162,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const menuActionsWithComponents = menuActionsConfig.filter(a => a.component);
   const menuActionStateStatements = menuActionsWithComponents.map(a => {
     const name = capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()));
-    return `  const [show${name}MenuModal, set${name}MenuModal] = useState(false);\n  const [${a.key}MenuContext, set${name}MenuContext] = useState(null);`;
+    const camelKey = name.charAt(0).toLowerCase() + name.slice(1);
+    return `  const [show${name}MenuModal, set${name}MenuModal] = useState(false);\n  const [${camelKey}MenuContext, set${name}MenuContext] = useState(null);`;
   }).join('\n');
   const menuActionModals = menuActionsWithComponents.map(a => {
     const name = capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()));
-    return `      {show${name}MenuModal && <${a.component} isOpen={show${name}MenuModal} token={props.token} apiBaseUrl={api.baseUrl} currentRecord={${a.key}MenuContext} onClose={() => set${name}MenuModal(false)} onSaved={() => { set${name}MenuModal(false); window.location.reload(); }} />}`;
+    const camelKey = name.charAt(0).toLowerCase() + name.slice(1);
+    return `      {show${name}MenuModal && <${a.component} isOpen={show${name}MenuModal} token={props.token} apiBaseUrl={api.baseUrl} currentRecord={${camelKey}MenuContext} onClose={() => set${name}MenuModal(false)} onSaved={() => { set${name}MenuModal(false); window.location.reload(); }} />}`;
   }).join('\n');
 
   const needsUseState = customComponents.newRecordComponent || newActionsWithComponents.length > 0 || menuActionsWithComponents.length > 0 || !!confirmModalName;

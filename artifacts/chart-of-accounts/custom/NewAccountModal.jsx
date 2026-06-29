@@ -126,7 +126,9 @@ export default function NewAccountModal({
     return parent ? String(parent.searchKey) : '';
   }, [form.parentAccountId, parentOptions]);
 
-  // Re-initialise when modal opens or currentRecord changes
+  // Re-initialise when modal opens or currentRecord changes.
+  // parentOptions is intentionally excluded: async loading can change it while
+  // the modal is open and would reset user-entered name/searchKey mid-edit.
   useEffect(() => {
     if (!isOpen) return;
     const defaultParentId = deriveDefaultParentId(currentRecord, parentOptions);
@@ -135,7 +137,7 @@ export default function NewAccountModal({
     setForm({ parentAccountId: defaultParentId, name: '', searchKey: prefix });
     setErrors({});
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, currentRecord, parentOptions]);
+  }, [isOpen, currentRecord]);
 
   // When parent changes, update the code prefix in the searchKey field
   const handleParentChange = useCallback(
@@ -184,7 +186,7 @@ export default function NewAccountModal({
       const res = await fetch(`${apiBaseUrl}/elementValue`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
