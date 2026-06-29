@@ -1,7 +1,7 @@
 # Email Send Stress Test — Design Spec
 
 **Date:** 2026-06-29  
-**Branch:** feature/ETP-4346  
+**Branch:** feature/ETP-4357  
 **Scope:** Frontend contract layer + real Etendo backend (email provider mocked at config)  
 
 ---
