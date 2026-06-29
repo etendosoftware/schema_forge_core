@@ -1445,5 +1445,15 @@
     ],
     "author": "pipeline",
     "date": "2026-06-26"
+  },
+  {
+    "from": "0.29.0",
+    "to": "0.30.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"tax\" property \"validationRule\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-06-29"
   }
 ]

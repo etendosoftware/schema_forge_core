@@ -1,8 +1,8 @@
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "generatedAt": "2026-06-11T01:47:08.755Z",
-  "updatedAt": "2026-06-26T15:07:43.486Z",
-  "checksum": "b85f8403d9b8150f",
+  "updatedAt": "2026-06-29T15:43:05.770Z",
+  "checksum": "63745a0cb589ba60",
   "frontendContract": {
     "window": {
       "id": "94EAA455D2644E04AB25D93BE5157B6D",
@@ -2421,6 +2421,22 @@
             "column": "EM_Psd2_Reconnect_Fa",
             "type": "button",
             "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "eTGOAmountTolerance",
+            "apiKey": "eTGOAmountTolerance",
+            "column": "EM_ETGO_Amount_Tolerance",
+            "type": "decimal",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "eTGODateTolerance",
+            "apiKey": "eTGODateTolerance",
+            "column": "EM_ETGO_Date_Tolerance",
+            "type": "integer",
+            "visibility": "system",
             "required": false
           }
         ],
@@ -8174,6 +8190,22 @@
         "description": "System field 'default' should exist in backend but not frontend for account"
       },
       {
+        "id": "t-system-field-account-eTGOAmountTolerance",
+        "category": "system-field",
+        "entity": "account",
+        "field": "eTGOAmountTolerance",
+        "runner": "node",
+        "description": "System field 'eTGOAmountTolerance' should exist in backend but not frontend for account"
+      },
+      {
+        "id": "t-system-field-account-eTGODateTolerance",
+        "category": "system-field",
+        "entity": "account",
+        "field": "eTGODateTolerance",
+        "runner": "node",
+        "description": "System field 'eTGODateTolerance' should exist in backend but not frontend for account"
+      },
+      {
         "id": "t-system-field-account-genericAccountNo",
         "category": "system-field",
         "entity": "account",
@@ -8803,7 +8835,7 @@
       }
     ],
     "summary": {
-      "total": 665,
+      "total": 667,
       "byCategory": {
         "action-endpoint": 21,
         "crud-flags": 4,
@@ -8816,11 +8848,11 @@
         "readonlylogic-valid": 29,
         "rule-declared": 225,
         "selector-endpoint": 14,
-        "system-field": 87,
+        "system-field": 89,
         "visibility": 4
       },
       "byRunner": {
-        "node": 665,
+        "node": 667,
         "junit": 0
       }
     }
