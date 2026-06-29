@@ -381,6 +381,12 @@
           "windowId": "137"
         },
         {
+          "name": "tax-category",
+          "label": "Tax Category",
+          "favname": "Tax Category",
+          "windowId": "138"
+        },
+        {
           "name": "user",
           "label": "User",
           "favname": "User",

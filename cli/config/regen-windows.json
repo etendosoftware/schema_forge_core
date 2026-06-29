@@ -139,6 +139,10 @@
       "windowId": "137"
     },
     {
+      "name": "tax-category",
+      "windowId": "138"
+    },
+    {
       "name": "tbai-config",
       "windowId": "C327DE215AC945F69363905840118177",
       "menuName": "Configuración TBAI"
