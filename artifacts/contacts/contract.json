@@ -1,8 +1,8 @@
 {
-  "version": "0.31.0",
+  "version": "0.32.0",
   "generatedAt": "2026-05-06T15:52:09.982Z",
-  "updatedAt": "2026-06-29T14:25:54.660Z",
-  "checksum": "d2ccd981ce5645cb",
+  "updatedAt": "2026-06-29T18:42:18.875Z",
+  "checksum": "78881018ec01f181",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -883,7 +883,7 @@
           {
             "name": "oBTIKVIESStatus",
             "apiKey": "oBTIKVIESStatus",
-            "column": "EM_OBTIK_VIES_Status",
+            "column": "EM_OBTIK_VIESStatus",
             "label": "Estado VIES",
             "type": "enum",
             "tsType": "string",
@@ -4808,7 +4808,7 @@
           {
             "name": "oBTIKVIESStatus",
             "apiKey": "oBTIKVIESStatus",
-            "column": "EM_OBTIK_VIES_Status",
+            "column": "EM_OBTIK_VIESStatus",
             "type": "enum",
             "visibility": "readOnly",
             "required": false
@@ -5712,7 +5712,7 @@
           {
             "name": "oBTIKVIESStatus",
             "apiKey": "oBTIKVIESStatus",
-            "column": "EM_OBTIK_VIES_Status",
+            "column": "EM_OBTIK_VIESStatus",
             "type": "enum",
             "visibility": "system",
             "required": false
@@ -6869,7 +6869,7 @@
           {
             "name": "oBTIKVIESStatus",
             "apiKey": "oBTIKVIESStatus",
-            "column": "EM_OBTIK_VIES_Status",
+            "column": "EM_OBTIK_VIESStatus",
             "type": "enum",
             "visibility": "system",
             "required": false
@@ -8034,7 +8034,7 @@
           {
             "name": "oBTIKVIESStatus",
             "apiKey": "oBTIKVIESStatus",
-            "column": "EM_OBTIK_VIES_Status",
+            "column": "EM_OBTIK_VIESStatus",
             "type": "enum",
             "visibility": "system",
             "required": false
@@ -9169,14 +9169,6 @@
             "type": "string",
             "visibility": "system",
             "required": true
-          },
-          {
-            "name": "psd2ApiKey",
-            "apiKey": "psd2ApiKey",
-            "column": "EM_Psd2_Api_Key",
-            "type": "string",
-            "visibility": "discarded",
-            "required": false
           }
         ]
       },
@@ -14237,11 +14229,11 @@
         "description": "Rule 'contacts-Business Partner-EM_Etgo_Lastname-displayLogic' (displayLogic) should be declared"
       },
       {
-        "id": "t-rule-declared-contacts-Business-Partner-EM-OBTIK-VIES-Status-displayLogic",
+        "id": "t-rule-declared-contacts-Business-Partner-EM-OBTIK-VIESStatus-displayLogic",
         "category": "rule-declared",
-        "rule": "contacts-Business Partner-EM_OBTIK_VIES_Status-displayLogic",
+        "rule": "contacts-Business Partner-EM_OBTIK_VIESStatus-displayLogic",
         "runner": "node",
-        "description": "Rule 'contacts-Business Partner-EM_OBTIK_VIES_Status-displayLogic' (displayLogic) should be declared"
+        "description": "Rule 'contacts-Business Partner-EM_OBTIK_VIESStatus-displayLogic' (displayLogic) should be declared"
       },
       {
         "id": "t-rule-declared-contacts-Business-Partner-FirstSale-displayLogic",
@@ -16244,14 +16236,6 @@
         "field": "processNow",
         "runner": "node",
         "description": "System field 'processNow' should exist in backend but not frontend for contact"
-      },
-      {
-        "id": "t-system-field-contact-psd2ApiKey",
-        "category": "system-field",
-        "entity": "contact",
-        "field": "psd2ApiKey",
-        "runner": "node",
-        "description": "System field 'psd2ApiKey' should exist in backend but not frontend for contact"
       },
       {
         "id": "t-system-field-contact-smfswsDefaultWsRole",
@@ -19456,7 +19440,7 @@
       }
     ],
     "summary": {
-      "total": 1151,
+      "total": 1150,
       "byCategory": {
         "action-endpoint": 6,
         "crud-flags": 15,
@@ -19468,11 +19452,11 @@
         "rule-declared": 104,
         "searchable-filters": 4,
         "selector-endpoint": 41,
-        "system-field": 518,
+        "system-field": 517,
         "visibility": 15
       },
       "byRunner": {
-        "node": 1151,
+        "node": 1150,
         "junit": 0
       }
     }

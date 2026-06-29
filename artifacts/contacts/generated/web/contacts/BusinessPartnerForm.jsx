@@ -12,7 +12,7 @@ const fields = [
   { key: 'etgoEmail', column: 'EM_Etgo_Email', type: 'text', label: 'Email', section: 'principal' },
   { key: 'etgoPhone', column: 'EM_Etgo_Phone', type: 'text', label: 'Phone', section: 'principal' },
   { key: 'creditLimit', column: 'SO_CreditLimit', type: 'number', label: 'Credit Limit', required: true, section: 'other' },
-  { key: 'oBTIKVIESStatus', column: 'EM_OBTIK_VIES_Status', type: 'select', label: 'Estado VIES', readOnly: true, section: 'principal', options: [{ value: 'P', label: 'Pendiente' }, { value: 'V', label: 'Válido' }, { value: 'I', label: 'No válido' }], displayLogic: (record) => record.oBTIKTaxIDKey === '2' },
+  { key: 'oBTIKVIESStatus', column: 'EM_OBTIK_VIESStatus', type: 'select', label: 'Estado VIES', readOnly: true, section: 'principal', options: [{ value: 'P', label: 'Pendiente' }, { value: 'V', label: 'Válido' }, { value: 'I', label: 'No válido' }], displayLogic: (record) => record.oBTIKTaxIDKey === '2' },
 ];
 // @sf-generated-end fields:businessPartner
 
