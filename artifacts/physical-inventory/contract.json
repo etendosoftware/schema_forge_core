@@ -1,8 +1,7 @@
 {
   "version": "0.27.0",
-  "generatedAt": "2026-04-29T19:05:48.442Z",
-  "updatedAt": "2026-06-26T17:46:00.458Z",
-  "checksum": "31d483295d962944",
+  "generatedAt": "2026-06-29T12:25:17.116Z",
+  "checksum": "ae20647a26896001",
   "frontendContract": {
     "window": {
       "id": "168",
@@ -15,6 +14,17 @@
         "moreMenuContent": "InventoryMenuContent",
         "bottomSection": "PhysicalInventoryBottomPanel"
       },
+      "menuActions": [
+        {
+          "key": "post",
+          "label": "Post",
+          "labelKey": "post",
+          "action": "post",
+          "visibleWhenFieldFalse": "posted",
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
+        }
+      ],
       "processOverrides": {
         "processNow": {
           "requiresLines": true
@@ -134,6 +144,46 @@
             "form": false
           },
           {
+            "name": "posted",
+            "apiKey": "posted",
+            "column": "Posted",
+            "label": "Posted",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
+            },
+            "defaultValue": "N",
+            "explicitType": true,
+            "badge": true,
+            "badgeLabels": {
+              "true": {
+                "en_US": "Posted",
+                "es_ES": "Contabilizado"
+              },
+              "false": {
+                "en_US": "Not posted",
+                "es_ES": "Sin contabilizar"
+              }
+            },
+            "badgeVariants": {
+              "true": "green",
+              "false": "orange"
+            },
+            "displayLogic": {
+              "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
+              "evaluable": false,
+              "reason": "session-preference",
+              "js": null
+            }
+          },
+          {
             "name": "inventoryType",
             "apiKey": "inventoryType",
             "column": "Inventory_Type",
@@ -187,7 +237,7 @@
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
               "evaluable": true,
-              "js": "record['posted'] === 'Y'"
+              "js": "record['posted'] === true"
             }
           },
           {
@@ -236,6 +286,13 @@
             "derivation": {
               "type": "computed",
               "source": "@#Date@"
+            }
+          },
+          {
+            "name": "posted",
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
             }
           },
           {
@@ -505,6 +562,17 @@
         "moreMenuContent": "InventoryMenuContent",
         "bottomSection": "PhysicalInventoryBottomPanel"
       },
+      "menuActions": [
+        {
+          "key": "post",
+          "label": "Post",
+          "labelKey": "post",
+          "action": "post",
+          "visibleWhenFieldFalse": "posted",
+          "successKey": "documentPosted",
+          "visibleWhenFieldTrue": "processed"
+        }
+      ],
       "processOverrides": {
         "processNow": {
           "requiresLines": true
@@ -611,8 +679,8 @@
             "name": "posted",
             "apiKey": "posted",
             "column": "Posted",
-            "type": "button",
-            "visibility": "system",
+            "type": "boolean",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -672,14 +740,6 @@
             "required": false
           },
           {
-            "name": "trxOrganization",
-            "apiKey": "trxOrganization",
-            "column": "AD_OrgTrx_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
             "name": "ndDimension",
             "apiKey": "ndDimension",
             "column": "User2_ID",
@@ -688,18 +748,34 @@
             "required": false
           },
           {
-            "name": "processed",
-            "apiKey": "processed",
-            "column": "Processed",
-            "type": "boolean",
-            "visibility": "readOnly",
+            "name": "trxOrganization",
+            "apiKey": "trxOrganization",
+            "column": "AD_OrgTrx_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "etblkpBulkposting",
+            "apiKey": "etblkpBulkposting",
+            "column": "EM_Etblkp_Bulkposting",
+            "type": "button",
+            "visibility": "discarded",
             "required": true
           },
           {
-            "name": "id",
-            "apiKey": "id",
-            "column": "M_Inventory_ID",
-            "type": "id",
+            "name": "etblkpAccountingstatus",
+            "apiKey": "etblkpAccountingstatus",
+            "column": "EM_Etblkp_Accountingstatus",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
@@ -712,11 +788,19 @@
             "required": true
           },
           {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
+            "name": "id",
+            "apiKey": "id",
+            "column": "M_Inventory_ID",
+            "type": "id",
             "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "type": "boolean",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -749,22 +833,6 @@
             "column": "UpdatedBy",
             "type": "foreignKey",
             "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "etblkpAccountingstatus",
-            "apiKey": "etblkpAccountingstatus",
-            "column": "EM_Etblkp_Accountingstatus",
-            "type": "enum",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
-            "name": "etblkpBulkposting",
-            "apiKey": "etblkpBulkposting",
-            "column": "EM_Etblkp_Bulkposting",
-            "type": "button",
-            "visibility": "discarded",
             "required": true
           }
         ]
@@ -879,6 +947,14 @@
             "required": false
           },
           {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "organization",
             "apiKey": "organization",
             "column": "AD_Org_ID",
@@ -907,14 +983,6 @@
             "apiKey": "id",
             "column": "M_InventoryLine_ID",
             "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
@@ -1129,12 +1197,6 @@
       },
       {
         "entity": "inventory",
-        "field": "posted",
-        "column": "Posted",
-        "url": "/sws/neo/physical-inventory/inventory/{id}/action/posted"
-      },
-      {
-        "entity": "inventory",
         "field": "etblkpBulkposting",
         "column": "EM_Etblkp_Bulkposting",
         "url": "/sws/neo/physical-inventory/inventory/{id}/action/etblkpBulkposting",
@@ -1184,14 +1246,6 @@
         "field": "generateList",
         "runner": "node",
         "description": "Action endpoint for 'generateList' in inventory should exist"
-      },
-      {
-        "id": "t-action-endpoint-inventory-posted",
-        "category": "action-endpoint",
-        "entity": "inventory",
-        "field": "posted",
-        "runner": "node",
-        "description": "Action endpoint for 'posted' in inventory should exist"
       },
       {
         "id": "t-action-endpoint-inventory-processNow",
@@ -1248,6 +1302,14 @@
         "description": "Default value for 'name' in inventory should be a string"
       },
       {
+        "id": "t-default-value-type-inventory-posted",
+        "category": "default-value-type",
+        "entity": "inventory",
+        "field": "posted",
+        "runner": "node",
+        "description": "Default value for 'posted' in inventory should be a string"
+      },
+      {
         "id": "t-default-value-type-inventoryLine-lineNo",
         "category": "default-value-type",
         "entity": "inventoryLine",
@@ -1272,6 +1334,14 @@
         "description": "Default value for 'storageBin' in inventoryLine should be a string"
       },
       {
+        "id": "t-displaylogic-evaluable-inventory-posted",
+        "category": "displaylogic-evaluable",
+        "entity": "inventory",
+        "field": "posted",
+        "runner": "node",
+        "description": "Display logic for 'posted' in inventory should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-inventory-project",
         "category": "displaylogic-evaluable",
         "entity": "inventory",
@@ -1286,6 +1356,14 @@
         "field": "quantityOrderBook",
         "runner": "node",
         "description": "Display logic for 'quantityOrderBook' in inventoryLine should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-inventory-posted",
+        "category": "displaylogic-valid",
+        "entity": "inventory",
+        "field": "posted",
+        "runner": "node",
+        "description": "Display logic for 'posted' in inventory should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-inventory-project",
@@ -1334,6 +1412,14 @@
         "field": "name",
         "runner": "node",
         "description": "Field 'name' should be present in inventory"
+      },
+      {
+        "id": "t-field-presence-inventory-posted",
+        "category": "field-presence",
+        "entity": "inventory",
+        "field": "posted",
+        "runner": "node",
+        "description": "Field 'posted' should be present in inventory"
       },
       {
         "id": "t-field-presence-inventory-processed",
@@ -1462,6 +1548,14 @@
         "field": "name",
         "runner": "node",
         "description": "Field 'name' should have type 'string' in inventory"
+      },
+      {
+        "id": "t-field-type-inventory-posted",
+        "category": "field-type",
+        "entity": "inventory",
+        "field": "posted",
+        "runner": "node",
+        "description": "Field 'posted' should have type 'boolean' in inventory"
       },
       {
         "id": "t-field-type-inventory-processed",
@@ -1957,14 +2051,6 @@
         "description": "System field 'organization' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-system-field-inventory-posted",
-        "category": "system-field",
-        "entity": "inventory",
-        "field": "posted",
-        "runner": "node",
-        "description": "System field 'posted' should exist in backend but not frontend for inventory"
-      },
-      {
         "id": "t-system-field-inventory-processNow",
         "category": "system-field",
         "entity": "inventory",
@@ -2140,25 +2226,25 @@
       }
     ],
     "summary": {
-      "total": 123,
+      "total": 126,
       "byCategory": {
-        "action-endpoint": 5,
+        "action-endpoint": 4,
         "crud-flags": 2,
-        "default-value-type": 6,
-        "displaylogic-evaluable": 2,
-        "displaylogic-valid": 2,
-        "field-presence": 16,
-        "field-type": 16,
+        "default-value-type": 7,
+        "displaylogic-evaluable": 3,
+        "displaylogic-valid": 3,
+        "field-presence": 17,
+        "field-type": 17,
         "readonlylogic-evaluable": 10,
         "readonlylogic-valid": 10,
         "rule-declared": 11,
         "searchable-filters": 2,
         "selector-endpoint": 5,
-        "system-field": 34,
+        "system-field": 33,
         "visibility": 2
       },
       "byRunner": {
-        "node": 123,
+        "node": 126,
         "junit": 0
       }
     }

@@ -7,6 +7,7 @@ export const inventory = [
     "name": "Sample name",
     "warehouse": "Main Warehouse",
     "description": "Standard order for Q1 delivery",
+    "posted": "Sample posted",
     "inventoryType": "Sample inventoryType",
     "project": "Sample project",
     "processed": "Sample processed"
@@ -17,6 +18,7 @@ export const inventory = [
     "name": "Sample name",
     "warehouse": "East Distribution Center",
     "description": "Rush order - priority shipping required",
+    "posted": "Sample posted",
     "inventoryType": "Sample inventoryType",
     "project": "Sample project",
     "processed": "Sample processed"
@@ -27,6 +29,7 @@ export const inventory = [
     "name": "Sample name",
     "warehouse": "West Hub",
     "description": "Bulk purchase for warehouse restocking",
+    "posted": "Sample posted",
     "inventoryType": "Sample inventoryType",
     "project": "Sample project",
     "processed": "Sample processed"
@@ -37,6 +40,7 @@ export const inventory = [
     "name": "Sample name",
     "warehouse": "North Storage",
     "description": "Sample order for client evaluation",
+    "posted": "Sample posted",
     "inventoryType": "Sample inventoryType",
     "project": "Sample project",
     "processed": "Sample processed"
@@ -47,6 +51,7 @@ export const inventory = [
     "name": "Sample name",
     "warehouse": "South Logistics",
     "description": "Recurring monthly supply order",
+    "posted": "Sample posted",
     "inventoryType": "Sample inventoryType",
     "project": "Sample project",
     "processed": "Sample processed"
@@ -57,6 +62,7 @@ export const inventory = [
     "name": "Sample name",
     "warehouse": "Central Depot",
     "description": "Special pricing agreement applies",
+    "posted": "Sample posted",
     "inventoryType": "Sample inventoryType",
     "project": "Sample project",
     "processed": "Sample processed"
@@ -67,6 +73,7 @@ export const inventory = [
     "name": "Sample name",
     "warehouse": "Regional Warehouse A",
     "description": "Consolidated order from multiple requests",
+    "posted": "Sample posted",
     "inventoryType": "Sample inventoryType",
     "project": "Sample project",
     "processed": "Sample processed"
@@ -77,6 +84,7 @@ export const inventory = [
     "name": "Sample name",
     "warehouse": "Regional Warehouse B",
     "description": "Trial order for new product line",
+    "posted": "Sample posted",
     "inventoryType": "Sample inventoryType",
     "project": "Sample project",
     "processed": "Sample processed"
@@ -87,6 +95,7 @@ export const inventory = [
     "name": "Sample name",
     "warehouse": "Main Warehouse",
     "description": "Replacement for damaged goods",
+    "posted": "Sample posted",
     "inventoryType": "Sample inventoryType",
     "project": "Sample project",
     "processed": "Sample processed"
@@ -97,6 +106,7 @@ export const inventory = [
     "name": "Sample name",
     "warehouse": "East Distribution Center",
     "description": "Pre-season inventory build-up",
+    "posted": "Sample posted",
     "inventoryType": "Sample inventoryType",
     "project": "Sample project",
     "processed": "Sample processed"
@@ -107,6 +117,7 @@ export const inventory = [
     "name": "Sample name",
     "warehouse": "West Hub",
     "description": "Customer-specific configuration",
+    "posted": "Sample posted",
     "inventoryType": "Sample inventoryType",
     "project": "Sample project",
     "processed": "Sample processed"
@@ -117,6 +128,7 @@ export const inventory = [
     "name": "Sample name",
     "warehouse": "North Storage",
     "description": "Government contract fulfillment",
+    "posted": "Sample posted",
     "inventoryType": "Sample inventoryType",
     "project": "Sample project",
     "processed": "Sample processed"

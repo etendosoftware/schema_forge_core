@@ -46,7 +46,18 @@
       "es_ES": {
         "Processed": "Estado"
       }
-    }
+    },
+    "menuActions": [
+      {
+        "key": "post",
+        "label": "Post",
+        "labelKey": "post",
+        "action": "post",
+        "visibleWhenFieldFalse": "posted",
+        "successKey": "documentPosted",
+        "visibleWhenFieldTrue": "processed"
+      }
+    ]
   },
   "entities": {
     "header": {
@@ -104,6 +115,21 @@
         },
         "costCenter": {
           "visibility": "discarded"
+        },
+        "posted": {
+          "visibility": "readOnly",
+          "type": "boolean",
+          "form": false,
+          "grid": true,
+          "badge": true,
+          "badgeLabels": {
+            "true":  { "en_US": "Posted",     "es_ES": "Contabilizado"   },
+            "false": { "en_US": "Not posted", "es_ES": "Sin contabilizar" }
+          },
+          "badgeVariants": {
+            "true": "green",
+            "false": "orange"
+          }
         }
       }
     },
@@ -246,9 +272,8 @@
     "PROCESS_Posted": {
       "type": "process",
       "entity": "inventory",
-      "decision": "Omit",
-      "description": "Posted hardcoded button. Not applicable to simplified UI.",
-      "impactIfOmitted": "Accounting posting handled through backend."
+      "decision": "Keep",
+      "description": "Post to accounting — exposed via menuActions post action, visible when processed=Y and not yet posted."
     }
   },
   "discardPatterns": [
