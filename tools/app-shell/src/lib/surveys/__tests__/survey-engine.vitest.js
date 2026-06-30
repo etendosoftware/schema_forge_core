@@ -161,6 +161,27 @@ describe('selectNextSurvey', () => {
     expect(survey?.id).toBe('csat_order');
   });
 
+  it('returns csat_invoicing 30 docs after last response (not global multiples)', () => {
+    mockStorage.setItem(STORAGE_KEY, JSON.stringify({
+      counters: { invoicing: 37, order: 0 },
+      respondedCounts: { csat_invoicing: 1 },
+      respondedAt: { csat_invoicing: new Date(NOW - 91 * MS_DAY).toISOString() },
+      respondedCountAt: { csat_invoicing: 7 },
+    }));
+    const survey = selectNextSurvey({ isAdmin: false, now: NOW });
+    expect(survey?.id).toBe('csat_invoicing');
+  });
+
+  it('does not return csat_invoicing before 30 docs since last response', () => {
+    mockStorage.setItem(STORAGE_KEY, JSON.stringify({
+      counters: { invoicing: 20, order: 0 },
+      respondedCounts: { csat_invoicing: 1 },
+      respondedAt: { csat_invoicing: new Date(NOW - 91 * MS_DAY).toISOString() },
+      respondedCountAt: { csat_invoicing: 7 },
+    }));
+    expect(selectNextSurvey({ isAdmin: false, now: NOW })).toBeNull();
+  });
+
   it('does not return csat_invoicing on login source', () => {
     mockStorage.setItem(STORAGE_KEY, JSON.stringify({
       counters: { invoicing: 5, order: 0 },

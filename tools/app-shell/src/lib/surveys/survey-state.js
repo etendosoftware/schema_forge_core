@@ -11,6 +11,7 @@ const DEFAULTS = Object.freeze({
   shownThisMonth: Object.freeze({}),
   respondedCounts: Object.freeze({}),
   respondedAt: Object.freeze({}),
+  respondedCountAt: Object.freeze({}),
   dismissals: Object.freeze({}),
 });
 
@@ -25,7 +26,7 @@ function getStorage() {
 export function readSurveyState() {
   try {
     const raw = getStorage()?.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULTS, counters: { ...DEFAULTS.counters }, shownThisMonth: {}, respondedCounts: {}, respondedAt: {}, dismissals: {} };
+    if (!raw) return { ...DEFAULTS, counters: { ...DEFAULTS.counters }, shownThisMonth: {}, respondedCounts: {}, respondedAt: {}, respondedCountAt: {}, dismissals: {} };
     const parsed = JSON.parse(raw);
     return {
       ...DEFAULTS,
@@ -33,11 +34,12 @@ export function readSurveyState() {
       shownThisMonth: {},
       respondedCounts: {},
       respondedAt: {},
+      respondedCountAt: {},
       dismissals: {},
       ...parsed,
     };
   } catch {
-    return { ...DEFAULTS, counters: { ...DEFAULTS.counters }, shownThisMonth: {}, respondedCounts: {}, respondedAt: {}, dismissals: {} };
+    return { ...DEFAULTS, counters: { ...DEFAULTS.counters }, shownThisMonth: {}, respondedCounts: {}, respondedAt: {}, respondedCountAt: {}, dismissals: {} };
   }
 }
 
@@ -88,6 +90,10 @@ export function markSurveyResponded(surveyId, now = Date.now()) {
     respondedAt: {
       ...state.respondedAt,
       [surveyId]: new Date(now).toISOString(),
+    },
+    respondedCountAt: {
+      ...state.respondedCountAt,
+      [surveyId]: state.counters[surveyId === 'csat_invoicing' ? 'invoicing' : 'order'] ?? 0,
     },
   });
 }

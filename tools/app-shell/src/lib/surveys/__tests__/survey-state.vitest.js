@@ -46,6 +46,7 @@ describe('survey-state', () => {
       expect(state.shownThisMonth).toEqual({});
       expect(state.respondedCounts).toEqual({});
       expect(state.respondedAt).toEqual({});
+      expect(state.respondedCountAt).toEqual({});
       expect(state.dismissals).toEqual({});
     });
 
@@ -125,6 +126,18 @@ describe('survey-state', () => {
       markSurveyResponded('nps', NOW);
       markSurveyResponded('nps', NOW + 1000);
       expect(readSurveyState().respondedCounts['nps']).toBe(2);
+    });
+
+    it('snapshots invoicing counter into respondedCountAt for csat_invoicing', () => {
+      mockStorage.setItem(STORAGE_KEY, JSON.stringify({ counters: { invoicing: 7, order: 0 } }));
+      markSurveyResponded('csat_invoicing', NOW);
+      expect(readSurveyState().respondedCountAt['csat_invoicing']).toBe(7);
+    });
+
+    it('snapshots order counter into respondedCountAt for csat_order', () => {
+      mockStorage.setItem(STORAGE_KEY, JSON.stringify({ counters: { invoicing: 0, order: 12 } }));
+      markSurveyResponded('csat_order', NOW);
+      expect(readSurveyState().respondedCountAt['csat_order']).toBe(12);
     });
   });
 

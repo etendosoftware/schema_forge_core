@@ -32,7 +32,8 @@ function csatInvoicingIsEligible({ state, now }) {
   if (count < 5) return false;
   const respondedCount = state.respondedCounts['csat_invoicing'] ?? 0;
   if (respondedCount === 0) return true;
-  if (count % 30 !== 0) return false;
+  const lastRespondedCountAt = state.respondedCountAt?.['csat_invoicing'] ?? 0;
+  if (count - lastRespondedCountAt < 30) return false;
   const lastRespondedAt = state.respondedAt['csat_invoicing'];
   if (!lastRespondedAt) return true;
   return now - new Date(lastRespondedAt).getTime() >= 90 * MS_DAY;
@@ -43,7 +44,8 @@ function csatOrderIsEligible({ state, now }) {
   if (count < 5) return false;
   const respondedCount = state.respondedCounts['csat_order'] ?? 0;
   if (respondedCount === 0) return true;
-  if (count % 30 !== 0) return false;
+  const lastRespondedCountAt = state.respondedCountAt?.['csat_order'] ?? 0;
+  if (count - lastRespondedCountAt < 30) return false;
   const lastRespondedAt = state.respondedAt['csat_order'];
   if (!lastRespondedAt) return true;
   return now - new Date(lastRespondedAt).getTime() >= 90 * MS_DAY;
