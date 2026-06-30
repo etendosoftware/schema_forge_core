@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { selectNextSurvey, SURVEY_TRIGGER_EVENT } from '../lib/surveys/survey-engine.js';
 import {
@@ -7,7 +7,7 @@ import {
   markSurveyResponded,
   markSurveyDismissed,
 } from '../lib/surveys/survey-state.js';
-import { track } from '../lib/observability.js';
+import { track, identify } from '../lib/observability.js';
 import { OBSERVABILITY_EVENTS, buildObservabilityEvent } from '../lib/observability/events.js';
 
 function isAdminRole(selectedRole) {
@@ -20,43 +20,65 @@ function trackSurveyEvent(eventDef, properties) {
 }
 
 export function useSurveyEngine() {
-  const { isAuthenticated, selectedRole } = useAuth();
+  const { isAuthenticated, selectedRole, username, selectedOrg } = useAuth();
   const [activeSurvey, setActiveSurvey] = useState(null);
 
-  const checkAndShowSurvey = useCallback(() => {
+  const userProps = useMemo(() => {
+    if (!username) return {};
+    return { userId: username, ...(selectedOrg?.id ? { accountId: selectedOrg.id } : {}) };
+  }, [username, selectedOrg?.id]);
+
+  const checkAndShowSurvey = useCallback((source) => {
     if (!isAuthenticated) return;
     const isAdmin = isAdminRole(selectedRole);
-    const survey = selectNextSurvey({ isAdmin });
+    const survey = selectNextSurvey({ isAdmin, source });
     if (!survey) return;
     markSurveyShown(survey.id);
     trackSurveyEvent(OBSERVABILITY_EVENTS.SURVEY_SHOWN, {
       type: survey.type,
       source: survey.id,
+      ...userProps,
     });
     setActiveSurvey(survey);
-  }, [isAuthenticated, selectedRole]);
+  }, [isAuthenticated, selectedRole, userProps]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !username) return;
+    const traits = selectedOrg?.id ? { account_id: selectedOrg.id } : {};
+    identify(username, traits);
+  }, [isAuthenticated, username, selectedOrg]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
     markFirstLogin();
-    checkAndShowSurvey();
+    const timer = setTimeout(() => checkAndShowSurvey('login'), 2500);
+    return () => clearTimeout(timer);
   }, [isAuthenticated, checkAndShowSurvey]);
 
   useEffect(() => {
-    const handler = () => checkAndShowSurvey();
+    let timer;
+    const handler = () => {
+      timer = setTimeout(() => checkAndShowSurvey('trigger'), 1000);
+    };
     window.addEventListener(SURVEY_TRIGGER_EVENT, handler);
-    return () => window.removeEventListener(SURVEY_TRIGGER_EVENT, handler);
+    return () => {
+      window.removeEventListener(SURVEY_TRIGGER_EVENT, handler);
+      clearTimeout(timer);
+    };
   }, [checkAndShowSurvey]);
 
-  const handleRespond = useCallback((score) => {
+  const handleRespond = useCallback((score, feedback, tags) => {
     if (!activeSurvey) return;
     markSurveyResponded(activeSurvey.id);
     trackSurveyEvent(OBSERVABILITY_EVENTS.SURVEY_RESPONDED, {
       type: activeSurvey.type,
       source: activeSurvey.id,
       score,
+      ...(feedback?.trim() ? { feedback: feedback.trim() } : {}),
+      ...(tags?.length ? { tags: tags.join(',') } : {}),
+      ...userProps,
     });
-  }, [activeSurvey]);
+  }, [activeSurvey, userProps]);
 
   const handleClose = useCallback(() => {
     setActiveSurvey(null);
@@ -68,9 +90,10 @@ export function useSurveyEngine() {
     trackSurveyEvent(OBSERVABILITY_EVENTS.SURVEY_DISMISSED, {
       type: activeSurvey.type,
       source: activeSurvey.id,
+      ...userProps,
     });
     setActiveSurvey(null);
-  }, [activeSurvey]);
+  }, [activeSurvey, userProps]);
 
   return { activeSurvey, handleRespond, handleClose, handleDismiss };
 }

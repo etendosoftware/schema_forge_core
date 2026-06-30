@@ -20390,7 +20390,7 @@
     "ellipsis": "...",
     "priceUnit": "€ /",
     "amountPlaceholder": "0.00",
-    "surveyEyebrow": "Valoración",
+    "surveyEyebrow": "Tu opinión",
     "surveySkip": "Ahora no",
     "surveySubmit": "Enviar",
     "surveyNext": "Siguiente",
@@ -20400,7 +20400,7 @@
     "surveyNpsSubtitle": "0 = nada probable · 10 = muy probable",
     "surveyNpsLow": "Nada probable",
     "surveyNpsHigh": "Muy probable",
-    "surveyNpsQ2Detractor": "¿Qué tendríamos que cambiar para que te quedases?",
+    "surveyNpsQ2Detractor": "¿Qué podríamos mejorar para que lo valores más?",
     "surveyNpsQ2Passive": "¿Qué mejorarías de Etendo GO?",
     "surveyNpsQ2Promoter": "¿Qué es lo que más valoras de Etendo GO?",
     "surveyNpsQ2Placeholder": "Cuéntanos en una frase. Lo leemos todo.",
@@ -20413,10 +20413,10 @@
     "surveyInvoicingQ2": "¿Qué mejorarías del proceso de facturación?",
     "surveyInvoicingQ2Placeholder": "Plantillas, conceptos, IVA, envío al cliente…",
     "surveyInvoicingThanks": "¡Gracias! Tu opinión nos ayuda a afinar la facturación.",
-    "surveyPoTitle": "¿Qué tan fácil te resulta gestionar los pedidos de compra?",
-    "surveyPoQ2": "¿Qué mejorarías del proceso de pedidos de compra?",
-    "surveyPoQ2Placeholder": "Búsqueda de proveedores, recepción en almacén, IVA…",
-    "surveyPoThanks": "Gracias. Tu opinión nos ayuda a afinar los flujos de compra.",
+    "surveyOrderTitle": "¿Qué tan fácil te resulta gestionar los pedidos en Etendo GO?",
+    "surveyOrderQ2": "¿Qué mejorarías del proceso de pedidos?",
+    "surveyOrderQ2Placeholder": "Búsqueda de productos, líneas de pedido, confirmación…",
+    "surveyOrderThanks": "Gracias. Tu opinión nos ayuda a mejorar los flujos de pedidos.",
     "csatLabelLow": "Muy difícil",
     "csatLabelHigh": "Muy fácil",
     "surveyChipSpeed": "Velocidad",
@@ -20425,7 +20425,7 @@
     "surveyChipSupport": "Soporte",
     "surveyChipPrice": "Precio",
     "surveyChipDocs": "Documentación",
-    "surveyChipAI": "IA / Bastian"
+    "surveyChipAI": "IA / Copilot"
   },
   "menus": {
     "Goods Movement": {

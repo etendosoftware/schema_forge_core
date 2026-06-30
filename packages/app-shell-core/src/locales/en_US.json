@@ -20124,7 +20124,7 @@
     "ellipsis": "...",
     "priceUnit": "€ /",
     "amountPlaceholder": "0.00",
-    "surveyEyebrow": "Feedback",
+    "surveyEyebrow": "Your opinion",
     "surveySkip": "Not now",
     "surveySubmit": "Submit",
     "surveyNext": "Next",
@@ -20134,7 +20134,7 @@
     "surveyNpsSubtitle": "0 = not at all likely · 10 = extremely likely",
     "surveyNpsLow": "Not at all likely",
     "surveyNpsHigh": "Extremely likely",
-    "surveyNpsQ2Detractor": "What would we need to change for you to stay?",
+    "surveyNpsQ2Detractor": "What could we improve so you value it more?",
     "surveyNpsQ2Passive": "What would you improve about Etendo GO?",
     "surveyNpsQ2Promoter": "What do you value most about Etendo GO?",
     "surveyNpsQ2Placeholder": "Tell us in a sentence. We read everything.",
@@ -20147,10 +20147,10 @@
     "surveyInvoicingQ2": "What would you improve about the invoicing process?",
     "surveyInvoicingQ2Placeholder": "Templates, line items, VAT, sending to clients…",
     "surveyInvoicingThanks": "Thanks! Your opinion helps us refine invoicing.",
-    "surveyPoTitle": "How easy is it to manage purchase orders in Etendo GO?",
-    "surveyPoQ2": "What would you improve about the purchase order process?",
-    "surveyPoQ2Placeholder": "Supplier search, warehouse receipt, VAT…",
-    "surveyPoThanks": "Thanks. Your opinion helps us improve purchase flows.",
+    "surveyOrderTitle": "How easy is it to manage orders in Etendo GO?",
+    "surveyOrderQ2": "What would you improve about the order process?",
+    "surveyOrderQ2Placeholder": "Product search, order lines, confirmation…",
+    "surveyOrderThanks": "Thanks. Your opinion helps us improve order flows.",
     "csatLabelLow": "Very difficult",
     "csatLabelHigh": "Very easy",
     "surveyChipSpeed": "Speed",
@@ -20159,7 +20159,7 @@
     "surveyChipSupport": "Support",
     "surveyChipPrice": "Pricing",
     "surveyChipDocs": "Documentation",
-    "surveyChipAI": "AI / Bastian"
+    "surveyChipAI": "AI / Copilot"
   },
   "menus": {
     "Currency": {

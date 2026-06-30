@@ -2,11 +2,12 @@ const STORAGE_KEY = 'sf_survey_v1';
 
 const DEFAULTS = Object.freeze({
   firstLoginAt: null,
+  lastLoginAt: null,
   lastShownAt: null,
   lastDismissedAt: null,
   onboardingCompleted: false,
   onboardingShown: false,
-  counters: Object.freeze({ invoicing: 0, po: 0 }),
+  counters: Object.freeze({ invoicing: 0, order: 0 }),
   shownThisMonth: Object.freeze({}),
   respondedCounts: Object.freeze({}),
   respondedAt: Object.freeze({}),
@@ -50,8 +51,11 @@ export function writeSurveyState(next) {
 
 export function markFirstLogin(now = Date.now()) {
   const state = readSurveyState();
-  if (state.firstLoginAt) return;
-  writeSurveyState({ ...state, firstLoginAt: new Date(now).toISOString() });
+  writeSurveyState({
+    ...state,
+    firstLoginAt: state.firstLoginAt ?? new Date(now).toISOString(),
+    lastLoginAt: new Date(now).toISOString(),
+  });
 }
 
 export function markOnboardingCompleted() {

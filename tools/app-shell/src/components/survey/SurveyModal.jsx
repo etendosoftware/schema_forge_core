@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n/index.js';
 
 // ─── Design tokens (mapped from Etendo design system) ───────────────────────
@@ -14,7 +14,6 @@ const T = {
   successFg: '#17663A',
   yellowTop: '#F8D414',
   yellowBot: '#FFE356',
-  logoPurple:'#202452',
   // NPS segments
   detractorBg: '#FEF0F4', detractorFg: '#D50B3E', detractorRing: '#FBB1C4',
   passiveBg:   '#FFF9EB', passiveFg:   '#C28800', passiveRing:   '#FFDA85',
@@ -61,16 +60,13 @@ function SurveyHeader({ onClose, eyebrow }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '16px 20px 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{
-          width: 24, height: 24, borderRadius: 6,
-          background: `linear-gradient(${T.yellowTop}, ${T.yellowBot})`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          <svg viewBox="0 0 24 24" width="14" height="14" fill={T.logoPurple}>
-            <path d="M5 5h6v3H8v2h3v3H8v3h6v3H5z"/>
-          </svg>
-        </div>
+        <img
+          src="/favicon.png"
+          width="24"
+          height="24"
+          alt="Etendo"
+          style={{ borderRadius: 6, flexShrink: 0 }}
+        />
         <span style={{ font: font(11, 600, 14), color: T.fg3, letterSpacing: '.06em', textTransform: 'uppercase' }}>
           {eyebrow}
         </span>
@@ -254,7 +250,7 @@ function PrimaryBtn({ children, onClick, disabled }) {
 function SurveyFooter({ onSkip, onSubmit, submitLabel, disabled, skipLabel }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-      <GhostBtn onClick={onSkip}>{skipLabel}</GhostBtn>
+      {onSkip && <GhostBtn onClick={onSkip}>{skipLabel}</GhostBtn>}
       <PrimaryBtn onClick={onSubmit} disabled={disabled}>
         {submitLabel} <ArrowRight />
       </PrimaryBtn>
@@ -263,7 +259,7 @@ function SurveyFooter({ onSkip, onSubmit, submitLabel, disabled, skipLabel }) {
 }
 
 // ─── Thank-you body ───────────────────────────────────────────────────────────
-function ThanksBody({ line }) {
+function ThanksBody({ title, line }) {
   return (
     <div style={{ textAlign: 'center', padding: '12px 4px 4px' }} data-testid="SurveyModal__thank-you">
       <div style={{
@@ -274,7 +270,7 @@ function ThanksBody({ line }) {
         <CheckCircle />
       </div>
       <div style={{ font: font(16, 700, 22), color: T.fg1, marginBottom: 6, letterSpacing: '-0.005em' }}>
-        ¡Gracias!
+        {title}
       </div>
       <div style={{ font: font(13, 400, 18), color: T.fg3, maxWidth: 300, margin: '0 auto' }}>
         {line}
@@ -284,12 +280,10 @@ function ThanksBody({ line }) {
 }
 
 // ─── NPS survey content ───────────────────────────────────────────────────────
-function NPSSurveyContent({ phase, setPhase, score, setScore, onDismiss, ui }) {
-  const [text, setText] = useState('');
-  const [chips, setChips] = useState([]);
+function NPSSurveyContent({ phase, setPhase, score, setScore, feedback, setFeedback, tags, setTags, onDismiss, ui }) {
 
   if (phase === 'thanks') {
-    return <ThanksBody line={ui('surveyNpsThanksLine')} />;
+    return <ThanksBody title={ui('surveyThankYou')} line={ui('surveyNpsThanksLine')} />;
   }
 
   if (phase === 'followup') {
@@ -307,8 +301,8 @@ function NPSSurveyContent({ phase, setPhase, score, setScore, onDismiss, ui }) {
         <div style={{ font: font(17, 700, 24), color: T.fg1, letterSpacing: '-0.005em', marginBottom: 2 }}>{q2}</div>
         <div style={{ font: font(13, 400, 18), color: T.fg3, marginBottom: 14 }}>{ui('surveyQ2Optional')}</div>
         <textarea
-          value={text}
-          onChange={e => setText(e.target.value)}
+          value={feedback}
+          onChange={e => setFeedback(e.target.value)}
           placeholder={ui('surveyNpsQ2Placeholder')}
           rows={4}
           style={{
@@ -319,13 +313,11 @@ function NPSSurveyContent({ phase, setPhase, score, setScore, onDismiss, ui }) {
           }}
         />
         <div style={{ marginTop: 10 }}>
-          <ChipGroup options={chipOptions} value={chips} onChange={setChips} />
+          <ChipGroup options={chipOptions} value={tags} onChange={setTags} />
         </div>
         <SurveyFooter
-          onSkip={onDismiss}
           onSubmit={() => setPhase('thanks')}
           submitLabel={ui('surveySubmit')}
-          skipLabel={ui('surveySkip')}
         />
       </>
     );
@@ -335,9 +327,6 @@ function NPSSurveyContent({ phase, setPhase, score, setScore, onDismiss, ui }) {
     <>
       <div style={{ font: font(17, 700, 24), color: T.fg1, letterSpacing: '-0.005em', marginBottom: 2 }}>
         {ui('surveyNpsTitle')}
-      </div>
-      <div style={{ font: font(13, 400, 18), color: T.fg3, marginBottom: 14 }}>
-        {ui('surveyNpsSubtitle')}
       </div>
       <NPSScale
         value={score}
@@ -357,11 +346,10 @@ function NPSSurveyContent({ phase, setPhase, score, setScore, onDismiss, ui }) {
 }
 
 // ─── CSAT survey content ──────────────────────────────────────────────────────
-function CSATSurveyContent({ survey, phase, setPhase, score, setScore, onDismiss, ui }) {
-  const [text, setText] = useState('');
+function CSATSurveyContent({ survey, phase, setPhase, score, setScore, feedback, setFeedback, onDismiss, ui }) {
 
   if (phase === 'thanks') {
-    return <ThanksBody line={ui(survey.thanksKey)} />;
+    return <ThanksBody title={ui('surveyThankYou')} line={ui(survey.thanksKey)} />;
   }
 
   if (phase === 'followup') {
@@ -372,8 +360,8 @@ function CSATSurveyContent({ survey, phase, setPhase, score, setScore, onDismiss
         </div>
         <div style={{ font: font(13, 400, 18), color: T.fg3, marginBottom: 14 }}>{ui('surveyQ2Optional')}</div>
         <textarea
-          value={text}
-          onChange={e => setText(e.target.value)}
+          value={feedback}
+          onChange={e => setFeedback(e.target.value)}
           placeholder={ui(survey.q2PlaceholderKey)}
           rows={4}
           style={{
@@ -384,10 +372,8 @@ function CSATSurveyContent({ survey, phase, setPhase, score, setScore, onDismiss
           }}
         />
         <SurveyFooter
-          onSkip={onDismiss}
           onSubmit={() => setPhase('thanks')}
           submitLabel={ui('surveySubmit')}
-          skipLabel={ui('surveySkip')}
         />
       </>
     );
@@ -420,10 +406,21 @@ function CSATSurveyContent({ survey, phase, setPhase, score, setScore, onDismiss
 }
 
 // ─── Main SurveyModal ─────────────────────────────────────────────────────────
-export function SurveyModal({ survey, open, onRespond, onDismiss }) {
+export function SurveyModal({ survey, open, onRespond, onDismiss, onClose }) {
   const ui = useUI();
   const [score, setScore] = useState(null);
   const [phase, setPhase] = useState('initial');
+  const [feedback, setFeedback] = useState('');
+  const [tags, setTags] = useState([]);
+
+  useEffect(() => {
+    if (open) {
+      setScore(null);
+      setPhase('initial');
+      setFeedback('');
+      setTags([]);
+    }
+  }, [open]);
 
   if (!open || !survey) return null;
 
@@ -435,13 +432,12 @@ export function SurveyModal({ survey, open, onRespond, onDismiss }) {
 
   function handleSetPhase(next) {
     if (next === 'thanks') {
-      onRespond(score);
+      onRespond(score, feedback, tags);
     }
     setPhase(next);
     if (next === 'thanks') {
       setTimeout(() => {
-        setScore(null);
-        setPhase('initial');
+        onClose();
       }, 2000);
     }
   }
@@ -489,6 +485,10 @@ export function SurveyModal({ survey, open, onRespond, onDismiss }) {
               setPhase={handleSetPhase}
               score={score}
               setScore={setScore}
+              feedback={feedback}
+              setFeedback={setFeedback}
+              tags={tags}
+              setTags={setTags}
               onDismiss={onDismiss}
               ui={ui}
             />
@@ -499,6 +499,8 @@ export function SurveyModal({ survey, open, onRespond, onDismiss }) {
               setPhase={handleSetPhase}
               score={score}
               setScore={setScore}
+              feedback={feedback}
+              setFeedback={setFeedback}
               onDismiss={onDismiss}
               ui={ui}
             />

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { FileText, Check } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { formatCurrency } from '@/lib/formatCurrency';
+import { incrementSurveyCounter } from '@/lib/surveys/survey-state.js';
 
 /* eslint-disable react/prop-types */
 
@@ -400,6 +401,7 @@ function ConfirmOrderModal({
         throw new Error(err?.response?.message || err?.message || `Process failed (${processRes.status})`);
       }
       setNeedsReload(true);
+      incrementSurveyCounter('order');
 
       // Step 2: Create invoice if requested
       if (selected === 'invoice') {
@@ -464,7 +466,7 @@ function ConfirmOrderModal({
     const isConfirmOnly = createdDoc.type === 'confirm';
 
     return (
-      <div className={overlayClass}>
+      <div style={overlayStyle}>
         <div onClick={(e) => e.stopPropagation()} style={{ ...cardStyle, width: 400 }}>
           <div style={{ padding: '28px 24px', textAlign: 'center' }}>
             <div style={{
@@ -528,7 +530,7 @@ function ConfirmOrderModal({
 
   // ── Selection state ────────────────────────────────────────
   return (
-    <div onClick={handleClose} className={overlayClass}>
+    <div onClick={handleClose} style={overlayStyle}>
       <div onClick={(e) => e.stopPropagation()} style={cardStyle}>
 
         {/* Header — blue card */}
@@ -687,7 +689,11 @@ function OptionCard({ selected, onClick, icon, title, badge, subtitle }) {
 
 /* ── Shared styles ─────────────────────────────────────────────── */
 
-const overlayClass = 'fixed inset-0 z-50 flex items-center justify-center bg-black/30';
+const overlayStyle = {
+  position: 'fixed', inset: 0, zIndex: 1000,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  background: 'rgba(0,0,0,0.3)',
+};
 
 const cardStyle = {
   width: 480, maxHeight: '85vh', display: 'flex', flexDirection: 'column',

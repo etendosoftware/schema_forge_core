@@ -16,7 +16,7 @@ function makeState(overrides = {}) {
     lastDismissedAt: null,
     onboardingCompleted: false,
     onboardingShown: false,
-    counters: { invoicing: 0, po: 0 },
+    counters: { invoicing: 0, order: 0 },
     shownThisMonth: {},
     respondedCounts: {},
     respondedAt: {},
@@ -111,21 +111,11 @@ describe('selectNextSurvey', () => {
     expect(selectNextSurvey({ isAdmin: false, now: NOW })).toBeNull();
   });
 
-  it('returns csat_onboarding for admin with onboarding completed', () => {
+  it('does not return csat_onboarding (disabled until fully implemented)', () => {
     mockStorage.setItem(STORAGE_KEY, JSON.stringify({
       onboardingCompleted: true,
       onboardingShown: false,
-      counters: { invoicing: 0, po: 0 },
-    }));
-    const survey = selectNextSurvey({ isAdmin: true, now: NOW });
-    expect(survey?.id).toBe('csat_onboarding');
-  });
-
-  it('does not return csat_onboarding when already shown', () => {
-    mockStorage.setItem(STORAGE_KEY, JSON.stringify({
-      onboardingCompleted: true,
-      onboardingShown: true,
-      counters: { invoicing: 0, po: 0 },
+      counters: { invoicing: 0, order: 0 },
     }));
     expect(selectNextSurvey({ isAdmin: true, now: NOW })).toBeNull();
   });
@@ -133,7 +123,7 @@ describe('selectNextSurvey', () => {
   it('returns nps after 60 days for first-time user', () => {
     mockStorage.setItem(STORAGE_KEY, JSON.stringify({
       firstLoginAt: new Date(NOW - 61 * MS_DAY).toISOString(),
-      counters: { invoicing: 0, po: 0 },
+      counters: { invoicing: 0, order: 0 },
     }));
     const survey = selectNextSurvey({ isAdmin: false, now: NOW });
     expect(survey?.id).toBe('nps');
@@ -142,39 +132,87 @@ describe('selectNextSurvey', () => {
   it('does not return nps before 60 days', () => {
     mockStorage.setItem(STORAGE_KEY, JSON.stringify({
       firstLoginAt: new Date(NOW - 30 * MS_DAY).toISOString(),
-      counters: { invoicing: 0, po: 0 },
+      counters: { invoicing: 0, order: 0 },
     }));
     expect(selectNextSurvey({ isAdmin: false, now: NOW })).toBeNull();
   });
 
   it('returns csat_invoicing at 5th invoice for standard user', () => {
     mockStorage.setItem(STORAGE_KEY, JSON.stringify({
-      counters: { invoicing: 5, po: 0 },
+      counters: { invoicing: 5, order: 0 },
     }));
     const survey = selectNextSurvey({ isAdmin: false, now: NOW });
     expect(survey?.id).toBe('csat_invoicing');
   });
 
-  it('does not return csat_invoicing for admin users', () => {
+  it('returns csat_invoicing for admin users at 5th invoice', () => {
     mockStorage.setItem(STORAGE_KEY, JSON.stringify({
-      counters: { invoicing: 10, po: 0 },
+      counters: { invoicing: 5, order: 0 },
     }));
-    expect(selectNextSurvey({ isAdmin: true, now: NOW })).toBeNull();
+    const survey = selectNextSurvey({ isAdmin: true, now: NOW });
+    expect(survey?.id).toBe('csat_invoicing');
   });
 
-  it('returns csat_po at 5th PO for standard user', () => {
+  it('returns csat_order at 5th order for standard user', () => {
     mockStorage.setItem(STORAGE_KEY, JSON.stringify({
-      counters: { invoicing: 0, po: 5 },
+      counters: { invoicing: 0, order: 5 },
     }));
     const survey = selectNextSurvey({ isAdmin: false, now: NOW });
-    expect(survey?.id).toBe('csat_po');
+    expect(survey?.id).toBe('csat_order');
+  });
+
+  it('does not return csat_invoicing on login source', () => {
+    mockStorage.setItem(STORAGE_KEY, JSON.stringify({
+      counters: { invoicing: 5, order: 0 },
+    }));
+    expect(selectNextSurvey({ isAdmin: false, now: NOW, source: 'login' })).toBeNull();
+  });
+
+  it('does not return csat_order on login source', () => {
+    mockStorage.setItem(STORAGE_KEY, JSON.stringify({
+      counters: { invoicing: 0, order: 5 },
+    }));
+    expect(selectNextSurvey({ isAdmin: false, now: NOW, source: 'login' })).toBeNull();
+  });
+
+  it('does not return nps on trigger source', () => {
+    mockStorage.setItem(STORAGE_KEY, JSON.stringify({
+      firstLoginAt: new Date(NOW - 61 * MS_DAY).toISOString(),
+      counters: { invoicing: 0, order: 0 },
+    }));
+    expect(selectNextSurvey({ isAdmin: false, now: NOW, source: 'trigger' })).toBeNull();
+  });
+
+  it('returns csat_invoicing on trigger source', () => {
+    mockStorage.setItem(STORAGE_KEY, JSON.stringify({
+      counters: { invoicing: 5, order: 0 },
+    }));
+    expect(selectNextSurvey({ isAdmin: false, now: NOW, source: 'trigger' })?.id).toBe('csat_invoicing');
+  });
+
+  it('does not return nps when user inactive for more than 14 days', () => {
+    mockStorage.setItem(STORAGE_KEY, JSON.stringify({
+      firstLoginAt: new Date(NOW - 61 * MS_DAY).toISOString(),
+      lastLoginAt: new Date(NOW - 15 * MS_DAY).toISOString(),
+      counters: { invoicing: 0, order: 0 },
+    }));
+    expect(selectNextSurvey({ isAdmin: false, now: NOW })).toBeNull();
+  });
+
+  it('returns nps when user active within 14 days', () => {
+    mockStorage.setItem(STORAGE_KEY, JSON.stringify({
+      firstLoginAt: new Date(NOW - 61 * MS_DAY).toISOString(),
+      lastLoginAt: new Date(NOW - 5 * MS_DAY).toISOString(),
+      counters: { invoicing: 0, order: 0 },
+    }));
+    expect(selectNextSurvey({ isAdmin: false, now: NOW })?.id).toBe('nps');
   });
 
   it('returns null when global cooldown is active', () => {
     mockStorage.setItem(STORAGE_KEY, JSON.stringify({
       firstLoginAt: new Date(NOW - 61 * MS_DAY).toISOString(),
       lastShownAt: new Date(NOW - 5 * MS_DAY).toISOString(),
-      counters: { invoicing: 0, po: 0 },
+      counters: { invoicing: 0, order: 0 },
     }));
     expect(selectNextSurvey({ isAdmin: false, now: NOW })).toBeNull();
   });
@@ -183,7 +221,7 @@ describe('selectNextSurvey', () => {
     mockStorage.setItem(STORAGE_KEY, JSON.stringify({
       firstLoginAt: new Date(NOW - 61 * MS_DAY).toISOString(),
       shownThisMonth: { '2026-06': 2 },
-      counters: { invoicing: 0, po: 0 },
+      counters: { invoicing: 0, order: 0 },
     }));
     expect(selectNextSurvey({ isAdmin: false, now: NOW })).toBeNull();
   });

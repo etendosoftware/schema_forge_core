@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useUI, useMenuLabel } from '@/i18n';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 import { ConfirmResultModal } from '@/components/contract-ui';
+import { incrementSurveyCounter } from '@/lib/surveys/survey-state.js';
+import { emitSurveyTrigger } from '@/lib/surveys/survey-engine.js';
 
 export { ConfirmResultModal as PoConfirmResultModal };
 
@@ -108,7 +110,7 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
           ].filter(Boolean)}
           currency={data?.['currency$_identifier'] || ''}
           navigate={navigate}
-          onClose={() => { setConfirmedDocs(null); setConfirmedTitle(null); onRefresh?.(); }}
+          onClose={() => { setConfirmedDocs(null); setConfirmedTitle(null); emitSurveyTrigger(); onRefresh?.(); }}
         />,
         document.body,
       )
@@ -307,6 +309,7 @@ export function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onCo
           throw new Error(rawMsg.includes('@OrderWithoutLines@') ? ui('soNoLinesError') : rawMsg);
         }
         setOrderConfirmed(true);
+        incrementSurveyCounter('order');
         window.dispatchEvent(new CustomEvent('purchase-order:document-created'));
       } catch (e) {
         setError(e.message || ui('poErrorOccurred'));

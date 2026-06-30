@@ -22,13 +22,14 @@ export function isDismissedCooldownActive(state, surveyId, now) {
   return now - new Date(dismissedAt).getTime() < DISMISSED_COOLDOWN_MS;
 }
 
-export function selectNextSurvey({ isAdmin, now = Date.now() } = {}) {
+export function selectNextSurvey({ isAdmin, now = Date.now(), source } = {}) {
   const state = readSurveyState();
 
   if (isGlobalCooldownActive(state, now)) return null;
   if (isMonthlyLimitReached(state, now)) return null;
 
   for (const survey of SURVEYS) {
+    if (source && survey.sources && !survey.sources.includes(source)) continue;
     if (!survey.isEligible({ state, isAdmin, now })) continue;
     if (isDismissedCooldownActive(state, survey.id, now)) continue;
     return survey;

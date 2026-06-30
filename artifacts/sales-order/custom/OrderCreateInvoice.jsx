@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useUI, useMenuLabel } from '@/i18n';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 import { ConfirmResultModal } from '@/components/contract-ui';
+import { incrementSurveyCounter } from '@/lib/surveys/survey-state.js';
+import { emitSurveyTrigger } from '@/lib/surveys/survey-engine.js';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -112,7 +114,7 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl, 
           ].filter(Boolean)}
           currency={data?.['currency$_identifier'] || ''}
           navigate={navigate}
-          onClose={() => { setConfirmedDocs(null); setConfirmedTitle(null); onRefresh?.(); }}
+          onClose={() => { setConfirmedDocs(null); setConfirmedTitle(null); emitSurveyTrigger(); onRefresh?.(); }}
         />,
         document.body,
       )
@@ -317,6 +319,7 @@ export function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onCo
           throw new Error(e?.error?.message || e?.response?.message || `Error (${processRes.status})`);
         }
         setOrderConfirmed(true);
+        incrementSurveyCounter('order');
         window.dispatchEvent(new CustomEvent('sales-order:document-created'));
       } catch (e) {
         setError(e.message || ui('soErrorOccurred'));

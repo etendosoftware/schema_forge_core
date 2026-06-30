@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
@@ -331,14 +332,16 @@ function ServiceWorkerManager() {
 
 function SurveyManager() {
   const { activeSurvey, handleRespond, handleClose, handleDismiss } = useSurveyEngine();
-  return (
+  if (!activeSurvey) return null;
+  return createPortal(
     <SurveyModal
       survey={activeSurvey}
       open={!!activeSurvey}
       onRespond={handleRespond}
       onClose={handleClose}
       onDismiss={handleDismiss}
-    />
+    />,
+    document.body,
   );
 }
 

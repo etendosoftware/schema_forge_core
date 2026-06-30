@@ -39,9 +39,10 @@ describe('survey-state', () => {
     it('returns defaults when storage is empty', () => {
       const state = readSurveyState();
       expect(state.firstLoginAt).toBeNull();
+      expect(state.lastLoginAt).toBeNull();
       expect(state.onboardingCompleted).toBe(false);
       expect(state.onboardingShown).toBe(false);
-      expect(state.counters).toEqual({ invoicing: 0, po: 0 });
+      expect(state.counters).toEqual({ invoicing: 0, order: 0 });
       expect(state.shownThisMonth).toEqual({});
       expect(state.respondedCounts).toEqual({});
       expect(state.respondedAt).toEqual({});
@@ -52,7 +53,7 @@ describe('survey-state', () => {
       mockStorage.setItem(STORAGE_KEY, JSON.stringify({
         firstLoginAt: '2026-01-01T00:00:00.000Z',
         onboardingCompleted: true,
-        counters: { invoicing: 3, po: 0 },
+        counters: { invoicing: 3, order: 0 },
       }));
       const state = readSurveyState();
       expect(state.firstLoginAt).toBe('2026-01-01T00:00:00.000Z');
@@ -69,18 +70,20 @@ describe('survey-state', () => {
   });
 
   describe('markFirstLogin', () => {
-    it('sets firstLoginAt if not already set', () => {
+    it('sets firstLoginAt and lastLoginAt on first call', () => {
       markFirstLogin(NOW);
       const state = readSurveyState();
       expect(state.firstLoginAt).toBe(new Date(NOW).toISOString());
+      expect(state.lastLoginAt).toBe(new Date(NOW).toISOString());
     });
 
-    it('does not overwrite existing firstLoginAt', () => {
+    it('does not overwrite firstLoginAt but updates lastLoginAt', () => {
       const earlier = new Date('2025-06-01').getTime();
       markFirstLogin(earlier);
       markFirstLogin(NOW);
       const state = readSurveyState();
       expect(state.firstLoginAt).toBe(new Date(earlier).toISOString());
+      expect(state.lastLoginAt).toBe(new Date(NOW).toISOString());
     });
   });
 
@@ -148,13 +151,13 @@ describe('survey-state', () => {
       expect(result).toBe(3);
     });
 
-    it('increments po independently from invoicing', () => {
+    it('increments order independently from invoicing', () => {
       incrementSurveyCounter('invoicing');
       incrementSurveyCounter('invoicing');
-      incrementSurveyCounter('po');
+      incrementSurveyCounter('order');
       const state = readSurveyState();
       expect(state.counters.invoicing).toBe(2);
-      expect(state.counters.po).toBe(1);
+      expect(state.counters.order).toBe(1);
     });
   });
 });
