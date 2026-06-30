@@ -57,6 +57,7 @@ function CheckCircle() {
 
 // ─── Etendo branded survey header ────────────────────────────────────────────
 function SurveyHeader({ onClose, eyebrow }) {
+  const ui = useUI();
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '16px 20px 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -74,7 +75,7 @@ function SurveyHeader({ onClose, eyebrow }) {
       {onClose && (
         <button
           onClick={onClose}
-          aria-label="Cerrar"
+          aria-label={ui('surveyClose')}
           style={{
             width: 28, height: 28, borderRadius: 6, border: 0,
             background: 'transparent', color: T.fg3,

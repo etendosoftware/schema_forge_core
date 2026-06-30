@@ -5,6 +5,7 @@ import { FileText, Check } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { incrementSurveyCounter } from '@/lib/surveys/survey-state.js';
+import { emitSurveyTrigger } from '@/lib/surveys/survey-engine.js';
 
 /* eslint-disable react/prop-types */
 
@@ -457,6 +458,7 @@ function ConfirmOrderModal({
   };
 
   const handleClose = () => {
+    if (needsReload) emitSurveyTrigger();
     onClose();
     if (needsReload) window.location.reload();
   };
