@@ -29,7 +29,7 @@ export function selectNextSurvey({ isAdmin, now = Date.now(), source } = {}) {
   if (isMonthlyLimitReached(state, now)) return null;
 
   for (const survey of SURVEYS) {
-    if (source && survey.sources && !survey.sources.includes(source)) continue;
+    if (source != null && survey.sources && !survey.sources.includes(source)) continue;
     if (!survey.isEligible({ state, isAdmin, now })) continue;
     if (isDismissedCooldownActive(state, survey.id, now)) continue;
     return survey;

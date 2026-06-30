@@ -307,9 +307,9 @@ describe('useSurveyEngine', () => {
 
       act(() => { vi.advanceTimersByTime(1000); });
 
-      // Both timers fire because the first is not cancelled when the second is scheduled.
-      // Expected (buggy) count: 2. When the bug is fixed this should be 1.
-      expect(selectNextSurvey).toHaveBeenCalledTimes(2);
+      // The second event debounces the first (clearTimeout before setTimeout).
+      // Only one timer fires — selectNextSurvey is called exactly once.
+      expect(selectNextSurvey).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -237,14 +237,13 @@ describe('survey-state', () => {
   // -------------------------------------------------------------------------
 
   describe('markSurveyResponded with non-CSAT survey id', () => {
-    it('snapshots the order counter (fallback) for an unrecognised survey id', () => {
+    it('does not write respondedCountAt for non-CSAT surveys (nps has no counter)', () => {
       mockStorage.setItem(STORAGE_KEY, JSON.stringify({
         counters: { invoicing: 5, order: 3 },
       }));
       markSurveyResponded('nps', NOW);
       const state = readSurveyState();
-      // nps does not map to 'invoicing', so it falls back to the order counter
-      expect(state.respondedCountAt['nps']).toBe(3);
+      expect(state.respondedCountAt['nps']).toBeUndefined();
     });
 
     it('increments respondedCounts for nps', () => {

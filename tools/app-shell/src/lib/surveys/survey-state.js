@@ -93,7 +93,8 @@ export function markSurveyResponded(surveyId, now = Date.now()) {
     },
     respondedCountAt: {
       ...state.respondedCountAt,
-      [surveyId]: state.counters[surveyId === 'csat_invoicing' ? 'invoicing' : 'order'] ?? 0,
+      ...(surveyId === 'csat_invoicing' && { csat_invoicing: state.counters.invoicing ?? 0 }),
+      ...(surveyId === 'csat_order' && { csat_order: state.counters.order ?? 0 }),
     },
   });
 }

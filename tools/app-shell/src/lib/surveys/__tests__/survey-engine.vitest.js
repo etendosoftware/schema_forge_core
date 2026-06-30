@@ -252,14 +252,13 @@ describe('selectNextSurvey', () => {
   // -------------------------------------------------------------------------
 
   it('treats empty source string as no-filter and returns eligible surveys', () => {
-    // With source: '', the falsy check in selectNextSurvey skips source filtering,
-    // so surveys are selected purely by eligibility regardless of their sources list.
+    // With source: '', source != null is true, so filtering IS applied.
+    // csat_invoicing has sources: ['trigger'] — empty string does not match.
     mockStorage.setItem(STORAGE_KEY, JSON.stringify({
       counters: { invoicing: 5, order: 0 },
     }));
-    // csat_invoicing has sources: ['trigger'], but empty string bypasses the filter
     const survey = selectNextSurvey({ isAdmin: false, now: NOW, source: '' });
-    expect(survey?.id).toBe('csat_invoicing');
+    expect(survey).toBeNull();
   });
 
   // -------------------------------------------------------------------------

@@ -58,6 +58,7 @@ export function useSurveyEngine() {
   useEffect(() => {
     let timer;
     const handler = () => {
+      clearTimeout(timer);
       timer = setTimeout(() => checkAndShowSurvey('trigger'), 1000);
     };
     window.addEventListener(SURVEY_TRIGGER_EVENT, handler);
