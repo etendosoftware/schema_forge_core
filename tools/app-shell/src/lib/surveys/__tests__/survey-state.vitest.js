@@ -172,5 +172,84 @@ describe('survey-state', () => {
       expect(state.counters.invoicing).toBe(2);
       expect(state.counters.order).toBe(1);
     });
+
+    // QA edge case: unknown counter key should create it without throwing
+    it('creates a new key for an unknown counter without throwing', () => {
+      const result = incrementSurveyCounter('foo');
+      expect(result).toBe(1);
+      expect(readSurveyState().counters['foo']).toBe(1);
+      // known keys must be unaffected
+      expect(readSurveyState().counters.invoicing).toBe(0);
+      expect(readSurveyState().counters.order).toBe(0);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // QA edge case: localStorage unavailable (getStorage returns null)
+  // -------------------------------------------------------------------------
+
+  describe('readSurveyState with no localStorage', () => {
+    it('returns clean defaults when window has no localStorage (SSR/private mode)', () => {
+      vi.stubGlobal('window', {}); // localStorage is undefined
+      const state = readSurveyState();
+      expect(state.firstLoginAt).toBeNull();
+      expect(state.counters).toEqual({ invoicing: 0, order: 0 });
+      expect(state.shownThisMonth).toEqual({});
+      expect(state.respondedCounts).toEqual({});
+      expect(state.dismissals).toEqual({});
+    });
+
+    it('returns clean defaults when window is undefined (non-browser)', () => {
+      vi.stubGlobal('window', undefined);
+      const state = readSurveyState();
+      expect(state.firstLoginAt).toBeNull();
+      expect(state.counters).toEqual({ invoicing: 0, order: 0 });
+    });
+  });
+
+  describe('writeSurveyState with no localStorage', () => {
+    it('fails silently when localStorage is unavailable', () => {
+      vi.stubGlobal('window', {}); // no localStorage
+      expect(() => writeSurveyState({ firstLoginAt: 'x' })).not.toThrow();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // QA edge case: backward compat — respondedCountAt absent in old stored data
+  // -------------------------------------------------------------------------
+
+  describe('readSurveyState backward compat (old data without respondedCountAt)', () => {
+    it('provides empty respondedCountAt when key is missing from stored data', () => {
+      mockStorage.setItem(STORAGE_KEY, JSON.stringify({
+        firstLoginAt: '2025-01-01T00:00:00.000Z',
+        counters: { invoicing: 10, order: 0 },
+        respondedCounts: { csat_invoicing: 1 },
+        respondedAt: { csat_invoicing: '2025-03-01T00:00:00.000Z' },
+        // respondedCountAt intentionally absent (old format)
+      }));
+      const state = readSurveyState();
+      expect(state.respondedCountAt).toEqual({});
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // QA edge case: markSurveyResponded with a non-CSAT survey id (e.g. 'nps')
+  // -------------------------------------------------------------------------
+
+  describe('markSurveyResponded with non-CSAT survey id', () => {
+    it('snapshots the order counter (fallback) for an unrecognised survey id', () => {
+      mockStorage.setItem(STORAGE_KEY, JSON.stringify({
+        counters: { invoicing: 5, order: 3 },
+      }));
+      markSurveyResponded('nps', NOW);
+      const state = readSurveyState();
+      // nps does not map to 'invoicing', so it falls back to the order counter
+      expect(state.respondedCountAt['nps']).toBe(3);
+    });
+
+    it('increments respondedCounts for nps', () => {
+      markSurveyResponded('nps', NOW);
+      expect(readSurveyState().respondedCounts['nps']).toBe(1);
+    });
   });
 });

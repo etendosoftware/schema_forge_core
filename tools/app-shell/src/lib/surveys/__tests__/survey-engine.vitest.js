@@ -246,4 +246,45 @@ describe('selectNextSurvey', () => {
     }));
     expect(selectNextSurvey({ isAdmin: false, now: NOW })).toBeNull();
   });
+
+  // -------------------------------------------------------------------------
+  // QA edge case: empty source string bypasses source filtering
+  // -------------------------------------------------------------------------
+
+  it('treats empty source string as no-filter and returns eligible surveys', () => {
+    // With source: '', the falsy check in selectNextSurvey skips source filtering,
+    // so surveys are selected purely by eligibility regardless of their sources list.
+    mockStorage.setItem(STORAGE_KEY, JSON.stringify({
+      counters: { invoicing: 5, order: 0 },
+    }));
+    // csat_invoicing has sources: ['trigger'], but empty string bypasses the filter
+    const survey = selectNextSurvey({ isAdmin: false, now: NOW, source: '' });
+    expect(survey?.id).toBe('csat_invoicing');
+  });
+
+  // -------------------------------------------------------------------------
+  // QA edge case: isMonthlyLimitReached at month boundary
+  // -------------------------------------------------------------------------
+
+  it('does not count previous month surveys against the current month limit', () => {
+    // shownThisMonth has a key for a past month with 2 entries;
+    // current month has none — limit must NOT be reached
+    const pastMonthKey = new Date(NOW - 45 * MS_DAY).toISOString().slice(0, 7);
+    const state = {
+      lastShownAt: null,
+      shownThisMonth: { [pastMonthKey]: 2 },
+      dismissals: {},
+    };
+    expect(isMonthlyLimitReached(state, NOW)).toBe(false);
+  });
+
+  // -------------------------------------------------------------------------
+  // QA edge case: selectNextSurvey with no localStorage (SSR / private mode)
+  // -------------------------------------------------------------------------
+
+  it('returns null gracefully when localStorage is unavailable', () => {
+    vi.stubGlobal('window', {}); // no localStorage property
+    expect(() => selectNextSurvey({ isAdmin: false, now: NOW })).not.toThrow();
+    expect(selectNextSurvey({ isAdmin: false, now: NOW })).toBeNull();
+  });
 });

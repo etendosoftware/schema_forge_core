@@ -285,6 +285,57 @@ describe('useSurveyEngine', () => {
 
       expect(selectNextSurvey).not.toHaveBeenCalled();
     });
+
+    // -------------------------------------------------------------------------
+    // QA edge case: concurrent survey triggers — two events within 1s
+    // The shared `timer` variable means the second event overwrites the first
+    // reference; only the second timer's delay is cancelled on cleanup. The
+    // first timer still fires, so the survey can be shown twice.
+    // This test documents the current (buggy) behavior.
+    // -------------------------------------------------------------------------
+
+    it('fires checkAndShowSurvey twice when two events arrive within the 1000ms debounce window [BUG]', () => {
+      useAuth.mockReturnValue(makeAuth({ isAuthenticated: true, username: 'alice' }));
+      selectNextSurvey.mockReturnValue(makeSurvey());
+
+      renderHook(() => useSurveyEngine());
+
+      act(() => {
+        window.dispatchEvent(new Event(SURVEY_TRIGGER_EVENT));
+        window.dispatchEvent(new Event(SURVEY_TRIGGER_EVENT));
+      });
+
+      act(() => { vi.advanceTimersByTime(1000); });
+
+      // Both timers fire because the first is not cancelled when the second is scheduled.
+      // Expected (buggy) count: 2. When the bug is fixed this should be 1.
+      expect(selectNextSurvey).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // QA edge case: auth state transition — user logs out while login timer is running
+  // -------------------------------------------------------------------------
+
+  describe('auth state transition during login timer', () => {
+    it('does not show survey when isAuthenticated becomes false before 2500ms elapses', () => {
+      const { rerender } = renderHook(() => useSurveyEngine(), {
+        wrapper: ({ children }) => children,
+      });
+
+      // Start authenticated — timer begins
+      useAuth.mockReturnValue(makeAuth({ isAuthenticated: true, username: 'alice' }));
+      rerender();
+
+      // Simulate logout before the 2500ms timer fires
+      useAuth.mockReturnValue(makeAuth({ isAuthenticated: false, username: null }));
+      rerender();
+
+      act(() => { vi.advanceTimersByTime(2500); });
+
+      // checkAndShowSurvey guards on isAuthenticated at call time — must NOT call selectNextSurvey
+      expect(selectNextSurvey).not.toHaveBeenCalled();
+    });
   });
 
   // -------------------------------------------------------------------------
