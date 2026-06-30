@@ -14,6 +14,11 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
       '@generated': resolve(__dirname, '../../artifacts'),
     },
+    server: {
+      deps: {
+        inline: ['@exodus/bytes'],
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'json-summary'],
