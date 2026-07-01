@@ -44,7 +44,8 @@
     "sf-xml-apply-delta": "./src/xml-apply-delta.js",
     "sf-resolve-curated": "./src/resolve-curated.js",
     "sf-validate-pipeline": "./src/validate-pipeline.js",
-    "sf-epic-rollup-report": "./src/epic-rollup-report.js"
+    "sf-epic-rollup-report": "./src/epic-rollup-report.js",
+    "sf-data-fixes": "./src/data-fixes/run.js"
   },
   "files": [
     "src",
