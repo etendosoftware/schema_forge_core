@@ -62,6 +62,7 @@ jobs:
           npm pack --workspace=packages/app-shell-core --dry-run
           npm pack --workspace=packages/schema-forge-agent-context --dry-run
           npm pack --workspace=packages/schema-forge-stack --dry-run
+          npm pack --workspace=packages/etendo-go-core --dry-run
           npm pack --workspace=cli --dry-run
 
       - name: Publish schema forge core
@@ -124,6 +125,22 @@ jobs:
             echo "$NAME@$VERSION is already published — skipping (bump the version to publish new changes)."
           else
             npm publish --workspace=packages/schema-forge-stack --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish etendo-go-core
+        run: |
+          DRY_RUN_ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_ARGS="--dry-run"
+          fi
+          NAME=$(node -p "require('./packages/etendo-go-core/package.json').name")
+          VERSION=$(node -p "require('./packages/etendo-go-core/package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION is already published — skipping (bump the version to publish new changes)."
+          else
+            npm publish --workspace=packages/etendo-go-core --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
