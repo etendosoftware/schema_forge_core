@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDbPool, resolveDbDefaults } from '../src/db.js';
@@ -243,5 +243,36 @@ describe('resolveDbDefaults', () => {
       assert.equal(defaults.password, '');
       assert.equal(defaults.database, 'etendo_dev');
     });
+  });
+
+  it('auto-discovers gradle.properties one level above SF_ROOT (installed-package layout)', () => {
+    // Simulates the real installed-package layout: SF_ROOT is the consuming
+    // repo's root, and gradle.properties (Etendo root) is its parent — the
+    // exact convention findGradleProperties() must honor once __dirname no
+    // longer reflects the consuming repo's own directory depth.
+    const etendoRoot = mkdtempSync(join(tmpdir(), 'sf-etendo-root-'));
+    const consumerRoot = join(etendoRoot, 'etendo_schema_forge');
+    mkdirSync(consumerRoot);
+    writeFileSync(join(etendoRoot, 'gradle.properties'), [
+      'bbdd.url=jdbc:postgresql://sfroothost:5555/sfrootdb',
+      'bbdd.user=sfrootuser',
+      `${PASSWORD_PROP}=${FIXTURE_DB_PWD}`,
+    ].join('\n'));
+    const previousSfRoot = process.env.SF_ROOT;
+    process.env.SF_ROOT = consumerRoot;
+    try {
+      withDbEnv({}, () => {
+        const defaults = resolveDbDefaults();
+        assert.equal(defaults.source, 'gradle');
+        assert.equal(defaults.host, 'sfroothost');
+        assert.equal(defaults.port, 5555);
+        assert.equal(defaults.user, 'sfrootuser');
+        assert.equal(defaults.password, FIXTURE_DB_PWD);
+      });
+    } finally {
+      if (previousSfRoot === undefined) delete process.env.SF_ROOT;
+      else process.env.SF_ROOT = previousSfRoot;
+      rmSync(etendoRoot, { recursive: true, force: true });
+    }
   });
 });
