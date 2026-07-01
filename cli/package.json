@@ -9,6 +9,9 @@
   "engines": {
     "node": ">=22"
   },
+  "scripts": {
+    "test": "node --test 'test/*.test.js'"
+  },
   "dependencies": {
     "@clack/prompts": "^1.5.1",
     "pg": "^8.13.0"

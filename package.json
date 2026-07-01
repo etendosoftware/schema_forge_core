@@ -8,8 +8,7 @@
   "workspaces": [
     "cli",
     "tools/*",
-    "packages/*",
-    "e2e"
+    "packages/*"
   ],
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",

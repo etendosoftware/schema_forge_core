@@ -569,7 +569,7 @@ export async function scaffoldSecondaryTabCustomForms(contract, windowName, deps
         .map(cfg => cfg.customForm);
     if (customForms.length > 0) {
       const __filename = fileURLToPathMod(import.meta.url);
-      const repoRoot = resolvePath(dirnamePath(__filename), '../../');
+      const repoRoot = process.env.SF_ROOT || resolvePath(dirnamePath(__filename), '../../');
       const customDir = resolvePath(repoRoot, `tools/app-shell/src/windows/custom/${windowName}`);
       await mkdir(customDir, {recursive: true});
       for (const formName of customForms) {
@@ -730,7 +730,7 @@ export async function runGenerateFrontendStep(windowName, result) {
     // Custom scaffold path: write to windows/custom/{windowName}/
     // Resolve the app-shell src directory relative to this file's location
     const __filename = fileURLToPathMod(import.meta.url);
-    const repoRoot = resolvePath(dirnamePath(__filename), '../../');
+    const repoRoot = process.env.SF_ROOT || resolvePath(dirnamePath(__filename), '../../');
     const customDir = resolvePath(repoRoot, `tools/app-shell/src/windows/custom/${windowName}`);
     await mkdir(customDir, {recursive: true});
 
