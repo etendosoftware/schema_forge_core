@@ -21,8 +21,8 @@ const Toaster = ({
             "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
         },
       }}
-      {...props}
-      data-testid="Sonner__7936a8" />
+      data-testid="Sonner__7936a8"
+      {...props} />
   );
 }
 

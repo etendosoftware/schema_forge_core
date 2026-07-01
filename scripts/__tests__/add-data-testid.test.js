@@ -127,6 +127,31 @@ describe('add-data-testid transformer — preserves existing attributes', () => 
     const out = run(src, 'src/App.jsx');
     assert.match(out, /data-testid="my-id"/);
   });
+
+  it('inserts a new data-testid BEFORE a {...props} spread, not after', () => {
+    // A data-testid placed after {...props} would be silently overridden by
+    // whatever the caller passed in via props — JSX resolves duplicate
+    // attributes left-to-right, last one wins. The fallback identifier must
+    // come first so a real caller-supplied value always takes precedence.
+    const src = `function Widget(props) { return <Comp {...props} />; }`;
+    const out = run(src, 'src/Widget.jsx');
+    const testidIdx = out.indexOf('data-testid');
+    const spreadIdx = out.indexOf('{...props}');
+    assert.ok(testidIdx !== -1 && spreadIdx !== -1);
+    assert.ok(testidIdx < spreadIdx, 'data-testid must appear before {...props}');
+  });
+
+  it('reorders an existing misplaced data-testid to before the spread', () => {
+    // Simulates output from a prior, buggy codemod run.
+    const src = `function Widget(props) { return <Comp {...props} data-testid="Comp__abc123" />; }`;
+    const out = run(src, 'src/Widget.jsx');
+    const count = (out.match(/data-testid/g) || []).length;
+    assert.equal(count, 1, 'must not duplicate the attribute while reordering it');
+    const testidIdx = out.indexOf('data-testid');
+    const spreadIdx = out.indexOf('{...props}');
+    assert.ok(testidIdx < spreadIdx, 'misplaced data-testid must move before {...props}');
+    assert.match(out, /data-testid="Comp__abc123"/, 'must preserve the original value while reordering');
+  });
 });
 
 // ── field.id scope detection ──────────────────────────────────────────────────

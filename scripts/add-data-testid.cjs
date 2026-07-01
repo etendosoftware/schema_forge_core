@@ -85,16 +85,36 @@ module.exports = function transformer(file, api) {
 
   for (const path of elements.paths()) {
     const attrs = path.node.attributes || [];
-    if (attrs.some(a => a && a.type === "JSXAttribute" && a.name && a.name.name === "data-testid"))
+    // Attribute order matters: on an element that also spreads {...props}, a
+    // data-testid placed AFTER the spread silently overrides whatever
+    // data-testid the caller passed in via props — the exact opposite of
+    // what a fallback identifier is for. Insert before the first spread (if
+    // any) so a real caller-supplied value always wins.
+    const firstSpreadIdx = attrs.findIndex(a => a && a.type === "JSXSpreadAttribute");
+    const existingIdx = attrs.findIndex(a => a && a.type === "JSXAttribute" && a.name && a.name.name === "data-testid");
+    if (existingIdx !== -1) {
+      // Already has one — only fix its position if it's misplaced after a spread.
+      if (firstSpreadIdx !== -1 && existingIdx > firstSpreadIdx) {
+        const [existing] = attrs.splice(existingIdx, 1);
+        attrs.splice(firstSpreadIdx, 0, existing);
+        path.node.attributes = attrs;
+      }
       continue;
+    }
     const compName = path.node.name.name;
+    let newAttr;
     if (hasFieldInScope(path)) {
       const expr = j.binaryExpression("+",
         j.literal(`${compName}__`),
         j.memberExpression(j.identifier("field"), j.identifier("id")));
-      attrs.push(j.jsxAttribute(j.jsxIdentifier("data-testid"), j.jsxExpressionContainer(expr)));
+      newAttr = j.jsxAttribute(j.jsxIdentifier("data-testid"), j.jsxExpressionContainer(expr));
     } else {
-      attrs.push(j.jsxAttribute(j.jsxIdentifier("data-testid"), j.literal(`${compName}__${hash}`)));
+      newAttr = j.jsxAttribute(j.jsxIdentifier("data-testid"), j.literal(`${compName}__${hash}`));
+    }
+    if (firstSpreadIdx !== -1) {
+      attrs.splice(firstSpreadIdx, 0, newAttr);
+    } else {
+      attrs.push(newAttr);
     }
     path.node.attributes = attrs;
   }

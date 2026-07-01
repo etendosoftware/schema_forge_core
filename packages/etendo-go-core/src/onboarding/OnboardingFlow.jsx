@@ -247,7 +247,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       loadingEnvs={loadingEnvs}
       routeByEnvironments={routeByEnvironments}
       handleRegisterSuccess={handleRegisterSuccess}
-    />
+      data-testid="StepComponent__5852c2" />
   );
 }
 

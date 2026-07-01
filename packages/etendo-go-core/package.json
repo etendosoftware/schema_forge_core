@@ -1,6 +1,6 @@
 {
   "name": "@etendosoftware/etendo-go-core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Core onboarding, auth flow, and shared components for Etendo GO — consumed by all locale workspaces.",
   "type": "module",
   "publishConfig": {

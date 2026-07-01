@@ -267,12 +267,12 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
   return (
     <SetupProgressShell data-testid="SetupProgressShell__79cf84">
       <div className="w-full flex flex-col items-center gap-6">
-        <SetupProgressCard {...setupProgressState} data-testid="SetupProgressCard__79cf84" />
+        <SetupProgressCard data-testid="SetupProgressCard__79cf84" {...setupProgressState} />
         {result?.status === 'failed' && (
           <Button
             onClick={onBack}
             className="bg-gray-900 text-white rounded-2xl h-12 px-6 hover:bg-gray-800"
-          >
+            data-testid="Button__c76d30">
             {ui('back')}
           </Button>
         )}

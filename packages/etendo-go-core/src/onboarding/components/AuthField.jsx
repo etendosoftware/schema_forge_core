@@ -21,8 +21,8 @@ export function AuthField({ id, label, required = false, icon: Icon, trailing, c
         <Input
           id={id}
           className={`h-12 rounded-2xl border border-slate-300 bg-white text-base text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:ring-4 focus-visible:ring-slate-900/5 ${Icon ? 'pl-12' : 'pl-4'} ${trailing ? 'pr-14' : 'pr-4'} ${inputClassName}`}
-          {...props}
-          data-testid="Input__79cf84" />
+          data-testid="Input__79cf84"
+          {...props} />
         {trailing && <div className="absolute inset-y-0 right-3 flex items-center">{trailing}</div>}
       </div>
     </div>
