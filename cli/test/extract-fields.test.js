@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { classifyField, inferDerivation, buildSchema, buildReference, parseValidationRule } from '../src/extract-fields.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..', '..');
+const ROOT = join(__dirname, '..');
 
 // Load the real system-columns map for tests
 const systemColumns = JSON.parse(

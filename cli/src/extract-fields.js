@@ -7,7 +7,10 @@ import { toCamelCase, toPropertyName, computeChecksum, generateVersion } from '.
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
-const CLI_DIR = join(__dirname, '..', '..');
+// One level up from src/ is the package root — both in local dev (cli/) and once
+// installed (node_modules/@etendosoftware/schema-forge-cli/). core-maps/ ships inside
+// this package's own `files` allowlist, so it must resolve here, not via SF_ROOT.
+const CLI_DIR = join(__dirname, '..');
 
 /**
  * Load a JSON file from the core-maps directory.

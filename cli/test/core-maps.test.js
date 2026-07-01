@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 describe('core-maps', () => {
   it('system-columns.json is valid JSON with expected keys', async () => {
     const raw = await readFile(
-      new URL('../../core-maps/system-columns.json', import.meta.url), 'utf8');
+      new URL('../core-maps/system-columns.json', import.meta.url), 'utf8');
     const data = JSON.parse(raw);
     assert.ok(data['AD_Client_ID'], 'Missing AD_Client_ID');
     assert.ok(data['AD_Org_ID'], 'Missing AD_Org_ID');
@@ -18,7 +18,7 @@ describe('core-maps', () => {
 
   it('ad-reference-map.json maps AD_Reference_IDs to schema types', async () => {
     const raw = await readFile(
-      new URL('../../core-maps/ad-reference-map.json', import.meta.url), 'utf8');
+      new URL('../core-maps/ad-reference-map.json', import.meta.url), 'utf8');
     const data = JSON.parse(raw);
     assert.equal(data['10'], 'string');
     assert.equal(data['11'], 'integer');
@@ -29,7 +29,7 @@ describe('core-maps', () => {
 
   it('impact-messages.json has entries for each system category', async () => {
     const raw = await readFile(
-      new URL('../../core-maps/impact-messages.json', import.meta.url), 'utf8');
+      new URL('../core-maps/impact-messages.json', import.meta.url), 'utf8');
     const data = JSON.parse(raw);
     for (const cat of ['accounting','inventory','costing','audit','tax','integration','internal']) {
       assert.ok(data[cat], `Missing category: ${cat}`);
