@@ -70,7 +70,13 @@ jobs:
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             DRY_RUN_ARGS="--dry-run"
           fi
-          npm publish --workspace=packages/schema-forge-core --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
+          NAME=$(node -p "require('./packages/schema-forge-core/package.json').name")
+          VERSION=$(node -p "require('./packages/schema-forge-core/package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION is already published — skipping (bump the version to publish new changes)."
+          else
+            npm publish --workspace=packages/schema-forge-core --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -80,7 +86,13 @@ jobs:
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             DRY_RUN_ARGS="--dry-run"
           fi
-          npm publish --workspace=packages/app-shell-core --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
+          NAME=$(node -p "require('./packages/app-shell-core/package.json').name")
+          VERSION=$(node -p "require('./packages/app-shell-core/package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION is already published — skipping (bump the version to publish new changes)."
+          else
+            npm publish --workspace=packages/app-shell-core --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -90,7 +102,13 @@ jobs:
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             DRY_RUN_ARGS="--dry-run"
           fi
-          npm publish --workspace=packages/schema-forge-agent-context --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
+          NAME=$(node -p "require('./packages/schema-forge-agent-context/package.json').name")
+          VERSION=$(node -p "require('./packages/schema-forge-agent-context/package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION is already published — skipping (bump the version to publish new changes)."
+          else
+            npm publish --workspace=packages/schema-forge-agent-context --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -100,7 +118,13 @@ jobs:
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             DRY_RUN_ARGS="--dry-run"
           fi
-          npm publish --workspace=packages/schema-forge-stack --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
+          NAME=$(node -p "require('./packages/schema-forge-stack/package.json').name")
+          VERSION=$(node -p "require('./packages/schema-forge-stack/package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION is already published — skipping (bump the version to publish new changes)."
+          else
+            npm publish --workspace=packages/schema-forge-stack --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -110,6 +134,12 @@ jobs:
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             DRY_RUN_ARGS="--dry-run"
           fi
-          npm publish --workspace=cli --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
+          NAME=$(node -p "require('./cli/package.json').name")
+          VERSION=$(node -p "require('./cli/package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION is already published — skipping (bump the version to publish new changes)."
+          else
+            npm publish --workspace=cli --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
