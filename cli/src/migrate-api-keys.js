@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = resolve(__dirname, '../..');
+const ROOT = process.env.SF_ROOT || resolve(__dirname, '../..');
 const ARTIFACTS_DIR = resolve(ROOT, 'artifacts');
 
 const dryRun = process.argv.includes('--dry-run');

@@ -19,7 +19,7 @@ import { existsSync } from 'node:fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..');
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
 
 const DEFAULT_PORT = 5488;
 const DEFAULT_LOCALE = 'en_US';

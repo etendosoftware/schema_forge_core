@@ -21,7 +21,7 @@ import { dirname, join } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..');
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
 
 const REGISTRY_PATH = join(ROOT, 'cli/config/regen-windows.json');
 const ARTIFACTS = join(ROOT, 'artifacts');

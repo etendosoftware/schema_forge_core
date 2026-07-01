@@ -13,7 +13,7 @@ import { QUALITY_GATE_CHECKS } from './quality-gate/checks/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..');
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
 
 function collectRuntimeFiles(dir) {
   if (!existsSync(dir)) {

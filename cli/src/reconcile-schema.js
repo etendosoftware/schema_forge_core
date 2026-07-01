@@ -45,7 +45,8 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS_DIR = join(__dirname, '..', '..', 'artifacts');
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const ARTIFACTS_DIR = join(ROOT, 'artifacts');
 
 /**
  * Build a lookup map: tableName (lowercase) → entity object.

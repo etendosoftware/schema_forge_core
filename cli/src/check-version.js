@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..');
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
 
 // Properties whose changes are considered breaking (structural contract changes)
 const BREAKING_PROPERTIES = new Set(['name', 'type', 'tsType', 'column']);

@@ -21,7 +21,7 @@ import { join, dirname} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..', '..');
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
 
 const RESET  = '\x1b[0m';
 const GREEN  = '\x1b[32m';

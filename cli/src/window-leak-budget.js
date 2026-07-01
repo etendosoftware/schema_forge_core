@@ -30,7 +30,7 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..');
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
 const CONFIG_PATH = join(__dirname, '..', 'window-leak-budget.json');
 
 /**

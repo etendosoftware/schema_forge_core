@@ -17,7 +17,7 @@ import { classifyRule } from './pre-classify.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..');
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
 
 // ---------------------------------------------------------------------------
 // Helpers
