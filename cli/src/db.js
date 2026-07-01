@@ -282,19 +282,32 @@ export function createDbPool(config, gradlePropertiesPath) {
  * that root is 2 levels up (schema_forge_core/); once installed as
  * node_modules/@etendosoftware/schema-forge-cli/src/db.js, __dirname's own
  * directory depth no longer means anything — SF_ROOT (set by the consuming
- * repo's Makefile/CI) must be used instead. Either way, gradle.properties
- * itself lives one level ABOVE that root, per the documented convention:
- * "Etendo root: parent directory of this repo".
+ * repo's Makefile/CI) must be used instead.
+ *
+ * Two real layouts exist for where gradle.properties actually lives relative
+ * to that root, matching the two conventions already in use elsewhere in the
+ * consuming repo (see tools/app-shell/vite-plugins/report-api.js's own
+ * findGradleProps()):
+ *   - CI / the documented convention: one level ABOVE the consumer root
+ *     ("Etendo root: parent directory of this repo").
+ *   - A local dev layout some machines use: an `etendo_core/` checkout
+ *     nested INSIDE the consumer root, matching CI's own
+ *     `working-directory: etendo_core/etendo_schema_forge` path shape.
+ * Check both; ETENDO_GRADLE_PROPERTIES (handled by the caller) always wins.
  */
 function findGradleProperties() {
   const consumerRoot = process.env.SF_ROOT || join(__dirname, '..', '..');
-  const candidate = join(consumerRoot, '..', 'gradle.properties');
-  try {
-    readFileSync(candidate, 'utf-8');
-    return candidate;
-  } catch {
-    return null;
+  const candidates = [
+    join(consumerRoot, 'etendo_core', 'gradle.properties'),
+    join(consumerRoot, '..', 'gradle.properties'),
+  ];
+  for (const candidate of candidates) {
+    try {
+      readFileSync(candidate, 'utf-8');
+      return candidate;
+    } catch { /* try next candidate */ }
   }
+  return null;
 }
 
 export async function closePool(pool) {

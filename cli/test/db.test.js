@@ -275,4 +275,63 @@ describe('resolveDbDefaults', () => {
       rmSync(etendoRoot, { recursive: true, force: true });
     }
   });
+
+  it('auto-discovers gradle.properties inside an etendo_core/ nested under SF_ROOT', () => {
+    // Some local dev machines nest a full Etendo checkout (etendo_core/,
+    // matching CI's own etendo_core/etendo_schema_forge path shape) INSIDE
+    // the consuming repo rather than making it the parent directory.
+    const consumerRoot = mkdtempSync(join(tmpdir(), 'sf-consumer-root-'));
+    const etendoCoreDir = join(consumerRoot, 'etendo_core');
+    mkdirSync(etendoCoreDir);
+    writeFileSync(join(etendoCoreDir, 'gradle.properties'), [
+      'bbdd.url=jdbc:postgresql://nestedhost:6666/nesteddb',
+      'bbdd.user=nesteduser',
+      `${PASSWORD_PROP}=${FIXTURE_DB_PWD}`,
+    ].join('\n'));
+    const previousSfRoot = process.env.SF_ROOT;
+    process.env.SF_ROOT = consumerRoot;
+    try {
+      withDbEnv({}, () => {
+        const defaults = resolveDbDefaults();
+        assert.equal(defaults.source, 'gradle');
+        assert.equal(defaults.host, 'nestedhost');
+        assert.equal(defaults.port, 6666);
+        assert.equal(defaults.user, 'nesteduser');
+        assert.equal(defaults.password, FIXTURE_DB_PWD);
+      });
+    } finally {
+      if (previousSfRoot === undefined) delete process.env.SF_ROOT;
+      else process.env.SF_ROOT = previousSfRoot;
+      rmSync(consumerRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('prefers a nested etendo_core/gradle.properties over one at the parent directory', () => {
+    const etendoRoot = mkdtempSync(join(tmpdir(), 'sf-both-candidates-'));
+    const consumerRoot = join(etendoRoot, 'etendo_schema_forge');
+    mkdirSync(consumerRoot);
+    writeFileSync(join(etendoRoot, 'gradle.properties'), [
+      'bbdd.url=jdbc:postgresql://parenthost:1111/parentdb',
+      `${PASSWORD_PROP}=${FIXTURE_DB_PWD}`,
+    ].join('\n'));
+    const etendoCoreDir = join(consumerRoot, 'etendo_core');
+    mkdirSync(etendoCoreDir);
+    writeFileSync(join(etendoCoreDir, 'gradle.properties'), [
+      'bbdd.url=jdbc:postgresql://nestedhost:2222/nesteddb',
+      `${PASSWORD_PROP}=${FIXTURE_DB_PWD}`,
+    ].join('\n'));
+    const previousSfRoot = process.env.SF_ROOT;
+    process.env.SF_ROOT = consumerRoot;
+    try {
+      withDbEnv({}, () => {
+        const defaults = resolveDbDefaults();
+        assert.equal(defaults.host, 'nestedhost');
+        assert.equal(defaults.port, 2222);
+      });
+    } finally {
+      if (previousSfRoot === undefined) delete process.env.SF_ROOT;
+      else process.env.SF_ROOT = previousSfRoot;
+      rmSync(etendoRoot, { recursive: true, force: true });
+    }
+  });
 });
