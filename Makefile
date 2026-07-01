@@ -2,32 +2,27 @@
 
 # --- Testing ---
 
-test: ## Run all unit tests (CLI + app-shell + artifacts + vitest)
+test: ## Run all unit tests (CLI + core packages)
 	cd cli && node --test 'test/*.test.js'
 	npm test --workspace=packages/schema-forge-core
 	npm test --workspace=packages/app-shell-core
-	node --test 'tools/app-shell/src/**/__tests__/*.test.js'
-	node --test 'tools/app-shell/test/*.test.js'
-	node --test 'artifacts/**/__tests__/*.test.js'
-	cd tools/app-shell && npx vitest run
+	npm run test:vitest --workspace=packages/app-shell-core
 
 test-all-coverage: ## Run ALL unit tests (Node + Vitest) with coverage reports
 	@mkdir -p coverage
 	@echo "=== CLI tests ==="
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/cli-lcov.info $(shell find cli/test -name '*.test.js')
-	@echo "=== App-shell Node tests ==="
-	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-lcov.info $(shell find tools/app-shell/src -path '*/__tests__/*.test.js' ! -name 'useEntity-helpers.test.js')
-	@echo "=== App-shell extra tests ==="
-	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-test-lcov.info $(shell find tools/app-shell/test -name '*.test.js')
-	@echo "=== Artifact custom tests ==="
-	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/artifacts-lcov.info $(shell find artifacts -path '*/__tests__/*.test.js')
-	@echo "=== Vitest (React components) ==="
-	cd tools/app-shell && npx vitest run --coverage && sed 's|^SF:src/|SF:tools/app-shell/src/|' coverage/vitest/lcov.info > ../../coverage/vitest-lcov.info
+	@echo "=== Schema Forge core package tests ==="
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/schema-forge-core-lcov.info $(shell find packages/schema-forge-core/test -name '*.test.js')
+	@echo "=== App-shell core package tests ==="
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-core-lcov.info $(shell find packages/app-shell-core/test packages/app-shell-core/src/auth/__tests__ packages/app-shell-core/src/i18n/__tests__ packages/app-shell-core/src/components/ui/__tests__ packages/app-shell-core/src/runtime/__tests__ -name '*.test.js' 2>/dev/null)
+	@echo "=== App-shell core package Vitest ==="
+	cd packages/app-shell-core && npx vitest run --coverage --coverage.reporter=lcov && sed 's|^SF:src/|SF:packages/app-shell-core/src/|' coverage/lcov.info > ../../coverage/appshell-core-vitest-lcov.info
 	@echo "=== Merging LCOV reports ==="
 	npx lcov-result-merger 'coverage/*-lcov.info' coverage/merged-lcov.info
 	@echo ""
 	@echo "Coverage reports saved in coverage/"
-	@echo "  Individual: cli-lcov.info, appshell-lcov.info, appshell-test-lcov.info, artifacts-lcov.info, vitest-lcov.info"
+	@echo "  Individual: cli-lcov.info, schema-forge-core-lcov.info, appshell-core-lcov.info, appshell-core-vitest-lcov.info"
 	@echo "  Merged:     merged-lcov.info (used by SonarQube)"
 
 test-ci: ## Run all unit tests and write JUnit XML reports (CI mode)
@@ -41,18 +36,7 @@ test-ci: ## Run all unit tests and write JUnit XML reports (CI mode)
 	  --test-reporter=junit --test-reporter-destination=test-results/schema-forge-core.xml \
 	  'packages/schema-forge-core/test/*.test.js'
 	npm test --workspace=packages/app-shell-core
-	node --test \
-	  --test-reporter=spec --test-reporter-destination=stdout \
-	  --test-reporter=junit --test-reporter-destination=test-results/appshell-node.xml \
-	  'tools/app-shell/src/**/__tests__/*.test.js' \
-	  'tools/app-shell/test/*.test.js'
-	node --test \
-	  --test-reporter=spec --test-reporter-destination=stdout \
-	  --test-reporter=junit --test-reporter-destination=test-results/artifacts.xml \
-	  'artifacts/**/__tests__/*.test.js'
-	cd tools/app-shell && npx vitest run \
-	  --reporter=junit \
-	  --outputFile=../../test-results/vitest.xml
+	npm run test:vitest --workspace=packages/app-shell-core -- --reporter=junit --outputFile=../../test-results/appshell-core-vitest.xml
 
 test-ci-coverage: ## Run all unit tests with JUnit XML reports + LCOV coverage (CI mode, single pass)
 	@mkdir -p test-results coverage
@@ -63,23 +47,17 @@ test-ci-coverage: ## Run all unit tests with JUnit XML reports + LCOV coverage (
 	  'cli/test/*.test.js'
 	node --test --experimental-test-coverage \
 	  --test-reporter=spec --test-reporter-destination=stdout \
-	  --test-reporter=junit --test-reporter-destination=test-results/appshell-node.xml \
-	  --test-reporter=lcov --test-reporter-destination=coverage/appshell-lcov.info \
-	  'tools/app-shell/src/**/__tests__/*.test.js' \
-	  'tools/app-shell/test/*.test.js'
-	node --test --experimental-test-coverage \
-	  --test-reporter=spec --test-reporter-destination=stdout \
-	  --test-reporter=junit --test-reporter-destination=test-results/artifacts.xml \
-	  --test-reporter=lcov --test-reporter-destination=coverage/artifacts-lcov.info \
-	  'artifacts/**/__tests__/*.test.js'
-	cd tools/app-shell && npx vitest run --coverage \
+	  --test-reporter=junit --test-reporter-destination=test-results/schema-forge-core.xml \
+	  --test-reporter=lcov --test-reporter-destination=coverage/schema-forge-core-lcov.info \
+	  'packages/schema-forge-core/test/*.test.js'
+	cd packages/app-shell-core && npx vitest run --coverage --coverage.reporter=lcov \
 	  --reporter=junit \
-	  --outputFile=../../test-results/vitest.xml \
-	  && cp coverage/vitest/lcov.info ../../coverage/vitest-lcov.info
+	  --outputFile=../../test-results/appshell-core-vitest.xml \
+	  && cp coverage/lcov.info ../../coverage/appshell-core-vitest-lcov.info
 	@echo "=== Merging LCOV reports ==="
 	npx lcov-result-merger 'coverage/*-lcov.info' coverage/merged-lcov.info
 
-validate-pipeline: ## Validate pipeline completeness across all artifacts
+validate-pipeline: ## [Requires etendo_schema_forge — this repo has no artifacts/ to validate] Validate pipeline completeness across all artifacts
 	node cli/src/validate-pipeline.js --format=text
 
 method-budget: ## Ratchet guard: fail only if a tracked class grew past its method baseline
