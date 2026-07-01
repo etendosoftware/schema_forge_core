@@ -18,7 +18,7 @@ import { CURRENT_VERSION, getVersion, needsMigration, migrateDecisions } from '.
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..', '..');
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..', '..');
 const ARTIFACTS_DIR = join(ROOT, 'artifacts');
 
 async function findDecisionsFiles(specificWindows) {

@@ -277,13 +277,18 @@ export function createDbPool(config, gradlePropertiesPath) {
 }
 
 /**
- * Auto-discover gradle.properties by walking up from the CLI source dir.
- * Schema Forge lives at {etendo_root}/schema_forge/cli/src/db.js
- * so gradle.properties is at ../../.. relative to this file.
+ * Auto-discover gradle.properties relative to the consuming repo's root, not
+ * this package's own install location. In local dev (this repo, cli/src/db.js)
+ * that root is 2 levels up (schema_forge_core/); once installed as
+ * node_modules/@etendosoftware/schema-forge-cli/src/db.js, __dirname's own
+ * directory depth no longer means anything — SF_ROOT (set by the consuming
+ * repo's Makefile/CI) must be used instead. Either way, gradle.properties
+ * itself lives one level ABOVE that root, per the documented convention:
+ * "Etendo root: parent directory of this repo".
  */
 function findGradleProperties() {
-  // Try: schema_forge/../gradle.properties (etendo root)
-  const candidate = join(__dirname, '..', '..', '..', 'gradle.properties');
+  const consumerRoot = process.env.SF_ROOT || join(__dirname, '..', '..');
+  const candidate = join(consumerRoot, '..', 'gradle.properties');
   try {
     readFileSync(candidate, 'utf-8');
     return candidate;
