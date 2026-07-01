@@ -19,7 +19,7 @@ import { existsSync } from 'node:fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..');
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
 
 // ---------------------------------------------------------------------------
 // Helpers code for jsreport (group-break detection + formatting)
@@ -299,9 +299,17 @@ export function generateTemplate(contract) {
 
 function parseArgs(argv) {
   const opts = { contract: null, output: null };
-  for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--contract' && argv[i + 1]) opts.contract = argv[++i];
-    else if (argv[i] === '--output' && argv[i + 1]) opts.output = argv[++i];
+  let i = 0;
+  while (i < argv.length) {
+    if (argv[i] === '--contract' && argv[i + 1]) {
+      opts.contract = argv[i + 1];
+      i += 2;
+    } else if (argv[i] === '--output' && argv[i + 1]) {
+      opts.output = argv[i + 1];
+      i += 2;
+    } else {
+      i += 1;
+    }
   }
   return opts;
 }

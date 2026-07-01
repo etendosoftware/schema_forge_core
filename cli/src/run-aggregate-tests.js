@@ -206,6 +206,24 @@ function checkLayoutCoverage(contract) {
   return results;
 }
 
+function getValidAndReason(data, section) {
+  let valid = true;
+  let reason = '';
+
+  if (Array.isArray(data)) {
+    if (data.length === 0) {
+      valid = false;
+      reason = `mockData for '${section.id}' is an empty array`;
+    }
+  } else if (typeof data === 'object' && data !== null) {
+    if (Object.keys(data).length === 0) {
+      valid = false;
+      reason = `mockData for '${section.id}' is an empty object`;
+    }
+  }
+  return {valid, reason};
+}
+
 /**
  * Check mockData shape: arrays must be non-empty, objects must have keys.
  * Skips quick-actions sections.
@@ -221,20 +239,7 @@ function checkMockDataShape(contract) {
     const data = mockData[section.id];
     if (data === undefined) continue;
 
-    let valid = true;
-    let reason = '';
-
-    if (Array.isArray(data)) {
-      if (data.length === 0) {
-        valid = false;
-        reason = `mockData for '${section.id}' is an empty array`;
-      }
-    } else if (typeof data === 'object' && data !== null) {
-      if (Object.keys(data).length === 0) {
-        valid = false;
-        reason = `mockData for '${section.id}' is an empty object`;
-      }
-    }
+    let {valid, reason} = getValidAndReason(data, section);
 
     results.push({
       id: nextId('mds'),

@@ -1,4 +1,3 @@
-import { createReadStream } from 'node:fs';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -7,13 +6,14 @@ import { toCamelCase, toPropertyName, computeChecksum, generateVersion } from '.
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..');
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const CLI_DIR = join(__dirname, '..', '..');
 
 /**
  * Load a JSON file from the core-maps directory.
  */
 async function loadCoreMap(filename) {
-  const raw = await readFile(join(ROOT, 'core-maps', filename), 'utf-8');
+  const raw = await readFile(join(CLI_DIR, 'core-maps', filename), 'utf-8');
   return JSON.parse(raw);
 }
 
@@ -29,7 +29,7 @@ async function loadCoreMap(filename) {
  * 6. Everything else → editable
  */
 export function classifyField(fieldRow, systemColumns) {
-  const { columnname, tablename, isdisplayed, isreadonly, isupdateable, defaultvalue, field_isactive, isshowninstatusbar } = fieldRow;
+  const { columnname, tablename, isdisplayed, isreadonly, isupdateable, defaultvalue, field_isactive } = fieldRow;
 
   // 0. Inactive field → discarded
   if (field_isactive === 'N') {
@@ -121,7 +121,7 @@ export function inferDerivation(defaultValue) {
   }
 
   // @VAR@ pattern — match the full string being a single @...@ token
-  const varMatch = defaultValue.match(/^@([A-Za-z_][A-Za-z0-9_]*)@$/);
+  const varMatch = defaultValue.match(/^@([A-Za-z_]\w*)@$/);
   if (varMatch) {
     const varName = toCamelCase(varMatch[1]);
     return {
@@ -153,13 +153,13 @@ export function parseValidationRule(code) {
   const cascadeParams = new Set();
 
   // First pass: find all @#VAR@ (session context)
-  for (const match of code.matchAll(/@#([A-Za-z_][A-Za-z0-9_]*)@/g)) {
+  for (const match of code.matchAll(/@#([A-Za-z_]\w*)@/g)) {
     contextParams.add(match[1]);
   }
 
   // Second pass: find all @VAR@ that are NOT preceded by #
   // Use negative lookbehind to exclude @#VAR@ matches
-  for (const match of code.matchAll(/(?<!#)@([A-Za-z_][A-Za-z0-9_]*)@/g)) {
+  for (const match of code.matchAll(/(?<!#)@([A-Za-z_]\w*)@/g)) {
     const varName = match[1];
     if (varName === 'SQL') continue;
     cascadeParams.add(varName);
@@ -293,20 +293,169 @@ function deduplicateFieldNames(fields) {
 }
 
 /**
- * Build the full schema structure from DB rows.
- *
- * Groups rows by tab, maps AD_Reference_IDs to schema types, and produces
- * the schema-raw.json structure per TDD 2.1.
+ * Infer and apply derivation from the default value if not already set.
  */
-export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
-  if (!rows || rows.length === 0) {
-    return { window: null, entities: [] };
+function applyDerivationHint(fieldDef, row) {
+  if (!fieldDef.derivation && row.defaultvalue) {
+    const derivation = inferDerivation(row.defaultvalue);
+    if (derivation) fieldDef.derivation = derivation;
+  }
+}
+
+/**
+ * Apply value constraints (max length, min/max value) from the DB row.
+ */
+function applyConstraints(fieldDef, row) {
+  if (row.fieldlength) fieldDef.maxLength = row.fieldlength;
+  if (row.valuemin != null) fieldDef.valueMin = row.valuemin;
+  if (row.valuemax != null) fieldDef.valueMax = row.valuemax;
+}
+
+/**
+ * Apply display and readOnly logic expressions from the DB row.
+ * Convention #6: omit key if null.
+ */
+function applyDisplayLogic(fieldDef, row) {
+  if (row.displaylogic) fieldDef.displayLogic = row.displaylogic;
+  if (row.displaylogic_server) fieldDef.displayLogicServer = row.displaylogic_server;
+  if (row.displaylogicgrid) fieldDef.displayLogicGrid = row.displaylogicgrid;
+  if (row.readonlylogic) fieldDef.readOnlyLogic = row.readonlylogic;
+}
+
+/**
+ * Apply callout class and client-side change function from the DB row.
+ */
+function applyCalloutLogic(fieldDef, row) {
+  if (row.callout_class) fieldDef.callout = row.callout_class;
+  if (row.onchangefunction) fieldDef.onChangeFunction = row.onchangefunction;
+}
+
+/**
+ * Apply UI hints (identifier flags, precision, translation, help, group) from the DB row.
+ */
+function applyUIHints(fieldDef, row) {
+  if (row.defaultvalue) fieldDef.defaultValue = row.defaultvalue;
+  if (row.isidentifier === 'Y') fieldDef.isIdentifier = true;
+  if (row.isselectioncolumn === 'Y') fieldDef.isSelectionColumn = true;
+  if (row.isfilterable === 'Y') fieldDef.isFilterable = true;
+  if (row.precision != null && row.precision > 0) fieldDef.precision = Number(row.precision);
+  if (row.istranslated === 'Y') fieldDef.isTranslated = true;
+  if (row.help_text) fieldDef.help = row.help_text;
+  if (row.field_group_name) fieldDef.fieldGroup = row.field_group_name;
+}
+
+/**
+ * Apply foreign key reference metadata when schemaType is 'foreignKey'.
+ */
+function applyForeignKeyReference(fieldDef, row, schemaType) {
+  if (schemaType === 'foreignKey') {
+    const reference = buildReference(row);
+    if (reference) fieldDef.reference = reference;
+  }
+}
+
+/**
+ * Apply button process ID (priority: OBUIAPP > Classic > Hardcoded).
+ */
+function applyButtonProcess(fieldDef, row) {
+  if (row.em_obuiapp_process_id) {
+    fieldDef.processId = row.em_obuiapp_process_id;
+    fieldDef.processType = 'obuiapp';
+  } else if (row.ad_process_id) {
+    fieldDef.processId = row.ad_process_id;
+    fieldDef.processType = 'classic';
+  }
+  // No processId + no processType = hardcoded button (resolved by convention)
+}
+
+/**
+ * Apply enum values for List-type fields (AD_Reference_ID = 17).
+ */
+function applyEnumValues(fieldDef, row, schemaType, enumValuesMap) {
+  if (schemaType === 'enum' && row.ad_reference_value_id) {
+    const enumValues = enumValuesMap[row.ad_reference_value_id];
+    if (enumValues) fieldDef.enumValues = enumValues;
+  }
+}
+
+/**
+ * Apply optional AD metadata hints (constraints, UI flags, groups) to a field definition.
+ */
+function applyFieldMetadata(fieldDef, row, schemaType, enumValuesMap) {
+  applyDerivationHint(fieldDef, row);
+  applyConstraints(fieldDef, row);
+  applyDisplayLogic(fieldDef, row);
+  applyCalloutLogic(fieldDef, row);
+  applyUIHints(fieldDef, row);
+  if (row.val_rule_code) fieldDef.validationRule = parseValidationRule(row.val_rule_code);
+  applyForeignKeyReference(fieldDef, row, schemaType);
+  if (schemaType === 'button') applyButtonProcess(fieldDef, row);
+  applyEnumValues(fieldDef, row, schemaType, enumValuesMap);
+}
+
+/**
+ * Map a single DB field row to a field definition object.
+ */
+function mapFieldRow(row, tab, systemColumns, refMap, enumValuesMap) {
+  const classification = classifyField(row, systemColumns);
+  const schemaType = refMap[String(row.ad_reference_id)] ?? 'string';
+  const isPk = row.columnname === tab.tableName + '_ID';
+  const isCoreModule = row.table_module_id === '0' || (row.column_module_id != null && row.column_module_id !== '0');
+  const apiKey = toPropertyName(row.obdal_name, { isPk, isCoreModule });
+  const fieldDef = {
+    name: apiKey,
+    apiKey,
+    columnName: row.columnname,
+    label: row.field_name,
+    type: schemaType,
+    mandatory: row.ismandatory === 'Y',
+    ...classification,
+  };
+
+  applyFieldMetadata(fieldDef, row, schemaType, enumValuesMap);
+  return fieldDef;
+}
+
+/**
+ * Convert a tab descriptor to an entity object.
+ * Returns the entity and the resolved entity name.
+ */
+function buildEntityFromTab(tab, fields, semanticLevel) {
+  const entityClassname = tab.entityClassname || tab.entityAlias || toCamelCase(tab.tableName);
+  const entityJavaPackage = tab.entityJavaPackage || null;
+  const entityName = tab.tabName ? toCamelCase(tab.tabName) : toCamelCase(tab.tableName);
+
+  const entity = {
+    name: entityName,
+    tableName: tab.tableName,
+    tabId: tab.tabId,
+    entityClassname,
+    entityJavaPackage,
+    tabName: tab.tabName,
+    level: semanticLevel,
+    sequence: tab.tabSeq,
+    fields,
+  };
+
+  if (entityJavaPackage && entityClassname) {
+    entity.entityFullClass = `${entityJavaPackage}.${entityClassname}`;
   }
 
-  const windowName = rows[0].window_name;
-  const windowId = rows[0].ad_window_id;
+  // Tab clauses (convention #6: omit key if null)
+  if (tab.whereClause) entity.whereClause = tab.whereClause;
+  if (tab.orderByClause) entity.orderByClause = tab.orderByClause;
+  if (tab.filterClause) entity.filterClause = tab.filterClause;
+  if (tab.hqlWhereClause) entity.hqlWhereClause = tab.hqlWhereClause;
+  if (tab.hqlOrderByClause) entity.hqlOrderByClause = tab.hqlOrderByClause;
+  if (tab.hqlFilterClause) entity.hqlFilterClause = tab.hqlFilterClause;
 
-  // Group rows by tab
+  return { entity, entityName };
+}
+
+/**
+ * Group raw DB rows into a tab map.
+ */
+function groupRowsByTab(rows) {
   const tabMap = new Map();
   for (const row of rows) {
     const tabId = row.ad_tab_id;
@@ -317,7 +466,7 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
         tabLevel: row.tablevel,
         tabSeq: row.tab_seq,
         uiPattern: row.ui_pattern,
-        tableName: row.tablename,
+        tableName: row.tab_tablename ?? row.tablename,
         entityClassname: row.entity_classname,
         entityAlias: row.entity_alias,
         entityJavaPackage: row.entity_javapackage,
@@ -332,141 +481,40 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
     }
     tabMap.get(tabId).fields.push(row);
   }
+  return tabMap;
+}
+
+/**
+ * Build the full schema structure from DB rows.
+ *
+ * Groups rows by tab, maps AD_Reference_IDs to schema types, and produces
+ * the schema-raw.json structure per TDD 2.1.
+ */
+export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
+  if (!rows || rows.length === 0) {
+    return { window: null, entities: [] };
+  }
+
+  const windowName = rows[0].window_name;
+  const windowId = rows[0].ad_window_id;
+
+  const tabMap = groupRowsByTab(rows);
 
   // Convert tabs to entities
   const entities = [];
   let primaryEntity = null;
 
   for (const tab of tabMap.values()) {
-    const fields = tab.fields.map((row) => {
-      const classification = classifyField(row, systemColumns);
-      const schemaType = refMap[String(row.ad_reference_id)] ?? 'string';
-      const isPk = row.columnname === tab.tableName + '_ID';
-      const isCoreModule = row.table_module_id === '0' || (row.column_module_id != null && row.column_module_id !== '0');
-      const apiKey = toPropertyName(row.obdal_name, { isPk, isCoreModule });
-      const fieldDef = {
-        name: apiKey,
-        apiKey,
-        columnName: row.columnname,
-        label: row.field_name,
-        type: schemaType,
-        mandatory: row.ismandatory === 'Y',
-        ...classification,
-      };
-
-      // Add derivation from inferDerivation if not already set by classification
-      if (!fieldDef.derivation && row.defaultvalue) {
-        const derivation = inferDerivation(row.defaultvalue);
-        if (derivation) {
-          fieldDef.derivation = derivation;
-        }
-      }
-
-      // Add constraints if present
-      if (row.fieldlength) fieldDef.maxLength = row.fieldlength;
-      if (row.valuemin != null) fieldDef.valueMin = row.valuemin;
-      if (row.valuemax != null) fieldDef.valueMax = row.valuemax;
-
-      // Add display/readOnly logic if present (convention #6: omit key if null)
-      if (row.displaylogic) fieldDef.displayLogic = row.displaylogic;
-      if (row.displaylogic_server) fieldDef.displayLogicServer = row.displaylogic_server;
-      if (row.displaylogicgrid) fieldDef.displayLogicGrid = row.displaylogicgrid;
-      if (row.readonlylogic) fieldDef.readOnlyLogic = row.readonlylogic;
-
-      // Add callout if present
-      if (row.callout_class) fieldDef.callout = row.callout_class;
-
-      // Add onChangeFunction if present (JS client-side logic from SmartClient)
-      if (row.onchangefunction) fieldDef.onChangeFunction = row.onchangefunction;
-
-      // UI hints from AD metadata
-      if (row.defaultvalue) fieldDef.defaultValue = row.defaultvalue;
-      if (row.isidentifier === 'Y') fieldDef.isIdentifier = true;
-      if (row.isselectioncolumn === 'Y') fieldDef.isSelectionColumn = true;
-      if (row.isfilterable === 'Y') fieldDef.isFilterable = true;
-      if (row.precision != null && row.precision > 0) fieldDef.precision = Number(row.precision);
-      if (row.istranslated === 'Y') fieldDef.isTranslated = true;
-      if (row.help_text) fieldDef.help = row.help_text;
-      if (row.field_group_name) fieldDef.fieldGroup = row.field_group_name;
-
-      // Add validation rule with parsed params if present
-      if (row.val_rule_code) {
-        fieldDef.validationRule = parseValidationRule(row.val_rule_code);
-      }
-
-      // Add reference metadata for foreign key fields
-      if (schemaType === 'foreignKey') {
-        const reference = buildReference(row);
-        if (reference) {
-          fieldDef.reference = reference;
-        }
-      }
-
-      // Add processId for button-type fields (AD_Reference_ID = 28)
-      // Priority: OBUIAPP (modern) > Classic > Hardcoded (no ID)
-      if (schemaType === 'button') {
-        if (row.em_obuiapp_process_id) {
-          fieldDef.processId = row.em_obuiapp_process_id;
-          fieldDef.processType = 'obuiapp';
-        } else if (row.ad_process_id) {
-          fieldDef.processId = row.ad_process_id;
-          fieldDef.processType = 'classic';
-        }
-        // No processId + no processType = hardcoded button (resolved by convention)
-      }
-
-      // Attach enum values for List-type fields (AD_Reference_ID = 17)
-      if (schemaType === 'enum' && row.ad_reference_value_id) {
-        const enumValues = enumValuesMap[row.ad_reference_value_id];
-        if (enumValues) {
-          fieldDef.enumValues = enumValues;
-        }
-      }
-
-      return fieldDef;
-    });
-
-    // Disambiguate duplicate camelCase field names within this entity
+    const fields = tab.fields.map(row => mapFieldRow(row, tab, systemColumns, refMap, enumValuesMap));
     deduplicateFieldNames(fields);
 
-    const entityClassname = tab.entityClassname || tab.entityAlias || toCamelCase(tab.tableName);
-    const entityJavaPackage = tab.entityJavaPackage || null;
     const semanticLevel = mapTabLevel(tab.tabLevel);
+    const { entity, entityName } = buildEntityFromTab(tab, fields, semanticLevel);
 
     // Track the primary entity (first header-level tab)
-    // Prefer tabName (human-readable tab label) over tableName (DB table)
-    const entityName = tab.tabName
-      ? toCamelCase(tab.tabName)
-      : toCamelCase(tab.tableName);
-
     if (semanticLevel === 'header' && !primaryEntity) {
       primaryEntity = entityName;
     }
-
-    const entity = {
-      name: entityName,
-      tableName: tab.tableName,
-      tabId: tab.tabId,
-      entityClassname,
-      entityJavaPackage,
-      tabName: tab.tabName,
-      level: semanticLevel,
-      sequence: tab.tabSeq,
-      fields,
-    };
-
-    // Full qualified Java class: package + classname
-    if (entityJavaPackage && entityClassname) {
-      entity.entityFullClass = `${entityJavaPackage}.${entityClassname}`;
-    }
-
-    // Add tab clauses if present (convention #6: omit key if null)
-    if (tab.whereClause) entity.whereClause = tab.whereClause;
-    if (tab.orderByClause) entity.orderByClause = tab.orderByClause;
-    if (tab.filterClause) entity.filterClause = tab.filterClause;
-    if (tab.hqlWhereClause) entity.hqlWhereClause = tab.hqlWhereClause;
-    if (tab.hqlOrderByClause) entity.hqlOrderByClause = tab.hqlOrderByClause;
-    if (tab.hqlFilterClause) entity.hqlFilterClause = tab.hqlFilterClause;
 
     entities.push(entity);
   }
@@ -537,12 +585,16 @@ SELECT
   NULL AS Precision,
   c.IsTranslated,
   COALESCE(f.Help, c.Help) AS help_text,
-  fg.Name AS field_group_name
+  fg.Name AS field_group_name,
+  f.Property,
+  c.IsKey,
+  tab_tbl.TableName AS tab_tablename
 FROM AD_Field f
 JOIN AD_Tab t ON f.AD_Tab_ID = t.AD_Tab_ID
 JOIN AD_Window w ON t.AD_Window_ID = w.AD_Window_ID
 JOIN AD_Column c ON f.AD_Column_ID = c.AD_Column_ID
 JOIN AD_Table tbl ON c.AD_Table_ID = tbl.AD_Table_ID
+JOIN AD_Table tab_tbl ON t.AD_Table_ID = tab_tbl.AD_Table_ID
 LEFT JOIN AD_Package pkg ON tbl.AD_Package_ID = pkg.AD_Package_ID
 LEFT JOIN AD_FieldGroup fg ON fg.AD_FieldGroup_ID = f.AD_FieldGroup_ID
 JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
@@ -607,7 +659,10 @@ SELECT
   NULL AS onchangefunction,
   c.IsIdentifier, c.IsSelectionColumn, c.AllowFiltering AS IsFilterable,
   NULL AS Precision, c.IsTranslated,
-  c.Help AS help_text, NULL AS field_group_name
+  c.Help AS help_text, NULL AS field_group_name,
+  NULL AS property,  -- orphan columns have no AD_Field, so Property is always null
+  c.IsKey,
+  tbl.TableName AS tab_tablename  -- tbl joins via t.AD_Table_ID so already canonical
 FROM AD_Tab t
 JOIN AD_Window w ON t.AD_Window_ID = w.AD_Window_ID
 JOIN AD_Table tbl ON t.AD_Table_ID = tbl.AD_Table_ID
@@ -670,8 +725,11 @@ export async function main(windowId, windowName) {
         // Force C collation on Name + add Value as final tiebreaker so the
         // option order is identical across DBs with different lc_collate
         // (e.g. C vs es_ES.UTF-8, which treat punctuation differently).
-        `SELECT rl.AD_Reference_ID, rl.Value, rl.Name
+        `SELECT rl.AD_Reference_ID, rl.Value, rl.Name, rlt_es.Name AS name_es
          FROM AD_Ref_List rl
+         LEFT JOIN AD_Ref_List_Trl rlt_es
+           ON rlt_es.AD_Ref_List_ID = rl.AD_Ref_List_ID
+          AND rlt_es.AD_Language = 'es_ES'
          WHERE rl.AD_Reference_ID = ANY($1)
            AND rl.IsActive = 'Y'
          ORDER BY rl.SeqNo NULLS LAST, rl.Name COLLATE "C", rl.Value COLLATE "C"`,
@@ -680,7 +738,11 @@ export async function main(windowId, windowName) {
       for (const row of enumResult.rows) {
         const refId = row.ad_reference_id;
         if (!enumValuesMap[refId]) enumValuesMap[refId] = [];
-        enumValuesMap[refId].push({ value: row.value, name: row.name });
+        enumValuesMap[refId].push({
+          value: row.value,
+          name: row.name,
+          ...(row.name_es ? { labels: { es_ES: row.name_es } } : {}),
+        });
       }
     }
 

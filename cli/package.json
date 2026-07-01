@@ -1,12 +1,19 @@
 {
-  "name": "@schema-forge/cli",
+  "name": "@etendosoftware/schema-forge-cli",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
   "engines": {
     "node": ">=22"
   },
+  "scripts": {
+    "test": "node --test 'test/*.test.js'"
+  },
   "dependencies": {
+    "@clack/prompts": "^1.5.1",
     "pg": "^8.13.0"
   },
   "bin": {
@@ -27,8 +34,21 @@
     "sf-report-serve": "./src/report-serve.js",
     "sf-report-preview": "./src/report-preview.js",
     "sf-quality-gate": "./src/quality-gate.js",
-    "sf-xml-regeneration-check": "./src/xml-regeneration-check.js"
+    "sf-xml-regeneration-check": "./src/xml-regeneration-check.js",
+    "sf-generate-frontend": "./src/generate-frontend.js",
+    "sf-generate-reports-manifest": "./src/generate-reports-manifest.js",
+    "sf-menu-cache": "./src/menu-cache.js",
+    "sf-method-budget": "./src/method-budget.js",
+    "sf-regen-all": "./src/regen-all.js",
+    "sf-window-leak-budget": "./src/window-leak-budget.js",
+    "sf-xml-apply-delta": "./src/xml-apply-delta.js",
+    "sf-resolve-curated": "./src/resolve-curated.js",
+    "sf-validate-pipeline": "./src/validate-pipeline.js"
   },
+  "files": [
+    "src",
+    "!test"
+  ],
   "devDependencies": {
     "@babel/parser": "^7.29.2",
     "ajv": "^8.17.0"

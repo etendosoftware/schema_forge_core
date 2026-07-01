@@ -426,7 +426,7 @@ if (isDirectRun) {
     process.exit(1);
   }
 
-  const repoRoot = resolve(dirname(import.meta.url.replace('file://', '')), '..', '..');
+  const repoRoot = process.env.SF_ROOT || resolve(dirname(import.meta.url.replace('file://', '')), '..', '..');
   const logPath = resolve(repoRoot, 'artifacts/generation-log.json');
 
   // Read before (git) and after (disk)

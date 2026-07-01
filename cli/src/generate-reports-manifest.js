@@ -12,8 +12,9 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS_DIR = join(__dirname, '../../artifacts');
-const OUT_DIR = join(__dirname, '../../tools/app-shell/dist/api');
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const ARTIFACTS_DIR = join(ROOT, 'artifacts');
+const OUT_DIR = join(ROOT, 'tools/app-shell/dist/api');
 const OUT_FILE = join(OUT_DIR, 'reports');
 
 const VALID_SOURCES = new Set(['jasper-migration', 'manual', 'sql', 'neo']);

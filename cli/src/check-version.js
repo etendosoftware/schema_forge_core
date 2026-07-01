@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..');
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
 
 // Properties whose changes are considered breaking (structural contract changes)
 const BREAKING_PROPERTIES = new Set(['name', 'type', 'tsType', 'column']);
@@ -162,21 +162,7 @@ export function classifyChanges(diff) {
 
     // Field-level diffs
     for (const [entityName, fieldDiff] of Object.entries(sectionDiff.entityDiffs || {})) {
-      for (const field of fieldDiff.removed || []) {
-        maxSeverity = Math.max(maxSeverity, severityOrder.breaking);
-        reasons.push(`Field "${field.name}" removed from entity "${entityName}" in ${section}`);
-      }
-      for (const field of fieldDiff.added || []) {
-        maxSeverity = Math.max(maxSeverity, severityOrder.additive);
-        reasons.push(`Field "${field.name}" added to entity "${entityName}" in ${section}`);
-      }
-      for (const change of fieldDiff.changed || []) {
-        for (const prop of change.changes) {
-          const level = classifyProperty(prop.property);
-          maxSeverity = Math.max(maxSeverity, severityOrder[level]);
-          reasons.push(`Field "${change.field}" property "${prop.property}" changed from "${prop.from}" to "${prop.to}" in ${section} (${level})`);
-        }
-      }
+      maxSeverity = processFieldDifferences(fieldDiff, maxSeverity, severityOrder, reasons, entityName, section);
     }
   }
 
@@ -195,6 +181,25 @@ export function classifyChanges(diff) {
   const level = levelMap[maxSeverity] || 'patch';
 
   return { level, reasons };
+}
+
+function processFieldDifferences(fieldDiff, maxSeverity, severityOrder, reasons, entityName, section) {
+  for (const field of fieldDiff.removed || []) {
+    maxSeverity = Math.max(maxSeverity, severityOrder.breaking);
+    reasons.push(`Field "${field.name}" removed from entity "${entityName}" in ${section}`);
+  }
+  for (const field of fieldDiff.added || []) {
+    maxSeverity = Math.max(maxSeverity, severityOrder.additive);
+    reasons.push(`Field "${field.name}" added to entity "${entityName}" in ${section}`);
+  }
+  for (const change of fieldDiff.changed || []) {
+    for (const prop of change.changes) {
+      const level = classifyProperty(prop.property);
+      maxSeverity = Math.max(maxSeverity, severityOrder[level]);
+      reasons.push(`Field "${change.field}" property "${prop.property}" changed from "${prop.from}" to "${prop.to}" in ${section} (${level})`);
+    }
+  }
+  return maxSeverity;
 }
 
 /**

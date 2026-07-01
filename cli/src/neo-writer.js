@@ -10,6 +10,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { GO_MODULE_ID } from './lib/constants.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -63,6 +64,7 @@ export function auditDefaults(opts = {}) {
  * @param {string} [params.processId] - AD_Process_ID (required for type P)
  * @param {string} [params.specType='W'] - 'W' (window) or 'P' (process)
  * @param {string} [params.description]
+ * @param {string} [params.agentPrompt] - Agent guidance returned by neo_discover
  * @param {string} [params.specId] - If provided, UPDATE instead of INSERT
  * @param {object} [params.audit] - Override audit defaults
  * @returns {{ specId: string, created: boolean }}
@@ -70,11 +72,12 @@ export function auditDefaults(opts = {}) {
 export async function upsertSpec(client, params) {
   const {
     name,
-    moduleId,
+    moduleId = process.env.SF_MODULE_ID || GO_MODULE_ID,
     windowId = null,
     processId = null,
     specType = 'W',
     description = null,
+    agentPrompt = null,
     specId: existingId = null,
     audit = {},
   } = params;
@@ -98,9 +101,10 @@ export async function upsertSpec(client, params) {
     await client.query(
       `UPDATE etgo_sf_spec
        SET name = $1, spec_type = $2, ad_window_id = $3, ad_process_id = $4,
-           ad_module_id = $5, description = $6, updated = $7, updatedby = $8
-       WHERE etgo_sf_spec_id = $9`,
-      [name, specType, windowId, processId, moduleId, description,
+           ad_module_id = $5, description = $6, agent_prompt = $7,
+           updated = $8, updatedby = $9
+       WHERE etgo_sf_spec_id = $10`,
+      [name, specType, windowId, processId, moduleId, description, agentPrompt,
        auditVals.updated, auditVals.updatedby, existingId],
     );
     return { specId: existingId, created: false };
@@ -111,11 +115,13 @@ export async function upsertSpec(client, params) {
   await client.query(
     `INSERT INTO etgo_sf_spec
      (etgo_sf_spec_id, name, spec_type, ad_window_id, ad_process_id, ad_module_id,
-      description, ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+      description, ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby,
+      agent_prompt)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
     [specId, name, specType, windowId, processId, moduleId, description,
      auditVals.ad_client_id, auditVals.ad_org_id, auditVals.isactive,
-     auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby],
+     auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby,
+     agentPrompt],
   );
   return { specId, created: true };
 }
@@ -150,7 +156,7 @@ export async function upsertEntity(client, params) {
   const {
     specId,
     tabId,
-    moduleId,
+    moduleId = process.env.SF_MODULE_ID || GO_MODULE_ID,
     entityId: existingId = null,
     isIncluded = 'Y',
     isGet = 'N',
@@ -226,6 +232,7 @@ export async function upsertEntity(client, params) {
  * @param {string} [params.isIncluded='Y']
  * @param {string} [params.isReadOnly='N']
  * @param {string} [params.defaultValue]
+ * @param {string} [params.agentPrompt] - Per-field agent guidance for neo_schema
  * @param {string} [params.javaQualifier]
  * @param {number} [params.seqNo]
  * @param {object} [params.audit] - Override audit defaults
@@ -234,10 +241,11 @@ export async function upsertEntity(client, params) {
 export async function upsertField(client, params) {
   const {
     entityId,
-    moduleId,
+    moduleId = process.env.SF_MODULE_ID || GO_MODULE_ID,
     fieldId: existingId = null,
     isIncluded = 'Y',
     isReadOnly = 'N',
+    isBusinessCritical = 'N',
     audit = {},
   } = params;
 
@@ -264,6 +272,10 @@ export async function upsertField(client, params) {
       setClauses.push(`defaultvalue = $${paramIndex++}`);
       values.push(params.defaultValue ?? null);
     }
+    if ('agentPrompt' in params) {
+      setClauses.push(`agent_prompt = $${paramIndex++}`);
+      values.push(params.agentPrompt ?? null);
+    }
     if ('javaQualifier' in params) {
       setClauses.push(`java_qualifier = $${paramIndex++}`);
       values.push(params.javaQualifier ?? null);
@@ -271,6 +283,10 @@ export async function upsertField(client, params) {
     if ('seqNo' in params) {
       setClauses.push(`seqno = $${paramIndex++}`);
       values.push(params.seqNo ?? null);
+    }
+    if ('isBusinessCritical' in params) {
+      setClauses.push(`isbusinesscritical = $${paramIndex++}`);
+      values.push(params.isBusinessCritical ?? 'N');
     }
 
     setClauses.push(`updated = $${paramIndex++}`);
@@ -290,18 +306,21 @@ export async function upsertField(client, params) {
   const defaultValue = params.defaultValue ?? null;
   const javaQualifier = params.javaQualifier ?? null;
   const seqNo = params.seqNo ?? null;
+  const agentPrompt = params.agentPrompt ?? null;
 
   const fieldId = generateId();
   await client.query(
     `INSERT INTO etgo_sf_field
      (etgo_sf_field_id, etgo_sf_entity_id, ad_column_id, ad_module_id,
-      isincluded, isreadonly, defaultvalue, java_qualifier, seqno,
-      ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+      isincluded, isreadonly, isbusinesscritical, defaultvalue, java_qualifier, seqno,
+      ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby,
+      agent_prompt)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
     [fieldId, entityId, columnId, moduleId,
-     isIncluded, isReadOnly, defaultValue, javaQualifier, seqNo,
+     isIncluded, isReadOnly, isBusinessCritical, defaultValue, javaQualifier, seqNo,
      auditVals.ad_client_id, auditVals.ad_org_id, auditVals.isactive,
-     auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby],
+     auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby,
+     agentPrompt],
   );
   return { fieldId, created: true };
 }
@@ -328,7 +347,7 @@ export async function upsertField(client, params) {
 export async function populateSpec(client, params) {
   const {
     specId,
-    moduleId,
+    moduleId = process.env.SF_MODULE_ID || GO_MODULE_ID,
     excludeSystemColumns = true,
     includeAllMethods = false,
     audit = {},
@@ -346,12 +365,88 @@ export async function populateSpec(client, params) {
 
   if (spec.spec_type === 'W') {
     return populateWindowSpec(client, { specId, windowId: spec.ad_window_id, moduleId, excludeSystemColumns, includeAllMethods, audit });
-  } else if (spec.spec_type === 'P' || spec.spec_type === 'R') {
-    // Reports use the same AD_Process_Para structure as processes
+  } else if (spec.spec_type === 'P') {
     return populateProcessSpec(client, { specId, processId: spec.ad_process_id, moduleId, audit });
+  } else if (spec.spec_type === 'R') {
+    // Report specs (ETP-4255) are NEO-native callable metadata only; they are NOT backed
+    // by AD_Process/Jasper. Report callability comes from a NEO report handler
+    // (ETGO_SF_ENTITY.Java_Qualifier), not from AD_Process_Para. Do not derive
+    // process-style entities/fields here. Jasper/JRXML is offline migration provenance only.
+    return {
+      entityCount: 0,
+      fieldCount: 0,
+      entities: [],
+      changes: {
+        entities: { created: 0, updated: 0, deleted: 0 },
+        fields: { created: 0, updated: 0, deleted: 0 },
+      },
+    };
   }
 
   throw new Error(`Unknown spec type: ${spec.spec_type}`);
+}
+
+async function deleteStaleFields(existingFieldByColumn, visitedFieldIds, client, changes) {
+  // Delete stale fields (exist in DB but column no longer in AD)
+  for (const [, existingFieldId] of existingFieldByColumn) {
+    if (!visitedFieldIds.has(existingFieldId)) {
+      await client.query(
+          'DELETE FROM etgo_sf_field WHERE etgo_sf_field_id = $1',
+          [existingFieldId],
+      );
+      changes.fields.deleted++;
+    }
+  }
+}
+
+function indexFieldsByColumn(existingFieldsResult) {
+  const existingFieldByColumn = new Map();
+  for (const row of existingFieldsResult.rows) {
+    if (row.ad_column_id) {
+      existingFieldByColumn.set(row.ad_column_id, row.etgo_sf_field_id);
+    }
+  }
+  return existingFieldByColumn;
+}
+
+function tallyFieldChange(fieldCreated, changes) {
+  if (fieldCreated) changes.fields.created++;
+  else changes.fields.updated++;
+}
+
+async function deleteStaleEntities(existingEntityByTab, visitedEntityIds, client, changes) {
+  for (const [, existingEntityId] of existingEntityByTab) {
+    if (!visitedEntityIds.has(existingEntityId)) {
+      // Delete fields for stale entity first
+      const staleFieldsResult = await client.query(
+          'SELECT COUNT(*) as cnt FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
+          [existingEntityId],
+      );
+      const staleFieldCount = parseInt(staleFieldsResult.rows[0].cnt, 10);
+      await client.query(
+          'DELETE FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
+          [existingEntityId],
+      );
+      changes.fields.deleted += staleFieldCount;
+
+      await client.query(
+          'DELETE FROM etgo_sf_entity WHERE etgo_sf_entity_id = $1',
+          [existingEntityId],
+      );
+      changes.entities.deleted++;
+    }
+  }
+}
+
+function indexEntitiesByTabAndName(existingEntitiesResult, existingEntityByTab, existingEntityByName) {
+  for (const row of existingEntitiesResult.rows) {
+    if (row.ad_tab_id) {
+      existingEntityByTab.set(row.ad_tab_id, row.etgo_sf_entity_id);
+    }
+    if (row.name) {
+      existingEntityByName.set(row.name, row.etgo_sf_entity_id);
+    }
+  }
 }
 
 /**
@@ -379,14 +474,7 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
   );
   const existingEntityByTab = new Map();
   const existingEntityByName = new Map();
-  for (const row of existingEntitiesResult.rows) {
-    if (row.ad_tab_id) {
-      existingEntityByTab.set(row.ad_tab_id, row.etgo_sf_entity_id);
-    }
-    if (row.name) {
-      existingEntityByName.set(row.name, row.etgo_sf_entity_id);
-    }
-  }
+  indexEntitiesByTabAndName(existingEntitiesResult, existingEntityByTab, existingEntityByName);
 
   const methodFlags = includeAllMethods
     ? { isGet: 'Y', isGetbyid: 'Y', isPost: 'Y', isPut: 'Y', isPatch: 'Y', isDelete: 'Y' }
@@ -434,12 +522,7 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
        ORDER BY created, etgo_sf_field_id`,
       [entityId],
     );
-    const existingFieldByColumn = new Map();
-    for (const row of existingFieldsResult.rows) {
-      if (row.ad_column_id) {
-        existingFieldByColumn.set(row.ad_column_id, row.etgo_sf_field_id);
-      }
-    }
+    const existingFieldByColumn = indexFieldsByColumn(existingFieldsResult);
 
     // Get active columns for this tab's table
     // ORDER BY needs a tiebreaker: AD_Column.position is not unique within a
@@ -475,48 +558,34 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
       });
       fieldCount++;
       visitedFieldIds.add(fieldId);
-      if (fieldCreated) changes.fields.created++;
-      else changes.fields.updated++;
+      tallyFieldChange(fieldCreated, changes);
     }
 
-    // Delete stale fields (exist in DB but column no longer in AD)
-    for (const [, existingFieldId] of existingFieldByColumn) {
-      if (!visitedFieldIds.has(existingFieldId)) {
-        await client.query(
-          'DELETE FROM etgo_sf_field WHERE etgo_sf_field_id = $1',
-          [existingFieldId],
-        );
-        changes.fields.deleted++;
-      }
-    }
+    await deleteStaleFields(existingFieldByColumn, visitedFieldIds, client, changes);
 
     entities.push({ entityId, name: tab.name, tabId: tab.ad_tab_id });
   }
 
   // Delete stale entities (exist in DB but tab no longer in AD)
-  for (const [, existingEntityId] of existingEntityByTab) {
-    if (!visitedEntityIds.has(existingEntityId)) {
-      // Delete fields for stale entity first
-      const staleFieldsResult = await client.query(
-        'SELECT COUNT(*) as cnt FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
-        [existingEntityId],
-      );
-      const staleFieldCount = parseInt(staleFieldsResult.rows[0].cnt, 10);
-      await client.query(
-        'DELETE FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
-        [existingEntityId],
-      );
-      changes.fields.deleted += staleFieldCount;
+  await deleteStaleEntities(existingEntityByTab, visitedEntityIds, client, changes);
 
+  return { entityCount, fieldCount, entities, changes };
+}
+
+async function deleteDuplicateEntities(existingEntityResult, entityId, client, changes) {
+  for (const row of existingEntityResult.rows) {
+    if (row.etgo_sf_entity_id !== entityId) {
       await client.query(
-        'DELETE FROM etgo_sf_entity WHERE etgo_sf_entity_id = $1',
-        [existingEntityId],
+          'DELETE FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
+          [row.etgo_sf_entity_id],
+      );
+      await client.query(
+          'DELETE FROM etgo_sf_entity WHERE etgo_sf_entity_id = $1',
+          [row.etgo_sf_entity_id],
       );
       changes.entities.deleted++;
     }
   }
-
-  return { entityCount, fieldCount, entities, changes };
 }
 
 /**
@@ -558,19 +627,7 @@ async function populateProcessSpec(client, { specId, processId, moduleId, audit 
 
   // Delete any extra entities beyond the one we just upserted (shouldn't happen, but be safe)
   if (existingEntityResult.rows.length > 1) {
-    for (const row of existingEntityResult.rows) {
-      if (row.etgo_sf_entity_id !== entityId) {
-        await client.query(
-          'DELETE FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
-          [row.etgo_sf_entity_id],
-        );
-        await client.query(
-          'DELETE FROM etgo_sf_entity WHERE etgo_sf_entity_id = $1',
-          [row.etgo_sf_entity_id],
-        );
-        changes.entities.deleted++;
-      }
-    }
+    await deleteDuplicateEntities(existingEntityResult, entityId, client, changes);
   }
 
   // Load existing fields indexed by java_qualifier

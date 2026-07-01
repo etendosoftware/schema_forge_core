@@ -27,6 +27,28 @@ npm install -g agent-browser && agent-browser install   # Optional: install agen
 
 ---
 
+## Etendo GO Contextual Selector Smoke
+
+`e2e/tests/flows/etendogo-contextual-selectors.integration.spec.js` validates the non-MCP Etendo GO integration risk for contextual FK selectors. It is skipped by default because it requires a live Etendo backend, a loaded F&B dataset, and a JWT-capable test user.
+
+Run it explicitly against local Etendo:
+
+```bash
+cd e2e
+ETENDO_URL=http://localhost:8080/etendo npm run test:etendogo-contextual-selectors
+```
+
+The smoke gets a read JWT through `scripts/neo-token-groupadmin.sh` unless `E2E_ETENDOGO_JWT` is already set. It verifies that generated selector identifiers work at runtime for the highest-risk document contexts:
+
+- sales/purchase partner address from selected business partner;
+- sales/purchase price list from `isSOTrx`;
+- sales/purchase tax from transaction side plus date;
+- goods receipt/shipment partner address from selected business partner.
+
+If this smoke fails because generated field-name selector URLs return `404 Field not found or not included`, track it under [ETP-4058](https://etendoproject.atlassian.net/browse/ETP-4058). That bug is intentionally separate from the integration-test scope: the test detects the runtime/generator contract mismatch, but the fix belongs to the Etendo GO / Schema Forge selector URL compatibility task.
+
+---
+
 ## Deployed MCP OAuth2 Smoke
 
 `e2e/tests/flows/mcp-oauth-pkce.smoke.spec.js` validates the public MCP/OAuth integration after deploy. It models the browser flow started by `opencode mcp auth etendo`: clean session, OAuth authorize URL, login, requested permissions, explicit authorization, local callback, and PKCE token exchange. The UI preserves the original `/authorize?...` URL through onboarding with a local-only `returnTo` parameter, then resumes the authorization screen after environment login. It is skipped by default because it targets a deployed environment, uses real smoke credentials, can create an OAuth client through DCR, and binds a local callback server.
@@ -506,6 +528,88 @@ Shared UI components (`EntityForm`, `DetailView`, `ListView`, `DataTable`) emit 
 | `row-quick-action-delete-confirm` | — | Destructive button inside the row delete confirm dialog |
 | `generic-preview-modal` | — | `GenericPreviewModal` card (the right-anchored panel) |
 | `preview-drop-zone` | — | Drop zone inside GenericPreviewModal managed left panel |
+| `filter-{name}` | `filter-todos`, `filter-personas` | ListView subset filter buttons |
+| `quick-filter-{name}` | `quick-filter-active` | ListView quick filter toggle buttons |
+| `selection-count` | — | ListView selection bar (count of selected rows) |
+| `list-progress-bar` | — | ListView loading progress indicator |
+| `global-search-trigger` | — | CommandPalette trigger button |
+| `global-search-input` | — | CommandPalette search input |
+| `menu-item-{slug}` | `menu-item-sales-order` | SideMenu navigation items |
+| `topbar-user-menu` | — | UserAvatarButton trigger |
+| `topbar-notifications` | — | TopBar notification bell |
+| `topbar-back` | — | TopBar back navigation button |
+| `topbar-more-actions` | — | TopBar kebab / 3-dot menu |
+| `user-menu-logout` | — | User menu logout button |
+| `user-menu-language-{code}` | `user-menu-language-en_US` | User menu language option |
+| `location-field-{name}` | `location-field-city`, `location-field-postalCode` | Location modal input fields |
+| `location-country-picker` | — | Location modal country select |
+| `location-save` | — | Location modal save button |
+| `field-{type}-{name}` | `field-select-warehouse`, `field-number-qty` | Generic typed field inputs |
+
+## Stable IDs — Public Contract
+
+The following element `id` attributes are used by E2E tests and **must not change** without
+updating the corresponding test files. They are a public API.
+
+| ID | Screen | Usage |
+|----|--------|-------|
+| `#reg-name` | Register | Full name input |
+| `#reg-email` | Register | Email input |
+| `#reg-password` | Register | Password input |
+| `#login-email` | Login | Email input |
+| `#login-password` | Login | Password input |
+| `#forgot-email` | Forgot Password | Email input |
+| `#fullName` | Profile step | Full name input |
+| `#countryCode` | Profile step | Country code selector |
+| `#clientName` | Company step | Company name input |
+| `#fiscalIdValue` | Company step | Fiscal ID input |
+| `#onboarding-language` | Onboarding | Language selector |
+
+## Component Testability Checklist (MANDATORY for new components)
+
+Every new UI component MUST include:
+
+- [ ] `data-testid` on interactive elements (buttons, inputs, selects, toggles)
+- [ ] `data-testid` on container elements E2E tests need to locate (rows, cards, panels, modals)
+- [ ] `data-testid` on action triggers (save, delete, cancel, confirm, submit)
+- [ ] `aria-label` on icon-only buttons (buttons with only an SVG/icon and no visible text)
+- [ ] `role` attributes on semantic containers that use `<div>` instead of native HTML
+- [ ] No `data-testid` uses dynamic CSS classes or translated text
+
+### Naming convention
+
+`{context}-{element}` or `{context}-{element}-{identifier}`
+
+Examples: `filter-todos`, `subtab-row-{id}`, `location-field-city`, `action-bulk-delete`
+
+### Codemod
+
+Run `npm run check:data-testid` to verify all React components have baseline `data-testid`.
+Run `npm run apply:data-testid` to auto-add missing testids (generates `ComponentName__hash`).
+Files can opt out with `// @data-testid-ignore`.
+
+## Document status attributes
+
+Document-aware components expose status via `data-*` attributes for test assertions:
+
+| Attribute | Element | Values |
+|-----------|---------|--------|
+| `data-doc-status` | Detail view container (`data-testid="detail-view"`) | `DR` (draft), `CO` (completed), `VO` (voided), `CL` (closed) |
+| `data-row-status` | List view rows (`data-testid="row-{id}"`) | Same as above |
+| `data-status` | Status badge (`data-testid="document-status-pill"`) | Same as above |
+
+## Toast selectors
+
+Sonner v2 renders `data-type` on each toast element. Use these selectors in E2E tests:
+
+| Selector | Matches |
+|----------|---------|
+| `[data-type="error"]` | Error toasts (`role="alert"`) |
+| `[data-type="success"]` | Success toasts |
+| `[data-type="warning"]` | Warning toasts |
+| `[data-type="info"]` | Info toasts |
+
+The global `<Toaster />` also adds CSS class hooks: `toast-error`, `toast-success`, `toast-warning`, `toast-info`.
 
 ## Writing a mocked list/detail spec
 
@@ -571,6 +675,7 @@ test.describe('My feature — sales-order', () => {
 - **Match list vs detail by regex on the URL** — `/\/header\/[^/?]+/.test(url)` is the detail GET.
 - **Custom field keys** — some windows expose the document number under a different field (e.g. purchase-invoice uses `orderReference`, not `documentNo`). Mirror the value into both keys when mocking so a single locator works across windows.
 - **Per-window expected buttons** — if your overlay/feature is gated by the custom window file (`onClone`, `onEmail`, `menuActions`, `documentPreview`), parametrize the asserts so each window verifies its own wiring (catches regressions where a custom window stops passing a handler).
+- **Numeric field clearing normalises to `defaultValue`** — when a user clears a numeric inline-add or inline-edit field and moves focus away, `DataTable.jsx` and `InlineLinesPanel.jsx` automatically substitute the field's `defaultValue` (or `min` if `defaultValue` is absent) before the save payload is built. In tests, assert the intercepted POST/PATCH body contains the expected numeric value (e.g. `0` for discount, `1` for quantity), never `undefined` or `''`. Do not assert that the input displays empty after blur — it will display the normalised value. See `docs/feedback.md` (ETP-4277) for the full root-cause explanation.
 
 ### Canonical reference
 

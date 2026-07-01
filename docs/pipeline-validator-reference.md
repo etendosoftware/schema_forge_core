@@ -56,6 +56,11 @@ Rules are grouped by the artifact kind they apply to (see [Artifact Classificati
 | F10 | BLOCK | `registry.js` registers a loader for `<window>` but `artifacts/<window>/generated/web/<window>/index.jsx` is missing. | Re-run the pipeline to regenerate the frontend, or remove the stale registry entry. |
 | F11 | BLOCK | `decisions.json → window.rowQuickActions.actions.<key>` references a non-canonical key that does not exist in `window.menuActions[].key` or `window.processOverrides`. Canonical keys (`edit`, `duplicate`, `email`, `delete`) are always valid and never trigger F11. | Remove the unknown key from `rowQuickActions.actions`, or add the corresponding entry to `window.menuActions` or `window.processOverrides`. |
 | F12 | BLOCK | `decisions.json` sets `window.linesLayout` to a value outside the supported enum (`"classic"`, `"inlineEditable"`). | Set `window.linesLayout` to one of the supported values, or remove the key to fall back to `"classic"`. |
+| F13 | BLOCK | `contract.json → apiPrediction.actions[]` contains an action with fewer than three edge cases on contracts `0.7.0+`. | Update the action classifier or curated action metadata so each action exposes at least three behavioral edge cases. |
+| F14 | BLOCK | `contract.json` is missing `formState` on contracts `0.7.0+`. | Re-run contract generation so agent form-fidelity metadata is emitted. |
+| F15 | BLOCK | `contract.json` is missing `agentProfile`, or the profile references fields, selectors, or actions that do not exist in the generated contract, on contracts `0.7.0+`. | Re-run contract generation or fix the profile generator/curated metadata so references match generated contract metadata. |
+| F16 | BLOCK | A key file under `artifacts/<window>/generated/` is newer than `contract.json`, which indicates a possible manual edit to generated output. | Never edit generated output manually. Fix the generator or source metadata, then regenerate the artifact. |
+| F17 | BLOCK | `decisions.json` `window.balanceFooter` is missing `debitField`/`creditField`, or references a field that does not exist on the lines entity (validated against `frontendContract.entities.<lineEntity>.fields[].name`). | Set `window.balanceFooter` to `{ debitField, creditField }` using amount-typed line-entity field names that exist in the contract. |
 
 ### Report rules
 
@@ -94,7 +99,7 @@ Rules applied per kind:
 
 | Kind | Rules checked |
 |------|--------------|
-| window | F1, F2, F3, F4, F5, F6, F7, F10, F11 |
+| window | F1, F2, F3, F4, F5, F6, F7, F10, F11, F12, F13, F14, F15, F16, F17 |
 | report | F8 |
 | aggregate | F9 |
 | aggregate-section | none (whitelisted) |

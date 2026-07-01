@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = resolve(__dirname, '../..');
+const ROOT = process.env.SF_ROOT || resolve(__dirname, '../..');
 const ARTIFACTS_DIR = resolve(ROOT, 'artifacts');
 
 const dryRun = process.argv.includes('--dry-run');
@@ -100,7 +100,7 @@ async function main() {
   let totalFieldsSkipped = 0;
   let filesModified = 0;
 
-  for (const entry of entries.sort()) {
+  for (const entry of entries.sort((a, b) => a.localeCompare(b))) {
     const artifactDir = join(ARTIFACTS_DIR, entry);
     const curatedPath = join(artifactDir, 'schema-curated.json');
 
@@ -127,57 +127,14 @@ async function main() {
     let fileFieldsMigrated = 0;
     let fileFieldsSkipped = 0;
 
-    for (const entity of curated.entities) {
-      if (!Array.isArray(entity.fields)) continue;
-
-      const tableName = entity.tableName || '';
-      // Build raw field lookup if raw schema is available
-      const rawEntity = rawSchema ? findRawEntity(rawSchema, entity) : null;
-      const rawFieldMap = rawEntity ? buildRawFieldMap(rawEntity.fields) : new Map();
-
-      for (const field of entity.fields) {
-        // Already has apiKey — skip
-        if (field.apiKey !== undefined) {
-          fileFieldsSkipped++;
-          continue;
-        }
-
-        // Determine apiKey: use curated field.name as the baseline.
-        // This preserves the existing API binding since field.name was
-        // previously used as the property name in contracts and frontend.
-        let apiKey = field.name;
-
-        // If we have a raw schema match, verify consistency (log only)
-        if (rawFieldMap.size > 0 && field.column) {
-          const rawField = rawFieldMap.get(field.column);
-          if (rawField && rawField.name && rawField.name !== field.name) {
-            // The raw schema's name (old toPropertyName output) differs from
-            // the curated name — the curated name was manually renamed.
-            // Use curated name as apiKey since that's what the API was using.
-            if (!dryRun) {
-              console.log(`  NOTE ${entry}/${entity.name}: field "${field.name}" (column ${field.column}) — raw name was "${rawField.name}", keeping curated name as apiKey`);
-            }
-          }
-        }
-
-        field.apiKey = apiKey;
-        fileFieldsMigrated++;
-      }
-    }
+    ({ fileFieldsSkipped, fileFieldsMigrated } = migrateApiKeys(curated, rawSchema, fileFieldsSkipped, entry, fileFieldsMigrated));
 
     if (fileFieldsMigrated > 0) {
       filesModified++;
       totalFieldsMigrated += fileFieldsMigrated;
       totalFieldsSkipped += fileFieldsSkipped;
 
-      if (dryRun) {
-        console.log(`  WOULD MIGRATE ${entry}: ${fileFieldsMigrated} fields (${fileFieldsSkipped} already had apiKey)`);
-      } else {
-        // Write back with consistent formatting (2-space indent, trailing newline)
-        const output = JSON.stringify(curated, null, 2) + '\n';
-        await writeFile(curatedPath, output, 'utf-8');
-        console.log(`  MIGRATED ${entry}: ${fileFieldsMigrated} fields (${fileFieldsSkipped} already had apiKey)`);
-      }
+      await migrateAndSaveSchema(entry, fileFieldsMigrated, fileFieldsSkipped, curated, curatedPath);
     } else {
       totalFieldsSkipped += fileFieldsSkipped;
       console.log(`  OK ${entry}: all ${fileFieldsSkipped} fields already have apiKey`);
@@ -191,6 +148,22 @@ async function main() {
   console.log(`  Fields migrated:        ${totalFieldsMigrated}`);
   console.log(`  Fields already had key: ${totalFieldsSkipped}`);
 
+  logMigrationSummary(totalFieldsMigrated);
+}
+
+
+async function migrateAndSaveSchema(entry, fileFieldsMigrated, fileFieldsSkipped, curated, curatedPath) {
+  if (dryRun) {
+    console.log(`  WOULD MIGRATE ${entry}: ${fileFieldsMigrated} fields (${fileFieldsSkipped} already had apiKey)`);
+  } else {
+    // Write back with consistent formatting (2-space indent, trailing newline)
+    const output = JSON.stringify(curated, null, 2) + '\n';
+    await writeFile(curatedPath, output, 'utf-8');
+    console.log(`  MIGRATED ${entry}: ${fileFieldsMigrated} fields (${fileFieldsSkipped} already had apiKey)`);
+  }
+}
+
+function logMigrationSummary(totalFieldsMigrated) {
   if (dryRun) {
     console.log();
     console.log('No files were written (--dry-run). Run without --dry-run to apply changes.');
@@ -201,7 +174,65 @@ async function main() {
   }
 }
 
-main().catch(err => {
-  console.error('Migration failed:', err);
-  process.exit(1);
-});
+function migrateApiKeys(curated, rawSchema, fileFieldsSkipped, entry, fileFieldsMigrated) {
+  for (const entity of curated.entities) {
+    if (!Array.isArray(entity.fields)) continue;
+
+    const tableName = entity.tableName || '';
+    // Build raw field lookup if raw schema is available
+    const rawEntity = rawSchema ? findRawEntity(rawSchema, entity) : null;
+    const rawFieldMap = rawEntity ? buildRawFieldMap(rawEntity.fields) : new Map();
+
+    for (const field of entity.fields) {
+      // Already has apiKey — skip
+      if (field.apiKey !== undefined) {
+        fileFieldsSkipped++;
+        continue;
+      }
+
+      // Determine apiKey: use curated field.name as the baseline.
+      // This preserves the existing API binding since field.name was
+      // previously used as the property name in contracts and frontend.
+      let apiKey = field.name;
+
+      // If we have a raw schema match, verify consistency (log only)
+      validateRawFieldConsistency(rawFieldMap, field, entry, entity);
+
+      field.apiKey = apiKey;
+      fileFieldsMigrated++;
+    }
+  }
+  return { fileFieldsSkipped, fileFieldsMigrated };
+}
+
+function validateRawFieldConsistency(rawFieldMap, field, entry, entity) {
+  if (rawFieldMap.size > 0 && field.column) {
+    const rawField = rawFieldMap.get(field.column);
+    if (rawField && rawField.name && rawField.name !== field.name) {
+      // The raw schema's name (old toPropertyName output) differs from
+      // the curated name — the curated name was manually renamed.
+      // Use curated name as apiKey since that's what the API was using.
+      if (!dryRun) {
+        console.log(`  NOTE ${entry}/${entity.name}: field "${field.name}" (column ${field.column}) — raw name was "${rawField.name}", keeping curated name as apiKey`);
+      }
+    }
+  }
+}
+
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isMain) {
+  main().catch(err => {
+    console.error('Migration failed:', err);
+    process.exit(1);
+  });
+}
+
+export {
+  isPrimaryKey,
+  buildRawFieldMap,
+  loadJson,
+  findRawEntity,
+  migrateApiKeys,
+  validateRawFieldConsistency,
+  main,
+};

@@ -19,7 +19,7 @@ import { existsSync } from 'node:fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..');
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
 
 const DEFAULT_PORT = 5488;
 const DEFAULT_LOCALE = 'en_US';
@@ -64,26 +64,56 @@ export function parsePreviewArgs(argv) {
     open: false,
   };
 
-  for (let i = 0; i < argv.length; i++) {
+  let i = 0;
+  while (i < argv.length) {
     const arg = argv[i];
-    if (arg === '--artifact' && argv[i + 1]) {
-      opts.artifact = argv[++i];
-    } else if (arg === '--report' && argv[i + 1]) {
-      opts.report = argv[++i];
-    } else if (arg === '--format' && argv[i + 1]) {
-      opts.format = argv[++i];
-    } else if (arg === '--locale' && argv[i + 1]) {
-      opts.locale = argv[++i];
-    } else if (arg === '--data' && argv[i + 1]) {
-      opts.data = argv[++i];
+    if (isArtifactFlag(arg, argv, i)) {
+      opts.artifact = argv[i + 1];
+      i += 2;
+    } else if (isReportFlag(arg, argv, i)) {
+      opts.report = argv[i + 1];
+      i += 2;
+    } else if (isFormatFlag(arg, argv, i)) {
+      opts.format = argv[i + 1];
+      i += 2;
+    } else if (isLocaleFlag(arg, argv, i)) {
+      opts.locale = argv[i + 1];
+      i += 2;
+    } else if (isDataFlag(arg, argv, i)) {
+      opts.data = argv[i + 1];
+      i += 2;
     } else if (arg === '--port' && argv[i + 1]) {
-      opts.port = parseInt(argv[++i], 10);
+      opts.port = parseInt(argv[i + 1], 10);
+      i += 2;
     } else if (arg === '--open') {
       opts.open = true;
+      i += 1;
+    } else {
+      i += 1;
     }
   }
 
   return opts;
+}
+
+function isDataFlag(arg, argv, i) {
+  return arg === '--data' && argv[i + 1];
+}
+
+function isLocaleFlag(arg, argv, i) {
+  return arg === '--locale' && argv[i + 1];
+}
+
+function isFormatFlag(arg, argv, i) {
+  return arg === '--format' && argv[i + 1];
+}
+
+function isReportFlag(arg, argv, i) {
+  return arg === '--report' && argv[i + 1];
+}
+
+function isArtifactFlag(arg, argv, i) {
+  return arg === '--artifact' && argv[i + 1];
 }
 
 /**

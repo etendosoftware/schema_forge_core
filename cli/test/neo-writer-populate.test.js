@@ -541,6 +541,37 @@ describe('populateSpec (process, incremental)', () => {
     assert.equal(result.changes.fields.created, 1); // NewParam
   });
 
+  it('deletes duplicate entities, keeping the first one', async () => {
+    // A process spec must have exactly one entity. Seed two pointing at the
+    // same spec to exercise the deleteDuplicateEntities cleanup path.
+    const ENT_KEEP = 'ENT_PROC_KEEP';
+    const ENT_DUP = 'ENT_PROC_DUP';
+
+    const client = createMockClient({
+      specs: [[SPEC_ID, { spec_type: 'P', ad_window_id: null, ad_process_id: PROCESS_ID }]],
+      entities: [
+        [ENT_KEEP, { etgo_sf_spec_id: SPEC_ID, ad_tab_id: null, name: 'Generate Invoices' }],
+        [ENT_DUP, { etgo_sf_spec_id: SPEC_ID, ad_tab_id: null, name: 'Generate Invoices (dup)' }],
+      ],
+      fields: [
+        ['FLD_DUP', { etgo_sf_entity_id: ENT_DUP, ad_column_id: null, java_qualifier: 'Stale' }],
+      ],
+      processes: [{ ad_process_id: PROCESS_ID, name: 'Generate Invoices' }],
+      processParas: [
+        { ad_process_para_id: 'PP1', name: 'DateFrom', defaultvalue: null, seqno: 10, ad_process_id: PROCESS_ID },
+      ],
+    });
+
+    const result = await populateSpec(client, { specId: SPEC_ID, moduleId: MODULE_ID });
+
+    // First entity reused, the duplicate removed along with its fields.
+    assert.equal(result.entities[0].entityId, ENT_KEEP);
+    assert.equal(result.changes.entities.deleted, 1);
+    assert.equal(client.store.entities.has(ENT_DUP), false);
+    assert.equal(client.store.entities.has(ENT_KEEP), true);
+    assert.equal(client.store.fields.has('FLD_DUP'), false);
+  });
+
   it('is idempotent for process specs', async () => {
     const EXISTING_ENT = 'ENT_PROC_IDEM';
     const EXISTING_FLD = 'FLD_PROC_IDEM';
@@ -612,5 +643,109 @@ describe('populateSpec result shape', () => {
     assert.ok(result.changes);
     assert.ok(result.changes.entities);
     assert.ok(result.changes.fields);
+  });
+
+  it('report spec returns same shape with changes', async () => {
+    const client = createMockClient({
+      specs: [['S1', { spec_type: 'R', ad_window_id: null, ad_process_id: null }]],
+    });
+
+    const result = await populateSpec(client, { specId: 'S1', moduleId: 'M1' });
+
+    assert.equal(typeof result.entityCount, 'number');
+    assert.equal(typeof result.fieldCount, 'number');
+    assert.ok(Array.isArray(result.entities));
+    assert.ok(result.changes);
+    assert.ok(result.changes.entities);
+    assert.ok(result.changes.fields);
+    assert.equal(typeof result.changes.entities.created, 'number');
+    assert.equal(typeof result.changes.entities.updated, 'number');
+    assert.equal(typeof result.changes.entities.deleted, 'number');
+    assert.equal(typeof result.changes.fields.created, 'number');
+    assert.equal(typeof result.changes.fields.updated, 'number');
+    assert.equal(typeof result.changes.fields.deleted, 'number');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Report spec tests (ETP-4255)
+//
+// Report specs (spec_type === 'R') are NEO-native callable metadata only. They
+// are NOT backed by AD_Process/Jasper, so populateSpec must NOT derive any
+// process-style entities/fields and must NOT write anything to the DB. It
+// simply returns a fully-zeroed result.
+// ---------------------------------------------------------------------------
+
+describe('populateSpec (report)', () => {
+  const SPEC_ID = 'SPEC_REPORT';
+  const MODULE_ID = 'MOD001';
+
+  it('returns a fully zeroed result with no AD derivation', async () => {
+    const client = createMockClient({
+      specs: [[SPEC_ID, { spec_type: 'R', ad_window_id: null, ad_process_id: null }]],
+    });
+
+    const result = await populateSpec(client, { specId: SPEC_ID, moduleId: MODULE_ID });
+
+    assert.equal(result.entityCount, 0);
+    assert.equal(result.fieldCount, 0);
+    assert.deepEqual(result.entities, []);
+    assert.equal(result.changes.entities.created, 0);
+    assert.equal(result.changes.entities.updated, 0);
+    assert.equal(result.changes.entities.deleted, 0);
+    assert.equal(result.changes.fields.created, 0);
+    assert.equal(result.changes.fields.updated, 0);
+    assert.equal(result.changes.fields.deleted, 0);
+  });
+
+  it('does not derive AD metadata or write to the DB', async () => {
+    const client = createMockClient({
+      specs: [[SPEC_ID, { spec_type: 'R', ad_window_id: null, ad_process_id: null }]],
+    });
+
+    await populateSpec(client, { specId: SPEC_ID, moduleId: MODULE_ID });
+
+    const queries = client.queryLog.map(q => q.sql);
+
+    // The ONLY query allowed is the spec-type lookup.
+    assert.equal(queries.length, 1, `expected a single query, got: ${JSON.stringify(queries)}`);
+    assert.match(queries[0], /FROM etgo_sf_spec WHERE etgo_sf_spec_id/);
+
+    // No AD metadata-derivation reads. The spec-type lookup itself selects the
+    // ad_window_id / ad_process_id columns, so it is excluded from these checks.
+    const derivationQueries = queries.filter(
+      sql => !/FROM etgo_sf_spec WHERE etgo_sf_spec_id/.test(sql),
+    );
+    for (const sql of derivationQueries) {
+      assert.doesNotMatch(sql, /FROM ad_tab/i);
+      assert.doesNotMatch(sql, /FROM ad_column/i);
+      assert.doesNotMatch(sql, /FROM ad_process/i);
+      assert.doesNotMatch(sql, /FROM ad_process_para/i);
+    }
+
+    // No entity/field writes of any kind.
+    for (const sql of queries) {
+      assert.doesNotMatch(sql, /INSERT INTO etgo_sf_entity/i);
+      assert.doesNotMatch(sql, /UPDATE etgo_sf_entity/i);
+      assert.doesNotMatch(sql, /DELETE FROM etgo_sf_entity/i);
+      assert.doesNotMatch(sql, /INSERT INTO etgo_sf_field/i);
+      assert.doesNotMatch(sql, /UPDATE etgo_sf_field/i);
+      assert.doesNotMatch(sql, /DELETE FROM etgo_sf_field/i);
+    }
+
+    // The in-memory store stayed empty.
+    assert.equal(client.store.entities.size, 0);
+    assert.equal(client.store.fields.size, 0);
+  });
+
+  it('throws on an unrecognized spec type', async () => {
+    const client = createMockClient({
+      specs: [[SPEC_ID, { spec_type: 'X', ad_window_id: null, ad_process_id: null }]],
+    });
+
+    await assert.rejects(
+      () => populateSpec(client, { specId: SPEC_ID, moduleId: MODULE_ID }),
+      /Unknown spec type: X/,
+    );
   });
 });

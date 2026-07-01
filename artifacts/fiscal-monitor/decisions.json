@@ -1,9 +1,0 @@
-{
-  "$schema": "decisions-v2",
-  "window": {
-    "category": "custom",
-    "name": "Fiscal Monitor",
-    "layoutType": "custom"
-  },
-  "entities": {}
-}

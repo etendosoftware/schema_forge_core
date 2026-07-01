@@ -38,17 +38,14 @@ jobs:
       - name: CLI tests
         run: node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-results.xml 'cli/test/*.test.js'
 
-      - name: App-shell Node tests
-        run: node --test --test-reporter=spec --test-reporter-destination=stdout 'tools/app-shell/src/**/__tests__/*.test.js'
+      - name: Schema Forge core package tests
+        run: npm test --workspace=packages/schema-forge-core
 
-      - name: App-shell extra tests
-        run: node --test --test-reporter=spec --test-reporter-destination=stdout 'tools/app-shell/test/*.test.js'
+      - name: App shell core package tests
+        run: npm test --workspace=packages/app-shell-core
 
-      - name: Artifact custom tests
-        run: node --test --test-reporter=spec --test-reporter-destination=stdout 'artifacts/**/__tests__/*.test.js'
-
-      - name: Vitest (React components)
-        run: cd tools/app-shell && npx vitest run
+      - name: App shell core consumer smoke
+        run: npm run test:consumer --workspace=packages/app-shell-core
 
       - name: Publish test results
         uses: dorny/test-reporter@v1
@@ -57,6 +54,3 @@ jobs:
           name: Test Results
           path: test-results.xml
           reporter: java-junit
-
-      - name: Build app-shell
-        run: npm run build --workspace=tools/app-shell

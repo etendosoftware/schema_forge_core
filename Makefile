@@ -1,29 +1,29 @@
-.PHONY: test test-all-coverage test-ci test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-coverage menu-cache uuid test-xml-regeneration-check test-python xml-regeneration-check dump-delta regen-check regen-check-help regen-check-clean regen-help
+.PHONY: test test-all-coverage test-ci test-ci-coverage test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline method-budget window-leak-budget quality-gate domain-boundary-check sonar sonar-coverage sonar-file-coverage menu-cache uuid test-xml-regeneration-check test-python xml-regeneration-check dump-delta regen-check regen-check-help regen-check-clean regen-help data-fixes data-fixes-help switch switch-to-es switch-to-ar ensure-locale project-status
 
 # --- Testing ---
 
-test: ## Run all unit tests (CLI + app-shell + artifacts + vitest)
+test: ## Run all unit tests (CLI + core packages)
 	cd cli && node --test 'test/*.test.js'
-	node --test 'tools/app-shell/src/**/__tests__/*.test.js'
-	node --test 'tools/app-shell/test/*.test.js'
-	node --test 'artifacts/**/__tests__/*.test.js'
-	cd tools/app-shell && npx vitest run
+	npm test --workspace=packages/schema-forge-core
+	npm test --workspace=packages/app-shell-core
+	npm run test:vitest --workspace=packages/app-shell-core
 
 test-all-coverage: ## Run ALL unit tests (Node + Vitest) with coverage reports
 	@mkdir -p coverage
 	@echo "=== CLI tests ==="
-	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/cli-lcov.info 'cli/test/*.test.js'
-	@echo "=== App-shell Node tests ==="
-	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-lcov.info 'tools/app-shell/src/**/__tests__/*.test.js'
-	@echo "=== App-shell extra tests ==="
-	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-test-lcov.info 'tools/app-shell/test/*.test.js'
-	@echo "=== Artifact custom tests ==="
-	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/artifacts-lcov.info 'artifacts/**/__tests__/*.test.js'
-	@echo "=== Vitest (React components) ==="
-	cd tools/app-shell && npx vitest run --coverage && cp coverage/vitest/lcov.info ../../coverage/vitest-lcov.info
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/cli-lcov.info $(shell find cli/test -name '*.test.js')
+	@echo "=== Schema Forge core package tests ==="
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/schema-forge-core-lcov.info $(shell find packages/schema-forge-core/test -name '*.test.js')
+	@echo "=== App-shell core package tests ==="
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-core-lcov.info $(shell find packages/app-shell-core/test packages/app-shell-core/src/auth/__tests__ packages/app-shell-core/src/i18n/__tests__ packages/app-shell-core/src/components/ui/__tests__ packages/app-shell-core/src/runtime/__tests__ -name '*.test.js' 2>/dev/null)
+	@echo "=== App-shell core package Vitest ==="
+	cd packages/app-shell-core && npx vitest run --coverage --coverage.reporter=lcov && sed 's|^SF:src/|SF:packages/app-shell-core/src/|' coverage/lcov.info > ../../coverage/appshell-core-vitest-lcov.info
+	@echo "=== Merging LCOV reports ==="
+	npx lcov-result-merger 'coverage/*-lcov.info' coverage/merged-lcov.info
 	@echo ""
 	@echo "Coverage reports saved in coverage/"
-	@echo "  cli-lcov.info, appshell-lcov.info, appshell-test-lcov.info, artifacts-lcov.info, vitest-lcov.info"
+	@echo "  Individual: cli-lcov.info, schema-forge-core-lcov.info, appshell-core-lcov.info, appshell-core-vitest-lcov.info"
+	@echo "  Merged:     merged-lcov.info (used by SonarQube)"
 
 test-ci: ## Run all unit tests and write JUnit XML reports (CI mode)
 	@mkdir -p test-results
@@ -33,19 +33,38 @@ test-ci: ## Run all unit tests and write JUnit XML reports (CI mode)
 	  'cli/test/*.test.js'
 	node --test \
 	  --test-reporter=spec --test-reporter-destination=stdout \
-	  --test-reporter=junit --test-reporter-destination=test-results/appshell-node.xml \
-	  'tools/app-shell/src/**/__tests__/*.test.js' \
-	  'tools/app-shell/test/*.test.js'
-	node --test \
-	  --test-reporter=spec --test-reporter-destination=stdout \
-	  --test-reporter=junit --test-reporter-destination=test-results/artifacts.xml \
-	  'artifacts/**/__tests__/*.test.js'
-	cd tools/app-shell && npx vitest run \
-	  --reporter=junit \
-	  --outputFile=../../test-results/vitest.xml
+	  --test-reporter=junit --test-reporter-destination=test-results/schema-forge-core.xml \
+	  'packages/schema-forge-core/test/*.test.js'
+	npm test --workspace=packages/app-shell-core
+	npm run test:vitest --workspace=packages/app-shell-core -- --reporter=junit --outputFile=../../test-results/appshell-core-vitest.xml
 
-validate-pipeline: ## Validate pipeline completeness across all artifacts
+test-ci-coverage: ## Run all unit tests with JUnit XML reports + LCOV coverage (CI mode, single pass)
+	@mkdir -p test-results coverage
+	node --test --experimental-test-coverage \
+	  --test-reporter=spec --test-reporter-destination=stdout \
+	  --test-reporter=junit --test-reporter-destination=test-results/cli.xml \
+	  --test-reporter=lcov --test-reporter-destination=coverage/cli-lcov.info \
+	  'cli/test/*.test.js'
+	node --test --experimental-test-coverage \
+	  --test-reporter=spec --test-reporter-destination=stdout \
+	  --test-reporter=junit --test-reporter-destination=test-results/schema-forge-core.xml \
+	  --test-reporter=lcov --test-reporter-destination=coverage/schema-forge-core-lcov.info \
+	  'packages/schema-forge-core/test/*.test.js'
+	cd packages/app-shell-core && npx vitest run --coverage --coverage.reporter=lcov \
+	  --reporter=junit \
+	  --outputFile=../../test-results/appshell-core-vitest.xml \
+	  && cp coverage/lcov.info ../../coverage/appshell-core-vitest-lcov.info
+	@echo "=== Merging LCOV reports ==="
+	npx lcov-result-merger 'coverage/*-lcov.info' coverage/merged-lcov.info
+
+validate-pipeline: ## [Requires etendo_schema_forge — this repo has no artifacts/ to validate] Validate pipeline completeness across all artifacts
 	node cli/src/validate-pipeline.js --format=text
+
+method-budget: ## Ratchet guard: fail only if a tracked class grew past its method baseline
+	node cli/src/method-budget.js
+
+window-leak-budget: ## Ratchet guard: fail only if window-specific literals in contract-ui grew (use --list to enumerate)
+	node cli/src/window-leak-budget.js
 
 test-frontend: ## Run only frontend generator tests
 	cd cli && node --test 'test/generate-frontend.test.js'
@@ -53,13 +72,29 @@ test-frontend: ## Run only frontend generator tests
 
 quality-gate: ## Run Schema Forge quality gate for PR-affected windows
 	node cli/src/quality-gate.js --pr-affected --baseline-ref origin/main --format md
+
+domain-boundary-check: ## Check changed files against monorepo intent/domain boundaries (BASE=<ref>, HEAD=<ref>)
+	@if [ -z "$(BASE)" ]; then \
+	  echo "Usage: make domain-boundary-check BASE=<ref> [HEAD=<ref>] [LABELS=a,b] [PR_BODY_FILE=path]"; \
+	  exit 1; \
+	fi; \
+	HEAD_REF="$(HEAD)"; \
+	if [ -z "$$HEAD_REF" ]; then HEAD_REF="HEAD"; fi; \
+	ARGS="--base $(BASE) --head $$HEAD_REF"; \
+	if [ -n "$(LABELS)" ]; then ARGS="$$ARGS --labels $(LABELS)"; fi; \
+	if [ -n "$(PR_BODY_FILE)" ]; then ARGS="$$ARGS --pr-body-file $(PR_BODY_FILE)"; fi; \
+	npx sf-domain-boundary-check $$ARGS
 # --- E2E Testing (Playwright) ---
 
-test-e2e: ## Run E2E tests with visible browser
-	cd e2e && npx playwright test --headed
+# Parallel workers for E2E runs. Override to go faster: `make test-e2e-headless WORKERS=8`.
+# Caveat: all workers share the single dev server on :3100 — too many may cause flaky timeouts.
+WORKERS ?= 5
 
-test-e2e-headless: ## Run E2E tests headless (CI mode)
-	cd e2e && CI=true npx playwright test
+test-e2e: ## Run E2E tests with visible browser (override parallelism with WORKERS=N)
+	cd e2e && npx playwright test --headed --workers=$(WORKERS)
+
+test-e2e-headless: ## Run E2E tests headless (CI mode; override parallelism with WORKERS=N)
+	cd e2e && CI=true npx playwright test --workers=$(WORKERS)
 
 test-e2e-debug: ## Run E2E tests in debug mode (step by step)
 	cd e2e && npx playwright test --debug
@@ -222,19 +257,75 @@ regen-check-help: ## Show usage and examples for `make regen-check`
 regen-check-clean: ## Remove tmp/regen-check/ outputs
 	rm -rf $(REGEN_CHECK_OUT_ROOT)
 
+# --- Tenant data-fixes runner ---
+
+DRY_RUN    ?= 0
+MARK_FIXED ?= 0
+CLIENT     ?=
+FIX        ?=
+REASON     ?=
+
+data-fixes: ## Run the tenant data-fixes runner (HELP=1 or `make data-fixes-help` for options)
+	@if [ "$(HELP)" = "1" ]; then $(MAKE) -s data-fixes-help; exit 0; fi; \
+	DF_ARGS=""; \
+	if [ "$(LIST_CLIENTS)" = "1" ]; then DF_ARGS="$$DF_ARGS --list-clients"; fi; \
+	if [ "$(MARK_FIXED)" = "1" ]; then DF_ARGS="$$DF_ARGS --mark-fixed"; fi; \
+	if [ "$(DRY_RUN)" = "1" ]; then DF_ARGS="$$DF_ARGS --dry-run"; fi; \
+	if [ -n "$(CLIENT)" ]; then DF_ARGS="$$DF_ARGS --client $(CLIENT)"; fi; \
+	if [ -n "$(FIX)" ]; then DF_ARGS="$$DF_ARGS --fix $(FIX)"; fi; \
+	if [ -n "$(REASON)" ]; then DF_ARGS="$$DF_ARGS --reason \"$(REASON)\""; fi; \
+	eval node cli/src/data-fixes/run.js $$DF_ARGS
+
+data-fixes-help: ## Show usage and examples for `make data-fixes`
+	@echo "Usage: make data-fixes [VAR=value ...]"
+	@echo ""
+	@echo "Applies corrective .sql data-fixes to existing tenants, recording state in the"
+	@echo "System-owned ledger ETGO_DATA_FIX_HISTORY. DB credentials auto-resolve from"
+	@echo "{etendo_root}/gradle.properties (see cli/src/db.js)."
+	@echo ""
+	@echo "Variables:"
+	@echo "  LIST_CLIENTS=1     Read-only overview: each tenant (name+id), last applied fix, # pending/FAILED"
+	@echo "  DRY_RUN=1          Report what WOULD run (executes @check, commits nothing)"
+	@echo "  CLIENT=<clientId>  Restrict to a single tenant (ad_client_id)"
+	@echo "  FIX=<fix_id>       Force exactly ONE fix (ignores chain order + baseline cutoff; does not advance)"
+	@echo "  MARK_FIXED=1       Mark a fix as manually resolved (counts as success; runs nothing)"
+	@echo "  REASON=\"...\"       Mandatory note for MARK_FIXED — what was done by hand"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make data-fixes LIST_CLIENTS=1                         # overview of every tenant's state"
+	@echo "  make data-fixes DRY_RUN=1                              # preview across all tenants"
+	@echo "  make data-fixes                                       # apply across all tenants"
+	@echo "  make data-fixes CLIENT=<id>                           # apply for one tenant"
+	@echo "  make data-fixes FIX=<fix_id>                          # force one fix for all tenants"
+	@echo "  make data-fixes FIX=<fix_id> CLIENT=<id>              # force one fix for one tenant"
+	@echo "  make data-fixes MARK_FIXED=1 CLIENT=<id> FIX=<fix_id> REASON=\"patched by hand\""
+	@echo ""
+	@echo "Notes:"
+	@echo "  - fix_id = the .sql filename without .sql (e.g. 20260611T143000Z__R3-periodcontrol)."
+	@echo "  - Authoring rules + skeleton: cli/src/data-fixes/sql/README.md."
+	@echo "  - Exit code is non-zero if any tenant's chain halted on a FAILED fix."
+
 sync-regen-check-workflow: ## Regenerate the mirror Offline Regen Check workflow in com.etendoerp.go
 	./scripts/sync-offline-regen-check.sh
 
 # --- Dev Server ---
 
-dev: ## Start app-shell dev server (http://localhost:3100)
-	cd tools/app-shell && npm run dev
+dev: ensure-locale ## Start dev server for active locale (make switch LOCALE=ar to change)
+	@if [ "$(LOCALE)" = "ar" ]; then \
+		cd tools/etendo-go-ar/app-shell && npm run dev; \
+	else \
+		cd tools/app-shell && npm run dev; \
+	fi
 
 dev-with-shell: ## Start app-shell + spike-hello-app together (shell 3100, UI 5173, API 4100)
 	cd tools/spike-hello-app && npm run dev:with-shell
 
-dev-mock: ## Start app-shell dev server with mock data (http://localhost:3100) — required for E2E tests
-	cd tools/app-shell && npm run dev:mock
+dev-mock: ensure-locale ## Start dev server with mock data for active locale — required for E2E tests
+	@if [ "$(LOCALE)" = "ar" ]; then \
+		cd tools/etendo-go-ar/app-shell && npm run dev:mock; \
+	else \
+		cd tools/app-shell && npm run dev:mock; \
+	fi
 
 build: ## Build app-shell for production
 	cd tools/app-shell && npm run build
@@ -305,8 +396,11 @@ sonar-coverage: ## Run all tests with coverage then SonarQube analysis
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/cli-lcov.info 'cli/test/*.test.js'
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-lcov.info 'tools/app-shell/src/**/__tests__/*.test.js'
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-test-lcov.info 'tools/app-shell/test/*.test.js'
-	cd tools/app-shell && npx vitest run --coverage && cp coverage/vitest/lcov.info ../../coverage/vitest-lcov.info
+	cd tools/app-shell && npx vitest run --coverage && sed 's|^SF:src/|SF:tools/app-shell/src/|' coverage/vitest/lcov.info > ../../coverage/vitest-lcov.info
 	sonar-scanner -Dproject.settings=sonar-project.properties
+
+sonar-file-coverage: ## Show uncovered lines for specific files (SF or com.etendoerp.go). Usage: make sonar-file-coverage FILES="a.js b.java" [NEW_ONLY=1] [BRANCH=x] [PR=123]
+	@./cli/sonar-coverage.sh $(if $(NEW_ONLY),--new-only) $(if $(BRANCH),--branch $(BRANCH)) $(if $(PR),--pull-request $(PR)) $(FILES)
 
 # --- XML Regeneration Check ---
 
@@ -324,6 +418,48 @@ xml-regeneration-check: ## Compare original module XML vs export.database output
 		exit 1; \
 	fi
 	node cli/src/xml-regeneration-check.js "$(ORIGINAL_DB_DIR)" "$(EXPORTED_DB_DIR)"
+
+# --- Project Context Switching ---
+# Active locale is tracked in .active-locale (gitignored). Default: es.
+# Usage: make switch-to-ar  |  make switch-to-es  |  make switch LOCALE=ar
+
+LOCALE ?= $(shell cat .active-locale 2>/dev/null || echo es)
+
+switch-to-es: ## Switch active locale to Spain (ES)
+	@cp tools/app-shell/.env.es tools/app-shell/.env.local
+	@echo es > .active-locale
+	@echo "Active locale: ES (Spain) — com.etendoerp.go"
+
+switch-to-ar: ## Switch active locale to Argentina (AR)
+	@cp tools/etendo-go-ar/app-shell/.env.ar tools/etendo-go-ar/app-shell/.env.local
+	@echo ar > .active-locale
+	@echo "Active locale: AR (Argentina) — com.etendoerp.go.ar"
+
+switch: ## Switch active locale — LOCALE=es (default) | LOCALE=ar
+	@if [ "$(LOCALE)" = "es" ]; then \
+		$(MAKE) switch-to-es --no-print-directory; \
+	elif [ "$(LOCALE)" = "ar" ]; then \
+		$(MAKE) switch-to-ar --no-print-directory; \
+	else \
+		echo "Unknown locale '$(LOCALE)'. Use LOCALE=es or LOCALE=ar."; \
+		exit 1; \
+	fi
+
+ensure-locale: ## Bootstrap ES locale if .active-locale does not exist (called automatically)
+	@if [ ! -f .active-locale ]; then \
+		$(MAKE) switch-to-es --no-print-directory; \
+	fi
+
+project-status: ## Show active locale and module ID
+	@LOCALE=$$(cat .active-locale 2>/dev/null || echo es); \
+	echo "Active locale : $$LOCALE"; \
+	if [ "$$LOCALE" = "es" ]; then \
+		echo "Module        : com.etendoerp.go (Spain)"; \
+		grep -s SF_MODULE_ID tools/app-shell/.env.local || echo "  .env.local missing — run: make switch-to-es"; \
+	elif [ "$$LOCALE" = "ar" ]; then \
+		echo "Module        : com.etendoerp.go.ar (Argentina)"; \
+		grep -s SF_MODULE_ID tools/etendo-go-ar/app-shell/.env.local || echo "  .env.local missing — run: make switch-to-ar"; \
+	fi
 
 # --- Cleanup ---
 
