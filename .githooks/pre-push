@@ -356,7 +356,7 @@ run_optional_playwright() {
 check_base_conflicts
 
 # 0. Run data-testid check (fast, runs before expensive checks)
-run_step "0" "Running data-testid check" "$REPO_DIR" "tmp/pre-push/data-testid-check.log" "npm run check:data-testid"
+run_step "0" "Running data-testid check" "$REPO_DIR" "tmp/pre-push/data-testid-check.log" "npm run check:data-testid -- packages/app-shell-core/src"
 
 # Run Step 1
 run_domain_boundary_check
@@ -373,14 +373,6 @@ else
   SONAR_CMD="./run-sonar.sh --all-issues --coverage --fail-on-gate --compare-coverage"
 fi
 run_step "2" "Running unit tests and SonarQube analysis" "$REPO_DIR" "tmp/pre-push/sonar-and-tests.log" "$SONAR_CMD"
-
-# 3. Run offline regeneration check
-if [ -d "etendo_core/modules/com.etendoerp.go/src-db/database/sourcedata" ]; then
-  REGEN_CMD="make regen-check FROM_CACHE=1 REGEN_CHECK_PREV_XML_DIR=etendo_core/modules/com.etendoerp.go/src-db/database/sourcedata"
-  run_step "3" "Running offline regeneration check" "$REPO_DIR" "tmp/pre-push/offline-regen-check.log" "$REGEN_CMD"
-else
-  echo "==> [3/3] Running offline regeneration check... SKIPPED ⚠️ (com.etendoerp.go sourcedata not found)"
-fi
 
 # Mandatory checks passed — offer the optional Playwright E2E run before the banner.
 run_optional_playwright

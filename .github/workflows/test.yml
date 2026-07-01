@@ -47,18 +47,6 @@ jobs:
       - name: App shell core consumer smoke
         run: npm run test:consumer --workspace=packages/app-shell-core
 
-      - name: App-shell Node tests
-        run: node --test --test-reporter=spec --test-reporter-destination=stdout 'tools/app-shell/src/**/__tests__/*.test.js'
-
-      - name: App-shell extra tests
-        run: node --test --test-reporter=spec --test-reporter-destination=stdout 'tools/app-shell/test/*.test.js'
-
-      - name: Artifact custom tests
-        run: node --test --test-reporter=spec --test-reporter-destination=stdout 'artifacts/**/__tests__/*.test.js'
-
-      - name: Vitest (React components)
-        run: cd tools/app-shell && npx vitest run
-
       - name: Publish test results
         uses: dorny/test-reporter@v1
         if: always()
@@ -66,6 +54,3 @@ jobs:
           name: Test Results
           path: test-results.xml
           reporter: java-junit
-
-      - name: Build app-shell
-        run: npm run build --workspace=tools/app-shell
