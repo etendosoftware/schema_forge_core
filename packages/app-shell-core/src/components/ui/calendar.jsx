@@ -49,8 +49,8 @@ export function Calendar({ className, classNames, locale, ...props }) {
         hidden: 'invisible',
         ...classNames,
       }}
-      {...props}
-      data-testid="DayPicker__20e539" />
+      data-testid="DayPicker__20e539"
+      {...props} />
   );
 }
 

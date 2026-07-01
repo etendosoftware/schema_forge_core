@@ -11,14 +11,14 @@ const Command = React.forwardRef(({ className, ...props }, ref) => (
       "flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground",
       className
     )}
-    {...props}
-    data-testid="CommandPrimitive__8e5d1a" />
+    data-testid="CommandPrimitive__8e5d1a"
+    {...props} />
 ));
 Command.displayName = "Command";
 
 const CommandDialog = ({ children, ...props }) => {
   return (
-    <Dialog {...props} data-testid="Dialog__8e5d1a">
+    <Dialog data-testid="Dialog__8e5d1a" {...props}>
       <DialogContent
         className="overflow-hidden p-0 shadow-lg"
         data-testid="DialogContent__8e5d1a">
