@@ -53,12 +53,16 @@ jobs:
       - name: Schema Forge stack tests
         run: npm test --workspace=packages/schema-forge-stack
 
+      - name: Schema Forge CLI tests
+        run: npm test --workspace=cli
+
       - name: Pack packages
         run: |
           npm pack --workspace=packages/schema-forge-core --dry-run
           npm pack --workspace=packages/app-shell-core --dry-run
           npm pack --workspace=packages/schema-forge-agent-context --dry-run
           npm pack --workspace=packages/schema-forge-stack --dry-run
+          npm pack --workspace=cli --dry-run
 
       - name: Publish schema forge core
         run: |
@@ -97,5 +101,15 @@ jobs:
             DRY_RUN_ARGS="--dry-run"
           fi
           npm publish --workspace=packages/schema-forge-stack --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish schema forge CLI
+        run: |
+          DRY_RUN_ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_ARGS="--dry-run"
+          fi
+          npm publish --workspace=cli --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
