@@ -112,7 +112,7 @@ const SidebarProvider = React.forwardRef((
 
   return (
     <SidebarContext.Provider value={contextValue}>
-      <TooltipProvider delayDuration={0}>
+      <TooltipProvider delayDuration={0} data-testid="TooltipProvider__83ee67">
         <div
           style={
             {
@@ -164,7 +164,11 @@ const Sidebar = React.forwardRef((
 
   if (isMobile) {
     return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+      <Sheet
+        open={openMobile}
+        onOpenChange={setOpenMobile}
+        {...props}
+        data-testid="Sheet__83ee67">
         <SheetContent
           data-sidebar="sidebar"
           data-mobile="true"
@@ -174,10 +178,11 @@ const Sidebar = React.forwardRef((
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE
             }
           }
-          side={side}>
-          <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+          side={side}
+          data-testid="SheetContent__83ee67">
+          <SheetHeader className="sr-only" data-testid="SheetHeader__83ee67">
+            <SheetTitle data-testid="SheetTitle__83ee67">Sidebar</SheetTitle>
+            <SheetDescription data-testid="SheetDescription__83ee67">Displays the mobile sidebar.</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
@@ -241,8 +246,9 @@ const SidebarTrigger = React.forwardRef(({ className, onClick, ...props }, ref) 
         onClick?.(event)
         toggleSidebar()
       }}
-      {...props}>
-      <PanelLeft />
+      {...props}
+      data-testid="Button__83ee67">
+      <PanelLeft data-testid="PanelLeft__83ee67" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );
@@ -297,7 +303,8 @@ const SidebarInput = React.forwardRef(({ className, ...props }, ref) => {
         "h-8 w-full bg-background shadow-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         className
       )}
-      {...props} />
+      {...props}
+      data-testid="Input__83ee67" />
   );
 })
 SidebarInput.displayName = "SidebarInput"
@@ -330,7 +337,8 @@ const SidebarSeparator = React.forwardRef(({ className, ...props }, ref) => {
       ref={ref}
       data-sidebar="separator"
       className={cn("mx-2 w-auto bg-sidebar-border", className)}
-      {...props} />
+      {...props}
+      data-testid="Separator__83ee67" />
   );
 })
 SidebarSeparator.displayName = "SidebarSeparator"
@@ -372,7 +380,8 @@ const SidebarGroupLabel = React.forwardRef(({ className, asChild = false, ...pro
         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
         className
       )}
-      {...props} />
+      {...props}
+      data-testid="Comp__83ee67" />
   );
 })
 SidebarGroupLabel.displayName = "SidebarGroupLabel"
@@ -391,7 +400,8 @@ const SidebarGroupAction = React.forwardRef(({ className, asChild = false, ...pr
         "group-data-[collapsible=icon]:hidden",
         className
       )}
-      {...props} />
+      {...props}
+      data-testid="Comp__83ee67" />
   );
 })
 SidebarGroupAction.displayName = "SidebarGroupAction"
@@ -467,7 +477,8 @@ const SidebarMenuButton = React.forwardRef((
       data-size={size}
       data-active={isActive}
       className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-      {...props} />
+      {...props}
+      data-testid="Comp__83ee67" />
   )
 
   if (!tooltip) {
@@ -481,13 +492,14 @@ const SidebarMenuButton = React.forwardRef((
   }
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
+    <Tooltip data-testid="Tooltip__83ee67">
+      <TooltipTrigger asChild data-testid="TooltipTrigger__83ee67">{button}</TooltipTrigger>
       <TooltipContent
         side="right"
         align="center"
         hidden={state !== "collapsed" || isMobile}
-        {...tooltip} />
+        {...tooltip}
+        data-testid="TooltipContent__83ee67" />
     </Tooltip>
   );
 })
@@ -512,7 +524,8 @@ const SidebarMenuAction = React.forwardRef(({ className, asChild = false, showOn
           "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0",
         className
       )}
-      {...props} />
+      {...props}
+      data-testid="Comp__83ee67" />
   );
 })
 SidebarMenuAction.displayName = "SidebarMenuAction"
@@ -547,7 +560,10 @@ const SidebarMenuSkeleton = React.forwardRef(({ className, showIcon = false, ...
       className={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
       {...props}>
       {showIcon && (
-        <Skeleton className="size-4 rounded-md" data-sidebar="menu-skeleton-icon" />
+        <Skeleton
+          className="size-4 rounded-md"
+          data-sidebar="menu-skeleton-icon"
+          data-testid="Skeleton__83ee67" />
       )}
       <Skeleton
         className="h-4 max-w-[--skeleton-width] flex-1"
@@ -556,7 +572,8 @@ const SidebarMenuSkeleton = React.forwardRef(({ className, showIcon = false, ...
           {
             "--skeleton-width": width
           }
-        } />
+        }
+        data-testid="Skeleton__83ee67" />
     </div>
   );
 })
@@ -596,7 +613,8 @@ const SidebarMenuSubButton = React.forwardRef(
           "group-data-[collapsible=icon]:hidden",
           className
         )}
-        {...props} />
+        {...props}
+        data-testid="Comp__83ee67" />
     );
   }
 )

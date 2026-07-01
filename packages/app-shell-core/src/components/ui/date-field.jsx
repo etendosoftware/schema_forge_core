@@ -107,15 +107,24 @@ function HeaderRow({ label, onLabelClick, onPrev, onNext, showLabelChevron }) {
       >
         <span>{label}</span>
         {showLabelChevron && (
-          <ChevronDown className="h-4 w-4 text-[#828FA3]" aria-hidden="true" />
+          <ChevronDown
+            className="h-4 w-4 text-[#828FA3]"
+            aria-hidden="true"
+            data-testid="ChevronDown__d56af3" />
         )}
       </button>
       <div className="flex items-center gap-2">
-        <NavButton onClick={onPrev} ariaLabel="prev">
-          <ChevronLeft className="h-5 w-5 text-[#828FA3]" aria-hidden="true" />
+        <NavButton onClick={onPrev} ariaLabel="prev" data-testid="NavButton__d56af3">
+          <ChevronLeft
+            className="h-5 w-5 text-[#828FA3]"
+            aria-hidden="true"
+            data-testid="ChevronLeft__d56af3" />
         </NavButton>
-        <NavButton onClick={onNext} ariaLabel="next">
-          <ChevronRight className="h-5 w-5 text-[#828FA3]" aria-hidden="true" />
+        <NavButton onClick={onNext} ariaLabel="next" data-testid="NavButton__d56af3">
+          <ChevronRight
+            className="h-5 w-5 text-[#828FA3]"
+            aria-hidden="true"
+            data-testid="ChevronRight__d56af3" />
         </NavButton>
       </div>
     </div>
@@ -412,9 +421,9 @@ export function DateField({
   const inputPlaceholder = placeholder || localePlaceholder;
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
+    <Popover open={open} onOpenChange={handleOpenChange} data-testid="Popover__d56af3">
       <div className={wrapperClass}>
-        <PopoverTrigger asChild>
+        <PopoverTrigger asChild data-testid="PopoverTrigger__d56af3">
           <button
             type="button"
             disabled={disabled}
@@ -424,7 +433,10 @@ export function DateField({
               !disabled && 'hover:bg-[rgba(18,18,23,0.05)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             )}
           >
-            <CalendarIcon className="h-6 w-6 shrink-0 text-[#A9A9BC]" aria-hidden="true" />
+            <CalendarIcon
+              className="h-6 w-6 shrink-0 text-[#A9A9BC]"
+              aria-hidden="true"
+              data-testid="CalendarIcon__d56af3" />
           </button>
         </PopoverTrigger>
         <input
@@ -447,7 +459,10 @@ export function DateField({
         />
       </div>
       {!disabled && (
-        <PopoverContent className="w-[264px] p-0" align="start">
+        <PopoverContent
+          className="w-[264px] p-0"
+          align="start"
+          data-testid="PopoverContent__d56af3">
           <div className="p-2">
             <HeaderRow
               label={headerLabel}
@@ -455,7 +470,7 @@ export function DateField({
               onPrev={navPrev}
               onNext={navNext}
               showLabelChevron={view === 'calendar'}
-            />
+              data-testid="HeaderRow__d56af3" />
 
             {view === 'calendar' && (
               <Calendar
@@ -479,7 +494,7 @@ export function DateField({
                   today:
                     '[&>button]:border [&>button]:border-[#282833] [&>button]:text-[#282833]',
                 }}
-              />
+                data-testid="Calendar__d56af3" />
             )}
 
             {view === 'picker' && (
@@ -489,19 +504,19 @@ export function DateField({
                   onChange={setPickerTab}
                   monthLabel={ui('datePickerMonth')}
                   yearLabel={ui('datePickerYear')}
-                />
+                  data-testid="PickerTabs__d56af3" />
                 {pickerTab === 'month' ? (
                   <PickerGrid
                     items={monthItems}
                     selectedValue={tempMonth}
                     onSelect={setTempMonth}
-                  />
+                    data-testid="PickerGrid__d56af3" />
                 ) : (
                   <PickerGrid
                     items={yearItems}
                     selectedValue={tempYear}
                     onSelect={setTempYear}
-                  />
+                    data-testid="PickerGrid__d56af3" />
                 )}
               </div>
             )}
@@ -510,17 +525,23 @@ export function DateField({
           <div className="border-t border-[#E8EAEF] flex items-center justify-between gap-2 px-5 py-3">
             {view === 'calendar' ? (
               <>
-                <PillButton onClick={handleClear} disabled={!parsedValue}>
+                <PillButton
+                  onClick={handleClear}
+                  disabled={!parsedValue}
+                  data-testid="PillButton__d56af3">
                   {ui('clear')}
                 </PillButton>
-                <PillButton variant="filled" onClick={() => handleSelect(new Date())}>
+                <PillButton
+                  variant="filled"
+                  onClick={() => handleSelect(new Date())}
+                  data-testid="PillButton__d56af3">
                   {ui('dateRangeToday')}
                 </PillButton>
               </>
             ) : (
               <>
-                <PillButton onClick={cancelPicker}>{ui('datePickerBack')}</PillButton>
-                <PillButton variant="filled" onClick={commitPicker}>
+                <PillButton onClick={cancelPicker} data-testid="PillButton__d56af3">{ui('datePickerBack')}</PillButton>
+                <PillButton variant="filled" onClick={commitPicker} data-testid="PillButton__d56af3">
                   {ui('datePickerOk')}
                 </PillButton>
               </>

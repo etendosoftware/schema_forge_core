@@ -210,7 +210,7 @@ describe('DateField — footer buttons', () => {
   it('Calendar view footer shows Limpiar (outlined) + Hoy (filled)', () => {
     assert.match(src, /ui\('clear'\)/);
     assert.match(src, /ui\('dateRangeToday'\)/);
-    assert.match(src, /<PillButton onClick=\{handleClear\} disabled=\{!parsedValue\}/);
+    assert.match(src, /<PillButton\s+onClick=\{handleClear\}\s+disabled=\{!parsedValue\}/);
   });
 
   it('Picker view footer shows Volver (outlined) + Ok (filled)', () => {
@@ -274,7 +274,7 @@ describe('DateField — manual typing in the input', () => {
 
   it('only the calendar icon button (not the whole field) opens the popover', () => {
     // PopoverTrigger wraps only the icon button, not the entire wrapper or the input.
-    assert.match(src, /<PopoverTrigger asChild>\s*<button[\s\S]*?<CalendarIcon[\s\S]*?<\/button>\s*<\/PopoverTrigger>/);
+    assert.match(src, /<PopoverTrigger asChild[^>]*>\s*<button[\s\S]*?<CalendarIcon[\s\S]*?<\/button>\s*<\/PopoverTrigger>/);
   });
 });
 

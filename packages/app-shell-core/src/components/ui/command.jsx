@@ -12,16 +12,20 @@ const Command = React.forwardRef(({ className, ...props }, ref) => (
       className
     )}
     {...props}
-  />
+    data-testid="CommandPrimitive__8e5d1a" />
 ));
 Command.displayName = "Command";
 
 const CommandDialog = ({ children, ...props }) => {
   return (
-    <Dialog {...props}>
-      <DialogContent className="overflow-hidden p-0 shadow-lg">
-        <DialogTitle className="sr-only">Command palette</DialogTitle>
-        <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
+    <Dialog {...props} data-testid="Dialog__8e5d1a">
+      <DialogContent
+        className="overflow-hidden p-0 shadow-lg"
+        data-testid="DialogContent__8e5d1a">
+        <DialogTitle className="sr-only" data-testid="DialogTitle__8e5d1a">Command palette</DialogTitle>
+        <Command
+          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5"
+          data-testid="Command__8e5d1a">
           {children}
         </Command>
       </DialogContent>
@@ -31,7 +35,7 @@ const CommandDialog = ({ children, ...props }) => {
 
 const CommandInput = React.forwardRef(({ className, ...props }, ref) => (
   <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
-    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" data-testid="Search__8e5d1a" />
     <CommandPrimitive.Input
       ref={ref}
       className={cn(

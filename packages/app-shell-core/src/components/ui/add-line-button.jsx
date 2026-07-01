@@ -78,7 +78,7 @@ export function AddLineButton({ onClick, label, disabled = false, menuActions, h
       onMouseLeave={hoverOut(disabled)}
       style={{ ...PRIMARY_STYLE, borderRadius: radius, ...(disabled ? DISABLED_OVERLAY : null) }}
     >
-      <Plus size={20} color={ICON_COLOR} strokeWidth={2} />
+      <Plus size={20} color={ICON_COLOR} strokeWidth={2} data-testid="Plus__9424df" />
       <span>{label}</span>
     </button>
   );
@@ -99,7 +99,11 @@ export function AddLineButton({ onClick, label, disabled = false, menuActions, h
       style={{ ...CHEVRON_STYLE, ...(disabled ? DISABLED_OVERLAY : null) }}
       aria-label="More actions"
     >
-      <ChevronDown size={20} color={ICON_COLOR} strokeWidth={2} />
+      <ChevronDown
+        size={20}
+        color={ICON_COLOR}
+        strokeWidth={2}
+        data-testid="ChevronDown__9424df" />
     </button>
   );
 
@@ -107,16 +111,20 @@ export function AddLineButton({ onClick, label, disabled = false, menuActions, h
     <span style={GROUP_STYLE}>
       {primaryButton('7px 0 0 7px')}
       <span style={DIVIDER_STYLE} />
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>{chevronButton}</DropdownMenuTrigger>
-        <DropdownMenuContent align="start" sideOffset={4} className="min-w-[200px]">
+      <DropdownMenu data-testid="DropdownMenu__9424df">
+        <DropdownMenuTrigger asChild data-testid="DropdownMenuTrigger__9424df">{chevronButton}</DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          sideOffset={4}
+          className="min-w-[200px]"
+          data-testid="DropdownMenuContent__9424df">
           {actions.map((action) => (
             <DropdownMenuItem
               key={action.key ?? action.label}
               onSelect={action.onClick}
               disabled={action.disabled}
               className={action.destructive ? 'text-destructive focus:text-destructive' : undefined}
-            >
+              data-testid="DropdownMenuItem__9424df">
               {action.icon ? <span className="mr-2 inline-flex">{action.icon}</span> : null}
               {action.label}
             </DropdownMenuItem>

@@ -23,7 +23,7 @@ const SelectTrigger = React.forwardRef(({ className, children, ...props }, ref) 
     {...props}>
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50" />
+      <ChevronDown className="h-4 w-4 opacity-50" data-testid="ChevronDown__72b884" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ))
@@ -34,7 +34,7 @@ const SelectScrollUpButton = React.forwardRef(({ className, ...props }, ref) => 
     ref={ref}
     className={cn("flex cursor-default items-center justify-center py-1", className)}
     {...props}>
-    <ChevronUp className="h-4 w-4" />
+    <ChevronUp className="h-4 w-4" data-testid="ChevronUp__72b884" />
   </SelectPrimitive.ScrollUpButton>
 ))
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
@@ -44,7 +44,7 @@ const SelectScrollDownButton = React.forwardRef(({ className, ...props }, ref) =
     ref={ref}
     className={cn("flex cursor-default items-center justify-center py-1", className)}
     {...props}>
-    <ChevronDown className="h-4 w-4" />
+    <ChevronDown className="h-4 w-4" data-testid="ChevronDown__72b884" />
   </SelectPrimitive.ScrollDownButton>
 ))
 SelectScrollDownButton.displayName =
@@ -62,13 +62,13 @@ const SelectContent = React.forwardRef(({ className, children, position = "poppe
       )}
       position={position}
       {...props}>
-      <SelectScrollUpButton />
+      <SelectScrollUpButton data-testid="SelectScrollUpButton__72b884" />
       <SelectPrimitive.Viewport
         className={cn("p-1", position === "popper" &&
           "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]")}>
         {children}
       </SelectPrimitive.Viewport>
-      <SelectScrollDownButton />
+      <SelectScrollDownButton data-testid="SelectScrollDownButton__72b884" />
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
 ))
@@ -92,7 +92,7 @@ const SelectItem = React.forwardRef(({ className, children, ...props }, ref) => 
     {...props}>
     <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <Check className="h-4 w-4" />
+        <Check className="h-4 w-4" data-testid="Check__72b884" />
       </SelectPrimitive.ItemIndicator>
     </span>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>

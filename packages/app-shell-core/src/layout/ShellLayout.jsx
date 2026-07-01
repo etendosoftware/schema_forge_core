@@ -15,8 +15,14 @@ export function ShellMenu({ groups = [], expanded = true, onToggle }) {
     >
       <div className="flex h-14 items-center justify-between border-b border-border/40 px-3">
         {expanded && <span className="text-sm font-semibold text-foreground">Schema Forge</span>}
-        <Button type="button" variant="ghost" size="icon" onClick={onToggle} aria-label="Toggle menu">
-          {expanded ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onToggle}
+          aria-label="Toggle menu"
+          data-testid="Button__69bf59">
+          {expanded ? <ChevronLeft className="h-4 w-4" data-testid="ChevronLeft__69bf59" /> : <ChevronRight className="h-4 w-4" data-testid="ChevronRight__69bf59" />}
         </Button>
       </div>
       <nav className="flex-1 overflow-auto px-2 py-3">
@@ -38,7 +44,7 @@ export function ShellMenu({ groups = [], expanded = true, onToggle }) {
                     !expanded && 'justify-center'
                   )}
                   title={item.label}
-                >
+                  data-testid="NavLink__69bf59">
                   {item.icon ? <item.icon className="h-4 w-4 shrink-0" /> : <span className="h-2 w-2 rounded-full bg-current" />}
                   {expanded && <span className="truncate">{item.label}</span>}
                 </NavLink>
@@ -69,14 +75,22 @@ export function ShellLayout({ menuGroups, title, breadcrumb, rightExtras, childr
 
   return (
     <>
-      <ShellMenu groups={menuGroups} expanded={expanded} onToggle={() => setExpanded((value) => !value)} />
+      <ShellMenu
+        groups={menuGroups}
+        expanded={expanded}
+        onToggle={() => setExpanded((value) => !value)}
+        data-testid="ShellMenu__69bf59" />
       <div
         className="flex h-screen flex-col bg-page-bg transition-[margin-left] duration-200"
         style={{ marginLeft }}
       >
-        <ShellTopBar title={title} breadcrumb={breadcrumb} rightExtras={rightExtras} />
+        <ShellTopBar
+          title={title}
+          breadcrumb={breadcrumb}
+          rightExtras={rightExtras}
+          data-testid="ShellTopBar__69bf59" />
         <main className="min-h-0 flex-1 overflow-auto p-3">
-          {children || <Outlet />}
+          {children || <Outlet data-testid="Outlet__69bf59" />}
         </main>
       </div>
     </>

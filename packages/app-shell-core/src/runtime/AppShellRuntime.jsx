@@ -8,21 +8,37 @@ import { createAppShellConfig } from './contracts.js';
 
 function DefaultLoginRedirect({ loginPath }) {
   const location = useLocation();
-  return <Navigate to={loginPath} replace state={{ from: location }} />;
+  return (
+    <Navigate
+      to={loginPath}
+      replace
+      state={{ from: location }}
+      data-testid="Navigate__b517b2" />
+  );
 }
 
 export function AuthGate({ children, loginPath = '/login', fallback }) {
   const { isAuthenticated } = useAuth();
   if (isAuthenticated) return children;
-  return fallback || <DefaultLoginRedirect loginPath={loginPath} />;
+  return fallback || <DefaultLoginRedirect loginPath={loginPath} data-testid="DefaultLoginRedirect__b517b2" />;
 }
 
 function renderRoute(route, auth) {
   const element = route.public
     ? route.element
-    : <AuthGate loginPath={auth.loginPath} fallback={auth.unauthenticatedFallback}>{route.element}</AuthGate>;
+    : <AuthGate
+    loginPath={auth.loginPath}
+    fallback={auth.unauthenticatedFallback}
+    data-testid="AuthGate__b517b2">{route.element}</AuthGate>;
 
-  return <Route key={route.index ? 'index' : route.path} index={route.index} path={route.path} element={element} />;
+  return (
+    <Route
+      key={route.index ? 'index' : route.path}
+      index={route.index}
+      path={route.path}
+      element={element}
+      data-testid="Route__b517b2" />
+  );
 }
 
 export function AppShellProviders({
@@ -33,17 +49,20 @@ export function AppShellProviders({
   currency,
 }) {
   return (
-    <LocaleProvider locale={locale} setLocale={setLocale}>
+    <LocaleProvider
+      locale={locale}
+      setLocale={setLocale}
+      data-testid="LocaleProvider__b517b2">
       <AuthProvider
         storage={auth?.storage}
         initialSession={auth?.initialSession}
         onSessionChange={auth?.onSessionChange}
-      >
+        data-testid="AuthProvider__b517b2">
         <CurrencyProvider
           value={currency?.value || currency}
           apiBaseUrl={currency?.apiBaseUrl}
           fetcher={currency?.fetcher}
-        >
+          data-testid="CurrencyProvider__b517b2">
           {children}
         </CurrencyProvider>
       </AuthProvider>
@@ -71,7 +90,7 @@ export function AppShellRuntime({
   title,
   breadcrumb,
   rightExtras,
-  notFoundElement = <Navigate to="/" replace />,
+  notFoundElement = <Navigate to="/" replace data-testid="Navigate__b517b2" />,
   layout: Layout = ShellLayout,
   children,
 }) {
@@ -92,32 +111,40 @@ export function AppShellRuntime({
         params={report.params}
         format={report.format}
         title={report.title}
-      />
+        data-testid="ReportViewerFrame__b517b2" />
     ),
   }));
 
   return (
-    <BrowserRouter basename={basename}>
-      <AppShellProviders auth={runtimeAuth} locale={locale} setLocale={setLocale} currency={currency}>
+    <BrowserRouter basename={basename} data-testid="BrowserRouter__b517b2">
+      <AppShellProviders
+        auth={runtimeAuth}
+        locale={locale}
+        setLocale={setLocale}
+        currency={currency}
+        data-testid="AppShellProviders__b517b2">
         {children}
-        <Routes>
+        <Routes data-testid="Routes__b517b2">
           <Route
             element={
-              <AuthGate loginPath={runtimeAuth.loginPath} fallback={runtimeAuth.unauthenticatedFallback}>
+              <AuthGate
+                loginPath={runtimeAuth.loginPath}
+                fallback={runtimeAuth.unauthenticatedFallback}
+                data-testid="AuthGate__b517b2">
                 <Layout
                   menuGroups={menuGroups || runtime.menuGroups}
                   title={title}
                   breadcrumb={breadcrumb}
                   rightExtras={rightExtras}
-                />
+                  data-testid="Layout__b517b2" />
               </AuthGate>
             }
-          >
+            data-testid="Route__b517b2">
             {runtime.routes.filter((route) => !route.public).map((route) => renderRoute(route, runtimeAuth))}
             {reportRoutes.map((route) => renderRoute(route, runtimeAuth))}
           </Route>
           {runtime.routes.filter((route) => route.public).map((route) => renderRoute(route, runtimeAuth))}
-          <Route path="*" element={notFoundElement} />
+          <Route path="*" element={notFoundElement} data-testid="Route__b517b2" />
         </Routes>
       </AppShellProviders>
     </BrowserRouter>

@@ -50,7 +50,7 @@ export function Calendar({ className, classNames, locale, ...props }) {
         ...classNames,
       }}
       {...props}
-    />
+      data-testid="DayPicker__20e539" />
   );
 }
 
