@@ -1,6 +1,6 @@
 {
   "name": "@etendosoftware/schema-forge-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
@@ -43,7 +43,8 @@
     "sf-window-leak-budget": "./src/window-leak-budget.js",
     "sf-xml-apply-delta": "./src/xml-apply-delta.js",
     "sf-resolve-curated": "./src/resolve-curated.js",
-    "sf-validate-pipeline": "./src/validate-pipeline.js"
+    "sf-validate-pipeline": "./src/validate-pipeline.js",
+    "sf-epic-rollup-report": "./src/epic-rollup-report.js"
   },
   "files": [
     "src",
