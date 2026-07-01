@@ -12,7 +12,7 @@ import {
 } from '../src/extract-fields.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..', '..');
+const ROOT = join(__dirname, '..');
 
 const systemColumns = JSON.parse(
   await readFile(join(ROOT, 'core-maps', 'system-columns.json'), 'utf-8')

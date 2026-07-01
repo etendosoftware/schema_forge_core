@@ -1,6 +1,6 @@
 {
   "name": "@etendosoftware/schema-forge-cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
@@ -49,6 +49,8 @@
   },
   "files": [
     "src",
+    "core-maps",
+    "sonar-coverage.sh",
     "!test"
   ],
   "devDependencies": {

@@ -17,6 +17,7 @@ import { buildSchema, classifyField } from '../src/extract-fields.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');
+const CLI_DIR = join(__dirname, '..');
 
 describe('Integration: extractor → validator', () => {
   let schemaRaw;
@@ -100,10 +101,10 @@ describe('Integration: extractor → validator', () => {
 describe('Integration: buildSchema produces valid output', () => {
   it('buildSchema with synthetic rows produces validatable schema', async () => {
     const systemColumns = JSON.parse(
-      await readFile(join(ROOT, 'core-maps', 'system-columns.json'), 'utf-8')
+      await readFile(join(CLI_DIR, 'core-maps', 'system-columns.json'), 'utf-8')
     );
     const refMap = JSON.parse(
-      await readFile(join(ROOT, 'core-maps', 'ad-reference-map.json'), 'utf-8')
+      await readFile(join(CLI_DIR, 'core-maps', 'ad-reference-map.json'), 'utf-8')
     );
 
     // Minimal synthetic rows simulating a 2-tab window
