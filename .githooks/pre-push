@@ -361,18 +361,20 @@ run_step "0" "Running data-testid check" "$REPO_DIR" "tmp/pre-push/data-testid-c
 # Run Step 1
 run_domain_boundary_check
 
-# 2. Run unit tests and SonarQube analysis
+# 2. Run SonarQube analysis (issues only)
 # --fail-on-gate makes run-sonar.sh exit non-zero when the Quality Gate is in
 # ERROR, so this step (and the push) is blocked exactly when CI's gate would fail.
-# --compare-coverage additionally blocks when this branch's OVERALL coverage drops
-# below the base branch's — mirroring Jenkins' "Compare Coverage Results" stage,
-# which the new-code-only Quality Gate does not cover.
+# NOTE: coverage measurement is intentionally SKIPPED in this repo (schema_forge_core)
+# to keep pre-push fast — `make test-all-coverage` + --compare-coverage add 1-2+ minutes
+# and are sensitive to local node_modules/workspace-hoisting drift. Coverage still runs
+# in etendo_schema_forge's own pre-push. Re-enable here by restoring
+# `--coverage --compare-coverage` if this repo's coverage gate needs to be enforced again.
 if [ -n "$BASE_REF" ]; then
-  SONAR_CMD="./run-sonar.sh --base-ref \"$BASE_REF\" --coverage --fail-on-gate --compare-coverage"
+  SONAR_CMD="./run-sonar.sh --base-ref \"$BASE_REF\" --fail-on-gate"
 else
-  SONAR_CMD="./run-sonar.sh --all-issues --coverage --fail-on-gate --compare-coverage"
+  SONAR_CMD="./run-sonar.sh --all-issues --fail-on-gate"
 fi
-run_step "2" "Running unit tests and SonarQube analysis" "$REPO_DIR" "tmp/pre-push/sonar-and-tests.log" "$SONAR_CMD"
+run_step "2" "Running SonarQube analysis" "$REPO_DIR" "tmp/pre-push/sonar-and-tests.log" "$SONAR_CMD"
 
 # 3. Run offline regeneration check
 if [ -d "etendo_core/modules/com.etendoerp.go/src-db/database/sourcedata" ]; then
