@@ -1,4 +1,23 @@
 import { createHash } from 'node:crypto';
+import { realpathSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+/**
+ * Detect whether a module was invoked directly as the CLI entrypoint (vs imported).
+ * Plain `fileURLToPath(import.meta.url) === process.argv[1]` breaks whenever the
+ * script is run through an npm-installed bin (node_modules/.bin/<name> is a
+ * symlink): import.meta.url resolves through the symlink to the real file, while
+ * process.argv[1] keeps the symlink path, so the strings never match and the
+ * guarded block silently never runs. realpath-ing both sides survives that.
+ */
+export function isMainModule(moduleUrl) {
+  if (!process.argv[1]) return false;
+  try {
+    return realpathSync(fileURLToPath(moduleUrl)) === realpathSync(process.argv[1]);
+  } catch {
+    return false;
+  }
+}
 
 export function computeChecksum(data) {
   return createHash('sha256')

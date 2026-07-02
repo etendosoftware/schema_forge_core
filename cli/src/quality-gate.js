@@ -10,6 +10,7 @@ import { collectDecisionWindows, detectAffectedWindows, detectAffectedWindowsDet
 import { runQualityGate } from './quality-gate/runner.js';
 import { buildQualityGateAnalysisBundle, buildQualityGateReport } from './quality-gate/report.js';
 import { QUALITY_GATE_CHECKS } from './quality-gate/checks/index.js';
+import { isMainModule } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -263,7 +264,7 @@ export async function runQualityGateCli({ args = process.argv.slice(2), rootDir 
   };
 }
 
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+const isMain = isMainModule(import.meta.url);
 
 if (isMain) {
   try {

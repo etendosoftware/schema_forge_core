@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { isMainModule } from './utils.js';
 
 const DUPLICATE_MIN_LINES = 6;
 const LARGE_FILE_BYTES = 512000;
@@ -528,7 +528,7 @@ function getArg(args, name) {
   return index !== -1 && index + 1 < args.length ? args[index + 1] : null;
 }
 
-const isCli = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+const isCli = isMainModule(import.meta.url);
 
 if (isCli) {
   const args = process.argv.slice(2);

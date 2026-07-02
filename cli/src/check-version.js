@@ -2,6 +2,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { isMainModule } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -319,7 +320,7 @@ export async function checkVersion(windowName, author) {
 }
 
 // CLI entry point
-const isCLI = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+const isCLI = isMainModule(import.meta.url);
 if (isCLI) {
   const windowName = process.argv[2];
   const author = process.argv[3] || 'system';

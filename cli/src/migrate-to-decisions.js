@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { resolveCurated, autoSimplifyEntityName } from './resolve-curated.js';
 import { classifyRule } from './pre-classify.js';
+import { isMainModule } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -679,7 +680,7 @@ export async function migrateWindow(windowName) {
 // CLI entry point
 // ---------------------------------------------------------------------------
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+if (isMainModule(import.meta.url)) {
   const args = process.argv.slice(2);
   const windowIdx = args.indexOf('--window');
   const dryRun = args.includes('--dry-run');

@@ -44,12 +44,12 @@
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 import {
   parseEtgoXmlFile,
   loadEtgoXmlSnapshot,
 } from './lib/etgo-xml-parser.js';
+import { isMainModule } from './utils.js';
 
 const TABLES = [
   { tag: 'ETGO_SF_SPEC',   pk: 'ETGO_SF_SPEC_ID' },
@@ -380,7 +380,7 @@ export async function runCli(argv = process.argv.slice(2)) {
 // Exported for tests
 export { parseEtgoXmlFile };
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isMainModule(import.meta.url)) {
   runCli().then(code => { process.exitCode = code; }).catch(err => {
     console.error(err.stack || err.message);
     process.exitCode = 1;

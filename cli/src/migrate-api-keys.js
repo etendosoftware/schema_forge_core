@@ -17,6 +17,7 @@
 import { readFile, writeFile, readdir, stat } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isMainModule } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -219,7 +220,7 @@ function validateRawFieldConsistency(rawFieldMap, field, entry, entity) {
   }
 }
 
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+const isMain = isMainModule(import.meta.url);
 if (isMain) {
   main().catch(err => {
     console.error('Migration failed:', err);

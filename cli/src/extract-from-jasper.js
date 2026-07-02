@@ -16,6 +16,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
 import { existsSync } from 'node:fs';
+import { isMainModule } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -402,7 +403,7 @@ function parseArgs(argv) {
   return opts;
 }
 
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+const isMain = isMainModule(import.meta.url);
 
 if (isMain) {
   const opts = parseArgs(process.argv.slice(2));

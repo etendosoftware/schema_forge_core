@@ -24,6 +24,7 @@ import {
 import { computeWindowDelta, serializeDelta } from './lib/neo-delta.js';
 import { loadEtgoXmlSnapshot } from './lib/etgo-xml-parser.js';
 import { GO_MODULE_ID } from './lib/constants.js';
+import { isMainModule } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -1303,7 +1304,7 @@ async function main() {
 }
 
 // Run CLI when executed directly
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+const isMain = isMainModule(import.meta.url);
 if (isMain) {
   main();
 }

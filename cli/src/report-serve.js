@@ -16,6 +16,7 @@
 import { execSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { isMainModule } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -145,7 +146,7 @@ export async function serve(opts) {
 // CLI entry point
 // ---------------------------------------------------------------------------
 
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+const isMain = isMainModule(import.meta.url);
 
 if (isMain) {
   const opts = parseServeArgs(process.argv.slice(2));

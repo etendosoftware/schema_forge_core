@@ -18,7 +18,8 @@
 
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname} from 'node:path';
-import {fileURLToPath, pathToFileURL} from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { isMainModule } from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
@@ -214,6 +215,6 @@ function main() {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isMainModule(import.meta.url)) {
   main();
 }

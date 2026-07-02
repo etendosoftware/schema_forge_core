@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { isMainModule } from './utils.js';
 
 export const EPIC_ROLLUP_MARKER = '<!-- epic-rollup-report -->';
 export const EPIC_ROLLUP_ENTRY_MARKER = '<!-- epic-rollup-entry -->';
@@ -205,7 +205,7 @@ export function renderEpicRollupReport({ epicPullRequest, includedPullRequests }
   ].join('\n');
 }
 
-const isCli = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+const isCli = isMainModule(import.meta.url);
 
 if (isCli) {
   const args = process.argv.slice(2);
