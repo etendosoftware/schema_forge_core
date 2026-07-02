@@ -880,6 +880,32 @@ describe('generatePageComponent — sendDocument recipient policy (ETP-4226)', (
 });
 
 // ---------------------------------------------------------------------------
+// generatePageComponent — documentDateField (ETP-4029)
+// ---------------------------------------------------------------------------
+
+describe('generatePageComponent — documentDateField prop', () => {
+  it('emits documentDateField="<value>" on DetailView when window.documentDateField is set', () => {
+    const contractWithDocDateField = {
+      ...masterDetailContract,
+      frontendContract: {
+        ...masterDetailContract.frontendContract,
+        window: { ...masterDetailContract.frontendContract.window, documentDateField: 'invoiceDate' },
+      },
+    };
+    const code = generatePageComponent('order', 'orderLine', contractWithDocDateField);
+    assert.ok(code.includes('documentDateField="invoiceDate"'));
+  });
+
+  it('does NOT emit documentDateField at all when window.documentDateField is not set', () => {
+    // windowConfig.documentDateField ?? null → wrapIf's cond is null (falsy) → prop omitted entirely.
+    // Confirmed by reading generate-frontend.js: wrapIf(prefix, value, suffix) returns
+    // cond ? prefix+value+suffix : '' and cond defaults to value, so a null value emits ''.
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('documentDateField='), 'documentDateField prop should be entirely absent from output');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // generateIndexComponent
 // ---------------------------------------------------------------------------
 

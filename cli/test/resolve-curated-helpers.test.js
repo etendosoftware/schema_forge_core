@@ -104,6 +104,10 @@ describe('WINDOW_KEY_ORDER', () => {
     const unique = new Set(WINDOW_KEY_ORDER);
     assert.equal(unique.size, WINDOW_KEY_ORDER.length);
   });
+
+  it('includes documentDateField (ETP-4029)', () => {
+    assert.ok(WINDOW_KEY_ORDER.includes('documentDateField'));
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -330,6 +334,22 @@ describe('resolveCurated', () => {
     };
     const result = await resolveCurated(minimalSchema, minimalRules, decisions);
     assert.equal(result.schema.window.name, 'Custom Name');
+  });
+
+  it('resolves documentDateField from window decisions through to the curated contract (ETP-4029)', async () => {
+    const decisions = {
+      _version: 3,
+      entities: {},
+      rules: {},
+      window: { documentDateField: 'invoiceDate' },
+    };
+    const result = await resolveCurated(minimalSchema, minimalRules, decisions);
+    assert.equal(result.schema.window.documentDateField, 'invoiceDate');
+  });
+
+  it('does not set documentDateField on the curated window when not declared in decisions', async () => {
+    const result = await resolveCurated(minimalSchema, minimalRules, minimalDecisions);
+    assert.equal(result.schema.window.documentDateField, undefined);
   });
 
   it('sets form=true for editable fields by default', async () => {
