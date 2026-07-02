@@ -37,6 +37,8 @@ jobs:
           scope: '@etendosoftware'
 
       - run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Schema Forge core tests
         run: npm test --workspace=packages/schema-forge-core
