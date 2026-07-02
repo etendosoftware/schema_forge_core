@@ -24,7 +24,7 @@ async function loadCoreMap(filename) {
  * Priority-based classification of a field row (TDD 3.1).
  *
  * Priority order:
- * 1. Primary key (columnName === tableName + '_ID')
+ * 1. Primary key (AD_Column.IsKey = 'Y')
  * 2. Known system column (present in systemColumns map)
  * 3. Audit columns (Created/CreatedBy/Updated/UpdatedBy)
  * 4. Not displayed (isDisplayed === 'N')
@@ -32,7 +32,7 @@ async function loadCoreMap(filename) {
  * 6. Everything else → editable
  */
 export function classifyField(fieldRow, systemColumns) {
-  const { columnname, tablename, isdisplayed, isreadonly, isupdateable, defaultvalue, field_isactive } = fieldRow;
+  const { columnname, isdisplayed, isreadonly, isupdateable, defaultvalue, field_isactive, iskey } = fieldRow;
 
   // 0. Inactive field → discarded
   if (field_isactive === 'N') {
@@ -42,7 +42,12 @@ export function classifyField(fieldRow, systemColumns) {
   }
 
   // 1. Primary key
-  if (columnname === tablename + '_ID') {
+  // Use the authoritative AD_Column.IsKey flag rather than a naming-convention
+  // guess (columnName === tableName + '_ID'). That guess silently fails when
+  // AD_Table.TableName is stored lowercase (common in custom modules, e.g.
+  // etvfac_verifactu_config) while AD_Column.ColumnName keeps mixed case
+  // (Etvfac_Verifactu_Config_ID) — the string comparison is case-sensitive.
+  if (iskey === 'Y') {
     return {
       visibility: 'system',
       systemCategory: 'internal',
@@ -399,10 +404,14 @@ function applyFieldMetadata(fieldDef, row, schemaType, enumValuesMap) {
 /**
  * Map a single DB field row to a field definition object.
  */
-function mapFieldRow(row, tab, systemColumns, refMap, enumValuesMap) {
+function mapFieldRow(row, systemColumns, refMap, enumValuesMap) {
   const classification = classifyField(row, systemColumns);
   const schemaType = refMap[String(row.ad_reference_id)] ?? 'string';
-  const isPk = row.columnname === tab.tableName + '_ID';
+  // Use the authoritative AD_Column.IsKey flag rather than a naming-convention
+  // guess (columnName === tableName + '_ID'), which is case-sensitive and fails
+  // whenever AD_Table.TableName is stored lowercase while AD_Column.ColumnName
+  // keeps mixed case (common in custom-module tables, e.g. etvfac_verifactu_config).
+  const isPk = row.iskey === 'Y';
   const isCoreModule = row.table_module_id === '0' || (row.column_module_id != null && row.column_module_id !== '0');
   const apiKey = toPropertyName(row.obdal_name, { isPk, isCoreModule });
   const fieldDef = {
@@ -508,7 +517,7 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
   let primaryEntity = null;
 
   for (const tab of tabMap.values()) {
-    const fields = tab.fields.map(row => mapFieldRow(row, tab, systemColumns, refMap, enumValuesMap));
+    const fields = tab.fields.map(row => mapFieldRow(row, systemColumns, refMap, enumValuesMap));
     deduplicateFieldNames(fields);
 
     const semanticLevel = mapTabLevel(tab.tabLevel);

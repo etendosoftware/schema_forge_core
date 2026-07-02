@@ -89,6 +89,7 @@ function makeRow(overrides = {}) {
     table_module_id: null,
     ad_process_id: null,
     em_obuiapp_process_id: null,
+    iskey: 'N',
     ...overrides,
   };
 }
@@ -138,14 +139,30 @@ describe('classifyField — additional cases', () => {
   });
 
   it('priority: inactive beats primary key', () => {
-    const row = makeRow({ columnname: 'C_Order_ID', tablename: 'C_Order', field_isactive: 'N' });
+    const row = makeRow({ columnname: 'C_Order_ID', tablename: 'C_Order', iskey: 'Y', field_isactive: 'N' });
     const result = classifyField(row, systemColumns);
     assert.equal(result.visibility, 'discarded');
   });
 
   it('priority: primary key beats system column', () => {
     // AD_Org_ID is a known system column, but if table were AD_Org, it would be the PK
-    const row = makeRow({ columnname: 'AD_Org_ID', tablename: 'AD_Org' });
+    const row = makeRow({ columnname: 'AD_Org_ID', tablename: 'AD_Org', iskey: 'Y' });
+    const result = classifyField(row, systemColumns);
+    assert.equal(result.visibility, 'system');
+    assert.equal(result.systemCategory, 'internal');
+    assert.deepEqual(result.derivation, { type: 'sequence' });
+  });
+
+  it('classifies primary key via IsKey even when ColumnName casing does not match TableName + _ID', () => {
+    // Regression guard for the naming-convention bug: AD_Table.TableName can be
+    // stored lowercase for custom-module tables (e.g. etvfac_verifactu_config)
+    // while AD_Column.ColumnName keeps mixed case (Etvfac_Verifactu_Config_ID).
+    // classifyField must rely on IsKey, not a case-sensitive string comparison.
+    const row = makeRow({
+      columnname: 'Etvfac_Verifactu_Config_ID',
+      tablename: 'etvfac_verifactu_config',
+      iskey: 'Y',
+    });
     const result = classifyField(row, systemColumns);
     assert.equal(result.visibility, 'system');
     assert.equal(result.systemCategory, 'internal');

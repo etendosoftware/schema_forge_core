@@ -60,6 +60,7 @@ function makeRow(overrides = {}) {
     ref_selector_target: null,
     ref_selector_filter: null,
     ref_selector_hql: null,
+    iskey: 'N',
     ...overrides,
   };
 }
@@ -99,11 +100,35 @@ describe('classifyField', () => {
   });
 
   it('classifies primary key (C_Order_ID on table C_Order) as system/internal with sequence', () => {
-    const row = makeRow({ columnname: 'C_Order_ID', tablename: 'C_Order' });
+    const row = makeRow({ columnname: 'C_Order_ID', tablename: 'C_Order', iskey: 'Y' });
     const result = classifyField(row, systemColumns);
     assert.equal(result.visibility, 'system');
     assert.equal(result.systemCategory, 'internal');
     assert.deepEqual(result.derivation, { type: 'sequence' });
+  });
+
+  it('classifies primary key by IsKey even when ColumnName does not match TableName + _ID convention (case mismatch)', () => {
+    // Regression: AD_Table.TableName stored lowercase for custom-module tables
+    // (e.g. etvfac_verifactu_config) while AD_Column.ColumnName keeps mixed case
+    // (Etvfac_Verifactu_Config_ID). The naming-convention string comparison
+    // fails here; only the authoritative IsKey flag identifies the PK.
+    const row = makeRow({
+      columnname: 'Etvfac_Verifactu_Config_ID',
+      tablename: 'etvfac_verifactu_config',
+      iskey: 'Y',
+    });
+    const result = classifyField(row, systemColumns);
+    assert.equal(result.visibility, 'system');
+    assert.equal(result.systemCategory, 'internal');
+    assert.deepEqual(result.derivation, { type: 'sequence' });
+  });
+
+  it('does NOT classify a naming-convention match as primary key when IsKey is N', () => {
+    // Guards against reverting to the naming-convention guess: a column that
+    // *looks* like a PK by name but isn't flagged IsKey='Y' must not be treated as one.
+    const row = makeRow({ columnname: 'C_Order_ID', tablename: 'C_Order', iskey: 'N' });
+    const result = classifyField(row, systemColumns);
+    assert.notDeepEqual(result.derivation, { type: 'sequence' });
   });
 });
 
@@ -243,6 +268,41 @@ describe('buildSchema', () => {
     const schema = buildSchema([], systemColumns, refMap);
     assert.equal(schema.window, null);
     assert.deepEqual(schema.entities, []);
+  });
+
+  it('maps a custom-module PK column to generic apiKey "id" even when TableName is lowercase and ColumnName is mixed-case', () => {
+    // Regression for the ETP-4248 fix silently reverted during the ETP-4346
+    // Sonar cleanup: custom-module tables (e.g. etvfac_verifactu_config) store
+    // AD_Table.TableName lowercase while AD_Column.ColumnName keeps mixed case
+    // (Etvfac_Verifactu_Config_ID). The naming-convention comparison
+    // (columnName === tableName + '_ID') is case-sensitive and silently fails,
+    // so the PK loses its generic "id" name and leaks as "etvfacVerifactuConfigId".
+    // Only AD_Column.IsKey reliably identifies the PK regardless of casing.
+    const rows = [
+      makeRow({
+        ad_tab_id: '900',
+        tab_name: 'Verifactu Config',
+        tablevel: 0,
+        tablename: 'etvfac_verifactu_config',
+        columnname: 'Etvfac_Verifactu_Config_ID',
+        obdal_name: 'Etvfac_Verifactu_Config_ID',
+        field_name: 'Verifactu Config',
+        ad_reference_id: 13, // ID reference
+        iskey: 'Y',
+        column_module_id: 'AB1', // custom module → isCoreModule=false path unaffected by isPk shortcut
+      }),
+    ];
+
+    const schema = buildSchema(rows, systemColumns, refMap);
+    const field = schema.entities[0].fields.find(
+      (f) => f.columnName === 'Etvfac_Verifactu_Config_ID'
+    );
+    assert.ok(field, 'expected PK field to be present');
+    assert.equal(field.apiKey, 'id');
+    assert.equal(field.name, 'id');
+    assert.equal(field.visibility, 'system');
+    assert.equal(field.systemCategory, 'internal');
+    assert.deepEqual(field.derivation, { type: 'sequence' });
   });
 
   it('includes reference metadata for foreignKey fields', () => {
