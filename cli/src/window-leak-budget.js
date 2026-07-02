@@ -32,7 +32,7 @@ import { isMainModule } from './utils.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
-const CONFIG_PATH = join(__dirname, '..', 'window-leak-budget.json');
+const CONFIG_PATH = join(ROOT, 'cli', 'window-leak-budget.json');
 
 /**
  * Per-char step inside a quoted literal (`string` / `char` / `template`). The quote
