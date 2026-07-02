@@ -1,6 +1,6 @@
 {
   "name": "@etendosoftware/schema-forge-cli",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "module",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
@@ -34,6 +34,7 @@
     "sf-report-serve": "./src/report-serve.js",
     "sf-report-preview": "./src/report-preview.js",
     "sf-quality-gate": "./src/quality-gate.js",
+    "sf-pr-review": "./src/pr-review.js",
     "sf-xml-regeneration-check": "./src/xml-regeneration-check.js",
     "sf-generate-frontend": "./src/generate-frontend.js",
     "sf-generate-reports-manifest": "./src/generate-reports-manifest.js",
