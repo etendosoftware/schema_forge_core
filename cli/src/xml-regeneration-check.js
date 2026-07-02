@@ -9,7 +9,7 @@
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { relative, resolve, sep } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { isMainModule } from './utils.js';
 
 const DEFAULT_INCLUDE_DIRS = [
   'model/tables',
@@ -751,6 +751,6 @@ export function main(argv = process.argv.slice(2)) {
   return hasInconsistencies(changed, missing, extra, errors) ? 1 : 0;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isMainModule(import.meta.url)) {
   process.exitCode = main();
 }

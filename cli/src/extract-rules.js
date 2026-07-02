@@ -2,6 +2,7 @@ import { readFile, mkdir, writeFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, sep } from 'node:path';
 import { createDbPool, closePool, setCacheMode, flushCacheWrites } from './db.js';
+import { isMainModule } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -519,7 +520,7 @@ export async function main(windowId, windowName) {
 }
 
 // CLI entry point
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+if (isMainModule(import.meta.url)) {
   const flags = process.argv.slice(2).filter((a) => a.startsWith('--'));
   const positional = process.argv.slice(2).filter((a) => !a.startsWith('--'));
   const writeCache = flags.includes('--write-cache');

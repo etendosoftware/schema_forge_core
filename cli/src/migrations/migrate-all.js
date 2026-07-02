@@ -15,6 +15,7 @@ import { readFile, writeFile, readdir, stat } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { CURRENT_VERSION, getVersion, needsMigration, migrateDecisions } from './index.js';
+import { isMainModule } from '../utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -105,7 +106,7 @@ async function main() {
   if (dryRun) console.log('(dry-run mode — no files were written)');
 }
 
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+const isMain = isMainModule(import.meta.url);
 if (isMain) {
   main().catch(err => {
     console.error('Fatal:', err.message);

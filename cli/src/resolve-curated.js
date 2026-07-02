@@ -13,7 +13,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { classifyRule } from './pre-classify.js';
-import { toCamelCase } from './utils.js';
+import { toCamelCase, isMainModule } from './utils.js';
 import { migrateDecisions, needsMigration, getVersion } from './migrations/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -961,7 +961,7 @@ async function runCli() {
   printSchemaAndRules(dump, schema, rules);
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+if (isMainModule(import.meta.url)) {
   runCli().catch(err => {
     console.error('Error:', err.message);
     process.exit(1);

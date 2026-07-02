@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { isMainModule } from './utils.js';
 
 /**
  * Window locking via GitHub Issues.
@@ -137,7 +137,7 @@ export function validateLock(windowName, owner) {
 
 // --- CLI entry point ---
 
-const isCLI = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+const isCLI = isMainModule(import.meta.url);
 
 if (isCLI) {
   const args = process.argv.slice(2);

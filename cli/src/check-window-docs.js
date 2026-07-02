@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isMainModule } from './utils.js';
 
 const ROOT = process.env.SF_ROOT || join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SHARED_DOC_FILES = new Set(['INDEX', 'app-shell-functional-flows']);
@@ -156,7 +157,7 @@ function getArg(args, name) {
   return index !== -1 && index + 1 < args.length ? args[index + 1] : undefined;
 }
 
-const isCLI = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+const isCLI = isMainModule(import.meta.url);
 
 if (isCLI) {
   const args = process.argv.slice(2);
