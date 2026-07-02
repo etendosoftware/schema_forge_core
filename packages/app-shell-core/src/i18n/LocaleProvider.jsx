@@ -2,19 +2,21 @@ import React, { createContext, useContext, useMemo } from 'react';
 
 const LocaleContext = createContext(null);
 
-// Import all locale files statically (Vite handles JSON imports)
-const localeModules = import.meta.glob('../locales/*.json', { eager: true });
+// Stable empty fallback — an inline `dictionaries = {}` default would create a
+// new object on every LocaleProvider render, defeating the `[dictionaries, locale]`
+// memo below and breaking the hook-stability guarantees in useUI/useLabel/useMenuLabel.
+const EMPTY_DICTIONARIES = {};
 
 /**
  * Provides locale dictionary to the component tree via React context.
- * Accepts a locale prop (e.g., "en_US") and resolves the matching JSON file.
+ * Accepts a locale prop (e.g., "en_US") and a `dictionaries` map
+ * (`{ [locale]: dictionaryObject }`) supplied by the host application —
+ * app-shell-core does not bundle or load locale data itself, so any app
+ * consuming this runtime owns its own translations.
  * Optionally accepts setLocale callback for locale switching.
  */
-export function LocaleProvider({ locale = 'es_ES', setLocale, children }) {
-  const dictionary = useMemo(() => {
-    const key = `../locales/${locale}.json`;
-    return localeModules[key]?.default ?? localeModules[key] ?? {};
-  }, [locale]);
+export function LocaleProvider({ locale = 'es_ES', setLocale, dictionaries = EMPTY_DICTIONARIES, children }) {
+  const dictionary = useMemo(() => dictionaries[locale] ?? {}, [dictionaries, locale]);
 
   const value = useMemo(() => ({
     dictionary,

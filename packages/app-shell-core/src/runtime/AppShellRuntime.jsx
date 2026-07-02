@@ -46,12 +46,14 @@ export function AppShellProviders({
   auth,
   locale,
   setLocale,
+  dictionaries,
   currency,
 }) {
   return (
     <LocaleProvider
       locale={locale}
       setLocale={setLocale}
+      dictionaries={dictionaries}
       data-testid="LocaleProvider__b517b2">
       <AuthProvider
         storage={auth?.storage}
@@ -86,6 +88,7 @@ export function AppShellRuntime({
   auth,
   locale,
   setLocale,
+  dictionaries,
   currency,
   title,
   breadcrumb,
@@ -121,6 +124,7 @@ export function AppShellRuntime({
         auth={runtimeAuth}
         locale={locale}
         setLocale={setLocale}
+        dictionaries={dictionaries}
         currency={currency}
         data-testid="AppShellProviders__b517b2">
         {children}
