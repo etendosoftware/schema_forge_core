@@ -13,12 +13,12 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { classifyRule } from './pre-classify.js';
-import { toCamelCase, isMainModule } from './utils.js';
+import { toCamelCase } from './utils.js';
 import { migrateDecisions, needsMigration, getVersion } from './migrations/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const ROOT = join(__dirname, '..', '..');
 
 // ---------------------------------------------------------------------------
 // Entity name helpers
@@ -681,6 +681,7 @@ const WINDOW_TRUTHY_PROPS = [
   'subsetFilters',
   'dateFilterKey',
   'statusEnumLabels',
+  'statusFieldLabel',
   'lockedAlert',
   'lineEntityConfig',
   'actions',
@@ -741,7 +742,7 @@ export const WINDOW_KEY_ORDER = [
   'labelOverrides', 'primaryTabs', 'othersLabel',
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
-  'dateFilterKey', 'statusEnumLabels', 'lockedAlert', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarAboveTabsOnly', 'tabsSeparator', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
+  'dateFilterKey', 'statusEnumLabels', 'statusFieldLabel', 'lockedAlert', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarAboveTabsOnly', 'tabsSeparator', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
   'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
   'layoutType', 'linesLayout', 'balanceFooter', 'selectorPriceCurrency',
@@ -961,7 +962,7 @@ async function runCli() {
   printSchemaAndRules(dump, schema, rules);
 }
 
-if (isMainModule(import.meta.url)) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   runCli().catch(err => {
     console.error('Error:', err.message);
     process.exit(1);
