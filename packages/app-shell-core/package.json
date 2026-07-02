@@ -1,6 +1,6 @@
 {
   "name": "@etendosoftware/app-shell-core",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Reusable Schema Forge app shell runtime without generated contracts or windows.",
   "type": "module",
   "publishConfig": {
@@ -14,6 +14,7 @@
     ".": "./src/index.js",
     "./auth": "./src/auth/index.js",
     "./i18n": "./src/i18n/index.js",
+    "./i18n/resolveLabel": "./src/i18n/resolveLabel.js",
     "./layout": "./src/layout/index.js",
     "./reports": "./src/reports/index.js",
     "./runtime": "./src/runtime/index.js",

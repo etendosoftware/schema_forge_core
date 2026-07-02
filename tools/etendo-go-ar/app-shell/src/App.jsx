@@ -4,6 +4,9 @@ import { AuthProvider, useAuth } from '@etendosoftware/app-shell-core/auth';
 import { LocaleProvider } from '@etendosoftware/app-shell-core/i18n';
 import OnboardingPage from './pages/OnboardingPage.jsx';
 import { buildOnboardingReturnTo } from '@etendosoftware/etendo-go-core/onboarding';
+import es_AR from './locales/es_AR.json';
+
+const LOCALE_DICTIONARIES = { es_AR };
 
 function AuthGuard({ children }) {
   const { isAuthenticated } = useAuth();
@@ -33,7 +36,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <LocaleProvider locale={locale} setLocale={setLocale}>
+      <LocaleProvider locale={locale} setLocale={setLocale} dictionaries={LOCALE_DICTIONARIES}>
         <AuthProvider>
           <Routes>
             <Route path="/onboarding" element={<OnboardingPage />} />
