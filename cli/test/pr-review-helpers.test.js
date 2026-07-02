@@ -153,6 +153,22 @@ describe('analyzeChangedFiles — POTENTIAL_SECRET', () => {
     });
     assert.ok(findings.some((f) => f.code === 'POTENTIAL_SECRET'));
   });
+
+  it('does not flag env-var names that merely end in a keyword, like ETENDO_DB_PASSWORD', () => {
+    // Regression: the old pattern had no word boundary, so `PASSWORD\s*[=:]` matched
+    // the substring inside `ETENDO_DB_PASSWORD = ...` — a variable *name* reference,
+    // not an assigned secret *value*. Real-world false positive from cli/test/db.test.js.
+    const findings = analyzeChangedFiles({
+      changedFiles: ['config/db.js'],
+      newSourceFiles: [],
+      newTestFiles: [],
+      fileContents: {
+        'config/db.js': "process.env.ETENDO_DB_PASSWORD = 'secret';\n",
+      },
+      packageJsonChanges: [],
+    });
+    assert.ok(!findings.some((f) => f.code === 'POTENTIAL_SECRET'));
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -262,7 +262,7 @@ function analyzeSecrets(changedFiles, fileContents, addedLineContents) {
     });
   }
 
-  const secretPattern = /(API_KEY|SECRET_KEY|PRIVATE_KEY|PASSWORD|ACCESS_TOKEN|CLIENT_SECRET)\s*[=:]/;
+  const secretPattern = /\b(API_KEY|SECRET_KEY|PRIVATE_KEY|PASSWORD|ACCESS_TOKEN|CLIENT_SECRET)\s*[=:]/;
   const secretMatches = [];
   for (const path of changedFiles) {
     const hasSecretMatch = getRelevantLines(path, addedLineContents, fileContents)
