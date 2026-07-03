@@ -324,7 +324,7 @@ export function generateTableComponent(entityName, contract) {
   const depreciationProgressHelper = neededCellTypes.has('depreciationProgress') ? `
 function renderDepreciationProgress(row) {
   const pct = row.etgoAmortizationStatus ?? null;
-  if (pct == null) return null;
+  if (pct == null || pct === 0) return null;
   const color = pct === 100 ? '#10b981' : '#f59e0b';
   return (
     <div className="flex items-center gap-1.5" style={{ minWidth: 80 }}>
@@ -826,6 +826,10 @@ function buildCustomComponentImportsAndProps(customComponents, specName, customP
     customComponentImports.push(`import ${customComponents.moreMenuContent} from ${resolveCustomImport(specName, customComponents.moreMenuContent)};`);
     customComponentProps.push(`\n        customMenuContent={${customComponents.moreMenuContent}}`);
   }
+  if (customComponents.subHeader) {
+    customComponentImports.push(`import ${customComponents.subHeader} from ${resolveCustomImport(specName, customComponents.subHeader)};`);
+    customComponentProps.push(`\n        headerContent={(data) => <${customComponents.subHeader} data={data} />}`);
+  }
   if (customComponents.newRecordComponent) {
     customComponentImports.push(`import ${customComponents.newRecordComponent} from ${resolveCustomImport(specName, customComponents.newRecordComponent)};`);
   }
@@ -840,6 +844,10 @@ function buildCustomComponentImportsAndProps(customComponents, specName, customP
   }
   for (const action of menuActionsConfig.filter(a => a.component)) {
     customComponentImports.push(`import ${action.component} from ${resolveCustomImport(specName, action.component)};`);
+  }
+  if (customComponents.processConfirmModal) {
+    customComponentImports.push(`import ${customComponents.processConfirmModal} from ${resolveCustomImport(specName, customComponents.processConfirmModal)};`);
+    customComponentProps.push(`\n        processConfirmModal={${customComponents.processConfirmModal}}`);
   }
   const customCompImportBlock = customComponentImports.length > 0
     ? customComponentImports.join('\n') + '\n'
@@ -1219,7 +1227,7 @@ export function buildDetailEntityAttr(detailEntity) {
  * button-type header fields, and extra processes declared only in decisions.json.
  * `processOverrides` can relabel, restyle, exclude, or add entries.
  */
-function buildProcessesArray({ processes, buttonFields, processOverrides }) {
+export function buildProcessesArray({ processes, buttonFields, processOverrides }) {
   return [
     ...processes.map(p => {
       const ovr = processOverrides[p.name] || processOverrides[p.columnName] || {};
@@ -1232,7 +1240,8 @@ function buildProcessesArray({ processes, buttonFields, processOverrides }) {
       const dlRaw = ovr.displayLogicRaw
         ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"`
         : '';
-      return `  { name: '${p.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${paramsPart}${dlRaw} },`;
+      const confirmModalPart = fragmentIf(ovr.confirmModal, ', confirmModal: true');
+      return `  { name: '${p.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${paramsPart}${dlRaw}${confirmModalPart} },`;
     }).filter(Boolean),
     ...buttonFields.map(f => {
       const ovr = processOverrides[f.name] || {};
@@ -1244,7 +1253,8 @@ function buildProcessesArray({ processes, buttonFields, processOverrides }) {
       const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"` : '';
       const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
       const paramsPart = ovr.params?.length ? `, params: ${JSON.stringify(ovr.params)}` : '';
-      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart}${paramsPart} },`;
+      const confirmModalPart = fragmentIf(ovr.confirmModal, ', confirmModal: true');
+      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart}${paramsPart}${confirmModalPart} },`;
     }).filter(Boolean),
     // Extra processes defined purely in decisions.json (not in backend contract)
     ...Object.entries(processOverrides)
@@ -1261,7 +1271,8 @@ function buildProcessesArray({ processes, buttonFields, processOverrides }) {
           ? `, requiresFieldMax: ${JSON.stringify(ovr.requiresFieldMax)}`
           : '';
         const addParamsPart = ovr.params?.length ? `, params: ${JSON.stringify(ovr.params)}` : '';
-        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart}${fieldMaxPart}${addParamsPart} },`;
+        const confirmModalPart = fragmentIf(ovr.confirmModal, ', confirmModal: true');
+        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart}${fieldMaxPart}${addParamsPart}${confirmModalPart} },`;
       }),
   ].join('\n');
 }
@@ -2121,6 +2132,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const statusEnumLabelsConfig = windowConfig.statusEnumLabels ?? null;
   const statusEnumLabelsProp = jsonWrapIf('\n        statusEnumLabels={', statusEnumLabelsConfig, '}');
 
+  // statusFieldLabel — i18n key resolved by DetailView's own ui(); shows "Label: Status" in toolbar
+  const statusFieldLabelKey = windowConfig.statusFieldLabel ?? null;
+  const statusFieldLabelProp = statusFieldLabelKey ? `\n        statusFieldLabel="${statusFieldLabelKey}"` : '';
+
   // lockedAlert support — banner shown above the principal fields when the document is processed
   const lockedAlertConfig = windowConfig.lockedAlert ?? null;
   const lockedAlertProp = jsonWrapIf('\n        lockedAlert={', lockedAlertConfig, '}');
@@ -2263,7 +2278,7 @@ ${menuActionStateStatements}`)}${fragmentIf(confirmModalName, `
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
         {...props}${sidebarContentProp}
       />
 ${menuActionModals}${confirmModalName ? `
