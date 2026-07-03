@@ -3,7 +3,13 @@ import { strict as assert } from 'node:assert';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createDbPool, resolveDbDefaults } from '../src/db.js';
+import {
+  createDbPool,
+  resolveDbDefaults,
+  setCacheMode,
+  getCacheMode,
+  DEFAULT_CACHE_PATH,
+} from '../src/db.js';
 
 const DB_ENV_KEYS = [
   'ETENDO_DB_HOST',
@@ -333,5 +339,51 @@ describe('resolveDbDefaults', () => {
       else process.env.SF_ROOT = previousSfRoot;
       rmSync(etendoRoot, { recursive: true, force: true });
     }
+  });
+});
+
+describe('setCacheMode cache path resolution', () => {
+  function withCachePathEnv(value, fn) {
+    const previous = process.env.SF_CACHE_PATH;
+    if (value === undefined) delete process.env.SF_CACHE_PATH;
+    else process.env.SF_CACHE_PATH = value;
+    try {
+      return fn();
+    } finally {
+      // Always reset the module-level cache state back to 'off' so other tests
+      // (and other suites) are not affected by the mutation.
+      setCacheMode({ mode: 'off' });
+      if (previous === undefined) delete process.env.SF_CACHE_PATH;
+      else process.env.SF_CACHE_PATH = previous;
+    }
+  }
+
+  it('honors SF_CACHE_PATH when no explicit path is passed (regression ETP-4436)', () => {
+    // Every CLI entrypoint (regen-all, extract-*) calls setCacheMode without a
+    // path, relying on SF_CACHE_PATH exported by the consuming repo's Makefile.
+    // The bug reset cachePath to DEFAULT_CACHE_PATH, silently discarding it.
+    const consumerCache = join(tmpdir(), 'consumer-cache', 'ad-snapshot.json');
+    withCachePathEnv(consumerCache, () => {
+      setCacheMode({ mode: 'write' });
+      const { mode, path } = getCacheMode();
+      assert.equal(mode, 'write');
+      assert.equal(path, consumerCache);
+      assert.notEqual(path, DEFAULT_CACHE_PATH);
+    });
+  });
+
+  it('an explicit path argument still wins over SF_CACHE_PATH', () => {
+    const explicit = join(tmpdir(), 'explicit-cache', 'ad-snapshot.json');
+    withCachePathEnv(join(tmpdir(), 'env-cache', 'ad-snapshot.json'), () => {
+      setCacheMode({ mode: 'read', path: explicit });
+      assert.equal(getCacheMode().path, explicit);
+    });
+  });
+
+  it('falls back to DEFAULT_CACHE_PATH when neither path nor SF_CACHE_PATH is set', () => {
+    withCachePathEnv(undefined, () => {
+      setCacheMode({ mode: 'write' });
+      assert.equal(getCacheMode().path, DEFAULT_CACHE_PATH);
+    });
   });
 });

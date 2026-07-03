@@ -47,7 +47,10 @@ export function setCacheMode({ mode = 'off', path } = {}) {
     throw new Error(`setCacheMode: invalid mode "${mode}" (expected off|write|read)`);
   }
   cacheMode = mode;
-  cachePath = path || DEFAULT_CACHE_PATH;
+  // When no explicit path is passed (the common case — every CLI entrypoint
+  // omits it), honor SF_CACHE_PATH so a consuming repo's tracked cache file is
+  // used instead of the package's bundled DEFAULT_CACHE_PATH inside node_modules.
+  cachePath = path || process.env.SF_CACHE_PATH || DEFAULT_CACHE_PATH;
   writeBuffer = {};
   readSnapshot = null;
 }
