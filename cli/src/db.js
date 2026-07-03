@@ -60,6 +60,16 @@ export function getCacheMode() {
 }
 
 /**
+ * Apply cache mode from a {writeCache, fromCache} CLI-flag pair, forwarding
+ * SF_CACHE_PATH so the cache file lands where the caller specified instead of
+ * silently falling back to DEFAULT_CACHE_PATH.
+ */
+export function applyCacheModeFromEnv({ writeCache, fromCache } = {}) {
+  if (writeCache) return setCacheMode({ mode: 'write', path: process.env.SF_CACHE_PATH });
+  if (fromCache) return setCacheMode({ mode: 'read', path: process.env.SF_CACHE_PATH });
+}
+
+/**
  * Persist any queries recorded during 'write' mode into the on-disk cache.
  * Existing entries are preserved; entries with the same (sql, params) key
  * captured during this run overwrite the stale ones. No-op outside 'write'.

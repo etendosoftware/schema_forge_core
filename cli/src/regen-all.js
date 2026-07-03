@@ -234,8 +234,8 @@ async function configureCacheMode(opts) {
     process.exit(1);
   }
   if (opts.writeCache || opts.fromCache) {
-    const { setCacheMode } = await import('./db.js');
-    setCacheMode({ mode: opts.writeCache ? 'write' : 'read' });
+    const { applyCacheModeFromEnv } = await import('./db.js');
+    applyCacheModeFromEnv({ writeCache: opts.writeCache, fromCache: opts.fromCache });
   }
 }
 
