@@ -1,7 +1,7 @@
 import { readFile, mkdir, writeFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, sep } from 'node:path';
-import { createDbPool, closePool, setCacheMode, flushCacheWrites } from './db.js';
+import { createDbPool, closePool, applyCacheModeFromEnv, flushCacheWrites } from './db.js';
 import { isMainModule } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -529,8 +529,7 @@ if (isMainModule(import.meta.url)) {
     console.error('Error: --write-cache and --from-cache are mutually exclusive');
     process.exit(1);
   }
-  if (writeCache) setCacheMode({ mode: 'write', path: process.env.SF_CACHE_PATH });
-  else if (fromCache) setCacheMode({ mode: 'read', path: process.env.SF_CACHE_PATH });
+  applyCacheModeFromEnv({ writeCache, fromCache });
 
   const windowId = positional[0];
   const windowName = positional[1];

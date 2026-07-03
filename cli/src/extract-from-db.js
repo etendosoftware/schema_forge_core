@@ -3,7 +3,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { createDbPool, closePool, setCacheMode, flushCacheWrites } from './db.js';
+import { createDbPool, closePool, applyCacheModeFromEnv, flushCacheWrites } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -218,8 +218,7 @@ if (isCLI) {
     console.error('Error: --write-cache and --from-cache are mutually exclusive');
     process.exit(1);
   }
-  if (writeCache) setCacheMode({ mode: 'write', path: process.env.SF_CACHE_PATH });
-  else if (fromCache) setCacheMode({ mode: 'read', path: process.env.SF_CACHE_PATH });
+  applyCacheModeFromEnv({ writeCache, fromCache });
 
   let windowId = positional[0];
   let windowSlug = positional[1];
