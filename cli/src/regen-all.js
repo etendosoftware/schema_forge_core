@@ -235,7 +235,7 @@ async function configureCacheMode(opts) {
   }
   if (opts.writeCache || opts.fromCache) {
     const { setCacheMode } = await import('./db.js');
-    setCacheMode({ mode: opts.writeCache ? 'write' : 'read' });
+    setCacheMode({ mode: opts.writeCache ? 'write' : 'read', path: process.env.SF_CACHE_PATH });
   }
 }
 

@@ -529,8 +529,8 @@ if (isMainModule(import.meta.url)) {
     console.error('Error: --write-cache and --from-cache are mutually exclusive');
     process.exit(1);
   }
-  if (writeCache) setCacheMode({ mode: 'write' });
-  else if (fromCache) setCacheMode({ mode: 'read' });
+  if (writeCache) setCacheMode({ mode: 'write', path: process.env.SF_CACHE_PATH });
+  else if (fromCache) setCacheMode({ mode: 'read', path: process.env.SF_CACHE_PATH });
 
   const windowId = positional[0];
   const windowName = positional[1];
