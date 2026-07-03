@@ -58,69 +58,69 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     try {
       const envs = await fetchEnvironments(fetch, apiBase, authToken);
       setEnvironments(envs);
-      if (stepIndex === -1) {
-        if (envs.length === 0) {
-          await restoreOnboardingDraft(authToken);
-        } else {
-          // Auto-login to first environment
-          try {
-            const env = envs[0];
-            trackOnboarding(config, 'onboarding_environment_enter_submitted', {
-              action: 'enter_environment',
-              status: 'started',
-            });
-            const data = await loginEnvironment(fetch, apiBase, authToken, env);
-            if (data.token) {
-              const storageValues = buildEnvironmentSessionStorage(env, data);
-              Object.entries(storageValues).forEach(([key, value]) => localStorage.setItem(key, value));
+      if (envs.length === 0) {
+        await restoreOnboardingDraft(authToken);
+      } else {
+        // Auto-login to first environment
+        try {
+          const env = envs[0];
+          trackOnboarding(config, 'onboarding_environment_enter_submitted', {
+            action: 'enter_environment',
+            status: 'started',
+          });
+          const data = await loginEnvironment(fetch, apiBase, authToken, env);
+          if (data.token) {
+            const storageValues = buildEnvironmentSessionStorage(env, data);
+            Object.entries(storageValues).forEach(([key, value]) => localStorage.setItem(key, value));
 
-              // Clear all SW caches on login to guarantee fresh resources
-              if ('caches' in window) {
-                try {
-                  const names = await caches.keys();
-                  await Promise.all(names.map((n) => caches.delete(n)));
-                } catch (err) {
-                  console.warn('Failed to clear SW caches during login', err);
-                }
+            // Clear all SW caches on login to guarantee fresh resources
+            if ('caches' in window) {
+              try {
+                const names = await caches.keys();
+                await Promise.all(names.map((n) => caches.delete(n)));
+              } catch (err) {
+                console.warn('Failed to clear SW caches during login', err);
               }
-
-              trackOnboarding(config, 'onboarding_environment_enter_succeeded', {
-                action: 'enter_environment',
-                status: 'success',
-              });
-
-              window.location.href = buildAppReturnToHref(
-                getSafeReturnTo(window.location.search),
-                window.location.pathname
-              );
-              return;
-            } else {
-              trackOnboarding(config, 'onboarding_environment_enter_failed', {
-                action: 'enter_environment',
-                status: 'failed',
-              });
-              alert(ui('onboardingEnvironmentLoginFailed'));
             }
-          } catch (loginErr) {
-            console.warn('Auto-login to environment failed', loginErr);
+
+            trackOnboarding(config, 'onboarding_environment_enter_succeeded', {
+              action: 'enter_environment',
+              status: 'success',
+            });
+
+            // Tell useServiceWorker (schema-forge-ar) a full-page navigation is
+            // about to happen, so a concurrent controllerchange doesn't call
+            // location.reload() and race/cancel this redirect (ETP-4425/ETP-4426).
+            window.dispatchEvent(new Event('etendo-go:navigating'));
+            window.location.href = buildAppReturnToHref(
+              getSafeReturnTo(window.location.search),
+              window.location.pathname
+            );
+            return;
+          } else {
             trackOnboarding(config, 'onboarding_environment_enter_failed', {
               action: 'enter_environment',
               status: 'failed',
             });
-            alert(loginErr.userMessage || ui(loginErr.code || 'onboardingEnvironmentLoginFailed'));
+            alert(ui('onboardingEnvironmentLoginFailed'));
           }
-          goToStep('env-select');
+        } catch (loginErr) {
+          console.warn('Auto-login to environment failed', loginErr);
+          trackOnboarding(config, 'onboarding_environment_enter_failed', {
+            action: 'enter_environment',
+            status: 'failed',
+          });
+          alert(loginErr.userMessage || ui(loginErr.code || 'onboardingEnvironmentLoginFailed'));
         }
+        goToStep('env-select');
       }
     } catch (err) {
       console.error('Failed to load environments', err);
-      if (stepIndex === -1) {
-        goToStep('profile');
-      }
+      goToStep('profile');
     } finally {
       setLoadingEnvs(false);
     }
-  }, [apiBase, restoreOnboardingDraft, goToStep, stepIndex]);
+  }, [apiBase, restoreOnboardingDraft, goToStep]);
 
   // Initial token verification on mount
   useEffect(() => {
