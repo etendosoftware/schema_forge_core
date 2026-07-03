@@ -1,5 +1,11 @@
 import { DayPicker } from 'react-day-picker';
-import { es, enUS } from 'date-fns/locale';
+// Subpath imports, NOT the 'date-fns/locale' barrel — the barrel re-exports all
+// ~87 locales, and Vite's dev server (unbundled ESM) fetches every one of them
+// transitively on a cold cache, causing timeouts in CI (ETP-4431). Consumers
+// must also pre-bundle react-day-picker (optimizeDeps.include) since it loads
+// its own translated-locale wrappers the same way, independent of this import.
+import { es } from 'date-fns/locale/es';
+import { enUS } from 'date-fns/locale/en-US';
 import { useLocaleSwitch } from '../../i18n/index.js';
 import { cn } from '../../lib/utils.js';
 
