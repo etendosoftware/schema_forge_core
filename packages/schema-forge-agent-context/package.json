@@ -1,6 +1,6 @@
 {
   "name": "@etendosoftware/schema-forge-agent-context",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Packaged Schema Forge agent context for external consumers.",
   "type": "module",
   "publishConfig": {

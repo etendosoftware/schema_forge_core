@@ -1,0 +1,106 @@
+name: Release (auto patch + publish)
+
+# Lockstep release for all publishable packages.
+#   - Fires on every push to main (i.e. every merge).
+#   - PATCH is automatic: bumps the patch of the last v*.*.* tag.
+#   - MINOR / MAJOR is manual: bump packages/schema-forge-core/package.json in
+#     your PR; the resolver publishes that version as-is and realigns the rest.
+# The resolved version is written into all package.json files IN THE RUNNER and
+# published; the release is recorded as a git tag (main itself is not committed
+# back, so this works with a protected main).
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write   # push the release tag
+  packages: write   # publish to GitHub Packages
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Bump, tag & publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # need full tag history for the resolver
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@etendosoftware'
+
+      - run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- Gates: same test suite as the manual publish workflow -------------
+      - name: Schema Forge core tests
+        run: npm test --workspace=packages/schema-forge-core
+      - name: App shell core tests
+        run: npm test --workspace=packages/app-shell-core
+      - name: App shell core consumer smoke
+        run: npm run test:consumer --workspace=packages/app-shell-core
+      - name: Schema Forge agent context tests
+        run: npm test --workspace=packages/schema-forge-agent-context
+      - name: Schema Forge stack tests
+        run: npm test --workspace=packages/schema-forge-stack
+      - name: Schema Forge CLI tests
+        run: npm test --workspace=cli
+
+      # --- Resolve the lockstep version and write it into every package ------
+      - name: Resolve release version
+        id: ver
+        run: node scripts/release-version.mjs >> "$GITHUB_OUTPUT"
+
+      - name: Show resolved version
+        run: echo "Releasing ${{ steps.ver.outputs.tag }}"
+
+      # --- Abort early if this tag already exists (idempotent re-runs) --------
+      - name: Guard against existing tag
+        run: |
+          if git rev-parse -q --verify "refs/tags/${{ steps.ver.outputs.tag }}" >/dev/null; then
+            echo "Tag ${{ steps.ver.outputs.tag }} already exists — nothing to release."
+            exit 0
+          fi
+
+      # --- Publish every workspace in lockstep (skip if already on registry) -
+      - name: Publish packages
+        run: |
+          set -e
+          TAG="latest"
+          for WS in \
+            packages/schema-forge-core \
+            packages/app-shell-core \
+            packages/schema-forge-agent-context \
+            packages/schema-forge-stack \
+            packages/etendo-go-core \
+            cli; do
+            NAME=$(node -p "require('./$WS/package.json').name")
+            VERSION=$(node -p "require('./$WS/package.json').version")
+            if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+              echo "· $NAME@$VERSION already published — skipping."
+            else
+              echo "↑ Publishing $NAME@$VERSION ($TAG)"
+              npm publish --workspace="$WS" --tag "$TAG"
+            fi
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- Record the release as a tag (main stays at its committed floor) ---
+      - name: Tag release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ steps.ver.outputs.tag }}" -m "Release ${{ steps.ver.outputs.tag }}"
+          git push origin "${{ steps.ver.outputs.tag }}"
