@@ -21,9 +21,9 @@
     "test": "node --test test/*.test.js"
   },
   "dependencies": {
-    "@etendosoftware/app-shell-core": "0.1.1",
-    "@etendosoftware/schema-forge-agent-context": "0.1.0",
-    "@etendosoftware/schema-forge-core": "0.1.0"
+    "@etendosoftware/app-shell-core": "0.3.0",
+    "@etendosoftware/schema-forge-agent-context": "0.3.0",
+    "@etendosoftware/schema-forge-core": "0.3.0"
   },
   "peerDependencies": {
     "@radix-ui/react-collapsible": "^1.1.12",

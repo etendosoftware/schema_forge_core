@@ -34,6 +34,11 @@ const PACKAGE_FILES = [
   'cli/package.json',
 ];
 
+// Extra (non-published) package.json files that consume the internal packages
+// and must keep their cross-dependency ranges in lockstep, but whose own
+// "version" field must NOT be bumped (e.g. the workspace root).
+const DEP_ONLY_FILES = ['package.json'];
+
 // The single file a human edits to force a minor/major bump.
 const REFERENCE_FILE = 'packages/schema-forge-core/package.json';
 
@@ -95,15 +100,41 @@ function main() {
 
   const version = next.join('.');
 
-  // Rewrite the version line in every package (preserve formatting / key order).
+  // Names of the packages we manage, so internal cross-dependencies between them
+  // stay in lockstep (an internal dep pinned to an old version breaks npm's
+  // workspace linking and forces a registry fetch).
+  const internalNames = PACKAGE_FILES.map(
+    (relPath) => JSON.parse(readFileSync(join(REPO_ROOT, relPath), 'utf8')).name,
+  );
+  const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+
+  // Rewrite the version field AND any internal cross-dependency in every package
+  // (preserve formatting / key order).
   for (const relPath of PACKAGE_FILES) {
     const abs = join(REPO_ROOT, relPath);
     const src = readFileSync(abs, 'utf8');
-    const updated = src.replace(/("version"\s*:\s*)"[^"]*"/, `$1"${version}"`);
+    let updated = src.replace(/("version"\s*:\s*)"[^"]*"/, `$1"${version}"`);
     if (updated === src && !src.includes(`"version": "${version}"`)) {
       throw new Error(`Could not update version field in ${relPath}`);
     }
+    // Internal deps appear as key/value pairs ("<name>": "<range>"); the package's
+    // own "name" field has the scoped name as the VALUE, so it is not matched.
+    for (const name of internalNames) {
+      const re = new RegExp(`("${escapeRe(name)}"\\s*:\\s*)"[^"]*"`, 'g');
+      updated = updated.replace(re, `$1"${version}"`);
+    }
     writeFileSync(abs, updated);
+  }
+
+  // Sync internal cross-dependency ranges in non-published files (no version bump).
+  for (const relPath of DEP_ONLY_FILES) {
+    const abs = join(REPO_ROOT, relPath);
+    let src = readFileSync(abs, 'utf8');
+    for (const name of internalNames) {
+      const re = new RegExp(`("${escapeRe(name)}"\\s*:\\s*)"[^"]*"`, 'g');
+      src = src.replace(re, `$1"${version}"`);
+    }
+    writeFileSync(abs, src);
   }
 
   process.stdout.write(`version=${version}\n`);
