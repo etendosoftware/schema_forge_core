@@ -358,8 +358,10 @@ check_base_conflicts
 # 0. Run data-testid check (fast, runs before expensive checks)
 run_step "0" "Running data-testid check" "$REPO_DIR" "tmp/pre-push/data-testid-check.log" "npm run check:data-testid -- packages/app-shell-core/src"
 
-# Run Step 1
-run_domain_boundary_check
+# Step 1 (domain boundary check) disabled: repos are now split at the repo
+# level, so the monorepo cross-domain check no longer applies. Re-enable by
+# uncommenting the call below (function still defined above).
+# run_domain_boundary_check
 
 # 2. Run SonarQube analysis (issues only)
 # --fail-on-gate makes run-sonar.sh exit non-zero when the Quality Gate is in
