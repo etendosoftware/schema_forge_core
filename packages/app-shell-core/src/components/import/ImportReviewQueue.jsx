@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/table.jsx';
 import { Input } from '../ui/input.jsx';
 import { Button } from '../ui/button.jsx';
@@ -8,7 +9,21 @@ const DEFAULT_LABELS = {
   skip: 'Skip',
   skipped: 'Skipped',
   downloadErrors: 'Download errors',
+  copyError: 'Copy error',
+  copied: 'Copied to clipboard',
+  copyFailed: 'Could not copy to clipboard',
 };
+
+/**
+ * Plain-text summary of one entry's errors, e.g. for pasting into a support
+ * ticket. These are frequently raw, uncontrolled server messages (BatchService's
+ * own generic "Operation 'x' rejected by server" wrapper, or a raw unhandled
+ * exception) rather than a friendly validation message — the user can't fix
+ * those themselves, only retry or hand the exact text to support.
+ */
+function errorsToText(entry) {
+  return entry.errors.map((e) => (e.target ? `${e.target}: ${e.message}` : e.message)).join('\n');
+}
 
 function csvEscape(value) {
   const s = String(value ?? '');
@@ -47,6 +62,15 @@ export function ImportReviewQueue({
   const visibleEntries = entries
     .map((entry, index) => ({ entry, index }))
     .filter(({ entry }) => !showOnlyErrors || entry.errors.length > 0 || entry.status === 'skipped');
+
+  const handleCopyError = async (entry) => {
+    try {
+      await navigator.clipboard.writeText(errorsToText(entry));
+      toast.success(text.copied);
+    } catch {
+      toast.error(text.copyFailed);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-2">
@@ -119,6 +143,17 @@ export function ImportReviewQueue({
                       <Button type="button" size="sm" onClick={() => onRetryEntry(index)} data-testid={`ImportReviewQueue__retry-${index}`}>
                         {retryLabel}
                       </Button>
+                      {entry.errors.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          data-testid={`ImportReviewQueue__copy-${index}`}
+                          onClick={() => handleCopyError(entry)}
+                        >
+                          {text.copyError}
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         variant="ghost"
