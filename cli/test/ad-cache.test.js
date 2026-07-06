@@ -1,9 +1,15 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { cacheKey, readCache, writeCache, mergeCache } from '../src/lib/ad-cache.js';
+import {
+  cacheKey,
+  entryPath,
+  readEntry,
+  writeEntry,
+  listKeys,
+} from '../src/lib/ad-cache.js';
 
 describe('ad-cache.cacheKey', () => {
   it('produces identical keys for identical (sql, params)', () => {
@@ -49,94 +55,119 @@ describe('ad-cache.cacheKey', () => {
   });
 });
 
-describe('ad-cache.readCache', () => {
-  it('returns {} when the file does not exist', () => {
-    const result = readCache(join(tmpdir(), 'definitely-not-here-' + Date.now() + '.json'));
-    assert.deepEqual(result, {});
+function withTmpDir(fn) {
+  const dir = mkdtempSync(join(tmpdir(), 'ad-cache-test-'));
+  try {
+    return fn(dir);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+describe('ad-cache.entryPath', () => {
+  it('joins the dir and the key with a .json suffix', () => {
+    assert.equal(entryPath('/tmp/snap', 'abc123'), join('/tmp/snap', 'abc123.json'));
+  });
+});
+
+describe('ad-cache.readEntry', () => {
+  it('returns null when the file does not exist', () => {
+    withTmpDir((dir) => {
+      assert.equal(readEntry(dir, 'missing-key'), null);
+    });
   });
 
-  it('returns {} for an empty file', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ad-cache-test-'));
-    try {
-      const path = join(dir, 'empty.json');
-      writeFileSync(path, '', 'utf-8');
-      assert.deepEqual(readCache(path), {});
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+  it('returns null when the directory does not exist', () => {
+    const dir = join(tmpdir(), 'definitely-not-here-' + Date.now());
+    assert.equal(readEntry(dir, 'k'), null);
   });
 
-  it('parses an existing cache file', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ad-cache-test-'));
-    try {
-      const path = join(dir, 'snap.json');
-      writeFileSync(path, JSON.stringify({ k1: { rows: [{ a: 1 }] } }), 'utf-8');
-      const result = readCache(path);
-      assert.deepEqual(result, { k1: { rows: [{ a: 1 }] } });
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+  it('returns null for an empty file', () => {
+    withTmpDir((dir) => {
+      writeFileSync(entryPath(dir, 'empty'), '', 'utf-8');
+      assert.equal(readEntry(dir, 'empty'), null);
+    });
+  });
+
+  it('parses an existing entry file', () => {
+    withTmpDir((dir) => {
+      writeFileSync(entryPath(dir, 'k1'), JSON.stringify({ sql: 'x', params: [], rows: [{ a: 1 }] }), 'utf-8');
+      assert.deepEqual(readEntry(dir, 'k1'), { sql: 'x', params: [], rows: [{ a: 1 }] });
+    });
   });
 
   it('throws on malformed JSON (loud, not silent)', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ad-cache-test-'));
-    try {
-      const path = join(dir, 'bad.json');
-      writeFileSync(path, '{not json', 'utf-8');
-      assert.throws(() => readCache(path), /JSON/);
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    withTmpDir((dir) => {
+      writeFileSync(entryPath(dir, 'bad'), '{not json', 'utf-8');
+      assert.throws(() => readEntry(dir, 'bad'), /JSON/);
+    });
   });
 });
 
-describe('ad-cache.writeCache', () => {
-  it('writes pretty-printed JSON with sorted top-level keys', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ad-cache-test-'));
-    try {
-      const path = join(dir, 'out.json');
-      writeCache(path, { zeta: 1, alpha: 2, mike: 3 });
-      const text = readFileSync(path, 'utf-8');
-      const keysInOrder = text.match(/"[a-z]+":/g);
-      assert.deepEqual(keysInOrder, ['"alpha":', '"mike":', '"zeta":']);
+describe('ad-cache.writeEntry', () => {
+  it('writes pretty-printed JSON ending with a newline', () => {
+    withTmpDir((dir) => {
+      writeEntry(dir, 'k1', { sql: 'SELECT 1', params: [], rows: [{ a: 1 }] });
+      const text = readFileSync(entryPath(dir, 'k1'), 'utf-8');
       assert.ok(text.endsWith('\n'), 'file must end with newline');
       assert.ok(text.includes('\n  '), 'file must be 2-space indented');
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    });
   });
 
-  it('creates the parent directory if missing', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ad-cache-test-'));
-    try {
-      const path = join(dir, 'nested', 'deeper', 'snap.json');
-      writeCache(path, { a: 1 });
-      assert.ok(readFileSync(path, 'utf-8').includes('"a"'));
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+  it('creates the directory if missing', () => {
+    withTmpDir((base) => {
+      const dir = join(base, 'nested', 'deeper');
+      writeEntry(dir, 'k', { rows: [] });
+      assert.ok(readFileSync(entryPath(dir, 'k'), 'utf-8').includes('"rows"'));
+    });
+  });
+
+  it('round-trips through readEntry', () => {
+    withTmpDir((dir) => {
+      const entry = { sql: 'SELECT $1', params: ['9'], rows: [{ id: '9', name: 'X' }] };
+      writeEntry(dir, 'rt', entry);
+      assert.deepEqual(readEntry(dir, 'rt'), entry);
+    });
+  });
+
+  it('produces deterministic output regardless of key insertion order', () => {
+    withTmpDir((dir) => {
+      writeEntry(dir, 'a', { rows: [{ zeta: 1, alpha: 2 }], params: [], sql: 'q' });
+      const first = readFileSync(entryPath(dir, 'a'), 'utf-8');
+      writeEntry(dir, 'a', { sql: 'q', params: [], rows: [{ alpha: 2, zeta: 1 }] });
+      const second = readFileSync(entryPath(dir, 'a'), 'utf-8');
+      assert.equal(first, second, 'field order must not affect the serialized bytes');
+      // Top-level keys are sorted alphabetically: params, rows, sql
+      assert.deepEqual(
+        [...second.matchAll(/^ {2}"(\w+)":/gm)].map((m) => m[1]),
+        ['params', 'rows', 'sql'],
+      );
+    });
+  });
+
+  it('overwrites an existing same-key file', () => {
+    withTmpDir((dir) => {
+      writeEntry(dir, 'k', { rows: [{ v: 'old' }] });
+      writeEntry(dir, 'k', { rows: [{ v: 'new' }] });
+      assert.deepEqual(readEntry(dir, 'k').rows, [{ v: 'new' }]);
+    });
   });
 });
 
-describe('ad-cache.mergeCache', () => {
-  it('fresh entries overwrite existing keys', () => {
-    const existing = { k1: 'old', k2: 'keep' };
-    const fresh = { k1: 'new' };
-    assert.deepEqual(mergeCache(existing, fresh), { k1: 'new', k2: 'keep' });
+describe('ad-cache.listKeys', () => {
+  it('returns [] when the directory does not exist', () => {
+    const dir = join(tmpdir(), 'definitely-not-here-' + Date.now());
+    assert.deepEqual(listKeys(dir), []);
   });
 
-  it('preserves existing entries not present in fresh', () => {
-    const existing = { a: 1, b: 2, c: 3 };
-    const fresh = { b: 99 };
-    assert.deepEqual(mergeCache(existing, fresh), { a: 1, b: 99, c: 3 });
-  });
-
-  it('returns a new object (does not mutate inputs)', () => {
-    const existing = { a: 1 };
-    const fresh = { b: 2 };
-    const merged = mergeCache(existing, fresh);
-    assert.deepEqual(existing, { a: 1 });
-    assert.deepEqual(fresh, { b: 2 });
-    assert.notEqual(merged, existing);
+  it('lists keys (filenames minus .json), sorted, ignoring non-json files', () => {
+    withTmpDir((dir) => {
+      writeEntry(dir, 'zeta', { rows: [] });
+      writeEntry(dir, 'alpha', { rows: [] });
+      writeEntry(dir, 'mike', { rows: [] });
+      writeFileSync(join(dir, 'README.txt'), 'not a cache file', 'utf-8');
+      mkdirSync(join(dir, 'subdir'));
+      assert.deepEqual(listKeys(dir), ['alpha', 'mike', 'zeta']);
+    });
   });
 });

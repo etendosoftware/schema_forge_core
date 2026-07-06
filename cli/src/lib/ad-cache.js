@@ -1,25 +1,28 @@
 /**
- * ad-cache.js — Generic key-value cache for AD (Application Dictionary) snapshots.
+ * ad-cache.js — Per-query file cache for AD (Application Dictionary) snapshots.
  *
  * This module is intentionally agnostic of SQL, DB drivers, and business logic.
- * It exposes:
- *   - cacheKey(sql, params)  → deterministic string key
- *   - readCache(path)        → parsed cache object ({} if missing)
- *   - writeCache(path, obj)  → pretty JSON with sorted keys (deterministic diffs)
- *   - mergeCache(existing, fresh) → fresh entries overwrite, others preserved
+ * The cache is a DIRECTORY of one file per query, not a single monolithic JSON.
+ * Each file is named <cacheKey>.json and holds a single entry:
  *
- * Cache file shape:
- *   {
- *     "<deterministic-key>": { sql: "...", params: [...], rows: [...] },
- *     ...
- *   }
+ *   cache/ad-snapshot/<sha256key>.json
+ *     { "sql": "...", "params": [...], "rows": [...] }
  *
- * Slice 1 uses this from db.js to wrap pg.Pool.query().
- * Slice 2 will reuse it from push-to-neo's delta dump.
+ * Identical (sql, params) pairs across different call sites map to the same key,
+ * so they naturally deduplicate to a single file. Splitting the old monolith
+ * into per-query files keeps diffs small and reviewable: a refresh touches only
+ * the files whose queries changed instead of rewriting one 50MB blob.
+ *
+ * Public API:
+ *   - cacheKey(sql, params)   → deterministic string key (UNCHANGED)
+ *   - entryPath(dir, key)     → absolute path of the file for a key
+ *   - readEntry(dir, key)     → parsed { sql, params, rows } or null if missing
+ *   - writeEntry(dir, key, e) → write one pretty, deterministically-ordered file
+ *   - listKeys(dir)           → keys present in the directory ([] if dir missing)
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 
 /**
@@ -30,6 +33,22 @@ import { createHash } from 'node:crypto';
  */
 function normalizeSql(sql) {
   return String(sql).replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Deep-copy a value with every object's keys sorted alphabetically at every
+ * depth. Arrays keep their order (positional data such as SQL params and result
+ * rows must not be reordered). Used to make per-file JSON output stable across
+ * runs regardless of the insertion order of columns in a result row.
+ */
+function sortKeysDeep(value) {
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(sortKeysDeep);
+  const out = {};
+  for (const k of Object.keys(value).sort((a, b) => a.localeCompare(b))) {
+    out[k] = sortKeysDeep(value[k]);
+  }
+  return out;
 }
 
 /**
@@ -57,40 +76,55 @@ export function cacheKey(sql, params = []) {
 }
 
 /**
- * Read a cache file. Returns {} if the file does not exist or is empty.
- * Parse errors are NOT swallowed — they surface as exceptions so a corrupt
- * cache is loud, not silent.
+ * Absolute path of the cache file backing a given key.
  */
-export function readCache(path) {
+export function entryPath(dir, key) {
+  return join(dir, key + '.json');
+}
+
+/**
+ * Read a single cache entry. Returns null when the file does not exist so that
+ * callers can distinguish "not cached" from a corrupt cache. Parse errors are
+ * NOT swallowed — a malformed cache file surfaces as an exception so it is loud,
+ * not silent.
+ */
+export function readEntry(dir, key) {
   let raw;
   try {
-    raw = readFileSync(path, 'utf-8');
+    raw = readFileSync(entryPath(dir, key), 'utf-8');
   } catch (err) {
-    if (err.code === 'ENOENT') return {};
+    if (err.code === 'ENOENT') return null;
     throw err;
   }
-  if (!raw.trim()) return {};
+  if (!raw.trim()) return null;
   return JSON.parse(raw);
 }
 
 /**
- * Write a cache object to disk with deterministic key ordering and
- * pretty-printed JSON (2-space indent) so diffs are reviewable.
- * Ensures the parent directory exists.
+ * Write a single cache entry to its own file with deterministic key ordering
+ * and pretty-printed JSON (2-space indent) so per-file diffs are reviewable.
+ * Ensures the cache directory exists. Overwrites any existing same-key file.
  */
-export function writeCache(path, entries) {
-  const sorted = {};
-  for (const k of Object.keys(entries).sort((a, b) => a.localeCompare(b))) {
-    sorted[k] = entries[k];
-  }
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, JSON.stringify(sorted, null, 2) + '\n', 'utf-8');
+export function writeEntry(dir, key, entry) {
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(entryPath(dir, key), JSON.stringify(sortKeysDeep(entry), null, 2) + '\n', 'utf-8');
 }
 
 /**
- * Merge two cache objects. Entries present in `fresh` overwrite entries
- * with the same key in `existing`; all other `existing` entries are kept.
+ * List the keys present in the cache directory (filenames minus the `.json`
+ * extension). Returns [] when the directory does not exist. Sorted for stable
+ * iteration order.
  */
-export function mergeCache(existing, fresh) {
-  return { ...existing, ...fresh };
+export function listKeys(dir) {
+  let names;
+  try {
+    names = readdirSync(dir);
+  } catch (err) {
+    if (err.code === 'ENOENT') return [];
+    throw err;
+  }
+  return names
+    .filter((n) => n.endsWith('.json'))
+    .map((n) => n.slice(0, -'.json'.length))
+    .sort((a, b) => a.localeCompare(b));
 }

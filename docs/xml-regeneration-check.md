@@ -21,7 +21,7 @@ push-to-neo delta  ─────┘                                           
 
 There are three building blocks, all DB-free:
 
-1. **AD snapshot cache** (`cli/cache/ad-snapshot.json`) — captures the AD queries the extractors and `push-to-neo` would otherwise make to PostgreSQL. Refresh it once after every AD change; commit the diff.
+1. **AD snapshot cache** (`cli/cache/ad-snapshot/` — a directory of one `<sha256key>.json` file per query) — captures the AD queries the extractors and `push-to-neo` would otherwise make to PostgreSQL. Refresh it once after every AD change; commit the diff. Each query lives in its own file, so a refresh only touches the files whose queries changed (small, reviewable diffs). Identical `(sql, params)` pairs across call sites dedup to a single file. A legacy `SF_CACHE_PATH` pointing at `ad-snapshot.json` is transparently mapped to the `ad-snapshot/` directory.
 2. **`push-to-neo --dump-delta`** — emits `artifacts/<spec>/neo-delta.json`: the upserts and deletes `push-to-neo` would issue, computed by mirroring `populateWindowSpec` against the cache and the committed `ETGO_SF_*.xml`.
 3. **`xml-apply-delta`** — applies a delta on top of the committed XML and writes the predicted XML.
 
@@ -32,7 +32,7 @@ The bottom layer, `xml-regeneration-check.js`, then performs a canonicalized XML
 ```bash
 # One-time / when AD changes: refresh the cache (this needs the DB).
 make regen ONLY=sales-order CACHE_DB=1
-git add cli/cache/ad-snapshot.json && git commit -m "Refresh AD cache"
+git add cli/cache/ad-snapshot/ && git commit -m "Refresh AD cache"
 
 # Then, in CI or locally — fully offline:
 make regen-check ONLY=sales-order FROM_CACHE=1
@@ -78,24 +78,34 @@ Override variables:
 | Variable | Default | Meaning |
 |----------|---------|---------|
 | `ONLY` | _(required)_ | Comma-separated kebab-case spec names |
-| `FROM_CACHE` | `0` | Use `cli/cache/ad-snapshot.json` (no DB) |
+| `FROM_CACHE` | `0` | Use `cli/cache/ad-snapshot/` (no DB) |
 | `CACHE_DB` | `0` | Refresh the cache from DB during the regen step |
 | `REGEN_CHECK_PREV_XML_DIR` | `../modules/com.etendoerp.go/src-db/database/sourcedata` | Committed XML root |
 | `REGEN_CHECK_OUT_ROOT` | `tmp/regen-check` | Where predicted/prev artifacts go |
 
 ## When does the cache need refreshing?
 
-Refresh `cli/cache/ad-snapshot.json` whenever AD itself changes — typically because someone:
+Refresh `cli/cache/ad-snapshot/` whenever AD itself changes — typically because someone:
 - Added/removed a column to a tab the spec uses.
 - Added/renamed/removed a tab in the window.
 - Renamed the window or its table.
 
 ```bash
-make regen ONLY=<spec> CACHE_DB=1     # hits DB, rewrites snapshot
-git add cli/cache/ad-snapshot.json
+make regen ONLY=<spec> CACHE_DB=1     # hits DB, rewrites the touched per-query files
+git add cli/cache/ad-snapshot/
 ```
 
 If the cache is stale, `make regen-check ... FROM_CACHE=1` will fail with an `AD_CACHE_MISS` error pointing at the query that needs to be cached.
+
+### Pruning stale cache files (gated sweep)
+
+Refreshing a single window (`CACHE_DB=1` with `ONLY=`) only rewrites that window's query files; it never deletes anything. To also prune cache files for queries that are no longer emitted anywhere, run a **full, all-windows** refresh with the sweep enabled:
+
+```bash
+SF_CACHE_SWEEP=1 make regen CACHE_DB=1     # NO ONLY= — must exercise every window
+```
+
+The sweep deletes any `cli/cache/ad-snapshot/*.json` whose query was not touched during the run, and logs every pruned file. It is **off by default** and gated behind `SF_CACHE_SWEEP=1`. ⚠️ Never combine `SF_CACHE_SWEEP=1` with `ONLY=` — a scoped run only touches one window's queries, so the sweep would delete every other window's cache. `regen-all.js` refuses to sweep when `--only` is present (it warns and ignores the env), but the safe rule is: sweep only on the full refresh.
 
 ## Limitations
 

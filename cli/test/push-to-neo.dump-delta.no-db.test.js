@@ -6,15 +6,15 @@ import { tmpdir } from 'node:os';
 
 import { dumpDelta } from '../src/push-to-neo.js';
 import { setCacheMode } from '../src/db.js';
-import { cacheKey } from '../src/lib/ad-cache.js';
+import { cacheKey, writeEntry } from '../src/lib/ad-cache.js';
 
 /**
  * Verifies that `push-to-neo --dump-delta` with SF_CACHE_MODE=read never opens
  * a real DB connection: the cache stub pool answers every query.
  *
- * Strategy: prime cli/cache/<tmp>.json with the two queries dumpDelta makes
- * (ad-tabs-for-window and ad-columns-for-window), point the cache there, run
- * dumpDelta, and assert the delta JSON file exists and has the expected shape.
+ * Strategy: prime a per-query cache directory with the two queries dumpDelta
+ * makes (ad-tabs-for-window and ad-columns-for-window), point the cache there,
+ * run dumpDelta, and assert the delta JSON file exists and has the expected shape.
  */
 
 const TABS_SQL = `SELECT ad_tab_id, name, ad_table_id, seqno
@@ -67,22 +67,19 @@ test('dumpDelta in read-cache mode produces a delta without opening a DB connect
     writeFileSync(join(prevDir, 'ETGO_SF_ENTITY.xml'), emptyData);
     writeFileSync(join(prevDir, 'ETGO_SF_FIELD.xml'),  emptyData);
 
-    // ---- 3) Prime the AD cache with the two queries dumpDelta makes ----
-    const cachePath = join(tmp, 'cache.json');
-    const snapshot = {
-      [cacheKey(TABS_SQL, ['143'])]: {
-        sql: 'tabs', params: ['143'],
-        rows: [{ ad_tab_id: '187', name: 'Header', ad_table_id: '259', seqno: 10 }],
-      },
-      [cacheKey(COLS_SQL, ['143'])]: {
-        sql: 'cols', params: ['143'],
-        rows: [{ ad_table_id: '259', ad_column_id: '2070', columnname: 'DocumentNo', position: 1 }],
-      },
-    };
-    writeFileSync(cachePath, JSON.stringify(snapshot));
+    // ---- 3) Prime the AD cache dir with the two queries dumpDelta makes ----
+    const cacheDir = join(tmp, 'cache');
+    writeEntry(cacheDir, cacheKey(TABS_SQL, ['143']), {
+      sql: 'tabs', params: ['143'],
+      rows: [{ ad_tab_id: '187', name: 'Header', ad_table_id: '259', seqno: 10 }],
+    });
+    writeEntry(cacheDir, cacheKey(COLS_SQL, ['143']), {
+      sql: 'cols', params: ['143'],
+      rows: [{ ad_table_id: '259', ad_column_id: '2070', columnname: 'DocumentNo', position: 1 }],
+    });
 
     // ---- 4) Switch cache to read mode and call dumpDelta ----
-    setCacheMode({ mode: 'read', path: cachePath });
+    setCacheMode({ mode: 'read', path: cacheDir });
 
     const outPath = join(tmp, 'neo-delta.json');
     const { summary } = await dumpDelta('tiny-spec', {

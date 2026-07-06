@@ -1,8 +1,8 @@
 import pg from 'pg';
-import { readFileSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { cacheKey, readCache, writeCache, mergeCache } from './lib/ad-cache.js';
+import { cacheKey, readEntry, writeEntry, listKeys, entryPath } from './lib/ad-cache.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -10,9 +10,25 @@ const __dirname = dirname(__filename);
 /**
  * Global, repo-wide AD query cache. Single source of truth so that all
  * three extractors (extract-from-db, extract-fields, extract-rules) share
- * the same file and one CACHE_DB=1 refresh covers all of them.
+ * the same directory and one CACHE_DB=1 refresh covers all of them.
+ *
+ * The cache is a DIRECTORY of one file per query (cache/ad-snapshot/<key>.json),
+ * not a single monolithic JSON — see cli/src/lib/ad-cache.js.
  */
-export const DEFAULT_CACHE_PATH = join(__dirname, '..', 'cache', 'ad-snapshot.json');
+export const DEFAULT_CACHE_DIR = join(__dirname, '..', 'cache', 'ad-snapshot');
+
+/**
+ * Back-compat: SF_CACHE_PATH historically pointed at the monolithic
+ * `ad-snapshot.json`. The cache is now a directory. If a `.json` path is
+ * given (env or explicit arg), map it to the directory obtained by dropping the
+ * `.json` extension (`.../ad-snapshot.json` → `.../ad-snapshot/`). This is the
+ * least-surprising mapping: an unchanged SF_CACHE_PATH config resolves to the
+ * new per-query directory that the migration script produces from that file.
+ */
+export function resolveCacheDir(p) {
+  if (!p) return null;
+  return p.endsWith('.json') ? p.slice(0, -'.json'.length) : p;
+}
 
 /**
  * Module-level cache mode. Set by setCacheMode() before any createDbPool()
@@ -33,30 +49,45 @@ function initialCacheModeFromEnv() {
   return (v === 'read' || v === 'write' || v === 'off') ? v : 'off';
 }
 
+function initialSweepFromEnv() {
+  return process.env.SF_CACHE_SWEEP === '1';
+}
+
 let cacheMode = initialCacheModeFromEnv();
-let cachePath = process.env.SF_CACHE_PATH || DEFAULT_CACHE_PATH;
-let writeBuffer = {};   // accumulates fresh entries during a 'write' run
-let readSnapshot = null; // lazily loaded cache for 'read' mode
+let cacheDir = resolveCacheDir(process.env.SF_CACHE_PATH) || DEFAULT_CACHE_DIR;
+let writeBuffer = {};       // accumulates fresh entries during a 'write' run
+let sweepEnabled = initialSweepFromEnv();
+let touchedKeys = new Set(); // keys read OR written this run (for the gated sweep)
 
 /**
  * Configure cache behavior for the rest of the process. Must be called
  * BEFORE createDbPool(). Pass mode='off' to reset.
+ *
+ * @param {object} opts
+ * @param {'off'|'write'|'read'} [opts.mode='off']
+ * @param {string} [opts.path] - Cache directory (a legacy `.json` path is mapped
+ *   to its extension-stripped directory). Falls back to SF_CACHE_PATH, then
+ *   DEFAULT_CACHE_DIR.
+ * @param {boolean} [opts.sweep] - Enable the gated orphan sweep on flush.
+ *   Defaults to the SF_CACHE_SWEEP env var. See sweepCache() for the safety
+ *   contract — this must NEVER be enabled on a scoped (single-window) run.
  */
-export function setCacheMode({ mode = 'off', path } = {}) {
+export function setCacheMode({ mode = 'off', path, sweep } = {}) {
   if (!['off', 'write', 'read'].includes(mode)) {
     throw new Error(`setCacheMode: invalid mode "${mode}" (expected off|write|read)`);
   }
   cacheMode = mode;
   // When no explicit path is passed (the common case — every CLI entrypoint
-  // omits it), honor SF_CACHE_PATH so a consuming repo's tracked cache file is
-  // used instead of the package's bundled DEFAULT_CACHE_PATH inside node_modules.
-  cachePath = path || process.env.SF_CACHE_PATH || DEFAULT_CACHE_PATH;
+  // omits it), honor SF_CACHE_PATH so a consuming repo's tracked cache dir is
+  // used instead of the package's bundled DEFAULT_CACHE_DIR inside node_modules.
+  cacheDir = resolveCacheDir(path) || resolveCacheDir(process.env.SF_CACHE_PATH) || DEFAULT_CACHE_DIR;
+  sweepEnabled = sweep === undefined ? initialSweepFromEnv() : Boolean(sweep);
   writeBuffer = {};
-  readSnapshot = null;
+  touchedKeys = new Set();
 }
 
 export function getCacheMode() {
-  return { mode: cacheMode, path: cachePath };
+  return { mode: cacheMode, path: cacheDir, sweep: sweepEnabled };
 }
 
 /**
@@ -70,20 +101,57 @@ export function applyCacheModeFromEnv({ writeCache, fromCache } = {}) {
 }
 
 /**
- * Persist any queries recorded during 'write' mode into the on-disk cache.
- * Existing entries are preserved; entries with the same (sql, params) key
- * captured during this run overwrite the stale ones. No-op outside 'write'.
+ * Persist any queries recorded during 'write' mode into the on-disk cache,
+ * one file per query. Entries with the same (sql, params) key captured during
+ * this run overwrite the stale file; every other file is left untouched.
+ * No-op outside 'write'.
+ *
+ * If the gated sweep is enabled (SF_CACHE_SWEEP / setCacheMode({sweep:true}))
+ * the sweep runs after the writes — see sweepCache() for the safety contract.
  *
  * Call this once at the end of an extraction run (after closePool).
  */
 export function flushCacheWrites() {
-  if (cacheMode !== 'write') return { written: 0, path: cachePath };
-  const existing = readCache(cachePath);
-  const merged = mergeCache(existing, writeBuffer);
-  writeCache(cachePath, merged);
+  if (cacheMode !== 'write') return { written: 0, path: cacheDir, pruned: 0 };
+  for (const [key, entry] of Object.entries(writeBuffer)) {
+    writeEntry(cacheDir, key, entry);
+  }
   const written = Object.keys(writeBuffer).length;
   writeBuffer = {};
-  return { written, path: cachePath };
+  let pruned = 0;
+  if (sweepEnabled) pruned = sweepCache().pruned;
+  return { written, path: cacheDir, pruned };
+}
+
+/**
+ * Gated sweep: delete cache files for queries no longer emitted this run.
+ *
+ * A cache file is an "orphan" if its key was NOT touched (written or read)
+ * during the current process. Sweeping keeps the committed cache from growing
+ * unbounded as queries are removed.
+ *
+ * ⚠️ SAFETY CONTRACT — this MUST only be invoked by a FULL-repo refresh that
+ * exercises EVERY window's queries. A scoped run (e.g. `make regen ONLY=<w>`)
+ * only touches one window's keys, so sweeping would delete every OTHER window's
+ * cache. It is therefore off by default and gated behind SF_CACHE_SWEEP=1 /
+ * setCacheMode({sweep:true}); the consuming Makefile must set it ONLY on the
+ * all-windows refresh target, never when ONLY= is present. regen-all.js also
+ * refuses to enable it when --only is passed (defense in depth).
+ *
+ * Every prune is logged (never silent).
+ */
+export function sweepCache() {
+  const orphans = listKeys(cacheDir).filter((k) => !touchedKeys.has(k));
+  for (const key of orphans) {
+    rmSync(entryPath(cacheDir, key), { force: true });
+  }
+  if (orphans.length > 0) {
+    console.log(`[ad-cache] sweep: pruned ${orphans.length} orphan cache file(s) in ${cacheDir}`);
+    for (const key of orphans) console.log(`  - ${key}.json`);
+  } else {
+    console.log(`[ad-cache] sweep: no orphan cache files in ${cacheDir}`);
+  }
+  return { pruned: orphans.length, prunedKeys: orphans };
 }
 
 class CacheMissError extends Error {
@@ -93,7 +161,8 @@ class CacheMissError extends Error {
       `  key:    ${key}\n` +
       `  sql:    ${String(sql).replace(/\s+/g, ' ').trim().slice(0, 200)}\n` +
       `  params: ${JSON.stringify(params)}\n` +
-      `Run with CACHE_DB=1 to refresh the cache for this window.`
+      `Run with CACHE_DB=1 to refresh the cache for this window.\n` +
+      `(The cache is now a directory of per-query files.)`
     );
     this.name = 'CacheMissError';
     this.code = 'AD_CACHE_MISS';
@@ -122,13 +191,14 @@ export function wrapPoolWithCache(realPool) {
         params,
         rows: result.rows,
       };
+      touchedKeys.add(key);
       return result;
     }
 
     if (cacheMode === 'read') {
-      if (readSnapshot === null) readSnapshot = readCache(cachePath);
-      const entry = readSnapshot[key];
+      const entry = readEntry(cacheDir, key);
       if (!entry) throw new CacheMissError(key, sql, params);
+      touchedKeys.add(key);
       return { rows: entry.rows, rowCount: entry.rows.length };
     }
 
@@ -146,9 +216,9 @@ function createCacheReadPool() {
   const pool = {
     async query(sql, params = []) {
       const key = cacheKey(sql, params);
-      if (readSnapshot === null) readSnapshot = readCache(cachePath);
-      const entry = readSnapshot[key];
+      const entry = readEntry(cacheDir, key);
       if (!entry) throw new CacheMissError(key, sql, params);
+      touchedKeys.add(key);
       return { rows: entry.rows, rowCount: entry.rows.length };
     },
     async connect() {
