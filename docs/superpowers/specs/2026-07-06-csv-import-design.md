@@ -158,10 +158,10 @@ Each module has one job and is independently unit-testable:
 | `mapColumns.js` | Matches file headers to contract fields using `label` + `decisions.import.fields[].aliases` (case/accent-insensitive). Returns `{ mapping, unmapped }` for the user to override in the UI. |
 | `simSearch.js` (lives one level up, at `packages/app-shell-core/src/lib/simSearch.js` — relocated from `tools/app-shell/src/lib/`) | Generic matching engine: entity name + text values → best candidate(s) with `similarityPercent`, via the existing `SimSearch` webhook. Entity-agnostic, no import-specific logic; imported by `resolveForeignKeys.js` below. |
 | `resolveForeignKeys.js` | Per-column match resolver: collects distinct raw values per `foreignKey` column, calls `simSearch.js` once per column, classifies each value `auto-resolved` / `needs-review`, returns a `value → { id }|{ candidates, needsReview: true }` table for `ImportDialog` to render and for the user to fix inline. |
-| `validateRows.js` | Applies `required` + basic format checks (e.g. email shape) from contract metadata, plus any FK value still `needsReview` after the user has had a chance to resolve it. Returns `{ validRows, errorRows }` with a reason per error row. |
+| `validateRows.js` | Exposes `validateRow(row, contract)` — pure, single-row validation (required + format + FK-still-`needsReview`) — and a thin `validateRows(rows, contract)` that maps it over the file. Same function powers the initial bulk pass and the **inline re-validate** used when the user edits one erroring row (see UI below): no separate "single row" reimplementation. |
 | `dedupeRows.js` | Collapses rows within `validRows` that share the same `dedupe.key` values (keeps first occurrence, reports the rest as skipped-duplicate — visible in the summary, not silently dropped). |
 | `buildOperations.js` | Turns one row into the `operations[]` array for a single `/batch` call. Default: one `create` op against `import.entity` using the mapped/resolved values. Composite entities (Contacts) use a registered descriptor (same shape as `ocr/ingest/purchaseInvoiceDescriptor.js`) that returns `{ id, spec, entity, body, parentRef? }[]` for BusinessPartner + LocationAddress + Contact. |
-| `importEngine.js` | Orchestrates: for each row (bounded by `limit.maxRows`), run `buildOperations` → `POST /batch` (bounded parallelism = `limit.concurrency`) → collect `{ row, ok, recordId?, error? }` → emit progress callback. No dependency on `fetch` directly — takes an injected `postBatch(operations)` function, so tests supply a mock. |
+| `importEngine.js` | Orchestrates the bulk send: for each row (bounded by `limit.maxRows`), run `buildOperations` → `POST /batch` (bounded parallelism = `limit.concurrency`) → collect `{ row, ok, recordId?, error? }` → emit progress callback. Exposes `sendRow(row)` as the unit of work (bulk send is just `sendRow` fanned out with bounded concurrency), so the **per-row retry** in the result UI calls the exact same function, not a parallel code path. No dependency on `fetch` directly — takes an injected `postBatch(operations)` function, so tests supply a mock. |
 
 ### 3. UI (`ImportDialog.jsx`, `schema_forge_core / app-shell-core / components`)
 
@@ -169,18 +169,45 @@ Steps, matching the reference mockups:
 1. **Dropzone** — accepts `.csv`/`.txt`, shows detected row count.
 2. **Mapping table** — one column per detected header, auto-mapped via `mapColumns`,
    each with a dropdown to override the target field (or mark "not imported").
-3. **Preview + errors** — shows sample rows, an "N errors found" expandable panel
-   (validation + dedupe-skips), and how many rows will actually import. **FK values
-   needing review** get their own panel, one entry per distinct value (not per row), each
-   with the `simSearch` candidates to pick from or a manual entity-search fallback;
-   resolving a value live-updates every row that shares it.
+3. **Preview + review queue** — see "Review queue" below; default view is capped/sampled
+   (see Performance section), with a toggle to show only rows that still need attention
+   (validation errors, FK `needs-review`, in-file dedupe-skips) versus all rows.
 4. **Confirm dialog** — "Will import N contacts, M rows will be skipped due to errors" +
    options surfaced from `decisions.import` (dedupe on/off if ever made optional later —
    v1 ships it always-on per the config).
 5. **Progress** — "Importing… X%" driven by `importEngine`'s progress callback.
-6. **Result** — success toast/count + a **failed-rows panel** listing each row that
-   `/batch` rejected, with its server error message and a **retry** action (re-runs just
-   that row through `buildOperations` → `/batch`).
+6. **Result** — success toast/count + the same **review queue** pattern applied to
+   server-rejected rows (see below).
+
+#### Review queue (shared pattern, used in step 3 and step 6)
+
+Both "rows that fail validation before sending" and "rows the server rejected after
+sending" use the same interaction model, since the user's ask is one workflow — "hide the
+ones that are fine, work the failing ones until they clear or I explicitly skip them":
+
+- **Filter toggle**: "Show only errors" / "Show all", available in both the preview step
+  and the result step independently (each step remembers its own toggle state).
+- **FK values needing review** are listed once per distinct value (not per row), each with
+  the `simSearch` candidates to pick from or a manual entity-search fallback — resolving a
+  value live-clears every row that shares it, as already described above.
+- **Per-row inline editing**: a row still in the queue (validation error pre-send, or
+  server-rejected post-send) can have its individual erroring field(s) edited directly in
+  the table, using the same field-input component the record's own form would use for that
+  field's type (text, email, the FK selector for a `foreignKey` field, etc.) — not a
+  free-form spreadsheet editor, only the cells flagged as the problem.
+- **Per-row action after editing**:
+  - Pre-send: **Re-validate** re-runs `validateRow` (the same function used for the bulk
+    pass, see `validateRows.js` above) on just that row's current values; it clears from
+    the queue immediately if it now passes.
+  - Post-send: **Retry** re-runs `importEngine.sendRow` (the same function the bulk send
+    uses) for just that row; success removes it from the queue and counts it as imported,
+    failure keeps it with the updated server error message.
+- **Skip**: explicitly removes a row from the queue without it passing — it is excluded
+  from the import (pre-send) or accepted as permanently not-imported (post-send) and
+  reported as "skipped by user" in the final summary, distinct from "still failing" so the
+  numbers stay honest.
+- The loop is user-driven and open-ended: edit → re-validate/retry → repeat, or skip,
+  until the queue is empty or the user is done. Nothing is auto-retried or auto-skipped.
 
 ### 4. Wiring (`generate-frontend.js`, core)
 
@@ -199,22 +226,55 @@ every new string in both locales, no exceptions.
   mismatch, in-file duplicate → row excluded from send, listed in the errors panel with a
   reason, never silently dropped.
 - **Row-level (server)**: `/batch` returns `committed:false` for that row → row marked
-  failed with the server's `error.message`, offered for retry. A row's own multi-op
-  transaction (e.g. BP+Location+Contact) still rolls back atomically per existing
-  `BatchService` behavior — no partial sub-entities.
+  failed with the server's `error.message`, enters the result-step review queue (edit +
+  retry, or skip). A row's own multi-op transaction (e.g. BP+Location+Contact) still rolls
+  back atomically per existing `BatchService` behavior — no partial sub-entities.
+- **User-skipped**: a row explicitly skipped via the review queue is reported as "skipped
+  by user" in the final summary, kept distinct from "still failing" and from "imported".
 - **Limit reached**: rows beyond `limit.maxRows` are not sent; the summary explicitly
   states how many were skipped for that reason (no silent truncation).
 
-### 6. Testing
+### 6. Performance & efficiency
+
+The entire import runs client-side, in the browser tab, entirely in memory — there is no
+server-side staging of the file and no streaming parse:
+
+- The file is read fully (`File.text()`) and parsed into an in-memory row array in one
+  pass. At the expected scale (business CSVs of contacts/products — thousands of rows,
+  a few dozen columns), this is a few MB at most: negligible for both parse time and
+  browser memory. `limit.maxRows` puts a hard ceiling on top of that.
+- **The actual risk is DOM rendering, not memory**: naively rendering thousands of table
+  rows would make the UI sluggish. `app-shell-core` has **no table-virtualization library**
+  today (checked: not a dependency), so rather than adding one for this, the preview and
+  result tables never render the full row set — they render a **capped sample of OK rows**
+  (e.g. first 50) plus **all rows currently in the review queue** (errors / needs-review /
+  failed), with simple in-memory pagination (array slicing, no new dependency) for when the
+  queue itself is large. This also directly serves the "hide OK, focus on errors" ask:
+  toggling to "show only errors" only ever renders the queue, which is normally far smaller
+  than the full file.
+- FK matching stays cheap because it's batched by **distinct value per column**, not per
+  row (see Foreign-key columns above) — this is the one part of the flow that would not
+  scale linearly with row count if done naively.
+- Sending is network-bound, not memory-bound (one `/batch` call per row, bounded
+  concurrency) — already covered by the existing `limit.concurrency` design.
+- **No resumability**: the import holds all state in the tab's memory only; closing or
+  reloading the tab mid-import loses progress and the review queue. This is accepted v1
+  behavior, not an oversight — call it out explicitly rather than leaving it implicit.
+
+### 7. Testing
 
 Unit tests (Vitest/`node:test`, per repo convention) for every engine module in
 isolation with `postBatch` mocked — dedupe collisions, FK resolution (auto-resolved /
 needs-review with candidates / needs-review with zero candidates, and the user-picks-a-
-candidate / user-uses-manual-fallback paths), row-level failure + retry, `maxRows`
-truncation, concurrency bound. The relocated `simSearch.js` keeps its existing test
-coverage (moved, not rewritten) plus a regression test that `tools/app-shell`'s OCR ingest
-still imports it correctly post-move. Per CLAUDE.md, test-writing is delegated to the
-`test-generator` subagent (Tester) during implementation, not written ad hoc.
+candidate / user-uses-manual-fallback paths), `validateRow` single-row re-validation after
+an inline edit, `sendRow` single-row retry after an inline edit, `maxRows` truncation,
+concurrency bound. The relocated `simSearch.js` keeps its existing test coverage (moved,
+not rewritten) plus a regression test that `tools/app-shell`'s OCR ingest still imports it
+correctly post-move. Component-level tests cover the review queue: filter toggle
+(preview and result independently), inline edit + re-validate/retry clearing a row from
+the queue, and the Skip action reporting a row as "skipped by user" rather than
+"failing". Per CLAUDE.md, test-writing is delegated to the `test-generator` subagent
+(Tester) during implementation, not written ad hoc.
 
 ## Open items explicitly deferred (not this iteration)
 
