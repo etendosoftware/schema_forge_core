@@ -8,6 +8,7 @@ import { ImportReviewQueue, buildErrorsCsv } from './ImportReviewQueue.jsx';
 import { ImportConfirmStep } from './ImportConfirmStep.jsx';
 import { ImportProgressStep } from './ImportProgressStep.jsx';
 import { ImportFileErrorDialog } from './ImportFileErrorDialog.jsx';
+import { ImportSystemErrorDialog } from './ImportSystemErrorDialog.jsx';
 import { decodeCsvBuffer, parseDelimited } from '../../lib/import/parseDelimited.js';
 import { mapColumns } from '../../lib/import/mapColumns.js';
 import { dedupeRows } from '../../lib/import/dedupeRows.js';
@@ -51,6 +52,12 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   const [showOnlyErrorsPreSend, setShowOnlyErrorsPreSend] = useState(true);
   const [showOnlyErrorsPostSend, setShowOnlyErrorsPostSend] = useState(true);
   const [progress, setProgress] = useState(0);
+  // Debug-phase aid (per explicit request while the backend integration is still being
+  // stabilized, one error at a time): the last uncontrolled/system-level failure of a
+  // send, shown in its own blocking dialog with the full raw trace on top of the normal
+  // Result step — not a replacement for the per-row review queue underneath, which stays
+  // for retry/skip/download. Null means no system-error dialog is showing.
+  const [systemError, setSystemError] = useState(null);
 
   const requiredTargets = useMemo(() => config.fields.filter((f) => f.required).map((f) => f.target), [config.fields]);
   const emailTargets = useMemo(() => config.fields.filter((f) => f.isEmail).map((f) => f.target), [config.fields]);
@@ -224,11 +231,15 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       return;
     }
     const okCount = results.filter((r) => r.status === 'ok').length;
-    const resultEntries = results
-      .filter((r) => r.status !== 'ok')
+    const failedResults = results.filter((r) => r.status !== 'ok');
+    const resultEntries = failedResults
       .map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || 'Unknown error' }], status: 'pending' }));
     setEntries(resultEntries);
     setStep(STEP.RESULT);
+    // The last failure of this run, front-and-center with its full raw trace — see the
+    // systemError state comment above for why this exists alongside the review queue.
+    const lastFailure = failedResults.at(-1);
+    setSystemError(lastFailure ? { message: lastFailure.error?.message || 'Unknown error', raw: lastFailure.error?.raw } : null);
     // Reports failedCount alongside okCount (not just a bare success count) so the caller
     // can decide whether it's actually safe to close the dialog. The design spec is
     // explicit that the Result step must show "the same review queue pattern applied to
@@ -254,6 +265,9 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       }
       return next;
     });
+    if (result.status !== 'ok') {
+      setSystemError({ message: result.error?.message || 'Unknown error', raw: result.error?.raw });
+    }
   }, [entries, operationsConfig, postBatch]);
 
   const handleRetryFile = useCallback(() => {
@@ -262,69 +276,77 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   }, []);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>{text.title}</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{text.title}</DialogTitle>
+          </DialogHeader>
 
-        {step === STEP.DROPZONE && <ImportDropzone onFileSelected={handleFileSelected} />}
+          {step === STEP.DROPZONE && <ImportDropzone onFileSelected={handleFileSelected} />}
 
-        {step === STEP.FILE_ERROR && (
-          <ImportFileErrorDialog message={fileErrorMessage} onCancel={() => onOpenChange(false)} onRetry={handleRetryFile} />
-        )}
+          {step === STEP.FILE_ERROR && (
+            <ImportFileErrorDialog message={fileErrorMessage} onCancel={() => onOpenChange(false)} onRetry={handleRetryFile} />
+          )}
 
-        {step === STEP.MAPPING && (
-          <div className="flex flex-col gap-4">
-            <ImportColumnMapping headers={headers} importFields={config.fields} mapping={mapping} onMappingChange={handleMappingChange} />
-            <ImportReviewQueue
-              entries={entries}
-              fields={config.fields}
-              showOnlyErrors={showOnlyErrorsPreSend}
-              onToggleFilter={() => setShowOnlyErrorsPreSend((v) => !v)}
-              onEditField={handleEditField}
-              onRetryEntry={handleRetryEntryPreSend}
-              onSkipEntry={handleSkipEntry}
-              onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
-              retryLabel="Re-validate"
-            />
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                onClick={() => setStep(STEP.CONFIRM)}
-                disabled={validCount === 0}
-                data-testid="ImportDialog__importButton"
-              >
-                {`Import ${validCount}`}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === STEP.CONFIRM && (
-          <ImportConfirmStep importCount={validCount} skipCount={skipCount} onCancel={() => setStep(STEP.MAPPING)} onConfirm={handleSend} />
-        )}
-
-        {step === STEP.SENDING && <ImportProgressStep percent={progress} />}
-
-        {step === STEP.RESULT && (
-          <div className="flex flex-col gap-4">
-            {entries.length > 0 && (
+          {step === STEP.MAPPING && (
+            <div className="flex flex-col gap-4">
+              <ImportColumnMapping headers={headers} importFields={config.fields} mapping={mapping} onMappingChange={handleMappingChange} />
               <ImportReviewQueue
                 entries={entries}
                 fields={config.fields}
-                showOnlyErrors={showOnlyErrorsPostSend}
-                onToggleFilter={() => setShowOnlyErrorsPostSend((v) => !v)}
+                showOnlyErrors={showOnlyErrorsPreSend}
+                onToggleFilter={() => setShowOnlyErrorsPreSend((v) => !v)}
                 onEditField={handleEditField}
-                onRetryEntry={handleRetryEntryPostSend}
+                onRetryEntry={handleRetryEntryPreSend}
                 onSkipEntry={handleSkipEntry}
                 onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
-                retryLabel="Retry"
+                retryLabel="Re-validate"
               />
-            )}
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  onClick={() => setStep(STEP.CONFIRM)}
+                  disabled={validCount === 0}
+                  data-testid="ImportDialog__importButton"
+                >
+                  {`Import ${validCount}`}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === STEP.CONFIRM && (
+            <ImportConfirmStep importCount={validCount} skipCount={skipCount} onCancel={() => setStep(STEP.MAPPING)} onConfirm={handleSend} />
+          )}
+
+          {step === STEP.SENDING && <ImportProgressStep percent={progress} />}
+
+          {step === STEP.RESULT && (
+            <div className="flex flex-col gap-4">
+              {entries.length > 0 && (
+                <ImportReviewQueue
+                  entries={entries}
+                  fields={config.fields}
+                  showOnlyErrors={showOnlyErrorsPostSend}
+                  onToggleFilter={() => setShowOnlyErrorsPostSend((v) => !v)}
+                  onEditField={handleEditField}
+                  onRetryEntry={handleRetryEntryPostSend}
+                  onSkipEntry={handleSkipEntry}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
+                  retryLabel="Retry"
+                />
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      <ImportSystemErrorDialog
+        open={Boolean(systemError)}
+        message={systemError?.message}
+        raw={systemError?.raw}
+        onClose={() => setSystemError(null)}
+      />
+    </>
   );
 }

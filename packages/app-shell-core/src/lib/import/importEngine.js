@@ -20,7 +20,10 @@ export async function sendRow(operations, { postBatch }) {
   try {
     response = await postBatch(operations);
   } catch (error) {
-    return { status: SEND_STATUS.UNKNOWN, error };
+    // No structured response to inspect at all — the closest thing to a "trace" is the
+    // rejection's own stack, which console.error already loses once this bubbles up
+    // through a Promise.all in the bounded pool.
+    return { status: SEND_STATUS.UNKNOWN, error: Object.assign(error, { raw: error.raw ?? (error.stack || error.message) }) };
   }
   if (response.committed) {
     const recordId = response.operations?.[0]?.recordId;
@@ -40,7 +43,15 @@ export async function sendRow(operations, { postBatch }) {
     // eslint-disable-next-line no-console
     console.error('[import] /batch returned an unrecognized failure shape — raw response:', response);
   }
-  return { status: SEND_STATUS.FAILED, error };
+  // `error.detail` (when BatchService.java's failureBody set one) is the underlying NEO
+  // response for the specific op that got rejected — the actual diagnostic content, not
+  // just the generic "Operation 'x' rejected by server" wrapper text. Falls back to a
+  // dump of the whole response for the unrecognized-shape case, so there is always
+  // *something* to inspect beyond the bare message while this integration is still being
+  // debugged (per the user's explicit ask: capture uncontrolled backend errors with their
+  // full trace, one at a time, until the pipeline stabilizes).
+  const raw = error.raw ?? (error.detail ? JSON.stringify(error.detail, null, 2) : JSON.stringify(response, null, 2));
+  return { status: SEND_STATUS.FAILED, error: { ...error, raw } };
 }
 
 /**

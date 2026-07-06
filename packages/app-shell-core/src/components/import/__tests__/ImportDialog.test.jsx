@@ -99,6 +99,39 @@ describe('ImportDialog', () => {
     expect(screen.getByTestId('ImportReviewQueue__rowError-0').textContent).toContain('Invalid value for OBTIKTaxIDKey');
   });
 
+  it('regression: shows the ImportSystemErrorDialog with the last failure\'s message and raw trace after a failed send', async () => {
+    // Debug-phase aid, per explicit request: while the backend integration is still
+    // being stabilized, the last failure of a run should be front-and-center with its
+    // full raw trace, not just a small cell in the review queue — the user should not
+    // have to dig it out of the Network tab by hand.
+    const postBatch = vi.fn().mockResolvedValue({
+      committed: false,
+      failedAt: { id: 'bp' },
+      error: { status: 500, message: "Operation 'bp' rejected by server", detail: { response: { error: { message: 'Invalid value for OBTIKTaxIDKey' } } } },
+    });
+    render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => screen.getByTestId('ImportSystemErrorDialog__title'));
+    expect(screen.getByTestId('ImportSystemErrorDialog__message').textContent).toBe("Operation 'bp' rejected by server");
+    expect(screen.getByTestId('ImportSystemErrorDialog__trace').textContent).toContain('Invalid value for OBTIKTaxIDKey');
+    fireEvent.click(screen.getByTestId('ImportSystemErrorDialog__close'));
+    expect(screen.queryByTestId('ImportSystemErrorDialog__title')).toBeNull();
+    // Closing the system-error dialog must not tear down the review queue underneath.
+    expect(screen.getByTestId('ImportReviewQueue__rowError-0')).toBeDefined();
+  });
+
+  it('does not show the ImportSystemErrorDialog after a fully successful send', async () => {
+    const postBatch = vi.fn().mockResolvedValue({ committed: true, operations: [{ id: 'row', ok: true, recordId: 'REC-1' }] });
+    render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => expect(postBatch).toHaveBeenCalled());
+    expect(screen.queryByTestId('ImportSystemErrorDialog__title')).toBeNull();
+  });
+
   it('regression: config.descriptor (the real decisions.json field) dispatches to the registered composite descriptor, not the flat single-op default', async () => {
     // Async, like the real Contacts descriptor (which awaits FK resolution) — a
     // synchronous mock here would not have caught the sibling bug where an unawaited

@@ -50,6 +50,39 @@ describe('sendRow', () => {
     assert.equal(result.status, SEND_STATUS.FAILED);
     assert.equal(result.error.message, 'Unknown error');
   });
+
+  it('regression: carries error.detail through as a readable raw trace (the underlying NEO error, not just the generic wrapper message)', async () => {
+    // BatchService.java's failureBody() attaches the per-op NEO response as error.detail
+    // when one is available — the actual diagnostic content behind a generic wrapper
+    // message like "Operation 'bp' rejected by server". Without surfacing this, the user
+    // has no way to see what actually failed short of digging through the Network tab.
+    const detail = { response: { error: { message: 'Invalid value for OBTIKTaxIDKey' } } };
+    const postBatch = async () => ({ committed: false, failedAt: { id: 'bp' }, error: { status: 500, message: "Operation 'bp' rejected by server", detail } });
+    const result = await sendRow([{ id: 'row' }], { postBatch });
+    assert.equal(result.status, SEND_STATUS.FAILED);
+    assert.ok(result.error.raw.includes('Invalid value for OBTIKTaxIDKey'), `expected raw trace to include the detail, got: ${result.error.raw}`);
+  });
+
+  it('regression: falls back to dumping the whole response as raw when there is no error.detail to read', async () => {
+    const postBatch = async () => ({ message: 'Invalid value for OBTIKTaxIDKey' });
+    const result = await sendRow([{ id: 'row' }], { postBatch });
+    assert.equal(result.status, SEND_STATUS.FAILED);
+    assert.ok(result.error.raw.includes('Invalid value for OBTIKTaxIDKey'), `expected raw dump to include the message, got: ${result.error.raw}`);
+  });
+
+  it('regression: an UNKNOWN result (postBatch throw) carries the error\'s own stack as raw', async () => {
+    const postBatch = async () => { throw new Error('network dropped'); };
+    const result = await sendRow([{ id: 'row' }], { postBatch });
+    assert.equal(result.status, SEND_STATUS.UNKNOWN);
+    assert.ok(result.error.raw, 'expected a raw trace to be present');
+  });
+
+  it('regression: preserves an explicitly-set error.raw (e.g. from useBatch\'s non-JSON-body case) instead of overwriting it with the stack', async () => {
+    const postBatch = async () => { const e = new Error('Batch failed (502)'); e.raw = 'Gateway error: upstream connection reset'; throw e; };
+    const result = await sendRow([{ id: 'row' }], { postBatch });
+    assert.equal(result.status, SEND_STATUS.UNKNOWN);
+    assert.equal(result.error.raw, 'Gateway error: upstream connection reset');
+  });
 });
 
 describe('runImport', () => {
