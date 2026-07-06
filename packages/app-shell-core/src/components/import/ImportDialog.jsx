@@ -67,8 +67,19 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     targets: config.fields.map((f) => f.target),
   }), [config.spec, config.entity, config.descriptorName, config.fields]);
 
+  // The real config shape (decisions.json → window.import, verified against
+  // artifacts/contacts/decisions.json) is `dedupe: { scope, key: string[] }`, not a flat
+  // `dedupeKeyTargets` — reading the wrong field silently passed `dedupeRows` an empty
+  // key array, which collapses EVERY row to the same blank key and falsely flags all but
+  // the first as duplicates (confirmed by reproducing it directly against
+  // dedupeRows.js). Guard against that same failure mode for any other future empty/
+  // missing config: dedupe only runs when there's an actual non-empty key list.
+  const dedupeKeyTargets = config.dedupe?.key ?? [];
+
   const runValidation = useCallback(async (mappedRows) => {
-    const { uniqueRows, duplicates } = dedupeRows(mappedRows, config.dedupeKeyTargets || []);
+    const { uniqueRows, duplicates } = dedupeKeyTargets.length > 0
+      ? dedupeRows(mappedRows, dedupeKeyTargets)
+      : { uniqueRows: mappedRows, duplicates: [] };
     const fkResolutions = fkColumns.length > 0
       ? await resolveForeignKeys({ rows: uniqueRows, columns: fkColumns, simSearchFn, token })
       : new Map();
@@ -79,7 +90,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     }));
     const skippedDuplicates = duplicates.map((d) => ({ row: d.row, errors: [{ target: '', message: 'Duplicate row (already in file).' }], status: 'skipped' }));
     setEntries([...validated.map((v) => ({ row: v.row, errors: v.errors, status: 'pending' })), ...skippedDuplicates]);
-  }, [config.dedupeKeyTargets, fkColumns, fkTargets, requiredTargets, emailTargets, simSearchFn, token]);
+  }, [dedupeKeyTargets, fkColumns, fkTargets, requiredTargets, emailTargets, simSearchFn, token]);
 
   const handleFileSelected = useCallback(async (file) => {
     try {

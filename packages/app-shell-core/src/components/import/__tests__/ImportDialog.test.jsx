@@ -13,7 +13,7 @@ const config = {
     { target: 'name', label: 'Name', required: true },
     { target: 'email', label: 'Email', isEmail: true },
   ],
-  dedupeKeyTargets: ['email'],
+  dedupe: { scope: 'file', key: ['email'] },
 };
 
 function makeFile(content, name = 'contacts.csv') {
@@ -34,6 +34,23 @@ describe('ImportDialog', () => {
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     expect(screen.getByTestId('ImportColumnMapping__select-Name').textContent).toContain('Name');
     expect(screen.getByTestId('ImportColumnMapping__select-Email').textContent).toContain('Email');
+  });
+
+  it('regression: does not collapse distinct rows into duplicates of each other (config.dedupe.key, not a flat dedupeKeyTargets)', async () => {
+    render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email\nLucia,lucia@x.com\nAndres,andres@x.com\nSofia,sofia@x.com');
+    // Every row is a valid, distinct record — the "Import N" button must count all 3,
+    // not silently skip 2 of them as false-positive duplicates of the first.
+    await waitFor(() => screen.getByTestId('ImportDialog__importButton'));
+    expect(screen.getByTestId('ImportDialog__importButton').textContent).toBe('Import 3');
+  });
+
+  it('regression: a window with no dedupe config at all treats every row as unique', async () => {
+    const noDedupeConfig = { ...config, dedupe: undefined };
+    render(<ImportDialog open config={noDedupeConfig} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email\nLucia,lucia@x.com\nAndres,andres@x.com');
+    await waitFor(() => screen.getByTestId('ImportDialog__importButton'));
+    expect(screen.getByTestId('ImportDialog__importButton').textContent).toBe('Import 2');
   });
 
   it('shows the file-error dialog for a malformed file and Retry returns to the dropzone', async () => {
