@@ -1,7 +1,7 @@
 # CSV Import (generic, per-entity) — Design
 
 - Date: 2026-07-06
-- Status: approved (pending user review of this file)
+- Status: approved (reviewed by user 2026-07-06)
 - Repos touched: `schema_forge_core` (functionality), `etendo_schema_forge` (contract/decisions)
 
 ## Problem
