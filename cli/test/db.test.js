@@ -8,7 +8,7 @@ import {
   resolveDbDefaults,
   setCacheMode,
   getCacheMode,
-  DEFAULT_CACHE_PATH,
+  DEFAULT_CACHE_DIR,
 } from '../src/db.js';
 
 const DB_ENV_KEYS = [
@@ -361,29 +361,39 @@ describe('setCacheMode cache path resolution', () => {
   it('honors SF_CACHE_PATH when no explicit path is passed (regression ETP-4436)', () => {
     // Every CLI entrypoint (regen-all, extract-*) calls setCacheMode without a
     // path, relying on SF_CACHE_PATH exported by the consuming repo's Makefile.
-    // The bug reset cachePath to DEFAULT_CACHE_PATH, silently discarding it.
+    // The bug reset cacheDir to DEFAULT_CACHE_DIR, silently discarding it.
+    // A legacy `.json` SF_CACHE_PATH now maps to its extension-stripped dir.
     const consumerCache = join(tmpdir(), 'consumer-cache', 'ad-snapshot.json');
+    const consumerDir = join(tmpdir(), 'consumer-cache', 'ad-snapshot');
     withCachePathEnv(consumerCache, () => {
       setCacheMode({ mode: 'write' });
       const { mode, path } = getCacheMode();
       assert.equal(mode, 'write');
-      assert.equal(path, consumerCache);
-      assert.notEqual(path, DEFAULT_CACHE_PATH);
+      assert.equal(path, consumerDir);
+      assert.notEqual(path, DEFAULT_CACHE_DIR);
+    });
+  });
+
+  it('uses a directory SF_CACHE_PATH verbatim (no .json extension)', () => {
+    const consumerDir = join(tmpdir(), 'consumer-cache', 'ad-snapshot');
+    withCachePathEnv(consumerDir, () => {
+      setCacheMode({ mode: 'write' });
+      assert.equal(getCacheMode().path, consumerDir);
     });
   });
 
   it('an explicit path argument still wins over SF_CACHE_PATH', () => {
-    const explicit = join(tmpdir(), 'explicit-cache', 'ad-snapshot.json');
-    withCachePathEnv(join(tmpdir(), 'env-cache', 'ad-snapshot.json'), () => {
+    const explicit = join(tmpdir(), 'explicit-cache', 'ad-snapshot');
+    withCachePathEnv(join(tmpdir(), 'env-cache', 'ad-snapshot'), () => {
       setCacheMode({ mode: 'read', path: explicit });
       assert.equal(getCacheMode().path, explicit);
     });
   });
 
-  it('falls back to DEFAULT_CACHE_PATH when neither path nor SF_CACHE_PATH is set', () => {
+  it('falls back to DEFAULT_CACHE_DIR when neither path nor SF_CACHE_PATH is set', () => {
     withCachePathEnv(undefined, () => {
       setCacheMode({ mode: 'write' });
-      assert.equal(getCacheMode().path, DEFAULT_CACHE_PATH);
+      assert.equal(getCacheMode().path, DEFAULT_CACHE_DIR);
     });
   });
 });

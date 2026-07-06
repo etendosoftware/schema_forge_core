@@ -233,6 +233,18 @@ async function configureCacheMode(opts) {
     console.error('Error: --write-cache and --from-cache are mutually exclusive');
     process.exit(1);
   }
+  // Defense in depth: the cache sweep (SF_CACHE_SWEEP=1) deletes cache files for
+  // queries not touched this run. A scoped `--only` run touches a single
+  // window's queries, so sweeping would wipe every OTHER window's cache. Refuse
+  // to sweep on scoped runs — the consuming Makefile must only set the env on
+  // the full, all-windows refresh. We unset it here so no downstream code sees it.
+  if (opts.only && process.env.SF_CACHE_SWEEP === '1') {
+    console.warn(
+      'Warning: SF_CACHE_SWEEP=1 ignored because --only was passed. ' +
+      'The cache sweep is only safe on a full (all-windows) refresh.'
+    );
+    delete process.env.SF_CACHE_SWEEP;
+  }
   if (opts.writeCache || opts.fromCache) {
     const { applyCacheModeFromEnv } = await import('./db.js');
     applyCacheModeFromEnv({ writeCache: opts.writeCache, fromCache: opts.fromCache });
@@ -257,8 +269,8 @@ function logRunHeader(opts, windows) {
   console.log(`Windows (${windows.length}): ${windows.map(w => w.name).join(', ')}`);
   console.log(`Push to NEO: ${opts.pushToNeo ? 'YES' : 'no'}`);
   console.log(`Skip extract: ${opts.skipExtract ? 'YES' : 'no'}`);
-  if (opts.writeCache) console.log(`Cache mode: WRITE (will refresh cli/cache/ad-snapshot.json)`);
-  if (opts.fromCache) console.log(`Cache mode: READ (no DB connection — serving from cli/cache/ad-snapshot.json)`);
+  if (opts.writeCache) console.log(`Cache mode: WRITE (will refresh cli/cache/ad-snapshot/)`);
+  if (opts.fromCache) console.log(`Cache mode: READ (no DB connection — serving from cli/cache/ad-snapshot/)`);
   console.log();
 }
 
@@ -302,8 +314,9 @@ async function main() {
 
   if (opts.writeCache) {
     const { flushCacheWrites } = await import('./db.js');
-    const { written, path } = flushCacheWrites();
+    const { written, path, pruned } = flushCacheWrites();
     console.log(`\nCache: wrote ${written} entries to ${path}`);
+    if (pruned > 0) console.log(`Cache: pruned ${pruned} orphan entries (sweep)`);
   }
 
   console.log(`\n=== Summary ===`);

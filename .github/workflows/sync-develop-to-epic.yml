@@ -84,13 +84,23 @@ jobs:
 
           if [ -z "$existing" ]; then
             echo "No open sync PR found, creating one..."
+            # Capture stderr so we can tell "no diff" apart from a real failure.
+            create_err=$(mktemp)
             if ! pr_url=$(gh pr create \
                 --base epic/ETP-3504 \
                 --head develop \
                 --title "Epic ETP-3504: Sync develop into epic" \
                 --body "$PR_BODY" \
-                --label epic-sync \
-                --assignee sebastianbarrozo); then
+                --label epic-sync 2>"$create_err"); then
+              cat "$create_err" >&2
+              # No-op: epic/ETP-3504 and develop are already in sync. GitHub refuses
+              # to open a PR with an empty diff — that is nothing to sync, not an
+              # error, so exit cleanly instead of failing the check.
+              if grep -qi 'No commits between' "$create_err"; then
+                echo "epic/ETP-3504 is already up to date with develop — nothing to sync."
+                rm -f "$create_err"
+                exit 0
+              fi
               # A concurrent run may have created the PR between our list and create.
               echo "gh pr create failed — re-querying for an existing PR..."
               pr_url=$(gh pr list \
@@ -99,14 +109,17 @@ jobs:
                 --state open \
                 --json url \
                 --jq '.[0].url // empty')
+              rm -f "$create_err"
               [ -n "$pr_url" ] || { echo "No PR after retry — failing."; exit 1; }
+            else
+              rm -f "$create_err"
             fi
             echo "PR ready: $pr_url"
           else
             pr_url=$(echo "$existing" | jq -r '.url')
-            echo "Sync PR already open: $pr_url — re-applying label/assignee."
-            gh pr edit "$pr_url" --add-label epic-sync --add-assignee sebastianbarrozo \
-              || echo "Could not re-apply label/assignee (continuing)."
+            echo "Sync PR already open: $pr_url — re-applying label."
+            gh pr edit "$pr_url" --add-label epic-sync \
+              || echo "Could not re-apply label (continuing)."
           fi
 
           # Re-arm auto-merge on every run. No-op if already armed; recovers if a

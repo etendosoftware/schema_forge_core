@@ -21,7 +21,7 @@ push-to-neo delta  ─────┘                                           
 
 There are three building blocks, all DB-free:
 
-1. **AD snapshot cache** (`cli/cache/ad-snapshot.json`) — captures the AD queries the extractors and `push-to-neo` would otherwise make to PostgreSQL. Refresh it once after every AD change; commit the diff.
+1. **AD snapshot cache** (`cli/cache/ad-snapshot/` — a directory of one `<sqlKey>.json` file per **distinct SQL statement**) — captures the AD queries the extractors and `push-to-neo` would otherwise make to PostgreSQL. Refresh it once after every AD change; commit the diff. The same SQL runs with many param sets (one per window), so each file groups every param **version** inside a `versions` map keyed by `paramsKey` (`{ "<paramsKey>": { "params": [...], "rows": [...] } }`) and stores the SQL text once. This keeps the file count small (a handful of files instead of hundreds) and the diffs reviewable: a refresh only rewrites the SQL files whose queries ran, merging in the touched versions and preserving the rest. `sqlKey = sha256(normalizeSql(sql))`; `paramsKey = sha256(stableStringify(params))` (whitespace-insensitive SQL, order-sensitive positional params). A legacy `SF_CACHE_PATH` pointing at `ad-snapshot.json` is transparently mapped to the `ad-snapshot/` directory. See `cli/src/lib/ad-cache.js` for the storage API and `cli/src/migrations/regroup-ad-snapshot.js` for the one-shot migration from the old monolith or per-`(sql, params)` layout.
 2. **`push-to-neo --dump-delta`** — emits `artifacts/<spec>/neo-delta.json`: the upserts and deletes `push-to-neo` would issue, computed by mirroring `populateWindowSpec` against the cache and the committed `ETGO_SF_*.xml`.
 3. **`xml-apply-delta`** — applies a delta on top of the committed XML and writes the predicted XML.
 
@@ -32,7 +32,7 @@ The bottom layer, `xml-regeneration-check.js`, then performs a canonicalized XML
 ```bash
 # One-time / when AD changes: refresh the cache (this needs the DB).
 make regen ONLY=sales-order CACHE_DB=1
-git add cli/cache/ad-snapshot.json && git commit -m "Refresh AD cache"
+git add cli/cache/ad-snapshot/ && git commit -m "Refresh AD cache"
 
 # Then, in CI or locally — fully offline:
 make regen-check ONLY=sales-order FROM_CACHE=1
@@ -78,24 +78,39 @@ Override variables:
 | Variable | Default | Meaning |
 |----------|---------|---------|
 | `ONLY` | _(required)_ | Comma-separated kebab-case spec names |
-| `FROM_CACHE` | `0` | Use `cli/cache/ad-snapshot.json` (no DB) |
+| `FROM_CACHE` | `0` | Use `cli/cache/ad-snapshot/` (no DB) |
 | `CACHE_DB` | `0` | Refresh the cache from DB during the regen step |
 | `REGEN_CHECK_PREV_XML_DIR` | `../modules/com.etendoerp.go/src-db/database/sourcedata` | Committed XML root |
 | `REGEN_CHECK_OUT_ROOT` | `tmp/regen-check` | Where predicted/prev artifacts go |
 
 ## When does the cache need refreshing?
 
-Refresh `cli/cache/ad-snapshot.json` whenever AD itself changes — typically because someone:
+Refresh `cli/cache/ad-snapshot/` whenever AD itself changes — typically because someone:
 - Added/removed a column to a tab the spec uses.
 - Added/renamed/removed a tab in the window.
 - Renamed the window or its table.
 
 ```bash
-make regen ONLY=<spec> CACHE_DB=1     # hits DB, rewrites snapshot
-git add cli/cache/ad-snapshot.json
+make regen ONLY=<spec> CACHE_DB=1     # hits DB, rewrites the touched per-query files
+git add cli/cache/ad-snapshot/
 ```
 
 If the cache is stale, `make regen-check ... FROM_CACHE=1` will fail with an `AD_CACHE_MISS` error pointing at the query that needs to be cached.
+
+### Pruning stale cache files (gated sweep)
+
+Refreshing a single window (`CACHE_DB=1` with `ONLY=`) only rewrites the versions that window touched inside the SQL files it hit; it never deletes anything. To also prune entries no longer emitted anywhere, run a **full, all-windows** refresh with the sweep enabled:
+
+```bash
+SF_CACHE_SWEEP=1 make regen CACHE_DB=1     # NO ONLY= — must exercise every window
+```
+
+The sweep works at **two levels** and logs both counts:
+
+- **File level** — deletes any `cli/cache/ad-snapshot/<sqlKey>.json` whose SQL was not run at all this refresh (the query was removed from the extractors).
+- **Version level** — inside a SQL file that *was* touched, drops any `versions[paramsKey]` not touched this refresh (e.g. a window was removed, so its param set is gone). A file left with zero versions is deleted.
+
+It is **off by default** and gated behind `SF_CACHE_SWEEP=1`. ⚠️ Never combine `SF_CACHE_SWEEP=1` with `ONLY=` — a scoped run only touches one window's queries/versions, so the sweep would delete every other window's cache. `regen-all.js` refuses to sweep when `--only` is present (it warns and ignores the env), but the safe rule is: sweep only on the full refresh.
 
 ## Limitations
 
@@ -144,10 +159,10 @@ Replace the old `install + make regen + push-to-neo + ./gradlew export.database 
 
 ```yaml
 - name: Refresh AD cache (only on AD changes)
-  if: contains(steps.changes.outputs.paths, 'cli/cache/ad-snapshot.json')
+  if: contains(steps.changes.outputs.paths, 'cli/cache/ad-snapshot/')
   run: |
     make regen ONLY=<spec> CACHE_DB=1
-    git diff --exit-code cli/cache/ad-snapshot.json || echo "cache changed"
+    git diff --exit-code cli/cache/ad-snapshot/ || echo "cache changed"
 
 - name: Regeneration check (every PR)
   run: make regen-check ONLY=<spec> FROM_CACHE=1

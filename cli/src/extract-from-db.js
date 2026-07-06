@@ -83,14 +83,16 @@ FROM AD_Callout co
 JOIN AD_Column col ON col.AD_Callout_ID = co.AD_Callout_ID
 JOIN AD_Tab t ON col.AD_Table_ID = t.AD_Table_ID
 LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = co.AD_Callout_ID
-WHERE t.AD_Window_ID = $1`,
+WHERE t.AD_Window_ID = $1
+ORDER BY co.AD_Callout_ID, col.AD_Table_ID, col.ColumnName`,
 
   'validation-rules': `
 SELECT vr.AD_Val_Rule_ID, vr.Name, vr.Code, c.ColumnName
 FROM AD_Val_Rule vr
 JOIN AD_Column c ON c.AD_Val_Rule_ID = vr.AD_Val_Rule_ID
 JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
-WHERE t.AD_Window_ID = $1`,
+WHERE t.AD_Window_ID = $1
+ORDER BY vr.AD_Val_Rule_ID, c.ColumnName`,
 
   'display-logic': `
 SELECT f.Name, f.DisplayLogic, f.DisplayLogic_Server, f.DisplayLogicGrid,
@@ -99,7 +101,8 @@ FROM AD_Field f
 JOIN AD_Column c ON f.AD_Column_ID = c.AD_Column_ID
 JOIN AD_Tab t ON f.AD_Tab_ID = t.AD_Tab_ID
 WHERE t.AD_Window_ID = $1
-  AND (f.DisplayLogic IS NOT NULL OR c.ReadOnlyLogic IS NOT NULL)`,
+  AND (f.DisplayLogic IS NOT NULL OR c.ReadOnlyLogic IS NOT NULL)
+ORDER BY c.ColumnName, f.Name, f.AD_Field_ID`,
 
   'document-processes': `
 SELECT 'tab_process' AS mechanism,
