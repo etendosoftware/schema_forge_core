@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 
 import { dumpDelta } from '../src/push-to-neo.js';
 import { setCacheMode } from '../src/db.js';
-import { cacheKey, writeEntry } from '../src/lib/ad-cache.js';
+import { upsertVersion } from '../src/lib/ad-cache.js';
 
 /**
  * Verifies that `push-to-neo --dump-delta` with SF_CACHE_MODE=read never opens
@@ -69,14 +69,10 @@ test('dumpDelta in read-cache mode produces a delta without opening a DB connect
 
     // ---- 3) Prime the AD cache dir with the two queries dumpDelta makes ----
     const cacheDir = join(tmp, 'cache');
-    writeEntry(cacheDir, cacheKey(TABS_SQL, ['143']), {
-      sql: 'tabs', params: ['143'],
-      rows: [{ ad_tab_id: '187', name: 'Header', ad_table_id: '259', seqno: 10 }],
-    });
-    writeEntry(cacheDir, cacheKey(COLS_SQL, ['143']), {
-      sql: 'cols', params: ['143'],
-      rows: [{ ad_table_id: '259', ad_column_id: '2070', columnname: 'DocumentNo', position: 1 }],
-    });
+    upsertVersion(cacheDir, TABS_SQL, ['143'],
+      [{ ad_tab_id: '187', name: 'Header', ad_table_id: '259', seqno: 10 }]);
+    upsertVersion(cacheDir, COLS_SQL, ['143'],
+      [{ ad_table_id: '259', ad_column_id: '2070', columnname: 'DocumentNo', position: 1 }]);
 
     // ---- 4) Switch cache to read mode and call dumpDelta ----
     setCacheMode({ mode: 'read', path: cacheDir });

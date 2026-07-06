@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -11,10 +11,10 @@ import {
   sweepCache,
   wrapPoolWithCache,
 } from '../src/db.js';
-import { cacheKey, entryPath, listKeys, readEntry } from '../src/lib/ad-cache.js';
+import { sqlKey, listSqlKeys, listVersions, readVersion } from '../src/lib/ad-cache.js';
 
 /**
- * These tests exercise the per-query file cache wiring in cli/src/db.js
+ * These tests exercise the grouped-by-SQL file cache wiring in cli/src/db.js
  * end-to-end without opening a real PostgreSQL connection. We use the cache
  * 'read' path (a pure stub pool) and the cache 'write' wrapper on a fake pool.
  *
@@ -44,8 +44,8 @@ afterEach(() => {
   rmSync(tmp, { recursive: true, force: true });
 });
 
-describe('extract cache: write mode produces per-query files', () => {
-  it('records every query and flushes one deterministic file per key', async () => {
+describe('extract cache: write mode produces grouped files', () => {
+  it('records every query and flushes one file per distinct SQL', async () => {
     setCacheMode({ mode: 'write', path: cacheDir });
     const pool = wrapPoolWithCache(fakePool((sql, params) => {
       if (sql.includes('AD_Window')) return [{ id: params[0], name: 'Sales Order' }];
@@ -57,15 +57,49 @@ describe('extract cache: write mode produces per-query files', () => {
     await pool.query('SELECT * FROM AD_Tab WHERE AD_Window_ID = $1', ['143']);
 
     const { written, path, pruned } = flushCacheWrites();
-    assert.equal(written, 2);
+    assert.equal(written, 2, 'two versions written');
     assert.equal(path, cacheDir);
     assert.equal(pruned, 0, 'sweep is off by default');
-    assert.equal(listKeys(cacheDir).length, 2);
+    assert.equal(listSqlKeys(cacheDir).length, 2, 'two distinct SQL → two files');
 
-    // Verify one file per key, named after cacheKey().
-    const k1 = cacheKey('SELECT * FROM AD_Window WHERE AD_Window_ID = $1', ['143']);
-    assert.ok(existsSync(entryPath(cacheDir, k1)), 'window query file must exist');
-    assert.deepEqual(readEntry(cacheDir, k1).rows, [{ id: '143', name: 'Sales Order' }]);
+    assert.deepEqual(
+      readVersion(cacheDir, 'SELECT * FROM AD_Window WHERE AD_Window_ID = $1', ['143']).rows,
+      [{ id: '143', name: 'Sales Order' }],
+    );
+  });
+
+  it('groups many param versions of the SAME SQL into ONE file', async () => {
+    setCacheMode({ mode: 'write', path: cacheDir });
+    const pool = wrapPoolWithCache(fakePool((sql, params) => [{ w: params[0] }]));
+    const SQL = 'SELECT * FROM AD_Tab WHERE AD_Window_ID = $1';
+    await pool.query(SQL, ['143']);
+    await pool.query(SQL, ['800']);
+    await pool.query(SQL, ['259']);
+    const { written } = flushCacheWrites();
+
+    assert.equal(written, 3, 'three versions written');
+    assert.equal(listSqlKeys(cacheDir).length, 1, 'same SQL → single file');
+    assert.equal(listVersions(cacheDir, sqlKey(SQL)).length, 3, 'three versions inside');
+    assert.deepEqual(readVersion(cacheDir, SQL, ['800']).rows, [{ w: '800' }]);
+  });
+
+  it('merge-write preserves versions from a previous run in the same file', async () => {
+    const SQL = 'SELECT * FROM AD_Tab WHERE AD_Window_ID = $1';
+    setCacheMode({ mode: 'write', path: cacheDir });
+    let pool = wrapPoolWithCache(fakePool((sql, params) => [{ w: params[0] }]));
+    await pool.query(SQL, ['143']);
+    flushCacheWrites();
+
+    // Second run touches a different param version of the SAME SQL.
+    setCacheMode({ mode: 'write', path: cacheDir });
+    pool = wrapPoolWithCache(fakePool((sql, params) => [{ w: params[0] }]));
+    await pool.query(SQL, ['800']);
+    flushCacheWrites();
+
+    // Both versions coexist in the one file (no drop).
+    assert.equal(listVersions(cacheDir, sqlKey(SQL)).length, 2);
+    assert.deepEqual(readVersion(cacheDir, SQL, ['143']).rows, [{ w: '143' }]);
+    assert.deepEqual(readVersion(cacheDir, SQL, ['800']).rows, [{ w: '800' }]);
   });
 
   it('maps a legacy .json SF_CACHE_PATH to its directory', async () => {
@@ -76,7 +110,7 @@ describe('extract cache: write mode produces per-query files', () => {
     await pool.query('SELECT 1', []);
     flushCacheWrites();
     assert.equal(existsSync(legacyPath), false, 'no monolithic file is created');
-    assert.equal(listKeys(cacheDir).length, 1);
+    assert.equal(listSqlKeys(cacheDir).length, 1);
   });
 });
 
@@ -101,7 +135,7 @@ describe('extract cache: read mode reproduces results without DB', () => {
     assert.equal(cachedResult.rowCount, dbResult.rows.length);
   });
 
-  it('serves the same key across whitespace-different SQL', async () => {
+  it('serves the same file across whitespace-different SQL', async () => {
     setCacheMode({ mode: 'write', path: cacheDir });
     const writer = wrapPoolWithCache(fakePool(() => [{ x: 1 }]));
     await writer.query('SELECT  *  FROM   AD_Window\nWHERE AD_Window_ID = $1', ['9']);
@@ -130,50 +164,102 @@ describe('extract cache: read mode with empty cache fails hard', () => {
       },
     );
   });
+
+  it('misses when the SQL file exists but the param version is absent', async () => {
+    setCacheMode({ mode: 'write', path: cacheDir });
+    const writer = wrapPoolWithCache(fakePool(() => [{ x: 1 }]));
+    await writer.query('SELECT $1', ['known']);
+    flushCacheWrites();
+
+    setCacheMode({ mode: 'read', path: cacheDir });
+    const reader = createDbPool();
+    await assert.rejects(
+      () => reader.query('SELECT $1', ['unknown-param']),
+      (err) => err.code === 'AD_CACHE_MISS',
+    );
+  });
 });
 
-describe('extract cache: gated sweep', () => {
+describe('extract cache: gated two-level sweep', () => {
   it('is disabled by default: orphan files survive a flush', async () => {
-    // Seed two files, then a fresh write run touches only one; without sweep,
-    // the untouched file must remain.
     setCacheMode({ mode: 'write', path: cacheDir });
     let writer = wrapPoolWithCache(fakePool(() => [{ v: 'a' }]));
     await writer.query('SELECT 1', []);
     await writer.query('SELECT 2', []);
     flushCacheWrites();
-    assert.equal(listKeys(cacheDir).length, 2);
+    assert.equal(listSqlKeys(cacheDir).length, 2);
 
     setCacheMode({ mode: 'write', path: cacheDir }); // sweep NOT enabled
     writer = wrapPoolWithCache(fakePool(() => [{ v: 'b' }]));
     await writer.query('SELECT 1', []);
     const { pruned } = flushCacheWrites();
     assert.equal(pruned, 0);
-    assert.equal(listKeys(cacheDir).length, 2, 'orphan must survive without sweep');
+    assert.equal(listSqlKeys(cacheDir).length, 2, 'orphan must survive without sweep');
   });
 
-  it('when enabled, deletes only untouched keys and keeps touched ones', async () => {
-    // Seed three files.
+  it('FILE level: deletes untouched SQL files, keeps touched ones', async () => {
     setCacheMode({ mode: 'write', path: cacheDir });
     let writer = wrapPoolWithCache(fakePool(() => [{ v: 1 }]));
     await writer.query('SELECT 1', []);
     await writer.query('SELECT 2', []);
     await writer.query('SELECT 3', []);
     flushCacheWrites();
-    assert.equal(listKeys(cacheDir).length, 3);
+    assert.equal(listSqlKeys(cacheDir).length, 3);
 
-    // Fresh run with sweep on touches only two of the three.
     setCacheMode({ mode: 'write', path: cacheDir, sweep: true });
     writer = wrapPoolWithCache(fakePool(() => [{ v: 2 }]));
     await writer.query('SELECT 1', []);
     await writer.query('SELECT 2', []);
     const { pruned } = flushCacheWrites();
 
-    assert.equal(pruned, 1, 'the untouched key must be pruned');
-    const remaining = listKeys(cacheDir);
+    assert.equal(pruned, 1, 'the untouched SQL file must be pruned');
+    const remaining = listSqlKeys(cacheDir);
     assert.equal(remaining.length, 2);
-    assert.ok(remaining.includes(cacheKey('SELECT 1', [])));
-    assert.ok(remaining.includes(cacheKey('SELECT 2', [])));
-    assert.ok(!remaining.includes(cacheKey('SELECT 3', [])));
+    assert.ok(remaining.includes(sqlKey('SELECT 1')));
+    assert.ok(remaining.includes(sqlKey('SELECT 2')));
+    assert.ok(!remaining.includes(sqlKey('SELECT 3')));
+  });
+
+  it('VERSION level: drops stale versions inside a touched file', async () => {
+    const SQL = 'SELECT * FROM AD_Tab WHERE AD_Window_ID = $1';
+    setCacheMode({ mode: 'write', path: cacheDir });
+    let writer = wrapPoolWithCache(fakePool((sql, params) => [{ w: params[0] }]));
+    await writer.query(SQL, ['143']);
+    await writer.query(SQL, ['800']);
+    await writer.query(SQL, ['259']);
+    flushCacheWrites();
+    assert.equal(listVersions(cacheDir, sqlKey(SQL)).length, 3);
+
+    // Fresh run touches only two of the three versions.
+    setCacheMode({ mode: 'write', path: cacheDir, sweep: true });
+    writer = wrapPoolWithCache(fakePool((sql, params) => [{ w: params[0] }]));
+    await writer.query(SQL, ['143']);
+    await writer.query(SQL, ['800']);
+    const { pruned } = flushCacheWrites();
+
+    assert.equal(pruned, 1, 'one stale version pruned');
+    const versions = listVersions(cacheDir, sqlKey(SQL));
+    assert.equal(versions.length, 2);
+    assert.equal(readVersion(cacheDir, SQL, ['259']), null, 'stale version gone');
+    assert.ok(readVersion(cacheDir, SQL, ['143']), 'touched version kept');
+  });
+
+  it('deletes a file whose every version became stale', async () => {
+    const SQL = 'SELECT $1';
+    setCacheMode({ mode: 'write', path: cacheDir });
+    let writer = wrapPoolWithCache(fakePool(() => [{ v: 1 }]));
+    await writer.query(SQL, ['a']);
+    await writer.query('SELECT keep', []);
+    flushCacheWrites();
+
+    // A run touches only 'SELECT keep'; the whole 'SELECT $1' file is emptied.
+    setCacheMode({ mode: 'read', path: cacheDir, sweep: true });
+    const reader = createDbPool();
+    await reader.query('SELECT keep', []);
+    const { pruned, prunedFiles } = sweepCache();
+    assert.equal(pruned, 1);
+    assert.equal(prunedFiles, 1);
+    assert.deepEqual(listSqlKeys(cacheDir), [sqlKey('SELECT keep')]);
   });
 
   it('read-mode touches count toward the swept set', async () => {
@@ -183,14 +269,13 @@ describe('extract cache: gated sweep', () => {
     await writer.query('SELECT 2', []);
     flushCacheWrites();
 
-    // A read run that reads only key 1, then an explicit sweepCache().
     setCacheMode({ mode: 'read', path: cacheDir, sweep: true });
     const reader = createDbPool();
     await reader.query('SELECT 1', []);
-    const { pruned, prunedKeys } = sweepCache();
+    const { pruned, prunedFileKeys } = sweepCache();
     assert.equal(pruned, 1);
-    assert.deepEqual(prunedKeys, [cacheKey('SELECT 2', [])]);
-    assert.deepEqual(listKeys(cacheDir), [cacheKey('SELECT 1', [])]);
+    assert.deepEqual(prunedFileKeys, [sqlKey('SELECT 2')]);
+    assert.deepEqual(listSqlKeys(cacheDir), [sqlKey('SELECT 1')]);
   });
 
   it('SF_CACHE_SWEEP=1 env enables the sweep by default', async () => {
@@ -201,13 +286,12 @@ describe('extract cache: gated sweep', () => {
       assert.equal(getCacheMode().sweep, true);
       const writer = wrapPoolWithCache(fakePool(() => [{ v: 1 }]));
       await writer.query('SELECT keep', []);
-      // Pre-seed an orphan file directly.
-      const orphanKey = cacheKey('SELECT gone', []);
-      const { writeEntry } = await import('../src/lib/ad-cache.js');
-      writeEntry(cacheDir, orphanKey, { sql: 'SELECT gone', params: [], rows: [] });
+      // Pre-seed an orphan file directly (grouped layout).
+      const { upsertVersion } = await import('../src/lib/ad-cache.js');
+      upsertVersion(cacheDir, 'SELECT gone', [], []);
       const { pruned } = flushCacheWrites();
       assert.equal(pruned, 1);
-      assert.ok(!listKeys(cacheDir).includes(orphanKey));
+      assert.ok(!listSqlKeys(cacheDir).includes(sqlKey('SELECT gone')));
     } finally {
       if (prev === undefined) delete process.env.SF_CACHE_SWEEP;
       else process.env.SF_CACHE_SWEEP = prev;
