@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { ImportDialog } from '../ImportDialog.jsx';
+import { registerImportDescriptor } from '../../../lib/import/buildOperations.js';
 
 afterEach(() => {
   cleanup();
@@ -76,6 +77,25 @@ describe('ImportDialog', () => {
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
     fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => expect(onImported).toHaveBeenCalledWith(1));
+  });
+
+  it('regression: config.descriptor (the real decisions.json field) dispatches to the registered composite descriptor, not the flat single-op default', async () => {
+    const descriptorFn = vi.fn().mockReturnValue([
+      { id: 'bp', spec: 'contacts', entity: 'businessPartner', body: { name: 'Custom BP body' } },
+      { id: 'contact', spec: 'contacts', entity: 'contact', parentRef: 'bp', body: {} },
+    ]);
+    registerImportDescriptor('regression-test-descriptor', descriptorFn);
+    const descriptorConfig = { ...config, descriptor: 'regression-test-descriptor' };
+    const postBatch = vi.fn().mockResolvedValue({ committed: true, operations: [{ id: 'bp', ok: true, recordId: 'REC-1' }] });
+    render(<ImportDialog open config={descriptorConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => expect(descriptorFn).toHaveBeenCalled());
+    // Prove postBatch received the descriptor's own two-op shape, not a flat one-op default.
+    const sentOps = postBatch.mock.calls[0][0];
+    expect(sentOps).toHaveLength(2);
+    expect(sentOps[0].body.name).toBe('Custom BP body');
   });
 
   it('shows a failed row in the result review queue with Retry re-invoking postBatch for that row', async () => {

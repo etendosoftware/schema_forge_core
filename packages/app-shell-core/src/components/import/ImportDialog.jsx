@@ -59,13 +59,21 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // buildOperations (engine) expects { spec, entity, targets: string[], descriptorName? } —
   // config carries `fields` (full descriptor objects, needed by the mapping/validation
   // steps above), so the operations-builder config is derived here rather than passing
-  // `config` straight through, which would silently build an empty body.
+  // `config` straight through, which would silently build an empty body. The real
+  // decisions.json/contract.json field is `descriptor` (verified against
+  // artifacts/contacts/decisions.json: `"descriptor": "contacts"`, not `descriptorName`)
+  // — reading the wrong key here silently left `descriptorName` undefined, so
+  // buildOperations always fell through to the flat single-op default builder instead of
+  // the registered Contacts composite descriptor: no location/contact split, no country/
+  // region resolution, raw address text dumped straight onto businessPartner, and the
+  // descriptor's own oBTIKTaxIDKey default never applied — confirmed by inspecting the
+  // actual /batch request body sent from the browser.
   const operationsConfig = useMemo(() => ({
     spec: config.spec,
     entity: config.entity,
-    descriptorName: config.descriptorName,
+    descriptorName: config.descriptor,
     targets: config.fields.map((f) => f.target),
-  }), [config.spec, config.entity, config.descriptorName, config.fields]);
+  }), [config.spec, config.entity, config.descriptor, config.fields]);
 
   // The real config shape (decisions.json → window.import, verified against
   // artifacts/contacts/decisions.json) is `dedupe: { scope, key: string[] }`, not a flat
