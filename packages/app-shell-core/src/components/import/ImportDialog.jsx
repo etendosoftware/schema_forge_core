@@ -169,7 +169,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
   const handleRetryEntryPostSend = useCallback(async (index) => {
     const entry = entries[index];
-    const result = await sendRow(buildOperations(entry.row, operationsConfig), { postBatch });
+    const result = await sendRow(await buildOperations(entry.row, operationsConfig), { postBatch });
     setEntries((prev) => {
       const next = [...prev];
       if (result.status === 'ok') {

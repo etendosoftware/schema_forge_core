@@ -63,7 +63,10 @@ export async function runImport(rows, { buildRowOperations, postBatch, concurren
   await runBoundedPool(
     attempted,
     concurrency,
-    async (row) => sendRow(buildRowOperations(row), { postBatch }),
+    // buildRowOperations may itself be async (a composite descriptor awaiting FK
+    // resolution) — always await it before handing the result to sendRow, never pass a
+    // possibly-unresolved Promise straight through.
+    async (row) => sendRow(await buildRowOperations(row), { postBatch }),
     (result, row, index) => {
       results[index] = { row, ...result };
       completed += 1;

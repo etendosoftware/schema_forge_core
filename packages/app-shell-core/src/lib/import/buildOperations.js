@@ -27,7 +27,15 @@ export function buildDefaultOperations(row, { spec, entity, targets }) {
   return [{ id: 'row', spec, entity, body }];
 }
 
-export function buildOperations(row, config) {
+// Declared `async` even though the default path is fully synchronous: a registered
+// composite descriptor (e.g. Contacts, which awaits FK resolution while building its
+// Location op) may itself be async, returning a Promise<operations[]> instead of a plain
+// array. A non-async buildOperations would hand that unresolved Promise straight to
+// postBatch, which JSON.stringifies it as `{}` (a Promise has no enumerable own
+// properties) — sent to /batch as `{"operations":{}}` and rejected outright. Declaring
+// this function itself `async` makes every call site `await` it uniformly regardless of
+// which path (sync default builder or async descriptor) actually ran.
+export async function buildOperations(row, config) {
   if (!config.descriptorName) {
     return buildDefaultOperations(row, config);
   }

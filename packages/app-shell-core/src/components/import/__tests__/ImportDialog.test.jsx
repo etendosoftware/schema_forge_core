@@ -80,10 +80,16 @@ describe('ImportDialog', () => {
   });
 
   it('regression: config.descriptor (the real decisions.json field) dispatches to the registered composite descriptor, not the flat single-op default', async () => {
-    const descriptorFn = vi.fn().mockReturnValue([
-      { id: 'bp', spec: 'contacts', entity: 'businessPartner', body: { name: 'Custom BP body' } },
-      { id: 'contact', spec: 'contacts', entity: 'contact', parentRef: 'bp', body: {} },
-    ]);
+    // Async, like the real Contacts descriptor (which awaits FK resolution) — a
+    // synchronous mock here would not have caught the sibling bug where an unawaited
+    // async descriptor's Promise got JSON.stringify'd as "{}" instead of the real array.
+    const descriptorFn = vi.fn().mockImplementation(async () => {
+      await Promise.resolve();
+      return [
+        { id: 'bp', spec: 'contacts', entity: 'businessPartner', body: { name: 'Custom BP body' } },
+        { id: 'contact', spec: 'contacts', entity: 'contact', parentRef: 'bp', body: {} },
+      ];
+    });
     registerImportDescriptor('regression-test-descriptor', descriptorFn);
     const descriptorConfig = { ...config, descriptor: 'regression-test-descriptor' };
     const postBatch = vi.fn().mockResolvedValue({ committed: true, operations: [{ id: 'bp', ok: true, recordId: 'REC-1' }] });
@@ -92,8 +98,11 @@ describe('ImportDialog', () => {
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
     fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => expect(descriptorFn).toHaveBeenCalled());
-    // Prove postBatch received the descriptor's own two-op shape, not a flat one-op default.
+    // Prove postBatch received the descriptor's own resolved two-op array, not a flat
+    // one-op default and not an unresolved Promise serialized as "{}".
+    await waitFor(() => expect(postBatch).toHaveBeenCalled());
     const sentOps = postBatch.mock.calls[0][0];
+    expect(Array.isArray(sentOps)).toBe(true);
     expect(sentOps).toHaveLength(2);
     expect(sentOps[0].body.name).toBe('Custom BP body');
   });
@@ -108,5 +117,26 @@ describe('ImportDialog', () => {
     postBatch.mockResolvedValueOnce({ committed: true, operations: [{ id: 'row', ok: true, recordId: 'REC-2' }] });
     fireEvent.click(screen.getByTestId('ImportReviewQueue__retry-0'));
     await waitFor(() => expect(postBatch).toHaveBeenCalledTimes(2));
+  });
+
+  it('regression: post-send Retry awaits an async descriptor before calling postBatch, never sends an unresolved Promise', async () => {
+    const descriptorFn = vi.fn().mockImplementation(async (row) => {
+      await Promise.resolve();
+      return [{ id: 'bp', spec: 'contacts', entity: 'businessPartner', body: { name: row.name } }];
+    });
+    registerImportDescriptor('async-retry-descriptor', descriptorFn);
+    const descriptorConfig = { ...config, descriptor: 'async-retry-descriptor' };
+    const postBatch = vi.fn().mockResolvedValue({ committed: false, failedAt: { index: 0 }, error: { message: 'Rejected by server' } });
+    render(<ImportDialog open config={descriptorConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__rowError-0'));
+    postBatch.mockResolvedValueOnce({ committed: true, operations: [{ id: 'bp', ok: true, recordId: 'REC-2' }] });
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__retry-0'));
+    await waitFor(() => expect(postBatch).toHaveBeenCalledTimes(2));
+    const retryOps = postBatch.mock.calls[1][0];
+    expect(Array.isArray(retryOps)).toBe(true);
+    expect(retryOps[0].body.name).toBe('Lucia');
   });
 });
