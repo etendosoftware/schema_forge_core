@@ -236,26 +236,86 @@ Each module has one job and is independently unit-testable:
 
 ### 3. UI (`ImportDialog.jsx`, `schema_forge_core / app-shell-core / components`)
 
-The reference screenshots (from a different, unrelated product) are a source for the
-**interaction flow only** — dropzone → mapping table → preview/errors → confirm →
-progress → result. **Visual language is not replicated** (colors, branding, exact spacing) —
-the implementation uses this repo's existing design system, the shadcn/Radix components
-already in `app-shell-core/src/components/ui/` (`dialog.jsx`, `table.jsx`, `button.jsx`,
-etc.), consistent with every other dialog/table in the app.
+**Reference mock:** a 7-screen interactive prototype built with Claude Design, project
+"Pasted images" (`865968a8-af18-4c9f-a45c-d2abec42245a`), file
+`Flujo Importación Contactos.dc.html`. It defines the authoritative **interaction flow,
+screen anatomy, and Spanish copy** for the Contacts import (Product's copy follows the
+same anatomy with its own field/entity labels). It ships its own parallel CSS design
+system (custom properties like `--etendo-ink`, `--purple-500`, plain classes like `.btn`/
+`.modal`/`.pill`) that **does not match** this repo's actual tokens
+(`tools/app-shell/src/index.css` — shadcn/HSL, no purple/yellow brand colors). Decision:
+**fidelity of interaction and anatomy, not of skin** — the implementation uses this
+repo's real shadcn/Radix primitives already in `app-shell-core/src/components/ui/`
+(`dialog.jsx`, `table.jsx`, `button.jsx`, etc.), styled with the app's actual theme, not
+the mock's custom properties or plain CSS classes.
 
-Steps, matching the reference mockups' flow:
-1. **Dropzone** — accepts `.csv`/`.txt`, shows detected row count.
+**Three points where implementation deliberately diverges from the mock, resolved
+during design review (not oversights):**
+- The mock's confirm step shows a "Crear etiquetas automáticamente" (auto-create tags)
+  checkbox. **Dropped entirely** — Contacts/Product have no tagging feature in this
+  design; there is nothing for it to control.
+- The mock shows "Evitar duplicados" (avoid duplicates) as a per-run checkbox the user
+  could untick. **Not implemented as a toggle** — dedupe stays exactly as already
+  specified: driven by `decisions.import.dedupe`, always applied when configured, no UI
+  toggle. The confirm step therefore shows the two stat lines and no checkboxes at all.
+- The mock's result screen (1f) shows a **one-time downloadable error report** ("descarga
+  los errores ahora, ya que no podrás consultarlos nuevamente" — download now, you won't
+  be able to see them again) with no way to revisit or act on failed rows afterward. **The
+  interactive review queue already specified above is kept** — a "Download errors" button
+  is added as one more action *inside* the review queue (export what's currently in the
+  queue to CSV), not as a replacement for it. Nothing about failed rows is one-shot or
+  unrecoverable within the session.
+
+**Exact screen anatomy and copy from the mock** (Spanish; Contacts window shown, Product
+follows the same shape with `product`'s own contract field labels):
+
+1. **1a — Empty state**: dropzone with copy "Arrastra tu archivo aquí" / "o selecciona un
+   archivo. Formatos compatibles: CSV o TXT" (mock says "XLS, CSV o TXT" — **XLS dropped**
+   per this spec's non-goals), heading "Empieza agregando tus contactos", subtext "Puedes
+   crearlos manualmente o importarlos en segundos", and a single primary "Nuevo contacto"
+   button (the mock's second button, "Pídeselo a Copilot", is **not implemented** — AI-
+   assisted import is an explicit non-goal). The toolbar's import trigger is a secondary
+   `IconButton` (upload icon) placed among the other trailing toolbar icons (search,
+   filter, more), matching the mock's `ContactosToolbar` layout exactly.
+2. **1b — Column mapping**: header shows "Importar contactos" + an info pill "{N} filas
+   detectadas" + "Archivo cargado: {filename}" subtitle. Below it, one `colhead` chip per
+   detected column with a chevron-down (opens the target-field picker), then the row
+   preview table. Footer: a red "{N} Errores encontrados" link on the left (opens the
+   review queue filtered to errors), "Volver" (secondary) and "Importar {N} contactos"
+   (primary) on the right.
+3. **Preview + review queue** — as already specified above (this is the mock's step 1b
+   continued, once the user interacts with mapped/erroring columns) — unchanged by the
+   mock, since the mock only shows the static "before interaction" state.
+4. **1c — Confirm**: title "Confirmar importación", "Se importarán {N} contactos", "{M}
+   filas serán omitidas por errores", "Cancelar" (secondary) / "Confirmar importación"
+   (primary) — no checkboxes, per the divergence above.
+5. **1d — Progress**: "Importando contactos…" label with a live percentage (tabular-nums),
+   a progress bar, and "Procesando filas" as secondary text underneath — driven by
+   `importEngine`'s progress callback.
+6. **1e — File-level error**: a blocking dialog (not the review queue — this is the
+   file-level error case from Error handling below) with a danger icon, "No se pudo
+   completar la importación", "Ocurrió un problema al procesar el archivo. Verifica el
+   formato e inténtalo nuevamente.", "Cancelar" / "Reintentar".
+7. **1f/1g — Result**: if any rows failed, a warning banner — "{M} filas fueron omitidas
+   por errores." plus two actions: "Ver filas con error" (opens the review queue, scoped
+   to this run's failures) and "Descargar errores" (exports the current review-queue
+   contents to CSV) — followed by the imported-rows table. A dismissible success toast,
+   bottom-center, reads "{N} contactos importados correctamente".
+
+Steps, matching the mock's flow:
+1. **Dropzone** — accepts `.csv`/`.txt`, shows detected row count (mock screen 1a).
 2. **Mapping table** — one column per detected header, auto-mapped via `mapColumns`,
-   each with a dropdown to override the target field (or mark "not imported").
+   each with a dropdown to override the target field (or mark "not imported") (1b).
 3. **Preview + review queue** — see "Review queue" below; default view is capped/sampled
    (see Performance section), with a toggle to show only rows that still need attention
-   (validation errors, FK `needs-review`, in-file dedupe-skips) versus all rows.
-4. **Confirm dialog** — "Will import N contacts, M rows will be skipped due to errors" +
-   options surfaced from `decisions.import` (dedupe on/off if ever made optional later —
-   v1 ships it always-on per the config).
-5. **Progress** — "Importing… X%" driven by `importEngine`'s progress callback.
+   (validation errors, FK `needs-review`, in-file dedupe-skips) versus all rows (1b
+   continued).
+4. **Confirm dialog** — "Will import N contacts, M rows will be skipped due to errors",
+   no options/checkboxes per the divergence above (1c).
+5. **Progress** — "Importing… X%" driven by `importEngine`'s progress callback (1d).
 6. **Result** — success toast/count + the same **review queue** pattern applied to
-   server-rejected rows (see below).
+   server-rejected rows, plus a Download-errors export action (see below) (1f/1g). File-
+   level parse failures use the separate blocking error dialog instead (1e).
 
 #### Review queue (shared pattern, used in step 3 and step 6)
 
@@ -291,6 +351,10 @@ ones that are fine, work the failing ones until they clear or I explicitly skip 
   from the import (pre-send) or accepted as permanently not-imported (post-send) and
   reported as "skipped by user" in the final summary, distinct from "still failing" so the
   numbers stay honest.
+- **Download errors** (result-step queue only, per the mock's screen 1f): exports the
+  queue's *current* contents (still-failing + skipped rows, with their reasons/server
+  messages) as a CSV the user can act on outside the app. This is additive — it does not
+  clear or close the queue, and the user can keep editing/retrying after downloading.
 - The loop is user-driven and open-ended: edit → re-validate/retry → repeat, or skip,
   until the queue is empty or the user is done. Nothing is auto-retried or auto-skipped.
 
@@ -305,17 +369,18 @@ every new string in both locales, no exceptions.
 
 ### 5. Error handling
 
-- **File-level**: unreadable/empty file, unknown delimiter → single blocking error,
-  dialog stays on step 1.
+- **File-level**: unreadable/empty file, unknown delimiter, duplicate headers → the
+  blocking dialog from the mock's screen 1e ("No se pudo completar la importación" / a
+  one-line reason / "Cancelar" / "Reintentar" — Retry re-opens the dropzone step so the
+  user can pick a corrected file, it does not blindly re-parse the same bad file).
 - **File encoding**: Spanish-locale Excel exports commonly save CSV as Windows-1252, not
   UTF-8 — decoding those as UTF-8 corrupts exactly the accented text (`ó`, `ñ`) the FK
   matching engine and validators most need to read correctly. `parseDelimited.js` decodes
   as UTF-8 first and falls back to Windows-1252 if the result contains the UTF-8
   replacement character (`�`); still garbled after that is a file-level error, not a
   silent corruption.
-- **Duplicate CSV headers**: two columns with the same header name is a file-level
-  blocking error ("column 'Email' appears twice") — the user fixes the file and re-uploads,
-  no attempt to guess which one wins.
+  Two columns sharing a header name ("column 'Email' appears twice") surfaces through the
+  same blocking dialog with that specific reason — no attempt to guess which one wins.
 - **Locale-formatted values**: numeric/decimal and date columns (e.g. `amount`, `date`
   contract types) accept common alternate formats (`"1.234,56"`, `dd/mm/yyyy`) during
   validation/normalization, not just the raw ISO/plain-number shape a hand-authored English
