@@ -22,7 +22,9 @@
     "./hooks/useCurrency.jsx": "./src/hooks/useCurrency.jsx",
     "./hooks/use-mobile.jsx": "./src/hooks/use-mobile.jsx",
     "./styles.css": "./src/styles.css",
-    "./components/ui/*": "./src/components/ui/*"
+    "./components/ui/*": "./src/components/ui/*",
+    "./components/import/*": "./src/components/import/*",
+    "./lib/*": "./src/lib/*"
   },
   "files": [
     "src",
