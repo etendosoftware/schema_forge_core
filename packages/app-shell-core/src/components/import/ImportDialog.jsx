@@ -195,7 +195,12 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
               retryLabel="Re-validate"
             />
             <div className="flex justify-end">
-              <Button type="button" onClick={() => setStep(STEP.CONFIRM)} disabled={validCount === 0}>
+              <Button
+                type="button"
+                onClick={() => setStep(STEP.CONFIRM)}
+                disabled={validCount === 0}
+                data-testid="ImportDialog__importButton"
+              >
                 {`Import ${validCount}`}
               </Button>
             </div>

@@ -21,8 +21,8 @@ describe('ImportColumnMapping', () => {
         onMappingChange={() => {}}
       />,
     );
-    expect(screen.getByText('Nombre')).toBeDefined();
-    expect(screen.getByText('Correo')).toBeDefined();
+    expect(screen.getByTestId('ImportColumnMapping__header-Nombre')).toBeDefined();
+    expect(screen.getByTestId('ImportColumnMapping__header-Correo')).toBeDefined();
   });
 
   it('shows the currently mapped target for each header', () => {

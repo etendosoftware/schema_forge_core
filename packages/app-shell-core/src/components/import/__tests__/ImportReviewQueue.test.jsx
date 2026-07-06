@@ -28,27 +28,30 @@ describe('buildErrorsCsv', () => {
 
 describe('ImportReviewQueue', () => {
   it('hides OK entries when showOnlyErrors is true', () => {
+    // okEntry is at index 0, errorEntry at index 1 — filtering doesn't renumber, it
+    // just removes okEntry (index 0) from what's rendered, so the surviving row keeps
+    // its original index 1 in its testids.
     render(<ImportReviewQueue entries={[okEntry, errorEntry]} showOnlyErrors onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
-    expect(screen.queryByText('Lucia · lucia@x.com')).toBeNull();
-    expect(screen.getByDisplayValue('not-an-email')).toBeDefined();
+    expect(screen.queryByTestId('ImportReviewQueue__summary-0')).toBeNull();
+    expect(screen.getByTestId('ImportReviewQueue__input-1-email')).toBeDefined();
   });
 
   it('shows all entries when showOnlyErrors is false', () => {
     render(<ImportReviewQueue entries={[okEntry, errorEntry]} showOnlyErrors={false} onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
-    expect(screen.getByText('Lucia · lucia@x.com')).toBeDefined();
-    expect(screen.getByDisplayValue('not-an-email')).toBeDefined();
+    expect(screen.getByTestId('ImportReviewQueue__summary-0').textContent).toBe('Lucia · lucia@x.com');
+    expect(screen.getByTestId('ImportReviewQueue__input-1-email')).toBeDefined();
   });
 
   it('renders the error message and an editable input for the flagged field', () => {
     render(<ImportReviewQueue entries={[errorEntry]} showOnlyErrors onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
-    expect(screen.getByText('Not a valid email address.')).toBeDefined();
-    expect(screen.getByDisplayValue('not-an-email')).toBeDefined();
+    expect(screen.getByTestId('ImportReviewQueue__fieldError-0-email').textContent).toBe('Not a valid email address.');
+    expect(screen.getByTestId('ImportReviewQueue__input-0-email').value).toBe('not-an-email');
   });
 
   it('calls onEditField with the entry index, target, and new value', () => {
     const onEditField = vi.fn();
     render(<ImportReviewQueue entries={[errorEntry]} showOnlyErrors onToggleFilter={() => {}} onEditField={onEditField} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
-    fireEvent.change(screen.getByDisplayValue('not-an-email'), { target: { value: 'fixed@x.com' } });
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-email'), { target: { value: 'fixed@x.com' } });
     expect(onEditField).toHaveBeenCalledWith(0, 'email', 'fixed@x.com');
   });
 
@@ -70,9 +73,9 @@ describe('ImportReviewQueue', () => {
         onDownloadErrors={() => {}}
       />
     );
-    expect(screen.getByText('Rejected by server')).toBeDefined();
-    expect(screen.getByDisplayValue('Lucia')).toBeDefined();
-    expect(screen.getByDisplayValue('lucia@x.com')).toBeDefined();
+    expect(screen.getByTestId('ImportReviewQueue__rowError-0').textContent).toBe('Rejected by server');
+    expect(screen.getByTestId('ImportReviewQueue__input-0-name').value).toBe('Lucia');
+    expect(screen.getByTestId('ImportReviewQueue__input-0-email').value).toBe('lucia@x.com');
   });
 
   it('edits the correct field when editing a row-level-error entry\'s full-row inputs', () => {
@@ -94,14 +97,15 @@ describe('ImportReviewQueue', () => {
         onDownloadErrors={() => {}}
       />
     );
-    fireEvent.change(screen.getByDisplayValue('lucia@x.com'), { target: { value: 'fixed@x.com' } });
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-email'), { target: { value: 'fixed@x.com' } });
     expect(onEditField).toHaveBeenCalledWith(0, 'email', 'fixed@x.com');
   });
 
   it('calls onRetryEntry with the entry index and shows the custom retryLabel', () => {
     const onRetryEntry = vi.fn();
     render(<ImportReviewQueue entries={[errorEntry]} showOnlyErrors onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={onRetryEntry} onSkipEntry={() => {}} onDownloadErrors={() => {}} retryLabel="Retry" />);
-    fireEvent.click(screen.getByText('Retry'));
+    expect(screen.getByTestId('ImportReviewQueue__retry-0').textContent).toBe('Retry');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__retry-0'));
     expect(onRetryEntry).toHaveBeenCalledWith(0);
   });
 
@@ -115,21 +119,21 @@ describe('ImportReviewQueue', () => {
   it('marks a skipped entry distinctly and does not offer edit/retry for it', () => {
     const skipped = { ...errorEntry, status: 'skipped' };
     render(<ImportReviewQueue entries={[skipped]} showOnlyErrors onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
-    expect(screen.getByText('Skipped')).toBeDefined();
-    expect(screen.queryByDisplayValue('not-an-email')).toBeNull();
+    expect(screen.getByTestId('ImportReviewQueue__skippedLabel-0').textContent).toBe('Skipped');
+    expect(screen.queryByTestId('ImportReviewQueue__input-0-email')).toBeNull();
   });
 
   it('calls onDownloadErrors when the download button is clicked', () => {
     const onDownloadErrors = vi.fn();
     render(<ImportReviewQueue entries={[errorEntry]} showOnlyErrors onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={onDownloadErrors} />);
-    fireEvent.click(screen.getByText('Download errors'));
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__download'));
     expect(onDownloadErrors).toHaveBeenCalled();
   });
 
   it('calls onToggleFilter when the filter toggle is clicked', () => {
     const onToggleFilter = vi.fn();
     render(<ImportReviewQueue entries={[errorEntry]} showOnlyErrors onToggleFilter={onToggleFilter} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
-    fireEvent.click(screen.getByText('Show all'));
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__filterToggle'));
     expect(onToggleFilter).toHaveBeenCalled();
   });
 });

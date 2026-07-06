@@ -51,10 +51,15 @@ export function ImportReviewQueue({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <button type="button" className="text-xs text-primary underline" onClick={onToggleFilter}>
+        <button
+          type="button"
+          className="text-xs text-primary underline"
+          onClick={onToggleFilter}
+          data-testid="ImportReviewQueue__filterToggle"
+        >
           {showOnlyErrors ? text.showAll : text.showOnlyErrors}
         </button>
-        <Button type="button" variant="secondary" size="sm" onClick={onDownloadErrors}>
+        <Button type="button" variant="secondary" size="sm" onClick={onDownloadErrors} data-testid="ImportReviewQueue__download">
           {text.downloadErrors}
         </Button>
       </div>
@@ -80,25 +85,26 @@ export function ImportReviewQueue({
               <TableRow key={index}>
                 <TableCell>
                   {isSkipped ? (
-                    <span className="text-xs text-muted-foreground">{text.skipped}</span>
+                    <span className="text-xs text-muted-foreground" data-testid={`ImportReviewQueue__skippedLabel-${index}`}>{text.skipped}</span>
                   ) : entry.errors.length === 0 ? (
-                    Object.values(entry.row).join(' · ')
+                    <span data-testid={`ImportReviewQueue__summary-${index}`}>{Object.values(entry.row).join(' · ')}</span>
                   ) : (
                     <div className="flex flex-col gap-2">
                       {rowLevelError && (
-                        <span className="text-xs text-destructive">{rowLevelError.message}</span>
+                        <span className="text-xs text-destructive" data-testid={`ImportReviewQueue__rowError-${index}`}>{rowLevelError.message}</span>
                       )}
                       {editableFields.map((field) => {
                         const fieldError = entry.errors.find((e) => e.target === field.target);
                         return (
                           <div key={field.target} className="flex flex-col gap-1">
                             {fieldError && !rowLevelError && (
-                              <span className="text-xs text-destructive">{fieldError.message}</span>
+                              <span className="text-xs text-destructive" data-testid={`ImportReviewQueue__fieldError-${index}-${field.target}`}>{fieldError.message}</span>
                             )}
                             <Input
                               value={entry.row[field.target] ?? ''}
                               onChange={(e) => onEditField(index, field.target, e.target.value)}
                               className="h-8"
+                              data-testid={`ImportReviewQueue__input-${index}-${field.target}`}
                             />
                           </div>
                         );
@@ -110,7 +116,7 @@ export function ImportReviewQueue({
                 <TableCell>
                   {!isSkipped && (
                     <div className="flex gap-1">
-                      <Button type="button" size="sm" onClick={() => onRetryEntry(index)}>
+                      <Button type="button" size="sm" onClick={() => onRetryEntry(index)} data-testid={`ImportReviewQueue__retry-${index}`}>
                         {retryLabel}
                       </Button>
                       <Button

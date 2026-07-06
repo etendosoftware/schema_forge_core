@@ -9,16 +9,16 @@ afterEach(() => {
 describe('ImportConfirmStep', () => {
   it('shows the import and skip counts', () => {
     render(<ImportConfirmStep importCount={112} skipCount={8} onCancel={() => {}} onConfirm={() => {}} />);
-    expect(screen.getByText(/112/)).toBeDefined();
-    expect(screen.getByText(/8/)).toBeDefined();
+    expect(screen.getByTestId('ImportConfirmStep__importCount').textContent).toMatch(/112/);
+    expect(screen.getByTestId('ImportConfirmStep__skipCount').textContent).toMatch(/8/);
   });
 
   it('calls onCancel and onConfirm', () => {
     const onCancel = vi.fn();
     const onConfirm = vi.fn();
     render(<ImportConfirmStep importCount={1} skipCount={0} onCancel={onCancel} onConfirm={onConfirm} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm import' }));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__cancel'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     expect(onCancel).toHaveBeenCalled();
     expect(onConfirm).toHaveBeenCalled();
   });

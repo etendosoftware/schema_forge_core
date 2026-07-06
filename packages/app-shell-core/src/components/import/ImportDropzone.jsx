@@ -53,8 +53,8 @@ export function ImportDropzone({ accept = '.csv,.txt', onFileSelected, labels })
       )}
     >
       <Upload className="h-6 w-6 text-muted-foreground" />
-      <p className="text-sm font-medium text-foreground">{text.dropHere}</p>
-      <p className="text-xs text-muted-foreground">{text.dropHint}</p>
+      <p className="text-sm font-medium text-foreground" data-testid="ImportDropzone__title">{text.dropHere}</p>
+      <p className="text-xs text-muted-foreground" data-testid="ImportDropzone__hint">{text.dropHint}</p>
       <input
         ref={inputRef}
         type="file"

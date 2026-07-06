@@ -9,15 +9,15 @@ afterEach(() => {
 describe('ImportFileErrorDialog', () => {
   it('shows the error message', () => {
     render(<ImportFileErrorDialog message="Duplicate column header: &quot;Email&quot;" onCancel={() => {}} onRetry={() => {}} />);
-    expect(screen.getByText(/Duplicate column header/)).toBeDefined();
+    expect(screen.getByTestId('ImportFileErrorDialog__message').textContent).toMatch(/Duplicate column header/);
   });
 
   it('calls onCancel and onRetry', () => {
     const onCancel = vi.fn();
     const onRetry = vi.fn();
     render(<ImportFileErrorDialog message="x" onCancel={onCancel} onRetry={onRetry} />);
-    fireEvent.click(screen.getByText('Cancel'));
-    fireEvent.click(screen.getByText('Retry'));
+    fireEvent.click(screen.getByTestId('ImportFileErrorDialog__cancel'));
+    fireEvent.click(screen.getByTestId('ImportFileErrorDialog__retry'));
     expect(onCancel).toHaveBeenCalled();
     expect(onRetry).toHaveBeenCalled();
   });

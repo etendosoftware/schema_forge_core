@@ -9,7 +9,7 @@ afterEach(() => {
 describe('ImportProgressStep', () => {
   it('shows the percent value', () => {
     render(<ImportProgressStep percent={42} />);
-    expect(screen.getByText('42%')).toBeDefined();
+    expect(screen.getByTestId('ImportProgressStep__percent').textContent).toBe('42%');
   });
 
   it('sets the progress bar width to the percent value', () => {

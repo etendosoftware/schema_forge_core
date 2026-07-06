@@ -9,13 +9,13 @@ afterEach(() => {
 describe('ImportDropzone', () => {
   it('renders default English copy', () => {
     render(<ImportDropzone onFileSelected={() => {}} />);
-    expect(screen.getByText('Drop your file here')).toBeDefined();
-    expect(screen.getByText(/Supported formats: CSV or TXT/)).toBeDefined();
+    expect(screen.getByTestId('ImportDropzone__title').textContent).toBe('Drop your file here');
+    expect(screen.getByTestId('ImportDropzone__hint').textContent).toMatch(/Supported formats: CSV or TXT/);
   });
 
   it('renders overridden copy from labels', () => {
     render(<ImportDropzone onFileSelected={() => {}} labels={{ dropHere: 'Suelta tu archivo' }} />);
-    expect(screen.getByText('Suelta tu archivo')).toBeDefined();
+    expect(screen.getByTestId('ImportDropzone__title').textContent).toBe('Suelta tu archivo');
   });
 
   it('calls onFileSelected when a file is chosen via the hidden input', () => {

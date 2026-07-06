@@ -5,8 +5,8 @@ export function ImportProgressStep({ percent, labels }) {
   return (
     <div className="flex flex-col gap-2 py-6">
       <div className="flex justify-between text-sm font-medium">
-        <span>{text.title}</span>
-        <span className="tabular-nums">{percent}%</span>
+        <span data-testid="ImportProgressStep__title">{text.title}</span>
+        <span className="tabular-nums" data-testid="ImportProgressStep__percent">{percent}%</span>
       </div>
       <div className="h-1.5 rounded-full bg-muted overflow-hidden">
         <div

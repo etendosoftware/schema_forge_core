@@ -73,6 +73,16 @@ overrides in the follow-up wiring plan). Engine API surface (already merged, all
   latter is a pre-existing dead naming convention in this package that
   `vitest.config.js`'s `include` glob does not match, so those files silently never
   run. Do not propagate that mistake.)
+- **Tests query exclusively via `data-testid`** — never `getByText`, `getByRole(...,
+  { name })`, or `getByDisplayValue`. This is an established repo-wide convention (both
+  `schema_forge_core` and `etendo_schema_forge` ship a codemod,
+  `scripts/add-data-testid.cjs`, that auto-injects `data-testid` on interactive JSX
+  across the codebase) caught during this plan's own post-implementation review — the
+  code blocks below have already been corrected to this style; give every
+  element a test touches an explicit `data-testid` (e.g.
+  `ImportReviewQueue__input-${index}-${field.target}`, `ImportConfirmStep__confirm`),
+  not a codemod-generated hash, so names stay stable and greppable in hand-written test
+  code.
 
 ---
 

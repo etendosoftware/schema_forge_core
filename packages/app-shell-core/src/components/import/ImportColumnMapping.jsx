@@ -13,7 +13,7 @@ export function ImportColumnMapping({ headers, importFields, mapping, onMappingC
         const target = mapping[header];
         return (
           <div key={header} className="flex flex-col gap-1 min-w-[140px]">
-            <span className="text-xs font-medium text-muted-foreground">{header}</span>
+            <span className="text-xs font-medium text-muted-foreground" data-testid={`ImportColumnMapping__header-${header}`}>{header}</span>
             <Select
               value={target ?? UNMAPPED_VALUE}
               onValueChange={(value) => onMappingChange(header, value === UNMAPPED_VALUE ? null : value)}
