@@ -76,7 +76,27 @@ describe('ImportDialog', () => {
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
     fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
-    await waitFor(() => expect(onImported).toHaveBeenCalledWith(1));
+    await waitFor(() => expect(onImported).toHaveBeenCalledWith({ okCount: 1, failedCount: 0 }));
+  });
+
+  it('regression: reports a nonzero failedCount when the batch fails, so a caller can choose to keep the dialog open instead of hiding the review queue', async () => {
+    // Root cause of a real report ("tengo 500 durante el import, no veo ningun error en
+    // pantalla"): ListView.jsx's onImported callback unconditionally closed the dialog on
+    // every call, regardless of whether there was anything to review — so even a batch
+    // that failed outright unmounted this whole dialog the instant it rendered the RESULT
+    // step, before the user could ever see the (correctly surfaced, per sendRow's own
+    // fix) error message. onImported must report enough information for the caller to
+    // make that call itself, not just a bare "how many succeeded" count.
+    const postBatch = vi.fn().mockResolvedValue({ message: 'Invalid value for OBTIKTaxIDKey' });
+    const onImported = vi.fn();
+    render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={onImported} />);
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => expect(onImported).toHaveBeenCalledWith({ okCount: 0, failedCount: 1 }));
+    // The dialog itself must still be showing the review queue at this point, not
+    // already torn down — this is what a caller closing on every onImported call hides.
+    expect(screen.getByTestId('ImportReviewQueue__rowError-0').textContent).toContain('Invalid value for OBTIKTaxIDKey');
   });
 
   it('regression: config.descriptor (the real decisions.json field) dispatches to the registered composite descriptor, not the flat single-op default', async () => {

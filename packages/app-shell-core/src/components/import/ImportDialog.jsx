@@ -229,7 +229,16 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       .map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || 'Unknown error' }], status: 'pending' }));
     setEntries(resultEntries);
     setStep(STEP.RESULT);
-    onImported(okCount);
+    // Reports failedCount alongside okCount (not just a bare success count) so the caller
+    // can decide whether it's actually safe to close the dialog. The design spec is
+    // explicit that the Result step must show "the same review queue pattern applied to
+    // server-rejected rows" — a caller that unconditionally closes on every onImported
+    // call (as ListView.jsx originally did) unmounts this whole dialog the instant it
+    // renders the RESULT step, hiding every failed row's real error message the very
+    // moment it becomes visible. Confirmed via a real browser run: a batch that failed
+    // outright (a genuine 500) still closed the dialog immediately, so nothing ever
+    // reached the screen even though sendRow was correctly surfacing the real message.
+    onImported({ okCount, failedCount: resultEntries.length });
     if (okCount > 0) toast.success(`${okCount} records imported successfully`);
   }, [entries, operationsConfig, config.concurrency, config.maxRows, postBatch, onImported]);
 
