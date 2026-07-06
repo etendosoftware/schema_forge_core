@@ -14,6 +14,7 @@ import {
   upsertVersion,
   listSqlKeys,
   listVersions,
+  rowsChecksum,
 } from '../src/lib/ad-cache.js';
 
 function withTmpDir(fn) {
@@ -69,6 +70,35 @@ describe('ad-cache.sqlKey / paramsKey', () => {
   });
 });
 
+describe('ad-cache.rowsChecksum', () => {
+  it('is stable across key-order permutations of row objects', () => {
+    const a = rowsChecksum([{ id: '1', name: 'Sales Order' }]);
+    const b = rowsChecksum([{ name: 'Sales Order', id: '1' }]);
+    assert.equal(a, b);
+  });
+
+  it('is stable across repeated calls with the same rows', () => {
+    const rows = [{ id: '1' }, { id: '2' }];
+    assert.equal(rowsChecksum(rows), rowsChecksum(rows));
+  });
+
+  it('changes when a value changes', () => {
+    const a = rowsChecksum([{ id: '1', name: 'Sales Order' }]);
+    const b = rowsChecksum([{ id: '1', name: 'Sales Invoice' }]);
+    assert.notEqual(a, b);
+  });
+
+  it('changes when row order changes', () => {
+    const a = rowsChecksum([{ id: '1' }, { id: '2' }]);
+    const b = rowsChecksum([{ id: '2' }, { id: '1' }]);
+    assert.notEqual(a, b, 'row order is meaningful data, checksum must not ignore it');
+  });
+
+  it('treats missing rows as an empty array', () => {
+    assert.equal(rowsChecksum(), rowsChecksum([]));
+  });
+});
+
 describe('ad-cache.sqlFilePath', () => {
   it('joins the dir and the sqlKey with a .json suffix', () => {
     assert.equal(sqlFilePath('/tmp/snap', 'abc123'), join('/tmp/snap', 'abc123.json'));
@@ -113,12 +143,24 @@ describe('ad-cache.upsertVersion / readVersion', () => {
   it('round-trips a single version', () => {
     withTmpDir((dir) => {
       const sql = 'SELECT $1';
-      upsertVersion(dir, sql, ['9'], [{ id: '9', name: 'X' }]);
+      const rows = [{ id: '9', name: 'X' }];
+      upsertVersion(dir, sql, ['9'], rows);
       assert.deepEqual(readVersion(dir, sql, ['9']), {
         sql: 'SELECT $1',
         params: ['9'],
-        rows: [{ id: '9', name: 'X' }],
+        rows,
+        checksum: rowsChecksum(rows),
       });
+    });
+  });
+
+  it('persists a checksum matching rowsChecksum(rows)', () => {
+    withTmpDir((dir) => {
+      const sql = 'SELECT $1';
+      const rows = [{ id: '1', name: 'Sales Order' }, { id: '2', name: 'Sales Invoice' }];
+      upsertVersion(dir, sql, ['w'], rows);
+      const version = readVersion(dir, sql, ['w']);
+      assert.equal(version.checksum, rowsChecksum(rows));
     });
   });
 

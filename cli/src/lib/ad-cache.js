@@ -13,13 +13,21 @@
  *     {
  *       "sql": "<normalizeSql(sql)>",
  *       "versions": {
- *         "<paramsKey>": { "params": [...], "rows": [...] },
- *         "<paramsKey>": { "params": [...], "rows": [...] }
+ *         "<paramsKey>": { "params": [...], "checksum": "<sha256>", "rows": [...] },
+ *         "<paramsKey>": { "params": [...], "checksum": "<sha256>", "rows": [...] }
  *       }
  *     }
  *
- *   - sqlKey    = sha256(normalizeSql(sql))     → the file name (SQL only).
+ *   - sqlKey    = sha256(normalizeSql(sql))       → the file name (SQL only).
  *   - paramsKey = sha256(stableStringify(params)) → the key inside "versions".
+ *   - checksum  = sha256(stableStringify(rows))   → fingerprint of the result set at
+ *     write time. Consumers (see cli/src/db.js) recompute this on the fresh result
+ *     of an 'off'-mode (real DB) run and compare it to the stored value to detect a
+ *     STALE cache — a query whose real-DB rows no longer match the snapshot. This
+ *     is deterministic ONLY because extractor queries carry an ORDER BY with a
+ *     unique tiebreaker; an unordered result set would make the checksum flap
+ *     between identical runs. May be `undefined` on versions written before this
+ *     field existed — callers must fall back to `rowsChecksum(rows)` for those.
  *
  * Grouping keeps diffs small AND saves space: a refresh touches only the files
  * whose SQL ran, and each big SQL body is stored once per file instead of once
@@ -31,10 +39,12 @@
  *                                    insensitive, param-order-sensitive)
  *   - sqlKey(sql)                  → file key (sha256 of normalized SQL)
  *   - paramsKey(params)            → version key (sha256 of stable params)
+ *   - rowsChecksum(rows)           → sha256 fingerprint of a result set (deep-sorted)
  *   - sqlFilePath(dir, sqlKey)     → absolute path of the file for a sqlKey
  *   - readSqlFile(dir, sqlKey)     → parsed { sql, versions } or null if missing
  *   - writeSqlFile(dir, sqlKey, f) → write one pretty, deterministically-ordered file
- *   - readVersion(dir, sql, p)     → { sql, params, rows } for that version, or null
+ *   - readVersion(dir, sql, p)     → { sql, params, rows, checksum } for that version,
+ *                                    or null (checksum may be undefined for legacy files)
  *   - upsertVersion(dir, sql,p,r)  → merge one version into its file (never drops others)
  *   - listSqlKeys(dir)             → sqlKeys present in the directory ([] if missing)
  *   - listVersions(dir, sqlKey)    → paramsKeys inside one file ([] if file missing)
@@ -116,6 +126,17 @@ export function paramsKey(params = []) {
 }
 
 /**
+ * Fingerprint of a query result set. Deterministic across object-key-order
+ * permutations of individual rows (thanks to stableStringify's sorted keys),
+ * but sensitive to row ORDER and to any value change. Relies on the caller's
+ * SQL having a deterministic ORDER BY — this function does not sort rows
+ * itself, since row order is meaningful data for some callers.
+ */
+export function rowsChecksum(rows = []) {
+  return sha256(stableStringify(rows));
+}
+
+/**
  * Absolute path of the cache file that groups all versions of a given SQL.
  */
 export function sqlFilePath(dir, key) {
@@ -164,21 +185,25 @@ export function writeSqlFile(dir, key, fileObj) {
 
 /**
  * Read one version out of a SQL file. Returns the classic { sql, params, rows }
- * shape (so callers see the same object a per-query cache used to hand back), or
- * null when either the file or that specific version is absent.
+ * shape (so callers see the same object a per-query cache used to hand back)
+ * PLUS the stored `checksum` (may be `undefined` for versions written before the
+ * checksum field existed — callers wanting a checksum for a legacy version must
+ * compute it themselves via rowsChecksum(rows)). Returns null when either the
+ * file or that specific version is absent.
  */
 export function readVersion(dir, sql, params = []) {
   const file = readSqlFile(dir, sqlKey(sql));
   if (!file) return null;
   const version = file.versions[paramsKey(params)];
   if (!version) return null;
-  return { sql: file.sql, params: version.params, rows: version.rows };
+  return { sql: file.sql, params: version.params, rows: version.rows, checksum: version.checksum };
 }
 
 /**
  * Merge one (params → rows) version into its SQL file, preserving every other
  * version already stored. Reads the existing file (or starts fresh), sets
- * versions[paramsKey] = { params, rows }, and writes back deterministically.
+ * versions[paramsKey] = { params, checksum: rowsChecksum(rows), rows }, and
+ * writes back deterministically.
  * MERGE semantics: never drops other versions in the file.
  * Returns { sqlKey, paramsKey } for callers that want to track what was touched.
  */
@@ -186,7 +211,7 @@ export function upsertVersion(dir, sql, params = [], rows = []) {
   const sk = sqlKey(sql);
   const pk = paramsKey(params);
   const file = readSqlFile(dir, sk) || { sql: normalizeSql(sql), versions: {} };
-  file.versions[pk] = { params, rows };
+  file.versions[pk] = { params, checksum: rowsChecksum(rows), rows };
   writeSqlFile(dir, sk, file);
   return { sqlKey: sk, paramsKey: pk };
 }
