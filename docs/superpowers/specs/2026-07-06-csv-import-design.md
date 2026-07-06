@@ -236,7 +236,14 @@ Each module has one job and is independently unit-testable:
 
 ### 3. UI (`ImportDialog.jsx`, `schema_forge_core / app-shell-core / components`)
 
-Steps, matching the reference mockups:
+The reference screenshots (from a different, unrelated product) are a source for the
+**interaction flow only** — dropzone → mapping table → preview/errors → confirm →
+progress → result. **Visual language is not replicated** (colors, branding, exact spacing) —
+the implementation uses this repo's existing design system, the shadcn/Radix components
+already in `app-shell-core/src/components/ui/` (`dialog.jsx`, `table.jsx`, `button.jsx`,
+etc.), consistent with every other dialog/table in the app.
+
+Steps, matching the reference mockups' flow:
 1. **Dropzone** — accepts `.csv`/`.txt`, shows detected row count.
 2. **Mapping table** — one column per detected header, auto-mapped via `mapColumns`,
    each with a dropdown to override the target field (or mark "not imported").
