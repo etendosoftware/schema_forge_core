@@ -18,6 +18,7 @@ JOIN AD_Column col ON col.AD_Callout_ID = co.AD_Callout_ID
 JOIN AD_Tab t ON col.AD_Table_ID = t.AD_Table_ID
 LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = co.AD_Callout_ID
 WHERE t.AD_Window_ID = $1
+ORDER BY co.AD_Callout_ID, col.AD_Table_ID, col.ColumnName
 `;
 
 const VALIDATION_RULES_SQL = `
@@ -26,6 +27,7 @@ FROM AD_Val_Rule vr
 JOIN AD_Column c ON c.AD_Val_Rule_ID = vr.AD_Val_Rule_ID
 JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
 WHERE t.AD_Window_ID = $1
+ORDER BY vr.AD_Val_Rule_ID, c.ColumnName
 `;
 
 const DISPLAY_LOGIC_SQL = `

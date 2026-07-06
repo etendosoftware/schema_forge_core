@@ -66,12 +66,18 @@ jobs:
         run: echo "Releasing ${{ steps.ver.outputs.tag }}"
 
       # --- Abort early if this tag already exists (idempotent re-runs) --------
+      # `exit 0` here only ends this STEP (later steps still run regardless),
+      # so `new_release` is the actual signal steps below gate on to tell an
+      # idempotent re-run (tag already existed) from a real new release.
       - name: Guard against existing tag
+        id: guard
         run: |
           if git rev-parse -q --verify "refs/tags/${{ steps.ver.outputs.tag }}" >/dev/null; then
             echo "Tag ${{ steps.ver.outputs.tag }} already exists — nothing to release."
+            echo "new_release=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          echo "new_release=true" >> "$GITHUB_OUTPUT"
 
       # --- Publish every workspace in lockstep (skip if already on registry) -
       - name: Publish packages
@@ -110,3 +116,17 @@ jobs:
           # the release intentionally leaves the runner tree dirty (release-version
           # rewrites package.json in place without committing it back). Bypass it.
           git push --no-verify origin "${{ steps.ver.outputs.tag }}"
+
+      # --- Notify the functional repo so it can bump its lockstep pin ---------
+      # GITHUB_TOKEN cannot trigger workflows in another repo, so this uses a
+      # fine-grained PAT (contents:write + pull-requests:write on the
+      # functional repo) stored as SF_BUMP_PAT in both repos. Skipped on
+      # idempotent re-runs (see the "Guard against existing tag" step above).
+      - name: Notify functional repo of new release
+        if: steps.guard.outputs.new_release == 'true'
+        run: |
+          curl -sS -X POST \
+            -H "Authorization: Bearer ${{ secrets.SF_BUMP_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/etendosoftware/etendo_schema_forge/dispatches \
+            -d '{"event_type":"core-released","client_payload":{"version":"${{ steps.ver.outputs.tag }}"}}'

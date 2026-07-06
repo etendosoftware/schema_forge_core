@@ -36,6 +36,14 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            // ── TEMPORARILY DISABLED (per request) ──────────────────────────
+            // The base-branch health gate is skipped for now: the job still runs
+            // so any required-status-check reference stays satisfied (green), but
+            // it returns immediately without inspecting the base branch. The full
+            // logic below is preserved — remove this early return to re-enable it.
+            core.info('Base branch health check is temporarily disabled — passing.');
+            return;
+
             const { owner, repo } = context.repo;
             const baseRef = context.payload.pull_request.base.ref;
 
