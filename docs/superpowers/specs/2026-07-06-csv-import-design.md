@@ -53,16 +53,49 @@ reasonably carry as raw Etendo IDs — e.g. Product's `uOM`, `productCategory`,
 `artifacts/product/contract.json`). Contacts' `locationAddress.locationAddress` field
 (country/region chain) has the same shape.
 
-**Decision:** the CSV carries the human-readable text (e.g. `"Kilogramo"`), and the
-import engine resolves it against that field's NEO selector, **once per unique value per
-column** (cached in-memory for the run — a file with 500 rows and 3 distinct UOM values
-does 3 lookups, not 500). Resolution rules:
-- Exact match (case-insensitive) on the selector's display field → resolved to id.
-- Zero matches or multiple ambiguous matches → the row is NOT sent; it is reported as a
-  validation error (`"UOM 'Kg' not found"` / `"UOM 'Widget' is ambiguous (2 matches)"`)
-  and surfaces in the same errors/preview UI as a missing-required-field error.
-- This still requires **no new backend endpoint** — it reuses the existing NEO selector
-  endpoints the app already calls for `EntityField` lookups.
+The CSV carries human-readable text (e.g. `"Kilogramo"`, `"Bebidas"`). Resolving that text
+to a record id is split into two independent pieces — a generic **matching engine** and a
+per-column **match resolver** — so the fuzzy-matching logic is reusable and testable on
+its own, and the decision of what to do with an imperfect match lives with the import flow,
+not the engine.
+
+**Matching engine (reused, not built new):** `tools/app-shell/src/lib/simSearch.js` already
+wraps Etendo's `SimSearch` webhook — given an entity name and a list of text values, it
+returns, per value, the best candidate(s) with a `similarityPercent`. It's already in
+production use by the OCR/Copilot ingest flow (`purchaseInvoiceDescriptor.js`, matching
+`Product` and `FinancialMgmtTaxRate` by free text). **No new backend/webhook work** — this
+is an existing generic primitive we point at more entities (`UOM`, `ProductCategory`, plus
+whatever entity backs Contacts' location/country chain).
+Since it's genuinely generic (not OCR-specific), it moves to
+`packages/app-shell-core/src/lib/simSearch.js` as a shared primitive; `tools/app-shell`'s
+OCR ingest is updated to import it from there instead of keeping its own copy.
+
+**Match resolver (`resolveForeignKeys.js`, import-specific):**
+1. For each `foreignKey`-typed mapped column, collect the **distinct raw text values**
+   across the file (a 500-row file with 3 distinct UOM strings does one `simSearch` call
+   for those 3 values, not 500 lookups).
+2. Call the matching engine once per column with that distinct-value list, `qtyResults`
+   > 1 so close alternatives are available for disambiguation, not just the top hit.
+3. Classify each distinct value:
+   - **auto-resolved** — a single candidate clears a confidence threshold with no close
+     runner-up → used directly, no user interaction.
+   - **needs review** — zero candidates above threshold, or two+ candidates too close to
+     call → surfaced to the user (see below), not treated as a hard error yet.
+4. Cache the resulting `value → id` table for the run and reuse it in `buildOperations`.
+
+**Resolving "needs review" values (UI, not just validation text):** the preview step
+lists each distinct unresolved/ambiguous value **once** (e.g. "Product Category 'Bebida'
+→ no confident match", "UOM 'Kg' → 2 close matches") — never per-row, since the same typo
+usually repeats across many rows. For each, the user can:
+- Pick one of the candidate matches `simSearch` returned, or
+- Fall back to the standard entity selector/search (same lookup control used elsewhere in
+  forms) to pick the correct record manually when no candidate fits.
+
+The user's choice is applied to **every row sharing that raw value** and the preview/error
+counts update live. A value the user leaves unresolved keeps its rows excluded from send,
+listed in the errors panel exactly like a missing-required-field error — nothing is
+silently dropped, and nothing blocks confidently-matched rows from importing while a
+handful of ambiguous values are still being resolved.
 
 ## Architecture
 
@@ -123,8 +156,9 @@ Each module has one job and is independently unit-testable:
 |---|---|
 | `parseDelimited.js` | CSV/TXT → rows of raw string cells. Auto-detects delimiter (`,` `;` `\t`), handles quoted fields. |
 | `mapColumns.js` | Matches file headers to contract fields using `label` + `decisions.import.fields[].aliases` (case/accent-insensitive). Returns `{ mapping, unmapped }` for the user to override in the UI. |
-| `resolveForeignKeys.js` | For each `foreignKey`-typed mapped column, collects unique raw values, resolves each once via the field's NEO selector, returns a `value → { id }|{ error }` table. |
-| `validateRows.js` | Applies `required` + basic format checks (e.g. email shape) from contract metadata, plus FK-resolution failures. Returns `{ validRows, errorRows }` with a reason per error row. |
+| `simSearch.js` (lives one level up, at `packages/app-shell-core/src/lib/simSearch.js` — relocated from `tools/app-shell/src/lib/`) | Generic matching engine: entity name + text values → best candidate(s) with `similarityPercent`, via the existing `SimSearch` webhook. Entity-agnostic, no import-specific logic; imported by `resolveForeignKeys.js` below. |
+| `resolveForeignKeys.js` | Per-column match resolver: collects distinct raw values per `foreignKey` column, calls `simSearch.js` once per column, classifies each value `auto-resolved` / `needs-review`, returns a `value → { id }|{ candidates, needsReview: true }` table for `ImportDialog` to render and for the user to fix inline. |
+| `validateRows.js` | Applies `required` + basic format checks (e.g. email shape) from contract metadata, plus any FK value still `needsReview` after the user has had a chance to resolve it. Returns `{ validRows, errorRows }` with a reason per error row. |
 | `dedupeRows.js` | Collapses rows within `validRows` that share the same `dedupe.key` values (keeps first occurrence, reports the rest as skipped-duplicate — visible in the summary, not silently dropped). |
 | `buildOperations.js` | Turns one row into the `operations[]` array for a single `/batch` call. Default: one `create` op against `import.entity` using the mapped/resolved values. Composite entities (Contacts) use a registered descriptor (same shape as `ocr/ingest/purchaseInvoiceDescriptor.js`) that returns `{ id, spec, entity, body, parentRef? }[]` for BusinessPartner + LocationAddress + Contact. |
 | `importEngine.js` | Orchestrates: for each row (bounded by `limit.maxRows`), run `buildOperations` → `POST /batch` (bounded parallelism = `limit.concurrency`) → collect `{ row, ok, recordId?, error? }` → emit progress callback. No dependency on `fetch` directly — takes an injected `postBatch(operations)` function, so tests supply a mock. |
@@ -136,7 +170,10 @@ Steps, matching the reference mockups:
 2. **Mapping table** — one column per detected header, auto-mapped via `mapColumns`,
    each with a dropdown to override the target field (or mark "not imported").
 3. **Preview + errors** — shows sample rows, an "N errors found" expandable panel
-   (validation + FK-resolution + dedupe-skips), and how many rows will actually import.
+   (validation + dedupe-skips), and how many rows will actually import. **FK values
+   needing review** get their own panel, one entry per distinct value (not per row), each
+   with the `simSearch` candidates to pick from or a manual entity-search fallback;
+   resolving a value live-updates every row that shares it.
 4. **Confirm dialog** — "Will import N contacts, M rows will be skipped due to errors" +
    options surfaced from `decisions.import` (dedupe on/off if ever made optional later —
    v1 ships it always-on per the config).
@@ -158,9 +195,9 @@ every new string in both locales, no exceptions.
 
 - **File-level**: unreadable/empty file, unknown delimiter → single blocking error,
   dialog stays on step 1.
-- **Row-level (pre-send)**: missing required field, unresolved FK, format mismatch,
-  in-file duplicate → row excluded from send, listed in the errors panel with a reason,
-  never silently dropped.
+- **Row-level (pre-send)**: missing required field, FK value still `needs-review`, format
+  mismatch, in-file duplicate → row excluded from send, listed in the errors panel with a
+  reason, never silently dropped.
 - **Row-level (server)**: `/batch` returns `committed:false` for that row → row marked
   failed with the server's `error.message`, offered for retry. A row's own multi-op
   transaction (e.g. BP+Location+Contact) still rolls back atomically per existing
@@ -171,10 +208,13 @@ every new string in both locales, no exceptions.
 ### 6. Testing
 
 Unit tests (Vitest/`node:test`, per repo convention) for every engine module in
-isolation with `postBatch` mocked — dedupe collisions, FK resolution (match / ambiguous /
-not-found), row-level failure + retry, `maxRows` truncation, concurrency bound. Per
-CLAUDE.md, test-writing is delegated to the `test-generator` subagent (Tester) during
-implementation, not written ad hoc.
+isolation with `postBatch` mocked — dedupe collisions, FK resolution (auto-resolved /
+needs-review with candidates / needs-review with zero candidates, and the user-picks-a-
+candidate / user-uses-manual-fallback paths), row-level failure + retry, `maxRows`
+truncation, concurrency bound. The relocated `simSearch.js` keeps its existing test
+coverage (moved, not rewritten) plus a regression test that `tools/app-shell`'s OCR ingest
+still imports it correctly post-move. Per CLAUDE.md, test-writing is delegated to the
+`test-generator` subagent (Tester) during implementation, not written ad hoc.
 
 ## Open items explicitly deferred (not this iteration)
 
