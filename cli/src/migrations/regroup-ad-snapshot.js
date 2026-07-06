@@ -53,6 +53,57 @@ function resolveInput(inputPath) {
 }
 
 /**
+ * Merge one (sql, params, rows) triple into the grouped map, creating the
+ * per-SQL bucket on first sight. Mutates `grouped` in place.
+ */
+function addTriple(grouped, sql, params = [], rows = []) {
+  const sk = sqlKey(sql);
+  if (!grouped.has(sk)) grouped.set(sk, { sql: normalizeSql(sql), versions: {} });
+  grouped.get(sk).versions[paramsKey(params)] = { params, rows };
+}
+
+/**
+ * Source 1: ingest the old monolith into `grouped`. Returns the number of
+ * versions added (0 when there is no monolith).
+ */
+function ingestMonolith(grouped, monolithPath) {
+  if (!monolithPath || !existsSync(monolithPath)) return 0;
+  const raw = readFileSync(monolithPath, 'utf-8');
+  const entries = raw.trim() ? JSON.parse(raw) : {};
+  let added = 0;
+  for (const e of Object.values(entries)) {
+    addTriple(grouped, e.sql, e.params || [], e.rows || []);
+    added += 1;
+  }
+  return added;
+}
+
+/**
+ * Source 2: ingest files already in the directory (old per-query OR already
+ * grouped) into `grouped`. Returns { added, oldPerQueryFiles, alreadyGroupedFiles }.
+ */
+function ingestDirectory(grouped, dir) {
+  const result = { added: 0, oldPerQueryFiles: [], alreadyGroupedFiles: 0 };
+  if (!existsSync(dir)) return result;
+  for (const name of readdirSync(dir).filter((n) => n.endsWith('.json'))) {
+    const fp = `${dir}/${name}`;
+    const parsed = JSON.parse(readFileSync(fp, 'utf-8'));
+    if (parsed.versions && typeof parsed.versions === 'object') {
+      result.alreadyGroupedFiles += 1;
+      for (const v of Object.values(parsed.versions)) {
+        addTriple(grouped, parsed.sql, v.params || [], v.rows || []);
+        result.added += 1;
+      }
+    } else if ('rows' in parsed || 'sql' in parsed) {
+      addTriple(grouped, parsed.sql, parsed.params || [], parsed.rows || []);
+      result.added += 1;
+      result.oldPerQueryFiles.push(fp);
+    }
+  }
+  return result;
+}
+
+/**
  * @param {string} inputPath - the monolith `.json` OR the cache directory.
  * @returns {{ files: number, versions: number, removedOldFiles: number,
  *             monolithRemoved: boolean, dir: string, alreadyDone: boolean }}
@@ -61,40 +112,10 @@ export function regroupSnapshot(inputPath) {
   const { dir, monolithPath } = resolveInput(inputPath);
 
   const grouped = new Map(); // sqlKey -> { sql, versions }
-  const oldPerQueryFiles = []; // per-(sql,params) files to remove
-  let sourceVersions = 0;
 
-  function addTriple(sql, params = [], rows = []) {
-    const sk = sqlKey(sql);
-    if (!grouped.has(sk)) grouped.set(sk, { sql: normalizeSql(sql), versions: {} });
-    grouped.get(sk).versions[paramsKey(params)] = { params, rows };
-    sourceVersions += 1;
-  }
-
-  // Source 1: monolith.
-  if (monolithPath && existsSync(monolithPath)) {
-    const raw = readFileSync(monolithPath, 'utf-8');
-    const entries = raw.trim() ? JSON.parse(raw) : {};
-    for (const e of Object.values(entries)) addTriple(e.sql, e.params || [], e.rows || []);
-  }
-
-  // Source 2: files already in the directory (old per-query OR already grouped).
-  let alreadyGroupedFiles = 0;
-  if (existsSync(dir)) {
-    for (const name of readdirSync(dir).filter((n) => n.endsWith('.json'))) {
-      const fp = `${dir}/${name}`;
-      const parsed = JSON.parse(readFileSync(fp, 'utf-8'));
-      if (parsed.versions && typeof parsed.versions === 'object') {
-        alreadyGroupedFiles += 1;
-        for (const v of Object.values(parsed.versions)) {
-          addTriple(parsed.sql, v.params || [], v.rows || []);
-        }
-      } else if ('rows' in parsed || 'sql' in parsed) {
-        addTriple(parsed.sql, parsed.params || [], parsed.rows || []);
-        oldPerQueryFiles.push(fp);
-      }
-    }
-  }
+  const monolithVersions = ingestMonolith(grouped, monolithPath);
+  const { added, oldPerQueryFiles, alreadyGroupedFiles } = ingestDirectory(grouped, dir);
+  const sourceVersions = monolithVersions + added;
 
   // Nothing to do: no monolith, no old per-query files, and the dir is already
   // fully grouped.
