@@ -42,6 +42,13 @@ describe('classifyCandidates', () => {
     const result = classifyCandidates([]);
     assert.deepEqual(result, { status: 'needs-review', candidates: [] });
   });
+
+  // The real webhook formats this field as "NN.NNNN%", not the bare digit
+  // strings used above — that's covered where the raw value actually enters
+  // the system: simSearch.test.js's mapRow/parseSimSearchEnvelope regression
+  // tests. By the time a candidate reaches classifyCandidates in production
+  // it has already gone through that normalization, so a "%"-suffixed input
+  // here would test a shape this function never actually receives.
 });
 
 describe('resolveForeignKeyColumn', () => {

@@ -11,7 +11,7 @@ import { ImportFileErrorDialog } from './ImportFileErrorDialog.jsx';
 import { decodeCsvBuffer, parseDelimited } from '../../lib/import/parseDelimited.js';
 import { mapColumns } from '../../lib/import/mapColumns.js';
 import { dedupeRows } from '../../lib/import/dedupeRows.js';
-import { resolveForeignKeys } from '../../lib/import/resolveForeignKeys.js';
+import { resolveForeignKeys, resolveForeignKeyColumn } from '../../lib/import/resolveForeignKeys.js';
 import { validateRow } from '../../lib/import/validateRows.js';
 import { buildOperations } from '../../lib/import/buildOperations.js';
 import { runImport, sendRow } from '../../lib/import/importEngine.js';
@@ -54,8 +54,20 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
   const requiredTargets = useMemo(() => config.fields.filter((f) => f.required).map((f) => f.target), [config.fields]);
   const emailTargets = useMemo(() => config.fields.filter((f) => f.isEmail).map((f) => f.target), [config.fields]);
-  const fkColumns = useMemo(() => config.fields.filter((f) => f.isForeignKey).map((f) => ({ target: f.target, matchEntity: f.matchEntity, qtyResults: f.qtyResults })), [config.fields]);
+  // `matchEntity` presence is the real signal a column needs FK resolution — there is no
+  // separate `isForeignKey` flag anywhere in the actual pipeline: generate-contract.js
+  // never emits one (it only backfills `type`/`reference` from the contract), and
+  // decisions.json authors set `matchEntity` directly (verified against
+  // artifacts/product/decisions.json's uOM/productCategory/taxCategory, which already had
+  // `matchEntity` with no `isForeignKey`). Checking `f.isForeignKey` here meant fkColumns
+  // was always empty for every real window, so resolveForeignKeys() below never ran — FK
+  // values were only ever resolved at send time (inside a composite descriptor, e.g.
+  // Contacts' country), never previewed, confirmed by a real browser capture showing the
+  // `/webhooks/?name=SimSearch` request firing only during send, not during the mapping/
+  // confirm preview.
+  const fkColumns = useMemo(() => config.fields.filter((f) => f.matchEntity).map((f) => ({ target: f.target, matchEntity: f.matchEntity, qtyResults: f.qtyResults })), [config.fields]);
   const fkTargets = useMemo(() => fkColumns.map((c) => c.target), [fkColumns]);
+  const [fkResolutions, setFkResolutions] = useState(new Map());
   // buildOperations (engine) expects { spec, entity, targets: string[], descriptorName? } —
   // config carries `fields` (full descriptor objects, needed by the mapping/validation
   // steps above), so the operations-builder config is derived here rather than passing
@@ -95,12 +107,13 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     const { uniqueRows, duplicates } = dedupeKeyTargets.length > 0
       ? dedupeRows(mappedRows, dedupeKeyTargets)
       : { uniqueRows: mappedRows, duplicates: [] };
-    const fkResolutions = fkColumns.length > 0
+    const resolutions = fkColumns.length > 0
       ? await resolveForeignKeys({ rows: uniqueRows, columns: fkColumns, simSearchFn, token })
       : new Map();
+    setFkResolutions(resolutions);
     const validated = uniqueRows.map((row) => ({
       row,
-      ...validateRow(row, { requiredTargets, emailTargets, fkTargets, fkResolutions }),
+      ...validateRow(row, { requiredTargets, emailTargets, fkTargets, fkResolutions: resolutions }),
       status: 'pending',
     }));
     const skippedDuplicates = duplicates.map((d) => ({ row: d.row, errors: [{ target: '', message: 'Duplicate row (already in file).' }], status: 'skipped' }));
@@ -127,24 +140,57 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     setMapping((prev) => ({ ...prev, [header]: target }));
   }, []);
 
+  // Reuses the already-resolved fkResolutions from runValidation (not a fresh empty Map)
+  // so undoing an edit back to an already-resolved raw value is recognized immediately.
+  // Deliberately does NOT re-run resolveForeignKeyColumn here — this fires on every
+  // keystroke (wired to the row input's onChange), and a SimSearch call per keystroke
+  // would be both wasteful and slow. "Re-validate" (handleRetryEntryPreSend) is the
+  // explicit, button-triggered point where a genuinely new value gets re-resolved.
   const handleEditField = useCallback((index, targetField, value) => {
     setEntries((prev) => {
       const next = [...prev];
       const row = { ...next[index].row, [targetField]: value };
-      const { valid, errors } = validateRow(row, { requiredTargets, emailTargets, fkTargets, fkResolutions: new Map() });
+      const { valid, errors } = validateRow(row, { requiredTargets, emailTargets, fkTargets, fkResolutions });
       next[index] = { ...next[index], row, errors: valid ? [] : errors };
       return next;
     });
-  }, [requiredTargets, emailTargets, fkTargets]);
+  }, [requiredTargets, emailTargets, fkTargets, fkResolutions]);
 
-  const handleRetryEntryPreSend = useCallback((index) => {
+  // "Re-validate" in the preview review queue — the one explicit, user-triggered point
+  // where an edited FK value is actually worth a network round-trip: re-resolves just
+  // this row's current FK column values (single-value lookups, not a full-file batch)
+  // and merges them into the persisted fkResolutions before validating. Without this,
+  // fkColumns being empty was masking that this path never resolved anything — passing
+  // an empty Map meant a row flagged for an unmatched country could never be fixed here
+  // at all, only by editing the source file and re-uploading.
+  const handleRetryEntryPreSend = useCallback(async (index) => {
+    const row = entries[index].row;
+    let resolutions = fkResolutions;
+    if (fkColumns.length > 0) {
+      resolutions = new Map(fkResolutions);
+      for (const column of fkColumns) {
+        const rawValue = String(row[column.target] ?? '').trim();
+        if (!rawValue) continue;
+        const valueMap = await resolveForeignKeyColumn({
+          values: [rawValue],
+          matchEntity: column.matchEntity,
+          simSearchFn,
+          token,
+          qtyResults: column.qtyResults,
+        });
+        const columnMap = new Map(resolutions.get(column.target) ?? []);
+        for (const [key, resolution] of valueMap) columnMap.set(key, resolution);
+        resolutions.set(column.target, columnMap);
+      }
+      setFkResolutions(resolutions);
+    }
     setEntries((prev) => {
       const next = [...prev];
-      const { valid, errors } = validateRow(next[index].row, { requiredTargets, emailTargets, fkTargets, fkResolutions: new Map() });
+      const { valid, errors } = validateRow(next[index].row, { requiredTargets, emailTargets, fkTargets, fkResolutions: resolutions });
       next[index] = { ...next[index], errors: valid ? [] : errors };
       return next;
     });
-  }, [requiredTargets, emailTargets, fkTargets]);
+  }, [entries, requiredTargets, emailTargets, fkTargets, fkColumns, fkResolutions, simSearchFn, token]);
 
   const handleSkipEntry = useCallback((index) => {
     setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, status: 'skipped' } : e)));

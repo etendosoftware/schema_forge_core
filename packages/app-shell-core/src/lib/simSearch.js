@@ -21,11 +21,28 @@ function detectEtendoBase() {
   return import.meta.env.VITE_API_BASE || '';
 }
 
+/**
+ * The real webhook (confirmed via a live capture) renders this field as a
+ * formatted string with a trailing unit sign, e.g. `"100.0000%"` — not the
+ * bare numeric string (`"85"`) every existing caller and test was written
+ * against. `classifyCandidates` (resolveForeignKeys.js) does `Number(...)` on
+ * this value to compare against its thresholds; `Number("100.0000%")` is
+ * `NaN`, and `NaN < threshold` is always `false` in JS, so every real
+ * candidate — good or bad — was silently classified as clearing the
+ * confidence threshold. Stripping a trailing `%` here (only when present)
+ * fixes that at the one place that knows the raw wire format, without
+ * changing the value for the bare-numeric-string shape existing tests and
+ * callers already depend on.
+ */
+function stripPercentSign(value) {
+  return typeof value === 'string' ? value.replace(/%\s*$/, '') : value;
+}
+
 function mapRow(row) {
   return {
     id: row.id,
     name: row.name || row._identifier || row.id,
-    similarityPercent: row.similarity_percent ?? row.similarityPercent,
+    similarityPercent: stripPercentSign(row.similarity_percent ?? row.similarityPercent),
   };
 }
 

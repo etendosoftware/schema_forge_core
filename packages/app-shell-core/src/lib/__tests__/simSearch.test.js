@@ -115,4 +115,32 @@ describe('parseSimSearchEnvelope', () => {
     const [first] = parseSimSearchEnvelope(envelope, 1);
     assert.equal(first, null);
   });
+
+  it('regression: strips the real webhook\'s trailing "%" so downstream Number() parsing is never NaN', () => {
+    // A live capture against the actual SimSearch webhook returned
+    // `similarity_percent: "100.0000%"` — a formatted display string, not the
+    // bare-digit string ("85") every other test here uses. classifyCandidates
+    // does Number(similarityPercent) to compare against its auto-resolve
+    // threshold; Number("100.0000%") is NaN, and NaN compared with `<` is
+    // always false, so every real candidate silently passed as "confident
+    // enough" regardless of actual match quality.
+    const envelope = {
+      message: JSON.stringify({
+        item_0: { data: [{ id: '119', name: 'Argentina', similarity_percent: '100.0000%' }] },
+      }),
+    };
+    const [first] = parseSimSearchEnvelope(envelope, 1);
+    assert.equal(first.similarityPercent, '100.0000');
+    assert.equal(Number(first.similarityPercent), 100);
+  });
+
+  it('regression: a bare numeric string (no "%") is left byte-for-byte unchanged', () => {
+    const envelope = {
+      message: JSON.stringify({
+        item_0: { data: [{ id: 'P-1', name: 'Widget', similarity_percent: '85' }] },
+      }),
+    };
+    const [first] = parseSimSearchEnvelope(envelope, 1);
+    assert.equal(first.similarityPercent, '85');
+  });
 });
