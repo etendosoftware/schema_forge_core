@@ -99,11 +99,13 @@ describe('ImportDialog', () => {
     expect(screen.getByTestId('ImportReviewQueue__rowError-0').textContent).toContain('Invalid value for OBTIKTaxIDKey');
   });
 
-  it('regression: shows the ImportSystemErrorDialog with the last failure\'s message and raw trace after a failed send', async () => {
+  it('regression: shows the ImportSystemErrorDialog with the last failure\'s message, row data, request sent, and raw trace after a failed send', async () => {
     // Debug-phase aid, per explicit request: while the backend integration is still
-    // being stabilized, the last failure of a run should be front-and-center with its
-    // full raw trace, not just a small cell in the review queue — the user should not
-    // have to dig it out of the Network tab by hand.
+    // being stabilized, the last failure of a run should be front-and-center with which
+    // row failed, the exact request that was sent, and the full raw trace — not just a
+    // small cell in the review queue — the user should not have to dig it out of the
+    // Network tab by hand. Row/request/trace are collapsed behind "View full report" by
+    // default, per explicit request, so only the message shows up front.
     const postBatch = vi.fn().mockResolvedValue({
       committed: false,
       failedAt: { id: 'bp' },
@@ -115,6 +117,10 @@ describe('ImportDialog', () => {
     fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => screen.getByTestId('ImportSystemErrorDialog__title'));
     expect(screen.getByTestId('ImportSystemErrorDialog__message').textContent).toBe("Operation 'bp' rejected by server");
+    expect(screen.queryByTestId('ImportSystemErrorDialog__trace')).toBeNull();
+    fireEvent.click(screen.getByTestId('ImportSystemErrorDialog__toggleReport'));
+    expect(screen.getByTestId('ImportSystemErrorDialog__row').textContent).toContain('Lucia');
+    expect(screen.getByTestId('ImportSystemErrorDialog__request').textContent).toContain('businessPartner');
     expect(screen.getByTestId('ImportSystemErrorDialog__trace').textContent).toContain('Invalid value for OBTIKTaxIDKey');
     fireEvent.click(screen.getByTestId('ImportSystemErrorDialog__close'));
     expect(screen.queryByTestId('ImportSystemErrorDialog__title')).toBeNull();

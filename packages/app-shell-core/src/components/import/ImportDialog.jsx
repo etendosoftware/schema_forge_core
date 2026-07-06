@@ -236,10 +236,16 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       .map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || 'Unknown error' }], status: 'pending' }));
     setEntries(resultEntries);
     setStep(STEP.RESULT);
-    // The last failure of this run, front-and-center with its full raw trace — see the
-    // systemError state comment above for why this exists alongside the review queue.
+    // The last failure of this run, front-and-center with its row data, the exact
+    // request that was sent, and the full raw trace — see the systemError state comment
+    // above for why this exists alongside the review queue.
     const lastFailure = failedResults.at(-1);
-    setSystemError(lastFailure ? { message: lastFailure.error?.message || 'Unknown error', raw: lastFailure.error?.raw } : null);
+    setSystemError(lastFailure ? {
+      message: lastFailure.error?.message || 'Unknown error',
+      raw: lastFailure.error?.raw,
+      row: lastFailure.row,
+      operations: lastFailure.operations,
+    } : null);
     // Reports failedCount alongside okCount (not just a bare success count) so the caller
     // can decide whether it's actually safe to close the dialog. The design spec is
     // explicit that the Result step must show "the same review queue pattern applied to
@@ -255,7 +261,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
   const handleRetryEntryPostSend = useCallback(async (index) => {
     const entry = entries[index];
-    const result = await sendRow(await buildOperations(entry.row, operationsConfig), { postBatch });
+    const operations = await buildOperations(entry.row, operationsConfig);
+    const result = await sendRow(operations, { postBatch });
     setEntries((prev) => {
       const next = [...prev];
       if (result.status === 'ok') {
@@ -266,7 +273,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       return next;
     });
     if (result.status !== 'ok') {
-      setSystemError({ message: result.error?.message || 'Unknown error', raw: result.error?.raw });
+      setSystemError({ message: result.error?.message || 'Unknown error', raw: result.error?.raw, row: entry.row, operations });
     }
   }, [entries, operationsConfig, postBatch]);
 
@@ -344,6 +351,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       <ImportSystemErrorDialog
         open={Boolean(systemError)}
         message={systemError?.message}
+        row={systemError?.row}
+        operations={systemError?.operations}
         raw={systemError?.raw}
         onClose={() => setSystemError(null)}
       />

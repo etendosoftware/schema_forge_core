@@ -98,14 +98,18 @@ export async function runImport(rows, { buildRowOperations, postBatch, concurren
     // forever. One row's build failure must show up as that row's own FAILED result,
     // exactly like a postBatch rejection already does in sendRow, never take the whole
     // batch down.
+    // `operations` is threaded into every result (success or failure) — not just used
+    // internally — so a caller building a diagnostic report (which row, what request was
+    // actually sent) has it without needing to recompute buildRowOperations itself.
     async (row) => {
       let operations;
       try {
         operations = await buildRowOperations(row);
       } catch (error) {
-        return { status: SEND_STATUS.FAILED, error };
+        return { status: SEND_STATUS.FAILED, error, operations: null };
       }
-      return sendRow(operations, { postBatch });
+      const result = await sendRow(operations, { postBatch });
+      return { ...result, operations };
     },
     (result, row, index) => {
       results[index] = { row, ...result };

@@ -13,14 +13,55 @@ describe('ImportSystemErrorDialog', () => {
     expect(screen.queryByTestId('ImportSystemErrorDialog__title')).toBeNull();
   });
 
-  it('shows the message and, when present, the raw trace', () => {
+  it('shows the message up front', () => {
     render(<ImportSystemErrorDialog open message="Operation 'bp' rejected by server" raw='{"status":500,"detail":"..."}' onClose={() => {}} />);
     expect(screen.getByTestId('ImportSystemErrorDialog__message').textContent).toBe("Operation 'bp' rejected by server");
-    expect(screen.getByTestId('ImportSystemErrorDialog__trace').textContent).toBe('{"status":500,"detail":"..."}');
   });
 
-  it('omits the trace block entirely when there is no raw detail', () => {
-    render(<ImportSystemErrorDialog open message="boom" raw={undefined} onClose={() => {}} />);
+  it('keeps the full report (row, request, trace) collapsed by default', () => {
+    render(
+      <ImportSystemErrorDialog
+        open
+        message="Operation 'bp' rejected by server"
+        row={{ name: 'Andres' }}
+        operations={[{ id: 'bp', body: { name: 'Andres' } }]}
+        raw='{"status":500}'
+        onClose={() => {}}
+      />
+    );
+    expect(screen.queryByTestId('ImportSystemErrorDialog__report')).toBeNull();
+    expect(screen.queryByTestId('ImportSystemErrorDialog__row')).toBeNull();
+    expect(screen.queryByTestId('ImportSystemErrorDialog__request')).toBeNull();
+    expect(screen.queryByTestId('ImportSystemErrorDialog__trace')).toBeNull();
+  });
+
+  it('reveals row data, the request sent, and the trace after clicking "View full report"', () => {
+    const row = { name: 'Andres', country: 'España' };
+    const operations = [{ id: 'bp', spec: 'contacts', entity: 'businessPartner', body: { name: 'Andres' } }];
+    render(
+      <ImportSystemErrorDialog
+        open
+        message="Operation 'bp' rejected by server"
+        row={row}
+        operations={operations}
+        raw='{"status":500,"detail":"..."}'
+        onClose={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByTestId('ImportSystemErrorDialog__toggleReport'));
+    expect(screen.getByTestId('ImportSystemErrorDialog__row').textContent).toContain('España');
+    expect(screen.getByTestId('ImportSystemErrorDialog__request').textContent).toContain('businessPartner');
+    expect(screen.getByTestId('ImportSystemErrorDialog__trace').textContent).toBe('{"status":500,"detail":"..."}');
+    // Toggling again hides it — it's a show/hide toggle, not a one-way reveal.
+    fireEvent.click(screen.getByTestId('ImportSystemErrorDialog__toggleReport'));
+    expect(screen.queryByTestId('ImportSystemErrorDialog__report')).toBeNull();
+  });
+
+  it('omits the row/request/trace sub-sections that have no data, even with the report expanded', () => {
+    render(<ImportSystemErrorDialog open message="boom" onClose={() => {}} />);
+    fireEvent.click(screen.getByTestId('ImportSystemErrorDialog__toggleReport'));
+    expect(screen.queryByTestId('ImportSystemErrorDialog__row')).toBeNull();
+    expect(screen.queryByTestId('ImportSystemErrorDialog__request')).toBeNull();
     expect(screen.queryByTestId('ImportSystemErrorDialog__trace')).toBeNull();
   });
 
@@ -31,21 +72,29 @@ describe('ImportSystemErrorDialog', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('copies both the message and the raw trace to the clipboard', async () => {
+  it('copies a full report — message, row data, request sent, and server response — regardless of whether it is currently expanded on screen', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
-    render(<ImportSystemErrorDialog open message="boom" raw="the trace" onClose={() => {}} />);
+    const row = { name: 'Andres', country: 'España' };
+    const operations = [{ id: 'bp', body: { name: 'Andres' } }];
+    render(<ImportSystemErrorDialog open message="Operation 'bp' rejected by server" row={row} operations={operations} raw="the trace" onClose={() => {}} />);
+    // Deliberately do NOT expand the report first — copy must work whether or not the
+    // user ever clicked "View full report".
     fireEvent.click(screen.getByTestId('ImportSystemErrorDialog__copy'));
     await Promise.resolve();
-    expect(writeText).toHaveBeenCalledWith('boom\n\nthe trace');
+    const copied = writeText.mock.calls[0][0];
+    expect(copied).toContain("Operation 'bp' rejected by server");
+    expect(copied).toContain('España');
+    expect(copied).toContain('"id": "bp"');
+    expect(copied).toContain('the trace');
   });
 
-  it('copies just the message when there is no raw trace', async () => {
+  it('copies just the message when there is no row, request, or trace at all', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
-    render(<ImportSystemErrorDialog open message="boom" raw={undefined} onClose={() => {}} />);
+    render(<ImportSystemErrorDialog open message="boom" onClose={() => {}} />);
     fireEvent.click(screen.getByTestId('ImportSystemErrorDialog__copy'));
     await Promise.resolve();
-    expect(writeText).toHaveBeenCalledWith('boom');
+    expect(writeText).toHaveBeenCalledWith('Error: boom');
   });
 });

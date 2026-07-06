@@ -191,4 +191,25 @@ describe('runImport', () => {
     assert.equal(bad.status, SEND_STATUS.FAILED);
     assert.equal(bad.error.message, 'async build failure');
   });
+
+  it('regression: threads the actual built operations through on every result (success or failure), so a caller can report exactly what was sent', async () => {
+    const rows = [{ name: 'good' }, { name: 'bad' }];
+    const postBatch = async (ops) => (ops[0].body.name === 'bad'
+      ? { committed: false, failedAt: { index: 0 }, error: { message: 'rejected' } }
+      : { committed: true, operations: [{ id: 'row', ok: true, recordId: 'REC-good' }] });
+    const buildRowOperations = (row) => [{ id: 'row', spec: 's', entity: 'e', body: row }];
+    const { results } = await runImport(rows, { buildRowOperations, postBatch });
+    const good = results.find((r) => r.row.name === 'good');
+    const bad = results.find((r) => r.row.name === 'bad');
+    assert.deepEqual(good.operations, [{ id: 'row', spec: 's', entity: 'e', body: { name: 'good' } }]);
+    assert.deepEqual(bad.operations, [{ id: 'row', spec: 's', entity: 'e', body: { name: 'bad' } }]);
+  });
+
+  it('regression: a buildRowOperations throw still reports operations: null (there was nothing to send)', async () => {
+    const rows = [{ name: 'bad' }];
+    const postBatch = async () => ({ committed: true, operations: [{ id: 'row', ok: true, recordId: 'X' }] });
+    const buildRowOperations = () => { throw new Error('country could not be resolved'); };
+    const { results } = await runImport(rows, { buildRowOperations, postBatch });
+    assert.equal(results[0].operations, null);
+  });
 });
