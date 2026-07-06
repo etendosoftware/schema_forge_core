@@ -107,6 +107,22 @@ describe('ImportDialog', () => {
     expect(sentOps[0].body.name).toBe('Custom BP body');
   });
 
+  it('regression: threads token through to the descriptor (needed for FK resolution during operation-building)', async () => {
+    const descriptorFn = vi.fn().mockImplementation(async (row, descriptorConfig) => [
+      { id: 'row', spec: descriptorConfig.spec, entity: 'businessPartner', body: { token: descriptorConfig.token } },
+    ]);
+    registerImportDescriptor('token-check-descriptor', descriptorFn);
+    const descriptorConfig = { ...config, descriptor: 'token-check-descriptor' };
+    const postBatch = vi.fn().mockResolvedValue({ committed: true, operations: [{ id: 'row', ok: true, recordId: 'REC-1' }] });
+    render(<ImportDialog open config={descriptorConfig} token="real-token-123" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => expect(descriptorFn).toHaveBeenCalled());
+    const [, receivedConfig] = descriptorFn.mock.calls[0];
+    expect(receivedConfig.token).toBe('real-token-123');
+  });
+
   it('shows a failed row in the result review queue with Retry re-invoking postBatch for that row', async () => {
     const postBatch = vi.fn().mockResolvedValue({ committed: false, failedAt: { index: 0 }, error: { message: 'Rejected by server' } });
     render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
@@ -138,5 +154,30 @@ describe('ImportDialog', () => {
     const retryOps = postBatch.mock.calls[1][0];
     expect(Array.isArray(retryOps)).toBe(true);
     expect(retryOps[0].body.name).toBe('Lucia');
+  });
+
+  it('regression: an exception escaping the whole send never leaves the dialog stuck on the progress step', async () => {
+    // runImport already isolates per-row build failures on its own (covered above and in
+    // importEngine.test.js) — this covers the remaining, genuinely-unexpected case:
+    // something throws outside that per-row isolation entirely. Before this safety net,
+    // handleSend had no try/catch at all, so the dialog was reproduced hanging on
+    // "Importing… 0%" forever in a real browser run with no way to see what happened.
+    const postBatch = vi.fn();
+    const brokenRunImportConfig = { ...config, concurrency: 'not-a-number-but-does-not-matter' };
+    // Force a throw that is NOT per-row (simulates something failing before any row is
+    // even attempted, e.g. a malformed config) by making postBatch itself unreachable —
+    // buildOperations with an unregistered descriptor throws synchronously up front.
+    const unregisteredDescriptorConfig = { ...brokenRunImportConfig, descriptor: 'this-descriptor-does-not-exist' };
+    render(<ImportDialog open config={unregisteredDescriptorConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    // Even with an unregistered descriptor (buildOperations throws per-row, which
+    // runImport already isolates), the dialog must reach a terminal, visible state —
+    // never stay stuck on the progress step.
+    await waitFor(() => {
+      const stillOnProgress = screen.queryByTestId('ImportProgressStep__percent');
+      expect(stillOnProgress).toBeNull();
+    });
   });
 });

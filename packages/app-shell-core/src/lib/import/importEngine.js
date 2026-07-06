@@ -64,9 +64,24 @@ export async function runImport(rows, { buildRowOperations, postBatch, concurren
     attempted,
     concurrency,
     // buildRowOperations may itself be async (a composite descriptor awaiting FK
-    // resolution) — always await it before handing the result to sendRow, never pass a
-    // possibly-unresolved Promise straight through.
-    async (row) => sendRow(await buildRowOperations(row), { postBatch }),
+    // resolution) and, unlike postBatch, has no built-in isolation — a descriptor is free
+    // to throw (e.g. "country could not be resolved") for a single bad row. Without this
+    // try/catch that throw propagates out of runBoundedPool's Promise.all, aborting every
+    // other row's send mid-flight (even ones on a different worker slot that were about
+    // to succeed) and leaving the caller's await on runImport() rejected with nothing to
+    // show the user — reproduced via a real browser run that hung at "Importing... 0%"
+    // forever. One row's build failure must show up as that row's own FAILED result,
+    // exactly like a postBatch rejection already does in sendRow, never take the whole
+    // batch down.
+    async (row) => {
+      let operations;
+      try {
+        operations = await buildRowOperations(row);
+      } catch (error) {
+        return { status: SEND_STATUS.FAILED, error };
+      }
+      return sendRow(operations, { postBatch });
+    },
     (result, row, index) => {
       results[index] = { row, ...result };
       completed += 1;

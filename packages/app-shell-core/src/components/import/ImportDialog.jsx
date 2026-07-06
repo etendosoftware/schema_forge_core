@@ -68,12 +68,19 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // region resolution, raw address text dumped straight onto businessPartner, and the
   // descriptor's own oBTIKTaxIDKey default never applied — confirmed by inspecting the
   // actual /batch request body sent from the browser.
+  // `token` must be threaded through too — a composite descriptor (e.g. Contacts) needs
+  // it to call FK resolvers during operation-building (`resolveCountry(row.country,
+  // { token: config.token })`). Omitting it here silently produced `token: undefined`,
+  // which made `simSearch`'s own guard clause short-circuit to "no match" for every row
+  // instead of actually querying — the descriptor then threw "country could not be
+  // resolved" for every address-bearing row (confirmed via a real browser run).
   const operationsConfig = useMemo(() => ({
     spec: config.spec,
     entity: config.entity,
     descriptorName: config.descriptor,
     targets: config.fields.map((f) => f.target),
-  }), [config.spec, config.entity, config.descriptor, config.fields]);
+    token,
+  }), [config.spec, config.entity, config.descriptor, config.fields, token]);
 
   // The real config shape (decisions.json → window.import, verified against
   // artifacts/contacts/decisions.json) is `dedupe: { scope, key: string[] }`, not a flat
@@ -150,13 +157,26 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     setStep(STEP.SENDING);
     setProgress(0);
     const toSend = entries.filter((e) => e.status === 'pending' && e.errors.length === 0);
-    const { results } = await runImport(toSend.map((e) => e.row), {
-      buildRowOperations: (row) => buildOperations(row, operationsConfig),
-      postBatch,
-      concurrency: config.concurrency,
-      maxRows: config.maxRows,
-      onProgress: (completed, total) => setProgress(Math.round((completed / total) * 100)),
-    });
+    // runImport isolates per-row build/send failures on its own (a bad row surfaces as
+    // that row's FAILED result, not a thrown exception) — this catch is a last-resort
+    // safety net for anything genuinely unexpected escaping that isolation, so the dialog
+    // never again gets stuck on "Importing… 0%" forever with no way for the user to see
+    // what happened or retry (reproduced via a real browser run before runImport's own
+    // per-row try/catch was added).
+    let results;
+    try {
+      ({ results } = await runImport(toSend.map((e) => e.row), {
+        buildRowOperations: (row) => buildOperations(row, operationsConfig),
+        postBatch,
+        concurrency: config.concurrency,
+        maxRows: config.maxRows,
+        onProgress: (completed, total) => setProgress(Math.round((completed / total) * 100)),
+      }));
+    } catch (error) {
+      setFileErrorMessage(error.message || 'Unknown error while sending the import.');
+      setStep(STEP.FILE_ERROR);
+      return;
+    }
     const okCount = results.filter((r) => r.status === 'ok').length;
     const resultEntries = results
       .filter((r) => r.status !== 'ok')

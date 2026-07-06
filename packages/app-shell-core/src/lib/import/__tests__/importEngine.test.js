@@ -99,4 +99,41 @@ describe('runImport', () => {
     assert.equal(results[0].row, rows[0]);
     assert.equal(results[0].status, SEND_STATUS.FAILED);
   });
+
+  it('regression: a buildRowOperations throw for one row surfaces as that row\'s own FAILED result, without aborting the other rows in flight', async () => {
+    // Reproduces a real hang: a composite descriptor (e.g. Contacts resolving an
+    // unmatched country) throwing during operation-building used to escape
+    // runBoundedPool's Promise.all uncaught, aborting every other row's send mid-flight
+    // and leaving the caller's await on runImport() rejected with nothing to show.
+    const rows = [{ name: 'good-1' }, { name: 'bad' }, { name: 'good-2' }];
+    const postBatch = async (ops) => ({ committed: true, operations: [{ id: 'row', ok: true, recordId: `REC-${ops[0].body.name}` }] });
+    const buildRowOperations = (row) => {
+      if (row.name === 'bad') throw new Error('country could not be resolved');
+      return [{ id: 'row', spec: 's', entity: 'e', body: row }];
+    };
+    const { results } = await runImport(rows, { buildRowOperations, postBatch, concurrency: 3 });
+    assert.equal(results.length, 3);
+    const good1 = results.find((r) => r.row.name === 'good-1');
+    const bad = results.find((r) => r.row.name === 'bad');
+    const good2 = results.find((r) => r.row.name === 'good-2');
+    assert.equal(good1.status, SEND_STATUS.OK);
+    assert.equal(good2.status, SEND_STATUS.OK);
+    assert.equal(bad.status, SEND_STATUS.FAILED);
+    assert.equal(bad.error.message, 'country could not be resolved');
+  });
+
+  it('regression: an async buildRowOperations rejection is isolated the same way as a synchronous throw', async () => {
+    const rows = [{ name: 'good' }, { name: 'bad' }];
+    const postBatch = async (ops) => ({ committed: true, operations: [{ id: 'row', ok: true, recordId: `REC-${ops[0].body.name}` }] });
+    const buildRowOperations = async (row) => {
+      if (row.name === 'bad') throw new Error('async build failure');
+      return [{ id: 'row', spec: 's', entity: 'e', body: row }];
+    };
+    const { results } = await runImport(rows, { buildRowOperations, postBatch });
+    const good = results.find((r) => r.row.name === 'good');
+    const bad = results.find((r) => r.row.name === 'bad');
+    assert.equal(good.status, SEND_STATUS.OK);
+    assert.equal(bad.status, SEND_STATUS.FAILED);
+    assert.equal(bad.error.message, 'async build failure');
+  });
 });
