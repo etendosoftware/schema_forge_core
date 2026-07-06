@@ -53,3 +53,9 @@ test('core package source does not import app-shell implementation or generated 
     }
   }
 });
+
+test('fkResolvers.js is reachable at the documented subpath', async () => {
+  const mod = await import('../src/lib/import/fkResolvers.js');
+  assert.equal(typeof mod.registerFkResolver, 'function');
+  assert.equal(typeof mod.getFkResolver, 'function');
+});
