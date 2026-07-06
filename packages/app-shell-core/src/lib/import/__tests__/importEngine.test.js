@@ -28,6 +28,28 @@ describe('sendRow', () => {
     const result = await sendRow([{ id: 'row' }], { postBatch });
     assert.equal(result.status, SEND_STATUS.UNKNOWN);
   });
+
+  it('regression: surfaces the real message from a raw exception response ({ message } shape, not the documented { error } wrapper)', async () => {
+    // Confirmed via a live capture: an unhandled server-side exception (a genuine 500,
+    // not a graceful BatchService.java transactional rollback) never goes through the
+    // documented `{ committed: false, error: { message, ... } }` shape at all — it comes
+    // back as Etendo's generic error envelope, `{ message: "..." }`, with no `.error` key
+    // (useBatch's runBatch returns this unmodified whenever the non-ok body happens to
+    // parse as JSON). Reading only `response.error` for that shape silently produced
+    // `error: undefined`, so the actual backend exception text never reached the UI —
+    // the user saw nothing more useful than a generic "Unknown error" bubble.
+    const postBatch = async () => ({ message: 'Invalid value for OBTIKTaxIDKey: some.CachedSet@1a2b3c' });
+    const result = await sendRow([{ id: 'row' }], { postBatch });
+    assert.equal(result.status, SEND_STATUS.FAILED);
+    assert.equal(result.error.message, 'Invalid value for OBTIKTaxIDKey: some.CachedSet@1a2b3c');
+  });
+
+  it('regression: falls back to a generic message only when the response has neither shape', async () => {
+    const postBatch = async () => ({});
+    const result = await sendRow([{ id: 'row' }], { postBatch });
+    assert.equal(result.status, SEND_STATUS.FAILED);
+    assert.equal(result.error.message, 'Unknown error');
+  });
 });
 
 describe('runImport', () => {

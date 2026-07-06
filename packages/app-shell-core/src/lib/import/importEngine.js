@@ -26,7 +26,21 @@ export async function sendRow(operations, { postBatch }) {
     const recordId = response.operations?.[0]?.recordId;
     return { status: SEND_STATUS.OK, recordId };
   }
-  return { status: SEND_STATUS.FAILED, error: response.error };
+  // BatchService.java's documented failure shape is `{ committed: false, error: { message,
+  // ... } }`, but a raw unhandled server exception (a genuine 500, not a graceful
+  // transactional rollback) doesn't go through that wrapper at all — it comes back as
+  // Etendo's generic error envelope, `{ message: "..." }`, with no `.error` key (verified
+  // against a real capture: the exact shape `useBatch`'s runBatch returns unmodified for
+  // any non-ok response that happens to parse as JSON). Reading only `response.error` for
+  // that shape produced `undefined`, so the real backend exception text was silently
+  // dropped and the UI showed nothing more useful than "Unknown error" — logged here so
+  // the actual server message is visible in the console for diagnosis, not just discarded.
+  const error = response.error ?? { message: response.message || 'Unknown error' };
+  if (!response.error) {
+    // eslint-disable-next-line no-console
+    console.error('[import] /batch returned an unrecognized failure shape — raw response:', response);
+  }
+  return { status: SEND_STATUS.FAILED, error };
 }
 
 /**
