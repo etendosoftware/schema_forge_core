@@ -309,6 +309,12 @@ function analyzeLargeFiles(changedFiles) {
   const offenders = [];
 
   for (const path of changedFiles) {
+    // Generated dependency lockfiles (package-lock, npm-shrinkwrap) grow
+    // unboundedly and are machine-authored — gated by dependency review, not
+    // the handwritten-source size gate.
+    if (isGeneratedDependencyManifest(path)) {
+      continue;
+    }
     // Locale JSON files grow predictably as the app is translated — skip them.
     if (/\/locales\/[^/]+\.json$/.test(path)) {
       continue;
