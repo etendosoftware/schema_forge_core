@@ -43,6 +43,12 @@ sonar-results.md
 # Generated at runtime — not versioned
 coverage/
 sonar-reports/
+
+# React Doctor reports (keep current + history, ignore per-run output)
+reports/react-doctor/*
+!reports/react-doctor/current.md
+!reports/react-doctor/current.json
+!reports/react-doctor/history.csv
 domain-boundary-report.json
 domain-boundary-report.md
 review-report.json
