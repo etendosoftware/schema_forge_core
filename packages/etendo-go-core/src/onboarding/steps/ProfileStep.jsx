@@ -7,8 +7,9 @@ import { isProfileStepValid } from '../state.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
 import { SetupField } from '../components/SetupField.jsx';
-import { SetupSelect } from '../components/SetupSelect.jsx';
+import { CountrySelect } from '../components/CountrySelect.jsx';
 import { BusinessTypeCard } from '../components/BusinessTypeCard.jsx';
+import { buildCountryOptions } from '../countries.js';
 
 export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accountName, draftNotice, setDraftNotice, onChange }) {
   const ui = useUI();
@@ -50,12 +51,7 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
     onNext(form);
   };
 
-  const countryOptions = (config.countryCodes || []).map((code) => ({
-    value: code,
-    label: code === 'ES'
-      ? ui('onboardingCountrySpain')
-      : (code === 'AR' ? ui('onboardingCountryArgentina') : code),
-  }));
+  const countryOptions = buildCountryOptions(config.countryCodes, locale);
 
   const businessTypeOptions = (config.businessTypeValues || ['company', 'freelancer', 'advisory']).map((value) => ({
     value,
@@ -101,17 +97,13 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
             placeholder={ui('onboardingFullNamePlaceholder')}
             data-testid="SetupField__79cf84" />
 
-          <SetupSelect
+          <CountrySelect
             id="countryCode"
             label={ui('onboardingCountryLabel')}
             required
             value={form.countryCode}
-            onChange={e => updateField('countryCode', e.target.value)}
-            data-testid="SetupSelect__79cf84">
-            {countryOptions.map((country) => (
-              <option key={country.value} value={country.value}>{country.label}</option>
-            ))}
-          </SetupSelect>
+            onChange={(code) => updateField('countryCode', code)}
+            options={countryOptions} />
 
           <div>
             <Label
