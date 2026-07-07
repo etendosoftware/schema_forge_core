@@ -17,15 +17,18 @@ export function ImportColumnMapping({ headers, importFields, mapping, onMappingC
             <Select
               value={target ?? UNMAPPED_VALUE}
               onValueChange={(value) => onMappingChange(header, value === UNMAPPED_VALUE ? null : value)}
-            >
+              data-testid="Select__bf9e7b">
               <SelectTrigger data-testid={`ImportColumnMapping__select-${header}`} className="h-9">
-                <SelectValue />
-                <ChevronDown className="h-3 w-3 opacity-50" />
+                <SelectValue data-testid="SelectValue__bf9e7b" />
+                <ChevronDown className="h-3 w-3 opacity-50" data-testid="ChevronDown__bf9e7b" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={UNMAPPED_VALUE}>{text.notImported}</SelectItem>
+              <SelectContent data-testid="SelectContent__bf9e7b">
+                <SelectItem value={UNMAPPED_VALUE} data-testid="SelectItem__bf9e7b">{text.notImported}</SelectItem>
                 {importFields.map((field) => (
-                  <SelectItem key={field.target} value={field.target}>{field.label}</SelectItem>
+                  <SelectItem
+                    key={field.target}
+                    value={field.target}
+                    data-testid={"SelectItem__" + field.id}>{field.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

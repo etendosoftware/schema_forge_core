@@ -311,22 +311,31 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{text.title}</DialogTitle>
+      <Dialog open={open} onOpenChange={onOpenChange} data-testid="Dialog__38a6c3">
+        <DialogContent className="max-w-3xl" data-testid="DialogContent__38a6c3">
+          <DialogHeader data-testid="DialogHeader__38a6c3">
+            <DialogTitle data-testid="DialogTitle__38a6c3">{text.title}</DialogTitle>
           </DialogHeader>
 
-          {step === STEP.DROPZONE && <ImportDropzone onFileSelected={handleFileSelected} />}
+          {step === STEP.DROPZONE && <ImportDropzone onFileSelected={handleFileSelected} data-testid="ImportDropzone__38a6c3" />}
 
           {step === STEP.FILE_ERROR && (
-            <ImportFileErrorDialog message={fileErrorMessage} onCancel={() => onOpenChange(false)} onRetry={handleRetryFile} />
+            <ImportFileErrorDialog
+              message={fileErrorMessage}
+              onCancel={() => onOpenChange(false)}
+              onRetry={handleRetryFile}
+              data-testid="ImportFileErrorDialog__38a6c3" />
           )}
 
           {step === STEP.MAPPING && (
             <div className="flex min-h-0 max-h-[70vh] min-w-0 flex-col gap-4">
-              <ImportColumnMapping headers={headers} importFields={config.fields} mapping={mapping} onMappingChange={handleMappingChange} />
-              <ScrollPane>
+              <ImportColumnMapping
+                headers={headers}
+                importFields={config.fields}
+                mapping={mapping}
+                onMappingChange={handleMappingChange}
+                data-testid="ImportColumnMapping__38a6c3" />
+              <ScrollPane data-testid="ScrollPane__38a6c3">
                 <ImportReviewQueue
                   entries={entries}
                   fields={config.fields}
@@ -340,7 +349,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   retryLabel="Re-validate"
                   simSearchFn={simSearchFn}
                   token={token}
-                />
+                  data-testid="ImportReviewQueue__38a6c3" />
               </ScrollPane>
               <div className="flex justify-end">
                 <Button
@@ -356,15 +365,20 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
           )}
 
           {step === STEP.CONFIRM && (
-            <ImportConfirmStep importCount={validCount} skipCount={skipCount} onCancel={() => setStep(STEP.MAPPING)} onConfirm={handleSend} />
+            <ImportConfirmStep
+              importCount={validCount}
+              skipCount={skipCount}
+              onCancel={() => setStep(STEP.MAPPING)}
+              onConfirm={handleSend}
+              data-testid="ImportConfirmStep__38a6c3" />
           )}
 
-          {step === STEP.SENDING && <ImportProgressStep percent={progress} />}
+          {step === STEP.SENDING && <ImportProgressStep percent={progress} data-testid="ImportProgressStep__38a6c3" />}
 
           {step === STEP.RESULT && (
             <div className="flex min-h-0 max-h-[70vh] min-w-0 flex-col gap-4">
               {entries.length > 0 && (
-                <ScrollPane>
+                <ScrollPane data-testid="ScrollPane__38a6c3">
                   <ImportReviewQueue
                     entries={entries}
                     fields={config.fields}
@@ -378,7 +392,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                     retryLabel="Retry"
                     simSearchFn={simSearchFn}
                     token={token}
-                  />
+                    data-testid="ImportReviewQueue__38a6c3" />
                 </ScrollPane>
               )}
             </div>
@@ -392,7 +406,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         operations={systemError?.operations}
         raw={systemError?.raw}
         onClose={() => setSystemError(null)}
-      />
+        data-testid="ImportSystemErrorDialog__38a6c3" />
     </>
   );
 }

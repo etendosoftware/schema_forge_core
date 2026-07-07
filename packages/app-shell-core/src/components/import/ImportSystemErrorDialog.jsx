@@ -65,11 +65,14 @@ export function ImportSystemErrorDialog({ open, message, row, operations, raw, o
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => { if (!next) onClose(); }}
+      data-testid="Dialog__a7c9a4">
+      <DialogContent className="max-w-2xl" data-testid="DialogContent__a7c9a4">
+        <DialogHeader data-testid="DialogHeader__a7c9a4">
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
-            <CircleAlert className="h-5 w-5" />
+            <CircleAlert className="h-5 w-5" data-testid="CircleAlert__a7c9a4" />
           </span>
           <DialogTitle data-testid="ImportSystemErrorDialog__title">{text.title}</DialogTitle>
         </DialogHeader>
@@ -82,7 +85,7 @@ export function ImportSystemErrorDialog({ open, message, row, operations, raw, o
           onClick={() => setShowReport((v) => !v)}
           data-testid="ImportSystemErrorDialog__toggleReport"
         >
-          {showReport ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          {showReport ? <ChevronDown className="h-3 w-3" data-testid="ChevronDown__a7c9a4" /> : <ChevronRight className="h-3 w-3" data-testid="ChevronRight__a7c9a4" />}
           {showReport ? text.hideReport : text.showReport}
         </button>
 

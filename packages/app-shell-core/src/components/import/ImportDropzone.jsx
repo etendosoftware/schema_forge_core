@@ -52,7 +52,7 @@ export function ImportDropzone({ accept = '.csv,.txt', onFileSelected, labels })
         dragOver ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40',
       )}
     >
-      <Upload className="h-6 w-6 text-muted-foreground" />
+      <Upload className="h-6 w-6 text-muted-foreground" data-testid="Upload__607f9c" />
       <p className="text-sm font-medium text-foreground" data-testid="ImportDropzone__title">{text.dropHere}</p>
       <p className="text-xs text-muted-foreground" data-testid="ImportDropzone__hint">{text.dropHint}</p>
       <input

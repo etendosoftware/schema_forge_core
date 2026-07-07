@@ -144,8 +144,11 @@ function FkMismatchCell({ index, field, value, error, onEditField, simSearchFn, 
   };
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
+    <Popover
+      open={open}
+      onOpenChange={handleOpenChange}
+      data-testid={"Popover__" + field.id}>
+      <PopoverTrigger asChild data-testid={"PopoverTrigger__" + field.id}>
         <button
           type="button"
           className="flex h-8 w-full items-center justify-between gap-1 rounded-md border border-[#D50B3E]/60 bg-[#FEF0F4] px-2 text-left text-sm text-[#D50B3E]"
@@ -153,20 +156,26 @@ function FkMismatchCell({ index, field, value, error, onEditField, simSearchFn, 
           data-testid={`ImportReviewQueue__fieldError-${index}-${field.target}`}
         >
           <span className="truncate">{value || '—'}</span>
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />
+          <ChevronDown
+            className="h-3.5 w-3.5 shrink-0 opacity-70"
+            aria-hidden="true"
+            data-testid={"ChevronDown__" + field.id} />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="start">
-        <Command shouldFilter={false}>
+      <PopoverContent
+        className="w-64 p-0"
+        align="start"
+        data-testid={"PopoverContent__" + field.id}>
+        <Command shouldFilter={false} data-testid={"Command__" + field.id}>
           <CommandInput
             value={query}
             onValueChange={handleQueryChange}
             placeholder="Search or type a value…"
             data-testid={`ImportReviewQueue__fkSearch-${index}-${field.target}`}
           />
-          <CommandList>
+          <CommandList data-testid={"CommandList__" + field.id}>
             {query.trim() && (
-              <CommandGroup>
+              <CommandGroup data-testid={"CommandGroup__" + field.id}>
                 <CommandItem
                   value={`__use-typed__${query}`}
                   onSelect={() => handleSelect(query.trim())}
@@ -181,9 +190,9 @@ function FkMismatchCell({ index, field, value, error, onEditField, simSearchFn, 
                 Searching…
               </div>
             ) : candidates.length === 0 ? (
-              <CommandEmpty>{query.trim() ? null : 'No matches found — type a value above.'}</CommandEmpty>
+              <CommandEmpty data-testid={"CommandEmpty__" + field.id}>{query.trim() ? null : 'No matches found — type a value above.'}</CommandEmpty>
             ) : (
-              <CommandGroup>
+              <CommandGroup data-testid={"CommandGroup__" + field.id}>
                 {candidates.map((c) => (
                   <CommandItem
                     key={c.id}
@@ -273,25 +282,27 @@ export function ImportReviewQueue({
           {text.downloadErrors}
         </Button>
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className={`w-[1%] whitespace-nowrap ${STICKY_CELL_CLASS}`}>{text.status}</TableHead>
+      <Table data-testid="Table__a73779">
+        <TableHeader data-testid="TableHeader__a73779">
+          <TableRow data-testid="TableRow__a73779">
+            <TableHead
+              className={`w-[1%] whitespace-nowrap ${STICKY_CELL_CLASS}`}
+              data-testid="TableHead__a73779">{text.status}</TableHead>
             {dataColumns
-              ? dataColumns.map((field) => <TableHead key={field.target}>{field.label ?? field.target}</TableHead>)
-              : <TableHead>Row</TableHead>}
+              ? dataColumns.map((field) => <TableHead key={field.target} data-testid={"TableHead__" + field.id}>{field.label ?? field.target}</TableHead>)
+              : <TableHead data-testid="TableHead__a73779">Row</TableHead>}
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody data-testid="TableBody__a73779">
           {visibleEntries.map(({ entry, index }) => {
             const isSkipped = entry.status === 'skipped';
 
             if (isSkipped) {
               return (
-                <TableRow key={index}>
-                  <TableCell className={STICKY_CELL_CLASS}>
+                <TableRow key={index} data-testid="TableRow__a73779">
+                  <TableCell className={STICKY_CELL_CLASS} data-testid="TableCell__a73779">
                     <div className="flex items-center gap-2">
-                      <StatusLineTag index={index} tag="neutral">{text.skipped}</StatusLineTag>
+                      <StatusLineTag index={index} tag="neutral" data-testid="StatusLineTag__a73779">{text.skipped}</StatusLineTag>
                       {onUnskipEntry && (
                         <Button
                           type="button"
@@ -302,13 +313,13 @@ export function ImportReviewQueue({
                           data-testid={`ImportReviewQueue__unskip-${index}`}
                           title={text.unskip}
                         >
-                          <Pencil className="h-3 w-3" aria-hidden="true" />
+                          <Pencil className="h-3 w-3" aria-hidden="true" data-testid="Pencil__a73779" />
                           <span className="sr-only">{text.unskip}</span>
                         </Button>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell colSpan={dataColumnCount}>
+                  <TableCell colSpan={dataColumnCount} data-testid="TableCell__a73779">
                     <span className="text-xs text-muted-foreground" data-testid={`ImportReviewQueue__skippedLabel-${index}`}>{text.skipped}</span>
                   </TableCell>
                 </TableRow>
@@ -317,10 +328,10 @@ export function ImportReviewQueue({
 
             if (entry.errors.length === 0) {
               return (
-                <TableRow key={index}>
-                  <TableCell className={STICKY_CELL_CLASS}>
+                <TableRow key={index} data-testid="TableRow__a73779">
+                  <TableCell className={STICKY_CELL_CLASS} data-testid="TableCell__a73779">
                     <div className="flex items-center gap-2">
-                      <StatusLineTag index={index} tag="success">{text.statusOk}</StatusLineTag>
+                      <StatusLineTag index={index} tag="success" data-testid="StatusLineTag__a73779">{text.statusOk}</StatusLineTag>
                       <div className="flex items-center gap-0.5">
                         <Button
                           type="button"
@@ -330,7 +341,7 @@ export function ImportReviewQueue({
                           data-testid={`ImportReviewQueue__retry-${index}`}
                           title={retryLabel}
                         >
-                          <RotateCw className="h-3 w-3" aria-hidden="true" />
+                          <RotateCw className="h-3 w-3" aria-hidden="true" data-testid="RotateCw__a73779" />
                           <span className="sr-only">{retryLabel}</span>
                         </Button>
                         <Button
@@ -342,7 +353,7 @@ export function ImportReviewQueue({
                           onClick={() => onSkipEntry(index)}
                           title={text.skip}
                         >
-                          <SkipForward className="h-3 w-3" aria-hidden="true" />
+                          <SkipForward className="h-3 w-3" aria-hidden="true" data-testid="SkipForward__a73779" />
                           <span className="sr-only">{text.skip}</span>
                         </Button>
                       </div>
@@ -350,12 +361,12 @@ export function ImportReviewQueue({
                   </TableCell>
                   {dataColumns ? (
                     dataColumns.map((field) => (
-                      <TableCell key={field.target}>
+                      <TableCell key={field.target} data-testid={"TableCell__" + field.id}>
                         <span data-testid={`ImportReviewQueue__value-${index}-${field.target}`}>{entry.row[field.target] ?? ''}</span>
                       </TableCell>
                     ))
                   ) : (
-                    <TableCell colSpan={dataColumnCount}>
+                    <TableCell colSpan={dataColumnCount} data-testid="TableCell__a73779">
                       <span data-testid={`ImportReviewQueue__summary-${index}`}>{Object.values(entry.row).join(' · ')}</span>
                     </TableCell>
                   )}
@@ -370,12 +381,17 @@ export function ImportReviewQueue({
             const rowColumns = dataColumns ?? entry.errors.map((e) => ({ target: e.target, label: e.target }));
 
             return (
-              <TableRow key={index}>
-                <TableCell className={`${STICKY_CELL_CLASS} align-top`}>
+              <TableRow key={index} data-testid="TableRow__a73779">
+                <TableCell
+                  className={`${STICKY_CELL_CLASS} align-top`}
+                  data-testid="TableCell__a73779">
                   <div className="flex min-w-[160px] flex-col gap-1 py-1">
                     <div className="flex items-center gap-2">
-                      <StatusLineTag index={index} tag="destructive">
-                        <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                      <StatusLineTag index={index} tag="destructive" data-testid="StatusLineTag__a73779">
+                        <AlertCircle
+                          className="h-3.5 w-3.5"
+                          aria-hidden="true"
+                          data-testid="AlertCircle__a73779" />
                         <span className="sr-only">{text.statusError}</span>
                       </StatusLineTag>
                       <div className="flex items-center gap-0.5">
@@ -387,7 +403,7 @@ export function ImportReviewQueue({
                           data-testid={`ImportReviewQueue__retry-${index}`}
                           title={retryLabel}
                         >
-                          <RotateCw className="h-3 w-3" aria-hidden="true" />
+                          <RotateCw className="h-3 w-3" aria-hidden="true" data-testid="RotateCw__a73779" />
                           <span className="sr-only">{retryLabel}</span>
                         </Button>
                         <Button
@@ -399,7 +415,7 @@ export function ImportReviewQueue({
                           onClick={() => handleCopyError(entry)}
                           title={text.copyError}
                         >
-                          <Copy className="h-3 w-3" aria-hidden="true" />
+                          <Copy className="h-3 w-3" aria-hidden="true" data-testid="Copy__a73779" />
                           <span className="sr-only">{text.copyError}</span>
                         </Button>
                         <Button
@@ -411,7 +427,7 @@ export function ImportReviewQueue({
                           onClick={() => onSkipEntry(index)}
                           title={text.skip}
                         >
-                          <SkipForward className="h-3 w-3" aria-hidden="true" />
+                          <SkipForward className="h-3 w-3" aria-hidden="true" data-testid="SkipForward__a73779" />
                           <span className="sr-only">{text.skip}</span>
                         </Button>
                       </div>
@@ -435,7 +451,7 @@ export function ImportReviewQueue({
                   // a plain required/format error that just needs retyping.
                   const isFkMismatch = fieldError && !rowLevelError && fieldError.candidates !== undefined;
                   return (
-                    <TableCell key={field.target}>
+                    <TableCell key={field.target} data-testid={"TableCell__" + field.id}>
                       {isFkMismatch ? (
                         <FkMismatchCell
                           index={index}
@@ -445,7 +461,7 @@ export function ImportReviewQueue({
                           onEditField={onEditField}
                           simSearchFn={simSearchFn}
                           token={token}
-                        />
+                          data-testid={"FkMismatchCell__" + field.id} />
                       ) : isEditable ? (
                         <div className="flex flex-col gap-1">
                           {fieldError && !rowLevelError && (
