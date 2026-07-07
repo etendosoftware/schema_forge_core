@@ -88,8 +88,8 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
               data-testid="Label__79cf84">
               {ui('onboardingFiscalIdLabel')} <span className="ml-1 text-rose-500">*</span>
             </Label>
-            <div className="flex overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] focus-within:ring-4 focus-within:ring-slate-900/5">
-              <div className="flex min-w-[88px] items-center justify-center border-r border-slate-300 px-4 text-base text-slate-500">
+            <div className="flex overflow-hidden rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:border-slate-400 focus-within:border-slate-400 focus-within:ring-4 focus-within:ring-slate-900/5">
+              <div className="flex min-w-[88px] items-center justify-center border-r border-[#D1D4DB] px-4 text-base text-slate-500">
                 {form.fiscalIdType}
               </div>
               <input
@@ -98,7 +98,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                 value={form.fiscalIdValue}
                 onChange={e => updateField('fiscalIdValue', e.target.value)}
                 placeholder={ui('onboardingFiscalIdPlaceholder')}
-                className="h-12 w-full border-0 px-4 text-base text-slate-900 outline-none placeholder:text-slate-400"
+                className="h-10 w-full border-0 px-4 text-base text-slate-900 outline-none placeholder:text-slate-400"
               />
             </div>
           </div>
