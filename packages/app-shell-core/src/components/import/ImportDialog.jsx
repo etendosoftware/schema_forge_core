@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog.jsx';
 import { Button } from '../ui/button.jsx';
+import { ScrollPane } from '../ui/scroll-pane.jsx';
 import { ImportDropzone } from './ImportDropzone.jsx';
 import { ImportColumnMapping } from './ImportColumnMapping.jsx';
 import { ImportReviewQueue, buildErrorsCsv } from './ImportReviewQueue.jsx';
@@ -203,6 +204,15 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, status: 'skipped' } : e)));
   }, []);
 
+  // Brings a skipped row back into the editable queue (e.g. a false-positive
+  // in-file duplicate the user wants to review and import after all). Errors
+  // recorded at skip time (a dedupe row-level error, or a prior send failure)
+  // are left untouched, so it reappears exactly where the normal error/OK
+  // branches already know how to render and act on it.
+  const handleUnskipEntry = useCallback((index) => {
+    setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, status: 'pending' } : e)));
+  }, []);
+
   const validCount = entries.filter((e) => e.status === 'pending' && e.errors.length === 0).length;
   const skipCount = entries.length - validCount;
 
@@ -314,19 +324,24 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
           )}
 
           {step === STEP.MAPPING && (
-            <div className="flex flex-col gap-4">
+            <div className="flex min-h-0 max-h-[70vh] min-w-0 flex-col gap-4">
               <ImportColumnMapping headers={headers} importFields={config.fields} mapping={mapping} onMappingChange={handleMappingChange} />
-              <ImportReviewQueue
-                entries={entries}
-                fields={config.fields}
-                showOnlyErrors={showOnlyErrorsPreSend}
-                onToggleFilter={() => setShowOnlyErrorsPreSend((v) => !v)}
-                onEditField={handleEditField}
-                onRetryEntry={handleRetryEntryPreSend}
-                onSkipEntry={handleSkipEntry}
-                onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
-                retryLabel="Re-validate"
-              />
+              <ScrollPane>
+                <ImportReviewQueue
+                  entries={entries}
+                  fields={config.fields}
+                  showOnlyErrors={showOnlyErrorsPreSend}
+                  onToggleFilter={() => setShowOnlyErrorsPreSend((v) => !v)}
+                  onEditField={handleEditField}
+                  onRetryEntry={handleRetryEntryPreSend}
+                  onSkipEntry={handleSkipEntry}
+                  onUnskipEntry={handleUnskipEntry}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
+                  retryLabel="Re-validate"
+                  simSearchFn={simSearchFn}
+                  token={token}
+                />
+              </ScrollPane>
               <div className="flex justify-end">
                 <Button
                   type="button"
@@ -347,19 +362,24 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
           {step === STEP.SENDING && <ImportProgressStep percent={progress} />}
 
           {step === STEP.RESULT && (
-            <div className="flex flex-col gap-4">
+            <div className="flex min-h-0 max-h-[70vh] min-w-0 flex-col gap-4">
               {entries.length > 0 && (
-                <ImportReviewQueue
-                  entries={entries}
-                  fields={config.fields}
-                  showOnlyErrors={showOnlyErrorsPostSend}
-                  onToggleFilter={() => setShowOnlyErrorsPostSend((v) => !v)}
-                  onEditField={handleEditField}
-                  onRetryEntry={handleRetryEntryPostSend}
-                  onSkipEntry={handleSkipEntry}
-                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
-                  retryLabel="Retry"
-                />
+                <ScrollPane>
+                  <ImportReviewQueue
+                    entries={entries}
+                    fields={config.fields}
+                    showOnlyErrors={showOnlyErrorsPostSend}
+                    onToggleFilter={() => setShowOnlyErrorsPostSend((v) => !v)}
+                    onEditField={handleEditField}
+                    onRetryEntry={handleRetryEntryPostSend}
+                    onSkipEntry={handleSkipEntry}
+                    onUnskipEntry={handleUnskipEntry}
+                    onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
+                    retryLabel="Retry"
+                    simSearchFn={simSearchFn}
+                    token={token}
+                  />
+                </ScrollPane>
               )}
             </div>
           )}

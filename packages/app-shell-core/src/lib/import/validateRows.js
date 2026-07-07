@@ -31,7 +31,9 @@ export function validateRow(row, { requiredTargets = [], emailTargets = [], fkTa
     if (isBlank(value)) continue;
     const resolution = fkResolutions.get(target)?.get(String(value).trim());
     if (!resolution || resolution.status !== 'auto-resolved') {
-      errors.push({ target, message: `"${value}" could not be matched to an existing record.` });
+      // `candidates` (present, possibly empty) is what lets the review queue offer a
+      // pick-a-value selector instead of a bare retype-and-hope text field.
+      errors.push({ target, message: `"${value}" could not be matched to an existing record.`, candidates: resolution?.candidates ?? [] });
     }
   }
 
