@@ -17,6 +17,27 @@ describe('sendRow', () => {
     assert.equal(result.error.message, 'Rejected');
   });
 
+  it('regression: classifies a unique-constraint rejection as DUPLICATE, not FAILED — nothing for the user to fix or retry', async () => {
+    // Reproduced via a real import run: re-sending a row whose BusinessPartner already
+    // exists (Client, Org, SearchKey unique index) rejects with Etendo's generic AD-level
+    // uniqueness message — the same wording for any entity's unique index, not something
+    // specific to BusinessPartner. Retrying would only repeat the identical rejection, so
+    // this must not be surfaced as an actionable failure.
+    const postBatch = async () => ({
+      committed: false,
+      failedAt: { id: 'bp' },
+      error: { message: 'There is already a Business Partner with the same (Client, Organization, Search Key). (Client, Organization, Search Key) must be unique.', status: 500 },
+    });
+    const result = await sendRow([{ id: 'bp' }], { postBatch });
+    assert.equal(result.status, SEND_STATUS.DUPLICATE);
+  });
+
+  it('regression: a genuinely different failure message is still classified as FAILED, not DUPLICATE', async () => {
+    const postBatch = async () => ({ committed: false, failedAt: { index: 0 }, error: { message: 'Could not find Sequence for: EM_Etgo_Identifier' } });
+    const result = await sendRow([{ id: 'row' }], { postBatch });
+    assert.equal(result.status, SEND_STATUS.FAILED);
+  });
+
   it('returns UNKNOWN when postBatch throws a BatchTimeoutError', async () => {
     const postBatch = async () => { throw new BatchTimeoutError('timed out'); };
     const result = await sendRow([{ id: 'row' }], { postBatch });

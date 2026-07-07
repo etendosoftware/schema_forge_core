@@ -5,7 +5,20 @@ export class BatchTimeoutError extends Error {
   }
 }
 
-export const SEND_STATUS = { OK: 'ok', FAILED: 'failed', UNKNOWN: 'unknown' };
+export const SEND_STATUS = { OK: 'ok', FAILED: 'failed', UNKNOWN: 'unknown', DUPLICATE: 'duplicate' };
+
+/**
+ * Etendo's generic AD-level uniqueness-constraint message ("X must be unique") — the same
+ * wording for any entity's unique index, not something specific to BusinessPartner
+ * (confirmed via a real capture: "There is already a Business Partner with the same
+ * (Client, Organization, Search Key). (Client, Organization, Search Key) must be unique.").
+ * A row that already exists server-side isn't a failure the user needs to act on or
+ * retry — retrying would only repeat the same rejection — so it's classified and reported
+ * separately from a genuine FAILED/UNKNOWN outcome.
+ */
+function isDuplicateKeyError(message) {
+  return typeof message === 'string' && /must be unique/i.test(message);
+}
 
 /**
  * Send one row's operations through the injected postBatch and classify the
@@ -51,7 +64,8 @@ export async function sendRow(operations, { postBatch }) {
   // debugged (per the user's explicit ask: capture uncontrolled backend errors with their
   // full trace, one at a time, until the pipeline stabilizes).
   const raw = error.raw ?? (error.detail ? JSON.stringify(error.detail, null, 2) : JSON.stringify(response, null, 2));
-  return { status: SEND_STATUS.FAILED, error: { ...error, raw } };
+  const status = isDuplicateKeyError(error.message) ? SEND_STATUS.DUPLICATE : SEND_STATUS.FAILED;
+  return { status, error: { ...error, raw } };
 }
 
 /**

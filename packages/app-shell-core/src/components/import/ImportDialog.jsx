@@ -15,7 +15,7 @@ import { dedupeRows } from '../../lib/import/dedupeRows.js';
 import { resolveForeignKeys, resolveForeignKeyColumn } from '../../lib/import/resolveForeignKeys.js';
 import { validateRow } from '../../lib/import/validateRows.js';
 import { buildOperations } from '../../lib/import/buildOperations.js';
-import { runImport, sendRow } from '../../lib/import/importEngine.js';
+import { runImport, sendRow, SEND_STATUS } from '../../lib/import/importEngine.js';
 
 const DEFAULT_LABELS = { title: 'Import' };
 
@@ -231,15 +231,25 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       return;
     }
     const okCount = results.filter((r) => r.status === 'ok').length;
-    const failedResults = results.filter((r) => r.status !== 'ok');
-    const resultEntries = failedResults
-      .map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || 'Unknown error' }], status: 'pending' }));
+    // A DUPLICATE result (the row's record already exists server-side, a unique-constraint
+    // rejection — see importEngine.js's isDuplicateKeyError) is not an actionable failure:
+    // retrying would only repeat the identical rejection, and there's nothing for the user
+    // to fix. Reported as a skipped entry (same treatment the pre-send in-file dedupe
+    // already uses — greyed out, no retry/skip buttons, per ImportReviewQueue) rather than
+    // lumped in with genuine failures that still need the user's attention.
+    const duplicateResults = results.filter((r) => r.status === SEND_STATUS.DUPLICATE);
+    const trueFailures = results.filter((r) => r.status !== 'ok' && r.status !== SEND_STATUS.DUPLICATE);
+    const resultEntries = [
+      ...duplicateResults.map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || 'Already exists' }], status: 'skipped' })),
+      ...trueFailures.map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || 'Unknown error' }], status: 'pending' })),
+    ];
     setEntries(resultEntries);
     setStep(STEP.RESULT);
-    // The last failure of this run, front-and-center with its row data, the exact
+    // The last TRUE failure of this run, front-and-center with its row data, the exact
     // request that was sent, and the full raw trace — see the systemError state comment
-    // above for why this exists alongside the review queue.
-    const lastFailure = failedResults.at(-1);
+    // above for why this exists alongside the review queue. A duplicate is expected,
+    // benign server behavior, not worth a blocking "system error" dialog.
+    const lastFailure = trueFailures.at(-1);
     setSystemError(lastFailure ? {
       message: lastFailure.error?.message || 'Unknown error',
       raw: lastFailure.error?.raw,
@@ -255,8 +265,11 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     // moment it becomes visible. Confirmed via a real browser run: a batch that failed
     // outright (a genuine 500) still closed the dialog immediately, so nothing ever
     // reached the screen even though sendRow was correctly surfacing the real message.
-    onImported({ okCount, failedCount: resultEntries.length });
+    // failedCount only counts trueFailures — duplicates alone should not keep the dialog
+    // forced open, since there's nothing left for the user to act on.
+    onImported({ okCount, failedCount: trueFailures.length });
     if (okCount > 0) toast.success(`${okCount} records imported successfully`);
+    if (duplicateResults.length > 0) toast.info(`${duplicateResults.length} row(s) skipped — already exist`);
   }, [entries, operationsConfig, config.concurrency, config.maxRows, postBatch, onImported]);
 
   const handleRetryEntryPostSend = useCallback(async (index) => {
@@ -267,12 +280,16 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       const next = [...prev];
       if (result.status === 'ok') {
         next.splice(index, 1);
+      } else if (result.status === SEND_STATUS.DUPLICATE) {
+        // Same treatment as the initial send — nothing for the user to fix, not worth
+        // re-flagging as an actionable failure.
+        next[index] = { ...next[index], errors: [{ target: '', message: result.error?.message || 'Already exists' }], status: 'skipped' };
       } else {
         next[index] = { ...next[index], errors: [{ target: '', message: result.error?.message || 'Unknown error' }] };
       }
       return next;
     });
-    if (result.status !== 'ok') {
+    if (result.status !== 'ok' && result.status !== SEND_STATUS.DUPLICATE) {
       setSystemError({ message: result.error?.message || 'Unknown error', raw: result.error?.raw, row: entry.row, operations });
     }
   }, [entries, operationsConfig, postBatch]);

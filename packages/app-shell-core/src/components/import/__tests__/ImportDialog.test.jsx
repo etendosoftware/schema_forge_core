@@ -215,6 +215,27 @@ describe('ImportDialog', () => {
     expect(retryOps[0].body.name).toBe('Lucia');
   });
 
+  it('regression: a unique-constraint rejection ("must be unique") shows as skipped, not an actionable failure, and does not open the system-error dialog', async () => {
+    // Reproduced via a real import run: re-sending a row whose BusinessPartner already
+    // exists rejects with Etendo's generic AD-level uniqueness message. Nothing for the
+    // user to fix or retry — must not be treated the same as a genuine failure.
+    const postBatch = vi.fn().mockResolvedValue({
+      committed: false,
+      failedAt: { id: 'bp' },
+      error: { message: 'There is already a Business Partner with the same (Client, Organization, Search Key). (Client, Organization, Search Key) must be unique.', status: 500 },
+    });
+    const onImported = vi.fn();
+    render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={onImported} />);
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__skippedLabel-0'));
+    expect(screen.queryByTestId('ImportReviewQueue__rowError-0')).toBeNull();
+    expect(screen.queryByTestId('ImportSystemErrorDialog__title')).toBeNull();
+    // A duplicate isn't a failure that keeps the caller from closing the dialog.
+    expect(onImported).toHaveBeenCalledWith({ okCount: 0, failedCount: 0 });
+  });
+
   it('regression: an exception escaping the whole send never leaves the dialog stuck on the progress step', async () => {
     // runImport already isolates per-row build failures on its own (covered above and in
     // importEngine.test.js) — this covers the remaining, genuinely-unexpected case:
