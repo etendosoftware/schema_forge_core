@@ -305,31 +305,38 @@ function analyzeMissingTests(newSourceFiles, newTestFiles) {
   }];
 }
 
+function isExemptFromSizeGate(path) {
+  // Generated dependency lockfiles (package-lock, npm-shrinkwrap) grow
+  // unboundedly and are machine-authored — gated by dependency review, not
+  // the handwritten-source size gate.
+  if (isGeneratedDependencyManifest(path)) {
+    return true;
+  }
+  // Locale JSON files grow predictably as the app is translated — skip them.
+  if (/\/locales\/[^/]+\.json$/.test(path)) {
+    return true;
+  }
+  // Generated contract snapshots are intentionally verbose and are checked
+  // by schema/quality gates instead of the handwritten-source size gate.
+  if (/^artifacts\/[^/]+\/(?:contract|contract\.prev|contract\.mcp|report-contract|aggregate-contract)\.json$/.test(path)) {
+    return true;
+  }
+  // Generated AD metadata cache (offline-regen snapshot): intentionally large
+  // and machine-generated — same rationale as the contract snapshots above.
+  if (path.startsWith('cli/cache/')) {
+    return true;
+  }
+  // Frozen, hand-authored data-fix migrations (chart of accounts, etc.):
+  // intentionally large sampledata dumps, gated by the data-fixes review
+  // criterion rather than the handwritten-source size gate.
+  return /^cli\/src\/data-fixes\/sql\/.*\.sql$/.test(path);
+}
+
 function analyzeLargeFiles(changedFiles) {
   const offenders = [];
 
   for (const path of changedFiles) {
-    // Locale JSON files grow predictably as the app is translated — skip them.
-    if (/\/locales\/[^/]+\.json$/.test(path)) {
-      continue;
-    }
-    // Generated contract snapshots are intentionally verbose and are checked
-    // by schema/quality gates instead of the handwritten-source size gate.
-    if (/^artifacts\/[^/]+\/(?:contract|contract\.prev|contract\.mcp|report-contract|aggregate-contract)\.json$/.test(path)) {
-      continue;
-    }
-    // Generated AD metadata cache (offline-regen snapshot): intentionally large
-    // and machine-generated — same rationale as the contract snapshots above.
-    if (path.startsWith('cli/cache/')) {
-      continue;
-    }
-    // Frozen, hand-authored data-fix migrations (chart of accounts, etc.):
-    // intentionally large sampledata dumps, gated by the data-fixes review
-    // criterion rather than the handwritten-source size gate.
-    if (/^cli\/src\/data-fixes\/sql\/.*\.sql$/.test(path)) {
-      continue;
-    }
-    if (!existsSync(path)) {
+    if (isExemptFromSizeGate(path) || !existsSync(path)) {
       continue;
     }
     const size = statSync(path).size;
