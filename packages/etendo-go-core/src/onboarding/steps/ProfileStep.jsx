@@ -115,11 +115,11 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
 
           <div>
             <Label
-              className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900"
+              className="mb-2 block text-sm font-medium leading-6 text-slate-900"
               data-testid="Label__79cf84">
               {ui('onboardingBusinessTypeLabel')}
             </Label>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-3">
               {businessTypeOptions.map((option) => (
                 <BusinessTypeCard
                   key={option.value}
@@ -138,7 +138,7 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
             type="button"
             onClick={handleContinue}
             disabled={!isValid}
-            className="h-12 rounded-2xl bg-gray-900 px-6 text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
+            className="h-12 rounded-lg bg-[#121217] px-6 text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
             data-testid="Button__79cf84">
             {ui('onboardingContinueAction')} <ArrowRight className="ml-2 h-4 w-4" data-testid="ArrowRight__79cf84" />
           </Button>

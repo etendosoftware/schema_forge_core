@@ -271,7 +271,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
         {result?.status === 'failed' && (
           <Button
             onClick={onBack}
-            className="bg-gray-900 text-white rounded-2xl h-12 px-6 hover:bg-accent-highlight hover:text-accent-highlight-foreground"
+            className="bg-[#121217] text-white rounded-lg h-12 px-6 hover:bg-accent-highlight hover:text-accent-highlight-foreground"
             data-testid="Button__c76d30">
             {ui('back')}
           </Button>

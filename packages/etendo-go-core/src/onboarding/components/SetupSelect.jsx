@@ -6,7 +6,7 @@ export function SetupSelect({ id, label, required = false, value, onChange, chil
     <div className={className}>
       <Label
         htmlFor={id}
-        className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900"
+        className="mb-2 block text-sm font-medium leading-6 text-slate-900"
         data-testid="Label__79cf84">
         {label}
         {required && <span className="ml-1 text-rose-500">*</span>}

@@ -282,7 +282,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           type="submit"
           data-testid="action-register-submit"
           disabled={registerLoading || !registerPasswordStrong}
-          className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
+          className="h-12 w-full rounded-lg bg-[#121217] text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
         >
           {registerLoading
             ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingCreatingAccount')}</>
