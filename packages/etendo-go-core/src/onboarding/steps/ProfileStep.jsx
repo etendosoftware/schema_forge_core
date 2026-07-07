@@ -7,7 +7,6 @@ import { isProfileStepValid } from '../state.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
 import { SetupField } from '../components/SetupField.jsx';
-import { CountrySelect } from '../components/CountrySelect.jsx';
 import { BusinessTypeCard } from '../components/BusinessTypeCard.jsx';
 import { buildCountryOptions } from '../countries.js';
 
@@ -51,7 +50,10 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
     onNext(form);
   };
 
-  const countryOptions = buildCountryOptions(config.countryCodes, locale);
+  // Country is fixed (Spain-only for now, no multi-country selector) — still
+  // derived from countries.js instead of a hardcoded literal, so the field
+  // stays data-driven if the country list ever expands again.
+  const fixedCountry = buildCountryOptions(config.countryCodes, locale)[0];
 
   const businessTypeOptions = (config.businessTypeValues || ['company', 'freelancer', 'advisory']).map((value) => ({
     value,
@@ -97,13 +99,26 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
             placeholder={ui('onboardingFullNamePlaceholder')}
             data-testid="SetupField__79cf84" />
 
-          <CountrySelect
-            id="countryCode"
-            label={ui('onboardingCountryLabel')}
-            required
-            value={form.countryCode}
-            onChange={(code) => updateField('countryCode', code)}
-            options={countryOptions} />
+          <div>
+            <Label
+              htmlFor="countryCode"
+              className="mb-2 block text-sm font-medium leading-6 text-slate-900"
+              data-testid="Label__79cf84">
+              {ui('onboardingCountryLabel')}
+              <span className="ml-1 text-rose-500">*</span>
+            </Label>
+            <div
+              id="countryCode"
+              className="flex h-10 w-full items-center gap-2 rounded-lg border border-[#D1D4DB] bg-white px-3 text-base text-slate-900 shadow-[0_1px_2px_rgba(18,18,23,0.05)]"
+              data-testid="CountryField__79cf84">
+              {fixedCountry && (
+                <>
+                  <span aria-hidden="true">{fixedCountry.flag}</span>
+                  <span>{fixedCountry.label}</span>
+                </>
+              )}
+            </div>
+          </div>
 
           <div>
             <Label
