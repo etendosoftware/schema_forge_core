@@ -137,7 +137,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
             type="button"
             onClick={handleStart}
             disabled={!isValid}
-            className="h-12 rounded-2xl bg-gray-900 px-6 text-base font-medium text-white hover:bg-gray-800 disabled:bg-slate-200 disabled:text-slate-500"
+            className="h-12 rounded-2xl bg-gray-900 px-6 text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground disabled:bg-slate-200 disabled:text-slate-500"
             data-testid="Button__79cf84">
             <><ArrowRight className="mr-2 h-4 w-4" data-testid="ArrowRight__79cf84" />{ui('onboardingStartAction')}</>
           </Button>
