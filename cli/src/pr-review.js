@@ -329,10 +329,7 @@ function isExemptFromSizeGate(path) {
   // Frozen, hand-authored data-fix migrations (chart of accounts, etc.):
   // intentionally large sampledata dumps, gated by the data-fixes review
   // criterion rather than the handwritten-source size gate.
-  if (/^cli\/src\/data-fixes\/sql\/.*\.sql$/.test(path)) {
-    return true;
-  }
-  return false;
+  return /^cli\/src\/data-fixes\/sql\/.*\.sql$/.test(path);
 }
 
 function analyzeLargeFiles(changedFiles) {
