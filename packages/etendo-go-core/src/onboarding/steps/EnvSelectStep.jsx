@@ -25,7 +25,7 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
     localStorage.removeItem('sf_platform_auth_method');
     if (setToken) setToken(null);
     if (setAccountName) setAccountName(null);
-    if (goToStep) goToStep('register');
+    if (goToStep) goToStep('login');
   };
 
   const loginToEnvironment = async (env) => {
