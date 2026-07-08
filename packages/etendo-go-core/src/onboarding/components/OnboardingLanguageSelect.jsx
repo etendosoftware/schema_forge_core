@@ -1,19 +1,9 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
-import { countryFlagEmoji } from '../countries.js';
-
-// Locale codes here look like `es_ES` / `en_US` — the flag is derived from the
-// region half (after the underscore), reusing the shared countryFlagEmoji
-// helper instead of a separate hardcoded flag map.
-function regionFromLocale(localeCode) {
-  const region = (localeCode || '').split('_')[1];
-  return region ? region.toUpperCase() : '';
-}
+import { LocaleFlagIcon } from './LocaleFlagIcon.jsx';
 
 export function OnboardingLanguageSelect({ label, locale, onChange, options }) {
-  const currentFlag = countryFlagEmoji(regionFromLocale(locale));
-
   return (
     <div className="min-w-[132px]">
       <Label
@@ -23,27 +13,25 @@ export function OnboardingLanguageSelect({ label, locale, onChange, options }) {
         {label}
       </Label>
       <div className="relative">
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base leading-none"
-        >
-          {currentFlag}
-        </span>
+        <LocaleFlagIcon
+          locale={locale}
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
+        />
         <select
           id="onboarding-language"
           aria-label={label}
           value={locale}
           onChange={(event) => onChange(event.target.value)}
-          className="h-10 w-full appearance-none rounded-full border border-slate-300 bg-white pl-9 pr-8 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5"
+          className="h-10 w-full appearance-none rounded-full border border-slate-200 bg-white pl-9 pr-8 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5"
         >
-          {options.map((option) => {
-            const optionFlag = countryFlagEmoji(regionFromLocale(option.value));
-            return (
-              <option key={option.value} value={option.value}>
-                {optionFlag ? `${optionFlag} ${option.label}` : option.label}
-              </option>
-            );
-          })}
+          {options.map((option) => (
+            // Native <option> elements can only render plain text (no HTML/SVG),
+            // so the open dropdown list cannot show flag icons — only the closed
+            // control does, via the LocaleFlagIcon overlay above.
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
         <ChevronDown
           aria-hidden="true"

@@ -12,6 +12,8 @@ const companyStep = readFileSync(join(onboardingSrc, 'steps', 'CompanyStep.jsx')
 const registerStep = readFileSync(join(onboardingSrc, 'steps', 'RegisterStep.jsx'), 'utf8');
 const envSelectStep = readFileSync(join(onboardingSrc, 'steps', 'EnvSelectStep.jsx'), 'utf8');
 const languageSelect = readFileSync(join(onboardingSrc, 'components', 'OnboardingLanguageSelect.jsx'), 'utf8');
+const localeFlagIconPath = join(onboardingSrc, 'components', 'LocaleFlagIcon.jsx');
+const localeFlagIcon = readFileSync(localeFlagIconPath, 'utf8');
 // useLocaleState lives in the sibling app-shell-core package — it owns the
 // localStorage persistence that setLocale (returned by useLocaleSwitch) relies on.
 const useLocaleState = readFileSync(
@@ -90,16 +92,36 @@ describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
     assert.match(useLocaleState, /const STORAGE_KEY = 'schema-forge-locale'/);
   });
 
-  it('renders a flag glyph derived from the current locale, reusing countryFlagEmoji', () => {
-    // Must reuse the shared helper from countries.js rather than duplicating a flag map.
+  it('renders the current locale flag via the dedicated LocaleFlagIcon component', () => {
+    // Flag rendering was extracted out of OnboardingLanguageSelect.jsx into its
+    // own component, so a real circular SVG can be used instead of an emoji glyph.
     assert.match(
       languageSelect,
+      /import\s*\{\s*LocaleFlagIcon\s*\}\s*from\s*'\.\/LocaleFlagIcon\.jsx'/,
+    );
+    assert.match(languageSelect, /<LocaleFlagIcon\s+locale=\{locale\}/);
+  });
+
+  it('does not prefix <option> labels with a flag glyph (native <option> is text-only)', () => {
+    // <option> elements cannot render HTML/SVG, so the option text must be the
+    // plain label — no emoji concatenation, no countryFlagEmoji reference here.
+    assert.doesNotMatch(languageSelect, /countryFlagEmoji/);
+    assert.doesNotMatch(languageSelect, /optionFlag/);
+    assert.match(languageSelect, /<option key=\{option\.value\} value=\{option\.value\}>\s*\{option\.label\}\s*<\/option>/);
+  });
+
+  it('LocaleFlagIcon covers ES, US, and falls back gracefully for unknown regions', () => {
+    // Known-locale circular SVG icons, hand-authored (no flag-icon dependency).
+    assert.match(localeFlagIcon, /region === 'ES'/);
+    assert.match(localeFlagIcon, /region === 'US'/);
+    assert.match(localeFlagIcon, /<svg/);
+    assert.match(localeFlagIcon, /<circle/);
+    // Any other region degrades to the shared emoji glyph instead of crashing.
+    assert.match(
+      localeFlagIcon,
       /import\s*\{\s*countryFlagEmoji\s*\}\s*from\s*'\.\.\/countries\.js'/,
     );
-    // The current flag is shown as a leading visual icon in the closed control.
-    assert.match(languageSelect, /countryFlagEmoji\(regionFromLocale\(locale\)\)/);
-    // Options are also flag-prefixed.
-    assert.match(languageSelect, /countryFlagEmoji\(regionFromLocale\(option\.value\)\)/);
+    assert.match(localeFlagIcon, /countryFlagEmoji\(region\)/);
   });
 
   it('keeps native <select> semantics (no Radix/custom listbox)', () => {
