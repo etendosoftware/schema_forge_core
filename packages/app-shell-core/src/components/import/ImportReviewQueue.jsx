@@ -6,6 +6,7 @@ import { Input } from '../ui/input.jsx';
 import { Button } from '../ui/button.jsx';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover.jsx';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '../ui/command.jsx';
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from '../ui/dialog.jsx';
 import { ScrollPane } from '../ui/scroll-pane.jsx';
 
 const DEFAULT_LABELS = {
@@ -22,7 +23,16 @@ const DEFAULT_LABELS = {
   status: 'Status',
   statusOk: 'OK',
   statusError: 'Error',
+  bulkApplyTitle: 'Apply to similar rows?',
+  bulkApplyDescription: '{count} other row(s) also have "{raw}". Apply "{value}" to all of them too?',
+  bulkApplyOnlyThis: 'Just this row',
+  bulkApplyAll: 'Apply to all',
 };
+
+/** Fills `{key}` placeholders in a label template — e.g. bulkApplyDescription's {count}/{raw}/{value}. */
+function formatTemplate(template, vars) {
+  return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? '');
+}
 
 // Three-way status filter — 'error' bundles skipped rows in with actual
 // validation errors, since both need the user's attention; 'ok' is only rows
@@ -118,8 +128,13 @@ function StatusLineTag({ index, tag, children }) {
  * by live similarity instead of just client-side substring filtering the
  * original candidate set, which misses cross-language/fuzzy matches entirely
  * (e.g. typing "España" would never substring-match "Spain").
+ *
+ * Selecting a candidate is reported via `onSelect(value, resolvedId)` — a known
+ * `resolvedId` means the exact record is already identified (no re-validate
+ * round-trip needed), while `null` means the user accepted free-typed text
+ * (still needs a fresh SimSearch lookup, same as the old "Re-validate" button).
  */
-function FkMismatchCell({ index, field, value, error, onEditField, simSearchFn, token }) {
+function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, token }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [candidates, setCandidates] = useState(error.candidates ?? []);
@@ -128,8 +143,13 @@ function FkMismatchCell({ index, field, value, error, onEditField, simSearchFn, 
   const debounceRef = useRef(null);
   const requestIdRef = useRef(0);
 
-  const handleSelect = (name) => {
-    onEditField(index, field.target, name);
+  const handleSelectCandidate = (candidate) => {
+    onSelect(candidate.name, candidate.id);
+    setOpen(false);
+  };
+
+  const handleUseTyped = (text) => {
+    onSelect(text, null);
     setOpen(false);
   };
 
@@ -211,7 +231,7 @@ function FkMismatchCell({ index, field, value, error, onEditField, simSearchFn, 
               <CommandGroup data-testid={"CommandGroup__" + field.id}>
                 <CommandItem
                   value={`__use-typed__${query}`}
-                  onSelect={() => handleSelect(query.trim())}
+                  onSelect={() => handleUseTyped(query.trim())}
                   data-testid={`ImportReviewQueue__fkUseTyped-${index}-${field.target}`}
                 >
                   Use &ldquo;{query.trim()}&rdquo;
@@ -230,7 +250,7 @@ function FkMismatchCell({ index, field, value, error, onEditField, simSearchFn, 
                   <CommandItem
                     key={c.id}
                     value={c.name}
-                    onSelect={() => handleSelect(c.name)}
+                    onSelect={() => handleSelectCandidate(c)}
                     data-testid={`ImportReviewQueue__fkCandidate-${index}-${field.target}-${c.id}`}
                   >
                     <span className="flex-1 truncate">{c.name}</span>
@@ -273,6 +293,7 @@ export function ImportReviewQueue({
   onRetryEntry,
   onSkipEntry,
   onUnskipEntry,
+  onApplyFkValue,
   onDownloadErrors,
   retryLabel = 'Retry',
   labels,
@@ -287,6 +308,42 @@ export function ImportReviewQueue({
       const isAttentionNeeded = entry.status === 'skipped' || entry.errors.length > 0;
       return statusFilter === 'error' ? isAttentionNeeded : !isAttentionNeeded;
     });
+
+  // Awaiting the user's yes/no on whether a just-picked FK fix should also apply to every
+  // other row currently failing on the same raw value (e.g. every "Brazil" row, not just
+  // this one) — null when no prompt is showing.
+  const [pendingBulkApply, setPendingBulkApply] = useState(null);
+
+  /** Other non-skipped rows whose `field` is failing on the exact same raw value. */
+  const findMatchingIndices = (index, field, rawValue) => {
+    const trimmed = String(rawValue ?? '').trim();
+    if (!trimmed) return [];
+    return entries.reduce((acc, entry, i) => {
+      if (i === index || entry.status === 'skipped') return acc;
+      const sameMismatch = entry.errors.some(
+        (err) => err.target === field.target && err.candidates !== undefined
+          && String(entry.row[field.target] ?? '').trim() === trimmed,
+      );
+      if (sameMismatch) acc.push(i);
+      return acc;
+    }, []);
+  };
+
+  const handleFkValueSelected = (index, field, value, resolvedId) => {
+    const rawValue = entries[index].row[field.target];
+    const matchingIndices = findMatchingIndices(index, field, rawValue);
+    if (matchingIndices.length > 0) {
+      setPendingBulkApply({ index, field, value, resolvedId, matchingIndices, rawValue });
+    } else {
+      onApplyFkValue({ indices: [index], field, value, resolvedId });
+    }
+  };
+
+  const resolvePendingBulkApply = (applyToAll) => {
+    const { index, field, value, resolvedId, matchingIndices } = pendingBulkApply;
+    onApplyFkValue({ indices: applyToAll ? [index, ...matchingIndices] : [index], field, value, resolvedId });
+    setPendingBulkApply(null);
+  };
 
   const handleCopyError = async (entry) => {
     try {
@@ -526,7 +583,7 @@ export function ImportReviewQueue({
                           field={field}
                           value={entry.row[field.target] ?? ''}
                           error={fieldError}
-                          onEditField={onEditField}
+                          onSelect={(value, resolvedId) => handleFkValueSelected(index, field, value, resolvedId)}
                           simSearchFn={simSearchFn}
                           token={token}
                           data-testid={"FkMismatchCell__" + field.id} />
@@ -567,6 +624,42 @@ export function ImportReviewQueue({
       </Table>
       </div>
       </ScrollPane>
+      {pendingBulkApply && (
+        <Dialog
+          open
+          onOpenChange={(next) => { if (!next) setPendingBulkApply(null); }}
+          data-testid="Dialog__bulkApplyFk">
+          <DialogContent data-testid="DialogContent__bulkApplyFk">
+            <DialogHeader data-testid="DialogHeader__bulkApplyFk">
+              <DialogTitle data-testid="DialogTitle__bulkApplyFk">{text.bulkApplyTitle}</DialogTitle>
+              <DialogDescription data-testid="DialogDescription__bulkApplyFk">
+                {formatTemplate(text.bulkApplyDescription, {
+                  count: pendingBulkApply.matchingIndices.length,
+                  raw: pendingBulkApply.rawValue,
+                  value: pendingBulkApply.value,
+                })}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter data-testid="DialogFooter__bulkApplyFk">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => resolvePendingBulkApply(false)}
+                data-testid="ImportReviewQueue__bulkApplyOnlyThis"
+              >
+                {text.bulkApplyOnlyThis}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => resolvePendingBulkApply(true)}
+                data-testid="ImportReviewQueue__bulkApplyAll"
+              >
+                {text.bulkApplyAll}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

@@ -2,6 +2,20 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { ImportReviewQueue, buildErrorsCsv } from '../ImportReviewQueue.jsx';
 
+// cmdk (the FK-mismatch popover's command list) observes its list size via
+// ResizeObserver and scrolls the selected item into view — neither of which
+// jsdom implements.
+if (!global.ResizeObserver) {
+  global.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}
+
 afterEach(() => {
   cleanup();
 });
@@ -163,6 +177,126 @@ describe('ImportReviewQueue', () => {
       render(<ImportReviewQueue entries={[errorEntry]} statusFilter="all" onStatusFilterChange={onStatusFilterChange} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
       fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
       expect(onStatusFilterChange).toHaveBeenCalledWith('error');
+    });
+  });
+
+  describe('FK mismatch — apply value', () => {
+    const fkFields = [{ target: 'country', label: 'Country', matchEntity: 'Country' }];
+    const fkErrorEntry = (rawValue) => ({
+      row: { country: rawValue },
+      errors: [{
+        target: 'country',
+        message: `"${rawValue}" could not be matched to an existing record.`,
+        candidates: [{ id: 'BR', name: 'Brasil', similarityPercent: 92 }],
+      }],
+      status: 'pending',
+    });
+
+    it('applies a picked candidate immediately, with no prompt, when no other row shares the mismatch', () => {
+      const onApplyFkValue = vi.fn();
+      render(
+        <ImportReviewQueue
+          entries={[fkErrorEntry('Brazil')]}
+          fields={fkFields}
+          statusFilter="error"
+          onStatusFilterChange={() => {}}
+          onEditField={() => {}}
+          onRetryEntry={() => {}}
+          onSkipEntry={() => {}}
+          onApplyFkValue={onApplyFkValue}
+          onDownloadErrors={() => {}}
+        />
+      );
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__fieldError-0-country'));
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__fkCandidate-0-country-BR'));
+      expect(onApplyFkValue).toHaveBeenCalledWith({ indices: [0], field: fkFields[0], value: 'Brasil', resolvedId: 'BR' });
+      expect(screen.queryByTestId('DialogTitle__bulkApplyFk')).toBeNull();
+    });
+
+    it('prompts before applying when another row has the same unmatched value', () => {
+      const onApplyFkValue = vi.fn();
+      render(
+        <ImportReviewQueue
+          entries={[fkErrorEntry('Brazil'), fkErrorEntry('Brazil')]}
+          fields={fkFields}
+          statusFilter="error"
+          onStatusFilterChange={() => {}}
+          onEditField={() => {}}
+          onRetryEntry={() => {}}
+          onSkipEntry={() => {}}
+          onApplyFkValue={onApplyFkValue}
+          onDownloadErrors={() => {}}
+        />
+      );
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__fieldError-0-country'));
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__fkCandidate-0-country-BR'));
+      expect(onApplyFkValue).not.toHaveBeenCalled();
+      expect(screen.getByTestId('DialogTitle__bulkApplyFk').textContent).toBe('Apply to similar rows?');
+      expect(screen.getByTestId('DialogDescription__bulkApplyFk').textContent).toBe('1 other row(s) also have "Brazil". Apply "Brasil" to all of them too?');
+    });
+
+    it('applies only to the picked row when the user declines the bulk prompt', () => {
+      const onApplyFkValue = vi.fn();
+      render(
+        <ImportReviewQueue
+          entries={[fkErrorEntry('Brazil'), fkErrorEntry('Brazil')]}
+          fields={fkFields}
+          statusFilter="error"
+          onStatusFilterChange={() => {}}
+          onEditField={() => {}}
+          onRetryEntry={() => {}}
+          onSkipEntry={() => {}}
+          onApplyFkValue={onApplyFkValue}
+          onDownloadErrors={() => {}}
+        />
+      );
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__fieldError-0-country'));
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__fkCandidate-0-country-BR'));
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__bulkApplyOnlyThis'));
+      expect(onApplyFkValue).toHaveBeenCalledWith({ indices: [0], field: fkFields[0], value: 'Brasil', resolvedId: 'BR' });
+      expect(screen.queryByTestId('DialogTitle__bulkApplyFk')).toBeNull();
+    });
+
+    it('applies to every matching row when the user confirms "Apply to all"', () => {
+      const onApplyFkValue = vi.fn();
+      render(
+        <ImportReviewQueue
+          entries={[fkErrorEntry('Brazil'), fkErrorEntry('Brazil'), fkErrorEntry('Other')]}
+          fields={fkFields}
+          statusFilter="error"
+          onStatusFilterChange={() => {}}
+          onEditField={() => {}}
+          onRetryEntry={() => {}}
+          onSkipEntry={() => {}}
+          onApplyFkValue={onApplyFkValue}
+          onDownloadErrors={() => {}}
+        />
+      );
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__fieldError-0-country'));
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__fkCandidate-0-country-BR'));
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__bulkApplyAll'));
+      expect(onApplyFkValue).toHaveBeenCalledWith({ indices: [0, 1], field: fkFields[0], value: 'Brasil', resolvedId: 'BR' });
+    });
+
+    it('reports a null resolvedId when accepting freeform typed text', () => {
+      const onApplyFkValue = vi.fn();
+      render(
+        <ImportReviewQueue
+          entries={[fkErrorEntry('Brazil')]}
+          fields={fkFields}
+          statusFilter="error"
+          onStatusFilterChange={() => {}}
+          onEditField={() => {}}
+          onRetryEntry={() => {}}
+          onSkipEntry={() => {}}
+          onApplyFkValue={onApplyFkValue}
+          onDownloadErrors={() => {}}
+        />
+      );
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__fieldError-0-country'));
+      fireEvent.change(screen.getByTestId('ImportReviewQueue__fkSearch-0-country'), { target: { value: 'Brasil (typed)' } });
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__fkUseTyped-0-country'));
+      expect(onApplyFkValue).toHaveBeenCalledWith({ indices: [0], field: fkFields[0], value: 'Brasil (typed)', resolvedId: null });
     });
   });
 

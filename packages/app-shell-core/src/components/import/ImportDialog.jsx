@@ -201,6 +201,40 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     });
   }, [entries, requiredTargets, emailTargets, fkTargets, fkColumns, fkResolutions, simSearchFn, token]);
 
+  // A candidate picked (or freeform text accepted) from the FK-mismatch popover — applies
+  // it to one or more rows in one shot: merges the resolution into fkResolutions and
+  // revalidates every affected row synchronously, so the error clears immediately without
+  // a separate "Re-validate" click. A known `resolvedId` (the user picked an exact
+  // SimSearch candidate) skips the network round-trip entirely; freeform typed text still
+  // needs a fresh SimSearch lookup, same as the explicit Re-validate action.
+  const handleApplyFkValue = useCallback(async ({ indices, field, value, resolvedId }) => {
+    let resolution;
+    if (resolvedId != null) {
+      resolution = { status: 'auto-resolved', id: resolvedId, name: value };
+    } else {
+      const valueMap = await resolveForeignKeyColumn({
+        values: [value],
+        matchEntity: field.matchEntity,
+        simSearchFn,
+        token,
+        qtyResults: field.qtyResults,
+      });
+      resolution = valueMap.get(value);
+    }
+    const nextResolutions = new Map(fkResolutions);
+    const columnMap = new Map(nextResolutions.get(field.target) ?? []);
+    columnMap.set(value, resolution);
+    nextResolutions.set(field.target, columnMap);
+    setFkResolutions(nextResolutions);
+    const indexSet = new Set(indices);
+    setEntries((prev) => prev.map((entry, i) => {
+      if (!indexSet.has(i)) return entry;
+      const row = { ...entry.row, [field.target]: value };
+      const { valid, errors } = validateRow(row, { requiredTargets, emailTargets, fkTargets, fkResolutions: nextResolutions });
+      return { ...entry, row, errors: valid ? [] : errors };
+    }));
+  }, [fkResolutions, requiredTargets, emailTargets, fkTargets, simSearchFn, token]);
+
   const handleSkipEntry = useCallback((index) => {
     setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, status: 'skipped' } : e)));
   }, []);
@@ -345,6 +379,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                 onRetryEntry={handleRetryEntryPreSend}
                 onSkipEntry={handleSkipEntry}
                 onUnskipEntry={handleUnskipEntry}
+                onApplyFkValue={handleApplyFkValue}
                 onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
                 retryLabel="Re-validate"
                 simSearchFn={simSearchFn}
@@ -386,6 +421,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onRetryEntry={handleRetryEntryPostSend}
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
+                  onApplyFkValue={handleApplyFkValue}
                   onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
                   retryLabel="Retry"
                   simSearchFn={simSearchFn}
