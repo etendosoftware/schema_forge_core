@@ -2,15 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
-import { useUI } from '@etendosoftware/app-shell-core/i18n';
+import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
 import { isCompanyStepValid } from '../state.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
 import { SetupField } from '../components/SetupField.jsx';
 import { SetupSelect } from '../components/SetupSelect.jsx';
+import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect.jsx';
 
 export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, setDraftNotice }) {
   const ui = useUI();
+  const { locale, setLocale } = useLocaleSwitch();
 
   const [form, setForm] = useState(() => ({
     clientName: stepData.clientName ?? config.defaultForm?.clientName ?? '',
@@ -23,6 +25,10 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
   const updateField = (field, value) => {
     setForm(f => ({ ...f, [field]: value }));
     if (onChange) onChange({ [field]: value });
+  };
+
+  const setOnboardingLocale = (nextLocale) => {
+    if (setLocale) setLocale(nextLocale);
   };
 
   const handleBack = () => {
@@ -45,12 +51,33 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
     label: ui(`onboardingSector${code.charAt(0).toUpperCase()}${code.slice(1)}`),
   }));
 
+  const languageOptions = (config.localeCodes || []).map((code) => ({
+    value: code,
+    label: code.startsWith('es') ? ui('onboardingLanguageSpanish') : ui('onboardingLanguageEnglish'),
+  }));
+
+  const localeControl = setLocale ? (
+    <OnboardingLanguageSelect
+      label={ui('language')}
+      locale={locale}
+      onChange={setOnboardingLocale}
+      options={languageOptions}
+      data-testid="OnboardingLanguageSelect__79cf84" />
+  ) : null;
+
+  const setupHeaderContent = (
+    <div className="flex flex-wrap items-end justify-end gap-3">
+      {localeControl}
+    </div>
+  );
+
   const isValid = isCompanyStepValid(form);
 
   return (
     <SetupShell
       progressLabel={ui('onboardingProgressAlmostDone')}
       progressValue={90}
+      headerContent={setupHeaderContent}
       brandLabel={config.brandLabel || 'Etendo GO'}
       data-testid="SetupShell__79cf84">
       {draftNotice && (
