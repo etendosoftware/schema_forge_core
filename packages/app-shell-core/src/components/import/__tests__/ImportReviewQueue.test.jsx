@@ -27,30 +27,43 @@ describe('buildErrorsCsv', () => {
 });
 
 describe('ImportReviewQueue', () => {
-  it('hides OK entries when showOnlyErrors is true', () => {
+  it('hides OK entries when statusFilter is "error"', () => {
     // okEntry is at index 0, errorEntry at index 1 — filtering doesn't renumber, it
     // just removes okEntry (index 0) from what's rendered, so the surviving row keeps
     // its original index 1 in its testids.
-    render(<ImportReviewQueue entries={[okEntry, errorEntry]} showOnlyErrors onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+    render(<ImportReviewQueue entries={[okEntry, errorEntry]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
     expect(screen.queryByTestId('ImportReviewQueue__summary-0')).toBeNull();
     expect(screen.getByTestId('ImportReviewQueue__input-1-email')).toBeDefined();
   });
 
-  it('shows all entries when showOnlyErrors is false', () => {
-    render(<ImportReviewQueue entries={[okEntry, errorEntry]} showOnlyErrors={false} onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+  it('shows all entries when statusFilter is "all"', () => {
+    render(<ImportReviewQueue entries={[okEntry, errorEntry]} statusFilter="all" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
     expect(screen.getByTestId('ImportReviewQueue__summary-0').textContent).toBe('Lucia · lucia@x.com');
     expect(screen.getByTestId('ImportReviewQueue__input-1-email')).toBeDefined();
   });
 
+  it('shows only OK entries when statusFilter is "ok"', () => {
+    render(<ImportReviewQueue entries={[okEntry, errorEntry]} statusFilter="ok" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+    expect(screen.getByTestId('ImportReviewQueue__summary-0')).toBeDefined();
+    expect(screen.queryByTestId('ImportReviewQueue__input-1-email')).toBeNull();
+  });
+
+  it('treats a skipped entry as needing attention under the "error" filter', () => {
+    const skipped = { ...errorEntry, status: 'skipped' };
+    render(<ImportReviewQueue entries={[okEntry, skipped]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+    expect(screen.queryByTestId('ImportReviewQueue__summary-0')).toBeNull();
+    expect(screen.getByTestId('ImportReviewQueue__skippedLabel-1')).toBeDefined();
+  });
+
   it('renders the error message and an editable input for the flagged field', () => {
-    render(<ImportReviewQueue entries={[errorEntry]} showOnlyErrors onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+    render(<ImportReviewQueue entries={[errorEntry]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
     expect(screen.getByTestId('ImportReviewQueue__fieldError-0-email').textContent).toBe('Not a valid email address.');
     expect(screen.getByTestId('ImportReviewQueue__input-0-email').value).toBe('not-an-email');
   });
 
   it('calls onEditField with the entry index, target, and new value', () => {
     const onEditField = vi.fn();
-    render(<ImportReviewQueue entries={[errorEntry]} showOnlyErrors onToggleFilter={() => {}} onEditField={onEditField} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+    render(<ImportReviewQueue entries={[errorEntry]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={onEditField} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
     fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-email'), { target: { value: 'fixed@x.com' } });
     expect(onEditField).toHaveBeenCalledWith(0, 'email', 'fixed@x.com');
   });
@@ -65,8 +78,8 @@ describe('ImportReviewQueue', () => {
       <ImportReviewQueue
         entries={[rowLevelEntry]}
         fields={[{ target: 'name', label: 'Name' }, { target: 'email', label: 'Email' }]}
-        showOnlyErrors
-        onToggleFilter={() => {}}
+        statusFilter="error"
+        onStatusFilterChange={() => {}}
         onEditField={() => {}}
         onRetryEntry={() => {}}
         onSkipEntry={() => {}}
@@ -89,8 +102,8 @@ describe('ImportReviewQueue', () => {
       <ImportReviewQueue
         entries={[rowLevelEntry]}
         fields={[{ target: 'name', label: 'Name' }, { target: 'email', label: 'Email' }]}
-        showOnlyErrors
-        onToggleFilter={() => {}}
+        statusFilter="error"
+        onStatusFilterChange={() => {}}
         onEditField={onEditField}
         onRetryEntry={() => {}}
         onSkipEntry={() => {}}
@@ -103,7 +116,7 @@ describe('ImportReviewQueue', () => {
 
   it('calls onRetryEntry with the entry index and shows the custom retryLabel', () => {
     const onRetryEntry = vi.fn();
-    render(<ImportReviewQueue entries={[errorEntry]} showOnlyErrors onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={onRetryEntry} onSkipEntry={() => {}} onDownloadErrors={() => {}} retryLabel="Retry" />);
+    render(<ImportReviewQueue entries={[errorEntry]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={onRetryEntry} onSkipEntry={() => {}} onDownloadErrors={() => {}} retryLabel="Retry" />);
     expect(screen.getByTestId('ImportReviewQueue__retry-0').textContent).toBe('Retry');
     fireEvent.click(screen.getByTestId('ImportReviewQueue__retry-0'));
     expect(onRetryEntry).toHaveBeenCalledWith(0);
@@ -111,30 +124,46 @@ describe('ImportReviewQueue', () => {
 
   it('calls onSkipEntry with the entry index', () => {
     const onSkipEntry = vi.fn();
-    render(<ImportReviewQueue entries={[errorEntry]} showOnlyErrors onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={onSkipEntry} onDownloadErrors={() => {}} />);
+    render(<ImportReviewQueue entries={[errorEntry]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={onSkipEntry} onDownloadErrors={() => {}} />);
     fireEvent.click(screen.getByTestId('ImportReviewQueue__skip-0'));
     expect(onSkipEntry).toHaveBeenCalledWith(0);
   });
 
   it('marks a skipped entry distinctly and does not offer edit/retry for it', () => {
     const skipped = { ...errorEntry, status: 'skipped' };
-    render(<ImportReviewQueue entries={[skipped]} showOnlyErrors onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+    render(<ImportReviewQueue entries={[skipped]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
     expect(screen.getByTestId('ImportReviewQueue__skippedLabel-0').textContent).toBe('Skipped');
     expect(screen.queryByTestId('ImportReviewQueue__input-0-email')).toBeNull();
   });
 
   it('calls onDownloadErrors when the download button is clicked', () => {
     const onDownloadErrors = vi.fn();
-    render(<ImportReviewQueue entries={[errorEntry]} showOnlyErrors onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={onDownloadErrors} />);
+    render(<ImportReviewQueue entries={[errorEntry]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={onDownloadErrors} />);
     fireEvent.click(screen.getByTestId('ImportReviewQueue__download'));
     expect(onDownloadErrors).toHaveBeenCalled();
   });
 
-  it('calls onToggleFilter when the filter toggle is clicked', () => {
-    const onToggleFilter = vi.fn();
-    render(<ImportReviewQueue entries={[errorEntry]} showOnlyErrors onToggleFilter={onToggleFilter} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
-    fireEvent.click(screen.getByTestId('ImportReviewQueue__filterToggle'));
-    expect(onToggleFilter).toHaveBeenCalled();
+  describe('status filter', () => {
+    it('calls onStatusFilterChange with "all" when the All button is clicked', () => {
+      const onStatusFilterChange = vi.fn();
+      render(<ImportReviewQueue entries={[errorEntry]} statusFilter="error" onStatusFilterChange={onStatusFilterChange} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-all'));
+      expect(onStatusFilterChange).toHaveBeenCalledWith('all');
+    });
+
+    it('calls onStatusFilterChange with "ok" when the Correct button is clicked', () => {
+      const onStatusFilterChange = vi.fn();
+      render(<ImportReviewQueue entries={[errorEntry]} statusFilter="error" onStatusFilterChange={onStatusFilterChange} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-ok'));
+      expect(onStatusFilterChange).toHaveBeenCalledWith('ok');
+    });
+
+    it('calls onStatusFilterChange with "error" when the Errors button is clicked', () => {
+      const onStatusFilterChange = vi.fn();
+      render(<ImportReviewQueue entries={[errorEntry]} statusFilter="all" onStatusFilterChange={onStatusFilterChange} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
+      expect(onStatusFilterChange).toHaveBeenCalledWith('error');
+    });
   });
 
   describe('Copy error', () => {
@@ -150,7 +179,7 @@ describe('ImportReviewQueue', () => {
     it('copies a single-target error\'s message to the clipboard', async () => {
       const writeText = vi.fn().mockResolvedValue(undefined);
       Object.assign(navigator, { clipboard: { writeText } });
-      render(<ImportReviewQueue entries={[errorEntry]} showOnlyErrors onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+      render(<ImportReviewQueue entries={[errorEntry]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
       fireEvent.click(screen.getByTestId('ImportReviewQueue__copy-0'));
       await Promise.resolve();
       expect(writeText).toHaveBeenCalledWith('email: Not a valid email address.');
@@ -160,14 +189,14 @@ describe('ImportReviewQueue', () => {
       const writeText = vi.fn().mockResolvedValue(undefined);
       Object.assign(navigator, { clipboard: { writeText } });
       const rowLevelEntry = { row: { name: 'Lucia' }, errors: [{ target: '', message: "Operation 'bp' rejected by server" }], status: 'pending' };
-      render(<ImportReviewQueue entries={[rowLevelEntry]} fields={[{ target: 'name', label: 'Name' }]} showOnlyErrors onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+      render(<ImportReviewQueue entries={[rowLevelEntry]} fields={[{ target: 'name', label: 'Name' }]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
       fireEvent.click(screen.getByTestId('ImportReviewQueue__copy-0'));
       await Promise.resolve();
       expect(writeText).toHaveBeenCalledWith("Operation 'bp' rejected by server");
     });
 
     it('does not render a Copy button for an entry with no errors', () => {
-      render(<ImportReviewQueue entries={[okEntry]} showOnlyErrors={false} onToggleFilter={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+      render(<ImportReviewQueue entries={[okEntry]} statusFilter="all" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
       expect(screen.queryByTestId('ImportReviewQueue__copy-0')).toBeNull();
     });
   });

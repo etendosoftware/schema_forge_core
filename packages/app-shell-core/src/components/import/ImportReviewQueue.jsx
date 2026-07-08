@@ -6,10 +6,12 @@ import { Input } from '../ui/input.jsx';
 import { Button } from '../ui/button.jsx';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover.jsx';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '../ui/command.jsx';
+import { ScrollPane } from '../ui/scroll-pane.jsx';
 
 const DEFAULT_LABELS = {
-  showOnlyErrors: 'Show only errors',
-  showAll: 'Show all',
+  filterAll: 'All',
+  filterOk: 'Correct',
+  filterError: 'Errors',
   skip: 'Skip',
   skipped: 'Skipped',
   unskip: 'Edit again',
@@ -22,10 +24,41 @@ const DEFAULT_LABELS = {
   statusError: 'Error',
 };
 
+// Three-way status filter — 'error' bundles skipped rows in with actual
+// validation errors, since both need the user's attention; 'ok' is only rows
+// that are ready to send as-is.
+const STATUS_FILTERS = [
+  { value: 'all', labelKey: 'filterAll' },
+  { value: 'ok', labelKey: 'filterOk' },
+  { value: 'error', labelKey: 'filterError' },
+];
+
+// Fixed per-column widths (paired with `table-fixed` on <Table>) so every
+// cell is capped to a single line with a predictable, ellipsis-on-overflow
+// truncation — a data grid with values of wildly different lengths (a short
+// postal code next to a long address) is otherwise nearly impossible to keep
+// tidy without either fixed widths or per-field configuration, which this
+// generic component doesn't have. In table-fixed layout, only the header
+// row's cells need the width class — every body cell in a column inherits it.
+const STATUS_COLUMN_WIDTH_CLASS = 'w-[190px]';
+const DATA_COLUMN_WIDTH_CLASS = 'w-[160px]';
+// overflow-hidden text-ellipsis whitespace-nowrap (Tailwind's `truncate`),
+// applied to header labels and read-only values so long content shows "…"
+// instead of wrapping — combined with a `title` attribute for the full text.
+const TRUNCATE_CLASS = 'block truncate';
+
 // Sticky/frozen so the line number and status stay visible while the wide,
 // per-field data grid scrolls horizontally underneath — an opaque background
-// is required or the scrolled-under columns would show through.
+// is required or the scrolled-under columns would show through. z-10 must
+// stay below the header row's z-20 (below) so the frozen column scrolls
+// *under* the header, not over it.
 const STICKY_CELL_CLASS = 'sticky left-0 z-10 bg-background border-r border-border';
+
+// Header row pinned to the top of the scroll container. `!` guards against
+// Tailwind's generation-order-dependent cascade when combined with
+// STICKY_CELL_CLASS on the corner cell below (both set z-index; without
+// `!important` whichever rule happens to compile later would silently win).
+const STICKY_HEADER_CLASS = 'sticky top-0 !z-20 bg-background';
 
 // Same success/destructive/neutral tokens as the app's own status-tag--* CSS
 // (styles.css, ETP-3835), inlined as Tailwind utilities rather than referencing
@@ -234,8 +267,8 @@ export function buildErrorsCsv(entries) {
 export function ImportReviewQueue({
   entries,
   fields = [],
-  showOnlyErrors,
-  onToggleFilter,
+  statusFilter = 'all',
+  onStatusFilterChange,
   onEditField,
   onRetryEntry,
   onSkipEntry,
@@ -249,7 +282,11 @@ export function ImportReviewQueue({
   const text = { ...DEFAULT_LABELS, ...labels };
   const visibleEntries = entries
     .map((entry, index) => ({ entry, index }))
-    .filter(({ entry }) => !showOnlyErrors || entry.errors.length > 0 || entry.status === 'skipped');
+    .filter(({ entry }) => {
+      if (statusFilter === 'all') return true;
+      const isAttentionNeeded = entry.status === 'skipped' || entry.errors.length > 0;
+      return statusFilter === 'error' ? isAttentionNeeded : !isAttentionNeeded;
+    });
 
   const handleCopyError = async (entry) => {
     try {
@@ -268,28 +305,47 @@ export function ImportReviewQueue({
   const dataColumnCount = dataColumns ? dataColumns.length : 1;
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          className="text-xs text-primary underline"
-          onClick={onToggleFilter}
-          data-testid="ImportReviewQueue__filterToggle"
-        >
-          {showOnlyErrors ? text.showAll : text.showOnlyErrors}
-        </button>
+    <div className="flex min-h-0 flex-1 flex-col gap-2">
+      <div className="flex shrink-0 items-center justify-between">
+        <div className="flex items-center gap-1" role="group" aria-label={text.status}>
+          {STATUS_FILTERS.map((opt) => (
+            <Button
+              key={opt.value}
+              type="button"
+              size="sm"
+              variant={statusFilter === opt.value ? 'default' : 'ghost'}
+              onClick={() => onStatusFilterChange(opt.value)}
+              data-testid={`ImportReviewQueue__statusFilter-${opt.value}`}
+            >
+              {text[opt.labelKey]}
+            </Button>
+          ))}
+        </div>
         <Button type="button" variant="secondary" size="sm" onClick={onDownloadErrors} data-testid="ImportReviewQueue__download">
           {text.downloadErrors}
         </Button>
       </div>
-      <Table data-testid="Table__a73779">
-        <TableHeader data-testid="TableHeader__a73779">
+      <ScrollPane className="sf-scrollbar-visible" data-testid="ScrollPane__a73779">
+      {/* Table.jsx's own wrapper div has an independent, unbounded-height
+          overflow-auto — its horizontal scrollbar would render at the very
+          bottom of the FULL (unclipped) content instead of the visible
+          viewport (invisible until scrolling all the way down). Neutralizing
+          it hands both scroll axes to this ScrollPane, so both scrollbars sit
+          at the actual visible edges. Same idiom as DataTable.jsx's
+          `[&>div]:!overflow-visible`. */}
+      <div className="[&>div]:!overflow-visible">
+      <Table className="table-fixed" data-testid="Table__a73779">
+        <TableHeader className={STICKY_HEADER_CLASS} data-testid="TableHeader__a73779">
           <TableRow data-testid="TableRow__a73779">
             <TableHead
-              className={`w-[1%] whitespace-nowrap ${STICKY_CELL_CLASS}`}
+              className={`${STATUS_COLUMN_WIDTH_CLASS} ${STICKY_CELL_CLASS}`}
               data-testid="TableHead__a73779">{text.status}</TableHead>
             {dataColumns
-              ? dataColumns.map((field) => <TableHead key={field.target} data-testid={"TableHead__" + field.id}>{field.label ?? field.target}</TableHead>)
+              ? dataColumns.map((field) => (
+                <TableHead key={field.target} className={DATA_COLUMN_WIDTH_CLASS} data-testid={"TableHead__" + field.id}>
+                  <span className={TRUNCATE_CLASS} title={field.label ?? field.target}>{field.label ?? field.target}</span>
+                </TableHead>
+              ))
               : <TableHead data-testid="TableHead__a73779">Row</TableHead>}
           </TableRow>
         </TableHeader>
@@ -362,12 +418,24 @@ export function ImportReviewQueue({
                   {dataColumns ? (
                     dataColumns.map((field) => (
                       <TableCell key={field.target} data-testid={"TableCell__" + field.id}>
-                        <span data-testid={`ImportReviewQueue__value-${index}-${field.target}`}>{entry.row[field.target] ?? ''}</span>
+                        <span
+                          className={TRUNCATE_CLASS}
+                          title={entry.row[field.target] ?? ''}
+                          data-testid={`ImportReviewQueue__value-${index}-${field.target}`}
+                        >
+                          {entry.row[field.target] ?? ''}
+                        </span>
                       </TableCell>
                     ))
                   ) : (
                     <TableCell colSpan={dataColumnCount} data-testid="TableCell__a73779">
-                      <span data-testid={`ImportReviewQueue__summary-${index}`}>{Object.values(entry.row).join(' · ')}</span>
+                      <span
+                        className={TRUNCATE_CLASS}
+                        title={Object.values(entry.row).join(' · ')}
+                        data-testid={`ImportReviewQueue__summary-${index}`}
+                      >
+                        {Object.values(entry.row).join(' · ')}
+                      </span>
                     </TableCell>
                   )}
                 </TableRow>
@@ -434,7 +502,7 @@ export function ImportReviewQueue({
                     </div>
                     {rowLevelError && (
                       <span
-                        className="line-clamp-2 text-xs text-destructive"
+                        className="truncate text-xs text-destructive"
                         title={rowLevelError.message}
                         data-testid={`ImportReviewQueue__rowError-${index}`}
                       >
@@ -466,7 +534,7 @@ export function ImportReviewQueue({
                         <div className="flex flex-col gap-1">
                           {fieldError && !rowLevelError && (
                             <span
-                              className="line-clamp-2 text-xs text-destructive"
+                              className="truncate text-xs text-destructive"
                               title={fieldError.message}
                               data-testid={`ImportReviewQueue__fieldError-${index}-${field.target}`}
                             >
@@ -481,7 +549,13 @@ export function ImportReviewQueue({
                           />
                         </div>
                       ) : (
-                        <span data-testid={`ImportReviewQueue__value-${index}-${field.target}`}>{entry.row[field.target] ?? ''}</span>
+                        <span
+                          className={TRUNCATE_CLASS}
+                          title={entry.row[field.target] ?? ''}
+                          data-testid={`ImportReviewQueue__value-${index}-${field.target}`}
+                        >
+                          {entry.row[field.target] ?? ''}
+                        </span>
                       )}
                     </TableCell>
                   );
@@ -491,6 +565,8 @@ export function ImportReviewQueue({
           })}
         </TableBody>
       </Table>
+      </div>
+      </ScrollPane>
     </div>
   );
 }

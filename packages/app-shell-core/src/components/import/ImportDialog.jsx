@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog.jsx';
 import { Button } from '../ui/button.jsx';
-import { ScrollPane } from '../ui/scroll-pane.jsx';
 import { ImportDropzone } from './ImportDropzone.jsx';
 import { ImportColumnMapping } from './ImportColumnMapping.jsx';
 import { ImportReviewQueue, buildErrorsCsv } from './ImportReviewQueue.jsx';
@@ -47,11 +46,13 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   const [mapping, setMapping] = useState({});
   const [headers, setHeaders] = useState([]);
   const [entries, setEntries] = useState([]);
-  // Two independent toggles, not one shared boolean — the design spec is explicit that
+  // Two independent filters, not one shared value — the design spec is explicit that
   // the preview (pre-send) and result (post-send) review queues each remember their own
-  // filter state.
-  const [showOnlyErrorsPreSend, setShowOnlyErrorsPreSend] = useState(true);
-  const [showOnlyErrorsPostSend, setShowOnlyErrorsPostSend] = useState(true);
+  // filter state. 'error' (errors + skipped) is the default, matching the original
+  // "show only errors" behavior — most rows are usually fine, so open on the ones that
+  // need attention.
+  const [statusFilterPreSend, setStatusFilterPreSend] = useState('error');
+  const [statusFilterPostSend, setStatusFilterPostSend] = useState('error');
   const [progress, setProgress] = useState(0);
   // Debug-phase aid (per explicit request while the backend integration is still being
   // stabilized, one error at a time): the last uncontrolled/system-level failure of a
@@ -312,7 +313,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange} data-testid="Dialog__38a6c3">
-        <DialogContent className="max-w-3xl" data-testid="DialogContent__38a6c3">
+        <DialogContent className="w-[90vw] max-w-[1200px] max-h-[90vh] overflow-y-auto" data-testid="DialogContent__38a6c3">
           <DialogHeader data-testid="DialogHeader__38a6c3">
             <DialogTitle data-testid="DialogTitle__38a6c3">{text.title}</DialogTitle>
           </DialogHeader>
@@ -335,22 +336,20 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                 mapping={mapping}
                 onMappingChange={handleMappingChange}
                 data-testid="ImportColumnMapping__38a6c3" />
-              <ScrollPane data-testid="ScrollPane__38a6c3">
-                <ImportReviewQueue
-                  entries={entries}
-                  fields={config.fields}
-                  showOnlyErrors={showOnlyErrorsPreSend}
-                  onToggleFilter={() => setShowOnlyErrorsPreSend((v) => !v)}
-                  onEditField={handleEditField}
-                  onRetryEntry={handleRetryEntryPreSend}
-                  onSkipEntry={handleSkipEntry}
-                  onUnskipEntry={handleUnskipEntry}
-                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
-                  retryLabel="Re-validate"
-                  simSearchFn={simSearchFn}
-                  token={token}
-                  data-testid="ImportReviewQueue__38a6c3" />
-              </ScrollPane>
+              <ImportReviewQueue
+                entries={entries}
+                fields={config.fields}
+                statusFilter={statusFilterPreSend}
+                onStatusFilterChange={setStatusFilterPreSend}
+                onEditField={handleEditField}
+                onRetryEntry={handleRetryEntryPreSend}
+                onSkipEntry={handleSkipEntry}
+                onUnskipEntry={handleUnskipEntry}
+                onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
+                retryLabel="Re-validate"
+                simSearchFn={simSearchFn}
+                token={token}
+                data-testid="ImportReviewQueue__38a6c3" />
               <div className="flex justify-end">
                 <Button
                   type="button"
@@ -378,22 +377,20 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
           {step === STEP.RESULT && (
             <div className="flex min-h-0 max-h-[70vh] min-w-0 flex-col gap-4">
               {entries.length > 0 && (
-                <ScrollPane data-testid="ScrollPane__38a6c3">
-                  <ImportReviewQueue
-                    entries={entries}
-                    fields={config.fields}
-                    showOnlyErrors={showOnlyErrorsPostSend}
-                    onToggleFilter={() => setShowOnlyErrorsPostSend((v) => !v)}
-                    onEditField={handleEditField}
-                    onRetryEntry={handleRetryEntryPostSend}
-                    onSkipEntry={handleSkipEntry}
-                    onUnskipEntry={handleUnskipEntry}
-                    onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
-                    retryLabel="Retry"
-                    simSearchFn={simSearchFn}
-                    token={token}
-                    data-testid="ImportReviewQueue__38a6c3" />
-                </ScrollPane>
+                <ImportReviewQueue
+                  entries={entries}
+                  fields={config.fields}
+                  statusFilter={statusFilterPostSend}
+                  onStatusFilterChange={setStatusFilterPostSend}
+                  onEditField={handleEditField}
+                  onRetryEntry={handleRetryEntryPostSend}
+                  onSkipEntry={handleSkipEntry}
+                  onUnskipEntry={handleUnskipEntry}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
+                  retryLabel="Retry"
+                  simSearchFn={simSearchFn}
+                  token={token}
+                  data-testid="ImportReviewQueue__38a6c3" />
               )}
             </div>
           )}
