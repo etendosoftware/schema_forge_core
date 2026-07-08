@@ -2,17 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
-import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
+import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { isCompanyStepValid } from '../state.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
 import { SetupField } from '../components/SetupField.jsx';
 import { SetupSelect } from '../components/SetupSelect.jsx';
-import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect.jsx';
 
 export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, setDraftNotice }) {
   const ui = useUI();
-  const { locale, setLocale } = useLocaleSwitch();
 
   const [form, setForm] = useState(() => ({
     clientName: stepData.clientName ?? config.defaultForm?.clientName ?? '',
@@ -25,10 +23,6 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
   const updateField = (field, value) => {
     setForm(f => ({ ...f, [field]: value }));
     if (onChange) onChange({ [field]: value });
-  };
-
-  const setOnboardingLocale = (nextLocale) => {
-    if (setLocale) setLocale(nextLocale);
   };
 
   const handleBack = () => {
@@ -51,33 +45,12 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
     label: ui(`onboardingSector${code.charAt(0).toUpperCase()}${code.slice(1)}`),
   }));
 
-  const languageOptions = (config.localeCodes || []).map((code) => ({
-    value: code,
-    label: code.startsWith('es') ? ui('onboardingLanguageSpanish') : ui('onboardingLanguageEnglish'),
-  }));
-
-  const localeControl = setLocale ? (
-    <OnboardingLanguageSelect
-      label={ui('language')}
-      locale={locale}
-      onChange={setOnboardingLocale}
-      options={languageOptions}
-      data-testid="OnboardingLanguageSelect__79cf84" />
-  ) : null;
-
-  const setupHeaderContent = (
-    <div className="flex flex-wrap items-end justify-end gap-3">
-      {localeControl}
-    </div>
-  );
-
   const isValid = isCompanyStepValid(form);
 
   return (
     <SetupShell
       progressLabel={ui('onboardingProgressAlmostDone')}
       progressValue={90}
-      headerContent={setupHeaderContent}
       brandLabel={config.brandLabel || 'Etendo GO'}
       data-testid="SetupShell__79cf84">
       {draftNotice && (
@@ -111,12 +84,12 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
           <div>
             <Label
               htmlFor="fiscalIdValue"
-              className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900"
+              className="mb-2 block text-sm font-medium leading-6 text-slate-900"
               data-testid="Label__79cf84">
               {ui('onboardingFiscalIdLabel')} <span className="ml-1 text-rose-500">*</span>
             </Label>
-            <div className="flex overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] focus-within:ring-4 focus-within:ring-slate-900/5">
-              <div className="flex min-w-[88px] items-center justify-center border-r border-slate-300 px-4 text-base text-slate-500">
+            <div className="flex overflow-hidden rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:border-slate-400 focus-within:border-slate-400 focus-within:ring-4 focus-within:ring-slate-900/5">
+              <div className="flex min-w-[88px] items-center justify-center border-r border-[#D1D4DB] px-4 text-base text-slate-500">
                 {form.fiscalIdType}
               </div>
               <input
@@ -125,7 +98,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                 value={form.fiscalIdValue}
                 onChange={e => updateField('fiscalIdValue', e.target.value)}
                 placeholder={ui('onboardingFiscalIdPlaceholder')}
-                className="h-12 w-full border-0 px-4 text-base text-slate-900 outline-none placeholder:text-slate-400"
+                className="h-10 w-full border-0 px-4 text-base text-slate-900 outline-none placeholder:text-slate-400"
               />
             </div>
           </div>
@@ -164,7 +137,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
             type="button"
             onClick={handleStart}
             disabled={!isValid}
-            className="h-12 rounded-2xl bg-gray-900 px-6 text-base font-medium text-white hover:bg-gray-800 disabled:bg-slate-200 disabled:text-slate-500"
+            className="h-12 rounded-lg bg-[#121217] px-6 text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground disabled:bg-slate-200 disabled:text-slate-500"
             data-testid="Button__79cf84">
             <><ArrowRight className="mr-2 h-4 w-4" data-testid="ArrowRight__79cf84" />{ui('onboardingStartAction')}</>
           </Button>
