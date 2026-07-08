@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Lock, Mail, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, Loader2, ArrowLeft, Check } from 'lucide-react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { loginAccount, loginWithSsoProvider, requestPasswordReset, confirmPasswordReset, fetchAccount, fetchEnvironments } from '../api.js';
@@ -10,6 +10,12 @@ import { AuthField } from '../components/AuthField.jsx';
 import { AuthSsoOptions } from '../components/AuthSsoOptions.jsx';
 
 const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
+
+function maskEmail(email) {
+  const at = String(email || '').indexOf('@');
+  if (at <= 0) return email || '';
+  return `${email[0]}******${email.slice(at)}`;
+}
 
 export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, routeByEnvironments }) {
   const ui = useUI();
@@ -175,7 +181,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
   };
 
   const handleForgotPassword = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     setForgotError(null);
     setForgotSent(false);
     setForgotLoading(true);
@@ -217,36 +223,40 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
   if (view === 'reset-password') {
     return (
       <AuthShell
-        switchPrompt={ui('onboardingRememberPasswordPrompt')}
-        switchAction={ui('onboardingBackToLoginAction')}
-        switchTestId="action-reset-back-to-login"
-        onSwitch={() => {
-          setResetError(null);
-          setResetSuccess(false);
-          setView('login');
-        }}
         brandLabel={config.brandLabel || 'Etendo GO'}
         marketingTitle={ui('onboardingMarketingTitle')}
         marketingDescription={ui('onboardingMarketingDescription')}
         featureLabels={authFeatureLabels}
         data-testid="AuthShell__79cf84">
-        <div className="mb-10">
-          <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
-            {ui('onboardingResetPasswordTitle')}
-          </h1>
-          <p className="mt-3 text-base text-slate-600 sm:text-xl">
-            {ui(resetSuccess ? 'onboardingResetPasswordSuccess' : 'onboardingResetPasswordSubtitle')}
-          </p>
-        </div>
         {resetSuccess ? (
-          <Button
-            type="button"
-            onClick={() => setView('login')}
-            className="h-12 w-full rounded-lg bg-[#121217] text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
-            data-testid="Button__79cf84">
-            {ui('onboardingBackToLoginAction')}
-          </Button>
+          <div className="flex flex-col items-center text-center">
+            <div className="mb-2 flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#26A95F]" data-testid="reset-success-icon">
+              <Check className="h-8 w-8 text-white" strokeWidth={3} data-testid="Check__79cf84" />
+            </div>
+            <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
+              {ui('onboardingResetPasswordSuccessTitle')}
+            </h1>
+            <p className="mt-2 text-base text-slate-600 sm:text-xl">
+              {ui('onboardingResetPasswordSuccess')}
+            </p>
+            <Button
+              type="button"
+              onClick={() => setView('login')}
+              className="mt-5 h-10 w-full rounded-lg bg-[#121217] text-sm font-medium leading-6 text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
+              data-testid="Button__79cf84">
+              {ui('onboardingLoginAction')}
+            </Button>
+          </div>
         ) : (
+          <>
+          <div className="mb-5">
+            <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
+              {ui('onboardingResetPasswordTitle')}
+            </h1>
+            <p className="mt-0 text-base text-slate-600 sm:text-xl">
+              {ui('onboardingResetPasswordSubtitle')}
+            </p>
+          </div>
           <form onSubmit={handleResetPassword} className="space-y-5">
             <AuthField
               id="reset-password"
@@ -264,9 +274,9 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
                   type="button"
                   aria-label={showResetPassword ? ui('onboardingHidePassword') : ui('onboardingShowPassword')}
                   onClick={() => setShowResetPassword(value => !value)}
-                  className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                  className="rounded-full p-1 text-[#828FA3] transition hover:bg-slate-100 hover:text-slate-600"
                 >
-                  {showResetPassword ? <EyeOff className="h-5 w-5" data-testid="EyeOff__79cf84" /> : <Eye className="h-5 w-5" data-testid="Eye__79cf84" />}
+                  {showResetPassword ? <EyeOff className="h-6 w-6" data-testid="EyeOff__79cf84" /> : <Eye className="h-6 w-6" data-testid="Eye__79cf84" />}
                 </button>
               )}
               data-testid="AuthField__79cf84" />
@@ -291,13 +301,14 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
               type="submit"
               data-testid="action-reset-password-submit"
               disabled={resetLoading || !resetForm.token}
-              className="h-12 w-full rounded-lg bg-[#121217] text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
+              className="h-10 w-full rounded-lg bg-[#121217] text-sm font-medium leading-6 text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
             >
               {resetLoading
                 ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSavingPassword')}</>
                 : ui('onboardingSavePasswordAction')}
             </Button>
           </form>
+          </>
         )}
       </AuthShell>
     );
@@ -306,61 +317,116 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
   if (view === 'forgot-password') {
     return (
       <AuthShell
-        switchPrompt={ui('onboardingRememberPasswordPrompt')}
-        switchAction={ui('onboardingBackToLoginAction')}
-        switchTestId="action-forgot-back-to-login"
-        onSwitch={() => {
-          setForgotError(null);
-          setForgotSent(false);
-          setView('login');
-        }}
         brandLabel={config.brandLabel || 'Etendo GO'}
         marketingTitle={ui('onboardingMarketingTitle')}
         marketingDescription={ui('onboardingMarketingDescription')}
         featureLabels={authFeatureLabels}
         data-testid="AuthShell__79cf84">
-        <div className="mb-10">
-          <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
-            {ui('onboardingForgotPasswordTitle')}
-          </h1>
-          <p className="mt-3 text-base text-slate-600 sm:text-xl">
-            {ui(forgotSent ? 'onboardingResetEmailSent' : 'onboardingForgotPasswordSubtitle')}
-          </p>
-        </div>
-        <form onSubmit={handleForgotPassword} className="space-y-5">
-          <AuthField
-            id="forgot-email"
-            type="email"
-            label={ui('onboardingEmailLabel')}
-            icon={Mail}
-            value={forgotEmail}
-            onChange={e => setForgotEmail(e.target.value)}
-            disabled={forgotLoading || forgotSent}
-            placeholder={ui('onboardingEmailPlaceholder')}
-            autoComplete="email"
-            required
-            data-testid="AuthField__79cf84" />
-          {forgotError && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
-              {forgotError}
+        {forgotSent ? (
+          <div>
+            <div className="mb-5">
+              <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
+                {ui('onboardingResetEmailSentTitle')}
+              </h1>
+              <p className="mt-0 text-base text-slate-600 sm:text-xl">
+                {ui('onboardingResetEmailSentSubtitle').replace('{email}', maskEmail(forgotEmail))}
+              </p>
+              <p className="mt-5 text-base text-slate-600 sm:text-xl">
+                {(() => {
+                  const [prefix, suffix] = ui('onboardingResetLinkValidity').split('{duration}');
+                  return <>{prefix}<strong className="font-semibold text-[#121217]">{ui('onboardingResetLinkDuration')}</strong>{suffix}</>;
+                })()}
+              </p>
+              <p className="mt-5 text-base text-slate-600 sm:text-xl">{ui('onboardingResendPrompt')}</p>
             </div>
-          )}
-          {forgotSent && (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-              {ui('onboardingResetEmailSent')}
+            {forgotError && (
+              <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+                {forgotError}
+              </div>
+            )}
+            <div className="space-y-3">
+              <Button
+                type="button"
+                onClick={() => handleForgotPassword()}
+                disabled={forgotLoading}
+                data-testid="action-forgot-password-resend"
+                className="h-10 w-full rounded-lg bg-[#121217] text-sm font-medium leading-6 text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
+              >
+                {forgotLoading
+                  ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSendingResetEmail')}</>
+                  : ui('onboardingResendLinkAction')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setForgotError(null);
+                  setForgotSent(false);
+                  setView('login');
+                }}
+                className="h-10 w-full gap-1 rounded-lg border-[#D1D4DB] bg-white px-3 text-sm font-medium leading-6 text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-slate-50"
+                data-testid="action-forgot-password-back-to-login"
+              >
+                <ArrowLeft className="h-7 w-7 text-[#828FA3]" data-testid="ArrowLeft__79cf84" />
+                {ui('onboardingBackToLoginAction')}
+              </Button>
             </div>
-          )}
-          <Button
-            type="submit"
-            data-testid="action-forgot-password-submit"
-            disabled={forgotLoading || forgotSent}
-            className="h-12 w-full rounded-lg bg-[#121217] text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
-          >
-            {forgotLoading
-              ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSendingResetEmail')}</>
-              : ui('onboardingSendResetEmailAction')}
-          </Button>
-        </form>
+          </div>
+        ) : (
+          <>
+            <div className="mb-5">
+              <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
+                {ui('onboardingForgotPasswordTitle')}
+              </h1>
+              <p className="mt-0 text-base text-slate-600 sm:text-xl">
+                {ui('onboardingForgotPasswordSubtitle')}
+              </p>
+            </div>
+            <form onSubmit={handleForgotPassword} className="space-y-5">
+              <AuthField
+                id="forgot-email"
+                type="email"
+                label={ui('onboardingEmailLabel')}
+                icon={Mail}
+                value={forgotEmail}
+                onChange={e => setForgotEmail(e.target.value)}
+                disabled={forgotLoading}
+                placeholder={ui('onboardingEmailPlaceholder')}
+                autoComplete="email"
+                required
+                data-testid="AuthField__79cf84" />
+              {forgotError && (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+                  {forgotError}
+                </div>
+              )}
+              <Button
+                type="submit"
+                data-testid="action-forgot-password-submit"
+                disabled={forgotLoading}
+                className="h-10 w-full rounded-lg bg-[#121217] text-sm font-medium leading-6 text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
+              >
+                {forgotLoading
+                  ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSendingResetEmail')}</>
+                  : ui('onboardingSendResetEmailAction')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setForgotError(null);
+                  setForgotSent(false);
+                  setView('login');
+                }}
+                className="h-10 w-full gap-1 rounded-lg border-[#D1D4DB] bg-white px-3 text-sm font-medium leading-6 text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-slate-50"
+                data-testid="action-forgot-password-back-to-login"
+              >
+                <ArrowLeft className="h-7 w-7 text-[#828FA3]" data-testid="ArrowLeft__79cf84" />
+                {ui('onboardingBackToLoginAction')}
+              </Button>
+            </form>
+          </>
+        )}
       </AuthShell>
     );
   }
@@ -382,11 +448,11 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
       marketingDescription={ui('onboardingMarketingDescription')}
       featureLabels={authFeatureLabels}
       data-testid="AuthShell__79cf84">
-      <div className="mb-10">
+      <div className="mb-5">
         <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
           {ui('onboardingLoginTitle')}
         </h1>
-        <p className="mt-3 text-base text-slate-600 sm:text-xl">
+        <p className="mt-0 text-base text-slate-600 sm:text-xl">
           {ui('onboardingLoginSubtitle')}
         </p>
       </div>
@@ -422,30 +488,30 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           required
           data-testid="AuthField__79cf84" />
 
-        <AuthField
-          id="login-password"
-          type={showLoginPassword ? 'text' : 'password'}
-          label={ui('onboardingPasswordLabel')}
-          icon={Lock}
-          value={loginForm.password}
-          onChange={e => setLoginForm(f => ({ ...f, password: e.target.value }))}
-          disabled={loginLoading}
-          placeholder={ui('onboardingPasswordPlaceholder')}
-          autoComplete="current-password"
-          required
-          trailing={(
-            <button
-              type="button"
-              aria-label={showLoginPassword ? ui('onboardingHidePassword') : ui('onboardingShowPassword')}
-              onClick={() => setShowLoginPassword(value => !value)}
-              className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-            >
-              {showLoginPassword ? <EyeOff className="h-5 w-5" data-testid="EyeOff__79cf84" /> : <Eye className="h-5 w-5" data-testid="Eye__79cf84" />}
-            </button>
-          )}
-          data-testid="AuthField__79cf84" />
+        <div className="flex flex-col gap-3">
+          <AuthField
+            id="login-password"
+            type={showLoginPassword ? 'text' : 'password'}
+            label={ui('onboardingPasswordLabel')}
+            icon={Lock}
+            value={loginForm.password}
+            onChange={e => setLoginForm(f => ({ ...f, password: e.target.value }))}
+            disabled={loginLoading}
+            placeholder={ui('onboardingPasswordPlaceholder')}
+            autoComplete="current-password"
+            required
+            trailing={(
+              <button
+                type="button"
+                aria-label={showLoginPassword ? ui('onboardingHidePassword') : ui('onboardingShowPassword')}
+                onClick={() => setShowLoginPassword(value => !value)}
+                className="rounded-full p-1 text-[#828FA3] transition hover:bg-slate-100 hover:text-slate-600"
+              >
+                {showLoginPassword ? <EyeOff className="h-6 w-6" data-testid="EyeOff__79cf84" /> : <Eye className="h-6 w-6" data-testid="Eye__79cf84" />}
+              </button>
+            )}
+            data-testid="AuthField__79cf84" />
 
-        <div className="flex justify-end">
           <button
             type="button"
             onClick={() => {
@@ -455,7 +521,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
               setForgotError(null);
               setView('forgot-password');
             }}
-            className="text-sm font-medium text-slate-700 underline underline-offset-4 transition hover:text-slate-900"
+            className="self-start text-sm font-medium leading-5 text-[#121217] underline underline-offset-4 transition hover:text-slate-700"
           >
             {ui('onboardingForgotPasswordAction')}
           </button>
@@ -471,7 +537,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           type="submit"
           data-testid="action-login-submit"
           disabled={loginLoading}
-          className="h-12 w-full rounded-lg bg-[#121217] text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
+          className="h-10 w-full rounded-lg bg-[#121217] text-sm font-medium leading-6 text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
         >
           {loginLoading
             ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSigningIn')}</>
