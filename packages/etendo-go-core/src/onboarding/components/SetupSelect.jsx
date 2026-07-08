@@ -6,7 +6,7 @@ export function SetupSelect({ id, label, required = false, value, onChange, chil
     <div className={className}>
       <Label
         htmlFor={id}
-        className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900"
+        className="mb-2 block text-sm font-medium leading-6 text-slate-900"
         data-testid="Label__79cf84">
         {label}
         {required && <span className="ml-1 text-rose-500">*</span>}
@@ -15,7 +15,7 @@ export function SetupSelect({ id, label, required = false, value, onChange, chil
         id={id}
         value={value}
         onChange={onChange}
-        className="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-base text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] focus:outline-none focus:ring-4 focus:ring-slate-900/5"
+        className="h-10 w-full rounded-lg border border-[#D1D4DB] bg-white px-4 text-base text-slate-900 shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:border-slate-400 focus:outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-900/5"
       >
         {children}
       </select>

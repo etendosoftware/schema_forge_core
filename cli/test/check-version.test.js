@@ -80,6 +80,46 @@ describe('diffFields', () => {
     assert.equal(result.removed.length, 0);
     assert.equal(result.changed.length, 0);
   });
+
+  it('does not flag object-valued properties as changed when only key order differs', () => {
+    // Regression: enumValues[].labels objects can be constructed with different
+    // key insertion order across independent pipeline runs even when the
+    // underlying data is identical. A raw JSON.stringify comparison would
+    // spuriously flag this as a change and trigger an unwanted version bump.
+    const oldFields = [
+      {
+        name: 'type',
+        enumValues: [
+          { value: 'B', name: 'Bank', labels: { es_ES: 'Banco' } },
+          { value: 'C', name: 'Cash', labels: { es_ES: 'Caja' } },
+        ],
+      },
+    ];
+    const newFields = [
+      {
+        name: 'type',
+        enumValues: [
+          { value: 'B', labels: { es_ES: 'Banco' }, name: 'Bank' },
+          { value: 'C', name: 'Cash', labels: { es_ES: 'Caja' } },
+        ],
+      },
+    ];
+    const result = diffFields(oldFields, newFields);
+    assert.equal(result.changed.length, 0);
+  });
+
+  it('still flags a real change inside an object-valued property', () => {
+    const oldFields = [
+      { name: 'type', enumValues: [{ value: 'B', name: 'Bank', labels: { es_ES: 'Banco' } }] },
+    ];
+    const newFields = [
+      { name: 'type', enumValues: [{ value: 'B', name: 'Bank', labels: { es_ES: 'Banco actualizado' } }] },
+    ];
+    const result = diffFields(oldFields, newFields);
+    assert.equal(result.changed.length, 1);
+    assert.equal(result.changed[0].field, 'type');
+    assert.ok(result.changed[0].changes.find(c => c.property === 'enumValues'));
+  });
 });
 
 // --- diffEntities / diffContract ---
@@ -366,5 +406,76 @@ describe('checkVersion (integration)', () => {
     assert.equal(changelog[0].from, '0.1.0');
     assert.equal(changelog[0].to, '0.2.0');
     assert.equal(changelog[0].author, 'test-author');
+  });
+
+  it('keeps contract.mcp.json version in sync when a bump occurs', async () => {
+    // Regression: contract.mcp.json is written earlier in the pipeline, before
+    // this bump runs — without syncing it here, it permanently lags one
+    // version behind contract.json every time a real bump occurs.
+    const oldContract = makeContract(
+      { order: { fields: [{ name: 'documentNo', type: 'string' }] } },
+      [{ method: 'GET', path: '/order' }]
+    );
+    const newContract = makeContract(
+      { order: { fields: [
+        { name: 'documentNo', type: 'string' },
+        { name: 'dateOrdered', type: 'date' },
+      ] } },
+      [{ method: 'GET', path: '/order' }]
+    );
+    await writeFile(join(artifactDir, 'contract.prev.json'), JSON.stringify(oldContract, null, 2));
+    await writeFile(join(artifactDir, 'contract.json'), JSON.stringify(newContract, null, 2));
+    await writeFile(join(artifactDir, 'contract.mcp.json'), JSON.stringify({ version: '0.1.0', apiPrediction: {} }, null, 2));
+
+    const result = await checkVersion(testWindow, 'test-author');
+    assert.equal(result.newVersion, '0.2.0');
+
+    const { readFile } = await import('node:fs/promises');
+    const mcpContract = JSON.parse(await readFile(join(artifactDir, 'contract.mcp.json'), 'utf-8'));
+    assert.equal(mcpContract.version, '0.2.0');
+  });
+
+  it('does not fail when no contract.mcp.json exists for the window', async () => {
+    const oldContract = makeContract(
+      { order: { fields: [{ name: 'documentNo', type: 'string' }] } },
+      [{ method: 'GET', path: '/order' }]
+    );
+    const newContract = makeContract(
+      { order: { fields: [
+        { name: 'documentNo', type: 'string' },
+        { name: 'dateOrdered', type: 'date' },
+      ] } },
+      [{ method: 'GET', path: '/order' }]
+    );
+    await writeFile(join(artifactDir, 'contract.prev.json'), JSON.stringify(oldContract, null, 2));
+    await writeFile(join(artifactDir, 'contract.json'), JSON.stringify(newContract, null, 2));
+
+    const result = await checkVersion(testWindow, 'test-author');
+    assert.equal(result.newVersion, '0.2.0');
+  });
+
+  it('does not bump the version when contracts differ only by enum label key order', async () => {
+    // End-to-end regression for the false-positive-diff bug: two contracts
+    // whose enumValues[].labels objects have different key insertion order
+    // but identical values must NOT be treated as changed.
+    const oldContract = makeContract({
+      account: { fields: [
+        { name: 'type', enumValues: [{ value: 'B', name: 'Bank', labels: { es_ES: 'Banco' } }] },
+      ] },
+    });
+    const newContract = makeContract({
+      account: { fields: [
+        { name: 'type', enumValues: [{ value: 'B', labels: { es_ES: 'Banco' }, name: 'Bank' }] },
+      ] },
+    });
+    await writeFile(join(artifactDir, 'contract.prev.json'), JSON.stringify(oldContract, null, 2));
+    await writeFile(join(artifactDir, 'contract.json'), JSON.stringify(newContract, null, 2));
+
+    const result = await checkVersion(testWindow, 'test-author');
+    assert.equal(result, null);
+
+    const { readFile } = await import('node:fs/promises');
+    const unchanged = JSON.parse(await readFile(join(artifactDir, 'contract.json'), 'utf-8'));
+    assert.equal(unchanged.version, '0.1.0');
   });
 });

@@ -7,13 +7,12 @@ import { isProfileStepValid } from '../state.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
 import { SetupField } from '../components/SetupField.jsx';
-import { SetupSelect } from '../components/SetupSelect.jsx';
 import { BusinessTypeCard } from '../components/BusinessTypeCard.jsx';
-import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect.jsx';
+import { buildCountryOptions } from '../countries.js';
 
 export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accountName, draftNotice, setDraftNotice, onChange }) {
   const ui = useUI();
-  const { locale, setLocale } = useLocaleSwitch();
+  const { locale } = useLocaleSwitch();
 
   const [form, setForm] = useState(() => ({
     fullName: stepData.fullName ?? config.defaultForm?.fullName ?? accountName ?? '',
@@ -40,11 +39,6 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
     if (onChange) onChange({ [field]: value });
   };
 
-  const setOnboardingLocale = (nextLocale) => {
-    if (setLocale) setLocale(nextLocale);
-    updateField('language', nextLocale);
-  };
-
   const handleContinue = () => {
     trackOnboarding(config, 'onboarding_setup_step_completed', {
       action: 'continue',
@@ -56,38 +50,16 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
     onNext(form);
   };
 
-  const countryOptions = (config.countryCodes || []).map((code) => ({
-    value: code,
-    label: code === 'ES'
-      ? ui('onboardingCountrySpain')
-      : (code === 'AR' ? ui('onboardingCountryArgentina') : code),
-  }));
+  // Country is fixed (Spain-only for now, no multi-country selector) — still
+  // derived from countries.js instead of a hardcoded literal, so the field
+  // stays data-driven if the country list ever expands again.
+  const fixedCountry = buildCountryOptions(config.countryCodes, locale)[0];
 
   const businessTypeOptions = (config.businessTypeValues || ['company', 'freelancer', 'advisory']).map((value) => ({
     value,
     label: ui(`onboardingBusinessType${value.charAt(0).toUpperCase()}${value.slice(1)}`),
     icon: value === 'company' ? Building2 : value === 'freelancer' ? User : MessageCircle,
   }));
-
-  const languageOptions = (config.localeCodes || []).map((code) => ({
-    value: code,
-    label: code.startsWith('es') ? ui('onboardingLanguageSpanish') : ui('onboardingLanguageEnglish'),
-  }));
-
-  const localeControl = setLocale ? (
-    <OnboardingLanguageSelect
-      label={ui('language')}
-      locale={locale}
-      onChange={setOnboardingLocale}
-      options={languageOptions}
-      data-testid="OnboardingLanguageSelect__79cf84" />
-  ) : null;
-
-  const setupHeaderContent = (
-    <div className="flex flex-wrap items-end justify-end gap-3">
-      {localeControl}
-    </div>
-  );
 
   const isValid = isProfileStepValid(form);
   const setupGreetingName = (form.fullName || accountName || ui('onboardingGreetingFallback')).trim().split(/\s+/)[0];
@@ -96,7 +68,6 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
     <SetupShell
       progressLabel={ui('onboardingProgressAlmostReady')}
       progressValue={50}
-      headerContent={setupHeaderContent}
       brandLabel={config.brandLabel || 'Etendo GO'}
       data-testid="SetupShell__79cf84">
       {draftNotice && (
@@ -128,25 +99,34 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
             placeholder={ui('onboardingFullNamePlaceholder')}
             data-testid="SetupField__79cf84" />
 
-          <SetupSelect
-            id="countryCode"
-            label={ui('onboardingCountryLabel')}
-            required
-            value={form.countryCode}
-            onChange={e => updateField('countryCode', e.target.value)}
-            data-testid="SetupSelect__79cf84">
-            {countryOptions.map((country) => (
-              <option key={country.value} value={country.value}>{country.label}</option>
-            ))}
-          </SetupSelect>
+          <div>
+            <Label
+              htmlFor="countryCode"
+              className="mb-2 block text-sm font-medium leading-6 text-slate-900"
+              data-testid="Label__79cf84">
+              {ui('onboardingCountryLabel')}
+              <span className="ml-1 text-rose-500">*</span>
+            </Label>
+            <div
+              id="countryCode"
+              className="flex h-10 w-full items-center gap-2 rounded-lg border border-[#D1D4DB] bg-white px-3 text-base text-slate-900 shadow-[0_1px_2px_rgba(18,18,23,0.05)]"
+              data-testid="CountryField__79cf84">
+              {fixedCountry && (
+                <>
+                  <span aria-hidden="true">{fixedCountry.flag}</span>
+                  <span>{fixedCountry.label}</span>
+                </>
+              )}
+            </div>
+          </div>
 
           <div>
             <Label
-              className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900"
+              className="mb-2 block text-sm font-medium leading-6 text-slate-900"
               data-testid="Label__79cf84">
               {ui('onboardingBusinessTypeLabel')}
             </Label>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-3">
               {businessTypeOptions.map((option) => (
                 <BusinessTypeCard
                   key={option.value}
@@ -165,7 +145,7 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
             type="button"
             onClick={handleContinue}
             disabled={!isValid}
-            className="h-12 rounded-2xl bg-gray-900 px-6 text-base font-medium text-white hover:bg-gray-800"
+            className="h-12 rounded-lg bg-[#121217] px-6 text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
             data-testid="Button__79cf84">
             {ui('onboardingContinueAction')} <ArrowRight className="ml-2 h-4 w-4" data-testid="ArrowRight__79cf84" />
           </Button>

@@ -137,7 +137,8 @@ export function OnboardingFlow({ steps = [], config = {} }) {
 
     const currentToken = localStorage.getItem('sf_platform_token');
     if (!currentToken) {
-      goToStep(initialView === 'login' ? 'login' : 'register');
+      // Login is the default entry view; register is only shown when explicitly requested.
+      goToStep(initialView === 'register' ? 'register' : 'login');
       return;
     }
 
@@ -152,11 +153,11 @@ export function OnboardingFlow({ steps = [], config = {} }) {
           localStorage.removeItem('sf_platform_token');
           localStorage.removeItem('sf_platform_auth_method');
           setToken(null);
-          goToStep('register');
+          goToStep('login');
         });
     } else {
-      // If mocked fetchAccount doesn't return a promise, default to registering
-      goToStep('register');
+      // If mocked fetchAccount doesn't return a promise, default to the login view
+      goToStep('login');
     }
   }, []);
 
