@@ -18,6 +18,27 @@ const ADDITIVE_PROPERTIES = new Set(['required', 'reference', 'inputMode', 'depe
 const PATCH_PROPERTIES = new Set(['grid', 'form', 'visibility', 'searchable']);
 
 /**
+ * JSON.stringify with recursively key-sorted objects, so two structurally
+ * identical values compare equal regardless of property insertion order.
+ * Arrays keep their original order (order is significant there).
+ */
+function canonicalStringify(value) {
+  const sortKeys = (v) => {
+    if (Array.isArray(v)) return v.map(sortKeys);
+    if (v && typeof v === 'object') {
+      return Object.keys(v)
+        .sort((a, b) => a.localeCompare(b))
+        .reduce((acc, key) => {
+          acc[key] = sortKeys(v[key]);
+          return acc;
+        }, {});
+    }
+    return v;
+  };
+  return JSON.stringify(sortKeys(value));
+}
+
+/**
  * Diff two arrays of field objects by name.
  * Returns { added, removed, changed } where changed includes per-property diffs.
  */
@@ -39,7 +60,7 @@ export function diffFields(oldFields, newFields) {
       if (key === 'name') continue;
       const oldVal = oldField[key];
       const newVal = newField[key];
-      if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+      if (canonicalStringify(oldVal) !== canonicalStringify(newVal)) {
         changes.push({ property: key, from: oldVal, to: newVal });
       }
     }
@@ -293,6 +314,21 @@ export async function checkVersion(windowName, author) {
     join(artifactDir, 'contract.json'),
     JSON.stringify(currentContract, null, 2) + '\n'
   );
+
+  // Keep contract.mcp.json's version in sync — it is written earlier in the
+  // pipeline (before this bump runs), so without this it permanently lags
+  // one version behind contract.json every time a bump occurs.
+  try {
+    const mcpRaw = await readFile(join(artifactDir, 'contract.mcp.json'), 'utf-8');
+    const mcpContract = JSON.parse(mcpRaw);
+    mcpContract.version = newVersion;
+    await writeFile(
+      join(artifactDir, 'contract.mcp.json'),
+      JSON.stringify(mcpContract, null, 2) + '\n'
+    );
+  } catch {
+    // No mcp split artifact for this window — nothing to sync.
+  }
 
   // Build changelog entry
   const entry = buildChangelogEntry(oldVersion, newVersion, classification, author);

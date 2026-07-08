@@ -286,6 +286,31 @@ describe('analyzeChangedFiles', () => {
     }
   });
 
+  it('does not flag generated dependency lockfiles as large files', () => {
+    const repoDir = mkdtempSync(join(tmpdir(), 'pr-review-large-lockfile-'));
+    const previousCwd = process.cwd();
+
+    try {
+      process.chdir(repoDir);
+      mkdirSync(join(repoDir, 'tools', 'app-shell'), { recursive: true });
+      writeFileSync(join(repoDir, 'package-lock.json'), 'x'.repeat(513000));
+      writeFileSync(join(repoDir, 'tools', 'app-shell', 'package-lock.json'), 'x'.repeat(513000));
+
+      const findings = analyzeChangedFiles({
+        changedFiles: ['package-lock.json', 'tools/app-shell/package-lock.json'],
+        newSourceFiles: [],
+        newTestFiles: [],
+        fileContents: {},
+        packageJsonChanges: [],
+      });
+
+      assert.ok(!findings.some((finding) => finding.code === 'LARGE_FILE'));
+    } finally {
+      process.chdir(previousCwd);
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+
   it('still flags a large file under a non-skipped path (size gate is path-scoped)', () => {
     const repoDir = mkdtempSync(join(tmpdir(), 'pr-review-large-control-'));
     const previousCwd = process.cwd();

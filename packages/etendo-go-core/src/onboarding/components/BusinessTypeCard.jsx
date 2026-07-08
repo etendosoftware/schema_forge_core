@@ -5,15 +5,22 @@ export function BusinessTypeCard({ icon: Icon, label, selected, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`relative rounded-[1.5rem] border bg-white p-4 text-left shadow-sm transition ${selected ? 'border-slate-900 shadow-[0_14px_30px_rgba(15,23,42,0.10)]' : 'border-slate-200 hover:border-slate-300'}`}
+      className={`relative flex flex-col items-start gap-3 rounded-xl border bg-white p-4 text-left shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors ${
+        selected ? 'border-[#121217]' : 'border-[#E8EAEF] hover:border-slate-300'
+      }`}
     >
-      <span className={`absolute right-4 top-4 flex h-6 w-6 items-center justify-center rounded-full border ${selected ? 'border-slate-900 text-slate-900' : 'border-slate-300 text-transparent'}`}>
-        <span className={`h-3 w-3 rounded-full ${selected ? 'bg-slate-900' : 'bg-transparent'}`} />
+      <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center">
+        <span
+          className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border-[1.5px] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)] ${
+            selected ? 'border-[#121217]' : 'border-[#D1D4DB]'
+          }`}>
+          {selected && <span className="h-1.5 w-1.5 rounded-full bg-[#121217]" />}
+        </span>
       </span>
-      <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {Icon && <Icon className="h-6 w-6 text-slate-500" data-testid="Icon__79cf84" />}
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]">
+        {Icon && <Icon className="h-6 w-6 text-slate-400" data-testid="Icon__79cf84" />}
       </div>
-      <p className="text-lg font-medium tracking-[-0.02em] text-slate-900 sm:text-xl">{label}</p>
+      <p className="text-sm font-medium leading-5 text-slate-900">{label}</p>
     </button>
   );
 }

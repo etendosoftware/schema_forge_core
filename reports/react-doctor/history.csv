@@ -1,0 +1,9 @@
+timestamp,workspace,score,files,errors,warnings
+2026-07-06T15:52:46.254Z,@schema-forge/decision-panel,69,6,0,13
+2026-07-06T15:52:46.254Z,@schema-forge/quick-order-app,67,13,0,11
+2026-07-06T15:52:46.254Z,@schema-forge/spike-hello-app,96,7,0,1
+2026-07-06T15:52:46.254Z,@schema-forge/ui-preview,47,3,1,6
+2026-07-06T15:52:46.254Z,@etendosoftware/app-shell-core,61,95,1,47
+2026-07-06T15:52:46.254Z,@etendosoftware/etendo-go-core,50,31,0,58
+2026-07-06T15:52:46.254Z,@etendosoftware/schema-forge-stack,82,3,0,1
+2026-07-06T15:52:46.254Z,__average__,67,,2,137
