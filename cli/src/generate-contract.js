@@ -428,6 +428,14 @@ export function generateFrontendContract(schema, rules = []) {
   // making etendo_schema_forge's decisions.json duplicate metadata the contract already
   // derives. Fails loudly on an unknown target, same posture as every other
   // decisions.json/contract mismatch in this file.
+  //
+  // `label` is backfilled only when decisions.json didn't already declare one —
+  // a composite import (e.g. Contacts splitting one row across businessPartner +
+  // contact) routinely maps two DIFFERENT targets whose underlying Etendo AD
+  // columns happen to share the exact same label (e.g. both "First Name"), which
+  // is unreadable as two identically-labeled columns in the review grid. An
+  // explicit decisions.json label is how a window disambiguates that; silently
+  // overwriting it here would make that override impossible.
   if (win.import?.fields) {
     const allFields = Object.values(entities).flatMap((e) => e.fields);
     win.import.fields = win.import.fields.map((f) => {
@@ -438,7 +446,7 @@ export function generateFrontendContract(schema, rules = []) {
         }
         throw new Error(`window.import.fields references unknown field "${f.target}"`);
       }
-      return { ...f, label: match.label, required: !!match.required, type: match.type, reference: match.reference };
+      return { ...f, label: f.label ?? match.label, required: !!match.required, type: match.type, reference: match.reference };
     });
   }
 
